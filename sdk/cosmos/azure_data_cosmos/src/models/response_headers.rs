@@ -5,9 +5,10 @@
 
 //! SDK-owned wrapper around the driver's `CosmosResponseHeaders`.
 
+use azure_core::http::Etag;
 use azure_data_cosmos_driver::models::{
-    ActivityId, CosmosResponseHeaders as DriverCosmosResponseHeaders, ETag, RequestCharge,
-    SessionToken, SubStatusCode,
+    ActivityId, CosmosResponseHeaders as DriverCosmosResponseHeaders, RequestCharge, SessionToken,
+    SubStatusCode,
 };
 
 /// Cosmos DB response headers parsed from the wire.
@@ -19,10 +20,11 @@ use azure_data_cosmos_driver::models::{
 /// header representation without breaking SDK consumers.
 ///
 /// Note that the *value* types returned by the accessors
-/// (`ETag`, `RequestCharge`, `SessionToken`, `SubStatusCode`, `ActivityId`)
-/// are intentionally re-exported from the driver as canonical Cosmos types.
-/// They are stable, narrow primitives with no SDK-specific behavior, so the
-/// SDK does not maintain parallel wrappers for them.
+/// (`Etag`, `RequestCharge`, `SessionToken`, `SubStatusCode`, `ActivityId`)
+/// are intentionally narrow primitives sourced from their canonical Azure SDK
+/// homes (`azure_core::http::Etag` for `Etag`; the driver crate for the
+/// Cosmos-specific types). They have no SDK-specific behavior, so the SDK
+/// does not maintain parallel wrappers for them.
 ///
 /// Construction from the driver type is `From`-based for the bridge layer; the
 /// reverse direction is intentionally `pub(crate)`-scoped (the crate-internal
@@ -34,7 +36,7 @@ pub struct ResponseHeaders(DriverCosmosResponseHeaders);
 
 impl ResponseHeaders {
     /// ETag for optimistic concurrency (`etag`).
-    pub fn etag(&self) -> Option<&ETag> {
+    pub fn etag(&self) -> Option<&Etag> {
         self.0.etag.as_ref()
     }
 
@@ -165,14 +167,14 @@ impl ResponseHeaders {
         self.0.internal_partition_id.as_deref()
     }
 
-    /// Collection index transformation progress, 0\u2013100
+    /// Collection index transformation progress, 0–100
     /// (`x-ms-documentdb-collection-index-transformation-progress`). Reported
     /// while the service is rebuilding the index after a policy change.
     pub fn collection_index_transformation_progress(&self) -> Option<i64> {
         self.0.collection_index_transformation_progress
     }
 
-    /// Collection lazy-indexing progress, 0\u2013100
+    /// Collection lazy-indexing progress, 0–100
     /// (`x-ms-documentdb-collection-lazy-indexing-progress`). Reported for
     /// containers using the lazy indexing mode.
     pub fn collection_lazy_indexing_progress(&self) -> Option<i64> {

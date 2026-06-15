@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-#![cfg(feature = "key_auth")]
 
 use crate::split_tests::framework::InconclusiveError;
 
@@ -10,11 +9,12 @@ use std::error::Error;
 use std::num::NonZeroU32;
 use std::time::{Duration, Instant};
 
+use azure_data_cosmos::feed::ContinuationToken;
+use azure_data_cosmos::options::{CreateContainerOptions, ReadFeedRangesOptions};
 use azure_data_cosmos::{
+    feed::FeedScope,
     models::{ContainerProperties, ThroughputProperties},
     options::{MaxItemCountHint, QueryOptions},
-    query::FeedScope,
-    ContinuationToken, CreateContainerOptions, ReadFeedRangesOptions,
 };
 use framework::{MockItem, TestClient, TestOptions};
 use futures::{StreamExt, TryStreamExt};

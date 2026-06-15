@@ -3,19 +3,11 @@
 
 //! Fault injection framework for testing Cosmos DB client behavior under error conditions.
 //!
-//! This module is a pure re-export facade over the driver's fault-injection
-//! primitives — every type is re-exported directly from
-//! [`azure_data_cosmos_driver::fault_injection`]. Build
-//! [`FaultInjectionRule`]s with [`FaultInjectionRuleBuilder`] and pass the
-//! `Vec<Arc<FaultInjectionRule>>` to
-//! [`CosmosClientBuilder::with_fault_injection`](crate::CosmosClientBuilder::with_fault_injection),
-//! which forwards them into the driver runtime; the driver's own
-//! fault-injection transport client evaluates the rules on every in-flight
-//! request.
+//! Provides types that allow injecting simulated faults into the Cosmos DB client transport layer.
+//! This enables testing of application resilience, retry logic, and failover handling without
+//! needing to induce real faults in the service.
 //!
-//! Below the transport layer, fault injection intercepts HTTP requests and
-//! triggers the same retry and failover behavior as a real service error.
-//! It enables testing of:
+//! The fault injection framework enables testing of:
 //!
 //! - Error handling for various HTTP status codes (503, 500, 429, 408, etc.)
 //! - Retry logic and backoff behavior
@@ -28,7 +20,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! azure_data_cosmos = { version = "0.31", features = ["fault_injection"] }
+//! azure_data_cosmos = { version = "...", features = ["fault_injection"] }
 //! ```
 //!
 //! # Core Components

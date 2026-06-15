@@ -1,6 +1,6 @@
 [package]
 name = "azure_data_cosmos"
-version = "0.35.0"
+version = "0.36.0"
 description = "Rust wrappers around Microsoft Azure REST APIs - Azure Cosmos DB"
 readme = "README.md"
 authors.workspace = true
@@ -17,13 +17,13 @@ categories = ["api-bindings"]
 async-lock.workspace = true
 async-trait.workspace = true
 azure_core = { workspace = true, default-features = false }
-azure_data_cosmos_driver = { version = "0.4.0", path = "../azure_data_cosmos_driver", default-features = false }
+azure_data_cosmos_driver = { version = "0.5.0", path = "../azure_data_cosmos_driver", default-features = false }
 base64.workspace = true
 futures.workspace = true
 pin-project.workspace = true
 reqwest = { workspace = true, optional = true }
 serde.workspace = true
-serde_json.workspace = true
+serde_json = { workspace = true, features = ["raw_value"] }
 tracing.workspace = true
 url.workspace = true
 
@@ -55,6 +55,7 @@ azure_identity.workspace = true
 clap.workspace = true
 reqwest = { workspace = true, features = ["http2"] }
 serde = { workspace = true, features = ["derive"] }
+serde_bytes.workspace = true
 time.workspace = true
 tokio = { workspace = true, features = [
   "rt-multi-thread",
@@ -104,3 +105,27 @@ features = [
   "native_tls",
   "rustls",
 ]
+
+# Explicit [[test]] entries gate the feature-dependent integration test
+# binaries. Cargo silently skips a target whose `required-features` are not
+# all enabled, so `cargo build --tests` / `cargo test` work without
+# `--all-features`. Auto-discovery still picks up every other test root.
+[[test]]
+name = "emulator"
+path = "tests/emulator.rs"
+required-features = ["key_auth", "fault_injection"]
+
+[[test]]
+name = "multi_write"
+path = "tests/multi_write.rs"
+required-features = ["key_auth", "fault_injection"]
+
+[[test]]
+name = "split"
+path = "tests/split.rs"
+required-features = ["key_auth", "fault_injection"]
+
+[[test]]
+name = "in_memory_emulator"
+path = "tests/in_memory_emulator.rs"
+required-features = ["__internal_in_memory_emulator"]

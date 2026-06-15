@@ -18,7 +18,7 @@ use std::sync::Arc;
 use azure_data_cosmos_driver::error::CosmosError as DriverCosmosError;
 use azure_data_cosmos_driver::models::CosmosResponse;
 
-use crate::models::DiagnosticsContext;
+use crate::diagnostics::DiagnosticsContext;
 
 /// Typed Cosmos status (HTTP status code + optional sub-status) — type
 /// alias re-exporting the driver definition so SDK-only callers can stay

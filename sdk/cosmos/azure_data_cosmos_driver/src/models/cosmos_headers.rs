@@ -5,8 +5,9 @@
 
 use std::borrow::Cow;
 
-use crate::models::{ActivityId, ETag, Precondition, RequestCharge, SessionToken, SubStatusCode};
+use crate::models::{ActivityId, Precondition, RequestCharge, SessionToken, SubStatusCode};
 use azure_core::http::headers::{HeaderValue, Headers};
+use azure_core::http::Etag;
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use serde::Serialize;
 use std::num::NonZeroU32;
@@ -221,11 +222,11 @@ impl CosmosRequestHeaders {
             match precondition {
                 Precondition::IfMatch(etag) => headers.insert(
                     request_header_names::IF_MATCH,
-                    HeaderValue::from(etag.as_str().to_owned()),
+                    HeaderValue::from(etag.to_string()),
                 ),
                 Precondition::IfNoneMatch(etag) => headers.insert(
                     request_header_names::IF_NONE_MATCH,
-                    HeaderValue::from(etag.as_str().to_owned()),
+                    HeaderValue::from(etag.to_string()),
                 ),
             }
         }
@@ -356,7 +357,7 @@ pub struct CosmosResponseHeaders {
     pub session_token: Option<SessionToken>,
 
     /// ETag for optimistic concurrency (`etag`).
-    pub etag: Option<ETag>,
+    pub etag: Option<Etag>,
 
     /// Continuation token for pagination (`x-ms-continuation`).
     pub continuation: Option<String>,
@@ -514,7 +515,7 @@ impl CosmosResponseHeaders {
                     result.session_token = Some(SessionToken::new(value.as_str().to_owned()));
                 }
                 response_header_names::ETAG => {
-                    result.etag = Some(ETag::new(value.as_str().to_owned()));
+                    result.etag = Some(Etag::from(value.as_str().to_owned()));
                 }
                 response_header_names::CONTINUATION => {
                     result.continuation = Some(value.as_str().to_owned());
@@ -899,7 +900,7 @@ mod tests {
             Some("session:456")
         );
         assert_eq!(
-            cosmos_headers.etag.as_ref().map(ETag::as_str),
+            cosmos_headers.etag.as_ref().map(|e| -> &str { e.as_ref() }),
             Some("\"version-1\"")
         );
         assert_eq!(
@@ -989,7 +990,7 @@ mod tests {
             activity_id: Some(ActivityId::from_string("test".to_string())),
             request_charge: Some(RequestCharge::new(2.0)),
             session_token: Some(SessionToken::new("token".to_string())),
-            etag: Some(ETag::new("etag".to_string())),
+            etag: Some(Etag::from("etag".to_string())),
             continuation: Some("cont".to_string()),
             item_count: Some(5),
             substatus: Some(SubStatusCode::new(1002)),
@@ -1013,7 +1014,10 @@ mod tests {
             headers.session_token.as_ref().map(SessionToken::as_str),
             Some("token")
         );
-        assert_eq!(headers.etag.as_ref().map(ETag::as_str), Some("etag"));
+        assert_eq!(
+            headers.etag.as_ref().map(|e| -> &str { e.as_ref() }),
+            Some("etag")
+        );
         assert_eq!(headers.continuation.as_deref(), Some("cont"));
         assert_eq!(headers.item_count, Some(5));
         assert_eq!(headers.substatus, Some(SubStatusCode::new(1002)));
@@ -1099,7 +1103,7 @@ mod tests {
     #[test]
     fn write_to_headers_precondition_if_match() {
         let cosmos_headers = CosmosRequestHeaders {
-            precondition: Some(Precondition::if_match(ETag::new("etag-value-1"))),
+            precondition: Some(Precondition::if_match(Etag::from("etag-value-1"))),
             ..Default::default()
         };
         let mut headers = Headers::new();
@@ -1119,7 +1123,7 @@ mod tests {
     #[test]
     fn write_to_headers_precondition_if_none_match() {
         let cosmos_headers = CosmosRequestHeaders {
-            precondition: Some(Precondition::if_none_match(ETag::new("*"))),
+            precondition: Some(Precondition::if_none_match(Etag::from("*"))),
             ..Default::default()
         };
         let mut headers = Headers::new();
@@ -1158,7 +1162,7 @@ mod tests {
         let cosmos_headers = CosmosRequestHeaders {
             activity_id: Some(ActivityId::from_string("corr-id-1".to_string())),
             session_token: Some(SessionToken::new("session:100".to_string())),
-            precondition: Some(Precondition::if_match(ETag::new("etag-abc"))),
+            precondition: Some(Precondition::if_match(Etag::from("etag-abc"))),
             ..Default::default()
         };
         let mut headers = Headers::new();
@@ -1256,7 +1260,7 @@ mod tests {
             activity_id: Some(ActivityId::from_string("abc-123".into())),
             request_charge: Some(RequestCharge::new(5.67)),
             session_token: Some(SessionToken::new("0:1#100")),
-            etag: Some(ETag::new("\"v1\"")),
+            etag: Some(Etag::from("\"v1\"")),
             continuation: Some("next-page".into()),
             item_count: Some(10),
             substatus: Some(SubStatusCode::THROTTLE_DUE_TO_SPLIT),
@@ -1337,8 +1341,8 @@ mod tests {
             original.session_token.as_ref().map(SessionToken::as_str)
         );
         assert_eq!(
-            round_tripped.etag.as_ref().map(ETag::as_str),
-            original.etag.as_ref().map(ETag::as_str)
+            round_tripped.etag.as_ref().map(|e| -> &str { e.as_ref() }),
+            original.etag.as_ref().map(|e| -> &str { e.as_ref() })
         );
         assert_eq!(round_tripped.continuation, original.continuation);
         assert_eq!(round_tripped.item_count, original.item_count);

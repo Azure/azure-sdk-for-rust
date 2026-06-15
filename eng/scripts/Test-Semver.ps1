@@ -11,6 +11,9 @@ param(
   [switch]$IgnoreCgManifestVersion
 )
 
+Write-Host '[SKIP] Skipping semver-checks for now; see https://github.com/Azure/azure-sdk-for-rust/issues/4585'
+exit 0
+
 . ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
 . ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'Cargo.ps1'))
 

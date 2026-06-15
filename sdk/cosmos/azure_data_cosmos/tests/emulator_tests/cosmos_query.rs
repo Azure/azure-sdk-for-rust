@@ -1,18 +1,18 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-#![cfg(feature = "key_auth")]
 
 // Use the shared test framework declared in `tests/emulator/mod.rs`.
 use super::framework;
 
 use std::error::Error;
 
+use azure_data_cosmos::feed::ContinuationToken;
 use azure_data_cosmos::{
     clients::DatabaseClient,
+    feed::FeedScope,
     models::CosmosStatus,
     options::{MaxItemCountHint, QueryOptions},
-    query::FeedScope,
-    ContinuationToken, Query,
+    Query,
 };
 use framework::{test_data, MockItem, TestClient};
 use futures::StreamExt;

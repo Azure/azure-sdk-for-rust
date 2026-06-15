@@ -1,8 +1,8 @@
 use azure_core::http::StatusCode;
+use azure_data_cosmos::options::CreateContainerOptions;
 use azure_data_cosmos::{
     clients::{ContainerClient, DatabaseClient},
     models::{ContainerProperties, ThroughputProperties},
-    CreateContainerOptions,
 };
 use std::time::Duration;
 

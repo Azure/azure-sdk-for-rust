@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-#![cfg(feature = "key_auth")]
 
 // Use the shared test framework declared in `tests/emulator/mod.rs`.
 use super::framework;
@@ -28,12 +27,12 @@ pub async fn database_crud() -> Result<(), Box<dyn Error>> {
             .await?
             .into_model()?;
 
-        assert_eq!(&test_db_id, &properties.id);
+        assert_eq!(Some(test_db_id.as_str()), properties.id.as_deref());
 
         let db_client = cosmos_client.database_client(&test_db_id);
         let read_properties = db_client.read(None).await?.into_model()?;
 
-        assert_eq!(&test_db_id, &read_properties.id);
+        assert_eq!(Some(test_db_id.as_str()), read_properties.id.as_deref());
 
         let query = Query::from("SELECT * FROM root r WHERE r.id = @id")
             .with_parameter("@id", &test_db_id)?;
@@ -42,7 +41,7 @@ pub async fn database_crud() -> Result<(), Box<dyn Error>> {
         while let Some(db) = pager.try_next().await? {
             ids.push(db.id);
         }
-        assert_eq!(vec![test_db_id.clone()], ids);
+        assert_eq!(vec![Some(test_db_id.clone())], ids);
 
         let current_throughput = db_client.read_throughput(None).await?;
         assert!(current_throughput.is_none());
