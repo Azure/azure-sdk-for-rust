@@ -401,12 +401,13 @@ pub struct RequestDiagnostics {
 
     /// Activity ID for this attempt.
     ///
-    /// Seeded at request start from the operation-level activity ID (the value
-    /// placed on the wire as `x-ms-activity-id`, unless the operation overrides
-    /// it with its own header), then overwritten by the response-header echo on
-    /// success. On a transport failure (no response is received) the seeded
-    /// value is retained, so an attempt is never serialized with a `null`
-    /// activity ID.
+    /// Seeded at request start with the operation-level activity ID attached to
+    /// the outgoing request as `x-ms-activity-id` (an operation may override it
+    /// with its own header), then overwritten by the response-header echo on
+    /// success. If the attempt fails before a response is received — including
+    /// transport failures classified as [`RequestSentStatus::NotSent`] that
+    /// never reached the wire — the seeded value is retained, so an attempt is
+    /// never serialized with a `null` activity ID.
     activity_id: Option<ActivityId>,
 
     /// Session token from response (for session consistency).
@@ -1404,11 +1405,12 @@ impl DiagnosticsContextBuilder {
             endpoint,
         );
         // Seed the per-attempt activity ID with the operation-level activity ID.
-        // In the common case this is the value the SDK places on the wire as
-        // `x-ms-activity-id` (an operation may override it with its own header).
-        // On a successful response it is overwritten by the response-header echo
-        // in `record_response`; on a transport failure (no response) it ensures
-        // the attempt still records an activity ID instead of serializing `null`.
+        // In the common case this is the value attached to the outgoing request
+        // as `x-ms-activity-id` (an operation may override it with its own
+        // header). On a successful response it is overwritten by the
+        // response-header echo in `record_response`; if the attempt fails before
+        // a response is received it ensures the attempt still records an activity
+        // ID instead of serializing `null`.
         request.with_activity_id(self.activity_id.clone());
         let handle = RequestHandle(self.requests.len());
         self.requests.push(request);
