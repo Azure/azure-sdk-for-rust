@@ -35,14 +35,6 @@ use std::{
 pub enum ExecutionContext {
     /// Initial request attempt (first try).
     Initial,
-    /// Retry due to transient error (e.g., 429, 503).
-    ///
-    /// Renamed to [`ExecutionContext::OperationRetry`] to align with the
-    /// cross-SDK reason taxonomy. Retained for one release for source
-    /// compatibility; the serialized form also changes from `"retry"` to
-    /// `"operation_retry"`.
-    #[deprecated(since = "0.3.0", note = "use `ExecutionContext::OperationRetry`")]
-    Retry,
     /// An operation-level retry decided by the SDK's client-retry policy.
     ///
     /// Distinguishes user-visible operation retries from transport-layer
@@ -65,10 +57,8 @@ pub enum ExecutionContext {
 impl ExecutionContext {
     /// Returns the string representation of this execution context.
     pub fn as_str(&self) -> &'static str {
-        #[allow(deprecated)]
         match self {
             ExecutionContext::Initial => "initial",
-            ExecutionContext::Retry => "retry",
             ExecutionContext::OperationRetry => "operation_retry",
             ExecutionContext::TransportRetry => "transport_retry",
             ExecutionContext::Hedging => "hedging",
@@ -76,63 +66,6 @@ impl ExecutionContext {
             ExecutionContext::CircuitBreakerProbe => "circuit_breaker_probe",
         }
     }
-}
-
-/// Reason the SDK chose to dispatch a request to a particular region.
-///
-/// Realizes the cross-SDK Hedging Detection API's `RequestedRegionReason`. Each
-/// entry returned by [`DiagnosticsContext::requested_regions`] carries one of
-/// these, projected from the driver-internal [`ExecutionContext`] via the
-/// [`From<ExecutionContext>`] mapping below.
-///
-/// The enum is `#[non_exhaustive]`; callers that `match` on it MUST include a
-/// wildcard arm.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-#[non_exhaustive]
-pub enum RequestedRegionReason {
-    /// The first dispatch of the operation.
-    Initial,
-    /// An operation-level retry decided by the SDK's client-retry policy.
-    OperationRetry,
-    /// A transport-level retry inside the per-region transport stack.
-    TransportRetry,
-    /// A speculative cross-region hedge fan-out dispatch.
-    Hedging,
-    /// An endpoint-failure-driven retry to a different region.
-    RegionFailover,
-    /// A probe dispatch to a previously circuit-broken region.
-    CircuitBreakerProbe,
-}
-
-impl From<ExecutionContext> for RequestedRegionReason {
-    fn from(ctx: ExecutionContext) -> Self {
-        #[allow(deprecated)]
-        match ctx {
-            ExecutionContext::Initial => RequestedRegionReason::Initial,
-            ExecutionContext::Retry | ExecutionContext::OperationRetry => {
-                RequestedRegionReason::OperationRetry
-            }
-            ExecutionContext::TransportRetry => RequestedRegionReason::TransportRetry,
-            ExecutionContext::Hedging => RequestedRegionReason::Hedging,
-            ExecutionContext::RegionFailover => RequestedRegionReason::RegionFailover,
-            ExecutionContext::CircuitBreakerProbe => RequestedRegionReason::CircuitBreakerProbe,
-        }
-    }
-}
-
-/// A single region the SDK dispatched a request to, tagged with the reason the
-/// orchestrator chose to send it.
-///
-/// Realizes the cross-SDK Hedging Detection API's `RequestedRegion` value type.
-/// Returned by [`DiagnosticsContext::requested_regions`]. Region equality is
-/// delegated to [`Region`]'s own `PartialEq`.
-#[derive(Clone, Debug, PartialEq, Eq)]
-#[non_exhaustive]
-pub struct RequestedRegion {
-    /// The region the SDK dispatched to.
-    pub region: Region,
-    /// The reason the SDK chose this region for this dispatch attempt.
-    pub reason: RequestedRegionReason,
 }
 
 impl AsRef<str> for ExecutionContext {
@@ -684,21 +617,6 @@ impl RequestDiagnostics {
     /// Returns whether this request has been completed.
     pub(crate) fn is_completed(&self) -> bool {
         self.completed_at.is_some()
-    }
-
-    /// Returns whether this request received an actual service response.
-    ///
-    /// `completed_at` alone is insufficient: the driver also sets it for
-    /// client-side end-to-end timeouts ([`timeout`](Self::timeout)) and
-    /// transport-level failures ([`fail_transport`](Self::fail_transport)).
-    /// This predicate excludes those two cases so that only requests that
-    /// produced a service reply (any HTTP status, including non-2xx) are
-    /// counted. Used by [`DiagnosticsContext::responded_regions`].
-    pub(crate) fn responded_with_service_reply(&self) -> bool {
-        self.region.is_some()
-            && self.completed_at.is_some()
-            && !self.timed_out
-            && self.error.is_none()
     }
 
     // Public getters for read-only access to fields
@@ -1820,92 +1738,6 @@ impl DiagnosticsContext {
         regions
     }
 
-    /// Returns the regions to which this operation dispatched a request, in
-    /// dispatch order, each tagged with the reason the SDK chose it.
-    ///
-    /// Each dispatched attempt with a resolved region contributes one entry.
-    /// Duplicates are allowed: the same region may appear more than once if it
-    /// was dispatched multiple times (e.g., a retry to the same region, or a
-    /// hedge request to a region that was also the primary). The initial
-    /// attempt is included and tagged [`RequestedRegionReason::Initial`].
-    ///
-    /// Entries with no resolved region (pre-region-selection failures) are
-    /// skipped, so this returns an empty `Vec` when an operation failed before
-    /// any region was selected.
-    ///
-    /// Order matches [`RequestDiagnostics`] insertion order, which is dispatch
-    /// order. This is distinct from [`regions_contacted`](Self::regions_contacted),
-    /// which is sorted and deduplicated.
-    pub fn requested_regions(&self) -> Vec<RequestedRegion> {
-        self.requests
-            .iter()
-            .filter_map(|r| {
-                r.region().map(|region| RequestedRegion {
-                    region: region.clone(),
-                    reason: RequestedRegionReason::from(r.execution_context()),
-                })
-            })
-            .collect()
-    }
-
-    /// Returns the regions from which this operation received a response, in
-    /// arrival (completion) order.
-    ///
-    /// Each request that produced a service reply contributes one entry.
-    /// Duplicates are allowed: the same region may appear more than once if
-    /// multiple completed responses arrived from it (e.g., a late hedge
-    /// response after the hedge winner). `responded_regions().len() > 1` does
-    /// NOT imply more than one distinct region responded.
-    ///
-    /// Only requests that received an actual service response are included;
-    /// client-side timeouts and transport failures are excluded (via the
-    /// internal `responded_with_service_reply` predicate on each request).
-    /// A non-2xx HTTP status (e.g., 404/429) still counts — it is a response
-    /// from the region.
-    ///
-    /// To deduplicate, callers can collect into a set, for example:
-    /// `ctx.responded_regions().into_iter().collect::<std::collections::BTreeSet<_>>()`.
-    pub fn responded_regions(&self) -> Vec<&Region> {
-        let mut responded: Vec<&RequestDiagnostics> = self
-            .requests
-            .iter()
-            .filter(|r| r.responded_with_service_reply())
-            .collect();
-        // Stable sort by completion time to yield arrival order while
-        // preserving dispatch order among ties.
-        responded.sort_by_key(|r| r.completed_at());
-        responded.iter().filter_map(|r| r.region()).collect()
-    }
-
-    /// Returns `true` iff this operation actually dispatched at least one hedge
-    /// request (i.e., fan-out occurred), and `false` otherwise.
-    ///
-    /// `false` does NOT mean hedging was disabled or misconfigured; it means no
-    /// fan-out occurred. In particular, when the primary returns before the
-    /// hedging threshold elapses, this returns `false` even though a hedging
-    /// strategy was active.
-    ///
-    /// To check whether a hedging strategy was *configured*, inspect
-    /// [`hedge_diagnostics`](Self::hedge_diagnostics) instead — it is `Some`
-    /// whenever hedging was active for the operation, including the
-    /// primary-wins-under-threshold case where no fan-out happened.
-    ///
-    /// The result is a disjunction of two independent fan-out signals:
-    /// [`HedgeDiagnostics::alternate_region`] being `Some` (the orchestrator
-    /// dispatched an alternate leg) and any [`RequestDiagnostics`] tagged
-    /// [`ExecutionContext::Hedging`]. Either alone is sufficient; the
-    /// disjunction stays correct if a future change ever drifts one signal.
-    pub fn hedging_started(&self) -> bool {
-        self.hedge_diagnostics
-            .as_ref()
-            .map(|hd| hd.alternate_region().is_some())
-            .unwrap_or(false)
-            || self
-                .requests
-                .iter()
-                .any(|r| matches!(r.execution_context(), ExecutionContext::Hedging))
-    }
-
     /// Returns a shared reference to all request diagnostics.
     ///
     /// This returns an `Arc<Vec<RequestDiagnostics>>`, enabling efficient
@@ -2878,10 +2710,6 @@ mod tests {
     #[test]
     fn execution_context_display() {
         assert_eq!(ExecutionContext::Initial.to_string(), "initial");
-        #[allow(deprecated)]
-        {
-            assert_eq!(ExecutionContext::Retry.to_string(), "retry");
-        }
         assert_eq!(
             ExecutionContext::OperationRetry.to_string(),
             "operation_retry"
@@ -2899,144 +2727,6 @@ mod tests {
             ExecutionContext::CircuitBreakerProbe.to_string(),
             "circuit_breaker_probe"
         );
-    }
-
-    #[test]
-    fn requested_regions_preserves_dispatch_order_and_reason() {
-        let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
-            builder.start_test_request(
-                ExecutionContext::Initial,
-                Some(Region::WEST_US_2),
-                "https://test.westus2.documents.azure.com",
-            );
-            builder.start_test_request(
-                ExecutionContext::OperationRetry,
-                Some(Region::WEST_US_2),
-                "https://test.westus2.documents.azure.com",
-            );
-            builder.start_test_request(
-                ExecutionContext::RegionFailover,
-                Some(Region::EAST_US_2),
-                "https://test.eastus2.documents.azure.com",
-            );
-        });
-
-        let requested = ctx.requested_regions();
-        assert_eq!(requested.len(), 3);
-        // Dispatch order preserved, duplicates kept.
-        assert_eq!(requested[0].region, Region::WEST_US_2);
-        assert_eq!(requested[0].reason, RequestedRegionReason::Initial);
-        assert_eq!(requested[1].region, Region::WEST_US_2);
-        assert_eq!(requested[1].reason, RequestedRegionReason::OperationRetry);
-        assert_eq!(requested[2].region, Region::EAST_US_2);
-        assert_eq!(requested[2].reason, RequestedRegionReason::RegionFailover);
-    }
-
-    #[test]
-    fn requested_regions_empty_without_region() {
-        let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
-            builder.start_test_request(
-                ExecutionContext::Initial,
-                None,
-                "https://test.documents.azure.com",
-            );
-        });
-
-        assert!(ctx.requested_regions().is_empty());
-    }
-
-    #[test]
-    fn responded_regions_excludes_timeouts_and_transport_failures() {
-        let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
-            // A real service reply.
-            let h1 = builder.start_test_request(
-                ExecutionContext::Initial,
-                Some(Region::WEST_US_2),
-                "https://test.westus2.documents.azure.com",
-            );
-            builder.complete_request(h1, StatusCode::Ok, None);
-
-            // A client-side timeout (completed_at set, but no service reply).
-            let h2 = builder.start_test_request(
-                ExecutionContext::OperationRetry,
-                Some(Region::EAST_US_2),
-                "https://test.eastus2.documents.azure.com",
-            );
-            builder.timeout_request(h2);
-
-            // A non-2xx response still counts as a reply from the region.
-            let h3 = builder.start_test_request(
-                ExecutionContext::RegionFailover,
-                Some(Region::EAST_US_2),
-                "https://test.eastus2.documents.azure.com",
-            );
-            builder.complete_request(h3, StatusCode::NotFound, None);
-        });
-
-        let responded = ctx.responded_regions();
-        assert_eq!(responded, vec![&Region::WEST_US_2, &Region::EAST_US_2]);
-    }
-
-    #[test]
-    fn hedging_started_false_without_hedge_dispatch() {
-        let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
-            let h = builder.start_test_request(
-                ExecutionContext::Initial,
-                Some(Region::WEST_US_2),
-                "https://test.westus2.documents.azure.com",
-            );
-            builder.complete_request(h, StatusCode::Ok, None);
-        });
-
-        assert!(!ctx.hedging_started());
-    }
-
-    #[test]
-    fn hedging_started_true_when_hedge_dispatched() {
-        let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
-            builder.start_test_request(
-                ExecutionContext::Initial,
-                Some(Region::WEST_US_2),
-                "https://test.westus2.documents.azure.com",
-            );
-            builder.start_test_request(
-                ExecutionContext::Hedging,
-                Some(Region::EAST_US_2),
-                "https://test.eastus2.documents.azure.com",
-            );
-        });
-
-        assert!(ctx.hedging_started());
-    }
-
-    #[test]
-    fn requested_region_reason_mapping_is_total() {
-        // A wildcard-free match forces this to stay total as variants are added.
-        #[allow(deprecated)]
-        let all = [
-            ExecutionContext::Initial,
-            ExecutionContext::Retry,
-            ExecutionContext::OperationRetry,
-            ExecutionContext::TransportRetry,
-            ExecutionContext::Hedging,
-            ExecutionContext::RegionFailover,
-            ExecutionContext::CircuitBreakerProbe,
-        ];
-        for ctx in all {
-            let reason = RequestedRegionReason::from(ctx);
-            #[allow(deprecated)]
-            let expected = match ctx {
-                ExecutionContext::Initial => RequestedRegionReason::Initial,
-                ExecutionContext::Retry | ExecutionContext::OperationRetry => {
-                    RequestedRegionReason::OperationRetry
-                }
-                ExecutionContext::TransportRetry => RequestedRegionReason::TransportRetry,
-                ExecutionContext::Hedging => RequestedRegionReason::Hedging,
-                ExecutionContext::RegionFailover => RequestedRegionReason::RegionFailover,
-                ExecutionContext::CircuitBreakerProbe => RequestedRegionReason::CircuitBreakerProbe,
-            };
-            assert_eq!(reason, expected);
-        }
     }
 
     // =========================================================================

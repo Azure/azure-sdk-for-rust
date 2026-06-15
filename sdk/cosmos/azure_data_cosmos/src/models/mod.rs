@@ -41,13 +41,6 @@ pub use azure_data_cosmos_driver::models::{
 #[doc(inline)]
 pub use azure_data_cosmos_driver::diagnostics::DiagnosticsContext;
 
-// Re-export the cross-SDK Hedging Detection API's per-region-reason types,
-// which back `DiagnosticsContext::requested_regions()`. They are defined
-// in the driver (the accessors are inherent methods on `DiagnosticsContext`)
-// and surfaced here, mirroring the `DiagnosticsContext` re-export above.
-#[doc(inline)]
-pub use azure_data_cosmos_driver::diagnostics::{RequestedRegion, RequestedRegionReason};
-
 fn deserialize_cosmos_timestamp<'de, D>(deserializer: D) -> Result<Option<OffsetDateTime>, D::Error>
 where
     D: Deserializer<'de>,

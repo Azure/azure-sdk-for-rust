@@ -8,8 +8,6 @@
 
 - Added configurable retry limits for throttled (HTTP 429, rate-limited) requests, mirroring the .NET and Java SDKs' `ThrottlingRetryOptions`. A new nested `ThrottlingRetryOptions` group on `OperationOptions` (field `throttling_retry_options`) carries `max_retry_count` (env `AZURE_COSMOS_MAX_THROTTLE_RETRY_COUNT`, default `9`, `0` disables throttle retries) and `max_retry_wait_time` (default `30s`), settable per-request via `OperationOptions`/`OperationOptionsBuilder` and `ThrottlingRetryOptionsBuilder`. New client-wide setter `CosmosClientBuilder::with_throttling_retry_options(ThrottlingRetryOptions)` forwards the group as runtime-layer defaults. Both budgets apply *per transport-pipeline invocation*, not per logical operation — an operation that fans out across regions (failover, hedging) starts a fresh budget per leg; use `OperationOptions::end_to_end_latency_policy` to bound total per-operation wall-clock time. ([#4544](https://github.com/Azure/azure-sdk-for-rust/pull/4544))
 
-- Added the cross-SDK Hedging Detection API on `DiagnosticsContext`: `hedging_started() -> bool`, `requested_regions() -> Vec<RequestedRegion>` (dispatch order, duplicates allowed, each entry tagged with a `RequestedRegionReason`), and `responded_regions() -> Vec<&Region>` (arrival order, duplicates allowed). Re-exports the `RequestedRegion` struct and `RequestedRegionReason` enum (defined in `azure_data_cosmos_driver`) that realize the cross-SDK contract's per-region-reason surface. `RequestedRegionReason` is `#[non_exhaustive]`; `TransportRetry` and `CircuitBreakerProbe` are reserved and not populated by the initial implementation. ([#4558](https://github.com/Azure/azure-sdk-for-rust/pull/4558))
-
 ### Breaking Changes
 
 ### Bugs Fixed
