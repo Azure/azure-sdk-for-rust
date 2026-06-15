@@ -8,13 +8,15 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use azure_data_cosmos::clients::ContainerClient;
+use azure_data_cosmos::diagnostics::DiagnosticsContext;
+use azure_data_cosmos_driver::DiagnosticsVerbosity;
 use rand::RngExt;
 use serde::Serialize;
 use sysinfo::System;
 use tokio::task::JoinSet;
 use uuid::Uuid;
 
-use crate::operations::Operation;
+use crate::operations::{FeedRangeRefresher, Operation};
 use crate::stats::{self, Stats};
 
 /// Walks the `std::error::Error::source()` chain and joins messages with " → ".
@@ -127,12 +129,32 @@ struct ErrorResult {
     operation: String,
     error_message: String,
     source_message: Option<String>,
+    /// HTTP status code from `CosmosError::status()` — always present (transport /
+    /// client-synthesized errors carry the placeholder status produced by
+    /// `CosmosStatus::synthetic`, e.g. `503` for `TRANSPORT_GENERATED_503`).
+    status_code: u16,
+    /// Cosmos sub-status code from `CosmosError::status()`, when one was set.
+    /// `None` for service errors that did not carry a sub-status header.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    sub_status: Option<u16>,
+    /// Finalized per-operation diagnostics serialized as a JSON object — written
+    /// to ADX as a `dynamic` column (queryable, not a quoted string). `None`
+    /// when the error fired before the pipeline finalized diagnostics
+    /// (e.g. some pre-request client validation failures).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    diagnostics: Option<serde_json::Value>,
 }
 
 /// Configuration for a perf test run.
 pub struct RunConfig {
     pub container: ContainerClient,
     pub operations: Vec<Arc<dyn Operation>>,
+    /// Optional background task that periodically refreshes the
+    /// shared feed-range cache used by `FeedRangeQueryOperation`. When
+    /// present, its tick latency is recorded under the
+    /// [`crate::operations::READ_FEED_RANGES_STAT`] stats line and the
+    /// run loop spawns its `run` future before workers start.
+    pub feed_range_refresher: Option<FeedRangeRefresher>,
     pub stats: Arc<Stats>,
     pub concurrency: usize,
     pub duration: Option<Duration>,
@@ -169,6 +191,7 @@ pub async fn run(config: RunConfig) {
     let RunConfig {
         container,
         operations,
+        feed_range_refresher,
         stats,
         concurrency,
         duration,
@@ -180,6 +203,16 @@ pub async fn run(config: RunConfig) {
         config_snapshot,
     } = config;
     let cancelled = Arc::new(AtomicBool::new(false));
+
+    // Spawn the optional feed-range refresher BEFORE workers so its
+    // first refresh has a head start on warming the cache.
+    if let Some(refresher) = feed_range_refresher {
+        let refresher_stats = stats.clone();
+        let refresher_cancel = cancelled.clone();
+        tokio::spawn(async move {
+            refresher.run(refresher_stats, refresher_cancel).await;
+        });
+    }
 
     // Set up Ctrl+C handler
     let cancel_flag = cancelled.clone();
@@ -296,8 +329,8 @@ pub async fn run(config: RunConfig) {
 
                 let op_start = Instant::now();
                 match op.execute(&container).await {
-                    Ok(backend) => {
-                        stats.record_latency(op.name(), op_start.elapsed(), backend);
+                    Ok(backend_duration) => {
+                        stats.record_latency(op.name(), op_start.elapsed(), backend_duration);
                     }
                     Err(e) => {
                         stats.record_error(op.name());
@@ -453,6 +486,11 @@ async fn upsert_error(
         .expect("RFC 3339 formatting should never fail");
     let id = Uuid::new_v4().to_string();
 
+    let status = error.status();
+    let status_code = u16::from(status.status_code());
+    let sub_status = status.sub_status().map(|s| s.value());
+    let diagnostics = error.diagnostics().as_deref().map(diagnostics_to_json);
+
     let doc = ErrorResult {
         id: id.clone(),
         partition_key: Uuid::new_v4().to_string(),
@@ -463,6 +501,9 @@ async fn upsert_error(
         operation: operation.to_string(),
         error_message: format!("{error}"),
         source_message: error_source_chain(error),
+        status_code,
+        sub_status,
+        diagnostics,
     };
     if let Err(e) = container
         .upsert_item(&doc.partition_key, &id, &doc, None)
@@ -470,4 +511,15 @@ async fn upsert_error(
     {
         eprintln!("Warning: failed to upsert error result: {e}");
     }
+}
+
+/// Serializes a finalized [`DiagnosticsContext`] to a `serde_json::Value` so it
+/// can be embedded as a `dynamic` column in the upserted document (rather than
+/// a quoted JSON string). Panics if the roundtrip fails — `to_json_string`
+/// always produces valid JSON, so a failure here is a serialization bug we
+/// want surfaced immediately in the perf harness.
+fn diagnostics_to_json(diagnostics: &DiagnosticsContext) -> serde_json::Value {
+    let json_str = diagnostics.to_json_string(Some(DiagnosticsVerbosity::Detailed));
+    serde_json::from_str(json_str)
+        .expect("DiagnosticsContext::to_json_string should always produce valid JSON")
 }

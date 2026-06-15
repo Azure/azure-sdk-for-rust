@@ -5,21 +5,23 @@
 
 use std::{marker::PhantomData, sync::Arc};
 
-use crate::models::{
-    CosmosResponse, CosmosStatus, DiagnosticsContext, ResponseBody, ResponseHeaders,
-};
+use crate::diagnostics::DiagnosticsContext;
+use crate::models::CosmosStatus;
+use crate::models::{CosmosResponse, ResponseBody, ResponseHeaders};
+use azure_core::fmt::SafeDebug;
 use serde::de::DeserializeOwned;
 
 /// A response from a resource management operation (databases, containers, throughput).
 ///
 /// Carries common Cosmos response metadata plus a type parameter `T` that names
-/// the model the body deserializes into. Unlike [`ItemResponse`](crate::ItemResponse)
+/// the model the body deserializes into. Unlike [`ItemResponse`](crate::models::ItemResponse)
 /// — where the payload type is user-defined and the SDK never knows it — every
 /// `ResourceResponse`-returning client method statically knows its model
 /// (`DatabaseProperties`, `ContainerProperties`, `ThroughputProperties`, …), so
 /// keeping `T` on the response type lets callers write `.into_model()?` without
 /// a turbofish.
-#[derive(Debug)]
+#[derive(SafeDebug)]
+#[safe(true)]
 #[non_exhaustive]
 pub struct ResourceResponse<T> {
     response: CosmosResponse,

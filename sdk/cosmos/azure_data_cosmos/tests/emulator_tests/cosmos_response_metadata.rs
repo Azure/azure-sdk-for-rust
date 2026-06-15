@@ -1,14 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-#![cfg(feature = "key_auth")]
 
 // Use the shared test framework declared in `tests/emulator/mod.rs`.
 use super::framework;
 
 use azure_core::{http::StatusCode, Uuid};
-use azure_data_cosmos::models::{ContainerProperties, ResponseHeaders};
+use azure_data_cosmos::models::ContainerProperties;
+use azure_data_cosmos::models::ResponseHeaders;
 use azure_data_cosmos::Query;
-use azure_data_cosmos::{clients::ContainerClient, query::FeedScope};
+use azure_data_cosmos::{clients::ContainerClient, feed::FeedScope};
 use framework::{TestClient, TestRunContext};
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};

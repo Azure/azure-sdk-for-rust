@@ -40,3 +40,17 @@ pub(crate) fn apply_cosmos_headers(request: &mut HttpRequest, user_agent: &Heade
     request.headers.insert(CACHE_CONTROL, NO_CACHE.clone());
     request.headers.insert(USER_AGENT, user_agent.clone());
 }
+
+/// Tags a request with `x-ms-fault-injection-operation` so
+/// `FaultInjectingHttpClient` can match operation-typed fault rules against it.
+///
+/// Single source of truth for header name + value formatting; called from both
+/// the data-plane operation pipeline and off-pipeline bootstrap fetches.
+#[cfg(feature = "fault_injection")]
+pub(crate) fn apply_fault_injection_operation_tag(
+    headers: &mut azure_core::http::headers::Headers,
+    operation_type: crate::fault_injection::FaultOperationType,
+) {
+    use crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_OPERATION;
+    headers.insert(FAULT_INJECTION_OPERATION, operation_type.as_str());
+}

@@ -26,7 +26,9 @@ use super::{
     build_account_endpoint_state, expire_partition_overrides, expire_unavailable_endpoints,
     mark_endpoint_unavailable, mark_partition_unavailable,
     partition_endpoint_state::{PartitionEndpointState, PartitionFailoverConfig},
-    AccountEndpointState, CosmosEndpoint, LocationEffect,
+    partition_key_range_id::PartitionKeyRangeId,
+    record_hedge_alternate_win, record_hedge_primary_win, AccountEndpointState, CosmosEndpoint,
+    LocationEffect,
 };
 
 /// Immutable location snapshot consumed by one operation-loop iteration.
@@ -569,6 +571,61 @@ impl LocationStateStore {
             account_refresh_loop(weak_store, BACKGROUND_REFRESH_INTERVAL).await;
         });
     }
+
+    /// Records that the alternate (secondary) hedge attempt completed before
+    /// the primary in
+    /// [`execute_hedged`](crate::driver::pipeline::operation_pipeline).
+    ///
+    /// Increments a per-`(partition, primary_region)` counter atomically
+    /// via [`Self::apply_partition`]. When the counter reaches
+    /// [`PartitionFailoverConfig::consecutive_hedge_win_threshold`] the
+    /// partition is tripped by installing an `Unhealthy` entry in
+    /// `circuit_breaker_overrides` (the same shape PPCB uses for hard
+    /// failures), so subsequent requests route away from the degraded
+    /// primary region. The trip is recovered by the existing PPCB
+    /// failback sweep.
+    ///
+    /// `primary_region` is `None` for default-endpoint accounts whose
+    /// snapshot does not carry a named region.
+    pub fn record_consecutive_hedge_win(
+        &self,
+        partition: &PartitionKeyRangeId,
+        primary_region: Option<&Region>,
+    ) {
+        tracing::debug!(
+            partition = %partition,
+            primary_region = ?primary_region.map(Region::as_str),
+            "recorded alternate-region hedge win",
+        );
+        let account = self.account_snapshot();
+        self.apply_partition(|current| {
+            record_hedge_alternate_win(current, &account, partition, primary_region)
+        });
+    }
+
+    /// Records that the primary attempt won in
+    /// [`execute_hedged`](crate::driver::pipeline::operation_pipeline).
+    ///
+    /// Clears the per-`(partition, primary_region)` consecutive-hedge-win
+    /// counter atomically via [`Self::apply_partition`] so transient
+    /// cross-region latency spikes do not accumulate into a trip over
+    /// arbitrarily long timescales. Does not touch
+    /// `circuit_breaker_overrides` — an existing trip recovers via the
+    /// failback sweep, not via primary wins.
+    pub fn record_primary_win(
+        &self,
+        partition: &PartitionKeyRangeId,
+        primary_region: Option<&Region>,
+    ) {
+        tracing::debug!(
+            partition = %partition,
+            primary_region = ?primary_region.map(Region::as_str),
+            "recorded primary-region hedge win",
+        );
+        self.apply_partition(|current| {
+            record_hedge_primary_win(current, partition, primary_region)
+        });
+    }
 }
 
 /// Background account-metadata refresh loop. Periodically calls
@@ -795,6 +852,79 @@ mod tests {
             "event-driven refresh was incorrectly throttled by a previously-failed timer-driven refresh"
         );
         assert_eq!(success_refreshes.load(Ordering::SeqCst), 1);
+    }
+
+    #[tokio::test]
+    async fn location_state_store_preserves_cache_on_refresh_failure() {
+        let endpoint = test_endpoint();
+        let default_endpoint = CosmosEndpoint::global(endpoint.url().clone());
+        let total_refreshes = Arc::new(AtomicUsize::new(0));
+        let total_refreshes_clone = Arc::clone(&total_refreshes);
+
+        // Call 1 succeeds (bootstrap seeds the cache); calls 2+ surface a
+        // typed 503 mirroring what `fetch_account_properties_with_transport`
+        // now produces on a 5xx account-metadata response.
+        let refresh = Arc::new(move |_previous: Option<Arc<AccountProperties>>| {
+            let total = Arc::clone(&total_refreshes_clone);
+            let payload = test_refresh_payload();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move {
+                    let n = total.fetch_add(1, Ordering::SeqCst);
+                    if n == 0 {
+                        Ok(payload)
+                    } else {
+                        Err(crate::error::CosmosError::builder()
+                            .with_status(crate::error::CosmosStatus::new(
+                                azure_core::http::StatusCode::ServiceUnavailable,
+                            ))
+                            .with_message("simulated 5xx on periodic account-metadata refresh")
+                            .build())
+                    }
+                });
+            fut
+        });
+
+        let cache = Arc::new(AccountMetadataCache::new());
+        let store = LocationStateStore::new(
+            Arc::clone(&cache),
+            endpoint.clone(),
+            default_endpoint,
+            refresh,
+            false,
+            Duration::from_secs(60),
+            PartitionFailoverConfig::default(),
+            Vec::new(),
+        );
+
+        // Bootstrap: succeeds, seeds the cache.
+        store.force_refresh_account_properties().await;
+        assert_eq!(total_refreshes.load(Ordering::SeqCst), 1);
+        let after_bootstrap = cache
+            .get(&endpoint)
+            .await
+            .expect("bootstrap should have populated the cache");
+        assert_eq!(
+            after_bootstrap.etag, "etag-1",
+            "bootstrap should install the v1 payload"
+        );
+
+        // Subsequent timer-driven refresh: fails. Cache must NOT be replaced
+        // or evicted — concurrent operations should keep serving the v1 value.
+        store.force_refresh_account_properties().await;
+        assert_eq!(total_refreshes.load(Ordering::SeqCst), 2);
+
+        let after_failed_refresh = cache
+            .get(&endpoint)
+            .await
+            .expect("failed refresh must NOT evict the cached entry");
+        assert_eq!(
+            after_failed_refresh.etag, "etag-1",
+            "failed refresh must NOT overwrite the previously-cached v1 payload",
+        );
+        assert!(
+            Arc::ptr_eq(&after_bootstrap, &after_failed_refresh),
+            "failed refresh must leave the exact same Arc in the cache",
+        );
     }
 
     #[test]

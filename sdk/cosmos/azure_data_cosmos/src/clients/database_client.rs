@@ -3,10 +3,14 @@
 
 use crate::{
     clients::{offers_client, ClientContext, ContainerClient},
-    models::{ContainerProperties, DatabaseProperties, ResourceResponse, ThroughputProperties},
-    options::ReadDatabaseOptions,
-    CreateContainerOptions, DeleteDatabaseOptions, Query, QueryContainersOptions,
-    QueryItemIterator, ThroughputOptions,
+    feed::QueryItemIterator,
+    models::ResourceResponse,
+    models::{ContainerProperties, DatabaseProperties, ThroughputProperties},
+    options::{
+        CreateContainerOptions, DeleteDatabaseOptions, QueryContainersOptions, ReadDatabaseOptions,
+        ThroughputOptions,
+    },
+    Query,
 };
 use azure_data_cosmos_driver::models::{CosmosOperation, DatabaseReference};
 
@@ -142,6 +146,8 @@ impl DatabaseClient {
     ///
     #[doc = include_str!("../../docs/control-plane-warning.md")]
     ///
+    #[doc = include_str!("../../docs/control-plane-always-returns-body.md")]
+    ///
     /// # Arguments
     /// * `properties` - A [`ContainerProperties`] describing the new container.
     /// * `options` - Optional parameters for the request.
@@ -215,10 +221,7 @@ impl DatabaseClient {
         let options = options.unwrap_or_default();
         // We need to get the RID for the database.
         let db = self.read(None).await?.into_model()?;
-        let resource_id = db
-            .system_properties
-            .resource_id
-            .expect("service should always return a '_rid' for a database");
+        let resource_id = resource_id_or_error(db.system_properties.resource_id, "database")?;
 
         offers_client::find_offer(
             &self.context.driver,
@@ -234,6 +237,8 @@ impl DatabaseClient {
     /// The Cosmos DB service may process throughput changes asynchronously. The returned
     /// [`ThroughputPoller`] can be awaited directly for the final result, or polled as a
     /// stream to observe progress.
+    ///
+    #[doc = include_str!("../../docs/control-plane-always-returns-body.md")]
     ///
     /// # Arguments
     /// * `throughput` - The new throughput properties to set.
@@ -260,10 +265,7 @@ impl DatabaseClient {
         let options = options.unwrap_or_default();
         // We need to get the RID for the database.
         let db = self.read(None).await?.into_model()?;
-        let resource_id = db
-            .system_properties
-            .resource_id
-            .expect("service should always return a '_rid' for a database");
+        let resource_id = resource_id_or_error(db.system_properties.resource_id, "database")?;
 
         offers_client::begin_replace(
             self.context.driver.clone(),
@@ -274,6 +276,28 @@ impl DatabaseClient {
         )
         .await
     }
+}
+
+/// Unwraps the `_rid` from a system-properties response. The Cosmos service
+/// is contractually required to populate `_rid` on every resource read; if it
+/// is missing we surface a synthetic 500 [`CosmosError`](crate::CosmosError)
+/// rather than panicking, since panics in public methods would crash callers'
+/// applications. The `debug_assert!` keeps tests honest while still letting
+/// release builds recover.
+fn resource_id_or_error(rid: Option<String>, resource_kind: &str) -> crate::Result<String> {
+    debug_assert!(
+        rid.is_some(),
+        "service should always return a '_rid' for a {resource_kind}"
+    );
+    rid.ok_or_else(|| {
+        crate::DriverCosmosError::builder()
+            .with_status(crate::error::CosmosStatus::SERVICE_RETURNED_OBJECT_WITHOUT_RID)
+            .with_message(format!(
+                "service did not return a '_rid' for a {resource_kind}; cannot resolve the throughput offer"
+            ))
+            .build()
+            .into()
+    })
 }
 
 #[cfg(test)]

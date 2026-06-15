@@ -38,6 +38,22 @@ pub struct BlobClientDownloadResult {
     pub headers: Headers,
 }
 
+/// Result of a `BlobClient::download_into()` operation.
+#[derive(SafeDebug)]
+pub struct BlobClientDownloadIntoResult {
+    /// The length of data written to the provided buffer.
+    pub len: usize,
+
+    /// Blob properties parsed from the initial response.
+    pub properties: BlobDownloadProperties,
+
+    /// All headers from the initial response.
+    ///
+    /// Use this to access headers that are not surfaced as named fields, such as
+    /// `x-ms-request-id`, `x-ms-client-request-id`, and more.
+    pub headers: Headers,
+}
+
 /// Blob properties parsed from the initial response headers of a `BlobClient::download()` operation.
 #[derive(SafeDebug)]
 pub struct BlobDownloadProperties {
@@ -180,7 +196,7 @@ impl BlobClientDownloadResult {
 }
 
 impl BlobDownloadProperties {
-    fn from_headers(headers: &Headers) -> azure_core::Result<Self> {
+    pub(crate) fn from_headers(headers: &Headers) -> azure_core::Result<Self> {
         let (metadata, object_replication_rules) =
             crate::parsers::parse_metadata_and_replication_headers(headers);
         Ok(Self {

@@ -2,12 +2,16 @@
 // Licensed under the MIT License.
 
 mod download_blob_test;
+mod download_into_blob_test;
+mod extensions;
+/// list_blob performance test.
 mod list_blob_test;
 mod options;
 mod upload_blob_test;
 
 use azure_core_test::perf::PerfRunner;
 use download_blob_test::DownloadBlobTest;
+use download_into_blob_test::DownloadIntoBlobTest;
 use list_blob_test::ListBlobTest;
 use upload_blob_test::UploadBlobTest;
 
@@ -20,6 +24,7 @@ async fn main() -> azure_core::Result<()> {
             ListBlobTest::test_metadata(),
             UploadBlobTest::test_metadata(),
             DownloadBlobTest::test_metadata(),
+            DownloadIntoBlobTest::test_metadata(),
         ],
     )?;
 

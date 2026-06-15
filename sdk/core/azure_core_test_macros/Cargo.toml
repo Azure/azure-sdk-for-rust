@@ -1,24 +1,22 @@
 [package]
 name = "azure_core_test_macros"
-version = "0.1.0"
+version = "0.2.0"
 description = "Procedural macros for testing client libraries built on azure_core."
 readme = "README.md"
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
 homepage = "https://github.com/azure/azure-sdk-for-rust"
-documentation = "https://docs.rs/azure_core"
+documentation = "https://docs.rs/azure_core_test_macros"
 keywords = ["cloud", "iot", "rest", "sdk"]
 categories = ["development-tools"]
 edition.workspace = true
 rust-version.workspace = true
-publish = false
 
 [lib]
 proc-macro = true
 
 [dependencies]
-azure_core = { workspace = true, features = ["test"] }
 proc-macro2.workspace = true
 quote.workspace = true
 syn.workspace = true
@@ -26,3 +24,6 @@ syn.workspace = true
 [dev-dependencies]
 azure_core_test.path = "../azure_core_test"
 tokio.workspace = true
+
+[lints]
+workspace = true

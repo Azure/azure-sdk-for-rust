@@ -20,15 +20,16 @@
 //! individual scenarios can stay focused on the SDK operation under test.
 
 use azure_core::http::StatusCode;
-use azure_data_cosmos::clients::ContainerClient;
+use azure_data_cosmos::models::ItemResponse;
 use azure_data_cosmos::models::{ContainerProperties, DatabaseProperties};
-use azure_data_cosmos::regions::Region;
+use azure_data_cosmos::options::Region;
+use azure_data_cosmos::options::{
+    ContentResponseOnWrite, ItemReadOptions, ItemWriteOptions, OperationOptions,
+};
 use azure_data_cosmos::AccountEndpoint;
 use azure_data_cosmos::AccountReference;
-use azure_data_cosmos::{
-    ContentResponseOnWrite, CosmosClient, CosmosClientBuilder, ItemReadOptions, ItemResponse,
-    ItemWriteOptions, OperationOptions, RoutingStrategy,
-};
+use azure_data_cosmos::{clients::ContainerClient, options::ThrottlingRetryOptionsBuilder};
+use azure_data_cosmos::{CosmosClient, CosmosClientBuilder, RoutingStrategy};
 use azure_data_cosmos_driver::in_memory_emulator::{
     ConsistencyLevel, ContainerConfig, InMemoryEmulatorHttpClient, VirtualAccountConfig,
     VirtualRegion,
@@ -390,11 +391,11 @@ async fn sdk_create_database_and_container_through_driver() {
         assert_eq!(real_create_db.status(), emu_create_db.status());
 
         let real_db: DatabaseProperties = real_create_db.into_model().unwrap();
-        assert_eq!(real_db.id, db_name);
+        assert_eq!(real_db.id.as_deref(), Some(db_name.as_str()));
     }
 
     let emu_db: DatabaseProperties = emu_create_db.into_model().unwrap();
-    assert_eq!(emu_db.id, db_name);
+    assert_eq!(emu_db.id.as_deref(), Some(db_name.as_str()));
 
     let props = ContainerProperties::new(container_name.to_string(), "/pk".into());
     let emu_db_client = backend.emulator_client.database_client(&db_name);
@@ -1015,6 +1016,102 @@ async fn sdk_create_retries_after_429_throttling() {
     let emu_read_doc: PaddedTestItem = emu_read.into_body().into_single().unwrap();
     assert_eq!(emu_read_doc.value, 42);
     assert_eq!(emu_read_doc.padding.len(), 8 * 1024);
+}
+
+/// Validates that the SDK-side `CosmosClientBuilder::with_throttling_retry_options`
+/// setter actually wires the grouped [`ThrottlingRetryOptions`] through to the
+/// driver's transport-level throttle-retry loop.
+///
+/// This is the negative counterpart to [`sdk_create_retries_after_429_throttling`]:
+/// the same throttling-enabled emulator setup is used, but the client is built
+/// with `max_retry_count = 0` (retries disabled). With retries disabled the
+/// driver must surface the first 429 to the caller instead of transparently
+/// retrying, proving the refactored grouped setter is honored end-to-end.
+#[tokio::test]
+async fn sdk_throttling_retry_options_disables_retry() {
+    let run_id = Uuid::new_v4().to_string()[..8].to_string();
+
+    let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
+        "East US",
+        azure_core::http::Url::parse(EMULATOR_GATEWAY_URL).unwrap(),
+    )])
+    .unwrap()
+    .with_consistency(ConsistencyLevel::Session)
+    .with_throttling_enabled(true);
+
+    let emulator = std::sync::Arc::new(InMemoryEmulatorHttpClient::new(config));
+    let emulator_store = emulator.store();
+
+    let db_name = format!("sdk-throttle-no-retry-{run_id}");
+    emulator_store.create_database(&db_name);
+    emulator_store.create_container_with_config(
+        &db_name,
+        "throttle_coll",
+        serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"],
+            "kind": "Hash",
+            "version": 2
+        }))
+        .unwrap(),
+        ContainerConfig::new()
+            .with_partition_count(1)
+            .with_throughput(400)
+            .build()
+            .unwrap(),
+    );
+
+    let emulator_account = AccountReference::with_authentication_key(
+        EMULATOR_GATEWAY_URL.parse::<AccountEndpoint>().unwrap(),
+        azure_core::credentials::Secret::new("dGVzdGtleQ=="),
+    );
+    // Build the client with the grouped throttling-retry options setter,
+    // disabling throttle retries (max_retry_count = 0).
+    let emulator_client = CosmosClientBuilder::new()
+        .with_driver_runtime_builder(emulator.runtime_builder())
+        .with_throttling_retry_options(
+            ThrottlingRetryOptionsBuilder::new()
+                .with_max_retry_count(0)
+                .build(),
+        )
+        .build(
+            emulator_account,
+            RoutingStrategy::ProximityTo(Region::EAST_US),
+        )
+        .await
+        .unwrap();
+
+    let emu_container = emulator_client
+        .database_client(&db_name)
+        .container_client("throttle_coll")
+        .await
+        .unwrap();
+
+    // Seed a large item to consume the partition's RU budget so the next write
+    // is throttled (mirrors `sdk_create_retries_after_429_throttling`).
+    let seed = padded_test_item("seed-throttle", 1, 40 * 1024);
+    emu_container
+        .create_item("pk1", &seed.id, &seed, Some(write_options_with_content()))
+        .await
+        .unwrap();
+
+    // With retries disabled, the throttled create must surface the first 429
+    // rather than retrying until the RU budget refills.
+    let throttled = padded_test_item("throttled-item", 42, 8 * 1024);
+    let err = emu_container
+        .create_item(
+            "pk1",
+            &throttled.id,
+            &throttled,
+            Some(write_options_with_content()),
+        )
+        .await
+        .expect_err("create should fail fast with a 429 when throttle retries are disabled");
+
+    assert_eq!(
+        err.status().status_code(),
+        StatusCode::TooManyRequests,
+        "throttled create should surface HTTP 429 when retries are disabled",
+    );
 }
 
 // ─── Multi-region fault injection via SDK ────────────────────────────────────

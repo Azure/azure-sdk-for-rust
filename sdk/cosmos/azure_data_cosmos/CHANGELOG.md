@@ -1,14 +1,37 @@
 # Release History
 
-## 0.35.0 (Unreleased)
+## 0.36.0 (Unreleased)
 
 ### Features Added
 
+- Derived `SafeDebug` on `CosmosCredential`, `ItemResponse`, `ResourceResponse<T>`, and `BatchResponse`. ([#4512](https://github.com/Azure/azure-sdk-for-rust/pull/4512))
+- Added standard derives (`Clone`, `Copy`, `PartialEq`, `Eq`, `Hash`, `Serialize`, `Deserialize`) to `ConsistencyLevel` and `RoutingStrategy`. ([#4512](https://github.com/Azure/azure-sdk-for-rust/pull/4512))
+- `Query::with_text` now accepts `impl Into<String>`. ([#4512](https://github.com/Azure/azure-sdk-for-rust/pull/4512))
+
 ### Breaking Changes
+
+- Reorganized the public API: types are now grouped under `models`, `diagnostics`, `feed`, and `options`; the `query`, `regions`, and `routing_strategy` modules were removed; the previously `#[doc(hidden)]` feature-gated builder methods on `CosmosClientBuilder` are now visible (and remain feature-gated); `PartitionKey::EMPTY`, its `Default` impl, and `From<()> for PartitionKey` were removed (use the query/feed APIs for cross-partition operations); and `ETag` is no longer re-exported from `azure_data_cosmos::options` — use `azure_core::http::Etag` directly (construct via `Etag::from(&str)` / `Etag::from(String)`). See the PR for the full list of moves and import paths. ([#4512](https://github.com/Azure/azure-sdk-for-rust/pull/4512))
+- `TransactionalBatch::{create_item, upsert_item, replace_item}` and `TransactionalBatchOperationResult::into_model` now return `azure_data_cosmos::Result<_>` instead of `Result<_, serde_json::Error>`. The underlying `resource_body` is now stored as `Option<Box<serde_json::value::RawValue>>` and exposed via a new `resource_body()` accessor. ([#4512](https://github.com/Azure/azure-sdk-for-rust/pull/4512))
+- `DatabaseProperties::id` is now `Option<String>` (previously `String`) to match the wire schema. ([#4512](https://github.com/Azure/azure-sdk-for-rust/pull/4512))
 
 ### Bugs Fixed
 
 ### Other Changes
+
+- `DatabaseClient::read_throughput` and `begin_replace_throughput` no longer panic in release builds if the service returns an offer without `_rid`; they now return a synthetic `CosmosError`. ([#4512](https://github.com/Azure/azure-sdk-for-rust/pull/4512))
+- `azure_data_cosmos::error` is now a public module, and `ContainerClient` / `DatabaseClient` are re-exported at the crate root. ([#4512](https://github.com/Azure/azure-sdk-for-rust/pull/4512))
+- Documented that control-plane create/replace methods (`CosmosClient::create_database`, `DatabaseClient::create_container`, `ContainerClient::replace`, and the throughput-replace methods) always return the resource body regardless of `ContentResponseOnWrite`, and pointed `CosmosClient`'s rustdoc at the `CosmosClient::builder()` factory. ([#4512](https://github.com/Azure/azure-sdk-for-rust/pull/4512))
+
+## 0.35.0 (2026-06-09)
+
+### Features Added
+
+- Exposed cross-regional read hedging. Enable it by attaching an `OperationOptions` built with `OperationOptionsBuilder::with_availability_strategy(AvailabilityStrategy::Hedging(HedgingStrategy::new(HedgeThreshold::new(threshold)?)))` to a request (e.g. `ItemReadOptions::with_operation_options`) or to the client defaults via `CosmosClientBuilder::with_operation_options`. The `AvailabilityStrategy`, `HedgingStrategy`, and `HedgeThreshold` types are now re-exported from `azure_data_cosmos`. When enabled, the driver speculatively dispatches the read to a second preferred region after the configured threshold elapses and returns whichever response classifies as final first, cancelling the losing leg structurally (no detached tasks); `AvailabilityStrategy::Disabled` turns hedging off for that scope, and when no strategy is configured the driver applies a built-in default for multi-region reads. ([#4432](https://github.com/Azure/azure-sdk-for-rust/pull/4432))
+- Added configurable retry limits for throttled (HTTP 429, rate-limited) requests, mirroring the .NET and Java SDKs' `ThrottlingRetryOptions`. A new nested `ThrottlingRetryOptions` group on `OperationOptions` (field `throttling_retry_options`) carries `max_retry_count` (env `AZURE_COSMOS_MAX_THROTTLE_RETRY_COUNT`, default `9`, `0` disables throttle retries) and `max_retry_wait_time` (default `30s`), settable per-request via `OperationOptions`/`OperationOptionsBuilder` and `ThrottlingRetryOptionsBuilder`. New client-wide setter `CosmosClientBuilder::with_throttling_retry_options(ThrottlingRetryOptions)` forwards the group as runtime-layer defaults. Both budgets apply *per transport-pipeline invocation*, not per logical operation — an operation that fans out across regions (failover, hedging) starts a fresh budget per leg; use `OperationOptions::end_to_end_latency_policy` to bound total per-operation wall-clock time. ([#4544](https://github.com/Azure/azure-sdk-for-rust/pull/4544))
+
+### Bugs Fixed
+
+- Writes to multi-write Cosmos accounts now send the `x-ms-cosmos-allow-tentative-writes: true` request header. Without it, satellite write regions returned `403 / 3 (WriteForbidden)`, breaking write failover to non-primary regions. ([#4500](https://github.com/Azure/azure-sdk-for-rust/pull/4500))
 
 ## 0.34.0 (2026-05-29)
 
