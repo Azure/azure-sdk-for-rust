@@ -20,8 +20,8 @@ use crate::{
 use super::{
     intersect_feed_ranges,
     query_plan::{QueryInfo, QueryPlan},
-    DrainedLeaf, PartitionRoutingRefresh, Pipeline, PipelineNode, PipelineNodeState, Request,
-    RequestTarget, SequentialDrain, TopologyProvider,
+    DrainedLeaf, PartitionRoutingRefresh, Pipeline, PipelineNode, PipelineNodeState, RangedToken,
+    Request, RequestTarget, SequentialDrain, TopologyProvider,
 };
 
 /// Builds a single-node [`Pipeline`] for a trivial operation.
@@ -103,10 +103,9 @@ pub(crate) fn build_trivial_pipeline(
 
 /// Builds a fan-out [`Pipeline`] from a backend query plan as a sequential drain.
 ///
-/// Produces either a single [`Request`] leaf (when planning resolves to a
-/// single physical partition) or a [`SequentialDrain`] over one `Request` per
-/// resolved range. Other cross-partition strategies (streaming `ORDER BY`,
-/// hybrid search, read-many, etc.) will live as sibling functions.
+/// Produces a [`SequentialDrain`] over one [`Request`] per resolved range.
+/// Other cross-partition strategies (streaming `ORDER BY`, hybrid search,
+/// read-many, etc.) will live as sibling functions.
 ///
 /// `operation` is the underlying logical operation shared across every
 /// resulting [`Request`] node via `Arc::clone`; per-partition differences
@@ -119,16 +118,30 @@ pub(crate) fn build_trivial_pipeline(
 ///    top/limit, no ordering, no hybrid search, no aggregates).
 /// 2. Converts the plan's `queryRanges` to [`FeedRange`]s and resolves them
 ///    against the current partition topology.
-/// 3. Creates a [`Request`] node for each resolved range and bundles them in a
-///    [`SequentialDrain`].
+/// 3. Creates a [`Request`] node per resolved range (per saved child range
+///    on resume) and bundles them in a [`SequentialDrain`].
 ///
 /// `resume` is an optional [`PipelineNodeState`] from a continuation token.
-/// When present, ranges whose `max_exclusive <= current_min_epk` are skipped
-/// and the server continuation from `left_most` is propagated to the front
-/// (resumed) leaf only. The cursor also preserves the active child's original
-/// max EPK so resume can split a merged physical range into
-/// `[current_min_epk, current_max_epk)` (continued) and
-/// `[current_max_epk, merged_max)` (fresh).
+/// On resume, the `SequentialDrain { children }` list is the authoritative
+/// remaining-work ledger: every still-pending range and its server
+/// continuation. The planner intersects each saved range with the current
+/// topology and emits one [`Request`] leaf per intersection (carrying the
+/// saved server continuation, if any); saved ranges marked `Drained` emit
+/// nothing. Topology gaps that fall outside every saved range have already
+/// been drained and are not re-queried. If a non-`Drained` saved range can't
+/// be fully covered by the current topology, the resume fails with a
+/// continuation-token error rather than silently dropping work.
+/// `resume` is an optional [`PipelineNodeState`] from a continuation token.
+/// On resume, the `SequentialDrain { left_most_undrained_epk, active_tokens }`
+/// pair describes the remaining work sparsely: anything strictly below the
+/// cursor has already been drained; ranges at or above the cursor with no
+/// matching `active_tokens` entry are implicitly fresh-start; ranges that
+/// overlap an entry inherit that entry's server continuation (cloned across
+/// every overlapping topology leaf, which transparently handles partition
+/// splits since the saved snapshot was taken). If a non-empty `active_tokens`
+/// entry can't be fully covered by the current topology above the cursor,
+/// the resume fails with a continuation-token error rather than silently
+/// dropping work.
 pub(crate) async fn build_sequential_drain(
     query_plan: &QueryPlan,
     topology_provider: &mut dyn TopologyProvider,
@@ -137,146 +150,42 @@ pub(crate) async fn build_sequential_drain(
 ) -> crate::error::Result<Pipeline> {
     validate_query_plan(query_plan)?;
 
-    let resume = match resume {
+    let saved_snapshot = match resume {
         None => None,
         Some(PipelineNodeState::Drained) => {
             return Ok(Pipeline::new(Box::new(DrainedLeaf)));
         }
         Some(PipelineNodeState::SequentialDrain {
-            current_min_epk,
-            current_max_epk,
-            left_most,
-        }) => {
-            let server_continuation = match *left_most {
-                PipelineNodeState::Request {
-                    server_continuation,
-                } => server_continuation,
-                PipelineNodeState::Drained => None,
-                other => {
-                    return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE).with_message(format!(
-                            "continuation token has unsupported nested shape inside SequentialDrain: {}",
-                            snapshot_kind(&other)
-                        )).build());
-                }
-            };
-            let current_min_epk = EffectivePartitionKey::from(current_min_epk);
-            let current_max_epk = EffectivePartitionKey::from(current_max_epk);
-            if current_min_epk > current_max_epk {
-                return Err(crate::error::CosmosError::builder()
-                    .with_status(
-                        crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
-                    )
-                    .with_message(
-                        "continuation token has invalid SequentialDrain range (min > max)",
-                    )
-                    .build());
-            }
-            Some(ResumeCursor {
-                current_min_epk,
-                current_max_epk,
-                server_continuation,
-            })
-        }
-        Some(PipelineNodeState::Request {
-            server_continuation,
-        }) => {
-            // A bare Request snapshot means the cross-partition query had only
-            // a single child — apply it as a cursor at the minimum EPK.
-            Some(ResumeCursor {
-                current_min_epk: EffectivePartitionKey::MIN.clone(),
-                current_max_epk: EffectivePartitionKey::MAX.clone(),
-                server_continuation,
-            })
+            left_most_undrained_epk,
+            active_tokens,
+        }) => Some(validate_saved_snapshot(
+            left_most_undrained_epk,
+            active_tokens,
+        )?),
+        Some(other) => {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+                .with_message(format!(
+                    "continuation token shape {} does not match a cross-partition operation",
+                    snapshot_kind(&other)
+                ))
+                .build());
         }
     };
 
-    // Convert query ranges to FeedRanges and resolve against topology.
-    let mut request_nodes: Vec<Box<dyn PipelineNode>> = Vec::new();
-    let mut resume = resume;
-    for query_range in &query_plan.query_ranges {
-        let min = EffectivePartitionKey::from(query_range.min.as_str());
-        let max = EffectivePartitionKey::from(query_range.max.as_str());
-        let feed_range = FeedRange::new(min, max)?;
-        let resolved = topology_provider
-            .resolve_ranges(&feed_range, PartitionRoutingRefresh::UseCached)
-            .await?;
-
-        for resolved_range in resolved {
-            // Skip ranges that are entirely below the resume cursor.
-            if let Some(cursor) = resume.as_ref() {
-                if resolved_range.range.max_exclusive() <= &cursor.current_min_epk {
-                    continue;
-                }
-            }
-
-            // If we resumed inside a range that later merged with neighbors,
-            // keep the continuation scoped to the original child range and
-            // enqueue the remaining tail as a fresh request.
-            if let Some(cursor) = resume.as_mut() {
-                if cursor.server_continuation.is_some()
-                    && resolved_range.range.min_inclusive() <= &cursor.current_min_epk
-                    && &cursor.current_max_epk < resolved_range.range.max_exclusive()
-                {
-                    let resumed_range = FeedRange::new(
-                        cursor.current_min_epk.clone(),
-                        cursor.current_max_epk.clone(),
-                    )?;
-                    let resumed_target = RequestTarget::effective_partition_key_range(
-                        resumed_range,
-                        resolved_range.partition_key_range_id.clone(),
-                        resolved_range.range.clone(),
-                    );
-                    let resumed_continuation = cursor.server_continuation.take();
-                    request_nodes.push(Box::new(Request::new(
-                        Arc::clone(operation),
-                        resumed_target,
-                        resumed_continuation,
-                    )));
-
-                    let tail_range = FeedRange::new(
-                        cursor.current_max_epk.clone(),
-                        resolved_range.range.max_exclusive().clone(),
-                    )?;
-                    let tail_target = RequestTarget::effective_partition_key_range(
-                        tail_range,
-                        resolved_range.partition_key_range_id,
-                        resolved_range.range,
-                    );
-                    request_nodes.push(Box::new(Request::new(
-                        Arc::clone(operation),
-                        tail_target,
-                        None,
-                    )));
-                    continue;
-                }
-            }
-
-            // Carry the server continuation to every leaf node, because
-            // we don't know which ones have been drained. The service does, and will
-            // just return empty pages for those if needed.
-            let initial_continuation = resume.as_mut().and_then(|c| c.server_continuation.take());
-            let range = intersect_feed_ranges(&resolved_range.range, &feed_range).expect(
-                "topology provider must return ranges that overlap the query plan EPK range",
-            );
-            let target = RequestTarget::effective_partition_key_range(
-                range,
-                resolved_range.partition_key_range_id,
-                resolved_range.range,
-            );
-            request_nodes.push(Box::new(Request::new(
-                Arc::clone(operation),
-                target,
-                initial_continuation,
-            )));
-        }
-    }
+    let request_nodes = if let Some(saved) = saved_snapshot.as_ref() {
+        plan_resume_from_saved_snapshot(query_plan, topology_provider, operation, saved).await?
+    } else {
+        plan_fresh(query_plan, topology_provider, operation).await?
+    };
 
     // TODO: enforce max fan-out (default 100, configurable). See FEED_OPERATIONS_REQS.md §3.
 
     if request_nodes.is_empty() {
-        // Either the plan had no ranges or everything was below the cursor.
-        // The latter is a normal "fully drained" outcome — emit a drained leaf.
-        if resume.is_some() {
+        // Resumed past every range that still has work: the pipeline is
+        // fully drained. Otherwise the plan / topology yielded nothing to
+        // query — that's a service contract violation.
+        if saved_snapshot.is_some() {
             return Ok(Pipeline::new(Box::new(DrainedLeaf)));
         }
         return Err(crate::error::CosmosError::builder()
@@ -285,18 +194,348 @@ pub(crate) async fn build_sequential_drain(
             .build());
     }
 
-    // Even when there's only one request node, we still need to wrap it in a SequentialDrain
-    // so that the pipeline can react to splits by replacing the single Request with multiple Requests.
+    // Even when there's only one request node, we still need to wrap it in
+    // a SequentialDrain so the pipeline can react to splits by replacing
+    // the single Request with multiple Requests.
     let root = Box::new(SequentialDrain::new(request_nodes));
-
     Ok(Pipeline::new(root))
 }
 
-/// Resume cursor extracted from a `SequentialDrain` continuation snapshot.
-struct ResumeCursor {
-    current_min_epk: EffectivePartitionKey,
-    current_max_epk: EffectivePartitionKey,
-    server_continuation: Option<String>,
+/// Builds the request leaves for a fresh (non-resumed) cross-partition plan.
+async fn plan_fresh(
+    query_plan: &QueryPlan,
+    topology_provider: &mut dyn TopologyProvider,
+    operation: &Arc<CosmosOperation>,
+) -> crate::error::Result<Vec<Box<dyn PipelineNode>>> {
+    let mut nodes: Vec<Box<dyn PipelineNode>> = Vec::new();
+    for query_range in &query_plan.query_ranges {
+        let feed_range = query_range_to_feed_range(query_range)?;
+        let resolved = topology_provider
+            .resolve_ranges(&feed_range, PartitionRoutingRefresh::UseCached)
+            .await?;
+        for resolved_range in resolved {
+            let range = intersect_feed_ranges(&resolved_range.range, &feed_range).expect(
+                "topology provider must return ranges that overlap the query plan EPK range",
+            );
+            let target = RequestTarget::effective_partition_key_range(
+                range,
+                resolved_range.partition_key_range_id,
+                resolved_range.range,
+            );
+            nodes.push(Box::new(Request::new(Arc::clone(operation), target, None)));
+        }
+    }
+    Ok(nodes)
+}
+
+/// Builds the request leaves for a resumed cross-partition plan, using the
+/// sparse saved snapshot as the authoritative remaining-work ledger.
+///
+/// Iterates the current topology above the cursor. For each leaf, walks
+/// through `active_tokens` overlapping that leaf and emits one [`Request`]
+/// per intersection carrying the saved token; gaps between (or around)
+/// overlapping tokens within the leaf emit fresh-start [`Request`]s. Each
+/// `active_tokens` entry's coverage is tracked so any entry that can't be
+/// fully covered by the current topology above the cursor is reported as a
+/// continuation-token error.
+///
+/// # Cosmos server continuation semantics
+///
+/// When an `active_tokens` entry's range straddles multiple post-split
+/// resolved leaves, this function forwards the *same* server continuation
+/// token to every intersecting sub-leaf. This relies on the Cosmos backend's
+/// documented behavior that a continuation token issued for a parent
+/// partition remains valid against each of that partition's post-split
+/// children — the server uses the EPK range carried alongside the request
+/// to scope which child the token applies to.
+async fn plan_resume_from_saved_snapshot(
+    query_plan: &QueryPlan,
+    topology_provider: &mut dyn TopologyProvider,
+    operation: &Arc<CosmosOperation>,
+    saved: &SavedSnapshot,
+) -> crate::error::Result<Vec<Box<dyn PipelineNode>>> {
+    let mut nodes: Vec<Box<dyn PipelineNode>> = Vec::new();
+    let mut coverage: Vec<Vec<FeedRange>> = vec![Vec::new(); saved.active_tokens.len()];
+
+    for query_range in &query_plan.query_ranges {
+        let feed_range = query_range_to_feed_range(query_range)?;
+        let resolved = topology_provider
+            .resolve_ranges(&feed_range, PartitionRoutingRefresh::UseCached)
+            .await?;
+
+        for resolved_range in resolved {
+            // The leaf's range is the resolved range clipped to the query range.
+            let leaf_scope = intersect_feed_ranges(&resolved_range.range, &feed_range).expect(
+                "topology provider must return ranges that overlap the query plan EPK range",
+            );
+
+            // Clip to "at or above cursor". Drop leaves entirely below.
+            if leaf_scope.max_exclusive() <= &saved.cursor {
+                continue;
+            }
+            let effective_min = if leaf_scope.min_inclusive() < &saved.cursor {
+                saved.cursor.clone()
+            } else {
+                leaf_scope.min_inclusive().clone()
+            };
+            let effective_leaf = FeedRange::new(effective_min, leaf_scope.max_exclusive().clone())?;
+
+            // Walk active_tokens left-to-right against this leaf, emitting
+            // a continued sub-leaf per intersection plus fresh-start
+            // sub-leaves for any gaps.
+            let mut cursor_within_leaf = effective_leaf.min_inclusive().clone();
+            for (idx, entry) in saved.active_tokens.iter().enumerate() {
+                if entry.range.max_exclusive() <= &cursor_within_leaf {
+                    continue;
+                }
+                if entry.range.min_inclusive() >= effective_leaf.max_exclusive() {
+                    break;
+                }
+
+                let overlap_min = if entry.range.min_inclusive() > &cursor_within_leaf {
+                    entry.range.min_inclusive().clone()
+                } else {
+                    cursor_within_leaf.clone()
+                };
+                let overlap_max = if entry.range.max_exclusive() < effective_leaf.max_exclusive() {
+                    entry.range.max_exclusive().clone()
+                } else {
+                    effective_leaf.max_exclusive().clone()
+                };
+
+                if overlap_min > cursor_within_leaf {
+                    // Gap before this token entry — fresh-start sub-leaf.
+                    let gap = FeedRange::new(cursor_within_leaf.clone(), overlap_min.clone())?;
+                    let target = RequestTarget::effective_partition_key_range(
+                        gap,
+                        resolved_range.partition_key_range_id.clone(),
+                        resolved_range.range.clone(),
+                    );
+                    nodes.push(Box::new(Request::new(Arc::clone(operation), target, None)));
+                }
+
+                let intersection = FeedRange::new(overlap_min, overlap_max.clone())?;
+                coverage[idx].push(intersection.clone());
+                let target = RequestTarget::effective_partition_key_range(
+                    intersection,
+                    resolved_range.partition_key_range_id.clone(),
+                    resolved_range.range.clone(),
+                );
+                nodes.push(Box::new(Request::new(
+                    Arc::clone(operation),
+                    target,
+                    Some(entry.server_continuation.clone()),
+                )));
+
+                cursor_within_leaf = overlap_max;
+            }
+
+            if cursor_within_leaf < *effective_leaf.max_exclusive() {
+                // Trailing gap after the last overlapping token entry.
+                let gap =
+                    FeedRange::new(cursor_within_leaf, effective_leaf.max_exclusive().clone())?;
+                let target = RequestTarget::effective_partition_key_range(
+                    gap,
+                    resolved_range.partition_key_range_id.clone(),
+                    resolved_range.range.clone(),
+                );
+                nodes.push(Box::new(Request::new(Arc::clone(operation), target, None)));
+            }
+        }
+    }
+
+    // Verify every active token's range was fully covered by the current
+    // topology above the cursor. If not, the planner cannot honor the
+    // saved continuation without risking duplicate emission or data loss —
+    // fail loudly.
+    for (idx, entry) in saved.active_tokens.iter().enumerate() {
+        if !range_fully_covered(&entry.range, &coverage[idx]) {
+            const MAX_COVERAGE_PIECES_RENDERED: usize = 8;
+            let coverage_summary = if coverage[idx].is_empty() {
+                "(no overlapping topology ranges)".to_string()
+            } else {
+                let mut sorted = coverage[idx].clone();
+                sorted.sort_by(|a, b| a.min_inclusive().cmp(b.min_inclusive()));
+                let total = sorted.len();
+                let rendered: Vec<String> = sorted
+                    .iter()
+                    .take(MAX_COVERAGE_PIECES_RENDERED)
+                    .map(|r| {
+                        format!(
+                            "[{}, {})",
+                            r.min_inclusive().as_str(),
+                            r.max_exclusive().as_str()
+                        )
+                    })
+                    .collect();
+                if total > MAX_COVERAGE_PIECES_RENDERED {
+                    format!("{} + ... ({} total ranges)", rendered.join(" + "), total)
+                } else {
+                    rendered.join(" + ")
+                }
+            };
+            return Err(crate::error::CosmosError::builder()
+                .with_status(
+                    crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED,
+                )
+                .with_message(format!(
+                    "continuation token active range [{}, {}) could not be fully covered \
+                     by the current topology above the cursor (covered: {}); the query \
+                     cannot be safely resumed",
+                    entry.range.min_inclusive().as_str(),
+                    entry.range.max_exclusive().as_str(),
+                    coverage_summary,
+                ))
+                .build());
+        }
+    }
+
+    Ok(nodes)
+}
+
+/// Converts a query-plan EPK range to a [`FeedRange`].
+fn query_range_to_feed_range(
+    query_range: &super::query_plan::QueryRange,
+) -> crate::error::Result<FeedRange> {
+    let min = EffectivePartitionKey::from(query_range.min.as_str());
+    let max = EffectivePartitionKey::from(query_range.max.as_str());
+    FeedRange::new(min, max)
+}
+
+/// Returns true if the union of `pieces` covers `range` end-to-end.
+///
+/// Assumes pieces are subsets of `range`. The check sorts pieces by
+/// `min_inclusive` and walks left-to-right, requiring the running cursor to
+/// reach `range.max_exclusive` with no gaps.
+fn range_fully_covered(range: &FeedRange, pieces: &[FeedRange]) -> bool {
+    if pieces.is_empty() {
+        return false;
+    }
+    let mut sorted: Vec<&FeedRange> = pieces.iter().collect();
+    sorted.sort_by(|a, b| a.min_inclusive().cmp(b.min_inclusive()));
+    let mut cursor = range.min_inclusive().clone();
+    for piece in sorted {
+        debug_assert!(
+            piece.min_inclusive() >= range.min_inclusive()
+                && piece.max_exclusive() <= range.max_exclusive(),
+            "range_fully_covered piece [{}, {}) is not a subset of range [{}, {})",
+            piece.min_inclusive().as_str(),
+            piece.max_exclusive().as_str(),
+            range.min_inclusive().as_str(),
+            range.max_exclusive().as_str(),
+        );
+        if piece.min_inclusive() > &cursor {
+            return false;
+        }
+        if piece.max_exclusive() > &cursor {
+            cursor = piece.max_exclusive().clone();
+        }
+    }
+    &cursor >= range.max_exclusive()
+}
+
+/// Validated saved snapshot: cursor + per-range active tokens parsed into
+/// strongly-typed [`EffectivePartitionKey`] / [`FeedRange`].
+#[derive(Debug)]
+struct SavedSnapshot {
+    cursor: EffectivePartitionKey,
+    active_tokens: Vec<SavedActiveToken>,
+}
+
+#[derive(Debug)]
+struct SavedActiveToken {
+    range: FeedRange,
+    server_continuation: String,
+}
+
+/// Validates a sparse saved snapshot from a continuation token: each
+/// `active_tokens` entry has `min < max` (and is not zero-width), the list
+/// is strictly sorted ascending and non-overlapping, and the cursor is at
+/// or before the first entry's `min`. Returns the parsed [`SavedSnapshot`]
+/// on success or a continuation-token shape error on failure.
+fn validate_saved_snapshot(
+    left_most_undrained_epk: String,
+    active_tokens: Vec<RangedToken>,
+) -> crate::error::Result<SavedSnapshot> {
+    let cursor = EffectivePartitionKey::from(left_most_undrained_epk);
+
+    let mut parsed: Vec<SavedActiveToken> = Vec::with_capacity(active_tokens.len());
+    for entry in active_tokens {
+        let min = EffectivePartitionKey::from(entry.min_epk);
+        let max = EffectivePartitionKey::from(entry.max_epk);
+        if min > max {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(
+                    crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+                )
+                .with_message(format!(
+                    "continuation token has invalid active_tokens entry (min `{}` > max `{}`)",
+                    min.as_str(),
+                    max.as_str(),
+                ))
+                .build());
+        }
+        if min == max {
+            // A zero-width entry is structurally well-formed but cannot
+            // carry remaining work; reject explicitly so the caller sees
+            // a diagnostic message that points at the entry itself.
+            return Err(crate::error::CosmosError::builder()
+                .with_status(
+                    crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+                )
+                .with_message(format!(
+                    "continuation token has zero-width active_tokens entry (min == max == `{}`); \
+                     zero-width entries cannot carry remaining work",
+                    min.as_str(),
+                ))
+                .build());
+        }
+        let range = FeedRange::new(min, max)?;
+        if let Some(prev) = parsed.last() {
+            if range.min_inclusive() < prev.range.max_exclusive() {
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(
+                        crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+                    )
+                    .with_message(format!(
+                        "continuation token active_tokens must be sorted and non-overlapping; \
+                         entry [{}, {}) is out of order or overlaps the previous entry [{}, {})",
+                        range.min_inclusive().as_str(),
+                        range.max_exclusive().as_str(),
+                        prev.range.min_inclusive().as_str(),
+                        prev.range.max_exclusive().as_str(),
+                    ))
+                    .build());
+            }
+        }
+        parsed.push(SavedActiveToken {
+            range,
+            server_continuation: entry.server_continuation,
+        });
+    }
+
+    // Cursor cannot leapfrog past a still-active token entry: anything
+    // strictly below the cursor is implicitly drained, but `active_tokens`
+    // entries are by definition not drained.
+    if let Some(first) = parsed.first() {
+        if &cursor > first.range.min_inclusive() {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE)
+                .with_message(format!(
+                    "continuation token cursor `{}` is past the first active_tokens entry [{}, {}); \
+                     cursor must be at or before every active range",
+                    cursor.as_str(),
+                    first.range.min_inclusive().as_str(),
+                    first.range.max_exclusive().as_str(),
+                ))
+                .build());
+        }
+    }
+
+    Ok(SavedSnapshot {
+        cursor,
+        active_tokens: parsed,
+    })
 }
 
 fn snapshot_kind(state: &PipelineNodeState) -> &'static str {
@@ -357,7 +596,7 @@ mod tests {
 
     use super::*;
     use crate::{
-        driver::dataflow::{mocks::*, query_plan::QueryRange, ResolvedRange},
+        driver::dataflow::{mocks::*, query_plan::QueryRange, RangedToken, ResolvedRange},
         models::{
             effective_partition_key::EffectivePartitionKey, AccountReference, ContainerProperties,
             ContainerReference, DatabaseReference, ItemReference, OperationType, PartitionKey,
@@ -596,7 +835,7 @@ mod tests {
             let expected_state = PipelineNodeState::Request {
                 server_continuation: continuation.map(ToOwned::to_owned),
             };
-            assert_eq!(request.snapshot_state(), expected_state);
+            assert_eq!(request.snapshot_state().unwrap(), expected_state);
         }
     }
 
@@ -912,6 +1151,58 @@ mod tests {
     // Resume tests
     // -----------------------------------------------------------------
 
+    /// Builds a sparse `SequentialDrain` resume state from the legacy
+    /// `(min, max, state)` triple shape. Drained entries set / advance the
+    /// cursor; `Request { Some(token) }` entries become `active_tokens`;
+    /// `Request { None }` entries are skipped (sparse encoding treats them
+    /// as implicit fresh-start). The triples are assumed sorted; tests
+    /// that want to exercise the validator with malformed sparse shapes
+    /// build `PipelineNodeState::SequentialDrain { ... }` directly.
+    fn saved_drain(children: Vec<(&str, &str, PipelineNodeState)>) -> PipelineNodeState {
+        let mut cursor: Option<String> = None;
+        let mut active_tokens: Vec<RangedToken> = Vec::new();
+        for (min, max, state) in children {
+            match state {
+                PipelineNodeState::Drained => {
+                    debug_assert!(
+                        cursor.is_none(),
+                        "saved_drain helper does not support drained children after the cursor; \
+                         construct the sparse shape directly for that case",
+                    );
+                    cursor = Some(max.to_owned());
+                }
+                PipelineNodeState::Request {
+                    server_continuation,
+                } => {
+                    if cursor.is_none() {
+                        cursor = Some(min.to_owned());
+                    }
+                    if let Some(token) = server_continuation {
+                        active_tokens.push(RangedToken {
+                            min_epk: min.to_owned(),
+                            max_epk: max.to_owned(),
+                            server_continuation: token,
+                        });
+                    }
+                }
+                other => panic!(
+                    "saved_drain helper does not accept nested SequentialDrain states; \
+                     construct the sparse shape directly. Got: {other:?}"
+                ),
+            }
+        }
+        PipelineNodeState::SequentialDrain {
+            left_most_undrained_epk: cursor.unwrap_or_default(),
+            active_tokens,
+        }
+    }
+
+    fn saved_request(server_continuation: Option<&str>) -> PipelineNodeState {
+        PipelineNodeState::Request {
+            server_continuation: server_continuation.map(str::to_owned),
+        }
+    }
+
     #[tokio::test]
     async fn resume_drained_state_yields_drained_pipeline() {
         let plan = plan_with_ranges(vec![qr("", "FF")]);
@@ -927,15 +1218,17 @@ mod tests {
         .await
         .unwrap();
 
-        // The drained pipeline immediately yields no pages.
         assert!(matches!(
-            pipeline.snapshot_state(),
+            pipeline.snapshot_state().unwrap(),
             PipelineNodeState::Drained
         ));
     }
 
     #[tokio::test]
-    async fn resume_skips_ranges_below_cursor() {
+    async fn resume_skips_topology_below_first_saved_child() {
+        // Saved children cover only `[55, FF)`. The topology has a range
+        // `[, 55)` that falls outside every saved range — that range has
+        // already been drained on a prior page and must not be re-queried.
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = cross_partition_query_operation();
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![
@@ -944,15 +1237,10 @@ mod tests {
             rr("AA", "FF", "pk-c"),
         ])]);
 
-        // Cursor sitting at the first byte of the second range — the first
-        // range (max_exclusive == "55") must be skipped, the others kept.
-        let resume = PipelineNodeState::SequentialDrain {
-            current_min_epk: "55".to_owned(),
-            current_max_epk: "AA".to_owned(),
-            left_most: Box::new(PipelineNodeState::Request {
-                server_continuation: None,
-            }),
-        };
+        let resume = saved_drain(vec![
+            ("55", "AA", saved_request(None)),
+            ("AA", "FF", saved_request(None)),
+        ]);
 
         let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
             .await
@@ -961,7 +1249,45 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn resume_propagates_server_continuation_to_first_surviving_leaf_only() {
+    async fn resume_propagates_server_continuation_to_every_surviving_leaf_after_split() {
+        // The saved `[55, AA)` child held a server continuation. Between
+        // sessions the underlying partition split into `[55, 70)` + `[70, AA)`;
+        // every surviving leaf in the saved child's scope must carry the
+        // saved continuation, otherwise the continuation-less leaves execute
+        // a fresh query and re-emit items the caller already consumed.
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+            rr("", "55", "pk-a"),
+            rr("55", "70", "pk-b1"),
+            rr("70", "AA", "pk-b2"),
+            rr("AA", "FF", "pk-c"),
+        ])]);
+
+        let resume = saved_drain(vec![
+            ("55", "AA", saved_request(Some("server-token-xyz"))),
+            ("AA", "FF", saved_request(None)),
+        ]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+            .await
+            .unwrap();
+        assert_drain_requests_with_partitions_and_continuation(
+            pipeline,
+            &[
+                ("55", "70", "pk-b1", "55", "70", Some("server-token-xyz")),
+                ("70", "AA", "pk-b2", "70", "AA", Some("server-token-xyz")),
+                ("AA", "FF", "pk-c", "AA", "FF", None),
+            ],
+        );
+    }
+
+    #[tokio::test]
+    async fn resume_does_not_leak_continuation_into_siblings_past_saved_scope() {
+        // Saved child `[55, AA)` holds a continuation; sibling `[AA, FF)`
+        // does not. Topology unchanged across sessions: each saved child
+        // maps 1:1 to its leaf, and the continuation must not propagate
+        // into the following sibling.
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = cross_partition_query_operation();
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![
@@ -970,91 +1296,91 @@ mod tests {
             rr("AA", "FF", "pk-c"),
         ])]);
 
-        let resume = PipelineNodeState::SequentialDrain {
-            current_min_epk: "55".to_owned(),
-            current_max_epk: "AA".to_owned(),
-            left_most: Box::new(PipelineNodeState::Request {
-                server_continuation: Some("server-token-xyz".to_owned()),
-            }),
-        };
+        let resume = saved_drain(vec![
+            ("55", "AA", saved_request(Some("server-token-xyz"))),
+            ("AA", "FF", saved_request(None)),
+        ]);
 
         let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
             .await
             .unwrap();
-        let snapshot = pipeline.snapshot_state();
-        let PipelineNodeState::SequentialDrain { left_most, .. } = snapshot else {
-            panic!("expected SequentialDrain snapshot, got {snapshot:?}");
-        };
-        assert_eq!(
-            *left_most,
-            PipelineNodeState::Request {
-                server_continuation: Some("server-token-xyz".to_owned()),
-            },
-            "front leaf must carry the resumed server continuation",
+        assert_drain_requests_with_partitions_and_continuation(
+            pipeline,
+            &[
+                ("55", "AA", "pk-b", "55", "AA", Some("server-token-xyz")),
+                ("AA", "FF", "pk-c", "AA", "FF", None),
+            ],
         );
     }
 
     #[tokio::test]
-    async fn resume_with_cursor_past_all_ranges_yields_drained_pipeline() {
+    async fn resume_does_not_leak_continuation_across_query_ranges() {
+        // Two disjoint query-plan ranges. The first saved child holds the
+        // continuation; every leaf in the second range must start fresh.
+        let plan = plan_with_ranges(vec![qr("", "55"), qr("80", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![
+            Ok(vec![rr("", "30", "pk-a"), rr("30", "55", "pk-b")]),
+            Ok(vec![rr("80", "C0", "pk-c"), rr("C0", "FF", "pk-d")]),
+        ]);
+
+        let resume = saved_drain(vec![
+            ("30", "55", saved_request(Some("server-token-xyz"))),
+            ("80", "C0", saved_request(None)),
+            ("C0", "FF", saved_request(None)),
+        ]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+            .await
+            .unwrap();
+        assert_drain_requests_with_partitions_and_continuation(
+            pipeline,
+            &[
+                ("30", "55", "pk-b", "30", "55", Some("server-token-xyz")),
+                ("80", "C0", "pk-c", "80", "C0", None),
+                ("C0", "FF", "pk-d", "C0", "FF", None),
+            ],
+        );
+    }
+
+    #[tokio::test]
+    async fn resume_with_cursor_past_topology_yields_drained_pipeline() {
+        // Wire form `SequentialDrain { cursor = "FF", active_tokens = [] }`
+        // means every range has been drained: the cursor is at or past
+        // the last topology max, and no range above it owes a token.
+        // The planner emits no leaves → pipeline is drained.
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = cross_partition_query_operation();
-        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "55", "pk-a")])]);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-a")])]);
 
         let resume = PipelineNodeState::SequentialDrain {
-            current_min_epk: "FF".to_owned(),
-            current_max_epk: "FF".to_owned(),
-            left_most: Box::new(PipelineNodeState::Drained),
+            left_most_undrained_epk: "FF".to_owned(),
+            active_tokens: vec![],
         };
 
         let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
             .await
             .unwrap();
         assert!(matches!(
-            pipeline.snapshot_state(),
+            pipeline.snapshot_state().unwrap(),
             PipelineNodeState::Drained
         ));
     }
 
     #[tokio::test]
-    async fn resume_rejects_nested_sequential_drain_inside_left_most() {
-        let plan = plan_with_ranges(vec![qr("", "FF")]);
-        let op = cross_partition_query_operation();
-        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-a")])]);
-
-        let resume = PipelineNodeState::SequentialDrain {
-            current_min_epk: "00".to_owned(),
-            current_max_epk: "80".to_owned(),
-            left_most: Box::new(PipelineNodeState::SequentialDrain {
-                current_min_epk: "00".to_owned(),
-                current_max_epk: "80".to_owned(),
-                left_most: Box::new(PipelineNodeState::Request {
-                    server_continuation: None,
-                }),
-            }),
-        };
-
-        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
-            .await
-            .unwrap_err();
-        assert!(
-            err.to_string().contains("unsupported nested shape"),
-            "unexpected error message: {err}",
-        );
-    }
-
-    #[tokio::test]
     async fn resume_on_merged_range_splits_resumed_slice_and_tail() {
+        // Two saved children: `[55, AA)` with a token, `[AA, FF)` without.
+        // Between sessions the topology merged into one wide `[, FF)` range;
+        // each saved child intersects the merged range and produces its own
+        // leaf, preserving the token/no-token distinction.
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = cross_partition_query_operation();
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-merged")])]);
 
-        let resume = PipelineNodeState::SequentialDrain {
-            current_min_epk: "55".to_owned(),
-            current_max_epk: "AA".to_owned(),
-            left_most: Box::new(PipelineNodeState::Request {
-                server_continuation: Some("server-token-xyz".to_owned()),
-            }),
-        };
+        let resume = saved_drain(vec![
+            ("55", "AA", saved_request(Some("server-token-xyz"))),
+            ("AA", "FF", saved_request(None)),
+        ]);
 
         let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
             .await
@@ -1067,5 +1393,383 @@ mod tests {
                 ("AA", "FF", "pk-merged", "", "FF", None),
             ],
         );
+    }
+
+    #[tokio::test]
+    async fn resume_validates_saved_children_sorted_non_overlapping() {
+        // Out-of-order active_tokens: [55, AA) then [00, 55) violates
+        // strict ascending order.
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-a")])]);
+
+        let resume = saved_drain(vec![
+            ("55", "AA", saved_request(Some("tok-a"))),
+            ("00", "55", saved_request(Some("tok-b"))),
+        ]);
+
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+            .await
+            .unwrap_err();
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE),
+            "expected invalid-children sub-status, got: {err}",
+        );
+    }
+
+    #[tokio::test]
+    async fn resume_validates_saved_children_no_overlap() {
+        // Overlapping active_tokens: [00, 80) and [55, FF) overlap on
+        // [55, 80).
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-a")])]);
+
+        let resume = saved_drain(vec![
+            ("00", "80", saved_request(Some("tok-a"))),
+            ("55", "FF", saved_request(Some("tok-b"))),
+        ]);
+
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+            .await
+            .unwrap_err();
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE),
+            "expected invalid-children sub-status, got: {err}",
+        );
+    }
+
+    #[tokio::test]
+    async fn resume_errors_when_non_drained_saved_range_unhonored() {
+        // Saved child `[55, AA)` holds a continuation, but the topology
+        // only covers `[00, 40)`. The planner cannot honor the saved
+        // continuation without risking duplicate emission or data loss.
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "40", "pk-a")])]);
+
+        let resume = saved_drain(vec![("55", "AA", saved_request(Some("server-token-xyz")))]);
+
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+            .await
+            .unwrap_err();
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED),
+            "expected saved-range-unhonored sub-status, got: {err}",
+        );
+    }
+
+    #[tokio::test]
+    async fn resume_with_cursor_skips_drained_prefix_and_fresh_starts_uncovered_tail() {
+        // Sparse semantics: the cursor marks the end of the drained
+        // prefix. Anything above the cursor that has no active token is
+        // implicitly fresh-start — there's no "drained range past the
+        // cursor" in the sparse encoding. So with cursor="55", one
+        // active token covering [55, AA), and a topology of three
+        // resolved ranges [, 55), [55, AA), [AA, FF), the planner must:
+        //   - skip [, 55)        (fully below cursor → drained prefix)
+        //   - emit Request(tok)  for [55, AA)  (overlaps active token)
+        //   - emit Request(None) for [AA, FF)  (above cursor, no active
+        //                                       token → fresh-start)
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+            rr("", "55", "pk-a"),
+            rr("55", "AA", "pk-b"),
+            rr("AA", "FF", "pk-c"),
+        ])]);
+
+        let resume = PipelineNodeState::SequentialDrain {
+            left_most_undrained_epk: "55".to_owned(),
+            active_tokens: vec![RangedToken {
+                min_epk: "55".to_owned(),
+                max_epk: "AA".to_owned(),
+                server_continuation: "server-token-xyz".to_owned(),
+            }],
+        };
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+            .await
+            .unwrap();
+        assert_drain_requests_with_partitions_and_continuation(
+            pipeline,
+            &[
+                ("55", "AA", "pk-b", "55", "AA", Some("server-token-xyz")),
+                ("AA", "FF", "pk-c", "AA", "FF", None),
+            ],
+        );
+    }
+
+    #[tokio::test]
+    async fn resume_multiple_saved_children_in_one_resolved_range_no_duplicate_leaves() {
+        // The topology has merged the saved children into one wide range.
+        // Each active token produces exactly one leaf scoped to its own
+        // range, and the trailing portion of the merged range above the
+        // last active token is emitted as a single fresh-start leaf
+        // covering the gap to the topology max (sparse semantics:
+        // ranges above the cursor not covered by an active token are
+        // implicitly fresh-start).
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-merged")])]);
+
+        let resume = saved_drain(vec![
+            ("10", "30", saved_request(Some("tok-a"))),
+            ("30", "60", saved_request(Some("tok-b"))),
+        ]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+            .await
+            .unwrap();
+        assert_drain_requests_with_partitions_and_continuation(
+            pipeline,
+            &[
+                ("10", "30", "pk-merged", "", "FF", Some("tok-a")),
+                ("30", "60", "pk-merged", "", "FF", Some("tok-b")),
+                ("60", "FF", "pk-merged", "", "FF", None),
+            ],
+        );
+    }
+
+    #[tokio::test]
+    async fn resume_emits_fresh_leaves_for_topology_gaps_above_cursor() {
+        // Sparse semantics: any topology range above the cursor that is
+        // NOT covered by an active token is fresh-start (not drained).
+        // This is the O(S) trade-off — only ranges below the cursor are
+        // skipped as drained. With cursor="40", one active token at
+        // [40, 60), and topology [, 20), [20, 40), [40, 60), [60, 80),
+        // [80, FF), the planner emits:
+        //   - skip [, 20)        (below cursor)
+        //   - skip [20, 40)      (below cursor)
+        //   - Request(tok)       for [40, 60)
+        //   - Request(None)      for [60, 80)  (fresh-start, no token)
+        //   - Request(None)      for [80, FF)  (fresh-start, no token)
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+            rr("", "20", "pk-a"),
+            rr("20", "40", "pk-b"),
+            rr("40", "60", "pk-c"),
+            rr("60", "80", "pk-d"),
+            rr("80", "FF", "pk-e"),
+        ])]);
+
+        let resume = PipelineNodeState::SequentialDrain {
+            left_most_undrained_epk: "40".to_owned(),
+            active_tokens: vec![RangedToken {
+                min_epk: "40".to_owned(),
+                max_epk: "60".to_owned(),
+                server_continuation: "tok".to_owned(),
+            }],
+        };
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+            .await
+            .unwrap();
+        assert_drain_requests_with_partitions_and_continuation(
+            pipeline,
+            &[
+                ("40", "60", "pk-c", "40", "60", Some("tok")),
+                ("60", "80", "pk-d", "60", "80", None),
+                ("80", "FF", "pk-e", "80", "FF", None),
+            ],
+        );
+    }
+
+    /// An older serialized shape — a top-level bare `Request` continuation
+    /// for what is now a `SequentialDrain` — must be rejected on resume
+    /// rather than silently re-interpreted as a full-range cursor. Guards
+    /// the planner's existing rejection of that shape.
+    #[tokio::test]
+    async fn legacy_top_level_bare_request_shape_fails_to_resume() {
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
+
+        let legacy = PipelineNodeState::Request {
+            server_continuation: Some("OLD".to_owned()),
+        };
+
+        let result =
+            build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(legacy)).await;
+        let err = result.expect_err("bare top-level Request shape must be rejected on resume");
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH,
+            "expected SHAPE_MISMATCH for top-level bare Request shape; got {err:?}",
+        );
+    }
+
+    /// Zero-width active_tokens entries are well-formed JSON but cannot
+    /// carry remaining work. They must be rejected with a message that
+    /// points at the entry itself rather than at a downstream "could not
+    /// be fully covered" error.
+    #[tokio::test]
+    async fn rejects_zero_width_saved_child_entry_with_clear_message() {
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
+
+        let resume = PipelineNodeState::SequentialDrain {
+            left_most_undrained_epk: String::new(),
+            active_tokens: vec![RangedToken {
+                min_epk: "40".to_owned(),
+                max_epk: "40".to_owned(),
+                server_continuation: "tok".to_owned(),
+            }],
+        };
+
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+            .await
+            .expect_err("zero-width active_tokens entry must be rejected");
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+        );
+        let rendered = err.to_string();
+        assert!(
+            rendered.contains("zero-width"),
+            "error message should describe the zero-width entry; got: {rendered}"
+        );
+    }
+
+    /// The continuation-token validator must reject an `active_tokens`
+    /// entry with `min >= max` regardless of how that wire payload was
+    /// produced (corrupted token, hand-rolled, future-version rollback).
+    /// Pins the validator behavior so a future change to the comparison
+    /// semantics (e.g., `EffectivePartitionKey::Ord`) can't silently
+    /// downgrade this fail-loud path to a silent re-query.
+    #[tokio::test]
+    async fn malformed_min_greater_than_max_child_is_rejected_by_validator() {
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
+
+        let resume = PipelineNodeState::SequentialDrain {
+            left_most_undrained_epk: String::new(),
+            active_tokens: vec![RangedToken {
+                min_epk: "FF".to_owned(),
+                max_epk: "00".to_owned(),
+                server_continuation: "tok".to_owned(),
+            }],
+        };
+
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+            .await
+            .expect_err("malformed min>max entry must be rejected by the validator");
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+            "malformed min>max entry must trip the EPK-range validator path",
+        );
+    }
+
+    /// Companion to the test above: when a malformed `min >= max` entry
+    /// is *appended* to legitimate entries, the validator must still
+    /// reject the whole payload. Guards against a future "skip invalid
+    /// entries, continue with the valid ones" relaxation that would
+    /// silently swallow snapshot corruption.
+    #[tokio::test]
+    async fn malformed_min_greater_than_max_appended_to_valid_children_still_rejects() {
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
+
+        let resume = PipelineNodeState::SequentialDrain {
+            left_most_undrained_epk: String::new(),
+            active_tokens: vec![
+                RangedToken {
+                    min_epk: String::new(),
+                    max_epk: "80".to_owned(),
+                    server_continuation: "real-token".to_owned(),
+                },
+                RangedToken {
+                    min_epk: "FF".to_owned(),
+                    max_epk: "00".to_owned(),
+                    server_continuation: "tok".to_owned(),
+                },
+            ],
+        };
+
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+            .await
+            .expect_err("appended malformed min>max entry must still be rejected");
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+        );
+    }
+
+    /// Symmetric variant of the cascading-split scenario — the FRONT
+    /// sibling splits between snapshots instead of the back one. The
+    /// planner's interval-join logic is symmetric in the two siblings,
+    /// so this test guards against an accidental asymmetry (e.g.,
+    /// assuming the "still-pending" sibling is always the back one)
+    /// that would be invisible to the existing back-split test.
+    #[tokio::test]
+    async fn cascading_split_of_front_sibling_propagates_token_to_grand_children() {
+        // Saved state: cursor at start, active_tokens has one entry for
+        // [, 80) owing T1 (front sibling is in progress). The back range
+        // [80, FF) is not in active_tokens, so it's implicitly fresh-start.
+        // Then topology resolves the front into two grand-children
+        // [, 40) + [40, 80) on top of the unchanged back [80, FF).
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+            rr("", "40", "pkrange-front-left"),
+            rr("40", "80", "pkrange-front-right"),
+            rr("80", "FF", "pkrange-back"),
+        ])]);
+
+        let resume = PipelineNodeState::SequentialDrain {
+            left_most_undrained_epk: String::new(),
+            active_tokens: vec![RangedToken {
+                min_epk: String::new(),
+                max_epk: "80".to_owned(),
+                server_continuation: "T1".to_owned(),
+            }],
+        };
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+            .await
+            .expect("front-sibling cascading split must plan cleanly");
+
+        // Walk the planned children via snapshot: the two front grand-
+        // children must each carry T1; the back range must be a
+        // fresh-start leaf (implicit — appears in the planned children
+        // but not in active_tokens). The exact structure mirrors the
+        // back-split case in `query_resume_integration_tests::
+        // cascading_split_..._grand_child`.
+        let snap = pipeline.snapshot_state().unwrap();
+        let (cursor, active_tokens) = match snap {
+            PipelineNodeState::SequentialDrain {
+                left_most_undrained_epk,
+                active_tokens,
+            } => (left_most_undrained_epk, active_tokens),
+            other => panic!("expected SequentialDrain, got {other:?}"),
+        };
+        assert_eq!(cursor, "", "cursor must remain at start");
+        assert_eq!(
+            active_tokens.len(),
+            2,
+            "expected 2 active tokens for the front grand-children, got {active_tokens:?}",
+        );
+        for (idx, expected_min, expected_max) in [(0, "", "40"), (1, "40", "80")] {
+            assert_eq!(
+                active_tokens[idx].min_epk, expected_min,
+                "active_tokens[{idx}] min_epk mismatch",
+            );
+            assert_eq!(
+                active_tokens[idx].max_epk, expected_max,
+                "active_tokens[{idx}] max_epk mismatch",
+            );
+            assert_eq!(
+                active_tokens[idx].server_continuation, "T1",
+                "front grand-child {idx} must carry T1",
+            );
+        }
     }
 }

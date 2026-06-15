@@ -53,6 +53,8 @@ pub mod query;
 #[cfg(not(any(test, feature = "__internal_testing")))]
 #[allow(dead_code)]
 pub(crate) mod query;
+#[allow(dead_code)]
+pub(crate) mod query_plan_native;
 pub(crate) mod system;
 #[cfg(feature = "__internal_mocking")]
 pub mod testing;
