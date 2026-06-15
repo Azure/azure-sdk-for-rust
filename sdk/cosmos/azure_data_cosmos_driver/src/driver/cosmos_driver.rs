@@ -11,7 +11,9 @@ use crate::{
     driver::{
         cache::{PartitionKeyRangeCache, PkRangeFetchResult},
         dataflow::{
-            planner, query_plan::RawQueryPlan, CachedTopologyProvider, OperationPlan,
+            planner,
+            query_plan::{QueryPlan, RawQueryPlan},
+            CachedTopologyProvider, OperationPlan,
             PartitionRoutingRefresh, PipelineContext, PipelineNodeState, RequestExecutor,
             RequestTarget, TopologyProvider,
         },
@@ -156,6 +158,10 @@ pub struct CosmosDriver {
     /// initialization. In normal usage `get_or_create_driver` awaits `initialize()`
     /// before returning, so this guard only catches misuse.
     initialized: AtomicBool,
+    /// Native FFI query plan provider. Lazily loads the native library on
+    /// first use; returns errors if unavailable.
+    #[cfg(feature = "__internal_native_query_plan")]
+    native_query_plan_provider: crate::query_plan_native::NativeQueryPlanProvider,
 }
 
 impl CosmosDriver {
@@ -1093,6 +1099,8 @@ impl CosmosDriver {
             pk_range_cache: PartitionKeyRangeCache::new(),
             session_manager: SessionManager::new(),
             initialized: AtomicBool::new(false),
+            #[cfg(feature = "__internal_native_query_plan")]
+            native_query_plan_provider: crate::query_plan_native::NativeQueryPlanProvider::new(),
         }
     }
 
@@ -1835,13 +1843,19 @@ impl CosmosDriver {
             }
         };
 
-        // Trivial plan: anything that isn't a cross-partition query.
+        // 1. Trivial plan: anything that isn't a cross-partition query.
+        //    The internal pipeline only supports projection and filtering over
+        //    a sequential drain, with no support for ordering. Trivial
+        //    operations (targeting a single logical partition) are sent directly
+        //    to the gateway without query planning.
         if operation.is_trivial() {
             let pipeline = planner::build_trivial_pipeline(operation.clone(), resume_state)?;
             return Ok(OperationPlan::new(pipeline, operation));
         }
 
-        // Cross-partition query: fetch query plan from backend.
+        // 2. Cross-partition query: obtain a query plan and build the fan-out
+        //    pipeline. Try the native FFI provider first (no network call),
+        //    falling back to the Gateway if unavailable.
         let container = operation.container().ok_or_else(|| {
             crate::error::CosmosError::builder()
                 .with_status(
@@ -1851,6 +1865,31 @@ impl CosmosDriver {
                 .build()
         })?;
 
+        let query_plan = self
+            .resolve_query_plan(container, &operation, options)
+            .await?;
+
+        // Build the fan-out pipeline using the query plan.
+        let container_ref = container.clone();
+        let mut topology = CachedTopologyProvider::new(
+            &self.pk_range_cache,
+            container_ref,
+            |container, continuation| self.fetch_pk_ranges_from_service(container, continuation),
+        );
+
+        let pipeline =
+            planner::build_sequential_drain(&query_plan, &mut topology, &operation, resume_state)
+                .await?;
+        Ok(OperationPlan::new(pipeline, operation))
+    }
+
+    /// Fetches a query plan from the Gateway backend.
+    async fn gateway_query_plan(
+        &self,
+        container: &ContainerReference,
+        operation: &CosmosOperation,
+        options: &OperationOptions,
+    ) -> crate::error::Result<QueryPlan> {
         // Advertise the SDK's supported query-rewrite features. The default
         // (`SUPPORTED_QUERY_FEATURES`) is `"None"` until the cross-partition
         // pipeline gains rewrite support, but the value must be non-empty so
@@ -1889,21 +1928,87 @@ impl CosmosDriver {
             })?;
         // Resolve proxy-format `queryRanges` (PartitionKeyInternal arrays)
         // into canonical EPK hex strings using the container's PK definition.
-        // Mirrors Java PR #47759 (PartitionKeyInternalHelper).
         let query_plan = raw_query_plan.resolve(container.partition_key_definition())?;
+        Ok(query_plan)
+    }
 
-        // Build the fan-out pipeline using the query plan.
-        let container_ref = container.clone();
-        let mut topology = CachedTopologyProvider::new(
-            &self.pk_range_cache,
-            container_ref,
-            |container, continuation| self.fetch_pk_ranges_from_service(container, continuation),
-        );
+    /// Resolves a query plan, trying the native FFI provider first and
+    /// falling back to the Gateway if unavailable or if generation fails.
+    #[cfg(feature = "__internal_native_query_plan")]
+    async fn resolve_query_plan(
+        &self,
+        container: &ContainerReference,
+        operation: &CosmosOperation,
+        options: &OperationOptions,
+    ) -> crate::error::Result<QueryPlan> {
+        // Fetch the query engine configuration from the account metadata cache.
+        let account = operation.resource_reference().account();
+        let account_endpoint = AccountEndpoint::from(account);
+        let query_engine_config = self
+            .runtime
+            .account_metadata_cache()
+            .get(&account_endpoint)
+            .await
+            .map(|props| props.query_engine_configuration.clone())
+            .unwrap_or_default();
 
-        let pipeline =
-            planner::build_sequential_drain(&query_plan, &mut topology, &operation, resume_state)
-                .await?;
-        Ok(OperationPlan::new(pipeline, operation))
+        let native_result = operation
+            .body()
+            .and_then(|b| std::str::from_utf8(b).ok())
+            .map(|json| self.try_native_query_plan(json, container, &query_engine_config));
+
+        match native_result {
+            Some(Ok(plan)) => {
+                tracing::debug!("using native FFI query plan");
+                Ok(plan)
+            }
+            Some(Err(crate::query_plan_native::error::QueryPlanError::LibraryNotAvailable {
+                ..
+            })) => {
+                tracing::debug!("native query plan library not available, falling back to gateway");
+                self.gateway_query_plan(container, operation, options).await
+            }
+            Some(Err(e)) => {
+                tracing::warn!(error = %e, "native query plan generation failed, falling back to gateway");
+                self.gateway_query_plan(container, operation, options).await
+            }
+            None => {
+                tracing::debug!("using gateway query plan");
+                self.gateway_query_plan(container, operation, options).await
+            }
+        }
+    }
+
+    /// Resolves a query plan from the Gateway backend.
+    #[cfg(not(feature = "__internal_native_query_plan"))]
+    async fn resolve_query_plan(
+        &self,
+        container: &ContainerReference,
+        operation: &CosmosOperation,
+        options: &OperationOptions,
+    ) -> crate::error::Result<QueryPlan> {
+        self.gateway_query_plan(container, operation, options).await
+    }
+
+    /// Attempts to generate a query plan using the native FFI provider.
+    /// Returns `Err` if the native library is not available or if plan
+    /// generation fails for any reason. The caller should fall through
+    /// to the Gateway path on error.
+    #[cfg(feature = "__internal_native_query_plan")]
+    fn try_native_query_plan(
+        &self,
+        query_spec_json: &str,
+        container: &ContainerReference,
+        query_engine_config: &str,
+    ) -> Result<QueryPlan, crate::query_plan_native::error::QueryPlanError> {
+        let pk_def = container.partition_key_definition();
+        let pk_paths: Vec<&str> = pk_def.paths().iter().map(|p| p.as_ref()).collect();
+        self.native_query_plan_provider.get_query_plan(
+            query_spec_json,
+            &pk_paths,
+            pk_def.kind(),
+            query_engine_config,
+        )
     }
 
     /// Returns all partition key ranges for a container, ordered by min EPK.

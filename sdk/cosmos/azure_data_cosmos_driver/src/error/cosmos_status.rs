@@ -508,6 +508,7 @@ impl SubStatusCode {
             20209 => Some("ClientCrossPartitionQueryRequiresContainerRef"),
             20210 => Some("ClientSingletonOperationReturnedEmptyPage"),
             20211 => Some("ClientComputeRangeInvokedWithEmptyPartitionKey"),
+            20213 => Some("ClientContinuationTokenSavedRangeUnhonored"),
             20300 => Some("ClientNoOverlappingFeedRangesForSessionToken"),
             20301 => Some("ClientNoThroughputOfferForResource"),
             20302 => Some("ClientQueryPlanProducedEmptyRanges"),
@@ -1344,13 +1345,17 @@ impl SubStatusCode {
     /// (20203).
     pub const CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH: SubStatusCode = SubStatusCode(20203);
 
-    /// A continuation token's nested `SequentialDrain` shape contains an
-    /// unsupported pipeline node type (20204).
+    /// `SequentialDrain` cannot honor a nested child (20204). Raised when
+    /// a continuation token nests an unsupported pipeline node under
+    /// `SequentialDrain` (token-shape failure), or when a live child node
+    /// has no `feed_range` at snapshot time (in-memory invariant failure).
     pub const CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE: SubStatusCode =
         SubStatusCode(20204);
 
-    /// A continuation token's encoded EPK range is invalid (min > max)
-    /// (20205).
+    /// A continuation token's `SequentialDrain` children list is
+    /// structurally invalid (20205). Raised for any of: an entry with
+    /// `min > max`, a zero-width entry (`min == max`), or entries that
+    /// are unsorted / overlap each other.
     pub const CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE: SubStatusCode = SubStatusCode(20205);
 
     /// `SequentialDrain` exhausted its split-retry budget without
@@ -1378,6 +1383,13 @@ impl SubStatusCode {
     /// list (20211).
     pub const CLIENT_COMPUTE_RANGE_INVOKED_WITH_EMPTY_PARTITION_KEY: SubStatusCode =
         SubStatusCode(20211);
+
+    /// A continuation token's saved range could not be honored on resume
+    /// because the topology no longer covers it (20213). Surfacing this as
+    /// an error rather than silently dropping the range prevents duplicate
+    /// emission or data loss. Member of the continuation-token family —
+    /// see also 20200, 20203, 20204, 20205.
+    pub const CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED: SubStatusCode = SubStatusCode(20213);
 
     // ----- 20300-20349: SDK-detected service contract violations -----
 
@@ -2129,14 +2141,17 @@ impl CosmosStatus {
         sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH),
     };
 
-    /// 500 / 20204 — `SequentialDrain` nested node is of an unsupported
-    /// type.
+    /// 500 / 20204 — `SequentialDrain` cannot honor a nested child:
+    /// either the continuation token nests an unsupported pipeline node
+    /// type, or a live child has no `feed_range` at snapshot time.
     pub const CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE: CosmosStatus = CosmosStatus {
         status_code: StatusCode::InternalServerError,
         sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE),
     };
 
-    /// 500 / 20205 — continuation token's EPK range is invalid (min > max).
+    /// 500 / 20205 — continuation token's `SequentialDrain` children
+    /// list is structurally invalid: `min > max`, zero-width entry, or
+    /// unsorted / overlapping entries.
     pub const CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE: CosmosStatus = CosmosStatus {
         status_code: StatusCode::InternalServerError,
         sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE),
@@ -2179,6 +2194,13 @@ impl CosmosStatus {
     pub const CLIENT_COMPUTE_RANGE_INVOKED_WITH_EMPTY_PARTITION_KEY: CosmosStatus = CosmosStatus {
         status_code: StatusCode::InternalServerError,
         sub_status: Some(SubStatusCode::CLIENT_COMPUTE_RANGE_INVOKED_WITH_EMPTY_PARTITION_KEY),
+    };
+
+    /// 500 / 20213 — continuation token's saved range could not be
+    /// honored on resume because the topology no longer covers it.
+    pub const CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED),
     };
 
     // SDK-detected service contract violations (HTTP varies, sub-status 20300-20349)
