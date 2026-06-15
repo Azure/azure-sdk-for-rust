@@ -17,10 +17,13 @@ use std::sync::Arc;
 use std::time::Duration;
 
 /// How aggressively diagnostics are built at the gate.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+///
+/// `Mode` intentionally does **not** implement [`Default`]: the meaningful default lives on
+/// [`DiagnosticsPolicy`] (which defaults to [`Mode::Always`]). Deriving `Default` here would make
+/// `Mode::default()` return `Off`, silently contradicting the policy default — so it is omitted.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Mode {
     /// Never build. Capture is skipped entirely — truly zero cost.
-    #[default]
     Off,
     /// Build only when the threshold rule fires (slow, or errored when `capture_on_error`).
     Threshold,

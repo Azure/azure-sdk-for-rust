@@ -1214,6 +1214,13 @@ pub(crate) struct DiagnosticsContextBuilder {
     /// `None` when hedging was not selected for this operation.
     hedge_diagnostics: Option<HedgeDiagnostics>,
 
+    /// When `false`, the builder is a cheap no-op: per-request population
+    /// ([`start_request`](Self::start_request) and friends) records nothing and
+    /// [`complete`](Self::complete) yields a minimal context (activity id + final status, no
+    /// requests). Used when the diagnostics-capture gate is [`Mode::Off`](super::Mode::Off) so the
+    /// driver pays ~nothing on the hot path. Defaults to `true` (full collection).
+    enabled: bool,
+
     /// Test-only override for system usage snapshot, bypassing the CPU monitor.
     #[cfg(test)]
     test_system_usage: Option<SystemUsageSnapshot>,
@@ -1233,9 +1240,29 @@ impl DiagnosticsContextBuilder {
             #[cfg(feature = "fault_injection")]
             fault_injection_enabled: false,
             hedge_diagnostics: None,
+            enabled: true,
             #[cfg(test)]
             test_system_usage: None,
         }
+    }
+
+    /// Creates a **disabled** builder: a cheap no-op used when the diagnostics-capture gate is
+    /// [`Mode::Off`](super::Mode::Off).
+    ///
+    /// Per-request population records nothing (no allocation per attempt) and [`complete`](Self::complete)
+    /// yields a minimal context (activity id + final operation status, empty request list). This is
+    /// how the driver short-circuits the build **before** it happens under `Off`, rather than
+    /// building and discarding.
+    pub(crate) fn new_disabled(activity_id: ActivityId, options: Arc<DiagnosticsOptions>) -> Self {
+        let mut builder = Self::new(activity_id, options);
+        builder.enabled = false;
+        builder
+    }
+
+    /// Whether this builder collects per-request diagnostics (`false` is the `Off` no-op mode).
+    #[cfg(test)]
+    pub(crate) fn is_enabled(&self) -> bool {
+        self.enabled
     }
 
     /// Sets the CPU/memory monitor for system usage snapshots.
@@ -1250,6 +1277,9 @@ impl DiagnosticsContextBuilder {
 
     /// Sets the hedging diagnostics for this operation.
     pub(crate) fn set_hedge_diagnostics(&mut self, diagnostics: HedgeDiagnostics) {
+        if !self.enabled {
+            return;
+        }
         self.hedge_diagnostics = Some(diagnostics);
     }
 
@@ -1273,6 +1303,7 @@ impl DiagnosticsContextBuilder {
             #[cfg(feature = "fault_injection")]
             fault_injection_enabled: self.fault_injection_enabled,
             hedge_diagnostics: None,
+            enabled: self.enabled,
             #[cfg(test)]
             test_system_usage: self.test_system_usage.clone(),
         }
@@ -1285,6 +1316,9 @@ impl DiagnosticsContextBuilder {
     /// `hedge_diagnostics` are discarded because those operation-level
     /// fields are written directly on the parent.
     pub(crate) fn merge_hedge_attempt(&mut self, attempt: Self) {
+        if !self.enabled {
+            return;
+        }
         if self.requests.is_empty() {
             self.requests = attempt.requests;
         } else {
@@ -1345,6 +1379,13 @@ impl DiagnosticsContextBuilder {
         transport_http_version: TransportHttpVersion,
         endpoint: &CosmosEndpoint,
     ) -> RequestHandle {
+        // Disabled (Off) builder: record nothing and hand back an out-of-range handle. Every
+        // handle-consuming method (`update_request`, `complete_request`, `add_event`, …) already
+        // no-ops when `self.requests.get_mut(handle.0)` misses, so the whole per-request population
+        // path becomes free without any change to those call sites.
+        if !self.enabled {
+            return RequestHandle(usize::MAX);
+        }
         let request = RequestDiagnostics::new(
             execution_context,
             pipeline_type,
@@ -2070,6 +2111,61 @@ mod tests {
         let mut builder = DiagnosticsContextBuilder::new(activity_id, make_options());
         f(&mut builder);
         builder.complete()
+    }
+
+    #[test]
+    fn disabled_builder_records_nothing_per_request() {
+        // The Off path: a disabled builder must skip all per-request population while keeping the
+        // operation-level activity id + final status, and every handle method must stay a safe
+        // no-op (the out-of-range handle never indexes into the empty request list).
+        let activity_id = ActivityId::from_string("off-op".to_string());
+        let mut builder =
+            DiagnosticsContextBuilder::new_disabled(activity_id.clone(), make_options());
+        assert!(!builder.is_enabled());
+
+        let endpoint = CosmosEndpoint::global(url::Url::parse("https://acct/").unwrap());
+        let handle = builder.start_request(
+            ExecutionContext::Initial,
+            PipelineType::DataPlane,
+            TransportSecurity::Secure,
+            TransportKind::Gateway,
+            TransportHttpVersion::Http2,
+            &endpoint,
+        );
+        // Disabled start_request returns an out-of-range handle and pushes nothing.
+        assert_eq!(handle.0, usize::MAX);
+        assert_eq!(builder.request_count(), 0);
+
+        // All handle-consuming methods must be safe no-ops on the out-of-range handle.
+        builder.update_request(handle, |req| {
+            req.with_charge(RequestCharge::new(9.9));
+        });
+        builder.complete_request(handle, StatusCode::Ok, None);
+        builder.add_event(handle, RequestEvent::new(RequestEventType::TransportStart));
+        builder.timeout_request(handle);
+        builder.set_operation_status(StatusCode::Ok, None);
+        assert_eq!(builder.request_count(), 0);
+
+        let ctx = builder.complete();
+        assert_eq!(ctx.activity_id().as_str(), "off-op");
+        assert_eq!(ctx.request_count(), 0);
+        // The cheap minimal context still carries the final operation status.
+        assert_eq!(ctx.status().map(|s| u16::from(s.status_code())), Some(200));
+    }
+
+    #[test]
+    fn enabled_builder_still_records_fully() {
+        // Guard against the Off short-circuit leaking into the default (Always) path.
+        let mut builder = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("on-op".to_string()),
+            make_options(),
+        );
+        assert!(builder.is_enabled());
+        let h = builder.start_test_request(ExecutionContext::Initial, None, "https://acct/");
+        assert_eq!(h.0, 0);
+        builder.complete_request(h, StatusCode::Ok, None);
+        let ctx = builder.complete();
+        assert_eq!(ctx.request_count(), 1);
     }
 
     /// Helper extension trait for test-friendly start_request.

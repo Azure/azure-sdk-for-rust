@@ -40,9 +40,11 @@ fn capture_s2(pool: &LogPool, policy: &DiagnosticsPolicy, options: &Arc<Diagnost
 fn diagnostics_benchmarks(c: &mut Criterion) {
     let options = Arc::new(DiagnosticsOptions::default());
 
-    // Default-Off baseline: the gate is `Mode::Off`, so even if a record stream was appended the
-    // gate drops it without building. In the real driver, Off also skips constructing the recorder
-    // entirely, so this is the upper bound on the (already negligible) default-Off cost.
+    // `Mode::Off`: the gate short-circuits BEFORE `build_context` runs (it is never called). In the
+    // live driver, Off additionally skips constructing the recorder AND disables the
+    // `DiagnosticsContextBuilder` so per-request population is free too (see the
+    // `disabled_builder_records_nothing_per_request` unit test). This measures the recorder-path
+    // Off cost: append + gate-drops-without-building.
     let off_policy = DiagnosticsPolicy::off();
     c.bench_function("capture_off_noop", |b| {
         let pool = LogPool::new();
@@ -60,7 +62,9 @@ fn diagnostics_benchmarks(c: &mut Criterion) {
         });
     });
 
-    // Dropped / fast-success path: a 1 ms success under a 5 ms threshold -> nothing built.
+    // Threshold fast-success: a 1 ms success under a 5 ms threshold. The gate decides NOT to build
+    // and `finish` returns before `build_context` — the build is short-circuited, NOT built-then-
+    // dropped. Contrast the cost with `capture_built_context` below to see the saving.
     let drop_policy = DiagnosticsPolicy::threshold(Duration::from_millis(5));
     c.bench_function("capture_dropped_fast_success", |b| {
         let pool = LogPool::new();
@@ -78,7 +82,9 @@ fn diagnostics_benchmarks(c: &mut Criterion) {
         });
     });
 
-    // Build cost: materialize the canonical DiagnosticsContext, paid only past the gate.
+    // Build cost: materialize the canonical DiagnosticsContext, paid only when the gate fires
+    // (error / slow / Always). The gap between this and the two drop benchmarks above is the cost
+    // the gate saves by deciding BEFORE the build.
     c.bench_function("capture_built_context", |b| {
         let pool = LogPool::new();
         let policy = DiagnosticsPolicy::always();

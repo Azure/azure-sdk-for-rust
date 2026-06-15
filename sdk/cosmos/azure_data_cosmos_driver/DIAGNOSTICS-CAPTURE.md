@@ -35,17 +35,27 @@ Goals:
 - **G5** — The public SDK boundary (`diagnostics::DiagnosticsContext`, consumed by
   `azure_data_cosmos`) is **unchanged**: this is additive / non-breaking.
 
-## 2. Default behavior
+## 2. Default behavior & how the gate short-circuits the build
 
 The capture gate defaults to [`Mode::Always`] — diagnostics are produced **out-of-the-box**,
 matching the driver's historical always-on behavior. Callers opt into the cheaper modes explicitly
-via [`DriverOptions::with_capture_diagnostics_policy`](crate::options::DriverOptions):
+via [`DriverOptions::with_capture_diagnostics_policy`](crate::options::DriverOptions). The gate
+decides **before** the build, not after:
 
-- **`Always`** (default) — always surface the canonical context.
-- **`Threshold`** — surface on error or when the operation exceeds a latency threshold; drop a
-  fast success cheaply.
-- **`Off`** — never surface via the capture accessor (the rich `response.diagnostics()` boundary
-  is unaffected).
+- **`Always`** (default) — the builder collects fully and the canonical context is surfaced. No
+  behavior change versus the historical driver.
+- **`Off`** — the `DiagnosticsContextBuilder` is created **disabled**: `start_request` returns an
+  out-of-range handle without recording, so all per-request population auto-no-ops, and `complete()`
+  yields a minimal context (activity id + final status, empty request list). The per-request build
+  cost is genuinely skipped, not built-then-dropped. `response.diagnostics()` returns that minimal
+  context (the accessor is non-optional), and `capture_diagnostics()` is `None`.
+- **`Threshold`** — the builder collects fully during the operation (the slow/error verdict is only
+  known at the end), and at op-end the gate decides whether to **surface** the context via
+  `capture_diagnostics()`. On a fast success the standalone capture materialization
+  ([`build_context`](self::context)) is short-circuited before it runs (see §7); the pipeline's own
+  incrementally-built context still backs the always-on `response.diagnostics()`. See
+  [§8 Known nuances](#8-known-nuances--boundaries) for the precise boundary on fast-success
+  build-avoidance under `Threshold`.
 
 ## 3. Design exploration & benchmarks
 
@@ -151,16 +161,29 @@ cargo clippy -p azure_data_cosmos_driver --all-features --all-targets -- -D warn
 cargo test -p azure_data_cosmos_driver --all-features
 ```
 
-## 8. Known nuances & next steps
+## 8. Known nuances & boundaries
 
+- **`Off` short-circuits the build (resolved).** Under `Off` the builder is created disabled, so the
+  per-request population and per-attempt allocations are skipped entirely — the gate decides before
+  the build, not after. The only residual cost is the trivial minimal `complete()` (an empty request
+  list wrapped in an `Arc`), which is unavoidable because `response.diagnostics()` is non-optional.
+- **`Threshold` fast-success build-avoidance — the precise boundary.** Under `Threshold` the
+  slow/error verdict is only known at op-end, *after* the pipeline has already populated the builder
+  incrementally during I/O. The rich fields (`RequestEvent` timelines, transport-shard /
+  fault-injection diagnostics, true per-attempt wall-clock timing) are produced incrementally and
+  cannot be reconstructed after the fact; deferring them would require buffering that costs the same
+  as populating. The always-on, non-optional `response.diagnostics()` needs the context regardless.
+  Therefore, on a `Threshold` fast success the pipeline's incremental build still happens (it is
+  cheap — `complete()` is a move + `Arc`, and JSON is lazy); only the standalone capture
+  materialization is short-circuited. Fully avoiding the pipeline's incremental build on a
+  `Threshold` fast success **without data loss** would require routing all rich-field collection
+  through the append-log (a full diagnostics-collection rewrite), which is out of scope here. **No
+  rich data is dropped when the gate fires.**
 - **Standalone replay timing.** When the recorder builds a `DiagnosticsContext` standalone (no
   pipeline — tests/examples), the builder's clock measures replay time, so the top-level
   `total_duration_ms` reflects replay; per-attempt latency is surfaced via `server_duration_ms`. In
   the live driver path the pipeline feeds the builder with **true wall-clock timing**, so this only
   affects standalone use.
-- **Cheap-drop and the pipeline build.** Under `Threshold`/`Off`, the gate currently drops the
-  already-built context (it does not yet prevent the pipeline from building it). Gating the
-  pipeline's build itself — so a fast success pays nothing — is the natural follow-up.
 - **Threshold configuration.** The gate's latency threshold is a plain `Duration`; it should
   eventually read the driver's diagnostics configuration (verbosity / per-operation-kind
   thresholds).

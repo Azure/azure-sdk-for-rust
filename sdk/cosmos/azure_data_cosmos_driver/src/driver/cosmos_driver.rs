@@ -392,17 +392,23 @@ impl CosmosDriver {
         runtime: &CosmosDriverRuntime,
         activity_id: crate::models::ActivityId,
         endpoint: &AccountEndpoint,
+        enabled: bool,
     ) -> (DiagnosticsContextBuilder, TransportSecurity) {
-        let mut diagnostics = DiagnosticsContextBuilder::new(
-            activity_id,
-            Arc::new(crate::options::DiagnosticsOptions::default()),
-        );
-        diagnostics.set_cpu_monitor(runtime.cpu_monitor().clone());
-        diagnostics.set_machine_id(Arc::clone(runtime.machine_id()));
-        #[cfg(feature = "fault_injection")]
-        if runtime.fault_injection_enabled() {
-            diagnostics.set_fault_injection_enabled(true);
-        }
+        let options = Arc::new(crate::options::DiagnosticsOptions::default());
+        let diagnostics = if enabled {
+            let mut diagnostics = DiagnosticsContextBuilder::new(activity_id, options);
+            diagnostics.set_cpu_monitor(runtime.cpu_monitor().clone());
+            diagnostics.set_machine_id(Arc::clone(runtime.machine_id()));
+            #[cfg(feature = "fault_injection")]
+            if runtime.fault_injection_enabled() {
+                diagnostics.set_fault_injection_enabled(true);
+            }
+            diagnostics
+        } else {
+            // Off: a disabled builder that records nothing per-request. Skip the CPU-monitor /
+            // machine-id / fault-injection setup entirely so the hot path pays ~nothing.
+            DiagnosticsContextBuilder::new_disabled(activity_id, options)
+        };
         let transport_security =
             if bool::from(runtime.connection_pool().emulator_server_cert_validation())
                 && is_emulator_host(endpoint)
@@ -437,11 +443,14 @@ impl CosmosDriver {
         };
 
         // Off-pipeline envelope: same shape as the operation pipeline's Step 7 so
-        // err.diagnostics() exposes the same fields data-plane callers see.
+        // err.diagnostics() exposes the same fields data-plane callers see. Bootstrap
+        // account-metadata diagnostics are always collected (not gated): they are off the
+        // per-operation hot path and feed error reporting for connection/auth failures.
         let (mut diagnostics, transport_security) = Self::new_diagnostics_envelope(
             runtime,
             crate::models::ActivityId::new_uuid(),
             &endpoint,
+            true,
         );
         // NOTE: `transport.diagnostics_http_version()` reflects the *currently configured*
         // version on the adaptive transport. For the very first bootstrap call this is the
@@ -1599,8 +1608,17 @@ impl CosmosDriver {
         let resource_type = operation.resource_type();
         let is_dataplane = uses_dataplane_pipeline(resource_type, operation_type);
         // Step 7: Initialize diagnostics (shared envelope shape with the bootstrap fetch).
-        let (diagnostics_builder, transport_security) =
-            Self::new_diagnostics_envelope(&self.runtime, activity_id.clone(), &endpoint);
+        // The capture gate governs the engine: under `Off` the builder is created **disabled** so
+        // the per-request population is short-circuited BEFORE it happens (not built then dropped);
+        // under `Threshold`/`Always` the builder collects fully and the gate decides what to surface.
+        let capture_policy = self.options.capture_diagnostics_policy();
+        let diagnostics_enabled = capture_policy.mode != crate::diagnostics::capture::Mode::Off;
+        let (diagnostics_builder, transport_security) = Self::new_diagnostics_envelope(
+            &self.runtime,
+            activity_id.clone(),
+            &endpoint,
+            diagnostics_enabled,
+        );
 
         let pipeline_type = if is_dataplane {
             PipelineType::DataPlane
@@ -1617,19 +1635,17 @@ impl CosmosDriver {
         // by the capture-owned `DiagnosticsContextBuilder` inside the pipeline; here the recorder
         // captures the operation outcome + elapsed time and the gate decides whether that canonical
         // context is surfaced via `CosmosResponse::capture_diagnostics()`. The default is `Always`
-        // (diagnostics out-of-the-box); `Off` skips the recorder entirely. There is one diagnostics
-        // model — capture owns it and gates it; it is not rebuilt as a parallel object here.
-        let capture_policy = self.options.capture_diagnostics_policy();
+        // (diagnostics out-of-the-box); `Off` skips both the recorder AND the builder population.
+        // There is one diagnostics model — capture owns it and gates it; it is not rebuilt here.
         let endpoint_str = endpoint.to_string();
-        let mut capture_recorder = (capture_policy.mode != crate::diagnostics::capture::Mode::Off)
-            .then(|| {
-                crate::diagnostics::capture::DiagnosticsRecorder::start(
-                    &self.capture_pool,
-                    &format!("{operation_type:?} {resource_type:?}"),
-                    &endpoint_str,
-                    activity_id.as_str(),
-                )
-            });
+        let mut capture_recorder = diagnostics_enabled.then(|| {
+            crate::diagnostics::capture::DiagnosticsRecorder::start(
+                &self.capture_pool,
+                &format!("{operation_type:?} {resource_type:?}"),
+                &endpoint_str,
+                activity_id.as_str(),
+            )
+        });
 
         // Step 8: Execute via the new operation pipeline
         let result = super::pipeline::operation_pipeline::execute_operation_pipeline(
