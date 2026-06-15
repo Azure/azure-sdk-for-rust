@@ -21,6 +21,7 @@ edition.workspace = true
 async-trait.workspace = true
 azure_core = { workspace = true, default-features = false }
 fe2o3-amqp = { workspace = true, optional = true }
+fe2o3-amqp-ws = { workspace = true, optional = true }
 fe2o3-amqp-cbs = { workspace = true, optional = true }
 fe2o3-amqp-ext = { workspace = true, optional = true }
 fe2o3-amqp-management = { workspace = true, optional = true }
@@ -38,11 +39,12 @@ serde_json.workspace = true
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 
 [features]
-default = ["fe2o3_amqp", "fe2o3-amqp/native-tls"]
+default = ["fe2o3_amqp", "fe2o3-amqp/native-tls", "fe2o3-amqp-ws/native-tls"]
 ffi = []
 test = []
 fe2o3_amqp = [
   "dep:fe2o3-amqp",
+  "dep:fe2o3-amqp-ws",
   "fe2o3-amqp-types",
   "fe2o3-amqp-ext",
   "fe2o3-amqp-management",

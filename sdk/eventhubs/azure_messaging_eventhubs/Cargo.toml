@@ -21,7 +21,9 @@ async-lock.workspace = true
 async-stream.workspace = true
 async-trait.workspace = true
 azure_core = { workspace = true, default-features = false }
-# Unreleased: needs AmqpSessionOptions::with_unbounded_windows from 1.1.0-beta.1 (issue #4570).
+# Unreleased: needs AmqpSessionOptions::with_unbounded_windows (issue #4570) and
+# AmqpTransport for AMQP-over-WebSockets (issue #3601) from 1.1.0-beta.1. The root
+# workspace dependency stays version-only; the path is stripped at pack time.
 azure_core_amqp = { path = "../../core/azure_core_amqp", version = "1.1.0-beta.1" }
 futures.workspace = true
 rand.workspace = true

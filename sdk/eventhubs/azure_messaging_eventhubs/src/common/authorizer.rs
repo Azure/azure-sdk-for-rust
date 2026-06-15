@@ -449,6 +449,7 @@ mod tests {
             url,
             None,
             None,
+            azure_core_amqp::AmqpTransport::default(),
             mock_credential.clone(),
             Default::default(),
         );
@@ -513,6 +514,7 @@ mod tests {
             url,
             None,
             None,
+            azure_core_amqp::AmqpTransport::default(),
             mock_credential.clone(),
             Default::default(),
         );
@@ -581,6 +583,7 @@ mod tests {
             host.clone(),
             None,
             None,
+            azure_core_amqp::AmqpTransport::default(),
             mock_credential.clone(),
             Default::default(),
         ));
@@ -722,6 +725,7 @@ mod tests {
             url.clone(),
             None,
             None,
+            azure_core_amqp::AmqpTransport::default(),
             credential.clone(),
             Default::default(),
         );

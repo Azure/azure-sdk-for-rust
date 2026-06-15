@@ -17,6 +17,7 @@ use azure_core::{
 };
 use azure_core_amqp::{
     error::AmqpErrorKind, AmqpError, AmqpSendOptions, AmqpSendOutcome, AmqpSenderApis,
+    AmqpTransport,
 };
 use batch::{EventDataBatch, EventDataBatchOptions};
 use std::{fmt::Debug, sync::Arc};
@@ -99,12 +100,14 @@ impl ProducerClient {
         application_id: Option<String>,
         retry_options: RetryOptions,
         custom_endpoint: Option<Url>,
+        transport: AmqpTransport,
     ) -> Self {
         Self {
             connection: RecoverableConnection::new(
                 endpoint.clone(),
                 application_id,
                 custom_endpoint,
+                transport,
                 credential,
                 retry_options,
             ),
@@ -442,7 +445,7 @@ impl ProducerClient {
 
 pub mod builders {
     use super::ProducerClient;
-    use crate::{Result, RetryOptions};
+    use crate::{models::TransportType, Result, RetryOptions};
     use azure_core::{http::Url, Error};
     use std::sync::Arc;
 
@@ -473,6 +476,9 @@ pub mod builders {
 
         /// The custom endpoint for the Event Hub.
         custom_endpoint: Option<String>,
+
+        /// The transport used to communicate with the Event Hub.
+        transport_type: Option<TransportType>,
     }
 
     impl ProducerClientBuilder {
@@ -528,6 +534,21 @@ pub mod builders {
             self
         }
 
+        /// Sets the transport used to communicate with the Event Hub.
+        ///
+        /// # Arguments
+        /// * `transport_type` - The transport to use. Defaults to
+        ///   [`TransportType::AmqpTcp`]. Use [`TransportType::AmqpWebSocket`]
+        ///   to tunnel AMQP over WebSockets (port 443) when the native AMQP
+        ///   ports are blocked.
+        ///
+        /// # Returns
+        /// The updated [`ProducerClientBuilder`].
+        pub fn with_transport_type(mut self, transport_type: TransportType) -> Self {
+            self.transport_type = Some(transport_type);
+            self
+        }
+
         /// Opens the connection to the Event Hub.
         ///
         /// # Arguments
@@ -559,6 +580,7 @@ pub mod builders {
                 self.application_id,
                 self.retry_options.unwrap_or_default(),
                 custom_endpoint,
+                self.transport_type.unwrap_or_default().into(),
             );
 
             // Open a connection to the Event Hub to ensure that the client is ready to send messages.

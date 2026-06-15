@@ -131,6 +131,47 @@ pub struct EventHubPartitionProperties {
     pub is_empty: bool,
 }
 
+/// The type of transport used to communicate with the Event Hubs service.
+///
+/// Event Hubs is normally accessed using AMQP framed directly over a TCP/TLS
+/// socket (port 5671). Some networks (for example corporate firewalls) only
+/// permit outbound connections on port 443; in those environments AMQP can be
+/// tunneled over WebSockets instead.
+///
+/// # Examples
+///
+/// ```no_run
+/// use azure_messaging_eventhubs::{ProducerClient, models::TransportType};
+/// use azure_identity::DeveloperToolsCredential;
+///
+/// #[tokio::main]
+/// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+///     let credential = DeveloperToolsCredential::new(None)?;
+///     let producer = ProducerClient::builder()
+///         .with_transport_type(TransportType::AmqpWebSocket)
+///         .open("my_namespace", "my_eventhub", credential)
+///         .await?;
+///     Ok(())
+/// }
+/// ```
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub enum TransportType {
+    /// AMQP framing over a TCP/TLS socket (port 5671). This is the default.
+    #[default]
+    AmqpTcp,
+    /// AMQP framing tunneled over secure WebSockets (`wss://`, port 443).
+    AmqpWebSocket,
+}
+
+impl From<TransportType> for azure_core_amqp::AmqpTransport {
+    fn from(value: TransportType) -> Self {
+        match value {
+            TransportType::AmqpTcp => azure_core_amqp::AmqpTransport::Tcp,
+            TransportType::AmqpWebSocket => azure_core_amqp::AmqpTransport::WebSocket,
+        }
+    }
+}
+
 /// Uniquely identifies a message.
 ///
 /// This type can be used to uniquely identify a message within a message broker or messaging system.

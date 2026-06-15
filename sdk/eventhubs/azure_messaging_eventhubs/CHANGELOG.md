@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added `models::TransportType` and `with_transport_type` builder methods on `ProducerClient` and `ConsumerClient`. `TransportType::AmqpWebSocket` tunnels AMQP over secure WebSockets (`wss://`, port 443), allowing clients to connect from networks that block the native AMQP ports (5671/5672). This matches the transport option offered by the .NET, Java, and Python Azure SDKs. ([#3601](https://github.com/Azure/azure-sdk-for-rust/issues/3601))
 - The `EventProcessor` now opens every partition receiver with AMQP epoch (owner level) `0` and surfaces broker-initiated displacement as the new `EventHubsError::ConsumerDisconnected` error kind. When a second `EventProcessor` instance claims a partition this instance is currently holding, the broker disconnects this instance's receiver and the consumer's `stream_events()` resolves with `ConsumerDisconnected`. This matches the behavior of `EventProcessorClient` in the .NET and Java Azure SDKs. Consumers should pattern-match on `ErrorKind::ConsumerDisconnected` to detect a stolen partition and re-acquire a client via `next_partition_client()`.
 - Added `EventHubsError::ConsumerDisconnected(Option<AmqpDescribedError>)` error variant.
 
