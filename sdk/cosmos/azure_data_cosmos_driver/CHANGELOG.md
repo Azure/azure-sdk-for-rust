@@ -13,6 +13,7 @@
 
 ### Bugs Fixed
 
+- Fixed a cold account-metadata fetch preempting its own cross-region failover when the caller's future was dropped (Rust's cancellation mechanism) mid-flight against an unhealthy region. The on-demand account-metadata fetch (and its inline regional-failover chain) now runs on a detached, internally-bounded task, so dropping the caller no longer cancels the in-flight attempt before the failover to the next region can run. The detached work is bounded by a hard deadline (5 minutes) so it cannot leak indefinitely. Note: this introduces a bounded detached task for the (idempotent, GET-only) account-metadata path, an intentional exception to the structural-cancellation model used for hedging; container and partition-key-range metadata reads are not yet covered. ([#4253](https://github.com/Azure/azure-sdk-for-rust/issues/4253))
 - Fixed duplicate items being returned on cross-partition query resume after a physical partition split. When a cross-partition query was paused, serialized to a continuation token, and resumed after the underlying partition had split, the resumed iterator could re-emit items the caller had already consumed on a prior page. The continuation token now records per-range sibling state and is correctly propagated to every surviving leaf after a split. ([#4550](https://github.com/Azure/azure-sdk-for-rust/pull/4550))
 
 ### Other Changes
