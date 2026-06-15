@@ -398,6 +398,18 @@ impl GlobalEndpointManager {
             .unwrap()
             .update(write_locations, read_locations);
     }
+
+    /// Seeds the account-properties cache so that `refresh_location` is satisfied
+    /// from the cache and does not attempt a live `get_database_account` call.
+    ///
+    /// This lets tests exercise retry policies (which call `before_send_request`
+    /// -> `refresh_location`) without standing up a real Cosmos account.
+    #[cfg(test)]
+    pub(crate) async fn seed_account_properties_cache(&self, properties: AccountProperties) {
+        self.account_properties_cache
+            .insert(ACCOUNT_PROPERTIES_KEY, properties)
+            .await;
+    }
 }
 
 #[cfg(test)]

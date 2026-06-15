@@ -9,6 +9,7 @@
 
 ### Bugs Fixed
 
+- Fixed a control-plane metadata read (e.g. cold collection/partition-key-range cache warm-up) preempting its own cross-region failover when the caller's future was dropped (Rust's cancellation mechanism) mid-flight against an unhealthy region. Metadata reads now run on a detached, internally-bounded executor so a dropped caller no longer cancels the in-flight attempt before the retry policy can fail over to the next region. The detached work is bounded by a hard deadline (default 5 minutes, configurable via `AZURE_COSMOS_METADATA_DETACHED_HARD_DEADLINE_SECONDS`, clamped to 24 hours) and a defensive 50-attempt cap. Only idempotent metadata reads are detached; metadata writes and all data-plane requests are unaffected. ([#4253](https://github.com/Azure/azure-sdk-for-rust/issues/4253))
 - Fixed `410 Gone` responses carrying a partition-key-range routing sub-status (`1000` NameCacheIsStale, `1002` PartitionKeyRangeGone, `1007` CompletingSplit) escaping the retry pipeline as a raw, unclassifiable `410` (returned directly to the caller on writes, or after non-curative cross-region failover on reads). These are now retried within a small bound — flagging a routing-cache refresh so SDK-routing paths re-resolve stale routing information — and, on exhaustion, surfaced as `503 Service Unavailable` with the original sub-status preserved. This aligns the surfaced status with the rest of the Gone family so application-layer retry/circuit-breaker logic (wired for `503`, not `410`) can classify it.
 
 ## 0.31.0 (2026-02-25)

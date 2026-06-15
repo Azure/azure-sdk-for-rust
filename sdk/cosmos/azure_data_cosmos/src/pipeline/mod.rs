@@ -78,9 +78,14 @@ impl GatewayPipeline {
         context: Context<'_>,
     ) -> azure_core::Result<CosmosResponse<T>> {
         self.options.apply_headers(&mut cosmos_request.headers);
-        // Prepare a callback delegate to invoke the http request.
-        let sender = |req: &mut CosmosRequest| {
-            let pipeline = self.pipeline.clone();
+        // Prepare a callback delegate to invoke the http request. The closure must be
+        // `'static` because the retry handler may run it on a detached background task
+        // for metadata requests, so it owns clones of the pipeline and context rather
+        // than borrowing `self`.
+        let pipeline = self.pipeline.clone();
+        let context = context.into_owned();
+        let sender = move |req: &mut CosmosRequest| {
+            let pipeline = pipeline.clone();
             let ctx = context.clone();
             let success_options = CheckSuccessOptions {
                 success_codes: &SUCCESS_CODES,
