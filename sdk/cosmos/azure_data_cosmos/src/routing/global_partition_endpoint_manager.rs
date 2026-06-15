@@ -235,13 +235,15 @@ impl GlobalPartitionEndpointManager {
         }
     }
 
-    /// Attempts to initiate failback to previously failed endpoints non-deterministically.
+    /// Attempts to initiate failback to previously failed endpoints, gated by a probe.
     ///
     /// Scans `partition_key_range_to_location_for_read_and_write` for partitions whose
     /// first failure occurred more than [`partition_unavailability_duration_secs`] ago.
-    /// Eligible partitions are marked healthy via [`mark_endpoints_to_healthy`], and their
-    /// override entries are removed, allowing future requests to be routed back to the
-    /// original endpoint.
+    /// Before failing a partition back, the previously-failed endpoint is verified with a
+    /// connectivity probe ([`GlobalEndpointManager::probe_endpoint`]); only partitions whose
+    /// endpoint passes the probe have their override entries removed, allowing future requests
+    /// to be routed back to the original endpoint. This prevents repeatedly routing partitions
+    /// back to an endpoint that is still unreachable.
     ///
     /// # Errors
     /// Returns an error if the read lock on the partition map is poisoned.
@@ -288,10 +290,31 @@ impl GlobalPartitionEndpointManager {
             // Mark endpoints as healthy directly
             Self::mark_endpoints_to_healthy(&mut pk_range_to_endpoint_mappings);
 
+            // Probe each unique previously-failed endpoint before failing back, so we do
+            // not route partitions back to an endpoint that is still unreachable (e.g.
+            // firewall-blocked). Connectivity — not HTTP status — is what gates failback.
+            let mut reachability: HashMap<String, bool> = HashMap::new();
+            for (_, (_, original_failed_location, _)) in pk_range_to_endpoint_mappings.iter() {
+                if !reachability.contains_key(original_failed_location) {
+                    let reachable = match Url::parse(original_failed_location) {
+                        Ok(url) => self.global_endpoint_manager.probe_endpoint(&url).await,
+                        // If the stored endpoint can't be parsed we can't probe it; fall
+                        // back to the previous optimistic behavior rather than stranding
+                        // the partition forever.
+                        Err(_) => true,
+                    };
+                    reachability.insert(original_failed_location.clone(), reachable);
+                }
+            }
+
             for (pk_range, (_, original_failed_location, current_health_state)) in
                 pk_range_to_endpoint_mappings
             {
-                if current_health_state == PartitionHealthStatus::Healthy {
+                let reachable = reachability
+                    .get(&original_failed_location)
+                    .copied()
+                    .unwrap_or(false);
+                if current_health_state == PartitionHealthStatus::Healthy && reachable {
                     info!(
                         "Initiating failback to endpoint: {}, for partition key range: {:?}",
                         original_failed_location, pk_range

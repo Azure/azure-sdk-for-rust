@@ -274,6 +274,9 @@ impl CosmosClientBuilder {
             Vec::new(),
             pipeline_core.clone(),
         ));
+        // Start the background failback-probe loop so unavailable endpoints only
+        // rejoin the rotation after a connectivity probe confirms reachability.
+        global_endpoint_manager.start_failback_probe_loop();
 
         let global_partition_endpoint_manager: Arc<GlobalPartitionEndpointManager> =
             GlobalPartitionEndpointManager::new(global_endpoint_manager.clone(), false, true);

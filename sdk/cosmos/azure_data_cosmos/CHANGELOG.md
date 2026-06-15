@@ -9,6 +9,7 @@
 
 ### Bugs Fixed
 
+- Fixed unavailable regional endpoints failing back into the routing rotation purely on a time expiry, with no connectivity check. A firewall-blocked endpoint would be marked available again after the cooldown, have real traffic routed to it, time out on connect, and be re-marked unavailable — a sustained low-throughput loop. Endpoints now only return to rotation after a connectivity probe (an HTTP request through the gateway pipeline; any completed response counts as reachable, only connection-level failures count as unreachable) confirms they are reachable, driven by a background failback loop on the client. The same probe gate is applied to partition-level circuit-breaker failback. ([#4597](https://github.com/Azure/azure-sdk-for-rust/issues/4597))
 - Fixed `410 Gone` responses carrying a partition-key-range routing sub-status (`1000` NameCacheIsStale, `1002` PartitionKeyRangeGone, `1007` CompletingSplit) escaping the retry pipeline as a raw, unclassifiable `410` (returned directly to the caller on writes, or after non-curative cross-region failover on reads). These are now retried within a small bound — flagging a routing-cache refresh so SDK-routing paths re-resolve stale routing information — and, on exhaustion, surfaced as `503 Service Unavailable` with the original sub-status preserved. This aligns the surfaced status with the rest of the Gone family so application-layer retry/circuit-breaker logic (wired for `503`, not `410`) can classify it.
 
 ## 0.31.0 (2026-02-25)

@@ -1,6 +1,7 @@
 //! Concrete (yet unimplemented) GlobalEndpointManager.
 //! All methods currently use `unimplemented!()` as placeholders per request to keep them blank.
 
+use crate::background_task_manager::BackgroundTaskManager;
 use crate::constants::ACCOUNT_PROPERTIES_KEY;
 use crate::cosmos_request::CosmosRequest;
 use crate::models::AccountProperties;
@@ -9,12 +10,28 @@ use crate::regions::RegionName;
 use crate::resource_context::{ResourceLink, ResourceType};
 use crate::routing::async_cache::AsyncCache;
 use crate::routing::location_cache::{LocationCache, RequestOperation};
+use azure_core::async_runtime::get_async_runtime;
+use azure_core::error::ErrorKind;
 use azure_core::http::{Context, Pipeline, Response};
+use azure_core::time::Duration as AzureDuration;
 use azure_core::Error;
 use std::collections::HashMap;
-use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex, Weak};
 use std::time::Duration;
 use url::Url;
+
+/// Interval (in seconds) at which the background failback loop probes endpoints
+/// whose unavailability cooldown has elapsed.
+const FAILBACK_PROBE_INTERVAL_SECS: i64 = 60;
+
+/// Returns `true` if the error indicates the endpoint could not be reached
+/// (the connection itself failed), as opposed to the service returning a
+/// response. Mirrors the connection-failure classification used by the client
+/// retry policy.
+fn is_connection_failure(error: &Error) -> bool {
+    matches!(error.kind(), ErrorKind::Io | ErrorKind::Connection)
+}
 
 /// Manages global endpoint routing, failover, and location awareness for Cosmos DB requests.
 ///
@@ -35,6 +52,12 @@ pub(crate) struct GlobalEndpointManager {
 
     /// Cache for account properties with 600 second TTL to reduce redundant service calls
     account_properties_cache: AsyncCache<&'static str, AccountProperties>,
+
+    /// Manages the background failback-probe task and cancels it when dropped.
+    background_task_manager: BackgroundTaskManager,
+
+    /// Guards against starting the background failback-probe loop more than once.
+    probe_loop_active: AtomicBool,
 }
 
 impl GlobalEndpointManager {
@@ -76,6 +99,114 @@ impl GlobalEndpointManager {
             location_cache,
             pipeline,
             account_properties_cache,
+            background_task_manager: BackgroundTaskManager::new(),
+            probe_loop_active: AtomicBool::new(false),
+        }
+    }
+
+    /// Starts the background failback-probe loop if it is not already running.
+    ///
+    /// # Summary
+    /// Spawns a single background task (tracked by the [`BackgroundTaskManager`], cancelled
+    /// when this manager — and thus the client — is dropped) that periodically probes
+    /// endpoints whose unavailability cooldown has elapsed. Only endpoints that pass a
+    /// connectivity probe are returned to the routing rotation, preventing real traffic from
+    /// being repeatedly failed back to an endpoint that is still unreachable (e.g.
+    /// firewall-blocked). Safe to call multiple times; subsequent calls are no-ops.
+    ///
+    /// Takes `self: &Arc<Self>` because the spawned task holds a [`Weak`] reference and must
+    /// not keep the manager alive on its own.
+    pub(crate) fn start_failback_probe_loop(self: &Arc<Self>) {
+        // Atomically transition from not-running to running; if it was already
+        // running, another caller started the loop.
+        if self
+            .probe_loop_active
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .is_err()
+        {
+            return;
+        }
+
+        let weak_self = Arc::downgrade(self);
+        // Capture a Weak<Self> (not Arc<Self>) so the loop does not prevent the
+        // GlobalEndpointManager from being dropped.
+        self.background_task_manager.spawn(Box::pin(async move {
+            Self::failback_probe_loop(weak_self).await;
+        }));
+    }
+
+    /// Runs the background loop that probes cooled-down unavailable endpoints.
+    ///
+    /// The loop exits when `weak_self.upgrade()` returns `None` (the owning client has been
+    /// dropped, which drops the [`BackgroundTaskManager`] and cancels this task).
+    async fn failback_probe_loop(weak_self: Weak<Self>) {
+        let interval = AzureDuration::seconds(FAILBACK_PROBE_INTERVAL_SECS);
+
+        loop {
+            get_async_runtime().sleep(interval).await;
+
+            let strong = match weak_self.upgrade() {
+                Some(s) => s,
+                None => return,
+            };
+
+            strong.probe_pending_endpoints().await;
+        }
+    }
+
+    /// Probes every endpoint whose cooldown has elapsed and applies the result.
+    ///
+    /// Claims the due endpoints (marking them probe-in-flight) under the cache lock, releases
+    /// the lock, performs the (async) probes, then re-acquires the lock to record each result.
+    /// The lock is never held across an `.await`.
+    async fn probe_pending_endpoints(&self) {
+        let due = {
+            self.location_cache
+                .lock()
+                .unwrap()
+                .take_endpoints_due_for_probe()
+        };
+
+        for endpoint in due {
+            let reachable = self.probe_endpoint(&endpoint).await;
+            self.location_cache
+                .lock()
+                .unwrap()
+                .apply_probe_result(&endpoint, reachable);
+        }
+    }
+
+    /// Probes a single endpoint for connectivity through the gateway pipeline.
+    ///
+    /// # Summary
+    /// Sends a lightweight database-account read to the specified endpoint using the core
+    /// pipeline (which does not run the endpoint-marking retry policy, so a probe never
+    /// recursively marks endpoints unavailable). Connectivity — not the HTTP status — is what
+    /// matters: any completed response (even an error status) means the endpoint is reachable;
+    /// only a connection-level failure (`ErrorKind::Io`/`Connection`) means it is not.
+    ///
+    /// # Arguments
+    /// * `endpoint` - The endpoint URL to probe
+    ///
+    /// # Returns
+    /// `true` if the endpoint is reachable, `false` if the connection failed
+    pub(crate) async fn probe_endpoint(&self, endpoint: &Url) -> bool {
+        let resource_link = ResourceLink::root(ResourceType::DatabaseAccount);
+        let builder = CosmosRequest::builder(OperationType::Read, resource_link.clone());
+        let mut cosmos_request = match builder.build() {
+            Ok(request) => request,
+            Err(_) => return false,
+        };
+        cosmos_request.request_context.location_endpoint_to_route = Some(endpoint.clone());
+        let ctx_owned = Context::default().with_value(resource_link);
+
+        match self
+            .pipeline
+            .send(&ctx_owned, &mut cosmos_request.into_raw_request(), None)
+            .await
+        {
+            Ok(_) => true,
+            Err(error) => !is_connection_failure(&error),
         }
     }
 
@@ -540,6 +671,24 @@ mod tests {
 
         // Read requests should not use multiple write locations
         assert!(!manager.can_use_multiple_write_locations(&request));
+    }
+
+    #[test]
+    fn connection_failures_are_classified_as_unreachable() {
+        // A probe treats connection-level failures (the endpoint could not be
+        // reached) as "unreachable", but any other error (the service replied)
+        // as "reachable".
+        let connection_err =
+            azure_core::Error::with_message(ErrorKind::Connection, "connection refused");
+        let io_err = azure_core::Error::with_message(ErrorKind::Io, "timed out");
+        let http_err = azure_core::Error::with_message(ErrorKind::Other, "service replied");
+
+        assert!(is_connection_failure(&connection_err));
+        assert!(is_connection_failure(&io_err));
+        assert!(
+            !is_connection_failure(&http_err),
+            "a non-connection error means the endpoint was reachable"
+        );
     }
 
     #[test]

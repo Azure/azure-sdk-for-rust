@@ -80,6 +80,14 @@ pub(crate) struct LocationUnavailabilityInfo {
     pub last_check_time: SystemTime,
     /// Type of operation(s) for which the endpoint is unavailable
     pub unavailable_operation: RequestOperation,
+    /// Whether a connectivity probe is currently in flight for this endpoint.
+    ///
+    /// Guards against launching more than one probe per endpoint when the
+    /// background failback loop picks up the same endpoint on overlapping
+    /// passes. Defaults to `false` for backwards compatibility with any
+    /// previously-serialized state.
+    #[serde(default)]
+    pub probe_in_flight: bool,
 }
 
 /// Manages location-aware endpoint routing and availability tracking for Cosmos DB requests.
@@ -257,6 +265,7 @@ impl LocationCache {
             if let Some(info) = location_unavailability_info_map.get_mut(endpoint) {
                 // update last check time and operation in unavailability_info_map
                 info.last_check_time = now;
+                info.probe_in_flight = false;
                 if !info.unavailable_operation.includes(operation) {
                     info.unavailable_operation = RequestOperation::All;
                 }
@@ -267,6 +276,7 @@ impl LocationCache {
                     LocationUnavailabilityInfo {
                         last_check_time: now,
                         unavailable_operation: operation,
+                        probe_in_flight: false,
                     },
                 );
             }
@@ -284,24 +294,25 @@ impl LocationCache {
     ///
     /// # Summary
     /// Queries the unavailability map to determine if an endpoint should be avoided for the
-    /// given operation type. Returns true only if the endpoint is marked unavailable for the
-    /// operation AND less than 5 minutes have elapsed since it was marked. After 5 minutes,
-    /// endpoints are automatically considered available again.
+    /// given operation type. Returns true if the endpoint is currently marked unavailable for
+    /// the operation. Unlike the previous time-based behavior, an endpoint is **not** considered
+    /// available again simply because a cooldown elapsed; it remains unavailable until a
+    /// connectivity probe confirms it is reachable (see [`Self::take_endpoints_due_for_probe`]
+    /// and [`Self::apply_probe_result`]). This prevents repeatedly routing real traffic to an
+    /// endpoint that is still unreachable (e.g. firewall-blocked).
     ///
     /// # Arguments
     /// * `endpoint` - The endpoint URL to check
     /// * `operation` - The operation type to check for
     ///
     /// # Returns
-    /// `true` if endpoint is unavailable and not expired, `false` otherwise
+    /// `true` if endpoint is marked unavailable for the operation, `false` otherwise
     pub fn is_endpoint_unavailable(&self, endpoint: &Url, operation: RequestOperation) -> bool {
         let location_unavailability_info_map =
             self.location_unavailability_info_map.read().unwrap();
         if let Some(info) = location_unavailability_info_map.get(endpoint) {
-            // Checks if endpoint is unavailable for the given operation
-            let elapsed =
-                info.last_check_time.elapsed().unwrap_or_default() < DEFAULT_EXPIRATION_TIME;
-            info.unavailable_operation.includes(operation) && elapsed
+            // Endpoint stays unavailable until a successful probe clears the entry.
+            info.unavailable_operation.includes(operation)
         } else {
             false
         }
@@ -448,9 +459,8 @@ impl LocationCache {
     /// # Summary
     /// Rebuilds the read and write endpoint lists by querying preferred locations against
     /// available endpoints from the account. Orders endpoints by preference with available
-    /// endpoints first and unavailable endpoints last. Also removes stale unavailability
-    /// entries older than 5 minutes. Called after marking endpoints unavailable or updating
-    /// account regions.
+    /// endpoints first and unavailable endpoints last. Called after marking endpoints
+    /// unavailable, after a successful probe clears an endpoint, or when account regions change.
     fn refresh_endpoints(&mut self) {
         // Rebuild the preferred-and-availability-ordered endpoint lists so
         // that unavailable endpoints are pushed to the back.  Without this,
@@ -468,8 +478,6 @@ impl LocationCache {
             &self.default_endpoint,
             None,
         );
-
-        self.refresh_stale_endpoints();
     }
 
     /// Converts a list of regions into a location-to-endpoint map and region list.
@@ -571,21 +579,72 @@ impl LocationCache {
         endpoints
     }
 
-    /// Removes stale endpoint unavailability entries older than 5 minutes.
+    /// Returns the endpoints that are due for a connectivity probe and claims them.
     ///
     /// # Summary
-    /// Cleans up the unavailability map by removing entries where more than 5 minutes have
-    /// elapsed since the endpoint was marked unavailable. This allows endpoints to automatically
-    /// recover and be considered available again after the expiration period, enabling retry
-    /// attempts without manual intervention.
-    fn refresh_stale_endpoints(&mut self) {
+    /// Scans the unavailability map for endpoints whose cooldown
+    /// ([`DEFAULT_EXPIRATION_TIME`]) has elapsed and that do not already have a probe in
+    /// flight. Each returned endpoint is atomically marked `probe_in_flight = true` so that
+    /// concurrent or overlapping passes of the background failback loop never launch more
+    /// than one probe per endpoint. The caller is expected to probe each endpoint and report
+    /// the outcome via [`Self::apply_probe_result`].
+    ///
+    /// # Returns
+    /// The list of endpoint URLs that should be probed now.
+    pub(crate) fn take_endpoints_due_for_probe(&mut self) -> Vec<Url> {
+        let mut due = Vec::new();
         let mut location_unavailability_info_map =
             self.location_unavailability_info_map.write().unwrap();
 
-        // Removes endpoints that have not been checked in the last 5 minutes
-        location_unavailability_info_map.retain(|_, info| {
-            info.last_check_time.elapsed().unwrap_or_default() <= DEFAULT_EXPIRATION_TIME
-        });
+        for (endpoint, info) in location_unavailability_info_map.iter_mut() {
+            if info.probe_in_flight {
+                continue;
+            }
+            if info.last_check_time.elapsed().unwrap_or_default() >= DEFAULT_EXPIRATION_TIME {
+                info.probe_in_flight = true;
+                due.push(endpoint.clone());
+            }
+        }
+
+        due
+    }
+
+    /// Applies the result of a connectivity probe for an endpoint.
+    ///
+    /// # Summary
+    /// On a successful probe (`reachable == true`) the endpoint's unavailability entry is
+    /// removed, restoring it to the routing rotation for the operation(s) it was originally
+    /// marked unavailable for (operation-scoped recovery), and the ordered endpoint lists are
+    /// refreshed. On a failed probe the cooldown is reset (`last_check_time = now`) and the
+    /// in-flight flag is cleared so the endpoint becomes eligible for another probe after the
+    /// next cooldown, without thrashing.
+    ///
+    /// # Arguments
+    /// * `endpoint` - The endpoint that was probed
+    /// * `reachable` - Whether the connectivity probe succeeded
+    pub(crate) fn apply_probe_result(&mut self, endpoint: &Url, reachable: bool) {
+        let removed = {
+            let mut location_unavailability_info_map =
+                self.location_unavailability_info_map.write().unwrap();
+
+            if reachable {
+                location_unavailability_info_map.remove(endpoint).is_some()
+            } else if let Some(info) = location_unavailability_info_map.get_mut(endpoint) {
+                info.last_check_time = SystemTime::now();
+                info.probe_in_flight = false;
+                false
+            } else {
+                false
+            }
+        };
+
+        if removed {
+            info!(
+                "Endpoint {} passed connectivity probe; marking available",
+                endpoint
+            );
+            self.refresh_endpoints();
+        }
     }
 }
 
@@ -957,7 +1016,7 @@ mod tests {
     }
 
     #[test]
-    fn refresh_stale_endpoints() {
+    fn expired_endpoint_stays_unavailable_until_probed() {
         // create test cache
         let mut cache = create_test_location_cache();
 
@@ -967,7 +1026,7 @@ mod tests {
         cache.mark_endpoint_unavailable(&endpoint1, RequestOperation::Read);
         cache.mark_endpoint_unavailable(&endpoint2, RequestOperation::Read);
 
-        // simulate stale entry
+        // simulate the cooldown having elapsed for endpoint1
         {
             let mut unavailability_map = cache.location_unavailability_info_map.write().unwrap();
             if let Some(info) = unavailability_map.get_mut(&endpoint1) {
@@ -975,11 +1034,54 @@ mod tests {
             }
         }
 
-        // refresh stale endpoints
-        cache.refresh_stale_endpoints();
+        // Cooldown elapsing alone must NOT make the endpoint available again.
+        assert!(
+            cache.is_endpoint_unavailable(&endpoint1, RequestOperation::Read),
+            "expired endpoint must stay unavailable until a probe confirms reachability"
+        );
 
-        // check that endpoint 1 is marked as available again
+        // The endpoint should now be eligible for a probe (and only it, not endpoint2).
+        let due = cache.take_endpoints_due_for_probe();
+        assert_eq!(due, vec![endpoint1.clone()]);
+
+        // A second call must not re-offer the same endpoint while its probe is in flight.
+        assert!(
+            cache.take_endpoints_due_for_probe().is_empty(),
+            "an endpoint with a probe in flight must not be offered again"
+        );
+
+        // A failed probe keeps it unavailable.
+        cache.apply_probe_result(&endpoint1, false);
+        assert!(cache.is_endpoint_unavailable(&endpoint1, RequestOperation::Read));
+
+        // A successful probe clears it.
+        {
+            let mut unavailability_map = cache.location_unavailability_info_map.write().unwrap();
+            if let Some(info) = unavailability_map.get_mut(&endpoint1) {
+                info.last_check_time = SystemTime::now() - Duration::from_secs(500);
+            }
+        }
+        let due = cache.take_endpoints_due_for_probe();
+        assert_eq!(due, vec![endpoint1.clone()]);
+        cache.apply_probe_result(&endpoint1, true);
         assert!(!cache.is_endpoint_unavailable(&endpoint1, RequestOperation::Read));
+    }
+
+    #[test]
+    fn successful_probe_clears_only_marked_operation() {
+        let mut cache = create_test_location_cache();
+        let endpoint1: Url = "https://location1.documents.example.com".parse().unwrap();
+
+        // Marked unavailable for reads only.
+        cache.mark_endpoint_unavailable(&endpoint1, RequestOperation::Read);
+        assert!(cache.is_endpoint_unavailable(&endpoint1, RequestOperation::Read));
+        // Writes were never marked unavailable on this endpoint.
+        assert!(!cache.is_endpoint_unavailable(&endpoint1, RequestOperation::Write));
+
+        // A successful probe clears the entry (the only operation it was marked for).
+        cache.apply_probe_result(&endpoint1, true);
+        assert!(!cache.is_endpoint_unavailable(&endpoint1, RequestOperation::Read));
+        assert!(!cache.is_endpoint_unavailable(&endpoint1, RequestOperation::Write));
     }
 
     #[test]
