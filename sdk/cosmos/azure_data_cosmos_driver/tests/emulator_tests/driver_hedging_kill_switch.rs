@@ -23,6 +23,37 @@ use crate::framework::DriverTestClient;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 
+/// RAII guard that sets a process-wide environment variable and restores its
+/// previous value (or removes it) on drop.
+///
+/// Cargo runs tests multi-threaded within a single process, so a leaked
+/// `AZURE_COSMOS_HEDGING_ENABLED_OVERRIDE` could bleed into any other test that
+/// builds a runtime concurrently. Restoring on `Drop` makes cleanup robust even
+/// if an assertion panics mid-test (the manual `remove_var` after the `.await`
+/// would be skipped during unwinding).
+struct EnvVarGuard {
+    key: &'static str,
+    previous: Option<String>,
+}
+
+impl EnvVarGuard {
+    fn set(key: &'static str, value: &str) -> Self {
+        let previous = std::env::var(key).ok();
+        // `set_var` is safe on edition 2021.
+        std::env::set_var(key, value);
+        Self { key, previous }
+    }
+}
+
+impl Drop for EnvVarGuard {
+    fn drop(&mut self) {
+        match self.previous.take() {
+            Some(prev) => std::env::set_var(self.key, prev),
+            None => std::env::remove_var(self.key),
+        }
+    }
+}
+
 /// A simple test item for the kill-switch data-path check.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 struct TestItem {
@@ -47,13 +78,13 @@ pub async fn hedging_override_env_var_reaches_runtime_and_keeps_reads_healthy(
 ) -> Result<(), Box<dyn Error>> {
     // The `{ENV}_OVERRIDE` value is read once at runtime-build time from the
     // process environment, so it must be set *before* the runtime is built
-    // inside `run_with_unique_db`. `set_var` is safe on edition 2021; the blast
-    // radius across the emulator suite is nil because hedging never fires on the
-    // single-region emulator regardless of this switch. The variable is removed
-    // again as soon as the run completes (success or failure).
-    std::env::set_var("AZURE_COSMOS_HEDGING_ENABLED_OVERRIDE", "OFF");
+    // inside `run_with_unique_db`. The guard restores the previous value on
+    // drop — including when an assertion panics — so the override cannot leak
+    // into other tests. The functional blast radius while set is nil anyway
+    // because hedging never fires on the single-region emulator.
+    let _override_guard = EnvVarGuard::set("AZURE_COSMOS_HEDGING_ENABLED_OVERRIDE", "OFF");
 
-    let outcome = Box::pin(DriverTestClient::run_with_unique_db(
+    Box::pin(DriverTestClient::run_with_unique_db(
         async |context, database| {
             // The runtime was built (inside `run_with_unique_db`) after the env
             // var was set above, so the `{ENV}_OVERRIDE` → `from_env_override()`
@@ -99,8 +130,5 @@ pub async fn hedging_override_env_var_reaches_runtime_and_keeps_reads_healthy(
             Ok(())
         },
     ))
-    .await;
-
-    std::env::remove_var("AZURE_COSMOS_HEDGING_ENABLED_OVERRIDE");
-    outcome
+    .await
 }

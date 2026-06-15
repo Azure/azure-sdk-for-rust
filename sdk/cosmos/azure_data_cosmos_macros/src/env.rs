@@ -274,9 +274,11 @@ mod tests {
         let parsed = OptionsInput::from_derive_input(&input).unwrap();
         let tokens = generate_from_env(&parsed).unwrap().to_string();
 
-        // The override constructors are emitted...
-        assert!(tokens.contains("from_env_override"));
-        assert!(tokens.contains("from_env_override_vars"));
+        // The override constructors are emitted... (`fn from_env_override ()`
+        // is checked specifically so it is not satisfied by the substring in
+        // `from_env_override_vars`).
+        assert!(tokens.contains("fn from_env_override ()"));
+        assert!(tokens.contains("fn from_env_override_vars ("));
         // ...and read the `_OVERRIDE` variant for the overridable field only.
         assert!(tokens.contains("MY_VAR_A_OVERRIDE"));
         // The non-overridable field's base var must NOT gain an override read.

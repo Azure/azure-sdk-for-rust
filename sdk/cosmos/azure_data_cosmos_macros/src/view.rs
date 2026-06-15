@@ -628,8 +628,10 @@ mod tests {
         // The struct gains the highest-priority env_override layer.
         assert!(tokens.contains("env_override"));
         // Both constructors are emitted; `new` stays backward-compatible.
-        assert!(tokens.contains("fn new"));
-        assert!(tokens.contains("fn new_with_override"));
+        // `fn new (` is checked specifically so it is not satisfied by the
+        // substring in `fn new_with_override (`.
+        assert!(tokens.contains("fn new ("));
+        assert!(tokens.contains("fn new_with_override ("));
         // The accessor checks env_override before the operation layer.
         let accessor_start = tokens
             .find("fn my_field")
