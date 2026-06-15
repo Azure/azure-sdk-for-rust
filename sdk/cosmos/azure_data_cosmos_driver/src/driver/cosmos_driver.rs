@@ -584,6 +584,24 @@ impl CosmosDriver {
         Ok(props)
     }
 
+    /// Classifies an endpoint-probe read result as *network reachability*.
+    ///
+    /// The endpoint-probe loop gates account-level failback on connectivity,
+    /// not on the database-account read succeeding. Any wire response — even a
+    /// non-2xx envelope (401/403/429/503/5xx) — proves the endpoint accepted
+    /// the connection and is reachable, so the endpoint should fail back.
+    /// Only a synthetic/transport error with no response (firewall block, DNS
+    /// failure, connection refused, or connection timeout) means the endpoint
+    /// is unreachable and must stay out of rotation. See issue #4597.
+    fn probe_read_indicates_reachable(
+        result: &crate::error::Result<super::cache::AccountProperties>,
+    ) -> bool {
+        match result {
+            Ok(_) => true,
+            Err(err) => err.is_from_wire(),
+        }
+    }
+
     fn parse_account_properties_payload(
         payload: &[u8],
     ) -> crate::error::Result<super::cache::AccountProperties> {
@@ -1056,17 +1074,20 @@ impl CosmosDriver {
                     };
                     let user_agent = CosmosDriver::user_agent_header(&runtime);
                     // Reachable iff a database-account read to this specific
-                    // endpoint completes. A connection-level failure (e.g.
-                    // firewall block) yields `Err` → treated as unreachable.
-                    CosmosDriver::fetch_account_properties_with_transport(
+                    // endpoint elicits a wire response. A non-2xx envelope
+                    // (401/403/429/503/…) still proves connectivity, so the
+                    // probe only fails on a synthetic/transport error (no
+                    // response: firewall block, DNS failure, connection
+                    // refused or timed out) — see issue #4597.
+                    let result = CosmosDriver::fetch_account_properties_with_transport(
                         &runtime,
                         &metadata_transport,
                         &probe_account,
                         None,
                         &user_agent,
                     )
-                    .await
-                    .is_ok()
+                    .await;
+                    CosmosDriver::probe_read_indicates_reachable(&result)
                 }) as BoxFuture<'static, bool>
             });
             location_state_store.start_endpoint_probe_loop(probe_fn);
@@ -3125,6 +3146,89 @@ mod tests {
             &user_agent,
         )
         .await
+    }
+
+    /// `TransportClient` whose `send` always fails at the connection level
+    /// (no wire response), modeling a firewall-blocked / unreachable endpoint.
+    #[derive(Debug)]
+    struct UnreachableClient;
+
+    #[async_trait]
+    impl TransportClient for UnreachableClient {
+        async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
+            Err(TransportError::new(
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
+                    .with_message("injected connection failure")
+                    .build(),
+                RequestSentStatus::NotSent,
+            ))
+        }
+    }
+
+    async fn drive_fetch_unreachable(
+    ) -> std::result::Result<crate::driver::cache::AccountProperties, crate::error::CosmosError>
+    {
+        let client: Arc<dyn TransportClient> = Arc::new(UnreachableClient);
+        let transport =
+            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let account = signed_test_account("https://test.documents.azure.com:443/");
+        let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
+
+        CosmosDriver::fetch_account_properties_with_transport(
+            &runtime,
+            &transport,
+            &account,
+            None,
+            &user_agent,
+        )
+        .await
+    }
+
+    /// The endpoint probe gates failback on *connectivity*, not on the account
+    /// read succeeding. Any wire response — including a non-2xx envelope
+    /// (401/403/429/503) — proves the endpoint is reachable and should fail
+    /// back, while a connection-level failure with no response keeps it out of
+    /// rotation. Regression guard for issue #4597.
+    #[tokio::test]
+    async fn probe_treats_wire_response_as_reachable_and_transport_error_as_unreachable() {
+        // Happy path: a 2xx account read is reachable.
+        let ok = drive_fetch_with(200, ACCOUNT_PROPERTIES_PAYLOAD.as_bytes().to_vec()).await;
+        assert!(
+            ok.is_ok(),
+            "the canned 2xx account payload must parse successfully"
+        );
+        assert!(
+            CosmosDriver::probe_read_indicates_reachable(&ok),
+            "a successful account read must classify as reachable"
+        );
+
+        // Non-2xx wire responses still prove connectivity → reachable.
+        for status in [401u16, 403, 429, 503] {
+            let result = drive_fetch_with(status, Vec::new()).await;
+            assert!(
+                result.is_err(),
+                "HTTP {status} must surface as an error from the fetch"
+            );
+            assert!(
+                CosmosDriver::probe_read_indicates_reachable(&result),
+                "HTTP {status} is a wire response and must classify as reachable \
+                 (failback), not unreachable"
+            );
+        }
+
+        // A connection-level failure (no wire response) → unreachable.
+        let unreachable = drive_fetch_unreachable().await;
+        assert!(
+            unreachable.is_err(),
+            "an injected connection failure must surface as an error"
+        );
+        assert!(
+            !CosmosDriver::probe_read_indicates_reachable(&unreachable),
+            "a transport error with no wire response must classify as unreachable"
+        );
     }
 
     /// AAD 401 envelope on GET / (RBAC race / token expiry / IMDS hiccup) must surface
