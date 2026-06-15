@@ -63,17 +63,7 @@ struct Fixture {
 async fn build_fixture(
     write_mode: WriteMode,
     rules: Vec<Arc<FaultInjectionRule>>,
-    enable_ppcb: bool,
 ) -> Fixture {
-    if enable_ppcb {
-        std::env::set_var("AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED", "true");
-        std::env::set_var("AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_READS", "1");
-        std::env::set_var("AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_WRITES", "1");
-    } else {
-        std::env::remove_var("AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED");
-        std::env::remove_var("AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_READS");
-        std::env::remove_var("AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_WRITES");
-    }
     let recorder = HostRecorder::new();
 
     let config = VirtualAccountConfig::new(vec![
@@ -352,7 +342,7 @@ async fn r1_read_multi_primary_unreachable_failover_to_secondary() {
         FaultOperationType::ReadItem,
         Region::EAST_US,
     );
-    let fixture = build_fixture(WriteMode::Multi, vec![Arc::clone(&fault)], false).await;
+    let fixture = build_fixture(WriteMode::Multi, vec![Arc::clone(&fault)]).await;
     seed_item(&fixture, "r1-item", "pk1").await;
     fixture.recorder.clear();
 
@@ -381,7 +371,7 @@ async fn r2_read_single_primary_unreachable_failover_to_secondary() {
         FaultOperationType::ReadItem,
         Region::EAST_US,
     );
-    let fixture = build_fixture(WriteMode::Single, vec![Arc::clone(&fault)], false).await;
+    let fixture = build_fixture(WriteMode::Single, vec![Arc::clone(&fault)]).await;
     seed_item(&fixture, "r2-item", "pk1").await;
     fixture.recorder.clear();
 
@@ -404,7 +394,6 @@ async fn r3_read_multi_both_regions_unreachable_terminal_failure() {
     let fixture = build_fixture(
         WriteMode::Multi,
         vec![Arc::clone(&east), Arc::clone(&west)],
-        false,
     )
     .await;
     seed_item(&fixture, "r3-item", "pk1").await;
@@ -432,7 +421,7 @@ async fn r3_read_multi_both_regions_unreachable_terminal_failure() {
 #[tokio::test]
 async fn r4_read_primary_unreachable_secondary_excluded_terminal_failure() {
     let fault = connection_error_rule("r4-east", FaultOperationType::ReadItem, Region::EAST_US);
-    let fixture = build_fixture(WriteMode::Multi, vec![Arc::clone(&fault)], false).await;
+    let fixture = build_fixture(WriteMode::Multi, vec![Arc::clone(&fault)]).await;
     seed_item(&fixture, "r4-item", "pk1").await;
     fixture.recorder.clear();
 
@@ -455,7 +444,7 @@ async fn r4_read_primary_unreachable_secondary_excluded_terminal_failure() {
 /// **W1** — Healthy baseline. Writes land on PRIMARY only.
 #[tokio::test]
 async fn w1_write_multi_no_faults_lands_on_primary() {
-    let fixture = build_fixture(WriteMode::Multi, Vec::new(), false).await;
+    let fixture = build_fixture(WriteMode::Multi, Vec::new()).await;
     let result = create_item(&fixture, "w1-item", "pk1", base_options()).await;
     assert!(
         result.as_ref().is_ok(),
@@ -469,7 +458,7 @@ async fn w1_write_multi_no_faults_lands_on_primary() {
 #[tokio::test]
 async fn w2_write_multi_primary_unreachable_failover_to_secondary() {
     let fault = connection_error_rule("w2-east", FaultOperationType::CreateItem, Region::EAST_US);
-    let fixture = build_fixture(WriteMode::Multi, vec![Arc::clone(&fault)], false).await;
+    let fixture = build_fixture(WriteMode::Multi, vec![Arc::clone(&fault)]).await;
     fixture.recorder.clear();
 
     let result = create_item(&fixture, "w2-item", "pk1", base_options()).await;
@@ -487,7 +476,7 @@ async fn w2_write_multi_primary_unreachable_failover_to_secondary() {
 #[tokio::test]
 async fn w3_write_multi_primary_unreachable_secondary_excluded_terminal_failure() {
     let fault = connection_error_rule("w3-east", FaultOperationType::CreateItem, Region::EAST_US);
-    let fixture = build_fixture(WriteMode::Multi, vec![Arc::clone(&fault)], false).await;
+    let fixture = build_fixture(WriteMode::Multi, vec![Arc::clone(&fault)]).await;
     fixture.recorder.clear();
 
     let result = create_item(
@@ -511,7 +500,7 @@ async fn w3_write_multi_primary_unreachable_secondary_excluded_terminal_failure(
 #[tokio::test]
 async fn w4_upsert_multi_primary_unreachable_secondary_excluded_terminal_failure() {
     let fault = connection_error_rule("w4-east", FaultOperationType::UpsertItem, Region::EAST_US);
-    let fixture = build_fixture(WriteMode::Multi, vec![Arc::clone(&fault)], false).await;
+    let fixture = build_fixture(WriteMode::Multi, vec![Arc::clone(&fault)]).await;
     fixture.recorder.clear();
 
     let result = upsert_item(
@@ -536,7 +525,6 @@ async fn w5_write_multi_both_regions_unreachable_terminal_failure() {
     let fixture = build_fixture(
         WriteMode::Multi,
         vec![Arc::clone(&east), Arc::clone(&west)],
-        false,
     )
     .await;
     fixture.recorder.clear();
@@ -558,7 +546,7 @@ async fn w5_write_multi_both_regions_unreachable_terminal_failure() {
 #[tokio::test]
 async fn w6_write_single_primary_unreachable_secondary_excluded_terminal_failure() {
     let fault = connection_error_rule("w6-east", FaultOperationType::CreateItem, Region::EAST_US);
-    let fixture = build_fixture(WriteMode::Single, vec![Arc::clone(&fault)], false).await;
+    let fixture = build_fixture(WriteMode::Single, vec![Arc::clone(&fault)]).await;
     fixture.recorder.clear();
 
     let result = create_item(
@@ -609,7 +597,6 @@ async fn ppcb1_read_override_must_respect_excluded_regions() {
     let fixture = build_fixture(
         WriteMode::Multi,
         vec![Arc::clone(&storm), Arc::clone(&unreachable)],
-        true,
     )
     .await;
     seed_item(&fixture, "ppcb1-item", "pk1").await;
@@ -657,7 +644,6 @@ async fn ppcb2_write_override_must_respect_excluded_regions() {
     let fixture = build_fixture(
         WriteMode::Multi,
         vec![Arc::clone(&storm), Arc::clone(&unreachable)],
-        true,
     )
     .await;
 
@@ -699,7 +685,6 @@ async fn ppcb3_read_override_routes_to_healthy_secondary() {
     let fixture = build_fixture(
         WriteMode::Multi,
         vec![Arc::clone(&storm), Arc::clone(&unreachable)],
-        true,
     )
     .await;
     seed_item(&fixture, "ppcb3-item", "pk1").await;
@@ -732,7 +717,7 @@ async fn g1_cold_start_read_failover_to_secondary() {
     // succeeds, then enable it before the first data-plane op.
     fault.disable();
 
-    let fixture = build_fixture(WriteMode::Multi, vec![Arc::clone(&fault)], false).await;
+    let fixture = build_fixture(WriteMode::Multi, vec![Arc::clone(&fault)]).await;
     seed_item(&fixture, "g1-item", "pk1").await;
     fixture.recorder.clear();
 
@@ -756,7 +741,7 @@ async fn g2_cold_start_write_secondary_excluded_terminal_failure() {
     let fault = connection_error_rule("g2-east", FaultOperationType::CreateItem, Region::EAST_US);
     fault.disable();
 
-    let fixture = build_fixture(WriteMode::Multi, vec![Arc::clone(&fault)], false).await;
+    let fixture = build_fixture(WriteMode::Multi, vec![Arc::clone(&fault)]).await;
     fixture.recorder.clear();
 
     fault.enable();

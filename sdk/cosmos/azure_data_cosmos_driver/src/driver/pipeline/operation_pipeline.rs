@@ -5871,10 +5871,10 @@ mod tests {
             routing.endpoint, central,
             "BUG: PPCB override pinned the partition to centralus even though \
              centralus is in account.unavailable_endpoints. This is the \
-             production 4-attempt-all-to-central failure mode. The override-skip \
-             check at operation_pipeline.rs:1083 must also consult \
-             account.unavailable_endpoints (and excluded_regions); see sibling \
-             branch commit a7819f73 for the canonical fix."
+             production 4-attempt-all-to-central failure mode. The PPCB \
+             override-skip path in resolve_endpoint must honor \
+             account.unavailable_endpoints (and excluded_regions) the same \
+             way try_select_endpoint does."
         );
         assert_eq!(
             routing.endpoint, east,

@@ -52,7 +52,7 @@ These are deterministic client errors. No retry will change the outcome.
 | Substatus | Meaning | Action | Budget (multi-write) | Budget (single-write) |
 |-----------|---------|--------|----------------------|-----------------------|
 | 3 | `WriteForbidden` — region is not currently a valid write region for this partition (writes only) | Refresh account topology + cross-region failover retry | **120** attempts × **1000 ms** delay (dedicated `backend_failover_retry_count`) | 3 attempts × 0 ms delay (shared generic budget) |
-| 1008 | `DatabaseAccountNotFound` — region no longer owns this account (all op types, including reads, writes, queries, feed-range queries, metadata) | Refresh account topology + cross-region failover retry | **120** attempts × **1000 ms** delay (dedicated `backend_failover_retry_count`) | 3 attempts × 0 ms delay (shared generic budget) |
+| 1008 | `DatabaseAccountNotFound` — region no longer owns this account (all op types, including reads, writes, queries, feed-range queries, metadata) | Refresh account topology + cross-region failover retry | **120** attempts × **1000 ms** delay (dedicated `backend_failover_retry_count`) | **120** attempts × **1000 ms** delay (dedicated `backend_failover_retry_count`) |
 | Other | Permission denied | Abort | — | — |
 
 Both 403/3 and 403/1008 signal that the cached topology in the SDK has diverged from the backend's current routing — typically during a backend-initiated failover or a customer-initiated topology change. On each retry the driver requests `LocationEffect::RefreshAccountProperties` so the next attempt routes against the freshly learned region set. The metadata refresh itself is rate-limited (at most one network fetch per `refresh_interval`, default 5 s) and is independent of the caller's `excluded_regions` — the GetDatabaseAccount probe iterates the global endpoint and the cached `readable_locations` regardless of the operation-level exclusion list, because excluding a region from data-plane routing should not blind the SDK to topology changes happening in that region.
@@ -220,8 +220,9 @@ Without PPCB, the driver marks entire endpoints as unavailable when errors occur
 |-------|--------|-------|
 | Transport (429) | 9 attempts or 30s | Per-request, local only |
 | Operation failover (generic — 5xx, 408, 410, transport) | 3 attempts | Per-operation, cross-region |
-| Backend-failover (403/3, 403/1008) — multi-write | **120 attempts × 1000 ms** | Per-operation, cross-region |
-| Backend-failover (403/3, 403/1008) — single-write | 3 attempts × 0 ms (generic) | Per-operation, cross-region |
+| Backend-failover (403/1008) — single-write and multi-write | **120 attempts × 1000 ms** | Per-operation, cross-region |
+| Backend-failover (403/3) — multi-write | **120 attempts × 1000 ms** | Per-operation, cross-region |
+| Backend-failover (403/3) — single-write | 3 attempts × 0 ms (generic) | Per-operation, cross-region |
 | Session retry (404/1002) | 2 (single-write) or `preferred_endpoints.len()` (multi-write) | Per-operation |
 
 ## Comparison with Other SDKs
