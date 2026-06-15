@@ -13,6 +13,7 @@
 
 ### Bugs Fixed
 
+- Fixed account-level regional endpoints failing back into the routing rotation purely on a time-based cooldown, with no connectivity check. A firewall-blocked endpoint would be marked available again after its unavailability TTL elapsed, have real traffic routed to it, fail to connect, and be re-marked unavailable — a sustained low-throughput loop. A background endpoint-probe loop now gates failback: an unavailable endpoint only rejoins the rotation after a lightweight connectivity probe (a database-account read to that specific endpoint) confirms it is reachable; otherwise its cooldown is reset and it stays out of rotation. Partition-level (circuit-breaker) failback was already probe-gated via the `ProbeCandidate` state and is unchanged. ([#4597](https://github.com/Azure/azure-sdk-for-rust/issues/4597))
 - Fixed duplicate items being returned on cross-partition query resume after a physical partition split. When a cross-partition query was paused, serialized to a continuation token, and resumed after the underlying partition had split, the resumed iterator could re-emit items the caller had already consumed on a prior page. The continuation token now records per-range sibling state and is correctly propagated to every surviving leaf after a split. ([#4550](https://github.com/Azure/azure-sdk-for-rust/pull/4550))
 
 ### Other Changes

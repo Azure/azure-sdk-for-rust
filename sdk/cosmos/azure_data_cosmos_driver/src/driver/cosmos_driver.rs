@@ -41,6 +41,9 @@ use std::sync::Arc;
 use std::time::Duration;
 use url::Url;
 
+#[cfg(feature = "tokio")]
+use super::routing::EndpointProbeFn;
+
 use super::{
     cache::{parse_pk_ranges_response, AccountRegion},
     transport::{
@@ -1026,6 +1029,48 @@ impl CosmosDriver {
         // path because freshness is owned by this loop.
         #[cfg(feature = "tokio")]
         location_state_store.start_account_refresh_loop();
+
+        // Spawn the background endpoint-probe loop. This switches account-level
+        // endpoint failback from time-based to probe-gated: an endpoint marked
+        // unavailable (e.g. firewall-blocked) only rejoins the routing rotation
+        // after a lightweight connectivity probe (a database-account read to
+        // that specific endpoint) confirms it is reachable. Without this, the
+        // endpoint would be failed back purely on cooldown expiry, have real
+        // traffic routed to it, time out, and be re-marked unavailable — a
+        // sustained low-throughput loop (issue #4597).
+        #[cfg(feature = "tokio")]
+        {
+            let runtime_for_probe = Arc::clone(&runtime);
+            let account_for_probe = account.clone();
+            let transport_for_probe = Arc::clone(&transport);
+            let probe_fn: EndpointProbeFn = Arc::new(move |url: Url| {
+                let runtime = Arc::clone(&runtime_for_probe);
+                let account = account_for_probe.clone();
+                let transport_holder = Arc::clone(&transport_for_probe);
+                Box::pin(async move {
+                    let probe_account = CosmosDriver::with_endpoint(&account, url);
+                    let endpoint = AccountEndpoint::from(&probe_account);
+                    let transport = transport_holder.load_full();
+                    let Ok(metadata_transport) = transport.get_metadata_transport(&endpoint) else {
+                        return false;
+                    };
+                    let user_agent = CosmosDriver::user_agent_header(&runtime);
+                    // Reachable iff a database-account read to this specific
+                    // endpoint completes. A connection-level failure (e.g.
+                    // firewall block) yields `Err` → treated as unreachable.
+                    CosmosDriver::fetch_account_properties_with_transport(
+                        &runtime,
+                        &metadata_transport,
+                        &probe_account,
+                        None,
+                        &user_agent,
+                    )
+                    .await
+                    .is_ok()
+                }) as BoxFuture<'static, bool>
+            });
+            location_state_store.start_endpoint_probe_loop(probe_fn);
+        }
 
         Self {
             runtime,

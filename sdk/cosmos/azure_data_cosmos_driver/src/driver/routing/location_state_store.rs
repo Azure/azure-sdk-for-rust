@@ -5,7 +5,7 @@
 
 use std::{
     sync::{
-        atomic::{AtomicU64, Ordering},
+        atomic::{AtomicBool, AtomicU64, Ordering},
         Arc, Weak,
     },
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
@@ -13,6 +13,7 @@ use std::{
 
 use crossbeam_epoch::{self as epoch, Atomic, Owned};
 use futures::future::BoxFuture;
+use url::Url;
 
 #[cfg(feature = "tokio")]
 use crate::driver::transport::background_task_manager::BackgroundTaskManager;
@@ -66,6 +67,22 @@ type AccountRefreshFn = Arc<
         + Sync,
 >;
 
+/// Connectivity probe for a single endpoint URL.
+///
+/// Returns `true` if the endpoint is reachable (a request to it completed),
+/// `false` if it could not be connected to. Used to gate failback of an
+/// endpoint that was previously marked unavailable: an endpoint only rejoins
+/// the routing rotation after a probe confirms it is reachable, rather than
+/// purely because an unavailability cooldown elapsed.
+#[cfg(feature = "tokio")]
+pub(crate) type EndpointProbeFn = Arc<dyn Fn(Url) -> BoxFuture<'static, bool> + Send + Sync>;
+
+/// Interval between iterations of the background endpoint-probe loop, which
+/// probes endpoints whose unavailability cooldown has elapsed and fails back
+/// only those that are reachable.
+#[cfg(feature = "tokio")]
+pub(crate) const ENDPOINT_PROBE_INTERVAL: Duration = Duration::from_secs(60);
+
 /// Interval between iterations of the background account-metadata refresh
 /// loop. Independent of `LocationStateStore::refresh_interval` (which
 /// rate-limits the event-driven refresh emitted by
@@ -97,6 +114,15 @@ pub(crate) struct LocationStateStore {
     last_synced_properties: std::sync::Mutex<Option<Arc<AccountProperties>>>,
     /// Monotonic version counter bumped on every successful CAS write.
     account_version: AtomicU64,
+    /// When `true`, the background endpoint-probe loop owns failback of
+    /// account-level unavailable endpoints, so the time-based auto-clear in
+    /// [`Self::sync_account_properties`] and
+    /// [`Self::prune_expired_unavailable_endpoints`] is disabled. An endpoint
+    /// then only rejoins the rotation after a successful connectivity probe.
+    /// Set by [`Self::start_endpoint_probe_loop`]; defaults to `false` so
+    /// builds without the probe loop (e.g. non-`tokio`) keep the legacy
+    /// time-based failback behavior.
+    endpoint_probe_gating: AtomicBool,
     /// Cached snapshot: (version, snapshot). When the version matches
     /// `account_version`, `snapshot()` returns `Arc::clone()` of the cached
     /// arcs (refcount increment only) instead of a full clone.
@@ -182,6 +208,7 @@ impl LocationStateStore {
             last_synced_etag: std::sync::Mutex::new(String::new()),
             last_synced_properties: std::sync::Mutex::new(None),
             account_version: AtomicU64::new(0),
+            endpoint_probe_gating: AtomicBool::new(false),
             cached_snapshot: std::sync::Mutex::new((0, initial_snapshot)),
             #[cfg(feature = "tokio")]
             background_task_manager: BackgroundTaskManager::new(),
@@ -473,7 +500,11 @@ impl LocationStateStore {
             }
         }
 
-        self.prune_expired_unavailable_endpoints();
+        // Skip the time-based prune when the background endpoint-probe loop
+        // owns failback (it clears endpoints only after a successful probe).
+        if !self.endpoint_probe_gating.load(Ordering::Acquire) {
+            self.prune_expired_unavailable_endpoints();
+        }
 
         if !properties.etag.is_empty() {
             let last_etag = self.last_synced_etag.lock().unwrap();
@@ -495,11 +526,16 @@ impl LocationStateStore {
                 self.gateway20_enabled,
                 &self.preferred_regions,
             );
-            // Carry forward unavailability marks from the current state,
-            // filtering out entries that have expired past the configured TTL.
-            let now = Instant::now();
+            // Carry forward unavailability marks from the current state. When
+            // the endpoint-probe loop owns failback, all marks are preserved
+            // (the probe loop clears them only after a successful probe);
+            // otherwise expired entries are filtered out on a time basis.
             let mut unavailable = current.unavailable_endpoints.clone();
-            unavailable.retain(|_, (marked_at, _)| now.saturating_duration_since(*marked_at) < ttl);
+            if !self.endpoint_probe_gating.load(Ordering::Acquire) {
+                let now = Instant::now();
+                unavailable
+                    .retain(|_, (marked_at, _)| now.saturating_duration_since(*marked_at) < ttl);
+            }
             next.unavailable_endpoints = unavailable;
             next
         });
@@ -572,7 +608,80 @@ impl LocationStateStore {
         });
     }
 
-    /// Records that the alternate (secondary) hedge attempt completed before
+    /// Starts the background endpoint-probe loop.
+    ///
+    /// Enabling this loop switches account-level endpoint failback from
+    /// time-based to probe-gated: an endpoint marked unavailable is no longer
+    /// cleared simply because its cooldown elapsed. Instead, once the cooldown
+    /// has elapsed the loop probes the endpoint for connectivity (via
+    /// `probe_fn`) and only fails back (clears the unavailability mark)
+    /// endpoints that are reachable; unreachable endpoints have their cooldown
+    /// reset and stay out of the rotation. This prevents repeatedly routing
+    /// real traffic to an endpoint that is still unreachable (e.g.
+    /// firewall-blocked), which otherwise causes sustained low throughput.
+    ///
+    /// Mirrors `start_failback_loop` (`Weak<Self>` for self-termination,
+    /// `BackgroundTaskManager` for abort-on-drop).
+    #[cfg(feature = "tokio")]
+    pub fn start_endpoint_probe_loop(self: &Arc<Self>, probe_fn: EndpointProbeFn) {
+        // From now on the probe loop owns account-level failback; disable the
+        // time-based auto-clear in the account-sync path.
+        self.endpoint_probe_gating.store(true, Ordering::Release);
+        let weak_store: Weak<LocationStateStore> = Arc::downgrade(self);
+        self.background_task_manager.spawn(async move {
+            endpoint_probe_loop(weak_store, probe_fn, ENDPOINT_PROBE_INTERVAL).await;
+        });
+    }
+
+    /// Probes every account-level unavailable endpoint whose cooldown has
+    /// elapsed and fails back only those that are reachable.
+    ///
+    /// For each due endpoint the probe is awaited out of band (never under a
+    /// state lock — `apply_account` is only entered to record the result). A
+    /// reachable endpoint has its unavailability mark removed (rejoining the
+    /// rotation); an unreachable endpoint has its cooldown reset so it is
+    /// re-probed after the next interval rather than thrashing.
+    #[cfg(feature = "tokio")]
+    pub(crate) async fn probe_and_failback_unavailable_endpoints(
+        &self,
+        probe_fn: &EndpointProbeFn,
+    ) {
+        let now = Instant::now();
+        let ttl = self.endpoint_unavailability_ttl;
+        let snapshot = self.account_snapshot();
+
+        let due: Vec<Url> = snapshot
+            .unavailable_endpoints
+            .iter()
+            .filter(|(_, (marked_at, _))| now.saturating_duration_since(*marked_at) >= ttl)
+            .map(|(url, _)| url.clone())
+            .collect();
+
+        if due.is_empty() {
+            return;
+        }
+
+        for url in due {
+            let reachable = probe_fn(url.clone()).await;
+            self.apply_account(|current| {
+                let mut next = current.clone();
+                if reachable {
+                    next.unavailable_endpoints.remove(&url);
+                } else if let Some((marked_at, _)) = next.unavailable_endpoints.get_mut(&url) {
+                    // Reset the cooldown so the endpoint is re-probed later.
+                    *marked_at = Instant::now();
+                }
+                next
+            });
+
+            if reachable {
+                tracing::info!(
+                    endpoint = %url,
+                    "endpoint passed connectivity probe; failing back",
+                );
+            }
+        }
+    }
     /// the primary in
     /// [`execute_hedged`](crate::driver::pipeline::operation_pipeline).
     ///
@@ -677,6 +786,30 @@ async fn failback_loop(weak_store: Weak<LocationStateStore>, config: PartitionFa
     }
 }
 
+/// Background endpoint-probe loop. Periodically probes account-level endpoints
+/// whose unavailability cooldown has elapsed and fails back only those that are
+/// reachable. Exits when the `LocationStateStore` is dropped (`Weak::upgrade()`
+/// returns `None`).
+#[cfg(feature = "tokio")]
+async fn endpoint_probe_loop(
+    weak_store: Weak<LocationStateStore>,
+    probe_fn: EndpointProbeFn,
+    interval: Duration,
+) {
+    loop {
+        tokio::time::sleep(interval).await;
+
+        let Some(store) = weak_store.upgrade() else {
+            // LocationStateStore was dropped — exit the loop.
+            break;
+        };
+
+        store
+            .probe_and_failback_unavailable_endpoints(&probe_fn)
+            .await;
+    }
+}
+
 fn epoch_millis() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -750,6 +883,63 @@ mod tests {
 
         let snapshot = store.snapshot();
         assert_eq!(snapshot.account.unavailable_endpoints.len(), 1);
+    }
+
+    #[cfg(feature = "tokio")]
+    #[tokio::test]
+    async fn unavailable_endpoint_fails_back_only_after_successful_probe() {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
+            let payload = test_refresh_payload();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move { Ok(payload) });
+            fut
+        });
+
+        let store = LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint.clone(),
+            refresh,
+            false,
+            // Cooldown of zero so the marked endpoint is immediately probe-due.
+            Duration::ZERO,
+            PartitionFailoverConfig::default(),
+            Vec::new(),
+        );
+
+        store
+            .apply(&[LocationEffect::MarkEndpointUnavailable {
+                endpoint: default_endpoint.clone(),
+                reason: UnavailableReason::TransportError,
+            }])
+            .await;
+        assert_eq!(store.snapshot().account.unavailable_endpoints.len(), 1);
+
+        // A failing probe keeps the endpoint unavailable (cooldown is reset,
+        // not cleared) — this is the core #4597 behavior: no time-based failback.
+        let unreachable: EndpointProbeFn =
+            Arc::new(|_url: Url| Box::pin(async move { false }) as BoxFuture<'static, bool>);
+        store
+            .probe_and_failback_unavailable_endpoints(&unreachable)
+            .await;
+        assert_eq!(
+            store.snapshot().account.unavailable_endpoints.len(),
+            1,
+            "a failed probe must keep the endpoint unavailable"
+        );
+
+        // A successful probe fails the endpoint back (clears the mark).
+        let reachable: EndpointProbeFn =
+            Arc::new(|_url: Url| Box::pin(async move { true }) as BoxFuture<'static, bool>);
+        store
+            .probe_and_failback_unavailable_endpoints(&reachable)
+            .await;
+        assert_eq!(
+            store.snapshot().account.unavailable_endpoints.len(),
+            0,
+            "a successful probe must fail the endpoint back"
+        );
     }
 
     #[tokio::test]
