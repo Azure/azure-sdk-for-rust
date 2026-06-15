@@ -266,18 +266,39 @@ impl CosmosDriver {
         Ok((props, transport))
     }
 
-    /// Fetches account properties using the bootstrap transport.
+    /// Fetches account properties using the bootstrap transport, optionally with
+    /// a driver-specific HTTP client factory for fault injection.
     ///
     /// This is used during initialization (before the per-account transport exists).
+    /// When `override_http_client_factory` is provided (during driver initialization
+    /// with fault injection), a temporary bootstrap transport is created using that
+    /// factory, allowing fault injection rules to apply to the bootstrap probe.
+    /// Otherwise, the runtime's shared bootstrap transport is used (no fault injection).
     async fn fetch_account_properties_with_runtime(
         runtime: &CosmosDriverRuntime,
         account: &AccountReference,
+        override_http_client_factory: Option<&Arc<dyn super::transport::http_client_factory::HttpClientFactory>>,
         fault_injection_enabled: bool,
     ) -> crate::error::Result<super::cache::AccountProperties> {
         let endpoint = AccountEndpoint::from(account);
-        let transport = runtime.bootstrap_transport();
-        let metadata_transport = transport.get_metadata_transport(&endpoint)?;
         let user_agent = Self::user_agent_header(runtime.user_agent());
+
+        let metadata_transport = if let Some(factory) = override_http_client_factory {
+            // Bootstrap with driver-specific fault-injecting factory:
+            // Create a temporary bootstrap transport using the provided factory
+            // so fault injection rules apply to this probe.
+            let temp_bootstrap = CosmosTransport::bootstrap_metadata_only(
+                runtime.connection_pool().clone(),
+                Arc::clone(factory),
+                TransportHttpVersion::Http2,
+            )?;
+            temp_bootstrap.get_metadata_transport(&endpoint)?
+        } else {
+            // Normal bootstrap: use the runtime's shared bootstrap transport
+            let transport = runtime.bootstrap_transport();
+            transport.get_metadata_transport(&endpoint)?
+        };
+
         Self::fetch_account_properties_with_transport(
             runtime,
             &metadata_transport,
@@ -381,8 +402,18 @@ impl CosmosDriver {
         }
 
         // Try HTTP/2-only via the bootstrap transport (which is HTTP/2-only).
-        match Self::fetch_account_properties_with_runtime(runtime, account, fault_injection_enabled)
-            .await
+        // If fault injection is enabled, pass the driver's factory so FI rules apply to the probe.
+        match Self::fetch_account_properties_with_runtime(
+            runtime,
+            account,
+            if fault_injection_enabled {
+                Some(http_client_factory)
+            } else {
+                None
+            },
+            fault_injection_enabled,
+        )
+        .await
         {
             Ok(props) => {
                 tracing::trace!(
@@ -886,8 +917,18 @@ impl CosmosDriver {
             return;
         }
 
-        match Self::fetch_account_properties_with_runtime(runtime, account, fault_injection_enabled)
-            .await
+        // Reprobe HTTP/2 using the fault-injecting factory if enabled
+        match Self::fetch_account_properties_with_runtime(
+            runtime,
+            account,
+            if fault_injection_enabled {
+                Some(http_client_factory)
+            } else {
+                None
+            },
+            fault_injection_enabled,
+        )
+        .await
         {
             Ok(_) => match CosmosTransport::with_factory(
                 runtime.connection_pool().clone(),
