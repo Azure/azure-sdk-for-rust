@@ -87,9 +87,10 @@ pub use recorder::{AttemptRecord, DiagnosticsRecorder, HedgeOutcome};
 // `azure_data_cosmos` SDK) is unchanged.
 pub(crate) use model::DiagnosticsContextBuilder;
 pub use model::{
-    DiagnosticsContext, ExecutionContext, FailedTransportShardDiagnostics, PipelineType,
-    RequestDiagnostics, RequestEvent, RequestEventType, RequestHandle, RequestSentStatus,
-    TransportHttpVersion, TransportKind, TransportSecurity, TransportShardDiagnostics,
+    DiagnosticsContext, DiagnosticsSummary, ExecutionContext, FailedTransportShardDiagnostics,
+    PipelineType, RequestDiagnostics, RequestEvent, RequestEventType, RequestHandle,
+    RequestSentStatus, TransportHttpVersion, TransportKind, TransportSecurity,
+    TransportShardDiagnostics,
 };
 
 /// The terminal outcome of an operation, used by the gate.

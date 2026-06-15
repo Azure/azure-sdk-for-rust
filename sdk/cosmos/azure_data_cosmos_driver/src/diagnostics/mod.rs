@@ -32,9 +32,10 @@ pub mod capture;
 
 pub(crate) use capture::DiagnosticsContextBuilder;
 pub use capture::{
-    DiagnosticsContext, ExecutionContext, FailedTransportShardDiagnostics, PipelineType,
-    RequestDiagnostics, RequestEvent, RequestEventType, RequestHandle, RequestSentStatus,
-    TransportHttpVersion, TransportKind, TransportSecurity, TransportShardDiagnostics,
+    DiagnosticsContext, DiagnosticsSummary, ExecutionContext, FailedTransportShardDiagnostics,
+    PipelineType, RequestDiagnostics, RequestEvent, RequestEventType, RequestHandle,
+    RequestSentStatus, TransportHttpVersion, TransportKind, TransportSecurity,
+    TransportShardDiagnostics,
 };
 pub use proxy_configuration::ProxyConfiguration;
 

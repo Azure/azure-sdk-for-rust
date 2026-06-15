@@ -56,6 +56,10 @@ pub struct DriverOptions {
     /// engine. Defaults to [`Mode::Always`](crate::diagnostics::capture::Mode::Always) so
     /// diagnostics are produced out-of-the-box; configurable to `Threshold`/`Off`.
     capture_diagnostics_policy: crate::diagnostics::capture::DiagnosticsPolicy,
+    /// How [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext) is rendered to a string
+    /// (`Json` / `Compact` / `Encoded`). Defaults to
+    /// [`DiagnosticsEncoding::Json`](crate::options::DiagnosticsEncoding::Json).
+    diagnostics_encoding: crate::options::DiagnosticsEncoding,
 }
 
 impl DriverOptions {
@@ -85,6 +89,12 @@ impl DriverOptions {
     pub fn capture_diagnostics_policy(&self) -> crate::diagnostics::capture::DiagnosticsPolicy {
         self.capture_diagnostics_policy
     }
+
+    /// Returns the configured diagnostics string encoding (defaults to
+    /// [`DiagnosticsEncoding::Json`](crate::options::DiagnosticsEncoding::Json)).
+    pub fn diagnostics_encoding(&self) -> crate::options::DiagnosticsEncoding {
+        self.diagnostics_encoding
+    }
 }
 
 /// Builder for creating [`DriverOptions`].
@@ -98,6 +108,7 @@ pub struct DriverOptionsBuilder {
     operation_options: Option<OperationOptions>,
     preferred_regions: Vec<Region>,
     capture_diagnostics_policy: crate::diagnostics::capture::DiagnosticsPolicy,
+    diagnostics_encoding: crate::options::DiagnosticsEncoding,
 }
 
 impl DriverOptionsBuilder {
@@ -108,6 +119,7 @@ impl DriverOptionsBuilder {
             operation_options: None,
             preferred_regions: Vec::new(),
             capture_diagnostics_policy: crate::diagnostics::capture::DiagnosticsPolicy::default(),
+            diagnostics_encoding: crate::options::DiagnosticsEncoding::default(),
         }
     }
 
@@ -145,6 +157,20 @@ impl DriverOptionsBuilder {
         self
     }
 
+    /// Sets how [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext) is rendered to a
+    /// string by [`encode`](crate::diagnostics::DiagnosticsContext::encode) and
+    /// [`CosmosResponse::diagnostics_string`](crate::models::CosmosResponse::diagnostics_string).
+    ///
+    /// Defaults to [`DiagnosticsEncoding::Json`](crate::options::DiagnosticsEncoding::Json), so
+    /// existing output is unchanged.
+    pub fn with_diagnostics_encoding(
+        mut self,
+        encoding: crate::options::DiagnosticsEncoding,
+    ) -> Self {
+        self.diagnostics_encoding = encoding;
+        self
+    }
+
     /// Builds the [`DriverOptions`].
     pub fn build(self) -> DriverOptions {
         DriverOptions {
@@ -152,6 +178,7 @@ impl DriverOptionsBuilder {
             operation_options: Arc::new(self.operation_options.unwrap_or_default()),
             preferred_regions: self.preferred_regions,
             capture_diagnostics_policy: self.capture_diagnostics_policy,
+            diagnostics_encoding: self.diagnostics_encoding,
         }
     }
 }

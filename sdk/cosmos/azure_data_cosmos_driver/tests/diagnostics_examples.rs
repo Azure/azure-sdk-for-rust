@@ -16,7 +16,7 @@ use azure_data_cosmos_driver::diagnostics::capture::{
 };
 use azure_data_cosmos_driver::diagnostics::ExecutionContext;
 use azure_data_cosmos_driver::options::DiagnosticsOptions;
-use azure_data_cosmos_driver::DiagnosticsVerbosity;
+use azure_data_cosmos_driver::{DiagnosticsEncoding, DiagnosticsVerbosity};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -141,4 +141,64 @@ fn example_hedged_operation() {
         hedge.alternate_region().map(|r| r.as_str()),
         hedge.response_region().map(|r| r.as_str()),
     );
+}
+
+/// Example: the top-level `summary` block (computed at finalization) and the three encoding modes.
+#[test]
+fn example_summary_and_encoding() {
+    let pool = LogPool::new();
+    let mut rec = DiagnosticsRecorder::start(
+        &pool,
+        "create_item",
+        "https://acct.documents.azure.com/",
+        "a1b2c3d4-0000-1111-2222-summary00enc01",
+    );
+    rec.record_attempt(
+        AttemptRecord::new(
+            ExecutionContext::Initial,
+            "East US",
+            "https://acct-eastus.documents.azure.com/",
+            429,
+        )
+        .with_service_request_id("req-eastus-429")
+        .with_request_charge(4.2)
+        .with_sub_status(3200)
+        .with_duration_ns(3_200_000),
+    );
+    rec.record_attempt(
+        AttemptRecord::new(
+            ExecutionContext::Retry,
+            "East US",
+            "https://acct-eastus.documents.azure.com/",
+            200,
+        )
+        .with_service_request_id("req-eastus-200")
+        .with_request_charge(4.2)
+        .with_duration_ns(4_100_000),
+    );
+    rec.record_end(Outcome::Success, 2, 200, None, Some(7_300_000));
+
+    let ctx = finish(rec, &DiagnosticsPolicy::always(), options())
+        .expect("a context is built in Always mode");
+
+    // The summary aggregates over the requests; it exists only on a built context.
+    let summary = ctx.summary();
+    assert_eq!(summary.request_count(), 2);
+    assert_eq!(summary.retry_count(), 1);
+    assert_eq!(summary.throttled_count(), 1);
+
+    println!("=== Example: top-level summary block ===");
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&serde_json::to_value(summary).unwrap()).unwrap()
+    );
+
+    // The three encoding modes for the same context, with their sizes.
+    let json = ctx.encode(DiagnosticsEncoding::Json);
+    let compact = ctx.encode(DiagnosticsEncoding::Compact);
+    let encoded = ctx.encode(DiagnosticsEncoding::Encoded);
+    println!("=== Example: encoding modes (same context) ===");
+    println!("Json    ({} bytes, pretty)", json.len());
+    println!("Compact ({} bytes): {}", compact.len(), compact);
+    println!("Encoded ({} bytes, base64): {}", encoded.len(), encoded);
 }

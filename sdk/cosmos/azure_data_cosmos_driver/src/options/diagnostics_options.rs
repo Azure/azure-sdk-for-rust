@@ -58,6 +58,49 @@ impl AsRef<str> for DiagnosticsVerbosity {
     }
 }
 
+/// Controls how a `DiagnosticsContext` is rendered to a string by
+/// [`DiagnosticsContext::encode`](crate::diagnostics::DiagnosticsContext::encode).
+///
+/// The default is [`DiagnosticsEncoding::Json`], so existing string output is unchanged.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum DiagnosticsEncoding {
+    /// Pretty-printed, human-readable JSON (the default).
+    #[default]
+    Json,
+
+    /// Minified JSON — the same content as [`Json`](Self::Json) with no insignificant whitespace,
+    /// for the smallest text form.
+    Compact,
+
+    /// Base64 of the compact JSON — a single opaque token for size-sensitive logging. Decode with
+    /// standard base64 and parse the resulting JSON to recover the full diagnostics.
+    Encoded,
+}
+
+impl DiagnosticsEncoding {
+    /// Returns the string representation of this encoding.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            DiagnosticsEncoding::Json => "json",
+            DiagnosticsEncoding::Compact => "compact",
+            DiagnosticsEncoding::Encoded => "encoded",
+        }
+    }
+}
+
+impl AsRef<str> for DiagnosticsEncoding {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+
+impl std::fmt::Display for DiagnosticsEncoding {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
 impl std::fmt::Display for DiagnosticsVerbosity {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(self.as_str())

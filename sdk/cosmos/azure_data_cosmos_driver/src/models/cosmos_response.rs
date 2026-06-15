@@ -186,6 +186,16 @@ impl CosmosResponse {
         &self.diagnostics
     }
 
+    /// Renders this operation's [`DiagnosticsContext`] to a string using the given encoding.
+    ///
+    /// A convenience over [`DiagnosticsContext::encode`]. Pass the driver's configured encoding —
+    /// [`DriverOptions::diagnostics_encoding`](crate::options::DriverOptions::diagnostics_encoding)
+    /// — to honor the client option, e.g.
+    /// `response.diagnostics_string(driver_options.diagnostics_encoding())`.
+    pub fn diagnostics_string(&self, encoding: crate::options::DiagnosticsEncoding) -> String {
+        self.diagnostics.encode(encoding)
+    }
+
     /// Prepends the per-request diagnostics from one or more prior
     /// attempts onto this response's diagnostics, returning the response
     /// with an aggregated [`DiagnosticsContext`].

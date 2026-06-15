@@ -10,9 +10,10 @@
 use crate::{
     driver::{pipeline::hedging_diagnostics::HedgeDiagnostics, routing::CosmosEndpoint},
     models::{ActivityId, CosmosResponseHeaders, CosmosStatus, RequestCharge, SubStatusCode},
-    options::{DiagnosticsOptions, DiagnosticsVerbosity, Region},
+    options::{DiagnosticsEncoding, DiagnosticsOptions, DiagnosticsVerbosity, Region},
     system::CpuMemoryMonitor,
 };
+use azure_core::fmt::SafeDebug;
 use azure_core::http::StatusCode;
 use serde::Serialize;
 use std::{
@@ -1044,9 +1045,167 @@ enum DiagnosticsPayload<'a> {
     Summary { regions: Vec<RegionSummary> },
 }
 
+/// A single `(status, sub-status) -> count` entry of the [`DiagnosticsSummary`] histogram.
+#[derive(Clone, SafeDebug, Serialize)]
+struct StatusCount {
+    /// HTTP status code.
+    status: u16,
+    /// Cosmos sub-status code, when present.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    sub_status: Option<u16>,
+    /// Number of requests that returned this `(status, sub-status)`.
+    count: usize,
+}
+
+/// A compact, aggregatable roll-up of an operation's diagnostics, modeled on the top-level
+/// `Summary` block of .NET's `CosmosDiagnostics`.
+///
+/// Computed **once at finalization** ([`DiagnosticsContextBuilder::complete`]) as a reduction over
+/// the already-collected [`RequestDiagnostics`] — never on the hot path. It therefore exists only
+/// when a [`DiagnosticsContext`] is built (i.e. when the gate fires); a dropped fast success
+/// produces no context and hence no summary. Serialized as the top-level `summary` section of the
+/// diagnostics output.
+///
+/// The field set is seeded from the high-value signals a support investigation branches on first:
+/// final status, per-attempt status mix (the histogram), retry/throttle counts, total RU, total
+/// elapsed, regions contacted, and the first error.
+#[derive(Clone, SafeDebug, Serialize)]
+#[non_exhaustive]
+pub struct DiagnosticsSummary {
+    /// Final operation status (HTTP + Cosmos sub-status) after all retries/failovers.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    final_status: Option<CosmosStatus>,
+    /// Total number of requests recorded (attempts + hedge legs).
+    request_count: usize,
+    /// Number of retried requests (`ExecutionContext::Retry` / `TransportRetry`).
+    retry_count: usize,
+    /// Number of throttled (HTTP 429) requests.
+    throttled_count: usize,
+    /// Total request charge (RU) summed across all requests.
+    total_request_charge: RequestCharge,
+    /// Total operation elapsed time, in milliseconds.
+    total_duration_ms: u64,
+    /// Distinct regions contacted, sorted (normalized names, e.g. `"eastus"`).
+    regions_contacted: Vec<String>,
+    /// Histogram of `(status, sub-status) -> count` across all requests (like .NET's call
+    /// histogram), sorted by status then sub-status for deterministic output.
+    status_counts: Vec<StatusCount>,
+    /// The first error message observed across the requests, if any.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    top_error: Option<String>,
+}
+
+impl DiagnosticsSummary {
+    /// Reduces the collected requests into a summary. Called only at finalization, off the hot path.
+    fn compute(
+        requests: &[RequestDiagnostics],
+        status: Option<CosmosStatus>,
+        duration: Duration,
+    ) -> Self {
+        let mut retry_count = 0usize;
+        let mut throttled_count = 0usize;
+        let mut top_error: Option<String> = None;
+        let mut histogram: HashMap<(u16, Option<u16>), usize> = HashMap::new();
+        let mut regions: Vec<String> = Vec::new();
+
+        for req in requests {
+            if matches!(
+                req.execution_context,
+                ExecutionContext::Retry | ExecutionContext::TransportRetry
+            ) {
+                retry_count += 1;
+            }
+            if req.status.is_throttled() {
+                throttled_count += 1;
+            }
+            if top_error.is_none() {
+                if let Some(err) = req.error.as_deref() {
+                    top_error = Some(err.to_string());
+                }
+            }
+            let key = (
+                u16::from(req.status.status_code()),
+                req.status.sub_status().map(|s| s.value()),
+            );
+            *histogram.entry(key).or_insert(0) += 1;
+            if let Some(region) = &req.region {
+                let name = region.as_str().to_string();
+                if !regions.contains(&name) {
+                    regions.push(name);
+                }
+            }
+        }
+
+        regions.sort();
+        let mut status_counts: Vec<StatusCount> = histogram
+            .into_iter()
+            .map(|((status, sub_status), count)| StatusCount {
+                status,
+                sub_status,
+                count,
+            })
+            .collect();
+        status_counts.sort_by_key(|c| (c.status, c.sub_status));
+
+        Self {
+            final_status: status,
+            request_count: requests.len(),
+            retry_count,
+            throttled_count,
+            total_request_charge: requests.iter().map(|r| r.request_charge).sum(),
+            total_duration_ms: duration.as_millis() as u64,
+            regions_contacted: regions,
+            status_counts,
+            top_error,
+        }
+    }
+
+    /// The final operation status (HTTP + Cosmos sub-status), if recorded.
+    pub fn final_status(&self) -> Option<&CosmosStatus> {
+        self.final_status.as_ref()
+    }
+
+    /// Total number of requests recorded (attempts + hedge legs).
+    pub fn request_count(&self) -> usize {
+        self.request_count
+    }
+
+    /// Number of retried requests.
+    pub fn retry_count(&self) -> usize {
+        self.retry_count
+    }
+
+    /// Number of throttled (HTTP 429) requests.
+    pub fn throttled_count(&self) -> usize {
+        self.throttled_count
+    }
+
+    /// Total request charge (RU) across all requests.
+    pub fn total_request_charge(&self) -> RequestCharge {
+        self.total_request_charge
+    }
+
+    /// Total operation elapsed time, in milliseconds.
+    pub fn total_duration_ms(&self) -> u64 {
+        self.total_duration_ms
+    }
+
+    /// Distinct regions contacted (normalized names), sorted.
+    pub fn regions_contacted(&self) -> &[String] {
+        &self.regions_contacted
+    }
+
+    /// The first error message observed across the requests, if any.
+    pub fn top_error(&self) -> Option<&str> {
+        self.top_error.as_deref()
+    }
+}
+
 /// Diagnostics output structure for JSON serialization.
 #[derive(Serialize)]
 struct DiagnosticsOutput<'a> {
+    /// Aggregatable roll-up, emitted first (like .NET's top-level Summary block).
+    summary: &'a DiagnosticsSummary,
     activity_id: &'a ActivityId,
     total_duration_ms: u64,
     total_request_charge: RequestCharge,
@@ -1112,6 +1271,8 @@ struct DeduplicatedGroup {
 /// Truncated output indicator.
 #[derive(Serialize)]
 struct TruncatedOutput<'a> {
+    /// Aggregatable roll-up, retained even when the detail is truncated.
+    summary: &'a DiagnosticsSummary,
     activity_id: &'a ActivityId,
     total_duration_ms: u64,
     request_count: usize,
@@ -1559,11 +1720,15 @@ impl DiagnosticsContextBuilder {
     /// shared via `Arc` without any locking overhead.
     pub(crate) fn complete(self) -> DiagnosticsContext {
         let duration = self.started_at.elapsed();
+        // Compute the aggregatable summary once, here at finalization — a reduction over the
+        // already-collected requests. Never runs on the hot path; absent when no context is built.
+        let summary = DiagnosticsSummary::compute(&self.requests, self.status, duration);
         DiagnosticsContext {
             activity_id: self.activity_id,
             duration,
             requests: Arc::new(self.requests),
             status: self.status,
+            summary,
             options: self.options,
             cpu_monitor: self.cpu_monitor,
             machine_id: self.machine_id,
@@ -1632,6 +1797,9 @@ pub struct DiagnosticsContext {
 
     /// Operation-level combined HTTP status and sub-status (final status after retries).
     status: Option<CosmosStatus>,
+
+    /// Aggregatable roll-up over `requests`, computed once at finalization (off the hot path).
+    summary: DiagnosticsSummary,
 
     /// Reference to diagnostics configuration.
     options: Arc<DiagnosticsOptions>,
@@ -1718,11 +1886,14 @@ impl DiagnosticsContext {
             .iter()
             .map(|c| c.duration)
             .fold(Duration::ZERO, |a, b| a.saturating_add(b));
+        let summary =
+            DiagnosticsSummary::compute(&aggregated_requests, last.status, aggregated_duration);
         Some(DiagnosticsContext {
             activity_id: last.activity_id.clone(),
             duration: aggregated_duration,
             requests: Arc::new(aggregated_requests),
             status: last.status,
+            summary,
             options: Arc::clone(&last.options),
             cpu_monitor: last.cpu_monitor.clone(),
             machine_id: last.machine_id.clone(),
@@ -1752,6 +1923,38 @@ impl DiagnosticsContext {
     /// This is the final status after all retries and failovers.
     pub fn status(&self) -> Option<&CosmosStatus> {
         self.status.as_ref()
+    }
+
+    /// Returns the aggregatable [`DiagnosticsSummary`] for this operation.
+    ///
+    /// The summary is a `.NET CosmosDiagnostics`-style roll-up (status/sub-status histogram,
+    /// retry/throttle counts, total RU, regions, final status, top error, total elapsed), computed
+    /// once at finalization as a reduction over the requests. It is always present on a built
+    /// context (it has no cost on the hot path and is absent only when no context is built).
+    pub fn summary(&self) -> &DiagnosticsSummary {
+        &self.summary
+    }
+
+    /// Encodes the diagnostics to a string using the given [`DiagnosticsEncoding`].
+    ///
+    /// - [`DiagnosticsEncoding::Json`] — pretty-printed, human-readable JSON.
+    /// - [`DiagnosticsEncoding::Compact`] — minified JSON (same content, smallest text form).
+    /// - [`DiagnosticsEncoding::Encoded`] — base64 of the compact JSON, for size-sensitive logging;
+    ///   decode with standard base64 then parse the JSON.
+    ///
+    /// All encodings carry the full detailed diagnostics (including the top-level `summary`).
+    pub fn encode(&self, encoding: DiagnosticsEncoding) -> String {
+        let compact = self.to_json_string(Some(DiagnosticsVerbosity::Detailed));
+        match encoding {
+            DiagnosticsEncoding::Compact => compact.to_string(),
+            DiagnosticsEncoding::Json => serde_json::from_str::<serde_json::Value>(compact)
+                .and_then(|v| serde_json::to_string_pretty(&v))
+                .unwrap_or_else(|_| compact.to_string()),
+            DiagnosticsEncoding::Encoded => {
+                use base64::Engine as _;
+                base64::engine::general_purpose::STANDARD.encode(compact.as_bytes())
+            }
+        }
     }
 
     /// Returns the total request charge (RU) across all requests.
@@ -1862,6 +2065,7 @@ impl DiagnosticsContext {
         let total_duration_ms = self.duration.as_millis() as u64;
         let system_usage = self.resolve_system_usage();
         let output = DiagnosticsOutput {
+            summary: &self.summary,
             activity_id: &self.activity_id,
             total_duration_ms,
             total_request_charge: self.requests.iter().map(|r| r.request_charge).sum(),
@@ -1898,6 +2102,7 @@ impl DiagnosticsContext {
         region_summaries.sort_by(|a, b| a.region.cmp(&b.region));
 
         let output = DiagnosticsOutput {
+            summary: &self.summary,
             activity_id: &self.activity_id,
             total_duration_ms,
             total_request_charge: self.requests.iter().map(|r| r.request_charge).sum(),
@@ -1918,6 +2123,7 @@ impl DiagnosticsContext {
         } else {
             // Return a truncated indicator
             let truncated = TruncatedOutput {
+                summary: &self.summary,
                 activity_id: &self.activity_id,
                 total_duration_ms,
                 request_count: self.requests.len(),
@@ -1938,6 +2144,7 @@ impl Clone for DiagnosticsContext {
             duration: self.duration,
             requests: Arc::clone(&self.requests),
             status: self.status,
+            summary: self.summary.clone(),
             options: Arc::clone(&self.options),
             cpu_monitor: self.cpu_monitor.clone(),
             machine_id: self.machine_id.clone(),
@@ -2217,6 +2424,10 @@ mod tests {
                     serde_json::Value::Number(0.into()),
                 );
             }
+            // The top-level `summary` block is exercised by dedicated summary tests; strip it here
+            // so the structural golden tests stay focused on the requests/regions/system fields and
+            // are unaffected by the summary's timing-dependent `total_duration_ms`.
+            obj.remove("summary");
         }
 
         // Normalize duration_ms in individual requests (detailed mode)
@@ -2510,6 +2721,193 @@ mod tests {
             }
         };
         assert_eq!(actual, expected, "Detailed JSON mismatch.\nActual:\n{json}");
+    }
+
+    #[test]
+    fn summary_aggregates_typical_success() {
+        let ctx = make_context_with(ActivityId::from_string("sum-typical".to_string()), |b| {
+            let h = b.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::new("East US")),
+                "https://e/",
+            );
+            b.update_request(h, |r| r.request_charge = RequestCharge::new(2.5));
+            b.complete_request(h, StatusCode::Ok, None);
+            b.set_operation_status(StatusCode::Ok, None);
+        });
+        let s = ctx.summary();
+        assert_eq!(s.request_count(), 1);
+        assert_eq!(s.retry_count(), 0);
+        assert_eq!(s.throttled_count(), 0);
+        assert_eq!(s.total_request_charge(), RequestCharge::new(2.5));
+        assert_eq!(s.regions_contacted(), ["eastus".to_string()]);
+        assert_eq!(
+            s.final_status().map(|st| u16::from(st.status_code())),
+            Some(200)
+        );
+        assert!(s.top_error().is_none());
+    }
+
+    #[test]
+    fn summary_aggregates_retry_and_throttle() {
+        let ctx = make_context_with(ActivityId::from_string("sum-retry".to_string()), |b| {
+            let h1 = b.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::new("East US")),
+                "https://e/",
+            );
+            b.update_request(h1, |r| r.request_charge = RequestCharge::new(4.2));
+            b.complete_request(
+                h1,
+                StatusCode::TooManyRequests,
+                Some(SubStatusCode::new(3200)),
+            );
+            let h2 = b.start_test_request(
+                ExecutionContext::Retry,
+                Some(Region::new("East US")),
+                "https://e/",
+            );
+            b.update_request(h2, |r| r.request_charge = RequestCharge::new(4.2));
+            b.complete_request(h2, StatusCode::Ok, None);
+            b.set_operation_status(StatusCode::Ok, None);
+        });
+        let s = ctx.summary();
+        assert_eq!(s.request_count(), 2);
+        assert_eq!(s.retry_count(), 1, "one Retry request");
+        assert_eq!(s.throttled_count(), 1, "one 429");
+        assert_eq!(s.total_request_charge(), RequestCharge::new(8.4));
+        assert!(s.top_error().is_none());
+
+        // The (status, sub-status) histogram is serialized; assert both entries are present.
+        let value = serde_json::to_value(s).expect("summary serializes");
+        let counts = value["status_counts"]
+            .as_array()
+            .expect("status_counts array");
+        assert_eq!(counts.len(), 2);
+        // Sorted by status then sub-status: 200 first, then 429/3200.
+        assert_eq!(counts[0]["status"], 200);
+        assert_eq!(counts[0]["count"], 1);
+        assert_eq!(counts[1]["status"], 429);
+        assert_eq!(counts[1]["sub_status"], 3200);
+        assert_eq!(counts[1]["count"], 1);
+    }
+
+    #[test]
+    fn summary_aggregates_error() {
+        let ctx = make_context_with(ActivityId::from_string("sum-error".to_string()), |b| {
+            let h = b.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::new("East US")),
+                "https://e/",
+            );
+            b.fail_transport_request(
+                h,
+                "connection refused",
+                RequestSentStatus::NotSent,
+                CosmosStatus::from_parts(StatusCode::ServiceUnavailable, None),
+            );
+            b.set_operation_status(StatusCode::ServiceUnavailable, None);
+        });
+        let s = ctx.summary();
+        assert_eq!(s.request_count(), 1);
+        assert_eq!(s.top_error(), Some("connection refused"));
+        assert_eq!(
+            s.final_status().map(|st| u16::from(st.status_code())),
+            Some(503)
+        );
+    }
+
+    #[test]
+    fn summary_aggregates_hedged_legs() {
+        let ctx = make_context_with(ActivityId::from_string("sum-hedged".to_string()), |b| {
+            let h1 = b.start_test_request(
+                ExecutionContext::Hedging,
+                Some(Region::new("East US")),
+                "https://e/",
+            );
+            b.fail_transport_request(
+                h1,
+                "transport failure (no response)",
+                RequestSentStatus::Sent,
+                CosmosStatus::from_parts(StatusCode::ServiceUnavailable, None),
+            );
+            let h2 = b.start_test_request(
+                ExecutionContext::Hedging,
+                Some(Region::new("West US")),
+                "https://w/",
+            );
+            b.update_request(h2, |r| r.request_charge = RequestCharge::new(3.1));
+            b.complete_request(h2, StatusCode::Ok, None);
+            b.set_operation_status(StatusCode::Ok, None);
+        });
+        let s = ctx.summary();
+        assert_eq!(s.request_count(), 2);
+        assert_eq!(
+            s.regions_contacted(),
+            ["eastus".to_string(), "westus".to_string()]
+        );
+        assert_eq!(s.total_request_charge(), RequestCharge::new(3.1));
+        assert_eq!(s.top_error(), Some("transport failure (no response)"));
+        let value = serde_json::to_value(s).expect("summary serializes");
+        let counts = value["status_counts"]
+            .as_array()
+            .expect("status_counts array");
+        assert_eq!(counts.len(), 2, "200 and 503");
+    }
+
+    #[test]
+    fn summary_appears_at_top_of_detailed_json() {
+        let ctx = make_context_with(ActivityId::from_string("sum-top".to_string()), |b| {
+            let h = b.start_test_request(ExecutionContext::Initial, None, "https://e/");
+            b.complete_request(h, StatusCode::Ok, None);
+            b.set_operation_status(StatusCode::Ok, None);
+        });
+        let json = ctx.to_json_string(Some(DiagnosticsVerbosity::Detailed));
+        let value: serde_json::Value = serde_json::from_str(json).unwrap();
+        assert!(
+            value.get("summary").is_some(),
+            "detailed JSON carries a top-level summary block"
+        );
+        assert_eq!(value["summary"]["request_count"], 1);
+    }
+
+    #[test]
+    fn encode_modes_roundtrip() {
+        use base64::Engine as _;
+        let ctx = make_context_with(ActivityId::from_string("enc-id".to_string()), |b| {
+            let h = b.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::new("East US")),
+                "https://e/",
+            );
+            b.update_request(h, |r| r.request_charge = RequestCharge::new(1.5));
+            b.complete_request(h, StatusCode::Ok, None);
+            b.set_operation_status(StatusCode::Ok, None);
+        });
+
+        let compact = ctx.encode(DiagnosticsEncoding::Compact);
+        let pretty = ctx.encode(DiagnosticsEncoding::Json);
+        let encoded = ctx.encode(DiagnosticsEncoding::Encoded);
+
+        // Compact equals the detailed JSON; pretty is the same content, just formatted.
+        assert_eq!(
+            compact,
+            ctx.to_json_string(Some(DiagnosticsVerbosity::Detailed))
+        );
+        assert!(!compact.contains('\n'), "compact is single-line");
+        assert!(pretty.contains('\n'), "json is pretty-printed");
+        let pretty_value: serde_json::Value = serde_json::from_str(&pretty).unwrap();
+        let compact_value: serde_json::Value = serde_json::from_str(&compact).unwrap();
+        assert_eq!(
+            pretty_value, compact_value,
+            "Json and Compact carry the same data"
+        );
+
+        // Encoded is base64 of the compact JSON and round-trips losslessly.
+        let decoded = base64::engine::general_purpose::STANDARD
+            .decode(encoded.as_bytes())
+            .expect("encoded is valid base64");
+        assert_eq!(String::from_utf8(decoded).unwrap(), compact);
     }
 
     #[test]

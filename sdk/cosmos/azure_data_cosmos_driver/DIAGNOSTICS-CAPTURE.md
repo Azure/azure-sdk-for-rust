@@ -124,6 +124,53 @@ Components (`azure_data_cosmos_driver::diagnostics::capture`):
 
 There is **no parallel diagnostics model**: capture owns the one canonical type and gates it.
 
+## 5a. The `summary` block (.NET-style top-level roll-up)
+
+When a `DiagnosticsContext` is built, it carries a top-level [`DiagnosticsSummary`] —
+an aggregatable roll-up modeled on the `Summary` block of .NET's `CosmosDiagnostics`. It is
+**computed once at finalization** (in `complete()`), as a reduction over the already-collected
+requests — **never on the hot path**. Because it lives on a built context, it exists exactly when
+diagnostics are built; a dropped fast success (Off, or Threshold fast-success) produces no context
+and hence no summary.
+
+Fields (seeded from the high-value signals an investigation branches on first): `final_status`,
+`request_count`, `retry_count`, `throttled_count`, `total_request_charge`, `total_duration_ms`,
+`regions_contacted`, a `(status, sub-status) -> count` histogram (`status_counts`), and `top_error`.
+It is serialized as the first section of the diagnostics output (like .NET puts `Summary` at the
+top). Example for a retry (429 → 200):
+
+```json
+"summary": {
+  "final_status": { "status": "200" },
+  "request_count": 2,
+  "retry_count": 1,
+  "throttled_count": 1,
+  "total_request_charge": 8.4,
+  "total_duration_ms": 0,
+  "regions_contacted": ["eastus"],
+  "status_counts": [
+    { "status": 200, "count": 1 },
+    { "status": 429, "sub_status": 3200, "count": 1 }
+  ]
+}
+```
+
+## 5b. Diagnostics string encoding (client option)
+
+How a `DiagnosticsContext` is rendered to a string is a driver client option,
+[`DiagnosticsEncoding`], set via
+[`DriverOptions::with_diagnostics_encoding`](crate::options::DriverOptions). It is honored by
+[`DiagnosticsContext::encode`](crate::diagnostics::DiagnosticsContext::encode) and
+[`CosmosResponse::diagnostics_string`](crate::models::CosmosResponse::diagnostics_string):
+
+- **`Json`** (default) — pretty-printed, human-readable JSON. Default, so existing output is
+  unchanged.
+- **`Compact`** — minified JSON (same content, smallest text form).
+- **`Encoded`** — base64 of the compact JSON, a single opaque token for size-sensitive logging;
+  decode with standard base64 then parse the JSON to recover the full diagnostics.
+
+All encodings carry the full detailed diagnostics including the top-level `summary`.
+
 ## 6. Scope of this change
 
 - **Ownership flip, driver-scoped.** The rich diagnostics model moved from
@@ -132,12 +179,17 @@ There is **no parallel diagnostics model**: capture owns the one canonical type 
 - **The driver routes through capture.** At the operation-executor seam, the recorder records the
   outcome + elapsed and the gate decides whether the canonical `DiagnosticsContext` is surfaced via
   `CosmosResponse::capture_diagnostics()`.
+- **`.NET`-style `summary` block** computed at finalization, and a **`DiagnosticsEncoding`** client
+  option — both additive and non-breaking (default encoding `Json`).
 - **No data loss.** The pipeline keeps populating the (now capture-owned) builder, so events,
   transport-shard diagnostics, fault-injection evaluations, true wall-clock timing, and hedging are
   all preserved.
 - **No public break.** `response.diagnostics()` and the `azure_data_cosmos` boundary type are
   unchanged. The default is `Always`, so diagnostics are still produced out-of-the-box.
 - **No `azure_core` / `typespec_client_core` changes.**
+
+[`DiagnosticsSummary`]: crate::diagnostics::DiagnosticsSummary
+[`DiagnosticsEncoding`]: crate::options::DiagnosticsEncoding
 
 ## 7. Test & bench results
 
