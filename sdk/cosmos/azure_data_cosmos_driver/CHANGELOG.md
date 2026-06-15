@@ -4,8 +4,11 @@
 
 ### Features Added
 
+- Added support for using a native query planning library to generate query plans locally, avoiding a Gateway round-trip on cross-partition queries. Gated behind the `__internal_native_query_plan` feature flag. ([#4554](https://github.com/Azure/azure-sdk-for-rust/pull/4554))
+
 ### Breaking Changes
 
+- Cross-partition query continuation tokens minted by `0.4.0` cannot be resumed against `0.5.0`. The on-wire token shape was reshaped to record per-range sibling state so that pausing a fan-out query mid-flight preserves information about siblings that hadn't been touched yet. Callers holding a `0.4.0`-minted token will receive a continuation-token error on resume and must re-issue the query. ([#4550](https://github.com/Azure/azure-sdk-for-rust/pull/4550))
 - `azure_data_cosmos_driver::models::ETag` has been removed. Use `azure_core::http::Etag` directly. The previous `ETag::new(...)` is gone; construct via `Etag::from(&str)` / `Etag::from(String)`. ([#4512](https://github.com/Azure/azure-sdk-for-rust/pull/4512))
 
 ### Bugs Fixed
@@ -14,6 +17,7 @@
 - `evaluate_transport_layer_outcome`'s `definitely_not_sent` branch now emits only `MarkEndpointUnavailable` (the `MarkPartitionUnavailable` emit was dropped) so Gateway-mode connect failures stop inflating per-partition PPCB counters. ([#4590](https://github.com/Azure/azure-sdk-for-rust/pull/4590))
 - `try_handle_write_forbidden` now suppresses `MarkEndpointUnavailable` when `is_ppcb_managed` is true (multi-write + partitioned + PPCB active); the per-partition mark and topology refresh still fire. ([#4590](https://github.com/Azure/azure-sdk-for-rust/pull/4590))
 - `ppcb_should_skip` in `resolve_endpoint` now treats `OperationOptions::excluded_regions` as a hard filter on the PPCB override path; previously the override fast-path bypassed the exclusion check enforced in `try_select_endpoint`. ([#4590](https://github.com/Azure/azure-sdk-for-rust/pull/4590))
+- Fixed duplicate items being returned on cross-partition query resume after a physical partition split. When a cross-partition query was paused, serialized to a continuation token, and resumed after the underlying partition had split, the resumed iterator could re-emit items the caller had already consumed on a prior page. The continuation token now records per-range sibling state and is correctly propagated to every surviving leaf after a split. ([#4550](https://github.com/Azure/azure-sdk-for-rust/pull/4550))
 
 ### Other Changes
 
