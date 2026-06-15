@@ -85,11 +85,13 @@ pub struct CosmosResponse {
     /// Full diagnostics context for this operation.
     diagnostics: Arc<DiagnosticsContext>,
 
-    /// Optional, opt-in diagnostics built by the gated [`crate::diagnostics::capture`] front-end.
-    /// `None` unless the capture policy is enabled and the gate decided to build (a slow or
-    /// errored operation). When present this is the **same** canonical [`DiagnosticsContext`]
-    /// type as `diagnostics` — capture is an alternative, gated acquisition path, not a parallel
-    /// model.
+    /// The operation's [`DiagnosticsContext`] as surfaced through the diagnostics **capture** gate
+    /// ([`crate::diagnostics::capture`]). This is the **same** canonical context as `diagnostics`,
+    /// gated: `Some` when the capture policy decided to surface it (the default [`Mode::Always`],
+    /// or a `Threshold`/error hit) and `None` when the gate dropped it (a fast success under
+    /// `Threshold`, or `Mode::Off`). It is one model, not a parallel one.
+    ///
+    /// [`Mode::Always`]: crate::diagnostics::capture::Mode::Always
     capture: Option<Arc<DiagnosticsContext>>,
 }
 
@@ -113,7 +115,7 @@ impl CosmosResponse {
         }
     }
 
-    /// Attaches opt-in capture diagnostics to this response (builder-style).
+    /// Attaches the gated capture diagnostics to this response (builder-style).
     pub(crate) fn with_capture_diagnostics(
         mut self,
         capture: Option<Arc<DiagnosticsContext>>,
@@ -122,13 +124,13 @@ impl CosmosResponse {
         self
     }
 
-    /// Returns the gated [`DiagnosticsContext`] built by the [`crate::diagnostics::capture`]
-    /// front-end, if the capture policy was enabled and the gate decided to build for this
-    /// operation.
+    /// Returns the operation's [`DiagnosticsContext`] as surfaced through the diagnostics
+    /// **capture** gate ([`crate::diagnostics::capture`]).
     ///
-    /// `None` when capture is off (the default) or when the operation was a fast success the gate
-    /// dropped. This is the same type as [`CosmosResponse::diagnostics`]; it is surfaced
-    /// separately while capture is opt-in.
+    /// This is the **same** canonical context as [`CosmosResponse::diagnostics`], gated: `Some`
+    /// under the default [`Mode::Always`](crate::diagnostics::capture::Mode::Always) (or a
+    /// `Threshold`/error hit), and `None` when the gate dropped it (a fast success under
+    /// `Threshold`, or `Mode::Off`).
     pub fn capture_diagnostics(&self) -> Option<&DiagnosticsContext> {
         self.capture.as_deref()
     }

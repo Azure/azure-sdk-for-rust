@@ -1,28 +1,35 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Deferred, threshold-gated diagnostics **capture** for the Cosmos driver.
+//! Deferred, threshold-gated diagnostics **capture** — the Cosmos driver's diagnostics engine.
 //!
-//! A cheap, append-only, lock-free hot-path front-end with an op-end gate that, when it decides
-//! diagnostics are worth keeping, materializes the **canonical**
-//! [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext) — the same type the rest of the
-//! driver returns. There is one diagnostics model, not a parallel one.
+//! This module **owns** the canonical diagnostics model
+//! ([`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext) and its builder, in
+//! [`model`](self::model)) and provides a cheap, append-only, lock-free hot-path recorder plus an
+//! operation-end gate. The driver collects diagnostics by feeding the capture-owned builder, and
+//! the gate decides whether the resulting context is surfaced. There is one diagnostics model, not
+//! a parallel one; the model is re-exported from `crate::diagnostics` so the public boundary is
+//! unchanged.
 //!
 //! 1. **Hot path — append-only, pooled, lock-free.** Each operation rents one buffer from a
 //!    [`LogPool`] and a [`DiagnosticsRecorder`] appends a compact record per attempt / hedge leg.
 //!    Appends go through `&mut`, so there is no per-attempt lock and almost nothing is allocated
 //!    after pool warm-up.
 //! 2. **Gate — decide at the end.** When the outcome and elapsed time are known, a
-//!    [`DiagnosticsPolicy`] decides whether to build. If not, the buffer goes back to the pool —
-//!    effectively free.
-//! 3. **Build — only when wanted.** Past the gate, the log is parsed once and replayed onto a
-//!    `DiagnosticsContextBuilder` to produce a [`DiagnosticsContext`], mapping each attempt to a
-//!    [`RequestDiagnostics`](crate::diagnostics::RequestDiagnostics) (with the right
+//!    [`DiagnosticsPolicy`] decides whether to surface diagnostics. If not, the buffer goes back to
+//!    the pool — effectively free.
+//! 3. **Build — only when wanted.** Past the gate, the log is parsed once and replayed onto the
+//!    capture-owned `DiagnosticsContextBuilder` to produce a [`DiagnosticsContext`], mapping each
+//!    attempt to a [`RequestDiagnostics`](crate::diagnostics::RequestDiagnostics) (with the right
 //!    [`ExecutionContext`](crate::diagnostics::ExecutionContext)) and attaching
-//!    [`HedgeDiagnostics`](crate::diagnostics::HedgeDiagnostics) for a hedged operation.
+//!    [`HedgeDiagnostics`](crate::diagnostics::HedgeDiagnostics) for a hedged operation. In the
+//!    live driver path the pipeline feeds the same builder with the full rich data and true
+//!    wall-clock timing.
 //!
-//! Capture is **opt-in** and defaults to [`Mode::Off`] (no cost, no behavior change), configured
-//! via [`DriverOptions::with_capture_diagnostics_policy`](crate::options::DriverOptions).
+//! The gate defaults to [`Mode::Always`] — diagnostics are produced out-of-the-box; set
+//! [`Mode::Threshold`] or [`Mode::Off`] via
+//! [`DriverOptions::with_capture_diagnostics_policy`](crate::options::DriverOptions) to make the
+//! hot path cheaper.
 //!
 //! # Example
 //!
@@ -65,12 +72,25 @@
 
 mod context;
 mod gate;
+mod model;
 mod pool;
 mod recorder;
 
 pub use gate::{finish, should_build, DiagnosticsPolicy, Mode};
 pub use pool::LogPool;
 pub use recorder::{AttemptRecord, DiagnosticsRecorder, HedgeOutcome};
+
+// The capture module is the home/owner of the canonical diagnostics model. The driver (its
+// pipeline, retry, hedging, transport layers) collects diagnostics by feeding this builder, and
+// the gate decides whether to surface the resulting context. These types are re-exported from
+// `crate::diagnostics` so the public boundary (`diagnostics::DiagnosticsContext`, consumed by the
+// `azure_data_cosmos` SDK) is unchanged.
+pub(crate) use model::DiagnosticsContextBuilder;
+pub use model::{
+    DiagnosticsContext, ExecutionContext, FailedTransportShardDiagnostics, PipelineType,
+    RequestDiagnostics, RequestEvent, RequestEventType, RequestHandle, RequestSentStatus,
+    TransportHttpVersion, TransportKind, TransportSecurity, TransportShardDiagnostics,
+};
 
 /// The terminal outcome of an operation, used by the gate.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

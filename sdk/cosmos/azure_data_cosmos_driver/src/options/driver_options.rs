@@ -52,9 +52,9 @@ pub struct DriverOptions {
     /// endpoints matching these regions appear first. Regions that don't match
     /// any account endpoint are silently skipped.
     preferred_regions: Vec<Region>,
-    /// Opt-in policy for the deferred, threshold-gated diagnostics **capture** prototype
-    /// ([`crate::diagnostics::capture`]). Defaults to
-    /// [`Mode::Off`](crate::diagnostics::capture::Mode::Off) — no cost, no behavior change.
+    /// Diagnostics **capture** policy ([`crate::diagnostics::capture`]) — the driver's diagnostics
+    /// engine. Defaults to [`Mode::Always`](crate::diagnostics::capture::Mode::Always) so
+    /// diagnostics are produced out-of-the-box; configurable to `Threshold`/`Off`.
     capture_diagnostics_policy: crate::diagnostics::capture::DiagnosticsPolicy,
 }
 
@@ -81,7 +81,7 @@ impl DriverOptions {
         &self.preferred_regions
     }
 
-    /// Returns the opt-in diagnostics **capture** policy ([`crate::diagnostics::capture`]).
+    /// Returns the diagnostics **capture** policy ([`crate::diagnostics::capture`]).
     pub fn capture_diagnostics_policy(&self) -> crate::diagnostics::capture::DiagnosticsPolicy {
         self.capture_diagnostics_policy
     }
@@ -127,10 +127,14 @@ impl DriverOptionsBuilder {
         self
     }
 
-    /// Sets the opt-in diagnostics **capture** policy ([`crate::diagnostics::capture`]).
+    /// Sets the diagnostics **capture** policy ([`crate::diagnostics::capture`]).
     ///
-    /// Defaults to [`Mode::Off`](crate::diagnostics::capture::Mode::Off) (no cost, no behavior
-    /// change). This is a prototype subsystem distinct from [`DiagnosticsContext`].
+    /// The capture module is the driver's diagnostics engine: a cheap, lock-free hot-path recorder
+    /// plus an operation-end gate that governs whether the canonical [`DiagnosticsContext`] is
+    /// surfaced. Defaults to [`Mode::Always`](crate::diagnostics::capture::Mode::Always) —
+    /// diagnostics are produced out-of-the-box. Set
+    /// [`Mode::Threshold`](crate::diagnostics::capture::Mode::Threshold) or
+    /// [`Mode::Off`](crate::diagnostics::capture::Mode::Off) to make the hot path cheaper.
     ///
     /// [`DiagnosticsContext`]: crate::diagnostics::DiagnosticsContext
     pub fn with_capture_diagnostics_policy(
@@ -238,12 +242,15 @@ mod tests {
     }
 
     #[test]
-    fn capture_diagnostics_policy_defaults_off_and_is_configurable() {
+    fn capture_diagnostics_policy_defaults_always_and_is_configurable() {
         use crate::diagnostics::capture::{DiagnosticsPolicy, Mode};
         use std::time::Duration;
 
         let default_options = DriverOptionsBuilder::new(test_account()).build();
-        assert_eq!(default_options.capture_diagnostics_policy().mode, Mode::Off);
+        assert_eq!(
+            default_options.capture_diagnostics_policy().mode,
+            Mode::Always
+        );
 
         let configured = DriverOptionsBuilder::new(test_account())
             .with_capture_diagnostics_policy(DiagnosticsPolicy::threshold(Duration::from_millis(5)))

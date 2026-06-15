@@ -28,9 +28,11 @@ pub enum Mode {
     Always,
 }
 
-/// The policy evaluated at the end of an operation to decide whether to build diagnostics.
+/// The policy evaluated at the end of an operation to decide whether to surface diagnostics.
 ///
-/// The default is [`Mode::Off`] (no cost, no behavior change) — diagnostics capture is opt-in.
+/// The default is [`Mode::Always`] — diagnostics are produced out-of-the-box (matching the
+/// driver's historical always-on behavior). Set [`Mode::Threshold`] or [`Mode::Off`] via
+/// [`DriverOptions`](crate::options::DriverOptions) to make the hot path cheaper.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct DiagnosticsPolicy {
     /// Build aggressiveness.
@@ -43,9 +45,10 @@ pub struct DiagnosticsPolicy {
 
 impl Default for DiagnosticsPolicy {
     fn default() -> Self {
-        // Opt-in: off by default, so an unconfigured client pays nothing and behaves unchanged.
+        // Always-on by default so diagnostics are produced out-of-the-box, matching the driver's
+        // historical behavior. Callers opt into the cheaper Threshold/Off modes explicitly.
         Self {
-            mode: Mode::Off,
+            mode: Mode::Always,
             latency_threshold: None,
             capture_on_error: true,
         }
@@ -53,12 +56,15 @@ impl Default for DiagnosticsPolicy {
 }
 
 impl DiagnosticsPolicy {
-    /// A policy that never builds diagnostics ([`Mode::Off`]) — the opt-in default.
+    /// A policy that never builds diagnostics ([`Mode::Off`]) — the cheapest hot path.
     ///
-    /// Equivalent to [`DiagnosticsPolicy::default`]; provided for symmetry with
-    /// [`threshold`](Self::threshold) and [`always`](Self::always).
+    /// Provided for symmetry with [`threshold`](Self::threshold) and [`always`](Self::always).
     pub fn off() -> Self {
-        Self::default()
+        Self {
+            mode: Mode::Off,
+            latency_threshold: None,
+            capture_on_error: true,
+        }
     }
 
     /// A threshold policy that builds on error or when an operation exceeds `latency_threshold`.
@@ -120,10 +126,18 @@ mod tests {
 
     #[test]
     fn off_never_builds() {
-        let p = DiagnosticsPolicy::default();
+        let p = DiagnosticsPolicy::off();
         assert_eq!(p.mode, Mode::Off);
         assert!(!should_build(Outcome::Error, u64::MAX, &p));
         assert!(!should_build(Outcome::Success, 0, &p));
+    }
+
+    #[test]
+    fn default_is_always() {
+        let p = DiagnosticsPolicy::default();
+        assert_eq!(p.mode, Mode::Always);
+        assert!(should_build(Outcome::Success, 0, &p));
+        assert!(should_build(Outcome::Error, 0, &p));
     }
 
     #[test]

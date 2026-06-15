@@ -18,20 +18,20 @@
 //! When an operation completes, the builder is consumed to create an immutable
 //! `DiagnosticsContext` which is safe to share via `Arc` without locking.
 
-mod diagnostics_context;
 mod proxy_configuration;
 
-/// Deferred, threshold-gated diagnostics capture (opt-in prototype).
+/// Deferred, threshold-gated diagnostics capture — the driver's diagnostics **engine**.
 ///
-/// A cheap, append-only, lock-free hot-path recorder with an operation-end gate. When the gate
-/// decides diagnostics are worth keeping (a slow or errored operation, or `Mode::Always`), it
-/// materializes the **canonical** [`DiagnosticsContext`] — the same diagnostics type the rest of
-/// the driver returns — so there is one diagnostics model, not a parallel one. Capture is **off by
-/// default**; see `DIAGNOSTICS-CAPTURE.md`.
+/// This module **owns** the canonical diagnostics model ([`DiagnosticsContext`] and its builder)
+/// and provides a cheap, append-only, lock-free hot-path recorder plus an operation-end gate
+/// (`Off` / `Threshold` / `Always`). The driver collects diagnostics by feeding the capture-owned
+/// [`DiagnosticsContextBuilder`]; the gate decides whether the resulting [`DiagnosticsContext`] is
+/// surfaced. The model is re-exported below so the public boundary (`diagnostics::DiagnosticsContext`,
+/// consumed by the `azure_data_cosmos` SDK) is unchanged. See `DIAGNOSTICS-CAPTURE.md`.
 pub mod capture;
 
-pub(crate) use diagnostics_context::DiagnosticsContextBuilder;
-pub use diagnostics_context::{
+pub(crate) use capture::DiagnosticsContextBuilder;
+pub use capture::{
     DiagnosticsContext, ExecutionContext, FailedTransportShardDiagnostics, PipelineType,
     RequestDiagnostics, RequestEvent, RequestEventType, RequestHandle, RequestSentStatus,
     TransportHttpVersion, TransportKind, TransportSecurity, TransportShardDiagnostics,
