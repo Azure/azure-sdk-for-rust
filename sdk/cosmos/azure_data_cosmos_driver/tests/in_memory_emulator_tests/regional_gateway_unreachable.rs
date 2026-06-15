@@ -60,10 +60,7 @@ struct Fixture {
 }
 
 /// Builds the two-region in-memory emulator with the supplied fault rules and bootstraps a driver against it.
-async fn build_fixture(
-    write_mode: WriteMode,
-    rules: Vec<Arc<FaultInjectionRule>>,
-) -> Fixture {
+async fn build_fixture(write_mode: WriteMode, rules: Vec<Arc<FaultInjectionRule>>) -> Fixture {
     let recorder = HostRecorder::new();
 
     let config = VirtualAccountConfig::new(vec![
@@ -391,11 +388,7 @@ async fn r2_read_single_primary_unreachable_failover_to_secondary() {
 async fn r3_read_multi_both_regions_unreachable_terminal_failure() {
     let east = connection_error_rule("r3-east", FaultOperationType::ReadItem, Region::EAST_US);
     let west = connection_error_rule("r3-west", FaultOperationType::ReadItem, Region::WEST_US);
-    let fixture = build_fixture(
-        WriteMode::Multi,
-        vec![Arc::clone(&east), Arc::clone(&west)],
-    )
-    .await;
+    let fixture = build_fixture(WriteMode::Multi, vec![Arc::clone(&east), Arc::clone(&west)]).await;
     seed_item(&fixture, "r3-item", "pk1").await;
     fixture.recorder.clear();
 
@@ -522,11 +515,7 @@ async fn w4_upsert_multi_primary_unreachable_secondary_excluded_terminal_failure
 async fn w5_write_multi_both_regions_unreachable_terminal_failure() {
     let east = connection_error_rule("w5-east", FaultOperationType::CreateItem, Region::EAST_US);
     let west = connection_error_rule("w5-west", FaultOperationType::CreateItem, Region::WEST_US);
-    let fixture = build_fixture(
-        WriteMode::Multi,
-        vec![Arc::clone(&east), Arc::clone(&west)],
-    )
-    .await;
+    let fixture = build_fixture(WriteMode::Multi, vec![Arc::clone(&east), Arc::clone(&west)]).await;
     fixture.recorder.clear();
 
     let result = create_item(&fixture, "w5-item", "pk1", base_options()).await;
