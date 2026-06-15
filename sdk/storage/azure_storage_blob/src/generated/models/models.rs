@@ -1088,7 +1088,7 @@ pub struct PageBlobClientUploadPagesResult;
 pub struct PageList {
     /// The clear ranges.
     #[serde(rename = "ClearRange", skip_serializing_if = "Option::is_none")]
-    pub clear_range: Option<Vec<ClearRange>>,
+    pub clear_ranges: Option<Vec<ClearRange>>,
 
     /// An opaque string value that identifies the portion of the result set to be returned with the next operation. Use this
     /// value in the next request to continue the listing operation.
@@ -1097,7 +1097,7 @@ pub struct PageList {
 
     /// The page ranges.
     #[serde(default, rename = "PageRange")]
-    pub page_range: Vec<PageRange>,
+    pub page_ranges: Vec<PageRange>,
 }
 
 /// A page range.

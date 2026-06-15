@@ -644,7 +644,7 @@ async fn test_list_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert!(response.etag()?.is_some());
 
     let page_list = response.into_model()?;
-    let page_ranges = page_list.page_range;
+    let page_ranges = page_list.page_ranges;
     assert_eq!(1, page_ranges.len());
     assert_eq!(Some(0), page_ranges[0].start);
     assert_eq!(Some(511), page_ranges[0].end);
@@ -663,7 +663,7 @@ async fn test_list_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let mut pager = page_blob_client.list_page_ranges(None)?;
     let response = pager.try_next().await?.unwrap();
     let page_list = response.into_model()?;
-    let page_ranges = page_list.page_range;
+    let page_ranges = page_list.page_ranges;
     assert_eq!(2, page_ranges.len());
     assert_eq!(Some(0), page_ranges[0].start);
     assert_eq!(Some(511), page_ranges[0].end);
@@ -678,7 +678,7 @@ async fn test_list_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let mut pager = page_blob_client.list_page_ranges(Some(options))?;
     let response = pager.try_next().await?.unwrap();
     let page_list = response.into_model()?;
-    let page_ranges = page_list.page_range;
+    let page_ranges = page_list.page_ranges;
     assert_eq!(1, page_ranges.len());
     assert_eq!(Some(0), page_ranges[0].start);
     assert_eq!(Some(511), page_ranges[0].end);
@@ -691,7 +691,7 @@ async fn test_list_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let mut pager = page_blob_client.list_page_ranges(None)?;
     let response = pager.try_next().await?.unwrap();
     let page_list = response.into_model()?;
-    let page_ranges = page_list.page_range;
+    let page_ranges = page_list.page_ranges;
     assert_eq!(1, page_ranges.len());
     assert_eq!(Some(1024), page_ranges[0].start);
     assert_eq!(Some(1535), page_ranges[0].end);
