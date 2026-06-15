@@ -177,8 +177,9 @@ cargo test -p azure_data_cosmos_driver --all-features
   cheap — `complete()` is a move + `Arc`, and JSON is lazy); only the standalone capture
   materialization is short-circuited. Fully avoiding the pipeline's incremental build on a
   `Threshold` fast success **without data loss** would require routing all rich-field collection
-  through the append-log (a full diagnostics-collection rewrite), which is out of scope here. **No
-  rich data is dropped when the gate fires.**
+  through a byte append-log — investigated and **rejected** (see
+  [Investigated alternative](#investigated-alternative--full-collection-through-append-log-rejected-not-a-net-win)).
+  **No rich data is dropped when the gate fires.**
 - **Standalone replay timing.** When the recorder builds a `DiagnosticsContext` standalone (no
   pipeline — tests/examples), the builder's clock measures replay time, so the top-level
   `total_duration_ms` reflects replay; per-attempt latency is surfaced via `server_duration_ms`. In
@@ -187,6 +188,32 @@ cargo test -p azure_data_cosmos_driver --all-features
 - **Threshold configuration.** The gate's latency threshold is a plain `Duration`; it should
   eventually read the driver's diagnostics configuration (verbosity / per-operation-kind
   thresholds).
+
+### Investigated alternative — full collection-through-append-log (rejected; not a net win)
+
+We investigated rerouting **all** rich-field collection through a lock-free byte append-log (to
+realize the prototype spike's sub-µs hot path inside the integrated rich model) and materializing
+the full `DiagnosticsContext` only at op-end. It was **rejected** — it is not a net win and has
+hard blockers:
+
+1. **Full fidelity ≠ sub-µs.** The spike was sub-µs because it captured a flat ~6-field subset
+   (status, RU, region, sub-status, request_sent, timing). Byte-encoding the *full* model — ~22
+   `RequestDiagnostics` fields + `RequestEvent` timelines + `TransportShardDiagnostics` +
+   `FailedTransportShardDiagnostics` + `FaultInjectionEvaluation`s — costs **more** than the current
+   struct population (it is serialization: varints + per-field string copies) and adds a
+   decode/replay cost when the gate fires. You cannot have sub-µs *and* full fidelity.
+2. **The builder is already the optimal shape.** `DiagnosticsContextBuilder` is already a lock-free
+   append (single-owner `&mut Vec<RequestDiagnostics>`, no `Mutex`/atomics on the per-attempt path)
+   with a cheap `complete()` and **lazy JSON** (`OnceLock`). The expensive step is already deferred,
+   and `Off` already disables per-request population. A byte-log would add encode+decode cost and
+   likely make the default `Always` path **slower**.
+3. **Two fields can't be losslessly byte-encoded.** The `Instant` timestamps
+   (`RequestDiagnostics::started_at`/`completed_at`, `RequestEvent::timestamp`) have no portable
+   byte representation, and `FaultInjectionEvaluation` is a `#[non_exhaustive]` enum whose
+   hand-rolled codec would silently lose data when a variant is added.
+
+**Resolution:** keep the current design — full fidelity, lock-free append, lazy JSON, `Off` as the
+cheap opt-out, default `Always`. This is the final intended design.
 
 ## 9. How to configure
 
