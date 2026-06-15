@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added `AmqpTransport` and an `AmqpConnectionOptions::transport` field to select the connection transport. `AmqpTransport::WebSocket` tunnels AMQP over secure WebSockets (`wss://`, port 443) for networks that block the native AMQP ports.
+
 ### Breaking Changes
 
 ### Bugs Fixed
