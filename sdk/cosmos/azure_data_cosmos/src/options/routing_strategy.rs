@@ -3,7 +3,7 @@
 
 //! Region selection strategies for Azure Cosmos DB client routing.
 
-use crate::regions::Region;
+use super::Region;
 
 /// Determines how the SDK selects Azure regions for routing requests.
 ///
@@ -13,11 +13,12 @@ use crate::regions::Region;
 /// # Examples
 ///
 /// ```rust
-/// use azure_data_cosmos::{Region, RoutingStrategy};
+/// use azure_data_cosmos::{RoutingStrategy};
+/// use azure_data_cosmos::options::{Region};
 ///
 /// let strategy = RoutingStrategy::ProximityTo(Region::EAST_US);
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 #[non_exhaustive]
 pub enum RoutingStrategy {
     /// Select regions by geographic proximity to the given region.

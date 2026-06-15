@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-#![cfg(feature = "key_auth")]
 
 use super::framework;
 
@@ -9,7 +8,7 @@ use std::borrow::Cow;
 use std::error::Error;
 use std::sync::{Arc, Mutex};
 
-use azure_data_cosmos::regions::Region;
+use azure_data_cosmos::options::Region;
 use azure_data_cosmos::{
     clients::DatabaseClient,
     models::{ContainerProperties, ThroughputProperties},

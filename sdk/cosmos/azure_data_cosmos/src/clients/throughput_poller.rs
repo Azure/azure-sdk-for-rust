@@ -12,7 +12,8 @@
 
 use crate::{
     clients::offers_client,
-    models::{CosmosResponse, ResourceResponse, ThroughputProperties},
+    models::ThroughputProperties,
+    models::{CosmosResponse, ResourceResponse},
 };
 use azure_core::http::StatusCode;
 use azure_core::time::Duration;
@@ -183,7 +184,9 @@ impl IntoFuture for ThroughputPoller {
                 // most honest mapping (vs. a misleading 503).
                 crate::CosmosError::from(
                     crate::DriverCosmosError::builder()
-                        .with_status(crate::CosmosStatus::CLIENT_THROUGHPUT_POLLER_INCOMPLETE)
+                        .with_status(
+                            crate::error::CosmosStatus::CLIENT_THROUGHPUT_POLLER_INCOMPLETE,
+                        )
                         .with_message("throughput poller stream ended without yielding a response")
                         .build(),
                 )
@@ -260,7 +263,7 @@ mod tests {
         status: StatusCode,
         cosmos_headers: azure_data_cosmos_driver::models::CosmosResponseHeaders,
     ) -> CosmosResponse {
-        use crate::DiagnosticsContext;
+        use crate::diagnostics::DiagnosticsContext;
         use azure_data_cosmos_driver::models::{ActivityId, CosmosStatus, ResponseBody};
         use std::sync::Arc;
 
@@ -301,7 +304,7 @@ mod tests {
         status: StatusCode,
         offer_replace_pending: Option<&str>,
     ) -> CosmosResponse {
-        use crate::DiagnosticsContext;
+        use crate::diagnostics::DiagnosticsContext;
         use azure_data_cosmos_driver::models::{
             ActivityId, CosmosResponseHeaders, CosmosStatus, ResponseBody,
         };

@@ -4,10 +4,7 @@
 
 //! Partition key types for Cosmos DB operations.
 
-use crate::models::{
-    effective_partition_key::EffectivePartitionKey, FiniteF64, PartitionKeyKind,
-    PartitionKeyVersion,
-};
+use crate::models::FiniteF64;
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
 use std::{borrow::Cow, hash::Hash};
 
@@ -292,12 +289,6 @@ impl<T: Into<PartitionKeyValue>> From<Option<T>> for PartitionKeyValue {
 #[non_exhaustive]
 pub struct PartitionKey(Vec<PartitionKeyValue>);
 
-impl Default for PartitionKey {
-    fn default() -> Self {
-        Self::EMPTY
-    }
-}
-
 impl PartitionKey {
     /// A single null partition key value.
     pub const NULL: PartitionKeyValue = PartitionKeyValue::NULL;
@@ -305,8 +296,12 @@ impl PartitionKey {
     /// A single undefined partition key value.
     pub const UNDEFINED: PartitionKeyValue = PartitionKeyValue::UNDEFINED;
 
-    /// An empty partition key, used to signal a cross-partition operation.
-    pub const EMPTY: PartitionKey = PartitionKey(Vec::new());
+    /// An empty partition key. Used internally by the routing/range-cache
+    /// layer to mean "no specific partition" — *not* a public way to issue
+    /// cross-partition operations. Public callers express cross-partition
+    /// intent through the query/feed APIs (e.g. `FeedScope`), not through
+    /// this constant.
+    pub(crate) const EMPTY: PartitionKey = PartitionKey(Vec::new());
 
     /// Creates a new partition key from a single value.
     pub(crate) fn new(value: impl Into<PartitionKeyValue>) -> Self {
@@ -326,27 +321,6 @@ impl PartitionKey {
     /// Returns the partition key components.
     pub fn values(&self) -> &[PartitionKeyValue] {
         &self.0
-    }
-
-    /// Returns a hex string representation of the partition key hash.
-    pub fn get_hashed_partition_key_string(
-        &self,
-        kind: PartitionKeyKind,
-        version: u8,
-    ) -> EffectivePartitionKey {
-        let version = match version {
-            1 => PartitionKeyVersion::V1,
-            2 => PartitionKeyVersion::V2,
-            unsupported => {
-                tracing::warn!(
-                    "Partition key hashing version {} is unsupported in SDK API; defaulting to V2",
-                    unsupported
-                );
-                PartitionKeyVersion::V2
-            }
-        };
-
-        EffectivePartitionKey::compute(&self.0, kind, version)
     }
 }
 
@@ -451,12 +425,6 @@ impl<T: Into<PartitionKeyValue>> From<T> for PartitionKey {
     }
 }
 
-impl From<()> for PartitionKey {
-    fn from(_: ()) -> Self {
-        PartitionKey::EMPTY
-    }
-}
-
 impl From<Vec<PartitionKeyValue>> for PartitionKey {
     /// Creates a [`PartitionKey`] from a vector of partition key components.
     ///
@@ -530,20 +498,6 @@ mod tests {
     #[test]
     fn empty_partition_key() {
         let pk = PartitionKey::EMPTY;
-        assert!(pk.is_empty());
-        assert_eq!(pk.len(), 0);
-    }
-
-    #[test]
-    fn default_is_empty() {
-        let pk = PartitionKey::default();
-        assert_eq!(pk, PartitionKey::EMPTY);
-    }
-
-    #[test]
-    fn unit_converts_to_empty() {
-        let pk = PartitionKey::from(());
-        assert_eq!(pk, PartitionKey::EMPTY);
         assert!(pk.is_empty());
         assert_eq!(pk.len(), 0);
     }

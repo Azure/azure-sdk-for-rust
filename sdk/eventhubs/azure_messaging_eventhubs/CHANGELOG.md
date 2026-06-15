@@ -18,6 +18,8 @@
 
 ### Other Changes
 
+- Reduced lock contention when a single `ProducerClient` or `ConsumerClient` is shared across threads. The per-path sender, session, and receiver caches no longer serialize on a connection-wide lock: each partition's link attach runs without holding the shared lock, so the partitions on a shared client set up and recover concurrently instead of one at a time, and steady-state sends no longer queue behind an unrelated partition's attach.
+
 ## 0.14.0 (Unreleased)
 
 ### Features Added

@@ -12,7 +12,7 @@
 //! the `-<id>` tail is always preserved — the per-run identifier wins,
 //! the vanity text loses.
 
-use azure_data_cosmos::UserAgentSuffix;
+use azure_data_cosmos::options::UserAgentSuffix;
 
 /// Number of leading characters of `workload_id` to keep in the composite.
 const WORKLOAD_ID_CHARS: usize = 8;

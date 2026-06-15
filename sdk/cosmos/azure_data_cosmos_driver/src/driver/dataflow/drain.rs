@@ -14,7 +14,7 @@ use async_trait::async_trait;
 
 use crate::models::FeedRange;
 
-use super::{PageResult, PipelineContext, PipelineNode, PipelineNodeState};
+use super::{PageResult, PipelineContext, PipelineNode, PipelineNodeState, RangedToken};
 
 /// Maximum number of consecutive split retries before giving up.
 ///
@@ -110,19 +110,78 @@ impl PipelineNode for SequentialDrain {
         self.children.into_iter().collect()
     }
 
-    fn snapshot_state(&self) -> PipelineNodeState {
-        let Some(front) = self.children.front() else {
-            return PipelineNodeState::Drained;
-        };
-        let Some(range) = front.feed_range() else {
-            // Shouldn't happen for an EPK-ordered drain, but degrade gracefully:
-            // serialize the child snapshot directly with no cursor.
-            return front.snapshot_state();
-        };
-        PipelineNodeState::SequentialDrain {
-            current_min_epk: range.min_inclusive().as_str().to_string(),
-            current_max_epk: range.max_exclusive().as_str().to_string(),
-            left_most: Box::new(front.snapshot_state()),
+    fn snapshot_state(&self) -> crate::error::Result<PipelineNodeState> {
+        // A child without a `feed_range` is an invariant violation (every
+        // `SequentialDrain` child owns a contiguous EPK sub-range); fail
+        // loudly so the malformed snapshot never reaches the wire.
+        if self.children.is_empty() {
+            return Ok(PipelineNodeState::Drained);
+        }
+
+        let mut cursor: Option<String> = None;
+        let mut active_tokens: Vec<RangedToken> = Vec::new();
+
+        for (idx, child) in self.children.iter().enumerate() {
+            let Some(range) = child.feed_range() else {
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE)
+                    .with_message(format!(
+                        "SequentialDrain child {idx} of {total} has no feed_range; \
+                         cannot snapshot continuation state safely",
+                        total = self.children.len(),
+                    ))
+                    .build());
+            };
+            let child_state = child.snapshot_state()?;
+            match child_state.into_child_contribution(
+                "SequentialDrain",
+                idx,
+                self.children.len(),
+            )? {
+                crate::driver::dataflow::snapshot::ChildSnapshotContribution::Drained => {
+                    // The drain pops fully-drained front children before
+                    // returning a page, so an in-place `Drained` child at
+                    // snapshot time after the cursor has advanced is an
+                    // invariant violation. Fail loudly rather than
+                    // silently drop the drained-slot, which would let
+                    // its range be re-queried as fresh-start on resume
+                    // and produce duplicate items.
+                    if cursor.is_some() {
+                        return Err(crate::error::CosmosError::builder()
+                            .with_status(
+                                crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE,
+                            )
+                            .with_message(format!(
+                                "SequentialDrain child {idx} of {total} is Drained after the cursor was \
+                                 already set; drained children must be popped before non-drained ones",
+                                total = self.children.len(),
+                            ))
+                            .build());
+                    }
+                }
+                crate::driver::dataflow::snapshot::ChildSnapshotContribution::Pending {
+                    server_continuation,
+                } => {
+                    if cursor.is_none() {
+                        cursor = Some(range.min_inclusive().as_str().to_string());
+                    }
+                    if let Some(token) = server_continuation {
+                        active_tokens.push(RangedToken {
+                            min_epk: range.min_inclusive().as_str().to_string(),
+                            max_epk: range.max_exclusive().as_str().to_string(),
+                            server_continuation: token,
+                        });
+                    }
+                }
+            }
+        }
+
+        match cursor {
+            Some(left_most_undrained_epk) => Ok(PipelineNodeState::SequentialDrain {
+                left_most_undrained_epk,
+                active_tokens,
+            }),
+            None => Ok(PipelineNodeState::Drained),
         }
     }
 
@@ -628,7 +687,10 @@ mod tests {
     async fn terminal_page_pops_child_eagerly() {
         // The first child returns one terminal page; the drain must pop it
         // immediately so a snapshot taken right after the call already
-        // points at the next child.
+        // points at the next child. We give child2 a `Request { Some }`
+        // snapshot so the sparse encoding records an `active_tokens`
+        // entry for it (otherwise an all-Drained snapshot would collapse
+        // to `PipelineNodeState::Drained` and hide child1's eviction).
         let child1 = MockLeaf::with_pages(vec![Ok(PageResult::Page {
             response: response(b"c1-final"),
             is_terminal: true,
@@ -653,7 +715,10 @@ mod tests {
                 EffectivePartitionKey::from("FF"),
             )
             .unwrap(),
-        );
+        )
+        .with_snapshot(PipelineNodeState::Request {
+            server_continuation: Some("c2-tok".to_owned()),
+        });
 
         let mut drain = SequentialDrain::new(vec![Box::new(child1), Box::new(child2)]);
         let mut executor = NoopRequestExecutor;
@@ -663,16 +728,96 @@ mod tests {
         let page = unwrap_page(drain.next_page(&mut context).await);
         assert_eq!(page.body_bytes(), b"c1-final");
 
-        // Snapshot must already reference child2 (cursor at "80"), not the
-        // just-drained child1.
-        let snapshot = drain.snapshot_state();
+        // Snapshot must already reference only child2 (child1 was evicted on
+        // its terminal page). The sparse encoding places the cursor at the
+        // first non-drained child's `min_inclusive` and emits one
+        // `active_tokens` entry for that child.
+        let snapshot = drain.snapshot_state().unwrap();
         let PipelineNodeState::SequentialDrain {
-            current_min_epk, ..
+            left_most_undrained_epk,
+            active_tokens,
         } = snapshot
         else {
             panic!("expected SequentialDrain snapshot, got {snapshot:?}");
         };
-        assert_eq!(current_min_epk, "80");
+        assert_eq!(left_most_undrained_epk, "80");
+        assert_eq!(active_tokens.len(), 1);
+        assert_eq!(active_tokens[0].min_epk, "80");
+        assert_eq!(active_tokens[0].max_epk, "FF");
+        assert_eq!(active_tokens[0].server_continuation, "c2-tok");
+    }
+
+    #[tokio::test]
+    async fn snapshot_preserves_all_pending_children() {
+        // Mid-fan-out: every child still owes a server continuation, so
+        // the sparse snapshot must record an `active_tokens` entry per
+        // child (cursor at the first child's `min_inclusive`). A snapshot
+        // that captured only the front child would re-fresh-start the
+        // others on resume, dropping their in-flight tokens.
+        let child1 = MockLeaf::with_pages(vec![])
+            .with_feed_range(
+                FeedRange::new(
+                    EffectivePartitionKey::from("00"),
+                    EffectivePartitionKey::from("55"),
+                )
+                .unwrap(),
+            )
+            .with_snapshot(PipelineNodeState::Request {
+                server_continuation: Some("c1-tok".to_owned()),
+            });
+        let child2 = MockLeaf::with_pages(vec![])
+            .with_feed_range(
+                FeedRange::new(
+                    EffectivePartitionKey::from("55"),
+                    EffectivePartitionKey::from("AA"),
+                )
+                .unwrap(),
+            )
+            .with_snapshot(PipelineNodeState::Request {
+                server_continuation: Some("c2-tok".to_owned()),
+            });
+        let child3 = MockLeaf::with_pages(vec![])
+            .with_feed_range(
+                FeedRange::new(
+                    EffectivePartitionKey::from("AA"),
+                    EffectivePartitionKey::from("FF"),
+                )
+                .unwrap(),
+            )
+            .with_snapshot(PipelineNodeState::Request {
+                server_continuation: Some("c3-tok".to_owned()),
+            });
+        let drain =
+            SequentialDrain::new(vec![Box::new(child1), Box::new(child2), Box::new(child3)]);
+
+        let snapshot = drain.snapshot_state().unwrap();
+        let PipelineNodeState::SequentialDrain {
+            left_most_undrained_epk,
+            active_tokens,
+        } = snapshot
+        else {
+            panic!("expected SequentialDrain snapshot, got {snapshot:?}");
+        };
+        assert_eq!(left_most_undrained_epk, "00");
+        assert_eq!(active_tokens.len(), 3);
+        assert_eq!(active_tokens[0].min_epk, "00");
+        assert_eq!(active_tokens[0].max_epk, "55");
+        assert_eq!(active_tokens[0].server_continuation, "c1-tok");
+        assert_eq!(active_tokens[1].min_epk, "55");
+        assert_eq!(active_tokens[1].max_epk, "AA");
+        assert_eq!(active_tokens[1].server_continuation, "c2-tok");
+        assert_eq!(active_tokens[2].min_epk, "AA");
+        assert_eq!(active_tokens[2].max_epk, "FF");
+        assert_eq!(active_tokens[2].server_continuation, "c3-tok");
+    }
+
+    #[tokio::test]
+    async fn snapshot_of_empty_children_is_drained() {
+        let drain = SequentialDrain::new(vec![]);
+        assert!(matches!(
+            drain.snapshot_state().unwrap(),
+            PipelineNodeState::Drained
+        ));
     }
 
     #[tokio::test]
@@ -704,6 +849,9 @@ mod tests {
             }
             other => panic!("expected Page, got {other:?}"),
         }
-        assert!(matches!(drain.snapshot_state(), PipelineNodeState::Drained));
+        assert!(matches!(
+            drain.snapshot_state().unwrap(),
+            PipelineNodeState::Drained
+        ));
     }
 }

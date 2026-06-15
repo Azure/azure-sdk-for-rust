@@ -795,11 +795,7 @@ impl Receiver {
                 session
                     .begin(
                         self.connection.as_ref(),
-                        Some(azure_core_amqp::AmqpSessionOptions {
-                            incoming_window: Some(u32::MAX),
-                            outgoing_window: Some(u32::MAX),
-                            ..Default::default()
-                        }),
+                        Some(azure_core_amqp::AmqpSessionOptions::with_unbounded_windows()),
                     )
                     .await
                     .map_err(|e| {

@@ -42,7 +42,22 @@ pub struct AmqpSessionOptions {
     pub buffer_size: Option<usize>,
 }
 
-impl AmqpSessionOptions {}
+impl AmqpSessionOptions {
+    /// Session options that disable session-level flow control by maxing both
+    /// the incoming and outgoing windows.
+    ///
+    /// Messaging crates (such as Event Hubs and Service Bus) rely on per-link
+    /// credit for flow control and therefore want unbounded session windows.
+    /// The generic [`Default`] implementation deliberately stays `None` for
+    /// both windows so non-messaging consumers are unaffected.
+    pub fn with_unbounded_windows() -> Self {
+        Self {
+            incoming_window: Some(u32::MAX),
+            outgoing_window: Some(u32::MAX),
+            ..Default::default()
+        }
+    }
+}
 
 /// A trait for AMQP Session operations.
 #[async_trait::async_trait]
@@ -130,5 +145,15 @@ mod tests {
         );
 
         assert_eq!(session_options.buffer_size, Some(1024));
+    }
+
+    #[test]
+    fn test_with_unbounded_windows() {
+        let session_options = AmqpSessionOptions::with_unbounded_windows();
+        assert_eq!(session_options.incoming_window, Some(u32::MAX));
+        assert_eq!(session_options.outgoing_window, Some(u32::MAX));
+        // Everything else stays at the generic `Default` (`None`).
+        assert_eq!(session_options.next_outgoing_id, None);
+        assert_eq!(session_options.handle_max, None);
     }
 }

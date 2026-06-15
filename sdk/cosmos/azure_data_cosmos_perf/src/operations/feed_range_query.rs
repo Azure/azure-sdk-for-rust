@@ -18,7 +18,7 @@ use std::time::Duration;
 
 use async_trait::async_trait;
 use azure_data_cosmos::clients::ContainerClient;
-use azure_data_cosmos::{query::FeedScope, CosmosStatus, FeedRange, Query};
+use azure_data_cosmos::{feed::FeedRange, CosmosStatus, FeedScope, Query};
 use azure_data_cosmos_driver::error::CosmosError as DriverCosmosError;
 use futures::StreamExt;
 

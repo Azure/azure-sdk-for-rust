@@ -3,10 +3,13 @@
 
 use std::{borrow::Cow, error::Error};
 
+use azure_data_cosmos::options::{
+    ContentResponseOnWrite, CreateContainerOptions, ItemWriteOptions, OperationOptions,
+};
 use azure_data_cosmos::{
-    models::{ContainerProperties, PartitionKeyDefinition, ThroughputProperties},
-    ContentResponseOnWrite, CosmosClient, CreateContainerOptions, ItemWriteOptions,
-    OperationOptions, PartitionKey,
+    models::PartitionKeyDefinition,
+    models::{ContainerProperties, ThroughputProperties},
+    CosmosClient, PartitionKey,
 };
 use clap::{Args, Subcommand};
 

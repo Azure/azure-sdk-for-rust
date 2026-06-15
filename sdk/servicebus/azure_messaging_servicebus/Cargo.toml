@@ -21,7 +21,8 @@ async-lock.workspace = true
 async-stream.workspace = true
 async-trait.workspace = true
 azure_core = { workspace = true, default-features = false }
-azure_core_amqp.workspace = true
+# Unreleased: needs AmqpSessionOptions::with_unbounded_windows from 1.1.0-beta.1 (issue #4570).
+azure_core_amqp = { path = "../../core/azure_core_amqp", version = "1.1.0-beta.1" }
 futures.workspace = true
 rand.workspace = true
 rand_chacha.workspace = true
@@ -33,7 +34,7 @@ tracing.workspace = true
 default = ["azure_core_amqp/default"]
 
 [dev-dependencies]
-azure_core_amqp = { workspace = true, features = ["test"] }
+azure_core_amqp = { path = "../../core/azure_core_amqp", version = "1.1.0-beta.1", features = ["test"] }
 azure_core_test = { workspace = true, features = ["tracing"] }
 azure_identity.workspace = true
 serde_json.workspace = true
