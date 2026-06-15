@@ -11,9 +11,61 @@
 use std::collections::HashMap;
 
 use serde::Deserialize;
+use serde::Serialize;
+
+/// Deserializes a boolean from either a JSON boolean (`true`/`false`) or
+/// an integer (`0`/`1`). The native QueryPlanInterop library serializes
+/// booleans as integers, while the Gateway uses standard JSON booleans.
+fn bool_from_int_or_bool<'de, D>(deserializer: D) -> Result<bool, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::de;
+
+    struct BoolVisitor;
+
+    impl<'de> de::Visitor<'de> for BoolVisitor {
+        type Value = bool;
+
+        fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            formatter.write_str("a boolean or an integer (0/1)")
+        }
+
+        fn visit_bool<E: de::Error>(self, v: bool) -> Result<bool, E> {
+            Ok(v)
+        }
+
+        fn visit_i64<E: de::Error>(self, v: i64) -> Result<bool, E> {
+            Ok(v != 0)
+        }
+
+        fn visit_u64<E: de::Error>(self, v: u64) -> Result<bool, E> {
+            Ok(v != 0)
+        }
+    }
+
+    deserializer.deserialize_any(BoolVisitor)
+}
+
+/// Deserializes a value as a String. If the JSON value is already a string,
+/// it is used directly. Otherwise (array, object, number, etc.), it is
+/// serialized back to a JSON string. This handles the difference between
+/// Gateway responses (hex EPK strings) and native DLL responses (structured
+/// partition key values like arrays).
+fn string_or_json<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let value = serde_json::Value::deserialize(deserializer)?;
+    match value {
+        serde_json::Value::String(s) => Ok(s),
+        other => Ok(other.to_string()),
+    }
+}
 
 /// The response returned by the Gateway for a query plan request.
-#[derive(Debug, Default, Deserialize)]
+#[derive(Debug, Default, Deserialize, Serialize, PartialEq)]
+#[serde(default)]
 #[serde(rename_all = "camelCase")]
 #[allow(dead_code)] // Wire-format fields; not all are consumed today.
 pub(crate) struct QueryPlan {
@@ -34,7 +86,7 @@ pub(crate) struct QueryPlan {
 }
 
 /// Information about a hybrid search query.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 #[allow(dead_code)] // Wire-format fields; hybrid search isn't fully wired yet.
 pub(crate) struct HybridSearchQueryInfo {
@@ -55,11 +107,12 @@ pub(crate) struct HybridSearchQueryInfo {
     pub take: Option<u64>,
 
     /// Whether global statistics are required.
+    #[serde(deserialize_with = "bool_from_int_or_bool")]
     pub requires_global_statistics: bool,
 }
 
 /// The kind of DISTINCT tracking required by the query.
-#[derive(Debug, Deserialize, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Deserialize, Default, PartialEq, Eq, Serialize)]
 pub(crate) enum DistinctType {
     /// No deduplication required.
     #[default]
@@ -73,7 +126,7 @@ pub(crate) enum DistinctType {
 }
 
 /// Detailed query plan information.
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Deserialize, Default, Serialize, PartialEq)]
 #[serde(default)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct QueryInfo {
@@ -105,43 +158,52 @@ pub(crate) struct QueryInfo {
     pub aggregates: Vec<String>,
 
     /// Mapping from GROUP BY aliases to aggregate types.
-    pub group_by_alias_to_aggregate_type: HashMap<String, String>,
+    /// Values may be null or empty strings in the native DLL output.
+    #[serde(default)]
+    pub group_by_alias_to_aggregate_type: HashMap<String, serde_json::Value>,
 
     /// Rewritten form of the query for single-partition sub-queries.
     ///
     /// When non-empty, this should be used instead of the original query text
-    /// for individual partition requests.
-    pub rewritten_query: String,
+    /// for individual partition requests. The native DLL may return null.
+    #[serde(default)]
+    pub rewritten_query: Option<String>,
 
     /// Whether the query contains a `SELECT VALUE` clause.
+    #[serde(deserialize_with = "bool_from_int_or_bool")]
     pub has_select_value: bool,
 
     /// Whether the query contains a non-streaming `ORDER BY`.
+    #[serde(deserialize_with = "bool_from_int_or_bool")]
     pub has_non_streaming_order_by: bool,
 }
 
 /// Sort order for an `ORDER BY` expression.
-#[derive(Debug, Deserialize, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Deserialize, Clone, Copy, PartialEq, Eq, Serialize)]
 pub(crate) enum SortOrder {
     Ascending,
     Descending,
 }
 
 /// An EPK range covered by the query.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 #[allow(dead_code)] // Inclusivity flags are wire-format; planner treats ranges uniformly.
 pub(crate) struct QueryRange {
     /// The minimum EPK value.
+    #[serde(deserialize_with = "string_or_json")]
     pub min: String,
 
     /// The maximum EPK value.
+    #[serde(deserialize_with = "string_or_json")]
     pub max: String,
 
     /// Whether the minimum value is inclusive.
+    #[serde(deserialize_with = "bool_from_int_or_bool")]
     pub is_min_inclusive: bool,
 
     /// Whether the maximum value is inclusive.
+    #[serde(deserialize_with = "bool_from_int_or_bool")]
     pub is_max_inclusive: bool,
 }
 
