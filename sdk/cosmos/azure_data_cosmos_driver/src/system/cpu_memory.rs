@@ -197,6 +197,20 @@ impl CpuMemoryHistory {
         self.samples.last().and_then(|s| s.cpu)
     }
 
+    /// Returns the recorded CPU samples formatted as human-readable entries
+    /// (e.g. `["(45.3%)", "(50.1%)"]`), oldest first.
+    ///
+    /// Empty when no CPU samples have been collected (cold start or the sampler
+    /// is not running in the host environment). Used to serialize the
+    /// `system_usage.cpu` diagnostics field as a structured value instead of a
+    /// sentinel string.
+    pub(crate) fn cpu_sample_strings(&self) -> Vec<String> {
+        self.samples
+            .iter()
+            .filter_map(|s| s.cpu.map(|cpu| format!("({cpu})")))
+            .collect()
+    }
+
     /// Returns the most recent available memory in megabytes, if any sample exists.
     pub(crate) fn latest_memory_mb(&self) -> Option<u64> {
         self.samples.last().and_then(|s| s.available_mb)

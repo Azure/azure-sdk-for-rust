@@ -14,6 +14,7 @@
 ### Bugs Fixed
 
 - Fixed duplicate items being returned on cross-partition query resume after a physical partition split. When a cross-partition query was paused, serialized to a continuation token, and resumed after the underlying partition had split, the resumed iterator could re-emit items the caller had already consumed on a prior page. The continuation token now records per-range sibling state and is correctly propagated to every surviving leaf after a split. ([#4550](https://github.com/Azure/azure-sdk-for-rust/pull/4550))
+- Fixed two diagnostics-fidelity gaps surfaced in transport-failure diagnostics. The per-attempt `activity_id` is now seeded from the operation-level activity ID placed on the wire (`x-ms-activity-id`), so an attempt that fails at the transport layer (no response received) records the ID that was sent instead of serializing `null`; the success path still overwrites it with the response-header echo. The `system_usage.cpu` field now serializes as a structured object (`{ "samples": [...], "status": "available" | "unavailable" }`) matching the .NET/Java SDKs, instead of the type-punned literal string `"empty"` when the CPU sampler has no samples. ([#4573](https://github.com/Azure/azure-sdk-for-rust/issues/4573))
 
 ### Other Changes
 
