@@ -696,6 +696,106 @@ async fn ppcb3_read_override_routes_to_healthy_secondary() {
     assert_no_data_plane_host(&fixture.recorder, PRIMARY_HOST);
 }
 
+/// **PPCB-4 ★** — Asymmetric `excluded_regions` per operation in one workload.
+///
+/// Writes exclude the satellite (`WEST_US`); reads exclude nothing.
+/// After PPCB trips on PRIMARY for both op types, the post-trip
+/// behavior must diverge per the caller's per-op `excluded_regions`:
+///
+/// * read → falls through to SECONDARY (satellite allowed for reads),
+/// * write → terminal failure with SECONDARY untouched (satellite
+///   excluded for writes); PRIMARY's `unreachable` fault must fire,
+///   proving the write attempted PRIMARY rather than silently failing.
+///
+/// Models the customer pattern where writes are pinned to a hub region
+/// for compliance/latency while reads are free to fan out.
+#[tokio::test]
+async fn ppcb4_asymmetric_excluded_regions_per_operation() {
+    // Phase-1 storms — one per op type — trip PPCB on PRIMARY for both reads and writes.
+    let read_storm = service_unavailable_rule(
+        "ppcb4-read-east-503",
+        FaultOperationType::ReadItem,
+        Region::EAST_US,
+    );
+    let write_storm = service_unavailable_rule(
+        "ppcb4-write-east-503",
+        FaultOperationType::CreateItem,
+        Region::EAST_US,
+    );
+    // Phase-2 unreachables: force the post-trip override to either fall through to SECONDARY or fail.
+    let read_unreachable = connection_error_rule(
+        "ppcb4-read-east-unreachable",
+        FaultOperationType::ReadItem,
+        Region::EAST_US,
+    );
+    let write_unreachable = connection_error_rule(
+        "ppcb4-write-east-unreachable",
+        FaultOperationType::CreateItem,
+        Region::EAST_US,
+    );
+    // All rules disabled during bootstrap + seed so the in-memory emulator returns clean topology.
+    read_storm.disable();
+    write_storm.disable();
+    read_unreachable.disable();
+    write_unreachable.disable();
+
+    let fixture = build_fixture(
+        WriteMode::Multi,
+        vec![
+            Arc::clone(&read_storm),
+            Arc::clone(&write_storm),
+            Arc::clone(&read_unreachable),
+            Arc::clone(&write_unreachable),
+        ],
+    )
+    .await;
+    seed_item(&fixture, "ppcb4-item", "pk1").await;
+
+    // Phase 1: storms only, trip PPCB on PRIMARY for both op types.
+    // Each trip cycle uses its own item id so a previously-tripped PPCB
+    // override on the partition does not silently route the write to
+    // SECONDARY before the storm fires.
+    read_storm.enable();
+    trip_ppcb_reads(&fixture, "ppcb4-item", "pk1", 2).await;
+    read_storm.disable();
+    write_storm.enable();
+    trip_ppcb_writes(&fixture, "ppcb4-write-trip", "pk1", 2).await;
+    write_storm.disable();
+
+    // Phase 2: swap to unreachable on PRIMARY.
+    read_unreachable.enable();
+    write_unreachable.enable();
+    fixture.recorder.clear();
+
+    // Read leg — no exclusions: PPCB override must heal via SECONDARY.
+    let read_result = read_item(&fixture, "ppcb4-item", "pk1", ppcb_options(None)).await;
+    assert!(
+        read_result.as_ref().is_ok(),
+        "PPCB-4 read: with satellite NOT excluded, post-trip read \
+         should fall through to SECONDARY; got {read_result:?}"
+    );
+    assert_all_hosts_in(&fixture.recorder, &[SECONDARY_HOST]);
+    assert_no_data_plane_host(&fixture.recorder, PRIMARY_HOST);
+
+    // Reset the recorder so the write leg's host assertions only see write traffic.
+    fixture.recorder.clear();
+
+    // Write leg — satellite excluded: PPCB override cannot route to SECONDARY,
+    // PRIMARY is unreachable, so the operation must surface a terminal error.
+    // The unreachable fault firing proves the write actually attempted PRIMARY
+    // rather than failing silently in routing.
+    let write_result = create_item(
+        &fixture,
+        "ppcb4-write-final",
+        "pk1",
+        ppcb_options(Some(vec![Region::WEST_US])),
+    )
+    .await;
+    assert_terminal_transport_failure(&write_result);
+    assert_rule_fired(&write_unreachable, 1);
+    assert_no_data_plane_host(&fixture.recorder, SECONDARY_HOST);
+}
+
 // G1, G2: cold-start (topology discovered healthy, then unreachable)
 
 /// **G1** — cold-start read must fail over from newly unreachable primary.
