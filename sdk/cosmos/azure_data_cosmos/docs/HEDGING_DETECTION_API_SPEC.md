@@ -22,7 +22,7 @@ The only code change this PR makes to the diagnostics surface is renaming the in
 All citations are SHA-pinned to the `main` commit at the merge of the hedging design spec ([PR #4330](https://github.com/Azure/azure-sdk-for-rust/pull/4330)), commit [`5f5d8c49d02b579a2afd2297857b919900ff1dad`](https://github.com/Azure/azure-sdk-for-rust/commit/5f5d8c49d02b579a2afd2297857b919900ff1dad), file [`diagnostics_context.rs`](https://github.com/Azure/azure-sdk-for-rust/blob/5f5d8c49d02b579a2afd2297857b919900ff1dad/sdk/cosmos/azure_data_cosmos_driver/src/diagnostics/diagnostics_context.rs). Current line numbers may have drifted; the accessors and their semantics are stable.
 
 | Item | Signature | Notes |
-|---|---|---|
+| --- | --- | --- |
 | `DiagnosticsContext` | re-exported as `azure_data_cosmos::DiagnosticsContext` | The per-operation diagnostics handle. |
 | `DiagnosticsContext::requests()` | `-> Arc<Vec<RequestDiagnostics>>` | All dispatched attempts, in **dispatch order** (append-only). Cloning the `Arc` is a cheap atomic increment. |
 | `DiagnosticsContext::hedge_diagnostics()` | `-> Option<&HedgeDiagnostics>` | `Some` whenever a hedging strategy was active for the operation (including primary-wins-under-threshold). |
@@ -125,7 +125,7 @@ Duplicates are preserved (e.g., a late hedge loser after the winner). To dedupli
 The cross-SDK detection recipes and the Rust-native `HedgeDiagnostics` ([PR #4330](https://github.com/Azure/azure-sdk-for-rust/pull/4330) design, [#4432](https://github.com/Azure/azure-sdk-for-rust/pull/4432) implementation; authoritative shape in [`HEDGING_SPEC.md`](https://github.com/Azure/azure-sdk-for-rust/blob/5f5d8c49d02b579a2afd2297857b919900ff1dad/sdk/cosmos/azure_data_cosmos_driver/docs/HEDGING_SPEC.md)) coexist on the same `DiagnosticsContext` and serve different audiences.
 
 | Question | Recipe (§4) | Rust-native `HedgeDiagnostics` |
-|---|---|---|
+| --- | --- | --- |
 | Did fan-out happen? | §4.1 | `hedge_diagnostics().map(\|hd\| hd.alternate_region().is_some()).unwrap_or(false)` — equivalent |
 | Was a strategy active? | *(not derived)* | `hedge_diagnostics().is_some()` — superset of fan-out |
 | Regions tried | §4.2 (every attempt, with reason) | `primary_region()` + `alternate_region()` (hedge legs only) |
