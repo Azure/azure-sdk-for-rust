@@ -650,31 +650,47 @@ impl LocationStateStore {
         let ttl = self.endpoint_unavailability_ttl;
         let snapshot = self.account_snapshot();
 
-        let due: Vec<Url> = snapshot
+        // Capture each due endpoint's observed `marked_at` so we can detect a
+        // concurrent re-mark that lands while the (potentially slow) probe is in
+        // flight.
+        let due: Vec<(Url, Instant)> = snapshot
             .unavailable_endpoints
             .iter()
             .filter(|(_, (marked_at, _))| now.saturating_duration_since(*marked_at) >= ttl)
-            .map(|(url, _)| url.clone())
+            .map(|(url, (marked_at, _))| (url.clone(), *marked_at))
             .collect();
 
         if due.is_empty() {
             return;
         }
 
-        for url in due {
+        for (url, observed_marked_at) in due {
             let reachable = probe_fn(url.clone()).await;
             self.apply_account(|current| {
                 let mut next = current.clone();
-                if reachable {
-                    next.unavailable_endpoints.remove(&url);
-                } else if let Some((marked_at, _)) = next.unavailable_endpoints.get_mut(&url) {
-                    // Reset the cooldown so the endpoint is re-probed later.
-                    *marked_at = Instant::now();
+                if let Some((marked_at, _)) = next.unavailable_endpoints.get_mut(&url) {
+                    if reachable {
+                        // Only fail back if the mark is the same one we probed.
+                        // A newer `marked_at` means a concurrent transport
+                        // failure re-marked the endpoint while the probe was in
+                        // flight, so keep it out of rotation and re-probe later.
+                        if *marked_at == observed_marked_at {
+                            next.unavailable_endpoints.remove(&url);
+                        }
+                    } else {
+                        // Reset the cooldown so the endpoint is re-probed later.
+                        *marked_at = Instant::now();
+                    }
                 }
                 next
             });
 
-            if reachable {
+            if reachable
+                && !self
+                    .account_snapshot()
+                    .unavailable_endpoints
+                    .contains_key(&url)
+            {
                 tracing::info!(
                     endpoint = %url,
                     "endpoint passed connectivity probe; failing back",
@@ -682,6 +698,8 @@ impl LocationStateStore {
             }
         }
     }
+
+    /// Records that the alternate (secondary) hedge attempt completed before
     /// the primary in
     /// [`execute_hedged`](crate::driver::pipeline::operation_pipeline).
     ///
@@ -939,6 +957,141 @@ mod tests {
             store.snapshot().account.unavailable_endpoints.len(),
             0,
             "a successful probe must fail the endpoint back"
+        );
+    }
+
+    #[cfg(feature = "tokio")]
+    #[tokio::test]
+    async fn failed_probe_resets_cooldown_keeping_endpoint_out_of_rotation() {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
+            let payload = test_refresh_payload();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move { Ok(payload) });
+            fut
+        });
+
+        let make_store = || {
+            LocationStateStore::new(
+                Arc::new(AccountMetadataCache::new()),
+                test_endpoint(),
+                default_endpoint.clone(),
+                refresh.clone(),
+                false,
+                // Non-zero cooldown so the reset-on-failure is observable.
+                Duration::from_secs(60),
+                PartitionFailoverConfig::default(),
+                Vec::new(),
+            )
+        };
+
+        let endpoint = default_endpoint.url().clone();
+        let insert_due_mark = |store: &LocationStateStore| {
+            store.apply_account(|current| {
+                let mut next = current.clone();
+                next.unavailable_endpoints.insert(
+                    endpoint.clone(),
+                    (
+                        // Old enough that the endpoint is already probe-due.
+                        Instant::now() - Duration::from_secs(120),
+                        UnavailableReason::TransportError,
+                    ),
+                );
+                next
+            });
+        };
+
+        let reachable: EndpointProbeFn =
+            Arc::new(|_url: Url| Box::pin(async move { true }) as BoxFuture<'static, bool>);
+        let unreachable: EndpointProbeFn =
+            Arc::new(|_url: Url| Box::pin(async move { false }) as BoxFuture<'static, bool>);
+
+        // Baseline: a due endpoint is failed back by a successful probe.
+        let store = make_store();
+        insert_due_mark(&store);
+        store
+            .probe_and_failback_unavailable_endpoints(&reachable)
+            .await;
+        assert_eq!(
+            store.snapshot().account.unavailable_endpoints.len(),
+            0,
+            "a due endpoint must fail back on a successful probe",
+        );
+
+        // A failed probe resets the cooldown, so the endpoint is no longer due;
+        // an immediately-following successful probe must NOT fail it back
+        // (proving the reset is real, not a no-op as it would be with a zero
+        // cooldown).
+        let store = make_store();
+        insert_due_mark(&store);
+        store
+            .probe_and_failback_unavailable_endpoints(&unreachable)
+            .await;
+        store
+            .probe_and_failback_unavailable_endpoints(&reachable)
+            .await;
+        assert_eq!(
+            store.snapshot().account.unavailable_endpoints.len(),
+            1,
+            "a failed probe must reset the cooldown so the endpoint is not \
+             immediately re-probed and failed back",
+        );
+    }
+
+    #[test]
+    fn endpoint_probe_gating_preserves_expired_marks_on_account_sync() {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
+            let payload = test_refresh_payload();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move { Ok(payload) });
+            fut
+        });
+
+        let store = LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint.clone(),
+            refresh,
+            false,
+            Duration::from_secs(60),
+            PartitionFailoverConfig::default(),
+            Vec::new(),
+        );
+
+        // Enable probe gating: the probe loop now owns account-level failback,
+        // so the time-based prune in `sync_account_properties` must be skipped.
+        store.endpoint_probe_gating.store(true, Ordering::Release);
+
+        let properties = Arc::new(test_refresh_payload());
+        store.sync_account_properties(Arc::clone(&properties), &default_endpoint);
+
+        let expired_endpoint = CosmosEndpoint::regional(
+            "eastus".into(),
+            url::Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        store.apply_account(|current| {
+            let mut next = current.clone();
+            next.unavailable_endpoints.insert(
+                expired_endpoint.url().clone(),
+                (
+                    Instant::now() - Duration::from_secs(120),
+                    UnavailableReason::TransportError,
+                ),
+            );
+            next
+        });
+
+        // Re-sync with a different Arc (same data, different pointer). Under
+        // gating the expired mark must survive — only a successful probe may
+        // clear it. This is the inverse of the non-gated prune test.
+        let properties2 = Arc::new(test_refresh_payload());
+        store.sync_account_properties(properties2, &default_endpoint);
+
+        assert_eq!(
+            store.snapshot().account.unavailable_endpoints.len(),
+            1,
+            "under probe gating, expired marks must NOT be time-pruned on sync",
         );
     }
 
