@@ -722,6 +722,45 @@ pub mod builders {
 
         /// Builds the event processor with the specified consumer client and checkpoint store.
         /// Returns a `Result` containing the constructed `EventProcessor`.
+        ///
+        /// # Connection options (including transport)
+        ///
+        /// The event processor does not open its own connection. It processes
+        /// partitions using the [`ConsumerClient`] passed here, and every
+        /// per-partition receiver reuses that client's connection. Connection-level
+        /// options, such as the transport, a custom endpoint, retry options, and the
+        /// application id, are therefore configured on the [`ConsumerClient`] before
+        /// it is passed to `build`.
+        ///
+        /// To run the processor over AMQP-over-WebSockets (port 443, useful when the
+        /// native AMQP ports are blocked), select the transport on the consumer
+        /// client with
+        /// [`ConsumerClientBuilder::with_transport_type`](crate::builders::ConsumerClientBuilder::with_transport_type):
+        ///
+        /// ```no_run
+        /// use azure_messaging_eventhubs::{EventProcessor, CheckpointStore, ConsumerClient};
+        /// use azure_messaging_eventhubs::models::TransportType;
+        /// use std::sync::Arc;
+        ///
+        /// async fn create_processor(checkpoint_store: Arc<dyn CheckpointStore>) -> Result<(), Box<dyn std::error::Error>> {
+        /// use azure_identity::DeveloperToolsCredential;
+        ///
+        /// let eventhub_namespace = std::env::var("EVENTHUBS_HOST")?;
+        /// let eventhub_name = std::env::var("EVENTHUB_NAME")?;
+        /// let consumer = ConsumerClient::builder()
+        ///     .with_transport_type(TransportType::AmqpWebSocket)
+        ///     .open(
+        ///         &eventhub_namespace,
+        ///         eventhub_name,
+        ///         DeveloperToolsCredential::new(None)?.clone(),
+        ///     )
+        ///     .await?;
+        /// let processor = EventProcessor::builder()
+        ///     .build(consumer, checkpoint_store.clone())
+        ///     .await?;
+        /// Ok(())
+        /// }
+        /// ```
         pub async fn build(
             self,
             consumer_client: ConsumerClient,

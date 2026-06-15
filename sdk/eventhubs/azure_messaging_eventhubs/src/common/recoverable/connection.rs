@@ -1049,6 +1049,25 @@ mod tests {
         assert_eq!(connection_manager.custom_endpoint, Some(custom_endpoint));
     }
 
+    // The transport selected on a client builder (and, transitively, on an
+    // EventProcessor's injected ConsumerClient) must reach the connection so it
+    // is applied when the AMQP connection is opened. This verifies the field is
+    // stored on the RecoverableConnection.
+    #[test]
+    fn constructor_with_websocket_transport() {
+        let url = Url::parse("amqps://example.com").unwrap();
+        let connection_manager = RecoverableConnection::new(
+            url,
+            None,
+            None,
+            AmqpTransport::WebSocket,
+            Arc::new(MockCredential),
+            Default::default(),
+        );
+
+        assert_eq!(connection_manager.transport, AmqpTransport::WebSocket);
+    }
+
     #[test]
     fn test_should_retry_amqp_error() {
         use azure_core_amqp::AmqpDescribedError;
