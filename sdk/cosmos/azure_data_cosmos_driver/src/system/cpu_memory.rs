@@ -232,11 +232,9 @@ impl CpuMemoryHistory {
 
 impl std::fmt::Display for CpuMemoryHistory {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let cpu_entries: Vec<String> = self
-            .samples
-            .iter()
-            .filter_map(|s| s.cpu.map(|cpu| format!("({cpu})")))
-            .collect();
+        // Reuse the same sample formatting as the serialized diagnostics
+        // (`cpu_sample_strings`) so the human-readable and JSON views can't drift.
+        let cpu_entries = self.cpu_sample_strings();
         if cpu_entries.is_empty() {
             write!(f, "empty")
         } else {

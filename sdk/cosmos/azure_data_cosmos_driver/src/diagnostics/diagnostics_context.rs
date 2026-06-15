@@ -401,11 +401,12 @@ pub struct RequestDiagnostics {
 
     /// Activity ID for this attempt.
     ///
-    /// Seeded at request start from the operation-level activity ID placed on
-    /// the wire (`x-ms-activity-id`), then overwritten by the response-header
-    /// echo on success. On a transport failure (no response is received) the
-    /// seeded value is retained, so an attempt is never serialized with a
-    /// `null` activity ID.
+    /// Seeded at request start from the operation-level activity ID (the value
+    /// placed on the wire as `x-ms-activity-id`, unless the operation overrides
+    /// it with its own header), then overwritten by the response-header echo on
+    /// success. On a transport failure (no response is received) the seeded
+    /// value is retained, so an attempt is never serialized with a `null`
+    /// activity ID.
     activity_id: Option<ActivityId>,
 
     /// Session token from response (for session consistency).
@@ -1402,11 +1403,12 @@ impl DiagnosticsContextBuilder {
             transport_http_version,
             endpoint,
         );
-        // Seed the per-attempt activity ID with the operation-level ID that the
-        // SDK places on the wire (`x-ms-activity-id`). On a successful response
-        // this is overwritten by the response-header echo in `record_response`;
-        // on a transport failure (no response) it ensures the attempt still
-        // records the ID we sent instead of serializing `null`.
+        // Seed the per-attempt activity ID with the operation-level activity ID.
+        // In the common case this is the value the SDK places on the wire as
+        // `x-ms-activity-id` (an operation may override it with its own header).
+        // On a successful response it is overwritten by the response-header echo
+        // in `record_response`; on a transport failure (no response) it ensures
+        // the attempt still records an activity ID instead of serializing `null`.
         request.with_activity_id(self.activity_id.clone());
         let handle = RequestHandle(self.requests.len());
         self.requests.push(request);
@@ -2746,6 +2748,52 @@ mod tests {
             requests[0].activity_id(),
             Some(&echoed),
             "a successful response must record the response-header activity id"
+        );
+    }
+
+    #[test]
+    fn multi_attempt_failed_then_succeeded_keep_independent_activity_ids() {
+        // A failed attempt retains its seeded operation-level id while a later
+        // successful attempt records the response-header echo. The failed
+        // attempt's id must not be perturbed by the later success.
+        let op_activity_id = ActivityId::from_string("op-activity-id".to_string());
+        let echoed = ActivityId::from_string("echoed-activity-id".to_string());
+        let mut builder = DiagnosticsContextBuilder::new(op_activity_id.clone(), make_options());
+
+        let failed = builder.start_test_request(
+            ExecutionContext::Initial,
+            Some(Region::WEST_US_2),
+            "https://test.documents.azure.com",
+        );
+        builder.fail_transport_request(
+            failed,
+            "connection refused",
+            RequestSentStatus::Sent,
+            CosmosStatus::TRANSPORT_GENERATED_503,
+        );
+
+        let succeeded = builder.start_test_request(
+            ExecutionContext::Retry,
+            Some(Region::WEST_US_2),
+            "https://test.documents.azure.com",
+        );
+        let headers = CosmosResponseHeaders {
+            activity_id: Some(echoed.clone()),
+            ..Default::default()
+        };
+        builder.record_response(succeeded, StatusCode::Ok, &headers);
+
+        let ctx = builder.complete();
+        let requests = ctx.requests();
+        assert_eq!(
+            requests[0].activity_id(),
+            Some(&op_activity_id),
+            "the failed attempt must retain the seeded operation-level activity id"
+        );
+        assert_eq!(
+            requests[1].activity_id(),
+            Some(&echoed),
+            "the succeeded attempt must record the response-header echo"
         );
     }
 
