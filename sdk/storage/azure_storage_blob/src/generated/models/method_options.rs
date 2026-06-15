@@ -1807,9 +1807,9 @@ pub struct PageBlobClientCreateOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-/// Options to be passed to `PageBlobClient::get_page_ranges()`
+/// Options to be passed to `PageBlobClient::list_page_ranges()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct PageBlobClientGetPageRangesOptions<'a> {
+pub struct PageBlobClientListPageRangesOptions<'a> {
     /// Specify this value to operate only on a blob with a matching Etag value.
     pub if_match: Option<Etag>,
 
@@ -1848,10 +1848,10 @@ pub struct PageBlobClientGetPageRangesOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-impl PageBlobClientGetPageRangesOptions<'_> {
-    /// Transforms this [`PageBlobClientGetPageRangesOptions`] into a new `PageBlobClientGetPageRangesOptions` that owns the underlying data, cloning it if necessary.
-    pub fn into_owned(self) -> PageBlobClientGetPageRangesOptions<'static> {
-        PageBlobClientGetPageRangesOptions {
+impl PageBlobClientListPageRangesOptions<'_> {
+    /// Transforms this [`PageBlobClientListPageRangesOptions`] into a new `PageBlobClientListPageRangesOptions` that owns the underlying data, cloning it if necessary.
+    pub fn into_owned(self) -> PageBlobClientListPageRangesOptions<'static> {
+        PageBlobClientListPageRangesOptions {
             if_match: self.if_match,
             if_modified_since: self.if_modified_since,
             if_none_match: self.if_none_match,

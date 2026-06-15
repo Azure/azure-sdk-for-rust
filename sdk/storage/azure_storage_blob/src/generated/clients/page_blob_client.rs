@@ -7,7 +7,7 @@ use crate::{
     generated::models::{
         PageBlobClientClearPagesOptions, PageBlobClientClearPagesResult,
         PageBlobClientCreateOptions, PageBlobClientCreateResult,
-        PageBlobClientGetPageRangesOptions, PageBlobClientResizeOptions,
+        PageBlobClientListPageRangesOptions, PageBlobClientResizeOptions,
         PageBlobClientResizeResult, PageBlobClientSetSequenceNumberOptions,
         PageBlobClientSetSequenceNumberResult, PageBlobClientUploadPagesFromUrlOptions,
         PageBlobClientUploadPagesFromUrlResult, PageBlobClientUploadPagesOptions,
@@ -369,9 +369,9 @@ impl PageBlobClient {
     ///
     /// [`PageListHeaders`]: crate::generated::models::PageListHeaders
     #[tracing::function("Storage.Blob.PageBlobClient.getPageRanges")]
-    pub fn get_page_ranges(
+    pub fn list_page_ranges(
         &self,
-        options: Option<PageBlobClientGetPageRangesOptions<'_>>,
+        options: Option<PageBlobClientListPageRangesOptions<'_>>,
     ) -> Result<PageIterator<Response<PageList, XmlFormat>>> {
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();

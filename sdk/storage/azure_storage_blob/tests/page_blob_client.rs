@@ -5,7 +5,7 @@ use azure_core::http::{headers::CONTENT_TYPE, RequestContent, StatusCode};
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
     BlobClientGetPropertiesResultHeaders, BlobType, HttpRange, PageBlobClientCreateOptions,
-    PageBlobClientGetPageRangesOptions, PageBlobClientSetSequenceNumberOptions,
+    PageBlobClientListPageRangesOptions, PageBlobClientSetSequenceNumberOptions,
     PageBlobClientSetSequenceNumberResultHeaders, PageBlobClientUploadPagesFromUrlOptions,
     PageBlobClientUploadPagesOptions, PageListHeaders, SequenceNumberActionType,
 };
@@ -616,7 +616,7 @@ async fn test_upload_pages_from_url_source_if_match(
 }
 
 #[recorded::test]
-async fn test_get_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn test_list_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client =
@@ -637,7 +637,7 @@ async fn test_get_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .await?;
 
     // Single Range Scenario
-    let mut pager = page_blob_client.get_page_ranges(None)?;
+    let mut pager = page_blob_client.list_page_ranges(None)?;
     let response = pager.try_next().await?.unwrap();
     let blob_content_length = response.blob_content_length()?;
     assert_eq!(Some(2048), blob_content_length);
@@ -660,7 +660,7 @@ async fn test_get_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         )
         .await?;
 
-    let mut pager = page_blob_client.get_page_ranges(None)?;
+    let mut pager = page_blob_client.list_page_ranges(None)?;
     let response = pager.try_next().await?.unwrap();
     let page_list = response.into_model()?;
     let page_ranges = page_list.page_range;
@@ -671,11 +671,11 @@ async fn test_get_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert_eq!(Some(1535), page_ranges[1].end);
 
     // Filtered By Range Option Scenario
-    let options = PageBlobClientGetPageRangesOptions {
+    let options = PageBlobClientListPageRangesOptions {
         range: Some(HttpRange::new(0, 512)),
         ..Default::default()
     };
-    let mut pager = page_blob_client.get_page_ranges(Some(options))?;
+    let mut pager = page_blob_client.list_page_ranges(Some(options))?;
     let response = pager.try_next().await?.unwrap();
     let page_list = response.into_model()?;
     let page_ranges = page_list.page_range;
@@ -688,7 +688,7 @@ async fn test_get_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .clear_pages(HttpRange::new(0, 512), None)
         .await?;
 
-    let mut pager = page_blob_client.get_page_ranges(None)?;
+    let mut pager = page_blob_client.list_page_ranges(None)?;
     let response = pager.try_next().await?.unwrap();
     let page_list = response.into_model()?;
     let page_ranges = page_list.page_range;

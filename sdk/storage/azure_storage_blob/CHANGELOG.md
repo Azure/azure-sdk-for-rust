@@ -5,7 +5,7 @@
 ### Features Added
 
 - Added `list_blobs_hierarchical` to `BlobContainerClient`.
-- Added `get_page_ranges` to `PageBlobClient`.
+- Added `list_page_ranges` to `PageBlobClient`.
 
 ### Breaking Changes
 
