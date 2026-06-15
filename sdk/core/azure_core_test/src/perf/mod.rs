@@ -181,9 +181,12 @@ impl<T: PerfTestFactory> PerfRunner<T> {
     /// * module_name - the name of the module containing the test, typically `file!()`
     /// * tests - the set of tests to configure.
     ///
-    pub fn new(package_dir: &'static str, module_name: &'static str) -> Result<Self> {
+    pub fn new(
+        package_dir: &'static str,
+        module_name: &'static str,
+    ) -> std::result::Result<Self, clap::Error> {
         Ok(Self {
-            options: PerfRunnerOptions::<T>::parse(),
+            options: PerfRunnerOptions::<T>::try_parse()?,
             searched_subcommand_options: SearchedSubcommandOptions::try_parse().unwrap_or_default(),
             package_dir,
             module_name,
@@ -196,10 +199,9 @@ impl<T: PerfTestFactory> PerfRunner<T> {
         package_dir: &'static str,
         module_name: &'static str,
         args: Vec<&str>,
-    ) -> azure_core::Result<Self> {
+    ) -> std::result::Result<Self, clap::Error> {
         Ok(Self {
-            options: PerfRunnerOptions::<T>::try_parse_from(args.iter())
-                .with_context(ErrorKind::Other, "Failed to parse command line arguments.")?,
+            options: PerfRunnerOptions::<T>::try_parse_from(args.iter())?,
             searched_subcommand_options: SearchedSubcommandOptions::try_parse_from(args)
                 .unwrap_or_default(),
             package_dir,
