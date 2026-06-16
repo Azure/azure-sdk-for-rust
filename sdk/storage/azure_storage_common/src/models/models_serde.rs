@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
 pub mod option_offset_date_time_rfc3339 {
     use azure_core::time::{parse_rfc3339, OffsetDateTime};
     use serde::{Deserialize, Deserializer, Serializer};

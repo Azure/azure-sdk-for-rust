@@ -232,7 +232,10 @@ pub(crate) mod rfc3339_seconds_only {
     where
         S: Serializer,
     {
-        let s = value.format(FORMAT).map_err(serde::ser::Error::custom)?;
+        let s = value
+            .to_offset(time::UtcOffset::UTC)
+            .format(FORMAT)
+            .map_err(serde::ser::Error::custom)?;
         serializer.serialize_str(&s)
     }
 
