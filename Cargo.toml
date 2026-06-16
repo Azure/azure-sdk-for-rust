@@ -83,6 +83,10 @@ version = "1.0.0"
 [workspace.dependencies.azure_storage_blob]
 version = "1.0.0"
 
+[workspace.dependencies.azure_storage_common]
+path = "sdk/storage/azure_storage_common"
+version = "0.1.0"
+
 [workspace.dependencies]
 async-lock = "3.4"
 async-stream = { version = "0.3.6" }

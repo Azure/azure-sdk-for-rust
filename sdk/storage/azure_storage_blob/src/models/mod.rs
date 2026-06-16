@@ -202,11 +202,10 @@ pub(crate) mod blob_name {
 /// Serde serialization helpers that format [`OffsetDateTime`](azure_core::time::OffsetDateTime)
 /// as RFC 3339 truncated to whole seconds (e.g. `2022-08-12T20:55:02Z`).
 ///
-/// The Azure Blob Storage service rejects timestamps with fractional seconds
-/// for `KeyInfo` fields. This module provides a custom
-/// `serialize` function (and an `option` sub-module for `Option<OffsetDateTime>`)
-/// that strips fractional seconds while leaving deserialization to the standard
-/// RFC 3339 parser which accepts any valid precision.
+/// Some Azure Storage service endpoints reject timestamps with fractional seconds.
+/// This module provides a custom `serialize` function (and an `option` sub-module
+/// for `Option<OffsetDateTime>`) that strips fractional seconds while leaving
+/// deserialization to the standard RFC 3339 parser which accepts any valid precision.
 ///
 /// # Example
 ///
