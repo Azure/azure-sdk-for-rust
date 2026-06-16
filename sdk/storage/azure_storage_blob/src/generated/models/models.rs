@@ -903,7 +903,7 @@ pub struct KeyInfo {
         default,
         deserialize_with = "models_serde::option_offset_date_time_rfc3339::deserialize",
         rename = "Expiry",
-        serialize_with = "crate::models::rfc3339_seconds_only::option::serialize",
+        serialize_with = "azure_storage_common::models::rfc3339_seconds_only::option::serialize",
         skip_serializing_if = "Option::is_none"
     )]
     pub expiry: Option<OffsetDateTime>,
@@ -913,7 +913,7 @@ pub struct KeyInfo {
         default,
         deserialize_with = "models_serde::option_offset_date_time_rfc3339::deserialize",
         rename = "Start",
-        serialize_with = "crate::models::rfc3339_seconds_only::option::serialize",
+        serialize_with = "azure_storage_common::models::rfc3339_seconds_only::option::serialize",
         skip_serializing_if = "Option::is_none"
     )]
     pub start: Option<OffsetDateTime>,
