@@ -24,7 +24,7 @@ mod simple_value;
 mod value;
 
 pub use cbs::{AmqpClaimsBasedSecurity, AmqpClaimsBasedSecurityApis};
-pub use connection::{AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions};
+pub use connection::{AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions, AmqpTransport};
 pub use error::*;
 pub use management::{AmqpManagement, AmqpManagementApis};
 pub use messaging::{AmqpDelivery, AmqpDeliveryApis, AmqpMessage, AmqpSource, AmqpTarget};

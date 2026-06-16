@@ -46,6 +46,13 @@ impl From<fe2o3_amqp::transport::Error> for Fe2o3TransportError {
     }
 }
 
+pub(crate) struct Fe2o3WebSocketError(pub fe2o3_amqp_ws::Error);
+impl From<fe2o3_amqp_ws::Error> for Fe2o3WebSocketError {
+    fn from(e: fe2o3_amqp_ws::Error) -> Self {
+        Fe2o3WebSocketError(e)
+    }
+}
+
 // Specializations of From for common AMQP types.
 impl From<&fe2o3_amqp_types::definitions::ErrorCondition> for AmqpErrorCondition {
     fn from(e: &fe2o3_amqp_types::definitions::ErrorCondition) -> Self {
@@ -154,6 +161,16 @@ impl From<fe2o3_amqp::link::LinkStateError> for AmqpError {
 impl From<fe2o3_amqp::link::IllegalLinkStateError> for AmqpError {
     fn from(e: fe2o3_amqp::link::IllegalLinkStateError) -> Self {
         AmqpError::from(AmqpErrorKind::ConnectionDropped(Box::new(e)))
+    }
+}
+
+impl From<Fe2o3WebSocketError> for AmqpError {
+    fn from(e: Fe2o3WebSocketError) -> Self {
+        // The websocket establishment error wraps the underlying WebSocket and
+        // I/O failures that occur before the AMQP protocol handshake begins.
+        // There is no AMQP error condition for these, so they map to a
+        // transport-layer error.
+        AmqpError::from(AmqpErrorKind::TransportImplementationError(Box::new(e.0)))
     }
 }
 
