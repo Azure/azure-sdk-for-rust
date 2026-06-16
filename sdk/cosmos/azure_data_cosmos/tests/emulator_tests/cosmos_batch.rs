@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-#![cfg(feature = "key_auth")]
 
 // Use the shared test framework declared in `tests/emulator/mod.rs`.
 use super::framework;
@@ -10,8 +9,8 @@ use azure_core::Uuid;
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::models::ContainerProperties;
 use azure_data_cosmos::options::BatchOptions;
+use azure_data_cosmos::options::{ContentResponseOnWrite, OperationOptions};
 use azure_data_cosmos::TransactionalBatch;
-use azure_data_cosmos::{ContentResponseOnWrite, OperationOptions};
 use framework::TestClient;
 use framework::TestRunContext;
 use serde::{Deserialize, Serialize};
@@ -95,7 +94,7 @@ pub async fn batch_create_and_read() -> Result<(), Box<dyn Error>> {
 
             // Verify the read operation returned the correct item
             let read_item: BatchTestItem = batch_response.results()[2]
-                .deserialize_body()?
+                .into_model()?
                 .expect("Read operation should return an item");
             assert_eq!(read_item.id, "item1");
             assert_eq!(read_item.value, 100);

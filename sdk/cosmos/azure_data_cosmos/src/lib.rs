@@ -4,58 +4,51 @@
 #![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
-mod account_endpoint;
-mod account_reference;
-pub mod clients;
-mod constants;
-mod credential;
-mod error;
-mod feed;
-pub mod options;
-pub mod query;
-mod session_helpers;
-
-pub mod models;
-pub mod transactional_batch;
-
-#[doc(inline)]
-pub use clients::CosmosClient;
-#[doc(inline)]
-pub use clients::CosmosClientBuilder;
+// =========================================================================
+// Public API
+// =========================================================================
 
 pub use account_endpoint::AccountEndpoint;
 pub use account_reference::AccountReference;
-pub use clients::ThroughputPoller;
+#[doc(inline)]
+pub use clients::{ContainerClient, CosmosClient, CosmosClientBuilder, DatabaseClient};
 pub use credential::CosmosCredential;
 pub use error::{CosmosError, CosmosStatus, Result, SubStatusCode};
+pub use feed::{FeedScope, Query};
+pub use models::{PartitionKey, TransactionalBatch};
+pub use options::RoutingStrategy;
+
+// =========================================================================
+// Public modules
+// =========================================================================
+
+pub mod clients;
+pub mod diagnostics;
+pub mod error;
+#[cfg(feature = "fault_injection")]
+pub mod fault_injection;
+pub mod feed;
+pub mod models;
+pub mod options;
+
+// =========================================================================
+// Internal modules
+// =========================================================================
+
+mod account_endpoint;
+mod account_reference;
+mod constants;
+mod credential;
+mod driver_bridge;
+mod region_proximity;
+mod session_helpers;
+
+// =========================================================================
+// Crate-internal re-exports
+// =========================================================================
 
 /// Internal alias for the driver's `CosmosError`. Used at error-construction
 /// sites inside this crate so they can call the driver's
 /// `CosmosError::builder()` directly and then `.into()` the result into the
 /// public [`CosmosError`] newtype. Not exposed in the public API.
 pub(crate) use azure_data_cosmos_driver::error::CosmosError as DriverCosmosError;
-pub use models::{
-    BatchResponse, CosmosNumber, DiagnosticsContext, ItemResponse, PatchInstructions,
-    PatchOperation, ResourceResponse, ResponseBody, ResponseHeaders,
-};
-pub use options::*;
-pub use query::Query;
-pub use routing_strategy::RoutingStrategy;
-pub use transactional_batch::{
-    BatchDeleteOptions, BatchReadOptions, BatchReplaceOptions, BatchUpsertOptions,
-    TransactionalBatch, TransactionalBatchOperationResult, TransactionalBatchResponse,
-};
-
-// Driver re-exports
-#[doc(inline)]
-pub use azure_data_cosmos_driver::models::{
-    ContinuationToken, EffectivePartitionKey, FeedRange, PartitionKey, PartitionKeyValue,
-};
-
-pub use feed::{FeedPage, QueryFeedPage, QueryItemIterator, QueryPageIterator};
-mod driver_bridge;
-#[cfg(feature = "fault_injection")]
-pub mod fault_injection;
-mod region_proximity;
-pub mod regions;
-mod routing_strategy;

@@ -15,7 +15,9 @@ pub(crate) mod response_ext;
 mod upload_result;
 
 pub use crate::generated::models::*;
-pub use download_result::{BlobClientDownloadResult, BlobDownloadProperties};
+pub use download_result::{
+    BlobClientDownloadIntoResult, BlobClientDownloadResult, BlobDownloadProperties,
+};
 pub use method_options::BlobClientDownloadOptions;
 pub use method_options::BlockBlobClientUploadOptions;
 pub use method_options::BlockBlobClientUploadOptions as BlobClientUploadOptions;

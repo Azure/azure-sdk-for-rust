@@ -17,7 +17,6 @@
 //!
 //! Run with: `AZURE_COSMOS_CONNECTION_STRING=... cargo test -p azure_data_cosmos_driver --features __internal_testing --test gateway_query_plan_comparison`
 
-#![cfg(feature = "__internal_testing")]
 // The framework module is shared across test binaries; not all exports are used
 // by every binary.
 #![allow(dead_code, unused_imports)]

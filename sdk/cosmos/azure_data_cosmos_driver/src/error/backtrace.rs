@@ -805,15 +805,22 @@ pub(crate) mod tests {
         Arc::as_ptr(&bt.inner) as usize
     }
 
-    // Serializes backtrace tests that mutate the per-second limiter
-    // capacity (also process-global). Tests in *other* modules that
-    // merely render backtraces don't need this lock — they assert on
-    // per-IP properties, not absolute cache size, so concurrent renders
-    // cannot break them.
-    static TEST_LOCK: Mutex<()> = Mutex::new(());
+    // Serializes backtrace tests across the whole crate that mutate the
+    // per-second limiter or capture throttle (process-global). Made
+    // `pub(crate)` so the sibling test module in `error::mod` (which
+    // also touches `global_capture_throttle()` /
+    // `global_resolution_limiter()`) serializes against these tests via
+    // the **same** mutex. Two separate locks would not serialize and
+    // would race.
+    pub(crate) static TEST_LOCK: Mutex<()> = Mutex::new(());
 
     fn with_limiter_capacity<R>(capacity: u32, f: impl FnOnce() -> R) -> R {
         let _guard = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        // Prime the OnceLock-gated env-derived init BEFORE we set capacities,
+        // so the first `Backtrace::capture()` inside `f` doesn't fire the
+        // lazy init and clobber our test-set values back to env defaults
+        // (which are 0 when RUST_BACKTRACE is unset).
+        ensure_initialized();
         let prev = global_resolution_limiter().capacity();
         global_resolution_limiter().set_capacity(capacity);
         global_resolution_limiter().reset_for_tests();
@@ -1013,6 +1020,9 @@ pub(crate) mod tests {
         // walking the stack or allocating the IP vector. Exercising the
         // production `set_capacity` path (no test-only escape hatch).
         let _guard = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        // Prime the OnceLock-gated env init so it can't clobber our
+        // capacity below.
+        ensure_initialized();
         let prev = global_capture_throttle().capacity();
         global_capture_throttle().set_capacity(0);
         global_capture_throttle().reset_for_tests();
@@ -1027,6 +1037,7 @@ pub(crate) mod tests {
     #[test]
     fn capacity_nonzero_enables_capture() {
         let _guard = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        ensure_initialized();
         let prev = global_capture_throttle().capacity();
         global_capture_throttle().set_capacity(8);
         global_capture_throttle().reset_for_tests();

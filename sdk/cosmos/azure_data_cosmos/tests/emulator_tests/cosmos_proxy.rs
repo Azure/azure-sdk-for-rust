@@ -4,8 +4,6 @@
 //! Integration tests verifying proxy configuration behavior.
 //! These tests run against the Cosmos DB emulator.
 
-#![cfg(feature = "key_auth")]
-
 use super::framework;
 
 use framework::{TestClient, CONNECTION_STRING_ENV_VAR, EMULATOR_CONNECTION_STRING};
@@ -126,7 +124,9 @@ pub async fn proxy_enabled_routes_through_proxy() -> Result<(), Box<dyn Error>> 
                     endpoint,
                     parsed.account_key().clone(),
                 ),
-                azure_data_cosmos::RoutingStrategy::ProximityTo(azure_data_cosmos::Region::EAST_US),
+                azure_data_cosmos::RoutingStrategy::ProximityTo(
+                    azure_data_cosmos::options::Region::EAST_US,
+                ),
             )
             .await;
         // Ignore the result — the driver's init probe will fail through the fake proxy,

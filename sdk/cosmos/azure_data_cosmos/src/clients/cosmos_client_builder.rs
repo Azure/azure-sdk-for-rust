@@ -5,8 +5,9 @@
 //! Builder for creating [`CosmosClient`] instances.
 
 use crate::{
-    clients::ClientContext, options::ThroughputControlGroupOptions, AccountReference, CosmosClient,
-    CosmosClientOptions, CosmosCredential, RoutingStrategy,
+    clients::ClientContext,
+    options::{CosmosClientOptions, ThroughputControlGroupOptions},
+    AccountReference, CosmosClient, CosmosCredential, RoutingStrategy,
 };
 
 use azure_data_cosmos_driver::options::ConnectionPoolOptions;
@@ -32,10 +33,8 @@ use crate::constants::AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED;
 /// Using Entra ID authentication:
 ///
 /// ```rust,no_run
-/// use azure_data_cosmos::{
-///     CosmosClientBuilder, AccountReference, AccountEndpoint,
-///     Region, RoutingStrategy,
-/// };
+/// use azure_data_cosmos::{CosmosClientBuilder, AccountReference, AccountEndpoint, RoutingStrategy};
+/// use azure_data_cosmos::options::Region;
 /// use std::sync::Arc;
 ///
 /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
@@ -53,10 +52,8 @@ use crate::constants::AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED;
 /// Using key authentication (requires `key_auth` feature):
 ///
 /// ```rust,no_run,ignore
-/// use azure_data_cosmos::{
-///     CosmosClientBuilder, AccountReference, AccountEndpoint,
-///     Region, RoutingStrategy,
-/// };
+/// use azure_data_cosmos::{CosmosClientBuilder, AccountReference, AccountEndpoint, RoutingStrategy};
+/// use azure_data_cosmos::options::Region;
 /// use azure_core::credentials::Secret;
 ///
 /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
@@ -105,8 +102,8 @@ impl CosmosClientBuilder {
     /// Sets a suffix to append to the User-Agent header for telemetry.
     ///
     /// Construct the suffix explicitly via
-    /// [`UserAgentSuffix::new`](crate::UserAgentSuffix::new) for trusted
-    /// values, or [`UserAgentSuffix::try_new`](crate::UserAgentSuffix::try_new)
+    /// [`UserAgentSuffix::new`](crate::options::UserAgentSuffix::new) for trusted
+    /// values, or [`UserAgentSuffix::try_new`](crate::options::UserAgentSuffix::try_new)
     /// for untrusted input. Validation rules (max 25 characters,
     /// HTTP-header-safe) are enforced at the construction site rather than
     /// here, which keeps any panic local to the caller's input handling.
@@ -114,8 +111,46 @@ impl CosmosClientBuilder {
     /// # Arguments
     ///
     /// * `suffix` - The suffix to append to the User-Agent header.
-    pub fn with_user_agent_suffix(mut self, suffix: crate::UserAgentSuffix) -> Self {
+    pub fn with_user_agent_suffix(mut self, suffix: crate::options::UserAgentSuffix) -> Self {
         self.options.user_agent_suffix = Some(suffix);
+        self
+    }
+
+    /// Sets the maximum number of retries for requests that the service
+    /// throttles (HTTP 429, rate-limited), along with the maximum cumulative
+    /// wait time across those retries, as a single grouped
+    /// [`ThrottlingRetryOptions`](crate::options::ThrottlingRetryOptions) value.
+    ///
+    /// Mirrors the .NET SDK's `MaxRetryAttemptsOnRateLimitedRequests` /
+    /// `MaxRetryWaitTimeOnRateLimitedRequests` (grouped here as the Java SDK
+    /// does via `CosmosClientBuilder.throttlingRetryOptions`). Build the value
+    /// with [`ThrottlingRetryOptionsBuilder`](crate::options::ThrottlingRetryOptionsBuilder):
+    ///
+    /// - `max_retry_count` bounds the transport-level retry loop that honors
+    ///   the service `x-ms-retry-after-ms` header (**default** `9`; a value of
+    ///   `0` disables throttle retries, surfacing the first 429 to the caller).
+    /// - `max_retry_wait_time` caps the cumulative retry delay (**default**
+    ///   30 seconds); once the accumulated delay would exceed it, no further
+    ///   throttle retry is attempted.
+    ///
+    /// **Scope**: applies *per transport-pipeline invocation*, not per logical
+    /// operation. An operation that fans out across regions (failover,
+    /// hedging) enters the transport pipeline once per leg, each with a fresh
+    /// throttle-retry budget. To cap an operation's *total* wall-clock time,
+    /// configure
+    /// [`OperationOptions::end_to_end_latency_policy`](crate::options::OperationOptions::end_to_end_latency_policy).
+    ///
+    /// This client-wide value can be overridden per request via
+    /// [`OperationOptions`](crate::options::OperationOptions).
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - The grouped throttle-retry configuration.
+    pub fn with_throttling_retry_options(
+        mut self,
+        options: crate::options::ThrottlingRetryOptions,
+    ) -> Self {
+        self.options.operation.throttling_retry_options = Some(options);
         self
     }
 
@@ -133,7 +168,6 @@ impl CosmosClientBuilder {
     /// set; pass the complete final set on the last call.
     ///
     /// This is only available when the `fault_injection` feature is enabled.
-    #[doc(hidden)]
     #[cfg(feature = "fault_injection")]
     pub fn with_fault_injection(
         mut self,
@@ -152,7 +186,6 @@ impl CosmosClientBuilder {
     /// # Arguments
     ///
     /// * `allow` - Whether to accept invalid certificates for emulator connections.
-    #[doc(hidden)]
     #[cfg(all(feature = "allow_invalid_certificates", feature = "__tls",))]
     pub fn with_allow_emulator_invalid_certificates(mut self, allow: bool) -> Self {
         self.allow_emulator_invalid_certificates = allow;
@@ -184,7 +217,7 @@ impl CosmosClientBuilder {
     ///
     /// Groups define throughput policies (priority level, throughput bucket) that
     /// are applied to requests referencing the group name via
-    /// [`OperationOptions::throughput_control_group`](crate::OperationOptions::throughput_control_group).
+    /// [`OperationOptions::throughput_control_group`](crate::options::OperationOptions::throughput_control_group).
     pub fn with_throughput_control_group(mut self, group: ThroughputControlGroupOptions) -> Self {
         self.throughput_control_groups.push(group);
         self
@@ -256,7 +289,6 @@ impl CosmosClientBuilder {
     /// `with_http_client_factory` (the in-memory emulator transport),
     /// `with_cpu_refresh_interval`, and any future fields — are left
     /// untouched and take effect as configured.
-    #[doc(hidden)]
     #[cfg(feature = "__internal_in_memory_emulator")]
     pub fn with_driver_runtime_builder(mut self, builder: CosmosDriverRuntimeBuilder) -> Self {
         self.driver_runtime_builder = Some(builder);
@@ -351,10 +383,21 @@ impl CosmosClientBuilder {
         // the env layer in the driver's option-resolution hierarchy, so it
         // pins the SDK's "enabled by default" behavior even when the env var
         // is unset.
-        let runtime_operation_options =
-            azure_data_cosmos_driver::options::OperationOptionsBuilder::new()
-                .with_per_partition_circuit_breaker_enabled(ppcb_enabled)
-                .build();
+        //
+        // Start from the client-level operation defaults (set via the builder,
+        // e.g. `with_throttling_retry_options`) so they are
+        // forwarded to the driver's runtime layer, then force the resolved
+        // PPCB default on top — but only when the SDK builder hasn't already
+        // set an explicit value. No public SDK setter exists today, but the
+        // `is_none()` guard prevents a future PR that adds one from silently
+        // having its value clobbered here.
+        let mut runtime_operation_options = self.options.operation.clone();
+        if runtime_operation_options
+            .per_partition_circuit_breaker_enabled
+            .is_none()
+        {
+            runtime_operation_options.per_partition_circuit_breaker_enabled = Some(ppcb_enabled);
+        }
         driver_runtime_builder =
             driver_runtime_builder.with_operation_options(runtime_operation_options);
 
@@ -368,7 +411,7 @@ impl CosmosClientBuilder {
                 .register_throughput_control_group(group)
                 .map_err(|e| {
                     crate::DriverCosmosError::builder()
-                        .with_status(crate::CosmosStatus::CLIENT_THROUGHPUT_CONTROL_GROUP_REGISTRATION_FAILED)
+                        .with_status(crate::error::CosmosStatus::CLIENT_THROUGHPUT_CONTROL_GROUP_REGISTRATION_FAILED)
                         .with_message(format!("failed to register throughput control group: {e}"))
                         .build()
                 })?;
@@ -439,7 +482,7 @@ fn build_driver_account(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Region, UserAgentSuffix};
+    use crate::options::{Region, UserAgentSuffix};
 
     /// Reproduces the bug where `CosmosClientBuilder::with_user_agent_suffix`
     /// did not forward the suffix to the driver runtime, causing the
@@ -552,6 +595,73 @@ mod tests {
                 .per_partition_circuit_breaker_enabled,
             Some(false),
             "explicit env-var opt-out must propagate to the driver runtime"
+        );
+    }
+
+    /// The client-wide throttle-retry setter must populate the operation
+    /// options that `build()` forwards to the driver's runtime layer.
+    #[test]
+    fn throttle_retry_setter_populates_operation_options() {
+        let builder = CosmosClientBuilder::new().with_throttling_retry_options(
+            crate::options::ThrottlingRetryOptionsBuilder::new()
+                .with_max_retry_count(4)
+                .with_max_retry_wait_time(std::time::Duration::from_secs(15))
+                .build(),
+        );
+
+        let throttling = builder
+            .options
+            .operation
+            .throttling_retry_options
+            .as_ref()
+            .expect("throttling group should be populated");
+        assert_eq!(throttling.max_retry_count, Some(4));
+        assert_eq!(
+            throttling.max_retry_wait_time,
+            Some(std::time::Duration::from_secs(15))
+        );
+    }
+
+    /// A throttle-retry count of `0` (disable retries) must round-trip through
+    /// the builder unchanged so the driver can surface the first 429.
+    #[test]
+    fn throttle_retry_count_zero_round_trips() {
+        let builder = CosmosClientBuilder::new().with_throttling_retry_options(
+            crate::options::ThrottlingRetryOptionsBuilder::new()
+                .with_max_retry_count(0)
+                .build(),
+        );
+        assert_eq!(
+            builder
+                .options
+                .operation
+                .throttling_retry_options
+                .as_ref()
+                .and_then(|t| t.max_retry_count),
+            Some(0)
+        );
+    }
+
+    /// The grouped `with_throttling_retry_options` setter must replace the
+    /// whole group with the supplied value.
+    #[test]
+    fn grouped_throttling_retry_options_setter_replaces_group() {
+        let group = crate::options::ThrottlingRetryOptionsBuilder::new()
+            .with_max_retry_count(2)
+            .with_max_retry_wait_time(std::time::Duration::from_secs(7))
+            .build();
+        let builder = CosmosClientBuilder::new().with_throttling_retry_options(group);
+
+        let throttling = builder
+            .options
+            .operation
+            .throttling_retry_options
+            .as_ref()
+            .expect("throttling group should be populated");
+        assert_eq!(throttling.max_retry_count, Some(2));
+        assert_eq!(
+            throttling.max_retry_wait_time,
+            Some(std::time::Duration::from_secs(7))
         );
     }
 

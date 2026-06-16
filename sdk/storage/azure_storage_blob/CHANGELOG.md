@@ -5,6 +5,8 @@
 ### Features Added
 
 - Added support for `get_user_delegation_key` to `BlobServiceClient`.
+- Added support for `list_blobs_hierarchical` to `BlobContainerClient`.
+- Added support for `list_page_ranges` to `PageBlobClient`.
 
 ### Breaking Changes
 
