@@ -83,6 +83,20 @@ impl FromStr for ConnectionString {
         let mut shared_access_signature = None;
         let mut entity_path = None;
 
+        // Reject empty values for recognized keys up front. An empty required
+        // value (e.g. `SharedAccessKey=`) otherwise satisfies the presence
+        // checks below and defers the failure to an opaque broker 401 at connect
+        // time (an empty key even signs successfully with a zero-length HMAC).
+        let non_empty = |key_name: &str, value: &str| -> Result<(), Error> {
+            if value.is_empty() {
+                return Err(Error::new(
+                    ErrorKind::DataConversion,
+                    format!("invalid connection string, '{key_name}' has an empty value"),
+                ));
+            }
+            Ok(())
+        };
+
         for part in connection_string.split(';') {
             let part = part.trim();
             if part.is_empty() {
@@ -97,14 +111,19 @@ impl FromStr for ConnectionString {
 
             // Keys are matched case-insensitively to mirror the other Azure SDKs.
             if key.eq_ignore_ascii_case("Endpoint") {
+                non_empty("Endpoint", value)?;
                 endpoint = Some(value.to_string());
             } else if key.eq_ignore_ascii_case("SharedAccessKeyName") {
+                non_empty("SharedAccessKeyName", value)?;
                 shared_access_key_name = Some(value.to_string());
             } else if key.eq_ignore_ascii_case("SharedAccessKey") {
+                non_empty("SharedAccessKey", value)?;
                 shared_access_key = Some(Secret::new(value.to_string()));
             } else if key.eq_ignore_ascii_case("SharedAccessSignature") {
+                non_empty("SharedAccessSignature", value)?;
                 shared_access_signature = Some(Secret::new(value.to_string()));
             } else if key.eq_ignore_ascii_case("EntityPath") {
+                non_empty("EntityPath", value)?;
                 entity_path = Some(value.to_string());
             }
             // Unknown keys are ignored for forward compatibility.
@@ -169,6 +188,13 @@ pub(crate) fn resolve_eventhub(
     explicit: Option<&str>,
 ) -> Result<String, Error> {
     match (explicit, connection_string.entity_path.as_deref()) {
+        // Checked before the conflict arm so an empty explicit name gives a
+        // clear message instead of a confusing conflict with `EntityPath`. An
+        // empty `EntityPath` cannot reach here: the parser rejects it.
+        (Some(""), _) => Err(Error::new(
+            ErrorKind::Other,
+            "event hub name cannot be empty",
+        )),
         (Some(arg), Some(entity)) if arg != entity => Err(Error::new(
             ErrorKind::Other,
             format!(
@@ -289,6 +315,41 @@ mod tests {
             "Endpoint=not-a-url;SharedAccessKeyName=policy;SharedAccessKey=key",
             "invalid connection string, 'Endpoint' is not a valid URL",
         );
+    }
+
+    #[test]
+    fn empty_required_values_are_rejected() {
+        // Each empty value satisfies the old `is_some()` presence checks but
+        // would sign/connect with garbage; the parser must reject them.
+        assert_bad(
+            "Endpoint=;SharedAccessKeyName=policy;SharedAccessKey=key",
+            "invalid connection string, 'Endpoint' has an empty value",
+        );
+        assert_bad(
+            "Endpoint=sb://example.servicebus.windows.net/;SharedAccessKeyName=;SharedAccessKey=key",
+            "invalid connection string, 'SharedAccessKeyName' has an empty value",
+        );
+        assert_bad(
+            "Endpoint=sb://example.servicebus.windows.net/;SharedAccessKeyName=policy;SharedAccessKey=",
+            "invalid connection string, 'SharedAccessKey' has an empty value",
+        );
+        assert_bad(
+            "Endpoint=sb://example.servicebus.windows.net/;SharedAccessSignature=",
+            "invalid connection string, 'SharedAccessSignature' has an empty value",
+        );
+        assert_bad(
+            "Endpoint=sb://example.servicebus.windows.net/;SharedAccessKeyName=policy;SharedAccessKey=key;EntityPath=",
+            "invalid connection string, 'EntityPath' has an empty value",
+        );
+    }
+
+    #[test]
+    fn resolve_eventhub_rejects_empty_explicit_name() {
+        let without_entity: ConnectionString = "Endpoint=sb://example.servicebus.windows.net/;SharedAccessKeyName=policy;SharedAccessKey=key"
+            .parse()
+            .unwrap();
+        let err = resolve_eventhub(&without_entity, Some("")).unwrap_err();
+        assert_eq!(format!("{err}"), "event hub name cannot be empty");
     }
 
     #[test]

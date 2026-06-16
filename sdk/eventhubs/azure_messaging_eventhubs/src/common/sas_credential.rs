@@ -67,10 +67,16 @@ enum Kind {
     },
     /// A pre-formed `SharedAccessSignature ...` token supplied by the caller.
     ///
-    /// It cannot be refreshed (we have no key), so we report a rolling
-    /// client-side expiry and let the broker reject it once its own `se`
-    /// elapses. This matches the behavior of the other Azure SDKs.
-    Preformed { token: Secret },
+    /// It cannot be refreshed (we have no key), so `get_token` reports the
+    /// token's own `se` as the expiry rather than a rolling client-side window.
+    /// Reporting the real deadline keeps the client's view in sync with the
+    /// broker's; the connection's refresher detects the non-advancing expiry
+    /// and stops trying to renew it (see `Authorizer::refresh_tokens`).
+    Preformed {
+        token: Secret,
+        /// The token's own `se` expiry, parsed once at construction.
+        expires_on: OffsetDateTime,
+    },
 }
 
 /// A SAS [`TokenCredential`] for Event Hubs connection-string authentication.
@@ -101,10 +107,18 @@ impl SasCredential {
     }
 
     /// Wraps a pre-formed `SharedAccessSignature` token from a connection string.
-    pub(crate) fn from_signature(signature: Secret) -> Self {
-        Self {
-            kind: Kind::Preformed { token: signature },
-        }
+    ///
+    /// Validates the token's shape and parses its `se` expiry up front, so a
+    /// malformed or truncated signature fails at open time with a clear error
+    /// rather than as an opaque broker 401 at connect time.
+    pub(crate) fn from_signature(signature: Secret) -> Result<Self> {
+        let expires_on = parse_sas_expiry(signature.secret())?;
+        Ok(Self {
+            kind: Kind::Preformed {
+                token: signature,
+                expires_on,
+            },
+        })
     }
 
     /// Builds the appropriate credential from a parsed connection string for the
@@ -113,7 +127,7 @@ impl SasCredential {
     pub(crate) fn from_connection_string(
         connection_string: &ConnectionString,
         eventhub: &str,
-    ) -> Self {
+    ) -> Result<Self> {
         if let Some(signature) = &connection_string.shared_access_signature {
             return Self::from_signature(signature.clone());
         }
@@ -121,7 +135,7 @@ impl SasCredential {
         // name and key are `Some` (see the `has_key` check in `from_str`). Assert
         // that invariant rather than silently signing with empty values, which
         // would produce a token the broker rejects with an opaque 401.
-        Self::from_shared_access_key(
+        Ok(Self::from_shared_access_key(
             &connection_string.fully_qualified_namespace,
             eventhub,
             connection_string.shared_access_key_name.clone().expect(
@@ -131,8 +145,46 @@ impl SasCredential {
                 .shared_access_key
                 .clone()
                 .expect("parser guarantees SharedAccessKey is present when no signature is set"),
-        )
+        ))
     }
+}
+
+/// Validates a pre-formed `SharedAccessSignature` token's shape and extracts its
+/// `se` (expiry, Unix seconds) field. A token that does not look like the
+/// signer's output (wrong prefix, missing or non-numeric `se`) is rejected here
+/// so the failure surfaces at open time rather than as an opaque broker 401.
+fn parse_sas_expiry(token: &str) -> Result<OffsetDateTime> {
+    let body = token
+        .strip_prefix("SharedAccessSignature ")
+        .ok_or_else(|| {
+            Error::new(
+                ErrorKind::DataConversion,
+                "pre-formed SharedAccessSignature must start with 'SharedAccessSignature '",
+            )
+        })?;
+    let se = body
+        .split('&')
+        .find_map(|field| field.strip_prefix("se="))
+        .ok_or_else(|| {
+            Error::new(
+                ErrorKind::DataConversion,
+                "pre-formed SharedAccessSignature is missing its 'se' expiry field",
+            )
+        })?;
+    let se: i64 = se.parse().map_err(|e| {
+        Error::with_error(
+            ErrorKind::DataConversion,
+            e,
+            "pre-formed SharedAccessSignature has a non-numeric 'se' expiry",
+        )
+    })?;
+    OffsetDateTime::from_unix_timestamp(se).map_err(|e| {
+        Error::with_error(
+            ErrorKind::DataConversion,
+            e,
+            "pre-formed SharedAccessSignature has an out-of-range 'se' expiry",
+        )
+    })
 }
 
 /// Builds a SAS token string for `audience`, valid until `expiry` (Unix
@@ -178,11 +230,19 @@ impl TokenCredential for SasCredential {
                 let token = sign_sas(audience, key_name, key, expires_on.unix_timestamp())?;
                 Ok(AccessToken::new(Secret::new(token), expires_on))
             }
-            Kind::Preformed { token } => {
-                // Rolling client-side expiry: the real lifetime is enforced by
-                // the broker via the token's own `se` field.
-                let expires_on = OffsetDateTime::now_utc() + DEFAULT_TOKEN_VALIDITY;
-                Ok(AccessToken::new(token.clone(), expires_on))
+            Kind::Preformed { token, expires_on } => {
+                // Report the token's own `se` as the expiry. A pre-formed token
+                // cannot be re-signed, so once it is past `se` there is nothing
+                // to hand back; fail with a clear error instead of re-presenting
+                // an expired token and letting the broker drop the link.
+                if OffsetDateTime::now_utc() >= *expires_on {
+                    return Err(Error::new(
+                        ErrorKind::Credential,
+                        "pre-formed SharedAccessSignature has expired and cannot be refreshed; \
+                         supply a fresh token or use a SharedAccessKey for automatic renewal",
+                    ));
+                }
+                Ok(AccessToken::new(token.clone(), *expires_on))
             }
         }
     }
@@ -261,11 +321,42 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn preformed_token_is_returned_verbatim() {
+    async fn preformed_token_is_returned_verbatim_with_real_se_expiry() {
+        // `se` far in the future so the token is still valid. The token is
+        // returned unchanged and its expiry is the token's own `se`, not a
+        // rolling client-side window.
         let sig =
-            "SharedAccessSignature sr=amqps%3a%2f%2fns%2fhub&sig=abc%3d&se=1700000000&skn=policy";
-        let cred = SasCredential::from_signature(Secret::new(sig));
+            "SharedAccessSignature sr=amqps%3a%2f%2fns%2fhub&sig=abc%3d&se=4102444800&skn=policy";
+        let cred = SasCredential::from_signature(Secret::new(sig)).unwrap();
         let token = cred.get_token(&[], None).await.unwrap();
         assert_eq!(token.token.secret(), sig);
+        assert_eq!(token.expires_on.unix_timestamp(), 4102444800);
+    }
+
+    #[tokio::test]
+    async fn preformed_expired_token_errors() {
+        // `se` in the past (2023): the shape is valid so construction succeeds,
+        // but `get_token` refuses to hand back an expired token.
+        let sig =
+            "SharedAccessSignature sr=amqps%3a%2f%2fns%2fhub&sig=abc%3d&se=1700000000&skn=policy";
+        let cred = SasCredential::from_signature(Secret::new(sig)).unwrap();
+        let err = cred.get_token(&[], None).await.unwrap_err();
+        assert!(format!("{err}").contains("expired"), "{err}");
+    }
+
+    #[test]
+    fn from_signature_rejects_malformed_tokens() {
+        // Wrong prefix.
+        assert!(SasCredential::from_signature(Secret::new("se=4102444800")).is_err());
+        // Missing `se`.
+        assert!(SasCredential::from_signature(Secret::new(
+            "SharedAccessSignature sr=amqps%3a%2f%2fns%2fhub&sig=abc%3d&skn=policy"
+        ))
+        .is_err());
+        // Non-numeric `se`.
+        assert!(SasCredential::from_signature(Secret::new(
+            "SharedAccessSignature sr=amqps%3a%2f%2fns%2fhub&sig=abc%3d&se=abc&skn=policy"
+        ))
+        .is_err());
     }
 }

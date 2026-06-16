@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-// cspell:ignore sastoken
+// cspell:ignore sastoken refreshable
 
 use crate::{common::recoverable::RecoverableConnection, error::Result};
 use async_lock::RwLock;
@@ -14,7 +14,7 @@ use azure_core::{
 use azure_core_amqp::{AmqpClaimsBasedSecurityApis as _, AmqpError};
 use rand::{rng, RngExt};
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     sync::{Arc, Mutex as SyncMutex, OnceLock, Weak},
 };
 use tracing::{debug, trace, warn};
@@ -222,11 +222,20 @@ impl Authorizer {
     /// the Event Hubs service.
     async fn refresh_tokens(self: &Arc<Self>) -> Result<()> {
         debug!("Refreshing tokens.");
+        // Paths whose credential cannot renew their token (e.g. a pre-formed
+        // SAS supplied via a connection string): a refresh returns the same
+        // expiry it already had. Excluding them keeps the loop from busy-
+        // refreshing a token it cannot extend; the broker enforces the real
+        // `se`, and recovery re-authorizes the path if the link later drops.
+        let mut non_refreshable: HashSet<Url> = HashSet::new();
         loop {
             let mut expiration_times = vec![];
             {
                 let scopes = self.authorization_scopes.read().await;
                 for (path, token) in scopes.iter() {
+                    if non_refreshable.contains(path) {
+                        continue;
+                    }
                     debug!(
                         "Token expiration time for path {}: {}",
                         path, token.expires_on
@@ -312,6 +321,9 @@ impl Authorizer {
                 let scopes = self.authorization_scopes.read().await;
                 let mut to_refresh = Vec::new();
                 for (url, token) in scopes.iter() {
+                    if non_refreshable.contains(url) {
+                        continue;
+                    }
                     if token.expires_on >= now + (token_refresh_bias) {
                         debug!(
                             "Token not expired for {url}: ExpiresOn: {}, Now: {now}, Bias: {token_refresh_bias:?}",
@@ -324,18 +336,33 @@ impl Authorizer {
                         "Token about to be expired for {url}: ExpiresOn: {}, Now: {now}, Bias: {token_refresh_bias:?}",
                         token.expires_on
                     );
-                    to_refresh.push(url.clone());
+                    // Carry the current expiry so a refresh that does not extend
+                    // it can be detected as non-refreshable below.
+                    to_refresh.push((url.clone(), token.expires_on));
                 }
                 to_refresh
             };
 
             // Now refresh tokens without holding the lock to avoid deadlocks
             let mut updated_tokens = HashMap::new();
-            for url in tokens_to_refresh {
+            for (url, previous_expiry) in tokens_to_refresh {
                 let new_token = self
                     .credential
                     .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE], None)
                     .await?;
+
+                // A credential that cannot renew this token (e.g. a pre-formed
+                // SAS) hands back the same expiry. Re-presenting it would not
+                // extend the link, so mark the path non-refreshable and leave
+                // the broker to enforce the real `se` rather than spinning.
+                if new_token.expires_on <= previous_expiry {
+                    warn!(
+                        "Credential cannot refresh token for {url} (expiry did not advance past {previous_expiry}); \
+                         relying on broker-side expiry. This is expected for a pre-formed SAS token."
+                    );
+                    non_refreshable.insert(url.clone());
+                    continue;
+                }
 
                 // Create an ephemeral connection to host the authentication.
                 let connection = self.recoverable_connection.upgrade().ok_or_else(|| {
@@ -697,6 +724,96 @@ mod tests {
         info!("Second token expiration get count: {}", final_count);
 
         Ok(())
+    }
+
+    // A pre-formed SAS token cannot be re-signed, so its credential returns the
+    // same expiry on every call. The refresher must detect this non-advancing
+    // expiry, attempt the refresh at most once, and then stop, rather than
+    // spinning and re-presenting an unrenewable token to the broker on a tight
+    // loop. This pins the non-refreshable handling in `refresh_tokens`.
+    #[tokio::test(flavor = "multi_thread")]
+    async fn non_refreshable_token_is_refreshed_at_most_once() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+
+        #[derive(Debug)]
+        struct FixedExpiryCredential {
+            expires_on: OffsetDateTime,
+            calls: AtomicUsize,
+        }
+
+        #[async_trait::async_trait]
+        impl TokenCredential for FixedExpiryCredential {
+            async fn get_token(
+                &self,
+                _scopes: &[&str],
+                _options: Option<TokenRequestOptions<'_>>,
+            ) -> azure_core::Result<AccessToken> {
+                self.calls.fetch_add(1, Ordering::SeqCst);
+                Ok(AccessToken::new(
+                    azure_core::credentials::Secret::new("mock_token"),
+                    self.expires_on,
+                ))
+            }
+        }
+
+        let credential = Arc::new(FixedExpiryCredential {
+            expires_on: OffsetDateTime::now_utc() + Duration::seconds(8),
+            calls: AtomicUsize::new(0),
+        });
+
+        let url = Url::parse("amqps://example.com").unwrap();
+        let connection = RecoverableConnection::new(
+            url.clone(),
+            None,
+            None,
+            credential.clone(),
+            Default::default(),
+            None,
+        );
+        connection.disable_connection().await.unwrap();
+
+        let authorizer = Arc::new(Authorizer::new(
+            Arc::downgrade(&connection),
+            credential.clone(),
+            None,
+        ));
+        authorizer.disable_authorization().unwrap();
+
+        // Refresh ~3s before the 8s expiry, so a refresh is attempted ~5s in.
+        authorizer
+            .set_token_refresh_times(TokenRefreshTimes {
+                before_expiration_refresh_time: Duration::seconds(3),
+                jitter_min: Duration::milliseconds(-500),
+                jitter_max: Duration::milliseconds(500),
+            })
+            .unwrap();
+
+        let path = Url::parse("amqps://example.com/preformed").unwrap();
+        authorizer
+            .authorize_path(&connection, &path)
+            .await
+            .unwrap();
+        assert_eq!(credential.calls.load(Ordering::SeqCst), 1);
+
+        // Sleep well past the refresh point. Without the non-refreshable guard
+        // the refresher would re-call `get_token` on a tight loop (many calls);
+        // with it, the path is marked non-refreshable after a single attempt.
+        tokio::time::sleep(std::time::Duration::from_secs(7)).await;
+
+        let calls = credential.calls.load(Ordering::SeqCst);
+        assert!(
+            (2..=5).contains(&calls),
+            "expected one refresh attempt then stop, but get_token was called {calls} times"
+        );
+
+        // The token stays available for the path; the broker enforces the real
+        // `se`. The cached read does not call `get_token` again.
+        let stored = authorizer
+            .authorize_path(&connection, &path)
+            .await
+            .unwrap();
+        assert_eq!(stored.expires_on, credential.expires_on);
+        assert_eq!(credential.calls.load(Ordering::SeqCst), calls);
     }
 
     // Regression test for the self-deadlock described in

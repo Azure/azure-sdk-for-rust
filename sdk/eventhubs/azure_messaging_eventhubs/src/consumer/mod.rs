@@ -761,7 +761,7 @@ pub mod builders {
             let credential = Arc::new(SasCredential::from_connection_string(
                 &connection_string,
                 &eventhub,
-            ));
+            )?);
 
             let custom_endpoint = match self.custom_endpoint {
                 Some(endpoint) => Some(Url::parse(&endpoint).map_err(azure_core::Error::from)?),

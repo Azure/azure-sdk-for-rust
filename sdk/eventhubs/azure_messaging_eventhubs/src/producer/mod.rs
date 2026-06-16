@@ -623,7 +623,7 @@ pub mod builders {
             let credential = Arc::new(SasCredential::from_connection_string(
                 &connection_string,
                 &eventhub,
-            ));
+            )?);
 
             let url = format!(
                 "amqps://{}/{}",
