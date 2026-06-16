@@ -729,7 +729,7 @@ mod tests {
     // A pre-formed SAS token cannot be re-signed, so its credential returns the
     // same expiry on every call. The refresher must detect this non-advancing
     // expiry, attempt the refresh at most once, and then stop, rather than
-    // spinning and re-presenting an unrenewable token to the broker on a tight
+    // spinning and re-presenting a non-renewable token to the broker on a tight
     // loop. This pins the non-refreshable handling in `refresh_tokens`.
     #[tokio::test(flavor = "multi_thread")]
     async fn non_refreshable_token_is_refreshed_at_most_once() {
