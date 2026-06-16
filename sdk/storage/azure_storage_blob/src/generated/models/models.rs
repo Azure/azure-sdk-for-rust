@@ -891,7 +891,6 @@ pub struct GeoReplication {
     pub status: Option<GeoReplicationStatusType>,
 }
 
-<<<<<<< HEAD
 /// Key information.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct KeyInfo {
@@ -918,7 +917,8 @@ pub struct KeyInfo {
         skip_serializing_if = "Option::is_none"
     )]
     pub start: Option<OffsetDateTime>,
-=======
+}
+
 /// The result of the List Blobs Hierarchical API.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
@@ -956,7 +956,6 @@ pub struct ListBlobsHierarchicalResponse {
     /// The service endpoint.
     #[serde(rename = "@ServiceEndpoint", skip_serializing_if = "Option::is_none")]
     pub service_endpoint: Option<String>,
->>>>>>> main
 }
 
 /// The result of the List Blobs API.
