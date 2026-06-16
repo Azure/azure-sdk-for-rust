@@ -2078,3 +2078,13 @@ pub struct PageBlobClientUploadPagesOptions<'a> {
     /// Specifies the transactional MD5 hash for the body.
     pub transactional_content_md5: Option<Vec<u8>>,
 }
+
+/// Options to be passed to `BlobServiceClient::get_user_delegation_key()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct BlobServiceClientGetUserDelegationKeyOptions<'a> {
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds.
+    pub timeout: Option<i32>,
+}
