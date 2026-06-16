@@ -180,12 +180,6 @@ impl CosmosClientBuilder {
     /// set; pass the complete final set on the last call.
     ///
     /// This is only available when the `fault_injection` feature is enabled.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if two rules share the same `id`.
-    ///
-    /// Only available when the `fault_injection` Cargo feature is enabled.
     #[cfg(feature = "fault_injection")]
     pub fn with_fault_injection_rules(
         mut self,

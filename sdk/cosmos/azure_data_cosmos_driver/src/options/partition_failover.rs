@@ -46,9 +46,15 @@ pub struct PartitionFailoverOptions {
 
 impl Default for PartitionFailoverOptions {
     fn default() -> Self {
-        PartitionFailoverOptionsBuilder::new()
-            .build()
-            .expect("Default PartitionFailoverOptions should always be valid")
+        Self {
+            circuit_breaker_enabled: true, // PPCB is enabled by default.
+            read_failure_threshold: 10,
+            write_failure_threshold: 5,
+            counter_reset_window: Duration::from_millis(300_000),
+            partition_unavailability_duration: Duration::from_millis(5_000),
+            failback_sweep_interval: Duration::from_millis(300_000),
+            consecutive_hedge_win_threshold: 5,
+        }
     }
 }
 
@@ -116,7 +122,7 @@ impl PartitionFailoverOptions {
 /// # Environment Variables
 ///
 /// - `AZURE_COSMOS_PPCB_ENABLED`: Enables PPCB via driver options (default:
-///   `false`).
+///   `true`).
 /// - `AZURE_COSMOS_PPCB_READ_FAILURE_THRESHOLD`: Read failure count before
 ///   the breaker trips (default: `10`, min: `1`).
 /// - `AZURE_COSMOS_PPCB_WRITE_FAILURE_THRESHOLD`: Write failure count before
@@ -163,7 +169,7 @@ impl PartitionFailoverOptionsBuilder {
     }
 
     /// Enables or disables the per-partition circuit breaker (PPCB) via
-    /// driver options. Defaults to `false`.
+    /// driver options. Defaults to `true`.
     ///
     /// PPCB still turns on when the account property
     /// `enable_per_partition_failover_behavior` is set on the server, even
@@ -245,31 +251,33 @@ impl PartitionFailoverOptionsBuilder {
     /// Returns an error if any environment variable cannot be parsed or any
     /// supplied value falls outside its validation bounds.
     pub fn build(self) -> crate::error::Result<PartitionFailoverOptions> {
+        let defaults = PartitionFailoverOptions::default();
+
         let circuit_breaker_enabled = parse_from_env(
             self.circuit_breaker_enabled,
             "AZURE_COSMOS_PPCB_ENABLED",
-            false,
+            defaults.circuit_breaker_enabled,
             ValidationBounds::none(),
         )?;
 
         let read_failure_threshold = parse_from_env(
             self.read_failure_threshold,
             "AZURE_COSMOS_PPCB_READ_FAILURE_THRESHOLD",
-            10_u32,
+            defaults.read_failure_threshold,
             ValidationBounds::min(1),
         )?;
 
         let write_failure_threshold = parse_from_env(
             self.write_failure_threshold,
             "AZURE_COSMOS_PPCB_WRITE_FAILURE_THRESHOLD",
-            5_u32,
+            defaults.write_failure_threshold,
             ValidationBounds::min(1),
         )?;
 
         let counter_reset_window = parse_duration_millis_from_env(
             self.counter_reset_window,
             "AZURE_COSMOS_PPCB_COUNTER_RESET_WINDOW_MS",
-            300_000,
+            defaults.counter_reset_window.as_millis() as u64,
             1_000,
             u64::MAX,
         )?;
@@ -277,7 +285,7 @@ impl PartitionFailoverOptionsBuilder {
         let partition_unavailability_duration = parse_duration_millis_from_env(
             self.partition_unavailability_duration,
             "AZURE_COSMOS_PPCB_PARTITION_UNAVAILABILITY_DURATION_MS",
-            5_000,
+            defaults.partition_unavailability_duration.as_millis() as u64,
             1_000,
             u64::MAX,
         )?;
@@ -285,7 +293,7 @@ impl PartitionFailoverOptionsBuilder {
         let failback_sweep_interval = parse_duration_millis_from_env(
             self.failback_sweep_interval,
             "AZURE_COSMOS_PPCB_FAILBACK_SWEEP_INTERVAL_MS",
-            300_000,
+            defaults.failback_sweep_interval.as_millis() as u64,
             1_000,
             u64::MAX,
         )?;
@@ -293,7 +301,7 @@ impl PartitionFailoverOptionsBuilder {
         let consecutive_hedge_win_threshold = parse_from_env(
             self.consecutive_hedge_win_threshold,
             "AZURE_COSMOS_PPCB_CONSECUTIVE_HEDGE_WIN_THRESHOLD",
-            5_u32,
+            defaults.consecutive_hedge_win_threshold,
             ValidationBounds::min(1),
         )?;
 
@@ -317,7 +325,7 @@ mod tests {
     fn builder_defaults_match_documented_values() {
         let options = PartitionFailoverOptionsBuilder::new().build().unwrap();
 
-        assert!(!options.circuit_breaker_enabled());
+        assert!(options.circuit_breaker_enabled());
         assert_eq!(options.read_failure_threshold(), 10);
         assert_eq!(options.write_failure_threshold(), 5);
         assert_eq!(options.counter_reset_window(), Duration::from_secs(5 * 60));

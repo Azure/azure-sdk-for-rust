@@ -160,7 +160,8 @@ impl ServerCertificateValidation {
 mod tests {
     use std::time::Duration;
 
-    use super::EndToEndOperationLatencyPolicy;
+    use super::{EndToEndOperationLatencyPolicy, ServerCertificateValidation};
+    use crate::models::AccountEndpoint;
 
     #[test]
     fn end_to_end_latency_policy_clamps_timeout_below_one_second() {
@@ -172,5 +173,56 @@ mod tests {
     fn end_to_end_latency_policy_keeps_timeout_at_or_above_one_second() {
         let policy = EndToEndOperationLatencyPolicy::new(Duration::from_secs(2));
         assert_eq!(policy.timeout(), Duration::from_secs(2));
+    }
+
+    // ServerCertificateValidation tests
+
+    #[test]
+    fn required_validation_does_not_allow_insecure_with_production_endpoint() {
+        let endpoint = AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/")
+            .expect("Failed to create production endpoint");
+        let validation = ServerCertificateValidation::Required;
+
+        assert!(!validation.allows_insecure_connection(&endpoint));
+    }
+
+    #[test]
+    fn required_validation_does_not_allow_insecure_with_emulator_endpoint() {
+        let endpoint = AccountEndpoint::try_from("https://localhost:8081/")
+            .expect("Failed to create emulator endpoint");
+        let validation = ServerCertificateValidation::Required;
+
+        assert!(!validation.allows_insecure_connection(&endpoint));
+    }
+
+    #[test]
+    fn required_unless_emulator_does_not_allow_insecure_with_production_endpoint() {
+        let endpoint = AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/")
+            .expect("Failed to create production endpoint");
+        let validation = ServerCertificateValidation::RequiredUnlessEmulator;
+
+        assert!(!validation.allows_insecure_connection(&endpoint));
+    }
+
+    #[test]
+    fn required_unless_emulator_allows_insecure_with_known_emulator_endpoints() {
+        const EMULATOR_ENDPOINTS: &[&str] = &[
+            "https://localhost:8081/",
+            "https://127.0.0.1:8081/",
+            "https://[::1]:8081/",
+            "https://[0:0:0:0:0:0:0:1]:8081/",
+        ];
+
+        let validation = ServerCertificateValidation::RequiredUnlessEmulator;
+
+        for endpoint_url in EMULATOR_ENDPOINTS {
+            let endpoint = AccountEndpoint::try_from(*endpoint_url)
+                .expect("Failed to create emulator endpoint");
+            assert!(
+                validation.allows_insecure_connection(&endpoint),
+                "Expected insecure connection to be allowed for endpoint: {}",
+                endpoint_url
+            );
+        }
     }
 }
