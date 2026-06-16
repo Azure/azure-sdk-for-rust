@@ -171,6 +171,40 @@ How a `DiagnosticsContext` is rendered to a string is a driver client option,
 
 All encodings carry the full detailed diagnostics including the top-level `summary`.
 
+## 5c. Wall-clock timestamps (RFC 3339)
+
+Alongside the precise elapsed-time fields (which are derived from `Instant` and are not
+serializable), a built `DiagnosticsContext` carries **absolute wall-clock timestamps** so its output
+can be correlated against server-side and external logs. These are captured with
+[`azure_core::time::OffsetDateTime`] and serialized as RFC 3339 / ISO 8601 strings (matching the
+convention the public `azure_data_cosmos` models already use):
+
+- On the operation (`DiagnosticsContext`): `start_time` (captured when the recorder is created) and
+  `end_time` (captured at `complete()`). The `summary` block carries the same operation window.
+- On each attempt (`RequestDiagnostics`): `start_time` (captured when the attempt begins) and an
+  optional `end_time` (captured when the attempt completes, times out, or fails its transport;
+  omitted via `skip_serializing_if` while an attempt is still in flight).
+
+The fields are additive and non-breaking — existing consumers that ignore them are unaffected, and
+`Instant`-based durations (`duration_ms`, `total_duration_ms`) are unchanged. Like the summary, the
+timestamps exist only when a context is built, so a dropped fast success carries none. Example:
+
+```json
+{
+  "activity_id": "…",
+  "start_time": "2026-06-16T14:22:06.123456Z",
+  "end_time": "2026-06-16T14:22:06.158901Z",
+  "summary": { "…": "…" },
+  "requests": [
+    {
+      "start_time": "2026-06-16T14:22:06.123900Z",
+      "end_time": "2026-06-16T14:22:06.140012Z",
+      "…": "…"
+    }
+  ]
+}
+```
+
 ## 6. Scope of this change
 
 - **Ownership flip, driver-scoped.** The rich diagnostics model moved from

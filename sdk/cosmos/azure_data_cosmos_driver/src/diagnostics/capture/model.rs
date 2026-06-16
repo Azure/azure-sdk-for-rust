@@ -15,12 +15,43 @@ use crate::{
 };
 use azure_core::fmt::SafeDebug;
 use azure_core::http::StatusCode;
+use azure_core::time::{to_rfc3339, OffsetDateTime};
 use serde::Serialize;
 use std::{
     collections::HashMap,
     sync::{Arc, OnceLock},
     time::{Duration, Instant},
 };
+
+/// Serde helpers that serialize wall-clock [`OffsetDateTime`] values as RFC 3339 strings, matching
+/// the repository's timestamp convention (`azure_core::time::to_rfc3339`).
+mod rfc3339 {
+    use super::{to_rfc3339, OffsetDateTime};
+    use serde::Serializer;
+
+    /// Serializes a required timestamp as an RFC 3339 string.
+    pub(super) fn serialize<S: Serializer>(
+        value: &OffsetDateTime,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(&to_rfc3339(value))
+    }
+
+    /// Serializes an optional timestamp as an RFC 3339 string, or `null`.
+    pub(super) mod option {
+        use super::{to_rfc3339, OffsetDateTime, Serializer};
+
+        pub(in crate::diagnostics::capture::model) fn serialize<S: Serializer>(
+            value: &Option<OffsetDateTime>,
+            serializer: S,
+        ) -> Result<S::Ok, S::Error> {
+            match value {
+                Some(dt) => serializer.serialize_str(&to_rfc3339(dt)),
+                None => serializer.serialize_none(),
+            }
+        }
+    }
+}
 
 // =============================================================================
 // Execution Context
@@ -409,13 +440,24 @@ pub struct RequestDiagnostics {
     /// Server-side request processing duration in milliseconds (`x-ms-request-duration-ms`).
     server_duration_ms: Option<crate::models::FiniteF64>,
 
-    /// When this request was started.
+    /// When this request was started (monotonic clock, for precise elapsed; not serialized).
     #[serde(skip)]
     started_at: Instant,
 
-    /// When this request completed (response received or error).
+    /// When this request completed (monotonic clock; not serialized).
     #[serde(skip)]
     pub(crate) completed_at: Option<Instant>,
+
+    /// Wall-clock time the request started, serialized as an RFC 3339 string.
+    #[serde(serialize_with = "rfc3339::serialize")]
+    start_time: OffsetDateTime,
+
+    /// Wall-clock time the request completed, serialized as an RFC 3339 string (absent until done).
+    #[serde(
+        serialize_with = "rfc3339::option::serialize",
+        skip_serializing_if = "Option::is_none"
+    )]
+    end_time: Option<OffsetDateTime>,
 
     /// Duration in milliseconds (computed from started_at/completed_at).
     duration_ms: u64,
@@ -486,6 +528,8 @@ impl RequestDiagnostics {
             server_duration_ms: None,
             started_at: Instant::now(),
             completed_at: None,
+            start_time: OffsetDateTime::now_utc(),
+            end_time: None,
             duration_ms: 0,
             events: Vec::new(),
             transport_shard: None,
@@ -504,6 +548,7 @@ impl RequestDiagnostics {
     /// Since we received a response, the request was definitely sent.
     pub(crate) fn complete(&mut self, status_code: StatusCode, sub_status: Option<SubStatusCode>) {
         self.completed_at = Some(Instant::now());
+        self.end_time = Some(OffsetDateTime::now_utc());
         self.status = CosmosStatus::new(status_code);
         if let Some(sub_status) = sub_status {
             self.with_sub_status(sub_status);
@@ -530,6 +575,7 @@ impl RequestDiagnostics {
     /// operation timeout from the client side.
     pub(crate) fn timeout(&mut self) {
         self.completed_at = Some(Instant::now());
+        self.end_time = Some(OffsetDateTime::now_utc());
         self.timed_out = true;
         self.status = CosmosStatus::from_parts(
             StatusCode::RequestTimeout,
@@ -551,6 +597,7 @@ impl RequestDiagnostics {
         status: CosmosStatus,
     ) {
         self.completed_at = Some(Instant::now());
+        self.end_time = Some(OffsetDateTime::now_utc());
         self.status = status;
         self.with_error(error);
         self.request_sent = request_sent;
@@ -687,6 +734,16 @@ impl RequestDiagnostics {
     /// Returns when this request completed, if it has completed.
     pub fn completed_at(&self) -> Option<Instant> {
         self.completed_at
+    }
+
+    /// Returns the wall-clock time this request started (serialized as RFC 3339).
+    pub fn start_time(&self) -> OffsetDateTime {
+        self.start_time
+    }
+
+    /// Returns the wall-clock time this request completed, if it has (serialized as RFC 3339).
+    pub fn end_time(&self) -> Option<OffsetDateTime> {
+        self.end_time
     }
 
     /// Returns the duration in milliseconds.
@@ -1072,6 +1129,12 @@ struct StatusCount {
 #[derive(Clone, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct DiagnosticsSummary {
+    /// Wall-clock time the operation started, serialized as an RFC 3339 string.
+    #[serde(serialize_with = "rfc3339::serialize")]
+    start_time: OffsetDateTime,
+    /// Wall-clock time the operation finished, serialized as an RFC 3339 string.
+    #[serde(serialize_with = "rfc3339::serialize")]
+    end_time: OffsetDateTime,
     /// Final operation status (HTTP + Cosmos sub-status) after all retries/failovers.
     #[serde(skip_serializing_if = "Option::is_none")]
     final_status: Option<CosmosStatus>,
@@ -1101,6 +1164,8 @@ impl DiagnosticsSummary {
         requests: &[RequestDiagnostics],
         status: Option<CosmosStatus>,
         duration: Duration,
+        start_time: OffsetDateTime,
+        end_time: OffsetDateTime,
     ) -> Self {
         let mut retry_count = 0usize;
         let mut throttled_count = 0usize;
@@ -1148,6 +1213,8 @@ impl DiagnosticsSummary {
         status_counts.sort_by_key(|c| (c.status, c.sub_status));
 
         Self {
+            start_time,
+            end_time,
             final_status: status,
             request_count: requests.len(),
             retry_count,
@@ -1158,6 +1225,16 @@ impl DiagnosticsSummary {
             status_counts,
             top_error,
         }
+    }
+
+    /// The wall-clock time the operation started.
+    pub fn start_time(&self) -> OffsetDateTime {
+        self.start_time
+    }
+
+    /// The wall-clock time the operation finished.
+    pub fn end_time(&self) -> OffsetDateTime {
+        self.end_time
     }
 
     /// The final operation status (HTTP + Cosmos sub-status), if recorded.
@@ -1207,6 +1284,12 @@ struct DiagnosticsOutput<'a> {
     /// Aggregatable roll-up, emitted first (like .NET's top-level Summary block).
     summary: &'a DiagnosticsSummary,
     activity_id: &'a ActivityId,
+    /// Wall-clock operation start, serialized as an RFC 3339 string.
+    #[serde(serialize_with = "rfc3339::serialize")]
+    start_time: OffsetDateTime,
+    /// Wall-clock operation end, serialized as an RFC 3339 string.
+    #[serde(serialize_with = "rfc3339::serialize")]
+    end_time: OffsetDateTime,
     total_duration_ms: u64,
     total_request_charge: RequestCharge,
     request_count: usize,
@@ -1274,6 +1357,10 @@ struct TruncatedOutput<'a> {
     /// Aggregatable roll-up, retained even when the detail is truncated.
     summary: &'a DiagnosticsSummary,
     activity_id: &'a ActivityId,
+    #[serde(serialize_with = "rfc3339::serialize")]
+    start_time: OffsetDateTime,
+    #[serde(serialize_with = "rfc3339::serialize")]
+    end_time: OffsetDateTime,
     total_duration_ms: u64,
     request_count: usize,
     truncated: bool,
@@ -1349,6 +1436,9 @@ pub(crate) struct DiagnosticsContextBuilder {
     /// When this operation started.
     started_at: Instant,
 
+    /// Wall-clock time the operation started (for the absolute `start_time` timestamp).
+    start_time: OffsetDateTime,
+
     /// All request diagnostics collected during this operation.
     ///
     /// `Vec<T>` in Rust guarantees insertion order, so requests are stored in
@@ -1393,6 +1483,7 @@ impl DiagnosticsContextBuilder {
         Self {
             activity_id,
             started_at: Instant::now(),
+            start_time: OffsetDateTime::now_utc(),
             requests: Vec::with_capacity(4), // Expect 1-4 requests in most cases
             status: None,
             options,
@@ -1456,6 +1547,7 @@ impl DiagnosticsContextBuilder {
         Self {
             activity_id: self.activity_id.clone(),
             started_at: Instant::now(),
+            start_time: OffsetDateTime::now_utc(),
             requests: Vec::with_capacity(2),
             status: None,
             options: Arc::clone(&self.options),
@@ -1720,12 +1812,22 @@ impl DiagnosticsContextBuilder {
     /// shared via `Arc` without any locking overhead.
     pub(crate) fn complete(self) -> DiagnosticsContext {
         let duration = self.started_at.elapsed();
+        let start_time = self.start_time;
+        let end_time = OffsetDateTime::now_utc();
         // Compute the aggregatable summary once, here at finalization — a reduction over the
         // already-collected requests. Never runs on the hot path; absent when no context is built.
-        let summary = DiagnosticsSummary::compute(&self.requests, self.status, duration);
+        let summary = DiagnosticsSummary::compute(
+            &self.requests,
+            self.status,
+            duration,
+            start_time,
+            end_time,
+        );
         DiagnosticsContext {
             activity_id: self.activity_id,
             duration,
+            start_time,
+            end_time,
             requests: Arc::new(self.requests),
             status: self.status,
             summary,
@@ -1788,6 +1890,12 @@ pub struct DiagnosticsContext {
 
     /// Total duration of the operation (from start to completion).
     duration: Duration,
+
+    /// Wall-clock time the operation started.
+    start_time: OffsetDateTime,
+
+    /// Wall-clock time the operation finished (set at `complete()`).
+    end_time: OffsetDateTime,
 
     /// All request diagnostics (shared via `Arc` for efficient multi-read).
     ///
@@ -1878,6 +1986,7 @@ impl DiagnosticsContext {
     /// Returns `None` only when `sources` is empty.
     pub(crate) fn aggregate_sub_operations(sources: &[Arc<DiagnosticsContext>]) -> Option<Self> {
         let last = sources.last()?;
+        let first = sources.first()?;
         let aggregated_requests: Vec<RequestDiagnostics> = sources
             .iter()
             .flat_map(|c| c.requests.iter().cloned())
@@ -1886,11 +1995,21 @@ impl DiagnosticsContext {
             .iter()
             .map(|c| c.duration)
             .fold(Duration::ZERO, |a, b| a.saturating_add(b));
-        let summary =
-            DiagnosticsSummary::compute(&aggregated_requests, last.status, aggregated_duration);
+        // The aggregated operation spans the first sub-op's start to the last sub-op's end.
+        let start_time = first.start_time;
+        let end_time = last.end_time;
+        let summary = DiagnosticsSummary::compute(
+            &aggregated_requests,
+            last.status,
+            aggregated_duration,
+            start_time,
+            end_time,
+        );
         Some(DiagnosticsContext {
             activity_id: last.activity_id.clone(),
             duration: aggregated_duration,
+            start_time,
+            end_time,
             requests: Arc::new(aggregated_requests),
             status: last.status,
             summary,
@@ -1916,6 +2035,24 @@ impl DiagnosticsContext {
     /// This is the total time from operation start to completion.
     pub fn duration(&self) -> Duration {
         self.duration
+    }
+
+    /// Returns the wall-clock time at which the operation started.
+    ///
+    /// Serialized as an RFC 3339 / ISO 8601 timestamp in the diagnostics output. Use [`duration`]
+    /// for precise elapsed time; this absolute timestamp is for correlating against server-side
+    /// and external logs.
+    ///
+    /// [`duration`]: Self::duration
+    pub fn start_time(&self) -> OffsetDateTime {
+        self.start_time
+    }
+
+    /// Returns the wall-clock time at which the operation completed.
+    ///
+    /// Serialized as an RFC 3339 / ISO 8601 timestamp in the diagnostics output.
+    pub fn end_time(&self) -> OffsetDateTime {
+        self.end_time
     }
 
     /// Returns the operation-level combined HTTP status and sub-status code.
@@ -2067,6 +2204,8 @@ impl DiagnosticsContext {
         let output = DiagnosticsOutput {
             summary: &self.summary,
             activity_id: &self.activity_id,
+            start_time: self.start_time,
+            end_time: self.end_time,
             total_duration_ms,
             total_request_charge: self.requests.iter().map(|r| r.request_charge).sum(),
             request_count: self.requests.len(),
@@ -2104,6 +2243,8 @@ impl DiagnosticsContext {
         let output = DiagnosticsOutput {
             summary: &self.summary,
             activity_id: &self.activity_id,
+            start_time: self.start_time,
+            end_time: self.end_time,
             total_duration_ms,
             total_request_charge: self.requests.iter().map(|r| r.request_charge).sum(),
             request_count: self.requests.len(),
@@ -2125,6 +2266,8 @@ impl DiagnosticsContext {
             let truncated = TruncatedOutput {
                 summary: &self.summary,
                 activity_id: &self.activity_id,
+                start_time: self.start_time,
+                end_time: self.end_time,
                 total_duration_ms,
                 request_count: self.requests.len(),
                 truncated: true,
@@ -2142,6 +2285,8 @@ impl Clone for DiagnosticsContext {
         Self {
             activity_id: self.activity_id.clone(),
             duration: self.duration,
+            start_time: self.start_time,
+            end_time: self.end_time,
             requests: Arc::clone(&self.requests),
             status: self.status,
             summary: self.summary.clone(),
@@ -2428,6 +2573,10 @@ mod tests {
             // so the structural golden tests stay focused on the requests/regions/system fields and
             // are unaffected by the summary's timing-dependent `total_duration_ms`.
             obj.remove("summary");
+            // Wall-clock timestamps are non-deterministic; strip them here and assert their
+            // presence/format in dedicated timestamp tests instead.
+            obj.remove("start_time");
+            obj.remove("end_time");
         }
 
         // Normalize duration_ms in individual requests (detailed mode)
@@ -2440,6 +2589,9 @@ mod tests {
                             serde_json::Value::Number(0.into()),
                         );
                     }
+                    // Per-attempt wall-clock timestamps are non-deterministic.
+                    obj.remove("start_time");
+                    obj.remove("end_time");
                 }
             }
         }
@@ -3038,6 +3190,67 @@ mod tests {
             }]
         });
         assert_eq!(actual, expected, "Summary JSON mismatch.\nActual:\n{json}");
+    }
+
+    #[test]
+    fn timestamps_present_and_rfc3339() {
+        // Wall-clock timestamps must be captured on the context, the summary, and each attempt, and
+        // must serialize as RFC 3339 strings in both Detailed and Summary verbosities.
+        let before = OffsetDateTime::now_utc();
+        let ctx = make_context_with(ActivityId::from_string("ts-test".to_string()), |builder| {
+            let handle = builder.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::WEST_US_2),
+                "https://test.documents.azure.com",
+            );
+            builder.complete_request(handle, StatusCode::Ok, None);
+        });
+        let after = OffsetDateTime::now_utc();
+
+        // Accessor-level: context start/end are within the wall-clock window and ordered.
+        assert!(ctx.start_time() >= before && ctx.start_time() <= after);
+        assert!(ctx.end_time() >= ctx.start_time() && ctx.end_time() <= after);
+        // Summary carries the same operation window.
+        assert_eq!(ctx.summary().start_time(), ctx.start_time());
+        assert_eq!(ctx.summary().end_time(), ctx.end_time());
+        // The single attempt has a start time and a completion (end) time.
+        let req = &ctx.requests()[0];
+        assert!(req.start_time() >= before && req.start_time() <= after);
+        let req_end = req.end_time().expect("completed attempt has an end_time");
+        assert!(req_end >= req.start_time() && req_end <= after);
+
+        // Serialized form: RFC 3339 strings at the top level and per attempt (Detailed).
+        let detailed: serde_json::Value =
+            serde_json::from_str(&ctx.to_json_string(Some(DiagnosticsVerbosity::Detailed)))
+                .expect("detailed JSON parses");
+        for key in ["start_time", "end_time"] {
+            let s = detailed[key].as_str().unwrap_or_else(|| {
+                panic!("top-level `{key}` missing or not a string in {detailed}")
+            });
+            azure_core::time::parse_rfc3339(s)
+                .unwrap_or_else(|e| panic!("top-level `{key}` not RFC3339 ({s}): {e}"));
+        }
+        let req_json = &detailed["requests"][0];
+        let attempt_start = req_json["start_time"]
+            .as_str()
+            .expect("attempt start_time present");
+        azure_core::time::parse_rfc3339(attempt_start).expect("attempt start_time is RFC3339");
+        let attempt_end = req_json["end_time"]
+            .as_str()
+            .expect("attempt end_time present for a completed attempt");
+        azure_core::time::parse_rfc3339(attempt_end).expect("attempt end_time is RFC3339");
+
+        // Summary verbosity also surfaces the top-level operation timestamps.
+        let summary: serde_json::Value =
+            serde_json::from_str(&ctx.to_json_string(Some(DiagnosticsVerbosity::Summary)))
+                .expect("summary JSON parses");
+        for key in ["start_time", "end_time"] {
+            let s = summary[key]
+                .as_str()
+                .unwrap_or_else(|| panic!("summary-mode top-level `{key}` missing in {summary}"));
+            azure_core::time::parse_rfc3339(s)
+                .unwrap_or_else(|e| panic!("summary-mode `{key}` not RFC3339 ({s}): {e}"));
+        }
     }
 
     #[test]

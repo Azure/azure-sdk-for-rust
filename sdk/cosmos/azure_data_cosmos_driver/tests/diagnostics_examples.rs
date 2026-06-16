@@ -67,6 +67,15 @@ fn example_typical_operation() {
     assert_eq!(ctx.status().map(|s| u16::from(s.status_code())), Some(200));
     assert!(ctx.hedge_diagnostics().is_none());
 
+    // Wall-clock timestamps are present and serialize as RFC 3339 in the diagnostics JSON.
+    assert!(ctx.end_time() >= ctx.start_time());
+    let detailed = ctx.to_json_string(Some(DiagnosticsVerbosity::Detailed));
+    let parsed: serde_json::Value = serde_json::from_str(&detailed).expect("detailed JSON parses");
+    for key in ["start_time", "end_time"] {
+        let s = parsed[key].as_str().expect("timestamp present as string");
+        azure_core::time::parse_rfc3339(s).expect("timestamp is RFC3339");
+    }
+
     println!("=== Example: diagnostics for a typical operation ===");
     println!(
         "{}",
