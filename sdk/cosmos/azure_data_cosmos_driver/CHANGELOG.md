@@ -8,7 +8,7 @@
 
 ### Bugs Fixed
 
-- RID-addressed requests now percent-encode the resource id segments in the request URL path (for example the `=` padding in base64 RIDs) while the authorization signature continues to use the raw resource link. Without this, cold-cache lookups by RID (e.g. resolving a container by RID) sent the raw RID in the path and the gateway rejected them with `401 Unauthorized`.
+- RID-addressed requests are now signed and routed correctly. The driver signs them over the lowercased resource RID (the leaf for point reads, the parent for feeds), matching the service's `is_name_based = false` rule, and sends the RID raw in the request URL path. Name-addressed paths continue to be percent-encoded. Previously the driver signed the full name-style resource link and percent-encoded the RID for every request, so RID reads (for example resolving a database or container by RID) were rejected with `401 Unauthorized`.
 
 ### Other Changes
 

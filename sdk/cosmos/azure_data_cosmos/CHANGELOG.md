@@ -10,6 +10,8 @@
 
 ### Bugs Fixed
 
+- RID-addressed data-plane requests are now authenticated correctly. The driver signs RID-addressed databases, containers, and their feeds/children over the lowercased resource RID (matching the service's `is_name_based = false` rule) and sends the RID raw in the request URL instead of percent-encoding it. Previously the driver always signed the full name-style resource link and percent-encoded the RID, which made the gateway reject RID reads (e.g. `401` for a database or container read by RID). Reading a database or container by RID, listing/querying containers under a RID database, and querying items, reading throughput, and creating items on a RID-addressed container now work end-to-end. ([#4513](https://github.com/Azure/azure-sdk-for-rust/issues/4513))
+
 ### Other Changes
 
 ## 0.35.0 (2026-06-09)

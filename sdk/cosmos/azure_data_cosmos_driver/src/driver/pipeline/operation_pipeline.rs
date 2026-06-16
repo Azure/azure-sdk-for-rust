@@ -1255,11 +1255,17 @@ fn build_transport_request(
         } else {
             format!("/{}", request_path)
         };
-        // Percent-encode reserved characters in the path segments (e.g. the `=`
-        // padding in base64 RIDs) so the gateway reconstructs the same resource
-        // link we signed. The authorization signature still uses the raw link via
-        // `paths` below.
-        base.set_path(&encode_path_segments(&normalized));
+        // Name-based paths are percent-encoded so the gateway reconstructs the
+        // same resource link we signed (names may contain reserved characters).
+        // RID-based paths must be sent raw: encoding the `=` padding of a base64
+        // RID makes the gateway treat the segment as a name and reject the
+        // RID-based signature. The authorization signature is derived from
+        // `paths` below (a lowercased RID for RID-addressed requests).
+        if paths.is_rid_based() {
+            base.set_path(&normalized);
+        } else {
+            base.set_path(&encode_path_segments(&normalized));
+        }
         base
     };
 

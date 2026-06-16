@@ -39,11 +39,20 @@ pub(crate) struct ResourcePaths {
     /// For feed:      `parent.len()` → signing link = `buf[1..signing_end]`
     /// Always `>= 1` when `buf` is non-empty (skips the leading `/`).
     signing_end: usize,
-    /// Signing link override for offer resources.
+    /// Signing link override.
     ///
-    /// Offers use a lowercased RID that is unrelated to the URL path, so it
-    /// cannot be derived as a sub-slice of `buf`.
+    /// Used for resources whose signing link is a lowercased RID that is
+    /// unrelated to the URL path and so cannot be derived as a sub-slice of
+    /// `buf`. This applies to offers and to any RID-addressed resource (where
+    /// the master-key signature is computed over the lowercased leaf/parent RID
+    /// only, matching `is_name_based = false` semantics in the service).
     signing_override: Option<String>,
+    /// When `true`, the request path is RID-addressed and must be sent to the
+    /// gateway **raw** (no percent-encoding). Encoding the `=` padding of a
+    /// base64 RID makes the gateway treat the segment as a name and reject the
+    /// RID-based signature. Name-addressed paths keep `false` so their segments
+    /// are percent-encoded as usual.
+    rid_based: bool,
 }
 
 impl ResourcePaths {
@@ -52,12 +61,19 @@ impl ResourcePaths {
             buf: String::new(),
             signing_end: 0,
             signing_override: None,
+            rid_based: false,
         }
     }
 
     /// Returns the request path (used to set the URL path).
     pub(crate) fn request_path(&self) -> &str {
         &self.buf
+    }
+
+    /// Returns `true` if the request path is RID-addressed and must be sent raw
+    /// (without percent-encoding the path segments).
+    pub(crate) fn is_rid_based(&self) -> bool {
+        self.rid_based
     }
 
     /// Returns the signing link (path without the leading `/`, used for auth).
@@ -204,7 +220,8 @@ impl CosmosResourceReference {
         ResourcePaths {
             buf,
             signing_end,
-            signing_override: None,
+            signing_override: self.rid_signing_override(true),
+            rid_based: self.is_rid_addressed(),
         }
     }
 
@@ -264,6 +281,9 @@ impl CosmosResourceReference {
                 buf,
                 signing_end: 1,
                 signing_override,
+                // Offers keep percent-encoding (raw RID is not required for the
+                // offer signing scheme, which already signs the lowercased RID).
+                rid_based: false,
             };
         }
 
@@ -283,7 +303,8 @@ impl CosmosResourceReference {
             ResourcePaths {
                 buf,
                 signing_end,
-                signing_override: None,
+                signing_override: self.rid_signing_override(true),
+                rid_based: self.is_rid_addressed(),
             }
         } else {
             // Non-feed: request_path == signing_link (modulo the leading '/').
@@ -292,12 +313,90 @@ impl CosmosResourceReference {
             ResourcePaths {
                 buf,
                 signing_end,
-                signing_override: None,
+                signing_override: self.rid_signing_override(false),
+                rid_based: self.is_rid_addressed(),
             }
         }
     }
 
     // ===== Private Helpers =====
+
+    /// Returns the lowercased RID to sign against when this reference is
+    /// RID-addressed, or `None` when it is name-addressed (in which case the
+    /// full, case-preserved resource link is used for signing).
+    ///
+    /// For RID-based requests the Cosmos master-key signature is computed over
+    /// the lowercased RID of the **signing resource** only — the leaf for point
+    /// operations and the parent for feed operations — not the full resource
+    /// link. This mirrors the `is_name_based = false` path in the service SDKs.
+    ///
+    /// `is_feed` selects the parent (feed) vs. leaf (point op) signing resource.
+    fn rid_signing_override(&self, is_feed: bool) -> Option<String> {
+        if is_feed {
+            // Feed/parent-signed: parent is the account (no RID), the database,
+            // or the container, depending on the child resource type.
+            match self.resource_type {
+                ResourceType::DocumentCollection => self
+                    .database
+                    .as_ref()
+                    .and_then(|db| db.rid())
+                    .map(str::to_lowercase),
+                ResourceType::Document
+                | ResourceType::StoredProcedure
+                | ResourceType::Trigger
+                | ResourceType::UserDefinedFunction
+                | ResourceType::PartitionKeyRange => self
+                    .container
+                    .as_ref()
+                    .filter(|c| c.is_by_rid())
+                    .map(|c| c.rid().to_lowercase()),
+                // Database feed (list databases) signs the account: no RID.
+                _ => None,
+            }
+        } else {
+            // Point op: the leaf resource is the signing resource. The leaf RID
+            // is carried either by an explicit `id` (e.g. a container or item
+            // read addressed directly by RID) or, when no `id` is present, by the
+            // addressed container/database itself.
+            if let Some(rid) = self.id.as_ref().and_then(|id| id.rid()) {
+                return Some(rid.to_lowercase());
+            }
+            match self.resource_type {
+                ResourceType::Database => self
+                    .database
+                    .as_ref()
+                    .and_then(|db| db.rid())
+                    .map(str::to_lowercase),
+                ResourceType::DocumentCollection => self
+                    .container
+                    .as_ref()
+                    .filter(|c| c.is_by_rid())
+                    .map(|c| c.rid().to_lowercase()),
+                _ => None,
+            }
+        }
+    }
+
+    /// Returns `true` if any addressing segment of this reference is a RID, so
+    /// the request path must be sent raw (without percent-encoding).
+    ///
+    /// Under the no-mix addressing rule a RID database implies a RID container,
+    /// so checking the container and database covers database, container, and
+    /// item operations. Offers are handled separately and are not considered
+    /// RID-addressed for path-encoding purposes.
+    fn is_rid_addressed(&self) -> bool {
+        if let Some(ref container) = self.container {
+            if container.is_by_rid() {
+                return true;
+            }
+        }
+        if let Some(ref db) = self.database {
+            if db.is_by_rid() {
+                return true;
+            }
+        }
+        false
+    }
 
     /// Computes the full resource link for the leaf resource.
     ///
@@ -425,16 +524,16 @@ fn is_unreserved(b: u8) -> bool {
     b.is_ascii_alphanumeric() || matches!(b, b'-' | b'.' | b'_' | b'~')
 }
 
-/// Percent-encodes the reserved characters in each segment of a resource path so
-/// it can be used as a URL path, while leaving `/` separators intact.
+/// Percent-encodes the reserved characters in each segment of a **name-based**
+/// resource path so it can be used as a URL path, while leaving `/` separators
+/// intact.
 ///
-/// Cosmos resource IDs (RIDs) are emitted by the service as URL-safe base64 and
-/// routinely contain `=` padding (and, in principle, other reserved characters).
-/// When such a RID is placed *raw* into the request URL path the gateway
-/// canonicalizes the path, derives a resource id that differs from the one we
-/// signed, and rejects the request with `401 Unauthorized`. Percent-encoding the
-/// reserved characters in the URL — while the authorization signature continues
-/// to use the *raw* resource link — keeps the two in agreement.
+/// Resource names may contain reserved characters (spaces, `+`, etc.) that must
+/// be percent-encoded for the gateway to reconstruct the same resource link we
+/// signed. RID-addressed paths are the opposite: they must be sent **raw** (see
+/// [`ResourcePaths::is_rid_based`]), because percent-encoding the `=` padding of
+/// a base64 RID makes the gateway treat the segment as a name and reject the
+/// RID-based signature. Callers therefore apply this only to name-based paths.
 ///
 /// Resource ids (names) cannot contain `/`, and Cosmos RIDs use a URL-safe base64
 /// alphabet (no `/`), so splitting on `/` to preserve separators is always safe.
@@ -627,6 +726,17 @@ mod tests {
             "testdb_rid",
             "testcontainer",
             "testcontainer_rid",
+            &test_container_props(),
+        )
+    }
+
+    /// A container addressed purely by RID (no name-based path available).
+    fn test_container_by_rid() -> ContainerReference {
+        ContainerReference::new_by_rid(
+            test_account(),
+            "Lx1BAA==",
+            "testcontainer",
+            "Lx1BALxJyZ8=",
             &test_container_props(),
         )
     }
@@ -893,6 +1003,138 @@ mod tests {
         assert!(paths.signing_override.is_some());
     }
 
+    // ===== RID-addressed signing + raw-path tests =====
+
+    #[test]
+    fn database_by_rid_signs_lowercased_rid() {
+        // A RID-addressed database read signs over the lowercased database RID
+        // only (not the full `/dbs/{rid}` link) and sends the path raw.
+        let db = DatabaseReference::from_rid(test_account(), "Lx1BAA==");
+        let r: CosmosResourceReference = db.into();
+        let paths = r.compute_paths();
+        assert_eq!(paths.request_path(), "/dbs/Lx1BAA==");
+        assert_eq!(paths.signing_link(), "lx1baa==");
+        assert!(paths.is_rid_based());
+        // link_for_signing returns the bare lowercased RID (no leading '/').
+        assert_eq!(r.link_for_signing(), "lx1baa==");
+    }
+
+    #[test]
+    fn database_by_name_signs_full_link() {
+        // Name-addressed databases are unchanged: full, case-preserved link and
+        // a percent-encodable (non-raw) path.
+        let db = DatabaseReference::from_name(test_account(), "MyDb");
+        let r: CosmosResourceReference = db.into();
+        let paths = r.compute_paths();
+        assert_eq!(paths.signing_link(), "dbs/MyDb");
+        assert!(!paths.is_rid_based());
+    }
+
+    #[test]
+    fn container_by_rid_signs_lowercased_rid() {
+        let r: CosmosResourceReference = test_container_by_rid().into();
+        let paths = r.compute_paths();
+        assert_eq!(paths.request_path(), "/dbs/Lx1BAA==/colls/Lx1BALxJyZ8=");
+        assert_eq!(paths.signing_link(), "lx1balxjyz8=");
+        assert!(paths.is_rid_based());
+        assert_eq!(r.link_for_signing(), "lx1balxjyz8=");
+    }
+
+    #[test]
+    fn container_read_by_rid_via_id_signs_leaf_rid() {
+        // A cold-cache container read is built as: database by RID + leaf `id`
+        // by RID, with `container == None`. The signing resource is the leaf
+        // collection RID carried by `id`.
+        let db = DatabaseReference::from_rid(test_account(), "Lx1BAA==");
+        let r = CosmosResourceReference::from(db)
+            .with_resource_type(ResourceType::DocumentCollection)
+            .with_rid("Lx1BALxJyZ8=".into());
+        let paths = r.compute_paths();
+        assert_eq!(paths.request_path(), "/dbs/Lx1BAA==/colls/Lx1BALxJyZ8=");
+        assert_eq!(paths.signing_link(), "lx1balxjyz8=");
+        assert!(paths.is_rid_based());
+    }
+
+    #[test]
+    fn container_by_name_signs_full_link() {
+        let r: CosmosResourceReference = test_container().into();
+        let paths = r.compute_paths();
+        assert_eq!(paths.signing_link(), "dbs/testdb/colls/testcontainer");
+        assert!(!paths.is_rid_based());
+    }
+
+    #[test]
+    fn container_feed_under_rid_db_signs_parent_db_rid() {
+        // Listing containers under a RID-addressed database signs the parent
+        // database RID (lowercased) and sends the path raw.
+        let db = DatabaseReference::from_rid(test_account(), "Lx1BAA==");
+        let r = CosmosResourceReference::from(db)
+            .with_resource_type(ResourceType::DocumentCollection)
+            .into_feed_reference();
+        let paths = r.compute_paths();
+        assert_eq!(paths.request_path(), "/dbs/Lx1BAA==/colls");
+        assert_eq!(paths.signing_link(), "lx1baa==");
+        assert!(paths.is_rid_based());
+    }
+
+    #[test]
+    fn item_feed_on_rid_container_signs_parent_container_rid() {
+        // Query/create items on a RID-addressed container signs the parent
+        // container RID (lowercased). Covers both compute_paths (feed) and
+        // compute_feed_paths (Create/Upsert).
+        let feed = CosmosResourceReference::from(test_container_by_rid())
+            .with_resource_type(ResourceType::Document)
+            .into_feed_reference();
+        let paths = feed.compute_paths();
+        assert_eq!(
+            paths.request_path(),
+            "/dbs/Lx1BAA==/colls/Lx1BALxJyZ8=/docs"
+        );
+        assert_eq!(paths.signing_link(), "lx1balxjyz8=");
+        assert!(paths.is_rid_based());
+
+        // Create/Upsert path: an ItemReference on a RID container.
+        let item =
+            ItemReference::from_name(&test_container_by_rid(), PartitionKey::from("pk1"), "doc1");
+        let item_ref: CosmosResourceReference = item.into();
+        let feed_paths = item_ref.compute_feed_paths();
+        assert_eq!(
+            feed_paths.request_path(),
+            "/dbs/Lx1BAA==/colls/Lx1BALxJyZ8=/docs"
+        );
+        assert_eq!(feed_paths.signing_link(), "lx1balxjyz8=");
+        assert!(feed_paths.is_rid_based());
+    }
+
+    #[test]
+    fn name_addressed_paths_are_not_rid_based() {
+        // Sanity: every name-addressed reference keeps rid_based == false so the
+        // URL path continues to be percent-encoded.
+        let db = DatabaseReference::from_name(test_account(), "mydb");
+        assert!(!CosmosResourceReference::from(db)
+            .compute_paths()
+            .is_rid_based());
+        assert!(!CosmosResourceReference::from(test_container())
+            .compute_paths()
+            .is_rid_based());
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        assert!(!CosmosResourceReference::from(item)
+            .compute_paths()
+            .is_rid_based());
+    }
+
+    #[test]
+    fn offer_is_not_rid_based_for_path_encoding() {
+        // Offers sign the lowercased RID but keep percent-encoding (rid_based
+        // stays false) — their behavior is intentionally left unchanged.
+        let r = CosmosResourceReference::from(test_account())
+            .with_resource_type(ResourceType::Offer)
+            .with_rid("ABC123XYZ".into());
+        let paths = r.compute_paths();
+        assert_eq!(paths.signing_link(), "abc123xyz");
+        assert!(!paths.is_rid_based());
+    }
+
     #[test]
     fn encode_path_segments_borrows_when_safe() {
         let p = "/dbs/mydb/colls/mycoll/docs/item1";
@@ -901,8 +1143,10 @@ mod tests {
     }
 
     #[test]
-    fn encode_path_segments_encodes_rid_padding() {
-        // Base64 RID padding (`=`) must be percent-encoded in the URL path.
+    fn encode_path_segments_encodes_reserved_padding() {
+        // The helper still percent-encodes base64 padding (`=`) when applied —
+        // it is only invoked for name-based paths now, but the encoding itself
+        // is unchanged.
         let p = "/dbs/qjQBAA==/colls/qjQBAOWXnF4=";
         assert_eq!(
             encode_path_segments(p),
