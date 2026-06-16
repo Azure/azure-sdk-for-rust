@@ -245,6 +245,12 @@ impl RecoverableConnection {
     pub(crate) async fn close_connection(self) -> Result<()> {
         trace!("Closing recoverable connection for {}.", self.url);
 
+        // Abort the Authorizer's background token-refresh task first. It holds an
+        // `Arc<Authorizer>` and sleeps until just before token expiry, so without
+        // this the Authorizer and its cached token outlive the connection and leak
+        // a few KB per open/close cycle. See `Authorizer::stop_refresh_task`.
+        self.authorizer.stop_refresh_task();
+
         let mut management_client = self.mgmt_client.lock().await;
         if let Some(management_client) = management_client.take() {
             trace!("Closing management client for {}.", self.url);
@@ -906,6 +912,10 @@ impl RecoverableConnection {
 impl Drop for RecoverableConnection {
     fn drop(&mut self) {
         trace!("Dropping RecoverableConnection for {}", self.url);
+        // Backstop for the drop-without-`close_connection` path: abort the
+        // Authorizer's background token-refresh task so it stops holding the
+        // Authorizer (and its cached token) alive once this connection is gone.
+        self.authorizer.stop_refresh_task();
     }
 }
 

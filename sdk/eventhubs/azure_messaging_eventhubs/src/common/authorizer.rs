@@ -13,7 +13,10 @@ use azure_core_amqp::{AmqpClaimsBasedSecurityApis as _, AmqpError};
 use rand::{rng, RngExt};
 use std::{
     collections::HashMap,
-    sync::{Arc, Mutex as SyncMutex, OnceLock, Weak},
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc, Mutex as SyncMutex, OnceLock, Weak,
+    },
 };
 use tracing::{debug, trace, warn};
 
@@ -44,6 +47,10 @@ impl Default for TokenRefreshTimes {
 pub(crate) struct Authorizer {
     authorization_scopes: RwLock<HashMap<Url, AccessToken>>,
     authorization_refresher: OnceLock<SpawnedTask>,
+    /// Set once `stop_refresh_task` has aborted `authorization_refresher`, so the
+    /// abort (and its log line) run exactly once even though teardown reaches
+    /// `stop_refresh_task` from both `close_connection` and `Drop`.
+    refresher_aborted: AtomicBool,
     /// Bias to apply to token refresh time. This determines how much time we will refresh the token before it expires.
     token_refresh_bias: SyncMutex<TokenRefreshTimes>,
     credential: Arc<dyn TokenCredential>,
@@ -63,6 +70,7 @@ impl Authorizer {
     ) -> Self {
         Self {
             authorization_refresher: OnceLock::new(),
+            refresher_aborted: AtomicBool::new(false),
             authorization_scopes: RwLock::new(HashMap::new()),
             token_refresh_bias: SyncMutex::new(TokenRefreshTimes::default()),
             credential,
@@ -76,6 +84,34 @@ impl Authorizer {
         debug!("Clearing authorization scopes.");
         let mut scopes = self.authorization_scopes.write().await;
         scopes.clear();
+    }
+
+    /// Aborts the background token-refresh task, if one was ever started.
+    ///
+    /// The refresh task (spawned lazily by `authorize_path`) owns an `Arc<Self>`
+    /// and parks in a long `sleep` until shortly before the next token expiry —
+    /// typically tens of minutes. While it is alive it keeps the `Authorizer`,
+    /// its cached `AccessToken`s, and its credential from being reclaimed, even
+    /// after the owning `RecoverableConnection` has been torn down. That
+    /// orphaned-task-plus-token retention is a multi-KB leak per open/close cycle
+    /// (it grows with every producer/consumer that is rebuilt).
+    ///
+    /// Aborting the task lets it drop its `Arc<Self>` so the `Authorizer` is
+    /// reclaimed as soon as the connection's strong reference goes away. Callers
+    /// invoke this during connection teardown (`RecoverableConnection::close_connection`
+    /// and its `Drop`). It is deliberately *not* called on the recovery path,
+    /// where the same task is reused against the rebuilt connection.
+    ///
+    /// Idempotent: the graceful path reaches this twice (`close_connection`
+    /// aborts explicitly, then the `RecoverableConnection` `Drop` runs), so only
+    /// the first call actually aborts and logs.
+    pub(crate) fn stop_refresh_task(&self) {
+        if let Some(task) = self.authorization_refresher.get() {
+            if !self.refresher_aborted.swap(true, Ordering::Relaxed) {
+                debug!("Aborting authorization refresh task.");
+                task.abort();
+            }
+        }
     }
 
     #[cfg(test)]
