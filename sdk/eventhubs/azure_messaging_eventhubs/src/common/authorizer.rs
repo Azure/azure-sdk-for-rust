@@ -789,10 +789,7 @@ mod tests {
             .unwrap();
 
         let path = Url::parse("amqps://example.com/preformed").unwrap();
-        authorizer
-            .authorize_path(&connection, &path)
-            .await
-            .unwrap();
+        authorizer.authorize_path(&connection, &path).await.unwrap();
         assert_eq!(credential.calls.load(Ordering::SeqCst), 1);
 
         // Sleep well past the refresh point. Without the non-refreshable guard
@@ -808,10 +805,7 @@ mod tests {
 
         // The token stays available for the path; the broker enforces the real
         // `se`. The cached read does not call `get_token` again.
-        let stored = authorizer
-            .authorize_path(&connection, &path)
-            .await
-            .unwrap();
+        let stored = authorizer.authorize_path(&connection, &path).await.unwrap();
         assert_eq!(stored.expires_on, credential.expires_on);
         assert_eq!(credential.calls.load(Ordering::SeqCst), calls);
     }
