@@ -222,6 +222,12 @@ async fn make_hedging_driver(
 
     let driver_options = DriverOptions::builder(account.clone())
         .with_preferred_regions(vec![Region::EAST_US, Region::WEST_US])
+        .with_partition_failover_options(
+            PartitionFailoverOptions::builder()
+                .with_circuit_breaker_enabled(false)
+                .build()
+                .expect("partition failover options build"),
+        )
         .build();
 
     let driver = runtime

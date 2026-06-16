@@ -1291,9 +1291,30 @@ impl CosmosDriver {
         self.fault_injection_enabled
     }
 
+    /// **Internal test hook -- not part of the public API.**
+    ///
+    /// Returns the current value of the partition-level PPAF flag
+    /// (`per_partition_automatic_failover_enabled`) from the live
+    /// `PartitionEndpointState`. Used by integration tests to verify that
+    /// the driver's background account-refresh loop picks up dynamic
+    /// changes to `AccountProperties.enable_per_partition_failover_behavior`.
+    ///
+    /// **Do not call from production code.** Available only because
+    /// integration tests live outside the crate and cannot reach the
+    /// `pub(crate)` `LocationStateStore::snapshot` API directly. May be
+    /// changed or removed at any time without a semver bump.
+    #[cfg(any(test, feature = "__internal_in_memory_emulator"))]
+    #[doc(hidden)]
+    pub fn is_per_partition_automatic_failover_enabled_for_testing(&self) -> bool {
+        self.location_state_store
+            .snapshot()
+            .partitions
+            .per_partition_automatic_failover_enabled
+    }
+
     /// Returns the current per-account transport.
     ///
-    /// Lock-free via `ArcSwap::load_full()` — returns a cloned `Arc` with no
+    /// Lock-free via ArcSwap::load_full() — returns a cloned Arc with no
     /// reader-counter contention between concurrent callers.
     fn transport(&self) -> Arc<CosmosTransport> {
         self.transport.load_full()
@@ -1339,10 +1360,22 @@ impl CosmosDriver {
         );
 
         // Cache the properties.
-        self.runtime
+        let cached_properties = self
+            .runtime
             .account_metadata_cache()
             .get_or_fetch(account_endpoint, || async { Ok(properties) })
             .await?;
+
+        // Seed the routing snapshot with the initial account properties so
+        // server-controlled flags (PPAF/PPCB) and writable-region selection
+        // are correct before the first operation runs. Without this, the
+        // routing state would stay at defaults until either the first
+        // operation triggers `sync_account_properties` or the background
+        // refresh loop fires (after `BACKGROUND_REFRESH_INTERVAL`).
+        self.location_state_store.sync_account_properties(
+            cached_properties,
+            self.location_state_store.default_endpoint(),
+        );
 
         // Create the per-account transport with the negotiated version.
         let new_transport = Arc::new(CosmosTransport::with_factory(

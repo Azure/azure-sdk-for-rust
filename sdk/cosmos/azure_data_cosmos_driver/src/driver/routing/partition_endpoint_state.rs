@@ -142,8 +142,8 @@ mod tests {
         assert!(state.circuit_breaker_overrides.is_empty());
         assert!(state.consecutive_hedge_wins.is_empty());
         assert!(!state.per_partition_automatic_failover_enabled);
-        assert!(!state.per_partition_circuit_breaker_enabled);
-        assert!(!state.config.circuit_breaker_enabled());
+        assert!(state.per_partition_circuit_breaker_enabled);
+        assert!(state.config.circuit_breaker_enabled());
     }
 
     #[test]
