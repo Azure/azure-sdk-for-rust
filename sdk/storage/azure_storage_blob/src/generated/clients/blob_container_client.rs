@@ -11,19 +11,19 @@ use crate::generated::models::{
     BlobContainerClientFindBlobsByTagsOptions, BlobContainerClientGetAccessPolicyOptions,
     BlobContainerClientGetAccountInfoOptions, BlobContainerClientGetAccountInfoResult,
     BlobContainerClientGetPropertiesOptions, BlobContainerClientGetPropertiesResult,
-    BlobContainerClientListBlobsOptions, BlobContainerClientReleaseLeaseOptions,
-    BlobContainerClientReleaseLeaseResult, BlobContainerClientRenewLeaseOptions,
-    BlobContainerClientRenewLeaseResult, BlobContainerClientSetAccessPolicyOptions,
-    BlobContainerClientSetMetadataOptions, FilteredBlobResponse, ListBlobsResponse,
-    SignedIdentifiers,
+    BlobContainerClientListBlobsHierarchicalOptions, BlobContainerClientListBlobsOptions,
+    BlobContainerClientReleaseLeaseOptions, BlobContainerClientReleaseLeaseResult,
+    BlobContainerClientRenewLeaseOptions, BlobContainerClientRenewLeaseResult,
+    BlobContainerClientSetAccessPolicyOptions, BlobContainerClientSetMetadataOptions,
+    FilteredBlobResponse, ListBlobsHierarchicalResponse, ListBlobsResponse, SignedIdentifiers,
 };
 use azure_core::{
     error::CheckSuccessOptions,
     fmt::SafeDebug,
     http::{
         pager::{PagerContinuation, PagerResult, PagerState},
-        ClientOptions, Method, NoFormat, Pager, Pipeline, PipelineSendOptions, RawResponse,
-        Request, RequestContent, Response, Url, UrlExt, XmlFormat,
+        ClientOptions, Method, NoFormat, PageIterator, Pager, Pipeline, PipelineSendOptions,
+        RawResponse, Request, RequestContent, Response, Url, UrlExt, XmlFormat,
     },
     time::to_rfc7231,
     tracing, xml, Result,
@@ -772,6 +772,97 @@ impl BlobContainerClient {
                         .await?;
                     let (status, headers, body) = rsp.deconstruct();
                     let res: ListBlobsResponse = xml::from_xml(&body)?;
+                    let rsp = RawResponse::from_bytes(status, headers, body).into();
+                    Ok(match res.next_marker {
+                        Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
+                            response: rsp,
+                            continuation: PagerContinuation::Token(next_marker),
+                        },
+                        _ => PagerResult::Done { response: rsp },
+                    })
+                })
+            },
+            Some(options.method_options),
+        ))
+    }
+
+    /// Returns a list of the blobs in the specified container. A delimiter can be used to traverse a virtual hierarchy of blobs
+    /// as though it were a file system.
+    ///
+    /// # Arguments
+    ///
+    /// * `delimiter` - If specified, the operation returns a BlobPrefix element that acts as a placeholder for all blobs whose
+    ///   names begin with the same substring up to the appearance of the delimiter character. The delimiter may be a single character
+    ///   or a string.
+    /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.BlobContainerClient.listBlobHierarchySegment")]
+    pub fn list_blobs_hierarchical(
+        &self,
+        delimiter: &str,
+        options: Option<BlobContainerClientListBlobsHierarchicalOptions<'_>>,
+    ) -> Result<PageIterator<Response<ListBlobsHierarchicalResponse, XmlFormat>>> {
+        let options = options.unwrap_or_default().into_owned();
+        let pipeline = self.pipeline.clone();
+        let mut first_url = self.endpoint.clone();
+        let mut query_builder = first_url.query_builder();
+        query_builder
+            .append_pair("comp", "list")
+            .append_pair("restype", "container");
+        query_builder.set_pair("delimiter", delimiter);
+        if let Some(include) = options.include.as_ref() {
+            query_builder.set_pair(
+                "include",
+                include
+                    .iter()
+                    .map(|i| i.to_string())
+                    .collect::<Vec<String>>()
+                    .join(","),
+            );
+        }
+        if let Some(marker) = options.marker.as_ref() {
+            query_builder.set_pair("marker", marker);
+        }
+        if let Some(maxresults) = options.maxresults {
+            query_builder.set_pair("maxresults", maxresults.to_string());
+        }
+        if let Some(prefix) = options.prefix.as_ref() {
+            query_builder.set_pair("prefix", prefix);
+        }
+        if let Some(start_from) = options.start_from.as_ref() {
+            query_builder.set_pair("startFrom", start_from);
+        }
+        if let Some(timeout) = options.timeout {
+            query_builder.set_pair("timeout", timeout.to_string());
+        }
+        query_builder.build();
+        let version = self.version.clone();
+        Ok(PageIterator::new(
+            move |marker: PagerState, pager_options| {
+                let mut url = first_url.clone();
+                if let PagerState::More(marker) = marker {
+                    let mut query_builder = url.query_builder();
+                    query_builder.set_pair("marker", marker.as_ref());
+                    query_builder.build();
+                }
+                let mut request = Request::new(url, Method::Get);
+                request.insert_header("accept", "application/xml");
+                request.insert_header("x-ms-version", &version);
+                let pipeline = pipeline.clone();
+                Box::pin(async move {
+                    let rsp = pipeline
+                        .send(
+                            &pager_options.context,
+                            &mut request,
+                            Some(PipelineSendOptions {
+                                check_success: CheckSuccessOptions {
+                                    success_codes: &[200],
+                                },
+                                ..Default::default()
+                            }),
+                        )
+                        .await?;
+                    let (status, headers, body) = rsp.deconstruct();
+                    let res: ListBlobsHierarchicalResponse = xml::from_xml(&body)?;
                     let rsp = RawResponse::from_bytes(status, headers, body).into();
                     Ok(match res.next_marker {
                         Some(next_marker) if !next_marker.is_empty() => PagerResult::More {

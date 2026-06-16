@@ -12,9 +12,9 @@ use azure_storage_blob::models::{
     BlobContainerClientBreakLeaseOptions, BlobContainerClientChangeLeaseResultHeaders,
     BlobContainerClientCreateOptions, BlobContainerClientFindBlobsByTagsOptions,
     BlobContainerClientGetAccountInfoResultHeaders, BlobContainerClientGetPropertiesResultHeaders,
-    BlobContainerClientListBlobsOptions, BlobContainerClientSetMetadataOptions, BlobType,
-    BlockBlobClientUploadOptions, LeaseState, ListBlobsIncludeItem, SignedIdentifiers,
-    StorageErrorCode,
+    BlobContainerClientListBlobsHierarchicalOptions, BlobContainerClientListBlobsOptions,
+    BlobContainerClientSetMetadataOptions, BlobType, BlockBlobClientUploadOptions, LeaseState,
+    ListBlobsIncludeItem, SignedIdentifiers, StorageErrorCode,
 };
 use azure_storage_blob::StorageError;
 use azure_storage_blob_test::{
@@ -958,6 +958,92 @@ async fn test_lease_already_present_error_code(ctx: TestContext) -> Result<(), B
 
     // Clean up
     container_client.release_lease(lease_id, None).await?;
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_list_blobs_hierarchical(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+
+    // Create blobs with directory-like structure
+    create_test_blob(&container_client.blob_client("dir1/blob1"), None, None).await?;
+    create_test_blob(&container_client.blob_client("dir1/blob2"), None, None).await?;
+    create_test_blob(&container_client.blob_client("dir2/blob3"), None, None).await?;
+    create_test_blob(&container_client.blob_client("rootblob"), None, None).await?;
+
+    // Basic Hierarchical Listing Scenario
+    let mut pages = container_client.list_blobs_hierarchical("/", None)?;
+    let page = pages.try_next().await?.unwrap().into_model()?;
+
+    // Assert - Should have blob prefixes for "dir1/" and "dir2/", and blob_items with "rootblob"
+    let prefixes: Vec<String> = page
+        .hierarchical_list
+        .blob_prefixes
+        .unwrap_or_default()
+        .iter()
+        .map(|p| p.name.clone().unwrap())
+        .collect();
+    assert!(prefixes.contains(&"dir1/".to_string()));
+    assert!(prefixes.contains(&"dir2/".to_string()));
+    assert_eq!(2, prefixes.len());
+
+    let blob_names: Vec<String> = page
+        .hierarchical_list
+        .blob_items
+        .iter()
+        .map(|b| b.name.clone().unwrap())
+        .collect();
+    assert_eq!(vec!["rootblob".to_string()], blob_names);
+    assert_eq!(Some("/".to_string()), page.delimiter);
+
+    // With Prefix Scenario
+    let options = BlobContainerClientListBlobsHierarchicalOptions {
+        prefix: Some("dir1/".to_string()),
+        ..Default::default()
+    };
+    let mut pages = container_client.list_blobs_hierarchical("/", Some(options))?;
+    let page = pages.try_next().await?.unwrap().into_model()?;
+
+    // Assert: should contain "dir1/blob1" and "dir1/blob2" as blob items, no prefixes
+    let blob_names: Vec<String> = page
+        .hierarchical_list
+        .blob_items
+        .iter()
+        .map(|b| b.name.clone().unwrap())
+        .collect();
+    assert_eq!(2, blob_names.len());
+    assert!(blob_names.contains(&"dir1/blob1".to_string()));
+    assert!(blob_names.contains(&"dir1/blob2".to_string()));
+
+    let prefixes = page.hierarchical_list.blob_prefixes.unwrap_or_default();
+    assert!(prefixes.is_empty());
+
+    // Pagination Scenario
+    let options = BlobContainerClientListBlobsHierarchicalOptions {
+        maxresults: Some(1),
+        ..Default::default()
+    };
+    let mut pages = container_client.list_blobs_hierarchical("/", Some(options))?;
+
+    let mut total_items = 0;
+    let mut total_prefixes = 0;
+    while let Some(page) = pages.try_next().await? {
+        let model = page.into_model()?;
+        total_items += model.hierarchical_list.blob_items.len();
+        total_prefixes += model
+            .hierarchical_list
+            .blob_prefixes
+            .unwrap_or_default()
+            .len();
+    }
+    // Assert - 1 root blob item + 2 prefixes across all pages
+    assert_eq!(1, total_items);
+    assert_eq!(2, total_prefixes);
+
     container_client.delete(None).await?;
     Ok(())
 }

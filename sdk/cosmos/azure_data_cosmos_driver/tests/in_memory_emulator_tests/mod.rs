@@ -13,6 +13,7 @@ pub mod hedging;
 pub mod host_recorder;
 pub mod multi_region;
 pub mod point_operations;
+pub mod ppaf_dynamic_enablement;
 #[cfg(feature = "fault_injection")]
 pub mod regional_gateway_unreachable;
 pub mod split_merge;
