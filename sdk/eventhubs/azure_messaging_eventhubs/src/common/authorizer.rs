@@ -97,49 +97,97 @@ impl Authorizer {
     ) -> azure_core_amqp::Result<AccessToken> {
         debug!("Authorizing path: {path}");
 
-        // Fast path: cached token under a brief lock.
-        if let Some(token) = self.authorization_scopes.read().await.get(path).cloned() {
-            debug!("Token already exists for path: {path}");
-            return Ok(token);
+        // #4454 stale-token guard. The token cache is mutable (the
+        // refresh task rewrites entries), so unlike the connection caches it can't
+        // use a `OnceCell`; the generation check is applied here directly. We
+        // capture the connection's recovery generation before the lock-free CBS
+        // attach and re-check it after: if a recovery cleared this cache and bumped
+        // the generation mid-attach, the token we just authorized is bound to the
+        // torn-down connection's CBS link, so we discard it and re-authorize
+        // against the new connection instead of caching a stale entry (which the
+        // next operation would otherwise use and fail on, costing a second recovery
+        // cycle). Bounded so a storm of back-to-back recoveries surfaces an error
+        // rather than spinning forever.
+        const MAX_GENERATION_RETRIES: usize = 8;
+
+        for _ in 0..MAX_GENERATION_RETRIES {
+            // Fast path: cached token under a brief lock.
+            if let Some(token) = self.authorization_scopes.read().await.get(path).cloned() {
+                debug!("Token already exists for path: {path}");
+                return Ok(token);
+            }
+
+            let generation = connection.generation();
+
+            // Slow path: fetch the credential and perform the CBS attach *without*
+            // holding the scope cache lock. Holding it across `perform_authorization`
+            // would block `clear()` (called from `recover_from_error`) for as long as
+            // the CBS attach is in flight; if that CBS attach is itself the operation
+            // that triggers recovery, the result is a self-deadlock. Matches the
+            // pattern used by `ensure_sender` / `ensure_receiver` / `get_session` in
+            // `RecoverableConnection`.
+            debug!("Creating new authorization scope for path: {path}");
+
+            debug!("Get Token.");
+            let token = self
+                .credential
+                .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE], None)
+                .await
+                .map_err(AmqpError::from)?;
+
+            debug!("Token for path {path} expires at {}", token.expires_on);
+
+            self.perform_authorization(connection, path, &token).await?;
+            debug!("Token verified.");
+
+            // Insert under the write lock, but re-check the recovery generation
+            // *inside* that lock before inserting. `clear()` (from
+            // `recover_from_error`) takes this same lock and runs after the
+            // generation bump, so re-reading the generation here, rather than before
+            // acquiring the lock, closes the window where a recovery lands between
+            // the check and the insert: we either observe the bump and discard, or
+            // we hold the lock across the insert so no recovery can interleave. If a
+            // recovery raced the lock-free attach above, the CBS link we authorized
+            // against is gone, so we drop this token and retry against the new
+            // generation rather than repopulating the just-cleared cache with a
+            // stale entry (which the next operation would use and fail on, costing a
+            // second recovery cycle). See #4454.
+            let stored = {
+                let mut scopes = self.authorization_scopes.write().await;
+                if connection.generation() != generation {
+                    None
+                } else {
+                    // If another task won the race, return its cached token and drop
+                    // ours. Both CBS auths succeeded against the same link, so either
+                    // credential is acceptable to the broker.
+                    Some(scopes.entry(path.clone()).or_insert(token).clone())
+                }
+            };
+            let Some(stored) = stored else {
+                debug!(
+                    "Discarding token authorized during recovery (#4454) for path: {path}; re-authorizing."
+                );
+                continue;
+            };
+
+            self.authorization_refresher.get_or_init(|| {
+                debug!("Starting authorization refresh task.");
+                let self_clone = self.clone();
+                let async_runtime = get_async_runtime();
+                async_runtime.spawn(Box::pin(self_clone.refresh_tokens_task()))
+            });
+
+            return Ok(stored);
         }
 
-        // Slow path: fetch the credential and perform the CBS attach *without*
-        // holding the scope cache lock. Holding it across `perform_authorization`
-        // would block `clear()` (called from `recover_from_error`) for as long as
-        // the CBS attach is in flight; if that CBS attach is itself the operation
-        // that triggers recovery, the result is a self-deadlock. Matches the
-        // pattern used by `ensure_sender` / `ensure_receiver` / `get_session` in
-        // `RecoverableConnection`.
-        debug!("Creating new authorization scope for path: {path}");
-
-        debug!("Get Token.");
-        let token = self
-            .credential
-            .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE], None)
-            .await
-            .map_err(AmqpError::from)?;
-
-        debug!("Token for path {path} expires at {}", token.expires_on);
-
-        self.perform_authorization(connection, path, &token).await?;
-        debug!("Token verified.");
-
-        // Insert; if another task won the race, return its cached token and drop
-        // ours. Both CBS auths succeeded against the same link, so either
-        // credential is acceptable to the broker.
-        let stored = {
-            let mut scopes = self.authorization_scopes.write().await;
-            scopes.entry(path.clone()).or_insert(token).clone()
-        };
-
-        self.authorization_refresher.get_or_init(|| {
-            debug!("Starting authorization refresh task.");
-            let self_clone = self.clone();
-            let async_runtime = get_async_runtime();
-            async_runtime.spawn(Box::pin(self_clone.refresh_tokens_task()))
-        });
-
-        Ok(stored)
+        // Intentionally a plain `AmqpError::with_message`: the connection's
+        // `should_retry_amqp_error` classifies this unrecognized kind as
+        // `ReturnError`, so exhausting the budget surfaces to the caller instead of
+        // looping. Do not "fix" this into a retryable kind, that would let a recovery
+        // storm spin here forever (#4454).
+        Err(AmqpError::with_message(format!(
+            "Exceeded retry budget ({MAX_GENERATION_RETRIES}) authorizing path '{path}' across recoveries"
+        )))
     }
 
     /// Actually perform an authorization against the Event Hubs service.
@@ -296,30 +344,71 @@ impl Authorizer {
                 debug!("Not sleeping because refresh time ({refresh_time}) is in the past (now = {now}).");
             }
 
-            // Refresh the tokens.
-            // First, collect the tokens that need refreshing while holding the lock briefly
-            let tokens_to_refresh = {
-                let scopes = self.authorization_scopes.read().await;
-                let mut to_refresh = Vec::new();
-                for (url, token) in scopes.iter() {
-                    if token.expires_on >= now + (token_refresh_bias) {
-                        debug!(
-                            "Token not expired for {url}: ExpiresOn: {}, Now: {now}, Bias: {token_refresh_bias:?}",
-                            token.expires_on
-                        );
-                        continue;
-                    }
+            // Refresh every token that is due as of `now`, then write the fresh
+            // tokens back, guarded against a racing recovery (#4454).
+            self.refresh_due_tokens(now, token_refresh_bias).await?;
+        }
+    }
 
+    /// One refresh pass: re-authorize every cached token that is within
+    /// `token_refresh_bias` of expiring as of `now`, then write the fresh tokens
+    /// back, guarded against a racing recovery.
+    ///
+    /// #4454: the refresh task is the token cache's second writer (alongside
+    /// `authorize_path`), so it needs the same generation guard. We capture the
+    /// recovery generation before the lock-free CBS re-authorizations below and
+    /// re-check it under the write lock before writing the refreshed tokens back.
+    /// If a recovery clears the token cache and bumps the generation mid-refresh,
+    /// these tokens are bound to the torn-down connection; writing them back would
+    /// repopulate the just-cleared cache with stale entries that the next operation
+    /// would use and fail on. On a mismatch we drop them and let the next
+    /// `authorize_path` re-establish fresh tokens against the new connection.
+    ///
+    /// Extracted from the `refresh_tokens` loop (which owns the expiry scheduling
+    /// and sleeping) so the generation guard can be exercised deterministically in
+    /// tests.
+    async fn refresh_due_tokens(
+        self: &Arc<Self>,
+        now: OffsetDateTime,
+        token_refresh_bias: Duration,
+    ) -> Result<()> {
+        // First, collect the tokens that need refreshing while holding the lock briefly
+        let tokens_to_refresh = {
+            let scopes = self.authorization_scopes.read().await;
+            let mut to_refresh = Vec::new();
+            for (url, token) in scopes.iter() {
+                if token.expires_on >= now + (token_refresh_bias) {
                     debug!(
-                        "Token about to be expired for {url}: ExpiresOn: {}, Now: {now}, Bias: {token_refresh_bias:?}",
+                        "Token not expired for {url}: ExpiresOn: {}, Now: {now}, Bias: {token_refresh_bias:?}",
                         token.expires_on
                     );
-                    to_refresh.push(url.clone());
+                    continue;
                 }
-                to_refresh
-            };
 
-            // Now refresh tokens without holding the lock to avoid deadlocks
+                debug!(
+                    "Token about to be expired for {url}: ExpiresOn: {}, Now: {now}, Bias: {token_refresh_bias:?}",
+                    token.expires_on
+                );
+                to_refresh.push(url.clone());
+            }
+            to_refresh
+        };
+
+        // Nothing due: skip the connection upgrade and lock dance entirely. Scoping
+        // the work inside this branch keeps the connection and the recovery
+        // generation as plain values that exist only where they are valid, so they
+        // cannot drift out of sync (no hand-maintained `Option` invariant, no
+        // `expect()` that a future edit could turn into a panic in this background
+        // task and silently stop all token refresh).
+        if !tokens_to_refresh.is_empty() {
+            let connection = self.recoverable_connection.upgrade().ok_or_else(|| {
+                AmqpError::with_message("Recoverable connection has been dropped")
+            })?;
+            // Capture the recovery generation before the lock-free re-authorizations
+            // below, so a recovery that races them is detected before write-back (#4454).
+            let captured = connection.generation();
+
+            // Refresh tokens without holding the scopes lock to avoid deadlocks.
             let mut updated_tokens = HashMap::new();
             for url in tokens_to_refresh {
                 let new_token = self
@@ -327,10 +416,6 @@ impl Authorizer {
                     .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE], None)
                     .await?;
 
-                // Create an ephemeral connection to host the authentication.
-                let connection = self.recoverable_connection.upgrade().ok_or_else(|| {
-                    AmqpError::with_message("Recoverable connection has been dropped")
-                })?;
                 self.perform_authorization(&connection, &url, &new_token)
                     .await?;
 
@@ -341,15 +426,25 @@ impl Authorizer {
                 updated_tokens.insert(url.clone(), new_token);
             }
 
-            // Finally, update the scopes map with the new tokens
+            // Finally, update the scopes map with the new tokens, unless a recovery
+            // raced us. Re-check the generation under the same write lock `clear()`
+            // takes (#4454) before writing anything back.
             if !updated_tokens.is_empty() {
                 let mut scopes = self.authorization_scopes.write().await;
-                for (url, token) in updated_tokens.into_iter() {
-                    scopes.insert(url.clone(), token);
+                if connection.generation() != captured {
+                    debug!(
+                        "Discarding tokens refreshed during recovery (#4454); the recovery generation advanced mid-refresh."
+                    );
+                } else {
+                    for (url, token) in updated_tokens.into_iter() {
+                        scopes.insert(url.clone(), token);
+                    }
+                    debug!("Updated tokens.");
                 }
-                debug!("Updated tokens.");
             }
         }
+
+        Ok(())
     }
 
     #[cfg(test)]
@@ -761,5 +856,267 @@ mod tests {
             .await
             .expect("authorize_path task panicked")
             .expect("authorize_path returned an error");
+    }
+
+    // #4454: when a recovery races an in-flight `authorize_path` slow path, the
+    // token authorized against the now-dead CBS link must be discarded and the
+    // path re-authorized against the new connection, rather than cached and handed
+    // out stale.
+    //
+    // The token cache is mutable (the refresh task rewrites it), so it cannot use
+    // an `OnceCell` like the connection caches; `authorize_path` guards itself with
+    // the connection's recovery generation instead. This test drives that guard
+    // deterministically: a gated credential blocks the first `get_token` so the
+    // test can fire a simulated reconnect (which bumps the generation) precisely
+    // during the lock-free authorization window. The first attempt's token must be
+    // thrown away and a second authorization performed; the cached token must be
+    // the second one, stamped at the post-recovery generation.
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn authorize_path_discards_token_authorized_during_recovery() {
+        use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+
+        #[derive(Debug)]
+        struct CountingGatedCredential {
+            calls: AtomicUsize,
+            first_call_entered: AtomicBool,
+            release_first_call: AtomicBool,
+        }
+
+        #[async_trait::async_trait]
+        impl TokenCredential for CountingGatedCredential {
+            async fn get_token(
+                &self,
+                _scopes: &[&str],
+                _options: Option<TokenRequestOptions<'_>>,
+            ) -> azure_core::Result<AccessToken> {
+                let call = self.calls.fetch_add(1, Ordering::SeqCst);
+                // Gate only the first call so the test can interleave a recovery
+                // while the slow path is mid-authorization. Later calls (the
+                // re-authorization) proceed immediately.
+                if call == 0 {
+                    self.first_call_entered.store(true, Ordering::SeqCst);
+                    while !self.release_first_call.load(Ordering::SeqCst) {
+                        tokio::task::yield_now().await;
+                    }
+                }
+                // Far-future expiry so the spawned refresh task sleeps on its first
+                // pass instead of immediately re-fetching (which would add a third,
+                // racy `get_token` call and make the exact-count assert flaky).
+                Ok(AccessToken::new(
+                    azure_core::credentials::Secret::new("mock_token"),
+                    OffsetDateTime::now_utc() + Duration::hours(1),
+                ))
+            }
+        }
+
+        let credential = Arc::new(CountingGatedCredential {
+            calls: AtomicUsize::new(0),
+            first_call_entered: AtomicBool::new(false),
+            release_first_call: AtomicBool::new(false),
+        });
+
+        let url = Url::parse("amqps://example.com").unwrap();
+        let connection = RecoverableConnection::new(
+            url.clone(),
+            None,
+            None,
+            credential.clone(),
+            Default::default(),
+        );
+
+        let authorizer = Arc::new(Authorizer::new(
+            Arc::downgrade(&connection),
+            credential.clone(),
+        ));
+        // Skip the real CBS attach; we are exercising the generation guard, not the
+        // broker handshake.
+        authorizer.disable_authorization().unwrap();
+        connection.disable_connection().await.unwrap();
+
+        let path = Url::parse("amqps://example.com/test").unwrap();
+
+        let auth_task = {
+            let authorizer = authorizer.clone();
+            let connection = connection.clone();
+            let path = path.clone();
+            tokio::spawn(async move { authorizer.authorize_path(&connection, &path).await })
+        };
+
+        // Wait until the slow path is inside the first (gated) get_token: it has
+        // captured the pre-recovery generation and is mid-authorization.
+        while !credential.first_call_entered.load(Ordering::SeqCst) {
+            tokio::task::yield_now().await;
+        }
+        assert_eq!(connection.generation(), 0);
+
+        // Fire a recovery now, in the lock-free window. This bumps the generation,
+        // exactly the race #4454 describes. We bump the generation directly rather
+        // than running the full `simulate_reconnect`, because clearing the caches is
+        // irrelevant to the token guard and keeps the test focused.
+        connection.bump_generation_for_test();
+        assert_eq!(connection.generation(), 1);
+
+        // Release the first authorization; its token is now stale and must be
+        // discarded, triggering a re-authorization against the new generation.
+        credential.release_first_call.store(true, Ordering::SeqCst);
+
+        let token = auth_task
+            .await
+            .expect("authorize_path task panicked")
+            .expect("authorize_path returned an error");
+
+        // Two get_token calls: the discarded first attempt and the clean retry.
+        assert_eq!(
+            credential.calls.load(Ordering::SeqCst),
+            2,
+            "expected exactly one discard-and-retry"
+        );
+
+        // The token returned is cached and stamped at the stable post-recovery
+        // generation; the next lookup is a clean fast-path hit, with no further
+        // recovery needed.
+        let cached = authorizer
+            .authorization_scopes
+            .read()
+            .await
+            .get(&path)
+            .cloned();
+        assert!(
+            cached.is_some(),
+            "a fresh token must be cached after the discard-and-retry"
+        );
+        assert_eq!(cached.unwrap().token.secret(), token.token.secret());
+        assert_eq!(
+            connection.generation(),
+            1,
+            "no second recovery cycle should have been needed"
+        );
+    }
+
+    // #4454: the background refresh task is the token cache's *second* writer
+    // (alongside `authorize_path`), and it needs the same generation guard. When a
+    // recovery races a refresh, the token re-authorized against the now-dead CBS
+    // link must be discarded, not written back over the cache the recovery just
+    // cleared, otherwise the next operation serves a stale token and forces a
+    // second recovery cycle.
+    //
+    // This drives the guard deterministically by calling the extracted single-pass
+    // `refresh_due_tokens`: the cache is seeded with a token that is already due,
+    // a gated credential blocks the refresh's `get_token` inside the lock-free
+    // window, the test fires a simulated reconnect (bumping the generation) there,
+    // then releases. The refreshed token must be thrown away and the original left
+    // untouched.
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn refresh_discards_tokens_refreshed_during_recovery() {
+        use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+
+        #[derive(Debug)]
+        struct GatedRefreshCredential {
+            calls: AtomicUsize,
+            entered: AtomicBool,
+            release: AtomicBool,
+        }
+
+        #[async_trait::async_trait]
+        impl TokenCredential for GatedRefreshCredential {
+            async fn get_token(
+                &self,
+                _scopes: &[&str],
+                _options: Option<TokenRequestOptions<'_>>,
+            ) -> azure_core::Result<AccessToken> {
+                self.calls.fetch_add(1, Ordering::SeqCst);
+                self.entered.store(true, Ordering::SeqCst);
+                // Block inside the lock-free refresh window so the test can fire a
+                // recovery before the refreshed token is written back.
+                while !self.release.load(Ordering::SeqCst) {
+                    tokio::task::yield_now().await;
+                }
+                Ok(AccessToken::new(
+                    azure_core::credentials::Secret::new("refreshed_token"),
+                    OffsetDateTime::now_utc() + Duration::hours(1),
+                ))
+            }
+        }
+
+        let credential = Arc::new(GatedRefreshCredential {
+            calls: AtomicUsize::new(0),
+            entered: AtomicBool::new(false),
+            release: AtomicBool::new(false),
+        });
+
+        let url = Url::parse("amqps://example.com").unwrap();
+        let connection = RecoverableConnection::new(
+            url.clone(),
+            None,
+            None,
+            credential.clone(),
+            Default::default(),
+        );
+        let authorizer = Arc::new(Authorizer::new(
+            Arc::downgrade(&connection),
+            credential.clone(),
+        ));
+        // Exercise the generation guard, not the broker handshake.
+        authorizer.disable_authorization().unwrap();
+        connection.disable_connection().await.unwrap();
+
+        // Seed the cache with an "original" token that is already due for refresh.
+        let path = Url::parse("amqps://example.com/test").unwrap();
+        let now = OffsetDateTime::now_utc();
+        let original = AccessToken::new(
+            azure_core::credentials::Secret::new("original_token"),
+            now + Duration::seconds(1),
+        );
+        authorizer
+            .authorization_scopes
+            .write()
+            .await
+            .insert(path.clone(), original);
+
+        // A 10s bias makes the 1s-from-now token due, so the pass refreshes it.
+        let bias = Duration::seconds(10);
+        let refresh_task = {
+            let authorizer = authorizer.clone();
+            tokio::spawn(async move { authorizer.refresh_due_tokens(now, bias).await })
+        };
+
+        // Wait until the refresh is inside the gated `get_token`: it has captured
+        // the pre-recovery generation and is mid re-authorization.
+        while !credential.entered.load(Ordering::SeqCst) {
+            tokio::task::yield_now().await;
+        }
+        assert_eq!(connection.generation(), 0);
+
+        // Fire a recovery in the lock-free window: the #4454 race, refresh edition.
+        connection.bump_generation_for_test();
+        assert_eq!(connection.generation(), 1);
+
+        // Release the gated refresh; its token is now stale and must be discarded.
+        credential.release.store(true, Ordering::SeqCst);
+        refresh_task
+            .await
+            .expect("refresh task panicked")
+            .expect("refresh_due_tokens returned an error");
+
+        // Exactly one refresh attempt was made, and the cache still holds the
+        // original token: the token refreshed against the torn-down connection was
+        // dropped at the guarded write-back rather than overwriting the cache.
+        assert_eq!(
+            credential.calls.load(Ordering::SeqCst),
+            1,
+            "exactly one refresh attempt"
+        );
+        let cached = authorizer
+            .authorization_scopes
+            .read()
+            .await
+            .get(&path)
+            .cloned()
+            .expect("the original token must remain cached");
+        assert_eq!(
+            cached.token.secret(),
+            "original_token",
+            "a token refreshed during recovery must be discarded, not written back"
+        );
     }
 }

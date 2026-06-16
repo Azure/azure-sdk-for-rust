@@ -31,7 +31,11 @@ use azure_core_amqp::{
 use std::sync::Mutex;
 use std::{
     collections::HashMap,
-    sync::{Arc, Weak},
+    future::Future,
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        Arc, Weak,
+    },
 };
 use tracing::{debug, span, trace, warn};
 
@@ -81,39 +85,99 @@ pub(crate) struct RecoverableConnection {
     // *different* partitions never serialize on a shared lock, and the expensive
     // attach (authorize + session begin + link attach) happens without holding
     // the map-wide lock. See issues #2243 and #4563.
-    sender_instances: RwLock<HashMap<Url, Arc<OnceCell<Arc<AmqpSender>>>>>,
-    session_instances: RwLock<HashMap<Url, Arc<OnceCell<Arc<AmqpSession>>>>>,
-    receiver_instances: RwLock<HashMap<Url, Arc<OnceCell<Arc<AmqpReceiver>>>>>,
+    //
+    // Each cell is tagged with the recovery `generation` it was created under (see
+    // the `generation` field). A slow-path attach that races a recovery completes
+    // against a now-dead connection; comparing the cell's generation against the
+    // current one after the attach lets that path discard its stale result instead
+    // of caching and handing out a resource bound to the old connection. See #4454.
+    sender_instances: RwLock<HashMap<Url, GenerationalCell<AmqpSender>>>,
+    session_instances: RwLock<HashMap<Url, GenerationalCell<AmqpSession>>>,
+    receiver_instances: RwLock<HashMap<Url, GenerationalCell<AmqpReceiver>>>,
     pub(super) authorizer: Arc<Authorizer>,
     connections: AsyncMutex<Option<Arc<AmqpConnection>>>,
     connection_name: String,
     pub(super) retry_options: RetryOptions,
 
+    // Recovery generation counter (#4454). Bumped by
+    // `apply_recovery_plan` every time it clears the per-path caches (i.e. on every
+    // ReconnectConnection / ReconnectSession / ReconnectLink). Invariant: a cached
+    // resource is only valid if the generation it was created under still equals the
+    // current generation. The four slow paths (authorize_path, get_session,
+    // ensure_sender, ensure_receiver) do their AMQP IO with no map lock held; a
+    // recovery that fires during that window bumps the generation, and the slow path
+    // detects the mismatch on completion and discards its result rather than caching
+    // a resource bound to the dead connection. A single counter is used for all
+    // resource types: session-level recovery is rare, so the occasional extra
+    // re-init of an unaffected type after a narrower recovery is cheaper than the
+    // bookkeeping of per-type counters.
+    generation: AtomicU64,
+
     #[cfg(test)]
     forced_error: Mutex<Option<AmqpError>>,
+}
+
+/// A per-path cache cell tagged with the recovery [`RecoverableConnection::generation`]
+/// it was created under. See #4454.
+struct GenerationalCell<T> {
+    generation: u64,
+    cell: Arc<OnceCell<Arc<T>>>,
+}
+
+impl<T> Clone for GenerationalCell<T> {
+    fn clone(&self) -> Self {
+        Self {
+            generation: self.generation,
+            cell: self.cell.clone(),
+        }
+    }
 }
 
 unsafe impl Send for RecoverableConnection {}
 unsafe impl Sync for RecoverableConnection {}
 
-/// Returns the per-path `OnceCell` for `key`, inserting an uninitialized one if
-/// absent. The read path is taken first so steady-state lookups share a read
-/// lock; only the first insert for a key takes the write lock. The attach then
-/// runs inside the returned `OnceCell`, so the map lock is never held across it
-/// and different paths set up concurrently. Shared by the sender, session, and
-/// receiver caches so all three keep identical concurrency semantics.
+/// Returns the per-path cell for `key` valid at `generation`, inserting an
+/// uninitialized one if absent. The read path is taken first so steady-state
+/// lookups share a read lock; only the first insert for a key (or replacing a cell
+/// left over from a previous generation) takes the write lock. The attach then
+/// runs inside the returned `OnceCell`, so the map lock is never held across it and
+/// different paths set up concurrently. Shared by the sender, session, and receiver
+/// caches so all three keep identical concurrency semantics.
+///
+/// A cached cell whose generation predates `generation` is stale: a recovery
+/// cleared and re-stamped the connection after it was created. Such a cell is
+/// replaced with a fresh one so the caller re-attaches against the live
+/// connection. A cell at a *newer* generation than `generation` is returned
+/// as-is rather than overwritten: a recovery already advanced past the
+/// generation the caller captured, and a peer task may have attached a valid
+/// resource into that newer cell. Clobbering it with a fresh cell stamped at the
+/// older `generation` would discard that peer's work and force a redundant
+/// re-attach, the exact wasted recovery cycle #4454 set out to remove. The
+/// caller's post-`init` generation check sorts out the captured-then-superseded
+/// case instead (see [`RecoverableConnection::get_or_init_generational`]). Only
+/// a strictly-older or absent entry is replaced. See #4454.
 async fn or_init_cell<T>(
-    map: &RwLock<HashMap<Url, Arc<OnceCell<Arc<T>>>>>,
+    map: &RwLock<HashMap<Url, GenerationalCell<T>>>,
     key: &Url,
-) -> Arc<OnceCell<Arc<T>>> {
-    if let Some(cell) = map.read().await.get(key) {
-        return cell.clone();
+    generation: u64,
+) -> GenerationalCell<T> {
+    if let Some(entry) = map.read().await.get(key) {
+        if entry.generation >= generation {
+            return entry.clone();
+        }
     }
-    map.write()
-        .await
-        .entry(key.clone())
-        .or_insert_with(|| Arc::new(OnceCell::new()))
-        .clone()
+    let mut guard = map.write().await;
+    match guard.get(key) {
+        Some(entry) if entry.generation >= generation => entry.clone(),
+        _ => {
+            let fresh = GenerationalCell {
+                generation,
+                cell: Arc::new(OnceCell::new()),
+            };
+            guard.insert(key.clone(), fresh.clone());
+            fresh
+        }
+    }
 }
 
 /// Describes which per-connection caches an [`ErrorRecoveryAction`] must invalidate.
@@ -194,6 +258,7 @@ impl RecoverableConnection {
                 receiver_instances: RwLock::new(HashMap::new()),
                 mgmt_client: AsyncMutex::new(None),
                 authorizer,
+                generation: AtomicU64::new(0),
                 #[cfg(test)]
                 forced_error: Mutex::new(None),
             }
@@ -260,7 +325,7 @@ impl RecoverableConnection {
         }
 
         let mut sender_instances = self.sender_instances.write().await;
-        for (path, cell) in sender_instances.drain() {
+        for (path, GenerationalCell { cell, .. }) in sender_instances.drain() {
             trace!("Detaching sender for path {}.", path);
             let Some(sender) = Arc::try_unwrap(cell).ok().and_then(OnceCell::into_inner) else {
                 trace!(
@@ -281,7 +346,7 @@ impl RecoverableConnection {
         }
 
         let mut receiver_instances = self.receiver_instances.write().await;
-        for (source_url, cell) in receiver_instances.drain() {
+        for (source_url, GenerationalCell { cell, .. }) in receiver_instances.drain() {
             trace!("Detaching receiver for source URL {}.", source_url);
             let Some(receiver) = Arc::try_unwrap(cell).ok().and_then(OnceCell::into_inner) else {
                 trace!(
@@ -302,7 +367,7 @@ impl RecoverableConnection {
         }
 
         let mut session_instances = self.session_instances.write().await;
-        for (session_id, cell) in session_instances.drain() {
+        for (session_id, GenerationalCell { cell, .. }) in session_instances.drain() {
             trace!("Detaching session for ID {}.", session_id);
             let Some(session) = Arc::try_unwrap(cell).ok().and_then(OnceCell::into_inner) else {
                 trace!(
@@ -412,7 +477,9 @@ impl RecoverableConnection {
     pub(crate) async fn close_receiver(self: &Arc<Self>, source_url: &Url) -> Result<()> {
         // Drop the map's write lock as soon as the cell is removed so the detach
         // (network I/O) doesn't hold it.
-        let Some(cell) = self.receiver_instances.write().await.remove(source_url) else {
+        let Some(GenerationalCell { cell, .. }) =
+            self.receiver_instances.write().await.remove(source_url)
+        else {
             // No entry for this path; nothing to detach.
             return Ok(());
         };
@@ -453,16 +520,95 @@ impl RecoverableConnection {
         Ok(())
     }
 
+    /// The recovery generation the caches are currently stamped at. See the
+    /// `generation` field and #4454.
+    fn current_generation(&self) -> u64 {
+        self.generation.load(Ordering::Acquire)
+    }
+
+    /// Resolves the per-path cell for `key`, runs `init` to attach the resource
+    /// without holding the map lock, and guards the result against a racing
+    /// recovery via the generation counter (#4454).
+    ///
+    /// The attach (`init`) does its AMQP IO with no map lock held, so a recovery
+    /// can clear the caches and bump the generation while it is in flight. After
+    /// `init` completes this re-reads the generation: if it still matches the one
+    /// the cell was created under, the result is fresh and is returned. If it
+    /// changed, the just-attached resource is bound to a now-dead connection;
+    /// rather than caching and handing out that stale resource (the old behavior
+    /// that cost an extra recovery cycle on the next operation), the stale cell is
+    /// evicted and the whole attach retries against the new generation.
+    ///
+    /// `init` is therefore an `FnMut`: it may run more than once if recovery keeps
+    /// racing. The retry count is bounded so a pathological storm of back-to-back
+    /// recoveries surfaces an error instead of spinning forever.
+    async fn get_or_init_generational<T, F, Fut>(
+        &self,
+        map: &RwLock<HashMap<Url, GenerationalCell<T>>>,
+        key: &Url,
+        mut init: F,
+    ) -> azure_core_amqp::Result<Arc<T>>
+    where
+        F: FnMut() -> Fut,
+        Fut: Future<Output = azure_core_amqp::Result<Arc<T>>>,
+    {
+        // Generous bound: recovery is rare and each pass makes forward progress
+        // against a newer connection, so reaching this would mean the connection
+        // is being torn down faster than it can be set up.
+        const MAX_GENERATION_RETRIES: usize = 8;
+
+        for _ in 0..MAX_GENERATION_RETRIES {
+            let generation = self.current_generation();
+            let entry = or_init_cell(map, key, generation).await;
+            let value = entry.cell.get_or_try_init(&mut init).await?;
+
+            // If no recovery raced the attach above, the cell is valid; return it.
+            // Compare against the cell's *own* generation, not the value captured at
+            // the top of the loop: `or_init_cell` may have handed back a newer cell
+            // that a racing task installed, and such a cell is valid as long as its
+            // generation is still current. Using the captured `generation` here
+            // would wrongly discard (and evict) that peer's freshly-attached
+            // resource. See #4454.
+            if self.current_generation() == entry.generation {
+                return Ok(value.clone());
+            }
+
+            // A recovery cleared the caches mid-attach. The value we just produced
+            // (or read from a cell another racing task initialized) is bound to the
+            // old connection. Evict this cell if it is still the one mapped for
+            // `key` so the next pass re-inits against the new generation, then loop.
+            debug!(
+                %key,
+                "Discarding stale resource produced during recovery (#4454); re-initializing."
+            );
+            let mut guard = map.write().await;
+            if let Some(current) = guard.get(key) {
+                if Arc::ptr_eq(&current.cell, &entry.cell) {
+                    guard.remove(key);
+                }
+            }
+        }
+
+        // Intentionally a plain `AmqpError::with_message`: `should_retry_amqp_error`
+        // classifies this unrecognized kind as `ReturnError`, so exhausting the
+        // budget surfaces to the caller instead of looping. Do not "fix" this into a
+        // retryable kind, that would let a recovery storm spin here forever (#4454).
+        Err(AmqpError::with_message(format!(
+            "Exceeded retry budget ({MAX_GENERATION_RETRIES}) re-initializing resource '{key}' across recoveries"
+        )))
+    }
+
     async fn get_session(
         self: &Arc<Self>,
         source_url: &Url,
     ) -> azure_core_amqp::Result<Arc<AmqpSession>> {
         // Resolve the per-path cell while holding the map lock only briefly, then
         // initialize (which may begin a new AMQP session) without holding it, so
-        // that sessions for other partitions can be created concurrently.
-        let cell = self.session_cell(source_url).await;
-        let session = cell
-            .get_or_try_init(|| async {
+        // that sessions for other partitions can be created concurrently. The
+        // generation guard discards a session begun against a connection that a
+        // racing recovery has since replaced (#4454).
+        let session = self
+            .get_or_init_generational(&self.session_instances, source_url, || async {
                 debug!("Creating session for partition: {:?}", source_url);
                 let connection = self.ensure_connection().await?;
 
@@ -477,13 +623,21 @@ impl RecoverableConnection {
             })
             .await?;
         debug!("Cloning session for partition {:?}", source_url);
-        Ok(session.clone())
+        Ok(session)
     }
 
-    /// Returns the `OnceCell` that owns the session for `source_url`, inserting an
-    /// uninitialized one if absent. See [`or_init_cell`] for the locking strategy.
+    /// Returns the `OnceCell` that owns the session for `source_url` at the current
+    /// generation, inserting an uninitialized one if absent. See [`or_init_cell`]
+    /// for the locking strategy. Used in tests to assert cell identity.
+    #[cfg(test)]
     async fn session_cell(&self, source_url: &Url) -> Arc<OnceCell<Arc<AmqpSession>>> {
-        or_init_cell(&self.session_instances, source_url).await
+        or_init_cell(
+            &self.session_instances,
+            source_url,
+            self.current_generation(),
+        )
+        .await
+        .cell
     }
 
     async fn create_connection(&self) -> azure_core_amqp::Result<Arc<AmqpConnection>> {
@@ -567,9 +721,8 @@ impl RecoverableConnection {
         // without holding it, so receivers for other partitions can be created
         // concurrently and steady-state receives never serialize on a shared
         // lock. See issues #2243 and #4563.
-        let cell = self.receiver_cell(source_url).await;
-        let receiver = cell
-            .get_or_try_init(|| async {
+        let receiver = self
+            .get_or_init_generational(&self.receiver_instances, source_url, || async {
                 self.ensure_connection().await?;
                 self.authorizer.authorize_path(self, source_url).await?;
 
@@ -588,13 +741,21 @@ impl RecoverableConnection {
             })
             .await?;
 
-        Ok(receiver.clone())
+        Ok(receiver)
     }
 
-    /// Returns the `OnceCell` that owns the receiver for `source_url`, inserting
-    /// an uninitialized one if absent. See [`or_init_cell`] for the locking strategy.
+    /// Returns the `OnceCell` that owns the receiver for `source_url` at the current
+    /// generation, inserting an uninitialized one if absent. See [`or_init_cell`]
+    /// for the locking strategy. Used in tests to assert cell identity.
+    #[cfg(test)]
     async fn receiver_cell(&self, source_url: &Url) -> Arc<OnceCell<Arc<AmqpReceiver>>> {
-        or_init_cell(&self.receiver_instances, source_url).await
+        or_init_cell(
+            &self.receiver_instances,
+            source_url,
+            self.current_generation(),
+        )
+        .await
+        .cell
     }
 
     pub(super) async fn ensure_sender(
@@ -605,9 +766,8 @@ impl RecoverableConnection {
         // attach (authorize + session begin + link attach) without holding it, so
         // that senders for other partitions can be created concurrently and
         // steady-state sends never serialize on a shared lock. See issue #2243.
-        let cell = self.sender_cell(path).await;
-        let sender = cell
-            .get_or_try_init(|| async {
+        let sender = self
+            .get_or_init_generational(&self.sender_instances, path, || async {
                 // Ensure that we are authorized to access the senders path.
                 self.authorizer.authorize_path(self, path).await?;
 
@@ -631,13 +791,17 @@ impl RecoverableConnection {
             })
             .await?;
 
-        Ok(sender.clone())
+        Ok(sender)
     }
 
-    /// Returns the `OnceCell` that owns the sender for `path`, inserting an
-    /// uninitialized one if absent. See [`or_init_cell`] for the locking strategy.
+    /// Returns the `OnceCell` that owns the sender for `path` at the current
+    /// generation, inserting an uninitialized one if absent. See [`or_init_cell`]
+    /// for the locking strategy. Used in tests to assert cell identity.
+    #[cfg(test)]
     async fn sender_cell(&self, path: &Url) -> Arc<OnceCell<Arc<AmqpSender>>> {
-        or_init_cell(&self.sender_instances, path).await
+        or_init_cell(&self.sender_instances, path, self.current_generation())
+            .await
+            .cell
     }
 
     pub(super) async fn recover_from_error(
@@ -668,20 +832,44 @@ impl RecoverableConnection {
 
     /// Side-effecting half of `recover_from_error`: takes the locks and clears
     /// whichever caches the [`RecoveryPlan`] flagged.
+    ///
+    /// #4454 stale-resource window. Any plan that clears a per-path
+    /// cache bumps the recovery `generation` first. A slow path
+    /// (authorize_path / get_session / ensure_sender / ensure_receiver) that is
+    /// mid-attach captured the pre-bump generation; on completion it sees the
+    /// mismatch and discards its result instead of caching a resource bound to the
+    /// connection this recovery just tore down. The bump must precede the clears so
+    /// an in-flight attach that resolves its cell *after* the clears still observes
+    /// the newer generation and re-inits.
     async fn apply_recovery_plan(&self, plan: RecoveryPlan) {
         if plan.drop_connection {
             self.connections.lock().await.take();
         }
+
+        // Bump the generation before clearing *any* per-path cache, the
+        // authorizer's token cache included, so racing slow-path attaches detect
+        // the recovery and discard their stale results (see the struct field and
+        // `get_or_init_generational`). `authorize_path` and the refresh task read
+        // this generation directly because the token cache is mutable and cannot
+        // use a `OnceCell`; their guard re-reads the generation under the same
+        // `authorization_scopes` write lock that `clear()` takes. If we cleared the
+        // authorizer before the bump, an in-flight `authorize_path` could acquire
+        // that write lock after the clear, still observe the pre-bump generation,
+        // and insert a token bound to the torn-down connection. Bumping first
+        // closes that window (#4454). The bump only matters when a cache is being
+        // cleared; plans that touch neither caches nor the authorizer leave it
+        // untouched.
+        if plan.clear_sessions
+            || plan.clear_senders
+            || plan.clear_receivers
+            || plan.clear_authorizer
+        {
+            self.generation.fetch_add(1, Ordering::AcqRel);
+        }
+
         if plan.clear_authorizer {
             self.authorizer.clear().await;
         }
-        // Clearing a cache drops its per-path `OnceCell` entries, so the next
-        // `ensure_*` for a path re-inits a fresh cell against the new connection.
-        // A task already mid-`get_or_try_init` (or holding a value it just read)
-        // keeps using the old cell until it next re-enters `ensure_*`, so there's
-        // a brief window where stale, pre-recovery links can still be handed out.
-        // Closing that window (invalidating in-flight work immediately via a
-        // recovery generation counter) is tracked in #4454.
         if plan.clear_sessions {
             self.session_instances.write().await.clear();
         }
@@ -694,6 +882,32 @@ impl RecoverableConnection {
         if plan.drop_mgmt_client {
             self.mgmt_client.lock().await.take();
         }
+    }
+
+    /// The recovery generation, exposed for the authorizer's slow-path guard
+    /// (#4454) and for tests. See `current_generation`.
+    pub(crate) fn generation(&self) -> u64 {
+        self.current_generation()
+    }
+
+    /// Test hook: simulate the cache-clearing half of a `ReconnectConnection`
+    /// recovery (bump the generation and clear the per-path caches) without needing
+    /// a live broker connection. Used to drive the #4454 stale-resource race
+    /// deterministically.
+    #[cfg(test)]
+    pub(crate) async fn simulate_reconnect(&self) {
+        self.apply_recovery_plan(
+            RecoveryPlan::for_action(&ErrorRecoveryAction::ReconnectConnection)
+                .expect("ReconnectConnection has a recovery plan"),
+        )
+        .await;
+    }
+
+    /// Test hook: bump only the recovery generation without taking the cache
+    /// locks. Used to exercise the #4454 generation guard in isolation.
+    #[cfg(test)]
+    pub(crate) fn bump_generation_for_test(&self) {
+        self.generation.fetch_add(1, Ordering::AcqRel);
     }
 
     /// Classifies an [`AmqpError`] into the recovery action the retry loop should take.
@@ -1023,6 +1237,157 @@ mod tests {
         assert!(connection.receiver_cell(&path_a).await.get().is_none());
     }
 
+    // #4454: a recovery that clears the per-path caches must bump the recovery
+    // generation so racing slow-path attaches can detect it. A simulated
+    // ReconnectConnection must advance `generation()`.
+    #[tokio::test]
+    async fn simulate_reconnect_bumps_generation() {
+        let url = Url::parse("amqps://example.com").unwrap();
+        let connection = RecoverableConnection::new(
+            url,
+            None,
+            None,
+            Arc::new(MockCredential),
+            Default::default(),
+        );
+
+        assert_eq!(connection.generation(), 0);
+        connection.simulate_reconnect().await;
+        assert_eq!(connection.generation(), 1);
+        connection.simulate_reconnect().await;
+        assert_eq!(connection.generation(), 2);
+    }
+
+    // #4454: the core of the fix. A cell resolved under generation N must be
+    // replaced by a fresh, distinct cell once the generation advances to N+1,
+    // because the recovery that bumped the generation tore down the connection the
+    // old cell's resource was attached to. Resolving at the same generation must
+    // keep returning the same cell (so we don't lose single-init within a
+    // generation).
+    #[tokio::test]
+    async fn stale_generation_cell_is_replaced() {
+        let url = Url::parse("amqps://example.com").unwrap();
+        let connection = RecoverableConnection::new(
+            url,
+            None,
+            None,
+            Arc::new(MockCredential),
+            Default::default(),
+        );
+        let path = Url::parse("amqps://example.com/eh/Partitions/0").unwrap();
+
+        // Two resolutions at the same generation share a cell.
+        let cell_gen0 = connection.sender_cell(&path).await;
+        assert!(Arc::ptr_eq(
+            &cell_gen0,
+            &connection.sender_cell(&path).await
+        ));
+
+        // After a recovery, the next resolution returns a brand-new cell.
+        connection.simulate_reconnect().await;
+        let cell_gen1 = connection.sender_cell(&path).await;
+        assert!(
+            !Arc::ptr_eq(&cell_gen0, &cell_gen1),
+            "cell from the previous generation must be discarded after recovery"
+        );
+
+        // And that new cell is itself stable within its generation.
+        assert!(Arc::ptr_eq(
+            &cell_gen1,
+            &connection.sender_cell(&path).await
+        ));
+    }
+
+    // #4454: `get_or_init_generational` must discard a value produced during a
+    // racing recovery and re-init against the new generation. Here the init closure
+    // fires a simulated reconnect on its first call (the in-flight-slow-path
+    // window), so the first attempt's value is stale and must be thrown away; the
+    // second attempt runs at a stable generation and its value is the one returned
+    // and cached.
+    #[tokio::test]
+    async fn get_or_init_generational_discards_value_produced_during_recovery() {
+        let url = Url::parse("amqps://example.com").unwrap();
+        let connection = RecoverableConnection::new(
+            url,
+            None,
+            None,
+            Arc::new(MockCredential),
+            Default::default(),
+        );
+        let path = Url::parse("amqps://example.com/eh/Partitions/0").unwrap();
+
+        let calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let map: RwLock<HashMap<Url, GenerationalCell<u64>>> = RwLock::new(HashMap::new());
+
+        let result = connection
+            .get_or_init_generational(&map, &path, || {
+                let calls = calls.clone();
+                let connection = &connection;
+                async move {
+                    let attempt = calls.fetch_add(1, Ordering::SeqCst);
+                    // On the first attempt only, simulate a recovery firing during
+                    // the lock-free init window. This bumps the generation, so the
+                    // value produced here is stale and must be discarded.
+                    if attempt == 0 {
+                        connection.simulate_reconnect().await;
+                    }
+                    Ok::<_, AmqpError>(Arc::new(attempt as u64))
+                }
+            })
+            .await
+            .expect("init should succeed on the second, stable-generation attempt");
+
+        // The closure ran twice: once racing the recovery (discarded), once clean.
+        assert_eq!(calls.load(Ordering::SeqCst), 2);
+        // The returned value is the second attempt's (index 1), not the stale first.
+        assert_eq!(*result, 1);
+        // The cached cell holds the fresh value, stamped at the post-recovery generation.
+        let cached = map.read().await.get(&path).cloned().unwrap();
+        assert_eq!(cached.generation, connection.generation());
+        assert_eq!(**cached.cell.get().unwrap(), 1);
+    }
+
+    // #4454 regression: `or_init_cell` must never overwrite a cell at a *newer*
+    // generation than the one the caller captured. A slow task that captured
+    // generation N can reach the lookup only after a recovery advanced to N+1 and a
+    // peer task already cached a valid resource there; clobbering it with a fresh
+    // gen-N cell would discard the peer's freshly-attached resource and force a
+    // redundant re-attach, the exact wasted recovery cycle the fix removes. A
+    // strictly-older cached cell must still be replaced so the caller re-attaches
+    // against the live connection.
+    #[tokio::test]
+    async fn or_init_cell_reuses_newer_cell_and_replaces_older() {
+        let path = Url::parse("amqps://example.com/eh/Partitions/0").unwrap();
+        let map: RwLock<HashMap<Url, GenerationalCell<u64>>> = RwLock::new(HashMap::new());
+
+        // A peer task at generation 1 attached a resource and cached it.
+        let newer = or_init_cell(&map, &path, 1).await;
+        newer.cell.set(Arc::new(42)).await.unwrap();
+        assert_eq!(newer.generation, 1);
+
+        // A slow task that captured the stale generation 0 resolves the same key. It
+        // must get the gen-1 cell back, value intact, not a fresh gen-0 cell that
+        // throws the peer's work away.
+        let stale = or_init_cell(&map, &path, 0).await;
+        assert!(
+            Arc::ptr_eq(&stale.cell, &newer.cell),
+            "a cell newer than the captured generation must be reused, not clobbered"
+        );
+        assert_eq!(stale.generation, 1);
+        assert_eq!(**stale.cell.get().unwrap(), 42);
+
+        // Resolving at a generation strictly newer than the cached cell replaces it
+        // with a fresh, empty cell so the caller re-attaches against the live
+        // connection.
+        let replaced = or_init_cell(&map, &path, 2).await;
+        assert!(
+            !Arc::ptr_eq(&replaced.cell, &newer.cell),
+            "a cell older than the captured generation must be replaced"
+        );
+        assert_eq!(replaced.generation, 2);
+        assert!(replaced.cell.get().is_none());
+    }
+
     // The RecoverableConnection supports using a custom endpoint for connecting to Event Hubs proxies.
     // This test verifies that the custom endpoint is properly stored in the RecoverableConnection.
     #[test]
@@ -1155,6 +1520,20 @@ mod tests {
         assert_eq!(
             RecoverableConnection::should_retry_amqp_error(&err),
             ErrorRecoveryAction::ReconnectLink
+        );
+
+        // Test SimpleMessage (the kind `AmqpError::with_message` produces) ->
+        // ReturnError. The retry-budget-exhausted errors in `get_or_init_generational`
+        // and `authorize_path` are `with_message` errors that intentionally rely on
+        // this classification to surface instead of spinning across a recovery storm
+        // (#4454). This pins that contract: adding an explicit `SimpleMessage` arm, or
+        // flipping the `_` default to a retryable action, must fail here and force a
+        // deliberate decision rather than silently turning those backstops into an
+        // infinite retry loop.
+        let err = AmqpError::with_message("retry budget exhausted");
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&err),
+            ErrorRecoveryAction::ReturnError
         );
     }
 
