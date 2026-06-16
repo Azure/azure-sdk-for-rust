@@ -212,18 +212,6 @@ impl OperationHandle {
         }
     }
 
-    /// Borrows the shared inner operation state from a raw handle pointer.
-    ///
-    /// The returned reference's lifetime `'a` is tied to the call site (not
-    /// `'static`): it must not be held past the point where a concurrent
-    /// `cosmos_operation_handle_free` could drop the last `Arc`. Keeping the
-    /// borrow call-scoped lets the borrow checker prevent it from escaping
-    /// into a longer-lived binding, which a `'static` return would have
-    /// silently allowed (a potential use-after-free).
-    pub(crate) fn inner<'a>(p: *const OperationHandle) -> Option<&'a OperationInner> {
-        Self::storage(p).map(|s| -> &OperationInner { &s.inner })
-    }
-
     pub(crate) fn drop_raw(p: *mut OperationHandle) {
         if p.is_null() {
             return;
@@ -622,11 +610,16 @@ pub extern "C" fn cosmos_cq_runtime(queue: *const CompletionQueue) -> *const Run
 /// [`cosmos_completion_free`].
 #[no_mangle]
 pub extern "C" fn cosmos_cq_wait(queue: *mut CompletionQueue, timeout_ms: u32) -> *mut Completion {
-    let Some(q) = CompletionQueue::storage(queue) else {
+    // Clone the `Arc<CompletionQueueInner>` (rather than borrowing the storage
+    // box) so the inner mutex/condvar this thread may park on outlives a
+    // concurrent `cosmos_cq_free`. This mirrors `SpawnContext`, which holds a
+    // cloned `Arc` for the same survive-concurrent-free reason; borrowing here
+    // would otherwise leave a use-after-free window for a thread blocked in
+    // `data_available.wait(..)`.
+    let Some(inner_arc) = CompletionQueue::inner_arc(queue) else {
         return std::ptr::null_mut();
     };
-
-    let inner = &q.inner;
+    let inner = &*inner_arc;
     let mut guard = inner.inner.lock_recover();
 
     if timeout_ms == 0 {
@@ -937,8 +930,16 @@ pub extern "C" fn cosmos_completion_take_error(c: *mut Completion) -> *mut Cosmo
     if co.outcome != CosmosCompletionOutcome::CosmosCompletionOutcomeError {
         return std::ptr::null_mut();
     }
-    let mut slot = co.error.lock_recover();
-    match slot.take() {
+    let taken = co.error.lock_recover().take();
+    // Invalidate any borrowed handle previously handed out by
+    // `cosmos_completion_error` so a subsequent `error()` returns NULL, per
+    // its documented "NULL ... after a previous `_take_error` call" contract.
+    // The cached handle is backed by its own `Arc` clone, so freeing it here
+    // is independent of the ownership transferred to the caller below.
+    if let Some(cached) = co.cached_error_handle.lock_recover().take() {
+        crate::error::CosmosErrorHandle::drop_raw(cached);
+    }
+    match taken {
         Some(arc) => CosmosErrorHandle::from_arc_into_raw(arc),
         None => std::ptr::null_mut(),
     }
@@ -1010,7 +1011,11 @@ pub extern "C" fn cosmos_completion_free(c: *mut Completion) {
 /// `cosmos_completion_was_cancel_requested`.
 #[no_mangle]
 pub extern "C" fn cosmos_operation_handle_cancel(op: *mut OperationHandle) {
-    let Some(inner) = OperationHandle::inner(op) else {
+    // Clone the `Arc<OperationInner>` so the inner state survives a concurrent
+    // `cosmos_operation_handle_free` (matching the rest of the crate's
+    // ownership model). A borrowed reference would leave a use-after-free
+    // window if another thread freed the handle mid-call.
+    let Some(inner) = OperationHandle::inner_arc(op) else {
         return;
     };
     inner.cancel_requested.store(true, Ordering::Release);
@@ -1024,7 +1029,9 @@ pub extern "C" fn cosmos_operation_handle_cancel(op: *mut OperationHandle) {
 pub extern "C" fn cosmos_operation_handle_state(
     op: *const OperationHandle,
 ) -> CosmosOperationHandleState {
-    let Some(inner) = OperationHandle::inner(op) else {
+    // Clone the `Arc<OperationInner>` (rather than borrowing) for the same
+    // survive-concurrent-free reason as `cosmos_operation_handle_cancel`.
+    let Some(inner) = OperationHandle::inner_arc(op) else {
         return CosmosOperationHandleState::CosmosOperationHandleStateInFlight;
     };
     CosmosOperationHandleState::from_u8(inner.state.load(Ordering::Acquire))

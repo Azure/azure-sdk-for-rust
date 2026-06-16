@@ -393,9 +393,15 @@ pub extern "C" fn cosmos_response_body(
         return CosmosErrorCode::CosmosErrorCodeSuccess.as_i32();
     };
     let (ptr, len) = match inner_response.body() {
+        // Normalize an empty `Bytes` body to a NULL pointer so it matches the
+        // documented "NULL pointer + 0 length when the body is empty" contract
+        // (a non-empty `Vec`'s `as_ptr()` is a dangling sentinel a host might
+        // mistake for a present body when checking `ptr != NULL`).
+        ResponseBody::Bytes(b) if b.is_empty() => (std::ptr::null(), 0),
         ResponseBody::Bytes(b) => (b.as_ptr(), b.len()),
         ResponseBody::Items(items) => items
             .first()
+            .filter(|b| !b.is_empty())
             .map(|b| (b.as_ptr(), b.len()))
             .unwrap_or((std::ptr::null(), 0)),
         ResponseBody::NoPayload => (std::ptr::null(), 0),
