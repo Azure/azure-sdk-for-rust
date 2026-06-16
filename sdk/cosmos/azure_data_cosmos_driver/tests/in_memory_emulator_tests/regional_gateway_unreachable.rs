@@ -722,7 +722,7 @@ async fn ppcb4_asymmetric_excluded_regions_per_operation() {
         FaultOperationType::CreateItem,
         Region::EAST_US,
     );
-    // Phase-2 unreachables: force the post-trip override to either fall through to SECONDARY or fail.
+    // Phase-2 connection faults: force the post-trip override to either fall through to SECONDARY or fail.
     let read_unreachable = connection_error_rule(
         "ppcb4-read-east-unreachable",
         FaultOperationType::ReadItem,
