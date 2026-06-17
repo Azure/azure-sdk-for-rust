@@ -16,7 +16,7 @@ use azure_data_cosmos::{
 };
 use futures::TryStreamExt;
 
-use framework::TestClient;
+use framework::{TestClient, TestOptions};
 
 #[tokio::test]
 #[cfg_attr(
@@ -141,7 +141,7 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -192,7 +192,7 @@ pub async fn container_crud_hierarchical_pk() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }

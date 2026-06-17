@@ -35,12 +35,7 @@ async fn client_boots_via_backup_when_primary_unreachable() -> Result<(), Box<dy
     let real_endpoint: AccountEndpoint = connection_string.account_endpoint().parse()?;
     let fake_endpoint: AccountEndpoint = "https://localhost:9/".parse()?;
 
-    let mut builder = CosmosClient::builder().with_backup_endpoints(vec![real_endpoint]);
-
-    #[cfg(feature = "allow_invalid_certificates")]
-    {
-        builder = builder.with_allow_emulator_invalid_certificates(true);
-    }
+    let builder = CosmosClient::builder().with_backup_endpoints(vec![real_endpoint]);
 
     let client = builder
         .build(

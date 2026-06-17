@@ -467,3 +467,26 @@ async fn test_overload_batch(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
+
+#[recorded::test(live)]
+async fn send_eventdata_with_connection_string(_ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // The SAS credential is derived from the connection string, so no
+    // `recording.credential()` is needed. `EVENTHUB_NAME` is only required when
+    // the connection string carries no `EntityPath`.
+    let connection_string = env::var("EVENTHUBS_CONNECTION_STRING")?;
+    let eventhub = env::var("EVENTHUB_NAME").ok();
+
+    let client = ProducerClient::builder()
+        .with_application_id("send_eventdata_with_connection_string".to_string())
+        .open_with_connection_string(&connection_string, eventhub.as_deref())
+        .await?;
+
+    assert!(client
+        .send_event("Hello from a SAS connection string!", None)
+        .await
+        .is_ok());
+
+    client.close().await?;
+
+    Ok(())
+}

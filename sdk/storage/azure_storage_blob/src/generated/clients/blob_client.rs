@@ -100,13 +100,13 @@ impl BlobClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        if let Some(if_match) = options.if_match {
+        if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match.to_string());
         }
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
-        if let Some(if_none_match) = options.if_none_match {
+        if let Some(if_none_match) = options.if_none_match.as_ref() {
             request.insert_header("if-none-match", if_none_match.to_string());
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
@@ -188,13 +188,13 @@ impl BlobClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        if let Some(if_match) = options.if_match {
+        if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match.to_string());
         }
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
-        if let Some(if_none_match) = options.if_none_match {
+        if let Some(if_none_match) = options.if_none_match.as_ref() {
             request.insert_header("if-none-match", if_none_match.to_string());
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
@@ -279,13 +279,13 @@ impl BlobClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        if let Some(if_match) = options.if_match {
+        if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match.to_string());
         }
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
-        if let Some(if_none_match) = options.if_none_match {
+        if let Some(if_none_match) = options.if_none_match.as_ref() {
             request.insert_header("if-none-match", if_none_match.to_string());
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
@@ -367,13 +367,13 @@ impl BlobClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        if let Some(if_match) = options.if_match {
+        if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match.to_string());
         }
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
-        if let Some(if_none_match) = options.if_none_match {
+        if let Some(if_none_match) = options.if_none_match.as_ref() {
             request.insert_header("if-none-match", if_none_match.to_string());
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
@@ -451,13 +451,13 @@ impl BlobClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Delete);
-        if let Some(if_match) = options.if_match {
+        if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match.to_string());
         }
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
-        if let Some(if_none_match) = options.if_none_match {
+        if let Some(if_none_match) = options.if_none_match.as_ref() {
             request.insert_header("if-none-match", if_none_match.to_string());
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
@@ -636,13 +636,13 @@ impl BlobClient {
         query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/octet-stream");
-        if let Some(if_match) = options.if_match {
+        if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match.to_string());
         }
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
-        if let Some(if_none_match) = options.if_none_match {
+        if let Some(if_none_match) = options.if_none_match.as_ref() {
             request.insert_header("if-none-match", if_none_match.to_string());
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
@@ -869,13 +869,13 @@ impl BlobClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Head);
-        if let Some(if_match) = options.if_match {
+        if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match.to_string());
         }
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
-        if let Some(if_none_match) = options.if_none_match {
+        if let Some(if_none_match) = options.if_none_match.as_ref() {
             request.insert_header("if-none-match", if_none_match.to_string());
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
@@ -943,7 +943,7 @@ impl BlobClient {
         query_builder.build();
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
-        if let Some(if_match) = options.if_match {
+        if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("x-ms-blob-if-match", if_match.to_string());
         }
         if let Some(if_modified_since) = options.if_modified_since {
@@ -952,7 +952,7 @@ impl BlobClient {
                 to_rfc7231(&if_modified_since),
             );
         }
-        if let Some(if_none_match) = options.if_none_match {
+        if let Some(if_none_match) = options.if_none_match.as_ref() {
             request.insert_header("x-ms-blob-if-none-match", if_none_match.to_string());
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
@@ -1033,13 +1033,13 @@ impl BlobClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        if let Some(if_match) = options.if_match {
+        if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match.to_string());
         }
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
-        if let Some(if_none_match) = options.if_none_match {
+        if let Some(if_none_match) = options.if_none_match.as_ref() {
             request.insert_header("if-none-match", if_none_match.to_string());
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
@@ -1120,13 +1120,13 @@ impl BlobClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        if let Some(if_match) = options.if_match {
+        if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match.to_string());
         }
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
-        if let Some(if_none_match) = options.if_none_match {
+        if let Some(if_none_match) = options.if_none_match.as_ref() {
             request.insert_header("if-none-match", if_none_match.to_string());
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
@@ -1277,13 +1277,13 @@ impl BlobClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        if let Some(if_match) = options.if_match {
+        if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match.to_string());
         }
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
-        if let Some(if_none_match) = options.if_none_match {
+        if let Some(if_none_match) = options.if_none_match.as_ref() {
             request.insert_header("if-none-match", if_none_match.to_string());
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
@@ -1350,13 +1350,13 @@ impl BlobClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
-        if let Some(if_match) = options.if_match {
+        if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("if-match", if_match.to_string());
         }
         if let Some(if_modified_since) = options.if_modified_since {
             request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
         }
-        if let Some(if_none_match) = options.if_none_match {
+        if let Some(if_none_match) = options.if_none_match.as_ref() {
             request.insert_header("if-none-match", if_none_match.to_string());
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {
@@ -1432,7 +1432,7 @@ impl BlobClient {
             request.insert_header("content-md5", base64::encode(transactional_content_md5));
         }
         request.insert_header("content-type", "application/xml");
-        if let Some(if_match) = options.if_match {
+        if let Some(if_match) = options.if_match.as_ref() {
             request.insert_header("x-ms-blob-if-match", if_match.to_string());
         }
         if let Some(if_modified_since) = options.if_modified_since {
@@ -1441,7 +1441,7 @@ impl BlobClient {
                 to_rfc7231(&if_modified_since),
             );
         }
-        if let Some(if_none_match) = options.if_none_match {
+        if let Some(if_none_match) = options.if_none_match.as_ref() {
             request.insert_header("x-ms-blob-if-none-match", if_none_match.to_string());
         }
         if let Some(if_unmodified_since) = options.if_unmodified_since {

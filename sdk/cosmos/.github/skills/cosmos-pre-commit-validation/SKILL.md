@@ -78,7 +78,7 @@ Follow these steps strictly:
    - **CI-gated tests**: Tests gated by `test_category` (e.g., emulator, multi-write) are always **compiled** but are **ignored at runtime** unless the corresponding cfg is set via `RUSTFLAGS`.
      This means `cargo check --tests` and `cargo test` will compile these tests without any special flags, so build errors are caught locally.
      `RUSTFLAGS` is only needed when you want to actually **run** the tests:
-     - `RUSTFLAGS='--cfg test_category="emulator"' cargo test -p azure_data_cosmos --features fault_injection,key_auth,allow_invalid_certificates --tests`
+     - `RUSTFLAGS='--cfg test_category="emulator"' cargo test -p azure_data_cosmos --features fault_injection,key_auth --tests`
      - `RUSTFLAGS='--cfg test_category="multi_write"' cargo test -p azure_data_cosmos --features fault_injection,key_auth --tests`
      On Windows (PowerShell), set the env var first: `$env:RUSTFLAGS='--cfg test_category="emulator"'` then run the `cargo test` command, and clear it afterwards with `$env:RUSTFLAGS=$null`.
      These tests require a live Cosmos DB emulator or multi-region account to run.
