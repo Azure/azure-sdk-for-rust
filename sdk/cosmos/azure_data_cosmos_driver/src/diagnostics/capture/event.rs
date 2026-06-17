@@ -207,7 +207,7 @@ pub struct Attr {
 
 /// The per-operation event log: two flat, append-only lists.
 ///
-/// See the [module docs](self) for the design. Build one with [`EventLog::new`] /
+/// See the module-level documentation for the design. Build one with [`EventLog::new`] /
 /// [`EventLog::with_capacity`] (or rent from a [`LogPool`](super::pool::LogPool)), append with the
 /// `push_*` / `attr_*` helpers on the hot path, and reconstruct on the cold path.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -339,7 +339,8 @@ impl EventLog {
         self.attr(span, key).and_then(AttrValue::as_str)
     }
 
-    /// Serializes the log into the compact binary form (a cold-path concern; see [`super::encode`]).
+    /// Serializes the log into the compact binary form (a cold-path concern; see the `encode`
+    /// submodule).
     pub fn to_compact_bytes(&self) -> Vec<u8> {
         super::encode::encode(self)
     }

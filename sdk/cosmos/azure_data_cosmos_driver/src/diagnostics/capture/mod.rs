@@ -4,20 +4,21 @@
 //! Deferred, threshold-gated diagnostics **capture** — the Cosmos driver's diagnostics engine.
 //!
 //! This module **owns** the canonical diagnostics model
-//! ([`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext) and its builder, in
-//! [`model`](self::model)) and provides a cheap, append-only, lock-free hot-path recorder plus an
+//! ([`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext) and its builder, in the `model`
+//! submodule) and provides a cheap, append-only, lock-free hot-path recorder plus an
 //! operation-end gate. The driver collects diagnostics by feeding the capture-owned builder, and
 //! the gate decides whether the resulting context is surfaced. There is one diagnostics model, not
 //! a parallel one; the model is re-exported from `crate::diagnostics` so the public boundary is
 //! unchanged.
 //!
 //! 1. **Hot path — append-only, pooled, lock-free.** Each operation rents one buffer from a
-//!    [`LogPool`] and a [`DiagnosticsRecorder`] appends a compact record per attempt / hedge leg.
-//!    Appends go through `&mut`, so there is no per-attempt lock and almost nothing is allocated
-//!    after pool warm-up.
+//!    [`LogPool`](crate::diagnostics::capture::LogPool) and a
+//!    [`DiagnosticsRecorder`](crate::diagnostics::capture::DiagnosticsRecorder) appends a compact
+//!    record per attempt / hedge leg. Appends go through `&mut`, so there is no per-attempt lock
+//!    and almost nothing is allocated after pool warm-up.
 //! 2. **Gate — decide at the end.** When the outcome and elapsed time are known, a
-//!    [`DiagnosticsPolicy`] decides whether to surface diagnostics. If not, the buffer goes back to
-//!    the pool — effectively free.
+//!    [`DiagnosticsPolicy`](crate::diagnostics::capture::DiagnosticsPolicy) decides whether to
+//!    surface diagnostics. If not, the buffer goes back to the pool — effectively free.
 //! 3. **Build — only when wanted.** Past the gate, the log is parsed once and replayed onto the
 //!    capture-owned `DiagnosticsContextBuilder` to produce a [`DiagnosticsContext`], mapping each
 //!    attempt to a [`RequestDiagnostics`](crate::diagnostics::RequestDiagnostics) (with the right
@@ -26,8 +27,9 @@
 //!    live driver path the pipeline feeds the same builder with the full rich data and true
 //!    wall-clock timing.
 //!
-//! The gate defaults to [`Mode::Always`] — diagnostics are produced out-of-the-box; set
-//! [`Mode::Threshold`] or [`Mode::Off`] via
+//! The gate defaults to [`Mode::Always`](crate::diagnostics::capture::Mode::Always) — diagnostics
+//! are produced out-of-the-box; set [`Mode::Threshold`](crate::diagnostics::capture::Mode::Threshold)
+//! or [`Mode::Off`](crate::diagnostics::capture::Mode::Off) via
 //! [`DriverOptionsBuilder::with_capture_diagnostics_policy`](crate::options::DriverOptionsBuilder)
 //! (via [`DriverOptions::builder`](crate::options::DriverOptions::builder)) to make the
 //! hot path cheaper.

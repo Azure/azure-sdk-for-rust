@@ -25,7 +25,8 @@ mod proxy_configuration;
 /// This module **owns** the canonical diagnostics model ([`DiagnosticsContext`] and its builder)
 /// and provides a cheap, append-only, lock-free hot-path recorder plus an operation-end gate
 /// (`Off` / `Threshold` / `Always`). The driver collects diagnostics by feeding the capture-owned
-/// [`DiagnosticsContextBuilder`]; the gate decides whether the resulting [`DiagnosticsContext`] is
+/// `DiagnosticsContextBuilder`; the gate decides whether the resulting
+/// [`DiagnosticsContext`](capture::DiagnosticsContext) is
 /// surfaced. The model is re-exported below so the public boundary (`diagnostics::DiagnosticsContext`,
 /// consumed by the `azure_data_cosmos` SDK) is unchanged. See `DIAGNOSTICS-CAPTURE.md`.
 pub mod capture;

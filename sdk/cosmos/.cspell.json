@@ -4,6 +4,7 @@
   ],
   "ignoreWords": [
     "accountname",
+    "aggregatable",
     "ALPN",
     "apacsoutheast",
     "Appleby's",
@@ -239,6 +240,9 @@
     "usseceast",
     "ussecwest",
     "ussecwestcentral",
+    "varint",
+    "varints",
+    "Vecs",
     "vnext",
     "westcentralus",
     "westeurope",
