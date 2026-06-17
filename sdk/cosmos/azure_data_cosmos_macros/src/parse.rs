@@ -244,7 +244,13 @@ fn parse_fields(data: &DataStruct) -> Result<Vec<OptionField>> {
             )
         })?;
 
-        let (env_var, merge, nested, overridable, parser) = parse_option_attrs(&field.attrs)?;
+        let ParsedOptionAttrs {
+            env_var,
+            merge,
+            nested,
+            overridable,
+            parser,
+        } = parse_option_attrs(&field.attrs)?;
 
         result.push(OptionField {
             ident,
@@ -261,15 +267,16 @@ fn parse_fields(data: &DataStruct) -> Result<Vec<OptionField>> {
     Ok(result)
 }
 
-fn parse_option_attrs(
-    attrs: &[syn::Attribute],
-) -> Result<(
-    Option<String>,
-    Option<String>,
-    bool,
-    bool,
-    Option<syn::Path>,
-)> {
+/// The parsed `#[option(...)]` field-level attributes for a single field.
+struct ParsedOptionAttrs {
+    env_var: Option<String>,
+    merge: Option<String>,
+    nested: bool,
+    overridable: bool,
+    parser: Option<syn::Path>,
+}
+
+fn parse_option_attrs(attrs: &[syn::Attribute]) -> Result<ParsedOptionAttrs> {
     let mut env_var = None;
     let mut merge = None;
     let mut nested = false;
@@ -346,7 +353,13 @@ fn parse_option_attrs(
         ));
     }
 
-    Ok((env_var, merge, nested, overridable, parser))
+    Ok(ParsedOptionAttrs {
+        env_var,
+        merge,
+        nested,
+        overridable,
+        parser,
+    })
 }
 
 /// Extracts the inner type `T` from `Option<T>`.
