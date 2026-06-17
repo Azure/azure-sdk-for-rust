@@ -16,8 +16,8 @@ use crate::{
     diagnostics::ProxyConfiguration,
     models::{normalize_wrapping_sdk_identifier, UserAgent},
     options::{
-        resolve_duration_ms, ConnectionPoolOptions, CorrelationId, DriverOptions, OperationOptions,
-        UserAgentSuffix, WorkloadId,
+        parse_duration_millis_from_env, ConnectionPoolOptions, CorrelationId, DriverOptions,
+        OperationOptions, UserAgentSuffix, WorkloadId,
     },
     system::{CpuMemoryMonitor, VmMetadataService},
 };
@@ -30,18 +30,6 @@ use super::{
     },
     CosmosDriver,
 };
-
-/// Internal env-var source for runtime-level scalar settings.
-///
-/// Part of the unified env-parsing model: env vars are read and parsed only by
-/// the `CosmosOptions`-generated `from_env()`. The runtime builder resolves the
-/// final value (`builder → env → default`) via `resolve_duration_ms`.
-#[derive(azure_data_cosmos_macros::CosmosOptions, Clone, Debug)]
-#[options(layers(runtime))]
-pub(crate) struct RuntimeEnvConfig {
-    #[option(env = "AZURE_COSMOS_CPU_REFRESH_INTERVAL_MS")]
-    pub(crate) cpu_refresh_interval_ms: Option<u64>,
-}
 
 /// The Cosmos DB driver runtime environment.
 ///
@@ -598,13 +586,12 @@ impl CosmosDriverRuntimeBuilder {
         // Initialize system monitoring singletons.
         // CpuMemoryMonitor starts a background thread on first call;
         // VmMetadataService makes a single IMDS request (or falls back to a UUID).
-        // The env value is read once via the `CosmosOptions`-generated
-        // `from_env()` (the single env-reading mechanism); `resolve_duration_ms`
-        // applies the `builder → env → default` resolution + bounds validation.
-        let runtime_env = RuntimeEnvConfig::from_env();
-        let refresh_interval = resolve_duration_ms(
+        // The CPU-refresh interval resolves `builder → env → default` (with
+        // bounds validation) through the same `parse_duration_millis_from_env`
+        // helper the driver-level option builders use (e.g.
+        // `PartitionFailoverOptions`), keeping every duration env var on one path.
+        let refresh_interval = parse_duration_millis_from_env(
             self.cpu_refresh_interval,
-            runtime_env.cpu_refresh_interval_ms,
             "AZURE_COSMOS_CPU_REFRESH_INTERVAL_MS",
             5_000,
             1_000,
@@ -662,20 +649,6 @@ mod tests {
     use super::*;
     use crate::models::AccountReference;
     use url::Url;
-
-    #[test]
-    fn runtime_env_config_from_env_vars_maps_name_to_field() {
-        // Guards against an env-var-name typo in `RuntimeEnvConfig`.
-        let cfg = RuntimeEnvConfig::from_env_vars(|key| match key {
-            "AZURE_COSMOS_CPU_REFRESH_INTERVAL_MS" => Ok("2500".to_string()),
-            _ => Err(std::env::VarError::NotPresent),
-        });
-        assert_eq!(cfg.cpu_refresh_interval_ms, Some(2500));
-
-        // Unset → None (falls back to the default at resolution time).
-        let unset = RuntimeEnvConfig::from_env_vars(|_| Err(std::env::VarError::NotPresent));
-        assert!(unset.cpu_refresh_interval_ms.is_none());
-    }
 
     #[tokio::test]
     async fn create_driver_propagates_initialization_failures() {

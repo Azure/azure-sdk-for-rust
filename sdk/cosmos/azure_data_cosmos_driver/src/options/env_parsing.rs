@@ -154,8 +154,15 @@ pub(crate) fn resolve_duration_ms(
     Ok(value)
 }
 
-/// Compatibility wrapper for call sites that still use the legacy helper name.
-pub(super) fn parse_duration_millis_from_env(
+/// Reads, resolves, and validates a millisecond-duration environment variable
+/// in a single call.
+///
+/// Reads `env_var_name` itself (parsing it as `u64` milliseconds), then applies
+/// the shared `builder → env → default` resolution and bounds validation. This
+/// is the single duration env-reading path shared by the driver-level option
+/// builders (e.g. [`PartitionFailoverOptions`](crate::options::PartitionFailoverOptions))
+/// and the runtime CPU-refresh interval.
+pub(crate) fn parse_duration_millis_from_env(
     builder_value: Option<Duration>,
     env_var_name: &str,
     default_millis: u64,
