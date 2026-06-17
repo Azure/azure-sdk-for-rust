@@ -1657,18 +1657,39 @@ impl CosmosDriver {
             return None;
         }
 
-        // Need both a container reference and a partition key.
+        // Need both a container reference and a target feed range.
         let container = operation.container()?;
-        let Some(partition_key) = operation.target().and_then(|t| t.partition_key()) else {
-            return None;
-        };
+        let target = operation.target()?;
 
-        self.pk_range_cache
-            .resolve_partition_key_range_id(container, partition_key, false, |c, cont| {
-                Box::pin(self.fetch_pk_ranges_from_service(c, cont))
-            })
-            .await
-            .map(PartitionKeyRangeId::from)
+        // Logical-partition-key targets resolve directly from the partition key.
+        if let Some(partition_key) = target.partition_key() {
+            return self
+                .pk_range_cache
+                .resolve_partition_key_range_id(container, partition_key, false, |c, cont| {
+                    Box::pin(self.fetch_pk_ranges_from_service(c, cont))
+                })
+                .await
+                .map(PartitionKeyRangeId::from);
+        }
+
+        // EPK-range feed ranges (e.g. `SELECT * FROM c` scoped to a single physical
+        // partition) carry no logical partition key. Resolve the owning physical
+        // partition by EPK range so PPCB/PPAF can attribute failures from the first
+        // attempt. Only seed when the range maps to exactly one physical partition.
+        let ranges = self
+            .pk_range_cache
+            .resolve_overlapping_ranges(
+                container,
+                target.min_inclusive()..target.max_exclusive(),
+                false,
+                |c, cont| Box::pin(self.fetch_pk_ranges_from_service(c, cont)),
+            )
+            .await?;
+
+        match ranges.as_slice() {
+            [single] => Some(PartitionKeyRangeId::from(single.id.clone())),
+            _ => None,
+        }
     }
 
     /// Executes a Cosmos DB operation.
