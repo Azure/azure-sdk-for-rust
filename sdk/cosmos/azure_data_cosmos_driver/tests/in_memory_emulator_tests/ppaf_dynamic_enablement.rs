@@ -28,11 +28,14 @@ use std::time::Duration;
 
 use azure_core::http::Url;
 
-use azure_data_cosmos_driver::in_memory_emulator::{
-    ConsistencyLevel, InMemoryEmulatorHttpClient, VirtualAccountConfig, VirtualRegion,
-};
 use azure_data_cosmos_driver::models::{AccountReference, CosmosOperation, DatabaseReference};
 use azure_data_cosmos_driver::options::OperationOptions;
+use azure_data_cosmos_driver::{
+    in_memory_emulator::{
+        ConsistencyLevel, InMemoryEmulatorHttpClient, VirtualAccountConfig, VirtualRegion,
+    },
+    DriverOptions,
+};
 
 const GATEWAY_URL: &str = "https://eastus.emulator.local";
 
@@ -94,7 +97,7 @@ async fn ppaf_picks_up_runtime_enable_after_background_refresh() {
         .expect("runtime should build");
 
     let driver = runtime
-        .get_or_create_driver(account(), None)
+        .create_driver(DriverOptions::builder(account()).build())
         .await
         .expect("driver should initialize against the in-memory emulator");
 

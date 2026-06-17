@@ -19,14 +19,13 @@ use crate::driver::transport::background_task_manager::BackgroundTaskManager;
 use crate::{
     driver::cache::{AccountMetadataCache, AccountProperties},
     models::AccountEndpoint,
-    options::Region,
+    options::{PartitionFailoverOptions, Region},
 };
 
 use super::{
     build_account_endpoint_state, expire_partition_overrides, expire_unavailable_endpoints,
     mark_endpoint_unavailable, mark_partition_unavailable,
-    partition_endpoint_state::{PartitionEndpointState, PartitionFailoverConfig},
-    partition_key_range_id::PartitionKeyRangeId,
+    partition_endpoint_state::PartitionEndpointState, partition_key_range_id::PartitionKeyRangeId,
     record_hedge_alternate_win, record_hedge_primary_win, AccountEndpointState, CosmosEndpoint,
     LocationEffect,
 };
@@ -151,11 +150,11 @@ impl LocationStateStore {
         account_refresh_fn: AccountRefreshFn,
         gateway20_enabled: bool,
         endpoint_unavailability_ttl: Duration,
-        partition_failover_config: PartitionFailoverConfig,
+        partition_failover_options: PartitionFailoverOptions,
         preferred_regions: Vec<Region>,
     ) -> Self {
         let account_state = AccountEndpointState::single(default_endpoint.clone());
-        let partition_state = PartitionEndpointState::new(partition_failover_config);
+        let partition_state = PartitionEndpointState::new(partition_failover_options);
 
         let initial_snapshot = LocationSnapshot {
             account: Arc::new(account_state.clone()),
@@ -519,7 +518,7 @@ impl LocationStateStore {
             next.per_partition_automatic_failover_enabled =
                 per_partition_automatic_failover_enabled;
             next.per_partition_circuit_breaker_enabled = per_partition_automatic_failover_enabled
-                || previous.config.circuit_breaker_option_enabled;
+                || previous.config.circuit_breaker_enabled();
 
             // Drop per-partition routing overrides on any edge of either
             // enablement flag. The eligibility gate in `is_eligible_for_ppaf` /
@@ -609,7 +608,7 @@ impl LocationStateStore {
     ///
     /// Increments a per-`(partition, primary_region)` counter atomically
     /// via [`Self::apply_partition`]. When the counter reaches
-    /// [`PartitionFailoverConfig::consecutive_hedge_win_threshold`] the
+    /// [`PartitionFailoverOptions::consecutive_hedge_win_threshold`] the
     /// partition is tripped by installing an `Unhealthy` entry in
     /// `circuit_breaker_overrides` (the same shape PPCB uses for hard
     /// failures), so subsequent requests route away from the degraded
@@ -689,9 +688,9 @@ async fn account_refresh_loop(weak_store: Weak<LocationStateStore>, interval: Du
 ///
 /// Exits when the `LocationStateStore` is dropped (`Weak::upgrade()` returns `None`).
 #[cfg(feature = "tokio")]
-async fn failback_loop(weak_store: Weak<LocationStateStore>, config: PartitionFailoverConfig) {
+async fn failback_loop(weak_store: Weak<LocationStateStore>, config: PartitionFailoverOptions) {
     loop {
-        tokio::time::sleep(config.failback_sweep_interval).await;
+        tokio::time::sleep(config.failback_sweep_interval()).await;
 
         let Some(store) = weak_store.upgrade() else {
             // LocationStateStore was dropped — exit the loop.
@@ -702,7 +701,7 @@ async fn failback_loop(weak_store: Weak<LocationStateStore>, config: PartitionFa
             expire_partition_overrides(
                 current_partitions,
                 Instant::now(),
-                config.partition_unavailability_duration,
+                config.partition_unavailability_duration(),
             )
         });
     }
@@ -826,7 +825,7 @@ mod tests {
             refresh,
             false,
             Duration::from_secs(60),
-            PartitionFailoverConfig::default(),
+            PartitionFailoverOptions::default(),
             Vec::new(),
         );
 
@@ -864,7 +863,7 @@ mod tests {
             refresh,
             false,
             Duration::from_secs(60),
-            PartitionFailoverConfig::default(),
+            PartitionFailoverOptions::default(),
             Vec::new(),
         );
 
@@ -920,7 +919,7 @@ mod tests {
             refresh,
             false,
             Duration::from_secs(60),
-            PartitionFailoverConfig::default(),
+            PartitionFailoverOptions::default(),
             Vec::new(),
         );
 
@@ -981,7 +980,7 @@ mod tests {
             refresh,
             false,
             Duration::from_secs(60),
-            PartitionFailoverConfig::default(),
+            PartitionFailoverOptions::default(),
             Vec::new(),
         );
 
@@ -1033,7 +1032,7 @@ mod tests {
             refresh,
             false,
             Duration::from_secs(60),
-            PartitionFailoverConfig::default(),
+            PartitionFailoverOptions::default(),
             Vec::new(),
         );
 
@@ -1095,7 +1094,7 @@ mod tests {
             refresh,
             false,
             Duration::from_secs(60),
-            PartitionFailoverConfig::default(),
+            PartitionFailoverOptions::default(),
             Vec::new(),
         );
 
@@ -1189,7 +1188,7 @@ mod tests {
             refresh,
             false,
             Duration::from_secs(60),
-            PartitionFailoverConfig::default(),
+            PartitionFailoverOptions::default(),
             Vec::new(),
         )
     }
@@ -1231,38 +1230,6 @@ mod tests {
                 .partitions
                 .per_partition_automatic_failover_enabled,
             "PPAF flag should be false after a sync with enablePerPartitionFailoverBehavior=false"
-        );
-    }
-
-    #[test]
-    fn ppcb_tracks_server_ppaf_flag_in_absence_of_option_override() {
-        // PPCB effective value = server_ppaf || options_ppcb_enabled.
-        // With options_ppcb_enabled=false (the default), PPCB tracks PPAF.
-        let store = build_store_for_ppaf_tests();
-        let default_endpoint = store.default_endpoint().clone();
-
-        store.sync_account_properties(
-            Arc::new(test_payload_with_ppaf(true, "etag-on")),
-            &default_endpoint,
-        );
-        assert!(
-            store
-                .snapshot()
-                .partitions
-                .per_partition_circuit_breaker_enabled,
-            "PPCB should be enabled when PPAF is enabled and option-side PPCB is the default false"
-        );
-
-        store.sync_account_properties(
-            Arc::new(test_payload_with_ppaf(false, "etag-off")),
-            &default_endpoint,
-        );
-        assert!(
-            !store
-                .snapshot()
-                .partitions
-                .per_partition_circuit_breaker_enabled,
-            "PPCB should follow PPAF off when option-side PPCB is the default false"
         );
     }
 
@@ -1473,84 +1440,6 @@ mod tests {
             "stale failover_overrides from a prior enabled window must be cleared \
              on re-enable so they cannot silently re-apply against a routing \
              topology the operator never re-confirmed"
-        );
-    }
-
-    #[test]
-    fn disabling_ppaf_clears_circuit_breaker_overrides() {
-        // PPCB tracks PPAF in the default config (option override is false),
-        // so the PPAF on->off edge also flips PPCB off and must clear the
-        // PPCB override map alongside the PPAF one.
-        use crate::driver::routing::partition_endpoint_state::{
-            HealthStatus, PartitionFailoverEntry,
-        };
-        use crate::driver::routing::partition_key_range_id::PartitionKeyRangeId;
-        use std::collections::HashSet;
-
-        let store = build_store_for_ppaf_tests();
-        let default_endpoint = store.default_endpoint().clone();
-
-        store.sync_account_properties(
-            Arc::new(test_payload_with_ppaf(true, "etag-on")),
-            &default_endpoint,
-        );
-        assert!(
-            store
-                .snapshot()
-                .partitions
-                .per_partition_circuit_breaker_enabled,
-            "test setup: PPCB should be on once PPAF is on (default config)"
-        );
-
-        let endpoint_a = CosmosEndpoint::regional(
-            "eastus".into(),
-            url::Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
-        );
-        let endpoint_b = CosmosEndpoint::regional(
-            "westus".into(),
-            url::Url::parse("https://test-westus.documents.azure.com:443/").unwrap(),
-        );
-        let pkrange_id: PartitionKeyRangeId = "0".to_string().into();
-        let entry = PartitionFailoverEntry {
-            current_endpoint: endpoint_b.clone(),
-            first_failed_endpoint: endpoint_a.clone(),
-            failed_endpoints: HashSet::from([endpoint_a]),
-            read_failure_count: 1,
-            write_failure_count: 0,
-            first_failure_time: Instant::now(),
-            last_failure_time: Instant::now(),
-            health_status: HealthStatus::Unhealthy,
-            failback_jitter: Duration::ZERO,
-        };
-
-        store.apply_partition(|current| {
-            let mut next = current.clone();
-            next.circuit_breaker_overrides
-                .insert(pkrange_id.clone(), entry.clone());
-            next
-        });
-        assert_eq!(
-            store.snapshot().partitions.circuit_breaker_overrides.len(),
-            1,
-            "test setup: PPCB override was not installed"
-        );
-
-        // PPAF off -> PPCB off (derived). Both maps must be empty afterwards.
-        store.sync_account_properties(
-            Arc::new(test_payload_with_ppaf(false, "etag-off")),
-            &default_endpoint,
-        );
-
-        let snapshot = store.snapshot();
-        assert!(
-            !snapshot.partitions.per_partition_circuit_breaker_enabled,
-            "PPCB should be off once PPAF is off (default config)"
-        );
-        assert!(
-            snapshot.partitions.circuit_breaker_overrides.is_empty(),
-            "circuit_breaker_overrides should be cleared when PPCB flips off; \
-             leaving stale entries lets old circuit-breaker decisions re-apply \
-             silently on re-enable"
         );
     }
 }

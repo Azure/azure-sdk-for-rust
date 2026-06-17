@@ -17,6 +17,7 @@ pub use error::{CosmosError, CosmosStatus, Result, SubStatusCode};
 pub use feed::{FeedScope, Query};
 pub use models::{PartitionKey, TransactionalBatch};
 pub use options::RoutingStrategy;
+pub use runtime::{CosmosRuntime, CosmosRuntimeBuilder};
 
 // =========================================================================
 // Public modules
@@ -41,6 +42,7 @@ mod constants;
 mod credential;
 mod driver_bridge;
 mod region_proximity;
+mod runtime;
 mod session_helpers;
 
 // =========================================================================

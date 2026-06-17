@@ -11,8 +11,8 @@ use azure_data_cosmos::models::ContainerProperties;
 use azure_data_cosmos::options::BatchOptions;
 use azure_data_cosmos::options::{ContentResponseOnWrite, OperationOptions};
 use azure_data_cosmos::TransactionalBatch;
-use framework::TestClient;
 use framework::TestRunContext;
+use framework::{TestClient, TestOptions};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 
@@ -101,7 +101,7 @@ pub async fn batch_create_and_read() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -182,7 +182,7 @@ pub async fn batch_mixed_operations() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -242,7 +242,7 @@ pub async fn batch_atomicity_on_failure() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -288,7 +288,7 @@ pub async fn batch_fails_when_exceeding_max_operations() -> Result<(), Box<dyn E
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -341,7 +341,7 @@ pub async fn batch_fails_when_exceeding_max_payload_size() -> Result<(), Box<dyn
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }

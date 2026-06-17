@@ -216,22 +216,16 @@ impl CosmosTransport {
         self.negotiated_version
     }
 
-    /// Determines if insecure emulator transport should be used for the given endpoint.
-    ///
-    /// Returns `true` when both conditions are met:
-    /// - Emulator server certificate validation is disabled
-    /// - The endpoint is a known emulator host (localhost, 127.0.0.1)
-    fn should_use_insecure_emulator_transport(&self, endpoint: &AccountEndpoint) -> bool {
-        bool::from(self.connection_pool.emulator_server_cert_validation())
-            && is_emulator_host(endpoint)
-    }
-
     /// Returns the transport for metadata operations.
     pub(crate) fn get_metadata_transport(
         &self,
         endpoint: &AccountEndpoint,
     ) -> crate::error::Result<AdaptiveTransport> {
-        let transport = if self.should_use_insecure_emulator_transport(endpoint) {
+        let transport = if self
+            .connection_pool
+            .server_certificate_validation()
+            .allows_insecure_connection(endpoint)
+        {
             match self.insecure_emulator_metadata_transport.get() {
                 Some(t) => t.clone(),
                 None => {
@@ -260,7 +254,11 @@ impl CosmosTransport {
         endpoint: &AccountEndpoint,
         transport_mode: TransportMode,
     ) -> crate::error::Result<AdaptiveTransport> {
-        if self.should_use_insecure_emulator_transport(endpoint) {
+        if self
+            .connection_pool
+            .server_certificate_validation()
+            .allows_insecure_connection(endpoint)
+        {
             let transport = match self.insecure_emulator_dataplane_transport.get() {
                 Some(t) => t.clone(),
                 None => {
@@ -308,45 +306,7 @@ pub(crate) mod tests {
     use super::*;
     use crate::diagnostics::TransportHttpVersion;
     use crate::driver::pipeline::components::TransportMode;
-    use crate::options::{ConnectionPoolOptionsBuilder, EmulatorServerCertValidation};
-
-    #[test]
-    fn transport_creates_with_http2() {
-        let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
-        let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http2).unwrap();
-
-        let endpoint =
-            AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
-        assert!(!transport.should_use_insecure_emulator_transport(&endpoint));
-    }
-
-    #[test]
-    fn transport_detects_emulator_when_disabled() {
-        let pool = ConnectionPoolOptionsBuilder::new()
-            .with_emulator_server_cert_validation(EmulatorServerCertValidation::DangerousDisabled)
-            .build()
-            .unwrap();
-        let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http2).unwrap();
-
-        let endpoint = AccountEndpoint::try_from("https://localhost:8081/").unwrap();
-        assert!(transport.should_use_insecure_emulator_transport(&endpoint));
-
-        let endpoint = AccountEndpoint::try_from("https://127.0.0.1:8081/").unwrap();
-        assert!(transport.should_use_insecure_emulator_transport(&endpoint));
-
-        let endpoint =
-            AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
-        assert!(!transport.should_use_insecure_emulator_transport(&endpoint));
-    }
-
-    #[test]
-    fn transport_ignores_emulator_hosts_when_validation_enabled() {
-        let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
-        let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http2).unwrap();
-
-        let endpoint = AccountEndpoint::try_from("https://localhost:8081/").unwrap();
-        assert!(!transport.should_use_insecure_emulator_transport(&endpoint));
-    }
+    use crate::options::ConnectionPoolOptionsBuilder;
 
     #[test]
     fn metadata_transport_is_sharded_when_http2_negotiated() {

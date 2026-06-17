@@ -163,9 +163,6 @@ impl fmt::Display for CorrelationId {
 /// Limited to 25 characters and must contain only HTTP header-safe characters
 /// (alphanumeric, hyphen, underscore, dot, tilde).
 ///
-/// If [`CorrelationId`] is not set, this suffix is used as the correlation
-/// dimension for client-side metrics.
-///
 /// # Server-Side Enforcement
 ///
 /// The Cosmos DB service enforces cardinality limits on user agent suffixes

@@ -47,7 +47,7 @@ flowchart TD
     Op["<b>CosmosOperation</b><br/>(Built via factory methods)<br/>CosmosOperation::create(resource_ref)<br/>CosmosOperation::read(resource_ref)<br/>CosmosOperation::query(resource_ref)<br/>etc."]
     Ref["<b>CosmosResourceReference</b><br/>(Typed resource targeting)<br/>Built from typed references:<br/>• ContainerReference::from_name(...)<br/>• ItemReference::from_name(...)<br/>• DatabaseReference::from_name(...)"]
     Resp["<b>CosmosResponse</b><br/>(Response with diagnostics)<br/>• response_bytes: Vec&lt;u8&gt;<br/>• headers: ResponseHeaders<br/>• diagnostics: CosmosDiagnostics"]
-    Runtime -- "get_or_create_driver()" --> Driver
+    Runtime -- "create_driver()" --> Driver
     Driver -- "execute_operation()" --> Op
     Op --> Ref
     Ref --> Resp
@@ -151,7 +151,7 @@ async fn main() -> azure_data_cosmos_driver::error::Result<()> {
     );
 
     // Get or create driver for this account
-    let driver = runtime.get_or_create_driver(account.clone(), None).await?;
+    let driver = runtime.create_driver(DriverOptions::builder(account.clone()).build()).await?;
 
     // Create a JSON document payload
     let document_json = r#"{
@@ -247,7 +247,7 @@ async fn main() -> azure_data_cosmos_driver::error::Result<()> {
         )
         .build();
 
-    let driver = runtime.get_or_create_driver(account.clone(), Some(driver_opts)).await?;
+    let driver = runtime.create_driver(driver_opts).await?;
 
     // Read an existing document using typed references
     let item_ref = ItemReference::from_name(
@@ -837,7 +837,7 @@ let runtime = Arc::new(CosmosDriverRuntime::builder().build().await?);
 // Share across request handlers
 let runtime_clone = runtime.clone();
 tokio::spawn(async move {
-    let driver = runtime_clone.get_or_create_driver(account, None).await?;
+    let driver = runtime_clone.create_driver(DriverOptions::builder(account).build()).await?;
     // ... use driver
 });
 ```
@@ -847,7 +847,10 @@ tokio::spawn(async move {
 ## Performance Considerations
 
 1. **Runtime is expensive to create** - create once, reuse globally
-2. **Driver is cached per-account** - `get_or_create_driver` returns existing instance
+2. **Driver is cheap, but not cached** - `create_driver` builds a fresh `CosmosDriver` per call;
+   consumers (such as the SDK's `CosmosClient`) are responsible for any sharing they want.
+   Sharing typically happens at the runtime layer: many drivers can share a single
+   `CosmosDriverRuntime` (and its connection pool, background tasks, etc.).
 3. **Connection pooling is automatic** - configured via `ConnectionPoolOptions`
 4. **Retries have backoff** - exponential with jitter, configurable limits
 5. **Diagnostics are always collected** - no runtime cost to enable

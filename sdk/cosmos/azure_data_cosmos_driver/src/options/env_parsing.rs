@@ -127,10 +127,7 @@ where
                 ))
                 .with_message(format!(
                     "{} must be at least {:?}, got {:?}",
-                    env_var_name
-                        .strip_prefix("AZURE_COSMOS_CONNECTION_POOL_")
-                        .unwrap_or(env_var_name)
-                        .to_lowercase(),
+                    short_field_name(env_var_name),
                     min,
                     value
                 ))
@@ -146,10 +143,7 @@ where
                 ))
                 .with_message(format!(
                     "{} must be at most {:?}, got {:?}",
-                    env_var_name
-                        .strip_prefix("AZURE_COSMOS_CONNECTION_POOL_")
-                        .unwrap_or(env_var_name)
-                        .to_lowercase(),
+                    short_field_name(env_var_name),
                     max,
                     value
                 ))
@@ -158,6 +152,17 @@ where
     }
 
     Ok(value)
+}
+
+/// Strips well-known `AZURE_COSMOS_*_` group prefixes from `env_var_name` and
+/// lowercases the remainder, producing a short field-style name suitable for
+/// inclusion in user-facing validation error messages.
+fn short_field_name(env_var_name: &str) -> String {
+    env_var_name
+        .strip_prefix("AZURE_COSMOS_CONNECTION_POOL_")
+        .or_else(|| env_var_name.strip_prefix("AZURE_COSMOS_PPCB_"))
+        .unwrap_or(env_var_name)
+        .to_lowercase()
 }
 
 /// Parses a duration from an environment variable (in milliseconds) with validation.
@@ -206,10 +211,7 @@ fn validate_duration_bounds(
     let value_millis = value.as_millis();
     let min = u128::from(min_millis);
     let max = u128::from(max_millis);
-    let field_name = env_var_name
-        .strip_prefix("AZURE_COSMOS_CONNECTION_POOL_")
-        .unwrap_or(env_var_name)
-        .to_lowercase();
+    let field_name = short_field_name(env_var_name);
 
     if value_millis < min {
         return Err(crate::error::CosmosError::builder()

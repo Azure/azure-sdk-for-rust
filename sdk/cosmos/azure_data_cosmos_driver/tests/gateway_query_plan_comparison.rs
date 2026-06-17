@@ -32,6 +32,7 @@ use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
 use azure_data_cosmos_driver::models::{
     ContainerReference, CosmosOperation, PartitionKeyDefinition,
 };
+use azure_data_cosmos_driver::options::DriverOptions;
 use azure_data_cosmos_driver::options::OperationOptions;
 use azure_data_cosmos_driver::CosmosDriver;
 
@@ -46,7 +47,10 @@ async fn build_driver() -> Option<Arc<CosmosDriver>> {
         .build()
         .await
         .ok()?;
-    let driver = runtime.get_or_create_driver(env.account, None).await.ok()?;
+    let driver = runtime
+        .create_driver(DriverOptions::builder(env.account).build())
+        .await
+        .ok()?;
     Some(driver)
 }
 
