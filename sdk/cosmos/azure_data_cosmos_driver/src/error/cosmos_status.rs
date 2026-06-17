@@ -515,6 +515,7 @@ impl SubStatusCode {
             20303 => Some("ServiceReturnedOfferWithoutId"),
             20304 => Some("ClientThroughputPollerIncomplete"),
             20305 => Some("ClientTopologyResolutionFailed"),
+            20306 => Some("ServiceReturnedDatabaseWithoutRid"),
 
             // SDK Server-side codes (21xxx) - consistent across .NET and Java
             21001 => Some("NameCacheIsStaleExceededRetryLimit"),
@@ -1416,6 +1417,12 @@ impl SubStatusCode {
     /// has no routing information for the operation. Paired with HTTP
     /// 503 — an internal client-side condition, not a transport failure.
     pub const CLIENT_TOPOLOGY_RESOLUTION_FAILED: SubStatusCode = SubStatusCode(20305);
+
+    /// The service returned a database resource with no `_rid` system
+    /// property (20306). A broken server invariant — the SDK needs the
+    /// `_rid` to address the database by RID for follow-up operations.
+    /// Paired with HTTP 500.
+    pub const SERVICE_RETURNED_DATABASE_WITHOUT_RID: SubStatusCode = SubStatusCode(20306);
 }
 
 impl Default for SubStatusCode {
@@ -2185,6 +2192,14 @@ impl CosmosStatus {
     pub const SERVICE_RETURNED_OFFER_WITHOUT_ID: CosmosStatus = CosmosStatus {
         status_code: StatusCode::InternalServerError,
         sub_status: Some(SubStatusCode::SERVICE_RETURNED_OFFER_WITHOUT_ID),
+    };
+
+    /// 500 / 20306 — the service returned a database without a `_rid`
+    /// system property, so the SDK cannot resolve the database's RID for
+    /// RID-addressed follow-up operations.
+    pub const SERVICE_RETURNED_DATABASE_WITHOUT_RID: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::SERVICE_RETURNED_DATABASE_WITHOUT_RID),
     };
 
     /// 408 / 20304 — the async throughput-replace poller's underlying

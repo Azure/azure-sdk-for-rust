@@ -244,10 +244,15 @@ impl DatabaseClient {
             return Ok(rid.as_str().to_owned());
         }
         let db = self.read(None).await?.into_model()?;
-        Ok(db
-            .system_properties
-            .resource_id
-            .expect("service should always return a '_rid' for a database"))
+        db.system_properties.resource_id.ok_or_else(|| {
+            azure_data_cosmos_driver::error::CosmosError::builder()
+                .with_status(
+                    azure_data_cosmos_driver::error::CosmosStatus::SERVICE_RETURNED_DATABASE_WITHOUT_RID,
+                )
+                .with_message("the service returned the database without a '_rid' system property")
+                .build()
+                .into()
+        })
     }
 
     /// Reads database throughput properties, if any.

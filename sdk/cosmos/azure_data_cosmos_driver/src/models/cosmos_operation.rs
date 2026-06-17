@@ -454,6 +454,13 @@ impl CosmosOperation {
         database: DatabaseReference,
         container_rid: impl Into<std::borrow::Cow<'static, str>>,
     ) -> Self {
+        debug_assert!(
+            database.rid().is_some(),
+            "read_container_by_rid requires a RID-based DatabaseReference so the \
+             request path is fully RID-based (/dbs/{{db_rid}}/colls/{{container_rid}}); \
+             a name-based database would produce a mixed name/RID path that signs and \
+             routes inconsistently"
+        );
         let resource_ref: CosmosResourceReference = CosmosResourceReference::from(database)
             .with_resource_type(ResourceType::DocumentCollection)
             .with_rid(container_rid.into());

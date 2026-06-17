@@ -382,8 +382,12 @@ impl CosmosResourceReference {
     ///
     /// Under the no-mix addressing rule a RID database implies a RID container,
     /// so checking the container and database covers database, container, and
-    /// item operations. Offers are handled separately and are not considered
-    /// RID-addressed for path-encoding purposes.
+    /// item operations. The leaf `id` is also checked so the raw-path decision
+    /// can never diverge from [`rid_signing_override`](Self::rid_signing_override),
+    /// which signs over the leaf RID when `id` carries one: a request signed as
+    /// RID-based must always be routed RID-based (raw), otherwise the gateway
+    /// rejects it with an opaque `401`. Offers are handled separately and are
+    /// not considered RID-addressed for path-encoding purposes.
     fn is_rid_addressed(&self) -> bool {
         if let Some(ref container) = self.container {
             if container.is_by_rid() {
@@ -394,6 +398,9 @@ impl CosmosResourceReference {
             if db.is_by_rid() {
                 return true;
             }
+        }
+        if self.id.as_ref().and_then(|id| id.rid()).is_some() {
+            return true;
         }
         false
     }
@@ -1052,6 +1059,23 @@ mod tests {
         let paths = r.compute_paths();
         assert_eq!(paths.request_path(), "/dbs/Lx1BAA==/colls/Lx1BALxJyZ8=");
         assert_eq!(paths.signing_link(), "lx1balxjyz8=");
+        assert!(paths.is_rid_based());
+    }
+
+    #[test]
+    fn leaf_rid_forces_raw_path_even_under_name_parent() {
+        // Regression guard for the raw-path/signing invariant: whenever the
+        // signing override is a leaf RID (carried by `id`), the path must also
+        // be sent raw. If `is_rid_based()` only inspected the parent, this shape
+        // would be signed RID-based but routed name-encoded -> opaque 401.
+        let db = DatabaseReference::from_name(test_account(), "testdb");
+        let r = CosmosResourceReference::from(db)
+            .with_resource_type(ResourceType::DocumentCollection)
+            .with_rid("Lx1BALxJyZ8=".into());
+        let paths = r.compute_paths();
+        // Signed over the lowercased leaf RID...
+        assert_eq!(paths.signing_link(), "lx1balxjyz8=");
+        // ...so the path must be raw to match.
         assert!(paths.is_rid_based());
     }
 
