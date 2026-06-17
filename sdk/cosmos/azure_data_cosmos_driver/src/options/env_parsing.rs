@@ -3,11 +3,15 @@
 
 //! Resolution and validation helpers for option groups.
 //!
-//! Environment variables are read and parsed exclusively by the
-//! `CosmosOptions` derive macro's generated `from_env()` (the single
-//! env-reading mechanism). The helpers here only resolve a final value from
+//! Most environment variables are read and parsed by the `CosmosOptions`
+//! derive macro's generated `from_env()`/`from_env_vars()`; the `resolve_*`
+//! helpers here only resolve a final value from
 //! `builder override → pre-read env value → default` and validate it against
-//! bounds — they never call `std::env::var` themselves.
+//! bounds. A few driver-level helpers (`parse_duration_millis_from_env`,
+//! `parse_from_env`, `parse_optional_bool_from_env`) additionally read
+//! `std::env::var` directly for option builders that are not macro-generated;
+//! like the macro, they log and ignore a present-but-unparseable value
+//! (fail-soft) rather than erroring.
 
 use std::time::Duration;
 
@@ -169,9 +173,19 @@ pub(crate) fn parse_duration_millis_from_env(
     min_millis: u64,
     max_millis: u64,
 ) -> crate::error::Result<Duration> {
-    let env_millis = std::env::var(env_var_name)
-        .ok()
-        .and_then(|raw| raw.parse::<u64>().ok());
+    let env_millis = std::env::var(env_var_name).ok().and_then(|raw| {
+        raw.parse::<u64>().ok().or_else(|| {
+            // Fail-soft: a present-but-unparseable value is logged and ignored
+            // (falls back to the default), matching the macro's lenient
+            // env-parsing behavior.
+            tracing::warn!(
+                env_var = env_var_name,
+                value = %raw,
+                "failed to parse millisecond duration from environment variable; ignoring",
+            );
+            None
+        })
+    });
 
     resolve_duration_ms(
         builder_value,
@@ -193,9 +207,19 @@ pub(super) fn parse_from_env<T>(
 where
     T: PartialOrd + std::fmt::Debug + std::str::FromStr,
 {
-    let env_value = std::env::var(env_var_name)
-        .ok()
-        .and_then(|raw| raw.parse::<T>().ok());
+    let env_value = std::env::var(env_var_name).ok().and_then(|raw| {
+        raw.parse::<T>().ok().or_else(|| {
+            // Fail-soft: a present-but-unparseable value is logged and ignored
+            // (falls back to the default), matching the macro's lenient
+            // env-parsing behavior.
+            tracing::warn!(
+                env_var = env_var_name,
+                value = %raw,
+                "failed to parse environment variable; ignoring",
+            );
+            None
+        })
+    });
     resolve_from_env(builder_value, env_value, env_var_name, default, bounds)
 }
 
