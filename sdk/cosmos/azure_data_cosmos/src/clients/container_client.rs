@@ -837,15 +837,14 @@ impl ContainerClient {
         if let Some(hint) = options.feed.max_item_count {
             initial_operation = initial_operation.with_max_item_count(hint);
         }
+        let plan_options = azure_data_cosmos_driver::PlanOptions {
+            continuation: options.feed.continuation_token,
+            max_fan_out: options.feed.max_fan_out,
+        };
         let plan = self
             .context
             .driver
-            .plan_operation(
-                initial_operation,
-                &options.operation,
-                options.feed.continuation_token.as_ref(),
-                options.feed.max_fan_out,
-            )
+            .plan_operation(initial_operation, &options.operation, Some(plan_options))
             .await?;
         Ok(QueryItemIterator::new(
             self.context.driver.clone(),

@@ -16,12 +16,14 @@ mod cosmos_driver;
 pub(crate) mod dataflow;
 pub(crate) mod jitter;
 pub(crate) mod pipeline;
+mod plan_options;
 pub(crate) mod routing;
 mod runtime;
 pub(crate) mod transport;
 
 pub use cosmos_driver::CosmosDriver;
 pub use dataflow::OperationPlan;
+pub use plan_options::PlanOptions;
 pub use runtime::{CosmosDriverRuntime, CosmosDriverRuntimeBuilder};
 
 /// Walks an error's `.source()` chain and joins all distinct messages into a
