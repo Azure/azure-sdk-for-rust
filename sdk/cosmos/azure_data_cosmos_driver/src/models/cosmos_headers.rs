@@ -45,11 +45,9 @@ pub(crate) mod request_header_names {
     pub const SUPPORTED_QUERY_FEATURES: &str = "x-ms-cosmos-supported-query-features";
     pub const IS_UPSERT: &str = "x-ms-documentdb-is-upsert";
     pub const MAX_ITEM_COUNT: &str = "x-ms-max-item-count";
-    /// Change-feed indicator ("Incremental feed"). HTTP standard name `a-im`.
+    /// Change-feed indicator ("Incremental Feed"). HTTP standard name `a-im`.
     pub const A_IM: &str = "a-im";
-    pub const INCREMENTAL_FEED: &str = "Incremental feed";
-    /// Full-fidelity change feed indicator (`A-IM: Full-Fidelity Feed`).
-    pub const FULL_FIDELITY_FEED: &str = "Full-Fidelity Feed";
+    pub const INCREMENTAL_FEED: &str = "Incremental Feed";
     /// Wire format version for change feed responses.
     pub const CHANGEFEED_WIRE_FORMAT_VERSION: &str = "x-ms-cosmos-changefeed-wire-format-version";
     /// The wire format version value used by this SDK.
@@ -170,7 +168,7 @@ pub struct CosmosRequestHeaders {
     /// represented by [`MaxItemCountHint::ServerDecides`].
     pub max_item_count: Option<MaxItemCountHint>,
 
-    /// Requests an incremental change feed read (`a-im: Incremental feed`).
+    /// Requests an incremental change feed read (`a-im: Incremental Feed`).
     ///
     /// When `true`, the driver emits the standard change-feed indicator
     /// header. Combine with [`Precondition::if_none_match`] to pass a
@@ -180,7 +178,7 @@ pub struct CosmosRequestHeaders {
     /// When `true`, emits the change-feed wire format version header
     /// (`x-ms-cosmos-changefeed-wire-format-version: 2021-09-15`).
     ///
-    /// Required for both LatestVersion and AllVersionsAndDeletes modes.
+    /// Required for LatestVersion mode (and future modes).
     pub changefeed_wire_format_version: bool,
 
     /// If-Modified-Since timestamp for change feed point-in-time start.

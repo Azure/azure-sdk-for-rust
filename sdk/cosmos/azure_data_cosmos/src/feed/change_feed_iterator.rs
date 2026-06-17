@@ -126,8 +126,7 @@ impl LiveState {
 /// A stream of pages from a Cosmos DB change feed operation.
 ///
 /// Yields [`FeedPage<T>`] instances, where `T` is the user's document type
-/// (for LatestVersion mode) or `ChangeFeedItem<T>` (for AllVersionsAndDeletes
-/// mode, in a future release).
+/// (for LatestVersion mode).
 ///
 /// Use [`to_continuation_token()`](Self::to_continuation_token) to capture
 /// the current position for later resumption.

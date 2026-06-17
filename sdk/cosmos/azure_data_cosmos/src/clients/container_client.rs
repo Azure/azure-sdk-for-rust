@@ -927,7 +927,8 @@ impl ContainerClient {
                     const RFC1123: &[FormatItem<'_>] = format_description!(
                         "[weekday repr:short], [day] [month repr:short] [year] [hour]:[minute]:[second] GMT"
                     );
-                    let formatted = ts.format(RFC1123).map_err(|e| {
+                    let utc = ts.to_offset(time::UtcOffset::UTC);
+                    let formatted = utc.format(RFC1123).map_err(|e| {
                         crate::DriverCosmosError::builder()
                             .with_status(crate::error::CosmosStatus::new(
                                 azure_core::http::StatusCode::BadRequest,

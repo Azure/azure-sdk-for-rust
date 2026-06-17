@@ -618,7 +618,7 @@ impl CosmosOperation {
 
     /// Creates a change feed read operation for a container.
     ///
-    /// Sets the `A-IM` header to `Incremental feed` (LatestVersion mode) and
+    /// Sets the `A-IM` header to `Incremental Feed` (LatestVersion mode) and
     /// the wire format version header. The caller is responsible for setting
     /// start-from headers (e.g., `If-None-Match: *` for "Now") via
     /// [`with_precondition`](Self::with_precondition).

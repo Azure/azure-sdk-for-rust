@@ -12,36 +12,18 @@ use crate::options::FeedOptions;
 
 /// Determines the change feed mode, which controls the shape of the response.
 ///
-/// - [`LatestVersion`](Self::LatestVersion): Returns the latest version of each
-///   changed document (creates and replaces only; deletes are not surfaced).
-/// - [`AllVersionsAndDeletes`](Self::AllVersionsAndDeletes): Returns a
-///   full-fidelity envelope for every change including deletes, with optional
-///   previous images.
-///
-/// The default mode is [`LatestVersion`](Self::LatestVersion).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// Currently only [`LatestVersion`](Self::LatestVersion) is supported.
+/// Additional modes (e.g., all-versions-and-deletes) will be added in a
+/// follow-up release.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum ChangeFeedMode {
-    /// Returns the latest version of each changed document.
+    /// Returns the latest version of each changed document (creates and
+    /// replaces only; deletes are not surfaced).
     ///
-    /// Wire header: `A-IM: Incremental feed`.
+    /// Wire header: `A-IM: Incremental Feed`.
+    #[default]
     LatestVersion,
-
-    /// Returns a full-fidelity envelope for every operation (create, replace, delete).
-    ///
-    /// Wire header: `A-IM: Full-Fidelity Feed`.
-    ///
-    /// **Note:** This mode is defined for forward compatibility but is not
-    /// fully wired in this version of the SDK. The envelope types
-    /// (`ChangeFeedItem<T>`, `ChangeFeedMetadata`) will be added in a
-    /// follow-up release.
-    AllVersionsAndDeletes,
-}
-
-impl Default for ChangeFeedMode {
-    fn default() -> Self {
-        Self::LatestVersion
-    }
 }
 
 /// Determines where the change feed starts reading from.
@@ -105,7 +87,9 @@ pub struct ChangeFeedOptions {
     /// Session token for session-consistent reads.
     pub session_token: Option<SessionToken>,
 
-    /// The change feed mode. Defaults to [`ChangeFeedMode::LatestVersion`].
+    /// The change feed mode.
+    ///
+    /// Currently only [`ChangeFeedMode::LatestVersion`] is supported.
     pub mode: ChangeFeedMode,
 
     /// Where to start reading the change feed. Defaults to [`ChangeFeedStartFrom::Beginning`].
