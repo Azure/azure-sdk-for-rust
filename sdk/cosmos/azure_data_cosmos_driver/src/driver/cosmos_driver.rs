@@ -1759,7 +1759,7 @@ impl CosmosDriver {
         // We need to do some refactoring here to shrink the future size and avoid this heap allocation if possible.
         Box::pin(async {
             let container = operation.container().cloned();
-            let mut plan = self.plan_operation(operation, &options, None).await?;
+            let mut plan = self.plan_operation(operation, &options, None, None).await?;
             self.execute_plan(&mut plan, container, options).await
         })
         .await
@@ -2059,11 +2059,16 @@ impl CosmosDriver {
     /// - Opaque server-issued tokens (no `c<N>.` prefix) are accepted only
     ///   for trivial operations; passing one to a cross-partition query
     ///   returns a `Client`-shaped error.
+    ///
+    /// `max_fan_out` caps the number of physical partitions a cross-partition
+    /// query may target. Defaults to
+    /// [`DEFAULT_MAX_FAN_OUT`](planner::DEFAULT_MAX_FAN_OUT) when `None`.
     pub async fn plan_operation(
         &self,
         operation: CosmosOperation,
         options: &OperationOptions,
         continuation: Option<&ContinuationToken>,
+        max_fan_out: Option<usize>,
     ) -> crate::error::Result<OperationPlan> {
         if !self.initialized.load(Ordering::Acquire) {
             let endpoint = AccountEndpoint::from(self.options.account());
@@ -2146,9 +2151,14 @@ impl CosmosDriver {
             |container, continuation| self.fetch_pk_ranges_from_service(container, continuation),
         );
 
-        let pipeline =
-            planner::build_sequential_drain(&query_plan, &mut topology, &operation, resume_state)
-                .await?;
+        let pipeline = planner::build_sequential_drain(
+            &query_plan,
+            &mut topology,
+            &operation,
+            resume_state,
+            max_fan_out,
+        )
+        .await?;
         Ok(OperationPlan::new(pipeline, operation))
     }
 
@@ -3141,7 +3151,7 @@ mod tests {
         assert_send(driver.execute_operation(todo!(), todo!()));
         assert_send(driver.execute_singleton_operation(todo!(), todo!()));
         assert_send(driver.execute_plan(todo!(), todo!(), todo!()));
-        assert_send(driver.plan_operation(todo!(), todo!(), todo!()));
+        assert_send(driver.plan_operation(todo!(), todo!(), todo!(), todo!()));
     }
 
     // Account properties with two readable locations for regional fallback tests.

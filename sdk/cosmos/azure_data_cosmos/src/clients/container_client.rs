@@ -844,6 +844,7 @@ impl ContainerClient {
                 initial_operation,
                 &options.operation,
                 options.feed.continuation_token.as_ref(),
+                options.feed.max_fan_out,
             )
             .await?;
         Ok(QueryItemIterator::new(

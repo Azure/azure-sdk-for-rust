@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added `max_fan_out: Option<usize>` parameter to `CosmosDriver::plan_operation` and `planner::build_sequential_drain` to enforce a cap on cross-partition query fan-out. When the number of physical partitions targeted by a query exceeds the limit (default 100 when `None` is passed), `plan_operation` returns a `CosmosStatus::CLIENT_QUERY_FAN_OUT_LIMIT_EXCEEDED` (HTTP 400 / sub-status 20307) error. ([#4453](https://github.com/Azure/azure-sdk-for-rust/issues/4453))
+- Added `SubStatusCode::CLIENT_QUERY_FAN_OUT_LIMIT_EXCEEDED` (20307) and `CosmosStatus::CLIENT_QUERY_FAN_OUT_LIMIT_EXCEEDED` (HTTP 400 / sub-status 20307). ([#4453](https://github.com/Azure/azure-sdk-for-rust/issues/4453))
 - Added support for using a native query planning library to generate query plans locally, avoiding a Gateway round-trip on cross-partition queries. Gated behind the `__internal_native_query_plan` feature flag. ([#4554](https://github.com/Azure/azure-sdk-for-rust/pull/4554))
 - Restructured the client / runtime options layering on the driver. Two new nested option groups, a per-client overrides surface on `DriverOptionsBuilder`, and a single canonical `AZURE_COSMOS_PPCB_*` namespace for partition-failover environment variables. The driver now consumes partition-failover configuration once at construction (`CosmosDriver::new` no longer fabricates an `OperationOptionsView` outside any operation context) ([#4588](https://github.com/Azure/azure-sdk-for-rust/pull/4588)):
 - Added new nested `OperationOptions::throughput_control` group (`ThroughputControlOptions` / `…Builder` / `…View`, mirroring the `ThrottlingRetryOptions` pattern). Exposes three layered fields ([#4588](https://github.com/Azure/azure-sdk-for-rust/pull/4588)):

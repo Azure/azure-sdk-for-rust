@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added `FeedOptions::with_max_fan_out` (and the matching `QueryOptions::with_max_fan_out` shortcut) to cap the number of physical partitions a cross-partition query may target. Queries that would fan out beyond this limit now return an error instead of silently degrading; the default cap is 100. ([#4453](https://github.com/Azure/azure-sdk-for-rust/issues/4453))
 - Derived `SafeDebug` on `CosmosCredential`, `ItemResponse`, `ResourceResponse<T>`, and `BatchResponse`. ([#4512](https://github.com/Azure/azure-sdk-for-rust/pull/4512))
 - Added standard derives (`Clone`, `Copy`, `PartialEq`, `Eq`, `Hash`, `Serialize`, `Deserialize`) to `ConsistencyLevel` and `RoutingStrategy`. ([#4512](https://github.com/Azure/azure-sdk-for-rust/pull/4512))
 - `Query::with_text` now accepts `impl Into<String>`. ([#4512](https://github.com/Azure/azure-sdk-for-rust/pull/4512))

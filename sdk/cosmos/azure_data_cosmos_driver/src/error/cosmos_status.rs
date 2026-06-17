@@ -516,6 +516,7 @@ impl SubStatusCode {
             20303 => Some("ServiceReturnedOfferWithoutId"),
             20304 => Some("ClientThroughputPollerIncomplete"),
             20305 => Some("ClientTopologyResolutionFailed"),
+            20307 => Some("ClientQueryFanOutLimitExceeded"),
 
             // SDK Server-side codes (21xxx) - consistent across .NET and Java
             21001 => Some("NameCacheIsStaleExceededRetryLimit"),
@@ -1424,6 +1425,14 @@ impl SubStatusCode {
     /// has no routing information for the operation. Paired with HTTP
     /// 503 — an internal client-side condition, not a transport failure.
     pub const CLIENT_TOPOLOGY_RESOLUTION_FAILED: SubStatusCode = SubStatusCode(20305);
+
+    /// A cross-partition query would fan out to more physical partitions
+    /// than the configured maximum (20307). Paired with HTTP 400 because
+    /// this is a client-side policy violation — the caller can raise the
+    /// limit via `FeedOptions::max_fan_out` /
+    /// `QueryOptions::with_max_fan_out` if they truly need this level of
+    /// fan-out.
+    pub const CLIENT_QUERY_FAN_OUT_LIMIT_EXCEEDED: SubStatusCode = SubStatusCode(20307);
 }
 
 impl Default for SubStatusCode {
@@ -2215,6 +2224,17 @@ impl CosmosStatus {
     pub const SERVICE_RETURNED_OBJECT_WITHOUT_RID: CosmosStatus = CosmosStatus {
         status_code: StatusCode::InternalServerError,
         sub_status: Some(SubStatusCode::SERVICE_RETURNED_OBJECT_WITHOUT_RID),
+    };
+
+    /// 400 / 20307 — cross-partition query fan-out limit exceeded.
+    ///
+    /// The query would require contacting more physical partitions than
+    /// the configured maximum. Raise the limit via
+    /// `FeedOptions::max_fan_out` / `QueryOptions::with_max_fan_out` if
+    /// this level of fan-out is intentional.
+    pub const CLIENT_QUERY_FAN_OUT_LIMIT_EXCEEDED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_QUERY_FAN_OUT_LIMIT_EXCEEDED),
     };
 }
 

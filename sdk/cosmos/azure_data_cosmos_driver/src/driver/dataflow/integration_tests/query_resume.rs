@@ -193,7 +193,7 @@ async fn single_partition_resume_roundtrips_cleanly() {
     let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
     let mut executor1 = MockRequestExecutor::new(vec![Ok(page_response(b"page-1", Some("ct-1")))]);
 
-    let mut pipeline1 = build_sequential_drain(&plan, &mut topology1, &op, None)
+    let mut pipeline1 = build_sequential_drain(&plan, &mut topology1, &op, None, None)
         .await
         .unwrap();
     let pages1 = drain_pages(&mut pipeline1, &mut executor1, 1).await;
@@ -207,9 +207,10 @@ async fn single_partition_resume_roundtrips_cleanly() {
     let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
     let mut executor2 = MockRequestExecutor::new(vec![Ok(page_response(b"page-2", None))]);
 
-    let mut pipeline2 = build_sequential_drain(&plan, &mut topology2, &op, Some(resumed_state))
-        .await
-        .unwrap();
+    let mut pipeline2 =
+        build_sequential_drain(&plan, &mut topology2, &op, Some(resumed_state), None)
+            .await
+            .unwrap();
     let pages2 = drain_all(&mut pipeline2, &mut executor2).await;
     assert_eq!(pages2, vec![b"page-2".to_vec()]);
     assert_eq!(
@@ -237,7 +238,7 @@ async fn resume_after_split_forwards_continuation_to_every_surviving_leaf() {
         Some("ct-pre-split"),
     ))]);
 
-    let mut pipeline1 = build_sequential_drain(&plan, &mut topology1, &op, None)
+    let mut pipeline1 = build_sequential_drain(&plan, &mut topology1, &op, None, None)
         .await
         .unwrap();
     let pages1 = drain_pages(&mut pipeline1, &mut executor1, 1).await;
@@ -258,9 +259,10 @@ async fn resume_after_split_forwards_continuation_to_every_surviving_leaf() {
         Ok(page_response(b"page-right", None)),
     ]);
 
-    let mut pipeline2 = build_sequential_drain(&plan, &mut topology2, &op, Some(resumed_state))
-        .await
-        .unwrap();
+    let mut pipeline2 =
+        build_sequential_drain(&plan, &mut topology2, &op, Some(resumed_state), None)
+            .await
+            .unwrap();
     let pages2 = drain_all(&mut pipeline2, &mut executor2).await;
 
     // Every page exactly once, in EPK order.
@@ -303,7 +305,7 @@ async fn resume_mid_fanout_preserves_every_sibling_state() {
     let mut executor1 =
         MockRequestExecutor::new(vec![Ok(page_response(b"left-page-1", Some("ct-left")))]);
 
-    let mut pipeline1 = build_sequential_drain(&plan, &mut topology1, &op, None)
+    let mut pipeline1 = build_sequential_drain(&plan, &mut topology1, &op, None, None)
         .await
         .unwrap();
     let pages1 = drain_pages(&mut pipeline1, &mut executor1, 1).await;
@@ -349,9 +351,10 @@ async fn resume_mid_fanout_preserves_every_sibling_state() {
         Ok(page_response(b"right-page-1", None)),
     ]);
 
-    let mut pipeline2 = build_sequential_drain(&plan, &mut topology2, &op, Some(resumed_state))
-        .await
-        .unwrap();
+    let mut pipeline2 =
+        build_sequential_drain(&plan, &mut topology2, &op, Some(resumed_state), None)
+            .await
+            .unwrap();
     let pages2 = drain_all(&mut pipeline2, &mut executor2).await;
     assert_eq!(
         pages2,
@@ -397,7 +400,7 @@ async fn resume_mid_fanout_then_split_preserves_state_and_fans_out_continuation(
     let mut executor1 =
         MockRequestExecutor::new(vec![Ok(page_response(b"left-page-1", Some("ct-left")))]);
 
-    let mut pipeline1 = build_sequential_drain(&plan, &mut topology1, &op, None)
+    let mut pipeline1 = build_sequential_drain(&plan, &mut topology1, &op, None, None)
         .await
         .unwrap();
     let pages1 = drain_pages(&mut pipeline1, &mut executor1, 1).await;
@@ -420,9 +423,10 @@ async fn resume_mid_fanout_then_split_preserves_state_and_fans_out_continuation(
         Ok(page_response(b"right-page-1", None)),
     ]);
 
-    let mut pipeline2 = build_sequential_drain(&plan, &mut topology2, &op, Some(resumed_state))
-        .await
-        .unwrap();
+    let mut pipeline2 =
+        build_sequential_drain(&plan, &mut topology2, &op, Some(resumed_state), None)
+            .await
+            .unwrap();
     let pages2 = drain_all(&mut pipeline2, &mut executor2).await;
 
     assert_eq!(
@@ -489,7 +493,7 @@ async fn resume_does_not_requery_already_drained_sibling_scope() {
     ])]);
     let mut executor = MockRequestExecutor::new(vec![Ok(page_response(b"right-page-1", None))]);
 
-    let mut pipeline = build_sequential_drain(&plan, &mut topology, &op, Some(resumed_state))
+    let mut pipeline = build_sequential_drain(&plan, &mut topology, &op, Some(resumed_state), None)
         .await
         .unwrap();
     let pages = drain_all(&mut pipeline, &mut executor).await;
@@ -529,7 +533,7 @@ async fn resume_fails_loudly_when_saved_range_cannot_be_covered() {
     ])]);
 
     let err: Result<Pipeline> =
-        build_sequential_drain(&plan, &mut topology, &op, Some(resumed_state)).await;
+        build_sequential_drain(&plan, &mut topology, &op, Some(resumed_state), None).await;
     let err = err.expect_err("expected unhonored-saved-range error");
     let rendered = err.to_string();
     assert!(
@@ -572,7 +576,7 @@ async fn three_session_loop_propagates_presplit_token_through_two_snapshots() {
     let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-pre")])]);
     let mut executor1 =
         MockRequestExecutor::new(vec![Ok(page_response(b"page-1-pre", Some("T1")))]);
-    let mut pipeline1 = build_sequential_drain(&plan, &mut topology1, &op, None)
+    let mut pipeline1 = build_sequential_drain(&plan, &mut topology1, &op, None, None)
         .await
         .unwrap();
     let pages_s1 = drain_pages(&mut pipeline1, &mut executor1, 1).await;
@@ -615,7 +619,7 @@ async fn three_session_loop_propagates_presplit_token_through_two_snapshots() {
         b"page-1-postsplit-left",
         Some("T2_a"),
     ))]);
-    let mut pipeline2 = build_sequential_drain(&plan, &mut topology2, &op, Some(resumed_s2))
+    let mut pipeline2 = build_sequential_drain(&plan, &mut topology2, &op, Some(resumed_s2), None)
         .await
         .unwrap();
     let pages_s2 = drain_pages(&mut pipeline2, &mut executor2, 1).await;
@@ -677,7 +681,7 @@ async fn three_session_loop_propagates_presplit_token_through_two_snapshots() {
         Ok(page_response(b"page-2-postsplit-left", None)),
         Ok(page_response(b"page-1-postsplit-right", None)),
     ]);
-    let mut pipeline3 = build_sequential_drain(&plan, &mut topology3, &op, Some(resumed_s3))
+    let mut pipeline3 = build_sequential_drain(&plan, &mut topology3, &op, Some(resumed_s3), None)
         .await
         .unwrap();
     let pages_s3 = drain_all(&mut pipeline3, &mut executor3).await;
@@ -730,7 +734,7 @@ async fn cascading_split_propagates_back_sibling_token_to_every_grand_child() {
     let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-pre")])]);
     let mut executor1 =
         MockRequestExecutor::new(vec![Ok(page_response(b"page-1-pre", Some("T1")))]);
-    let mut pipeline1 = build_sequential_drain(&plan, &mut topology1, &op, None)
+    let mut pipeline1 = build_sequential_drain(&plan, &mut topology1, &op, None, None)
         .await
         .unwrap();
     let pages_s1 = drain_pages(&mut pipeline1, &mut executor1, 1).await;
@@ -749,7 +753,7 @@ async fn cascading_split_propagates_back_sibling_token_to_every_grand_child() {
     ])]);
     let mut executor2 =
         MockRequestExecutor::new(vec![Ok(page_response(b"page-1-postsplit-left", None))]);
-    let mut pipeline2 = build_sequential_drain(&plan, &mut topology2, &op, Some(resumed_s2))
+    let mut pipeline2 = build_sequential_drain(&plan, &mut topology2, &op, Some(resumed_s2), None)
         .await
         .unwrap();
     let pages_s2 = drain_pages(&mut pipeline2, &mut executor2, 1).await;
@@ -787,7 +791,7 @@ async fn cascading_split_propagates_back_sibling_token_to_every_grand_child() {
         Ok(page_response(b"page-1-back-left", None)),
         Ok(page_response(b"page-1-back-right", None)),
     ]);
-    let mut pipeline3 = build_sequential_drain(&plan, &mut topology3, &op, Some(resumed_s3))
+    let mut pipeline3 = build_sequential_drain(&plan, &mut topology3, &op, Some(resumed_s3), None)
         .await
         .unwrap();
     let pages_s3 = drain_all(&mut pipeline3, &mut executor3).await;

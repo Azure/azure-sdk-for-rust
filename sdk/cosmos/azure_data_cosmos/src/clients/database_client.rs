@@ -131,7 +131,7 @@ impl DatabaseClient {
         let plan = self
             .context
             .driver
-            .plan_operation(initial_operation, &operation_options, None)
+            .plan_operation(initial_operation, &operation_options, None, None)
             .await?;
 
         Ok(QueryItemIterator::new(
