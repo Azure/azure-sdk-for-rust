@@ -1,15 +1,23 @@
 // Copyright (c) Microsoft Corporation. All rights reserved
 // Licensed under the MIT license.
 
+// cspell:ignore sastoken
+
 pub(crate) mod authorizer;
+pub(crate) mod connection_string;
 pub(crate) mod management;
 pub(crate) mod recoverable;
 pub mod retry;
+pub(crate) mod sas_credential;
 pub(crate) mod user_agent;
 
 // Public API
 pub(crate) use management::ManagementInstance;
 pub(crate) use retry::recover_azure_operation;
+
+/// The AMQP claims-based-security (CBS) token type for a Shared Access
+/// Signature. JWT (Entra) tokens use the default type, signalled by `None`.
+pub(crate) const SAS_TOKEN_TYPE: &str = "servicebus.windows.net:sastoken";
 
 #[cfg(test)]
 pub(crate) mod tests {

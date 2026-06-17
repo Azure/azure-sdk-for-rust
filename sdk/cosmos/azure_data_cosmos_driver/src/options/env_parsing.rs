@@ -97,10 +97,7 @@ where
                 ))
                 .with_message(format!(
                     "{} must be at least {:?}, got {:?}",
-                    env_var_name
-                        .strip_prefix("AZURE_COSMOS_CONNECTION_POOL_")
-                        .unwrap_or(env_var_name)
-                        .to_lowercase(),
+                    short_field_name(env_var_name),
                     min,
                     value
                 ))
@@ -116,10 +113,7 @@ where
                 ))
                 .with_message(format!(
                     "{} must be at most {:?}, got {:?}",
-                    env_var_name
-                        .strip_prefix("AZURE_COSMOS_CONNECTION_POOL_")
-                        .unwrap_or(env_var_name)
-                        .to_lowercase(),
+                    short_field_name(env_var_name),
                     max,
                     value
                 ))
@@ -128,6 +122,17 @@ where
     }
 
     Ok(value)
+}
+
+/// Strips well-known `AZURE_COSMOS_*_` group prefixes from `env_var_name` and
+/// lowercases the remainder, producing a short field-style name suitable for
+/// inclusion in user-facing validation error messages.
+fn short_field_name(env_var_name: &str) -> String {
+    env_var_name
+        .strip_prefix("AZURE_COSMOS_CONNECTION_POOL_")
+        .or_else(|| env_var_name.strip_prefix("AZURE_COSMOS_PPCB_"))
+        .unwrap_or(env_var_name)
+        .to_lowercase()
 }
 
 /// Resolves a duration (in milliseconds) from a builder override and a
@@ -149,6 +154,44 @@ pub(crate) fn resolve_duration_ms(
     Ok(value)
 }
 
+/// Compatibility wrapper for call sites that still use the legacy helper name.
+pub(super) fn parse_duration_millis_from_env(
+    builder_value: Option<Duration>,
+    env_var_name: &str,
+    default_millis: u64,
+    min_millis: u64,
+    max_millis: u64,
+) -> crate::error::Result<Duration> {
+    let env_millis = std::env::var(env_var_name)
+        .ok()
+        .and_then(|raw| raw.parse::<u64>().ok());
+
+    resolve_duration_ms(
+        builder_value,
+        env_millis,
+        env_var_name,
+        default_millis,
+        min_millis,
+        max_millis,
+    )
+}
+
+/// Compatibility wrapper for call sites that still use the legacy helper name.
+pub(super) fn parse_from_env<T>(
+    builder_value: Option<T>,
+    env_var_name: &str,
+    default: T,
+    bounds: ValidationBounds<T>,
+) -> crate::error::Result<T>
+where
+    T: PartialOrd + std::fmt::Debug + std::str::FromStr,
+{
+    let env_value = std::env::var(env_var_name)
+        .ok()
+        .and_then(|raw| raw.parse::<T>().ok());
+    resolve_from_env(builder_value, env_value, env_var_name, default, bounds)
+}
+
 /// Validates a duration value against min/max bounds (in milliseconds).
 ///
 /// Comparisons use `u128` to avoid silent truncation since
@@ -162,10 +205,7 @@ fn validate_duration_bounds(
     let value_millis = value.as_millis();
     let min = u128::from(min_millis);
     let max = u128::from(max_millis);
-    let field_name = env_var_name
-        .strip_prefix("AZURE_COSMOS_CONNECTION_POOL_")
-        .unwrap_or(env_var_name)
-        .to_lowercase();
+    let field_name = short_field_name(env_var_name);
 
     if value_millis < min {
         return Err(crate::error::CosmosError::builder()

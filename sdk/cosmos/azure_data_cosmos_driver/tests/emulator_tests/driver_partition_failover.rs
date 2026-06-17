@@ -22,7 +22,7 @@
 
 use crate::framework::DriverTestClient;
 use azure_data_cosmos_driver::fault_injection::*;
-use azure_data_cosmos_driver::options::OperationOptionsBuilder;
+use azure_data_cosmos_driver::options::PartitionFailoverOptions;
 use std::error::Error;
 use std::sync::Arc;
 
@@ -64,13 +64,13 @@ pub async fn pkrange_fetch_503_falls_back_gracefully_to_data_operation(
 
     // PPCB must be enabled for the driver to actually fetch PK ranges
     // (pre_resolve_partition_key_range_id short-circuits otherwise).
-    let operation_options = OperationOptionsBuilder::new()
-        .with_per_partition_circuit_breaker_enabled(true)
-        .build();
+    let partition_failover_options = PartitionFailoverOptions::builder()
+        .with_circuit_breaker_enabled(true)
+        .build()?;
 
-    DriverTestClient::run_with_unique_db_and_fault_injection_options(
+    DriverTestClient::run_with_unique_db_and_fault_injection_partition_failover_options(
         rules,
-        operation_options,
+        partition_failover_options,
         async |context, database| {
             let container_name = context.unique_container_name();
             let container = context
@@ -134,13 +134,13 @@ pub async fn pkrange_fetch_transient_failure_then_recovers() -> Result<(), Box<d
     let rules = vec![Arc::clone(&rule)];
 
     // PPCB must be enabled for the driver to actually fetch PK ranges.
-    let operation_options = OperationOptionsBuilder::new()
-        .with_per_partition_circuit_breaker_enabled(true)
-        .build();
+    let partition_failover_options = PartitionFailoverOptions::builder()
+        .with_circuit_breaker_enabled(true)
+        .build()?;
 
-    DriverTestClient::run_with_unique_db_and_fault_injection_options(
+    DriverTestClient::run_with_unique_db_and_fault_injection_partition_failover_options(
         rules,
-        operation_options,
+        partition_failover_options,
         async |context, database| {
             let container_name = context.unique_container_name();
             let container = context

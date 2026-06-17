@@ -12,6 +12,7 @@ pub mod excluded_regions_fallback;
 pub mod hedging;
 pub mod multi_region;
 pub mod point_operations;
+pub mod ppaf_dynamic_enablement;
 pub mod split_merge;
 pub mod throttling;
 

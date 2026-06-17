@@ -301,14 +301,14 @@ The gateway pipeline tracked this via `CosmosRequest` (which held the final URL)
 
 The SDK no longer ships a parallel fault-injection type system. All fault-injection types — [`FaultInjectionRule`], [`FaultInjectionCondition`], [`FaultInjectionResult`], [`CustomResponse`], [`FaultInjectionErrorType`], [`FaultOperationType`], and the matching builders — are re-exported directly from the driver crate (`azure_data_cosmos_driver::fault_injection`) by `azure_data_cosmos::fault_injection`.
 
-The SDK owns no fault-injection logic of its own — `azure_data_cosmos::fault_injection` is a pure `pub use` of the driver's types, and `CosmosClientBuilder::with_fault_injection` just stores the `Vec<Arc<FaultInjectionRule>>` and forwards it to `CosmosDriverRuntimeBuilder::with_fault_injection_rules()` in `build()`. The driver runtime is the single fault-injection evaluation path; toggling `enable()`/`disable()`, hit-count increments, and `hit_limit` enforcement all happen against the same canonical rule object.
+The SDK owns no fault-injection logic of its own — `azure_data_cosmos::fault_injection` is a pure `pub use` of the driver's types, and `CosmosClientBuilder::with_fault_injection_rules` just stores the `Vec<Arc<FaultInjectionRule>>` and forwards it to the per-driver `DriverOptionsBuilder::with_fault_injection_rules()` in `build()`. The driver itself is the single fault-injection evaluation path; toggling `enable()`/`disable()`, hit-count increments, and `hit_limit` enforcement all happen against the same canonical rule object.
 
 ### Wiring in `CosmosClientBuilder`
 
 In `CosmosClientBuilder::build()`:
 
-1. The `with_fault_injection(rules)` call stores `Vec<Arc<FaultInjectionRule>>` on the builder.
-2. The vector is moved into `CosmosDriverRuntimeBuilder::with_fault_injection_rules()` so the driver's own fault-injection HTTP client evaluates them on every in-flight request.
+1. The `with_fault_injection_rules(rules)` call stores `Vec<Arc<FaultInjectionRule>>` on the builder.
+2. The vector is moved into the per-driver `DriverOptionsBuilder::with_fault_injection_rules()` so the driver's own fault-injection HTTP client evaluates them on every in-flight request.
 
 ### Test Patterns for Future Cutover
 

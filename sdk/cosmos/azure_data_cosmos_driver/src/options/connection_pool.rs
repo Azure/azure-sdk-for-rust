@@ -9,7 +9,7 @@ use super::env_parsing::{
     resolve_duration_ms, resolve_from_env, resolve_optional_duration_ms, resolve_optional_from_env,
     ValidationBounds,
 };
-use crate::options::EmulatorServerCertValidation;
+use crate::options::ServerCertificateValidation;
 
 /// Configuration for connection pooling behavior.
 ///
@@ -67,7 +67,7 @@ pub struct ConnectionPoolOptions {
 
     is_gateway20_allowed: bool,
 
-    emulator_server_cert_validation: EmulatorServerCertValidation,
+    server_certificate_validation: ServerCertificateValidation,
 
     local_address: Option<IpAddr>,
 }
@@ -217,11 +217,9 @@ impl ConnectionPoolOptions {
         self.is_gateway20_allowed
     }
 
-    /// Returns the emulator server certificate validation setting.
-    ///
-    /// This only takes effect when connecting to localhost/emulator endpoints.
-    pub fn emulator_server_cert_validation(&self) -> EmulatorServerCertValidation {
-        self.emulator_server_cert_validation
+    /// Returns the server certificate validation setting.
+    pub fn server_certificate_validation(&self) -> ServerCertificateValidation {
+        self.server_certificate_validation
     }
 
     /// Returns the local IP address to bind to, if set.
@@ -260,7 +258,7 @@ impl ConnectionPoolOptions {
 /// - `AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_RETRIES`: TCP keepalive retry count (default: none, min: `1`, max: `255`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_IS_HTTP2_ALLOWED`: Whether HTTP/2 is allowed for gateway mode connections (default: `true`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_IS_GATEWAY20_ALLOWED`: Whether Gateway 2.0 feature is allowed (default: `false`)
-/// - `AZURE_COSMOS_EMULATOR_SERVER_CERT_VALIDATION_DISABLED`: Whether server certificate validation is disabled for emulator; `true` maps to [`EmulatorServerCertValidation::DangerousDisabled`], `false` to [`EmulatorServerCertValidation::Enabled`] (default: `false`)
+/// - `AZURE_COSMOS_EMULATOR_SERVER_CERT_VALIDATION_DISABLED`: Whether server certificate validation is disabled for emulator; `true` maps to [`ServerCertificateValidation::RequiredUnlessEmulator`], `false` to [`ServerCertificateValidation::Required`] (default: `false`)
 /// - `AZURE_COSMOS_LOCAL_ADDRESS`: Local IP address to bind to (default: none)
 ///
 /// # Example
@@ -387,7 +385,7 @@ pub struct ConnectionPoolOptionsBuilder {
     tcp_keepalive_retries: Option<u32>,
     is_http2_allowed: Option<bool>,
     is_gateway20_allowed: Option<bool>,
-    emulator_server_cert_validation: Option<EmulatorServerCertValidation>,
+    server_certificate_validation: Option<ServerCertificateValidation>,
     local_address: Option<IpAddr>,
 }
 
@@ -586,15 +584,12 @@ impl ConnectionPoolOptionsBuilder {
         self
     }
 
-    /// Sets the emulator server certificate validation behavior.
-    ///
-    /// Use [`EmulatorServerCertValidation::DangerousDisabled`] to skip TLS certificate
-    /// validation when connecting to a local Cosmos DB emulator with a self-signed certificate.
-    pub fn with_emulator_server_cert_validation(
+    /// Sets the server certificate validation behavior.
+    pub fn with_server_certificate_validation(
         mut self,
-        value: EmulatorServerCertValidation,
+        value: ServerCertificateValidation,
     ) -> Self {
-        self.emulator_server_cert_validation = Some(value);
+        self.server_certificate_validation = Some(value);
         self
     }
 
@@ -870,15 +865,21 @@ impl ConnectionPoolOptionsBuilder {
             tcp_keepalive_retries,
             is_http2_allowed: effective_is_http2_allowed,
             is_gateway20_allowed: effective_is_gateway20_allowed,
-            emulator_server_cert_validation: match self.emulator_server_cert_validation {
+            server_certificate_validation: match self.server_certificate_validation {
                 Some(v) => v,
-                None => EmulatorServerCertValidation::from(resolve_from_env(
-                    None::<bool>,
-                    env.emulator_server_cert_validation_disabled,
-                    "AZURE_COSMOS_EMULATOR_SERVER_CERT_VALIDATION_DISABLED",
-                    false,
-                    ValidationBounds::none(),
-                )?),
+                None => {
+                    if resolve_from_env(
+                        None::<bool>,
+                        env.emulator_server_cert_validation_disabled,
+                        "AZURE_COSMOS_EMULATOR_SERVER_CERT_VALIDATION_DISABLED",
+                        false,
+                        ValidationBounds::none(),
+                    )? {
+                        ServerCertificateValidation::RequiredUnlessEmulator
+                    } else {
+                        ServerCertificateValidation::Required
+                    }
+                }
             },
             // Builder override wins; otherwise the macro-parsed env value (or
             // `None` when unset / unparseable).
@@ -964,8 +965,8 @@ mod tests {
         assert!(options.is_http2_allowed());
         assert!(!options.is_gateway20_allowed());
         assert_eq!(
-            options.emulator_server_cert_validation(),
-            EmulatorServerCertValidation::Enabled
+            options.server_certificate_validation(),
+            ServerCertificateValidation::Required
         );
         assert_eq!(options.idle_connection_timeout(), None);
         assert_eq!(options.max_http2_streams_per_client(), 16);
@@ -1020,7 +1021,7 @@ mod tests {
             .with_tcp_keepalive_retries(4)
             .with_is_http2_allowed(false)
             .with_is_gateway20_allowed(true)
-            .with_emulator_server_cert_validation(EmulatorServerCertValidation::DangerousDisabled)
+            .with_server_certificate_validation(ServerCertificateValidation::RequiredUnlessEmulator)
             .build()
             .unwrap();
 
@@ -1085,8 +1086,8 @@ mod tests {
         // gateway20 is set to true but HTTP/2 is false, so it should be false
         assert!(!options.is_gateway20_allowed());
         assert_eq!(
-            options.emulator_server_cert_validation(),
-            EmulatorServerCertValidation::DangerousDisabled
+            options.server_certificate_validation(),
+            ServerCertificateValidation::RequiredUnlessEmulator
         );
     }
 

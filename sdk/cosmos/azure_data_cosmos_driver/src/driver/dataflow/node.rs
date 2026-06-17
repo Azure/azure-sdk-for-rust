@@ -78,7 +78,13 @@ pub(crate) trait PipelineNode: Send + std::any::Any {
     fn into_children(self) -> Vec<Box<dyn PipelineNode>>;
 
     /// Snapshots this node's state for continuation-token serialization.
-    fn snapshot_state(&self) -> PipelineNodeState;
+    ///
+    /// Returns an error if a dataflow invariant is violated (e.g. an
+    /// intermediate node observes a child without a `feed_range`). Such
+    /// errors should be impossible in production code paths; surfacing
+    /// them as `Err` rather than encoding them into the payload prevents
+    /// a malformed snapshot from being serialized and later mis-parsed.
+    fn snapshot_state(&self) -> crate::error::Result<PipelineNodeState>;
 
     /// Returns `true` if it's possible for this node to require a topology change (split or merge) in the future.
     ///

@@ -28,6 +28,7 @@ use crate::{
 pub(crate) struct MockLeaf {
     pages: VecDeque<crate::error::Result<PageResult>>,
     feed_range: Option<FeedRange>,
+    snapshot: Option<PipelineNodeState>,
 }
 
 impl MockLeaf {
@@ -36,13 +37,20 @@ impl MockLeaf {
         Self {
             pages: pages.into(),
             feed_range: None,
+            snapshot: None,
         }
     }
 
     /// Sets the feed range reported by [`PipelineNode::feed_range`].
-    #[allow(dead_code)]
     pub fn with_feed_range(mut self, range: FeedRange) -> Self {
         self.feed_range = Some(range);
+        self
+    }
+
+    /// Overrides the state returned by [`PipelineNode::snapshot_state`].
+    /// Defaults to [`PipelineNodeState::Drained`] when unset.
+    pub fn with_snapshot(mut self, state: PipelineNodeState) -> Self {
+        self.snapshot = Some(state);
         self
     }
 }
@@ -63,8 +71,8 @@ impl PipelineNode for MockLeaf {
         vec![]
     }
 
-    fn snapshot_state(&self) -> PipelineNodeState {
-        PipelineNodeState::Drained
+    fn snapshot_state(&self) -> crate::error::Result<PipelineNodeState> {
+        Ok(self.snapshot.clone().unwrap_or(PipelineNodeState::Drained))
     }
 
     fn feed_range(&self) -> Option<&FeedRange> {
