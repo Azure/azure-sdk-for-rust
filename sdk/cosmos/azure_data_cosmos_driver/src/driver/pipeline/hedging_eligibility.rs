@@ -30,16 +30,24 @@ use crate::{
 /// this constant is the upper bound.
 const DEFAULT_THRESHOLD_CAP: Duration = Duration::from_millis(1000);
 
-/// Resource types eligible for cross-region hedging in the current phase.
+/// Resource types eligible for cross-region hedging.
 ///
-/// Subsequent phases widen this single constant — no other change to
-/// [`should_hedge`] is required.
-const HEDGEABLE_RESOURCE_TYPES: &[ResourceType] = &[ResourceType::Document];
+/// `Document` covers data-plane reads. `DocumentCollection` covers the
+/// control-plane container/collection metadata read that warms a cold
+/// container cache — hedging it across regions keeps a slow or unhealthy
+/// preferred region from stalling the read (and any operation blocked on it)
+/// past the caller's timeout, which is the cross-region-failover-preemption
+/// scenario in issue #4253. Both are idempotent reads.
+///
+/// Subsequent phases may widen this single constant further — no other change
+/// to [`should_hedge`] is required.
+const HEDGEABLE_RESOURCE_TYPES: &[ResourceType] =
+    &[ResourceType::Document, ResourceType::DocumentCollection];
 
 /// Operation types eligible for cross-region hedging in the current phase.
 ///
 /// Future phases will append feed-style operations
-/// (`Query` / `ReadFeed` / `QueryPlan`) and metadata reads.
+/// (`Query` / `ReadFeed` / `QueryPlan`).
 const HEDGEABLE_OPERATION_TYPES: &[OperationType] = &[OperationType::Read];
 
 /// Returns `true` when the operation is eligible for cross-region hedging.
@@ -324,6 +332,26 @@ mod tests {
         CosmosOperation::read_database(db)
     }
 
+    fn read_container_operation() -> CosmosOperation {
+        CosmosOperation::read_container(fake_container_reference())
+    }
+
+    fn create_container_operation() -> CosmosOperation {
+        let account = AccountReference::with_master_key(
+            Url::parse("https://acct.documents.azure.com/").unwrap(),
+            "k",
+        );
+        CosmosOperation::create_container(DatabaseReference::from_name(account, "db"))
+    }
+
+    fn read_all_containers_operation() -> CosmosOperation {
+        let account = AccountReference::with_master_key(
+            Url::parse("https://acct.documents.azure.com/").unwrap(),
+            "k",
+        );
+        CosmosOperation::read_all_containers(DatabaseReference::from_name(account, "db"))
+    }
+
     fn enabled_strategy() -> HedgingStrategy {
         HedgingStrategy::new(HedgeThreshold::new(Duration::from_millis(500)).unwrap())
     }
@@ -381,10 +409,43 @@ mod tests {
 
     #[test]
     fn should_hedge_non_document() {
-        // Reads against non-Document resource types are excluded in Phase 1.
+        // Reads against non-hedgeable resource types (e.g. Database) are excluded.
         let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
         let op = read_database_operation();
         assert!(!should_hedge(Some(&enabled_strategy()), &op, &state, &[],));
+    }
+
+    /// Regression for issue #4253: a cold container/collection metadata point-read
+    /// is hedged across regions so a slow or unhealthy preferred region cannot stall
+    /// the read (and any operation blocked on warming the container cache) past the
+    /// caller's timeout. This replaces the earlier detached-task approach with the
+    /// crate's structural cross-region mechanism (no detached tasks).
+    #[test]
+    fn should_hedge_container_read() {
+        let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
+        let op = read_container_operation();
+        assert_eq!(op.resource_type(), ResourceType::DocumentCollection);
+        assert!(should_hedge(Some(&enabled_strategy()), &op, &state, &[]));
+    }
+
+    /// Container writes (create/replace/delete) must never hedge — only idempotent
+    /// reads are eligible.
+    #[test]
+    fn should_not_hedge_container_write() {
+        let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
+        let op = create_container_operation();
+        assert_eq!(op.resource_type(), ResourceType::DocumentCollection);
+        assert!(!should_hedge(Some(&enabled_strategy()), &op, &state, &[]));
+    }
+
+    /// Feed-style container reads (`ReadFeed`, e.g. list containers) are not hedged
+    /// in this phase — only point reads of a container's metadata.
+    #[test]
+    fn should_not_hedge_container_feed_read() {
+        let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
+        let op = read_all_containers_operation();
+        assert_eq!(op.resource_type(), ResourceType::DocumentCollection);
+        assert!(!should_hedge(Some(&enabled_strategy()), &op, &state, &[]));
     }
 
     #[test]

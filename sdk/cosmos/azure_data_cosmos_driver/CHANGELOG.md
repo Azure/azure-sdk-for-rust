@@ -39,6 +39,7 @@
 
 ### Bugs Fixed
 
+- Extended cross-region hedging to cover the container/collection metadata read (`DocumentCollection` point reads). A cold container-cache warm-up routed to a slow or unhealthy preferred region could stall the read — and any operation blocked on it — past the caller's timeout, with the cross-region failover never reached if the caller gave up first. Hedging now speculatively dispatches the read to a second preferred region once the hedge threshold elapses, so a healthy region returns within the caller's deadline. This uses the existing structural hedging mechanism (no detached background tasks) and applies only to idempotent reads; container writes and feed reads are unaffected. ([#4253](https://github.com/Azure/azure-sdk-for-rust/issues/4253))
 - Fixed duplicate items being returned on cross-partition query resume after a physical partition split. When a cross-partition query was paused, serialized to a continuation token, and resumed after the underlying partition had split, the resumed iterator could re-emit items the caller had already consumed on a prior page. The continuation token now records per-range sibling state and is correctly propagated to every surviving leaf after a split. ([#4550](https://github.com/Azure/azure-sdk-for-rust/pull/4550))
 
 ### Other Changes
