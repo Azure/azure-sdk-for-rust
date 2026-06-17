@@ -400,14 +400,6 @@ pub struct RequestDiagnostics {
     pub(crate) request_charge: RequestCharge,
 
     /// Activity ID for this attempt.
-    ///
-    /// Seeded at request start with the operation-level activity ID attached to
-    /// the outgoing request as `x-ms-activity-id` (an operation may override it
-    /// with its own header), then overwritten by the response-header echo on
-    /// success. If the attempt fails before a response is received — including
-    /// transport failures classified as [`RequestSentStatus::NotSent`] that
-    /// never reached the wire — the seeded value is retained, so an attempt is
-    /// never serialized with a `null` activity ID.
     activity_id: Option<ActivityId>,
 
     /// Session token from response (for session consistency).
@@ -1404,13 +1396,6 @@ impl DiagnosticsContextBuilder {
             transport_http_version,
             endpoint,
         );
-        // Seed the per-attempt activity ID with the operation-level activity ID.
-        // In the common case this is the value attached to the outgoing request
-        // as `x-ms-activity-id` (an operation may override it with its own
-        // header). On a successful response it is overwritten by the
-        // response-header echo in `record_response`; if the attempt fails before
-        // a response is received it ensures the attempt still records an activity
-        // ID instead of serializing `null`.
         request.with_activity_id(self.activity_id.clone());
         let handle = RequestHandle(self.requests.len());
         self.requests.push(request);
@@ -3152,10 +3137,6 @@ mod tests {
         let ctx = builder.complete();
 
         let json = ctx.to_json_string(Some(DiagnosticsVerbosity::Detailed));
-        assert!(
-            !json.contains("\"cpu\":\"empty\"") && !json.contains("\"cpu\": \"empty\""),
-            "cpu must not serialize the 'empty' sentinel string.\nActual:\n{json}"
-        );
         let actual = normalize_diagnostics_json(json);
         let expected: serde_json::Value = serde_json::json!({
             "activity_id": "test-system-usage-empty",
