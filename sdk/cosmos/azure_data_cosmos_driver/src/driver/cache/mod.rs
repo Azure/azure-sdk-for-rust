@@ -23,6 +23,8 @@ mod container_routing_map;
 mod partition_key_range_cache;
 
 pub(crate) use account_metadata_cache::{AccountMetadataCache, AccountProperties, AccountRegion};
+#[cfg(test)]
+pub(crate) use account_metadata_cache::{ConsistencyPolicy, ReadPolicy, ReplicationPolicy};
 pub(crate) use async_cache::AsyncCache;
 pub(crate) use async_lazy::AsyncLazy;
 pub(crate) use container_cache::ContainerCache;

@@ -39,7 +39,8 @@ Goals:
 
 The capture gate defaults to [`Mode::Always`] — diagnostics are produced **out-of-the-box**,
 matching the driver's historical always-on behavior. Callers opt into the cheaper modes explicitly
-via [`DriverOptions::with_capture_diagnostics_policy`](crate::options::DriverOptions). The gate
+via [`DriverOptionsBuilder::with_capture_diagnostics_policy`](crate::options::DriverOptionsBuilder)
+(through [`DriverOptions::builder`](crate::options::DriverOptions::builder)). The gate
 decides **before** the build, not after:
 
 - **`Always`** (default) — the builder collects fully and the canonical context is surfaced. No
@@ -172,7 +173,8 @@ top). Example for a retry (429 → 200):
 
 How a `DiagnosticsContext` is rendered to a string is a driver client option,
 [`DiagnosticsEncoding`], set via
-[`DriverOptions::with_diagnostics_encoding`](crate::options::DriverOptions). It is honored by
+[`DriverOptionsBuilder::with_diagnostics_encoding`](crate::options::DriverOptionsBuilder)
+(via [`DriverOptions::builder`](crate::options::DriverOptions::builder)). It is honored by
 [`DiagnosticsContext::encode`](crate::diagnostics::DiagnosticsContext::encode) and
 [`CosmosResponse::diagnostics_string`](crate::models::CosmosResponse::diagnostics_string):
 

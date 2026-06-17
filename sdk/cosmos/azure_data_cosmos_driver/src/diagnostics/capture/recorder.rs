@@ -190,10 +190,9 @@ impl DiagnosticsRecorder {
     /// Begins capture for an operation, renting a log and recording the operation root span.
     ///
     /// `operation` is the operation name and `activity_id` the operation's activity id (used as the
-    /// top-level id of the built `DiagnosticsContext`). `endpoint` is accepted for call-site parity
-    /// with the previous byte recorder; the per-attempt endpoint is what reconstruction uses.
-    pub fn start(pool: &LogPool, operation: &str, endpoint: &str, activity_id: &str) -> Self {
-        let _ = endpoint;
+    /// top-level id of the built `DiagnosticsContext`). `_endpoint` is accepted for call-site parity
+    /// with the pipeline's envelope; the per-attempt endpoint is what reconstruction uses.
+    pub fn start(pool: &LogPool, operation: &str, _endpoint: &str, activity_id: &str) -> Self {
         let mut log = pool.rent();
         let op_span = log.push_span(SpanKind::Operation, NO_PARENT, 0, 0);
         log.attr_str(op_span, AttrKey::OperationName, operation);

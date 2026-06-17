@@ -39,7 +39,14 @@ impl LogPool {
 
     /// Rents a cleared log, reusing a pooled one when available.
     pub(crate) fn rent(&self) -> EventLog {
-        match self.free.lock().expect("LogPool mutex poisoned").pop() {
+        // Recover from a poisoned lock rather than propagating the panic: a diagnostics buffer
+        // pool should never turn one unrelated panic into cascading panics on later operations.
+        match self
+            .free
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .pop()
+        {
             Some(mut log) => {
                 log.clear();
                 log
@@ -54,7 +61,7 @@ impl LogPool {
             return; // oversized (e.g. wide fan-out) — let it free instead of pinning memory
         }
         log.clear();
-        let mut free = self.free.lock().expect("LogPool mutex poisoned");
+        let mut free = self.free.lock().unwrap_or_else(|e| e.into_inner());
         if free.len() < MAX_POOLED {
             free.push(log);
         }
@@ -62,7 +69,7 @@ impl LogPool {
 
     /// Number of logs currently parked in the pool.
     pub fn pooled(&self) -> usize {
-        self.free.lock().expect("LogPool mutex poisoned").len()
+        self.free.lock().unwrap_or_else(|e| e.into_inner()).len()
     }
 }
 

@@ -35,6 +35,7 @@ use azure_data_cosmos_driver::in_memory_emulator::{
     VirtualRegion,
 };
 use azure_data_cosmos_driver::models::{AccountReference, CosmosOperation, DatabaseReference};
+use azure_data_cosmos_driver::options::DriverOptions;
 use azure_data_cosmos_driver::options::OperationOptions;
 
 const GATEWAY_URL: &str = "https://eastus.emulator.local";
@@ -115,7 +116,7 @@ async fn background_loop_refetches_database_account_with_no_traffic() {
         .expect("runtime should build");
 
     let _driver = runtime
-        .get_or_create_driver(account(), None)
+        .create_driver(DriverOptions::builder(account()).build())
         .await
         .expect("driver should initialize against the in-memory emulator");
 
@@ -159,7 +160,7 @@ async fn back_to_back_operations_do_not_trigger_per_request_account_reads() {
         .expect("runtime should build");
 
     let driver = runtime
-        .get_or_create_driver(account(), None)
+        .create_driver(DriverOptions::builder(account()).build())
         .await
         .expect("driver should initialize against the in-memory emulator");
 

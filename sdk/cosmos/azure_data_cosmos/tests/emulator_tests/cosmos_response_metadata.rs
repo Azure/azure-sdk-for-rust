@@ -9,7 +9,7 @@ use azure_data_cosmos::models::ContainerProperties;
 use azure_data_cosmos::models::ResponseHeaders;
 use azure_data_cosmos::Query;
 use azure_data_cosmos::{clients::ContainerClient, feed::FeedScope};
-use framework::{TestClient, TestRunContext};
+use framework::{TestClient, TestOptions, TestRunContext};
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
@@ -92,7 +92,7 @@ pub async fn response_metadata_on_missing_read() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -234,7 +234,7 @@ pub async fn response_metadata_on_read_write_preserves_session_and_lsn(
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -315,7 +315,7 @@ pub async fn query_pages_do_not_leak_lsn_in_items() -> Result<(), Box<dyn Error>
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }

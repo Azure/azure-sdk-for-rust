@@ -28,7 +28,8 @@
 //!
 //! The gate defaults to [`Mode::Always`] — diagnostics are produced out-of-the-box; set
 //! [`Mode::Threshold`] or [`Mode::Off`] via
-//! [`DriverOptions::with_capture_diagnostics_policy`](crate::options::DriverOptions) to make the
+//! [`DriverOptionsBuilder::with_capture_diagnostics_policy`](crate::options::DriverOptionsBuilder)
+//! (via [`DriverOptions::builder`](crate::options::DriverOptions::builder)) to make the
 //! hot path cheaper.
 //!
 //! # Example
