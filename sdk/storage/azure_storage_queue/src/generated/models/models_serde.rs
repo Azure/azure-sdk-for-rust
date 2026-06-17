@@ -5,8 +5,8 @@
 
 pub mod option_offset_date_time_rfc3339 {
     #![allow(clippy::type_complexity)]
-    use azure_core::time::{parse_rfc3339, to_rfc3339, OffsetDateTime};
-    use serde::{Deserialize, Deserializer, Serialize, Serializer};
+    use azure_core::time::{parse_rfc3339, OffsetDateTime};
+    use serde::{Deserialize, Deserializer};
     use std::result::Result;
 
     pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<OffsetDateTime>, D::Error>
@@ -20,21 +20,6 @@ pub mod option_offset_date_time_rfc3339 {
                 Ok(Some(decoded0))
             }
             None => Ok(None),
-        }
-    }
-
-    pub fn serialize<S>(
-        to_serialize: &Option<OffsetDateTime>,
-        serializer: S,
-    ) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        if let Some(to_serialize) = to_serialize {
-            let encoded0 = to_rfc3339(to_serialize);
-            <Option<String>>::serialize(&Some(encoded0), serializer)
-        } else {
-            serializer.serialize_none()
         }
     }
 }
