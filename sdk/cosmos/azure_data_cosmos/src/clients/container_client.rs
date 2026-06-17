@@ -3,19 +3,21 @@
 
 use crate::{
     clients::{offers_client, ClientContext},
-    feed::{FeedRange, FeedScope, QueryItemIterator},
+    feed::{ChangeFeedPageIterator, FeedRange, FeedScope, QueryItemIterator},
     models::TransactionalBatch,
     models::{BatchResponse, ItemResponse, ResourceResponse},
     models::{ContainerProperties, PatchInstructions, ThroughputProperties},
     options::{
-        BatchOptions, DeleteContainerOptions, ItemReadOptions, ItemWriteOptions, PatchItemOptions,
-        Precondition, QueryOptions, ReadContainerOptions, ReadFeedRangesOptions,
-        ReplaceContainerOptions, SessionToken, ThroughputOptions,
+        BatchOptions, ChangeFeedOptions, ChangeFeedStartFrom, DeleteContainerOptions,
+        ItemReadOptions, ItemWriteOptions, PatchItemOptions, Precondition, QueryOptions,
+        ReadContainerOptions, ReadFeedRangesOptions, ReplaceContainerOptions, SessionToken,
+        ThroughputOptions,
     },
     PartitionKey, Query,
 };
 
 use super::ThroughputPoller;
+use azure_core::http::Etag;
 use azure_data_cosmos_driver::models::{
     ContainerReference, CosmosOperation, ItemReference, PartitionKeyKind,
 };
@@ -847,6 +849,110 @@ impl ContainerClient {
             )
             .await?;
         Ok(QueryItemIterator::new(
+            self.context.driver.clone(),
+            Some(self.container_ref.clone()),
+            plan,
+            options.operation,
+        ))
+    }
+
+    /// Reads the change feed for a container, returning a stream of pages.
+    ///
+    /// The change feed provides an ordered list of changes (creates and
+    /// replaces in LatestVersion mode) made to items in the container.
+    ///
+    /// # Arguments
+    /// * `scope` - Determines which partitions to read changes from.
+    /// * `options` - Optional parameters controlling mode, start position, and paging.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// use azure_data_cosmos::{clients::ContainerClient, feed::FeedScope};
+    /// use futures::StreamExt;
+    /// use serde::Deserialize;
+    ///
+    /// #[derive(Debug, Deserialize)]
+    /// struct MyItem { id: String }
+    ///
+    /// # async fn example(container: ContainerClient) -> Result<(), Box<dyn std::error::Error>> {
+    /// // Read all changes from the beginning
+    /// let mut pages = container
+    ///     .read_change_feed::<MyItem>(FeedScope::full_container(), None)
+    ///     .await?;
+    ///
+    /// while let Some(page) = pages.next().await {
+    ///     let page = page?;
+    ///     for item in page.items() {
+    ///         println!("changed: {:?}", item);
+    ///     }
+    ///     // Save checkpoint for resumption
+    ///     let _token = pages.to_continuation_token()?;
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn read_change_feed<T: DeserializeOwned + Send + 'static>(
+        &self,
+        scope: FeedScope,
+        options: Option<ChangeFeedOptions>,
+    ) -> crate::Result<ChangeFeedPageIterator<T>> {
+        let options = options.unwrap_or_default();
+
+        let mut initial_operation = CosmosOperation::change_feed(
+            self.container_ref.clone(),
+            Some(scope.into_feed_range(self.container_ref.partition_key_definition())),
+        );
+
+        if let Some(token) = options.session_token {
+            initial_operation = initial_operation.with_session_token(token);
+        }
+        if let Some(hint) = options.feed.max_item_count {
+            initial_operation = initial_operation.with_max_item_count(hint);
+        }
+
+        // start_from → headers (only when no continuation token is present,
+        // because the token carries its own position)
+        if options.feed.continuation_token.is_none() {
+            match &options.start_from {
+                ChangeFeedStartFrom::Beginning => {} // no additional header needed
+                ChangeFeedStartFrom::Now => {
+                    initial_operation = initial_operation
+                        .with_precondition(Precondition::if_none_match(Etag::from("*")));
+                }
+                ChangeFeedStartFrom::PointInTime(ts) => {
+                    // RFC 1123 / RFC 7231 IMF-fixdate format as required by Cosmos DB.
+                    use time::format_description::FormatItem;
+                    use time::macros::format_description;
+                    const RFC1123: &[FormatItem<'_>] = format_description!(
+                        "[weekday repr:short], [day] [month repr:short] [year] [hour]:[minute]:[second] GMT"
+                    );
+                    let formatted = ts.format(RFC1123).map_err(|e| {
+                        crate::DriverCosmosError::builder()
+                            .with_status(crate::error::CosmosStatus::new(
+                                azure_core::http::StatusCode::BadRequest,
+                            ))
+                            .with_message(format!(
+                                "failed to format PointInTime timestamp: {e}"
+                            ))
+                            .build()
+                    })?;
+                    initial_operation = initial_operation.with_if_modified_since(formatted);
+                }
+            }
+        }
+
+        let plan = self
+            .context
+            .driver
+            .plan_operation(
+                initial_operation,
+                &options.operation,
+                options.feed.continuation_token.as_ref(),
+            )
+            .await?;
+
+        Ok(ChangeFeedPageIterator::new(
             self.context.driver.clone(),
             Some(self.container_ref.clone()),
             plan,

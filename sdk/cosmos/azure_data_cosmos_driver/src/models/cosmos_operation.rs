@@ -186,6 +186,14 @@ impl CosmosOperation {
         self
     }
 
+    /// Sets the `If-Modified-Since` header (pre-formatted RFC 1123 string).
+    ///
+    /// Used by change feed to start from a specific point in time.
+    pub fn with_if_modified_since(mut self, value: String) -> Self {
+        self.request_headers.if_modified_since = Some(value);
+        self
+    }
+
     /// Returns the precondition, if set.
     pub fn precondition(&self) -> Option<&Precondition> {
         self.request_headers.precondition.as_ref()
@@ -606,6 +614,25 @@ impl CosmosOperation {
             resource_ref,
             Some(crate::models::FeedRange::full()),
         )
+    }
+
+    /// Creates a change feed read operation for a container.
+    ///
+    /// Sets the `A-IM` header to `Incremental feed` (LatestVersion mode) and
+    /// the wire format version header. The caller is responsible for setting
+    /// start-from headers (e.g., `If-None-Match: *` for "Now") via
+    /// [`with_precondition`](Self::with_precondition).
+    ///
+    /// `target` scopes the change feed to a specific partition or EPK range.
+    /// Pass `None` or `Some(FeedRange::full())` to read the entire container.
+    pub fn change_feed(container: ContainerReference, target: Option<FeedRange>) -> Self {
+        let resource_ref: CosmosResourceReference = CosmosResourceReference::from(container)
+            .with_resource_type(ResourceType::Document)
+            .into_feed_reference();
+        let mut headers = CosmosRequestHeaders::new();
+        headers.incremental_feed = true;
+        headers.changefeed_wire_format_version = true;
+        Self::new(OperationType::ReadFeed, resource_ref, target).with_request_headers(headers)
     }
 
     /// Queries items in a container.

@@ -38,6 +38,7 @@ pub(crate) mod request_header_names {
     pub const SESSION_TOKEN: &str = "x-ms-session-token";
     pub const IF_MATCH: &str = "if-match";
     pub const IF_NONE_MATCH: &str = "if-none-match";
+    pub const IF_MODIFIED_SINCE: &str = "if-modified-since";
     pub const PREFER: &str = "prefer";
     pub const IS_QUERY: &str = "x-ms-documentdb-isquery";
     pub const IS_QUERY_PLAN_REQUEST: &str = "x-ms-cosmos-is-query-plan-request";
@@ -47,6 +48,12 @@ pub(crate) mod request_header_names {
     /// Change-feed indicator ("Incremental feed"). HTTP standard name `a-im`.
     pub const A_IM: &str = "a-im";
     pub const INCREMENTAL_FEED: &str = "Incremental feed";
+    /// Full-fidelity change feed indicator (`A-IM: Full-Fidelity Feed`).
+    pub const FULL_FIDELITY_FEED: &str = "Full-Fidelity Feed";
+    /// Wire format version for change feed responses.
+    pub const CHANGEFEED_WIRE_FORMAT_VERSION: &str = "x-ms-cosmos-changefeed-wire-format-version";
+    /// The wire format version value used by this SDK.
+    pub const CHANGEFEED_WIRE_FORMAT_VERSION_2021_09_15: &str = "2021-09-15";
     pub const POPULATE_INDEX_METRICS: &str = "x-ms-cosmos-populateindexmetrics";
     pub const POPULATE_QUERY_METRICS: &str = "x-ms-documentdb-populatequerymetrics";
     pub const ENABLE_CROSS_PARTITION_QUERY: &str = "x-ms-documentdb-query-enablecrosspartition";
@@ -170,6 +177,18 @@ pub struct CosmosRequestHeaders {
     /// continuation token.
     pub incremental_feed: bool,
 
+    /// When `true`, emits the change-feed wire format version header
+    /// (`x-ms-cosmos-changefeed-wire-format-version: 2021-09-15`).
+    ///
+    /// Required for both LatestVersion and AllVersionsAndDeletes modes.
+    pub changefeed_wire_format_version: bool,
+
+    /// If-Modified-Since timestamp for change feed point-in-time start.
+    ///
+    /// When set, the driver emits `If-Modified-Since: <value>`. The caller
+    /// is responsible for formatting the timestamp in RFC 1123 format.
+    pub if_modified_since: Option<String>,
+
     /// Request index-utilization metrics on the response
     /// (`x-ms-cosmos-populateindexmetrics`). Only meaningful for query
     /// operations.
@@ -258,6 +277,20 @@ impl CosmosRequestHeaders {
             headers.insert(
                 request_header_names::A_IM,
                 HeaderValue::from_static(request_header_names::INCREMENTAL_FEED),
+            );
+        }
+        if self.changefeed_wire_format_version {
+            headers.insert(
+                request_header_names::CHANGEFEED_WIRE_FORMAT_VERSION,
+                HeaderValue::from_static(
+                    request_header_names::CHANGEFEED_WIRE_FORMAT_VERSION_2021_09_15,
+                ),
+            );
+        }
+        if let Some(ref ts) = self.if_modified_since {
+            headers.insert(
+                request_header_names::IF_MODIFIED_SINCE,
+                HeaderValue::from(ts.clone()),
             );
         }
         if let Some(v) = self.populate_index_metrics {
