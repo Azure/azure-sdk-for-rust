@@ -9,7 +9,7 @@ use crate::models::ContinuationToken;
 ///
 /// Group both continuation-token resumption and the fan-out cap into a single
 /// struct so the signature of `plan_operation` can grow without forcing a
-/// change at every call site. Callers that need no special behaviour can pass
+/// change at every call site. Callers that need no special behavior can pass
 /// `None`; `plan_operation` treats `None` as `PlanOptions::default()`.
 #[derive(Default)]
 pub struct PlanOptions {
