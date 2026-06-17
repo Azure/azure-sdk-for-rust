@@ -1,4 +1,4 @@
-# azure_storage_common
+# Azure Storage Common Library for Rust
 
 This crate contains shared types and utilities used across the Azure Storage client library offerings.
 

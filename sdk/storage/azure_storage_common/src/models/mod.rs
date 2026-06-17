@@ -1,16 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-pub(crate) mod models_serde;
-#[doc(hidden)]
-pub mod rfc3339_seconds_only;
-
 use azure_core::{base64, fmt::SafeDebug, time::OffsetDateTime};
 use serde::{Deserialize, Serialize};
 
 /// A user delegation key.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
-#[non_exhaustive]
 #[serde(rename_all = "PascalCase")]
 pub struct UserDelegationKey {
     /// The delegated user tenant ID in Entra ID. Returned if DelegatedUserTid is specified.
@@ -21,7 +16,7 @@ pub struct UserDelegationKey {
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
-        with = "models_serde::option_offset_date_time_rfc3339"
+        with = "crate::rfc3339::option"
     )]
     pub signed_expiry: Option<OffsetDateTime>,
 
@@ -37,7 +32,7 @@ pub struct UserDelegationKey {
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
-        with = "models_serde::option_offset_date_time_rfc3339"
+        with = "crate::rfc3339::option"
     )]
     pub signed_start: Option<OffsetDateTime>,
 

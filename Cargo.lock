@@ -860,6 +860,7 @@ version = "0.1.0"
 dependencies = [
  "azure_core 1.0.0",
  "serde",
+ "serde_json",
  "time",
 ]
 

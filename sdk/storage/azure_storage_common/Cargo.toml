@@ -17,3 +17,9 @@ categories = ["api-bindings"]
 azure_core = { workspace = true }
 serde = { workspace = true }
 time = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+
+[lints]
+workspace = true

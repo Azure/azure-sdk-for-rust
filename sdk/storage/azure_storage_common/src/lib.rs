@@ -4,3 +4,6 @@
 #![doc = include_str!("../README.md")]
 
 pub mod models;
+
+#[doc(hidden)]
+pub mod rfc3339;
