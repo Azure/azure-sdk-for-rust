@@ -43,8 +43,8 @@ pub struct FeedOptions {
     /// Maximum number of physical partitions a cross-partition query may fan
     /// out to.
     ///
-    /// When `None`, the SDK uses its built-in default
-    /// (`QueryOptions::DEFAULT_MAX_FAN_OUT` = 100). Setting this to a higher
+    /// When `None`, the SDK uses a built-in default of 100. Setting this to a
+    /// higher
     /// value allows queries that span very large containers, though such
     /// queries are typically expensive and should be avoided in
     /// latency-sensitive paths.

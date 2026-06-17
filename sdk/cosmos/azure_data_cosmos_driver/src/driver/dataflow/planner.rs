@@ -189,8 +189,8 @@ pub(crate) async fn build_sequential_drain(
         plan_fresh(query_plan, topology_provider, operation).await?
     };
 
-    let effective_max_fan_out = max_fan_out.unwrap_or(DEFAULT_MAX_FAN_OUT);
-    if request_nodes.len() > effective_max_fan_out {
+    let fan_out_limit = max_fan_out.unwrap_or(DEFAULT_MAX_FAN_OUT);
+    if request_nodes.len() > fan_out_limit {
         return Err(crate::error::CosmosError::builder()
             .with_status(crate::error::CosmosStatus::CLIENT_QUERY_FAN_OUT_LIMIT_EXCEEDED)
             .with_message(format!(
@@ -199,7 +199,7 @@ pub(crate) async fn build_sequential_drain(
                  QueryOptions::with_max_fan_out() to raise the limit if this \
                  level of fan-out is intentional",
                 request_nodes.len(),
-                effective_max_fan_out,
+                fan_out_limit,
             ))
             .build());
     }
