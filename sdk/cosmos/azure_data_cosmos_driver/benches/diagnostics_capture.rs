@@ -3,10 +3,10 @@
 
 //! Criterion benchmarks for the deferred, threshold-gated diagnostics capture.
 //!
-//! The headline metric is the **dropped/fast-success hot path**: capture appends a compact record
-//! stream, then the gate drops it and returns the buffer to the pool. With a warm pool this is
-//! allocation-free and on the order of tens of nanoseconds. The `built` case measures the cost of
-//! materializing the canonical `DiagnosticsContext`, paid only past the gate.
+//! The headline metric is the **dropped/fast-success hot path**: capture pushes typed spans/attrs
+//! into a pooled event log, then the gate drops it and returns the log to the pool. With a warm
+//! pool this is allocation-free apart from the attempt's owned strings. The `built` case measures
+//! the cost of materializing the canonical `DiagnosticsContext`, paid only past the gate.
 
 use azure_data_cosmos_driver::diagnostics::capture::{
     finish, AttemptRecord, DiagnosticsPolicy, DiagnosticsRecorder, LogPool, Outcome,

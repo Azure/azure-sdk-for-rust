@@ -9,7 +9,7 @@
 //! [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext) via [`super::context`].
 
 use super::context::build_context;
-use super::recorder::{parse, DiagnosticsRecorder};
+use super::recorder::DiagnosticsRecorder;
 use super::Outcome;
 use crate::diagnostics::DiagnosticsContext;
 use crate::options::DiagnosticsOptions;
@@ -117,10 +117,10 @@ pub fn finish(
         recorder.return_buffer();
         return None;
     }
-    let parsed = parse(recorder.bytes());
-    let context = build_context(&parsed, options);
+    // The typed event log *is* the parsed form — reconstruct the tree directly, no byte parse.
+    let context = recorder.log().map(|log| build_context(log, options));
     recorder.return_buffer();
-    Some(context)
+    context
 }
 
 #[cfg(test)]

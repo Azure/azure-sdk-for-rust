@@ -3,88 +3,35 @@
 
 //! The per-operation **capture recorder** — the entire hot-path cost of diagnostics.
 //!
-//! A [`DiagnosticsRecorder`] rents one buffer from a [`LogPool`](super::pool::LogPool) at
-//! operation start and appends a compact, tag-length-value (TLV) record stream as attempts and
-//! hedge legs complete. Appends go through `&mut self`, so there is **no lock on the per-attempt
-//! hot path**; the pool's brief lock is touched only at operation boundaries (rent / return).
+//! A [`DiagnosticsRecorder`] rents one [`EventLog`](super::event::EventLog) from a
+//! [`LogPool`](super::pool::LogPool) at operation start and appends plain Rust structs — a
+//! [`Span`](super::event::Span) per attempt / hedge leg plus its [`Attr`](super::event::Attr)s —
+//! as the operation runs. Appends go through `&mut self`, so there is **no lock on the per-attempt
+//! hot path**; the pool's brief lock is touched only at operation boundaries (rent / return). No
+//! bytes are encoded and no varints are written on the hot path — storing an event is a single
+//! `Vec::push` of a small, typed value.
 //!
 //! At operation end the recorder is handed to the gate ([`super::gate`]). On a fast success the
-//! buffer is returned to the pool for ~free; on a slow or errored operation the log is parsed and
-//! materialized into the canonical [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext)
-//! (see [`super::context`]).
+//! log is returned to the pool for ~free; on a slow or errored operation the recorded spans /
+//! attrs are walked into the canonical
+//! [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext) (see [`super::context`]).
 //!
 //! ## Cancellation & panic safety
 //!
-//! The recorder owns its buffer in an [`Option`]. [`DiagnosticsRecorder::return_buffer`] takes the
-//! buffer out so the gate can return it to the pool. If the operation future is dropped before
-//! the gate runs (cancellation, timeout, `select!`) or a panic unwinds through it, the [`Drop`]
-//! impl returns the still-owned buffer to the pool — so a cancelled or panicking operation never
-//! leaks a pooled buffer, and a partially written buffer is `clear()`-ed before reuse.
+//! The recorder owns its log in an [`Option`]. [`DiagnosticsRecorder::return_buffer`] takes the
+//! log out so the gate can return it to the pool. If the operation future is dropped before the
+//! gate runs (cancellation, timeout, `select!`) or a panic unwinds through it, the [`Drop`] impl
+//! returns the still-owned log to the pool — so a cancelled or panicking operation never leaks a
+//! pooled log, and a partially written log is `clear()`-ed before reuse.
 
+use super::event::{AttrKey, EventLog, SpanKind, NO_PARENT};
 use super::pool::LogPool;
 use super::Outcome;
 use crate::diagnostics::ExecutionContext;
 use std::time::Instant;
 
-/// Record tags in the append-only capture log.
-#[repr(u8)]
-enum Tag {
-    Op = 1,
-    Attempt = 2,
-    Hedge = 3,
-    End = 4,
-}
-
-// --- compact varint + string TLV helpers (LEB128) ---------------------------
-
-fn write_varint(out: &mut Vec<u8>, mut value: u64) {
-    loop {
-        let mut byte = (value & 0x7f) as u8;
-        value >>= 7;
-        if value != 0 {
-            byte |= 0x80;
-        }
-        out.push(byte);
-        if value == 0 {
-            break;
-        }
-    }
-}
-
-fn read_varint(input: &[u8], pos: &mut usize) -> Option<u64> {
-    let mut result: u64 = 0;
-    let mut shift = 0;
-    loop {
-        let byte = *input.get(*pos)?;
-        *pos += 1;
-        result |= u64::from(byte & 0x7f) << shift;
-        if byte & 0x80 == 0 {
-            break;
-        }
-        shift += 7;
-        if shift >= 64 {
-            return None;
-        }
-    }
-    Some(result)
-}
-
-fn write_str(out: &mut Vec<u8>, value: &str) {
-    write_varint(out, value.len() as u64);
-    out.extend_from_slice(value.as_bytes());
-}
-
-fn read_str(input: &[u8], pos: &mut usize) -> Option<String> {
-    let len = usize::try_from(read_varint(input, pos)?).ok()?;
-    let end = pos.checked_add(len)?;
-    let bytes = input.get(*pos..end)?;
-    let s = std::str::from_utf8(bytes).ok()?.to_string();
-    *pos = end;
-    Some(s)
-}
-
-/// Maps an [`ExecutionContext`] to its wire byte.
-fn exec_context_to_u8(ctx: ExecutionContext) -> u8 {
+/// Maps an [`ExecutionContext`] to its stable attribute discriminant.
+pub(crate) fn exec_context_to_u64(ctx: ExecutionContext) -> u64 {
     match ctx {
         ExecutionContext::Initial => 0,
         ExecutionContext::Retry => 1,
@@ -92,18 +39,6 @@ fn exec_context_to_u8(ctx: ExecutionContext) -> u8 {
         ExecutionContext::Hedging => 3,
         ExecutionContext::RegionFailover => 4,
         ExecutionContext::CircuitBreakerProbe => 5,
-    }
-}
-
-/// Maps a wire byte back to an [`ExecutionContext`], defaulting unknown values to `Initial`.
-fn exec_context_from_u8(value: u8) -> ExecutionContext {
-    match value {
-        1 => ExecutionContext::Retry,
-        2 => ExecutionContext::TransportRetry,
-        3 => ExecutionContext::Hedging,
-        4 => ExecutionContext::RegionFailover,
-        5 => ExecutionContext::CircuitBreakerProbe,
-        _ => ExecutionContext::Initial,
     }
 }
 
@@ -126,7 +61,8 @@ pub enum HedgeOutcome {
 }
 
 impl HedgeOutcome {
-    fn to_u8(self) -> u8 {
+    /// Stable discriminant stored as the [`AttrKey::HedgeOutcome`] value.
+    pub(crate) fn to_u64(self) -> u64 {
         match self {
             HedgeOutcome::PrimaryWonPreThreshold => 0,
             HedgeOutcome::PrimaryWonAfterHedge => 1,
@@ -140,7 +76,8 @@ impl HedgeOutcome {
         }
     }
 
-    fn from_u8(value: u8) -> Self {
+    /// Inverse of [`HedgeOutcome::to_u64`], defaulting unknown values to `PrimaryWonPreThreshold`.
+    pub(crate) fn from_u64(value: u64) -> Self {
         match value {
             1 => HedgeOutcome::PrimaryWonAfterHedge,
             2 => HedgeOutcome::AlternateWon,
@@ -236,11 +173,13 @@ impl AttemptRecord {
     }
 }
 
-/// A per-operation append-only capture recorder.
+/// A per-operation append-only capture recorder backed by a typed [`EventLog`].
 #[derive(Debug)]
 pub struct DiagnosticsRecorder {
     pool: LogPool,
-    buf: Option<Vec<u8>>,
+    log: Option<EventLog>,
+    /// Id of the operation root span (always `0` while the log is owned).
+    op_span: u32,
     start: Instant,
     outcome: Outcome,
     attempt_count: u32,
@@ -248,19 +187,21 @@ pub struct DiagnosticsRecorder {
 }
 
 impl DiagnosticsRecorder {
-    /// Begins capture for an operation, renting a buffer and writing the operation header.
+    /// Begins capture for an operation, renting a log and recording the operation root span.
     ///
-    /// `operation` is the operation name, `endpoint` the initial target URL, and `activity_id`
-    /// the operation's activity id (used as the top-level id of the built `DiagnosticsContext`).
+    /// `operation` is the operation name and `activity_id` the operation's activity id (used as the
+    /// top-level id of the built `DiagnosticsContext`). `endpoint` is accepted for call-site parity
+    /// with the previous byte recorder; the per-attempt endpoint is what reconstruction uses.
     pub fn start(pool: &LogPool, operation: &str, endpoint: &str, activity_id: &str) -> Self {
-        let mut buf = pool.rent();
-        buf.push(Tag::Op as u8);
-        write_str(&mut buf, operation);
-        write_str(&mut buf, endpoint);
-        write_str(&mut buf, activity_id);
+        let _ = endpoint;
+        let mut log = pool.rent();
+        let op_span = log.push_span(SpanKind::Operation, NO_PARENT, 0, 0);
+        log.attr_str(op_span, AttrKey::OperationName, operation);
+        log.attr_str(op_span, AttrKey::ActivityId, activity_id);
         Self {
             pool: pool.clone(),
-            buf: Some(buf),
+            log: Some(log),
+            op_span,
             start: Instant::now(),
             outcome: Outcome::Success,
             attempt_count: 0,
@@ -275,23 +216,45 @@ impl DiagnosticsRecorder {
 
     /// Records one attempt (or hedge leg). `start_ns` is set from the recorder's clock if `0`.
     pub fn record_attempt(&mut self, mut attempt: AttemptRecord) {
-        let Some(buf) = self.buf.as_mut() else {
+        let op_span = self.op_span;
+        let Some(log) = self.log.as_mut() else {
             return;
         };
         if attempt.start_ns == 0 {
             attempt.start_ns = self.start.elapsed().as_nanos().min(u128::from(u64::MAX)) as u64;
         }
-        buf.push(Tag::Attempt as u8);
-        buf.push(exec_context_to_u8(attempt.execution_context));
-        write_str(buf, &attempt.region);
-        write_str(buf, &attempt.endpoint);
-        write_varint(buf, u64::from(attempt.status));
-        write_varint(buf, attempt.sub_status.map_or(0, |s| u64::from(s) + 1));
-        write_str(buf, attempt.service_request_id.as_deref().unwrap_or(""));
-        buf.extend_from_slice(&(attempt.request_charge.unwrap_or(0.0) as f32).to_le_bytes());
-        write_str(buf, attempt.request_sent.as_deref().unwrap_or(""));
-        write_varint(buf, attempt.start_ns);
-        write_varint(buf, attempt.duration_ns);
+        let end_ns = attempt.start_ns.saturating_add(attempt.duration_ns);
+        let span = log.push_span(SpanKind::Attempt, op_span, attempt.start_ns, end_ns);
+
+        log.attr_u64(
+            span,
+            AttrKey::ExecutionContext,
+            exec_context_to_u64(attempt.execution_context),
+        );
+        if !attempt.region.is_empty() {
+            log.attr_str(span, AttrKey::Region, attempt.region.as_str());
+        }
+        if !attempt.endpoint.is_empty() {
+            log.attr_str(span, AttrKey::Endpoint, attempt.endpoint.as_str());
+        }
+        log.attr_u64(span, AttrKey::Status, u64::from(attempt.status));
+        if let Some(sub) = attempt.sub_status {
+            log.attr_u64(span, AttrKey::SubStatus, u64::from(sub));
+        }
+        if let Some(id) = attempt
+            .service_request_id
+            .as_deref()
+            .filter(|s| !s.is_empty())
+        {
+            log.attr_str(span, AttrKey::ServiceRequestId, id);
+        }
+        if let Some(ru) = attempt.request_charge.filter(|ru| *ru != 0.0) {
+            log.attr_f64(span, AttrKey::RequestCharge, ru);
+        }
+        if let Some(sent) = attempt.request_sent.as_deref().filter(|s| !s.is_empty()) {
+            log.attr_str(span, AttrKey::RequestSent, sent);
+        }
+
         self.attempt_count += 1;
     }
 
@@ -304,18 +267,30 @@ impl DiagnosticsRecorder {
         alternate_region: Option<&str>,
         response_region: Option<&str>,
     ) {
-        let Some(buf) = self.buf.as_mut() else {
+        let op_span = self.op_span;
+        let at = self.start.elapsed().as_nanos().min(u128::from(u64::MAX)) as u64;
+        let Some(log) = self.log.as_mut() else {
             return;
         };
-        buf.push(Tag::Hedge as u8);
-        buf.push(outcome.to_u8());
-        write_varint(buf, threshold.as_nanos().min(u128::from(u64::MAX)) as u64);
-        write_str(buf, primary_region);
-        write_str(buf, alternate_region.unwrap_or(""));
-        write_str(buf, response_region.unwrap_or(""));
+        let span = log.push_span(SpanKind::Hedge, op_span, at, at);
+        log.attr_u64(span, AttrKey::HedgeOutcome, outcome.to_u64());
+        log.attr_u64(
+            span,
+            AttrKey::HedgeThresholdNs,
+            threshold.as_nanos().min(u128::from(u64::MAX)) as u64,
+        );
+        if !primary_region.is_empty() {
+            log.attr_str(span, AttrKey::PrimaryRegion, primary_region);
+        }
+        if let Some(alt) = alternate_region.filter(|r| !r.is_empty()) {
+            log.attr_str(span, AttrKey::AlternateRegion, alt);
+        }
+        if let Some(resp) = response_region.filter(|r| !r.is_empty()) {
+            log.attr_str(span, AttrKey::ResponseRegion, resp);
+        }
     }
 
-    /// Records the operation outcome and finalizes the log header.
+    /// Records the operation outcome and finalizes the operation root span.
     ///
     /// `final_status` / `final_sub_status` set the top-level status of the built context. If
     /// `total_ns` is `None`, the recorder's own monotonic elapsed time is used.
@@ -331,16 +306,22 @@ impl DiagnosticsRecorder {
         self.outcome = outcome;
         self.attempt_count = attempt_count;
         self.total_ns = total;
-        if let Some(buf) = self.buf.as_mut() {
-            buf.push(Tag::End as u8);
-            buf.push(match outcome {
-                Outcome::Success => 0,
-                Outcome::Error => 1,
-            });
-            write_varint(buf, u64::from(attempt_count));
-            write_varint(buf, u64::from(final_status));
-            write_varint(buf, final_sub_status.map_or(0, |s| u64::from(s) + 1));
-            write_varint(buf, total);
+        let op_span = self.op_span;
+        if let Some(log) = self.log.as_mut() {
+            log.set_span_end(op_span, total);
+            log.attr_u64(
+                op_span,
+                AttrKey::Outcome,
+                match outcome {
+                    Outcome::Success => 0,
+                    Outcome::Error => 1,
+                },
+            );
+            log.attr_u64(op_span, AttrKey::AttemptCount, u64::from(attempt_count));
+            log.attr_u64(op_span, AttrKey::FinalStatus, u64::from(final_status));
+            if let Some(sub) = final_sub_status {
+                log.attr_u64(op_span, AttrKey::FinalSubStatus, u64::from(sub));
+            }
         }
     }
 
@@ -354,162 +335,32 @@ impl DiagnosticsRecorder {
         self.total_ns
     }
 
-    /// The raw, compact size of what was appended on the hot path.
+    /// The number of log entries (spans + attributes) appended on the hot path.
     pub fn raw_len(&self) -> usize {
-        self.buf.as_ref().map_or(0, Vec::len)
+        self.log
+            .as_ref()
+            .map_or(0, |log| log.spans().len() + log.attrs().len())
     }
 
-    /// Borrows the raw capture bytes (for parsing past the gate).
-    pub(crate) fn bytes(&self) -> &[u8] {
-        self.buf.as_deref().unwrap_or(&[])
+    /// Borrows the captured event log (for reconstruction past the gate).
+    pub(crate) fn log(&self) -> Option<&EventLog> {
+        self.log.as_ref()
     }
 
-    /// Returns the backing buffer to the pool, consuming the recorder.
+    /// Returns the backing log to the pool, consuming the recorder.
     pub(crate) fn return_buffer(mut self) {
-        if let Some(buf) = self.buf.take() {
-            self.pool.give_back(buf);
+        if let Some(log) = self.log.take() {
+            self.pool.give_back(log);
         }
     }
 }
 
 impl Drop for DiagnosticsRecorder {
     fn drop(&mut self) {
-        // Cancellation / panic safety: return the buffer to the pool if the gate didn't consume
-        // it. `give_back` clears it, so a partially written buffer never poisons the next rent.
-        if let Some(buf) = self.buf.take() {
-            self.pool.give_back(buf);
+        // Cancellation / panic safety: return the log to the pool if the gate didn't consume it.
+        // `give_back` clears it, so a partially written log never poisons the next rent.
+        if let Some(log) = self.log.take() {
+            self.pool.give_back(log);
         }
     }
-}
-
-/// A fully parsed attempt.
-pub(crate) struct ParsedAttempt {
-    pub execution_context: ExecutionContext,
-    pub region: String,
-    pub endpoint: String,
-    pub status: u16,
-    pub sub_status: Option<u16>,
-    pub service_request_id: String,
-    pub request_charge: f32,
-    pub request_sent: String,
-    pub duration_ns: u64,
-}
-
-/// The parsed hedge outcome.
-pub(crate) struct ParsedHedge {
-    pub outcome: HedgeOutcome,
-    pub threshold_ns: u64,
-    pub primary_region: String,
-    pub alternate_region: Option<String>,
-}
-
-/// A fully parsed capture log, ready to materialize into a `DiagnosticsContext`.
-pub(crate) struct Parsed {
-    pub operation: String,
-    pub activity_id: String,
-    pub attempts: Vec<ParsedAttempt>,
-    pub hedge: Option<ParsedHedge>,
-    pub outcome: Outcome,
-    pub attempt_count: u32,
-    pub final_status: u16,
-    pub final_sub_status: Option<u16>,
-    pub total_ns: u64,
-}
-
-/// Parses a raw capture log buffer. Tolerant of truncation (a cancelled op may lack the `End`).
-pub(crate) fn parse(buf: &[u8]) -> Parsed {
-    let mut p = Parsed {
-        operation: String::new(),
-        activity_id: String::new(),
-        attempts: Vec::new(),
-        hedge: None,
-        outcome: Outcome::Success,
-        attempt_count: 0,
-        final_status: 0,
-        final_sub_status: None,
-        total_ns: 0,
-    };
-    let mut pos = 0usize;
-    while pos < buf.len() {
-        let tag = buf[pos];
-        pos += 1;
-        match tag {
-            t if t == Tag::Op as u8 => {
-                p.operation = read_str(buf, &mut pos).unwrap_or_default();
-                let _endpoint = read_str(buf, &mut pos).unwrap_or_default();
-                p.activity_id = read_str(buf, &mut pos).unwrap_or_default();
-            }
-            t if t == Tag::Attempt as u8 => {
-                let Some(exec) = buf.get(pos).copied() else {
-                    break;
-                };
-                pos += 1;
-                let region = read_str(buf, &mut pos).unwrap_or_default();
-                let endpoint = read_str(buf, &mut pos).unwrap_or_default();
-                let status = read_varint(buf, &mut pos)
-                    .unwrap_or(0)
-                    .min(u64::from(u16::MAX)) as u16;
-                let raw_sub = read_varint(buf, &mut pos).unwrap_or(0);
-                let sub_status =
-                    (raw_sub != 0).then(|| (raw_sub - 1).min(u64::from(u16::MAX)) as u16);
-                let service_request_id = read_str(buf, &mut pos).unwrap_or_default();
-                let mut ru_bytes = [0u8; 4];
-                if let Some(slice) = buf.get(pos..pos + 4) {
-                    ru_bytes.copy_from_slice(slice);
-                }
-                pos += 4;
-                let request_charge = f32::from_le_bytes(ru_bytes);
-                let request_sent = read_str(buf, &mut pos).unwrap_or_default();
-                let _start_ns = read_varint(buf, &mut pos).unwrap_or(0);
-                let duration_ns = read_varint(buf, &mut pos).unwrap_or(0);
-                p.attempts.push(ParsedAttempt {
-                    execution_context: exec_context_from_u8(exec),
-                    region,
-                    endpoint,
-                    status,
-                    sub_status,
-                    service_request_id,
-                    request_charge,
-                    request_sent,
-                    duration_ns,
-                });
-            }
-            t if t == Tag::Hedge as u8 => {
-                let Some(outcome_byte) = buf.get(pos).copied() else {
-                    break;
-                };
-                pos += 1;
-                let threshold_ns = read_varint(buf, &mut pos).unwrap_or(0);
-                let primary_region = read_str(buf, &mut pos).unwrap_or_default();
-                let alternate = read_str(buf, &mut pos).unwrap_or_default();
-                let _response = read_str(buf, &mut pos).unwrap_or_default();
-                p.hedge = Some(ParsedHedge {
-                    outcome: HedgeOutcome::from_u8(outcome_byte),
-                    threshold_ns,
-                    primary_region,
-                    alternate_region: (!alternate.is_empty()).then_some(alternate),
-                });
-            }
-            t if t == Tag::End as u8 => {
-                p.outcome = if buf.get(pos).copied() == Some(1) {
-                    Outcome::Error
-                } else {
-                    Outcome::Success
-                };
-                pos += 1;
-                p.attempt_count = read_varint(buf, &mut pos)
-                    .unwrap_or(0)
-                    .min(u64::from(u32::MAX)) as u32;
-                p.final_status = read_varint(buf, &mut pos)
-                    .unwrap_or(0)
-                    .min(u64::from(u16::MAX)) as u16;
-                let raw_sub = read_varint(buf, &mut pos).unwrap_or(0);
-                p.final_sub_status =
-                    (raw_sub != 0).then(|| (raw_sub - 1).min(u64::from(u16::MAX)) as u16);
-                p.total_ns = read_varint(buf, &mut pos).unwrap_or(0);
-            }
-            _ => break,
-        }
-    }
-    p
 }

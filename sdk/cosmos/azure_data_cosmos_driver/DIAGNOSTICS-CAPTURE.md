@@ -95,11 +95,13 @@ over a nested handler → transport → `StoreResult` tree. Conceptually:
 
 ```text
 HOT PATH (per operation, lock-free, no Mutex):
-  start   -> rent Vec<u8> from a bounded pool; write the op header
+  start   -> rent an EventLog (two flat Vecs: spans + attrs) from a bounded pool;
+             push the operation span
+  attempt -> push a typed Span (+ its Attrs) per attempt / hedge leg (just Vec::push)
   ...     -> the driver pipeline populates the capture-owned DiagnosticsContextBuilder with the
              rich per-attempt / hedging / transport data, with true wall-clock timing
   end     -> GATE: surface? (Always | elapsed > threshold | (error && capture_on_error))
-               no  -> drop; return buffer to pool                      (~free)
+               no  -> drop; return the EventLog to the pool                (~free)
                yes -> surface the canonical DiagnosticsContext
 ```
 
@@ -112,15 +114,26 @@ Components (`azure_data_cosmos_driver::diagnostics::capture`):
   fault-injection / event types, etc. These are re-exported from `crate::diagnostics` so the public
   boundary is unchanged. The driver pipeline feeds this builder during execution, so **every rich
   field is still populated** (no regression).
-- **`LogPool`** (`pool.rs`) — a shared, **bounded** pool of reusable hot-path buffers.
+- **`event`** (`event.rs`) — the hot-path data model: a typed, two-list `EventLog` of `Span`s
+  (`kind` + optional `parent` id + op-relative timestamps; a span's id is its index) and `Attr`s
+  (typed `key`/`value` tagged with their owning span id). Storing either is a single `Vec::push` of
+  a small value — **no byte encoding and no varints on the hot path**; numerics are `Copy` and the
+  only heap is an owned attribute string (freed on `clear`, the `Vec` backbones pooled).
+- **`LogPool`** (`pool.rs`) — a shared, **bounded** pool of reusable `EventLog`s (the two `Vec`s).
 - **`DiagnosticsRecorder` / `AttemptRecord`** (`recorder.rs`) — an operation-layer-owned,
-  **lock-free `&mut`** append recorder. Cancellation-safe (`Drop` returns the buffer if the gate
-  never runs) and panic-safe. It is the cheap front-end that records the operation outcome +
-  elapsed time the gate reads, and the standalone acquisition path for tests/examples.
+  **lock-free `&mut`** recorder that pushes typed `Span`/`Attr` values into the rented `EventLog`.
+  Cancellation-safe (`Drop` returns the log if the gate never runs) and panic-safe. It is the cheap
+  front-end that records the operation outcome + elapsed time the gate reads, and the standalone
+  acquisition path for tests/examples.
 - **`DiagnosticsPolicy` / `Mode`** (`gate.rs`) — the gate: `Off`, `Threshold`, `Always` (default).
-- **`build_context`** (`context.rs`) — replays a captured log onto the capture-owned
-  `DiagnosticsContextBuilder` to materialize a standalone `DiagnosticsContext` (used by the
-  recorder's `finish()` for tests/examples and any caller that captures without the pipeline).
+- **`build_context`** (`context.rs`) — walks a captured `EventLog` (spans/attrs) back into a tree
+  and replays it onto the capture-owned `DiagnosticsContextBuilder` to materialize a standalone
+  `DiagnosticsContext`. The typed log *is* the parsed form, so there is no byte-parse step (used by
+  the recorder's `finish()` for tests/examples and any caller that captures without the pipeline).
+- **`encode`** (`encode.rs`) — an optional **cold-path** compact binary serialization of the
+  `EventLog`'s two lists (`EventLog::to_compact_bytes` / `from_compact_bytes`). The varint/TLV
+  machinery lives here, off the hot path: the binary form is just a compact way to store the two
+  lists, paid only when bytes are actually requested.
 
 There is **no parallel diagnostics model**: capture owns the one canonical type and gates it.
 
@@ -204,6 +217,27 @@ timestamps exist only when a context is built, so a dropped fast success carries
   ]
 }
 ```
+
+## 5d. The event-log representation (hot-path data model)
+
+The recorder's hot path stores a typed, append-only **event log** of two flat lists
+(`event.rs`), instead of a `Vec<u8>` TLV byte stream:
+
+- `Vec<Span>` — one `Span` per timestamped scope or point event (the operation root, each request
+  attempt, a hedge race). A span carries its `kind`, an optional `parent` id, and op-relative
+  `start_ns`/`end_ns`; **its id is its index** in the list, so the flat list reconstructs into a
+  tree via the parent links.
+- `Vec<Attr>` — one `Attr` per key/value (`Region`, `Endpoint`, `Status`, `RequestCharge`, …),
+  tagged with the id of the span it belongs to. `AttrValue` is `U64 | F64 | Str`, so numerics are
+  `Copy` and the only heap is an owned string.
+
+Appending is a single `Vec::push` of a typed value — no varints, no byte writing on the hot path.
+The two `Vec` backbones are pooled and reused (`LogPool`), so a returned log is just `clear`-ed
+(strings freed, capacity retained). Below the gate threshold the log is dropped/pooled for ~free;
+past the gate, `context.rs` walks the spans/attrs into the canonical `DiagnosticsContext` (the
+typed log *is* the parsed form — no byte-parse step). The optional compact binary form
+(`EventLog::to_compact_bytes` / `from_compact_bytes`, in `encode.rs`) is a **cold-path** serializer
+of the same two lists, paid only when bytes are actually requested.
 
 ## 6. Scope of this change
 
@@ -298,8 +332,15 @@ hard blockers:
    byte representation, and `FaultInjectionEvaluation` is a `#[non_exhaustive]` enum whose
    hand-rolled codec would silently lose data when a variant is added.
 
-**Resolution:** keep the current design — full fidelity, lock-free append, lazy JSON, `Off` as the
-cheap opt-out, default `Always`. This is the final intended design.
+**Resolution:** keep the live rich path feeding the builder — full fidelity, lock-free append,
+lazy JSON, `Off` as the cheap opt-out, default `Always`. What *did* change is the **recorder's own
+capture representation**: it is now a typed two-list `EventLog` (`Vec<Span>` + `Vec<Attr>`, see
+[§5d](#5d-the-event-log-representation-hot-path-data-model)) rather than a `Vec<u8>` TLV byte stream. That is the
+idiomatic realization of the "flat, timestamped log of events" idea for the captured subset —
+`Vec::push` of typed structs on the hot path, tree reconstruction on the cold path — and it
+sidesteps blocker 3 entirely (nothing is byte-encoded on the hot path; the `Instant`-derived
+durations and enum discriminants are stored as plain fields). Byte serialization survives only as
+an **optional cold-path** form (`encode.rs`) over the captured subset, never the full model.
 
 ## 9. How to configure
 

@@ -71,11 +71,14 @@
 //! ```
 
 mod context;
+mod encode;
+mod event;
 mod gate;
 mod model;
 mod pool;
 mod recorder;
 
+pub use event::{Attr, AttrKey, AttrValue, EventLog, Span, SpanKind, NO_PARENT};
 pub use gate::{finish, should_build, DiagnosticsPolicy, Mode};
 pub use pool::LogPool;
 pub use recorder::{AttemptRecord, DiagnosticsRecorder, HedgeOutcome};
