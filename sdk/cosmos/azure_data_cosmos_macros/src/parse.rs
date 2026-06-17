@@ -23,6 +23,9 @@ pub struct OptionsInput {
     pub layers: Vec<Layer>,
     /// Parsed fields.
     pub fields: Vec<OptionField>,
+    /// When `true`, only the `from_env()`/`from_env_vars()` constructors are
+    /// generated (no View, Builder, or `Default`). Set via `#[options(env_only)]`.
+    pub env_only: bool,
 }
 
 /// A configuration layer.
@@ -97,8 +100,8 @@ impl OptionsInput {
         let generics = ast.generics.clone();
         let vis = ast.vis.clone();
 
-        let layers = parse_layers_attr(&ast.attrs)?;
-        if layers.is_empty() {
+        let (layers, env_only) = parse_options_attr(&ast.attrs)?;
+        if !env_only && layers.is_empty() {
             return Err(Error::new(
                 ast.ident.span(),
                 "missing `#[options(layers(...))]` attribute",
@@ -117,12 +120,20 @@ impl OptionsInput {
 
         let fields = parse_fields(data)?;
 
+        if env_only && !fields.iter().any(|f| f.env_var.is_some()) {
+            return Err(Error::new(
+                ast.ident.span(),
+                "`env_only` requires at least one `#[option(env = \"...\")]` field",
+            ));
+        }
+
         Ok(OptionsInput {
             name,
             generics,
             vis,
             layers,
             fields,
+            env_only,
         })
     }
 
@@ -137,7 +148,8 @@ impl OptionsInput {
     }
 }
 
-fn parse_layers_attr(attrs: &[syn::Attribute]) -> Result<Vec<Layer>> {
+fn parse_options_attr(attrs: &[syn::Attribute]) -> Result<(Vec<Layer>, bool)> {
+    let mut env_only = false;
     for attr in attrs {
         if !attr.path().is_ident("options") {
             continue;
@@ -156,8 +168,11 @@ fn parse_layers_attr(attrs: &[syn::Attribute]) -> Result<Vec<Layer>> {
                     layers.push(layer);
                 }
                 Ok(())
+            } else if meta.path.is_ident("env_only") {
+                env_only = true;
+                Ok(())
             } else {
-                Err(meta.error("expected `layers(...)`"))
+                Err(meta.error("expected `layers(...)` or `env_only`"))
             }
         })?;
 
@@ -180,10 +195,10 @@ fn parse_layers_attr(attrs: &[syn::Attribute]) -> Result<Vec<Layer>> {
             }
         }
 
-        return Ok(layers);
+        return Ok((layers, env_only));
     }
 
-    Ok(Vec::new())
+    Ok((Vec::new(), false))
 }
 
 impl OptionField {

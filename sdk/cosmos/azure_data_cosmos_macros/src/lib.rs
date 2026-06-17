@@ -26,6 +26,11 @@ type Result<T> = ::std::result::Result<T, syn::Error>;
 ///
 /// - `#[options(layers(runtime, account, operation))]` — declares which layers
 ///   this option group participates in.
+/// - `#[options(env_only)]` — generates only the `from_env()`/`from_env_vars()`
+///   constructors (no View, Builder, or `Default`), so an existing type — such
+///   as a hand-written builder — can double as its own environment-variable
+///   source. Mutually exclusive with `layers(...)`; requires at least one
+///   `#[option(env = "...")]` field.
 ///
 /// # Field-Level Attributes
 ///
@@ -64,6 +69,22 @@ pub fn derive_cosmos_options(input: proc_macro::TokenStream) -> proc_macro::Toke
 
 fn derive_cosmos_options_impl(ast: DeriveInput) -> Result<proc_macro2::TokenStream> {
     let input = OptionsInput::from_derive_input(&ast)?;
+
+    // Env-only mode: the struct is purely an environment-variable source (e.g.
+    // an existing builder type reused to read env vars into). Emit only the
+    // `from_env`/`from_env_vars` constructors; skip the View, Builder, and
+    // `Default` generation so the macro can decorate a hand-written type
+    // without colliding with its existing `#[derive(Default)]` or builder
+    // methods.
+    if input.env_only {
+        let env_tokens = env::generate_from_env(&input)?;
+        return Ok(quote::quote! {
+            #[doc(hidden)]
+            const _: () = {
+                #env_tokens
+            };
+        });
+    }
 
     let view_tokens = view::generate_view(&input)?;
     let builder_tokens = builder::generate_builder(&input)?;

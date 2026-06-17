@@ -359,6 +359,37 @@ fn nested_with_none_nested_field() {
     assert_eq!(pool_view.idle_timeout(), None);
 }
 
+// --- `#[options(env_only)]`: a type doubles as its own env-var source ---
+
+// Deriving `Default` here alongside `CosmosOptions` is itself the assertion
+// that `env_only` does NOT generate a `Default` impl — a generated one would
+// collide with this derive and fail to compile.
+#[derive(CosmosOptions, Clone, Debug, Default, PartialEq)]
+#[options(env_only)]
+pub struct EnvOnlyOptions {
+    #[option(env = "AZURE_COSMOS_TEST_ENV_ONLY_SIZE")]
+    pub size: Option<usize>,
+    #[option(env = "AZURE_COSMOS_TEST_ENV_ONLY_NAME")]
+    pub name: Option<String>,
+}
+
+#[test]
+fn env_only_reads_fields_from_env() {
+    let opts = EnvOnlyOptions::from_env_vars(|key| match key {
+        "AZURE_COSMOS_TEST_ENV_ONLY_SIZE" => Ok("4096".to_string()),
+        "AZURE_COSMOS_TEST_ENV_ONLY_NAME" => Ok("hello".to_string()),
+        _ => Err(std::env::VarError::NotPresent),
+    });
+    assert_eq!(opts.size, Some(4096));
+    assert_eq!(opts.name.as_deref(), Some("hello"));
+}
+
+#[test]
+fn env_only_unset_falls_back_to_default() {
+    let opts = EnvOnlyOptions::from_env_vars(|_| Err(std::env::VarError::NotPresent));
+    assert_eq!(opts, EnvOnlyOptions::default());
+}
+
 // --- Lenient boolean parsing for operator-facing kill switches ---
 
 #[derive(CosmosOptions, Clone)]

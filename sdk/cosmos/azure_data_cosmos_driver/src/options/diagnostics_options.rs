@@ -126,24 +126,14 @@ impl DiagnosticsOptions {
     }
 }
 
-/// Internal env-var source for [`DiagnosticsOptions`].
-///
-/// This is the single env-reading mechanism for diagnostics config: the
-/// `CosmosOptions` derive generates `from_env()`, which reads each field's
-/// `AZURE_COSMOS_*` variable (lenient — a malformed value is logged and
-/// ignored). [`DiagnosticsOptionsBuilder::build`] resolves
-/// `builder value → env value → default` and applies validation.
-#[derive(CosmosOptions, Clone, Debug)]
-#[options(layers(runtime))]
-pub(crate) struct DiagnosticsEnvConfig {
-    #[option(env = "AZURE_COSMOS_DIAGNOSTICS_MAX_SUMMARY_SIZE_BYTES")]
-    pub(crate) max_summary_size_bytes: Option<usize>,
-
-    #[option(env = "AZURE_COSMOS_DIAGNOSTICS_DEFAULT_VERBOSITY")]
-    pub(crate) default_verbosity: Option<DiagnosticsVerbosity>,
-}
-
 /// Builder for [`DiagnosticsOptions`].
+///
+/// The builder doubles as its own environment-variable source: it derives
+/// `CosmosOptions` in `#[options(env_only)]` mode, which generates a
+/// `from_env()` that reads each `#[option(env = "...")]` field from its
+/// `AZURE_COSMOS_*` variable (lenient — a malformed value is logged and
+/// ignored). [`DiagnosticsOptionsBuilder::build`] then resolves
+/// `builder value → env value → default` and applies validation.
 ///
 /// Default values are read from environment variables when available,
 /// and can be overridden using builder methods.
@@ -167,9 +157,12 @@ pub(crate) struct DiagnosticsEnvConfig {
 ///     .expect("valid options");
 /// ```
 #[non_exhaustive]
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, CosmosOptions)]
+#[options(env_only)]
 pub struct DiagnosticsOptionsBuilder {
+    #[option(env = "AZURE_COSMOS_DIAGNOSTICS_MAX_SUMMARY_SIZE_BYTES")]
     max_summary_size_bytes: Option<usize>,
+    #[option(env = "AZURE_COSMOS_DIAGNOSTICS_DEFAULT_VERBOSITY")]
     default_verbosity: Option<DiagnosticsVerbosity>,
 }
 
@@ -205,10 +198,12 @@ impl DiagnosticsOptionsBuilder {
     /// Returns an error if:
     /// - `max_summary_size_bytes` is less than 4096
     pub fn build(self) -> crate::error::Result<DiagnosticsOptions> {
-        // Single env-reading mechanism: the `CosmosOptions`-generated
-        // `from_env()`. Resolution is `builder value → env value → default`,
-        // with bounds validation applied via the shared resolve helper.
-        let env = DiagnosticsEnvConfig::from_env();
+        // The builder doubles as the env source: `Self::from_env()` reads each
+        // `#[option(env = ...)]` field from its `AZURE_COSMOS_*` variable
+        // (lenient — malformed values are logged and ignored). Resolution is
+        // `builder value → env value → default`, with bounds validation applied
+        // via the shared resolve helper.
+        let env = Self::from_env();
 
         let max_summary_size_bytes = resolve_from_env(
             self.max_summary_size_bytes,
@@ -243,8 +238,10 @@ mod tests {
 
     #[test]
     fn env_config_from_env_vars_maps_names_to_fields() {
-        // Guards against env-var-name typos in `DiagnosticsEnvConfig`.
-        let cfg = DiagnosticsEnvConfig::from_env_vars(|key| match key {
+        // Guards against env-var-name typos: the builder doubles as the env
+        // source via `#[options(env_only)]`, so its `from_env_vars` must map
+        // each `#[option(env = ...)]` string to the right field.
+        let cfg = DiagnosticsOptionsBuilder::from_env_vars(|key| match key {
             "AZURE_COSMOS_DIAGNOSTICS_MAX_SUMMARY_SIZE_BYTES" => Ok("16384".to_string()),
             "AZURE_COSMOS_DIAGNOSTICS_DEFAULT_VERBOSITY" => Ok("summary".to_string()),
             _ => Err(std::env::VarError::NotPresent),
@@ -256,9 +253,9 @@ mod tests {
 
     #[test]
     fn env_config_from_env_vars_is_lenient_on_malformed_value() {
-        // Part B behavior: a malformed env value is ignored (None), so the
-        // builder falls back to the default instead of erroring.
-        let cfg = DiagnosticsEnvConfig::from_env_vars(|key| match key {
+        // A malformed env value is ignored (None), so the builder falls back
+        // to the default instead of erroring.
+        let cfg = DiagnosticsOptionsBuilder::from_env_vars(|key| match key {
             "AZURE_COSMOS_DIAGNOSTICS_MAX_SUMMARY_SIZE_BYTES" => Ok("huge".to_string()),
             "AZURE_COSMOS_DIAGNOSTICS_DEFAULT_VERBOSITY" => Ok("nonsense".to_string()),
             _ => Err(std::env::VarError::NotPresent),

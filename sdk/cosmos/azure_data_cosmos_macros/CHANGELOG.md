@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added an `#[options(env_only)]` struct-level mode to `CosmosOptions` that generates only the `from_env()`/`from_env_vars()` constructors (no View, Builder, or `Default`), allowing an existing builder-style type to double as its own environment-variable source. ([#4562](https://github.com/Azure/azure-sdk-for-rust/pull/4562))
+
 ### Breaking Changes
 
 ### Bugs Fixed
