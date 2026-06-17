@@ -41,12 +41,7 @@ impl LogPool {
     pub(crate) fn rent(&self) -> EventLog {
         // Recover from a poisoned lock rather than propagating the panic: a diagnostics buffer
         // pool should never turn one unrelated panic into cascading panics on later operations.
-        match self
-            .free
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .pop()
-        {
+        match self.free.lock().unwrap_or_else(|e| e.into_inner()).pop() {
             Some(mut log) => {
                 log.clear();
                 log

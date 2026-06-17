@@ -59,10 +59,7 @@ async fn live_capture_diagnostics_or_env_gated() {
     let driver_options = DriverOptions::builder(account.clone())
         .with_capture_diagnostics_policy(DiagnosticsPolicy::always())
         .build();
-    let driver = match runtime
-        .get_or_create_driver(account.clone(), Some(driver_options))
-        .await
-    {
+    let driver = match runtime.create_driver(driver_options).await {
         Ok(d) => d,
         Err(e) => {
             eprintln!("AC-7 env-gated: could not create driver: {}", e.status());
