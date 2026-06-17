@@ -449,7 +449,7 @@ async fn fault_injection_429_honors_configurable_throttle_retry_count() {
         AccountReference, CosmosOperation, ItemReference, PartitionKey,
     };
     use azure_data_cosmos_driver::options::{
-        OperationOptions, OperationOptionsBuilder, ThrottlingRetryOptionsBuilder,
+        DriverOptions, OperationOptions, OperationOptionsBuilder, ThrottlingRetryOptionsBuilder,
     };
 
     // A single-region emulator with a database + container provisioned. No
@@ -517,15 +517,18 @@ async fn fault_injection_429_honors_configurable_throttle_retry_count() {
 
         let runtime = emulator
             .runtime_builder()
-            .with_fault_injection_rules(vec![Arc::clone(&rule)])
-            .expect("fault injection rules should register")
-            .with_operation_options(operation_options)
+            .with_default_operation_options(operation_options)
             .build()
             .await
             .expect("runtime should build against the in-memory emulator");
 
         let driver = runtime
-            .get_or_create_driver(account.clone(), None)
+            .create_driver(
+                DriverOptions::builder(account.clone())
+                    .with_fault_injection_rules(vec![Arc::clone(&rule)])
+                    .expect("fault injection rules should register")
+                    .build(),
+            )
             .await
             .expect("driver should initialize against the in-memory emulator");
 

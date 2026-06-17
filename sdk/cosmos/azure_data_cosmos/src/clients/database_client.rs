@@ -3,10 +3,14 @@
 
 use crate::{
     clients::{offers_client, ClientContext, ContainerClient},
-    models::{ContainerProperties, DatabaseProperties, ResourceResponse, ThroughputProperties},
-    options::ReadDatabaseOptions,
-    CreateContainerOptions, DeleteDatabaseOptions, Query, QueryContainersOptions,
-    QueryItemIterator, ResourceId, ResourceIdentity, ThroughputOptions,
+    feed::QueryItemIterator,
+    models::ResourceResponse,
+    models::{ContainerProperties, DatabaseProperties, ThroughputProperties},
+    options::{
+        CreateContainerOptions, DeleteDatabaseOptions, QueryContainersOptions, ReadDatabaseOptions,
+        ThroughputOptions,
+    },
+    Query, ResourceId, ResourceIdentity,
 };
 use azure_data_cosmos_driver::models::{CosmosOperation, DatabaseReference};
 
@@ -176,6 +180,8 @@ impl DatabaseClient {
     ///
     #[doc = include_str!("../../docs/control-plane-warning.md")]
     ///
+    #[doc = include_str!("../../docs/control-plane-always-returns-body.md")]
+    ///
     /// # Arguments
     /// * `properties` - A [`ContainerProperties`] describing the new container.
     /// * `options` - Optional parameters for the request.
@@ -244,15 +250,7 @@ impl DatabaseClient {
             return Ok(rid.as_str().to_owned());
         }
         let db = self.read(None).await?.into_model()?;
-        db.system_properties.resource_id.ok_or_else(|| {
-            azure_data_cosmos_driver::error::CosmosError::builder()
-                .with_status(
-                    azure_data_cosmos_driver::error::CosmosStatus::SERVICE_RETURNED_DATABASE_WITHOUT_RID,
-                )
-                .with_message("the service returned the database without a '_rid' system property")
-                .build()
-                .into()
-        })
+        resource_id_or_error(db.system_properties.resource_id, "database")
     }
 
     /// Reads database throughput properties, if any.
@@ -282,6 +280,8 @@ impl DatabaseClient {
     /// The Cosmos DB service may process throughput changes asynchronously. The returned
     /// [`ThroughputPoller`] can be awaited directly for the final result, or polled as a
     /// stream to observe progress.
+    ///
+    #[doc = include_str!("../../docs/control-plane-always-returns-body.md")]
     ///
     /// # Arguments
     /// * `throughput` - The new throughput properties to set.
@@ -317,6 +317,28 @@ impl DatabaseClient {
         )
         .await
     }
+}
+
+/// Unwraps the `_rid` from a system-properties response. The Cosmos service
+/// is contractually required to populate `_rid` on every resource read; if it
+/// is missing we surface a synthetic 500 [`CosmosError`](crate::CosmosError)
+/// rather than panicking, since panics in public methods would crash callers'
+/// applications. The `debug_assert!` keeps tests honest while still letting
+/// release builds recover.
+fn resource_id_or_error(rid: Option<String>, resource_kind: &str) -> crate::Result<String> {
+    debug_assert!(
+        rid.is_some(),
+        "service should always return a '_rid' for a {resource_kind}"
+    );
+    rid.ok_or_else(|| {
+        crate::DriverCosmosError::builder()
+            .with_status(crate::error::CosmosStatus::SERVICE_RETURNED_OBJECT_WITHOUT_RID)
+            .with_message(format!(
+                "service did not return a '_rid' for a {resource_kind}; cannot resolve the throughput offer"
+            ))
+            .build()
+            .into()
+    })
 }
 
 #[cfg(test)]

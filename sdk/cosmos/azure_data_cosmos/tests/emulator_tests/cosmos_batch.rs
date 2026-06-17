@@ -9,10 +9,10 @@ use azure_core::Uuid;
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::models::ContainerProperties;
 use azure_data_cosmos::options::BatchOptions;
+use azure_data_cosmos::options::{ContentResponseOnWrite, OperationOptions};
 use azure_data_cosmos::TransactionalBatch;
-use azure_data_cosmos::{ContentResponseOnWrite, OperationOptions};
-use framework::TestClient;
 use framework::TestRunContext;
+use framework::{TestClient, TestOptions};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 
@@ -94,14 +94,14 @@ pub async fn batch_create_and_read() -> Result<(), Box<dyn Error>> {
 
             // Verify the read operation returned the correct item
             let read_item: BatchTestItem = batch_response.results()[2]
-                .deserialize_body()?
+                .into_model()?
                 .expect("Read operation should return an item");
             assert_eq!(read_item.id, "item1");
             assert_eq!(read_item.value, 100);
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -182,7 +182,7 @@ pub async fn batch_mixed_operations() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -242,7 +242,7 @@ pub async fn batch_atomicity_on_failure() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -288,7 +288,7 @@ pub async fn batch_fails_when_exceeding_max_operations() -> Result<(), Box<dyn E
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -341,7 +341,7 @@ pub async fn batch_fails_when_exceeding_max_payload_size() -> Result<(), Box<dyn
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }

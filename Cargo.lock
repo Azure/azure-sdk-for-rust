@@ -333,28 +333,6 @@ dependencies = [
 
 [[package]]
 name = "azure_core_amqp"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "15daabffc2fcce01c54333137e40b216f5be8401b3a1bdafe1a633972f7346e9"
-dependencies = [
- "async-trait",
- "azure_core 1.0.0",
- "fe2o3-amqp",
- "fe2o3-amqp-cbs",
- "fe2o3-amqp-ext",
- "fe2o3-amqp-management",
- "fe2o3-amqp-types",
- "serde",
- "serde_amqp",
- "serde_bytes",
- "tokio",
- "tracing",
- "typespec 1.0.0",
- "typespec_macros 1.0.0",
-]
-
-[[package]]
-name = "azure_core_amqp"
 version = "1.1.0-beta.1"
 dependencies = [
  "async-trait",
@@ -679,16 +657,20 @@ dependencies = [
  "async-stream",
  "async-trait",
  "azure_core 1.0.0",
- "azure_core_amqp 1.0.0",
+ "azure_core_amqp",
  "azure_core_test 0.1.0",
  "azure_identity 1.0.0",
  "azure_messaging_eventhubs",
+ "base64 0.22.1",
  "criterion",
  "fe2o3-amqp",
  "futures",
+ "hmac",
+ "percent-encoding",
  "rand 0.10.1",
  "rand_chacha 0.10.0",
  "rustc_version",
+ "sha2",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -726,7 +708,7 @@ dependencies = [
  "async-stream",
  "async-trait",
  "azure_core 1.0.0",
- "azure_core_amqp 1.0.0",
+ "azure_core_amqp",
  "azure_core_test 0.1.0",
  "azure_identity 1.0.0",
  "futures",

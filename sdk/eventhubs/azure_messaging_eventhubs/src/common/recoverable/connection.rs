@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-// cspell:ignore geodr georeplication
+// cspell:ignore geodr georeplication sastoken
 
 use super::{
     claims_based_security::RecoverableClaimsBasedSecurity, management::RecoverableManagementClient,
@@ -168,19 +168,23 @@ impl RecoveryPlan {
 }
 
 impl RecoverableConnection {
+    /// Creates a recoverable connection. `cbs_token_type` is `None` for
+    /// JWT/Entra credentials and `Some("servicebus.windows.net:sastoken")` for
+    /// SAS (connection-string) credentials.
     pub fn new(
         url: Url,
         application_id: Option<String>,
         custom_endpoint: Option<Url>,
         credential: Arc<dyn TokenCredential>,
         retry_options: RetryOptions,
+        cbs_token_type: Option<&'static str>,
     ) -> Arc<Self> {
         let connection_name = application_id
             .clone()
             .unwrap_or_else(|| Uuid::new_v4().to_string());
 
         Arc::new_cyclic(|weak_rc| {
-            let authorizer = Arc::new(Authorizer::new(weak_rc.clone(), credential));
+            let authorizer = Arc::new(Authorizer::new(weak_rc.clone(), credential, cbs_token_type));
 
             Self {
                 url,
@@ -470,11 +474,7 @@ impl RecoverableConnection {
                 session
                     .begin(
                         connection.as_ref(),
-                        Some(AmqpSessionOptions {
-                            incoming_window: Some(u32::MAX),
-                            outgoing_window: Some(u32::MAX),
-                            ..Default::default()
-                        }),
+                        Some(AmqpSessionOptions::with_unbounded_windows()),
                     )
                     .await?;
                 Ok::<_, AmqpError>(Arc::new(session))
@@ -932,6 +932,7 @@ mod tests {
             None,
             Arc::new(MockCredential),
             Default::default(),
+            None,
         );
         assert!(!connection_manager.connections.lock_blocking().is_some());
         assert_eq!(connection_manager.get_connection_id().len(), 36); // UUID v4 string length
@@ -954,6 +955,7 @@ mod tests {
             None,
             Arc::new(MockCredential),
             Default::default(),
+            None,
         );
         assert!(!connection_manager.connections.lock_blocking().is_some());
         assert_eq!(connection_manager.get_connection_id(), app_id);
@@ -973,6 +975,7 @@ mod tests {
             None,
             Arc::new(MockCredential),
             Default::default(),
+            None,
         ));
 
         assert!(!connection_manager.connections.lock_blocking().is_some());
@@ -992,6 +995,7 @@ mod tests {
             None,
             Arc::new(MockCredential),
             Default::default(),
+            None,
         );
 
         let path_a = Url::parse("amqps://example.com/eh/Partitions/0").unwrap();
@@ -1039,6 +1043,7 @@ mod tests {
             Some(custom_endpoint.clone()),
             Arc::new(MockCredential),
             Default::default(),
+            None,
         );
 
         assert_eq!(connection_manager.custom_endpoint, Some(custom_endpoint));

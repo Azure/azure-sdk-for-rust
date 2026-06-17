@@ -9,13 +9,15 @@ use azure_core::{
     Uuid,
 };
 use azure_data_cosmos::clients::ContainerClient;
-use azure_data_cosmos::models::{ContainerProperties, ItemResponse};
-use azure_data_cosmos::{
-    ContentResponseOnWrite, ETag, ItemWriteOptions, OperationOptions, PartitionKey, Precondition,
+use azure_data_cosmos::models::ContainerProperties;
+use azure_data_cosmos::models::ItemResponse;
+use azure_data_cosmos::options::{
+    ContentResponseOnWrite, ItemWriteOptions, OperationOptions, Precondition,
 };
+use azure_data_cosmos::PartitionKey;
 use framework::get_effective_hub_endpoint;
-use framework::TestClient;
 use framework::TestRunContext;
+use framework::{TestClient, TestOptions};
 use serde::{Deserialize, Serialize};
 use serde_bytes::ByteBuf;
 use std::{borrow::Cow, error::Error};
@@ -254,7 +256,7 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -320,7 +322,7 @@ pub async fn item_read_system_properties() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -377,7 +379,7 @@ pub async fn item_upsert_new() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -441,7 +443,7 @@ pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -540,7 +542,7 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -589,8 +591,7 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
                 .headers()
                 .etag()
                 .expect("expected the etag to be returned")
-                .as_str()
-                .into();
+                .clone();
 
             //Replace item with correct Etag
             item.value = 24;
@@ -603,7 +604,7 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
                     &item,
                     Some(
                         ItemWriteOptions::default()
-                            .with_precondition(Precondition::IfMatch(ETag::from(etag.to_string()))),
+                            .with_precondition(Precondition::IfMatch(Etag::from(etag.to_string()))),
                     ),
                 )
                 .await?;
@@ -625,7 +626,7 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
                     &item,
                     Some(
                         ItemWriteOptions::default()
-                            .with_precondition(Precondition::IfMatch(ETag::from("incorrectEtag"))),
+                            .with_precondition(Precondition::IfMatch(Etag::from("incorrectEtag"))),
                     ),
                 )
                 .await;
@@ -640,7 +641,7 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -689,8 +690,7 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
                 .headers()
                 .etag()
                 .expect("expected the etag to be returned")
-                .as_str()
-                .into();
+                .clone();
 
             //Upsert item with correct Etag
             item.value = 24;
@@ -703,7 +703,7 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
                     &item,
                     Some(
                         ItemWriteOptions::default()
-                            .with_precondition(Precondition::IfMatch(ETag::from(etag.to_string()))),
+                            .with_precondition(Precondition::IfMatch(Etag::from(etag.to_string()))),
                     ),
                 )
                 .await?;
@@ -725,7 +725,7 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
                     &item,
                     Some(
                         ItemWriteOptions::default()
-                            .with_precondition(Precondition::IfMatch(ETag::from("incorrectEtag"))),
+                            .with_precondition(Precondition::IfMatch(Etag::from("incorrectEtag"))),
                     ),
                 )
                 .await;
@@ -740,7 +740,7 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -789,8 +789,7 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
                 .headers()
                 .etag()
                 .expect("expected the etag to be returned")
-                .as_str()
-                .into();
+                .clone();
 
             //Delete item with correct Etag
             let delete_response = container_client
@@ -799,7 +798,7 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
                     &item_id,
                     Some(
                         ItemWriteOptions::default()
-                            .with_precondition(Precondition::IfMatch(ETag::from(etag.to_string()))),
+                            .with_precondition(Precondition::IfMatch(Etag::from(etag.to_string()))),
                     ),
                 )
                 .await?;
@@ -828,7 +827,7 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
                     &item_id,
                     Some(
                         ItemWriteOptions::default()
-                            .with_precondition(Precondition::IfMatch(ETag::from("incorrectEtag"))),
+                            .with_precondition(Precondition::IfMatch(Etag::from("incorrectEtag"))),
                     ),
                 )
                 .await;
@@ -843,7 +842,7 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -1012,7 +1011,7 @@ pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -1071,7 +1070,7 @@ pub async fn create_item_duplicate_returns_conflict() -> Result<(), Box<dyn Erro
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -1125,7 +1124,7 @@ pub async fn create_item_with_content_response() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -1219,7 +1218,7 @@ pub async fn create_item_response_metadata() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -1268,7 +1267,7 @@ pub async fn item_partition_key_non_ascii_utf8() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -1328,7 +1327,7 @@ pub async fn item_body_invalid_utf8_bytes_roundtrip() -> Result<(), Box<dyn Erro
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }

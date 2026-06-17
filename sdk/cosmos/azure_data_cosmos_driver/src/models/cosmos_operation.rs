@@ -31,7 +31,7 @@ use std::borrow::Cow;
 ///     AccountReference, CosmosOperation,
 ///     ItemReference, PartitionKey,
 /// };
-/// use azure_data_cosmos_driver::options::OperationOptions;
+/// use azure_data_cosmos_driver::options::{DriverOptions, OperationOptions};
 /// use url::Url;
 ///
 /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
@@ -41,7 +41,7 @@ use std::borrow::Cow;
 ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
 ///     "my-key",
 /// );
-/// let driver = runtime.get_or_create_driver(account, None).await?;
+/// let driver = runtime.create_driver(DriverOptions::builder(account).build()).await?;
 ///
 /// // 2. Resolve the container (reads database + container from service, caches result)
 /// let container = driver.resolve_container("mydb", "mycontainer").await?;
@@ -386,7 +386,7 @@ impl CosmosOperation {
     /// use azure_data_cosmos_driver::models::{
     ///     AccountReference, CosmosOperation,
     /// };
-    /// use azure_data_cosmos_driver::options::OperationOptions;
+    /// use azure_data_cosmos_driver::options::{DriverOptions, OperationOptions};
     /// use url::Url;
     ///
     /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
@@ -395,7 +395,7 @@ impl CosmosOperation {
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
     ///     "my-key",
     /// );
-    /// let driver = runtime.get_or_create_driver(account, None).await?;
+    /// let driver = runtime.create_driver(DriverOptions::builder(account).build()).await?;
     /// let container = driver.resolve_container("my-database", "my-container").await?;
     ///
     /// let result = driver
@@ -482,7 +482,7 @@ impl CosmosOperation {
     /// use azure_data_cosmos_driver::models::{
     ///     AccountReference, CosmosOperation, ItemReference, PartitionKey,
     /// };
-    /// use azure_data_cosmos_driver::options::OperationOptions;
+    /// use azure_data_cosmos_driver::options::{DriverOptions, OperationOptions};
     /// use url::Url;
     ///
     /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
@@ -491,7 +491,7 @@ impl CosmosOperation {
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
     ///     "my-key",
     /// );
-    /// let driver = runtime.get_or_create_driver(account, None).await?;
+    /// let driver = runtime.create_driver(DriverOptions::builder(account).build()).await?;
     /// let container = driver.resolve_container("my-database", "my-container").await?;
     ///
     /// let item = ItemReference::from_name(&container, PartitionKey::from("pk-value"), "doc1");
@@ -522,7 +522,7 @@ impl CosmosOperation {
     ///     AccountReference, CosmosOperation, ItemReference,
     ///     PartitionKey,
     /// };
-    /// use azure_data_cosmos_driver::options::OperationOptions;
+    /// use azure_data_cosmos_driver::options::{DriverOptions, OperationOptions};
     /// use url::Url;
     ///
     /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
@@ -531,7 +531,7 @@ impl CosmosOperation {
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
     ///     "my-key",
     /// );
-    /// let driver = runtime.get_or_create_driver(account, None).await?;
+    /// let driver = runtime.create_driver(DriverOptions::builder(account).build()).await?;
     /// let container = driver.resolve_container("my-database", "my-container").await?;
     ///
     /// let item = ItemReference::from_name(&container, PartitionKey::from("pk-value"), "doc1");

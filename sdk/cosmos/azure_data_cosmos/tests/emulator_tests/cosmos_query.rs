@@ -6,14 +6,15 @@ use super::framework;
 
 use std::error::Error;
 
+use azure_data_cosmos::feed::ContinuationToken;
 use azure_data_cosmos::{
     clients::DatabaseClient,
+    feed::FeedScope,
     models::CosmosStatus,
     options::{MaxItemCountHint, QueryOptions},
-    query::FeedScope,
-    ContinuationToken, Query,
+    Query,
 };
-use framework::{test_data, MockItem, TestClient};
+use framework::{test_data, MockItem, TestClient, TestOptions};
 use futures::StreamExt;
 use serde::de::DeserializeOwned;
 
@@ -142,7 +143,7 @@ pub async fn single_partition_query_simple() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -181,7 +182,7 @@ pub async fn single_partition_query_with_parameters() -> Result<(), Box<dyn Erro
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -216,7 +217,7 @@ pub async fn single_partition_query_with_projection() -> Result<(), Box<dyn Erro
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -248,7 +249,7 @@ pub async fn cross_partition_query_with_projection_and_filter() -> Result<(), Bo
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -314,7 +315,7 @@ pub async fn cross_partition_query_with_order_by_fails() -> Result<(), Box<dyn E
             );
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -409,7 +410,7 @@ pub async fn query_returns_index_and_query_metrics() -> Result<(), Box<dyn Error
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -445,7 +446,7 @@ pub async fn single_partition_query_pagination() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -474,7 +475,7 @@ pub async fn cross_partition_query_pagination() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -507,7 +508,7 @@ pub async fn cross_partition_query_suspend_resume() -> Result<(), Box<dyn Error>
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -547,7 +548,7 @@ pub async fn query_rejects_newer_sdk_continuation_token() -> Result<(), Box<dyn 
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -588,7 +589,7 @@ pub async fn query_rejects_server_token_for_cross_partition() -> Result<(), Box<
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -750,7 +751,7 @@ pub async fn single_partition_query_resumes_with_raw_server_token() -> Result<()
             assert_eq!(expected, actual);
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }

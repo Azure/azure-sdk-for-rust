@@ -23,7 +23,7 @@ futures.workspace = true
 pin-project.workspace = true
 reqwest = { workspace = true, optional = true }
 serde.workspace = true
-serde_json.workspace = true
+serde_json = { workspace = true, features = ["raw_value"] }
 tracing.workspace = true
 url.workspace = true
 
@@ -91,13 +91,10 @@ __internal_in_memory_emulator = [
   "azure_data_cosmos_driver/__internal_in_memory_emulator",
   "key_auth",
 ]
-allow_invalid_certificates = [
-] # Enables accepting invalid TLS certificates (e.g., for emulator testing). Must be combined with a TLS feature (`rustls` or `native_tls`).
 __tls = []
 
 [package.metadata.docs.rs]
 features = [
-  "allow_invalid_certificates",
   "fault_injection",
   "hmac_openssl",
   "hmac_rust",

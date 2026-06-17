@@ -3,8 +3,11 @@
 
 use crate::{
     clients::{ClientContext, DatabaseClient},
-    models::{DatabaseProperties, ResourceResponse},
-    CreateDatabaseOptions, Query, QueryDatabasesOptions, QueryItemIterator, ResourceIdentity,
+    feed::QueryItemIterator,
+    models::DatabaseProperties,
+    models::ResourceResponse,
+    options::{CreateDatabaseOptions, QueryDatabasesOptions},
+    Query, ResourceIdentity,
 };
 use azure_core::http::Url;
 use azure_data_cosmos_driver::models::CosmosOperation;
@@ -14,14 +17,16 @@ pub use super::cosmos_client_builder::CosmosClientBuilder;
 
 /// Client for Azure Cosmos DB.
 ///
-/// Use [`CosmosClientBuilder`] to create instances of this client.
+/// Use [`CosmosClient::builder()`] to obtain a [`CosmosClientBuilder`] and
+/// construct a configured client.
 ///
 /// # Examples
 ///
 /// Using Entra ID authentication:
 ///
 /// ```rust,no_run
-/// use azure_data_cosmos::{CosmosClient, AccountReference, AccountEndpoint, Region, RoutingStrategy};
+/// use azure_data_cosmos::{CosmosClient, AccountReference, AccountEndpoint, RoutingStrategy};
+/// use azure_data_cosmos::options::{Region};
 /// use std::sync::Arc;
 ///
 /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
@@ -41,7 +46,8 @@ pub use super::cosmos_client_builder::CosmosClientBuilder;
 /// Using key authentication (requires `key_auth` feature):
 ///
 /// ```rust,no_run,ignore
-/// use azure_data_cosmos::{CosmosClient, AccountReference, AccountEndpoint, Region, RoutingStrategy};
+/// use azure_data_cosmos::{CosmosClient, AccountReference, AccountEndpoint, RoutingStrategy};
+/// use azure_data_cosmos::options::{Region};
 /// use azure_core::credentials::Secret;
 ///
 /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
@@ -69,7 +75,8 @@ impl CosmosClient {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// use azure_data_cosmos::{CosmosClient, AccountReference, AccountEndpoint, Region, RoutingStrategy};
+    /// use azure_data_cosmos::{CosmosClient, AccountReference, AccountEndpoint, RoutingStrategy};
+    /// use azure_data_cosmos::options::{Region};
     ///
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// let credential: std::sync::Arc<dyn azure_core::credentials::TokenCredential> =
@@ -170,6 +177,8 @@ impl CosmosClient {
     /// Creates a new database.
     ///
     #[doc = include_str!("../../docs/control-plane-warning.md")]
+    ///
+    #[doc = include_str!("../../docs/control-plane-always-returns-body.md")]
     ///
     /// # Arguments
     /// * `id` - The ID of the new database.
