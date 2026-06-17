@@ -88,7 +88,15 @@ an override:
 | Base env var | Kill switch | Effect when set |
 | --- | --- | --- |
 | `AZURE_COSMOS_HEDGING_ENABLED` | `AZURE_COSMOS_HEDGING_ENABLED_OVERRIDE` | Forces cross-region read hedging on/off regardless of any programmatic `AvailabilityStrategy` or per-request value. |
-| `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED` | `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED_OVERRIDE` | Forces the per-partition circuit breaker (PPCB) on/off regardless of any per-request value. |
+| `AZURE_COSMOS_PPCB_ENABLED` | `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` | Forces the per-partition circuit breaker (PPCB) on/off regardless of the `PartitionFailoverOptions` setting **and** the account property `enable_per_partition_failover_behavior`. |
+
+> **Note on the PPCB kill switch.** Unlike the hedging switch, PPCB enablement
+> is a **driver-level** (`PartitionFailoverOptions`) setting rather than a
+> per-operation option, so its `_OVERRIDE` does not participate in the
+> operation → account → runtime layering above. Instead it is authoritative over
+> the only two PPCB enablement sources that exist: the
+> `PartitionFailoverOptions::circuit_breaker_enabled` option and the server
+> account property.
 
 > **Read once at startup.** Both the base variable and its `_OVERRIDE` variant
 > are read a single time when the driver runtime is built, not per request.

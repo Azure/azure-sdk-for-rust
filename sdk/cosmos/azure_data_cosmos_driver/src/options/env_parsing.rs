@@ -199,6 +199,38 @@ where
     resolve_from_env(builder_value, env_value, env_var_name, default, bounds)
 }
 
+/// Parses an *optional* boolean from `env_var_name` using the same lenient
+/// spellings the `CosmosOptions` derive uses for kill-switch booleans
+/// (`true`/`false`, `1`/`0`, `yes`/`no`, `on`/`off`, case-insensitive). A
+/// builder value, when present, wins over the environment; an unrecognized
+/// env value is logged and ignored (treated as unset) so an operator typo on
+/// an incident kill switch does not silently flip the switch the wrong way.
+///
+/// Returns `None` when neither a builder value nor a recognized env value is
+/// present, letting the caller fall through to its own default.
+pub(super) fn parse_optional_bool_from_env(
+    builder_value: Option<bool>,
+    env_var_name: &str,
+) -> Option<bool> {
+    if let Some(value) = builder_value {
+        return Some(value);
+    }
+
+    let raw = std::env::var(env_var_name).ok()?;
+    match raw.trim().to_ascii_lowercase().as_str() {
+        "true" | "1" | "yes" | "on" => Some(true),
+        "false" | "0" | "no" | "off" => Some(false),
+        _ => {
+            tracing::warn!(
+                env_var = env_var_name,
+                value = %raw,
+                "failed to parse boolean environment variable; ignoring",
+            );
+            None
+        }
+    }
+}
+
 /// Validates a duration value against min/max bounds (in milliseconds).
 ///
 /// Comparisons use `u128` to avoid silent truncation since
