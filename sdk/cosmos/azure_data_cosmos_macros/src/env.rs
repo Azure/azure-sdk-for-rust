@@ -33,7 +33,36 @@ fn is_bool_type(ty: &Type) -> bool {
 /// Shared by both the base `from_env_vars` and the `from_env_override_vars`
 /// constructors so the parse/warn semantics stay identical across the base
 /// and `_OVERRIDE` variants.
-fn field_init(field_name: &syn::Ident, inner_type: &Type, env_var: &str) -> TokenStream {
+///
+/// When `parser` is `Some(path)`, the field is parsed by calling
+/// `path(&raw) -> Option<InnerType>` instead of any built-in strategy, letting
+/// callers support types without a suitable `FromStr` (e.g. a `Duration` read
+/// from a millisecond count). A `None` result is logged and ignored, matching
+/// the lenient semantics of the built-in parsers.
+fn field_init(
+    field_name: &syn::Ident,
+    inner_type: &Type,
+    env_var: &str,
+    parser: Option<&syn::Path>,
+) -> TokenStream {
+    if let Some(parser) = parser {
+        return quote! {
+            #field_name: env_var(#env_var)
+                .ok()
+                .and_then(|v| {
+                    let parsed = #parser(&v);
+                    if parsed.is_none() {
+                        ::tracing::warn!(
+                            env_var = #env_var,
+                            value = %v,
+                            "failed to parse environment variable; ignoring",
+                        );
+                    }
+                    parsed
+                })
+        };
+    }
+
     if is_vec_type(inner_type) {
         quote! {
             #field_name: env_var(#env_var)
@@ -117,7 +146,12 @@ pub fn generate_from_env(input: &OptionsInput) -> Result<TokenStream> {
     let field_inits = input.fields.iter().map(|field| {
         let field_name = &field.ident;
         if let Some(ref env_var) = field.env_var {
-            field_init(field_name, &field.inner_type, env_var)
+            field_init(
+                field_name,
+                &field.inner_type,
+                env_var,
+                field.parser.as_ref(),
+            )
         } else {
             quote! { #field_name: None }
         }
@@ -160,7 +194,12 @@ fn generate_from_env_override(input: &OptionsInput) -> TokenStream {
     let field_inits = input.fields.iter().map(|field| {
         let field_name = &field.ident;
         if let Some(override_var) = field.override_env_var() {
-            field_init(field_name, &field.inner_type, &override_var)
+            field_init(
+                field_name,
+                &field.inner_type,
+                &override_var,
+                field.parser.as_ref(),
+            )
         } else {
             // Non-overridable fields are never sourced from an `_OVERRIDE`
             // variable — the override layer only carries kill-switch values.

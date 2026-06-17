@@ -390,6 +390,44 @@ fn env_only_unset_falls_back_to_default() {
     assert_eq!(opts, EnvOnlyOptions::default());
 }
 
+// --- `#[option(env = "...", parser = ...)]`: custom parsing into a field type
+// that has no suitable `FromStr` (here, a `Duration` read from a millisecond
+// count). ---
+
+fn parse_millis(raw: &str) -> Option<std::time::Duration> {
+    raw.trim()
+        .parse::<u64>()
+        .ok()
+        .map(std::time::Duration::from_millis)
+}
+
+#[derive(CosmosOptions, Clone, Debug, Default, PartialEq)]
+#[options(env_only)]
+pub struct ParserOptions {
+    #[option(env = "AZURE_COSMOS_TEST_PARSER_TIMEOUT_MS", parser = parse_millis)]
+    pub timeout: Option<std::time::Duration>,
+}
+
+#[test]
+fn parser_converts_env_value_into_field_type() {
+    let opts = ParserOptions::from_env_vars(|key| match key {
+        "AZURE_COSMOS_TEST_PARSER_TIMEOUT_MS" => Ok("1500".to_string()),
+        _ => Err(std::env::VarError::NotPresent),
+    });
+    assert_eq!(opts.timeout, Some(std::time::Duration::from_millis(1500)));
+}
+
+#[test]
+fn parser_none_result_is_ignored() {
+    // A value the parser rejects is treated as unset (None), matching the
+    // lenient semantics of the built-in parsers.
+    let opts = ParserOptions::from_env_vars(|key| match key {
+        "AZURE_COSMOS_TEST_PARSER_TIMEOUT_MS" => Ok("not-a-number".to_string()),
+        _ => Err(std::env::VarError::NotPresent),
+    });
+    assert_eq!(opts.timeout, None);
+}
+
 // --- Lenient boolean parsing for operator-facing kill switches ---
 
 #[derive(CosmosOptions, Clone)]

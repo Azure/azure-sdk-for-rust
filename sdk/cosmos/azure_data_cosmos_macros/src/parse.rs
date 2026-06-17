@@ -91,6 +91,11 @@ pub struct OptionField {
     /// Whether this field also recognizes a `{ENV}_OVERRIDE` kill-switch
     /// variable that takes precedence over every layer (including operation).
     pub overridable: bool,
+    /// Optional custom parser path for the env var. When set, the generated
+    /// `from_env` calls `parser(&raw) -> Option<InnerType>` instead of the
+    /// default `raw.parse()`, allowing types without a suitable `FromStr`
+    /// (e.g. a `Duration` read from a millisecond count). Requires `env`.
+    pub parser: Option<syn::Path>,
 }
 
 impl OptionsInput {
@@ -239,7 +244,7 @@ fn parse_fields(data: &DataStruct) -> Result<Vec<OptionField>> {
             )
         })?;
 
-        let (env_var, merge, nested, overridable) = parse_option_attrs(&field.attrs)?;
+        let (env_var, merge, nested, overridable, parser) = parse_option_attrs(&field.attrs)?;
 
         result.push(OptionField {
             ident,
@@ -249,6 +254,7 @@ fn parse_fields(data: &DataStruct) -> Result<Vec<OptionField>> {
             merge,
             nested,
             overridable,
+            parser,
         });
     }
 
@@ -257,11 +263,18 @@ fn parse_fields(data: &DataStruct) -> Result<Vec<OptionField>> {
 
 fn parse_option_attrs(
     attrs: &[syn::Attribute],
-) -> Result<(Option<String>, Option<String>, bool, bool)> {
+) -> Result<(
+    Option<String>,
+    Option<String>,
+    bool,
+    bool,
+    Option<syn::Path>,
+)> {
     let mut env_var = None;
     let mut merge = None;
     let mut nested = false;
     let mut overridable = false;
+    let mut parser = None;
 
     for attr in attrs {
         if !attr.path().is_ident("option") {
@@ -288,9 +301,14 @@ fn parse_option_attrs(
             } else if meta.path.is_ident("overridable") {
                 overridable = true;
                 Ok(())
+            } else if meta.path.is_ident("parser") {
+                let value = meta.value()?;
+                let path: syn::Path = value.parse()?;
+                parser = Some(path);
+                Ok(())
             } else {
                 Err(meta.error(
-                    "expected `env = \"...\"`, `merge = \"...\"`, `nested`, or `overridable`",
+                    "expected `env = \"...\"`, `merge = \"...\"`, `nested`, `overridable`, or `parser = path`",
                 ))
             }
         })?;
@@ -321,8 +339,14 @@ fn parse_option_attrs(
             "`overridable` requires `env = \"...\"` on the same field",
         ));
     }
+    if parser.is_some() && env_var.is_none() {
+        return Err(Error::new(
+            Span::call_site(),
+            "`parser` requires `env = \"...\"` on the same field",
+        ));
+    }
 
-    Ok((env_var, merge, nested, overridable))
+    Ok((env_var, merge, nested, overridable, parser))
 }
 
 /// Extracts the inner type `T` from `Option<T>`.
@@ -555,6 +579,36 @@ mod tests {
         match OptionsInput::from_derive_input(&input) {
             Err(e) => assert_eq!(
                 "`overridable` requires `env = \"...\"` on the same field",
+                e.to_string()
+            ),
+            Ok(_) => panic!("expected error"),
+        }
+    }
+
+    #[test]
+    fn parser_field_parsed_and_requires_env() {
+        // A `parser` path is captured on the field when `env` is present.
+        let ok: DeriveInput = syn::parse_quote! {
+            #[options(env_only)]
+            struct TestOptions {
+                #[option(env = "MY_VAR", parser = my_parser)]
+                pub field_a: Option<std::time::Duration>,
+            }
+        };
+        let parsed = OptionsInput::from_derive_input(&ok).unwrap();
+        assert!(parsed.fields[0].parser.is_some());
+
+        // `parser` without `env` is rejected.
+        let bad: DeriveInput = syn::parse_quote! {
+            #[options(layers(runtime, account))]
+            struct TestOptions {
+                #[option(parser = my_parser)]
+                pub field_a: Option<std::time::Duration>,
+            }
+        };
+        match OptionsInput::from_derive_input(&bad) {
+            Err(e) => assert_eq!(
+                "`parser` requires `env = \"...\"` on the same field",
                 e.to_string()
             ),
             Ok(_) => panic!("expected error"),

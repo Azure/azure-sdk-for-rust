@@ -42,6 +42,10 @@ type Result<T> = ::std::result::Result<T, syn::Error>;
 ///   `new_with_override`). Requires `env`.
 /// - `#[option(merge = "extend")]` — uses additive merge instead of shadow semantics.
 /// - `#[option(nested)]` — delegates resolution to a child View.
+/// - `#[option(env = "...", parser = path::to::fn)]` — parses the env var with a
+///   custom `fn(&str) -> Option<T>` (where `T` is the field's inner type)
+///   instead of `FromStr`, supporting types like `Duration` read from a
+///   millisecond count. A `None` result is logged and ignored. Requires `env`.
 ///
 /// # Example
 ///
