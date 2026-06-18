@@ -17,12 +17,19 @@ use std::{
     collections::{HashMap, HashSet},
     sync::{Arc, Mutex as SyncMutex, OnceLock, Weak},
 };
-use tracing::{debug, error, trace, warn};
+use tracing::{debug, error, info, trace, warn};
 
 // The number of seconds before token expiration that we wake up to refresh the token.
 const TOKEN_REFRESH_BIAS: Duration = Duration::minutes(6); // By default, we refresh tokens 6 minutes before they expire.
 const TOKEN_REFRESH_JITTER_MIN: Duration = Duration::seconds(-5); // Minimum jitter (added from the bias, so a negative number means we refresh before the bias)
 const TOKEN_REFRESH_JITTER_MAX: Duration = Duration::seconds(5); // Maximum jitter (added to the bias)
+
+// Floor delay applied after a pass in which one or more token refreshes failed.
+// A failed refresh leaves the token's `expires_on` unchanged, so its computed
+// refresh_time stays in the past and the next pass would not sleep. Without this
+// floor a persistent failure (credential outage, CBS down) busy-spins, hammering
+// get_token / perform_authorization with no backoff. See PR #4593 review.
+const TOKEN_REFRESH_RETRY_BACKOFF: Duration = Duration::seconds(30);
 
 const EVENTHUBS_AUTHORIZATION_SCOPE: &str = "https://eventhubs.azure.net/.default";
 
@@ -107,7 +114,7 @@ impl Authorizer {
             connection_id = %connection.get_connection_id(),
             path = %path,
         ),
-        err,
+        err(level = "warn"),
     )]
     pub(crate) async fn authorize_path(
         self: &Arc<Self>,
@@ -209,16 +216,17 @@ impl Authorizer {
         // ever returns, every cached token will silently expire. Per-path
         // get_token/authorization failures are handled (logged + retried) inside
         // refresh_tokens(), so reaching here means the loop hit a terminal
-        // condition (e.g. the recoverable connection was dropped, or a poisoned
-        // lock). Surface that at error! rather than warn! since it tears the
-        // refresher down.
+        // condition. An Err is a genuine fault (e.g. a poisoned lock) and is
+        // surfaced at error!. An Ok(()) is the expected clean shutdown: the
+        // recoverable connection was dropped, so there is nothing left to
+        // refresh and info! is the right level.
         let result = self.refresh_tokens().await;
         match result {
             Err(e) => {
                 error!(err = ?e, "Token refresher task exited with error; cached tokens will no longer be refreshed: {e}");
             }
             Ok(()) => {
-                error!("Token refresher task exited; cached tokens will no longer be refreshed.");
+                info!("Token refresher task stopped after the recoverable connection was dropped.");
             }
         }
     }
@@ -373,6 +381,11 @@ impl Authorizer {
             // and continue to the next path; the unrefreshed token will be
             // retried on the next pass.
             let mut updated_tokens = HashMap::new();
+            // Tracks whether any path failed to refresh this pass. A failure
+            // leaves that token's `expires_on` unchanged, so refresh_time stays
+            // in the past and the next pass would not sleep; we back off below to
+            // avoid a no-delay retry storm.
+            let mut refresh_failed = false;
             for (url, previous_expiry) in tokens_to_refresh {
                 let new_token = match self
                     .credential
@@ -387,6 +400,7 @@ impl Authorizer {
                             err = ?e,
                             "Failed to refresh token for path; will retry on next pass: {e}"
                         );
+                        refresh_failed = true;
                         continue;
                     }
                 };
@@ -405,15 +419,19 @@ impl Authorizer {
                 }
 
                 // Create an ephemeral connection to host the authentication.
+                //
+                // A failed upgrade is terminal, not retryable: once the last
+                // strong reference to the RecoverableConnection is dropped the
+                // Weak can never upgrade again, so continuing here would loop
+                // forever with nothing left to refresh against. Stop the task.
                 let connection = match self.recoverable_connection.upgrade() {
                     Some(connection) => connection,
                     None => {
-                        warn!(
-                            path = %url,
+                        info!(
                             operation = "upgrade_connection",
-                            "Recoverable connection has been dropped; skipping token refresh for path, will retry on next pass."
+                            "Recoverable connection has been dropped; stopping token refresher."
                         );
-                        continue;
+                        return Ok(());
                     }
                 };
                 if let Err(e) = self
@@ -426,6 +444,7 @@ impl Authorizer {
                         err = ?e,
                         "Failed to authorize refreshed token for path; will retry on next pass: {e}"
                     );
+                    refresh_failed = true;
                     continue;
                 }
 
@@ -443,6 +462,18 @@ impl Authorizer {
                     scopes.insert(url.clone(), token);
                 }
                 debug!("Updated tokens.");
+            }
+
+            // If any path failed to refresh, its refresh_time is still in the
+            // past, so the top-of-loop sleep would be skipped. Back off for a
+            // bounded interval before retrying so a persistent failure does not
+            // busy-spin on get_token / perform_authorization.
+            if refresh_failed {
+                warn!(
+                    backoff = ?TOKEN_REFRESH_RETRY_BACKOFF,
+                    "One or more token refreshes failed this pass; backing off before retrying."
+                );
+                azure_core::sleep::sleep(TOKEN_REFRESH_RETRY_BACKOFF).await;
             }
         }
     }

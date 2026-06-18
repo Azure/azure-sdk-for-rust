@@ -90,7 +90,7 @@ impl AmqpClaimsBasedSecurityApis for RecoverableClaimsBasedSecurity {
             operation = "authorize_path",
             expires_on = %expires_on,
         ),
-        err,
+        err(level = "warn"),
     )]
     async fn authorize_path(
         &self,

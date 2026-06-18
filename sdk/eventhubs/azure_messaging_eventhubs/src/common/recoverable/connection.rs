@@ -482,7 +482,7 @@ impl RecoverableConnection {
             connection_id = %self.get_connection_id(),
             source_url = %source_url,
         ),
-        err,
+        err(level = "warn"),
     )]
     async fn get_session(
         self: &Arc<Self>,
@@ -524,7 +524,7 @@ impl RecoverableConnection {
             connection_id = %self.get_connection_id(),
             url = %self.url,
         ),
-        err,
+        err(level = "warn"),
     )]
     async fn create_connection(&self) -> azure_core_amqp::Result<Arc<AmqpConnection>> {
         debug!(
@@ -568,7 +568,7 @@ impl RecoverableConnection {
         level = "debug",
         skip_all,
         fields(connection_id = %self.get_connection_id()),
-        err,
+        err(level = "warn"),
     )]
     pub(super) async fn ensure_amqp_management(
         self: &Arc<Self>,
@@ -596,7 +596,7 @@ impl RecoverableConnection {
         level = "debug",
         skip_all,
         fields(connection_id = %self.get_connection_id()),
-        err,
+        err(level = "warn"),
     )]
     pub(super) async fn ensure_amqp_cbs(
         self: &Arc<Self>,
@@ -617,7 +617,6 @@ impl RecoverableConnection {
             connection_id = %self.get_connection_id(),
             source_url = %source_url,
         ),
-        err,
     )]
     pub(super) async fn ensure_receiver(
         self: &Arc<Self>,
@@ -681,7 +680,6 @@ impl RecoverableConnection {
             connection_id = %self.get_connection_id(),
             path = %path,
         ),
-        err,
     )]
     pub(super) async fn ensure_sender(
         self: &Arc<Self>,
