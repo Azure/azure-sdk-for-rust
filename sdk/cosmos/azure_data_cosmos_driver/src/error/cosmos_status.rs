@@ -1632,6 +1632,14 @@ impl CosmosStatus {
             && self.sub_status == Some(SubStatusCode::WRITE_FORBIDDEN)
     }
 
+    /// Returns `true` for HTTP 403/sub-status 1008, where the region no longer owns the account.
+    ///
+    /// Note: sub-status 1008 is overloaded on HTTP 410 for partition migration.
+    pub fn is_database_account_not_found(&self) -> bool {
+        u16::from(self.status_code) == 403
+            && self.sub_status == Some(SubStatusCode::DATABASE_ACCOUNT_NOT_FOUND)
+    }
+
     /// Returns `true` if this is a read-session-not-available error (HTTP 404, sub-status 1002).
     pub fn is_read_session_not_available(&self) -> bool {
         u16::from(self.status_code) == 404
@@ -1697,6 +1705,8 @@ impl CosmosStatus {
     ///   `403` *can* be retried (e.g., write-forbidden on single-master
     ///   PPAF), the dedicated retry path handles it via the normal retry
     ///   loop rather than via a parallel hedge race.
+    ///   * **Exception — `403 / 1008` (`DatabaseAccountNotFound`):** topology
+    ///     ownership changed, so the outer retry pipeline must refresh and fail over.
     /// * `422`, `451`, `501`, `505` are payload/policy/protocol issues that
     ///   another region cannot resolve. Racing a hedge against them only
     ///   wastes RU and request budget.
@@ -1707,6 +1717,10 @@ impl CosmosStatus {
         }
 
         let sub = self.sub_status.map(|s| s.value()).unwrap_or(0);
+        if code == 403 && sub == 1008 {
+            // DatabaseAccountNotFound — see exception in the doc comment above.
+            return false;
+        }
         matches!(
             code,
             400 | 401 | 403 | 405 | 409 | 412 | 413 | 422 | 451 | 501 | 505
@@ -1850,6 +1864,14 @@ impl CosmosStatus {
     pub const WRITE_FORBIDDEN: CosmosStatus = CosmosStatus {
         status_code: StatusCode::Forbidden,
         sub_status: Some(SubStatusCode::WRITE_FORBIDDEN),
+    };
+
+    /// Database account not found (HTTP 403, sub-status 1008).
+    ///
+    /// Region ownership changed; sub-status `1008` is overloaded on 410.
+    pub const DATABASE_ACCOUNT_NOT_FOUND: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::Forbidden,
+        sub_status: Some(SubStatusCode::DATABASE_ACCOUNT_NOT_FOUND),
     };
 
     // ----- 410: Gone -----
