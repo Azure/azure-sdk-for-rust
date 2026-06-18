@@ -174,16 +174,49 @@ impl ContainerRoutingMap {
         &self,
         epk_range: Range<&EffectivePartitionKey>,
     ) -> Vec<&PartitionKeyRange> {
-        if self.ordered_ranges.is_empty() {
+        let Some((start_idx, end_idx)) = self.overlapping_range_bounds(epk_range) else {
             return Vec::new();
+        };
+        self.ordered_ranges[start_idx..end_idx].iter().collect()
+    }
+
+    /// Returns the ID of the single partition key range that overlaps the given
+    /// EPK range, or `None` when the range maps to zero or more than one
+    /// physical partition.
+    ///
+    /// This is a cheaper alternative to [`get_overlapping_ranges`](Self::get_overlapping_ranges)
+    /// for callers that only need to know whether a feed range is owned by
+    /// exactly one physical partition (e.g. PPCB/PPAF first-attempt
+    /// attribution). It reuses the same O(log n) binary-search bounds but
+    /// clones at most a single ID instead of every overlapping range.
+    pub fn single_overlapping_range_id(
+        &self,
+        epk_range: Range<&EffectivePartitionKey>,
+    ) -> Option<String> {
+        let (start_idx, end_idx) = self.overlapping_range_bounds(epk_range)?;
+        if end_idx - start_idx == 1 {
+            Some(self.ordered_ranges[start_idx].id.clone())
+        } else {
+            None
+        }
+    }
+
+    /// Computes the `[start_idx, end_idx)` slice of `ordered_ranges` that
+    /// overlaps the given EPK range. Returns `None` when the map is empty.
+    ///
+    /// Because `ordered_ranges` is sorted AND contiguous (no gaps/overlaps),
+    /// the overlapping ranges form a contiguous slice, found via two binary
+    /// searches for O(log n) total.
+    fn overlapping_range_bounds(
+        &self,
+        epk_range: Range<&EffectivePartitionKey>,
+    ) -> Option<(usize, usize)> {
+        if self.ordered_ranges.is_empty() {
+            return None;
         }
 
         let min_epk = epk_range.start;
         let max_epk = epk_range.end;
-
-        // Because ordered_ranges is sorted AND contiguous (no gaps/overlaps),
-        // the overlapping ranges form a contiguous slice. We binary-search for
-        // both the start and end indices to get O(log n) total.
 
         // Start: rightmost range whose min_inclusive <= query min.
         let start_idx = self.find_range_index(min_epk.as_str());
@@ -194,7 +227,7 @@ impl ContainerRoutingMap {
             .partition_point(|r| r.min_inclusive < *max_epk)
             + start_idx;
 
-        self.ordered_ranges[start_idx..end_idx].iter().collect()
+        Some((start_idx, end_idx))
     }
 
     /// Returns the highest partition key range ID that is not offline.
@@ -530,6 +563,41 @@ mod tests {
         let overlapping = map.get_overlapping_ranges(&epk("40")..&epk("50"));
         let ids: Vec<&str> = overlapping.iter().map(|r| r.id.as_str()).collect();
         assert_eq!(ids, ["2"]);
+    }
+
+    #[test]
+    fn single_overlapping_range_id_one_partition_returns_id() {
+        let map = ContainerRoutingMap::try_create(three_ranges(), None, None)
+            .unwrap()
+            .unwrap();
+        // Query [40, 50) — owned entirely by range 2 [3F, 7F).
+        let id = map.single_overlapping_range_id(&epk("40")..&epk("50"));
+        assert_eq!(id.as_deref(), Some("2"));
+    }
+
+    #[test]
+    fn single_overlapping_range_id_multiple_partitions_returns_none() {
+        let map = ContainerRoutingMap::try_create(three_ranges(), None, None)
+            .unwrap()
+            .unwrap();
+        // Full span overlaps all three ranges → no single owner.
+        assert!(map
+            .single_overlapping_range_id(&epk("")..&epk("FF"))
+            .is_none());
+        // Partial span [30, 50) overlaps ranges 1 and 2 → no single owner.
+        assert!(map
+            .single_overlapping_range_id(&epk("30")..&epk("50"))
+            .is_none());
+    }
+
+    #[test]
+    fn single_overlapping_range_id_single_partition_map_returns_id() {
+        let map = ContainerRoutingMap::try_create(single_range(), None, None)
+            .unwrap()
+            .unwrap();
+        // Whole space against a one-partition container → that partition owns it.
+        let id = map.single_overlapping_range_id(&epk("")..&epk("FF"));
+        assert_eq!(id.as_deref(), Some("0"));
     }
 
     #[test]

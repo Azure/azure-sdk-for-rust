@@ -1675,37 +1675,20 @@ impl CosmosDriver {
         // EPK-range feed ranges (e.g. `SELECT * FROM c` scoped to a single physical
         // partition) carry no logical partition key. Resolve the owning physical
         // partition by EPK range so PPCB/PPAF can attribute failures from the first
-        // attempt. Only seed when the range maps to exactly one physical partition.
-        let ranges = self
-            .pk_range_cache
-            .resolve_overlapping_ranges(
+        // attempt. Seed only when the range maps to exactly one physical partition:
+        // a range that fans out across multiple partitions (or matches none) has no
+        // single owner to attribute to, so the pipeline instead captures the range
+        // ID from the response headers on a later attempt. `resolve_single_overlapping_range_id`
+        // answers this without cloning every overlapping range.
+        self.pk_range_cache
+            .resolve_single_overlapping_range_id(
                 container,
                 target.min_inclusive()..target.max_exclusive(),
                 false,
                 |c, cont| Box::pin(self.fetch_pk_ranges_from_service(c, cont)),
             )
-            .await?;
-
-        Self::single_overlapping_range_id(&ranges)
-    }
-
-    /// Collapses an EPK-range overlap resolution into a single pre-resolved
-    /// partition key range ID for PPAF/PPCB seeding.
-    ///
-    /// A pre-resolved range ID is only useful when the feed range maps to
-    /// exactly one physical partition: that lets the per-partition circuit
-    /// breaker attribute a failure to a specific `(partition, region)` pair
-    /// from the very first attempt. A range that fans out across multiple
-    /// physical partitions — or matches none — has no single owner to
-    /// attribute to, so this returns `None` and the pipeline instead captures
-    /// the range ID from the response headers on a later attempt.
-    fn single_overlapping_range_id(
-        ranges: &[crate::models::partition_key_range::PartitionKeyRange],
-    ) -> Option<PartitionKeyRangeId> {
-        match ranges {
-            [single] => Some(PartitionKeyRangeId::from(single.id.clone())),
-            _ => None,
-        }
+            .await
+            .map(PartitionKeyRangeId::from)
     }
 
     /// Executes a Cosmos DB operation.
@@ -4081,12 +4064,14 @@ mod tests {
     }
 
     // =========================================================================
-    // pre_resolve_partition_key_range_id — EPK-range collapse (#4611 fix)
+    // pre_resolve_partition_key_range_id — EPK-range seeding (#4611 fix)
     //
-    // The single→Some / multi→None decision is `single_overlapping_range_id`.
-    // The cache-backed tests drive the *real* `resolve_overlapping_ranges`
-    // (mocked fetch, per the existing `resolve_overlapping_ranges_*` tests) and
-    // feed its output to that decision, exercising the exact production path.
+    // The single→Some / multi→None collapse now lives in
+    // `ContainerRoutingMap::single_overlapping_range_id` (unit-tested there).
+    // These cache-backed tests drive the *real*
+    // `PartitionKeyRangeCache::resolve_single_overlapping_range_id` (mocked
+    // fetch, per the existing `resolve_overlapping_ranges_*` tests), exercising
+    // the exact path `pre_resolve_partition_key_range_id` takes.
     // =========================================================================
 
     /// Builds a `ContainerReference` from a partition-key-definition JSON blob.
@@ -4151,29 +4136,6 @@ mod tests {
         }
     }
 
-    #[test]
-    fn single_overlapping_range_id_single_range_returns_some() {
-        use crate::models::partition_key_range::PartitionKeyRange as PkRange;
-        let ranges = vec![PkRange::new("3".into(), "", "FF")];
-        let resolved = CosmosDriver::single_overlapping_range_id(&ranges);
-        assert_eq!(resolved.as_ref().map(|id| id.as_str()), Some("3"));
-    }
-
-    #[test]
-    fn single_overlapping_range_id_multiple_ranges_returns_none() {
-        use crate::models::partition_key_range::PartitionKeyRange as PkRange;
-        let ranges = vec![
-            PkRange::new("0".into(), "", "80"),
-            PkRange::new("1".into(), "80", "FF"),
-        ];
-        assert!(CosmosDriver::single_overlapping_range_id(&ranges).is_none());
-    }
-
-    #[test]
-    fn single_overlapping_range_id_empty_returns_none() {
-        assert!(CosmosDriver::single_overlapping_range_id(&[]).is_none());
-    }
-
     #[tokio::test]
     async fn epk_range_owned_by_single_partition_resolves_to_that_range() {
         use crate::driver::cache::PartitionKeyRangeCache;
@@ -4183,19 +4145,18 @@ mod tests {
         let cache = PartitionKeyRangeCache::new();
 
         // An EPK-range feed range spanning the whole space, resolved against a
-        // container with a single physical partition, overlaps exactly one
+        // container with a single physical partition, is owned by exactly one
         // range — so pre-resolution seeds that range's ID (single → Some).
-        let ranges = cache
-            .resolve_overlapping_ranges(
+        let resolved = cache
+            .resolve_single_overlapping_range_id(
                 &container,
                 &EffectivePartitionKey::MIN..&EffectivePartitionKey::MAX,
                 false,
                 whole_space_single_range_fetch,
             )
             .await
-            .expect("routing map resolves");
+            .map(PartitionKeyRangeId::from);
 
-        let resolved = CosmosDriver::single_overlapping_range_id(&ranges);
         assert_eq!(resolved.as_ref().map(|id| id.as_str()), Some("0"));
     }
 
@@ -4209,22 +4170,16 @@ mod tests {
 
         // The whole-space feed range overlaps both physical partitions, so there
         // is no single owner to attribute PPCB/PPAF failures to (multi → None).
-        let ranges = cache
-            .resolve_overlapping_ranges(
+        let resolved = cache
+            .resolve_single_overlapping_range_id(
                 &container,
                 &EffectivePartitionKey::MIN..&EffectivePartitionKey::MAX,
                 false,
                 whole_space_two_range_fetch,
             )
-            .await
-            .expect("routing map resolves");
+            .await;
 
-        assert_eq!(
-            ranges.len(),
-            2,
-            "whole-space range must overlap both ranges"
-        );
-        assert!(CosmosDriver::single_overlapping_range_id(&ranges).is_none());
+        assert!(resolved.is_none());
     }
 
     #[tokio::test]
