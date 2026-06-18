@@ -639,8 +639,28 @@ impl RequestDiagnostics {
         self.server_duration_ms = Some(crate::models::FiniteF64::new_lossy(duration));
     }
 
-    /// Adds a pipeline event.
-    pub(crate) fn add_event(&mut self, event: RequestEvent) {
+    /// Adds a pipeline event, stamping it with the duration of the stage it
+    /// concludes.
+    ///
+    /// The stage duration is the time elapsed since the previous event on this
+    /// request, or since the request started for the first event, so e.g. a
+    /// `ResponseHeadersReceived` event carries the transport time-to-first-byte.
+    /// A duration the caller already set (via [`RequestEvent::with_duration`]) is
+    /// left untouched.
+    pub(crate) fn add_event(&mut self, mut event: RequestEvent) {
+        if event.duration_ms.is_none() {
+            let stage_start = self
+                .events
+                .last()
+                .map(|prev| prev.timestamp)
+                .unwrap_or(self.started_at);
+            event.duration_ms = Some(
+                event
+                    .timestamp
+                    .saturating_duration_since(stage_start)
+                    .as_millis() as u64,
+            );
+        }
         self.events.push(event);
     }
 
@@ -924,7 +944,13 @@ pub struct RequestEvent {
     #[serde(skip)]
     timestamp: Instant,
 
-    /// Duration of this stage, if applicable.
+    /// Duration of the stage this event concludes, in milliseconds.
+    ///
+    /// Computed when the event is recorded on a request as the time elapsed
+    /// since the previous event (or since the request started, for the first
+    /// event). For [`ResponseHeadersReceived`](RequestEventType::ResponseHeadersReceived)
+    /// this is the transport time-to-first-byte. `None` only for a free-standing
+    /// event that was never attached to a request.
     duration_ms: Option<u64>,
 
     /// Additional context for this event.
@@ -3773,6 +3799,37 @@ mod tests {
             Duration::from_millis(50),
         );
         assert_eq!(event.duration_ms, Some(50));
+    }
+
+    #[test]
+    fn added_events_carry_stage_durations() {
+        // Events recorded on a request must always carry a stage duration, so the
+        // serialized `duration_ms` is a real number rather than `null`.
+        let endpoint = CosmosEndpoint::global(url::Url::parse("https://acct/").unwrap());
+        let mut request = RequestDiagnostics::new(
+            ExecutionContext::Initial,
+            PipelineType::DataPlane,
+            TransportSecurity::Secure,
+            TransportKind::Gateway,
+            TransportHttpVersion::Http2,
+            &endpoint,
+        );
+
+        request.add_event(RequestEvent::new(RequestEventType::TransportStart));
+        request.add_event(RequestEvent::new(RequestEventType::ResponseHeadersReceived));
+
+        assert_eq!(request.events.len(), 2);
+        assert!(
+            request.events.iter().all(|e| e.duration_ms.is_some()),
+            "every recorded event should carry a stage duration"
+        );
+
+        // A caller-provided duration is preserved rather than overwritten.
+        request.add_event(RequestEvent::with_duration(
+            RequestEventType::TransportComplete,
+            Duration::from_millis(7),
+        ));
+        assert_eq!(request.events[2].duration_ms, Some(7));
     }
 
     // =========================================================================
