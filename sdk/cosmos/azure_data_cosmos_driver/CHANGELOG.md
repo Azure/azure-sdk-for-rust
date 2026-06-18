@@ -50,6 +50,9 @@
 
 ### Other Changes
 
+- Added an in-memory-emulator integration test covering the probe-gated account endpoint failback path end to end (a marked endpoint is only failed back after a real connectivity probe succeeds, and a failed probe resets the cooldown). Follow-up to [#4604](https://github.com/Azure/azure-sdk-for-rust/pull/4604). ([#4622](https://github.com/Azure/azure-sdk-for-rust/issues/4622))
+  - Follow-up: a real (Docker) emulator harness has no per-endpoint TCP/DNS connectivity-block hook; this scenario is covered against the in-memory emulator. Adding a real-emulator connectivity-block hook + live test remains a possible future enhancement.
+
 ## 0.4.0 (2026-06-09)
 
 ### Features Added
