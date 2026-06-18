@@ -144,6 +144,12 @@ impl From<&ResourceId> for ResourceIdentity {
     }
 }
 
+impl From<&ResourceIdentity> for ResourceIdentity {
+    fn from(identity: &ResourceIdentity) -> Self {
+        identity.clone()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -180,5 +186,19 @@ mod tests {
     fn resource_id_display_matches_str() {
         let rid = ResourceId::from("xyz==");
         assert_eq!(rid.to_string(), "xyz==");
+    }
+
+    #[test]
+    fn identity_ref_round_trips_preserving_addressing() {
+        let by_name: ResourceIdentity = "mydb".into();
+        let name_again: ResourceIdentity = (&by_name).into();
+        assert_eq!(name_again, by_name);
+        assert_eq!(name_again.as_name(), Some("mydb"));
+
+        let by_rid: ResourceIdentity = ResourceId::from("abc123==").into();
+        let rid_again: ResourceIdentity = (&by_rid).into();
+        assert_eq!(rid_again, by_rid);
+        assert!(rid_again.is_rid());
+        assert_eq!(rid_again.as_rid().map(|r| r.as_str()), Some("abc123=="));
     }
 }

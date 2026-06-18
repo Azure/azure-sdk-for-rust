@@ -69,17 +69,8 @@ impl DatabaseClient {
         ContainerClient::new(self.context.clone(), &self.identity, container.into()).await
     }
 
-    /// Returns the identifier used to construct this client: the database name
-    /// when addressed by name, or the RID string when addressed by RID.
-    pub fn id(&self) -> &str {
-        match &self.identity {
-            ResourceIdentity::Name(name) => name,
-            ResourceIdentity::Rid(rid) => rid.as_str(),
-        }
-    }
-
     /// Returns the identity (name or RID) used to construct this client.
-    pub fn identity(&self) -> &ResourceIdentity {
+    pub fn id(&self) -> &ResourceIdentity {
         &self.identity
     }
 
@@ -353,7 +344,8 @@ mod tests {
     fn _assert_futures_are_send() {
         fn assert_send<T: Send>(_: T) {}
         let client: &DatabaseClient = todo!();
-        assert_send(client.container_client(todo!() as ResourceIdentity));
+        let container_identity: ResourceIdentity = todo!();
+        assert_send(client.container_client(container_identity));
         assert_send(client.read(todo!()));
         assert_send(client.query_containers(Query::from("SELECT * FROM c"), todo!()));
         assert_send(client.create_container(todo!(), todo!()));

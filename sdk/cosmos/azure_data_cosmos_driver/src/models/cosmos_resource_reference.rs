@@ -265,6 +265,9 @@ impl CosmosResourceReference {
     /// [`link_for_signing`](Self::link_for_signing) and
     /// [`request_path`](Self::request_path) separately.
     pub(crate) fn compute_paths(&self) -> ResourcePaths {
+        #[cfg(debug_assertions)]
+        self.debug_assert_addressing_consistent();
+
         if self.resource_type == ResourceType::DatabaseAccount {
             return ResourcePaths::empty();
         }
@@ -320,6 +323,64 @@ impl CosmosResourceReference {
     }
 
     // ===== Private Helpers =====
+
+    /// Returns whether this reference's database/container parent chain is
+    /// RID-addressed (`Some(true)`), name-addressed (`Some(false)`), or has no
+    /// parent chain to classify (`None`, e.g. account-level references).
+    fn parent_chain_is_rid(&self) -> Option<bool> {
+        if let Some(ref container) = self.container {
+            return Some(container.is_by_rid());
+        }
+        if let Some(ref db) = self.database {
+            return Some(db.is_by_rid());
+        }
+        None
+    }
+
+    /// Debug-only check that this reference does not mix name and RID addressing
+    /// across its database/container parent chain.
+    ///
+    /// Under the service's no-mix rule a RID-addressed database can only contain
+    /// RID-addressed containers, and vice versa; a mixed path (e.g.
+    /// `/dbs/{name}/colls/{rid}`) signs and routes inconsistently and the gateway
+    /// rejects it with an opaque `401`. This guard turns such a programming error
+    /// into a deterministic panic in debug/test builds.
+    ///
+    /// Item and sub-resource leaf ids are intentionally exempt: a document may be
+    /// addressed by name within a RID-addressed container (its name is
+    /// independent of the container's addressing mode), so only the database and
+    /// container parent chain — plus a database/container leaf addressed directly
+    /// by `id` — are checked.
+    #[cfg(debug_assertions)]
+    fn debug_assert_addressing_consistent(&self) {
+        if let (Some(db), Some(container)) = (self.database.as_ref(), self.container.as_ref()) {
+            debug_assert_eq!(
+                db.is_by_rid(),
+                container.is_by_rid(),
+                "mixed name/RID addressing: database is {} but container is {}",
+                if db.is_by_rid() { "RID" } else { "name" },
+                if container.is_by_rid() { "RID" } else { "name" },
+            );
+        }
+
+        // When the resource is itself a database or container addressed directly
+        // by the leaf `id`, that id must match the parent chain's addressing.
+        if matches!(
+            self.resource_type,
+            ResourceType::Database | ResourceType::DocumentCollection
+        ) {
+            if let (Some(id), Some(parent_is_rid)) = (self.id.as_ref(), self.parent_chain_is_rid())
+            {
+                debug_assert_eq!(
+                    id.rid().is_some(),
+                    parent_is_rid,
+                    "mixed name/RID addressing: leaf id is {} but parent chain is {}",
+                    if id.rid().is_some() { "RID" } else { "name" },
+                    if parent_is_rid { "RID" } else { "name" },
+                );
+            }
+        }
+    }
 
     /// Returns the lowercased RID to sign against when this reference is
     /// RID-addressed, or `None` when it is name-addressed (in which case the
@@ -1064,19 +1125,37 @@ mod tests {
 
     #[test]
     fn leaf_rid_forces_raw_path_even_under_name_parent() {
-        // Regression guard for the raw-path/signing invariant: whenever the
-        // signing override is a leaf RID (carried by `id`), the path must also
-        // be sent raw. If `is_rid_based()` only inspected the parent, this shape
-        // would be signed RID-based but routed name-encoded -> opaque 401.
+        // Release-mode safety net for the raw-path/signing invariant: whenever
+        // the signing override is a leaf RID (carried by `id`), the path must
+        // also be sent raw. If `is_rid_addressed()` only inspected the parent,
+        // this shape would be signed RID-based but routed name-encoded -> opaque
+        // 401. The helpers are exercised directly (rather than via compute_paths)
+        // because the debug-only consistency assert rejects this mixed shape; see
+        // `mixed_name_parent_rid_leaf_panics_in_debug`.
         let db = DatabaseReference::from_name(test_account(), "testdb");
         let r = CosmosResourceReference::from(db)
             .with_resource_type(ResourceType::DocumentCollection)
             .with_rid("Lx1BALxJyZ8=".into());
-        let paths = r.compute_paths();
         // Signed over the lowercased leaf RID...
-        assert_eq!(paths.signing_link(), "lx1balxjyz8=");
-        // ...so the path must be raw to match.
-        assert!(paths.is_rid_based());
+        assert_eq!(
+            r.rid_signing_override(false),
+            Some("lx1balxjyz8=".to_owned())
+        );
+        // ...so the path must be reported raw to match.
+        assert!(r.is_rid_addressed());
+    }
+
+    #[test]
+    #[cfg(debug_assertions)]
+    #[should_panic(expected = "mixed name/RID addressing")]
+    fn mixed_name_parent_rid_leaf_panics_in_debug() {
+        // A name-addressed database parent with a RID-addressed container leaf is
+        // an invalid, mixable shape; compute_paths must fail fast in debug builds.
+        let db = DatabaseReference::from_name(test_account(), "testdb");
+        let r = CosmosResourceReference::from(db)
+            .with_resource_type(ResourceType::DocumentCollection)
+            .with_rid("Lx1BALxJyZ8=".into());
+        let _ = r.compute_paths();
     }
 
     #[test]
