@@ -1686,7 +1686,23 @@ impl CosmosDriver {
             )
             .await?;
 
-        match ranges.as_slice() {
+        Self::single_overlapping_range_id(&ranges)
+    }
+
+    /// Collapses an EPK-range overlap resolution into a single pre-resolved
+    /// partition key range ID for PPAF/PPCB seeding.
+    ///
+    /// A pre-resolved range ID is only useful when the feed range maps to
+    /// exactly one physical partition: that lets the per-partition circuit
+    /// breaker attribute a failure to a specific `(partition, region)` pair
+    /// from the very first attempt. A range that fans out across multiple
+    /// physical partitions — or matches none — has no single owner to
+    /// attribute to, so this returns `None` and the pipeline instead captures
+    /// the range ID from the response headers on a later attempt.
+    fn single_overlapping_range_id(
+        ranges: &[crate::models::partition_key_range::PartitionKeyRange],
+    ) -> Option<PartitionKeyRangeId> {
+        match ranges {
             [single] => Some(PartitionKeyRangeId::from(single.id.clone())),
             _ => None,
         }
@@ -4062,5 +4078,177 @@ mod tests {
         assert!(driver.user_agent().as_str().contains("driver-override"));
         assert!(runtime.user_agent().as_str().contains("runtime-default"));
         assert!(!driver.user_agent().as_str().contains("runtime-default"));
+    }
+
+    // =========================================================================
+    // pre_resolve_partition_key_range_id — EPK-range collapse (#4611 fix)
+    //
+    // The single→Some / multi→None decision is `single_overlapping_range_id`.
+    // The cache-backed tests drive the *real* `resolve_overlapping_ranges`
+    // (mocked fetch, per the existing `resolve_overlapping_ranges_*` tests) and
+    // feed its output to that decision, exercising the exact production path.
+    // =========================================================================
+
+    /// Builds a `ContainerReference` from a partition-key-definition JSON blob.
+    fn epk_test_container(pk_json: &str) -> ContainerReference {
+        let container_props = crate::models::ContainerProperties {
+            id: "testcontainer".into(),
+            partition_key: serde_json::from_str(pk_json).unwrap(),
+            system_properties: Default::default(),
+        };
+        ContainerReference::new(
+            signed_test_account("https://test.documents.azure.com:443/"),
+            "testdb",
+            "testdb_rid",
+            "testcontainer",
+            "testcontainer_rid",
+            &container_props,
+        )
+    }
+
+    /// Single-page fetch returning one range that owns the whole EPK space.
+    async fn whole_space_single_range_fetch(
+        _container: ContainerReference,
+        continuation: Option<String>,
+    ) -> Option<crate::driver::cache::PkRangeFetchResult> {
+        use crate::models::partition_key_range::PartitionKeyRange as PkRange;
+        if continuation.is_some() {
+            Some(crate::driver::cache::PkRangeFetchResult {
+                ranges: vec![],
+                continuation,
+                not_modified: true,
+            })
+        } else {
+            Some(crate::driver::cache::PkRangeFetchResult {
+                ranges: vec![PkRange::new("0".into(), "", "FF")],
+                continuation: Some("etag".to_string()),
+                not_modified: false,
+            })
+        }
+    }
+
+    /// Single-page fetch returning two ranges split at "80".
+    async fn whole_space_two_range_fetch(
+        _container: ContainerReference,
+        continuation: Option<String>,
+    ) -> Option<crate::driver::cache::PkRangeFetchResult> {
+        use crate::models::partition_key_range::PartitionKeyRange as PkRange;
+        if continuation.is_some() {
+            Some(crate::driver::cache::PkRangeFetchResult {
+                ranges: vec![],
+                continuation,
+                not_modified: true,
+            })
+        } else {
+            Some(crate::driver::cache::PkRangeFetchResult {
+                ranges: vec![
+                    PkRange::new("0".into(), "", "80"),
+                    PkRange::new("1".into(), "80", "FF"),
+                ],
+                continuation: Some("etag".to_string()),
+                not_modified: false,
+            })
+        }
+    }
+
+    #[test]
+    fn single_overlapping_range_id_single_range_returns_some() {
+        use crate::models::partition_key_range::PartitionKeyRange as PkRange;
+        let ranges = vec![PkRange::new("3".into(), "", "FF")];
+        let resolved = CosmosDriver::single_overlapping_range_id(&ranges);
+        assert_eq!(resolved.as_ref().map(|id| id.as_str()), Some("3"));
+    }
+
+    #[test]
+    fn single_overlapping_range_id_multiple_ranges_returns_none() {
+        use crate::models::partition_key_range::PartitionKeyRange as PkRange;
+        let ranges = vec![
+            PkRange::new("0".into(), "", "80"),
+            PkRange::new("1".into(), "80", "FF"),
+        ];
+        assert!(CosmosDriver::single_overlapping_range_id(&ranges).is_none());
+    }
+
+    #[test]
+    fn single_overlapping_range_id_empty_returns_none() {
+        assert!(CosmosDriver::single_overlapping_range_id(&[]).is_none());
+    }
+
+    #[tokio::test]
+    async fn epk_range_owned_by_single_partition_resolves_to_that_range() {
+        use crate::driver::cache::PartitionKeyRangeCache;
+        use crate::models::effective_partition_key::EffectivePartitionKey;
+
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        let cache = PartitionKeyRangeCache::new();
+
+        // An EPK-range feed range spanning the whole space, resolved against a
+        // container with a single physical partition, overlaps exactly one
+        // range — so pre-resolution seeds that range's ID (single → Some).
+        let ranges = cache
+            .resolve_overlapping_ranges(
+                &container,
+                &EffectivePartitionKey::MIN..&EffectivePartitionKey::MAX,
+                false,
+                whole_space_single_range_fetch,
+            )
+            .await
+            .expect("routing map resolves");
+
+        let resolved = CosmosDriver::single_overlapping_range_id(&ranges);
+        assert_eq!(resolved.as_ref().map(|id| id.as_str()), Some("0"));
+    }
+
+    #[tokio::test]
+    async fn epk_range_spanning_multiple_partitions_resolves_to_none() {
+        use crate::driver::cache::PartitionKeyRangeCache;
+        use crate::models::effective_partition_key::EffectivePartitionKey;
+
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        let cache = PartitionKeyRangeCache::new();
+
+        // The whole-space feed range overlaps both physical partitions, so there
+        // is no single owner to attribute PPCB/PPAF failures to (multi → None).
+        let ranges = cache
+            .resolve_overlapping_ranges(
+                &container,
+                &EffectivePartitionKey::MIN..&EffectivePartitionKey::MAX,
+                false,
+                whole_space_two_range_fetch,
+            )
+            .await
+            .expect("routing map resolves");
+
+        assert_eq!(
+            ranges.len(),
+            2,
+            "whole-space range must overlap both ranges"
+        );
+        assert!(CosmosDriver::single_overlapping_range_id(&ranges).is_none());
+    }
+
+    #[tokio::test]
+    async fn logical_partition_key_resolves_to_owning_range_unchanged() {
+        use crate::driver::cache::PartitionKeyRangeCache;
+
+        // The logical-partition-key path is unchanged by the EPK-range fix: a
+        // concrete partition key still resolves through the point-lookup path to
+        // exactly its owning physical partition's ID (mapped to a
+        // `PartitionKeyRangeId`, as `pre_resolve_partition_key_range_id` does).
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        let cache = PartitionKeyRangeCache::new();
+        let pk = PartitionKey::from("hello");
+
+        let resolved = cache
+            .resolve_partition_key_range_id(&container, &pk, false, whole_space_two_range_fetch)
+            .await
+            .map(PartitionKeyRangeId::from);
+
+        // "hello" hashes into one of the two ranges — exactly one, never both.
+        let id = resolved.expect("logical PK resolves to its owning range");
+        assert!(
+            id.as_str() == "0" || id.as_str() == "1",
+            "logical PK must resolve to a single owning range, got {id}",
+        );
     }
 }
