@@ -136,9 +136,9 @@ pub struct CosmosDriver {
     /// before returning, so this guard only catches misuse.
     initialized: AtomicBool,
     /// Shared, bounded pool of reusable buffers for the diagnostics **capture** engine
-    /// ([`crate::diagnostics::capture`]). Cheap to clone; only touched at operation boundaries
-    /// when the capture policy is not `Off`.
-    capture_pool: crate::diagnostics::capture::LogPool,
+    /// ([`crate::diagnostics::capture`]). Held behind an `Arc` so a cheap clone is shared with each
+    /// rented log lease; only touched at operation boundaries when the capture policy is not `Off`.
+    capture_pool: Arc<crate::diagnostics::capture::LogPool>,
     /// User-Agent string stamped on every request issued by this driver.
     ///
     /// When the driver's [`DriverOptions::user_agent_suffix()`] is `None`, this
@@ -1248,7 +1248,7 @@ impl CosmosDriver {
             pk_range_cache: PartitionKeyRangeCache::new(),
             session_manager: SessionManager::new(),
             initialized: AtomicBool::new(false),
-            capture_pool: crate::diagnostics::capture::LogPool::new(),
+            capture_pool: Arc::new(crate::diagnostics::capture::LogPool::default()),
             user_agent,
             http_client_factory,
             #[cfg(feature = "fault_injection")]

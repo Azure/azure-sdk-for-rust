@@ -3,31 +3,33 @@
 
 //! The per-operation **capture recorder** — the entire hot-path cost of diagnostics.
 //!
-//! A [`DiagnosticsRecorder`] rents one [`EventLog`](super::event::EventLog) from a
+//! A [`DiagnosticsRecorder`] rents one [`EventLog`](super::event::EventLog) lease from a
 //! [`LogPool`](super::pool::LogPool) at operation start and appends plain Rust structs — a
 //! [`Span`](super::event::Span) per attempt / hedge leg plus its [`Attr`](super::event::Attr)s —
 //! as the operation runs. Appends go through `&mut self`, so there is **no lock on the per-attempt
-//! hot path**; the pool's brief lock is touched only at operation boundaries (rent / return). No
+//! hot path**; the pool's brief lock is touched only at operation boundaries (rent / drop). No
 //! bytes are encoded and no varints are written on the hot path — storing an event is a single
 //! `Vec::push` of a small, typed value.
 //!
 //! At operation end the recorder is handed to the gate ([`super::gate`]). On a fast success the
-//! log is returned to the pool for ~free; on a slow or errored operation the recorded spans /
-//! attrs are walked into the canonical
-//! [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext) (see [`super::context`]).
+//! recorder is simply dropped; on a slow or errored operation the recorded spans / attrs are
+//! walked into the canonical
+//! [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext) (see [`super::context`]) first.
 //!
 //! ## Cancellation & panic safety
 //!
-//! The recorder owns its log in an [`Option`]. [`DiagnosticsRecorder::return_buffer`] takes the
-//! log out so the gate can return it to the pool. If the operation future is dropped before the
-//! gate runs (cancellation, timeout, `select!`) or a panic unwinds through it, the [`Drop`] impl
-//! returns the still-owned log to the pool — so a cancelled or panicking operation never leaks a
-//! pooled log, and a partially written log is `clear()`-ed before reuse.
+//! The recorder owns its [`EventLog`] lease, which is an RAII handle: dropping it returns the
+//! backing storage to the pool. So whether the operation future completes, is cancelled
+//! (`select!`, timeout), or panics, the storage is returned automatically — there is no explicit
+//! "return the buffer" step, and a partially written storage is cleared before reuse.
 
-use super::event::{AttrKey, EventLog, SpanKind, NO_PARENT};
+use super::event::{AttrKey, EventLog, SpanId, SpanKind, TimeOffset};
 use super::pool::LogPool;
 use super::Outcome;
 use crate::diagnostics::ExecutionContext;
+use crate::error::{CosmosStatus, SubStatusCode};
+use azure_core::http::StatusCode;
+use std::sync::Arc;
 use std::time::Instant;
 
 /// Maps an [`ExecutionContext`] to its stable attribute discriminant.
@@ -173,57 +175,64 @@ impl AttemptRecord {
     }
 }
 
-/// A per-operation append-only capture recorder backed by a typed [`EventLog`].
+/// A per-operation append-only capture recorder backed by a pooled [`EventLog`] lease.
 #[derive(Debug)]
 pub struct DiagnosticsRecorder {
-    pool: LogPool,
-    log: Option<EventLog>,
-    /// Id of the operation root span (always `0` while the log is owned).
-    op_span: u32,
+    log: EventLog,
+    /// Id of the operation root span.
+    op_span: SpanId,
     start: Instant,
     outcome: Outcome,
     attempt_count: u32,
-    total_ns: u64,
+    total: TimeOffset,
 }
 
 impl DiagnosticsRecorder {
-    /// Begins capture for an operation, renting a log and recording the operation root span.
+    /// Begins capture for an operation, renting a log lease and recording the operation root span.
     ///
     /// `operation` is the operation name and `activity_id` the operation's activity id (used as the
     /// top-level id of the built `DiagnosticsContext`). `_endpoint` is accepted for call-site parity
     /// with the pipeline's envelope; the per-attempt endpoint is what reconstruction uses.
-    pub fn start(pool: &LogPool, operation: &str, _endpoint: &str, activity_id: &str) -> Self {
+    pub fn start(pool: &Arc<LogPool>, operation: &str, _endpoint: &str, activity_id: &str) -> Self {
         let mut log = pool.rent();
-        let op_span = log.push_span(SpanKind::Operation, NO_PARENT, 0, 0);
+        let op_span = log.push_span(
+            SpanKind::Operation,
+            None,
+            TimeOffset::ZERO,
+            TimeOffset::ZERO,
+        );
         log.attr_str(op_span, AttrKey::OperationName, operation);
         log.attr_str(op_span, AttrKey::ActivityId, activity_id);
         Self {
-            pool: pool.clone(),
-            log: Some(log),
+            log,
             op_span,
             start: Instant::now(),
             outcome: Outcome::Success,
             attempt_count: 0,
-            total_ns: 0,
+            total: TimeOffset::ZERO,
         }
     }
 
     /// Nanoseconds elapsed since the operation started (monotonic, from [`Instant`]).
     pub fn elapsed_ns(&self) -> u64 {
-        self.start.elapsed().as_nanos().min(u128::from(u64::MAX)) as u64
+        self.elapsed().as_nanos()
+    }
+
+    /// Elapsed time since the operation started, as a [`TimeOffset`].
+    fn elapsed(&self) -> TimeOffset {
+        TimeOffset::from_nanos(self.start.elapsed().as_nanos().min(u128::from(u64::MAX)) as u64)
     }
 
     /// Records one attempt (or hedge leg). `start_ns` is set from the recorder's clock if `0`.
     pub fn record_attempt(&mut self, mut attempt: AttemptRecord) {
-        let op_span = self.op_span;
-        let Some(log) = self.log.as_mut() else {
-            return;
-        };
         if attempt.start_ns == 0 {
-            attempt.start_ns = self.start.elapsed().as_nanos().min(u128::from(u64::MAX)) as u64;
+            attempt.start_ns = self.elapsed_ns();
         }
-        let end_ns = attempt.start_ns.saturating_add(attempt.duration_ns);
-        let span = log.push_span(SpanKind::Attempt, op_span, attempt.start_ns, end_ns);
+        let op_span = self.op_span;
+        let start = TimeOffset::from_nanos(attempt.start_ns);
+        let end = TimeOffset::from_nanos(attempt.start_ns.saturating_add(attempt.duration_ns));
+        let log = &mut self.log;
+        let span = log.push_span(SpanKind::Attempt, Some(op_span), start, end);
 
         log.attr_u64(
             span,
@@ -236,9 +245,14 @@ impl DiagnosticsRecorder {
         if !attempt.endpoint.is_empty() {
             log.attr_str(span, AttrKey::Endpoint, attempt.endpoint.as_str());
         }
-        log.attr_u64(span, AttrKey::Status, u64::from(attempt.status));
-        if let Some(sub) = attempt.sub_status {
-            log.attr_u64(span, AttrKey::SubStatus, u64::from(sub));
+        // A real response is stored as a first-class status; a transport failure (status `0`,
+        // no response) records no status attribute, which reconstruction reads as a failure.
+        if attempt.status != 0 {
+            let status = CosmosStatus::from_parts(
+                StatusCode::from(attempt.status),
+                attempt.sub_status.map(SubStatusCode::new),
+            );
+            log.attr_status(span, AttrKey::Status, status);
         }
         if let Some(id) = attempt
             .service_request_id
@@ -267,11 +281,9 @@ impl DiagnosticsRecorder {
         response_region: Option<&str>,
     ) {
         let op_span = self.op_span;
-        let at = self.start.elapsed().as_nanos().min(u128::from(u64::MAX)) as u64;
-        let Some(log) = self.log.as_mut() else {
-            return;
-        };
-        let span = log.push_span(SpanKind::Hedge, op_span, at, at);
+        let at = self.elapsed();
+        let log = &mut self.log;
+        let span = log.push_span(SpanKind::Hedge, Some(op_span), at, at);
         log.attr_u64(span, AttrKey::HedgeOutcome, outcome.to_u64());
         log.attr_u64(
             span,
@@ -301,26 +313,30 @@ impl DiagnosticsRecorder {
         final_sub_status: Option<u16>,
         total_ns: Option<u64>,
     ) {
-        let total = total_ns.unwrap_or_else(|| self.elapsed_ns());
+        let total = total_ns
+            .map(TimeOffset::from_nanos)
+            .unwrap_or_else(|| self.elapsed());
         self.outcome = outcome;
         self.attempt_count = attempt_count;
-        self.total_ns = total;
+        self.total = total;
         let op_span = self.op_span;
-        if let Some(log) = self.log.as_mut() {
-            log.set_span_end(op_span, total);
-            log.attr_u64(
-                op_span,
-                AttrKey::Outcome,
-                match outcome {
-                    Outcome::Success => 0,
-                    Outcome::Error => 1,
-                },
+        let log = &mut self.log;
+        log.set_span_end(op_span, total);
+        log.attr_u64(
+            op_span,
+            AttrKey::Outcome,
+            match outcome {
+                Outcome::Success => 0,
+                Outcome::Error => 1,
+            },
+        );
+        log.attr_u64(op_span, AttrKey::AttemptCount, u64::from(attempt_count));
+        if final_status != 0 {
+            let status = CosmosStatus::from_parts(
+                StatusCode::from(final_status),
+                final_sub_status.map(SubStatusCode::new),
             );
-            log.attr_u64(op_span, AttrKey::AttemptCount, u64::from(attempt_count));
-            log.attr_u64(op_span, AttrKey::FinalStatus, u64::from(final_status));
-            if let Some(sub) = final_sub_status {
-                log.attr_u64(op_span, AttrKey::FinalSubStatus, u64::from(sub));
-            }
+            log.attr_status(op_span, AttrKey::FinalStatus, status);
         }
     }
 
@@ -331,35 +347,16 @@ impl DiagnosticsRecorder {
 
     /// The recorded total elapsed time (nanoseconds).
     pub fn total_ns(&self) -> u64 {
-        self.total_ns
+        self.total.as_nanos()
     }
 
     /// The number of log entries (spans + attributes) appended on the hot path.
     pub fn raw_len(&self) -> usize {
-        self.log
-            .as_ref()
-            .map_or(0, |log| log.spans().len() + log.attrs().len())
+        self.log.spans().len() + self.log.attrs().len()
     }
 
-    /// Borrows the captured event log (for reconstruction past the gate).
-    pub(crate) fn log(&self) -> Option<&EventLog> {
-        self.log.as_ref()
-    }
-
-    /// Returns the backing log to the pool, consuming the recorder.
-    pub(crate) fn return_buffer(mut self) {
-        if let Some(log) = self.log.take() {
-            self.pool.give_back(log);
-        }
-    }
-}
-
-impl Drop for DiagnosticsRecorder {
-    fn drop(&mut self) {
-        // Cancellation / panic safety: return the log to the pool if the gate didn't consume it.
-        // `give_back` clears it, so a partially written log never poisons the next rent.
-        if let Some(log) = self.log.take() {
-            self.pool.give_back(log);
-        }
+    /// Borrows the captured event storage (for reconstruction past the gate).
+    pub(crate) fn log(&self) -> &super::event::EventLogStorage {
+        self.log.storage()
     }
 }

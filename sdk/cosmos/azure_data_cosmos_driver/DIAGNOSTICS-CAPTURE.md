@@ -96,13 +96,13 @@ over a nested handler → transport → `StoreResult` tree. Conceptually:
 
 ```text
 HOT PATH (per operation, lock-free, no Mutex):
-  start   -> rent an EventLog (two flat Vecs: spans + attrs) from a bounded pool;
+  start   -> rent an EventLog lease (two flat Vecs: spans + attrs) from an Arc<LogPool>;
              push the operation span
   attempt -> push a typed Span (+ its Attrs) per attempt / hedge leg (just Vec::push)
   ...     -> the driver pipeline populates the capture-owned DiagnosticsContextBuilder with the
              rich per-attempt / hedging / transport data, with true wall-clock timing
   end     -> GATE: surface? (Always | elapsed > threshold | (error && capture_on_error))
-               no  -> drop; return the EventLog to the pool                (~free)
+               no  -> drop the recorder; its EventLog lease returns storage to the pool (~free)
                yes -> surface the canonical DiagnosticsContext
 ```
 
@@ -115,26 +115,31 @@ Components (`azure_data_cosmos_driver::diagnostics::capture`):
   fault-injection / event types, etc. These are re-exported from `crate::diagnostics` so the public
   boundary is unchanged. The driver pipeline feeds this builder during execution, so **every rich
   field is still populated** (no regression).
-- **`event`** (`event.rs`) — the hot-path data model: a typed, two-list `EventLog` of `Span`s
-  (`kind` + optional `parent` id + op-relative timestamps; a span's id is its index) and `Attr`s
-  (typed `key`/`value` tagged with their owning span id). Storing either is a single `Vec::push` of
-  a small value — **no byte encoding and no varints on the hot path**; numerics are `Copy` and the
-  only heap is an owned attribute string (freed on `clear`, the `Vec` backbones pooled).
-- **`LogPool`** (`pool.rs`) — a shared, **bounded** pool of reusable `EventLog`s (the two `Vec`s).
+- **`event`** (`event.rs`) — the hot-path data model: an [`EventLogStorage`] of two flat lists,
+  `Span`s (`kind` + `Option<SpanId>` parent + op-relative `TimeOffset`s) and `Attr`s (typed
+  `key`/`value` tagged with their owning `SpanId`). Storing either is a single `Vec::push` of a
+  small value — **no byte encoding and no varints on the hot path**. `AttrValue` keeps the hot path
+  allocation-light: numerics and a first-class `CosmosStatus` are `Copy`, and a string can be a
+  zero-copy `&'static str`, a shared `Arc<str>`, or an owned `Box<str>`. An `EventLog` is an **RAII
+  lease** bundling an `Arc<LogPool>` with the rented storage; dropping it returns the storage to the
+  pool automatically.
+- **`LogPool`** (`pool.rs`) — a **bounded** pool of reusable `EventLogStorage`s. Consumers hold it
+  behind an `Arc<LogPool>`; `rent()` hands out an `EventLog` lease. Retention is sized to the common
+  operation: only storages still at the default capacity are pooled; any that had to grow are freed.
 - **`DiagnosticsRecorder` / `AttemptRecord`** (`recorder.rs`) — an operation-layer-owned,
-  **lock-free `&mut`** recorder that pushes typed `Span`/`Attr` values into the rented `EventLog`.
-  Cancellation-safe (`Drop` returns the log if the gate never runs) and panic-safe. It is the cheap
-  front-end that records the operation outcome + elapsed time the gate reads, and the standalone
-  acquisition path for tests/examples.
+  **lock-free `&mut`** recorder that pushes typed `Span`/`Attr` values into its rented `EventLog`
+  lease. Cancellation- and panic-safe: it just owns the lease, so dropping the recorder (on success,
+  error, cancellation, or panic) returns the storage to the pool — there is no explicit
+  "return the buffer" step. It records the operation outcome + elapsed time the gate reads.
 - **`DiagnosticsPolicy` / `Mode`** (`gate.rs`) — the gate: `Off`, `Threshold`, `Always` (default).
-- **`build_context`** (`context.rs`) — walks a captured `EventLog` (spans/attrs) back into a tree
-  and replays it onto the capture-owned `DiagnosticsContextBuilder` to materialize a standalone
+- **`build_context`** (`context.rs`) — walks a captured `EventLogStorage` (spans/attrs) back into a
+  tree and replays it onto the capture-owned `DiagnosticsContextBuilder` to materialize a standalone
   `DiagnosticsContext`. The typed log *is* the parsed form, so there is no byte-parse step (used by
   the recorder's `finish()` for tests/examples and any caller that captures without the pipeline).
-- **`encode`** (`encode.rs`) — an optional **cold-path** compact binary serialization of the
-  `EventLog`'s two lists (`EventLog::to_compact_bytes` / `from_compact_bytes`). The varint/TLV
-  machinery lives here, off the hot path: the binary form is just a compact way to store the two
-  lists, paid only when bytes are actually requested.
+- **`encode`** (`encode.rs`) — an optional **cold-path** compact binary serialization of an
+  `EventLogStorage`'s two lists (`EventLogStorage::to_compact_bytes` / `from_compact_bytes`). The
+  varint/TLV machinery lives here, off the hot path: the binary form is just a compact way to store
+  the two lists, paid only when bytes are actually requested.
 
 There is **no parallel diagnostics model**: capture owns the one canonical type and gates it.
 
@@ -226,20 +231,25 @@ The recorder's hot path stores a typed, append-only **event log** of two flat li
 (`event.rs`), instead of a `Vec<u8>` TLV byte stream:
 
 - `Vec<Span>` — one `Span` per timestamped scope or point event (the operation root, each request
-  attempt, a hedge race). A span carries its `kind`, an optional `parent` id, and op-relative
-  `start_ns`/`end_ns`; **its id is its index** in the list, so the flat list reconstructs into a
-  tree via the parent links.
+  attempt, a hedge race). A span carries its `kind`, an `Option<SpanId>` parent, and op-relative
+  `TimeOffset` start/end. A `SpanId` is a `NonZero<u32>` holding the span's index + 1, so
+  `Option<SpanId>` encodes "no parent" (the root) in the niche for free, and the flat list
+  reconstructs into a tree via the parent links.
 - `Vec<Attr>` — one `Attr` per key/value (`Region`, `Endpoint`, `Status`, `RequestCharge`, …),
-  tagged with the id of the span it belongs to. `AttrValue` is `U64 | F64 | Str`, so numerics are
-  `Copy` and the only heap is an owned string.
+  tagged with the `SpanId` it belongs to. `AttrValue` keeps the hot path allocation-light:
+  `U64`, `F64`, and a first-class `Status(CosmosStatus)` are `Copy`; a string can be a zero-copy
+  `StaticStr(&'static str)`, a shared `SharedStr(Arc<str>)` that points at an existing heap
+  allocation, or an owned `Str(Box<str>)`.
 
 Appending is a single `Vec::push` of a typed value — no varints, no byte writing on the hot path.
-The two `Vec` backbones are pooled and reused (`LogPool`), so a returned log is just `clear`-ed
-(strings freed, capacity retained). Below the gate threshold the log is dropped/pooled for ~free;
-past the gate, `context.rs` walks the spans/attrs into the canonical `DiagnosticsContext` (the
-typed log *is* the parsed form — no byte-parse step). The optional compact binary form
-(`EventLog::to_compact_bytes` / `from_compact_bytes`, in `encode.rs`) is a **cold-path** serializer
-of the same two lists, paid only when bytes are actually requested.
+The two `Vec` backbones (an `EventLogStorage`) are pooled and reused; an `EventLog` is an **RAII
+lease** that bundles an `Arc<LogPool>` with the rented storage and returns it to the pool on drop,
+so callers never manage the buffer lifecycle. Below the gate threshold the recorder is simply
+dropped (storage pooled, ~free); past the gate, `context.rs` walks the spans/attrs into the
+canonical `DiagnosticsContext` (the typed log *is* the parsed form — no byte-parse step). The
+optional compact binary form (`EventLogStorage::to_compact_bytes` / `from_compact_bytes`, in
+`encode.rs`) is a **cold-path** serializer of the same two lists, paid only when bytes are
+actually requested.
 
 ## 6. Scope of this change
 

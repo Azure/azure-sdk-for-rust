@@ -19,7 +19,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 /// Records an S2-shaped operation (retry 429 -> 200) into a recorder, then gates it.
-fn capture_s2(pool: &LogPool, policy: &DiagnosticsPolicy, options: &Arc<DiagnosticsOptions>) {
+fn capture_s2(pool: &Arc<LogPool>, policy: &DiagnosticsPolicy, options: &Arc<DiagnosticsOptions>) {
     let mut rec = DiagnosticsRecorder::start(pool, "read_item", "https://acct/", "activity-bench");
     rec.record_attempt(
         AttemptRecord::new(ExecutionContext::Initial, "East US", "https://east/", 429)
@@ -47,7 +47,7 @@ fn diagnostics_benchmarks(c: &mut Criterion) {
     // Off cost: append + gate-drops-without-building.
     let off_policy = DiagnosticsPolicy::off();
     c.bench_function("capture_off_noop", |b| {
-        let pool = LogPool::new();
+        let pool = Arc::new(LogPool::default());
         let options = Arc::clone(&options);
         b.iter(|| {
             let mut rec = DiagnosticsRecorder::start(&pool, "read_item", "https://acct/", "c");
@@ -67,7 +67,7 @@ fn diagnostics_benchmarks(c: &mut Criterion) {
     // dropped. Contrast the cost with `capture_built_context` below to see the saving.
     let drop_policy = DiagnosticsPolicy::threshold(Duration::from_millis(5));
     c.bench_function("capture_dropped_fast_success", |b| {
-        let pool = LogPool::new();
+        let pool = Arc::new(LogPool::default());
         let options = Arc::clone(&options);
         b.iter(|| {
             let mut rec = DiagnosticsRecorder::start(&pool, "read_item", "https://acct/", "c");
@@ -86,7 +86,7 @@ fn diagnostics_benchmarks(c: &mut Criterion) {
     // (error / slow / Always). The gap between this and the two drop benchmarks above is the cost
     // the gate saves by deciding BEFORE the build.
     c.bench_function("capture_built_context", |b| {
-        let pool = LogPool::new();
+        let pool = Arc::new(LogPool::default());
         let policy = DiagnosticsPolicy::always();
         let options = Arc::clone(&options);
         b.iter(|| capture_s2(&pool, &policy, &options));

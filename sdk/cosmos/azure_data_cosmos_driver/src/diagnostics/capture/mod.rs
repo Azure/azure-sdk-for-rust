@@ -45,7 +45,7 @@
 //! use std::sync::Arc;
 //! use std::time::Duration;
 //!
-//! let pool = LogPool::new();
+//! let pool = Arc::new(LogPool::default());
 //! let policy = DiagnosticsPolicy::threshold(Duration::from_millis(5));
 //!
 //! let mut rec = DiagnosticsRecorder::start(&pool, "read_item", "https://acct/", "activity-1");
@@ -81,7 +81,9 @@ mod model;
 mod pool;
 mod recorder;
 
-pub use event::{Attr, AttrKey, AttrValue, EventLog, Span, SpanKind, NO_PARENT};
+pub use event::{
+    Attr, AttrKey, AttrValue, EventLog, EventLogStorage, Span, SpanId, SpanKind, TimeOffset,
+};
 pub use gate::{finish, should_build, DiagnosticsPolicy, Mode};
 pub use pool::LogPool;
 pub use recorder::{AttemptRecord, DiagnosticsRecorder, HedgeOutcome};
@@ -121,7 +123,7 @@ mod tests {
     }
 
     /// Records an S2-shaped op (retry 429 -> 200) and finishes against `policy`.
-    fn render_s2(pool: &LogPool, policy: &DiagnosticsPolicy) -> Option<DiagnosticsContext> {
+    fn render_s2(pool: &Arc<LogPool>, policy: &DiagnosticsPolicy) -> Option<DiagnosticsContext> {
         let mut rec = DiagnosticsRecorder::start(pool, "read_item", "https://acct/", "act-2");
         rec.record_attempt(
             AttemptRecord::new(ExecutionContext::Initial, "East US", "https://east/", 429)
@@ -142,7 +144,7 @@ mod tests {
 
     #[test]
     fn fast_success_is_dropped_and_buffer_pooled() {
-        let pool = LogPool::new();
+        let pool = Arc::new(LogPool::default());
         let policy = DiagnosticsPolicy::threshold(Duration::from_millis(5));
         let mut rec = DiagnosticsRecorder::start(&pool, "read_item", "https://acct/", "a-1");
         rec.record_attempt(
@@ -159,7 +161,7 @@ mod tests {
 
     #[test]
     fn slow_op_builds_canonical_diagnostics_context() {
-        let pool = LogPool::new();
+        let pool = Arc::new(LogPool::default());
         let ctx = render_s2(
             &pool,
             &DiagnosticsPolicy::threshold(Duration::from_millis(5)),
@@ -177,7 +179,7 @@ mod tests {
 
     #[test]
     fn hedged_operation_records_legs_and_terminal_state() {
-        let pool = LogPool::new();
+        let pool = Arc::new(LogPool::default());
         let mut rec = DiagnosticsRecorder::start(&pool, "read_item", "https://acct/", "act-hedge");
         // Primary leg (East US) is slow / no response; the alternate (West US) wins.
         rec.record_attempt(
@@ -223,7 +225,7 @@ mod tests {
 
     #[test]
     fn dropped_recorder_before_finish_returns_buffer() {
-        let pool = LogPool::new();
+        let pool = Arc::new(LogPool::default());
         {
             let mut rec = DiagnosticsRecorder::start(&pool, "read_item", "https://acct/", "a-3");
             rec.record_attempt(AttemptRecord::new(
@@ -239,7 +241,7 @@ mod tests {
 
     #[test]
     fn context_json_carries_no_auth_material() {
-        let pool = LogPool::new();
+        let pool = Arc::new(LogPool::default());
         let ctx = render_s2(&pool, &DiagnosticsPolicy::always()).expect("built");
         let json = ctx.to_json_string(None).to_lowercase();
         assert!(!json.contains("authorization"));

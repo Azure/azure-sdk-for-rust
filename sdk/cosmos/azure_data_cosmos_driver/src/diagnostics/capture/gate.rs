@@ -107,20 +107,19 @@ pub fn should_build(outcome: Outcome, total_ns: u64, policy: &DiagnosticsPolicy)
 /// [`DiagnosticsContext`].
 ///
 /// Returns `None` when the gate dropped the diagnostics (fast success). Either way the recorder's
-/// buffer is returned to the pool. Call after [`DiagnosticsRecorder::record_end`].
+/// backing storage is returned to the pool automatically when `recorder` drops (RAII). Call after
+/// [`DiagnosticsRecorder::record_end`].
 pub fn finish(
     recorder: DiagnosticsRecorder,
     policy: &DiagnosticsPolicy,
     options: Arc<DiagnosticsOptions>,
 ) -> Option<DiagnosticsContext> {
     if !should_build(recorder.outcome(), recorder.total_ns(), policy) {
-        recorder.return_buffer();
         return None;
     }
     // The typed event log *is* the parsed form — reconstruct the tree directly, no byte parse.
-    let context = recorder.log().map(|log| build_context(log, options));
-    recorder.return_buffer();
-    context
+    Some(build_context(recorder.log(), options))
+    // `recorder` drops here, returning its pooled storage via the `EventLog` lease.
 }
 
 #[cfg(test)]

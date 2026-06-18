@@ -17,16 +17,15 @@
 //! attaches a [`HedgeDiagnostics`](crate::diagnostics::HedgeDiagnostics) describing the region legs
 //! and the terminal state.
 
-use super::event::{AttrKey, EventLog, Span, SpanKind};
+use super::event::{AttrKey, EventLogStorage, Span, SpanId, SpanKind};
 use super::recorder::HedgeOutcome;
-use super::Outcome;
 use crate::diagnostics::{
     DiagnosticsContext, DiagnosticsContextBuilder, ExecutionContext, HedgeDiagnostics,
     HedgingStrategyConfig, PipelineType, RequestSentStatus, TransportHttpVersion, TransportKind,
     TransportSecurity,
 };
 use crate::driver::routing::CosmosEndpoint;
-use crate::error::{CosmosStatus, SubStatusCode};
+use crate::error::CosmosStatus;
 use crate::models::{ActivityId, RequestCharge};
 use crate::options::{DiagnosticsOptions, HedgeThreshold, Region};
 use azure_core::http::StatusCode;
@@ -71,22 +70,25 @@ fn request_sent_from_str(s: &str) -> RequestSentStatus {
 }
 
 /// Replays a single captured attempt span onto the builder as a `RequestDiagnostics`.
-fn replay_attempt(builder: &mut DiagnosticsContextBuilder, log: &EventLog, id: u32, span: &Span) {
+fn replay_attempt(
+    builder: &mut DiagnosticsContextBuilder,
+    log: &EventLogStorage,
+    id: SpanId,
+    span: &Span,
+) {
     let execution_context =
         exec_context_from_u64(log.attr_u64_of(id, AttrKey::ExecutionContext).unwrap_or(0));
     let region = log.attr_str_of(id, AttrKey::Region).unwrap_or("");
     let endpoint_url = log.attr_str_of(id, AttrKey::Endpoint).unwrap_or("");
-    let status = log.attr_u64_of(id, AttrKey::Status).unwrap_or(0);
-    let sub_status = log
-        .attr_u64_of(id, AttrKey::SubStatus)
-        .map(|s| SubStatusCode::new(s.min(u64::from(u16::MAX)) as u16));
+    // A present status is a real response; its absence marks a transport failure (no response).
+    let status = log.attr_status_of(id, AttrKey::Status);
     let service_request_id = log.attr_str_of(id, AttrKey::ServiceRequestId);
     let request_charge = log.attr_f64_of(id, AttrKey::RequestCharge);
     let request_sent = log.attr_str_of(id, AttrKey::RequestSent).unwrap_or("");
     // The captured client-observed attempt duration is surfaced as the server-duration field; the
     // builder's own wall-clock timing measures the (synchronous) replay, not the original request,
     // so the captured duration is the authoritative per-attempt latency signal.
-    let duration_ms = span.end_ns.saturating_sub(span.start_ns) as f64 / 1_000_000.0;
+    let duration_ms = span.end.saturating_sub(span.start).as_nanos() as f64 / 1_000_000.0;
 
     let endpoint = endpoint_for(region, endpoint_url);
     let handle = builder.start_request(
@@ -105,7 +107,7 @@ fn replay_attempt(builder: &mut DiagnosticsContextBuilder, log: &EventLog, id: u
         if let Some(ru) = request_charge {
             req.with_charge(RequestCharge::new(ru));
         }
-        if let Some(sub) = sub_status {
+        if let Some(sub) = status.and_then(|s| s.sub_status()) {
             req.with_sub_status(sub);
         }
         if duration_ms > 0.0 {
@@ -113,24 +115,21 @@ fn replay_attempt(builder: &mut DiagnosticsContextBuilder, log: &EventLog, id: u
         }
     });
 
-    if status == 0 {
-        builder.fail_transport_request(
+    match status {
+        Some(status) => {
+            builder.complete_request(handle, status.status_code(), status.sub_status());
+        }
+        None => builder.fail_transport_request(
             handle,
             "transport failure (no response)",
             request_sent_from_str(request_sent),
             transport_failure_status(),
-        );
-    } else {
-        builder.complete_request(
-            handle,
-            StatusCode::from(status.min(u64::from(u16::MAX)) as u16),
-            sub_status,
-        );
+        ),
     }
 }
 
 /// Builds the `HedgeDiagnostics` for a captured hedge span.
-fn build_hedge(log: &EventLog, id: u32) -> HedgeDiagnostics {
+fn build_hedge(log: &EventLogStorage, id: SpanId) -> HedgeDiagnostics {
     let outcome = HedgeOutcome::from_u64(log.attr_u64_of(id, AttrKey::HedgeOutcome).unwrap_or(0));
     let threshold_ns = log.attr_u64_of(id, AttrKey::HedgeThresholdNs).unwrap_or(0);
     let threshold = HedgeThreshold::new(std::time::Duration::from_nanos(threshold_ns))
@@ -163,13 +162,13 @@ fn build_hedge(log: &EventLog, id: u32) -> HedgeDiagnostics {
     }
 }
 
-/// Reconstructs a captured [`EventLog`] into a [`DiagnosticsContext`].
+/// Reconstructs a captured [`EventLogStorage`] into a [`DiagnosticsContext`].
 pub(crate) fn build_context(
-    log: &EventLog,
+    log: &EventLogStorage,
     options: Arc<DiagnosticsOptions>,
 ) -> DiagnosticsContext {
-    // The operation root is span 0 (see `DiagnosticsRecorder::start`).
-    let op_span = 0u32;
+    // The operation root is the first span (see `DiagnosticsRecorder::start`).
+    let op_span = SpanId::from_index(0);
     let activity_id = ActivityId::from_string(
         log.attr_str_of(op_span, AttrKey::ActivityId)
             .unwrap_or("")
@@ -185,24 +184,18 @@ pub(crate) fn build_context(
         }
     }
 
-    let recorded_status = log.attr_u64_of(op_span, AttrKey::FinalStatus).unwrap_or(0);
-    let final_status = if recorded_status == 0 {
-        // No explicit final status recorded (e.g. a cancelled op): fall back to the outcome.
-        let outcome = match log.attr_u64_of(op_span, AttrKey::Outcome) {
-            Some(1) => Outcome::Error,
-            _ => Outcome::Success,
-        };
-        match outcome {
-            Outcome::Success => StatusCode::from(200),
-            Outcome::Error => StatusCode::from(503),
+    let final_status = match log.attr_status_of(op_span, AttrKey::FinalStatus) {
+        Some(status) => status,
+        None => {
+            // No explicit final status recorded (e.g. a cancelled op): fall back to the outcome.
+            let code = match log.attr_u64_of(op_span, AttrKey::Outcome) {
+                Some(1) => StatusCode::from(503),
+                _ => StatusCode::from(200),
+            };
+            CosmosStatus::from_parts(code, None)
         }
-    } else {
-        StatusCode::from(recorded_status.min(u64::from(u16::MAX)) as u16)
     };
-    let final_sub_status = log
-        .attr_u64_of(op_span, AttrKey::FinalSubStatus)
-        .map(|s| SubStatusCode::new(s.min(u64::from(u16::MAX)) as u16));
-    builder.set_operation_status(final_status, final_sub_status);
+    builder.set_operation_status(final_status.status_code(), final_status.sub_status());
 
     builder.complete()
 }

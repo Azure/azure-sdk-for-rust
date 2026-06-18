@@ -27,7 +27,7 @@ fn options() -> Arc<DiagnosticsOptions> {
 /// Example: a typical operation that retries a throttled (429) attempt and then succeeds (200).
 #[test]
 fn example_typical_operation() {
-    let pool = LogPool::new();
+    let pool = Arc::new(LogPool::default());
     let mut rec = DiagnosticsRecorder::start(
         &pool,
         "read_item",
@@ -86,7 +86,7 @@ fn example_typical_operation() {
 /// Example: a hedged multi-region operation where the alternate region (West US) wins the race.
 #[test]
 fn example_hedged_operation() {
-    let pool = LogPool::new();
+    let pool = Arc::new(LogPool::default());
     let mut rec = DiagnosticsRecorder::start(
         &pool,
         "read_item",
@@ -155,7 +155,7 @@ fn example_hedged_operation() {
 /// Example: the top-level `summary` block (computed at finalization) and the three encoding modes.
 #[test]
 fn example_summary_and_encoding() {
-    let pool = LogPool::new();
+    let pool = Arc::new(LogPool::default());
     let mut rec = DiagnosticsRecorder::start(
         &pool,
         "create_item",

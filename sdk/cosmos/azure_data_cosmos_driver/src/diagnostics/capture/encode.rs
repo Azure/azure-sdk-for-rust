@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! A compact binary serialization of the [`EventLog`]'s two lists — a **cold-path** concern.
+//! A compact binary serialization of an [`EventLogStorage`]'s two lists — a **cold-path** concern.
 //!
 //! The hot path stores typed structs (see [`super::event`]); it never touches this codec. When a
 //! captured log needs to cross a process or storage boundary in compact form, [`encode`] flattens
@@ -10,7 +10,9 @@
 //! binary format is just a compact way of storing the two lists, paid only when something actually
 //! asks for the bytes.
 
-use super::event::{Attr, AttrKey, AttrValue, EventLog, Span, SpanKind, NO_PARENT};
+use super::event::{Attr, AttrKey, AttrValue, EventLogStorage, Span, SpanId, SpanKind, TimeOffset};
+use crate::error::{CosmosStatus, SubStatusCode};
+use azure_core::http::StatusCode;
 
 // LEB128 varint helpers (used only by this cold-path codec).
 
@@ -60,13 +62,21 @@ fn read_str(input: &[u8], pos: &mut usize) -> Option<Box<str>> {
     Some(s.into_boxed_str())
 }
 
-// Value tags for `AttrValue`.
+// Value tags for `AttrValue`. The three string flavors (owned / static / shared) all serialize as
+// a string and decode to the owned `Str` variant — the distinction is a hot-path allocation
+// optimization, not a semantic difference the byte format needs to preserve.
 const VALUE_U64: u8 = 0;
 const VALUE_F64: u8 = 1;
 const VALUE_STR: u8 = 2;
+const VALUE_STATUS: u8 = 3;
 
-/// Serializes an [`EventLog`] into a compact binary form.
-pub(crate) fn encode(log: &EventLog) -> Vec<u8> {
+fn write_parent(out: &mut Vec<u8>, parent: Option<SpanId>) {
+    // `None` (the root) is `0`; a real parent is its non-zero wire id.
+    write_varint(out, parent.map_or(0, SpanId::get).into());
+}
+
+/// Serializes an [`EventLogStorage`] into a compact binary form.
+pub(crate) fn encode(log: &EventLogStorage) -> Vec<u8> {
     let spans = log.spans();
     let attrs = log.attrs();
     let mut out = Vec::with_capacity(8 + spans.len() * 8 + attrs.len() * 6);
@@ -75,20 +85,13 @@ pub(crate) fn encode(log: &EventLog) -> Vec<u8> {
 
     for span in spans {
         out.push(span.kind as u8);
-        // Store the root's `NO_PARENT` as 0 and every real parent as `parent + 1`, so parents
-        // varint-encode small.
-        let parent = if span.parent == NO_PARENT {
-            0
-        } else {
-            u64::from(span.parent) + 1
-        };
-        write_varint(&mut out, parent);
-        write_varint(&mut out, span.start_ns);
-        write_varint(&mut out, span.end_ns);
+        write_parent(&mut out, span.parent);
+        write_varint(&mut out, span.start.as_nanos());
+        write_varint(&mut out, span.end.as_nanos());
     }
 
     for attr in attrs {
-        write_varint(&mut out, u64::from(attr.span));
+        write_varint(&mut out, u64::from(attr.span.get()));
         out.push(attr.key as u8);
         match &attr.value {
             AttrValue::U64(v) => {
@@ -98,6 +101,23 @@ pub(crate) fn encode(log: &EventLog) -> Vec<u8> {
             AttrValue::F64(v) => {
                 out.push(VALUE_F64);
                 out.extend_from_slice(&v.to_le_bytes());
+            }
+            AttrValue::Status(s) => {
+                out.push(VALUE_STATUS);
+                write_varint(&mut out, u64::from(u16::from(s.status_code())));
+                // Store sub-status as `value + 1` so `0` means "no sub-status".
+                write_varint(
+                    &mut out,
+                    s.sub_status().map_or(0, |s| u64::from(s.value()) + 1),
+                );
+            }
+            AttrValue::StaticStr(v) => {
+                out.push(VALUE_STR);
+                write_str(&mut out, v);
+            }
+            AttrValue::SharedStr(v) => {
+                out.push(VALUE_STR);
+                write_str(&mut out, v);
             }
             AttrValue::Str(v) => {
                 out.push(VALUE_STR);
@@ -109,8 +129,8 @@ pub(crate) fn encode(log: &EventLog) -> Vec<u8> {
     out
 }
 
-/// Restores an [`EventLog`] from [`encode`] output. Returns `None` on malformed input.
-pub(crate) fn decode(input: &[u8]) -> Option<EventLog> {
+/// Restores an [`EventLogStorage`] from [`encode`] output. Returns `None` on malformed input.
+pub(crate) fn decode(input: &[u8]) -> Option<EventLogStorage> {
     let mut pos = 0usize;
     let span_count = usize::try_from(read_varint(input, &mut pos)?).ok()?;
     let attr_count = usize::try_from(read_varint(input, &mut pos)?).ok()?;
@@ -119,25 +139,25 @@ pub(crate) fn decode(input: &[u8]) -> Option<EventLog> {
     for _ in 0..span_count {
         let kind = SpanKind::from_u8(*input.get(pos)?);
         pos += 1;
-        let raw_parent = read_varint(input, &mut pos)?;
+        let raw_parent = u32::try_from(read_varint(input, &mut pos)?).ok()?;
         let parent = if raw_parent == 0 {
-            NO_PARENT
+            None
         } else {
-            u32::try_from(raw_parent - 1).ok()?
+            Some(SpanId::from_raw(raw_parent)?)
         };
-        let start_ns = read_varint(input, &mut pos)?;
-        let end_ns = read_varint(input, &mut pos)?;
+        let start = TimeOffset::from_nanos(read_varint(input, &mut pos)?);
+        let end = TimeOffset::from_nanos(read_varint(input, &mut pos)?);
         spans.push(Span {
             kind,
             parent,
-            start_ns,
-            end_ns,
+            start,
+            end,
         });
     }
 
     let mut attrs = Vec::with_capacity(attr_count);
     for _ in 0..attr_count {
-        let span = u32::try_from(read_varint(input, &mut pos)?).ok()?;
+        let span = SpanId::from_raw(u32::try_from(read_varint(input, &mut pos)?).ok()?)?;
         let key = AttrKey::from_u8(*input.get(pos)?)?;
         pos += 1;
         let tag = *input.get(pos)?;
@@ -151,35 +171,72 @@ pub(crate) fn decode(input: &[u8]) -> Option<EventLog> {
                 pos = end;
                 AttrValue::F64(f64::from_le_bytes(bytes))
             }
+            VALUE_STATUS => {
+                let code = u16::try_from(read_varint(input, &mut pos)?).ok()?;
+                let raw_sub = read_varint(input, &mut pos)?;
+                let sub = (raw_sub != 0)
+                    .then(|| u16::try_from(raw_sub - 1).map(SubStatusCode::new))
+                    .transpose()
+                    .ok()?;
+                AttrValue::Status(CosmosStatus::from_parts(StatusCode::from(code), sub))
+            }
             VALUE_STR => AttrValue::Str(read_str(input, &mut pos)?),
             _ => return None,
         };
         attrs.push(Attr { span, key, value });
     }
 
-    Some(EventLog::from_parts(spans, attrs))
+    Some(EventLogStorage::from_parts(spans, attrs))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Arc;
 
-    fn sample() -> EventLog {
-        let mut log = EventLog::new();
-        let op = log.push_span(SpanKind::Operation, NO_PARENT, 0, 7_000_000);
+    fn sample() -> EventLogStorage {
+        let mut log = EventLogStorage::new();
+        let op = log.push_span(
+            SpanKind::Operation,
+            None,
+            TimeOffset::ZERO,
+            TimeOffset::from_nanos(7_000_000),
+        );
         log.attr_str(op, AttrKey::OperationName, "read_item");
         log.attr_str(op, AttrKey::ActivityId, "act-2");
-        log.attr_u64(op, AttrKey::FinalStatus, 200);
+        log.attr_status(
+            op,
+            AttrKey::FinalStatus,
+            CosmosStatus::from_parts(StatusCode::from(200), None),
+        );
 
-        let a0 = log.push_span(SpanKind::Attempt, op, 0, 3_000_000);
+        let a0 = log.push_span(
+            SpanKind::Attempt,
+            Some(op),
+            TimeOffset::ZERO,
+            TimeOffset::from_nanos(3_000_000),
+        );
         log.attr_u64(a0, AttrKey::ExecutionContext, 0);
         log.attr_str(a0, AttrKey::Region, "eastus");
-        log.attr_u64(a0, AttrKey::Status, 429);
+        log.attr_status(
+            a0,
+            AttrKey::Status,
+            CosmosStatus::from_parts(StatusCode::from(429), Some(SubStatusCode::new(3200))),
+        );
         log.attr_f64(a0, AttrKey::RequestCharge, 4.2);
 
-        let a1 = log.push_span(SpanKind::Attempt, op, 3_000_000, 7_000_000);
+        let a1 = log.push_span(
+            SpanKind::Attempt,
+            Some(op),
+            TimeOffset::from_nanos(3_000_000),
+            TimeOffset::from_nanos(7_000_000),
+        );
         log.attr_u64(a1, AttrKey::ExecutionContext, 1);
-        log.attr_u64(a1, AttrKey::Status, 200);
+        log.attr_status(
+            a1,
+            AttrKey::Status,
+            CosmosStatus::from_parts(StatusCode::from(200), None),
+        );
         log
     }
 
@@ -192,8 +249,28 @@ mod tests {
     }
 
     #[test]
+    fn string_flavors_decode_to_owned() {
+        let mut log = EventLogStorage::new();
+        let op = log.push_span(
+            SpanKind::Operation,
+            None,
+            TimeOffset::ZERO,
+            TimeOffset::ZERO,
+        );
+        log.attr_static_str(op, AttrKey::Region, "eastus");
+        log.attr_shared_str(op, AttrKey::PrimaryRegion, Arc::from("westus"));
+        let decoded = decode(&encode(&log)).expect("decode succeeds");
+        // Static/shared strings come back as owned strings with the same content.
+        assert_eq!(decoded.attr_str_of(op, AttrKey::Region), Some("eastus"));
+        assert_eq!(
+            decoded.attr_str_of(op, AttrKey::PrimaryRegion),
+            Some("westus")
+        );
+    }
+
+    #[test]
     fn empty_round_trips() {
-        let log = EventLog::new();
+        let log = EventLogStorage::new();
         let bytes = encode(&log);
         let decoded = decode(&bytes).expect("decode succeeds");
         assert!(decoded.is_empty());
@@ -208,8 +285,8 @@ mod tests {
 
     #[test]
     fn unknown_attr_key_is_rejected() {
-        // span_count=0, attr_count=1, span=0, key=250 (unknown).
-        let bytes = [0u8, 1u8, 0u8, 250u8, VALUE_U64, 0u8];
+        // span_count=0, attr_count=1, span=1, key=250 (unknown).
+        let bytes = [0u8, 1u8, 1u8, 250u8, VALUE_U64, 0u8];
         assert!(decode(&bytes).is_none());
     }
 }
