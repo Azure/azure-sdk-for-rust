@@ -27,10 +27,6 @@ use super::{
 /// Default maximum number of physical partitions a cross-partition query may
 /// fan out to. Exceeding this limit returns an error to prevent inadvertent
 /// full-container scans on very large clusters.
-///
-/// Users who truly need more can increase the limit via
-/// [`FeedOptions::max_fan_out`](crate::options::FeedOptions::max_fan_out) /
-/// `QueryOptions::with_max_fan_out`.
 pub(crate) const DEFAULT_MAX_FAN_OUT: usize = 100;
 
 /// Builds a single-node [`Pipeline`] for a trivial operation.

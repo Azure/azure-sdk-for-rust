@@ -4,7 +4,6 @@
 
 ### Features Added
 
-- Added `PlanOptions` struct to `CosmosDriver::plan_operation`, grouping continuation-token and fan-out cap into a single parameter, making the API extensible without future call-site churn. ([#4615](https://github.com/Azure/azure-sdk-for-rust/pull/4615))
 - Added `SubStatusCode::CLIENT_QUERY_FAN_OUT_LIMIT_EXCEEDED` (20307) and `CosmosStatus::CLIENT_QUERY_FAN_OUT_LIMIT_EXCEEDED` (HTTP 400 / sub-status 20307). ([#4615](https://github.com/Azure/azure-sdk-for-rust/pull/4615))
 - Added support for using a native query planning library to generate query plans locally, avoiding a Gateway round-trip on cross-partition queries. Gated behind the `__internal_native_query_plan` feature flag. ([#4554](https://github.com/Azure/azure-sdk-for-rust/pull/4554))
 - Restructured the client / runtime options layering on the driver. Two new nested option groups, a per-client overrides surface on `DriverOptionsBuilder`, and a single canonical `AZURE_COSMOS_PPCB_*` namespace for partition-failover environment variables. The driver now consumes partition-failover configuration once at construction (`CosmosDriver::new` no longer fabricates an `OperationOptionsView` outside any operation context) ([#4588](https://github.com/Azure/azure-sdk-for-rust/pull/4588)):
@@ -20,6 +19,7 @@
 
 ### Breaking Changes
 
+- `CosmosDriver::plan_operation` signature change: the final parameter changed from `Option<&ContinuationToken>` to `Option<PlanOptions>`. Direct driver consumers must wrap continuation tokens in `PlanOptions { continuation: Some(token), ..Default::default() }`, or pass `None` for queries starting from the beginning. ([#4615](https://github.com/Azure/azure-sdk-for-rust/pull/4615))
 - Cross-partition query continuation tokens minted by `0.4.0` cannot be resumed against `0.5.0`. The on-wire token shape was reshaped to record per-range sibling state so that pausing a fan-out query mid-flight preserves information about siblings that hadn't been touched yet. Callers holding a `0.4.0`-minted token will receive a continuation-token error on resume and must re-issue the query. ([#4550](https://github.com/Azure/azure-sdk-for-rust/pull/4550))
 - `azure_data_cosmos_driver::models::ETag` has been removed. Use `azure_core::http::Etag` directly. The previous `ETag::new(...)` is gone; construct via `Etag::from(&str)` / `Etag::from(String)`. ([#4512](https://github.com/Azure/azure-sdk-for-rust/pull/4512))
 - Migration impact of the client / runtime options restructure. Per-runtime concerns (transport, cert validation, proxy, UA defaults) are configured once on the `CosmosDriverRuntime`; per-client concerns (operation defaults, FI rules, throughput-control groups, partition-failover tuning) move onto `DriverOptions` ([#4588](https://github.com/Azure/azure-sdk-for-rust/pull/4588)):

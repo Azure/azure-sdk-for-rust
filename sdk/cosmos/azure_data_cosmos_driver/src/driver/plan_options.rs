@@ -11,7 +11,7 @@ use crate::models::ContinuationToken;
 /// struct so the signature of `plan_operation` can grow without forcing a
 /// change at every call site. Callers that need no special behavior can pass
 /// `None`; `plan_operation` treats `None` as `PlanOptions::default()`.
-#[derive(Default)]
+#[derive(Clone, Debug, Default)]
 pub struct PlanOptions {
     /// Continuation token to resume a previous query from where it left off.
     ///
