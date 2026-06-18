@@ -840,6 +840,7 @@ impl ContainerClient {
         let plan_options = azure_data_cosmos_driver::PlanOptions {
             continuation: options.feed.continuation_token,
             max_fan_out: options.feed.max_fan_out,
+            ..Default::default()
         };
         let plan = self
             .context
