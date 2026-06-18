@@ -189,15 +189,36 @@ impl ContainerRoutingMap {
     /// exactly one physical partition (e.g. PPCB/PPAF first-attempt
     /// attribution). It reuses the same O(log n) binary-search bounds but
     /// clones at most a single ID instead of every overlapping range.
+    ///
+    /// A multi-partition overlap is unexpected for callers on the operation
+    /// pipeline path: the dataflow pipeline splits multi-partition feed ranges
+    /// into one sub-operation per physical partition before execution. If it
+    /// happens here it signals a stale routing map / partition-split race, so
+    /// we surface it via `warn!` + `debug_assert!` and still return `None` so
+    /// the caller degrades gracefully.
     pub fn single_overlapping_range_id(
         &self,
         epk_range: Range<&EffectivePartitionKey>,
     ) -> Option<String> {
         let (start_idx, end_idx) = self.overlapping_range_bounds(epk_range)?;
-        if end_idx - start_idx == 1 {
-            Some(self.ordered_ranges[start_idx].id.clone())
-        } else {
-            None
+        match end_idx - start_idx {
+            0 => None,
+            1 => Some(self.ordered_ranges[start_idx].id.clone()),
+            count => {
+                debug_assert!(
+                    false,
+                    "feed range mapped to {count} physical partitions; expected \
+                     exactly one at the operation pipeline (stale routing map / \
+                     partition-split race)"
+                );
+                tracing::warn!(
+                    overlapping_partition_count = count,
+                    "feed range mapped to multiple physical partitions during \
+                     single-owner resolution; treating as no single owner (stale \
+                     routing map / partition-split race)"
+                );
+                None
+            }
         }
     }
 
@@ -576,18 +597,15 @@ mod tests {
     }
 
     #[test]
-    fn single_overlapping_range_id_multiple_partitions_returns_none() {
+    #[should_panic(expected = "physical partitions")]
+    fn single_overlapping_range_id_multiple_partitions_panics_in_debug() {
         let map = ContainerRoutingMap::try_create(three_ranges(), None, None)
             .unwrap()
             .unwrap();
-        // Full span overlaps all three ranges → no single owner.
-        assert!(map
-            .single_overlapping_range_id(&epk("")..&epk("FF"))
-            .is_none());
-        // Partial span [30, 50) overlaps ranges 1 and 2 → no single owner.
-        assert!(map
-            .single_overlapping_range_id(&epk("30")..&epk("50"))
-            .is_none());
+        // A multi-partition overlap is an invariant violation for this helper
+        // (the dataflow pipeline should have split the range first), so it trips
+        // the `debug_assert!`. In release builds it returns `None` instead.
+        let _ = map.single_overlapping_range_id(&epk("")..&epk("FF"));
     }
 
     #[test]

@@ -4249,9 +4249,9 @@ mod tests {
     // =========================================================================
     // pre_resolve_partition_key_range_id — EPK-range seeding (#4611 fix)
     //
-    // The single→Some / multi→None collapse now lives in
-    // `ContainerRoutingMap::single_overlapping_range_id` (unit-tested there).
-    // These cache-backed tests drive the *real*
+    // The single→Some / multi→(warn + debug_assert, then None) classification
+    // lives in `ContainerRoutingMap::single_overlapping_range_id` (unit-tested
+    // there). These cache-backed tests drive the *real*
     // `PartitionKeyRangeCache::resolve_single_overlapping_range_id` (mocked
     // fetch, per the existing `resolve_overlapping_ranges_*` tests), exercising
     // the exact path `pre_resolve_partition_key_range_id` takes.
@@ -4344,16 +4344,19 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn epk_range_spanning_multiple_partitions_resolves_to_none() {
+    #[should_panic(expected = "physical partitions")]
+    async fn epk_range_spanning_multiple_partitions_panics_in_debug() {
         use crate::driver::cache::PartitionKeyRangeCache;
         use crate::models::effective_partition_key::EffectivePartitionKey;
 
         let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
         let cache = PartitionKeyRangeCache::new();
 
-        // The whole-space feed range overlaps both physical partitions, so there
-        // is no single owner to attribute PPCB/PPAF failures to (multi → None).
-        let resolved = cache
+        // A whole-space feed range overlapping both physical partitions is an
+        // invariant violation at this layer (the dataflow pipeline should have
+        // split it first), so single-owner resolution trips the `debug_assert!`.
+        // In release builds it returns `None` and the caller degrades gracefully.
+        let _ = cache
             .resolve_single_overlapping_range_id(
                 &container,
                 &EffectivePartitionKey::MIN..&EffectivePartitionKey::MAX,
@@ -4361,8 +4364,6 @@ mod tests {
                 whole_space_two_range_fetch,
             )
             .await;
-
-        assert!(resolved.is_none());
     }
 
     #[tokio::test]
