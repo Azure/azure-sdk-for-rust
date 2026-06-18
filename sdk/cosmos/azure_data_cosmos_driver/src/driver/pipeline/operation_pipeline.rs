@@ -5252,9 +5252,10 @@ mod tests {
         override_target: CosmosEndpoint,
     ) -> crate::driver::routing::partition_endpoint_state::PartitionEndpointState {
         use crate::driver::routing::partition_endpoint_state::{
-            HealthStatus, PartitionEndpointState, PartitionFailoverConfig, PartitionFailoverEntry,
+            HealthStatus, PartitionEndpointState, PartitionFailoverEntry,
         };
-        let config = PartitionFailoverConfig::default();
+        use crate::options::PartitionFailoverOptions;
+        let config = PartitionFailoverOptions::default();
         let mut partitions = PartitionEndpointState::new(config);
         partitions.per_partition_circuit_breaker_enabled = true;
         partitions.circuit_breaker_overrides.insert(
@@ -5523,10 +5524,11 @@ mod tests {
         });
 
         use crate::driver::routing::partition_endpoint_state::{
-            HealthStatus, PartitionEndpointState, PartitionFailoverConfig, PartitionFailoverEntry,
+            HealthStatus, PartitionEndpointState, PartitionFailoverEntry,
         };
+        use crate::options::PartitionFailoverOptions;
         let pk_range_id: super::PartitionKeyRangeId = "0".parse().unwrap();
-        let mut partitions = PartitionEndpointState::new(PartitionFailoverConfig::default());
+        let mut partitions = PartitionEndpointState::new(PartitionFailoverOptions::default());
         partitions.per_partition_automatic_failover_enabled = true;
         partitions.failover_overrides.insert(
             pk_range_id.clone(),
@@ -5604,10 +5606,11 @@ mod tests {
         });
 
         use crate::driver::routing::partition_endpoint_state::{
-            HealthStatus, PartitionEndpointState, PartitionFailoverConfig, PartitionFailoverEntry,
+            HealthStatus, PartitionEndpointState, PartitionFailoverEntry,
         };
+        use crate::options::PartitionFailoverOptions;
         let pk_range_id: super::PartitionKeyRangeId = "0".parse().unwrap();
-        let mut partitions = PartitionEndpointState::new(PartitionFailoverConfig::default());
+        let mut partitions = PartitionEndpointState::new(PartitionFailoverOptions::default());
         partitions.per_partition_automatic_failover_enabled = true;
         partitions.failover_overrides.insert(
             pk_range_id.clone(),
@@ -5674,10 +5677,11 @@ mod tests {
         });
 
         use crate::driver::routing::partition_endpoint_state::{
-            HealthStatus, PartitionEndpointState, PartitionFailoverConfig, PartitionFailoverEntry,
+            HealthStatus, PartitionEndpointState, PartitionFailoverEntry,
         };
+        use crate::options::PartitionFailoverOptions;
         let pk_range_id: super::PartitionKeyRangeId = "0".parse().unwrap();
-        let mut partitions = PartitionEndpointState::new(PartitionFailoverConfig::default());
+        let mut partitions = PartitionEndpointState::new(PartitionFailoverOptions::default());
         partitions.per_partition_circuit_breaker_enabled = true;
         partitions.circuit_breaker_overrides.insert(
             pk_range_id.clone(),
@@ -5748,12 +5752,13 @@ mod tests {
         });
 
         use crate::driver::routing::partition_endpoint_state::{
-            HealthStatus, PartitionEndpointState, PartitionFailoverConfig, PartitionFailoverEntry,
+            HealthStatus, PartitionEndpointState, PartitionFailoverEntry,
         };
+        use crate::options::PartitionFailoverOptions;
         let pk_range_id: super::PartitionKeyRangeId = "0".parse().unwrap();
-        let mut partitions = PartitionEndpointState::new(PartitionFailoverConfig::default());
+        let mut partitions = PartitionEndpointState::new(PartitionFailoverOptions::default());
         partitions.per_partition_circuit_breaker_enabled = true;
-        let write_threshold = partitions.config.write_failure_threshold() as i32;
+        let write_threshold = partitions.config.write_failure_threshold();
         partitions.circuit_breaker_overrides.insert(
             pk_range_id.clone(),
             PartitionFailoverEntry {
@@ -5761,7 +5766,7 @@ mod tests {
                 first_failed_endpoint: central.clone(),
                 failed_endpoints: Default::default(),
                 read_failure_count: 0,
-                write_failure_count: write_threshold + 10,
+                write_failure_count: write_threshold as i32 + 10,
                 first_failure_time: std::time::Instant::now(),
                 last_failure_time: std::time::Instant::now(),
                 health_status: HealthStatus::Unhealthy,
@@ -5829,10 +5834,11 @@ mod tests {
         });
 
         use crate::driver::routing::partition_endpoint_state::{
-            HealthStatus, PartitionEndpointState, PartitionFailoverConfig, PartitionFailoverEntry,
+            HealthStatus, PartitionEndpointState, PartitionFailoverEntry,
         };
+        use crate::options::PartitionFailoverOptions;
         let pk_range_id: super::PartitionKeyRangeId = "0".parse().unwrap();
-        let mut partitions = PartitionEndpointState::new(PartitionFailoverConfig::default());
+        let mut partitions = PartitionEndpointState::new(PartitionFailoverOptions::default());
         partitions.per_partition_circuit_breaker_enabled = true;
         // PPCB override still points at the now-unavailable endpoint.
         partitions.circuit_breaker_overrides.insert(

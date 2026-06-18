@@ -1,15 +1,26 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Shared `RequestObserver` for hosts, excluding account-topology `GET /` fetches from routing assertions.
+//! Shared `RequestObserver` for hosts, excluding metadata fetches from routing assertions.
 
 use std::sync::{Arc, Mutex};
 
 use azure_core::http::{Method, Request};
 use azure_data_cosmos_driver::in_memory_emulator::RequestObserver;
 
-/// Tuple stored per observation: `(host, is_account_GET_/)`.
-type Observation = (String, bool);
+/// Classification of a recorded request.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RequestKind {
+    /// Account topology fetch (`GET /`).
+    Topology,
+    /// Routing metadata (e.g., `GET .../pkranges`).
+    RoutingMetadata,
+    /// Actual data-plane operation (item CRUD).
+    DataPlane,
+}
+
+/// Tuple stored per observation: `(host, kind)`.
+type Observation = (String, RequestKind);
 
 /// Records the host of every request observed by the in-memory emulator.
 #[derive(Debug, Default)]
@@ -24,13 +35,14 @@ impl HostRecorder {
         Arc::new(Self::default())
     }
 
-    /// Hosts of all non-topology requests; `GET /` may legitimately target the global endpoint.
+    /// Hosts of actual data-plane operations (item CRUD), excluding topology
+    /// fetches (`GET /`) and routing metadata (`GET .../pkranges`).
     pub fn data_plane_hosts(&self) -> Vec<String> {
         self.requests
             .lock()
             .unwrap()
             .iter()
-            .filter(|(_, is_account)| !*is_account)
+            .filter(|(_, kind)| *kind == RequestKind::DataPlane)
             .map(|(host, _)| host.clone())
             .collect()
     }
@@ -42,7 +54,7 @@ impl HostRecorder {
             .lock()
             .unwrap()
             .iter()
-            .filter(|(_, is_account)| *is_account)
+            .filter(|(_, kind)| *kind == RequestKind::Topology)
             .count()
     }
 
@@ -53,7 +65,7 @@ impl HostRecorder {
             .lock()
             .unwrap()
             .iter()
-            .filter(|(_, is_account)| *is_account)
+            .filter(|(_, kind)| *kind == RequestKind::Topology)
             .map(|(host, _)| host.clone())
             .collect()
     }
@@ -68,7 +80,17 @@ impl HostRecorder {
 impl RequestObserver for HostRecorder {
     fn on_request(&self, request: &Request) {
         let host = request.url().host_str().unwrap_or_default().to_string();
-        let is_account_read = request.method() == Method::Get && request.url().path() == "/";
-        self.requests.lock().unwrap().push((host, is_account_read));
+        let path = request.url().path();
+        let method = request.method();
+
+        let kind = if method == Method::Get && path == "/" {
+            RequestKind::Topology
+        } else if method == Method::Get && path.ends_with("/pkranges") {
+            RequestKind::RoutingMetadata
+        } else {
+            RequestKind::DataPlane
+        };
+
+        self.requests.lock().unwrap().push((host, kind));
     }
 }
