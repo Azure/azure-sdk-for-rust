@@ -79,7 +79,7 @@ async fn build_driver_with_faults(
         .build();
 
     let driver = runtime
-        .get_or_create_driver(account.clone(), Some(driver_options))
+        .create_driver(driver_options)
         .await
         .expect("driver initializes against emulator metadata");
 

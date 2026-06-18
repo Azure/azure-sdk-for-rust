@@ -10,6 +10,16 @@ use std::{
 
 use crate::options::{PartitionFailoverOptions, Region};
 
+/// Test-only compatibility alias for [`PartitionFailoverOptions`].
+///
+/// Some `#[cfg(test)]` modules merged in from branches predating #4588 (which
+/// renamed the internal failover config type to `PartitionFailoverOptions`)
+/// still construct it as `PartitionFailoverConfig`. This gated alias keeps that
+/// inherited test code compiling without resurrecting the old name in the
+/// production API.
+#[cfg(test)]
+pub(crate) use crate::options::PartitionFailoverOptions as PartitionFailoverConfig;
+
 use super::{partition_key_range_id::PartitionKeyRangeId, CosmosEndpoint};
 
 /// Immutable partition-level endpoint routing state.

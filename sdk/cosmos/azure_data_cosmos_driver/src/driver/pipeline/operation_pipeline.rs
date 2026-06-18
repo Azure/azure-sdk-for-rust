@@ -5753,7 +5753,7 @@ mod tests {
         let pk_range_id: super::PartitionKeyRangeId = "0".parse().unwrap();
         let mut partitions = PartitionEndpointState::new(PartitionFailoverConfig::default());
         partitions.per_partition_circuit_breaker_enabled = true;
-        let write_threshold = partitions.config.write_failure_threshold;
+        let write_threshold = partitions.config.write_failure_threshold() as i32;
         partitions.circuit_breaker_overrides.insert(
             pk_range_id.clone(),
             PartitionFailoverEntry {
