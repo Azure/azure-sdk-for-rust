@@ -186,6 +186,16 @@ pub struct QueueServiceClientGetStatisticsOptions<'a> {
     pub timeout: Option<i32>,
 }
 
+/// Options to be passed to `QueueServiceClient::get_user_delegation_key()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct QueueServiceClientGetUserDelegationKeyOptions<'a> {
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Queue Service Operations.](https://learn.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations)
+    pub timeout: Option<i32>,
+}
+
 /// Options to be passed to `QueueServiceClient::list_queues()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct QueueServiceClientListQueuesOptions<'a> {
