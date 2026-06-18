@@ -74,15 +74,14 @@ impl PartitionFailoverOptions {
     /// The effective in-driver value is `enabled_via_options ||
     /// account_property_enable_per_partition_failover_behavior`, so PPCB still
     /// turns on when the account property is set even if this flag is `false`
-    /// — *unless* [`circuit_breaker_enabled_override`](Self::circuit_breaker_enabled_override)
-    /// is set, which wins over both.
+    /// — unless the internal incident kill switch
+    /// (`AZURE_COSMOS_PPCB_ENABLED_OVERRIDE`) is set, which wins over both.
     pub fn circuit_breaker_enabled(&self) -> bool {
         self.circuit_breaker_enabled
     }
 
     /// Returns the per-partition circuit breaker (PPCB) incident kill switch,
-    /// if set (via `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` or
-    /// [`PartitionFailoverOptionsBuilder::with_circuit_breaker_enabled_override`]).
+    /// if set via the `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` environment variable.
     ///
     /// When `Some(_)`, this value is **authoritative**: it overrides every
     /// other source of PPCB enablement — the base
@@ -95,7 +94,10 @@ impl PartitionFailoverOptions {
     ///
     /// Read once when the driver runtime is built, not per request; flipping it
     /// mid-incident requires a process restart.
-    pub fn circuit_breaker_enabled_override(&self) -> Option<bool> {
+    ///
+    /// Internal: the kill switch is operator-facing (env-only) and is not part
+    /// of the public configuration surface, so this accessor is crate-private.
+    pub(crate) fn circuit_breaker_enabled_override(&self) -> Option<bool> {
         self.circuit_breaker_enabled_override
     }
 
@@ -211,17 +213,14 @@ impl PartitionFailoverOptionsBuilder {
         self
     }
 
-    /// Sets the per-partition circuit breaker (PPCB) incident kill switch.
+    /// Test-only setter for the PPCB incident kill switch.
     ///
-    /// When set, this value is **authoritative**: it overrides every other
-    /// source of PPCB enablement — the base
-    /// [`with_circuit_breaker_enabled`](Self::with_circuit_breaker_enabled)
-    /// value **and** the account property
-    /// `enable_per_partition_failover_behavior`. `Some(false)` forces PPCB off
-    /// fleet-wide; `Some(true)` forces it on. Mirrors the
-    /// `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` environment variable, which is the
-    /// usual way to set it during a livesite incident.
-    pub fn with_circuit_breaker_enabled_override(mut self, value: bool) -> Self {
+    /// Not part of the public API: the kill switch is operator-facing and is set
+    /// exclusively via the `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` environment
+    /// variable. This helper exists only so in-crate tests can exercise the
+    /// authoritative-override resolution without mutating process-wide env.
+    #[cfg(test)]
+    pub(crate) fn with_circuit_breaker_enabled_override(mut self, value: bool) -> Self {
         self.circuit_breaker_enabled_override = Some(value);
         self
     }
