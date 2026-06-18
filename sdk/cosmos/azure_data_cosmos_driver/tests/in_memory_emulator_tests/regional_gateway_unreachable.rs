@@ -107,7 +107,7 @@ async fn build_fixture(write_mode: WriteMode, rules: Vec<Arc<FaultInjectionRule>
         .build();
 
     let driver = runtime
-        .get_or_create_driver(account, Some(driver_options))
+        .create_driver(driver_options)
         .await
         .expect("driver initializes against emulator metadata");
 
@@ -186,9 +186,6 @@ fn options_with_excluded(regions: impl IntoIterator<Item = Region>) -> Operation
 /// `base_options()` with PPCB thresholds set so one failure trips the circuit.
 fn ppcb_options(extra_excluded: Option<Vec<Region>>) -> OperationOptions {
     let mut opts = base_options();
-    opts.per_partition_circuit_breaker_enabled = Some(true);
-    opts.circuit_breaker_failure_count_for_reads = Some(1);
-    opts.circuit_breaker_failure_count_for_writes = Some(1);
     if let Some(regions) = extra_excluded {
         opts.excluded_regions = Some(ExcludedRegions::from_iter(regions));
     }
