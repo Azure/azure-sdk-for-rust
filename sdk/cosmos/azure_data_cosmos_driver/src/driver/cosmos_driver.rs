@@ -677,47 +677,6 @@ impl CosmosDriver {
         Ok(props)
     }
 
-    /// Sends a lightweight `GET /probe` connectivity check to a single endpoint
-    /// and reports whether the endpoint is reachable.
-    ///
-    /// Account-level failback is gated on *network reachability*, not on a full
-    /// database-account read succeeding. Any wire response — even a non-2xx
-    /// envelope (401/403/429/503/5xx) — proves the endpoint accepted the
-    /// connection and is reachable. Only a transport error with no response
-    /// (firewall block, DNS failure, connection refused, or connection timeout)
-    /// means the endpoint is unreachable and must stay out of rotation.
-    ///
-    /// Hitting the dedicated `/probe` path (rather than re-reading the database
-    /// account) keeps the probe off the metadata code path and minimizes the
-    /// load it places on the service. See issue #4597.
-    async fn probe_endpoint_connectivity(
-        runtime: &CosmosDriverRuntime,
-        transport: &super::transport::adaptive_transport::AdaptiveTransport,
-        account: &AccountReference,
-        user_agent: &azure_core::http::headers::HeaderValue,
-    ) -> bool {
-        // The runtime is currently unused by the connectivity probe but is kept
-        // in the signature to mirror the other endpoint-fetch helpers and to
-        // leave room for future diagnostics wiring.
-        let _ = runtime;
-        let endpoint = AccountEndpoint::from(account);
-        let mut request = HttpRequest {
-            url: endpoint.join_path("/probe"),
-            method: azure_core::http::Method::Get,
-            headers: azure_core::http::headers::Headers::new(),
-            body: None,
-            timeout: None,
-            #[cfg(feature = "fault_injection")]
-            evaluation_collector: None,
-        };
-        cosmos_headers::apply_cosmos_headers(&mut request, user_agent);
-
-        // Any wire response (including a non-2xx envelope) proves reachability;
-        // only a transport error with no response means the endpoint could not
-        // be reached.
-        transport.send(&request).await.is_ok()
-    }
-
     fn parse_account_properties_payload(
         payload: &[u8],
     ) -> crate::error::Result<super::cache::AccountProperties> {
@@ -1275,12 +1234,10 @@ impl CosmosDriver {
         // sustained low-throughput loop (issue #4597).
         #[cfg(feature = "tokio")]
         {
-            let runtime_for_probe = Arc::clone(&runtime);
             let account_for_probe = account.clone();
             let transport_for_probe = Arc::clone(&transport);
             let user_agent_for_probe = Arc::clone(&user_agent);
             let probe_fn: EndpointProbeFn = Arc::new(move |url: Url| {
-                let runtime = Arc::clone(&runtime_for_probe);
                 let account = account_for_probe.clone();
                 let transport_holder = Arc::clone(&transport_for_probe);
                 let user_agent = Arc::clone(&user_agent_for_probe);
@@ -1292,13 +1249,8 @@ impl CosmosDriver {
                         return false;
                     };
                     let user_agent = CosmosDriver::user_agent_header(&user_agent);
-                    CosmosDriver::probe_endpoint_connectivity(
-                        &runtime,
-                        &metadata_transport,
-                        &probe_account,
-                        &user_agent,
-                    )
-                    .await
+                    probe_endpoint_connectivity(&metadata_transport, &probe_account, &user_agent)
+                        .await
                 }) as BoxFuture<'static, bool>
             });
             location_state_store.start_endpoint_probe_loop(probe_fn);
@@ -2436,6 +2388,42 @@ impl CosmosDriver {
     }
 }
 
+/// Sends a lightweight `GET /probe` connectivity check to a single endpoint
+/// and reports whether the endpoint is reachable.
+///
+/// Account-level failback is gated on *network reachability*, not on a full
+/// database-account read succeeding. Any wire response — even a non-2xx
+/// envelope (401/403/429/503/5xx) — proves the endpoint accepted the
+/// connection and is reachable. Only a transport error with no response
+/// (firewall block, DNS failure, connection refused, or connection timeout)
+/// means the endpoint is unreachable and must stay out of rotation.
+///
+/// Hitting the dedicated `/probe` path (rather than re-reading the database
+/// account) keeps the probe off the metadata code path and minimizes the
+/// load it places on the service. See issue #4597.
+async fn probe_endpoint_connectivity(
+    transport: &super::transport::adaptive_transport::AdaptiveTransport,
+    account: &AccountReference,
+    user_agent: &azure_core::http::headers::HeaderValue,
+) -> bool {
+    let endpoint = AccountEndpoint::from(account);
+    let mut request = HttpRequest {
+        url: endpoint.join_path("/probe"),
+        method: azure_core::http::Method::Get,
+        headers: azure_core::http::headers::Headers::new(),
+        body: None,
+        timeout: None,
+        #[cfg(feature = "fault_injection")]
+        evaluation_collector: None,
+    };
+    cosmos_headers::apply_cosmos_headers(&mut request, user_agent);
+
+    // Any wire response (including a non-2xx envelope) proves reachability;
+    // only a transport error with no response means the endpoint could not
+    // be reached.
+    transport.send(&request).await.is_ok()
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::VecDeque;
@@ -3566,11 +3554,10 @@ mod tests {
         let transport =
             crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
-        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         let account = signed_test_account("https://test.documents.azure.com:443/");
         let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
 
-        CosmosDriver::probe_endpoint_connectivity(&runtime, &transport, &account, &user_agent).await
+        probe_endpoint_connectivity(&transport, &account, &user_agent).await
     }
 
     async fn drive_probe_unreachable() -> bool {
@@ -3578,11 +3565,10 @@ mod tests {
         let transport =
             crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
-        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         let account = signed_test_account("https://test.documents.azure.com:443/");
         let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
 
-        CosmosDriver::probe_endpoint_connectivity(&runtime, &transport, &account, &user_agent).await
+        probe_endpoint_connectivity(&transport, &account, &user_agent).await
     }
 
     /// The endpoint probe gates failback on *connectivity*, not on the account
