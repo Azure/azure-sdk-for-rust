@@ -1624,20 +1624,36 @@ impl CosmosDriver {
 
     /// Pre-resolves the partition key range ID for a data plane operation.
     ///
-    /// When PPAF/PPCB is enabled and the operation provides both a container
-    /// reference and a partition key, uses the `PartitionKeyRangeCache` to
-    /// compute the effective partition key and look up the range ID from
-    /// the cached routing map. If the routing map is not cached, fetches it
-    /// from the service.
+    /// When PPAF/PPCB is enabled, seeds the partition key range ID before the
+    /// first attempt so partition-level failover overrides can take effect from
+    /// the very first request instead of only after a retry captures the ID
+    /// from response headers.
+    ///
+    /// Resolution is **`OperationOverrides`-aware**. The dataflow pipeline
+    /// fans a query out into per-physical-partition sub-operations and stamps
+    /// the owning `partition_key_range_id` (plus the narrowed feed range and/or
+    /// partition key) onto [`OperationOverrides`] rather than mutating the
+    /// shared [`CosmosOperation`]. The overrides therefore carry the most
+    /// specific routing information and are consulted first:
+    ///
+    /// 1. If the overrides already carry a `partition_key_range_id` (the common
+    ///    case for dataflow-planned queries), use it directly — no cache lookup
+    ///    and no risk of a multi-range collapse.
+    /// 2. Otherwise resolve a logical partition key (from the overrides, then
+    ///    the operation) through the point-lookup path.
+    /// 3. Otherwise resolve an EPK-range feed range (from the overrides, then
+    ///    the operation), seeding only when it maps to exactly one physical
+    ///    partition.
     ///
     /// Returns `None` if:
     /// - PPAF/PPCB is not enabled
     /// - The operation does not target a partitioned resource
-    /// - The operation has no container reference or partition key
+    /// - No container reference or routing target is available
     /// - The cache lookup or fetch fails
     async fn pre_resolve_partition_key_range_id(
         &self,
         operation: &CosmosOperation,
+        overrides: &OperationOverrides,
     ) -> Option<PartitionKeyRangeId> {
         // Only pre-resolve for partitioned data plane operations.
         if !operation
@@ -1657,12 +1673,25 @@ impl CosmosDriver {
             return None;
         }
 
-        // Need both a container reference and a target feed range.
+        // The dataflow pipeline resolves each query into per-partition
+        // sub-operations and stamps the owning physical partition's range ID
+        // onto the overrides. When present it is authoritative — use it as-is,
+        // skipping any cache lookup (and the multi-range collapse that would
+        // otherwise silently drop the seed).
+        if let Some(pk_range_id) = overrides.partition_key_range_id.as_deref() {
+            return Some(PartitionKeyRangeId::from(pk_range_id.to_owned()));
+        }
+
+        // Need a container reference for any cache-backed resolution below.
         let container = operation.container()?;
-        let target = operation.target()?;
 
         // Logical-partition-key targets resolve directly from the partition key.
-        if let Some(partition_key) = target.partition_key() {
+        // Prefer the override (set by the dataflow pipeline) over the operation.
+        let partition_key = overrides
+            .partition_key
+            .as_ref()
+            .or_else(|| operation.target().and_then(|t| t.partition_key()));
+        if let Some(partition_key) = partition_key {
             return self
                 .pk_range_cache
                 .resolve_partition_key_range_id(container, partition_key, false, |c, cont| {
@@ -1680,6 +1709,13 @@ impl CosmosDriver {
         // single owner to attribute to, so the pipeline instead captures the range
         // ID from the response headers on a later attempt. `resolve_single_overlapping_range_id`
         // answers this without cloning every overlapping range.
+        //
+        // Prefer the override feed range (set by the dataflow pipeline) over the
+        // operation's own target.
+        let target = overrides
+            .feed_range
+            .as_ref()
+            .or_else(|| operation.target())?;
         self.pk_range_cache
             .resolve_single_overlapping_range_id(
                 container,
@@ -1923,7 +1959,11 @@ impl CosmosDriver {
         // When partition-level failover is enabled, resolving the range ID
         // before the first attempt lets the pipeline apply partition overrides
         // from the very first request instead of only after the first retry.
-        let pre_resolved_pk_range_id = self.pre_resolve_partition_key_range_id(operation).await;
+        // Pass the overrides so dataflow-stamped routing (PK range ID, partition
+        // key, EPK range) is honored ahead of the operation's own target.
+        let pre_resolved_pk_range_id = self
+            .pre_resolve_partition_key_range_id(operation, &overrides)
+            .await;
 
         // Step 6: Select the adaptive transport context for the chosen pipeline
         let transport = self.transport();

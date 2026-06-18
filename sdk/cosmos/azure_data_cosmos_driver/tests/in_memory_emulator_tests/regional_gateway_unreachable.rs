@@ -61,8 +61,18 @@ struct Fixture {
 }
 
 /// Builds the two-region in-memory emulator with the supplied fault rules and bootstraps a driver against it.
+///
+/// PPCB is **disabled** here so these region-failover tests exercise pure
+/// cross-region failover without the per-partition circuit breaker's
+/// first-attempt range pre-resolution (which would otherwise issue a
+/// `pkranges` metadata read against the primary and pollute the recorded
+/// host list). The PPCB override tests opt in via [`build_ppcb_fixture`].
 async fn build_fixture(write_mode: WriteMode, rules: Vec<Arc<FaultInjectionRule>>) -> Fixture {
-    build_fixture_with_failover(write_mode, rules, None).await
+    let failover = PartitionFailoverOptions::builder()
+        .with_circuit_breaker_enabled(false)
+        .build()
+        .expect("valid failover options");
+    build_fixture_with_failover(write_mode, rules, failover).await
 }
 
 /// Like [`build_fixture`] but wires the per-partition circuit breaker (PPCB)
@@ -80,16 +90,15 @@ async fn build_ppcb_fixture(write_mode: WriteMode, rules: Vec<Arc<FaultInjection
         .with_write_failure_threshold(1)
         .build()
         .expect("valid PPCB options");
-    build_fixture_with_failover(write_mode, rules, Some(failover)).await
+    build_fixture_with_failover(write_mode, rules, failover).await
 }
 
-/// Shared fixture builder. When `failover` is `Some`, it is attached to the
-/// driver options so PPCB uses the supplied thresholds; otherwise the driver
-/// is built with default failover behavior.
+/// Shared fixture builder. The supplied `failover` options are attached to the
+/// driver so each test controls PPCB enablement and thresholds explicitly.
 async fn build_fixture_with_failover(
     write_mode: WriteMode,
     rules: Vec<Arc<FaultInjectionRule>>,
-    failover: Option<PartitionFailoverOptions>,
+    failover: PartitionFailoverOptions,
 ) -> Fixture {
     let recorder = HostRecorder::new();
 
@@ -134,9 +143,7 @@ async fn build_fixture_with_failover(
 
     let mut driver_options_builder = DriverOptions::builder(account.clone())
         .with_preferred_regions(vec![Region::EAST_US, Region::WEST_US]);
-    if let Some(failover) = failover {
-        driver_options_builder = driver_options_builder.with_partition_failover_options(failover);
-    }
+    driver_options_builder = driver_options_builder.with_partition_failover_options(failover);
     let driver_options = driver_options_builder.build();
 
     let driver = runtime
