@@ -520,7 +520,9 @@ async fn excluded_regions_honored_end_to_end() -> Result<(), Box<dyn Error>> {
         return Err(msg.into());
     }
 
-    let driver = runtime.get_or_create_driver(account.clone(), None).await?;
+    let driver = runtime
+        .create_driver(DriverOptions::builder(account.clone()).build())
+        .await?;
 
     // Iterate to ensure excluded-region routing is sticky, not a one-attempt coincidence.
     let excluded: ExcludedRegions = std::iter::once(HUB_REGION).collect();
