@@ -489,6 +489,7 @@ impl CosmosDriver {
             let mut diagnostics = DiagnosticsContextBuilder::new(activity_id, options);
             diagnostics.set_cpu_monitor(runtime.cpu_monitor().clone());
             diagnostics.set_machine_id(Arc::clone(runtime.machine_id()));
+            diagnostics.set_user_agent(Arc::from(runtime.user_agent().as_str()));
             #[cfg(feature = "fault_injection")]
             if fault_injection_enabled {
                 diagnostics.set_fault_injection_enabled(true);

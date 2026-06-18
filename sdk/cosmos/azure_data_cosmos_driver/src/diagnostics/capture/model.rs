@@ -1156,6 +1156,10 @@ pub struct DiagnosticsSummary {
     /// The first error message observed across the requests, if any.
     #[serde(skip_serializing_if = "Option::is_none")]
     top_error: Option<String>,
+    /// The client User-Agent string for the operation (SDK + runtime identity). Present only when
+    /// the driver supplied it; omitted otherwise so existing output is unchanged.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    user_agent: Option<String>,
 }
 
 impl DiagnosticsSummary {
@@ -1166,6 +1170,7 @@ impl DiagnosticsSummary {
         duration: Duration,
         start_time: OffsetDateTime,
         end_time: OffsetDateTime,
+        user_agent: Option<String>,
     ) -> Self {
         let mut retry_count = 0usize;
         let mut throttled_count = 0usize;
@@ -1224,6 +1229,7 @@ impl DiagnosticsSummary {
             regions_contacted: regions,
             status_counts,
             top_error,
+            user_agent,
         }
     }
 
@@ -1275,6 +1281,11 @@ impl DiagnosticsSummary {
     /// The first error message observed across the requests, if any.
     pub fn top_error(&self) -> Option<&str> {
         self.top_error.as_deref()
+    }
+
+    /// The client User-Agent string for the operation (SDK + runtime identity), if recorded.
+    pub fn user_agent(&self) -> Option<&str> {
+        self.user_agent.as_deref()
     }
 }
 
@@ -1500,6 +1511,10 @@ pub(crate) struct DiagnosticsContextBuilder {
     /// Machine identifier (VM ID on Azure, generated UUID otherwise).
     machine_id: Option<Arc<String>>,
 
+    /// Client User-Agent string (SDK + runtime identity) for this operation, surfaced in the
+    /// summary. `None` until the driver supplies it.
+    user_agent: Option<Arc<str>>,
+
     /// Whether fault injection is enabled for this operation's runtime.
     #[cfg(feature = "fault_injection")]
     fault_injection_enabled: bool,
@@ -1532,6 +1547,7 @@ impl DiagnosticsContextBuilder {
             options,
             cpu_monitor: None,
             machine_id: None,
+            user_agent: None,
             #[cfg(feature = "fault_injection")]
             fault_injection_enabled: false,
             hedge_diagnostics: None,
@@ -1570,6 +1586,11 @@ impl DiagnosticsContextBuilder {
         self.machine_id = Some(machine_id);
     }
 
+    /// Sets the client User-Agent string (SDK + runtime identity), surfaced in the summary.
+    pub(crate) fn set_user_agent(&mut self, user_agent: Arc<str>) {
+        self.user_agent = Some(user_agent);
+    }
+
     /// Sets the hedging diagnostics for this operation.
     pub(crate) fn set_hedge_diagnostics(&mut self, diagnostics: HedgeDiagnostics) {
         if !self.enabled {
@@ -1596,6 +1617,7 @@ impl DiagnosticsContextBuilder {
             options: Arc::clone(&self.options),
             cpu_monitor: self.cpu_monitor.clone(),
             machine_id: self.machine_id.clone(),
+            user_agent: self.user_agent.clone(),
             #[cfg(feature = "fault_injection")]
             fault_injection_enabled: self.fault_injection_enabled,
             hedge_diagnostics: None,
@@ -1866,6 +1888,7 @@ impl DiagnosticsContextBuilder {
             duration,
             start_time,
             end_time,
+            self.user_agent.as_deref().map(str::to_string),
         );
         DiagnosticsContext {
             activity_id: self.activity_id,
@@ -2048,6 +2071,7 @@ impl DiagnosticsContext {
             aggregated_duration,
             start_time,
             end_time,
+            last.summary.user_agent.clone(),
         );
         Some(DiagnosticsContext {
             activity_id: last.activity_id.clone(),
@@ -2942,6 +2966,45 @@ mod tests {
             Some(200)
         );
         assert!(s.top_error().is_none());
+    }
+
+    #[test]
+    fn summary_carries_user_agent_when_set() {
+        let ctx = make_context_with(ActivityId::from_string("sum-ua".to_string()), |b| {
+            b.set_user_agent(Arc::from("azsdk-rust-cosmos/1.0 (test)"));
+            let h = b.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::new("East US")),
+                "https://e/",
+            );
+            b.complete_request(h, StatusCode::Ok, None);
+            b.set_operation_status(StatusCode::Ok, None);
+        });
+        let s = ctx.summary();
+        assert_eq!(s.user_agent(), Some("azsdk-rust-cosmos/1.0 (test)"));
+        // The user agent is serialized inside the top-level summary block (whitespace-independent).
+        let json = ctx.to_json_string(None);
+        assert!(
+            json.contains("\"user_agent\"") && json.contains("azsdk-rust-cosmos/1.0 (test)"),
+            "user_agent should appear in the diagnostics JSON: {json}"
+        );
+    }
+
+    #[test]
+    fn summary_omits_user_agent_when_unset() {
+        let ctx = make_context_with(ActivityId::from_string("sum-no-ua".to_string()), |b| {
+            let h = b.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::new("East US")),
+                "https://e/",
+            );
+            b.complete_request(h, StatusCode::Ok, None);
+            b.set_operation_status(StatusCode::Ok, None);
+        });
+        let s = ctx.summary();
+        assert!(s.user_agent().is_none());
+        // Absent => no `user_agent` key, so existing output is unchanged.
+        assert!(!ctx.to_json_string(None).contains("user_agent"));
     }
 
     #[test]
