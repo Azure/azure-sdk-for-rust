@@ -39,7 +39,7 @@
 
 ### Bugs Fixed
 
-- RID-addressed requests are now signed and routed correctly. The driver signs them over the lowercased resource RID (the leaf for point reads, the parent for feeds), matching the service's `is_name_based = false` rule, and sends the RID raw in the request URL path. Name-addressed paths continue to be percent-encoded. Previously the driver signed the full name-style resource link and percent-encoded the RID for every request, so RID reads (for example resolving a database or container by RID) were rejected with `401 Unauthorized`.
+- RID-addressed requests are now signed and routed correctly. The driver signs them over the lowercased resource RID (the leaf for point reads, the parent for feeds), matching the service's `is_name_based = false` rule, and sends the RID raw in the request URL path. Name-addressed paths continue to be percent-encoded. Previously the driver signed the full name-style resource link and percent-encoded the RID for every request, so RID reads (for example resolving a database or container by RID) were rejected with `401 Unauthorized`. ([#4613](https://github.com/Azure/azure-sdk-for-rust/pull/4613))
 - Fixed duplicate items being returned on cross-partition query resume after a physical partition split. When a cross-partition query was paused, serialized to a continuation token, and resumed after the underlying partition had split, the resumed iterator could re-emit items the caller had already consumed on a prior page. The continuation token now records per-range sibling state and is correctly propagated to every surviving leaf after a split. ([#4550](https://github.com/Azure/azure-sdk-for-rust/pull/4550))
 
 ### Other Changes
