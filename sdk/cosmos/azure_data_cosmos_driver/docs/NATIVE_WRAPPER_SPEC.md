@@ -1263,244 +1263,214 @@ cosmos_error_code_t cosmos_partition_key_clone(
     cosmos_partition_key_t **out_clone);
 ```
 
-### 4.6 Operations (`src/handles/operation.rs`)
+### 4.6 Operations (`src/handles/operation.rs`, `src/op_request.rs`)
 
-This is the heart of the new wrapper. Operations mirror the `CosmosOperation` constructors in `src/models/cosmos_operation.rs`. Every constructor produces a heap-owned operation that the caller mutates with `with_*` shims and finally passes to `cosmos_driver_submit`.
+This is the heart of the new wrapper. All data-plane work flows through a
+single flat `cosmos_operation_request_t` that the host fills out in its own
+language and hands to one of the two submit entry points in §4.7. There is
+**no** per-operation factory or mutator surface: the operation kind, resource
+references, ids, partition key, feed range, body, per-call tweaks, and a
+pointer to `cosmos_operation_options_t` all ride on the one request struct.
+The wrapper validates the request, builds the driver's `CosmosOperation` +
+`OperationOptions` internally, and dispatches to the requested driver method.
 
-Naming convention: `cosmos_operation_<rust_constructor_name>`.
+Reference *handles* (`cosmos_account_ref_t`, `cosmos_container_ref_t`, the
+partition-key and feed-range handles) remain opaque handles, not flat data:
+they wrap `Arc`-shared Rust state that cannot be safely round-tripped as plain
+`#[repr(C)]` bytes.
 
-#### 4.6.1 Partition keys live on the factory, not on a mutator
+#### 4.6.1 `cosmos_operation_request_t` and `cosmos_operation_kind_t`
 
-Unlike the old wrapper, the driver's `CosmosOperation` does **not** carry a settable partition key. Partition keys are baked into the operation's underlying `ItemReference` at construction time (`src/models/resource_reference.rs:268`, `ItemReference::from_name(container, item_name, pk)`). The two operations that take a *container-level* partition key — `read_all_items(container, pk)` and `batch(container, pk)` — do so via their factory arguments. Accordingly, the wrapper **does not** expose a `cosmos_operation_with_partition_key` mutator. The partition key is supplied directly to every item / container-feed factory.
-
-**Factory signature template.** Every factory follows the normative §3.2 shape: returns `cosmos_error_code_t` and writes the allocated operation through `cosmos_operation_t **out_op`. This lets the factories report null-arg rejection (`COSMOS_ERROR_CODE_INVALID_ARGUMENT`), OOM on the internal `Box` allocation, invalid UTF-8 on `item_id`, etc., without resorting to a "poisoned handle" pattern. The earlier draft used bare-pointer returns and was changed here to keep the factory surface consistent with the rest of the ABI.
-
-```c
-/* Account-scope */
-cosmos_error_code_t cosmos_operation_create_database(
-    const cosmos_account_ref_t *account,
-    cosmos_operation_t **out_op);
-cosmos_error_code_t cosmos_operation_read_all_databases(
-    const cosmos_account_ref_t *account,
-    cosmos_operation_t **out_op);
-cosmos_error_code_t cosmos_operation_query_databases(
-    const cosmos_account_ref_t *account,
-    cosmos_operation_t **out_op);
-
-/* Database-scope */
-cosmos_error_code_t cosmos_operation_read_database(
-    const cosmos_database_ref_t *db,
-    cosmos_operation_t **out_op);
-cosmos_error_code_t cosmos_operation_delete_database(
-    const cosmos_database_ref_t *db,
-    cosmos_operation_t **out_op);
-cosmos_error_code_t cosmos_operation_create_container(
-    const cosmos_database_ref_t *db,
-    cosmos_operation_t **out_op);
-cosmos_error_code_t cosmos_operation_read_all_containers(
-    const cosmos_database_ref_t *db,
-    cosmos_operation_t **out_op);
-cosmos_error_code_t cosmos_operation_query_containers(
-    const cosmos_database_ref_t *db,
-    cosmos_operation_t **out_op);
-
-/* Container-scope */
-cosmos_error_code_t cosmos_operation_read_container(
-    const cosmos_container_ref_t *c, cosmos_operation_t **out_op);
-cosmos_error_code_t cosmos_operation_replace_container(
-    const cosmos_container_ref_t *c, cosmos_operation_t **out_op);
-cosmos_error_code_t cosmos_operation_delete_container(
-    const cosmos_container_ref_t *c, cosmos_operation_t **out_op);
-
-/* Single-partition feed read — mirrors CosmosOperation::read_all_items(c, pk). */
-cosmos_error_code_t cosmos_operation_read_all_items(
-    const cosmos_container_ref_t *c, const cosmos_partition_key_t *pk,
-    cosmos_operation_t **out_op);
-
-/* Cross-partition feed read — mirrors
- * CosmosOperation::read_all_items_cross_partition(c) at
- * src/models/cosmos_operation.rs:611. */
-cosmos_error_code_t cosmos_operation_read_all_items_cross_partition(
-    const cosmos_container_ref_t *c, cosmos_operation_t **out_op);
-
-/* Query — mirrors CosmosOperation::query_items(container, Option<FeedRange>)
- * at src/models/cosmos_operation.rs:625.
- *
- * The driver's query_items takes an optional FeedRange that targets a
- * specific physical partition (NULL = entire container, i.e. cross-partition);
- * it does NOT take a SQL string directly. The SQL query text and
- * parameters live in the operation's request body as JSON of shape
- *
- *     { "query": "SELECT * FROM c WHERE c.foo = @p", "parameters": [...] }
- *
- * and are attached via cosmos_operation_with_body() per the
- * schema-agnostic data-plane contract (G2). The wrapper does NOT JSON-encode
- * the query body — host SDKs build the bytes in their native serializer
- * exactly as they do for create / replace / upsert item bodies.
- *
- * Phase 5 ships this factory + body-attach pattern; Phase 8 wires the
- * resulting operation through the pager. */
-cosmos_error_code_t cosmos_operation_query_items(
-    const cosmos_container_ref_t *c,
-    const cosmos_feed_range_t *feed_range,    /* nullable — entire container */
-    cosmos_operation_t **out_op);
-
-/* Query plan — mirrors CosmosOperation::query_plan(container,
- * supported_query_features) at src/models/cosmos_operation.rs:639.
- *
- * NOTE: query_plan is NOT a SQL-execution entry point. It is a metadata
- * fetch that asks the gateway "given that the client can execute the
- * following query features, return a compatible query plan for this
- * container." The `supported_features_mask` is the comma-separated string
- * the driver sends as the `x-ms-cosmos-supported-query-features` header
- * (e.g. "OrderBy,TopAndLimit,Aggregate"). Most language SDKs never call
- * this directly — they execute queries via cosmos_operation_query_items
- * above and let the driver's pipeline decide whether a query plan is
- * needed. We expose it for parity with the driver's public surface;
- * cross-language SDKs that implement their own query-plan caching can
- * consume it. */
-cosmos_error_code_t cosmos_operation_query_plan_for_features(
-    const cosmos_container_ref_t *c,
-    const char *supported_features_mask,
-    cosmos_operation_t **out_op);
-
-/* Item-scope — partition key is baked into the underlying ItemReference at
- * construction (src/models/resource_reference.rs:268). */
-cosmos_error_code_t cosmos_operation_create_item(
-    const cosmos_container_ref_t *c, const char *item_id,
-    const cosmos_partition_key_t *pk, cosmos_operation_t **out_op);
-cosmos_error_code_t cosmos_operation_read_item(
-    const cosmos_container_ref_t *c, const char *item_id,
-    const cosmos_partition_key_t *pk, cosmos_operation_t **out_op);
-cosmos_error_code_t cosmos_operation_upsert_item(
-    const cosmos_container_ref_t *c, const char *item_id,
-    const cosmos_partition_key_t *pk, cosmos_operation_t **out_op);
-cosmos_error_code_t cosmos_operation_replace_item(
-    const cosmos_container_ref_t *c, const char *item_id,
-    const cosmos_partition_key_t *pk, cosmos_operation_t **out_op);
-cosmos_error_code_t cosmos_operation_delete_item(
-    const cosmos_container_ref_t *c, const char *item_id,
-    const cosmos_partition_key_t *pk, cosmos_operation_t **out_op);
-cosmos_error_code_t cosmos_operation_patch_item(
-    const cosmos_container_ref_t *c, const char *item_id,
-    const cosmos_partition_key_t *pk, cosmos_operation_t **out_op);
-
-/* Transactional batch — mirrors CosmosOperation::batch(c, pk) at
- * src/models/cosmos_operation.rs:549. Sub-operations are appended via the
- * batch builder (out of scope for the initial surface — see Phase 9). */
-cosmos_error_code_t cosmos_operation_batch(
-    const cosmos_container_ref_t *c, const cosmos_partition_key_t *pk,
-    cosmos_operation_t **out_op);
-
-/* Offer / throughput operations — mirror CosmosOperation::query_offers /
- * read_offer / replace_offer at src/models/cosmos_operation.rs:733/743/754.
- * These take an account ref because throughput offers are addressed by
- * resource link, not container ref. */
-cosmos_error_code_t cosmos_operation_query_offers(
-    const cosmos_account_ref_t *account, cosmos_operation_t **out_op);
-cosmos_error_code_t cosmos_operation_read_offer(
-    const cosmos_account_ref_t *account, const char *resource_link,
-    cosmos_operation_t **out_op);
-cosmos_error_code_t cosmos_operation_replace_offer(
-    const cosmos_account_ref_t *account, const char *resource_link,
-    cosmos_operation_t **out_op);
-```
-
-A minimal `cosmos_feed_range_t` builder surface (mirroring the driver's `FeedRange` constructors) is exposed under §4.6.4. NULL `feed_range` on `cosmos_operation_query_items` targets the entire container.
-
-The partition key passed to a factory is **cloned** into the operation — the caller retains ownership of its `cosmos_partition_key_t` and must `cosmos_partition_key_free` it independently.
-
-#### 4.6.2 Mutators
+The host fills out a single `#[repr(C)]` request struct. The `kind` field
+(a validated `cosmos_operation_kind_t` discriminant, stored as a raw `int32`
+and range-checked before dispatch — never transmuted) selects which driver
+`CosmosOperation` the wrapper builds; the remaining fields supply that kind's
+inputs. Fields irrelevant to the chosen kind must be left NULL / sentinel —
+strict validation rejects mismatches with `COSMOS_ERROR_CODE_INVALID_ARGUMENT`.
+All pointer fields are borrowed for the duration of the submit call only; the
+wrapper copies what it needs before returning.
 
 ```c
-/* Body — UTF-8 JSON bytes. Replaces any previously-set body.
- *
- * Lifetime: the wrapper COPIES the bytes into an internal driver-owned
- * buffer before returning. Once cosmos_operation_with_body returns SUCCESS
- * the caller is free to release / overwrite / unpin the source memory
- * immediately, including before the eventual cosmos_driver_submit and the
- * async completion. Rationale: this is the only contract that interoperates
- * cleanly with host-language GCs (pinned .NET buffers, Java DirectByteBuffer,
- * Go []byte, etc.) without forcing the caller to keep the source alive across
- * the whole submit→completion window. See §9 Q17 for the open question on
- * whether a future revision adds a zero-copy "borrow until completion" variant
- * (cosmos_operation_with_body_borrowed) backed by a driver-owned buffer pool. */
-cosmos_error_code_t cosmos_operation_with_body(
-    cosmos_operation_t *op, cosmos_bytes_view_t body);
+typedef struct cosmos_operation_request {
+    int32_t kind;                       /* cosmos_operation_kind_t discriminant */
 
-/* Request header — incremental. Each call appends one header to a builder
- * that is finalized into the driver's CosmosRequestHeaders at execute time.
- * (The driver's CosmosOperation::with_request_headers at
- * src/models/cosmos_operation.rs:140 takes a complete CosmosRequestHeaders
- * value and REPLACES the previous one — the wrapper accumulates incrementally
- * so the C ABI can stay header-at-a-time.) */
-cosmos_error_code_t cosmos_operation_with_request_header(
-    cosmos_operation_t *op, const char *name, const char *value);
+    /* Resource references — supply the one(s) the kind requires; else NULL. */
+    const cosmos_account_ref_t   *account;
+    const cosmos_database_ref_t  *database;
+    const cosmos_container_ref_t *container;
 
-/* Session token, activity id, max item count, populate index/query metrics —
- * mirror CosmosOperation::with_session_token / with_activity_id /
- * with_max_item_count / with_populate_index_metrics /
- * with_populate_query_metrics. */
-cosmos_error_code_t cosmos_operation_with_session_token(
-    cosmos_operation_t *op, const char *token);
-cosmos_error_code_t cosmos_operation_with_activity_id(
-    cosmos_operation_t *op, const char *activity_id_uuid);
-cosmos_error_code_t cosmos_operation_with_max_item_count(
-    cosmos_operation_t *op, int32_t max_item_count);
-cosmos_error_code_t cosmos_operation_with_populate_index_metrics(
-    cosmos_operation_t *op, bool enable);
-cosmos_error_code_t cosmos_operation_with_populate_query_metrics(
-    cosmos_operation_t *op, bool enable);
+    const char *item_id;                /* item-scope kinds; else NULL */
+    const char *resource_link;          /* offer kinds; else NULL */
 
-/* Precondition — the driver exposes a single
- * CosmosOperation::with_precondition(Precondition) at
- * src/models/cosmos_operation.rs:184, where Precondition is an enum with
- * IfMatch(etag) and IfNoneMatch(etag) variants (mutually exclusive). The
- * wrapper splits this into two convenience setters for C ergonomics, but the
- * underlying constraint stands: setting one precondition replaces any
- * previously-set precondition. Calling either setter while a precondition is
- * already configured returns COSMOS_ERROR_CODE_PRECONDITION_ALREADY_SET (4008)
- * so host SDKs catch accidental double-set rather than silently overwriting. */
-cosmos_error_code_t cosmos_operation_with_precondition_if_match(
-    cosmos_operation_t *op, const char *etag);
-cosmos_error_code_t cosmos_operation_with_precondition_if_none_match(
-    cosmos_operation_t *op, const char *etag);
+    const cosmos_partition_key_t *partition_key;  /* item / read_all_items / batch */
+    const cosmos_feed_range_t    *feed_range;     /* optional for query_items */
 
-/* Patch-only mutator — mirrors CosmosOperation::with_patch_max_attempts(NonZeroU8).
- * Wrapper validates max_attempts != 0 and rejects with
- * COSMOS_ERROR_CODE_INVALID_ARGUMENT. Calling this on a non-patch operation
- * returns COSMOS_ERROR_CODE_UNSUPPORTED_OPERATION_FOR_MUTATOR (4009). */
-cosmos_error_code_t cosmos_operation_with_patch_max_attempts(
-    cosmos_operation_t *op, uint8_t max_attempts);
+    cosmos_bytes_view_t body;           /* {NULL, 0} = no body */
 
-void cosmos_operation_free(cosmos_operation_t *op);  /* always safe — see §4.6.3 */
+    const char *session_token;          /* NULL = unset */
+    const char *activity_id;            /* NULL = auto-generate */
+    const char *continuation_token;     /* feed resume; NULL = none */
+
+    int32_t max_item_count;             /* < 0 = unset */
+    uint8_t patch_max_attempts;         /* 0 = unset */
+    int8_t  populate_index_metrics;     /* tri-state: 0 unset / 1 false / 2 true */
+    int8_t  populate_query_metrics;     /* tri-state */
+
+    int32_t     precondition_kind;      /* cosmos_precondition_kind_t discriminant */
+    const char *precondition_etag;      /* required iff precondition_kind != None */
+
+    const cosmos_operation_options_t *options;  /* NULL = driver/runtime defaults */
+} cosmos_operation_request_t;
 ```
 
-The wrapper deliberately does **not** expose a generic `cosmos_operation_with_partition_key` mutator (see §4.6.1). Calls that would mirror driver setters not listed above (e.g. `with_consistency_level`, `with_throughput_control_group_name`) live on `cosmos_operation_options_*` and are passed via the `options` argument to `cosmos_driver_submit`.
+`cosmos_operation_kind_t` is an append-only enum (new kinds get new trailing
+discriminants so the ABI stays stable). `0` (`Invalid`) is always rejected.
+The kinds and their required fields:
+
+| Kind (value) | Driver `CosmosOperation` | Required fields |
+|---|---|---|
+| `CreateDatabase` (1) | `create_database` | `account` + body |
+| `ReadAllDatabases` (2) | `read_all_databases` | `account` |
+| `QueryDatabases` (3) | `query_databases` | `account` + body |
+| `QueryOffers` (4) | `query_offers` | `account` + body |
+| `ReadOffer` (5) | `read_offer` | `account` + `resource_link` |
+| `ReplaceOffer` (6) | `replace_offer` | `account` + `resource_link` + body |
+| `ReadDatabase` (7) | `read_database` | `database` |
+| `DeleteDatabase` (8) | `delete_database` | `database` |
+| `CreateContainer` (9) | `create_container` | `database` + body |
+| `ReadAllContainers` (10) | `read_all_containers` | `database` |
+| `QueryContainers` (11) | `query_containers` | `database` + body |
+| `ReadContainer` (12) | `read_container` | `container` |
+| `ReplaceContainer` (13) | `replace_container` | `container` + body |
+| `DeleteContainer` (14) | `delete_container` | `container` |
+| `ReadAllItems` (15) | `read_all_items` | `container` + `partition_key` |
+| `ReadAllItemsCrossPartition` (16) | `read_all_items_cross_partition` | `container` |
+| `QueryItems` (17) | `query_items` | `container` + body; `feed_range` optional |
+| `Batch` (18) | `batch` | `container` + `partition_key` + body |
+| `CreateItem` (19) | `create_item` | `container` + `partition_key` + body |
+| `ReadItem` (20) | `read_item` | `container` + `partition_key` + `item_id` |
+| `UpsertItem` (21) | `upsert_item` | `container` + `partition_key` + body |
+| `ReplaceItem` (22) | `replace_item` | `container` + `partition_key` + `item_id` + body |
+| `DeleteItem` (23) | `delete_item` | `container` + `partition_key` + `item_id` |
+| `PatchItem` (24) | `patch_item` | `container` + `partition_key` + `item_id` + body |
+
+The query text / parameters for the `Query*` kinds live in `body` as JSON of
+shape `{ "query": "SELECT * FROM c WHERE c.foo = @p", "parameters": [...] }`,
+per the schema-agnostic data-plane contract — the wrapper does **not**
+JSON-encode it; host SDKs build the bytes in their native serializer exactly
+as they do for item bodies. A NULL `feed_range` on `QueryItems` targets the
+entire container (cross-partition).
+
+Partition keys are baked into the operation's underlying `ItemReference` at
+construction; there is no settable-partition-key mutator. The partition key /
+feed range / references in the request are **cloned** into the operation, so
+the caller retains ownership of its handles and must free each independently.
+
+#### 4.6.2 `cosmos_operation_options_t`
+
+Per-call options ride on `cosmos_operation_request_t.options` (NULL = use the
+driver/runtime defaults for every field). It is a flat `#[repr(C)]` mirror of
+the driver's `OperationOptions`, every field tri-state encoded so the host can
+distinguish "inherit from a lower layer" from an explicit value:
+
+- **enum fields** (`read_consistency_strategy`, `content_response_on_write`),
+  stored as raw `int32` and validated on conversion: `0` = unset (inherit),
+  other values map to the driver variant.
+- **tri-state bools** (`session_capturing_disabled`,
+  `per_partition_circuit_breaker_enabled`): `0` unset / `1` false / `2` true.
+- **`int32` numeric fields** (retry / circuit-breaker counters): `< 0` = unset.
+- **`int64` duration fields** (`*_ms`): `< 0` = unset, else milliseconds.
+- **string / array fields** (`throughput_control_group`, `excluded_regions`,
+  `custom_headers`): NULL / length `0` = unset.
+
+```c
+typedef struct cosmos_operation_options {
+    int32_t read_consistency_strategy;  /* cosmos_read_consistency_strategy_t; 0 = unset */
+    int32_t content_response_on_write;  /* cosmos_content_response_on_write_t; 0 = unset */
+    int8_t  session_capturing_disabled;                 /* tri-state */
+    int8_t  per_partition_circuit_breaker_enabled;      /* tri-state */
+    int32_t max_failover_retry_count;                   /* < 0 = unset */
+    int32_t max_session_retry_count;                    /* < 0 = unset */
+    int32_t circuit_breaker_failure_count_for_reads;    /* < 0 = unset */
+    int32_t circuit_breaker_failure_count_for_writes;   /* < 0 = unset */
+    int32_t circuit_breaker_timeout_counter_reset_window_in_minutes;         /* < 0 = unset */
+    int32_t allowed_partition_unavailability_duration_in_seconds;            /* < 0 = unset */
+    int32_t ppcb_stale_partition_unavailability_refresh_interval_in_seconds; /* < 0 = unset */
+    int64_t end_to_end_timeout_ms;                      /* < 0 = unset */
+    int64_t endpoint_unavailability_ttl_ms;             /* < 0 = unset */
+    const char        *throughput_control_group;        /* NULL = unset */
+    const char *const *excluded_regions;                /* NULL / len 0 = unset */
+    size_t             excluded_regions_len;
+    const cosmos_header_kv_t *custom_headers;           /* NULL / len 0 = none */
+    size_t                    custom_headers_len;
+} cosmos_operation_options_t;
+
+/* Returns an all-unset value by value; the host sets the fields it cares
+ * about and leaves the rest at their inherit sentinels. */
+cosmos_operation_options_t cosmos_operation_options_default(void);
+```
+
+The wrapper validates every field at the boundary when translating the struct
+into the driver's `OperationOptions` (out-of-range enum / tri-state
+discriminants return `COSMOS_ERROR_CODE_INVALID_OPTION_VALUE`; a non-NULL
+`excluded_regions` with length `0` is rejected as ambiguous). Driver setters
+without a dedicated field above (e.g. consistency level, throughput-control
+group name) are expressed through the corresponding option field rather than a
+per-operation mutator.
 
 #### 4.6.3 Submission and completion lifecycle — *normative*
 
-The driver's `execute_operation` takes the operation by value (move semantics on the Rust side). The C ABI cannot move out of a pointer, so the wrapper uses a sentinel pattern: `cosmos_operation_t*` is backed internally by `Box<Option<CosmosOperation>>`. The submit takes the inner `CosmosOperation` via `Option::take` and leaves the `Box` in place as a consumed sentinel.
+The request struct is **borrowed**, not consumed: both submit entry points
+read everything they need from `cosmos_operation_request_t` (copying owned
+bytes / strings, cloning the reference handles) before returning, so the host
+may free or reuse the request and all its inputs immediately after submit
+returns. There is no operation-builder handle to consume or free.
 
-Keep the two handles distinct:
+```c
+cosmos_operation_handle_t *cosmos_driver_execute_singleton_operation_submit(
+    const cosmos_driver_t *driver,
+    const cosmos_operation_request_t *request,    /* borrowed for the call only */
+    cosmos_cq_t *queue,
+    void *user_data,
+    cosmos_error_code_t *out_pre_error);
 
-- `cosmos_operation_t*` is the **builder / spec** (sync, in-memory, single-use, consumed on submit).
-- `cosmos_operation_handle_t*` is the **in-flight identity** (returned by submit, lives until `cosmos_operation_handle_free`; supports `_cancel` and `_state`; correlates to the completion record).
+cosmos_operation_handle_t *cosmos_driver_execute_operation_submit(
+    const cosmos_driver_t *driver,
+    const cosmos_operation_request_t *request,    /* borrowed for the call only */
+    cosmos_cq_t *queue,
+    void *user_data,
+    cosmos_error_code_t *out_pre_error);
+```
 
-They have no shared lifetime — freeing the `cosmos_operation_t*` right after submit is fine; the handle keeps its own internal references to the moved-out `CosmosOperation`.
+The contract (shared by both entry points; full response / accessor surface in §4.7):
 
-The full contract is:
-
-1. **`cosmos_operation_free` is always safe to call.** It is safe immediately after a successful submit (the sentinel is freed), after a pre-flight rejection (the operation is *not* consumed — see point 4), after multiple `_with_*` calls, and on a fresh handle that was never submitted. `cosmos_operation_free(NULL)` is a no-op.
-2. **`cosmos_operation_free` is idempotent only in the sense that the handle is then NULL on the caller side.** The wrapper does not track post-free use; double-free is undefined behavior, exactly as in the rest of the C ABI.
-3. **A second `cosmos_driver_submit` on a successfully-submitted handle fails its pre-flight with `COSMOS_ERROR_CODE_OPERATION_CONSUMED` (4005)** and returns NULL with that code in `*out_pre_error`. Mutator calls (`cosmos_operation_with_*`) on a consumed handle return the same error.
-4. **A submit whose pre-flight fails does NOT consume the operation handle.** The caller may inspect `*out_pre_error`, mutate the operation (e.g. attach a different body), and re-submit.
-5. **Runtime / service failures arrive on the completion queue and do consume the operation handle.** Once submit returned non-NULL, the inner `CosmosOperation` has been moved into the driver pipeline regardless of how the operation ultimately completes; the `cosmos_operation_t*` is in the consumed-sentinel state from that point onward. To retry after a runtime failure, rebuild the operation via a factory.
-6. **`cosmos_operation_t` is non-cloneable.** A host SDK that needs to retry must keep the inputs and rebuild via a factory.
+1. **Each successful submit posts exactly one completion** to `queue` — `OK`
+   (response), `ERROR` (rich error payload), or `CANCELLED` — and returns a
+   non-NULL `cosmos_operation_handle_t*`. The handle is the in-flight identity:
+   it supports `cosmos_operation_handle_cancel` / `_state` and lives until
+   `cosmos_operation_handle_free`, independent of the completion record.
+2. **A pre-flight rejection posts no completion.** When the driver / request is
+   NULL, the request fails validation, or the queue is shut down / at hard
+   capacity, the submit returns NULL and writes a coarse `cosmos_error_code_t`
+   to `*out_pre_error`. The host may fix the request and re-submit.
+3. **Request validation is strict and happens before any work is spawned.** An
+   out-of-range `kind` / `precondition_kind`, a missing required field for the
+   `kind`, or an out-of-range option discriminant is rejected with
+   `COSMOS_ERROR_CODE_INVALID_ARGUMENT` (or
+   `COSMOS_ERROR_CODE_INVALID_OPTION_VALUE`) before a Tokio task is spawned.
+4. **Use the right entry point.** Singleton submit is for single-result
+   operations (point ops, database / container / offer CRUD) and ignores the
+   inbound `continuation_token`; the feed submit is for paginated kinds
+   (queries, read-all, change feed) and threads the `continuation_token`
+   through the planner. Submitting a feed kind through the singleton entry
+   point makes the driver assert in debug and yields a
+   `CLIENT_SINGLETON_OPERATION_RETURNED_EMPTY_PAGE`-shaped error in release.
+5. **Retrying is just re-submitting** the same (or an adjusted) request; there
+   is no per-operation builder state to rebuild.
 
 #### 4.6.4 FeedRange handle
 
-`cosmos_operation_query_items` (and the Phase 8 pager-side query / read-feed surface that consumes the same operation) accept a `cosmos_feed_range_t *`. The handle mirrors the driver's `FeedRange` type (`src/models/feed_range.rs`) and is exposed through a minimal builder. The v1 surface matches the driver's **current public constructors** exactly; additional variants will be added as the driver's `FeedRange` grows.
+A `QueryItems` request's `feed_range` field accepts a `cosmos_feed_range_t *` (NULL targets the entire container). The handle mirrors the driver's `FeedRange` type (`src/models/feed_range.rs`) and is exposed through a minimal builder. The surface matches the driver's **current public constructors** exactly; additional variants will be added as the driver's `FeedRange` grows.
 
 ```c
 typedef struct cosmos_feed_range cosmos_feed_range_t;
@@ -1531,30 +1501,29 @@ void                cosmos_feed_range_free(cosmos_feed_range_t *fr);
 - A `FeedRange::new(min: EffectivePartitionKey, max: EffectivePartitionKey)` constructor exists on the driver (`feed_range.rs:71`) but takes a strongly-typed `EffectivePartitionKey`, not strings. The wrapper would need either a `cosmos_effective_partition_key_t` opaque type with `_from_hex` / `_min` / `_max` constructors, or a string-parsing helper on the driver side. Neither exists today, so `cosmos_feed_range_for_epk_range(min_hex, max_hex, ...)` is **not** part of v1.
 - The driver's internal `FeedRangeRepr` does **not** have a `PartitionKeyRangeId` variant — physical-partition routing happens at a different layer (PPAF/PPCB routing maps), not through `FeedRange`. The earlier draft's `cosmos_feed_range_for_partition_key_range(pkrange_id, ...)` is therefore **dropped** from v1.
 
-If a host SDK needs to resume a query from a continuation token (the typical EPK-range use case), Phase 8's `cosmos_pager_*` surface already covers that via the continuation-token round-trip on the pager handle — no `FeedRange` construction from the C side is required.
+If a host SDK needs to resume a query from a continuation token (the typical EPK-range use case), the feed submit (`cosmos_driver_execute_operation_submit`) already covers that via the `continuation_token` round-trip on `cosmos_operation_request_t` — no `FeedRange` construction from the C side is required.
 
 ### 4.7 Submission + response (`src/handles/response.rs`)
 
+All data-plane work flows through the two submit entry points from §4.6.3.
+Each takes a single flat `cosmos_operation_request_t` (no per-operation
+factory/mutator surface) and posts exactly one completion to the queue.
+
 ```c
-/* Single-shot submit — binds to CosmosDriver::execute_singleton_operation
- * (src/driver/cosmos_driver.rs:1281), which returns Result<CosmosResponse>
- * by collapsing the Option<CosmosResponse> returned by the underlying
- * execute_operation (src/driver/cosmos_driver.rs:1242,1246). If the inner
- * future yields Ok(None) (a feed page with no data on a non-feed request
- * path) the driver returns a generic CosmosError in release builds and
- * debug_asserts in debug; the wrapper detects this exact case and
- * re-classifies the completion as outcome = ERROR with status =
- * COSMOS_ERROR_CODE_FEED_EXHAUSTED (4007), preserving the rich error
- * payload for diagnostics. Use the pager submit below for feed-style
- * operations to avoid hitting this re-classification path.
+/* Single-result submit — binds to CosmosDriver::execute_singleton_operation.
+ * Use for point operations and database/container/offer CRUD (create / read /
+ * replace / delete / patch item, etc.). The inbound
+ * cosmos_operation_request_t.continuation_token is ignored on this path.
+ *
+ * If the driver unexpectedly yields Ok(None) for a mis-categorized singleton,
+ * the wrapper surfaces a CLIENT_SINGLETON_OPERATION_RETURNED_EMPTY_PAGE-shaped
+ * error rather than fabricating an empty response.
  *
  * Completion semantics:
  *   OK        — cosmos_completion_take_response returns the populated
- *               cosmos_response_t. The cosmos_operation_t* is in the
- *               consumed-sentinel state (see §4.6.3); the
- *               cosmos_operation_handle_t* remains valid for state polling
- *               (cosmos_operation_handle_state) until
- *               cosmos_operation_handle_free.
+ *               cosmos_response_t. The cosmos_operation_handle_t* remains
+ *               valid for state polling (cosmos_operation_handle_state)
+ *               until cosmos_operation_handle_free.
  *   ERROR     — cosmos_completion_take_error returns the rich payload
  *               (service / transport / client / authentication, etc.).
  *               cosmos_completion_status is the coarse code derived per
@@ -1564,140 +1533,75 @@ If a host SDK needs to resume a query from a continuation token (the typical EPK
  *               COSMOS_ERROR_CODE_OPERATION_CANCELLED (4012). See §3.6.3
  *               for the wrapper-layer drop-based implementation.
  *
- * Pre-flight rejection (NULL handle, queue shut down, operation already
- * consumed, queue at hard capacity, ...) returns NULL and writes a coarse
- * code to *out_pre_error; no completion is posted.
+ * Pre-flight rejection (NULL driver/request, malformed request, queue shut
+ * down, queue at hard capacity, ...) returns NULL and writes a coarse code
+ * to *out_pre_error; no completion is posted.
  */
-cosmos_operation_handle_t *cosmos_driver_submit(
+cosmos_operation_handle_t *cosmos_driver_execute_singleton_operation_submit(
     const cosmos_driver_t *driver,
-    cosmos_operation_t *op,                       /* consumed on successful submit */
-    const cosmos_operation_options_t *options,    /* nullable */
+    const cosmos_operation_request_t *request,    /* borrowed for the call only */
     cosmos_cq_t *queue,
     void *user_data,
     cosmos_error_code_t *out_pre_error);
 
-/* Feed / query submit — produces a wrapper-owned `cosmos_pager_t` that
- * iterates the result set one page at a time.
+/* Feed-capable / paginated submit — binds to plan_operation + execute_plan.
+ * Use for queries, read-all-items, and change feed. It resumes from an
+ * inbound cosmos_operation_request_t.continuation_token and surfaces the
+ * next-page token via cosmos_response_next_continuation on the completion
+ * response.
  *
- * Important: the driver crate does NOT expose a `Pager` / `PageStream`
- * type. Its native pagination primitive is the pair (OperationPlan,
- * execute_plan) — the caller builds an OperationPlan via
- * CosmosDriver::plan_operation (which captures the original Operation,
- * container, OperationOptions, and resolved query plan) and then re-calls
- * CosmosDriver::execute_plan(&mut plan) per page until execute_plan
- * returns Ok(None) (feed exhausted) or Err (terminal error).
+ * There is no wrapper-side pager type: the driver's native pagination
+ * primitive is (OperationPlan, execute_plan), and the wrapper threads the
+ * continuation token through it per call. Host SDKs iterate a feed by
+ * re-submitting the same request with continuation_token set to the previous
+ * response's next-continuation, stopping when no next token is returned.
  *
- * `cosmos_pager_t` is therefore a wrapper-side opaque type that owns:
- *   - The OperationPlan (mutable; advanced in place per page).
- *   - The originating CosmosDriver handle (Arc-cloned).
- *   - The cosmos_cq_t reference + per-page user_data slot.
- *
- * Submission flow:
- *   1. `cosmos_driver_submit_pager` posts an initial completion whose
- *      response carries the pager handle (via cosmos_response_take_pager).
- *      No data page is fetched yet — the initial completion only signals
- *      that planning succeeded.
- *   2. `cosmos_pager_next_submit` schedules the next `execute_plan` call;
- *      its completion carries the page response (outcome = OK) or
- *      FEED_EXHAUSTED (outcome = ERROR, status 4007) on drain.
- *   3. Pages are strictly sequential — the wrapper does NOT prefetch the
- *      next page while the current one is being consumed. Host SDKs that
- *      want pipelining must issue independent pagers, not multiple
- *      _next_submit calls against a single pager (a second _next_submit
- *      before the first completes is rejected pre-flight with
- *      OPERATION_CONSUMED (4005)).
- *
- * See Phase 8 in §8 for rollout, and §9 Q9 for the continuation-token
- * re-entry contract (resuming a pager from a saved continuation token).
+ * Completion semantics match the singleton submit above.
  */
-cosmos_operation_handle_t *cosmos_driver_submit_pager(
+cosmos_operation_handle_t *cosmos_driver_execute_operation_submit(
     const cosmos_driver_t *driver,
-    cosmos_operation_t *op,                       /* consumed on successful submit */
-    const cosmos_operation_options_t *options,    /* nullable */
+    const cosmos_operation_request_t *request,    /* borrowed for the call only */
     cosmos_cq_t *queue,
     void *user_data,
     cosmos_error_code_t *out_pre_error);
 
-/* Take ownership of the pager from the initial pager submission's
- * completion-response. Returns NULL on a non-pager response or after a
- * previous _take_pager. */
-cosmos_pager_t *cosmos_response_take_pager(cosmos_response_t *r);
+/* Response accessors — all O(1), borrowed pointers valid until
+ * cosmos_response_free. String accessors return the pointer directly
+ * (NULL when the field is absent), not via an out-parameter. */
+uint16_t     cosmos_response_status_code(const cosmos_response_t *r);
+double       cosmos_response_request_charge(const cosmos_response_t *r);
+const char  *cosmos_response_activity_id(const cosmos_response_t *r);
+const char  *cosmos_response_session_token(const cosmos_response_t *r);
+const char  *cosmos_response_etag(const cosmos_response_t *r);
 
-/* Schedule the next page. Same async semantics as cosmos_driver_submit —
- * returns a fresh cosmos_operation_handle_t whose completion lands on the
- * pager's bound queue with the page response (or FEED_EXHAUSTED). The
- * pager is NOT consumed; subsequent _next_submit calls advance it
- * further. */
-cosmos_operation_handle_t *cosmos_pager_next_submit(
-    cosmos_pager_t *pager,
-    void *user_data,
-    cosmos_error_code_t *out_pre_error);
+/* Raw server-header continuation (valid only for trivial single-partition
+ * reads). For paginating a feed submitted via
+ * cosmos_driver_execute_operation_submit, prefer
+ * cosmos_response_next_continuation below. */
+const char  *cosmos_response_continuation_token(const cosmos_response_t *r);
 
-/* Free a pager. If a _next_submit is currently in flight, blocks until
- * that single page completes (analogous to cosmos_cq_free vs. an in-flight
- * op). The pager's bound queue is NOT freed. */
-void cosmos_pager_free(cosmos_pager_t *pager);
+/* Planner-derived next-page token for a feed page produced by
+ * cosmos_driver_execute_operation_submit, or NULL on the last page / a
+ * non-feed response. Pass it back as
+ * cosmos_operation_request_t.continuation_token to fetch the following page,
+ * including for cross-partition queries. */
+const char  *cosmos_response_next_continuation(const cosmos_response_t *r);
 
-/* Response accessors — all O(1), do not allocate unless noted */
-uint16_t cosmos_response_status_code(const cosmos_response_t *r);
-double   cosmos_response_request_charge(const cosmos_response_t *r);
-cosmos_error_code_t cosmos_response_activity_id(
-    const cosmos_response_t *r, const char **out_str);  /* borrowed, valid until free */
-cosmos_error_code_t cosmos_response_session_token(
-    const cosmos_response_t *r, const char **out_str_or_null);
-cosmos_error_code_t cosmos_response_etag(
-    const cosmos_response_t *r, const char **out_str_or_null);
-cosmos_error_code_t cosmos_response_continuation_token(
-    const cosmos_response_t *r, const char **out_str_or_null);
+/* Body access — zero-copy borrowed view valid until cosmos_response_free.
+ * Writes a NULL pointer + 0 length when the body is empty. For multi-part
+ * feed bodies (driver's ResponseBody::Items) this returns the first part
+ * only. */
+cosmos_error_code_t cosmos_response_body(
+    const cosmos_response_t *r,
+    const uint8_t **out_data,
+    size_t *out_len);
 
-/* Typed-header accessors. Per PR #4401 (merged), the driver's ResponseHeaders
- * is a typed struct of ~27 named Option<...> fields (e.g. x_ms_session_token,
- * x_ms_continuation, etag, last_state_change_utc, content_path) — NOT a
- * generic name/value map. The wrapper therefore exposes one accessor per
- * known header; the original cosmos_response_iter_headers visitor pattern
- * (replaced here) cannot be supported because there is no name/value
- * iteration API on the underlying struct.
- *
- * Each accessor returns COSMOS_ERROR_CODE_SUCCESS and writes a borrowed
- * NUL-terminated UTF-8 pointer (valid until the response is freed) on
- * presence; writes NULL on absence. Numeric / boolean headers return a
- * parsed value via dedicated accessors as needed.
- *
- * The activity-id / session-token / etag / continuation-token accessors
- * above are the high-traffic four; the rest follow the same shape and are
- * added as host SDKs need them:
- *   cosmos_response_x_ms_request_charge_units(...)
- *   cosmos_response_x_ms_resource_quota(...)
- *   cosmos_response_x_ms_resource_usage(...)
- *   cosmos_response_x_ms_retry_after_ms(...)
- *   cosmos_response_x_ms_alt_content_path(...)
- *   cosmos_response_content_path(...)
- *   cosmos_response_last_state_change_utc(...)
- *   ... etc. (see ResponseHeaders for the authoritative list)
- *
- * NOTE: Unknown response headers are dropped at parse time by the driver
- * (ResponseHeaders has no catch-all "other" field). Host SDKs that need
- * forward-compat over future Cosmos headers must wait for a driver-side
- * extension; the wrapper cannot synthesize what the driver discarded. See
- * §9 Q2 for the open decision on whether/how to expose a passthrough.
- */
-
-/* Body access — zero-copy view valid for the response's lifetime.
- * NOTE: For multi-part feed responses (ResponseBody::Items) this returns the
- * first part's bytes only; the multi-part case is exposed via a dedicated
- * cosmos_response_iter_items API to be added with Phase 8. See §9 Q4. */
-cosmos_bytes_view_t cosmos_response_body(const cosmos_response_t *r);
-
-/* Or, take ownership of the body and free the response shell. The returned
- * cosmos_bytes_t is an opaque handle (see §3.3); free with cosmos_bytes_free. */
-cosmos_error_code_t cosmos_response_into_body(
-    cosmos_response_t *r,            /* freed by this call */
-    cosmos_bytes_t **out_body);
-
-/* Diagnostics handle (Arc-cloned). Mirrors CosmosResponse::diagnostics()
- * at src/models/cosmos_response.rs:109. Caller must free via
- * cosmos_diagnostics_free. */
-cosmos_diagnostics_t *cosmos_response_diagnostics(const cosmos_response_t *r);
+/* Side-payload take accessors for the degenerate responses produced by the
+ * bootstrap / control-plane submits (cosmos_driver_get_or_create_submit /
+ * cosmos_driver_resolve_container_submit). Each returns NULL on any other
+ * response, on NULL input, or after a previous take. */
+cosmos_driver_t        *cosmos_response_take_driver(cosmos_response_t *r);
+cosmos_container_ref_t *cosmos_response_take_container(cosmos_response_t *r);
 
 void cosmos_response_free(cosmos_response_t *r);
 ```
@@ -1799,12 +1703,12 @@ The wrapper's contract is shaped by that decision:
 
 ### 6.1 Return-type mapping
 
-- `cosmos_driver_submit` binds to `CosmosDriver::execute_singleton_operation` (`src/driver/cosmos_driver.rs:1281`), which returns `Result<CosmosResponse>` by collapsing the `Option<CosmosResponse>` returned by `execute_operation` (`src/driver/cosmos_driver.rs:1242,1246`). The submission returns a `cosmos_operation_handle_t*`; the eventual completion delivers one of three outcomes:
+- `cosmos_driver_execute_singleton_operation_submit` binds to `CosmosDriver::execute_singleton_operation`, which returns `Result<CosmosResponse>` by collapsing the `Option<CosmosResponse>` returned by `execute_operation`. The submission returns a `cosmos_operation_handle_t*`; the eventual completion delivers one of three outcomes:
   - **`Ok(CosmosResponse)`** → completion outcome = OK, `cosmos_completion_take_response` returns the populated `cosmos_response_t`. The response may itself carry a Cosmos non-success HTTP status (404, 409, 412, 429, ...) only when the driver's policy explicitly does not error on it — see §6.2 below.
-  - **`Err(CosmosError)`** → completion outcome = ERROR, `cosmos_completion_status` returns the mapped `cosmos_error_code_t` (see §6.3), `cosmos_completion_take_error` returns the structured `cosmos_error_t`. The operation handle is consumed regardless (see §4.6.3).
-  - **`execute_singleton_operation` is never expected to surface the `Ok(None)` case**; if the underlying operation is mis-categorized and the driver hands back `None`, the wrapper synthesizes a completion with outcome = ERROR and `cosmos_completion_status = COSMOS_ERROR_CODE_FEED_EXHAUSTED` (4007) for diagnosability rather than fabricating an empty response.
+  - **`Err(CosmosError)`** → completion outcome = ERROR, `cosmos_completion_status` returns the mapped `cosmos_error_code_t` (see §6.3), `cosmos_completion_take_error` returns the structured `cosmos_error_t`.
+  - **`execute_singleton_operation` is never expected to surface the `Ok(None)` case**; if the underlying operation is mis-categorized and the driver hands back `None`, the wrapper surfaces a `CLIENT_SINGLETON_OPERATION_RETURNED_EMPTY_PAGE`-shaped error rather than fabricating an empty response.
 
-- `cosmos_driver_submit_pager` binds to `execute_operation` directly and surfaces `Ok(None)` as `COSMOS_ERROR_CODE_FEED_EXHAUSTED` on the *pager* completion, not the initial submit completion — see Phase 8.
+- `cosmos_driver_execute_operation_submit` (the feed-capable / paginated path) binds to `plan_operation` + `execute_plan`. It resumes from an inbound `cosmos_operation_request_t.continuation_token` and surfaces the next-page token via `cosmos_response_next_continuation`. Host SDKs paginate by re-submitting the same request with `continuation_token` set to the previous response's next-continuation, stopping once no next token is returned.
 
 ### 6.2 Service errors vs. successful "non-2xx" responses
 
