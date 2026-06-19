@@ -4,12 +4,12 @@
 //! C ABI surface for `cosmos_account_ref_t` — wraps the driver's
 //! [`azure_data_cosmos_driver::models::AccountReference`].
 //!
-//! Phase 3 ships only the master-key path. Token-credential
+//! The wrapper currently ships only the master-key path. Token-credential
 //! (`AccountReference::with_credential`) and resource-token paths require an
 //! FFI bridge for `Arc<dyn TokenCredential>` (an async trait whose
 //! implementations live in `azure_identity`) — bridging an arbitrary C-side
 //! async credential through FFI is non-trivial and is intentionally
-//! deferred to a Phase 3+ follow-up.
+//! deferred to a follow-up.
 //!
 //! Construction validates the endpoint URL up-front; a parse failure
 //! surfaces [`CosmosErrorCode::CosmosErrorCodeInvalidAccountReference`]

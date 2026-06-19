@@ -1,4 +1,3 @@
-azurecosmosdriver
 bindgen
 cbindgen
 cfg

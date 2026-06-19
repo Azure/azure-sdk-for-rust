@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// Phase 4 — partition-key builder & accessors.
+// Partition-key builder & accessors.
 //
-// Covers the C surface of every Phase 4 entry point:
+// Covers the C surface of every partition-key entry point:
 //
 //   1. Lifecycle & NULL-safety on every `_free`.
 //   2. Each value kind (`_add_string`, `_add_number`, `_add_bool`,
@@ -26,7 +26,7 @@ static int test_lifecycle_null_safe(void)
     int result = TEST_PASS;
     cosmos_partition_key_builder_free(NULL);
     cosmos_partition_key_free(NULL);
-    ASSERT(1, "Phase 4 _free entry points NULL-safe");
+    ASSERT(1, "_free entry points NULL-safe");
     return result;
 }
 
@@ -311,7 +311,7 @@ cleanup:
     return result;
 }
 
-TEST_SUITE_BEGIN("Phase 4 — Partition Key Builder")
+TEST_SUITE_BEGIN("Partition Key Builder")
 TEST_REGISTER(lifecycle_null_safe)
 TEST_REGISTER(empty_pk_accessor_roundtrip)
 TEST_REGISTER(accessors_handle_null)
@@ -325,4 +325,4 @@ TEST_REGISTER(setters_reject_null_builder)
 TEST_REGISTER(add_string_rejects_null_value)
 TEST_REGISTER(clone_roundtrip)
 TEST_REGISTER(build_rejects_null_arguments)
-TEST_SUITE_END("Phase 4 — Partition Key Builder")
+TEST_SUITE_END("Partition Key Builder")

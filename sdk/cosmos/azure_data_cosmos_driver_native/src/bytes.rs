@@ -6,8 +6,8 @@
 //! Per §3.3 of the spec, the wrapper distinguishes two byte-buffer shapes:
 //!
 //! - **`cosmos_bytes_view_t`** — a caller-owned by-value view, layout
-//!   published. Used as **input** to the library. Defined in §3.3; not
-//!   implemented in Phase 0 because no entry point consumes one yet.
+//!   published. Used as **input** to the library. Defined in §3.3; not yet
+//!   implemented because no entry point consumes one yet.
 //! - **`cosmos_bytes_t`** — a library-owned opaque handle backing
 //!   heap-allocated bytes that the library returns. The internal
 //!   representation is intentionally NOT published so the storage can evolve
@@ -16,8 +16,7 @@
 //!
 //! This module ships only the opaque output type and its three accessors:
 //! [`cosmos_bytes_data`], [`cosmos_bytes_len`], and [`cosmos_bytes_free`].
-//! The first caller of [`cosmos_bytes_data`] will be the response/body
-//! surface in Phase 6.
+//! The first caller of [`cosmos_bytes_data`] is the response/body surface.
 
 use std::os::raw::c_void;
 
@@ -37,8 +36,8 @@ pub struct CosmosBytes {
 /// pointer suitable for handing back across the C ABI.
 ///
 /// This is an internal-only helper — it is not exposed via `#[no_mangle]`.
-/// Phase 6 will use it from the response body surface.
-#[allow(dead_code, reason = "first caller arrives in Phase 6 (response body)")]
+/// The response body surface uses it.
+#[allow(dead_code, reason = "first caller is the response body surface")]
 pub(crate) fn into_raw_bytes(buf: Vec<u8>) -> *mut CosmosBytes {
     let boxed = Box::new(buf);
     Box::into_raw(boxed) as *mut CosmosBytes

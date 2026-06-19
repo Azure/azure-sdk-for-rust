@@ -21,35 +21,19 @@ binding language.
 - A small C test harness under [c_tests/](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/cosmos/azure_data_cosmos_driver_native/c_tests) driven by CMake +
   [corrosion](https://github.com/corrosion-rs/corrosion).
 
-## Rollout status
+## Status
 
-This crate is being built up phase-by-phase per
-[§8 of the spec](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md).
-
-| Phase | Status | Surface |
-|---|---|---|
-| 0 — scaffolding | ✅ | `cosmos_version`, `cosmos_string_free`, `cosmos_bytes_*` |
-| 1 — error + async primitives | ✅ | 34-variant `CosmosErrorCode`, opaque `cosmos_error_t` (8 accessors + 16 predicates), `cosmos_cq_*`, `cosmos_completion_*`, `cosmos_operation_handle_*` |
-| 2 — runtime builder | ✅ | `cosmos_runtime_builder_*` (5 primitive setters + build) |
-| 3 — account + driver | ✅ | `cosmos_account_ref_with_master_key`, `cosmos_database_ref_*`, `cosmos_driver_options_builder_*`, `cosmos_driver_get_or_create_blocking` |
-| 4 — partition keys | ✅ | `cosmos_partition_key_builder_*` (5 value kinds, hierarchical, `_empty`) |
-| 5 — operation request + options structs | ✅ | Flat `cosmos_CosmosOperationRequest` (kind-tagged via `cosmos_CosmosOperationKind`, 25 variants) + tri-state `cosmos_CosmosOperationOptions` (all 16 `OperationOptions` fields), seeded by `cosmos_operation_options_default` |
-| 6 — submit + response | ✅ | `cosmos_driver_execute_operation_submit` (feeds + pagination) and `cosmos_driver_execute_singleton_operation_submit` (point ops), `cosmos_driver_get_or_create_submit`, `cosmos_driver_resolve_container_*`, `cosmos_response_*`, `cosmos_feed_range_*` |
-| 7 — diagnostics | ⏳ | `cosmos_diagnostics_*` accessors + `cosmos_response_diagnostics` |
-| 8 — pagination | ⏳ | `cosmos_pager_*`, multi-part body iterator, EPK feed-range variants |
-| 9 — patch + transactional batch | ⏳ | Patch instruction builder, batch sub-operation appender |
-| 10 — optional advanced | ⏳ | Fault injection, in-memory emulator transport, tracing |
-
-**After Phase 6 the wrapper supports end-to-end CRUD against a real Cosmos
-account.** Remaining phases are pure surface-area additions on top of a
-functional core.
+The wrapper supports end-to-end CRUD against a real Cosmos account. The
+remaining items below are surface-area additions on top of a functional core.
+See [the spec](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md)
+for the full design.
 
 ### Capability matrix (current)
 
 | Capability | Status |
 |---|---|
 | Master-key authentication | ✅ |
-| Token-credential / resource-token authentication | ⏳ Phase 3+ follow-up (needs `TokenCredential` FFI bridge) |
+| Token-credential / resource-token authentication | ⏳ follow-up (needs `TokenCredential` FFI bridge) |
 | Sync driver creation (`_blocking`) | ✅ |
 | Async driver creation (`_submit`) | ✅ |
 | Cache-hit advisory (`5001 OPTIONS_IGNORED_ON_CACHE_HIT`) | ⏳ needs driver-side `was_cached` signal |
@@ -61,16 +45,16 @@ functional core.
 | `cosmos_driver_execute_singleton_operation_submit` (point ops) | ✅ |
 | `cosmos_driver_execute_operation_submit` (feeds + pagination) | ✅ |
 | Response status / RU / body / activity-id / session-token / etag / continuation | ✅ |
-| Pagination (read-feeds + query result sets) | ⏳ Phase 8 |
-| Multi-part response body iteration | ⏳ Phase 8 |
-| Diagnostics accessors | ⏳ Phase 7 |
-| Patch instruction builder | ⏳ Phase 9 |
-| Transactional batch sub-operation builder | ⏳ Phase 9 |
+| Pagination (read-feeds + query result sets) | ⏳ planned |
+| Multi-part response body iteration | ⏳ planned |
+| Diagnostics accessors | ⏳ planned |
+| Patch instruction builder | ⏳ planned |
+| Transactional batch sub-operation builder | ⏳ planned |
 | Custom per-operation request headers | ✅ via `cosmos_CosmosOperationOptions.custom_headers` (array of `cosmos_CosmosHeaderKv`) |
 
 ## Building
 
-```pwsh
+```bash
 # Rust side (produces the cdylib / staticlib and regenerates the header).
 cargo build --release -p azure_data_cosmos_driver_native
 
@@ -722,7 +706,7 @@ if __name__ == "__main__":
    their source buffer immediately.
 6. **Diagnostics-on-error** is currently only available via the rich
    `cosmos_error_t` on `outcome == ERROR` completions. The success-path
-   `cosmos_response_diagnostics` accessor lands in Phase 7.
+   `cosmos_response_diagnostics` accessor is a planned follow-up.
 7. **Single-runtime caching.** Drivers are cached by endpoint URL on the
    `cosmos_runtime_t` that created them. Multiple `cosmos_runtime_t`
    instances do **not** share their caches — see

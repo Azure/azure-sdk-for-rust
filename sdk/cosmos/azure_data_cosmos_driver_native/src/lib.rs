@@ -9,10 +9,6 @@
 //! design is fully specified in [`docs/NATIVE_WRAPPER_SPEC.md`] in the driver
 //! crate, with a picture-first overview in [`docs/ASYNC_INVOCATION_ARCHITECTURE.md`].
 //!
-//! Phase 0 of the rollout ships only the bare scaffolding: a version probe, a
-//! string allocator/deallocator pair, and a bytes allocator/deallocator pair.
-//! Everything else is added in later phases.
-//!
 //! [`azure_data_cosmos_driver`]: https://docs.rs/azure_data_cosmos_driver
 //! [`docs/NATIVE_WRAPPER_SPEC.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md
 //! [`docs/ASYNC_INVOCATION_ARCHITECTURE.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/ASYNC_INVOCATION_ARCHITECTURE.md

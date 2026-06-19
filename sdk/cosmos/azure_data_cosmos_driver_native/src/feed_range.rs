@@ -25,12 +25,8 @@ use crate::error::CosmosErrorCode;
 use crate::partition_key::PartitionKeyHandle;
 
 pub(crate) struct FeedRangeInner {
-    /// First non-test consumer arrives later in Phase 6 (the
-    /// `cosmos_operation_query_items` factory).
-    #[allow(
-        dead_code,
-        reason = "consumed by cosmos_operation_query_items in the same phase"
-    )]
+    /// Consumed by the `query_items` request path.
+    #[allow(dead_code, reason = "consumed by the query_items request path")]
     pub(crate) inner: DriverFeedRange,
 }
 

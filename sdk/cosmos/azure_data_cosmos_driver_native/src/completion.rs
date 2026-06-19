@@ -16,9 +16,9 @@
 //! lock around the consumer-side dequeue beyond the queue's own mutex);
 //! calling from two threads simultaneously is undefined behavior. See §9 Q12.
 //!
-//! Phase 1 ships the full FFI surface plus internal test-only helpers
+//! The crate ships the full FFI surface plus internal test-only helpers
 //! ([`__test_only_enqueue_completion`]) so the receive-loop contract can be
-//! validated end-to-end before Phase 6 wires the real submit pipeline.
+//! validated end-to-end independently of the real submit pipeline.
 
 use std::collections::VecDeque;
 use std::ffi::c_void;
@@ -190,10 +190,7 @@ impl OperationHandle {
     }
 
     /// Build a fresh handle that shares the inner state of an existing handle.
-    #[allow(
-        dead_code,
-        reason = "first caller arrives in Phase 6 (submit pipeline)"
-    )]
+    #[allow(dead_code, reason = "first caller is the submit pipeline")]
     fn clone_arc(p: *const OperationHandle) -> Option<*mut OperationHandle> {
         let storage = Self::storage(p)?;
         let companion = Box::new(OperationHandleStorage {
@@ -229,10 +226,9 @@ impl OperationHandle {
 
 /// Internal storage of a `cosmos_completion_t`.
 ///
-/// Phase 1 carried no response payload; Phase 6 adds the optional
-/// `response` slot which `cosmos_completion_take_response` detaches
-/// from. The slot is `None` on every error / cancelled completion and
-/// on every Phase 1 test-synthesized completion.
+/// The optional `response` slot (which `cosmos_completion_take_response`
+/// detaches from) is `None` on every error / cancelled completion and on
+/// every test-synthesized completion.
 pub struct Completion {
     outcome: CosmosCompletionOutcome,
     status: CosmosErrorCode,
@@ -258,7 +254,7 @@ pub struct Completion {
     /// against a `None` slot.
     error: Mutex<Option<Arc<CosmosErrorInner>>>,
     /// Detachable response. Populated only on `OK` completions emitted
-    /// by Phase 6 submit paths; absent on every other completion.
+    /// by the submit paths; absent on every other completion.
     /// `cosmos_completion_take_response` moves the contained handle out
     /// (subsequent calls return NULL).
     pub(crate) response: Mutex<Option<*mut crate::response::ResponseHandle>>,
@@ -336,10 +332,10 @@ struct QueueInner {
     state: CosmosCqState,
 }
 
-/// Per-queue options. Mirrors `cosmos_cq_options_t` from spec §3.1.2 — Phase
-/// 1 honors `max_capacity` and `include_error_details`; `capacity_hint` is
-/// recorded but currently does not trigger any diagnostic (Phase 7 adds the
-/// one-shot warning when the soft hint is exceeded).
+/// Per-queue options. Mirrors `cosmos_cq_options_t` from spec §3.1.2 — the
+/// queue honors `max_capacity` and `include_error_details`; `capacity_hint`
+/// is recorded but currently does not trigger any diagnostic (a one-shot
+/// warning when the soft hint is exceeded is a follow-up).
 #[derive(Clone, Copy, Debug)]
 pub struct CqOptions {
     pub capacity_hint: u32,
@@ -391,8 +387,8 @@ pub(crate) struct CompletionQueueInner {
     /// producer waiting on `_wait_writable` can wake).
     space_available: Condvar,
     options: CqOptions,
-    /// Keep the runtime alive for the queue's lifetime. Phase 6's
-    /// submit pipeline clones this Arc to spawn per-operation tasks.
+    /// Keep the runtime alive for the queue's lifetime. The submit pipeline
+    /// clones this Arc to spawn per-operation tasks.
     pub(crate) runtime: Arc<RuntimeContextInner>,
 }
 
@@ -574,11 +570,9 @@ pub extern "C" fn cosmos_cq_create(
 
 /// Free a completion queue. NULL is a no-op.
 ///
-/// Phase 1 contract: no Tokio-side producers spawn against the queue, so
-/// "blocks until in-flight ops drain" is trivially satisfied. The check
-/// remains in place so the contract documented in spec §3.1.2 is observable:
-/// if anyone enqueued completions but never drained, this drops them (and
-/// thus their `Box`-allocated `Completion`s).
+/// The "blocks until in-flight ops drain" contract from spec §3.1.2 is
+/// observable here: if anyone enqueued completions but never drained, this
+/// drops them (and thus their `Box`-allocated `Completion`s).
 #[no_mangle]
 pub extern "C" fn cosmos_cq_free(queue: *mut CompletionQueue) {
     if queue.is_null() {
@@ -592,9 +586,9 @@ pub extern "C" fn cosmos_cq_free(queue: *mut CompletionQueue) {
 #[no_mangle]
 pub extern "C" fn cosmos_cq_runtime(queue: *const CompletionQueue) -> *const RuntimeContext {
     // NB: returning the inner Arc as a `*const RuntimeContext` would require
-    // a stable wrapping box. Phase 1 returns NULL because we don't keep a
+    // a stable wrapping box. This returns NULL because we don't keep a
     // back-pointer to the producer's `RuntimeContext` box (we only retain the
-    // inner `Arc`). Phase 2 revisits this when the runtime builder lands.
+    // inner `Arc`).
     let _ = queue;
     std::ptr::null()
 }
@@ -791,8 +785,8 @@ pub extern "C" fn cosmos_cq_wait_writable(queue: *mut CompletionQueue, timeout_m
     }
 }
 
-/// Signal shutdown: marks the queue as shutting down, cancels in-flight ops
-/// (Phase 1 has none from public API), and wakes any thread blocked in
+/// Signal shutdown: marks the queue as shutting down, cancels in-flight ops,
+/// and wakes any thread blocked in
 /// `cosmos_cq_wait` / `_wait_writable` / `_wait_batch`. Idempotent.
 #[no_mangle]
 pub extern "C" fn cosmos_cq_shutdown(queue: *mut CompletionQueue) {
@@ -1054,14 +1048,12 @@ pub extern "C" fn cosmos_operation_handle_free(op: *mut OperationHandle) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Test-only helpers
 //
-// Phase 6 replaces these with the real submit pipeline. For Phase 1 they let
-// integration tests synthesize completions end-to-end.
+// These let integration tests synthesize completions end-to-end without the
+// real submit pipeline.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Test-only: allocate a new operation handle, returning the producer-side
 /// raw pointer.
-///
-/// Phase 6 replaces with the real `cosmos_driver_submit` pipeline.
 #[doc(hidden)]
 pub fn __test_only_create_operation_handle() -> *mut OperationHandle {
     OperationHandle::new_raw()
@@ -1123,8 +1115,8 @@ mod tests {
         };
         let q = cosmos_cq_create(rt, &opts as *const _);
         // Runtime is held internally via Arc; we can free the producer-side
-        // handle right away. Phase 2 introduces the public builder which makes
-        // this rebinding ergonomic.
+        // handle right away. The public builder makes this rebinding
+        // ergonomic.
         crate::runtime::cosmos_runtime_free(rt);
         q
     }

@@ -4,18 +4,17 @@
 //! C ABI surface for `cosmos_database_ref_t` — wraps the driver's
 //! [`azure_data_cosmos_driver::models::DatabaseReference`].
 //!
-//! Phase 3 ships only the name-based constructor (`DatabaseReference::
-//! from_name`). The RID-based constructor (`from_rid`) is mechanically
-//! identical but is intentionally deferred — host SDKs that hold a RID
-//! invariably obtained it through a resolved container response, which
-//! Phase 6 (`cosmos_response_*`) lands.
+//! The wrapper currently ships only the name-based constructor
+//! (`DatabaseReference::from_name`). The RID-based constructor (`from_rid`)
+//! is mechanically identical but is intentionally deferred — host SDKs that
+//! hold a RID invariably obtained it through a resolved container response.
 //!
-//! `cosmos_container_ref_*` is **not** part of this phase. The driver's
-//! `ContainerReference::new` is `pub(crate)`-only and demands the
+//! `cosmos_container_ref_*` is built from the response surface, not here. The
+//! driver's `ContainerReference::new` is `pub(crate)`-only and demands the
 //! container's RID + partition-key definition, which are obtained via
 //! `CosmosDriver::resolve_container` — an async, network-touching call.
-//! Container handles therefore land in Phase 6 alongside the response
-//! surface that delivers a resolved container.
+//! Container handles therefore arrive alongside the response surface that
+//! delivers a resolved container.
 //!
 //! See [`docs/NATIVE_WRAPPER_SPEC.md`] §4.3.
 //!
@@ -30,12 +29,12 @@ use crate::account_ref::AccountRefHandle;
 use crate::error::CosmosErrorCode;
 
 pub(crate) struct DatabaseRefInner {
-    /// First non-test consumer arrives in Phase 5 (operation factories
-    /// that take a database reference). Tests read it directly via
-    /// `DatabaseRefHandle::inner_arc` to assert the wire shape.
+    /// Consumed by the operation request builder when it takes a database
+    /// reference. Tests read it directly via `DatabaseRefHandle::inner_arc`
+    /// to assert the wire shape.
     #[allow(
         dead_code,
-        reason = "first non-test caller arrives in Phase 5 (operation factories)"
+        reason = "first non-test caller is the operation request builder"
     )]
     pub(crate) inner: DriverDatabaseReference,
 }
@@ -70,7 +69,7 @@ impl DatabaseRefHandle {
 
     #[allow(
         dead_code,
-        reason = "first non-test caller arrives in Phase 5 (operation factories)"
+        reason = "first non-test caller is the operation request builder"
     )]
     pub(crate) fn inner_arc(p: *const DatabaseRefHandle) -> Option<Arc<DatabaseRefInner>> {
         if p.is_null() {

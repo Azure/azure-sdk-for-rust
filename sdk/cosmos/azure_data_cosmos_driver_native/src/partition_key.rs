@@ -53,7 +53,7 @@ pub(crate) struct PartitionKeyBuilderInner {
 /// Opaque C ABI handle for an incrementally-populated partition-key
 /// builder.
 ///
-/// Storage pun: same shape as the other Phase 2/3 builders.
+/// Storage pun: same shape as the other builder handles.
 #[repr(C)]
 pub struct PartitionKeyBuilderHandle {
     _opaque: [u8; 0],
@@ -114,12 +114,12 @@ impl PartitionKeyBuilderHandle {
 // ─────────────────────────────────────────────────────────────────────────────
 
 pub(crate) struct PartitionKeyInner {
-    /// First non-test consumer arrives in Phase 5 (operation factories
-    /// that take a partition key). Tests read it directly via
-    /// `PartitionKeyHandle::inner_arc` to assert the wire shape.
+    /// Consumed by the operation factories that take a partition key. Tests
+    /// read it directly via `PartitionKeyHandle::inner_arc` to assert the
+    /// wire shape.
     #[allow(
         dead_code,
-        reason = "first non-test caller arrives in Phase 5 (operation factories)"
+        reason = "first non-test caller is the operation request builder"
     )]
     pub(crate) inner: DriverPartitionKey,
 }

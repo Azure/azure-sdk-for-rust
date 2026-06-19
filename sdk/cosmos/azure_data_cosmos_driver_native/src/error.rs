@@ -16,9 +16,6 @@
 //!   [`azure_data_cosmos_driver::error::CosmosError`]. Accessors mirror the
 //!   merged driver API 1:1 (per spec §3.5.2).
 //!
-//! Phase 1 ships the FFI surface. Phases 2+ wire the runtime / driver
-//! pipeline that actually produces these errors.
-//!
 //! [`docs/NATIVE_WRAPPER_SPEC.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md
 
 use std::ffi::{c_char, CString};
@@ -43,9 +40,9 @@ use azure_data_cosmos_driver::error::CosmosError as DriverCosmosError;
 /// - `4001..=4999` — driver-wrapper-specific fatal codes (new in this crate).
 /// - `5001..=5999` — non-fatal warnings (`out_*` populated; rich error advisory).
 ///
-/// Phase 1 only populates the codes the completion / queue / handle FFI
-/// actively produces. The rest are reserved and will be added phase-by-phase
-/// as their producing surfaces land. Consumers must treat unknown codes per
+/// Only the codes the completion / queue / handle FFI actively produces are
+/// populated today. The rest are reserved and are added as their producing
+/// surfaces land. Consumers must treat unknown codes per
 /// their band: `4xxx` = fatal-but-recoverable, `5xxx` = warning with
 /// populated `out_*`.
 #[repr(i32)]
@@ -56,16 +53,16 @@ pub enum CosmosErrorCode {
     CosmosErrorCodeSuccess = 0,
 
     // ── 1..=999: FFI / argument-validation (reserved for incremental fill-in) ──
-    /// A required pointer argument was `NULL`. Reserved Phase-0/1 code that
-    /// every accessor checks for before dereferencing.
+    /// A required pointer argument was `NULL`. Every accessor checks for this
+    /// before dereferencing.
     CosmosErrorCodeInvalidArgument = 1,
 
     /// A `*const c_char` argument contained bytes that were not valid UTF-8.
     CosmosErrorCodeInvalidUtf8 = 2,
 
-    // ── 1001..=1999: auth / conversion (reserved for Phase 3 use) ──
+    // ── 1001..=1999: auth / conversion (reserved) ──
 
-    // ── 2001..=2999: Cosmos service errors (reserved for Phase 6 use) ──
+    // ── 2001..=2999: Cosmos service errors ──
     /// Mapped from a wire response with HTTP 404.
     CosmosErrorCodeNotFound = 2404,
 
@@ -101,7 +98,7 @@ pub enum CosmosErrorCode {
     /// Any other wire-side error (5xx, unmapped 4xx).
     CosmosErrorCodeServiceError = 2999,
 
-    // ── 3001..=3999: FFI plumbing (reserved for Phase 6+) ──
+    // ── 3001..=3999: FFI plumbing ──
     /// A driver client-side / synthetic failure with no specific 2xxx mapping.
     CosmosErrorCodeClientError = 3001,
 
@@ -341,7 +338,7 @@ impl CosmosErrorHandle {
     /// pointer suitable for handing across the C boundary.
     #[allow(
         dead_code,
-        reason = "first non-test caller arrives in Phase 6 (driver_submit failure path)"
+        reason = "first non-test caller is the driver submit failure path"
     )]
     pub(crate) fn into_raw(err: DriverCosmosError) -> *mut Self {
         Self::from_arc_into_raw(Arc::new(CosmosErrorInner::new(err)))

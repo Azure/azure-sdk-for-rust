@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// Phase 2 — runtime builder & lifecycle.
+// Runtime builder & lifecycle.
 //
 // Validates the C surface of `cosmos_runtime_builder_*` end-to-end:
 //
@@ -13,12 +13,10 @@
 //      resulting `cosmos_runtime_t *` is usable by handing it to
 //      `cosmos_cq_create` / `cosmos_cq_free` / `cosmos_runtime_free`.
 //
-// The Phase 2 done-when criterion's multi-producer / single-consumer
-// scenario lives in the Rust-side completion_t tests (which already
-// exercise it via the internal `__test_only_enqueue_completion` helper)
-// because the C surface for real submits doesn't land until Phase 6.
-// The lifecycle path validated here is the contract Phase 6's submit
-// path will build on top of.
+// The multi-producer / single-consumer scenario lives in the Rust-side
+// completion_t tests (which already exercise it via the internal
+// `__test_only_enqueue_completion` helper). The lifecycle path validated
+// here is the contract the submit path builds on top of.
 
 #include "test_common.h"
 
@@ -162,7 +160,7 @@ static int test_build_happy_path(void)
     cosmos_runtime_builder_t *b = cosmos_runtime_builder_new();
     REQUIRE(b != NULL, "builder allocated");
 
-    int32_t rc = cosmos_runtime_builder_with_user_agent_suffix(b, "phase2-c-tests");
+    int32_t rc = cosmos_runtime_builder_with_user_agent_suffix(b, "c-tests");
     REQUIRE(rc == COSMOS_ERROR_CODE_SUCCESS,
             "with_user_agent_suffix returned SUCCESS (rc=%d)", rc);
 

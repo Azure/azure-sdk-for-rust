@@ -1,10 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// Phase 3 — account refs, database refs, driver options, and driver
-// lifecycle.
+// Account refs, database refs, driver options, and driver lifecycle.
 //
-// Covers the C surface of every Phase 3 entry point that does not
+// Covers the C surface of every entry point that does not
 // touch the network:
 //
 //   1. Lifecycle & NULL-safety on every `_free`.
@@ -16,11 +15,10 @@
 //      round-trip + NULL-arg rejection + build idempotence.
 //
 // `cosmos_driver_get_or_create_blocking` is not exercised here because
-// it touches the network. The emulator-backed scenario in spec section
-// 8 Phase 3 (stand up a driver, free it, recreate it, observe the
-// cached instance, observe the OPTIONS_IGNORED_ON_CACHE_HIT advisory)
-// is intentionally deferred to a CI-side integration test once the
-// advisory itself lands as a Phase 3+ follow-up. The Rust-side
+// it touches the network. The emulator-backed scenario (stand up a driver,
+// free it, recreate it, observe the cached instance, observe the
+// OPTIONS_IGNORED_ON_CACHE_HIT advisory) is intentionally deferred to a
+// CI-side integration test once the advisory itself lands. The Rust-side
 // integration test `blocking_against_invalid_endpoint` (marked
 // `#[ignore]`) exercises the failure path manually.
 
@@ -33,7 +31,7 @@ static int test_lifecycle_null_safe(void) {
     cosmos_driver_options_builder_free(NULL);
     cosmos_driver_options_free(NULL);
     cosmos_driver_free(NULL);
-    ASSERT(1, "all Phase 3 _free entry points NULL-safe");
+    ASSERT(1, "all _free entry points NULL-safe");
     return result;
 }
 
@@ -270,7 +268,7 @@ static int test_driver_options_builder_new_rejects_null_account(void) {
     return result;
 }
 
-TEST_SUITE_BEGIN("Phase 3 — Account / Database / Driver Options Lifecycle")
+TEST_SUITE_BEGIN("Account / Database / Driver Options Lifecycle")
 TEST_REGISTER(lifecycle_null_safe)
 TEST_REGISTER(account_ref_master_key_happy_path)
 TEST_REGISTER(account_ref_rejects_null_arguments)
@@ -282,4 +280,4 @@ TEST_REGISTER(driver_options_builder_happy_path)
 TEST_REGISTER(driver_options_builder_zero_regions)
 TEST_REGISTER(driver_options_builder_rejects_nulls)
 TEST_REGISTER(driver_options_builder_new_rejects_null_account)
-TEST_SUITE_END("Phase 3 — Account / Database / Driver Options Lifecycle")
+TEST_SUITE_END("Account / Database / Driver Options Lifecycle")

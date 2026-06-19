@@ -98,9 +98,9 @@ typedef int32_t cosmos_completion_outcome_t;
  * - `4001..=4999` — driver-wrapper-specific fatal codes (new in this crate).
  * - `5001..=5999` — non-fatal warnings (`out_*` populated; rich error advisory).
  *
- * Phase 1 only populates the codes the completion / queue / handle FFI
- * actively produces. The rest are reserved and will be added phase-by-phase
- * as their producing surfaces land. Consumers must treat unknown codes per
+ * Only the codes the completion / queue / handle FFI actively produces are
+ * populated today. The rest are reserved and are added as their producing
+ * surfaces land. Consumers must treat unknown codes per
  * their band: `4xxx` = fatal-but-recoverable, `5xxx` = warning with
  * populated `out_*`.
  */
@@ -114,8 +114,8 @@ enum cosmos_error_code_t
    */
   COSMOS_ERROR_CODE_SUCCESS = 0,
   /**
-   * A required pointer argument was `NULL`. Reserved Phase-0/1 code that
-   * every accessor checks for before dereferencing.
+   * A required pointer argument was `NULL`. Every accessor checks for this
+   * before dereferencing.
    */
   COSMOS_ERROR_CODE_INVALID_ARGUMENT = 1,
   /**
@@ -518,10 +518,9 @@ typedef int32_t cosmos_CosmosContentResponseOnWriteOpt;
 /**
  * Internal storage of a `cosmos_completion_t`.
  *
- * Phase 1 carried no response payload; Phase 6 adds the optional
- * `response` slot which `cosmos_completion_take_response` detaches
- * from. The slot is `None` on every error / cancelled completion and
- * on every Phase 1 test-synthesized completion.
+ * The optional `response` slot (which `cosmos_completion_take_response`
+ * detaches from) is `None` on every error / cancelled completion and on
+ * every test-synthesized completion.
  */
 typedef struct cosmos_completion_t cosmos_completion_t;
 
@@ -815,7 +814,7 @@ typedef struct cosmos_partition_key_t {
  * Opaque C ABI handle for an incrementally-populated partition-key
  * builder.
  *
- * Storage pun: same shape as the other Phase 2/3 builders.
+ * Storage pun: same shape as the other builder handles.
  */
 typedef struct cosmos_partition_key_builder_t {
   uint8_t _opaque[0];
@@ -1057,11 +1056,9 @@ struct cosmos_cq_t *cosmos_cq_create(const struct cosmos_runtime_t *runtime,
 /**
  * Free a completion queue. NULL is a no-op.
  *
- * Phase 1 contract: no Tokio-side producers spawn against the queue, so
- * "blocks until in-flight ops drain" is trivially satisfied. The check
- * remains in place so the contract documented in spec §3.1.2 is observable:
- * if anyone enqueued completions but never drained, this drops them (and
- * thus their `Box`-allocated `Completion`s).
+ * The "blocks until in-flight ops drain" contract from spec §3.1.2 is
+ * observable here: if anyone enqueued completions but never drained, this
+ * drops them (and thus their `Box`-allocated `Completion`s).
  */
 void cosmos_cq_free(struct cosmos_cq_t *queue);
 
@@ -1109,8 +1106,8 @@ uint32_t cosmos_cq_wait_batch(struct cosmos_cq_t *queue,
 bool cosmos_cq_wait_writable(struct cosmos_cq_t *queue, uint32_t timeout_ms);
 
 /**
- * Signal shutdown: marks the queue as shutting down, cancels in-flight ops
- * (Phase 1 has none from public API), and wakes any thread blocked in
+ * Signal shutdown: marks the queue as shutting down, cancels in-flight ops,
+ * and wakes any thread blocked in
  * `cosmos_cq_wait` / `_wait_writable` / `_wait_batch`. Idempotent.
  */
 void cosmos_cq_shutdown(struct cosmos_cq_t *queue);
@@ -1315,7 +1312,7 @@ void cosmos_driver_free(struct cosmos_driver_t *driver);
  * `CosmosDriverRuntime::get_or_create_driver` through the wrapper's
  * own multi-threaded Tokio runtime via `block_on`. Suitable for
  * startup-time initialization; for runtime use prefer the async
- * `_submit` variant (lands in Phase 6).
+ * `_submit` variant.
  *
  * # Cache behavior (spec §4.4.1)
  *
@@ -1327,8 +1324,8 @@ void cosmos_driver_free(struct cosmos_driver_t *driver);
  * - Cache eviction happens only when the owning `cosmos_runtime_t` is
  *   freed; freeing a `cosmos_driver_t` does not evict.
  *
- * Phase 3 does not emit the `5001` `OPTIONS_IGNORED_ON_CACHE_HIT`
- * advisory described in spec §4.4.1 — see the module-level
+ * The `5001` `OPTIONS_IGNORED_ON_CACHE_HIT` advisory described in spec
+ * §4.4.1 is not emitted today — see the module-level
  * `Cache-hit advisory` note for the rationale.
  *
  * # Parameters
@@ -1728,8 +1725,8 @@ const char *cosmos_response_next_continuation(const struct cosmos_response_t *re
  * 0 length when the body is empty / response is NULL.
  *
  * For multi-part feed bodies (driver's `ResponseBody::Items`) this
- * returns the **first** part only; full multi-part iteration lands in
- * Phase 8 alongside the pager.
+ * returns the **first** part only; full multi-part iteration is a
+ * follow-up alongside the feed pagination surface.
  *
  * The returned pointer is valid until [`cosmos_response_free`] is
  * called on this response handle.
@@ -1959,8 +1956,6 @@ struct cosmos_operation_handle_t *cosmos_driver_execute_singleton_operation_subm
  * `cosmos_response_t` from which
  * [`crate::response::cosmos_response_take_driver`] extracts the new
  * driver handle.
- *
- * Closes the Phase 3 deferral.
  */
 struct cosmos_operation_handle_t *cosmos_driver_get_or_create_submit(const struct cosmos_runtime_t *runtime,
                                                                      const struct cosmos_account_ref_t *account,

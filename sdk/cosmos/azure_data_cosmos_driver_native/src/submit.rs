@@ -64,7 +64,7 @@ impl UserData {
 /// directly lets the spawned task survive a concurrent `cosmos_cq_free`
 /// or `cosmos_operation_handle_free` from the producer side — the
 /// queue's deque drops back-pressured completions cleanly, and the
-/// operation-handle state stays consistent through Phase 1's existing
+/// operation-handle state stays consistent through the existing
 /// `Arc` plumbing.
 struct SpawnContext {
     queue: Arc<CompletionQueueInner>,
@@ -451,7 +451,7 @@ pub extern "C" fn cosmos_driver_execute_singleton_operation_submit(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FFI: cosmos_driver_get_or_create_submit (Phase 3 deferral)
+// FFI: cosmos_driver_get_or_create_submit
 // ─────────────────────────────────────────────────────────────────────────────
 /// Asynchronous variant of [`crate::driver::cosmos_driver_get_or_create_blocking`].
 ///
@@ -460,8 +460,6 @@ pub extern "C" fn cosmos_driver_execute_singleton_operation_submit(
 /// `cosmos_response_t` from which
 /// [`crate::response::cosmos_response_take_driver`] extracts the new
 /// driver handle.
-///
-/// Closes the Phase 3 deferral.
 #[no_mangle]
 pub extern "C" fn cosmos_driver_get_or_create_submit(
     runtime: *const RuntimeContext,

@@ -1,15 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// Phase 6 — submit pipeline, response surface, container refs, feed
-// ranges, container/item factories.
+// Submit pipeline, response surface, container refs, feed ranges,
+// container/item factories.
 //
-// The full emulator-backed CRUD test (spec section 8 Phase 6 done-when)
-// requires a running Cosmos emulator and is exercised via CI when the
-// emulator endpoint is reachable. This harness covers the pure
-// lifecycle / NULL-safety / pre-flight rejection contracts that do not
-// touch the network so external SDKs can validate their bindings
-// before they ever start an emulator.
+// The full emulator-backed CRUD test requires a running Cosmos emulator
+// and is exercised via CI when the emulator endpoint is reachable. This
+// harness covers the pure lifecycle / NULL-safety / pre-flight rejection
+// contracts that do not touch the network so external SDKs can validate
+// their bindings before they ever start an emulator.
 
 #include "test_common.h"
 
@@ -23,7 +22,7 @@ static int test_lifecycle_null_safe(void)
     cosmos_response_free(NULL);
     cosmos_container_ref_free(NULL);
     cosmos_feed_range_free(NULL);
-    ASSERT(1, "Phase 6 _free entry points NULL-safe");
+    ASSERT(1, "_free entry points NULL-safe");
     return result;
 }
 
@@ -200,7 +199,7 @@ static int test_singleton_submit_with_request_rejects_null_driver(void)
     return result;
 }
 
-TEST_SUITE_BEGIN("Phase 6 — Submit + Response + Container + Feed Range")
+TEST_SUITE_BEGIN("Submit + Response + Container + Feed Range")
 TEST_REGISTER(lifecycle_null_safe)
 TEST_REGISTER(response_accessors_handle_null)
 TEST_REGISTER(feed_range_full_roundtrip)
@@ -213,4 +212,4 @@ TEST_REGISTER(execute_singleton_operation_submit_rejects_null_driver)
 TEST_REGISTER(get_or_create_submit_rejects_null_runtime)
 TEST_REGISTER(resolve_container_submit_rejects_null_driver)
 TEST_REGISTER(singleton_submit_with_request_rejects_null_driver)
-TEST_SUITE_END("Phase 6 — Submit + Response + Container + Feed Range")
+TEST_SUITE_END("Submit + Response + Container + Feed Range")

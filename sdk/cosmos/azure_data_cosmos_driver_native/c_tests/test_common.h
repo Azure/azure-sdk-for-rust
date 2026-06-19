@@ -1,12 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// Minimal Phase 0 test harness for the `azurecosmosdriver` C ABI.
+// Minimal test harness for the `azurecosmosdriver` C ABI.
 //
-// Later phases extend this header with runtime / driver / completion-queue
-// fixtures as those surfaces are added (Phase 2 brings the runtime; Phase 3
-// brings the driver; etc.). For Phase 0 the harness only needs the suite
-// registration / discovery machinery plus a couple of assertion macros.
+// Provides the suite registration / discovery machinery plus a couple of
+// assertion macros shared by the per-surface test files.
 
 #ifndef TEST_COMMON_H
 #define TEST_COMMON_H

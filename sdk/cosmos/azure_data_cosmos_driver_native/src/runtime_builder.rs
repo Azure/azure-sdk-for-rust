@@ -4,21 +4,19 @@
 //! C ABI surface for `cosmos_runtime_builder_t` — the wrapper-side mirror of
 //! [`azure_data_cosmos_driver::driver::CosmosDriverRuntimeBuilder`].
 //!
-//! Phase 2 ships the smallest useful builder surface: primitive setters that
-//! correspond to **actually-existing** simple setters on the merged driver
-//! builder, plus `_build` (async-bridged through the wrapper's own Tokio
-//! runtime). Complex nested setters
+//! This exposes the primitive setters that correspond to **actually-existing**
+//! simple setters on the merged driver builder, plus `_build` (async-bridged
+//! through the wrapper's own Tokio runtime). Complex nested setters
 //! (`with_client_options` / `with_connection_pool` /
 //! `with_operation_options` / `register_throughput_control_group` /
-//! `with_fault_injection_rules`) are intentional Phase 2+ follow-ups — each
-//! requires its own FFI builder surface, which would dwarf this commit if
-//! folded in here.
+//! `with_fault_injection_rules`) are deliberately not exposed yet — each
+//! requires its own FFI builder surface.
 //!
 //! The setters mutate in-place because builder-pattern chaining is awkward
 //! across an FFI boundary; callers create, configure, then `_build` (which
 //! consumes the builder).
 //!
-//! See [`docs/NATIVE_WRAPPER_SPEC.md`] §4.1 + §8 Phase 2.
+//! See [`docs/NATIVE_WRAPPER_SPEC.md`] §4.1.
 //!
 //! [`docs/NATIVE_WRAPPER_SPEC.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md
 

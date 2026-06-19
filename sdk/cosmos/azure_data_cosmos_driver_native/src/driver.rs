@@ -4,14 +4,12 @@
 //! C ABI surface for `cosmos_driver_t` — wraps
 //! [`azure_data_cosmos_driver::driver::CosmosDriver`].
 //!
-//! Phase 3 ships only the synchronous **convenience** entry point —
+//! This ships the synchronous **convenience** entry point —
 //! [`cosmos_driver_get_or_create_blocking`] — plus the matching free
-//! function. The async submit-and-deliver-via-completion-queue variants
-//! (`cosmos_driver_get_or_create_submit`,
-//! `cosmos_driver_initialize_submit`, and the
-//! `cosmos_response_take_driver` accessor) are deferred to Phase 6 so
-//! the wrapper's generic `tokio::spawn` → `cq_enqueue` plumbing can land
-//! once, with the operation submit pipeline.
+//! function. The async submit-and-deliver-via-completion-queue variant
+//! (`cosmos_driver_get_or_create_submit`) lives in the submit module so the
+//! wrapper's generic `tokio::spawn` → `cq_enqueue` plumbing lands once,
+//! with the operation submit pipeline.
 //!
 //! ## Cache-hit advisory (`OPTIONS_IGNORED_ON_CACHE_HIT`)
 //!
@@ -21,9 +19,9 @@
 //! `CosmosDriverRuntime::get_or_create_driver` API does not expose a
 //! "was cached" signal, so detecting cache hits requires either a
 //! driver-side enhancement (preferred) or wrapper-side cache shadowing
-//! (hacky). Phase 3 intentionally does **not** implement the advisory
+//! (hacky). The advisory is intentionally **not** implemented today
 //! — `cosmos_driver_get_or_create_blocking` always returns `SUCCESS` on
-//! a cached hit. This is tracked as a Phase 3+ follow-up.
+//! a cached hit. This is tracked as a follow-up.
 //!
 //! See [`docs/NATIVE_WRAPPER_SPEC.md`] §4.4.
 //!
@@ -39,7 +37,7 @@ use crate::error::{CosmosErrorCode, CosmosErrorHandle};
 use crate::runtime::RuntimeContext;
 
 pub(crate) struct DriverInner {
-    /// Consumed by Phase 6 (`cosmos_driver_submit`,
+    /// Consumed by the submit pipeline (`cosmos_driver_*_submit`,
     /// `cosmos_driver_resolve_container_*`) which `Arc::clone`s it
     /// onto each spawned task.
     pub(crate) inner: Arc<CosmosDriver>,
@@ -126,7 +124,7 @@ pub extern "C" fn cosmos_driver_free(driver: *mut DriverHandle) {
 /// `CosmosDriverRuntime::get_or_create_driver` through the wrapper's
 /// own multi-threaded Tokio runtime via `block_on`. Suitable for
 /// startup-time initialization; for runtime use prefer the async
-/// `_submit` variant (lands in Phase 6).
+/// `_submit` variant.
 ///
 /// # Cache behavior (spec §4.4.1)
 ///
@@ -138,8 +136,8 @@ pub extern "C" fn cosmos_driver_free(driver: *mut DriverHandle) {
 /// - Cache eviction happens only when the owning `cosmos_runtime_t` is
 ///   freed; freeing a `cosmos_driver_t` does not evict.
 ///
-/// Phase 3 does not emit the `5001` `OPTIONS_IGNORED_ON_CACHE_HIT`
-/// advisory described in spec §4.4.1 — see the module-level
+/// The `5001` `OPTIONS_IGNORED_ON_CACHE_HIT` advisory described in spec
+/// §4.4.1 is not emitted today — see the module-level
 /// `Cache-hit advisory` note for the rationale.
 ///
 /// # Parameters

@@ -75,13 +75,13 @@ macro_rules! c_str {
 /// tied to any input, picking an `'a` that outlives the underlying buffer is
 /// undefined behavior — hence the `unsafe` contract.
 ///
-/// Phase 0 ships this as a simple boolean-fail helper; later phases that
-/// thread the rich `cosmos_error_t` payload through builders / submits will
-/// add an error-aware variant. For now the convention is "null or invalid
+/// This ships as a simple boolean-fail helper; an error-aware variant that
+/// threads the rich `cosmos_error_t` payload through builders / submits can be
+/// added later. For now the convention is "null or invalid
 /// UTF-8 → reject the call with `COSMOS_ERROR_CODE_INVALID_ARGUMENT`."
 #[allow(
     dead_code,
-    reason = "first callers arrive in Phase 1+ (builders / submits)"
+    reason = "first callers arrive with the builder / submit surface"
 )]
 pub(crate) unsafe fn parse_cstr<'a>(ptr: *const c_char) -> Option<&'a str> {
     if ptr.is_null() {

@@ -8,9 +8,9 @@
 //! `Arc<CosmosDriverRuntime>` (so cached drivers, container caches, and the
 //! account-metadata cache stay alive for the lifetime of the handle).
 //!
-//! Phase 1 shipped only the Tokio half via a Phase-1 internal helper. Phase 2
-//! adds the driver runtime alongside it and exposes the public
-//! `cosmos_runtime_builder_*` surface (see [`crate::runtime_builder`]).
+//! The runtime pairs the wrapper-side Tokio runtime with the driver runtime
+//! and exposes the public `cosmos_runtime_builder_*` surface (see
+//! [`crate::runtime_builder`]).
 //!
 //! The runtime is **opaque** at the FFI boundary — consumers get a
 //! `cosmos_runtime_t *` and never look inside. See spec §3.1.1 + §4.1.
@@ -25,15 +25,15 @@ use crate::runtime_builder::RuntimeBuildError;
 /// Internal storage of a `cosmos_runtime_t`.
 ///
 /// - `tokio` — the wrapper-side multi-threaded Tokio runtime. Used to
-///   `block_on(...)` driver builder construction at FFI-call time and (from
-///   Phase 6 onwards) to spawn the per-operation tasks that drive submits.
+///   `block_on(...)` driver builder construction at FFI-call time and to
+///   spawn the per-operation tasks that drive submits.
 /// - `driver` — the underlying `azure_data_cosmos_driver` runtime that owns
 ///   the per-account driver registry, container cache, account-metadata
 ///   cache, HTTP transport factory, and so on. Cloning the `Arc` is cheap
-///   and is how Phase 3+ surfaces will hand out account / driver handles.
+///   and is how the driver / account surfaces hand out handles.
 pub(crate) struct RuntimeContextInner {
     /// Required at FFI-call time (e.g. `block_on` for the driver builder
-    /// and, from Phase 6, `spawn` for per-operation submits) but never
+    /// and `spawn` for per-operation submits) but never
     /// read directly outside that context, so the field reads as dead
     /// to the compiler.
     #[allow(
@@ -42,11 +42,11 @@ pub(crate) struct RuntimeContextInner {
                   is never read directly"
     )]
     pub(crate) tokio: Runtime,
-    /// First real consumer arrives in Phase 3 (driver / account references)
-    /// which `Arc::clone`s this into every per-account handle.
+    /// `Arc::clone`d into every per-account handle by the driver / account
+    /// surfaces.
     #[allow(
         dead_code,
-        reason = "first non-test caller arrives in Phase 3 (driver / account references)"
+        reason = "first non-test caller is the driver / account references"
     )]
     pub(crate) driver: Arc<CosmosDriverRuntime>,
 }
@@ -85,7 +85,7 @@ impl RuntimeContext {
     /// default driver runtime via the merged
     /// `CosmosDriverRuntimeBuilder::default()`.
     ///
-    /// Used by the Phase 1 / Phase 2 internal tests via
+    /// Used by the internal tests via
     /// [`__test_only_create_default_runtime`]; production callers go
     /// through `cosmos_runtime_builder_build`.
     pub(crate) fn new_default() -> Result<*mut Self, RuntimeBuildError> {
@@ -113,7 +113,7 @@ impl RuntimeContext {
         // the synchronous FFI call by running on the same Tokio runtime
         // the rest of the wrapper will use. The build itself does not
         // perform network I/O (per-account network probes happen lazily
-        // inside `get_or_create_driver` in Phase 3) so blocking the FFI
+        // inside `get_or_create_driver`) so blocking the FFI
         // thread here is bounded by local TLS + machine-ID work.
         let driver = tokio
             .block_on(async move { builder.build().await })
@@ -147,7 +147,7 @@ impl RuntimeContext {
     /// Borrows the wrapper from a raw pointer for the duration of an FFI call.
     #[allow(
         dead_code,
-        reason = "first non-test caller arrives in Phase 3 (driver / account refs)"
+        reason = "first non-test caller is the driver / account refs"
     )]
     pub(crate) fn from_ptr<'a>(p: *const RuntimeContext) -> Option<&'a Self> {
         if p.is_null() {
@@ -192,16 +192,16 @@ pub extern "C" fn cosmos_runtime_free(runtime: *mut RuntimeContext) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Test-only constructor
 //
-// Exposed via an internal Rust API (not `#[no_mangle]`) so Phase 1 / Phase 2
-// integration tests can build a queue end-to-end without threading a builder
-// through every test setup.
+// Exposed via an internal Rust API (not `#[no_mangle]`) so integration tests
+// can build a queue end-to-end without threading a builder through every test
+// setup.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Test-only: construct a default `cosmos_runtime_t` and return a raw pointer.
 ///
 /// Visible only to the workspace's own tests; not exported as `#[no_mangle]`.
-/// Phase 2+ callers should prefer the public `cosmos_runtime_builder_*`
-/// surface; this helper exists so the Phase 1 receive-loop tests do not
+/// Production callers should prefer the public `cosmos_runtime_builder_*`
+/// surface; this helper exists so the receive-loop tests do not
 /// have to thread a builder through every test setup.
 #[doc(hidden)]
 pub fn __test_only_create_default_runtime() -> *mut RuntimeContext {

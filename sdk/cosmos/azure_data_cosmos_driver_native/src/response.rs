@@ -4,22 +4,20 @@
 //! C ABI surface for `cosmos_response_t` — wraps the driver's
 //! [`azure_data_cosmos_driver::models::CosmosResponse`].
 //!
-//! ## Scope (Phase 6)
+//! ## Scope
 //!
 //! - Status code, RU charge.
 //! - Body access (zero-copy view + take-ownership variant).
 //! - The four high-traffic typed headers (activity_id, session_token,
 //!   etag, continuation token).
 //! - `cosmos_response_take_driver` for the degenerate response delivered
-//!   by `cosmos_driver_get_or_create_submit` (Phase 6 also lands the
-//!   async driver-creation path).
+//!   by `cosmos_driver_get_or_create_submit`.
 //! - `cosmos_response_take_container` for the degenerate response
 //!   delivered by `cosmos_driver_resolve_container_submit`.
 //!
 //! Multi-part responses (`ResponseBody::Items`) collapse to the first
-//! part for the body view — the multi-part iterator surface lands in
-//! Phase 8 (pager). Diagnostics, header iteration, and the long-tail
-//! of typed accessors land in Phase 7 (diagnostics) and Phase 8.
+//! part for the body view — the multi-part iterator surface, diagnostics,
+//! header iteration, and the long-tail of typed accessors are follow-ups.
 //!
 //! ## Storage pun
 //!
@@ -365,8 +363,8 @@ pub extern "C" fn cosmos_response_next_continuation(
 /// 0 length when the body is empty / response is NULL.
 ///
 /// For multi-part feed bodies (driver's `ResponseBody::Items`) this
-/// returns the **first** part only; full multi-part iteration lands in
-/// Phase 8 alongside the pager.
+/// returns the **first** part only; full multi-part iteration is a
+/// follow-up alongside the feed pagination surface.
 ///
 /// The returned pointer is valid until [`cosmos_response_free`] is
 /// called on this response handle.

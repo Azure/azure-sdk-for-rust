@@ -118,7 +118,7 @@ fn generate_c_header() {
             "CosmosOperationRequest".into(),
             "operation_request_t".into(),
         ),
-        // Phase 1 enums / option structs. Variant prefixes are baked into
+        // Enums / option structs. Variant prefixes are baked into
         // the Rust variant names (e.g. `CqStateRunning`,
         // `CompletionOutcomeOk`) so the `ScreamingSnakeCase` enum rule
         // produces the spec-mandated `COSMOS_CQ_STATE_RUNNING` etc.
@@ -146,8 +146,8 @@ fn generate_c_header() {
         after_includes: Some(after_includes),
         cpp_compat: true,
         parse: cbindgen::ParseConfig {
-            // Phase 0 has no driver-side re-exports yet; flip this on in later
-            // phases when wrapper-side types reference driver types.
+            // No driver-side re-exports yet; flip this on when wrapper-side
+            // types reference driver types.
             parse_deps: false,
             ..Default::default()
         },
