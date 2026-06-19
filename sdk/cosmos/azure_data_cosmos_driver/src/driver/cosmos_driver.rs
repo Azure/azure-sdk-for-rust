@@ -1127,13 +1127,15 @@ impl CosmosDriver {
             crate::models::resource_id::encode_rid(&decoded[0..4]),
         );
 
-        let db_ref =
-            DatabaseReference::from_rid(self.account().clone(), db_rid.as_str().to_owned());
         let options = OperationOptions::default();
 
         let container_result = self
             .execute_singleton_operation(
-                CosmosOperation::read_container_by_rid(db_ref, container_rid.to_owned()),
+                CosmosOperation::read_container_by_rid(
+                    self.account().clone(),
+                    db_rid.as_str().to_owned(),
+                    container_rid.to_owned(),
+                ),
                 options,
             )
             .await?;
@@ -1812,6 +1814,17 @@ impl CosmosDriver {
         operation: CosmosOperation,
         options: OperationOptions,
     ) -> crate::error::Result<Option<crate::models::CosmosResponse>> {
+        // Reject mixed name/RID addressing before any work is done. This is the
+        // release-mode guard backing the debug-time addressing assertion: a
+        // reference that mixes a name-addressed parent with a RID-addressed child
+        // (or vice versa) signs and routes inconsistently and the gateway rejects
+        // it with an opaque 401. Failing here turns that into a deterministic
+        // client-side error for references built through any path, not just the
+        // SDK's ContainerClient. The check is a cheap in-memory field comparison
+        // and is a no-op for every consistently-addressed reference, so it does
+        // not change the request flow or issue any additional network calls.
+        operation.resource_reference().validate_addressing()?;
+
         // PATCH is a virtual operation type: dispatch it to the dedicated
         // Read-Modify-Write handler before any of the standard pipeline steps
         // run, because the handler issues its own Read/Replace operations

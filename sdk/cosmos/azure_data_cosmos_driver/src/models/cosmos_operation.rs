@@ -447,20 +447,17 @@ impl CosmosOperation {
     /// Reads a container's properties by database and container RID.
     ///
     /// Like [`read_container_by_name`](Self::read_container_by_name) but addresses
-    /// the container by RID. `database` must itself be a RID-based
-    /// [`DatabaseReference`] so the request path is fully RID-based
+    /// the container by RID. Taking the raw `db_rid` and `container_rid` (rather
+    /// than a pre-built [`DatabaseReference`]) makes a mixed name/RID path
+    /// unrepresentable: the parent database reference is always constructed
+    /// RID-based here, so the request path is guaranteed to be fully RID-based
     /// (`/dbs/{db_rid}/colls/{container_rid}`).
     pub fn read_container_by_rid(
-        database: DatabaseReference,
+        account: AccountReference,
+        db_rid: impl Into<std::borrow::Cow<'static, str>>,
         container_rid: impl Into<std::borrow::Cow<'static, str>>,
     ) -> Self {
-        debug_assert!(
-            database.rid().is_some(),
-            "read_container_by_rid requires a RID-based DatabaseReference so the \
-             request path is fully RID-based (/dbs/{{db_rid}}/colls/{{container_rid}}); \
-             a name-based database would produce a mixed name/RID path that signs and \
-             routes inconsistently"
-        );
+        let database = DatabaseReference::from_rid(account, db_rid.into());
         let resource_ref: CosmosResourceReference = CosmosResourceReference::from(database)
             .with_resource_type(ResourceType::DocumentCollection)
             .with_rid(container_rid.into());
