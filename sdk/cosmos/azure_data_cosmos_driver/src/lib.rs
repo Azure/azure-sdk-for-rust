@@ -61,7 +61,9 @@ pub mod testing;
 
 // Re-export key types at crate root
 pub use diagnostics::{DiagnosticsContext, ExecutionContext, RequestDiagnostics, RequestHandle};
-pub use driver::{CosmosDriver, CosmosDriverRuntime, CosmosDriverRuntimeBuilder, OperationPlan};
+pub use driver::{
+    CosmosDriver, CosmosDriverRuntime, CosmosDriverRuntimeBuilder, OperationPlan, PlanOptions,
+};
 pub use error::{CosmosError, CosmosErrorBuilder, CosmosStatus, Result, SubStatusCode};
 pub use models::{ActivityId, CosmosResponse, RequestCharge, ResponseBody};
 pub use options::{DiagnosticsOptions, DiagnosticsVerbosity, DriverOptions};

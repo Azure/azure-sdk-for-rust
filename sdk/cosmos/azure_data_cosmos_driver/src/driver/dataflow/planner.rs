@@ -24,6 +24,11 @@ use super::{
     Request, RequestTarget, SequentialDrain, TopologyProvider,
 };
 
+/// Default maximum number of physical partitions a cross-partition query may
+/// fan out to. Exceeding this limit returns an error to prevent inadvertent
+/// full-container scans on very large clusters.
+pub(crate) const DEFAULT_MAX_FAN_OUT: usize = 100;
+
 /// Builds a single-node [`Pipeline`] for a trivial operation.
 ///
 /// Trivial operations are those that can be satisfied by a single request to
@@ -147,6 +152,7 @@ pub(crate) async fn build_sequential_drain(
     topology_provider: &mut dyn TopologyProvider,
     operation: &Arc<CosmosOperation>,
     resume: Option<PipelineNodeState>,
+    max_fan_out: Option<usize>,
 ) -> crate::error::Result<Pipeline> {
     validate_query_plan(query_plan)?;
 
@@ -179,7 +185,20 @@ pub(crate) async fn build_sequential_drain(
         plan_fresh(query_plan, topology_provider, operation).await?
     };
 
-    // TODO: enforce max fan-out (default 100, configurable). See FEED_OPERATIONS_REQS.md §3.
+    let fan_out_limit = max_fan_out.unwrap_or(DEFAULT_MAX_FAN_OUT);
+    if request_nodes.len() > fan_out_limit {
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::CLIENT_QUERY_FAN_OUT_LIMIT_EXCEEDED)
+            .with_message(format!(
+                "cross-partition query would fan out to {} physical partitions, \
+                 which exceeds the maximum of {}; use \
+                 QueryOptions::with_max_fan_out() to raise the limit if this \
+                 level of fan-out is intentional",
+                request_nodes.len(),
+                fan_out_limit,
+            ))
+            .build());
+    }
 
     if request_nodes.is_empty() {
         // Resumed past every range that still has work: the pipeline is
@@ -845,7 +864,7 @@ mod tests {
         let op = cross_partition_query_operation();
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None, None)
             .await
             .unwrap();
         assert_drain_requests(pipeline, &[("", "FF", "pkrange-0")]);
@@ -861,7 +880,7 @@ mod tests {
             rr("80", "FF", "pkrange-right"),
         ])]);
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None, None)
             .await
             .unwrap();
         assert_drain_requests(
@@ -880,7 +899,7 @@ mod tests {
             Ok(vec![rr("80", "FF", "pkrange-C")]),
         ]);
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None, None)
             .await
             .unwrap();
         assert_drain_requests(
@@ -900,7 +919,7 @@ mod tests {
             rr("80", "C0", "pkrange-3"),
         ])]);
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None, None)
             .await
             .unwrap();
         assert_drain_requests(
@@ -932,7 +951,7 @@ mod tests {
             ]),
         ]);
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None, None)
             .await
             .unwrap();
         assert_drain_requests(
@@ -953,7 +972,7 @@ mod tests {
         let op = cross_partition_query_operation();
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-wide")])]);
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None, None)
             .await
             .unwrap();
         assert_drain_requests_with_partitions(pipeline, &[("20", "80", "pkrange-wide", "", "FF")]);
@@ -971,7 +990,7 @@ mod tests {
         let op = cross_partition_query_operation();
         let mut topology = NoopTopologyProvider;
 
-        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None, None)
             .await
             .unwrap_err();
         let rendered = err.to_string();
@@ -993,7 +1012,7 @@ mod tests {
         let op = cross_partition_query_operation();
         let mut topology = NoopTopologyProvider;
 
-        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None, None)
             .await
             .unwrap_err();
         let rendered = err.to_string();
@@ -1017,7 +1036,7 @@ mod tests {
         let op = cross_partition_query_operation();
         let mut topology = NoopTopologyProvider;
 
-        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None, None)
             .await
             .unwrap_err();
         let rendered = err.to_string();
@@ -1039,7 +1058,7 @@ mod tests {
         let op = cross_partition_query_operation();
         let mut topology = NoopTopologyProvider;
 
-        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None, None)
             .await
             .unwrap_err();
         let rendered = err.to_string();
@@ -1061,7 +1080,7 @@ mod tests {
         let op = cross_partition_query_operation();
         let mut topology = NoopTopologyProvider;
 
-        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None, None)
             .await
             .unwrap_err();
         let rendered = err.to_string();
@@ -1087,7 +1106,7 @@ mod tests {
         let op = cross_partition_query_operation();
         let mut topology = NoopTopologyProvider;
 
-        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None, None)
             .await
             .unwrap_err();
         let rendered = err.to_string();
@@ -1103,7 +1122,7 @@ mod tests {
         let op = cross_partition_query_operation();
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None, None)
             .await
             .unwrap();
         assert_drain_requests(pipeline, &[("", "FF", "pkrange-0")]);
@@ -1115,7 +1134,7 @@ mod tests {
         let op = cross_partition_query_operation();
         let mut topology = NoopTopologyProvider;
 
-        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None, None)
             .await
             .unwrap_err();
         let rendered = err.to_string();
@@ -1137,7 +1156,7 @@ mod tests {
                 .with_message("topology resolution failed")
                 .build())]);
 
-        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None, None)
             .await
             .unwrap_err();
         let rendered = err.to_string();
@@ -1214,6 +1233,7 @@ mod tests {
             &mut topology,
             &Arc::new(op),
             Some(PipelineNodeState::Drained),
+            None,
         )
         .await
         .unwrap();
@@ -1242,9 +1262,10 @@ mod tests {
             ("AA", "FF", saved_request(None)),
         ]);
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
-            .await
-            .unwrap();
+        let pipeline =
+            build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume), None)
+                .await
+                .unwrap();
         assert_drain_requests(pipeline, &[("55", "AA", "pk-b"), ("AA", "FF", "pk-c")]);
     }
 
@@ -1269,9 +1290,10 @@ mod tests {
             ("AA", "FF", saved_request(None)),
         ]);
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
-            .await
-            .unwrap();
+        let pipeline =
+            build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume), None)
+                .await
+                .unwrap();
         assert_drain_requests_with_partitions_and_continuation(
             pipeline,
             &[
@@ -1301,9 +1323,10 @@ mod tests {
             ("AA", "FF", saved_request(None)),
         ]);
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
-            .await
-            .unwrap();
+        let pipeline =
+            build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume), None)
+                .await
+                .unwrap();
         assert_drain_requests_with_partitions_and_continuation(
             pipeline,
             &[
@@ -1330,9 +1353,10 @@ mod tests {
             ("C0", "FF", saved_request(None)),
         ]);
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
-            .await
-            .unwrap();
+        let pipeline =
+            build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume), None)
+                .await
+                .unwrap();
         assert_drain_requests_with_partitions_and_continuation(
             pipeline,
             &[
@@ -1358,9 +1382,10 @@ mod tests {
             active_tokens: vec![],
         };
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
-            .await
-            .unwrap();
+        let pipeline =
+            build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume), None)
+                .await
+                .unwrap();
         assert!(matches!(
             pipeline.snapshot_state().unwrap(),
             PipelineNodeState::Drained
@@ -1382,9 +1407,10 @@ mod tests {
             ("AA", "FF", saved_request(None)),
         ]);
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
-            .await
-            .unwrap();
+        let pipeline =
+            build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume), None)
+                .await
+                .unwrap();
 
         assert_drain_requests_with_partitions_and_continuation(
             pipeline,
@@ -1408,7 +1434,7 @@ mod tests {
             ("00", "55", saved_request(Some("tok-b"))),
         ]);
 
-        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume), None)
             .await
             .unwrap_err();
         assert_eq!(
@@ -1431,7 +1457,7 @@ mod tests {
             ("55", "FF", saved_request(Some("tok-b"))),
         ]);
 
-        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume), None)
             .await
             .unwrap_err();
         assert_eq!(
@@ -1452,7 +1478,7 @@ mod tests {
 
         let resume = saved_drain(vec![("55", "AA", saved_request(Some("server-token-xyz")))]);
 
-        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume), None)
             .await
             .unwrap_err();
         assert_eq!(
@@ -1491,9 +1517,10 @@ mod tests {
             }],
         };
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
-            .await
-            .unwrap();
+        let pipeline =
+            build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume), None)
+                .await
+                .unwrap();
         assert_drain_requests_with_partitions_and_continuation(
             pipeline,
             &[
@@ -1521,9 +1548,10 @@ mod tests {
             ("30", "60", saved_request(Some("tok-b"))),
         ]);
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
-            .await
-            .unwrap();
+        let pipeline =
+            build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume), None)
+                .await
+                .unwrap();
         assert_drain_requests_with_partitions_and_continuation(
             pipeline,
             &[
@@ -1566,9 +1594,10 @@ mod tests {
             }],
         };
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
-            .await
-            .unwrap();
+        let pipeline =
+            build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume), None)
+                .await
+                .unwrap();
         assert_drain_requests_with_partitions_and_continuation(
             pipeline,
             &[
@@ -1594,7 +1623,7 @@ mod tests {
         };
 
         let result =
-            build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(legacy)).await;
+            build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(legacy), None).await;
         let err = result.expect_err("bare top-level Request shape must be rejected on resume");
         assert_eq!(
             err.status(),
@@ -1622,7 +1651,7 @@ mod tests {
             }],
         };
 
-        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume), None)
             .await
             .expect_err("zero-width active_tokens entry must be rejected");
         assert_eq!(
@@ -1657,7 +1686,7 @@ mod tests {
             }],
         };
 
-        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume), None)
             .await
             .expect_err("malformed min>max entry must be rejected by the validator");
         assert_eq!(
@@ -1694,7 +1723,7 @@ mod tests {
             ],
         };
 
-        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume), None)
             .await
             .expect_err("appended malformed min>max entry must still be rejected");
         assert_eq!(
@@ -1733,9 +1762,10 @@ mod tests {
             }],
         };
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
-            .await
-            .expect("front-sibling cascading split must plan cleanly");
+        let pipeline =
+            build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume), None)
+                .await
+                .expect("front-sibling cascading split must plan cleanly");
 
         // Walk the planned children via snapshot: the two front grand-
         // children must each carry T1; the back range must be a
@@ -1771,5 +1801,140 @@ mod tests {
                 "front grand-child {idx} must carry T1",
             );
         }
+    }
+
+    // --- Fan-out limit enforcement tests ---
+
+    #[tokio::test]
+    async fn rejects_when_fan_out_exceeds_default_limit() {
+        // Create a topology with DEFAULT_MAX_FAN_OUT + 1 partitions to exceed the default.
+        let n = DEFAULT_MAX_FAN_OUT + 1;
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        // Build n evenly-spaced partition ranges across ["", "FF").
+        // We use hex suffixes: each partition gets a 2-hex-digit boundary.
+        // For simplicity, generate n ranges where each boundary is i * (0xFF / n) as a hex string.
+        let boundaries: Vec<String> = (0..=n)
+            .map(|i| {
+                if i == 0 {
+                    String::new()
+                } else if i == n {
+                    "FF".to_string()
+                } else {
+                    format!("{:02X}", (i * 0xFF / n).clamp(1, 0xFE))
+                }
+            })
+            .collect();
+        // Deduplicate adjacent boundaries (could happen with small n values).
+        let mut ranges: Vec<ResolvedRange> = Vec::new();
+        for i in 0..boundaries.len() - 1 {
+            if boundaries[i] != boundaries[i + 1] {
+                ranges.push(rr(
+                    &boundaries[i],
+                    &boundaries[i + 1],
+                    &format!("pkrange-{i}"),
+                ));
+            }
+        }
+
+        let mut topology = MockTopologyProvider::new(vec![Ok(ranges)]);
+
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None, None)
+            .await
+            .unwrap_err();
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::CLIENT_QUERY_FAN_OUT_LIMIT_EXCEEDED,
+            "expected FAN_OUT_LIMIT_EXCEEDED status; got {err:?}",
+        );
+        let msg = err.to_string();
+        assert!(
+            msg.contains("QueryOptions::with_max_fan_out"),
+            "error should mention QueryOptions::with_max_fan_out; got: {msg}",
+        );
+    }
+
+    #[tokio::test]
+    async fn accepts_query_at_exactly_the_default_limit() {
+        // A topology with exactly DEFAULT_MAX_FAN_OUT partitions should succeed.
+        let n = DEFAULT_MAX_FAN_OUT;
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let ranges: Vec<ResolvedRange> = (0..n)
+            .map(|i| {
+                let min = if i == 0 {
+                    String::new()
+                } else {
+                    format!("{:02X}", (i * 0xFF / n).clamp(1, 0xFE))
+                };
+                let max = if i == n - 1 {
+                    "FF".to_string()
+                } else {
+                    format!("{:02X}", ((i + 1) * 0xFF / n).clamp(1, 0xFE))
+                };
+                rr(&min, &max, &format!("pkrange-{i}"))
+            })
+            .collect();
+        let count = ranges.len();
+        let mut topology = MockTopologyProvider::new(vec![Ok(ranges)]);
+
+        let result = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None, None).await;
+        assert!(
+            result.is_ok(),
+            "exactly {} partitions should not exceed the default limit of {}; got: {:?}",
+            count,
+            DEFAULT_MAX_FAN_OUT,
+            result.unwrap_err(),
+        );
+    }
+
+    #[tokio::test]
+    async fn custom_max_fan_out_is_honored() {
+        // With a custom limit of 2, 3 partitions should fail.
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+            rr("", "40", "pkrange-0"),
+            rr("40", "80", "pkrange-1"),
+            rr("80", "FF", "pkrange-2"),
+        ])]);
+
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None, Some(2))
+            .await
+            .unwrap_err();
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::CLIENT_QUERY_FAN_OUT_LIMIT_EXCEEDED,
+            "expected FAN_OUT_LIMIT_EXCEEDED with custom limit 2; got {err:?}",
+        );
+        let msg = err.to_string();
+        assert!(
+            msg.contains("3") && msg.contains("2"),
+            "error should mention actual count (3) and limit (2); got: {msg}",
+        );
+    }
+
+    #[tokio::test]
+    async fn custom_max_fan_out_allows_more_partitions() {
+        // With a custom limit of 5, 3 partitions should succeed.
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+            rr("", "40", "pkrange-0"),
+            rr("40", "80", "pkrange-1"),
+            rr("80", "FF", "pkrange-2"),
+        ])]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None, Some(5))
+            .await
+            .unwrap();
+        assert_drain_requests(
+            pipeline,
+            &[
+                ("", "40", "pkrange-0"),
+                ("40", "80", "pkrange-1"),
+                ("80", "FF", "pkrange-2"),
+            ],
+        );
     }
 }

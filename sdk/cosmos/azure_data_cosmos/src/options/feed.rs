@@ -39,6 +39,20 @@ pub struct FeedOptions {
     ///
     /// See [`QueryPageIterator::to_continuation_token`](crate::feed::QueryPageIterator::to_continuation_token).
     pub continuation_token: Option<ContinuationToken>,
+
+    /// Maximum number of physical partitions a cross-partition query may fan
+    /// out to.
+    ///
+    /// When `None`, the SDK uses a built-in default of 100. Setting this to a
+    /// higher
+    /// value allows queries that span very large containers, though such
+    /// queries are typically expensive and should be avoided in
+    /// latency-sensitive paths.
+    ///
+    /// If a query would target more physical partitions than this limit,
+    /// [`plan_operation`](azure_data_cosmos_driver::driver::CosmosDriver::plan_operation)
+    /// returns an error with status 400 / sub-status 20307.
+    pub max_fan_out: Option<usize>,
 }
 
 impl FeedOptions {
@@ -54,6 +68,16 @@ impl FeedOptions {
     /// Sets a continuation token to resume the feed at a previous position.
     pub fn with_continuation_token(mut self, continuation_token: ContinuationToken) -> Self {
         self.continuation_token = Some(continuation_token);
+        self
+    }
+
+    /// Sets the maximum number of physical partitions a cross-partition query
+    /// may fan out to.
+    ///
+    /// Overrides the built-in default (100). Pass a larger value only when
+    /// you understand the performance implications of a wide fan-out query.
+    pub fn with_max_fan_out(mut self, max_fan_out: usize) -> Self {
+        self.max_fan_out = Some(max_fan_out);
         self
     }
 }
@@ -143,6 +167,20 @@ impl QueryOptions {
     /// [`feed`](Self::feed).
     pub fn with_continuation_token(mut self, continuation_token: ContinuationToken) -> Self {
         self.feed = self.feed.with_continuation_token(continuation_token);
+        self
+    }
+
+    /// Sets the maximum number of physical partitions a cross-partition query
+    /// may fan out to.
+    ///
+    /// Delegates to [`FeedOptions::with_max_fan_out`] on the inner
+    /// [`feed`](Self::feed). Pass a larger value only when you understand the
+    /// performance implications of a wide fan-out query.
+    ///
+    /// The default is 100. Queries that target more physical partitions than
+    /// this limit fail with a 400 error.
+    pub fn with_max_fan_out(mut self, max_fan_out: usize) -> Self {
+        self.feed = self.feed.with_max_fan_out(max_fan_out);
         self
     }
 }

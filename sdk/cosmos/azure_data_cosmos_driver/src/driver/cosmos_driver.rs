@@ -24,8 +24,8 @@ use crate::{
     },
     models::{
         effective_partition_key::EffectivePartitionKey, AccountEndpoint, AccountReference,
-        ContainerProperties, ContainerReference, ContinuationToken, CosmosOperation,
-        DatabaseReference, PartitionKey, ResolvedToken, ResourceType, UserAgent,
+        ContainerProperties, ContainerReference, CosmosOperation, DatabaseReference, PartitionKey,
+        ResolvedToken, ResourceType, UserAgent,
     },
     options::{
         ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsView,
@@ -49,7 +49,7 @@ use super::{
         cosmos_headers, cosmos_transport_client::HttpRequest, request_signing,
         AuthorizationContext, CosmosTransport,
     },
-    CosmosDriverRuntime,
+    CosmosDriverRuntime, PlanOptions,
 };
 
 struct DriverRequestExecutor<'a> {
@@ -2147,20 +2147,23 @@ impl CosmosDriver {
     /// singleton pipeline immediately. For cross-partition queries, fetches a
     /// query plan from the backend and builds a fan-out pipeline.
     ///
-    /// `continuation` optionally provides resume state from a prior call. Two
-    /// kinds of tokens are accepted:
+    /// `plan_options` groups planning-specific settings. Pass `None` to use
+    /// all defaults.  See [`PlanOptions`] for available fields:
     ///
-    /// - SDK-issued tokens (`c1.…`) carry a serialized snapshot of the
-    ///   previous pipeline's state and can resume any operation.
-    /// - Opaque server-issued tokens (no `c<N>.` prefix) are accepted only
-    ///   for trivial operations; passing one to a cross-partition query
-    ///   returns a `Client`-shaped error.
+    /// - [`continuation`](PlanOptions::continuation) optionally provides resume
+    ///   state from a prior call. SDK-issued tokens (`c1.…`) can resume any
+    ///   operation; opaque server-issued tokens are only accepted for trivial
+    ///   (single-partition) operations.
+    /// - [`max_fan_out`](PlanOptions::max_fan_out) caps the number of physical
+    ///   partitions a cross-partition query may target (default 100).
     pub async fn plan_operation(
         &self,
         operation: CosmosOperation,
         options: &OperationOptions,
-        continuation: Option<&ContinuationToken>,
+        plan_options: Option<PlanOptions>,
     ) -> crate::error::Result<OperationPlan> {
+        let plan_options = plan_options.unwrap_or_default();
+
         if !self.initialized.load(Ordering::Acquire) {
             let endpoint = AccountEndpoint::from(self.options.account());
             return Err(crate::error::CosmosError::builder()
@@ -2181,7 +2184,7 @@ impl CosmosDriver {
 
         // Resolve the continuation token (if any) into a planner-ready resume
         // state. Server-issued tokens are only valid for trivial operations.
-        let resume_state = match continuation {
+        let resume_state = match plan_options.continuation.as_ref() {
             None => None,
             Some(token) => {
                 match token.resolve()? {
@@ -2242,9 +2245,14 @@ impl CosmosDriver {
             |container, continuation| self.fetch_pk_ranges_from_service(container, continuation),
         );
 
-        let pipeline =
-            planner::build_sequential_drain(&query_plan, &mut topology, &operation, resume_state)
-                .await?;
+        let pipeline = planner::build_sequential_drain(
+            &query_plan,
+            &mut topology,
+            &operation,
+            resume_state,
+            plan_options.max_fan_out,
+        )
+        .await?;
         Ok(OperationPlan::new(pipeline, operation))
     }
 
