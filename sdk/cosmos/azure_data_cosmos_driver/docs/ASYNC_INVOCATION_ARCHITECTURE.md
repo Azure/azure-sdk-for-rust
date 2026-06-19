@@ -1,33 +1,27 @@
-<!--
-cspell:ignore azurecosmosdriver cdylib pinning ungoverned MPSC cgo napi GCHandle
-cspell:ignore Tokio reqwest mutex tcs CompletableFuture asyncio uintptr cbindgen
-cspell:ignore staticlib dlopen dlsym dylib corrosion ctypes downcallhandle
--->
-
-# Async invocation architecture &mdash; `azure_data_cosmos_driver_native`
+# Async invocation architecture — `azure_data_cosmos_driver_native`
 
 This is a visual companion to [`NATIVE_WRAPPER_SPEC.md`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md).
 The spec is the source of truth; this doc is the picture-first overview that
 host-SDK authors (.NET, Java, Go, Python, native C/C++) can read in five
 minutes before diving into the C API surface.
 
-If you only read one section, read [&sect;2 &mdash; The submission &harr;
-completion lifecycle](#2--the-submission--completion-lifecycle).
+If you only read one section, read [section 2 — The submission and
+completion lifecycle](#2-the-submission-and-completion-lifecycle).
 
 ---
 
-## 0. What &laquo;C wrapper&raquo; means (there is no C code)
+## 0. What "C wrapper" means (there is no C code)
 
 A common first question is: *if this is a "C wrapper", where is the C
-code?* The short answer is that the **&laquo;C&raquo; refers to the ABI
-(Application Binary Interface) &mdash; the binary calling convention &mdash;
+code?* The short answer is that the **"C" refers to the ABI
+(Application Binary Interface) — the binary calling convention —
 not the implementation language.** The crate is written 100% in Rust. The
 only hand-written C in the repo lives under
 [`c_tests/`](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/cosmos/azure_data_cosmos_driver_native/c_tests), and that is a
 **test harness** that *consumes* the library to prove the ABI is callable
 from real C; it is not part of the shipped artifact.
 
-So &laquo;C bindings&raquo; here means *a binary that any C-compatible
+So "C bindings" here means *a binary that any C-compatible
 language can bind to*, not *a binary written in C*.
 
 ### The four pieces that make it work
@@ -76,13 +70,13 @@ sequenceDiagram
    pub extern "C" fn cosmos_bytes_len(b: *const CosmosBytes) -> usize { ... }
    ```
 
-   - `extern "C"` &mdash; use the C calling convention (how arguments and
+   - `extern "C"` — use the C calling convention (how arguments and
      return values are passed in registers / on the stack).
-   - `#[no_mangle]` &mdash; suppress Rust name-mangling so the exported
+   - `#[no_mangle]` — suppress Rust name-mangling so the exported
      symbol is exactly `cosmos_bytes_len`, findable by `dlsym` /
      `GetProcAddress` / `[DllImport]`.
    - `#[repr(C)]` on structs (e.g. `CosmosBytes`, `CosmosOperationRequest`)
-     &mdash; lay fields out in memory exactly as a C compiler would, so a C#
+     — lay fields out in memory exactly as a C compiler would, so a C#
      `[StructLayout(Sequential)]` mirror or a Go `C.struct_...` lines up
      byte-for-byte.
 
@@ -96,7 +90,7 @@ sequenceDiagram
    **cbindgen** on every `cargo build`: it parses the `extern "C"` functions
    and `#[repr(C)]` types and writes
    [`include/azurecosmosdriver.h`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver_native/include/azurecosmosdriver.h).
-   The `rename` map + `prefix = "cosmos_"` in `build.rs` is cosmetic &mdash;
+   The `rename` map + `prefix = "cosmos_"` in `build.rs` is cosmetic —
    it turns the Rust type name `RuntimeContext` into the spec C name
    `cosmos_runtime_t`.
 
@@ -105,7 +99,7 @@ sequenceDiagram
    the contract.
 
 4. **Host languages bind at the ABI.** No language-specific glue is compiled
-   into the crate &mdash; each host declares the symbols its own way and the
+   into the crate — each host declares the symbols its own way and the
    OS loader connects them:
 
    | Host | Binding mechanism |
@@ -121,13 +115,13 @@ sequenceDiagram
 - **Why "C wrapper" with no C code?** Because it exposes a **C ABI**, the
   lingua franca of cross-language interop. The implementation is Rust; the
   *interface* is C.
-- **Are there C bindings?** Yes &mdash; the binding is the **checked-in C
+- **Are there C bindings?** Yes — the binding is the **checked-in C
   header** (`azurecosmosdriver.h`) plus the C-ABI symbols in the compiled
   `.dll` / `.so` / `.dylib`. The only actual C *source* is the test harness
   in `c_tests/`, which exists purely to validate that a genuine C program can
   drive the library.
 
-The rest of this document (&sect;1 onward) assumes this foundation and
+The rest of this document (section 1 onward) assumes this foundation and
 focuses on the *async* shape layered on top of these C-ABI symbols.
 
 ---
@@ -138,7 +132,7 @@ The wrapper is a thin C ABI in front of the
 [`azure_data_cosmos_driver`](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/cosmos/azure_data_cosmos_driver) crate. It owns an internal Tokio runtime and
 a multi-producer / single-consumer completion-queue abstraction; host SDKs
 get a non-blocking C API and reuse their own native async primitive
-(`Task`/`CompletableFuture`/`chan`/&hellip;) on top.
+(`Task`/`CompletableFuture`/`chan`/...) on top.
 
 ```mermaid
 flowchart TB
@@ -150,7 +144,7 @@ flowchart TB
 
     subgraph cabi["azurecosmosdriver C ABI (cdylib / staticlib)"]
         direction TB
-        submit["cosmos_driver_submit&hellip;<br/>(pre-flight + Tokio spawn)"]
+        submit["cosmos_driver_submit...<br/>(pre-flight + Tokio spawn)"]
         cqapi["cosmos_cq_wait / _try_wait /<br/>_wait_batch / _shutdown / _state"]
         compl["cosmos_completion_*<br/>(outcome / status /<br/>take_response / take_error)"]
         oph["cosmos_operation_handle_*<br/>(cancel / state / free)"]
@@ -166,7 +160,7 @@ flowchart TB
     subgraph driver["azure_data_cosmos_driver"]
         direction TB
         cdriver["CosmosDriver<br/>execute_singleton_operation"]
-        cerror["CosmosError &harr; CosmosResponse"]
+        cerror["CosmosError and CosmosResponse"]
     end
 
     app -->|"1. submit"| submit
@@ -193,21 +187,21 @@ flowchart TB
     class cdriver,cerror driver
 ```
 
-**Read this picture as &laquo;three independent threading planes&raquo;:**
+**Read this picture as "three independent threading planes":**
 
 | Plane | Who owns the thread | What runs there |
 |---|---|---|
-| Application | Host SDK | The `async` method that submits and `await`s. Never blocks &mdash; the submit returns immediately. |
+| Application | Host SDK | The `async` method that submits and `await`s. Never blocks — the submit returns immediately. |
 | Receive loop | Host SDK | One dedicated thread per `cosmos_cq_t` that blocks in `cosmos_cq_wait` and dispatches completions to the host's native async primitive. |
 | Tokio | Wrapper (runtime owned by `cosmos_runtime_t`) | The driver future for each in-flight op. The host never touches these threads. |
 
 The receive-loop thread is the **only** place the wrapper surfaces results
-back to host code &mdash; cleanly decoupling the host's threading model from
+back to host code — cleanly decoupling the host's threading model from
 Tokio's.
 
 ---
 
-## 2. The submission &harr; completion lifecycle
+## 2. The submission and completion lifecycle
 
 This is the canonical happy-path flow, end-to-end. Everything else
 (cancellation, queue shutdown, pre-flight rejection) is a variation on it.
@@ -228,7 +222,7 @@ sequenceDiagram
     Sub->>Tok: spawn driver.execute_singleton_operation(op)
     Sub-->>App: cosmos_operation_handle_t* (in-flight)
     App-->>App: return Task / Future / chan to caller
-    Note over App: App now awaits &mdash no thread is blocked.
+    Note over App: App now awaits — no thread is blocked.
 
     Tok->>Drv: poll until ready
     Drv-->>Tok: Ok(CosmosResponse) | Err(CosmosError)
@@ -237,7 +231,7 @@ sequenceDiagram
 
     Rcv->>CQ: cosmos_cq_wait(queue, timeout)
     CQ-->>Rcv: cosmos_completion_t*
-    Rcv->>Rcv: read user_data &rarr recover Cont
+    Rcv->>Rcv: read user_data -> recover Cont
     alt outcome == OK
         Rcv->>Cont: SetResult(take_response)
     else outcome == ERROR
@@ -256,13 +250,13 @@ sequenceDiagram
 2. **`user_data` is the per-call correlator.** The wrapper round-trips it
    verbatim. The host owns its lifetime.
 3. **Exactly one completion lands per successful submit.** Including the
-   cancelled case (see &sect;4) &mdash; there is no &laquo;silent drop&raquo;
+   cancelled case (see section 4) — there is no "silent drop"
    path.
 4. **Pre-flight rejection (`*out_pre_error != SUCCESS`, return value
    `NULL`) does NOT post a completion.** The host's exception path runs
    synchronously inside the submit wrapper.
 
-See [&sect;3.6.1](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#361-cosmos_completion_t) of the
+See [section 3.6.1](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#361-cosmos_completion_t) of the
 spec for the C API surface of every box in this diagram.
 
 ---
@@ -309,9 +303,9 @@ flowchart LR
 | Wants cancel propagation (`.NET CancellationToken`, `Go ctx.Done()`, `Java CompletableFuture.cancel`) | Stash the handle alongside the continuation. Cancel from the app side. Free from the receive loop after the completion is observed. |
 | Wants `cosmos_operation_handle_state` polling without draining the queue | Keep the handle. State remains observable after `cosmos_completion_free` because the handle's own `Arc` keeps the inner state alive. |
 
-Freeing the handle **never** cancels the op &mdash; it only drops the
+Freeing the handle **never** cancels the op — it only drops the
 producer's reference. See
-[&sect;3.6.2](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#362-cosmos_operation_handle_t) for the
+[section 3.6.2](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#362-cosmos_operation_handle_t) for the
 exact contract.
 
 ---
@@ -349,17 +343,17 @@ sequenceDiagram
     Note over Rcv: Host distinguishes cancel-succeeded from cancel-lost-the-race.
 ```
 
-**Caveats** &mdash; flagged here for visibility, fully documented in
-[&sect;3.6.3](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#363-cancellation):
+**Caveats** — flagged here for visibility, fully documented in
+[section 3.6.3](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#363-cancellation):
 
-- Granularity is &laquo;drop at the next await point&raquo;, not
-  &laquo;check a token every operation&raquo;. A future parked inside a
+- Granularity is "drop at the next await point", not
+  "check a token every operation". A future parked inside a
   non-cancellable syscall (e.g. `getaddrinfo`) cancels only when control
-  returns to the reactor &mdash; usually within a few milliseconds.
+  returns to the reactor — usually within a few milliseconds.
 - In-flight requests are not actively aborted on the wire. Dropping the
   `reqwest` future closes the TCP connection but does not send a
   protocol-level cancel; the gateway may still execute the request.
-- Cancelled completions carry **no** response and **no** diagnostics &mdash;
+- Cancelled completions carry **no** response and **no** diagnostics —
   the driver's partial `DiagnosticsContext` is dropped with the future.
 
 ---
@@ -380,7 +374,7 @@ stateDiagram-v2
 Submits against a queue at hard capacity
 (`cosmos_cq_options.max_capacity > 0`) fail pre-flight with
 `COSMOS_ERROR_CODE_QUEUE_FULL`. Use `cosmos_cq_wait_writable(queue, ms)` to
-block until space is available. The default queue is unbounded &mdash; only
+block until space is available. The default queue is unbounded — only
 opt into capacity caps for bulk-import / fan-out workloads where a stuck
 consumer would otherwise grow memory without bound.
 
@@ -390,7 +384,7 @@ consumer would otherwise grow memory without bound.
 
 The receive loop needs a stable correlator that survives the round-trip
 across the FFI. The wrapper does **no** lifecycle management on
-`user_data` &mdash; the host pins the continuation on submit and frees it
+`user_data` — the host pins the continuation on submit and frees it
 in the receive loop. The pinning trick differs per language because
 managed-pointer rules differ:
 
@@ -422,13 +416,13 @@ flowchart LR
 
 | Language | Pinning strategy | Why |
 |---|---|---|
-| .NET | `(IntPtr)GCHandle.Alloc(tcs)` &mdash; pins the TCS directly | Managed-pointer story works; the GC respects the pinning until `Free()`. |
-| Java | Ticket &rarr; `ConcurrentHashMap<Long, CompletableFuture>` | JNI / panama forbid live Java refs across native calls; the map keys give us a stable handle. |
-| Go | Ticket &rarr; `sync.Map[uintptr]chan` | cgo's `checkptr` rules forbid handing the C side a live `*T` whose lifetime crosses cgo boundaries. |
+| .NET | `(IntPtr)GCHandle.Alloc(tcs)` — pins the TCS directly | Managed-pointer story works; the GC respects the pinning until `Free()`. |
+| Java | Ticket -> `ConcurrentHashMap<Long, CompletableFuture>` | JNI / panama forbid live Java refs across native calls; the map keys give us a stable handle. |
+| Go | Ticket -> `sync.Map[uintptr]chan` | cgo's `checkptr` rules forbid handing the C side a live `*T` whose lifetime crosses cgo boundaries. |
 | Python / Node | Same ticket-map pattern as Java/Go | `asyncio.Future` / `Promise` resolvers; the receive thread bridges back via `loop.call_soon_threadsafe` / `napi_async_work`. |
 
 Full code examples for all three are in
-[&sect;3.1 of the spec](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#31-invocation-model--completion-queues).
+[section 3.1 of the spec](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#31-invocation-model--completion-queues).
 
 ---
 
@@ -437,21 +431,21 @@ Full code examples for all three are in
 | Object | Multi-producer? | Multi-consumer? | Ordered? |
 |---|---|---|---|
 | `cosmos_runtime_t` | Yes, but typically one per process | Yes | n/a |
-| `cosmos_cq_t` | **Yes** &mdash; any thread holding the pointer may submit | **No** &mdash; only one thread at a time may call `cosmos_cq_wait` (v1) | FIFO from a given producer; no global ordering across producers |
+| `cosmos_cq_t` | **Yes** — any thread holding the pointer may submit | **No** — only one thread at a time may call `cosmos_cq_wait` (v1) | FIFO from a given producer; no global ordering across producers |
 | `cosmos_operation_handle_t` | n/a | `_cancel` / `_state` / `_free` callable from any thread | n/a |
 | `cosmos_completion_t` | n/a | Single-threaded use (the receive loop) | n/a |
 
 If you want work-stealing across multiple consumer threads, create
 **one queue per consumer**. The wrapper does not coordinate cross-thread
-fairness inside a single queue. See [&sect;9 Q12](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#9-open-questions)
+fairness inside a single queue. See [section 9 Q12](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#9-open-questions)
 of the spec for whether MPMC will land in a future revision.
 
 ---
 
 ## 8. Where to look next
 
-- [`NATIVE_WRAPPER_SPEC.md` &sect;3.1](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#31-invocation-model--completion-queues) &mdash; full invocation model + per-language call sites.
-- [`NATIVE_WRAPPER_SPEC.md` &sect;3.5](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#35-error-model) &mdash; error model (`cosmos_error_code_t` + `cosmos_error_t`).
-- [`NATIVE_WRAPPER_SPEC.md` &sect;3.6](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#36-completion-records--operation-handles) &mdash; completion record / operation handle accessors.
-- [`NATIVE_WRAPPER_SPEC.md` &sect;8](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#8-phased-implementation-plan) &mdash; phased rollout (Phase 0 scaffolding through Phase 10 advanced surface).
-- [`NATIVE_WRAPPER_SPEC.md` &sect;6](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#6-error-semantics) &mdash; how the merged driver's `CosmosError` maps onto the coarse `cosmos_error_code_t`.
+- [`NATIVE_WRAPPER_SPEC.md` section 3.1](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#31-invocation-model--completion-queues) — full invocation model + per-language call sites.
+- [`NATIVE_WRAPPER_SPEC.md` section 3.5](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#35-error-model) — error model (`cosmos_error_code_t` + `cosmos_error_t`).
+- [`NATIVE_WRAPPER_SPEC.md` section 3.6](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#36-completion-records--operation-handles) — completion record / operation handle accessors.
+- [`NATIVE_WRAPPER_SPEC.md` section 8](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#8-phased-implementation-plan) — phased rollout (Phase 0 scaffolding through Phase 10 advanced surface).
+- [`NATIVE_WRAPPER_SPEC.md` section 6](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#6-error-semantics) — how the merged driver's `CosmosError` maps onto the coarse `cosmos_error_code_t`.
