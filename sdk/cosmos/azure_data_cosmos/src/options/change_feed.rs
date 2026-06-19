@@ -15,12 +15,13 @@ use crate::options::FeedOptions;
 /// This is only consulted when no continuation token is provided. If a
 /// continuation token is set, it carries its own position and this value is
 /// ignored.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 #[non_exhaustive]
 pub enum ChangeFeedStartFrom {
     /// Start from the beginning of the change feed (all available changes).
     ///
     /// No additional headers are sent.
+    #[default]
     Beginning,
 
     /// Start from the current point in time (only changes after the request).
@@ -32,12 +33,6 @@ pub enum ChangeFeedStartFrom {
     ///
     /// Wire header: `If-Modified-Since: <RFC 1123 timestamp>`.
     PointInTime(OffsetDateTime),
-}
-
-impl Default for ChangeFeedStartFrom {
-    fn default() -> Self {
-        Self::Beginning
-    }
 }
 
 /// Options for change feed operations.
@@ -132,8 +127,7 @@ mod tests {
 
     #[test]
     fn options_builder_chain() {
-        let opts = ChangeFeedOptions::default()
-            .with_start_from(ChangeFeedStartFrom::Now);
+        let opts = ChangeFeedOptions::default().with_start_from(ChangeFeedStartFrom::Now);
 
         assert!(matches!(opts.start_from, ChangeFeedStartFrom::Now));
     }

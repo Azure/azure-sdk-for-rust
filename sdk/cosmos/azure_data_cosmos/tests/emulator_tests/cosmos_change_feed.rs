@@ -1,0 +1,327 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+//! Emulator integration tests for the change feed pull API.
+//!
+//! These mirror the standard change feed scenarios validated by the .NET and
+//! Java SDKs:
+//!
+//! * `StartFrom::Beginning` returns all historical changes (single partition
+//!   and cross-partition fan-out).
+//! * `StartFrom::Now` excludes pre-existing items and only surfaces changes
+//!   made after the iterator's starting position.
+//! * A quiescent feed returns an empty page (HTTP 304 Not Modified) instead of
+//!   erroring or terminating the stream.
+//! * A continuation token resumes the feed and only yields changes that
+//!   occurred after the captured position.
+
+use super::framework;
+
+use std::error::Error;
+
+use azure_data_cosmos::feed::{ChangeFeedPageIterator, ContinuationToken, FeedScope};
+use azure_data_cosmos::models::ThroughputProperties;
+use azure_data_cosmos::options::{ChangeFeedOptions, ChangeFeedStartFrom};
+use framework::{test_data, MockItem, TestClient, TestOptions};
+use futures::StreamExt;
+use serde::de::DeserializeOwned;
+
+/// Maximum number of page polls a drain loop will perform before giving up.
+///
+/// Guards against the change feed's intentionally infinite stream looping
+/// forever if a test's stop condition is never met.
+const MAX_DRAIN_POLLS: usize = 200;
+
+/// Number of consecutive empty (304) pages that signals the feed is fully
+/// drained. Because [`UnorderedMerge`] resets to a non-empty page as soon as
+/// any partition has data, a short streak of consecutive empties reliably
+/// means every partition has caught up.
+const EMPTY_STREAK_TO_STOP: usize = 4;
+
+/// Polls a change feed iterator until it reports no further changes (a streak
+/// of empty 304 pages) or a poll cap is reached, returning every item seen.
+async fn drain_changes<T>(
+    iterator: &mut ChangeFeedPageIterator<T>,
+) -> Result<Vec<T>, Box<dyn Error>>
+where
+    T: DeserializeOwned + Send + 'static,
+{
+    let mut collected = Vec::new();
+    let mut empty_streak = 0usize;
+    let mut polls = 0usize;
+
+    while let Some(page) = iterator.next().await {
+        let page = page?;
+        polls += 1;
+
+        if page.items().is_empty() {
+            empty_streak += 1;
+            if empty_streak >= EMPTY_STREAK_TO_STOP {
+                break;
+            }
+        } else {
+            empty_streak = 0;
+            collected.extend(page.into_items());
+        }
+
+        if polls >= MAX_DRAIN_POLLS {
+            break;
+        }
+    }
+
+    Ok(collected)
+}
+
+/// Sorts items by their numeric `id` so collections gathered in partition or
+/// page order can be compared deterministically.
+fn sort_by_id(items: &mut [MockItem]) {
+    items.sort_by_key(|item| item.id.parse::<usize>().unwrap_or(usize::MAX));
+}
+
+/// `StartFrom::Beginning` against a single logical partition returns exactly
+/// the items written to that partition. This exercises the trivial
+/// (single-request) change feed path.
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+pub async fn change_feed_from_beginning_single_partition() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |_, db_client| {
+            let items = test_data::generate_mock_items(10, 10);
+            let mut expected: Vec<MockItem> = items
+                .iter()
+                .filter(|item| item.partition_key == "partition3")
+                .cloned()
+                .collect();
+            sort_by_id(&mut expected);
+
+            let container = test_data::create_container_with_items(db_client, items, None).await?;
+
+            let mut iterator = container
+                .read_change_feed::<MockItem>(FeedScope::partition("partition3"), None)
+                .await?;
+
+            let mut actual = drain_changes(&mut iterator).await?;
+            sort_by_id(&mut actual);
+
+            assert_eq!(expected, actual);
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+/// `StartFrom::Beginning` over the full container fans out across every
+/// physical partition (via `UnorderedMerge`) and returns all items. The
+/// container is provisioned with enough throughput to force multiple physical
+/// partitions so the cross-partition merge path is genuinely exercised.
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+pub async fn change_feed_from_beginning_full_container() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |_, db_client| {
+            let items = test_data::generate_mock_items(10, 10);
+            let mut expected = items.clone();
+            sort_by_id(&mut expected);
+
+            // 11000 RU/s forces the service to create at least 2 physical
+            // partitions, so the full-container read must fan out.
+            let container = test_data::create_container_with_items(
+                db_client,
+                items,
+                Some(ThroughputProperties::manual(11000)),
+            )
+            .await?;
+
+            let mut iterator = container
+                .read_change_feed::<MockItem>(FeedScope::full_container(), None)
+                .await?;
+
+            let mut actual = drain_changes(&mut iterator).await?;
+            sort_by_id(&mut actual);
+
+            assert_eq!(expected, actual);
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+/// `StartFrom::Now` excludes items written before the iterator's start
+/// position and surfaces only changes made afterwards.
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+pub async fn change_feed_start_from_now_returns_only_new_changes() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |_, db_client| {
+            // Baseline items exist before the iterator is created.
+            let baseline = test_data::generate_mock_items(10, 5);
+            let container =
+                test_data::create_container_with_items(db_client, baseline, None).await?;
+
+            let mut iterator = container
+                .read_change_feed::<MockItem>(
+                    FeedScope::partition("partition0"),
+                    Some(ChangeFeedOptions::default().with_start_from(ChangeFeedStartFrom::Now)),
+                )
+                .await?;
+
+            // The first poll establishes the "now" position; because no writes
+            // have happened since, it must be empty (baseline excluded).
+            let first = iterator
+                .next()
+                .await
+                .expect("change feed stream always yields a page")?;
+            assert!(
+                first.items().is_empty(),
+                "StartFrom::Now should not return baseline items, got {} items",
+                first.items().len()
+            );
+
+            // Write new items after the "now" marker.
+            let new_items: Vec<MockItem> = (0..3)
+                .map(|i| MockItem {
+                    id: format!("100{i}"),
+                    partition_key: "partition0".to_string(),
+                    merge_order: 1000 + i,
+                })
+                .collect();
+            for item in &new_items {
+                container
+                    .create_item("partition0", &item.id, item, None)
+                    .await?;
+            }
+
+            let mut actual = drain_changes(&mut iterator).await?;
+            sort_by_id(&mut actual);
+
+            let mut expected = new_items;
+            sort_by_id(&mut expected);
+
+            assert_eq!(expected, actual);
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+/// A feed with no changes returns an empty page (HTTP 304 Not Modified)
+/// without erroring or terminating the stream.
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+pub async fn change_feed_no_changes_returns_empty_page() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |_, db_client| {
+            // Empty container — there are no changes to report.
+            let container =
+                test_data::create_container_with_items(db_client, Vec::new(), None).await?;
+
+            let mut iterator = container
+                .read_change_feed::<MockItem>(FeedScope::partition("partition0"), None)
+                .await?;
+
+            // Several consecutive polls must each yield an empty page and must
+            // not error or end the stream.
+            for poll in 0..3 {
+                let page = iterator
+                    .next()
+                    .await
+                    .expect("change feed stream always yields a page")?;
+                assert!(
+                    page.items().is_empty(),
+                    "poll {poll} expected an empty page, got {} items",
+                    page.items().len()
+                );
+            }
+
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+/// A continuation token captured from one iterator resumes the feed in a fresh
+/// iterator, yielding only the changes that occurred after the captured
+/// position.
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+pub async fn change_feed_continuation_token_resume() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |_, db_client| {
+            let baseline = test_data::generate_mock_items(10, 5);
+            let mut expected_baseline: Vec<MockItem> = baseline
+                .iter()
+                .filter(|item| item.partition_key == "partition0")
+                .cloned()
+                .collect();
+            sort_by_id(&mut expected_baseline);
+
+            let container =
+                test_data::create_container_with_items(db_client, baseline, None).await?;
+
+            // Drain the baseline, then capture a resume token.
+            let mut iterator = container
+                .read_change_feed::<MockItem>(FeedScope::partition("partition0"), None)
+                .await?;
+            let mut first_batch = drain_changes(&mut iterator).await?;
+            sort_by_id(&mut first_batch);
+            assert_eq!(expected_baseline, first_batch);
+
+            // Round-trip the token through its string form to mimic persisting
+            // it across processes.
+            let token = iterator.to_continuation_token()?;
+            let token = ContinuationToken::from_string(token.as_str().to_owned());
+            drop(iterator);
+
+            // Write new items after the captured position.
+            let new_items: Vec<MockItem> = (0..3)
+                .map(|i| MockItem {
+                    id: format!("200{i}"),
+                    partition_key: "partition0".to_string(),
+                    merge_order: 2000 + i,
+                })
+                .collect();
+            for item in &new_items {
+                container
+                    .create_item("partition0", &item.id, item, None)
+                    .await?;
+            }
+
+            // Resume from the token: only the new items should appear.
+            let mut resumed = container
+                .read_change_feed::<MockItem>(
+                    FeedScope::partition("partition0"),
+                    Some(ChangeFeedOptions::default().with_continuation_token(token)),
+                )
+                .await?;
+            let mut second_batch = drain_changes(&mut resumed).await?;
+            sort_by_id(&mut second_batch);
+
+            let mut expected_new = new_items;
+            sort_by_id(&mut expected_new);
+
+            assert_eq!(expected_new, second_batch);
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}

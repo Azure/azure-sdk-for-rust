@@ -722,12 +722,10 @@ impl CosmosOperation {
     /// fan-out strategy.
     pub fn is_trivial(&self) -> bool {
         if self.operation_type != OperationType::Query {
-            // Change feed operations targeting EPK ranges need fan-out.
-            if self.is_change_feed() && self.target.is_some() {
-                return self
-                    .target()
-                    .and_then(|t| t.partition_key())
-                    .is_some();
+            // Change feed is trivial only when targeting a specific logical partition key.
+            // Full-container (target=None) and EPK range targets require fan-out.
+            if self.is_change_feed() {
+                return self.target().and_then(|t| t.partition_key()).is_some();
             }
             // For now, at least, all other non-query operations are trivial.
             return true;

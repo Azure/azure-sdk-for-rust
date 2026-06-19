@@ -245,9 +245,8 @@ pub(crate) async fn build_unordered_merge(
     let mut request_nodes: Vec<Box<dyn PipelineNode>> = Vec::new();
 
     for resolved_range in resolved {
-        let range = intersect_feed_ranges(&resolved_range.range, feed_range).expect(
-            "topology provider must return ranges that overlap the feed range",
-        );
+        let range = intersect_feed_ranges(&resolved_range.range, feed_range)
+            .expect("topology provider must return ranges that overlap the feed range");
 
         // Check if this range has a saved continuation token.
         let continuation = saved_tokens.as_ref().and_then(|tokens| {

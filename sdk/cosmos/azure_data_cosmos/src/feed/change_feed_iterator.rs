@@ -181,7 +181,9 @@ impl LiveState {
 /// ```
 #[pin_project::pin_project]
 pub struct ChangeFeedPageIterator<T: Send> {
-    #[pin]
+    // `state` is already heap-pinned (`Pin<Box<_>>`), so it is not a
+    // structurally-pinned field of this struct. Projecting it as `&mut`
+    // lets us re-derive `Pin<&mut LiveState>` via `Pin::as_mut` on each poll.
     state: Pin<Box<LiveState>>,
     _marker: PhantomData<fn() -> T>,
 }

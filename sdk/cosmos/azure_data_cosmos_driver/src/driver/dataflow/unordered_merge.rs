@@ -13,8 +13,6 @@ use std::collections::VecDeque;
 
 use async_trait::async_trait;
 
-use crate::models::FeedRange;
-
 use super::{PageResult, PipelineContext, PipelineNode, PipelineNodeState, RangedToken};
 
 /// Maximum number of consecutive split retries before giving up.
@@ -70,7 +68,11 @@ impl PipelineNode for UnorderedMerge {
             match child.next_page(context).await? {
                 PageResult::Page {
                     response,
-                    is_terminal,
+                    // A child's `is_terminal` (304 / no continuation) is
+                    // intentionally ignored: change feed partitions persist
+                    // and may yield data on a later poll, so we never evict
+                    // or propagate terminal upward.
+                    is_terminal: _,
                 } => {
                     // Advance cursor to next child for round-robin.
                     self.cursor = (idx + 1) % self.children.len();
@@ -110,9 +112,7 @@ impl PipelineNode for UnorderedMerge {
                     split_retries += 1;
                     if split_retries > MAX_SPLIT_RETRIES {
                         return Err(crate::error::CosmosError::builder()
-                            .with_status(
-                                crate::error::CosmosStatus::CLIENT_SPLIT_RETRIES_EXHAUSTED,
-                            )
+                            .with_status(crate::error::CosmosStatus::CLIENT_SPLIT_RETRIES_EXHAUSTED)
                             .with_message(format!(
                                 "exceeded maximum split retries ({MAX_SPLIT_RETRIES}) \
                                  in UnorderedMerge"
@@ -158,11 +158,7 @@ impl PipelineNode for UnorderedMerge {
             };
 
             let child_state = child.snapshot_state()?;
-            match child_state.into_child_contribution(
-                "UnorderedMerge",
-                idx,
-                self.children.len(),
-            )? {
+            match child_state.into_child_contribution("UnorderedMerge", idx, self.children.len())? {
                 super::snapshot::ChildSnapshotContribution::Drained => {
                     // Drained children contribute nothing to the token.
                 }

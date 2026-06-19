@@ -22,6 +22,7 @@
     - `register_throughput_control_group(ThroughputControlGroupOptions) -> Result<Self>` — registers a throughput-control group for this client's driver.
   - New re-exports from `azure_data_cosmos::options` (so users configuring a custom runtime don't have to take a direct dependency on the driver crate): `ConnectionPoolOptions`, `ConnectionPoolOptionsBuilder`, `ServerCertificateValidation`, `PartitionFailoverOptions`, `PartitionFailoverOptionsBuilder`, `ThroughputControlOptions`, `ThroughputControlOptionsBuilder`, and `ThroughputControlOptionsView`.
   - New nested `OperationOptions::throughput_control` group lets callers set `throughput_bucket` and `priority_level` per request without first registering a throughput-control group; registered groups are still consulted as fallbacks through `ThroughputControlOptions::group_name`. (See the driver CHANGELOG for the full per-field layering and header-emission rules.)
+- Added change feed pull support via `ContainerClient::read_change_feed()`, returning a `ChangeFeedPageIterator<T>` that streams `FeedPage<T>` results. New `feed` types `ChangeFeedPageIterator`, `FeedScope`, and `ContinuationToken`, plus `options` types `ChangeFeedOptions` and `ChangeFeedStartFrom` (`Beginning`, `Now`, `PointInTime`); supports single-partition, per-partition-key, and full-container (cross-partition fan-out) reads with continuation-token resumption. ([#4621](https://github.com/Azure/azure-sdk-for-rust/pull/4621))
 
 ### Breaking Changes
 

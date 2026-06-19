@@ -933,9 +933,7 @@ impl ContainerClient {
                             .with_status(crate::error::CosmosStatus::new(
                                 azure_core::http::StatusCode::BadRequest,
                             ))
-                            .with_message(format!(
-                                "failed to format PointInTime timestamp: {e}"
-                            ))
+                            .with_message(format!("failed to format PointInTime timestamp: {e}"))
                             .build()
                     })?;
                     initial_operation = initial_operation.with_if_modified_since(formatted);

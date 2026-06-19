@@ -15,6 +15,7 @@
   - `with_user_agent_suffix(UserAgentSuffix)` — overrides the runtime's default User-Agent suffix for this driver. The runtime continues to precompute its own `Arc<UserAgent>`; drivers with no override clone that `Arc` (no per-request UA recomputation), drivers with an override compute their own `UserAgent` once at construction.
   - `with_fault_injection_rules(Vec<Arc<FaultInjectionRule>>) -> Result<Self>` — registers fault-injection rules at the driver level (gated on the `fault_injection` feature). Rejects duplicate rule IDs.
   - `register_throughput_control_group(ThroughputControlGroupOptions) -> Result<Self>` — registers a throughput-control group for this driver. Throughput-control groups are now a driver-only concept; the per-runtime registry has been removed.
+- Added change feed support in the dataflow pipeline: a new `UnorderedMerge` node fans a change feed read out across physical partitions and round-robins their pages, and `CosmosOperation::change_feed` builds incremental-feed operations with the appropriate wire headers. ([#4621](https://github.com/Azure/azure-sdk-for-rust/pull/4621))
 
 ### Breaking Changes
 
