@@ -147,7 +147,7 @@ impl RequestObserver for RecordingObserver {
 /// Parses the global LSN out of a V2 session token of the form
 /// `{pkrange}:{version}#{globalLsn}#{region}={localLsn}` (or the bare V1 form
 /// `{pkrange}:{lsn}`).
-fn global_lsn(token: &str) -> u64 {
+pub(crate) fn global_lsn(token: &str) -> u64 {
     let after_pkrange = token.split_once(':').map(|(_, rest)| rest).unwrap_or(token);
     let mut parts = after_pkrange.split('#');
     let first = parts.next().unwrap_or_default();
