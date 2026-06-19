@@ -530,8 +530,17 @@ impl LocationStateStore {
             let mut next = previous.clone();
             next.per_partition_automatic_failover_enabled =
                 per_partition_automatic_failover_enabled;
-            next.per_partition_circuit_breaker_enabled = per_partition_automatic_failover_enabled
-                || previous.config.circuit_breaker_enabled();
+            // The incident kill switch (`AZURE_COSMOS_PPCB_ENABLED_OVERRIDE`) is
+            // authoritative: when set it wins over both the account property and
+            // the base option. Only when it is unset does PPCB fall back to
+            // `account property || option`.
+            next.per_partition_circuit_breaker_enabled = previous
+                .config
+                .circuit_breaker_enabled_override()
+                .unwrap_or_else(|| {
+                    per_partition_automatic_failover_enabled
+                        || previous.config.circuit_breaker_enabled()
+                });
 
             // Drop per-partition routing overrides on any edge of either
             // enablement flag. The eligibility gate in `is_eligible_for_ppaf` /
