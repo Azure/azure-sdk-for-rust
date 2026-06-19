@@ -24,7 +24,8 @@ use azure_data_cosmos_driver::models::{
     AccountReference, ContainerReference, CosmosOperation, ItemReference, PartitionKey,
 };
 use azure_data_cosmos_driver::options::{
-    DriverOptions, EndToEndOperationLatencyPolicy, ExcludedRegions, OperationOptions, Region,
+    DriverOptions, EndToEndOperationLatencyPolicy, ExcludedRegions, OperationOptions,
+    PartitionFailoverOptions, Region,
 };
 
 use super::host_recorder::HostRecorder;
@@ -60,7 +61,45 @@ struct Fixture {
 }
 
 /// Builds the two-region in-memory emulator with the supplied fault rules and bootstraps a driver against it.
+///
+/// PPCB is **disabled** here so these region-failover tests exercise pure
+/// cross-region failover without the per-partition circuit breaker's
+/// first-attempt range pre-resolution (which would otherwise issue a
+/// `pkranges` metadata read against the primary and pollute the recorded
+/// host list). The PPCB override tests opt in via [`build_ppcb_fixture`].
 async fn build_fixture(write_mode: WriteMode, rules: Vec<Arc<FaultInjectionRule>>) -> Fixture {
+    let failover = PartitionFailoverOptions::builder()
+        .with_circuit_breaker_enabled(false)
+        .build()
+        .expect("valid failover options");
+    build_fixture_with_failover(write_mode, rules, failover).await
+}
+
+/// Like [`build_fixture`] but wires the per-partition circuit breaker (PPCB)
+/// with a 1-failure trip threshold via driver-level
+/// [`PartitionFailoverOptions`].
+///
+/// Since #4588 the PPCB thresholds are configured once at driver construction
+/// rather than per operation, so the PPCB override tests build their driver
+/// with this fixture to keep the historical "one failure trips the breaker"
+/// behavior.
+async fn build_ppcb_fixture(write_mode: WriteMode, rules: Vec<Arc<FaultInjectionRule>>) -> Fixture {
+    let failover = PartitionFailoverOptions::builder()
+        .with_circuit_breaker_enabled(true)
+        .with_read_failure_threshold(1)
+        .with_write_failure_threshold(1)
+        .build()
+        .expect("valid PPCB options");
+    build_fixture_with_failover(write_mode, rules, failover).await
+}
+
+/// Shared fixture builder. The supplied `failover` options are attached to the
+/// driver so each test controls PPCB enablement and thresholds explicitly.
+async fn build_fixture_with_failover(
+    write_mode: WriteMode,
+    rules: Vec<Arc<FaultInjectionRule>>,
+    failover: PartitionFailoverOptions,
+) -> Fixture {
     let recorder = HostRecorder::new();
 
     let config = VirtualAccountConfig::new(vec![
@@ -102,12 +141,13 @@ async fn build_fixture(write_mode: WriteMode, rules: Vec<Arc<FaultInjectionRule>
         "ZW11bGF0b3Ita2V5",
     );
 
-    let driver_options = DriverOptions::builder(account.clone())
-        .with_preferred_regions(vec![Region::EAST_US, Region::WEST_US])
-        .build();
+    let mut driver_options_builder = DriverOptions::builder(account.clone())
+        .with_preferred_regions(vec![Region::EAST_US, Region::WEST_US]);
+    driver_options_builder = driver_options_builder.with_partition_failover_options(failover);
+    let driver_options = driver_options_builder.build();
 
     let driver = runtime
-        .get_or_create_driver(account, Some(driver_options))
+        .create_driver(driver_options)
         .await
         .expect("driver initializes against emulator metadata");
 
@@ -184,11 +224,12 @@ fn options_with_excluded(regions: impl IntoIterator<Item = Region>) -> Operation
 }
 
 /// `base_options()` with PPCB thresholds set so one failure trips the circuit.
+///
+/// Since #4588 the PPCB enablement and failure thresholds are configured at
+/// driver construction (see [`build_ppcb_fixture`]) rather than per operation,
+/// so this helper only carries the optional per-operation excluded regions.
 fn ppcb_options(extra_excluded: Option<Vec<Region>>) -> OperationOptions {
     let mut opts = base_options();
-    opts.per_partition_circuit_breaker_enabled = Some(true);
-    opts.circuit_breaker_failure_count_for_reads = Some(1);
-    opts.circuit_breaker_failure_count_for_writes = Some(1);
     if let Some(regions) = extra_excluded {
         opts.excluded_regions = Some(ExcludedRegions::from_iter(regions));
     }
@@ -583,7 +624,7 @@ async fn ppcb1_read_override_must_respect_excluded_regions() {
     // Phase 1.
     unreachable.disable();
 
-    let fixture = build_fixture(
+    let fixture = build_ppcb_fixture(
         WriteMode::Multi,
         vec![Arc::clone(&storm), Arc::clone(&unreachable)],
     )
@@ -630,7 +671,7 @@ async fn ppcb2_write_override_must_respect_excluded_regions() {
     );
     unreachable.disable();
 
-    let fixture = build_fixture(
+    let fixture = build_ppcb_fixture(
         WriteMode::Multi,
         vec![Arc::clone(&storm), Arc::clone(&unreachable)],
     )
@@ -671,7 +712,7 @@ async fn ppcb3_read_override_routes_to_healthy_secondary() {
     );
     unreachable.disable();
 
-    let fixture = build_fixture(
+    let fixture = build_ppcb_fixture(
         WriteMode::Multi,
         vec![Arc::clone(&storm), Arc::clone(&unreachable)],
     )
@@ -739,7 +780,7 @@ async fn ppcb4_asymmetric_excluded_regions_per_operation() {
     read_unreachable.disable();
     write_unreachable.disable();
 
-    let fixture = build_fixture(
+    let fixture = build_ppcb_fixture(
         WriteMode::Multi,
         vec![
             Arc::clone(&read_storm),

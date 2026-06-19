@@ -40,6 +40,9 @@ use std::sync::Arc;
 use std::time::Duration;
 use url::Url;
 
+#[cfg(feature = "tokio")]
+use super::routing::EndpointProbeFn;
+
 use super::{
     cache::{parse_pk_ranges_response, AccountRegion},
     transport::{
@@ -1197,7 +1200,6 @@ impl CosmosDriver {
                     .map(Duration::from_millis)
                     .unwrap_or(Duration::from_secs(60))
             });
-
         let location_state_store = Arc::new(LocationStateStore::new(
             runtime.account_metadata_cache().clone(),
             account_endpoint,
@@ -1220,6 +1222,38 @@ impl CosmosDriver {
         // path because freshness is owned by this loop.
         #[cfg(feature = "tokio")]
         location_state_store.start_account_refresh_loop();
+
+        // Spawn the background endpoint-probe loop. This makes account-level
+        // endpoint failback probe-gated: an endpoint marked unavailable (e.g.
+        // firewall-blocked) only rejoins the routing rotation after a
+        // lightweight connectivity probe (a `GET /probe` request to that
+        // specific endpoint) confirms it is reachable. Without this, the
+        // endpoint would be failed back purely on cooldown expiry, have real
+        // traffic routed to it, time out, and be re-marked unavailable — a
+        // sustained low-throughput loop (issue #4597).
+        #[cfg(feature = "tokio")]
+        {
+            let account_for_probe = account.clone();
+            let transport_for_probe = Arc::clone(&transport);
+            let user_agent_for_probe = Arc::clone(&user_agent);
+            let probe_fn: EndpointProbeFn = Arc::new(move |url: Url| {
+                let account = account_for_probe.clone();
+                let transport_holder = Arc::clone(&transport_for_probe);
+                let user_agent = Arc::clone(&user_agent_for_probe);
+                Box::pin(async move {
+                    let probe_account = CosmosDriver::with_endpoint(&account, url);
+                    let endpoint = AccountEndpoint::from(&probe_account);
+                    let transport = transport_holder.load_full();
+                    let Ok(metadata_transport) = transport.get_metadata_transport(&endpoint) else {
+                        return false;
+                    };
+                    let user_agent = CosmosDriver::user_agent_header(&user_agent);
+                    probe_endpoint_connectivity(&metadata_transport, &probe_account, &user_agent)
+                        .await
+                }) as BoxFuture<'static, bool>
+            });
+            location_state_store.start_endpoint_probe_loop(probe_fn);
+        }
 
         // Driver-level throughput-control registry.
         //
@@ -1409,15 +1443,17 @@ impl CosmosDriver {
     /// Constructs an [`OperationOptionsView`] for resolving options across all layers.
     ///
     /// The view resolves options in priority order (highest first):
-    /// 1. `OperationOptions` - operation-specific overrides
-    /// 2. `DriverOptions` - driver-level defaults
-    /// 3. `CosmosDriverRuntime` - global runtime defaults
-    /// 4. Environment - env vars read at startup
+    /// 1. Environment `{ENV}_OVERRIDE` kill switches - fleet-wide incident override
+    /// 2. `OperationOptions` - operation-specific overrides
+    /// 3. `DriverOptions` - driver-level defaults
+    /// 4. `CosmosDriverRuntime` - global runtime defaults
+    /// 5. Environment - env vars read at startup
     pub fn operation_options_view<'a>(
         &self,
         operation_options: &'a OperationOptions,
     ) -> OperationOptionsView<'a> {
-        OperationOptionsView::new(
+        OperationOptionsView::new_with_override(
+            Some(Arc::clone(self.runtime.env_override_operation_options())),
             Some(Arc::clone(self.runtime.env_operation_options())),
             Some(self.runtime.default_operation_options()),
             Some(self.options.operation_options().clone()),
@@ -1624,20 +1660,36 @@ impl CosmosDriver {
 
     /// Pre-resolves the partition key range ID for a data plane operation.
     ///
-    /// When PPAF/PPCB is enabled and the operation provides both a container
-    /// reference and a partition key, uses the `PartitionKeyRangeCache` to
-    /// compute the effective partition key and look up the range ID from
-    /// the cached routing map. If the routing map is not cached, fetches it
-    /// from the service.
+    /// When PPAF/PPCB is enabled, seeds the partition key range ID before the
+    /// first attempt so partition-level failover overrides can take effect from
+    /// the very first request instead of only after a retry captures the ID
+    /// from response headers.
+    ///
+    /// Resolution is **`OperationOverrides`-aware**. The dataflow pipeline
+    /// fans a query out into per-physical-partition sub-operations and stamps
+    /// the owning `partition_key_range_id` (plus the narrowed feed range and/or
+    /// partition key) onto [`OperationOverrides`] rather than mutating the
+    /// shared [`CosmosOperation`]. The overrides therefore carry the most
+    /// specific routing information and are consulted first:
+    ///
+    /// 1. If the overrides already carry a `partition_key_range_id` (the common
+    ///    case for dataflow-planned queries), use it directly — no cache lookup
+    ///    and no risk of a multi-range collapse.
+    /// 2. Otherwise resolve a logical partition key (from the overrides, then
+    ///    the operation) through the point-lookup path.
+    /// 3. Otherwise resolve an EPK-range feed range (from the overrides, then
+    ///    the operation), seeding only when it maps to exactly one physical
+    ///    partition.
     ///
     /// Returns `None` if:
     /// - PPAF/PPCB is not enabled
     /// - The operation does not target a partitioned resource
-    /// - The operation has no container reference or partition key
+    /// - No container reference or routing target is available
     /// - The cache lookup or fetch fails
     async fn pre_resolve_partition_key_range_id(
         &self,
         operation: &CosmosOperation,
+        overrides: &OperationOverrides,
     ) -> Option<PartitionKeyRangeId> {
         // Only pre-resolve for partitioned data plane operations.
         if !operation
@@ -1657,16 +1709,56 @@ impl CosmosDriver {
             return None;
         }
 
-        // Need both a container reference and a partition key.
-        let container = operation.container()?;
-        let Some(partition_key) = operation.target().and_then(|t| t.partition_key()) else {
-            return None;
-        };
+        // The dataflow pipeline resolves each query into per-partition
+        // sub-operations and stamps the owning physical partition's range ID
+        // onto the overrides. When present it is authoritative — use it as-is,
+        // skipping any cache lookup (and the multi-range collapse that would
+        // otherwise silently drop the seed).
+        if let Some(pk_range_id) = overrides.partition_key_range_id.as_deref() {
+            return Some(PartitionKeyRangeId::from(pk_range_id.to_owned()));
+        }
 
+        // Need a container reference for any cache-backed resolution below.
+        let container = operation.container()?;
+
+        // Logical-partition-key targets resolve directly from the partition key.
+        // Prefer the override (set by the dataflow pipeline) over the operation.
+        let partition_key = overrides
+            .partition_key
+            .as_ref()
+            .or_else(|| operation.target().and_then(|t| t.partition_key()));
+        if let Some(partition_key) = partition_key {
+            return self
+                .pk_range_cache
+                .resolve_partition_key_range_id(container, partition_key, false, |c, cont| {
+                    Box::pin(self.fetch_pk_ranges_from_service(c, cont))
+                })
+                .await
+                .map(PartitionKeyRangeId::from);
+        }
+
+        // EPK-range feed ranges (e.g. `SELECT * FROM c` scoped to a single physical
+        // partition) carry no logical partition key. Resolve the owning physical
+        // partition by EPK range so PPCB/PPAF can attribute failures from the first
+        // attempt. Seed only when the range maps to exactly one physical partition:
+        // a range that fans out across multiple partitions (or matches none) has no
+        // single owner to attribute to, so the pipeline instead captures the range
+        // ID from the response headers on a later attempt. `resolve_single_overlapping_range_id`
+        // answers this without cloning every overlapping range.
+        //
+        // Prefer the override feed range (set by the dataflow pipeline) over the
+        // operation's own target.
+        let target = overrides
+            .feed_range
+            .as_ref()
+            .or_else(|| operation.target())?;
         self.pk_range_cache
-            .resolve_partition_key_range_id(container, partition_key, false, |c, cont| {
-                Box::pin(self.fetch_pk_ranges_from_service(c, cont))
-            })
+            .resolve_single_overlapping_range_id(
+                container,
+                target.min_inclusive()..target.max_exclusive(),
+                false,
+                |c, cont| Box::pin(self.fetch_pk_ranges_from_service(c, cont)),
+            )
             .await
             .map(PartitionKeyRangeId::from)
     }
@@ -1903,7 +1995,11 @@ impl CosmosDriver {
         // When partition-level failover is enabled, resolving the range ID
         // before the first attempt lets the pipeline apply partition overrides
         // from the very first request instead of only after the first retry.
-        let pre_resolved_pk_range_id = self.pre_resolve_partition_key_range_id(operation).await;
+        // Pass the overrides so dataflow-stamped routing (PK range ID, partition
+        // key, EPK range) is honored ahead of the operation's own target.
+        let pre_resolved_pk_range_id = self
+            .pre_resolve_partition_key_range_id(operation, &overrides)
+            .await;
 
         // Step 6: Select the adaptive transport context for the chosen pipeline
         let transport = self.transport();
@@ -2351,6 +2447,42 @@ impl CosmosDriver {
                 .await
         }
     }
+}
+
+/// Sends a lightweight `GET /probe` connectivity check to a single endpoint
+/// and reports whether the endpoint is reachable.
+///
+/// Account-level failback is gated on *network reachability*, not on a full
+/// database-account read succeeding. Any wire response — even a non-2xx
+/// envelope (401/403/429/503/5xx) — proves the endpoint accepted the
+/// connection and is reachable. Only a transport error with no response
+/// (firewall block, DNS failure, connection refused, or connection timeout)
+/// means the endpoint is unreachable and must stay out of rotation.
+///
+/// Hitting the dedicated `/probe` path (rather than re-reading the database
+/// account) keeps the probe off the metadata code path and minimizes the
+/// load it places on the service. See issue #4597.
+async fn probe_endpoint_connectivity(
+    transport: &super::transport::adaptive_transport::AdaptiveTransport,
+    account: &AccountReference,
+    user_agent: &azure_core::http::headers::HeaderValue,
+) -> bool {
+    let endpoint = AccountEndpoint::from(account);
+    let mut request = HttpRequest {
+        url: endpoint.join_path("/probe"),
+        method: azure_core::http::Method::Get,
+        headers: azure_core::http::headers::Headers::new(),
+        body: None,
+        timeout: None,
+        #[cfg(feature = "fault_injection")]
+        evaluation_collector: None,
+    };
+    cosmos_headers::apply_cosmos_headers(&mut request, user_agent);
+
+    // Any wire response (including a non-2xx envelope) proves reachability;
+    // only a transport error with no response means the endpoint could not
+    // be reached.
+    transport.send(&request).await.is_ok()
 }
 
 #[cfg(test)]
@@ -3457,6 +3589,78 @@ mod tests {
         .await
     }
 
+    /// `TransportClient` whose `send` always fails at the connection level
+    /// (no wire response), modeling a firewall-blocked / unreachable endpoint.
+    #[derive(Debug)]
+    struct UnreachableClient;
+
+    #[async_trait]
+    impl TransportClient for UnreachableClient {
+        async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
+            Err(TransportError::new(
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
+                    .with_message("injected connection failure")
+                    .build(),
+                RequestSentStatus::NotSent,
+            ))
+        }
+    }
+
+    async fn drive_probe_with(status: u16) -> bool {
+        let client: Arc<dyn TransportClient> = Arc::new(RawResponseClient {
+            status,
+            body: Vec::new(),
+        });
+        let transport =
+            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+
+        let account = signed_test_account("https://test.documents.azure.com:443/");
+        let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
+
+        probe_endpoint_connectivity(&transport, &account, &user_agent).await
+    }
+
+    async fn drive_probe_unreachable() -> bool {
+        let client: Arc<dyn TransportClient> = Arc::new(UnreachableClient);
+        let transport =
+            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+
+        let account = signed_test_account("https://test.documents.azure.com:443/");
+        let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
+
+        probe_endpoint_connectivity(&transport, &account, &user_agent).await
+    }
+
+    /// The endpoint probe gates failback on *connectivity*, not on the account
+    /// read succeeding. Any wire response — including a non-2xx envelope
+    /// (401/403/429/503) — proves the endpoint is reachable and should fail
+    /// back, while a connection-level failure with no response keeps it out of
+    /// rotation. Regression guard for issue #4597.
+    #[tokio::test]
+    async fn probe_treats_wire_response_as_reachable_and_transport_error_as_unreachable() {
+        // Happy path: a 2xx `/probe` response is reachable.
+        assert!(
+            drive_probe_with(200).await,
+            "a 2xx /probe response must classify as reachable"
+        );
+
+        // Non-2xx wire responses still prove connectivity → reachable.
+        for status in [401u16, 403, 429, 503] {
+            assert!(
+                drive_probe_with(status).await,
+                "HTTP {status} is a wire response and must classify as reachable \
+                 (failback), not unreachable"
+            );
+        }
+
+        // A connection-level failure (no wire response) → unreachable.
+        assert!(
+            !drive_probe_unreachable().await,
+            "a transport error with no wire response must classify as unreachable"
+        );
+    }
+
     /// AAD 401 envelope on GET / (RBAC race / token expiry / IMDS hiccup) must surface
     /// upstream HTTP 401, not the synthetic `SERIALIZATION_RESPONSE_BODY_INVALID`.
     #[tokio::test]
@@ -4041,5 +4245,150 @@ mod tests {
         assert!(driver.user_agent().as_str().contains("driver-override"));
         assert!(runtime.user_agent().as_str().contains("runtime-default"));
         assert!(!driver.user_agent().as_str().contains("runtime-default"));
+    }
+
+    // =========================================================================
+    // pre_resolve_partition_key_range_id — EPK-range seeding (#4611 fix)
+    //
+    // The single→Some / multi→(warn + debug_assert, then None) classification
+    // lives in `ContainerRoutingMap::single_overlapping_range_id` (unit-tested
+    // there). These cache-backed tests drive the *real*
+    // `PartitionKeyRangeCache::resolve_single_overlapping_range_id` (mocked
+    // fetch, per the existing `resolve_overlapping_ranges_*` tests), exercising
+    // the exact path `pre_resolve_partition_key_range_id` takes.
+    // =========================================================================
+
+    /// Builds a `ContainerReference` from a partition-key-definition JSON blob.
+    fn epk_test_container(pk_json: &str) -> ContainerReference {
+        let container_props = crate::models::ContainerProperties {
+            id: "testcontainer".into(),
+            partition_key: serde_json::from_str(pk_json).unwrap(),
+            system_properties: Default::default(),
+        };
+        ContainerReference::new(
+            signed_test_account("https://test.documents.azure.com:443/"),
+            "testdb",
+            "testdb_rid",
+            "testcontainer",
+            "testcontainer_rid",
+            &container_props,
+        )
+    }
+
+    /// Single-page fetch returning one range that owns the whole EPK space.
+    async fn whole_space_single_range_fetch(
+        _container: ContainerReference,
+        continuation: Option<String>,
+    ) -> Option<crate::driver::cache::PkRangeFetchResult> {
+        use crate::models::partition_key_range::PartitionKeyRange as PkRange;
+        if continuation.is_some() {
+            Some(crate::driver::cache::PkRangeFetchResult {
+                ranges: vec![],
+                continuation,
+                not_modified: true,
+            })
+        } else {
+            Some(crate::driver::cache::PkRangeFetchResult {
+                ranges: vec![PkRange::new("0".into(), "", "FF")],
+                continuation: Some("etag".to_string()),
+                not_modified: false,
+            })
+        }
+    }
+
+    /// Single-page fetch returning two ranges split at "80".
+    async fn whole_space_two_range_fetch(
+        _container: ContainerReference,
+        continuation: Option<String>,
+    ) -> Option<crate::driver::cache::PkRangeFetchResult> {
+        use crate::models::partition_key_range::PartitionKeyRange as PkRange;
+        if continuation.is_some() {
+            Some(crate::driver::cache::PkRangeFetchResult {
+                ranges: vec![],
+                continuation,
+                not_modified: true,
+            })
+        } else {
+            Some(crate::driver::cache::PkRangeFetchResult {
+                ranges: vec![
+                    PkRange::new("0".into(), "", "80"),
+                    PkRange::new("1".into(), "80", "FF"),
+                ],
+                continuation: Some("etag".to_string()),
+                not_modified: false,
+            })
+        }
+    }
+
+    #[tokio::test]
+    async fn epk_range_owned_by_single_partition_resolves_to_that_range() {
+        use crate::driver::cache::PartitionKeyRangeCache;
+        use crate::models::effective_partition_key::EffectivePartitionKey;
+
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        let cache = PartitionKeyRangeCache::new();
+
+        // An EPK-range feed range spanning the whole space, resolved against a
+        // container with a single physical partition, is owned by exactly one
+        // range — so pre-resolution seeds that range's ID (single → Some).
+        let resolved = cache
+            .resolve_single_overlapping_range_id(
+                &container,
+                &EffectivePartitionKey::MIN..&EffectivePartitionKey::MAX,
+                false,
+                whole_space_single_range_fetch,
+            )
+            .await
+            .map(PartitionKeyRangeId::from);
+
+        assert_eq!(resolved.as_ref().map(|id| id.as_str()), Some("0"));
+    }
+
+    #[tokio::test]
+    #[should_panic(expected = "physical partitions")]
+    async fn epk_range_spanning_multiple_partitions_panics_in_debug() {
+        use crate::driver::cache::PartitionKeyRangeCache;
+        use crate::models::effective_partition_key::EffectivePartitionKey;
+
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        let cache = PartitionKeyRangeCache::new();
+
+        // A whole-space feed range overlapping both physical partitions is an
+        // invariant violation at this layer (the dataflow pipeline should have
+        // split it first), so single-owner resolution trips the `debug_assert!`.
+        // In release builds it returns `None` and the caller degrades gracefully.
+        let _ = cache
+            .resolve_single_overlapping_range_id(
+                &container,
+                &EffectivePartitionKey::MIN..&EffectivePartitionKey::MAX,
+                false,
+                whole_space_two_range_fetch,
+            )
+            .await;
+    }
+
+    #[tokio::test]
+    async fn logical_partition_key_resolves_to_owning_range_unchanged() {
+        use crate::driver::cache::PartitionKeyRangeCache;
+
+        // The logical-partition-key path is unchanged by the EPK-range fix: a
+        // concrete partition key still resolves through the point-lookup path to
+        // exactly its owning physical partition's ID (mapped to a
+        // `PartitionKeyRangeId`, as `pre_resolve_partition_key_range_id` does).
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        let cache = PartitionKeyRangeCache::new();
+        let pk = PartitionKey::from("hello");
+
+        let resolved = cache
+            .resolve_partition_key_range_id(&container, &pk, false, whole_space_two_range_fetch)
+            .await
+            .map(PartitionKeyRangeId::from);
+
+        // "hello" hashes into one of the two ranges — exactly one, never both.
+        let id = resolved.expect("logical PK resolves to its owning range");
+        assert!(
+            id.as_str() == "0" || id.as_str() == "1",
+            "logical PK must resolve to a single owning range, got {id}",
+        );
     }
 }

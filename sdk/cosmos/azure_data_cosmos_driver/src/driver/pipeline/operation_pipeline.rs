@@ -5758,7 +5758,7 @@ mod tests {
         let pk_range_id: super::PartitionKeyRangeId = "0".parse().unwrap();
         let mut partitions = PartitionEndpointState::new(PartitionFailoverOptions::default());
         partitions.per_partition_circuit_breaker_enabled = true;
-        let write_threshold = partitions.config.write_failure_threshold() as i32;
+        let write_threshold = partitions.config.write_failure_threshold();
         partitions.circuit_breaker_overrides.insert(
             pk_range_id.clone(),
             PartitionFailoverEntry {
@@ -5766,7 +5766,7 @@ mod tests {
                 first_failed_endpoint: central.clone(),
                 failed_endpoints: Default::default(),
                 read_failure_count: 0,
-                write_failure_count: write_threshold + 10,
+                write_failure_count: write_threshold as i32 + 10,
                 first_failure_time: std::time::Instant::now(),
                 last_failure_time: std::time::Instant::now(),
                 health_status: HealthStatus::Unhealthy,
