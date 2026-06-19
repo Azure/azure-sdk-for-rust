@@ -21,7 +21,7 @@ use super::{
     intersect_feed_ranges,
     query_plan::{QueryInfo, QueryPlan},
     DrainedLeaf, PartitionRoutingRefresh, Pipeline, PipelineNode, PipelineNodeState, RangedToken,
-    Request, RequestTarget, SequentialDrain, TopologyProvider,
+    Request, RequestTarget, SequentialDrain, TopologyProvider, UnorderedMerge,
 };
 
 /// Builds a single-node [`Pipeline`] for a trivial operation.
@@ -198,6 +198,92 @@ pub(crate) async fn build_sequential_drain(
     // a SequentialDrain so the pipeline can react to splits by replacing
     // the single Request with multiple Requests.
     let root = Box::new(SequentialDrain::new(request_nodes));
+    Ok(Pipeline::new(root))
+}
+
+/// Builds an [`UnorderedMerge`] pipeline for change feed operations.
+///
+/// Unlike [`build_sequential_drain`], this does not require a query plan.
+/// The operation's target [`FeedRange`] is resolved against the current
+/// partition topology to produce one [`Request`] leaf per physical
+/// partition. All leaves are wrapped in an [`UnorderedMerge`] that polls
+/// them round-robin without evicting children on 304.
+///
+/// `resume` is an optional [`PipelineNodeState`] from a continuation token.
+/// On resume, `UnorderedMerge { active_tokens }` entries carry per-partition
+/// server continuations. Each entry's range is intersected with the current
+/// topology to rebuild the leaf nodes.
+pub(crate) async fn build_unordered_merge(
+    feed_range: &FeedRange,
+    topology_provider: &mut dyn TopologyProvider,
+    operation: &Arc<CosmosOperation>,
+    resume: Option<PipelineNodeState>,
+) -> crate::error::Result<Pipeline> {
+    let saved_tokens = match resume {
+        None => None,
+        Some(PipelineNodeState::Drained) => {
+            return Ok(Pipeline::new(Box::new(DrainedLeaf)));
+        }
+        Some(PipelineNodeState::UnorderedMerge { active_tokens }) => {
+            Some(validate_unordered_merge_tokens(active_tokens)?)
+        }
+        Some(other) => {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+                .with_message(format!(
+                    "continuation token shape {} does not match a change feed operation",
+                    snapshot_kind(&other)
+                ))
+                .build());
+        }
+    };
+
+    let resolved = topology_provider
+        .resolve_ranges(feed_range, PartitionRoutingRefresh::UseCached)
+        .await?;
+
+    let mut request_nodes: Vec<Box<dyn PipelineNode>> = Vec::new();
+
+    for resolved_range in resolved {
+        let range = intersect_feed_ranges(&resolved_range.range, feed_range).expect(
+            "topology provider must return ranges that overlap the feed range",
+        );
+
+        // Check if this range has a saved continuation token.
+        let continuation = saved_tokens.as_ref().and_then(|tokens| {
+            tokens.iter().find_map(|t| {
+                // If the saved token's range overlaps this resolved range,
+                // use its continuation. The server accepts parent-partition
+                // tokens against post-split children.
+                let overlap = intersect_feed_ranges(&t.range, &range);
+                if overlap.is_some() {
+                    Some(t.server_continuation.clone())
+                } else {
+                    None
+                }
+            })
+        });
+
+        let target = RequestTarget::effective_partition_key_range(
+            range,
+            resolved_range.partition_key_range_id,
+            resolved_range.range,
+        );
+        request_nodes.push(Box::new(Request::new(
+            Arc::clone(operation),
+            target,
+            continuation,
+        )));
+    }
+
+    if request_nodes.is_empty() {
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES)
+            .with_message("change feed produced no partition ranges to query")
+            .build());
+    }
+
+    let root = Box::new(UnorderedMerge::new(request_nodes));
     Ok(Pipeline::new(root))
 }
 
@@ -543,7 +629,58 @@ fn snapshot_kind(state: &PipelineNodeState) -> &'static str {
         PipelineNodeState::Drained => "Drained",
         PipelineNodeState::Request { .. } => "Request",
         PipelineNodeState::SequentialDrain { .. } => "SequentialDrain",
+        PipelineNodeState::UnorderedMerge { .. } => "UnorderedMerge",
     }
+}
+
+/// Validates the `active_tokens` from an `UnorderedMerge` continuation token.
+///
+/// Each entry must have `min < max` and be non-zero-width. The list must be
+/// sorted ascending by `min_epk` and non-overlapping.
+fn validate_unordered_merge_tokens(
+    active_tokens: Vec<RangedToken>,
+) -> crate::error::Result<Vec<SavedActiveToken>> {
+    let mut parsed: Vec<SavedActiveToken> = Vec::with_capacity(active_tokens.len());
+    for entry in active_tokens {
+        let min = EffectivePartitionKey::from(entry.min_epk);
+        let max = EffectivePartitionKey::from(entry.max_epk);
+        if min >= max {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(
+                    crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+                )
+                .with_message(format!(
+                    "continuation token has invalid active_tokens entry \
+                     (min `{}` >= max `{}`)",
+                    min.as_str(),
+                    max.as_str(),
+                ))
+                .build());
+        }
+        let range = FeedRange::new(min, max)?;
+        if let Some(prev) = parsed.last() {
+            if range.min_inclusive() < prev.range.max_exclusive() {
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(
+                        crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+                    )
+                    .with_message(format!(
+                        "continuation token active_tokens must be sorted and non-overlapping; \
+                         entry [{}, {}) overlaps [{}, {})",
+                        range.min_inclusive().as_str(),
+                        range.max_exclusive().as_str(),
+                        prev.range.min_inclusive().as_str(),
+                        prev.range.max_exclusive().as_str(),
+                    ))
+                    .build());
+            }
+        }
+        parsed.push(SavedActiveToken {
+            range,
+            server_continuation: entry.server_continuation,
+        });
+    }
+    Ok(parsed)
 }
 
 /// Validates that the query plan does not require features we don't yet support.

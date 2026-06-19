@@ -126,6 +126,13 @@ impl CosmosOperation {
         self.target.as_ref().and_then(|t| t.partition_key())
     }
 
+    /// Returns `true` if this operation is a change feed request.
+    ///
+    /// Detected by the presence of the `A-IM: Incremental Feed` header.
+    pub fn is_change_feed(&self) -> bool {
+        self.request_headers.incremental_feed
+    }
+
     /// Returns the request headers.
     pub fn request_headers(&self) -> &CosmosRequestHeaders {
         &self.request_headers
@@ -715,7 +722,14 @@ impl CosmosOperation {
     /// fan-out strategy.
     pub fn is_trivial(&self) -> bool {
         if self.operation_type != OperationType::Query {
-            // For now, at least, all non-query operations are trivial.
+            // Change feed operations targeting EPK ranges need fan-out.
+            if self.is_change_feed() && self.target.is_some() {
+                return self
+                    .target()
+                    .and_then(|t| t.partition_key())
+                    .is_some();
+            }
+            // For now, at least, all other non-query operations are trivial.
             return true;
         }
 

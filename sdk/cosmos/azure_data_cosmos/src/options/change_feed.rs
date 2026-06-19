@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Change feed options: mode selection, start position, and paging.
+//! Change feed options: start position and paging.
 
 use azure_data_cosmos_driver::models::{MaxItemCountHint, SessionToken};
 use azure_data_cosmos_driver::options::OperationOptions;
@@ -9,22 +9,6 @@ use time::OffsetDateTime;
 
 use crate::feed::ContinuationToken;
 use crate::options::FeedOptions;
-
-/// Determines the change feed mode, which controls the shape of the response.
-///
-/// Currently only [`LatestVersion`](Self::LatestVersion) is supported.
-/// Additional modes (e.g., all-versions-and-deletes) will be added in a
-/// follow-up release.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-#[non_exhaustive]
-pub enum ChangeFeedMode {
-    /// Returns the latest version of each changed document (creates and
-    /// replaces only; deletes are not surfaced).
-    ///
-    /// Wire header: `A-IM: Incremental Feed`.
-    #[default]
-    LatestVersion,
-}
 
 /// Determines where the change feed starts reading from.
 ///
@@ -70,9 +54,8 @@ impl Default for ChangeFeedStartFrom {
 /// [`with_continuation_token`](Self::with_continuation_token) delegate to the
 /// inner [`FeedOptions`].
 ///
-/// When a continuation token is set, [`mode`](Self::mode) and
-/// [`start_from`](Self::start_from) are ignored because the token carries its
-/// own position and mode.
+/// When a continuation token is set, [`start_from`](Self::start_from) is
+/// ignored because the token carries its own position.
 #[derive(Clone, Default)]
 #[non_exhaustive]
 pub struct ChangeFeedOptions {
@@ -87,22 +70,11 @@ pub struct ChangeFeedOptions {
     /// Session token for session-consistent reads.
     pub session_token: Option<SessionToken>,
 
-    /// The change feed mode.
-    ///
-    /// Currently only [`ChangeFeedMode::LatestVersion`] is supported.
-    pub mode: ChangeFeedMode,
-
     /// Where to start reading the change feed. Defaults to [`ChangeFeedStartFrom::Beginning`].
     pub start_from: ChangeFeedStartFrom,
 }
 
 impl ChangeFeedOptions {
-    /// Sets the change feed mode.
-    pub fn with_mode(mut self, mode: ChangeFeedMode) -> Self {
-        self.mode = mode;
-        self
-    }
-
     /// Sets where to start reading the change feed.
     pub fn with_start_from(mut self, start_from: ChangeFeedStartFrom) -> Self {
         self.start_from = start_from;
@@ -138,9 +110,8 @@ impl ChangeFeedOptions {
 
     /// Sets a continuation token to resume the change feed at a previous position.
     ///
-    /// When continuation is set, [`mode`](Self::mode) and
-    /// [`start_from`](Self::start_from) are ignored because the token carries
-    /// its own position and mode.
+    /// When continuation is set, [`start_from`](Self::start_from) is ignored
+    /// because the token carries its own position.
     pub fn with_continuation_token(mut self, token: ContinuationToken) -> Self {
         self.feed = self.feed.with_continuation_token(token);
         self
@@ -150,11 +121,6 @@ impl ChangeFeedOptions {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn default_mode_is_latest_version() {
-        assert_eq!(ChangeFeedMode::default(), ChangeFeedMode::LatestVersion);
-    }
 
     #[test]
     fn default_start_from_is_beginning() {
@@ -167,10 +133,8 @@ mod tests {
     #[test]
     fn options_builder_chain() {
         let opts = ChangeFeedOptions::default()
-            .with_mode(ChangeFeedMode::LatestVersion)
             .with_start_from(ChangeFeedStartFrom::Now);
 
-        assert_eq!(opts.mode, ChangeFeedMode::LatestVersion);
         assert!(matches!(opts.start_from, ChangeFeedStartFrom::Now));
     }
 }

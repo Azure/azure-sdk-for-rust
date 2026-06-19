@@ -26,7 +26,7 @@ struct LiveState {
     options: OperationOptions,
     plan: Option<OperationPlan>,
     in_flight: Option<DriverPageFuture>,
-    exhausted: bool,
+    errored: bool,
 }
 
 impl LiveState {
@@ -42,7 +42,7 @@ impl LiveState {
             options,
             plan: Some(plan),
             in_flight: None,
-            exhausted: false,
+            errored: false,
         }
     }
 
@@ -52,7 +52,7 @@ impl LiveState {
     ) -> task::Poll<Option<crate::Result<FeedPage<T>>>> {
         let this = self.project();
 
-        if *this.exhausted {
+        if *this.errored {
             return task::Poll::Ready(None);
         }
 
@@ -87,24 +87,37 @@ impl LiveState {
 
         match result {
             Ok(None) => {
-                *this.exhausted = true;
+                // Pipeline fully drained — no children left. This is
+                // unusual for change feed but legitimate (e.g., empty
+                // container). Terminate the stream.
+                *this.errored = true;
                 task::Poll::Ready(None)
             }
             Err(err) => {
-                *this.exhausted = true;
+                *this.errored = true;
                 task::Poll::Ready(Some(Err(err)))
             }
             Ok(Some(driver_response)) => {
                 let response = driver_bridge::driver_response_to_cosmos_response(driver_response);
+                let status = response.status();
                 let headers = response.cosmos_headers().clone();
                 let diagnostics = response.diagnostics();
+
+                // 304 Not Modified means no changes for this partition.
+                // Return an empty page — do not try to deserialize the
+                // (potentially empty) body.
+                if status.status_code() == azure_core::http::StatusCode::NotModified {
+                    let page = FeedPage::new(Vec::new(), headers, diagnostics);
+                    return task::Poll::Ready(Some(Ok(page)));
+                }
+
                 match response.into_model::<FeedBody<T>>() {
                     Ok(body) => {
                         let page = FeedPage::new(body.items, headers, diagnostics);
                         task::Poll::Ready(Some(Ok(page)))
                     }
                     Err(err) => {
-                        *this.exhausted = true;
+                        *this.errored = true;
                         task::Poll::Ready(Some(Err(err)))
                     }
                 }
@@ -126,7 +139,10 @@ impl LiveState {
 /// A stream of pages from a Cosmos DB change feed operation.
 ///
 /// Yields [`FeedPage<T>`] instances, where `T` is the user's document type
-/// (for LatestVersion mode).
+/// (for LatestVersion mode). The stream is conceptually infinite: when a
+/// partition has no new changes (304 Not Modified), an empty page is
+/// returned instead of terminating the stream. The consumer decides when
+/// to stop polling.
 ///
 /// Use [`to_continuation_token()`](Self::to_continuation_token) to capture
 /// the current position for later resumption.
@@ -148,6 +164,11 @@ impl LiveState {
 ///
 /// while let Some(page) = pages.next().await {
 ///     let page = page?;
+///     if page.items().is_empty() {
+///         // No changes right now — checkpoint and wait before retrying.
+///         let _token = pages.to_continuation_token()?;
+///         break;
+///     }
 ///     for item in page.items() {
 ///         println!("changed: {:?}", item);
 ///     }
