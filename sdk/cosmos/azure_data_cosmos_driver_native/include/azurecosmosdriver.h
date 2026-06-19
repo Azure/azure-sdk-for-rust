@@ -728,10 +728,6 @@ typedef struct cosmos_operation_options_t {
    */
   int8_t session_capturing_disabled;
   /**
-   * Enable the per-partition circuit breaker. Tri-state bool.
-   */
-  int8_t per_partition_circuit_breaker_enabled;
-  /**
    * Max region-failover retries. `< 0` = unset.
    */
   int32_t max_failover_retry_count;
@@ -739,26 +735,6 @@ typedef struct cosmos_operation_options_t {
    * Max session-consistency retries on 404/1002. `< 0` = unset.
    */
   int32_t max_session_retry_count;
-  /**
-   * PPCB read failure threshold. `< 0` = unset.
-   */
-  int32_t circuit_breaker_failure_count_for_reads;
-  /**
-   * PPCB write failure threshold (multi-master). `< 0` = unset.
-   */
-  int32_t circuit_breaker_failure_count_for_writes;
-  /**
-   * PPCB counter reset window (minutes). `< 0` = unset.
-   */
-  int32_t circuit_breaker_timeout_counter_reset_window_in_minutes;
-  /**
-   * Min age (seconds) before a tripped breaker may probe back. `< 0` = unset.
-   */
-  int32_t allowed_partition_unavailability_duration_in_seconds;
-  /**
-   * PPCB failback sweep interval (seconds). `< 0` = unset.
-   */
-  int32_t ppcb_stale_partition_unavailability_refresh_interval_in_seconds;
   /**
    * End-to-end timeout (milliseconds). `< 0` = unset.
    */

@@ -46,7 +46,7 @@ use azure_data_cosmos_driver::models::{
 };
 use azure_data_cosmos_driver::options::{
     ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions, OperationOptions,
-    ReadConsistencyStrategy, Region,
+    ReadConsistencyStrategy, Region, ThroughputControlOptions,
 };
 
 use crate::account_ref::AccountRefHandle;
@@ -65,10 +65,9 @@ use crate::partition_key::PartitionKeyHandle;
 ///
 /// - **enum fields** (`*_strategy`, `content_response_on_write`): `0` = unset
 ///   (inherit), any other value = the corresponding driver variant.
-/// - **tri-state bools** (`session_capturing_disabled`,
-///   `per_partition_circuit_breaker_enabled`): `0` = unset, `1` = `false`,
-///   `2` = `true`.
-/// - **i32 numeric fields** (retry/circuit-breaker counters): `< 0` = unset,
+/// - **tri-state bools** (`session_capturing_disabled`): `0` = unset,
+///   `1` = `false`, `2` = `true`.
+/// - **i32 numeric fields** (retry counters): `< 0` = unset,
 ///   `>= 0` = the value.
 /// - **i64 duration fields** (`*_ms`): `< 0` = unset, `>= 0` = milliseconds.
 /// - **string / array fields** (`throughput_control_group`,
@@ -266,22 +265,10 @@ pub struct CosmosOperationOptions {
     pub content_response_on_write: i32,
     /// Disable automatic session token management. Tri-state bool.
     pub session_capturing_disabled: i8,
-    /// Enable the per-partition circuit breaker. Tri-state bool.
-    pub per_partition_circuit_breaker_enabled: i8,
     /// Max region-failover retries. `< 0` = unset.
     pub max_failover_retry_count: i32,
     /// Max session-consistency retries on 404/1002. `< 0` = unset.
     pub max_session_retry_count: i32,
-    /// PPCB read failure threshold. `< 0` = unset.
-    pub circuit_breaker_failure_count_for_reads: i32,
-    /// PPCB write failure threshold (multi-master). `< 0` = unset.
-    pub circuit_breaker_failure_count_for_writes: i32,
-    /// PPCB counter reset window (minutes). `< 0` = unset.
-    pub circuit_breaker_timeout_counter_reset_window_in_minutes: i32,
-    /// Min age (seconds) before a tripped breaker may probe back. `< 0` = unset.
-    pub allowed_partition_unavailability_duration_in_seconds: i32,
-    /// PPCB failback sweep interval (seconds). `< 0` = unset.
-    pub ppcb_stale_partition_unavailability_refresh_interval_in_seconds: i32,
     /// End-to-end timeout (milliseconds). `< 0` = unset.
     pub end_to_end_timeout_ms: i64,
     /// Endpoint unavailability TTL (milliseconds). `< 0` = unset.
@@ -317,21 +304,9 @@ impl CosmosOperationOptions {
             CosmosContentResponseOnWriteOpt::from_i32(self.content_response_on_write)?
                 .to_driver()?;
         opts.session_capturing_disabled = decode_tristate_bool(self.session_capturing_disabled)?;
-        opts.per_partition_circuit_breaker_enabled =
-            decode_tristate_bool(self.per_partition_circuit_breaker_enabled)?;
 
         opts.max_failover_retry_count = decode_opt_u32(self.max_failover_retry_count);
         opts.max_session_retry_count = decode_opt_u32(self.max_session_retry_count);
-        opts.circuit_breaker_failure_count_for_reads =
-            decode_opt_u32(self.circuit_breaker_failure_count_for_reads);
-        opts.circuit_breaker_failure_count_for_writes =
-            decode_opt_u32(self.circuit_breaker_failure_count_for_writes);
-        opts.circuit_breaker_timeout_counter_reset_window_in_minutes =
-            decode_opt_u32(self.circuit_breaker_timeout_counter_reset_window_in_minutes);
-        opts.allowed_partition_unavailability_duration_in_seconds =
-            decode_opt_u32(self.allowed_partition_unavailability_duration_in_seconds);
-        opts.ppcb_stale_partition_unavailability_refresh_interval_in_seconds =
-            decode_opt_u32(self.ppcb_stale_partition_unavailability_refresh_interval_in_seconds);
 
         if self.end_to_end_timeout_ms >= 0 {
             let dur = std::time::Duration::from_millis(self.end_to_end_timeout_ms as u64);
@@ -345,7 +320,10 @@ impl CosmosOperationOptions {
 
         if !self.throughput_control_group.is_null() {
             let name = cstr_to_str(self.throughput_control_group)?;
-            opts.throughput_control_group = Some(ThroughputControlGroupName::from(name.to_owned()));
+            let mut throughput_control = ThroughputControlOptions::default();
+            throughput_control.group_name =
+                Some(ThroughputControlGroupName::from(name.to_owned()));
+            opts.throughput_control = Some(throughput_control);
         }
 
         // SAFETY: caller contract on the array pointer + length.
@@ -407,14 +385,8 @@ pub extern "C" fn cosmos_operation_options_default() -> CosmosOperationOptions {
         content_response_on_write:
             CosmosContentResponseOnWriteOpt::CosmosContentResponseOnWriteOptUnset as i32,
         session_capturing_disabled: TRISTATE_UNSET,
-        per_partition_circuit_breaker_enabled: TRISTATE_UNSET,
         max_failover_retry_count: -1,
         max_session_retry_count: -1,
-        circuit_breaker_failure_count_for_reads: -1,
-        circuit_breaker_failure_count_for_writes: -1,
-        circuit_breaker_timeout_counter_reset_window_in_minutes: -1,
-        allowed_partition_unavailability_duration_in_seconds: -1,
-        ppcb_stale_partition_unavailability_refresh_interval_in_seconds: -1,
         end_to_end_timeout_ms: -1,
         endpoint_unavailability_ttl_ms: -1,
         throughput_control_group: std::ptr::null(),
@@ -1103,20 +1075,8 @@ mod tests {
             CosmosContentResponseOnWriteOpt::CosmosContentResponseOnWriteOptUnset as i32
         );
         assert_eq!(o.session_capturing_disabled, TRISTATE_UNSET);
-        assert_eq!(o.per_partition_circuit_breaker_enabled, TRISTATE_UNSET);
         assert_eq!(o.max_failover_retry_count, -1);
         assert_eq!(o.max_session_retry_count, -1);
-        assert_eq!(o.circuit_breaker_failure_count_for_reads, -1);
-        assert_eq!(o.circuit_breaker_failure_count_for_writes, -1);
-        assert_eq!(
-            o.circuit_breaker_timeout_counter_reset_window_in_minutes,
-            -1
-        );
-        assert_eq!(o.allowed_partition_unavailability_duration_in_seconds, -1);
-        assert_eq!(
-            o.ppcb_stale_partition_unavailability_refresh_interval_in_seconds,
-            -1
-        );
         assert_eq!(o.end_to_end_timeout_ms, -1);
         assert_eq!(o.endpoint_unavailability_ttl_ms, -1);
         assert!(o.throughput_control_group.is_null());
@@ -1136,12 +1096,11 @@ mod tests {
         assert_eq!(driver.read_consistency_strategy, None);
         assert_eq!(driver.content_response_on_write, None);
         assert_eq!(driver.session_capturing_disabled, None);
-        assert_eq!(driver.per_partition_circuit_breaker_enabled, None);
         assert_eq!(driver.max_failover_retry_count, None);
         assert_eq!(driver.max_session_retry_count, None);
         assert_eq!(driver.end_to_end_latency_policy, None);
         assert_eq!(driver.excluded_regions, None);
-        assert_eq!(driver.throughput_control_group, None);
+        assert!(driver.throughput_control.is_none());
     }
 
     #[test]

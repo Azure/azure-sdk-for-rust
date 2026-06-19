@@ -30,6 +30,7 @@
 use std::sync::Arc;
 
 use azure_data_cosmos_driver::driver::CosmosDriver;
+use azure_data_cosmos_driver::options::DriverOptions;
 
 use crate::account_ref::AccountRefHandle;
 use crate::driver_options::DriverOptionsHandle;
@@ -188,9 +189,13 @@ pub extern "C" fn cosmos_driver_get_or_create_blocking(
     let driver_runtime = Arc::clone(&runtime_inner.driver);
 
     let result = runtime_inner.tokio.block_on(async move {
-        driver_runtime
-            .get_or_create_driver(account_for_call, options_owned)
-            .await
+        // Since #4588 `create_driver` takes a single `DriverOptions` that
+        // embeds the account. When the caller supplied options we use them
+        // as-is (they already carry an account); otherwise build a default
+        // `DriverOptions` from the account argument.
+        let driver_options =
+            options_owned.unwrap_or_else(|| DriverOptions::builder(account_for_call).build());
+        driver_runtime.create_driver(driver_options).await
     });
 
     match result {

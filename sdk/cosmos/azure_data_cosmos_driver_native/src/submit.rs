@@ -27,6 +27,7 @@ use std::sync::Arc;
 
 use azure_data_cosmos_driver::driver::CosmosDriver;
 use azure_data_cosmos_driver::models::{AccountReference, CosmosResponse};
+use azure_data_cosmos_driver::options::DriverOptions;
 
 use crate::account_ref::AccountRefHandle;
 use crate::completion::{
@@ -509,9 +510,12 @@ pub extern "C" fn cosmos_driver_get_or_create_submit(
         ctx,
         task_runtime,
         async move {
-            driver_runtime
-                .get_or_create_driver(account_owned, options_owned)
-                .await
+            // Since #4588 `create_driver` takes a single `DriverOptions`
+            // that embeds the account. Use caller-supplied options when
+            // present; otherwise build a default from the account.
+            let driver_options = options_owned
+                .unwrap_or_else(|| DriverOptions::builder(account_owned).build());
+            driver_runtime.create_driver(driver_options).await
         },
         |driver_arc: Arc<CosmosDriver>| {
             // The submit's "response" is a degenerate shell; the real

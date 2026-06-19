@@ -31,8 +31,6 @@ static int test_options_default_is_all_unset(void)
            "content_response unset (=%d)", opts.content_response_on_write);
     ASSERT(opts.session_capturing_disabled == 0,
            "session_capturing unset (=%d)", opts.session_capturing_disabled);
-    ASSERT(opts.per_partition_circuit_breaker_enabled == 0,
-           "ppcb unset (=%d)", opts.per_partition_circuit_breaker_enabled);
     ASSERT(opts.max_failover_retry_count < 0,
            "max_failover unset (=%d)", opts.max_failover_retry_count);
     ASSERT(opts.max_session_retry_count < 0,
