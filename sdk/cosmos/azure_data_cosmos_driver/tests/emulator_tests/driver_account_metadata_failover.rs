@@ -16,7 +16,7 @@ use std::sync::Arc;
 #[tokio::test]
 pub async fn account_metadata_503_surfaces_as_status_error() -> Result<(), Box<dyn Error>> {
     // Persistent 503 on every MetadataReadDatabaseAccount so the first lazy fetch
-    // (via get_or_create_driver) hits the fault.
+    // (via create_driver) hits the fault.
     let condition = FaultInjectionConditionBuilder::new()
         .with_operation_type(FaultOperationType::MetadataReadDatabaseAccount)
         .build();
@@ -39,7 +39,7 @@ pub async fn account_metadata_503_surfaces_as_status_error() -> Result<(), Box<d
         let db_name = context.unique_database_name();
 
         // First op on the driver triggers the lazy account-properties fetch via
-        // get_or_create_driver. Under a persistent 503 it must surface upstream HTTP status.
+        // create_driver. Under a persistent 503 it must surface upstream HTTP status.
         let err = context.create_database(&db_name).await.expect_err(
             "create_database must fail when GET / is faulted with a persistent 503; \
                  the account-metadata fetch is the first network call and cannot succeed",

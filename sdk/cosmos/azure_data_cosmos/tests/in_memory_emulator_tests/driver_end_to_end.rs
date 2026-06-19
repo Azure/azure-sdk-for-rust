@@ -16,7 +16,7 @@
 use azure_data_cosmos_driver::models::{
     CosmosOperation, DatabaseReference, ItemReference, PartitionKey, ResponseBody,
 };
-use azure_data_cosmos_driver::options::{OperationOptions, OperationOptionsBuilder};
+use azure_data_cosmos_driver::options::{DriverOptions, OperationOptions, OperationOptionsBuilder};
 use azure_data_cosmos_driver::CosmosResponse;
 
 #[cfg(feature = "fault_injection")]
@@ -852,13 +852,10 @@ async fn paused_satellite_converges_to_latest_hub_write() {
 
     let account = AccountReference::with_master_key(Url::parse(east_url).unwrap(), "dGVzdGtleQ==");
     let driver = emulator_runtime
-        .get_or_create_driver(
-            account.clone(),
-            Some(
-                DriverOptionsBuilder::new(account)
-                    .with_preferred_regions(vec![Region::WEST_US, Region::EAST_US])
-                    .build(),
-            ),
+        .create_driver(
+            DriverOptionsBuilder::new(account)
+                .with_preferred_regions(vec![Region::WEST_US, Region::EAST_US])
+                .build(),
         )
         .await
         .unwrap();
@@ -1007,7 +1004,7 @@ async fn create_retries_after_429_throttling() {
         "dGVzdGtleQ==",
     );
     let driver = emulator_runtime
-        .get_or_create_driver(account.clone(), None)
+        .create_driver(DriverOptions::builder(account.clone()).build())
         .await
         .unwrap();
     let container = driver
@@ -1163,14 +1160,8 @@ async fn read_failover_on_503_via_fault_injection() {
     let emulator = std::sync::Arc::new(InMemoryEmulatorHttpClient::new(config));
     let emulator_store = emulator.store();
 
-    // Build runtime with fault injection rules layered on top of the emulator.
-    let emulator_runtime = emulator
-        .runtime_builder()
-        .with_fault_injection_rules(vec![Arc::clone(&emu_rule)])
-        .expect("distinct fault injection rule id")
-        .build()
-        .await
-        .unwrap();
+    // Build runtime; fault injection is configured per driver (not on the runtime).
+    let emulator_runtime = emulator.runtime_builder().build().await.unwrap();
 
     // Provision database and container.
     emulator_store.create_database("fi-testdb");
@@ -1189,9 +1180,11 @@ async fn read_failover_on_503_via_fault_injection() {
         AccountReference::with_master_key(Url::parse(east_url).unwrap(), "dGVzdGtleQ==");
     let emu_driver_opts = DriverOptionsBuilder::new(emu_account.clone())
         .with_preferred_regions(vec![Region::EAST_US, Region::WEST_US])
+        .with_fault_injection_rules(vec![Arc::clone(&emu_rule)])
+        .expect("distinct fault injection rule id")
         .build();
     let emu_driver = emulator_runtime
-        .get_or_create_driver(emu_account.clone(), Some(emu_driver_opts))
+        .create_driver(emu_driver_opts)
         .await
         .unwrap();
 
@@ -1329,7 +1322,7 @@ async fn try_real_failover_comparison(
     use azure_data_cosmos_driver::fault_injection::FaultInjectionRuleBuilder;
     use azure_data_cosmos_driver::models::{AccountReference, ConnectionString};
     use azure_data_cosmos_driver::options::{
-        ConnectionPoolOptions, DriverOptionsBuilder, EmulatorServerCertValidation,
+        ConnectionPoolOptions, DriverOptionsBuilder, ServerCertificateValidation,
     };
     use std::sync::Arc;
 
@@ -1359,27 +1352,25 @@ async fn try_real_failover_comparison(
 
     let mut pool_builder = ConnectionPoolOptions::builder();
     if conn_str.account_endpoint().contains("localhost") {
-        pool_builder = pool_builder
-            .with_emulator_server_cert_validation(EmulatorServerCertValidation::DangerousDisabled);
+        pool_builder = pool_builder.with_server_certificate_validation(
+            ServerCertificateValidation::RequiredUnlessEmulator,
+        );
     }
     let pool = pool_builder.build().ok()?;
 
     let runtime = CosmosDriverRuntime::builder()
         .with_connection_pool(pool)
-        .with_fault_injection_rules(vec![Arc::clone(&real_rule)])
-        .ok()?
         .build()
         .await
         .ok()?;
 
     let driver_opts = DriverOptionsBuilder::new(account.clone())
         .with_preferred_regions(vec![Region::EAST_US, Region::WEST_US])
+        .with_fault_injection_rules(vec![Arc::clone(&real_rule)])
+        .ok()?
         .build();
 
-    let driver = runtime
-        .get_or_create_driver(account.clone(), Some(driver_opts))
-        .await
-        .ok()?;
+    let driver = runtime.create_driver(driver_opts).await.ok()?;
 
     // Create a unique database for this test run.
     let run_id = uuid::Uuid::new_v4().to_string()[..8].to_string();

@@ -20,6 +20,7 @@ use azure_data_cosmos_driver::in_memory_emulator::{
     ConsistencyLevel, InMemoryEmulatorHttpClient, VirtualAccountConfig, VirtualRegion,
 };
 use azure_data_cosmos_driver::models::{AccountReference, CosmosOperation, DatabaseReference};
+use azure_data_cosmos_driver::options::DriverOptions;
 use azure_data_cosmos_driver::options::OperationOptions;
 
 const GATEWAY_URL: &str = "https://eastus.emulator.local";
@@ -60,7 +61,7 @@ async fn aborted_operation_error_carries_operation_diagnostics() {
         .expect("runtime should build");
 
     let driver = runtime
-        .get_or_create_driver(account(), None)
+        .create_driver(DriverOptions::builder(account()).build())
         .await
         .expect("driver should initialize against the in-memory emulator");
 

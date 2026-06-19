@@ -13,7 +13,7 @@ use crate::{
     models::ThroughputControlGroupName,
     options::{
         AvailabilityStrategy, ContentResponseOnWrite, EndToEndOperationLatencyPolicy,
-        ExcludedRegions, ReadConsistencyStrategy,
+        ExcludedRegions, PriorityLevel, ReadConsistencyStrategy,
     },
 };
 
@@ -60,14 +60,9 @@ pub struct OperationOptions {
     #[option(env = "AZURE_COSMOS_CONTENT_RESPONSE_ON_WRITE")]
     pub content_response_on_write: Option<ContentResponseOnWrite>,
 
-    /// Throughput control group name for this request.
-    ///
-    /// References a group registered at runtime via
-    /// [`CosmosDriverRuntimeBuilder::register_throughput_control_group()`](crate::driver::CosmosDriverRuntimeBuilder::register_throughput_control_group).
-    ///
-    /// `None` inherits from a lower-priority level or falls back to the
-    /// container's default group.
-    pub throughput_control_group: Option<ThroughputControlGroupName>,
+    /// Throughput-control tuning for this request.
+    #[option(nested)]
+    pub throughput_control: Option<ThroughputControlOptions>,
 
     /// End-to-end timeout policy for this request.
     pub end_to_end_latency_policy: Option<EndToEndOperationLatencyPolicy>,
@@ -105,105 +100,30 @@ pub struct OperationOptions {
     /// etc.), configure [`end_to_end_latency_policy`](Self::end_to_end_latency_policy).
     #[option(nested)]
     pub throttling_retry_options: Option<ThrottlingRetryOptions>,
-
-    /// Read failure count threshold before the per-partition circuit breaker
-    /// trips for a `(partition, region)` pair.
+    /// Master switch that enables or disables cross-region read hedging.
     ///
-    /// **Default**: `10`. Counted within the
-    /// `circuit_breaker_timeout_counter_reset_window_in_minutes` window.
+    /// **Default**: `None`, which the driver treats as **enabled** — eligible
+    /// requests are hedged using the built-in default threshold of
+    /// `min(1000ms, request_timeout / 2)` (falling back to `1000ms`).
     ///
-    /// **Tuning**: Lower values trip the breaker faster, isolating bad regions
-    /// sooner but at the cost of false positives during transient blips and
-    /// more cross-region traffic. Higher values are more tolerant of
-    /// short-lived issues but delay isolation of a genuinely unhealthy region
-    /// (more user-visible failed reads before failover engages).
-    #[option(env = "AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_READS")]
-    pub circuit_breaker_failure_count_for_reads: Option<u32>,
-
-    /// Write failure count threshold before the per-partition circuit breaker
-    /// trips for a `(partition, region)` pair (multi-master accounts only).
+    /// **Environment variable**: `AZURE_COSMOS_HEDGING_ENABLED`. When set, it is
+    /// the **source of truth** and takes precedence over the programmatic
+    /// [`Self::availability_strategy`] in both directions:
+    /// - `Some(false)` turns hedging off even when an explicit
+    ///   [`AvailabilityStrategy::Hedging`] is configured.
+    /// - `Some(true)` turns hedging on even when an explicit
+    ///   [`AvailabilityStrategy::Disabled`] is configured; a programmatic
+    ///   `Hedging(..)` strategy still supplies its custom threshold, otherwise
+    ///   the default threshold above applies.
     ///
-    /// **Default**: `5`. Lower than the read threshold because writes are not
-    /// retried as aggressively across regions and a stuck write region has a
-    /// larger user-visible blast radius.
+    /// Leaving it unset (`None`) defers to the programmatic strategy.
     ///
-    /// **Tuning**: same trade-offs as
-    /// `circuit_breaker_failure_count_for_reads`; only applies on accounts
-    /// where multiple write locations are enabled.
-    #[option(env = "AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_WRITES")]
-    pub circuit_breaker_failure_count_for_writes: Option<u32>,
-
-    /// Window (in minutes) after which the per-partition failure counters
-    /// reset for a `(partition, region)` pair.
-    ///
-    /// **Default**: `5` minutes. Failures older than this window do not
-    /// contribute to the trip threshold.
-    ///
-    /// **Tuning**: Shorter windows make the breaker more forgiving of
-    /// occasional failures (less likely to trip from sparse, intermittent
-    /// errors); longer windows accumulate evidence of chronic regional
-    /// degradation that does not happen all at once.
-    #[option(env = "AZURE_COSMOS_CIRCUIT_BREAKER_TIMEOUT_COUNTER_RESET_WINDOW_IN_MINUTES")]
-    pub circuit_breaker_timeout_counter_reset_window_in_minutes: Option<u32>,
-
-    /// Minimum age (in seconds) a tripped circuit breaker entry must reach
-    /// before the background failback sweep is allowed to transition it from
-    /// `Unhealthy` to `ProbeCandidate` (and thereby attempt failback to the
-    /// original region).
-    ///
-    /// **Default**: `5` seconds (also the minimum permitted value).
-    ///
-    /// **Tuning**: Larger values keep traffic on the alternate region for
-    /// longer once a failover has happened, reducing flapping when a region
-    /// is recovering unevenly. Smaller values bring traffic back to the
-    /// preferred region sooner but risk repeatedly probing a not-yet-healed
-    /// region.
-    #[option(env = "AZURE_COSMOS_ALLOWED_PARTITION_UNAVAILABILITY_DURATION_IN_SECONDS")]
-    pub allowed_partition_unavailability_duration_in_seconds: Option<u32>,
-
-    /// Interval (in seconds) between iterations of the background failback
-    /// sweep that promotes eligible `Unhealthy` entries to `ProbeCandidate`.
-    ///
-    /// **Default**: `300` seconds (5 minutes).
-    ///
-    /// **Tuning**: This is purely a polling interval; it places an upper
-    /// bound on how long after `allowed_partition_unavailability_duration_in_seconds`
-    /// a tripped entry has to wait before being eligible to probe back to its
-    /// original region. Smaller values reduce that latency but raise the
-    /// background scan rate; larger values do the opposite.
-    #[option(env = "AZURE_COSMOS_PPCB_STALE_PARTITION_UNAVAILABILITY_REFRESH_INTERVAL_IN_SECONDS")]
-    pub ppcb_stale_partition_unavailability_refresh_interval_in_seconds: Option<u32>,
-
-    /// Whether the per-partition circuit breaker (PPCB) is enabled.
-    ///
-    /// **Default**: `false`. PPCB tracks failures per
-    /// `(partition_key_range_id, region)` and routes traffic to a healthy
-    /// alternate region once the threshold is exceeded, then probes the
-    /// original region for recovery via the failback sweep.
-    ///
-    /// **Tuning**: Enable to opt into partition-level circuit breaking on
-    /// reads (any account) and writes (multi-master accounts). When disabled,
-    /// the driver falls back to account-level endpoint marking, which is
-    /// coarser-grained.
-    #[option(env = "AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED")]
-    pub per_partition_circuit_breaker_enabled: Option<bool>,
-
-    /// Consecutive alternate-region hedge wins on the same
-    /// `(partition, primary_region)` pair before the per-partition circuit
-    /// breaker (PPCB) trips the partition away from that primary.
-    ///
-    /// **Default**: `5` (matches the .NET v3 SDK convention).
-    ///
-    /// **Tuning**: Lower values trip the partition faster when the primary
-    /// region is chronically slow but the alternate is healthy — useful
-    /// when operators want hedging to drive failover aggressively. Higher
-    /// values are more tolerant of occasional latency spikes that the
-    /// hedge happens to win, avoiding spurious failovers when both regions
-    /// are healthy and the primary just happened to lose the race. Set
-    /// well above `max_failover_retries` to effectively disable hedge-win
-    /// driven trips while keeping the hedge race itself active.
-    #[option(env = "AZURE_COSMOS_CONSECUTIVE_HEDGE_WIN_THRESHOLD")]
-    pub consecutive_hedge_win_threshold: Option<u32>,
+    /// **Kill switch**: `AZURE_COSMOS_HEDGING_ENABLED_OVERRIDE` takes
+    /// precedence over **every** layer (including a programmatic per-request
+    /// value and [`Self::availability_strategy`]). It is intended as a
+    /// fleet-wide incident override and should normally be left unset.
+    #[option(env = "AZURE_COSMOS_HEDGING_ENABLED", overridable)]
+    pub hedging_enabled: Option<bool>,
 
     /// Cross-region availability strategy controlling whether eligible
     /// requests are hedged to additional regions when the primary is slow.
@@ -212,6 +132,11 @@ pub struct OperationOptions {
     /// strategy. Setting
     /// `Some(AvailabilityStrategy::Disabled)` at any layer turns hedging
     /// off for that scope.
+    ///
+    /// **Note**: This strategy is overridden by [`Self::hedging_enabled`]
+    /// whenever the latter resolves to `Some(_)` (for example via
+    /// `AZURE_COSMOS_HEDGING_ENABLED`): `Some(false)` forces hedging off and
+    /// `Some(true)` forces it on, regardless of the strategy configured here.
     pub availability_strategy: Option<AvailabilityStrategy>,
 
     // Additional headers beyond those natively supported by the driver.
@@ -276,6 +201,68 @@ pub struct ThrottlingRetryOptions {
     pub max_retry_wait_time: Option<Duration>,
 }
 
+/// Throughput-control tuning for an individual request (or layer default).
+///
+/// Mirrors the [`ThrottlingRetryOptions`] pattern: three independently
+/// layered knobs grouped under a single nested option group on
+/// [`OperationOptions`]. None of these fields read from environment
+/// variables — throughput control is a per-application policy.
+///
+/// # Resolution
+///
+/// Each inner field participates independently in the standard runtime →
+/// account → operation layered resolution. Once resolved, the driver
+/// computes the wire headers (`x-ms-cosmos-priority-level`,
+/// `x-ms-cosmos-throughput-bucket`) using a two-step rule per field:
+///
+/// 1. If the layered value for the field is `Some`, use it directly.
+/// 2. Else, if [`group_name`](Self::group_name) resolves to a group
+///    registered on the driver via
+///    [`DriverOptionsBuilder::register_throughput_control_group`](crate::options::DriverOptionsBuilder::register_throughput_control_group),
+///    use the group's value for the field (if the group sets it).
+/// 3. Else, the header is omitted.
+///
+/// The two fields resolve independently, so a layered
+/// `throughput_bucket = Some(...)` does not suppress a
+/// `priority_level` carried by the registered group, and vice versa.
+///
+/// # Why direct overrides exist
+///
+/// The direct [`throughput_bucket`](Self::throughput_bucket) /
+/// [`priority_level`](Self::priority_level) overrides let callers set the
+/// per-operation headers without having to register a
+/// [`ThroughputControlGroupOptions`](super::ThroughputControlGroupOptions)
+/// on the driver. Use a registered group when you want shared, mutable
+/// values to apply to a family of operations; use the direct fields for
+/// one-off overrides.
+#[derive(CosmosOptions, Clone, Debug)]
+#[options(layers(runtime, account, operation))]
+#[non_exhaustive]
+pub struct ThroughputControlOptions {
+    /// Name of a previously-registered throughput-control group.
+    ///
+    /// Used as the fallback source for
+    /// [`throughput_bucket`](Self::throughput_bucket) and
+    /// [`priority_level`](Self::priority_level) when those fields are not
+    /// set at any layer. A name that does not resolve to a registered group
+    /// produces an error at request time.
+    pub group_name: Option<ThroughputControlGroupName>,
+
+    /// Direct override for the `x-ms-cosmos-throughput-bucket` header.
+    ///
+    /// Takes precedence over the bucket carried by the resolved
+    /// [`group_name`](Self::group_name) (if any). `None` falls back to the
+    /// resolved group's bucket, then to no header.
+    pub throughput_bucket: Option<u32>,
+
+    /// Direct override for the `x-ms-cosmos-priority-level` header.
+    ///
+    /// Takes precedence over the priority carried by the resolved
+    /// [`group_name`](Self::group_name) (if any). `None` falls back to the
+    /// resolved group's priority level, then to no header.
+    pub priority_level: Option<PriorityLevel>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -286,7 +273,7 @@ mod tests {
         assert!(options.read_consistency_strategy.is_none());
         assert!(options.excluded_regions.is_none());
         assert!(options.content_response_on_write.is_none());
-        assert!(options.throughput_control_group.is_none());
+        assert!(options.throughput_control.is_none());
         assert!(options.max_failover_retry_count.is_none());
         assert!(options.max_session_retry_count.is_none());
     }
@@ -378,6 +365,7 @@ mod tests {
             "AZURE_COSMOS_CONTENT_RESPONSE_ON_WRITE" => Ok("true".to_string()),
             "AZURE_COSMOS_MAX_FAILOVER_RETRY_COUNT" => Ok("7".to_string()),
             "AZURE_COSMOS_MAX_SESSION_RETRY_COUNT" => Ok("3".to_string()),
+            "AZURE_COSMOS_HEDGING_ENABLED" => Ok("false".to_string()),
             _ => Err(std::env::VarError::NotPresent),
         });
 
@@ -391,6 +379,7 @@ mod tests {
         );
         assert_eq!(options.max_failover_retry_count, Some(7));
         assert_eq!(options.max_session_retry_count, Some(3));
+        assert_eq!(options.hedging_enabled, Some(false));
         // Fields without env annotation remain None
         assert!(options.excluded_regions.is_none());
         // Nested option groups are not populated by the parent's `from_env`;
@@ -422,6 +411,7 @@ mod tests {
         assert!(options.max_failover_retry_count.is_none());
         assert!(options.max_session_retry_count.is_none());
         assert!(options.availability_strategy.is_none());
+        assert!(options.hedging_enabled.is_none());
     }
 
     #[test]
@@ -553,5 +543,152 @@ mod tests {
 
         assert!(throttling.max_retry_count().is_none());
         assert!(throttling.max_retry_wait_time().is_none());
+    }
+
+    /// The `env_override` kill-switch layer must win over the operation layer
+    /// for an `overridable` field — this is the whole point of the
+    /// `{ENV}_OVERRIDE` variant: a fleet-wide incident override that beats a
+    /// hard-coded per-request value.
+    #[test]
+    fn env_override_layer_wins_over_operation_for_hedging_enabled() {
+        use std::sync::Arc;
+
+        // Override layer disables hedging.
+        let env_override = Arc::new(OperationOptions {
+            hedging_enabled: Some(false),
+            ..Default::default()
+        });
+
+        // Operation layer tries to enable hedging.
+        let operation = OperationOptions {
+            hedging_enabled: Some(true),
+            ..Default::default()
+        };
+
+        let view = OperationOptionsView::new_with_override(
+            Some(env_override),
+            None,
+            None,
+            None,
+            Some(&operation),
+        );
+
+        assert_eq!(
+            view.hedging_enabled(),
+            Some(&false),
+            "env_override must beat the operation layer for hedging_enabled",
+        );
+    }
+
+    /// When the `env_override` layer leaves a field unset, resolution falls
+    /// through to the normal layer chain (operation → … → env), so the
+    /// kill switch is inert unless the `{ENV}_OVERRIDE` variant is set.
+    #[test]
+    fn env_override_unset_falls_through_to_operation() {
+        let operation = OperationOptions {
+            hedging_enabled: Some(true),
+            ..Default::default()
+        };
+
+        // Override layer present but the field is None — must not mask the
+        // operation value.
+        let env_override = std::sync::Arc::new(OperationOptions::default());
+
+        let view = OperationOptionsView::new_with_override(
+            Some(env_override),
+            None,
+            None,
+            None,
+            Some(&operation),
+        );
+
+        assert_eq!(view.hedging_enabled(), Some(&true));
+    }
+
+    /// `from_env_override_vars` populates only the `overridable` fields from
+    /// their `{ENV}_OVERRIDE` variants and leaves every other env field
+    /// `None` (the base `from_env_vars` path is unaffected).
+    #[test]
+    fn from_env_override_vars_reads_only_override_variants() {
+        let options = OperationOptions::from_env_override_vars(|key| match key {
+            "AZURE_COSMOS_HEDGING_ENABLED_OVERRIDE" => Ok("false".to_string()),
+            // A non-override env var must be ignored by the override path.
+            "AZURE_COSMOS_HEDGING_ENABLED" => Ok("true".to_string()),
+            _ => Err(std::env::VarError::NotPresent),
+        });
+
+        assert_eq!(options.hedging_enabled, Some(false));
+        // A non-overridable env field must stay None on the override layer.
+        assert!(options.availability_strategy.is_none());
+    }
+
+    /// With nothing set, the override constructor produces an all-`None`
+    /// instance.
+    #[test]
+    fn from_env_override_vars_returns_none_when_unset() {
+        let options =
+            OperationOptions::from_env_override_vars(|_| Err(std::env::VarError::NotPresent));
+        assert!(options.hedging_enabled.is_none());
+        assert!(options.availability_strategy.is_none());
+    }
+
+    /// Each inner field on the nested [`ThroughputControlOptions`] group must
+    /// participate independently in the standard runtime → account →
+    /// operation layered resolution. Mirrors the throttle equivalent so a
+    /// later macro change can't silently regress this layering.
+    #[test]
+    fn nested_throughput_control_resolves_across_layers() {
+        use std::sync::Arc;
+
+        let runtime = Arc::new(OperationOptions {
+            throughput_control: Some(ThroughputControlOptions {
+                group_name: Some(ThroughputControlGroupName::new("runtime-group")),
+                throughput_bucket: Some(7),
+                priority_level: Some(PriorityLevel::Low),
+            }),
+            ..Default::default()
+        });
+
+        let operation = OperationOptions {
+            throughput_control: Some(ThroughputControlOptions {
+                group_name: None,
+                throughput_bucket: Some(99),
+                priority_level: None,
+            }),
+            ..Default::default()
+        };
+
+        let view = OperationOptionsView::new(None, Some(runtime), None, Some(&operation));
+        let throughput = view.throughput_control();
+
+        assert_eq!(
+            throughput.group_name(),
+            Some(&ThroughputControlGroupName::new("runtime-group")),
+            "missing inner field on the operation layer must fall through to runtime",
+        );
+        assert_eq!(
+            throughput.throughput_bucket(),
+            Some(&99),
+            "operation-layer override must win over runtime for `throughput_bucket`",
+        );
+        assert_eq!(
+            throughput.priority_level(),
+            Some(&PriorityLevel::Low),
+            "missing inner field on the operation layer must fall through to runtime",
+        );
+    }
+
+    /// When no layer sets `throughput_control`, the view's inner-field
+    /// accessors must return `None` so the driver-side resolver knows to
+    /// omit the wire headers.
+    #[test]
+    fn nested_throughput_control_view_is_none_when_unset_at_every_layer() {
+        let op = OperationOptions::default();
+        let view = OperationOptionsView::new(None, None, None, Some(&op));
+        let throughput = view.throughput_control();
+
+        assert!(throughput.group_name().is_none());
+        assert!(throughput.throughput_bucket().is_none());
+        assert!(throughput.priority_level().is_none());
     }
 }
