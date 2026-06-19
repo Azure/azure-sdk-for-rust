@@ -399,7 +399,7 @@ pub struct RequestDiagnostics {
     /// Request charge (RU) for this individual request.
     pub(crate) request_charge: RequestCharge,
 
-    /// Activity ID from response headers.
+    /// Activity ID for this attempt.
     activity_id: Option<ActivityId>,
 
     /// Session token from response (for session consistency).
@@ -1119,20 +1119,63 @@ struct TruncatedOutput<'a> {
     message: &'static str,
 }
 
+/// Status of the CPU sample history in a [`SystemUsageSnapshot`].
+#[derive(Clone, Copy, Debug, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum CpuUsageStatus {
+    /// At least one CPU sample was collected.
+    Available,
+    /// No CPU samples were available (cold start, or the sampler is not running
+    /// in the host environment).
+    Unavailable,
+}
+
+/// Recent CPU load history, serialized as a structured object.
+///
+/// Replaces the previous behavior of serializing a human-readable string (which
+/// emitted the literal `"empty"` sentinel when no samples existed). Mirrors the
+/// structured CPU history shape used by the .NET and Java SDKs, so downstream
+/// JSON consumers always see an object with a `samples` array and a `status`.
+///
+/// # Examples
+///
+/// - With samples: `{ "samples": ["(45.3%)", "(50.1%)"], "status": "available" }`
+/// - Without samples: `{ "samples": [], "status": "unavailable" }`
+#[derive(Clone, Debug, Serialize)]
+struct CpuUsageHistory {
+    /// Recent CPU load samples, oldest first (empty when none were collected).
+    samples: Vec<String>,
+    /// Whether any CPU samples were available.
+    status: CpuUsageStatus,
+}
+
+impl CpuUsageHistory {
+    /// Builds a CPU history from formatted sample strings, deriving the status
+    /// from whether any samples are present.
+    fn from_samples(samples: Vec<String>) -> Self {
+        let status = if samples.is_empty() {
+            CpuUsageStatus::Unavailable
+        } else {
+            CpuUsageStatus::Available
+        };
+        Self { samples, status }
+    }
+}
+
 /// Snapshot of system CPU and memory usage at a point in time.
 ///
 /// Captured lazily on first serialization of a [`DiagnosticsContext`] and
 /// included in the JSON output under `"system_usage"`.
 ///
 /// Field names mirror the Java SDK's `CosmosDiagnosticsSystemUsageSnapshot`:
-/// - `"cpu"` – Recent CPU load history (e.g. `"(45.3%), (50.1%), ..."`)
+/// - `"cpu"` – Recent CPU load history as a structured object (`{ samples, status }`)
 /// - `"memory_available_mb"` – Most recent available memory in MB
 /// - `"processor_count"` – Number of logical CPUs available to the process
 /// - `"cpu_overloaded"` – Whether the CPU is considered overloaded
 #[derive(Clone, Debug, Serialize)]
 struct SystemUsageSnapshot {
-    /// Recent CPU load history formatted as a human-readable string.
-    cpu: String,
+    /// Recent CPU load history as a structured object.
+    cpu: CpuUsageHistory,
     /// Available memory in megabytes (most recent sample).
     #[serde(skip_serializing_if = "Option::is_none")]
     memory_available_mb: Option<u64>,
@@ -1147,7 +1190,7 @@ impl SystemUsageSnapshot {
     fn capture(monitor: &CpuMemoryMonitor) -> Self {
         let history = monitor.snapshot();
         Self {
-            cpu: history.to_string(),
+            cpu: CpuUsageHistory::from_samples(history.cpu_sample_strings()),
             memory_available_mb: history.latest_memory_mb(),
             processor_count: std::thread::available_parallelism()
                 .map(|n| n.get())
@@ -1159,13 +1202,13 @@ impl SystemUsageSnapshot {
     /// Creates a snapshot with fixed, deterministic values for testing.
     #[cfg(test)]
     fn new_for_test(
-        cpu: String,
+        cpu_samples: Vec<String>,
         memory_available_mb: Option<u64>,
         processor_count: usize,
         cpu_overloaded: bool,
     ) -> Self {
         Self {
-            cpu,
+            cpu: CpuUsageHistory::from_samples(cpu_samples),
             memory_available_mb,
             processor_count,
             cpu_overloaded,
@@ -1345,7 +1388,7 @@ impl DiagnosticsContextBuilder {
         transport_http_version: TransportHttpVersion,
         endpoint: &CosmosEndpoint,
     ) -> RequestHandle {
-        let request = RequestDiagnostics::new(
+        let mut request = RequestDiagnostics::new(
             execution_context,
             pipeline_type,
             transport_security,
@@ -1353,6 +1396,7 @@ impl DiagnosticsContextBuilder {
             transport_http_version,
             endpoint,
         );
+        request.with_activity_id(self.activity_id.clone());
         let handle = RequestHandle(self.requests.len());
         self.requests.push(request);
         handle
@@ -2372,7 +2416,7 @@ mod tests {
                         "endpoint": "https://test.documents.azure.com/",
                         "status": "200",
                         "request_charge": 1.0,
-                        "activity_id": null,
+                        "activity_id": "test-id",
                         "session_token": null,
                         "server_duration_ms": null,
                         "duration_ms": 0,
@@ -2401,7 +2445,7 @@ mod tests {
                         "endpoint": "https://test.documents.azure.com/",
                         "status": "200",
                         "request_charge": 1.0,
-                        "activity_id": null,
+                        "activity_id": "test-id",
                         "session_token": null,
                         "server_duration_ms": null,
                         "duration_ms": 0,
@@ -2636,6 +2680,108 @@ mod tests {
         let status = requests[0].status();
         assert_eq!(status, &CosmosStatus::TRANSPORT_GENERATED_503);
         assert_eq!(requests[0].error(), Some("connection refused"));
+    }
+
+    #[test]
+    fn transport_failure_records_sent_activity_id_not_null() {
+        // (A) On a transport failure there is no response, so `record_response`
+        // never runs. The per-attempt activity_id must still be populated with
+        // the operation-level id the SDK placed on the wire, rather than `null`.
+        let activity_id = ActivityId::from_string("op-activity-id".to_string());
+        let mut builder = DiagnosticsContextBuilder::new(activity_id.clone(), make_options());
+        let handle = builder.start_test_request(
+            ExecutionContext::Initial,
+            Some(Region::WEST_US_2),
+            "https://test.documents.azure.com",
+        );
+        builder.fail_transport_request(
+            handle,
+            "connection refused",
+            RequestSentStatus::Sent,
+            CosmosStatus::TRANSPORT_GENERATED_503,
+        );
+
+        let ctx = builder.complete();
+        let requests = ctx.requests();
+        assert_eq!(
+            requests[0].activity_id(),
+            Some(&activity_id),
+            "a transport-failed attempt must record the activity id sent on the wire"
+        );
+    }
+
+    #[test]
+    fn successful_response_overwrites_seeded_activity_id_with_header_echo() {
+        // (A) The success path is unchanged: `record_response` overwrites the
+        // seeded operation-level id with the activity id echoed in the response
+        // headers (the same value in the common case).
+        let op_activity_id = ActivityId::from_string("op-activity-id".to_string());
+        let echoed = ActivityId::from_string("echoed-activity-id".to_string());
+        let mut builder = DiagnosticsContextBuilder::new(op_activity_id, make_options());
+        let handle = builder.start_test_request(
+            ExecutionContext::Initial,
+            Some(Region::WEST_US_2),
+            "https://test.documents.azure.com",
+        );
+        let headers = CosmosResponseHeaders {
+            activity_id: Some(echoed.clone()),
+            ..Default::default()
+        };
+        builder.record_response(handle, StatusCode::Ok, &headers);
+
+        let ctx = builder.complete();
+        let requests = ctx.requests();
+        assert_eq!(
+            requests[0].activity_id(),
+            Some(&echoed),
+            "a successful response must record the response-header activity id"
+        );
+    }
+
+    #[test]
+    fn multi_attempt_failed_then_succeeded_keep_independent_activity_ids() {
+        // A failed attempt retains its seeded operation-level id while a later
+        // successful attempt records the response-header echo. The failed
+        // attempt's id must not be perturbed by the later success.
+        let op_activity_id = ActivityId::from_string("op-activity-id".to_string());
+        let echoed = ActivityId::from_string("echoed-activity-id".to_string());
+        let mut builder = DiagnosticsContextBuilder::new(op_activity_id.clone(), make_options());
+
+        let failed = builder.start_test_request(
+            ExecutionContext::Initial,
+            Some(Region::WEST_US_2),
+            "https://test.documents.azure.com",
+        );
+        builder.fail_transport_request(
+            failed,
+            "connection refused",
+            RequestSentStatus::Sent,
+            CosmosStatus::TRANSPORT_GENERATED_503,
+        );
+
+        let succeeded = builder.start_test_request(
+            ExecutionContext::Retry,
+            Some(Region::WEST_US_2),
+            "https://test.documents.azure.com",
+        );
+        let headers = CosmosResponseHeaders {
+            activity_id: Some(echoed.clone()),
+            ..Default::default()
+        };
+        builder.record_response(succeeded, StatusCode::Ok, &headers);
+
+        let ctx = builder.complete();
+        let requests = ctx.requests();
+        assert_eq!(
+            requests[0].activity_id(),
+            Some(&op_activity_id),
+            "the failed attempt must retain the seeded operation-level activity id"
+        );
+        assert_eq!(
+            requests[1].activity_id(),
+            Some(&echoed),
+            "the succeeded attempt must record the response-header echo"
+        );
     }
 
     #[test]
@@ -2939,7 +3085,7 @@ mod tests {
         );
         builder.set_operation_status(StatusCode::Ok, None);
         builder.set_test_system_usage(SystemUsageSnapshot::new_for_test(
-            "(50.0%), (60.0%)".to_string(),
+            vec!["(50.0%)".to_string(), "(60.0%)".to_string()],
             Some(4096),
             4,
             false,
@@ -2954,7 +3100,10 @@ mod tests {
             "total_request_charge": 0.0,
             "request_count": 0,
             "system_usage": {
-                "cpu": "(50.0%), (60.0%)",
+                "cpu": {
+                    "samples": ["(50.0%)", "(60.0%)"],
+                    "status": "available"
+                },
                 "memory_available_mb": 4096,
                 "processor_count": 4,
                 "cpu_overloaded": false
@@ -2964,6 +3113,49 @@ mod tests {
         assert_eq!(
             actual, expected,
             "JSON with system_usage mismatch.\nActual:\n{json}"
+        );
+    }
+
+    #[test]
+    fn json_system_usage_without_cpu_samples_is_structured_not_empty_sentinel() {
+        // When the CPU sampler has no samples (cold start, or not running in the
+        // host environment), the `cpu` field must serialize as a structured
+        // object with an empty `samples` array and `status: "unavailable"` -
+        // never the legacy literal string "empty" (a type-punned sentinel that
+        // breaks downstream JSON consumers).
+        let mut builder = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("test-system-usage-empty".to_string()),
+            make_options(),
+        );
+        builder.set_operation_status(StatusCode::Ok, None);
+        builder.set_test_system_usage(SystemUsageSnapshot::new_for_test(
+            Vec::new(),
+            None,
+            4,
+            false,
+        ));
+        let ctx = builder.complete();
+
+        let json = ctx.to_json_string(Some(DiagnosticsVerbosity::Detailed));
+        let actual = normalize_diagnostics_json(json);
+        let expected: serde_json::Value = serde_json::json!({
+            "activity_id": "test-system-usage-empty",
+            "total_duration_ms": 0,
+            "total_request_charge": 0.0,
+            "request_count": 0,
+            "system_usage": {
+                "cpu": {
+                    "samples": [],
+                    "status": "unavailable"
+                },
+                "processor_count": 4,
+                "cpu_overloaded": false
+            },
+            "requests": []
+        });
+        assert_eq!(
+            actual, expected,
+            "JSON with empty system_usage cpu mismatch.\nActual:\n{json}"
         );
     }
 
