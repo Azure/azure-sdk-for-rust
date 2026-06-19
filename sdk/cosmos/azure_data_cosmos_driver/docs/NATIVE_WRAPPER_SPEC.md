@@ -42,26 +42,21 @@ The `azure_data_cosmos_driver` crate was explicitly designed (see [`ARCHITECTURE
 
 ## 2. Architecture Overview
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│  Consumer (Java / .NET / Python / C / C++ language SDK)     │
-├─────────────────────────────────────────────────────────────┤
-│  azurecosmosdriver.h               (cbindgen-generated)     │
-│  libazurecosmosdriver.{so,dylib,dll,.a}                     │
-├─────────────────────────────────────────────────────────────┤
-│  azure_data_cosmos_driver_native  (THIS CRATE)              │
-│    • #[no_mangle] extern "C" fns                            │
-│    • CompletionQueue + RuntimeContext glue                  │
-│    • Boxed driver handles                                   │
-│    • Bytes-in / bytes-out shims                             │
-├─────────────────────────────────────────────────────────────┤
-│  azure_data_cosmos_driver         (Layer 1)                 │
-│    CosmosDriverRuntime, CosmosDriver, CosmosOperation,      │
-│    CosmosResponse, DiagnosticsContext, PartitionKey, …      │
-├─────────────────────────────────────────────────────────────┤
-│  azure_core / reqwest / tokio                               │
-└─────────────────────────────────────────────────────────────┘
-```
+The stack, top (host language) to bottom (transport), with each layer calling
+the one below it:
+
+- **Consumer** — the Java / .NET / Python / C / C++ language SDK.
+- **C ABI boundary** — `azurecosmosdriver.h` (cbindgen-generated) and the
+  compiled `libazurecosmosdriver.{so,dylib,dll,.a}`.
+- **`azure_data_cosmos_driver_native`** (this crate):
+  - `#[no_mangle] extern "C"` functions
+  - `CompletionQueue` + `RuntimeContext` glue
+  - boxed driver handles
+  - bytes-in / bytes-out shims
+- **`azure_data_cosmos_driver`** (Layer 1) — `CosmosDriverRuntime`,
+  `CosmosDriver`, `CosmosOperation`, `CosmosResponse`, `DiagnosticsContext`,
+  `PartitionKey`, etc.
+- **`azure_core` / `reqwest` / `tokio`** — HTTP transport and async runtime.
 
 ### 2.1 Crate layout
 
