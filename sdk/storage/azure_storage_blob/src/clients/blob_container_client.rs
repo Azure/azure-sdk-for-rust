@@ -116,6 +116,113 @@ impl BlobContainerClient {
     }
 }
 
+#[cfg(feature = "sas")]
+#[cfg_attr(docsrs, doc(cfg(feature = "sas")))]
+impl BlobContainerClient {
+    /// Generates a user delegation SAS URL for this container.
+    ///
+    /// The `configure` closure receives a [`SasBuilder`](azure_storage_sas::SasBuilder)
+    /// pre-initialized with this container's resource info and the requested
+    /// permissions.
+    ///
+    /// The returned URL can be passed directly to [`BlobContainerClient::new`]
+    /// with `None` for the credential to construct a SAS-authenticated client.
+    ///
+    /// To generate a SAS for a single blob in the container, use
+    /// [`BlobContainerClient::blob_client`] to get a [`BlobClient`] and call
+    /// [`BlobClient::generate_user_delegation_sas_url`](crate::BlobClient::generate_user_delegation_sas_url)
+    /// on that.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if `key` is missing any required field.
+    ///
+    /// # Examples
+    ///
+    /// Generate a read + list SAS URL with default settings:
+    ///
+    /// ```no_run
+    /// # use azure_storage_blob::BlobContainerClient;
+    /// # use azure_storage_blob::models::sas::{ContainerPermissions, UserDelegationKey};
+    /// # use time::OffsetDateTime;
+    /// # fn example(client: &BlobContainerClient, udk: UserDelegationKey) -> azure_core::Result<()> {
+    /// let url = client.generate_user_delegation_sas_url(
+    ///     "myaccount",
+    ///     &udk,
+    ///     ContainerPermissions::new().read().list(),
+    ///     OffsetDateTime::now_utc() + time::Duration::hours(1),
+    ///     |sas| sas, // no customization needed
+    /// )?;
+    /// # Ok(()) }
+    /// ```
+    ///
+    /// Restrict to HTTPS and add an IP range:
+    ///
+    /// ```no_run
+    /// # use azure_storage_blob::BlobContainerClient;
+    /// # use azure_storage_blob::models::sas::{ContainerPermissions, UserDelegationKey};
+    /// # use azure_storage_sas::{SasIpRange, SasProtocol};
+    /// # use std::net::Ipv4Addr;
+    /// # use time::OffsetDateTime;
+    /// # fn example(client: &BlobContainerClient, udk: UserDelegationKey) -> azure_core::Result<()> {
+    /// let url = client.generate_user_delegation_sas_url(
+    ///     "myaccount",
+    ///     &udk,
+    ///     ContainerPermissions::new().read().list().write(),
+    ///     OffsetDateTime::now_utc() + time::Duration::hours(8),
+    ///     |sas| {
+    ///         sas.protocol(SasProtocol::Https)
+    ///             .ip_range(SasIpRange::Range {
+    ///                 start: Ipv4Addr::new(10, 0, 0, 1).into(),
+    ///                 end: Ipv4Addr::new(10, 0, 0, 255).into(),
+    ///             })
+    ///     },
+    /// )?;
+    /// # Ok(()) }
+    /// ```
+    pub fn generate_user_delegation_sas_url<F>(
+        &self,
+        account_name: &str,
+        key: &azure_storage_sas::UserDelegationKey,
+        permissions: azure_storage_sas::resource::blob::ContainerPermissions,
+        expiry: time::OffsetDateTime,
+        configure: F,
+    ) -> Result<Url>
+    where
+        F: FnOnce(
+            azure_storage_sas::SasBuilder<'_, azure_storage_sas::state::ContainerState>,
+        )
+            -> azure_storage_sas::SasBuilder<'_, azure_storage_sas::state::ContainerState>,
+    {
+        let segments: Vec<String> = self
+            .endpoint
+            .path_segments()
+            .map(|p| {
+                p.filter(|s| !s.is_empty())
+                    .map(|s| {
+                        percent_encoding::percent_decode_str(s)
+                            .decode_utf8_lossy()
+                            .into_owned()
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+
+        if segments.len() != 1 {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "container endpoint URL must include exactly one path segment",
+            ));
+        }
+
+        let container = azure_storage_sas::resource::blob::Container::new(&segments[0]);
+        let builder = azure_storage_sas::SasBuilder::new(account_name, key, expiry)?
+            .container(container, permissions);
+        let token = configure(builder).build();
+        Ok(crate::sas_helpers::append_query(&self.endpoint, &token))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -141,5 +248,39 @@ mod tests {
         // CDN / Front Door / private endpoint hostnames are still https URLs.
         let url = Url::parse("https://cdn.contoso.com/container").unwrap();
         assert!(BlobContainerClient::new(url, None, None).is_ok());
+    }
+
+    #[cfg(feature = "sas")]
+    #[test]
+    fn generate_user_delegation_sas_url_attaches_sas_query() {
+        use crate::models::sas::{ContainerPermissions, UserDelegationKey};
+        use time::macros::datetime;
+
+        let url = Url::parse("https://acct.blob.core.windows.net/c1").unwrap();
+        let client = BlobContainerClient::new(url, None, None).unwrap();
+        let udk = UserDelegationKey {
+            signed_delegated_user_tid: None,
+            signed_oid: Some("oid".into()),
+            signed_tid: Some("tid".into()),
+            signed_start: Some(datetime!(2025-01-15 00:00:00 UTC)),
+            signed_expiry: Some(datetime!(2025-01-16 00:00:00 UTC)),
+            signed_service: Some("b".into()),
+            signed_version: Some("2025-11-05".into()),
+            value: Some(b"testkey".to_vec()),
+        };
+
+        let sas_url = client
+            .generate_user_delegation_sas_url(
+                "acct",
+                &udk,
+                ContainerPermissions::new().read(),
+                datetime!(2025-06-01 12:00:00 UTC),
+                |sas| sas,
+            )
+            .unwrap();
+
+        let query = sas_url.query().unwrap();
+        assert!(query.contains("sr=c"), "got: {query}");
+        assert!(query.contains("sig="), "got: {query}");
     }
 }

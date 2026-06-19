@@ -1588,3 +1588,62 @@ async fn test_gzip_blob_with_metadata_roundtrip(ctx: TestContext) -> Result<(), 
     container_client.delete(None).await?;
     Ok(())
 }
+
+/// SAS E2E: generate a user delegation SAS URL for a blob and download it without credentials.
+#[cfg(feature = "sas")]
+#[recorded::test(live)]
+async fn test_blob_user_delegation_sas(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    use azure_core::http::{RequestContent, XmlFormat};
+    use azure_storage_blob::models::sas::BlobPermissions;
+    use azure_storage_blob::models::KeyInfo;
+    use azure_storage_blob_test::get_blob_service_client;
+
+    let recording = ctx.recording();
+    let account_name = recording.var("AZURE_STORAGE_ACCOUNT_NAME", None);
+
+    // Create a container and blob using the authenticated client.
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let data = b"sas-e2e-test-data";
+    blob_client
+        .upload(RequestContent::from(data.to_vec()), None)
+        .await?;
+
+    // Get a UserDelegationKey from the service.
+    let service_client = get_blob_service_client(recording, StorageAccount::Standard, None)?;
+    let now = OffsetDateTime::now_utc();
+    let expiry = now + ::time::Duration::hours(1);
+    let key_info = KeyInfo {
+        start: Some(now),
+        expiry: Some(expiry),
+        ..Default::default()
+    };
+    let request_content: RequestContent<KeyInfo, XmlFormat> = key_info.try_into()?;
+    let udk = service_client
+        .get_user_delegation_key(request_content, None)
+        .await?
+        .into_model()?;
+
+    // Generate a SAS URL for the blob.
+    let sas_url = blob_client.generate_user_delegation_sas_url(
+        &account_name,
+        &udk,
+        BlobPermissions::new().read(),
+        expiry,
+        |sas| sas,
+    )?;
+
+    // Download the blob using the SAS URL (no credential).
+    let sas_client = BlobClient::new(sas_url, None, None)?;
+    let response = sas_client.download(None).await?;
+    let body = response.body.collect().await?;
+    assert_eq!(
+        data.as_ref(),
+        &body[..],
+        "SAS download must return original data"
+    );
+
+    container_client.delete(None).await?;
+    Ok(())
+}

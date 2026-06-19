@@ -722,3 +722,69 @@ pub async fn get_queue_service_client_secondary(
 
     Ok(queue_client)
 }
+
+/// SAS E2E: generate a user delegation SAS URL for a queue and use it to enqueue/dequeue a message.
+#[cfg(feature = "sas")]
+#[recorded::test(live)]
+async fn test_queue_user_delegation_sas(ctx: TestContext) -> Result<()> {
+    use azure_storage_queue::models::sas::QueuePermissions;
+    use azure_storage_queue::models::QueueMessage;
+    use azure_storage_queue::QueueClient;
+
+    let recording = ctx.recording();
+    let account_name = recording.var("AZURE_STORAGE_ACCOUNT_NAME", None);
+    let queue_service_client = get_queue_service_client(recording).await?;
+    let queue_name = get_queue_name(recording);
+
+    // Create the queue using the authenticated client.
+    let queue_client = queue_service_client.queue_client(&queue_name)?;
+    queue_client.create(None).await?;
+
+    // Get a UserDelegationKey from the service.
+    let now = OffsetDateTime::now_utc();
+    let key_info = KeyInfo {
+        start: Some(now),
+        expiry: Some(now + Duration::hours(1)),
+        ..Default::default()
+    };
+    let request_content: RequestContent<KeyInfo, XmlFormat> = key_info.try_into()?;
+    let udk = queue_service_client
+        .get_user_delegation_key(request_content, None)
+        .await?
+        .into_model()?;
+
+    // Generate a SAS URL for the queue.
+    let sas_url = queue_client.generate_user_delegation_sas_url(
+        &account_name,
+        &udk,
+        QueuePermissions::new().read().add().process(),
+        now + Duration::hours(1),
+        |sas| sas,
+    )?;
+
+    // Use the SAS URL to create an unauthenticated QueueClient and enqueue a message.
+    let sas_client = QueueClient::new(sas_url, None, None)?;
+    let message = QueueMessage {
+        message_text: Some("sas-e2e-test-message".to_string()),
+    };
+    sas_client.send_message(message.try_into()?, None).await?;
+
+    // Dequeue the message via the SAS client.
+    let dequeue_response = sas_client.receive_messages(None).await?.into_model()?;
+    let items = dequeue_response
+        .items
+        .expect("expected at least one message");
+    assert!(
+        !items.is_empty(),
+        "expected at least one message in the queue"
+    );
+    assert_eq!(
+        items[0].message_text.as_deref(),
+        Some("sas-e2e-test-message"),
+        "dequeued message must match enqueued message"
+    );
+
+    // Cleanup: delete the queue using the authenticated client.
+    queue_client.delete(None).await?;
+    Ok(())
+}

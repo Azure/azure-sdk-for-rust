@@ -15,11 +15,14 @@ categories = ["api-bindings"]
 
 [features]
 default = ["azure_core/default"]
+sas = ["dep:azure_storage_sas", "dep:percent-encoding"]
 
 [dependencies]
 async-trait.workspace = true
 azure_core = { workspace = true, features = ["xml"] }
 azure_storage_common = { path = "../azure_storage_common", version = "0.1.0" }
+azure_storage_sas = { workspace = true, optional = true }
+percent-encoding = { workspace = true, optional = true }
 serde = { workspace = true }
 time.workspace = true
 
@@ -37,3 +40,6 @@ opentelemetry_sdk.workspace = true
 rand.workspace = true
 tokio = { workspace = true, features = ["macros"] }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
+
+[package.metadata.docs.rs]
+all-features = true

@@ -301,6 +301,173 @@ impl BlobClient {
     }
 }
 
+#[cfg(feature = "sas")]
+#[cfg_attr(docsrs, doc(cfg(feature = "sas")))]
+impl BlobClient {
+    /// Generates a user delegation SAS URL for this blob.
+    ///
+    /// The `configure` closure receives a [`SasBuilder`](azure_storage_sas::SasBuilder)
+    /// pre-initialized with this blob's resource info and the requested
+    /// permissions. Use it to set additional fields like
+    /// [`protocol`](azure_storage_sas::SasBuilder::protocol),
+    /// [`ip_range`](azure_storage_sas::SasBuilder::ip_range), or response
+    /// header overrides.
+    ///
+    /// The returned URL can be passed directly to [`BlobClient::new`] with
+    /// `None` for the credential to construct a SAS-authenticated client.
+    ///
+    /// If this client was built with [`BlobClient::with_snapshot`] or
+    /// [`BlobClient::with_version`], the snapshot timestamp or version ID is
+    /// forwarded automatically and the SAS is scoped accordingly
+    /// (`sr=bs` for snapshots, `sr=bv` for versions).
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if `key` is missing any required field, or if both
+    /// `snapshot=` and `versionid=` are present in the endpoint query.
+    ///
+    /// # Examples
+    ///
+    /// Generate a read-only SAS URL with default settings:
+    ///
+    /// ```no_run
+    /// # use azure_storage_blob::BlobClient;
+    /// # use azure_storage_blob::models::sas::{BlobPermissions, UserDelegationKey};
+    /// # use time::OffsetDateTime;
+    /// # fn example(client: &BlobClient, udk: UserDelegationKey) -> azure_core::Result<()> {
+    /// let url = client.generate_user_delegation_sas_url(
+    ///     "myaccount",
+    ///     &udk,
+    ///     BlobPermissions::new().read(),
+    ///     OffsetDateTime::now_utc() + time::Duration::hours(1),
+    ///     |sas| sas, // no customization needed
+    /// )?;
+    /// # Ok(()) }
+    /// ```
+    ///
+    /// Use the closure to restrict to HTTPS and limit access by IP:
+    ///
+    /// ```no_run
+    /// # use azure_storage_blob::BlobClient;
+    /// # use azure_storage_blob::models::sas::{BlobPermissions, UserDelegationKey};
+    /// # use azure_storage_sas::{SasIpRange, SasProtocol};
+    /// # use std::net::Ipv4Addr;
+    /// # use time::OffsetDateTime;
+    /// # fn example(client: &BlobClient, udk: UserDelegationKey) -> azure_core::Result<()> {
+    /// let url = client.generate_user_delegation_sas_url(
+    ///     "myaccount",
+    ///     &udk,
+    ///     BlobPermissions::new().read().write(),
+    ///     OffsetDateTime::now_utc() + time::Duration::hours(4),
+    ///     |sas| {
+    ///         sas.protocol(SasProtocol::Https)
+    ///             .ip_range(SasIpRange::Range {
+    ///                 start: Ipv4Addr::new(10, 0, 0, 1).into(),
+    ///                 end: Ipv4Addr::new(10, 0, 0, 255).into(),
+    ///             })
+    ///             .content_type("application/octet-stream")
+    ///     },
+    /// )?;
+    /// # Ok(()) }
+    /// ```
+    pub fn generate_user_delegation_sas_url<F>(
+        &self,
+        account_name: &str,
+        key: &azure_storage_sas::UserDelegationKey,
+        permissions: azure_storage_sas::resource::blob::BlobPermissions,
+        expiry: time::OffsetDateTime,
+        configure: F,
+    ) -> Result<Url>
+    where
+        F: FnOnce(
+            azure_storage_sas::SasBuilder<'_, azure_storage_sas::state::BlobState>,
+        )
+            -> azure_storage_sas::SasBuilder<'_, azure_storage_sas::state::BlobState>,
+    {
+        let segments: Vec<String> = self
+            .endpoint
+            .path_segments()
+            .map(|p| {
+                p.filter(|s| !s.is_empty())
+                    .map(|s| {
+                        percent_encoding::percent_decode_str(s)
+                            .decode_utf8_lossy()
+                            .into_owned()
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+
+        if segments.len() < 2 {
+            return Err(azure_core::Error::with_message(
+                ErrorKind::Other,
+                "blob endpoint URL must include container and blob name",
+            ));
+        }
+
+        let container = &segments[0];
+        let blob_name = segments[1..].join("/");
+
+        let (snapshot, version_id) = crate::sas_helpers::extract_blob_qualifiers(&self.endpoint)?;
+        let mut resource = azure_storage_sas::resource::blob::Blob::new(container, blob_name);
+        if let Some(s) = snapshot {
+            resource = resource.snapshot(s);
+        }
+        if let Some(v) = version_id {
+            resource = resource.version(v);
+        }
+
+        let builder = azure_storage_sas::SasBuilder::new(account_name, key, expiry)?
+            .blob(resource, permissions);
+        let token = configure(builder).build();
+        Ok(crate::sas_helpers::append_query_excluding(
+            &self.endpoint,
+            &token,
+            &["snapshot"],
+        ))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[cfg(feature = "sas")]
+    #[test]
+    fn generate_user_delegation_sas_url_attaches_sas_query() {
+        use crate::models::sas::{BlobPermissions, UserDelegationKey};
+        use time::macros::datetime;
+
+        let url = Url::parse("https://acct.blob.core.windows.net/c1/b1").unwrap();
+        let client = BlobClient::new(url, None, None).unwrap();
+        let udk = UserDelegationKey {
+            signed_delegated_user_tid: None,
+            signed_oid: Some("oid".into()),
+            signed_tid: Some("tid".into()),
+            signed_start: Some(datetime!(2025-01-15 00:00:00 UTC)),
+            signed_expiry: Some(datetime!(2025-01-16 00:00:00 UTC)),
+            signed_service: Some("b".into()),
+            signed_version: Some("2025-11-05".into()),
+            value: Some(b"testkey".to_vec()),
+        };
+
+        let sas_url = client
+            .generate_user_delegation_sas_url(
+                "acct",
+                &udk,
+                BlobPermissions::new().read(),
+                datetime!(2025-06-01 12:00:00 UTC),
+                |sas| sas,
+            )
+            .unwrap();
+
+        assert_eq!(sas_url.path(), "/c1/b1");
+        let query = sas_url.query().unwrap();
+        assert!(query.contains("sr=b"), "got: {query}");
+        assert!(query.contains("sig="), "got: {query}");
+    }
+}
+
 struct BlobClientDownloadBehavior<'a> {
     client: GeneratedBlobClient,
     options: BlobClientDownloadInternalOptions<'a>,

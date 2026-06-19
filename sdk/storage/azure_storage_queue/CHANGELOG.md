@@ -6,6 +6,7 @@
 
 - Added `ListOfSentMessage::into_message()` to extract the single `SentMessage` returned by `QueueClient::send_message()`.
 - Added `QueueServiceClient::get_user_delegation_key()` to obtain a user delegation key for creating user delegation SAS tokens.
+- Added an opt-in `sas` feature that re-exports the `azure_storage_sas` builder for constructing user delegation SAS tokens via `azure_storage_queue::models::sas`, and a `generate_user_delegation_sas_url` convenience method on `QueueClient`.
 
 ### Breaking Changes
 

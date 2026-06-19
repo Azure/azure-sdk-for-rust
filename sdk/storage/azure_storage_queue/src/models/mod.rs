@@ -3,6 +3,10 @@
 
 //! Model types for Azure Storage Queue.
 
+#[cfg(feature = "sas")]
+#[cfg_attr(docsrs, doc(cfg(feature = "sas")))]
+pub mod sas;
+
 pub use crate::generated::models::*;
 
 use azure_core::{error::ErrorKind, Result};
