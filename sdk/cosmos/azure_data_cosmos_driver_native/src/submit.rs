@@ -513,8 +513,8 @@ pub extern "C" fn cosmos_driver_get_or_create_submit(
             // Since #4588 `create_driver` takes a single `DriverOptions`
             // that embeds the account. Use caller-supplied options when
             // present; otherwise build a default from the account.
-            let driver_options = options_owned
-                .unwrap_or_else(|| DriverOptions::builder(account_owned).build());
+            let driver_options =
+                options_owned.unwrap_or_else(|| DriverOptions::builder(account_owned).build());
             driver_runtime.create_driver(driver_options).await
         },
         |driver_arc: Arc<CosmosDriver>| {

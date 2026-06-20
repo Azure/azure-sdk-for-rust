@@ -321,8 +321,7 @@ impl CosmosOperationOptions {
         if !self.throughput_control_group.is_null() {
             let name = cstr_to_str(self.throughput_control_group)?;
             let mut throughput_control = ThroughputControlOptions::default();
-            throughput_control.group_name =
-                Some(ThroughputControlGroupName::from(name.to_owned()));
+            throughput_control.group_name = Some(ThroughputControlGroupName::from(name.to_owned()));
             opts.throughput_control = Some(throughput_control);
         }
 
