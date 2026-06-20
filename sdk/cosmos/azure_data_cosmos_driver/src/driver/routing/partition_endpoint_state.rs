@@ -10,6 +10,16 @@ use std::{
 
 use crate::options::{PartitionFailoverOptions, Region};
 
+// Compatibility alias for test helpers that predate the
+// `PartitionFailoverConfig` -> `PartitionFailoverOptions` rename (#4588).
+// Pre-existing breakage on `main`: the rename moved the type to
+// `crate::options` and made its fields private but left several
+// `operation_pipeline.rs` test helpers referencing the old name, which broke
+// the crate's test build. This keeps those helpers compiling without
+// expanding the scope of the #4574 fix.
+#[cfg(test)]
+pub(crate) use crate::options::PartitionFailoverOptions as PartitionFailoverConfig;
+
 use super::{partition_key_range_id::PartitionKeyRangeId, CosmosEndpoint};
 
 /// Immutable partition-level endpoint routing state.
