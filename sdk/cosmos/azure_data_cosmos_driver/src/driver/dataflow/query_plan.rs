@@ -188,7 +188,11 @@ pub(crate) enum SortOrder {
 /// An EPK range covered by the query.
 #[derive(Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
-#[allow(dead_code)] // Inclusivity flags are wire-format; planner treats ranges uniformly.
+// `is_min_inclusive` is wire-format only: query-plan ranges are always
+// min-inclusive and `FeedRange` is half-open `[min, max)`. `is_max_inclusive`
+// IS honored when converting to a `FeedRange` (see `query_range_to_feed_range`)
+// so closed point ranges from equality predicates route correctly (#4574).
+#[allow(dead_code)]
 pub(crate) struct QueryRange {
     /// The minimum EPK value.
     #[serde(deserialize_with = "string_or_json")]

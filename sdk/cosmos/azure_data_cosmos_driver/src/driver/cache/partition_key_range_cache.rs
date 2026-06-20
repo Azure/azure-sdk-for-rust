@@ -177,6 +177,40 @@ impl PartitionKeyRangeCache {
         )
     }
 
+    /// Resolves the single partition key range that *contains* the given EPK
+    /// point, using inclusive-lower / exclusive-upper (`min <= epk < max`)
+    /// containment.
+    ///
+    /// Unlike [`resolve_overlapping_ranges`](Self::resolve_overlapping_ranges)
+    /// (which takes a half-open `[start, end)` interval and returns nothing for a
+    /// degenerate `start == end` point at a partition boundary), this routes a
+    /// bare EPK point — the gateway equality / `IN` predicate shape (issue
+    /// #4574) — to its owning partition. Returns an empty vec if no range
+    /// contains the point, or `None` if the routing map cannot be resolved.
+    pub async fn resolve_range_containing<F, Fut>(
+        &self,
+        container: &ContainerReference,
+        epk: &EffectivePartitionKey,
+        force_refresh: bool,
+        fetch_pk_ranges: F,
+    ) -> Option<Vec<crate::models::partition_key_range::PartitionKeyRange>>
+    where
+        F: Fn(ContainerReference, Option<String>) -> Fut,
+        Fut: std::future::Future<Output = Option<PkRangeFetchResult>>,
+    {
+        let routing_map = self
+            .try_lookup(container, force_refresh, fetch_pk_ranges)
+            .await?;
+
+        Some(
+            routing_map
+                .get_range_by_effective_partition_key(epk)
+                .into_iter()
+                .cloned()
+                .collect(),
+        )
+    }
+
     /// Resolves a partition key range by its ID.
     ///
     /// Returns `None` if the routing map cannot be resolved or the ID is not found.
