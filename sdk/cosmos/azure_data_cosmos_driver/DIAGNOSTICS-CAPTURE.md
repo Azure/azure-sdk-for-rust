@@ -1,13 +1,26 @@
-# Deferred, Threshold-Gated Diagnostics Capture — the driver's diagnostics engine
+# Deferred, Threshold-Gated Diagnostics Capture — a prototype event-log engine
 
-> **Status: prototype / for discussion.** This document describes the diagnostics **capture**
-> module (`azure_data_cosmos_driver::diagnostics::capture`), which is the driver's diagnostics
-> **engine**: a cheap, append-only, lock-free hot-path recorder plus an operation-end gate
-> (`Off` / `Threshold` / `Always`). The capture module **owns** the canonical diagnostics model —
-> [`DiagnosticsContext`] and its builder are homed here — and the driver collects diagnostics by
-> feeding that builder. The gate governs whether the resulting context is surfaced. This is an
-> **ownership flip inside the driver crate**: the rich diagnostics model is re-homed under capture
-> ownership with **no data loss** and **no change to the public SDK boundary**.
+> **Status: prototype, OFF by default.** This document describes the diagnostics **capture**
+> module (`azure_data_cosmos_driver::diagnostics::capture`). The event-log engine it describes
+> (the `event`, `context`, `encode`, `pool`, `recorder` submodules and `gate::finish`) lives
+> behind the **off-by-default `capture_engine` Cargo feature** and is **not** how the driver
+> produces diagnostics today. It is exploratory scaffolding for evaluating a future
+> capture-then-reconstruct path; it is not covered by SemVer and may change or disappear.
+>
+> **What actually ships (default):** the always-on `DiagnosticsContextBuilder` (homed in the
+> `model` submodule, re-exported from `crate::diagnostics`) is populated by the driver's pipeline
+> with full fidelity and surfaced via `CosmosResponse::diagnostics()`. The only part of this module
+> that ships unconditionally is the **gate**: a `DiagnosticsPolicy` (`Off` / `Threshold` /
+> `Always`) plus `should_build`, evaluated at operation end to decide whether the
+> builder-produced context is *also* exposed through `CosmosResponse::capture_diagnostics()` /
+> `CosmosError::capture_diagnostics()`. The gate never builds the surfaced context; it only governs
+> exposure.
+>
+> **Known gaps in the capture path (behind the feature):** the reconstruction in `context.rs` is
+> still **lossy** — it hardcodes pipeline/transport facets (`DataPlane` / `Secure` / `Gateway` /
+> `Http2`) and surfaces client-observed latency where the builder records true server timing. A
+> byte-for-byte parity harness against the builder is a prerequisite before this path could ever
+> become authoritative (see the migration notes at the end).
 
 ## 1. Problem & goals
 
@@ -23,40 +36,47 @@ We want **outcome-aware** diagnostics: full fidelity when useful (errors / slow 
 request) with the option to drop cheaply on a fast success — without losing the rich data or
 breaking the public contract.
 
-Goals:
+Goals (the capture-engine prototype aims at these; only the gate is realized on the default path):
 
 - **G1** — Hot path is write-preferred, compact, append-only, minimal-allocation (pooled).
 - **G2** — Collection/materialization is governed by the gate, off the hot path.
 - **G3** — A configurable gate evaluated at operation end decides whether to surface diagnostics:
-  latency threshold + on-error, plus Off/Always modes.
-- **G4** — One canonical diagnostics model ([`DiagnosticsContext`]), **owned by the capture
-  module**, fed by the driver, with every rich field preserved (events, transport-shard /
-  failed-shard diagnostics, fault-injection evaluations, true wall-clock timing, hedging).
+  latency threshold + on-error, plus Off/Always modes. *(Realized on the default path.)*
+- **G4** *(aspirational, behind `capture_engine`)* — A single canonical model
+  ([`DiagnosticsContext`]) reconstructed losslessly from the event log, with every rich field
+  preserved (events, transport-shard / failed-shard diagnostics, fault-injection evaluations,
+  true server timing, hedging). **Not yet achieved** — the current reconstruction is lossy.
 - **G5** — The public SDK boundary (`diagnostics::DiagnosticsContext`, consumed by
   `azure_data_cosmos`) is **unchanged**: this is additive / non-breaking.
 
-## 2. Default behavior & how the gate short-circuits the build
+## 2. Default behavior & how the gate short-circuits exposure
 
-The capture gate defaults to [`Mode::Always`] — diagnostics are produced **out-of-the-box**,
-matching the driver's historical always-on behavior. Callers opt into the cheaper modes explicitly
-via [`DriverOptionsBuilder::with_capture_diagnostics_policy`](crate::options::DriverOptionsBuilder)
-(through [`DriverOptions::builder`](crate::options::DriverOptions::builder)). The gate
-decides **before** the build, not after:
+The gate ships unconditionally and defaults to [`Mode::Always`] — diagnostics are exposed
+**out-of-the-box**, matching the driver's historical always-on behavior. Callers opt into the
+cheaper modes explicitly via
+[`DriverOptionsBuilder::with_capture_diagnostics_policy`](crate::options::DriverOptionsBuilder)
+(through [`DriverOptions::builder`](crate::options::DriverOptions::builder)). The gate runs at
+operation end and decides only whether to **expose** the builder-produced context — it does not
+build it:
 
-- **`Always`** (default) — the builder collects fully and the canonical context is surfaced. No
-  behavior change versus the historical driver.
+- **`Always`** (default) — the builder collects fully and the context is exposed through both
+  `diagnostics()` and `capture_diagnostics()`. No behavior change versus the historical driver.
 - **`Off`** — the `DiagnosticsContextBuilder` is created **disabled**: `start_request` returns an
   out-of-range handle without recording, so all per-request population auto-no-ops, and `complete()`
   yields a minimal context (activity id + final status, empty request list). The per-request build
   cost is genuinely skipped, not built-then-dropped. `response.diagnostics()` returns that minimal
   context (the accessor is non-optional), and `capture_diagnostics()` is `None`.
 - **`Threshold`** — the builder collects fully during the operation (the slow/error verdict is only
-  known at the end), and at op-end the gate decides whether to **surface** the context via
-  `capture_diagnostics()`. On a fast success the standalone capture materialization
-  ([`build_context`](self::context)) is short-circuited before it runs (see §7); the pipeline's own
-  incrementally-built context still backs the always-on `response.diagnostics()`. See
-  [§8 Known nuances](#8-known-nuances--boundaries) for the precise boundary on fast-success
-  build-avoidance under `Threshold`.
+  known at the end), and at op-end the gate decides whether to **expose** the context via
+  `capture_diagnostics()`. On a fast success `capture_diagnostics()` is `None` while
+  `response.diagnostics()` still returns the full context. Note: under the default path the builder
+  population is **not** avoided under `Threshold` (only `Off` disables it); the summary roll-up is
+  computed lazily on first access, so an unread fast-success context pays nothing for it.
+
+> When the off-by-default `capture_engine` feature is enabled, the event-log
+> [`build_context`](self::context) reconstruction additionally becomes available and is
+> short-circuited before it runs on a gated-away fast success — but it is exercised only by the
+> engine's own tests/benches, not the driver's default path.
 
 ## 3. Design exploration & benchmarks
 

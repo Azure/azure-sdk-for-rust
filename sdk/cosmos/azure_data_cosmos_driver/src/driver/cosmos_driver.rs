@@ -135,10 +135,6 @@ pub struct CosmosDriver {
     /// initialization. In normal usage `create_driver` awaits `initialize()`
     /// before returning, so this guard only catches misuse.
     initialized: AtomicBool,
-    /// Shared, bounded pool of reusable buffers for the diagnostics **capture** engine
-    /// ([`crate::diagnostics::capture`]). Held behind an `Arc` so a cheap clone is shared with each
-    /// rented log lease; only touched at operation boundaries when the capture policy is not `Off`.
-    capture_pool: Arc<crate::diagnostics::capture::LogPool>,
     /// User-Agent string stamped on every request issued by this driver.
     ///
     /// When the driver's [`DriverOptions::user_agent_suffix()`] is `None`, this
@@ -1249,7 +1245,6 @@ impl CosmosDriver {
             pk_range_cache: PartitionKeyRangeCache::new(),
             session_manager: SessionManager::new(),
             initialized: AtomicBool::new(false),
-            capture_pool: Arc::new(crate::diagnostics::capture::LogPool::default()),
             user_agent,
             http_client_factory,
             #[cfg(feature = "fault_injection")]
@@ -1958,22 +1953,16 @@ impl CosmosDriver {
         let user_agent =
             azure_core::http::headers::HeaderValue::from(self.user_agent.as_str().to_owned());
 
-        // Diagnostics capture is the driver's diagnostics **engine**: a cheap, lock-free hot-path
-        // recorder plus the Off/Threshold/Always gate. The canonical `DiagnosticsContext` is built
-        // by the capture-owned `DiagnosticsContextBuilder` inside the pipeline; here the recorder
-        // captures the operation outcome + elapsed time and the gate decides whether that canonical
-        // context is surfaced via `CosmosResponse::capture_diagnostics()`. The default is `Always`
-        // (diagnostics out-of-the-box); `Off` skips both the recorder AND the builder population.
-        // There is one diagnostics model — capture owns it and gates it; it is not rebuilt here.
-        let endpoint_str = endpoint.to_string();
-        let mut capture_recorder = diagnostics_enabled.then(|| {
-            crate::diagnostics::capture::DiagnosticsRecorder::start(
-                &self.capture_pool,
-                &format!("{operation_type:?} {resource_type:?}"),
-                &endpoint_str,
-                activity_id.as_str(),
-            )
-        });
+        // Diagnostics exposure gate. The shipping diagnostics path is the always-on
+        // `DiagnosticsContextBuilder`, populated by the pipeline and surfaced via
+        // `CosmosResponse::diagnostics()`. Here we only run the Off/Threshold/Always gate against
+        // the operation's outcome + elapsed time to decide whether that builder-produced context is
+        // *also* exposed through `CosmosResponse::capture_diagnostics()`. `Off` already disabled the
+        // builder (`new_disabled`) and yields no capture diagnostics. The prototype event-log
+        // capture engine (`diagnostics::capture`, behind the off-by-default `capture_engine`
+        // feature) is not wired here; the gate never builds the surfaced context, it only governs
+        // exposure. (No per-op endpoint formatting on this path.)
+        let capture_op_start = std::time::Instant::now();
 
         // Step 8: Execute via the new operation pipeline
         let result = super::pipeline::operation_pipeline::execute_operation_pipeline(
@@ -1999,45 +1988,40 @@ impl CosmosDriver {
         )
         .await;
 
+        let capture_elapsed_ns = capture_op_start
+            .elapsed()
+            .as_nanos()
+            .min(u128::from(u64::MAX)) as u64;
+
         match result {
             Ok(response) => {
-                // Route the canonical `DiagnosticsContext` (already built by the capture-owned
-                // builder in the pipeline) through the gate. The recorder is the cheap, lock-free
-                // front-end that records the operation outcome + elapsed; the gate then decides
-                // whether the canonical context is surfaced. One model, gated — not rebuilt.
-                let captured = capture_recorder.take().and_then(|mut rec| {
+                // Expose the builder-produced `DiagnosticsContext` through the gate: `Some` under
+                // the default `Always` (or a `Threshold`/error hit), `None` when the gate drops a
+                // fast success or `Off` disabled diagnostics.
+                let captured = if diagnostics_enabled {
                     use crate::diagnostics::capture::{should_build, Outcome};
                     let outcome = if response.status().is_success() {
                         Outcome::Success
                     } else {
                         Outcome::Error
                     };
-                    rec.record_end(
-                        outcome,
-                        1,
-                        u16::from(response.status().status_code()),
-                        response.status().sub_status().map(|s| s.value()),
-                        None,
-                    );
-                    let build = should_build(rec.outcome(), rec.total_ns(), &capture_policy);
-                    // `rec` drops here, returning its buffer to the pool.
-                    build.then(|| response.diagnostics())
-                });
+                    should_build(outcome, capture_elapsed_ns, &capture_policy)
+                        .then(|| response.diagnostics())
+                } else {
+                    None
+                };
                 Ok(response.with_capture_diagnostics(captured))
             }
             Err(e) => {
-                if let Some(mut rec) = capture_recorder.take() {
+                // Symmetric with the success path: a failed operation's canonical diagnostics are
+                // attached to the error by the pipeline; expose them through the same gate via
+                // `CosmosError::capture_diagnostics()`.
+                if diagnostics_enabled {
                     use crate::diagnostics::capture::{should_build, Outcome};
-                    rec.record_end(Outcome::Error, 1, 0, None, None);
-                    if should_build(rec.outcome(), rec.total_ns(), &capture_policy) {
-                        // The canonical diagnostics for a failed operation live on the error
-                        // (attached by the pipeline). Surface them through the capture log.
-                        if let Some(context) = e.diagnostics() {
-                            tracing::debug!(
-                                target: "azure_data_cosmos_driver::diagnostics::capture",
-                                diagnostics = %context.to_json_string(None),
-                                "operation failed (capture)",
-                            );
+                    if should_build(Outcome::Error, capture_elapsed_ns, &capture_policy) {
+                        let captured = e.diagnostics();
+                        if captured.is_some() {
+                            return Err(e.with_capture_diagnostics(captured));
                         }
                     }
                 }

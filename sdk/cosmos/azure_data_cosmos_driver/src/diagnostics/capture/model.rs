@@ -1906,16 +1906,10 @@ impl DiagnosticsContextBuilder {
         let duration = self.started_at.elapsed();
         let start_time = self.start_time;
         let end_time = OffsetDateTime::now_utc();
-        // Compute the aggregatable summary once, here at finalization — a reduction over the
-        // already-collected requests. Never runs on the hot path; absent when no context is built.
-        let summary = DiagnosticsSummary::compute(
-            &self.requests,
-            self.status,
-            duration,
-            start_time,
-            end_time,
-            self.user_agent.as_deref().map(str::to_string),
-        );
+        // The aggregatable summary is computed lazily on first access (see `DiagnosticsContext::
+        // summary`), not here — a fast-success caller that never reads the summary or serializes the
+        // context pays nothing for it. The reduction inputs (requests, status, timing, user agent)
+        // are all retained on the context.
         DiagnosticsContext {
             activity_id: self.activity_id,
             duration,
@@ -1923,7 +1917,8 @@ impl DiagnosticsContextBuilder {
             end_time,
             requests: Arc::new(self.requests),
             status: self.status,
-            summary,
+            user_agent: self.user_agent,
+            summary: OnceLock::new(),
             options: self.options,
             cpu_monitor: self.cpu_monitor,
             machine_id: self.machine_id,
@@ -1999,8 +1994,13 @@ pub struct DiagnosticsContext {
     /// Operation-level combined HTTP status and sub-status (final status after retries).
     status: Option<CosmosStatus>,
 
-    /// Aggregatable roll-up over `requests`, computed once at finalization (off the hot path).
-    summary: DiagnosticsSummary,
+    /// User agent retained so [`summary()`](Self::summary) can be computed lazily on first access.
+    user_agent: Option<Arc<str>>,
+
+    /// Aggregatable roll-up over `requests`, computed **lazily** on first access to
+    /// [`summary()`](Self::summary) via `OnceLock` — never on the hot path, and only if a caller
+    /// actually reads the summary or serializes the context.
+    summary: OnceLock<DiagnosticsSummary>,
 
     /// Reference to diagnostics configuration.
     options: Arc<DiagnosticsOptions>,
@@ -2091,14 +2091,6 @@ impl DiagnosticsContext {
         // The aggregated operation spans the first sub-op's start to the last sub-op's end.
         let start_time = first.start_time;
         let end_time = last.end_time;
-        let summary = DiagnosticsSummary::compute(
-            &aggregated_requests,
-            last.status,
-            aggregated_duration,
-            start_time,
-            end_time,
-            last.summary.user_agent.clone(),
-        );
         Some(DiagnosticsContext {
             activity_id: last.activity_id.clone(),
             duration: aggregated_duration,
@@ -2106,7 +2098,8 @@ impl DiagnosticsContext {
             end_time,
             requests: Arc::new(aggregated_requests),
             status: last.status,
-            summary,
+            user_agent: last.user_agent.clone(),
+            summary: OnceLock::new(),
             options: Arc::clone(&last.options),
             cpu_monitor: last.cpu_monitor.clone(),
             machine_id: last.machine_id.clone(),
@@ -2159,11 +2152,20 @@ impl DiagnosticsContext {
     /// Returns the aggregatable [`DiagnosticsSummary`] for this operation.
     ///
     /// The summary is a `.NET CosmosDiagnostics`-style roll-up (status/sub-status histogram,
-    /// retry/throttle counts, total RU, regions, final status, top error, total elapsed), computed
-    /// once at finalization as a reduction over the requests. It is always present on a built
-    /// context (it has no cost on the hot path and is absent only when no context is built).
+    /// retry/throttle counts, total RU, regions, final status, top error, total elapsed). It is
+    /// computed **lazily** on first access (a reduction over the requests) and cached via
+    /// `OnceLock`, so an operation whose diagnostics are never inspected pays nothing for it.
     pub fn summary(&self) -> &DiagnosticsSummary {
-        &self.summary
+        self.summary.get_or_init(|| {
+            DiagnosticsSummary::compute(
+                &self.requests,
+                self.status,
+                self.duration,
+                self.start_time,
+                self.end_time,
+                self.user_agent.as_deref().map(str::to_string),
+            )
+        })
     }
 
     /// Encodes the diagnostics to a string using the given [`DiagnosticsEncoding`].
@@ -2296,7 +2298,7 @@ impl DiagnosticsContext {
         let total_duration_ms = self.duration.as_millis() as u64;
         let system_usage = self.resolve_system_usage();
         let output = DiagnosticsOutput {
-            summary: &self.summary,
+            summary: self.summary(),
             activity_id: &self.activity_id,
             start_time: self.start_time,
             end_time: self.end_time,
@@ -2335,7 +2337,7 @@ impl DiagnosticsContext {
         region_summaries.sort_by(|a, b| a.region.cmp(&b.region));
 
         let output = DiagnosticsOutput {
-            summary: &self.summary,
+            summary: self.summary(),
             activity_id: &self.activity_id,
             start_time: self.start_time,
             end_time: self.end_time,
@@ -2358,7 +2360,7 @@ impl DiagnosticsContext {
         } else {
             // Return a truncated indicator
             let truncated = TruncatedOutput {
-                summary: &self.summary,
+                summary: self.summary(),
                 activity_id: &self.activity_id,
                 start_time: self.start_time,
                 end_time: self.end_time,
@@ -2383,7 +2385,15 @@ impl Clone for DiagnosticsContext {
             end_time: self.end_time,
             requests: Arc::clone(&self.requests),
             status: self.status,
-            summary: self.summary.clone(),
+            user_agent: self.user_agent.clone(),
+            // `OnceLock` is not `Clone`; propagate any already-computed summary into a fresh lock
+            // (and leave it uncomputed otherwise so the clone stays lazy too).
+            summary: self
+                .summary
+                .get()
+                .cloned()
+                .map(OnceLock::from)
+                .unwrap_or_default(),
             options: Arc::clone(&self.options),
             cpu_monitor: self.cpu_monitor.clone(),
             machine_id: self.machine_id.clone(),

@@ -8,13 +8,19 @@
 //! slow or errored operation (or under [`Mode::Always`]) the log is built into the canonical
 //! [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext) via [`super::context`].
 
-use super::context::build_context;
-use super::recorder::DiagnosticsRecorder;
 use super::Outcome;
-use crate::diagnostics::DiagnosticsContext;
-use crate::options::DiagnosticsOptions;
-use std::sync::Arc;
 use std::time::Duration;
+
+#[cfg(feature = "capture_engine")]
+use super::context::build_context;
+#[cfg(feature = "capture_engine")]
+use super::recorder::DiagnosticsRecorder;
+#[cfg(feature = "capture_engine")]
+use crate::diagnostics::DiagnosticsContext;
+#[cfg(feature = "capture_engine")]
+use crate::options::DiagnosticsOptions;
+#[cfg(feature = "capture_engine")]
+use std::sync::Arc;
 
 /// How aggressively diagnostics are built at the gate.
 ///
@@ -109,6 +115,11 @@ pub fn should_build(outcome: Outcome, total_ns: u64, policy: &DiagnosticsPolicy)
 /// Returns `None` when the gate dropped the diagnostics (fast success). Either way the recorder's
 /// backing storage is returned to the pool automatically when `recorder` drops (RAII). Call after
 /// [`DiagnosticsRecorder::record_end`].
+///
+/// This is part of the prototype `capture_engine` reconstruction path and is **not** used by the
+/// driver's default diagnostics path (which surfaces the `DiagnosticsContextBuilder`-produced
+/// context, gated only by [`should_build`]).
+#[cfg(feature = "capture_engine")]
 pub fn finish(
     recorder: DiagnosticsRecorder,
     policy: &DiagnosticsPolicy,

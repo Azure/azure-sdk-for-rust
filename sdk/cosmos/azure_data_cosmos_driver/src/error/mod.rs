@@ -109,6 +109,15 @@ struct CosmosErrorInner {
     /// `Arc::<str>::from`.
     message: Cow<'static, str>,
     source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
+    /// Gated **capture** diagnostics, symmetric with
+    /// [`CosmosResponse::capture_diagnostics`](crate::models::CosmosResponse::capture_diagnostics).
+    /// `Some` when the diagnostics exposure gate decided to surface this
+    /// failed operation's context (default `Mode::Always`, or a
+    /// `Threshold`/error hit), `None` when the gate dropped it or capture is
+    /// `Off`. Set late by the driver via
+    /// [`with_capture_diagnostics`](CosmosError::with_capture_diagnostics);
+    /// the builder never sets it.
+    capture: Option<Arc<DiagnosticsContext>>,
     /// Captured stack backtrace, present when capture is enabled (opt-in
     /// via `RUST_BACKTRACE` or the runtime builder) and the global
     /// rate-limited backtrace capture budget allowed it. See the
@@ -262,6 +271,29 @@ impl CosmosError {
             ErrorContext::WirePending { .. } => None,
             ErrorContext::Synthetic { diagnostics } => diagnostics.as_ref(),
         }
+    }
+
+    /// Returns the failed operation's [`DiagnosticsContext`] as surfaced through the diagnostics
+    /// **capture** gate ([`crate::diagnostics::capture`]).
+    ///
+    /// This is symmetric with
+    /// [`CosmosResponse::capture_diagnostics`](crate::models::CosmosResponse::capture_diagnostics):
+    /// `Some` under the default [`Mode::Always`](crate::diagnostics::capture::Mode::Always) (or a
+    /// `Threshold`/error hit), and `None` when the gate dropped it or capture is `Off`. Unlike
+    /// [`diagnostics()`](Self::diagnostics) — which always returns the full context when one is
+    /// attached — this view reflects the exposure gate's decision.
+    pub fn capture_diagnostics(&self) -> Option<&DiagnosticsContext> {
+        self.inner.capture.as_deref()
+    }
+
+    /// Attaches the gated capture diagnostics to this error (consuming, builder-style).
+    ///
+    /// Called by the driver's operation path after the exposure gate decides a failed operation's
+    /// diagnostics should be surfaced via [`capture_diagnostics()`](Self::capture_diagnostics).
+    pub(crate) fn with_capture_diagnostics(self, capture: Option<Arc<DiagnosticsContext>>) -> Self {
+        let mut inner = (*self.inner).clone();
+        inner.capture = capture;
+        CosmosError::from_inner(inner)
     }
 
     /// Returns the stack backtrace captured at error construction time,
@@ -930,6 +962,7 @@ impl CosmosErrorBuilder {
             context,
             message,
             source,
+            capture: None,
             backtrace,
         })
     }
@@ -1005,6 +1038,28 @@ mod tests {
         assert_eq!(err.status().status_code(), StatusCode::InternalServerError);
         assert_eq!(format!("{err}").split(": ").last().unwrap(), "m");
         assert!(err.response().is_none());
+    }
+
+    #[test]
+    fn capture_diagnostics_none_until_attached_then_toggles() {
+        // Symmetric with CosmosResponse::capture_diagnostics: None until the exposure gate attaches
+        // a context, Some afterwards, and attaching None clears it again. diagnostics() (the full
+        // view) is independent and untouched here.
+        let diag = make_test_diagnostics();
+        let activity = diag.activity_id().clone();
+
+        let err = CosmosError::builder().with_message("boom").build();
+        assert!(err.capture_diagnostics().is_none());
+
+        let err = err.with_capture_diagnostics(Some(diag));
+        assert!(err.capture_diagnostics().is_some());
+        assert_eq!(
+            err.capture_diagnostics().map(|c| c.activity_id().clone()),
+            Some(activity)
+        );
+
+        let err = err.with_capture_diagnostics(None);
+        assert!(err.capture_diagnostics().is_none());
     }
 
     #[test]

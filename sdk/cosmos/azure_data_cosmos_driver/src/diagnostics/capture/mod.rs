@@ -1,42 +1,39 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Deferred, threshold-gated diagnostics **capture** — the Cosmos driver's diagnostics engine.
+//! Deferred, threshold-gated diagnostics **capture** — a prototype event-log engine.
 //!
-//! This module **owns** the canonical diagnostics model
-//! ([`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext) and its builder, in the `model`
-//! submodule) and provides a cheap, append-only, lock-free hot-path recorder plus an
-//! operation-end gate. The driver collects diagnostics by feeding the capture-owned builder, and
-//! the gate decides whether the resulting context is surfaced. There is one diagnostics model, not
-//! a parallel one; the model is re-exported from `crate::diagnostics` so the public boundary is
-//! unchanged.
+//! **Status: prototype, OFF by default.** The event-log machinery in this module
+//! (`event`, `context`, `encode`, `pool`, `recorder`, and `gate::finish`) lives behind the
+//! off-by-default `capture_engine` feature and is **not** how the driver produces diagnostics
+//! today. The shipping path is the always-on `DiagnosticsContextBuilder` (the `model` submodule,
+//! re-exported from [`crate::diagnostics`]); the driver's pipeline feeds that builder with full
+//! fidelity and the operation surfaces it via `CosmosResponse::diagnostics()` /
+//! `CosmosResponse::capture_diagnostics()`.
 //!
-//! 1. **Hot path — append-only, pooled, lock-free.** Each operation rents one buffer from a
-//!    [`LogPool`](crate::diagnostics::capture::LogPool) and a
-//!    [`DiagnosticsRecorder`](crate::diagnostics::capture::DiagnosticsRecorder) appends a compact
-//!    record per attempt / hedge leg. Appends go through `&mut`, so there is no per-attempt lock
-//!    and almost nothing is allocated after pool warm-up.
-//! 2. **Gate — decide at the end.** When the outcome and elapsed time are known, a
-//!    [`DiagnosticsPolicy`](crate::diagnostics::capture::DiagnosticsPolicy) decides whether to
-//!    surface diagnostics. If not, the buffer goes back to the pool — effectively free.
-//! 3. **Build — only when wanted.** Past the gate, the log is parsed once and replayed onto the
-//!    capture-owned `DiagnosticsContextBuilder` to produce a [`DiagnosticsContext`], mapping each
-//!    attempt to a [`RequestDiagnostics`](crate::diagnostics::RequestDiagnostics) (with the right
-//!    [`ExecutionContext`](crate::diagnostics::ExecutionContext)) and attaching
-//!    [`HedgeDiagnostics`](crate::diagnostics::HedgeDiagnostics) for a hedged operation. In the
-//!    live driver path the pipeline feeds the same builder with the full rich data and true
-//!    wall-clock timing.
+//! What ships unconditionally from this module is only the **gate**: a [`DiagnosticsPolicy`]
+//! ([`Mode::Off`] / [`Mode::Threshold`] / [`Mode::Always`]) plus [`should_build`], evaluated at
+//! operation end against the outcome + elapsed time to decide whether the builder-produced
+//! context is *exposed* through `capture_diagnostics()`. The gate never builds the surfaced
+//! context; it only governs exposure.
 //!
-//! The gate defaults to [`Mode::Always`](crate::diagnostics::capture::Mode::Always) — diagnostics
-//! are produced out-of-the-box; set [`Mode::Threshold`](crate::diagnostics::capture::Mode::Threshold)
-//! or [`Mode::Off`](crate::diagnostics::capture::Mode::Off) via
+//! The deferred capture design (behind `capture_engine`) evaluates a future
+//! capture-then-reconstruct path: a lock-free per-attempt `DiagnosticsRecorder` appends to a
+//! pooled event log, the same gate decides whether to build, and past the gate the typed log is
+//! replayed onto a `DiagnosticsContextBuilder`. That reconstruction is still **lossy** (it does
+//! not yet carry every builder field, and it maps client-observed latency where the builder
+//! records true server timing) and stays behind the feature until a parity harness proves it
+//! matches the builder byte-for-byte. See `DIAGNOSTICS-CAPTURE.md`.
+//!
+//! The gate defaults to [`Mode::Always`] — diagnostics are exposed out-of-the-box. Set
+//! [`Mode::Threshold`] or [`Mode::Off`] via
 //! [`DriverOptionsBuilder::with_capture_diagnostics_policy`](crate::options::DriverOptionsBuilder)
-//! (via [`DriverOptions::builder`](crate::options::DriverOptions::builder)) to make the
-//! hot path cheaper.
+//! (reached via [`DriverOptions::builder`](crate::options::DriverOptions::builder)) to make the
+//! gate drop fast-success diagnostics.
 //!
-//! # Example
+//! # Example (requires `--features capture_engine`)
 //!
-//! ```
+//! ```ignore
 //! use azure_data_cosmos_driver::diagnostics::capture::{
 //!     AttemptRecord, DiagnosticsPolicy, DiagnosticsRecorder, LogPool, Outcome,
 //! };
@@ -73,19 +70,29 @@
 //! assert_eq!(ctx.request_count(), 2);
 //! ```
 
+#[cfg(feature = "capture_engine")]
 mod context;
+#[cfg(feature = "capture_engine")]
 mod encode;
+#[cfg(feature = "capture_engine")]
 mod event;
 mod gate;
 mod model;
+#[cfg(feature = "capture_engine")]
 mod pool;
+#[cfg(feature = "capture_engine")]
 mod recorder;
 
+#[cfg(feature = "capture_engine")]
 pub use event::{
     Attr, AttrKey, AttrValue, EventLog, EventLogStorage, Span, SpanId, SpanKind, TimeOffset,
 };
-pub use gate::{finish, should_build, DiagnosticsPolicy, Mode};
+#[cfg(feature = "capture_engine")]
+pub use gate::finish;
+pub use gate::{should_build, DiagnosticsPolicy, Mode};
+#[cfg(feature = "capture_engine")]
 pub use pool::LogPool;
+#[cfg(feature = "capture_engine")]
 pub use recorder::{AttemptRecord, DiagnosticsRecorder, HedgeOutcome};
 
 // The capture module is the home/owner of the canonical diagnostics model. The driver (its
@@ -110,7 +117,7 @@ pub enum Outcome {
     Error,
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "capture_engine"))]
 mod tests {
     use super::*;
     use crate::diagnostics::{DiagnosticsContext, ExecutionContext, HedgeTerminalState};

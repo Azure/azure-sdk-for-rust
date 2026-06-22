@@ -58,9 +58,11 @@ pub struct DriverOptions {
     /// endpoints matching these regions appear first. Regions that don't match
     /// any account endpoint are silently skipped.
     preferred_regions: Vec<Region>,
-    /// Diagnostics **capture** policy ([`crate::diagnostics::capture`]) — the driver's diagnostics
-    /// engine. Defaults to [`Mode::Always`](crate::diagnostics::capture::Mode::Always) so
-    /// diagnostics are produced out-of-the-box; configurable to `Threshold`/`Off`.
+    /// Diagnostics exposure-gate policy ([`crate::diagnostics::capture`]). The gate decides whether
+    /// the always-on `DiagnosticsContextBuilder`-produced [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext)
+    /// is exposed via `capture_diagnostics()`. Defaults to
+    /// [`Mode::Always`](crate::diagnostics::capture::Mode::Always) so diagnostics are exposed
+    /// out-of-the-box; configurable to `Threshold`/`Off`.
     capture_diagnostics_policy: crate::diagnostics::capture::DiagnosticsPolicy,
     /// How [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext) is rendered to a string
     /// (`Json` / `Compact` / `Encoded`). Defaults to
@@ -219,14 +221,17 @@ impl DriverOptionsBuilder {
         self
     }
 
-    /// Sets the diagnostics **capture** policy ([`crate::diagnostics::capture`]).
+    /// Sets the diagnostics exposure-gate policy ([`crate::diagnostics::capture`]).
     ///
-    /// The capture module is the driver's diagnostics engine: a cheap, lock-free hot-path recorder
-    /// plus an operation-end gate that governs whether the canonical [`DiagnosticsContext`] is
-    /// surfaced. Defaults to [`Mode::Always`](crate::diagnostics::capture::Mode::Always) —
-    /// diagnostics are produced out-of-the-box. Set
-    /// [`Mode::Threshold`](crate::diagnostics::capture::Mode::Threshold) or
-    /// [`Mode::Off`](crate::diagnostics::capture::Mode::Off) to make the hot path cheaper.
+    /// The gate is an operation-end policy that governs whether the always-on
+    /// `DiagnosticsContextBuilder`-produced [`DiagnosticsContext`] is exposed through
+    /// `CosmosResponse::capture_diagnostics()` / `CosmosError::capture_diagnostics()`. It does not
+    /// build the context (the pipeline does). Defaults to
+    /// [`Mode::Always`](crate::diagnostics::capture::Mode::Always) — diagnostics are exposed
+    /// out-of-the-box. Set [`Mode::Threshold`](crate::diagnostics::capture::Mode::Threshold) or
+    /// [`Mode::Off`](crate::diagnostics::capture::Mode::Off) to drop fast-success diagnostics
+    /// (`Off` additionally disables the per-request builder population). The prototype event-log
+    /// capture engine behind the `capture_engine` feature is not involved in this default path.
     ///
     /// [`DiagnosticsContext`]: crate::diagnostics::DiagnosticsContext
     pub fn with_capture_diagnostics_policy(

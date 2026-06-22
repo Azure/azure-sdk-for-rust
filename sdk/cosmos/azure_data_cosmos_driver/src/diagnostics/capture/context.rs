@@ -1,14 +1,21 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Reconstructs a captured [`EventLog`] into the canonical
-//! [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext).
+//! Reconstructs a captured [`EventLog`] into a [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext).
 //!
-//! This runs **only past the gate** (a slow or errored operation, or `Mode::Always`). It walks the
-//! flat span / attr lists back into a tree and replays it onto a [`DiagnosticsContextBuilder`], so
-//! the gated capture front-end produces the **same diagnostics type** the rest of the driver
-//! returns — there is one canonical diagnostics model, not a parallel one. There is no byte parse
-//! step: the typed event log *is* the parsed form.
+//! **Prototype, behind the `capture_engine` feature.** This is the deferred capture engine's
+//! reconstruction step and is **not** used by the driver's default diagnostics path (which surfaces
+//! the `DiagnosticsContextBuilder`-produced context directly). It runs only past the gate (a slow or
+//! errored operation, or `Mode::Always`), walking the flat span / attr lists back into a tree and
+//! replaying them onto a [`DiagnosticsContextBuilder`].
+//!
+//! **This reconstruction is currently lossy.** It hardcodes the pipeline/transport facets
+//! (`PipelineType::DataPlane`, `TransportSecurity::Secure`, `TransportKind::Gateway`,
+//! `TransportHttpVersion::Http2`) instead of reading captured values, and it surfaces the
+//! client-observed attempt latency where the builder records true server timing. Reaching parity
+//! with the builder (and capturing those fields at the pipeline/transport sites) is tracked as the
+//! next migration step; until a byte-for-byte parity harness is green this path stays behind the
+//! feature and is exercised only by the engine's own tests.
 //!
 //! Each captured [`SpanKind::Attempt`] becomes a
 //! [`RequestDiagnostics`](crate::diagnostics::RequestDiagnostics) with its
