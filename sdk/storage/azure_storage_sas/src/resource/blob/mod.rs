@@ -106,7 +106,7 @@ pub(crate) fn blob_udk_string_to_sign(
         saoid = fields.authorized_object_id.as_deref().unwrap_or(""),
         suoid = fields.unauthorized_object_id.as_deref().unwrap_or(""),
         scid = fields.correlation_id.as_deref().unwrap_or(""),
-        skdutid = fields.delegated_tenant_id.as_deref().unwrap_or(""),
+        skdutid = key.signed_delegated_user_tid.unwrap_or(""),
         sduoid = fields.delegated_user_object_id.as_deref().unwrap_or(""),
         sip = fields.ip_str(),
         spr = fields.protocol_str(),
@@ -162,7 +162,7 @@ pub(crate) fn blob_udk_query_parameters(
     if let Some(ref v) = fields.correlation_id {
         parts.push(format!("scid={}", Fields::encode(v)));
     }
-    if let Some(ref v) = fields.delegated_tenant_id {
+    if let Some(v) = key.signed_delegated_user_tid {
         parts.push(format!("skdutid={}", Fields::encode(v)));
     }
     if let Some(ref v) = fields.delegated_user_object_id {
@@ -171,16 +171,20 @@ pub(crate) fn blob_udk_query_parameters(
     if let Some(ref v) = fields.encryption_scope {
         parts.push(format!("ses={}", Fields::encode(v)));
     }
+    // The srh/srq query parameter values are comma-separated lists of
+    // individually percent-encoded keys. Each key is encoded on its own,
+    // then joined with literal commas. The commas are structural separators
+    // and must NOT be percent-encoded.
     if let Some(ref headers) = fields.signed_request_headers {
         if !headers.is_empty() {
-            let keys: Vec<&str> = headers.keys().map(|k| k.as_str()).collect();
-            parts.push(format!("srh={}", Fields::encode(&keys.join(","))));
+            let encoded_keys: Vec<String> = headers.keys().map(|k| Fields::encode(k)).collect();
+            parts.push(format!("srh={}", encoded_keys.join(",")));
         }
     }
     if let Some(ref params) = fields.signed_request_query_parameters {
         if !params.is_empty() {
-            let keys: Vec<&str> = params.keys().map(|k| k.as_str()).collect();
-            parts.push(format!("srq={}", Fields::encode(&keys.join(","))));
+            let encoded_keys: Vec<String> = params.keys().map(|k| Fields::encode(k)).collect();
+            parts.push(format!("srq={}", encoded_keys.join(",")));
         }
     }
     if let Some(depth) = directory_depth {

@@ -137,7 +137,7 @@ pub(crate) fn queue_udk_string_to_sign(
         ske = Fields::format_time(key.signed_expiry),
         sks = key.signed_service,
         skv = key.signed_version,
-        skdutid = fields.delegated_tenant_id.as_deref().unwrap_or(""),
+        skdutid = key.signed_delegated_user_tid.unwrap_or(""),
         sduoid = fields.delegated_user_object_id.as_deref().unwrap_or(""),
         sip = fields.ip_str(),
         spr = fields.protocol_str(),
@@ -171,7 +171,7 @@ pub(crate) fn queue_udk_query_parameters(
     parts.push(format!("ske={}", Fields::format_time(key.signed_expiry)));
     parts.push(format!("sks={}", key.signed_service));
     parts.push(format!("skv={}", key.signed_version));
-    if let Some(ref v) = fields.delegated_tenant_id {
+    if let Some(v) = key.signed_delegated_user_tid {
         parts.push(format!("skdutid={}", Fields::encode(v)));
     }
     if let Some(ref v) = fields.delegated_user_object_id {

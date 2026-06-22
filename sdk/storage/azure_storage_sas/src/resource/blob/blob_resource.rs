@@ -69,6 +69,13 @@ impl Blob {
     pub(crate) fn snapshot_time(&self) -> Option<&str> {
         self.snapshot.as_deref()
     }
+
+    /// Returns the value for the string-to-sign snapshot slot: the snapshot
+    /// timestamp if set, otherwise the version ID. The service signs the
+    /// version ID in this slot for a version SAS (`sr=bv`).
+    pub(crate) fn snapshot_or_version_time(&self) -> Option<&str> {
+        self.snapshot.as_deref().or(self.version_id.as_deref())
+    }
 }
 
 /// Permissions for a blob SAS.

@@ -788,3 +788,92 @@ async fn test_queue_user_delegation_sas(ctx: TestContext) -> Result<()> {
     queue_client.delete(None).await?;
     Ok(())
 }
+
+/// Exercise the full message lifecycle (add, update, process/delete)
+/// through a user delegation SAS, validating the `update` permission and that
+/// each permission grants exactly the operation it names.
+#[cfg(feature = "sas_builder")]
+#[recorded::test(live)]
+async fn test_queue_user_delegation_sas_message_lifecycle(ctx: TestContext) -> Result<()> {
+    use azure_storage_queue::models::sas::QueuePermissions;
+    use azure_storage_queue::models::{QueueClientUpdateMessageOptions, QueueMessage};
+    use azure_storage_queue::QueueClient;
+
+    let recording = ctx.recording();
+    let account_name = recording.var("AZURE_STORAGE_ACCOUNT_NAME", None);
+    let queue_service_client = get_queue_service_client(recording).await?;
+    let queue_name = get_queue_name(recording);
+
+    let queue_client = queue_service_client.queue_client(&queue_name)?;
+    queue_client.create(None).await?;
+
+    let now = OffsetDateTime::now_utc();
+    let key_info = KeyInfo {
+        start: Some(now),
+        expiry: Some(now + Duration::hours(1)),
+        ..Default::default()
+    };
+    let request_content: RequestContent<KeyInfo, XmlFormat> = key_info.try_into()?;
+    let udk = queue_service_client
+        .get_user_delegation_key(request_content, None)
+        .await?
+        .into_model()?;
+
+    // Grant read, add, update, and process so the SAS can do the whole lifecycle.
+    let sas_url = queue_client.generate_user_delegation_sas_url(
+        &account_name,
+        &udk,
+        QueuePermissions::new().read().add().update().process(),
+        now + Duration::hours(1),
+        |sas| sas,
+    )?;
+    let sas_client = QueueClient::new(sas_url, None, None)?;
+
+    // Add.
+    let original = QueueMessage {
+        message_text: Some("original".to_string()),
+    };
+    sas_client.send_message(original.try_into()?, None).await?;
+
+    // Receive to obtain the message id + pop receipt.
+    let received = sas_client.receive_messages(None).await?.into_model()?;
+    let item = received
+        .items
+        .and_then(|mut items| items.drain(..).next())
+        .expect("expected a received message");
+    let message_id = item.message_id.expect("message id");
+    let pop_receipt = item.pop_receipt.expect("pop receipt");
+
+    // Update the message content and make it immediately visible again.
+    let updated = QueueMessage {
+        message_text: Some("updated".to_string()),
+    };
+    sas_client
+        .update_message(
+            &message_id,
+            &pop_receipt,
+            0,
+            Some(QueueClientUpdateMessageOptions {
+                queue_message: Some(updated.try_into()?),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Receive again and confirm the updated content.
+    let received_again = sas_client.receive_messages(None).await?.into_model()?;
+    let item_again = received_again
+        .items
+        .and_then(|mut items| items.drain(..).next())
+        .expect("expected the updated message");
+    assert_eq!(item_again.message_text.as_deref(), Some("updated"));
+
+    // Delete via the SAS client (process permission).
+    let pop_receipt_again = item_again.pop_receipt.expect("pop receipt");
+    sas_client
+        .delete_message(&message_id, &pop_receipt_again, None)
+        .await?;
+
+    queue_client.delete(None).await?;
+    Ok(())
+}

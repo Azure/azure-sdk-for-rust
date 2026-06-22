@@ -88,6 +88,10 @@ pub(crate) struct ValidatedKey<'a> {
     pub signed_expiry: &'a OffsetDateTime,
     pub signed_service: &'a str,
     pub signed_version: &'a str,
+    /// The delegated user tenant ID (`skdutid`). This is a property of the
+    /// user delegation key, set by the service only when the key was
+    /// requested with a delegated user tenant ID; otherwise `None`.
+    pub signed_delegated_user_tid: Option<&'a str>,
     pub value: &'a [u8],
 }
 
@@ -123,6 +127,7 @@ impl<'a> ValidatedKey<'a> {
                 .signed_version
                 .as_deref()
                 .ok_or_else(|| missing("signed_version"))?,
+            signed_delegated_user_tid: key.signed_delegated_user_tid.as_deref(),
             value: key.value.as_deref().ok_or_else(|| missing("value"))?,
         })
     }
@@ -144,7 +149,6 @@ pub(crate) struct Fields {
     pub authorized_object_id: Option<String>,
     pub unauthorized_object_id: Option<String>,
     pub correlation_id: Option<String>,
-    pub delegated_tenant_id: Option<String>,
     pub delegated_user_object_id: Option<String>,
     pub signed_request_headers: Option<BTreeMap<String, String>>,
     pub signed_request_query_parameters: Option<BTreeMap<String, String>>,
@@ -286,7 +290,6 @@ impl<'a> SasBuilder<'a, state::Untyped> {
                 authorized_object_id: None,
                 unauthorized_object_id: None,
                 correlation_id: None,
-                delegated_tenant_id: None,
                 delegated_user_object_id: None,
                 signed_request_headers: None,
                 signed_request_query_parameters: None,
@@ -383,12 +386,6 @@ impl<S> SasBuilder<'_, S> {
     /// Sets the encryption scope for the SAS.
     pub fn encryption_scope(mut self, scope: impl Into<String>) -> Self {
         self.fields.encryption_scope = Some(scope.into());
-        self
-    }
-
-    /// Sets the delegated tenant ID (skdutid).
-    pub fn delegated_tenant_id(mut self, value: impl Into<String>) -> Self {
-        self.fields.delegated_tenant_id = Some(value.into());
         self
     }
 
@@ -494,13 +491,16 @@ impl SasBuilder<'_, state::BlobState> {
             .canonicalized_resource(&self.fields.account);
         let sr = self.state.resource.signed_resource();
         let snapshot = self.state.resource.snapshot_time();
+        // The string-to-sign snapshot slot carries the snapshot timestamp or,
+        // for a version SAS (`sr=bv`), the version ID. The `snapshot=` query
+        // parameter remains snapshot-only; the version ID is not emitted there.
         let sts = blob_udk_string_to_sign(
             &self.state.permissions,
             &self.fields,
             &self.key,
             sr,
             &canonical,
-            snapshot.unwrap_or(""),
+            self.state.resource.snapshot_or_version_time().unwrap_or(""),
         );
         let signature = sign(self.key.value, &sts);
         blob_udk_query_parameters(
@@ -613,6 +613,30 @@ mod tests {
         }
     }
 
+    /// Builds a `Fields` with only the required values set, for testing the
+    /// internal string-to-sign helpers directly.
+    fn test_fields(expiry: OffsetDateTime) -> Fields {
+        Fields {
+            account: "acct".into(),
+            start: None,
+            expiry,
+            protocol: None,
+            ip_range: None,
+            encryption_scope: None,
+            cache_control: None,
+            content_disposition: None,
+            content_encoding: None,
+            content_language: None,
+            content_type: None,
+            authorized_object_id: None,
+            unauthorized_object_id: None,
+            correlation_id: None,
+            delegated_user_object_id: None,
+            signed_request_headers: None,
+            signed_request_query_parameters: None,
+        }
+    }
+
     #[test]
     fn blob_string_to_sign() {
         let udk = test_udk();
@@ -695,12 +719,12 @@ mod tests {
 
     #[test]
     fn queue_delegated_setters_are_percent_encoded() {
-        let udk = test_udk();
+        let mut udk = test_udk();
+        udk.signed_delegated_user_tid = Some("tenant id".into());
         let expiry = datetime!(2025-06-01 12:00:00 UTC);
 
         let qp = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
-            .delegated_tenant_id("tenant id")
             .delegated_user_object_id("user/oid")
             .queue(Queue::new("q"), QueuePermissions::new().read())
             .build();
@@ -711,12 +735,12 @@ mod tests {
 
     #[test]
     fn delegated_setters_on_blob() {
-        let udk = test_udk();
+        let mut udk = test_udk();
+        udk.signed_delegated_user_tid = Some("dtid".into());
         let expiry = datetime!(2025-06-01 12:00:00 UTC);
 
         let qp = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
-            .delegated_tenant_id("dtid")
             .delegated_user_object_id("duoid")
             .blob(Blob::new("c", "b"), BlobPermissions::new().read())
             .cache_control("no-cache")
@@ -780,13 +804,13 @@ mod tests {
 
     #[test]
     fn blob_identity_and_scope_fields_are_percent_encoded() {
-        let udk = test_udk();
+        let mut udk = test_udk();
+        udk.signed_delegated_user_tid = Some("tenant id".into());
         let expiry = datetime!(2025-06-01 12:00:00 UTC);
 
         let qp = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
             .encryption_scope("scope name")
-            .delegated_tenant_id("tenant id")
             .delegated_user_object_id("user/oid")
             .blob(Blob::new("c", "b"), BlobPermissions::new().read())
             .authorized_object_id("saoid/value")
@@ -816,6 +840,60 @@ mod tests {
             .build();
 
         assert!(qp.contains("sr=bv"));
+    }
+
+    #[test]
+    fn blob_version_id_is_signed() {
+        let udk = test_udk();
+        let expiry = datetime!(2025-06-01 12:00:00 UTC);
+
+        let sig = |version: &str| {
+            let qp = SasBuilder::new("acct", &udk, expiry)
+                .unwrap()
+                .blob(
+                    Blob::new("c", "b").version(version),
+                    BlobPermissions::new().read(),
+                )
+                .build();
+            qp.split("sig=").nth(1).unwrap().to_string()
+        };
+
+        // The version ID is placed in the snapshot slot of the string-to-sign,
+        // so two different versions must yield different signatures. Regression:
+        // previously the slot was always empty for `sr=bv`, so the signature did
+        // not cover the version ID and would not validate against the service.
+        assert_ne!(
+            sig("2025-01-15T12:00:00.0000000Z"),
+            sig("2025-02-20T08:30:00.0000000Z")
+        );
+    }
+
+    #[test]
+    fn skdutid_comes_from_key() {
+        let mut udk = test_udk();
+        udk.signed_delegated_user_tid = Some("delegated-tenant".into());
+        let expiry = datetime!(2025-06-01 12:00:00 UTC);
+
+        let qp = SasBuilder::new("acct", &udk, expiry)
+            .unwrap()
+            .blob(Blob::new("c", "b"), BlobPermissions::new().read())
+            .build();
+
+        assert!(qp.contains("skdutid=delegated-tenant"), "got: {qp}");
+    }
+
+    #[test]
+    fn no_skdutid_when_key_omits_it() {
+        // `test_udk()` has `signed_delegated_user_tid: None`.
+        let udk = test_udk();
+        let expiry = datetime!(2025-06-01 12:00:00 UTC);
+
+        let qp = SasBuilder::new("acct", &udk, expiry)
+            .unwrap()
+            .blob(Blob::new("c", "b"), BlobPermissions::new().read())
+            .build();
+
+        assert!(!qp.contains("skdutid="), "got: {qp}");
     }
 
     #[test]
@@ -916,9 +994,11 @@ mod tests {
             .signed_request_header("x-ms-blob-content-type", "text/plain")
             .build();
 
-        // BTreeMap sorts keys: x-ms-blob-content-type < x-ms-blob-type
+        // BTreeMap sorts keys: x-ms-blob-content-type < x-ms-blob-type.
+        // Commas between keys are structural separators and must NOT be
+        // percent-encoded (individual keys are encoded, commas are not).
         assert!(
-            qp.contains("srh=x-ms-blob-content-type%2Cx-ms-blob-type"),
+            qp.contains("srh=x-ms-blob-content-type,x-ms-blob-type"),
             "got: {qp}"
         );
     }
@@ -974,5 +1054,350 @@ mod tests {
 
         assert!(!qp.contains("srh="), "got: {qp}");
         assert!(!qp.contains("srq="), "got: {qp}");
+    }
+
+    // ---- String-to-sign layout tests ----
+    //
+    // These pin the exact field positions of the string-to-sign against the
+    // service spec. A reordering or a wrong source for any field (e.g., the
+    // `skdutid`/version-slot bugs) would change a line index and fail here.
+
+    #[test]
+    fn blob_string_to_sign_has_28_fields_in_order() {
+        let mut udk = test_udk();
+        udk.signed_delegated_user_tid = Some("dut".into());
+        let key = ValidatedKey::from_key(&udk).unwrap();
+        let mut fields = test_fields(datetime!(2025-06-01 12:00:00 UTC));
+        fields.start = Some(datetime!(2025-05-01 08:00:00 UTC));
+        fields.delegated_user_object_id = Some("duoid".into());
+        fields.authorized_object_id = Some("saoid".into());
+        fields.unauthorized_object_id = Some("suoid".into());
+        fields.correlation_id = Some("scid".into());
+        fields.encryption_scope = Some("ses".into());
+        fields.cache_control = Some("rscc".into());
+        fields.content_disposition = Some("rscd".into());
+        fields.content_encoding = Some("rsce".into());
+        fields.content_language = Some("rscl".into());
+        fields.content_type = Some("rsct".into());
+
+        let sts = blob_udk_string_to_sign(
+            &BlobPermissions::new().read().write(),
+            &fields,
+            &key,
+            "b",
+            "/blob/acct/c/b",
+            "",
+        );
+        let lines: Vec<&str> = sts.split('\n').collect();
+        assert_eq!(lines.len(), 28, "blob STS must have exactly 28 fields");
+        assert_eq!(lines[0], "rw"); // sp
+        assert_eq!(lines[1], "2025-05-01T08:00:00Z"); // st
+        assert_eq!(lines[2], "2025-06-01T12:00:00Z"); // se
+        assert_eq!(lines[3], "/blob/acct/c/b"); // cr
+        assert_eq!(lines[4], "oid-value"); // skoid
+        assert_eq!(lines[5], "tid-value"); // sktid
+        assert_eq!(lines[6], "2025-01-15T00:00:00Z"); // skt
+        assert_eq!(lines[7], "2025-01-16T00:00:00Z"); // ske
+        assert_eq!(lines[8], "b"); // sks
+        assert_eq!(lines[9], "2025-11-05"); // skv (from key, not SAS_VERSION)
+        assert_eq!(lines[10], "saoid"); // saoid
+        assert_eq!(lines[11], "suoid"); // suoid
+        assert_eq!(lines[12], "scid"); // scid
+        assert_eq!(lines[13], "dut"); // skdutid (from key)
+        assert_eq!(lines[14], "duoid"); // sduoid (from builder)
+        assert_eq!(lines[17], "2026-04-06"); // sv (SAS_VERSION)
+        assert_eq!(lines[18], "b"); // sr
+        assert_eq!(lines[19], ""); // snapshot
+        assert_eq!(lines[20], "ses"); // ses
+        assert_eq!(lines[23], "rscc"); // rscc
+        assert_eq!(lines[24], "rscd"); // rscd
+        assert_eq!(lines[25], "rsce"); // rsce
+        assert_eq!(lines[26], "rscl"); // rscl
+        assert_eq!(lines[27], "rsct"); // rsct
+    }
+
+    #[test]
+    fn blob_version_string_to_sign_places_version_in_snapshot_slot() {
+        // Regression for the version-SAS bug: the version id must occupy the
+        // snapshot slot (index 19) of the string-to-sign for `sr=bv`.
+        let udk = test_udk();
+        let key = ValidatedKey::from_key(&udk).unwrap();
+        let fields = test_fields(datetime!(2025-06-01 12:00:00 UTC));
+        let sts = blob_udk_string_to_sign(
+            &BlobPermissions::new().read(),
+            &fields,
+            &key,
+            "bv",
+            "/blob/acct/c/b",
+            "2025-01-15T12:00:00.0000000Z",
+        );
+        let lines: Vec<&str> = sts.split('\n').collect();
+        assert_eq!(lines[13], ""); // skdutid empty when key omits it
+        assert_eq!(lines[18], "bv"); // sr
+        assert_eq!(lines[19], "2025-01-15T12:00:00.0000000Z"); // version id in snapshot slot
+    }
+
+    #[test]
+    fn blob_snapshot_string_to_sign_places_snapshot_in_slot() {
+        let udk = test_udk();
+        let key = ValidatedKey::from_key(&udk).unwrap();
+        let fields = test_fields(datetime!(2025-06-01 12:00:00 UTC));
+        let sts = blob_udk_string_to_sign(
+            &BlobPermissions::new().read(),
+            &fields,
+            &key,
+            "bs",
+            "/blob/acct/c/b",
+            "2025-02-20T08:30:00.0000000Z",
+        );
+        let lines: Vec<&str> = sts.split('\n').collect();
+        assert_eq!(lines[18], "bs"); // sr
+        assert_eq!(lines[19], "2025-02-20T08:30:00.0000000Z"); // snapshot in slot
+    }
+
+    #[test]
+    fn queue_string_to_sign_has_15_fields_in_order() {
+        let mut udk = test_udk();
+        udk.signed_delegated_user_tid = Some("q-tenant".into());
+        let key = ValidatedKey::from_key(&udk).unwrap();
+        let mut fields = test_fields(datetime!(2025-06-01 12:00:00 UTC));
+        fields.delegated_user_object_id = Some("duoid".into());
+
+        let sts = queue_udk_string_to_sign(
+            &QueuePermissions::new().read().add(),
+            &fields,
+            &key,
+            "/queue/acct/q",
+        );
+        let lines: Vec<&str> = sts.split('\n').collect();
+        assert_eq!(lines.len(), 15, "queue STS must have exactly 15 fields");
+        assert_eq!(lines[0], "ra"); // sp
+        assert_eq!(lines[3], "/queue/acct/q"); // cr
+        assert_eq!(lines[4], "oid-value"); // skoid
+        assert_eq!(lines[9], "2025-11-05"); // skv
+        assert_eq!(lines[10], "q-tenant"); // skdutid (from key)
+        assert_eq!(lines[11], "duoid"); // sduoid (from builder)
+        assert_eq!(lines[14], "2026-04-06"); // sv
+    }
+
+    #[test]
+    fn queue_string_to_sign_skdutid_empty_when_key_omits() {
+        let udk = test_udk(); // signed_delegated_user_tid: None
+        let key = ValidatedKey::from_key(&udk).unwrap();
+        let fields = test_fields(datetime!(2025-06-01 12:00:00 UTC));
+        let sts = queue_udk_string_to_sign(
+            &QueuePermissions::new().read(),
+            &fields,
+            &key,
+            "/queue/acct/q",
+        );
+        let lines: Vec<&str> = sts.split('\n').collect();
+        assert_eq!(lines[10], ""); // skdutid empty
+    }
+
+    // ---- Query-parameter edge cases ----
+
+    #[test]
+    fn blob_version_query_omits_snapshot_param() {
+        let udk = test_udk();
+        let expiry = datetime!(2025-06-01 12:00:00 UTC);
+        let qp = SasBuilder::new("acct", &udk, expiry)
+            .unwrap()
+            .blob(
+                Blob::new("c", "b").version("2025-01-15T12:00:00.0000000Z"),
+                BlobPermissions::new().read(),
+            )
+            .build();
+        assert!(qp.contains("sr=bv"));
+        assert!(
+            !qp.contains("snapshot="),
+            "version SAS must not emit a snapshot= query param; got: {qp}"
+        );
+    }
+
+    #[test]
+    fn blob_snapshot_query_includes_snapshot_param_not_version() {
+        let udk = test_udk();
+        let expiry = datetime!(2025-06-01 12:00:00 UTC);
+        let qp = SasBuilder::new("acct", &udk, expiry)
+            .unwrap()
+            .blob(
+                Blob::new("c", "b").snapshot("2025-01-15T12:00:00.0000000Z"),
+                BlobPermissions::new().read(),
+            )
+            .build();
+        assert!(qp.contains("sr=bs"));
+        assert!(qp.contains("snapshot=2025-01-15T12%3A00%3A00.0000000Z"));
+        assert!(!qp.contains("versionid="), "got: {qp}");
+    }
+
+    #[test]
+    fn directory_build_sets_sr_d_and_sdd_depth() {
+        let udk = test_udk();
+        let expiry = datetime!(2025-06-01 12:00:00 UTC);
+        let qp = SasBuilder::new("acct", &udk, expiry)
+            .unwrap()
+            .directory(
+                Directory::new("fs", "a/b/c"),
+                ContainerPermissions::new().read(),
+            )
+            .build();
+        assert!(qp.contains("sr=d"), "got: {qp}");
+        assert!(qp.contains("sdd=3"), "got: {qp}");
+    }
+
+    #[test]
+    fn directory_root_has_zero_depth() {
+        let udk = test_udk();
+        let expiry = datetime!(2025-06-01 12:00:00 UTC);
+        let qp = SasBuilder::new("acct", &udk, expiry)
+            .unwrap()
+            .directory(Directory::new("fs", ""), ContainerPermissions::new().read())
+            .build();
+        assert!(qp.contains("sdd=0"), "got: {qp}");
+    }
+
+    #[test]
+    fn ip_range_single_address_in_query() {
+        use std::net::{IpAddr, Ipv4Addr};
+        let udk = test_udk();
+        let expiry = datetime!(2025-06-01 12:00:00 UTC);
+        let qp = SasBuilder::new("acct", &udk, expiry)
+            .unwrap()
+            .ip_range(SasIpRange::Address(IpAddr::V4(Ipv4Addr::new(1, 2, 3, 4))))
+            .blob(Blob::new("c", "b"), BlobPermissions::new().read())
+            .build();
+        assert!(qp.contains("sip=1.2.3.4"), "got: {qp}");
+    }
+
+    #[test]
+    fn ip_range_span_in_query() {
+        use std::net::{IpAddr, Ipv4Addr};
+        let udk = test_udk();
+        let expiry = datetime!(2025-06-01 12:00:00 UTC);
+        let qp = SasBuilder::new("acct", &udk, expiry)
+            .unwrap()
+            .ip_range(SasIpRange::Range {
+                start: IpAddr::V4(Ipv4Addr::new(10, 0, 0, 1)),
+                end: IpAddr::V4(Ipv4Addr::new(10, 0, 0, 255)),
+            })
+            .blob(Blob::new("c", "b"), BlobPermissions::new().read())
+            .build();
+        // The `-` between addresses must not be percent-encoded.
+        assert!(qp.contains("sip=10.0.0.1-10.0.0.255"), "got: {qp}");
+    }
+
+    #[test]
+    fn protocol_https_only_in_query() {
+        let udk = test_udk();
+        let expiry = datetime!(2025-06-01 12:00:00 UTC);
+        let qp = SasBuilder::new("acct", &udk, expiry)
+            .unwrap()
+            .protocol(SasProtocol::Https)
+            .blob(Blob::new("c", "b"), BlobPermissions::new().read())
+            .build();
+        assert!(qp.contains("spr=https"), "got: {qp}");
+        assert!(!qp.contains("spr=https,"), "got: {qp}");
+    }
+
+    #[test]
+    fn no_optional_params_when_unset() {
+        let udk = test_udk();
+        let expiry = datetime!(2025-06-01 12:00:00 UTC);
+        let qp = SasBuilder::new("acct", &udk, expiry)
+            .unwrap()
+            .blob(Blob::new("c", "b"), BlobPermissions::new().read())
+            .build();
+        for absent in [
+            "st=",
+            "sip=",
+            "spr=",
+            "saoid=",
+            "suoid=",
+            "scid=",
+            "skdutid=",
+            "sduoid=",
+            "ses=",
+            "snapshot=",
+            "rscc=",
+            "rscd=",
+            "rsce=",
+            "rscl=",
+            "rsct=",
+            "sdd=",
+        ] {
+            assert!(!qp.contains(absent), "unexpected `{absent}` in: {qp}");
+        }
+    }
+
+    #[test]
+    fn blob_permissions_serialize_in_canonical_order() {
+        // Pins the documented serialization order `racwdxytmeopi`. The setters
+        // are intentionally applied out of order to prove the order is fixed by
+        // the type, not by call order.
+        let perms = BlobPermissions::new()
+            .set_immutability_policy()
+            .permissions()
+            .ownership()
+            .execute()
+            .move_blob()
+            .tags()
+            .permanent_delete()
+            .delete_version()
+            .delete()
+            .write()
+            .create()
+            .add()
+            .read();
+        assert_eq!(perms.to_string(), "racwdxytmeopi");
+    }
+
+    #[test]
+    fn queue_query_has_no_blob_only_params() {
+        let udk = test_udk();
+        let expiry = datetime!(2025-06-01 12:00:00 UTC);
+        let qp = SasBuilder::new("acct", &udk, expiry)
+            .unwrap()
+            .queue(Queue::new("q"), QueuePermissions::new().read())
+            .build();
+        for absent in ["sr=", "snapshot=", "sdd=", "rscc=", "ses="] {
+            assert!(!qp.contains(absent), "unexpected `{absent}` in: {qp}");
+        }
+    }
+
+    #[test]
+    fn start_time_appears_in_query_and_sts() {
+        let udk = test_udk();
+        let expiry = datetime!(2025-06-01 12:00:00 UTC);
+        let qp = SasBuilder::new("acct", &udk, expiry)
+            .unwrap()
+            .start(datetime!(2025-05-01 08:00:00 UTC))
+            .blob(Blob::new("c", "b"), BlobPermissions::new().read())
+            .build();
+        assert!(qp.contains("st=2025-05-01T08:00:00Z"), "got: {qp}");
+    }
+
+    #[test]
+    fn delegated_key_changes_signature() {
+        // Two keys differing only in `signed_delegated_user_tid` must produce
+        // different signatures, proving `skdutid` is covered by the signature.
+        let expiry = datetime!(2025-06-01 12:00:00 UTC);
+
+        let udk_none = test_udk();
+        let sig_none = SasBuilder::new("acct", &udk_none, expiry)
+            .unwrap()
+            .blob(Blob::new("c", "b"), BlobPermissions::new().read())
+            .build();
+
+        let mut udk_some = test_udk();
+        udk_some.signed_delegated_user_tid = Some("tenant".into());
+        let sig_some = SasBuilder::new("acct", &udk_some, expiry)
+            .unwrap()
+            .blob(Blob::new("c", "b"), BlobPermissions::new().read())
+            .build();
+
+        let a = sig_none.split("sig=").nth(1).unwrap();
+        let b = sig_some.split("sig=").nth(1).unwrap();
+        assert_ne!(a, b);
     }
 }
