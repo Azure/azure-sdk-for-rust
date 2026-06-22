@@ -37,7 +37,7 @@ use crate::completion::{
 use crate::container_ref::ContainerRefHandle;
 use crate::driver::DriverHandle;
 use crate::driver_options::DriverOptionsHandle;
-use crate::error::{CosmosErrorCode, CosmosErrorInner};
+use crate::error::{CosmosErrorCode, CosmosErrorHandle};
 use crate::op_request::{build_request, CosmosOperationRequest};
 use crate::response::ResponseHandle;
 use crate::runtime::RuntimeContext;
@@ -192,7 +192,7 @@ fn spawn_oneshot<Fut, R>(
             Some(Ok(Err(err))) => {
                 let coarse = CosmosErrorCode::from_driver_error(&err);
                 let stored_error = if ctx.include_error_details {
-                    Some(Arc::new(CosmosErrorInner::new(err)))
+                    Some(Arc::new(CosmosErrorHandle::new(err)))
                 } else {
                     None
                 };

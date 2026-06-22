@@ -548,6 +548,18 @@ typedef struct cosmos_completion_t cosmos_completion_t;
 typedef struct cosmos_container_ref_t cosmos_container_ref_t;
 
 /**
+ * The C ABI handle for a rich error (`cosmos_error_t`).
+ *
+ * A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
+ * opaque type because C cannot see its fields. Reference-counted via `Arc` so
+ * `Completion`'s borrow accessor and the take-ownership accessor can share the
+ * same allocation cheaply. Lazy-caches the rendered backtrace and the four
+ * header-derived convenience strings as `CString`s so the FFI accessors can
+ * hand out borrowed pointers with a stable lifetime.
+ */
+typedef struct cosmos_error_t cosmos_error_t;
+
+/**
  * The C ABI handle for a database reference.
  *
  * A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
@@ -617,22 +629,6 @@ typedef struct cosmos_feed_range_t cosmos_feed_range_t;
  *   and is how the driver / account surfaces hand out handles.
  */
 typedef struct cosmos_runtime_t cosmos_runtime_t;
-
-/**
- * Opaque heap-allocated wrapper around an `Arc<CosmosErrorInner>`.
- *
- * The FFI hands out `*mut CosmosErrorHandle` as `cosmos_error_t *`. Cloning
- * the underlying `Arc` is cheap and is how the `Completion` borrow accessor
- * shares the payload with the `take_error` ownership accessor.
- *
- * Storage pun: see the matching pattern on `CompletionQueue` /
- * `OperationHandle` in `completion.rs` — the public struct only carries the
- * `_opaque` marker; the real `Arc` lives in a trailing
- * `CosmosErrorHandleStorage` field allocated by `Self::into_raw`.
- */
-typedef struct cosmos_error_t {
-  uint8_t _opaque[0];
-} cosmos_error_t;
 
 /**
  * A library-owned byte buffer returned by value across the C ABI.

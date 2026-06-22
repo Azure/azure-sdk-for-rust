@@ -226,20 +226,19 @@ impl CosmosErrorCode {
 // Rich error handle
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Internal storage of a `cosmos_error_t`.
+/// The C ABI handle for a rich error (`cosmos_error_t`).
 ///
-/// Wraps an `Arc<DriverCosmosError>` so that `Completion`'s borrow accessor
-/// and the take-ownership accessor can share the same allocation cheaply.
-/// Also lazy-caches the rendered backtrace and the four header-derived
-/// convenience strings as `CString`s so the FFI accessors can hand out
-/// borrowed pointers with a stable lifetime.
-pub struct CosmosErrorInner {
+/// A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
+/// opaque type because C cannot see its fields. Reference-counted via `Arc` so
+/// `Completion`'s borrow accessor and the take-ownership accessor can share the
+/// same allocation cheaply. Lazy-caches the rendered backtrace and the four
+/// header-derived convenience strings as `CString`s so the FFI accessors can
+/// hand out borrowed pointers with a stable lifetime.
+pub struct CosmosErrorHandle {
     pub(crate) err: DriverCosmosError,
     // Cached null-terminated copies of the strings the FFI returns by
-    // borrowed pointer. Populated lazily on first access — `OnceLock` would
-    // be cleaner but we only ever access from a single thread (the receive
-    // loop), so a `std::cell::RefCell` would also suffice. We use `OnceLock`
-    // anyway because `CosmosErrorHandle` may be retrieved from any thread.
+    // borrowed pointer. Populated lazily on first access. We use `OnceLock`
+    // because the handle may be retrieved from any thread.
     message_cstring: std::sync::OnceLock<CString>,
     backtrace_cstring: std::sync::OnceLock<Option<CString>>,
     activity_id_cstring: std::sync::OnceLock<Option<CString>>,
@@ -247,7 +246,7 @@ pub struct CosmosErrorInner {
     etag_cstring: std::sync::OnceLock<Option<CString>>,
 }
 
-impl CosmosErrorInner {
+impl CosmosErrorHandle {
     pub fn new(err: DriverCosmosError) -> Self {
         Self {
             err,
@@ -312,27 +311,11 @@ impl CosmosErrorInner {
     }
 }
 
-/// Opaque heap-allocated wrapper around an `Arc<CosmosErrorInner>`.
+/// Opaque heap-allocated handle around an error payload.
 ///
 /// The FFI hands out `*mut CosmosErrorHandle` as `cosmos_error_t *`. Cloning
 /// the underlying `Arc` is cheap and is how the `Completion` borrow accessor
 /// shares the payload with the `take_error` ownership accessor.
-///
-/// Storage pun: see the matching pattern on `CompletionQueue` /
-/// `OperationHandle` in `completion.rs` — the public struct only carries the
-/// `_opaque` marker; the real `Arc` lives in a trailing
-/// `CosmosErrorHandleStorage` field allocated by `Self::into_raw`.
-#[repr(C)]
-pub struct CosmosErrorHandle {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-struct CosmosErrorHandleStorage {
-    _opaque: [u8; 0],
-    inner: Arc<CosmosErrorInner>,
-}
-
 impl CosmosErrorHandle {
     /// Wraps a driver error into a heap-allocated FFI handle. Returns a raw
     /// pointer suitable for handing across the C boundary.
@@ -341,38 +324,34 @@ impl CosmosErrorHandle {
         reason = "first non-test caller is the driver submit failure path"
     )]
     pub(crate) fn into_raw(err: DriverCosmosError) -> *mut Self {
-        Self::from_arc_into_raw(Arc::new(CosmosErrorInner::new(err)))
+        Arc::into_raw(Arc::new(CosmosErrorHandle::new(err))) as *mut Self
     }
 
     /// Like [`into_raw`](Self::into_raw) but for an existing `Arc` (used by
     /// `cosmos_completion_take_error` to detach the completion's strong
     /// reference into a caller-owned handle).
-    pub(crate) fn from_arc_into_raw(inner: Arc<CosmosErrorInner>) -> *mut Self {
-        let storage = Box::new(CosmosErrorHandleStorage { _opaque: [], inner });
-        Box::into_raw(storage).cast::<CosmosErrorHandle>()
+    pub(crate) fn from_arc_into_raw(this: Arc<CosmosErrorHandle>) -> *mut Self {
+        Arc::into_raw(this) as *mut Self
     }
 
-    fn storage<'a>(p: *const CosmosErrorHandle) -> Option<&'a CosmosErrorHandleStorage> {
+    /// Borrows the handle from a raw pointer for the duration of an FFI call.
+    fn inner_from_ptr<'a>(p: *const CosmosErrorHandle) -> Option<&'a CosmosErrorHandle> {
         if p.is_null() {
             None
         } else {
             // SAFETY: caller guarantees `p` was obtained from a library API.
-            Some(unsafe { &*(p as *const CosmosErrorHandleStorage) })
+            Some(unsafe { &*p })
         }
-    }
-
-    /// Borrows the wrapped inner state from a raw pointer.
-    fn inner_from_ptr<'a>(p: *const CosmosErrorHandle) -> Option<&'a CosmosErrorInner> {
-        Self::storage(p).map(|s| -> &CosmosErrorInner { &s.inner })
     }
 
     pub(crate) fn drop_raw(p: *mut CosmosErrorHandle) {
         if p.is_null() {
             return;
         }
-        // SAFETY: caller guarantees `p` was obtained from a library API.
+        // SAFETY: caller guarantees `p` was obtained from a library API and
+        // has not already been freed.
         unsafe {
-            drop(Box::from_raw(p.cast::<CosmosErrorHandleStorage>()));
+            drop(Arc::from_raw(p as *const CosmosErrorHandle));
         }
     }
 }

@@ -26,7 +26,7 @@ use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::{Arc, Condvar, Mutex};
 use std::time::{Duration, Instant};
 
-use crate::error::{CosmosErrorCode, CosmosErrorHandle, CosmosErrorInner};
+use crate::error::{CosmosErrorCode, CosmosErrorHandle};
 use crate::runtime::RuntimeContext;
 use crate::safety::MutexExt;
 
@@ -252,7 +252,7 @@ pub struct Completion {
     /// `Arc`-wrapped so `cosmos_completion_take_error` can detach ownership
     /// while leaving the borrowed `cosmos_completion_error` accessor working
     /// against a `None` slot.
-    error: Mutex<Option<Arc<CosmosErrorInner>>>,
+    error: Mutex<Option<Arc<CosmosErrorHandle>>>,
     /// Detachable response. Populated only on `OK` completions emitted
     /// by the submit paths; absent on every other completion.
     /// `cosmos_completion_take_response` moves the contained handle out
@@ -305,7 +305,7 @@ impl Completion {
         status: CosmosErrorCode,
         user_data: isize,
         op_inner: Arc<OperationInner>,
-        error: Option<Arc<CosmosErrorInner>>,
+        error: Option<Arc<CosmosErrorHandle>>,
         response: Option<*mut crate::response::ResponseHandle>,
     ) -> Box<Completion> {
         Box::new(Completion {
@@ -1056,7 +1056,7 @@ pub fn __test_only_enqueue_completion(
     // `isize` the real submit path uses. This helper is `#[doc(hidden)]` and
     // never crosses the (now `intptr_t`) C ABI.
     user_data: *mut c_void,
-    error: Option<Arc<CosmosErrorInner>>,
+    error: Option<Arc<CosmosErrorHandle>>,
 ) -> CosmosErrorCode {
     let Some(storage) = CompletionQueue::storage(queue) else {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument;
@@ -1405,7 +1405,7 @@ mod tests {
         use azure_data_cosmos_driver::error::{CosmosError, CosmosStatus};
         let q = fresh_queue(0, true);
         let op = __test_only_create_operation_handle();
-        let err_arc = Arc::new(CosmosErrorInner::new(
+        let err_arc = Arc::new(CosmosErrorHandle::new(
             CosmosError::builder()
                 .with_status(CosmosStatus::new(azure_core::http::StatusCode::NotFound))
                 .with_message("test error")
@@ -1441,7 +1441,7 @@ mod tests {
         use azure_data_cosmos_driver::error::{CosmosError, CosmosStatus};
         let q = fresh_queue(0, /* include_error_details = */ false);
         let op = __test_only_create_operation_handle();
-        let err_arc = Arc::new(CosmosErrorInner::new(
+        let err_arc = Arc::new(CosmosErrorHandle::new(
             CosmosError::builder()
                 .with_status(CosmosStatus::new(azure_core::http::StatusCode::Conflict))
                 .with_message("dropped")
