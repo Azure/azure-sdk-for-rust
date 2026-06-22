@@ -3707,6 +3707,50 @@ mod tests {
     }
 
     #[test]
+    fn build_transport_request_change_feed_continuation_uses_if_none_match() {
+        let pk_def = test_partition_key_definition("/partition_key");
+        let target = crate::models::FeedRange::for_partition(PartitionKey::from("pk1"), &pk_def);
+        let operation = CosmosOperation::change_feed(test_container(), Some(target));
+        assert!(operation.is_change_feed());
+
+        let routing = test_routing();
+        let activity_id = ActivityId::from_string("default-activity".to_string());
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Retry,
+            deadline: Some(std::time::Instant::now() + Duration::from_secs(5)),
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+        let overrides = OperationOverrides {
+            partition_key: Some(PartitionKey::from("pk1")),
+            continuation: Some("\"etag-123\"".to_string()),
+            ..Default::default()
+        };
+        let request = build_transport_request(&operation, &overrides, None, &ctx)
+            .expect("request should build");
+
+        assert_eq!(
+            request
+                .headers
+                .get_optional_str(&HeaderName::from_static(
+                    request_header_names::IF_NONE_MATCH
+                ))
+                .map(|s| s.to_string()),
+            Some("\"etag-123\"".to_string()),
+            "change feed continuation must be sent as If-None-Match"
+        );
+        assert!(
+            request
+                .headers
+                .get_optional_str(&HeaderName::from_static(request_header_names::CONTINUATION))
+                .is_none(),
+            "change feed must not send x-ms-continuation"
+        );
+    }
+
+    #[test]
     fn build_transport_request_uses_routed_endpoint_url_directly() {
         let operation =
             CosmosOperation::read_database(DatabaseReference::from_name(test_account(), "mydb"));
