@@ -28,7 +28,7 @@ impl ContainerNameKey {
     fn from_container(c: &ContainerReference) -> Self {
         Self {
             account_endpoint: c.account().endpoint().as_str().to_owned(),
-            db_name: c.database_name().to_owned(),
+            db_name: c.database_name().unwrap_or_default().to_owned(),
             container_name: c.name().to_owned(),
         }
     }
@@ -378,8 +378,8 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(r1.database_name(), "db1");
-        assert_eq!(r2.database_name(), "db2");
+        assert_eq!(r1.database_name(), Some("db1"));
+        assert_eq!(r2.database_name(), Some("db2"));
     }
 
     // --- get returns none ---

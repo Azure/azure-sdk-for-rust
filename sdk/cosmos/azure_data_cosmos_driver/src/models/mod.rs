@@ -52,6 +52,7 @@ pub use cosmos_headers::{
     CosmosResponseHeaders, MaxItemCountHint, OfferAutoscaleSettings,
 };
 pub use cosmos_operation::CosmosOperation;
+pub(crate) use cosmos_resource_reference::encode_path_segments;
 pub use cosmos_resource_reference::CosmosResourceReference;
 pub(crate) use cosmos_resource_reference::ResourcePaths;
 pub use cosmos_response::CosmosResponse;
