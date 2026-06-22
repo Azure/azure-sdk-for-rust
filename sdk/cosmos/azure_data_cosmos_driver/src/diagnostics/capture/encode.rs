@@ -135,7 +135,11 @@ pub(crate) fn decode(input: &[u8]) -> Option<EventLogStorage> {
     let span_count = usize::try_from(read_varint(input, &mut pos)?).ok()?;
     let attr_count = usize::try_from(read_varint(input, &mut pos)?).ok()?;
 
-    let mut spans = Vec::with_capacity(span_count);
+    // Cap the pre-allocation against the remaining input: every span/attr needs at least one byte,
+    // so a claimed count larger than the remaining bytes is malformed and must not drive a giant
+    // allocation. `with_capacity` is then bounded by real data, not an attacker-supplied length.
+    let remaining = input.len().saturating_sub(pos);
+    let mut spans = Vec::with_capacity(span_count.min(remaining));
     for _ in 0..span_count {
         let kind = SpanKind::from_u8(*input.get(pos)?);
         pos += 1;
@@ -155,7 +159,7 @@ pub(crate) fn decode(input: &[u8]) -> Option<EventLogStorage> {
         });
     }
 
-    let mut attrs = Vec::with_capacity(attr_count);
+    let mut attrs = Vec::with_capacity(attr_count.min(input.len().saturating_sub(pos)));
     for _ in 0..attr_count {
         let span = SpanId::from_raw(u32::try_from(read_varint(input, &mut pos)?).ok()?)?;
         let key = AttrKey::from_u8(*input.get(pos)?)?;
@@ -287,6 +291,24 @@ mod tests {
     fn unknown_attr_key_is_rejected() {
         // span_count=0, attr_count=1, span=1, key=250 (unknown).
         let bytes = [0u8, 1u8, 1u8, 250u8, VALUE_U64, 0u8];
+        assert!(decode(&bytes).is_none());
+    }
+
+    #[test]
+    fn oversized_declared_counts_do_not_overallocate_or_panic() {
+        // A malformed header claiming a huge span/attr count must not drive a giant `with_capacity`
+        // allocation; decode caps the pre-allocation against the remaining bytes and then fails
+        // cleanly when the promised entries aren't actually present.
+        // span_count = u64::MAX (varint), attr_count = 0, then no span bytes.
+        let mut bytes = Vec::new();
+        write_varint(&mut bytes, u64::MAX);
+        write_varint(&mut bytes, 0);
+        assert!(decode(&bytes).is_none());
+
+        // attr_count enormous with no attr bytes following.
+        let mut bytes = Vec::new();
+        write_varint(&mut bytes, 0);
+        write_varint(&mut bytes, 1_000_000_000);
         assert!(decode(&bytes).is_none());
     }
 }

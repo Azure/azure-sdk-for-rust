@@ -187,6 +187,16 @@ pub enum AttrKey {
     AlternateRegion = 17,
     /// Region that ultimately served a hedged response.
     ResponseRegion = 18,
+    /// Pipeline type of an attempt ([`PipelineType`](super::PipelineType)) as a `u64` discriminant.
+    PipelineType = 19,
+    /// Transport security of an attempt ([`TransportSecurity`](super::TransportSecurity)).
+    TransportSecurity = 20,
+    /// Transport kind of an attempt ([`TransportKind`](super::TransportKind)).
+    TransportKind = 21,
+    /// Negotiated HTTP version of an attempt ([`TransportHttpVersion`](super::TransportHttpVersion)).
+    TransportHttpVersion = 22,
+    /// Server-reported request duration in milliseconds (distinct from the client-observed span).
+    ServerDurationMs = 23,
 }
 
 impl AttrKey {
@@ -212,6 +222,11 @@ impl AttrKey {
             16 => AttrKey::PrimaryRegion,
             17 => AttrKey::AlternateRegion,
             18 => AttrKey::ResponseRegion,
+            19 => AttrKey::PipelineType,
+            20 => AttrKey::TransportSecurity,
+            21 => AttrKey::TransportKind,
+            22 => AttrKey::TransportHttpVersion,
+            23 => AttrKey::ServerDurationMs,
             _ => return None,
         };
         Some(key)

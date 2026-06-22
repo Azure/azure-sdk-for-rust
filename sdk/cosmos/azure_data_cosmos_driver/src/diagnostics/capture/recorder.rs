@@ -26,7 +26,9 @@
 use super::event::{AttrKey, EventLog, SpanId, SpanKind, TimeOffset};
 use super::pool::LogPool;
 use super::Outcome;
-use crate::diagnostics::ExecutionContext;
+use crate::diagnostics::{
+    ExecutionContext, PipelineType, TransportHttpVersion, TransportKind, TransportSecurity,
+};
 use crate::error::{CosmosStatus, SubStatusCode};
 use azure_core::http::StatusCode;
 use std::sync::Arc;
@@ -41,6 +43,38 @@ pub(crate) fn exec_context_to_u64(ctx: ExecutionContext) -> u64 {
         ExecutionContext::Hedging => 3,
         ExecutionContext::RegionFailover => 4,
         ExecutionContext::CircuitBreakerProbe => 5,
+    }
+}
+
+/// Maps a [`PipelineType`] to its stable attribute discriminant.
+pub(crate) fn pipeline_type_to_u64(value: PipelineType) -> u64 {
+    match value {
+        PipelineType::Metadata => 0,
+        PipelineType::DataPlane => 1,
+    }
+}
+
+/// Maps a [`TransportSecurity`] to its stable attribute discriminant.
+pub(crate) fn transport_security_to_u64(value: TransportSecurity) -> u64 {
+    match value {
+        TransportSecurity::Secure => 0,
+        TransportSecurity::EmulatorWithInsecureCertificates => 1,
+    }
+}
+
+/// Maps a [`TransportKind`] to its stable attribute discriminant.
+pub(crate) fn transport_kind_to_u64(value: TransportKind) -> u64 {
+    match value {
+        TransportKind::Gateway => 0,
+        TransportKind::Gateway20 => 1,
+    }
+}
+
+/// Maps a [`TransportHttpVersion`] to its stable attribute discriminant.
+pub(crate) fn http_version_to_u64(value: TransportHttpVersion) -> u64 {
+    match value {
+        TransportHttpVersion::Http11 => 0,
+        TransportHttpVersion::Http2 => 1,
     }
 }
 
@@ -116,6 +150,16 @@ pub struct AttemptRecord {
     pub request_charge: Option<f64>,
     /// Retry-safety signal on a transport failure (`sent` / `not_sent` / `unknown`).
     pub request_sent: Option<String>,
+    /// Pipeline type this attempt ran under, when known.
+    pub pipeline_type: Option<PipelineType>,
+    /// Transport security mode of this attempt, when known.
+    pub transport_security: Option<TransportSecurity>,
+    /// Transport kind of this attempt, when known.
+    pub transport_kind: Option<TransportKind>,
+    /// Negotiated HTTP version of this attempt, when known.
+    pub http_version: Option<TransportHttpVersion>,
+    /// Server-reported request duration (ms), distinct from the client-observed span, when known.
+    pub server_duration_ms: Option<f64>,
     /// Start relative to the operation start (nanoseconds); filled from the clock when `0`.
     pub start_ns: u64,
     /// Attempt duration (nanoseconds).
@@ -139,6 +183,11 @@ impl AttemptRecord {
             service_request_id: None,
             request_charge: None,
             request_sent: None,
+            pipeline_type: None,
+            transport_security: None,
+            transport_kind: None,
+            http_version: None,
+            server_duration_ms: None,
             start_ns: 0,
             duration_ns: 0,
         }
@@ -165,6 +214,27 @@ impl AttemptRecord {
     /// Sets the retry-safety signal for a transport failure (builder-style).
     pub fn with_request_sent(mut self, request_sent: impl Into<String>) -> Self {
         self.request_sent = Some(request_sent.into());
+        self
+    }
+
+    /// Sets the transport / pipeline facets of this attempt (builder-style).
+    pub fn with_transport(
+        mut self,
+        pipeline_type: PipelineType,
+        transport_security: TransportSecurity,
+        transport_kind: TransportKind,
+        http_version: TransportHttpVersion,
+    ) -> Self {
+        self.pipeline_type = Some(pipeline_type);
+        self.transport_security = Some(transport_security);
+        self.transport_kind = Some(transport_kind);
+        self.http_version = Some(http_version);
+        self
+    }
+
+    /// Sets the server-reported request duration in milliseconds (builder-style).
+    pub fn with_server_duration_ms(mut self, server_duration_ms: f64) -> Self {
+        self.server_duration_ms = Some(server_duration_ms);
         self
     }
 
@@ -266,6 +336,25 @@ impl DiagnosticsRecorder {
         }
         if let Some(sent) = attempt.request_sent.as_deref().filter(|s| !s.is_empty()) {
             log.attr_str(span, AttrKey::RequestSent, sent);
+        }
+        if let Some(pt) = attempt.pipeline_type {
+            log.attr_u64(span, AttrKey::PipelineType, pipeline_type_to_u64(pt));
+        }
+        if let Some(ts) = attempt.transport_security {
+            log.attr_u64(
+                span,
+                AttrKey::TransportSecurity,
+                transport_security_to_u64(ts),
+            );
+        }
+        if let Some(tk) = attempt.transport_kind {
+            log.attr_u64(span, AttrKey::TransportKind, transport_kind_to_u64(tk));
+        }
+        if let Some(hv) = attempt.http_version {
+            log.attr_u64(span, AttrKey::TransportHttpVersion, http_version_to_u64(hv));
+        }
+        if let Some(sd) = attempt.server_duration_ms {
+            log.attr_f64(span, AttrKey::ServerDurationMs, sd);
         }
 
         self.attempt_count += 1;

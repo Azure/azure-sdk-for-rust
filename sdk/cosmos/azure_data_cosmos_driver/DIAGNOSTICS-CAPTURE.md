@@ -16,11 +16,13 @@
 > `CosmosError::capture_diagnostics()`. The gate never builds the surfaced context; it only governs
 > exposure.
 >
-> **Known gaps in the capture path (behind the feature):** the reconstruction in `context.rs` is
-> still **lossy** — it hardcodes pipeline/transport facets (`DataPlane` / `Secure` / `Gateway` /
-> `Http2`) and surfaces client-observed latency where the builder records true server timing. A
-> byte-for-byte parity harness against the builder is a prerequisite before this path could ever
-> become authoritative (see the migration notes at the end).
+> **Status of the capture path (behind the feature):** the reconstruction in `context.rs` carries
+> the captured per-attempt facets (pipeline type, transport security/kind, HTTP version) and the
+> server-reported duration, reconstructed from what was recorded rather than hardcoded, and a parity
+> harness validates the reconstruction against the builder. It remains behind the feature because
+> the live driver pipeline does not yet feed the recorder; wiring that feed (so the engine carries
+> every builder field on a real operation) is the remaining work before it could become
+> authoritative (see the notes at the end).
 
 ## 1. Problem & goals
 
@@ -42,10 +44,12 @@ Goals (the capture-engine prototype aims at these; only the gate is realized on 
 - **G2** — Collection/materialization is governed by the gate, off the hot path.
 - **G3** — A configurable gate evaluated at operation end decides whether to surface diagnostics:
   latency threshold + on-error, plus Off/Always modes. *(Realized on the default path.)*
-- **G4** *(aspirational, behind `capture_engine`)* — A single canonical model
-  ([`DiagnosticsContext`]) reconstructed losslessly from the event log, with every rich field
-  preserved (events, transport-shard / failed-shard diagnostics, fault-injection evaluations,
-  true server timing, hedging). **Not yet achieved** — the current reconstruction is lossy.
+- **G4** *(behind `capture_engine`)* — A single canonical model
+  ([`DiagnosticsContext`]) reconstructed from the event log, with the rich fields preserved (events,
+  transport-shard / failed-shard diagnostics, fault-injection evaluations, true server timing,
+  hedging). The reconstruction carries the captured per-attempt facets and server-reported duration
+  (parity-checked against the builder); the remaining gap is feeding the recorder from the live
+  pipeline so every field is present on a real operation.
 - **G5** — The public SDK boundary (`diagnostics::DiagnosticsContext`, consumed by
   `azure_data_cosmos`) is **unchanged**: this is additive / non-breaking.
 

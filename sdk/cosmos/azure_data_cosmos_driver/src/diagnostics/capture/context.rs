@@ -9,13 +9,10 @@
 //! errored operation, or `Mode::Always`), walking the flat span / attr lists back into a tree and
 //! replaying them onto a [`DiagnosticsContextBuilder`].
 //!
-//! **This reconstruction is currently lossy.** It hardcodes the pipeline/transport facets
-//! (`PipelineType::DataPlane`, `TransportSecurity::Secure`, `TransportKind::Gateway`,
-//! `TransportHttpVersion::Http2`) instead of reading captured values, and it surfaces the
-//! client-observed attempt latency where the builder records true server timing. Reaching parity
-//! with the builder (and capturing those fields at the pipeline/transport sites) is tracked as the
-//! next migration step; until a byte-for-byte parity harness is green this path stays behind the
-//! feature and is exercised only by the engine's own tests.
+//! Pipeline/transport facets (pipeline type, transport security/kind, HTTP version) and the
+//! server-reported duration are reconstructed from what the producer captured for each attempt;
+//! each facet falls back to its common-case default only when it was not recorded. The per-attempt
+//! client-observed span timing is retained separately from the server-reported duration.
 //!
 //! Each captured [`SpanKind::Attempt`] becomes a
 //! [`RequestDiagnostics`](crate::diagnostics::RequestDiagnostics) with its
@@ -47,6 +44,38 @@ fn exec_context_from_u64(value: u64) -> ExecutionContext {
         4 => ExecutionContext::RegionFailover,
         5 => ExecutionContext::CircuitBreakerProbe,
         _ => ExecutionContext::Initial,
+    }
+}
+
+/// Reconstructs the pipeline type from its captured discriminant, defaulting to data-plane.
+fn pipeline_type_from_u64(value: Option<u64>) -> PipelineType {
+    match value {
+        Some(0) => PipelineType::Metadata,
+        _ => PipelineType::DataPlane,
+    }
+}
+
+/// Reconstructs the transport security from its captured discriminant, defaulting to secure.
+fn transport_security_from_u64(value: Option<u64>) -> TransportSecurity {
+    match value {
+        Some(1) => TransportSecurity::EmulatorWithInsecureCertificates,
+        _ => TransportSecurity::Secure,
+    }
+}
+
+/// Reconstructs the transport kind from its captured discriminant, defaulting to gateway.
+fn transport_kind_from_u64(value: Option<u64>) -> TransportKind {
+    match value {
+        Some(1) => TransportKind::Gateway20,
+        _ => TransportKind::Gateway,
+    }
+}
+
+/// Reconstructs the HTTP version from its captured discriminant, defaulting to HTTP/2.
+fn http_version_from_u64(value: Option<u64>) -> TransportHttpVersion {
+    match value {
+        Some(0) => TransportHttpVersion::Http11,
+        _ => TransportHttpVersion::Http2,
     }
 }
 
@@ -92,18 +121,26 @@ fn replay_attempt(
     let service_request_id = log.attr_str_of(id, AttrKey::ServiceRequestId);
     let request_charge = log.attr_f64_of(id, AttrKey::RequestCharge);
     let request_sent = log.attr_str_of(id, AttrKey::RequestSent).unwrap_or("");
-    // The captured client-observed attempt duration is surfaced as the server-duration field; the
-    // builder's own wall-clock timing measures the (synchronous) replay, not the original request,
-    // so the captured duration is the authoritative per-attempt latency signal.
-    let duration_ms = span.end.saturating_sub(span.start).as_nanos() as f64 / 1_000_000.0;
+    // Transport / pipeline facets are reconstructed from what was captured for this attempt (each
+    // falls back to its common-case default when the producer did not record it).
+    let pipeline_type = pipeline_type_from_u64(log.attr_u64_of(id, AttrKey::PipelineType));
+    let transport_security =
+        transport_security_from_u64(log.attr_u64_of(id, AttrKey::TransportSecurity));
+    let transport_kind = transport_kind_from_u64(log.attr_u64_of(id, AttrKey::TransportKind));
+    let http_version = http_version_from_u64(log.attr_u64_of(id, AttrKey::TransportHttpVersion));
+    // Prefer the captured server-reported duration; fall back to the client-observed span only when
+    // no server duration was recorded.
+    let server_duration_ms = log
+        .attr_f64_of(id, AttrKey::ServerDurationMs)
+        .unwrap_or_else(|| span.end.saturating_sub(span.start).as_nanos() as f64 / 1_000_000.0);
 
     let endpoint = endpoint_for(region, endpoint_url);
     let handle = builder.start_request(
         execution_context,
-        PipelineType::DataPlane,
-        TransportSecurity::Secure,
-        TransportKind::Gateway,
-        TransportHttpVersion::Http2,
+        pipeline_type,
+        transport_security,
+        transport_kind,
+        http_version,
         &endpoint,
     );
 
@@ -117,8 +154,8 @@ fn replay_attempt(
         if let Some(sub) = status.and_then(|s| s.sub_status()) {
             req.with_sub_status(sub);
         }
-        if duration_ms > 0.0 {
-            req.with_server_duration_ms(duration_ms);
+        if server_duration_ms > 0.0 {
+            req.with_server_duration_ms(server_duration_ms);
         }
     });
 
@@ -205,4 +242,98 @@ pub(crate) fn build_context(
     builder.set_operation_status(final_status.status_code(), final_status.sub_status());
 
     builder.complete()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::diagnostics::capture::{
+        finish, AttemptRecord, DiagnosticsPolicy, DiagnosticsRecorder, LogPool, Outcome,
+    };
+    use crate::diagnostics::DiagnosticsContextBuilder;
+    use std::sync::Arc;
+
+    fn options() -> Arc<DiagnosticsOptions> {
+        Arc::new(DiagnosticsOptions::default())
+    }
+
+    /// Builds a context through the capture path (record -> gate -> reconstruct) for an attempt that
+    /// carries non-default transport facets and a server-reported duration.
+    fn captured_context() -> DiagnosticsContext {
+        let pool = Arc::new(LogPool::default());
+        let mut rec = DiagnosticsRecorder::start(&pool, "read_item", "https://acct/", "act-parity");
+        rec.record_attempt(
+            AttemptRecord::new(ExecutionContext::Initial, "West US", "https://west/", 200)
+                .with_service_request_id("svc-200")
+                .with_request_charge(3.5)
+                .with_transport(
+                    PipelineType::Metadata,
+                    TransportSecurity::EmulatorWithInsecureCertificates,
+                    TransportKind::Gateway20,
+                    TransportHttpVersion::Http11,
+                )
+                .with_server_duration_ms(12.0)
+                .with_duration_ns(20_000_000),
+        );
+        rec.record_end(Outcome::Success, 1, 200, None, Some(20_000_000));
+        finish(rec, &DiagnosticsPolicy::always(), options()).expect("context built")
+    }
+
+    /// The same logical attempt fed straight to the builder — the parity reference.
+    fn reference_context() -> DiagnosticsContext {
+        let mut builder =
+            DiagnosticsContextBuilder::new(ActivityId::from_string("act-parity".into()), options());
+        let endpoint = endpoint_for("West US", "https://west/");
+        let handle = builder.start_request(
+            ExecutionContext::Initial,
+            PipelineType::Metadata,
+            TransportSecurity::EmulatorWithInsecureCertificates,
+            TransportKind::Gateway20,
+            TransportHttpVersion::Http11,
+            &endpoint,
+        );
+        builder.update_request(handle, |req| {
+            req.with_activity_id(ActivityId::from_string("svc-200".into()));
+            req.with_charge(RequestCharge::new(3.5));
+            req.with_server_duration_ms(12.0);
+        });
+        builder.complete_request(handle, StatusCode::from(200), None);
+        builder.set_operation_status(StatusCode::from(200), None);
+        builder.complete()
+    }
+
+    #[test]
+    fn reconstruction_carries_real_facets_not_hardcoded_defaults() {
+        let ctx = captured_context();
+        let req = &ctx.requests()[0];
+        // These would all be the old hardcoded DataPlane/Secure/Gateway/Http2 values if the
+        // reconstruction were still fabricating them.
+        assert_eq!(req.pipeline_type(), PipelineType::Metadata);
+        assert_eq!(
+            req.transport_security(),
+            TransportSecurity::EmulatorWithInsecureCertificates
+        );
+        assert_eq!(req.transport_kind(), TransportKind::Gateway20);
+        assert_eq!(req.transport_http_version(), TransportHttpVersion::Http11);
+        // Server-reported duration is the captured 12ms, not the 20ms client span.
+        assert_eq!(req.server_duration_ms(), Some(12.0));
+    }
+
+    #[test]
+    fn capture_reconstruction_matches_builder_reference() {
+        let captured = captured_context();
+        let reference = reference_context();
+        let cap = &captured.requests()[0];
+        let refr = &reference.requests()[0];
+        assert_eq!(cap.execution_context(), refr.execution_context());
+        assert_eq!(cap.pipeline_type(), refr.pipeline_type());
+        assert_eq!(cap.transport_security(), refr.transport_security());
+        assert_eq!(cap.transport_kind(), refr.transport_kind());
+        assert_eq!(cap.transport_http_version(), refr.transport_http_version());
+        assert_eq!(cap.region(), refr.region());
+        assert_eq!(cap.status().status_code(), refr.status().status_code());
+        assert_eq!(cap.request_charge(), refr.request_charge());
+        assert_eq!(cap.server_duration_ms(), refr.server_duration_ms());
+        assert_eq!(captured.request_count(), reference.request_count());
+    }
 }

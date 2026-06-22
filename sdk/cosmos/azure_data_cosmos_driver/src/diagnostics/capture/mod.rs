@@ -11,8 +11,12 @@
 //! fidelity and the operation surfaces it via `CosmosResponse::diagnostics()` /
 //! `CosmosResponse::capture_diagnostics()`.
 //!
-//! What ships unconditionally from this module is only the **gate**: a [`DiagnosticsPolicy`]
-//! ([`Mode::Off`] / [`Mode::Threshold`] / [`Mode::Always`]) plus [`should_build`], evaluated at
+//! What ships unconditionally from this module is only the **gate**: a
+//! [`DiagnosticsPolicy`](crate::diagnostics::capture::DiagnosticsPolicy)
+//! ([`Mode::Off`](crate::diagnostics::capture::Mode::Off) /
+//! [`Mode::Threshold`](crate::diagnostics::capture::Mode::Threshold) /
+//! [`Mode::Always`](crate::diagnostics::capture::Mode::Always)) plus
+//! [`should_build`](crate::diagnostics::capture::should_build), evaluated at
 //! operation end against the outcome + elapsed time to decide whether the builder-produced
 //! context is *exposed* through `capture_diagnostics()`. The gate never builds the surfaced
 //! context; it only governs exposure.
@@ -20,13 +24,15 @@
 //! The deferred capture design (behind `capture_engine`) evaluates a future
 //! capture-then-reconstruct path: a lock-free per-attempt `DiagnosticsRecorder` appends to a
 //! pooled event log, the same gate decides whether to build, and past the gate the typed log is
-//! replayed onto a `DiagnosticsContextBuilder`. That reconstruction is still **lossy** (it does
-//! not yet carry every builder field, and it maps client-observed latency where the builder
-//! records true server timing) and stays behind the feature until a parity harness proves it
-//! matches the builder byte-for-byte. See `DIAGNOSTICS-CAPTURE.md`.
+//! replayed onto a `DiagnosticsContextBuilder`. The reconstruction carries the captured
+//! per-attempt facets (pipeline type, transport security/kind, HTTP version) and the
+//! server-reported duration — validated against the builder by a parity harness — and stays behind
+//! the feature because the live driver pipeline does not yet feed the recorder. See
+//! `DIAGNOSTICS-CAPTURE.md`.
 //!
-//! The gate defaults to [`Mode::Always`] — diagnostics are exposed out-of-the-box. Set
-//! [`Mode::Threshold`] or [`Mode::Off`] via
+//! The gate defaults to [`Mode::Always`](crate::diagnostics::capture::Mode::Always) — diagnostics
+//! are exposed out-of-the-box. Set [`Mode::Threshold`](crate::diagnostics::capture::Mode::Threshold)
+//! or [`Mode::Off`](crate::diagnostics::capture::Mode::Off) via
 //! [`DriverOptionsBuilder::with_capture_diagnostics_policy`](crate::options::DriverOptionsBuilder)
 //! (reached via [`DriverOptions::builder`](crate::options::DriverOptions::builder)) to make the
 //! gate drop fast-success diagnostics.

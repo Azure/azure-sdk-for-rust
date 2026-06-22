@@ -128,4 +128,42 @@ mod tests {
         clone.give_back(EventLogStorage::with_capacity(1, 1));
         assert_eq!(pool.pooled(), 1, "Arc clones share the backing store");
     }
+
+    #[test]
+    fn concurrent_rent_and_drop_is_consistent() {
+        // Many threads concurrently rent a lease, write to it, and drop it (returning storage to
+        // the shared pool). The pool's mutex must keep this race-free: no panic, no lost/duplicated
+        // storage, and the final pooled count stays within the configured bound.
+        use std::thread;
+
+        let pool = Arc::new(LogPool::default());
+        let threads: Vec<_> = (0..16)
+            .map(|_| {
+                let pool = Arc::clone(&pool);
+                thread::spawn(move || {
+                    for _ in 0..1_000 {
+                        let mut log = pool.rent();
+                        let op = log.push_span(
+                            SpanKind::Operation,
+                            None,
+                            TimeOffset::ZERO,
+                            TimeOffset::ZERO,
+                        );
+                        log.attr_str(op, AttrKey::OperationName, "read_item");
+                        // `log` drops here, returning its storage to the shared pool.
+                    }
+                })
+            })
+            .collect();
+        for t in threads {
+            t.join().expect("worker thread did not panic");
+        }
+        // Every lease was dropped, so the pool holds storages but never more than its bound.
+        assert!(
+            pool.pooled() <= MAX_POOLED,
+            "pooled count must stay within MAX_POOLED"
+        );
+        // The pool is still usable and hands out cleared storage after the stress run.
+        assert!(pool.rent().is_empty(), "a reused storage is cleared");
+    }
 }
