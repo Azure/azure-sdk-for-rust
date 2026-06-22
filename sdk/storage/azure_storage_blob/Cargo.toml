@@ -16,14 +16,14 @@ categories = ["api-bindings"]
 [features]
 default = ["tokio", "azure_core/default"]
 tokio = ["dep:tokio", "azure_core/tokio"]
-sas = ["dep:azure_storage_sas"]
+sas_builder = ["dep:azure_storage_sas"]
 
 [dependencies]
 async-stream.workspace = true
 async-trait.workspace = true
 azure_core = { workspace = true, features = ["xml"] }
 azure_storage_common = { path = "../azure_storage_common", version = "0.1.0" }
-azure_storage_sas = { workspace = true, optional = true }
+azure_storage_sas = { path = "../azure_storage_sas", version = "0.1.0", optional = true }
 bytes.workspace = true
 futures.workspace = true
 percent-encoding.workspace = true

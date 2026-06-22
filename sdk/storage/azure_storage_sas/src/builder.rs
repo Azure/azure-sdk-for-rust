@@ -7,8 +7,9 @@ use crate::resource::blob::{
     blob_udk_query_parameters, blob_udk_string_to_sign, Blob, BlobPermissions, Container,
     ContainerPermissions, Directory,
 };
-use crate::resource::{Queue, QueuePermissions};
-use crate::SAS_VERSION;
+use crate::resource::{
+    queue_udk_query_parameters, queue_udk_string_to_sign, Queue, QueuePermissions,
+};
 use azure_core::error::{Error, ErrorKind};
 use azure_storage_common::models::UserDelegationKey;
 use base64::Engine;
@@ -18,7 +19,9 @@ use sha2::Sha256;
 use std::collections::BTreeMap;
 use time::OffsetDateTime;
 
-/// Characters that must be percent-encoded in SAS query parameter values.
+/// Percent-encoding set for SAS query parameter values.
+///
+/// Encodes everything except the RFC 3986 unreserved characters (`A-Z a-z 0-9 - _ . ~`).
 const ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
     .remove(b'-')
     .remove(b'_')
@@ -572,65 +575,14 @@ impl SasBuilder<'_, state::DirectoryState> {
 impl SasBuilder<'_, state::QueueState> {
     /// Builds the signed SAS query parameter string.
     pub fn build(&self) -> String {
-        let key = &self.key;
-        let sts = format!(
-            "{sp}\n{st}\n{se}\n{cr}\n\
-             {skoid}\n{sktid}\n{skt}\n{ske}\n{sks}\n{skv}\n\
-             {skdutid}\n{sduoid}\n\
-             {sip}\n{spr}\n{sv}",
-            sp = self.state.permissions,
-            st = self.fields.start_str(),
-            se = self.fields.expiry_str(),
-            cr = self
-                .state
-                .resource
-                .canonicalized_resource(&self.fields.account),
-            skoid = key.signed_oid,
-            sktid = key.signed_tid,
-            skt = Fields::format_time(key.signed_start),
-            ske = Fields::format_time(key.signed_expiry),
-            sks = key.signed_service,
-            skv = key.signed_version,
-            skdutid = self.fields.delegated_tenant_id.as_deref().unwrap_or(""),
-            sduoid = self
-                .fields
-                .delegated_user_object_id
-                .as_deref()
-                .unwrap_or(""),
-            sip = self.fields.ip_str(),
-            spr = self.fields.protocol_str(),
-            sv = SAS_VERSION,
-        );
-
-        let signature = sign(key.value, &sts);
-
-        let mut parts = Vec::with_capacity(15);
-        parts.push(format!("sv={SAS_VERSION}"));
-        if let Some(ref start) = self.fields.start {
-            parts.push(format!("st={}", Fields::format_time(start)));
-        }
-        parts.push(format!("se={}", self.fields.expiry_str()));
-        parts.push(format!("sp={}", self.state.permissions));
-        if let Some(ref ip) = self.fields.ip_range {
-            parts.push(format!("sip={ip}"));
-        }
-        if let Some(ref proto) = self.fields.protocol {
-            parts.push(format!("spr={proto}"));
-        }
-        parts.push(format!("skoid={}", key.signed_oid));
-        parts.push(format!("sktid={}", key.signed_tid));
-        parts.push(format!("skt={}", Fields::format_time(key.signed_start)));
-        parts.push(format!("ske={}", Fields::format_time(key.signed_expiry)));
-        parts.push(format!("sks={}", key.signed_service));
-        parts.push(format!("skv={}", key.signed_version));
-        if let Some(ref v) = self.fields.delegated_tenant_id {
-            parts.push(format!("skdutid={}", Fields::encode(v)));
-        }
-        if let Some(ref v) = self.fields.delegated_user_object_id {
-            parts.push(format!("sduoid={}", Fields::encode(v)));
-        }
-        parts.push(format!("sig={}", Fields::encode(&signature)));
-        parts.join("&")
+        let canonical = self
+            .state
+            .resource
+            .canonicalized_resource(&self.fields.account);
+        let sts =
+            queue_udk_string_to_sign(&self.state.permissions, &self.fields, &self.key, &canonical);
+        let signature = sign(self.key.value, &sts);
+        queue_udk_query_parameters(&self.state.permissions, &self.fields, &self.key, &signature)
     }
 }
 

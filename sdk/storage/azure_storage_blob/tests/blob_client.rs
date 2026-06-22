@@ -1590,7 +1590,7 @@ async fn test_gzip_blob_with_metadata_roundtrip(ctx: TestContext) -> Result<(), 
 }
 
 /// SAS E2E: generate a user delegation SAS URL for a blob and download it without credentials.
-#[cfg(feature = "sas")]
+#[cfg(feature = "sas_builder")]
 #[recorded::test(live)]
 async fn test_blob_user_delegation_sas(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     use azure_core::http::{RequestContent, XmlFormat};

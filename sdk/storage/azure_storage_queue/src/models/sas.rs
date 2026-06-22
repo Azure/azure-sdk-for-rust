@@ -11,6 +11,7 @@
 //! [`QueueClient::generate_user_delegation_sas_url`](crate::QueueClient::generate_user_delegation_sas_url)
 //! convenience method rather than the lower-level [`SasBuilder`].
 
+pub use azure_storage_common::models::UserDelegationKey;
 pub use azure_storage_sas::resource::{Queue, QueuePermissions};
 pub use azure_storage_sas::state::QueueState;
-pub use azure_storage_sas::{SasBuilder, SasIpRange, SasProtocol, UserDelegationKey, SAS_VERSION};
+pub use azure_storage_sas::{SasBuilder, SasIpRange, SasProtocol, SAS_VERSION};

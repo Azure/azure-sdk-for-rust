@@ -130,7 +130,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Generating SAS URLs
 
-Enable the `sas` Cargo feature to get the `generate_user_delegation_sas_url` method on `BlobClient` and `BlobContainerClient`, plus the lower-level builder re-exported under `azure_storage_blob::models::sas`. Snapshot-scoped and version-scoped clients built with `BlobClient::with_snapshot` or `BlobClient::with_version` flow their qualifier through automatically.
+Enable the `sas_builder` Cargo feature to get the `generate_user_delegation_sas_url` method on `BlobClient` and `BlobContainerClient`, plus the lower-level builder re-exported under `azure_storage_blob::models::sas`. Snapshot-scoped and version-scoped clients built with `BlobClient::with_snapshot` or `BlobClient::with_version` flow their qualifier through automatically.
 
 ### Automatic decompression with custom HTTP transports
 

@@ -9,8 +9,8 @@ pub(crate) mod error;
 pub(crate) mod extensions;
 pub(crate) mod http_ranges;
 mod method_options;
-#[cfg(feature = "sas")]
-#[cfg_attr(docsrs, doc(cfg(feature = "sas")))]
+#[cfg(feature = "sas_builder")]
+#[cfg_attr(docsrs, doc(cfg(feature = "sas_builder")))]
 pub mod sas;
 
 pub use http_ranges::HttpRange;

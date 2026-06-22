@@ -85,11 +85,7 @@ impl QueueClient {
             Err(e) => Err(e),
         }
     }
-}
 
-#[cfg(feature = "sas")]
-#[cfg_attr(docsrs, doc(cfg(feature = "sas")))]
-impl QueueClient {
     /// Generates a user delegation SAS URL for this queue.
     ///
     /// The `configure` closure receives a [`SasBuilder`](azure_storage_sas::SasBuilder)
@@ -139,10 +135,12 @@ impl QueueClient {
     /// )?;
     /// # Ok(()) }
     /// ```
+    #[cfg(feature = "sas_builder")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "sas_builder")))]
     pub fn generate_user_delegation_sas_url<F>(
         &self,
         account_name: &str,
-        key: &azure_storage_sas::UserDelegationKey,
+        key: &azure_storage_common::models::UserDelegationKey,
         permissions: azure_storage_sas::resource::QueuePermissions,
         expiry: time::OffsetDateTime,
         configure: F,
@@ -167,6 +165,21 @@ impl QueueClient {
             })
             .unwrap_or_default();
 
+        // Emulator and path-style endpoints (e.g. Azurite) encode the account
+        // name as the first path segment rather than as a subdomain of the host.
+        // Detect this layout and strip the leading segment so that the remainder
+        // is always [queue].
+        let is_path_prefix = self
+            .endpoint
+            .host_str()
+            .map_or(false, |h| !h.starts_with(account_name))
+            && segments.first().map(String::as_str) == Some(account_name);
+        let segments: &[String] = if is_path_prefix {
+            &segments[1..]
+        } else {
+            &segments
+        };
+
         if segments.len() != 1 {
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
@@ -183,7 +196,7 @@ impl QueueClient {
 }
 
 /// Appends a SAS query string to a URL, preserving existing query parameters.
-#[cfg(feature = "sas")]
+#[cfg(feature = "sas_builder")]
 fn append_sas_query(endpoint: &Url, query: &str) -> Url {
     let mut url = endpoint.clone();
     match url.query() {
@@ -234,7 +247,7 @@ mod tests {
         assert!(result.is_ok());
     }
 
-    #[cfg(feature = "sas")]
+    #[cfg(feature = "sas_builder")]
     #[test]
     fn generate_user_delegation_sas_url_attaches_sas_query() {
         use crate::models::sas::{QueuePermissions, UserDelegationKey};
@@ -265,6 +278,74 @@ mod tests {
 
         let query = sas_url.query().unwrap();
         assert!(query.contains("sp=ra"), "got: {query}");
+        assert!(query.contains("sig="), "got: {query}");
+    }
+
+    #[cfg(feature = "sas_builder")]
+    #[test]
+    fn sas_url_path_prefix_endpoint_strips_account_segment() {
+        use crate::models::sas::{QueuePermissions, UserDelegationKey};
+        use time::macros::datetime;
+
+        let url = Url::parse("http://127.0.0.1:10001/devstoreaccount1/myqueue").unwrap();
+        let client = QueueClient::new(url, None, None).unwrap();
+        let udk = UserDelegationKey {
+            signed_delegated_user_tid: None,
+            signed_oid: Some("oid".into()),
+            signed_tid: Some("tid".into()),
+            signed_start: Some(datetime!(2025-01-15 00:00:00 UTC)),
+            signed_expiry: Some(datetime!(2025-01-16 00:00:00 UTC)),
+            signed_service: Some("b".into()),
+            signed_version: Some("2025-11-05".into()),
+            value: Some(b"testkey".to_vec()),
+        };
+
+        let sas_url = client
+            .generate_user_delegation_sas_url(
+                "devstoreaccount1",
+                &udk,
+                QueuePermissions::new().read().process(),
+                datetime!(2025-06-01 12:00:00 UTC),
+                |sas| sas,
+            )
+            .unwrap();
+
+        assert_eq!(sas_url.path(), "/devstoreaccount1/myqueue");
+        let query = sas_url.query().unwrap();
+        assert!(query.contains("sig="), "got: {query}");
+    }
+
+    #[cfg(feature = "sas_builder")]
+    #[test]
+    fn sas_url_queue_named_same_as_account_no_false_skip() {
+        use crate::models::sas::{QueuePermissions, UserDelegationKey};
+        use time::macros::datetime;
+
+        // Queue has the same name as the account — must NOT be skipped.
+        let url = Url::parse("https://acct.queue.core.windows.net/acct").unwrap();
+        let client = QueueClient::new(url, None, None).unwrap();
+        let udk = UserDelegationKey {
+            signed_delegated_user_tid: None,
+            signed_oid: Some("oid".into()),
+            signed_tid: Some("tid".into()),
+            signed_start: Some(datetime!(2025-01-15 00:00:00 UTC)),
+            signed_expiry: Some(datetime!(2025-01-16 00:00:00 UTC)),
+            signed_service: Some("b".into()),
+            signed_version: Some("2025-11-05".into()),
+            value: Some(b"testkey".to_vec()),
+        };
+
+        let sas_url = client
+            .generate_user_delegation_sas_url(
+                "acct",
+                &udk,
+                QueuePermissions::new().read(),
+                datetime!(2025-06-01 12:00:00 UTC),
+                |sas| sas,
+            )
+            .unwrap();
+
+        let query = sas_url.query().unwrap();
         assert!(query.contains("sig="), "got: {query}");
     }
 }

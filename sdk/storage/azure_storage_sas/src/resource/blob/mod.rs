@@ -2,26 +2,60 @@
 // Licensed under the MIT License.
 
 //! Blob-service resource types: blob, container, and directory.
+//!
+//! # Examples
+//!
+//! ## Blob user delegation SAS
+//!
+//! ```rust no_run
+//! use azure_storage_sas::{SasBuilder, UserDelegationKey, resource::blob::{Blob, BlobPermissions}};
+//! use time::OffsetDateTime;
+//!
+//! # fn example(udk: UserDelegationKey) -> azure_core::Result<()> {
+//! let token = SasBuilder::new("myaccount", &udk,
+//!         OffsetDateTime::now_utc() + time::Duration::hours(1))?
+//!     .blob(Blob::new("images", "photo.jpg"), BlobPermissions::new().read())
+//!     .content_type("image/jpeg")
+//!     .build();
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ## Container SAS
+//!
+//! ```rust no_run
+//! use azure_storage_sas::{SasBuilder, UserDelegationKey, resource::blob::{Container, ContainerPermissions}};
+//! use time::OffsetDateTime;
+//!
+//! # fn example(udk: UserDelegationKey) -> azure_core::Result<()> {
+//! let token = SasBuilder::new("myaccount", &udk,
+//!         OffsetDateTime::now_utc() + time::Duration::hours(4))?
+//!     .container(Container::new("logs"), ContainerPermissions::new().read().list())
+//!     .build();
+//! # Ok(())
+//! # }
+//! ```
 
 mod blob_resource;
-mod container;
-mod directory;
+mod container_resource;
+mod directory_resource;
 
 pub use blob_resource::{Blob, BlobPermissions};
-pub use container::Container;
-pub use directory::Directory;
+pub use container_resource::Container;
+pub use directory_resource::Directory;
 
 /// Permissions shared by container and directory resources.
 ///
 /// Serialization order: `racwdxyltmeopi`.
-pub use container::ContainerPermissions;
+pub use container_resource::ContainerPermissions;
 
 use crate::builder::{Fields, ValidatedKey};
 use crate::SAS_VERSION;
 
-/// Builds the blob-service user delegation SAS string-to-sign (28 fields).
+/// Builds the blob-service user delegation SAS string-to-sign.
 ///
 /// Used by all blob-service resource types (blob, snapshot, version, container, directory).
+/// See <https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas#specify-the-signature>.
 pub(crate) fn blob_udk_string_to_sign(
     permissions: &impl std::fmt::Display,
     fields: &Fields,
@@ -30,15 +64,35 @@ pub(crate) fn blob_udk_string_to_sign(
     canonicalized_resource: &str,
     snapshot_time: &str,
 ) -> String {
-    // Fields: sp, st, se, canonicalizedResource, skoid, sktid, skt, ske, sks, skv,
-    //         saoid, suoid, scid, skdutid, sduoid, sip, spr, sv, sr, snapshotTime,
-    //         ses, canonicalizedSignedRequestHeaders, canonicalizedSignedRequestQueryParameters,
-    //         rscc, rscd, rsce, rscl, rsct
     format!(
-        "{sp}\n{st}\n{se}\n{cr}\n{skoid}\n{sktid}\n{skt}\n{ske}\n{sks}\n{skv}\n\
-         {saoid}\n{suoid}\n{scid}\n{skdutid}\n{sduoid}\n\
-         {sip}\n{spr}\n{sv}\n{sr}\n{snapshot}\n\
-         {ses}\n{srh}\n{srq}\n{rscc}\n{rscd}\n{rsce}\n{rscl}\n{rsct}",
+        "{sp}\n\
+         {st}\n\
+         {se}\n\
+         {cr}\n\
+         {skoid}\n\
+         {sktid}\n\
+         {skt}\n\
+         {ske}\n\
+         {sks}\n\
+         {skv}\n\
+         {saoid}\n\
+         {suoid}\n\
+         {scid}\n\
+         {skdutid}\n\
+         {sduoid}\n\
+         {sip}\n\
+         {spr}\n\
+         {sv}\n\
+         {sr}\n\
+         {snapshot}\n\
+         {ses}\n\
+         {srh}\n\
+         {srq}\n\
+         {rscc}\n\
+         {rscd}\n\
+         {rsce}\n\
+         {rscl}\n\
+         {rsct}",
         sp = permissions,
         st = fields.start_str(),
         se = fields.expiry_str(),
@@ -79,8 +133,6 @@ pub(crate) fn blob_udk_query_parameters(
     directory_depth: Option<u32>,
     signature: &str,
 ) -> String {
-    // Order: sv, sr, st, se, sp, sip, spr, skoid, sktid, skt, ske, sks, skv,
-    //        saoid, suoid, scid, skdutid, sduoid, ses, srh, srq, sdd, rscc, rscd, rsce, rscl, rsct, sig
     let mut parts = Vec::with_capacity(26);
     parts.push(format!("sv={SAS_VERSION}"));
     parts.push(format!("sr={sr}"));

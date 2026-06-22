@@ -76,19 +76,19 @@ impl Blob {
 /// Serialization order: `racwdxytmeopi`.
 #[derive(Clone, Copy, Default)]
 pub struct BlobPermissions {
-    pub read: bool,
-    pub add: bool,
-    pub create: bool,
-    pub write: bool,
-    pub delete: bool,
-    pub delete_version: bool,
-    pub permanent_delete: bool,
-    pub tags: bool,
-    pub move_blob: bool,
-    pub execute: bool,
-    pub ownership: bool,
-    pub permissions: bool,
-    pub set_immutability_policy: bool,
+    read: bool,
+    add: bool,
+    create: bool,
+    write: bool,
+    delete: bool,
+    delete_version: bool,
+    permanent_delete: bool,
+    tags: bool,
+    move_blob: bool,
+    execute: bool,
+    ownership: bool,
+    permissions: bool,
+    set_immutability_policy: bool,
 }
 
 impl BlobPermissions {

@@ -20,5 +20,5 @@ pub use parsers::*;
 mod logging;
 pub mod models;
 pub use models::error::{Result, StorageError};
-#[cfg(feature = "sas")]
+#[cfg(feature = "sas_builder")]
 mod sas_helpers;

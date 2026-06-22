@@ -12,10 +12,9 @@
 //! and [`BlobContainerClient::generate_user_delegation_sas_url`](crate::BlobContainerClient::generate_user_delegation_sas_url)
 //! convenience methods rather than the lower-level [`SasBuilder`].
 
+pub use azure_storage_common::models::UserDelegationKey;
 pub use azure_storage_sas::resource::blob::{
     Blob, BlobPermissions, Container, ContainerPermissions, Directory,
 };
 pub use azure_storage_sas::state::{BlobState, ContainerState, DirectoryState};
-pub use azure_storage_sas::{
-    BlobServiceState, SasBuilder, SasIpRange, SasProtocol, UserDelegationKey, SAS_VERSION,
-};
+pub use azure_storage_sas::{BlobServiceState, SasBuilder, SasIpRange, SasProtocol, SAS_VERSION};

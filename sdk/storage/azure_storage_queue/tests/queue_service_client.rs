@@ -724,7 +724,7 @@ pub async fn get_queue_service_client_secondary(
 }
 
 /// SAS E2E: generate a user delegation SAS URL for a queue and use it to enqueue/dequeue a message.
-#[cfg(feature = "sas")]
+#[cfg(feature = "sas_builder")]
 #[recorded::test(live)]
 async fn test_queue_user_delegation_sas(ctx: TestContext) -> Result<()> {
     use azure_storage_queue::models::sas::QueuePermissions;
