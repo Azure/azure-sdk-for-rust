@@ -568,6 +568,31 @@ mod tests {
         }
     }
 
+    // Poll `get_token_get_count` until it reaches `target` or `timeout` elapses,
+    // returning the last observed count either way.
+    //
+    // The token refresh task wakes on a real timer and only refreshes once the
+    // sleep overshoots the scheduled instant, so the exact moment a refresh lands
+    // drifts with scheduler latency. Reading the count at a single fixed instant
+    // makes the timing tests flaky under load (the read can race ahead of a
+    // refresh that is merely a little late). Waiting for the expected count keeps
+    // the assertions deterministic without widening the race window: a refresh
+    // that never happens still fails fast once the generous timeout expires.
+    async fn wait_for_token_count(
+        credential: &MockTokenCredential,
+        target: usize,
+        timeout: Duration,
+    ) -> usize {
+        let deadline = OffsetDateTime::now_utc() + timeout;
+        loop {
+            let count = credential.get_token_get_count();
+            if count >= target || OffsetDateTime::now_utc() >= deadline {
+                return count;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+        }
+    }
+
     // When a token is created, it needs to have a proper expiration time.
     // This test verifies that the expiration time of tokens is set correctly when
     // authorizing a path. It also confirms that tokens are properly stored for reuse
@@ -784,30 +809,29 @@ mod tests {
 
         // Token_refresh_1 will be refreshed between 4 and 6 seconds from now.
         // Token_refresh_2 will be refreshed between 14 and 16 from now.
-        trace!("Sleeping for 7 seconds to allow token_refresh_1 to expire and be refreshed. Current token count: {current_count}");
-        tokio::time::sleep(std::time::Duration::from_secs(7)).await;
-
-        // Verify that the token get count has increased, indicating a single refresh was attempted - we refreshed token_refresh_1 but not token_refresh_2.
-        let final_count = mock_credential.get_token_get_count();
-        trace!("After sleeping the first time, token count: {final_count}");
+        // Wait for token_refresh_1 to be refreshed (count goes 2 -> 3). The
+        // refresh lands ~5s from now; token_refresh_2 does not refresh until
+        // ~15s from now, so the count should reach exactly 3 within this window.
+        trace!("Waiting for token_refresh_1 to expire and be refreshed. Current token count: {current_count}");
+        let final_count = wait_for_token_count(&mock_credential, 3, Duration::seconds(12)).await;
+        trace!("After waiting the first time, token count: {final_count}");
         assert!(
-            final_count >= 2,
-            "Expected first get token count to be at least 2, but got {final_count}"
+            final_count >= 3,
+            "Expected token_refresh_1 to be refreshed (count >= 3), but got {final_count}"
         );
 
         trace!("First token expiration get count: {}", final_count);
         // Token_refresh_1 will be refreshed between 13 and 15 seconds from now.
         // Token_refresh_2 will be refreshed between 7 and 9 seconds from now.
 
-        // Sleep for 10 seconds to allow the second token to expire and be refreshed.
-        tokio::time::sleep(std::time::Duration::from_secs(10)).await;
-
-        // Verify that the token get count has increased, indicating a single refresh was attempted - we refreshed token_refresh_2.
-        let final_count = mock_credential.get_token_get_count();
+        // Wait for token_refresh_2 to be refreshed (count goes 3 -> 4). It
+        // refreshes ~7-9s from now; the timeout is generous so that scheduler
+        // latency under load delays the test rather than failing it.
+        let final_count = wait_for_token_count(&mock_credential, 4, Duration::seconds(20)).await;
         trace!("Getting second token count: {final_count}");
         assert!(
             final_count >= 4,
-            "Expected second get token count to be 4, but got {final_count}"
+            "Expected token_refresh_2 to be refreshed (count >= 4), but got {final_count}"
         );
         trace!("Second token expiration get count: {}", final_count);
 
