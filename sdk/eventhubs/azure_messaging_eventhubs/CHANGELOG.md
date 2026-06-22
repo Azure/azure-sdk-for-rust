@@ -20,6 +20,7 @@
 ### Other Changes
 
 - Reduced lock contention when a single `ProducerClient` or `ConsumerClient` is shared across threads. The per-path sender, session, and receiver caches no longer serialize on a connection-wide lock: each partition's link attach runs without holding the shared lock, so the partitions on a shared client set up and recover concurrently instead of one at a time, and steady-state sends no longer queue behind an unrelated partition's attach.
+- Added `tracing` span instrumentation and structured-field logging across the connection, producer, consumer, event-processor, and checkpoint paths. Lifecycle events (connection open/close, reconnect outcome, link attach, partition ownership claim/revoke) and failure conditions (receive errors, link-stolen, send/batch rejections, unauthorized fast-fail, token-refresh failures) are now visible at the default `info`/`warn` levels, with diagnostic values attached as structured fields (`partition_id`, `connection_id`, `source_url`, and similar) following a documented level policy. Per-message hot paths stay at `trace`. Credentials are never logged, and event payloads are redacted by `SafeDebug` unless the `azure_core` `debug` feature is enabled. See the README for details and a subscriber example. ([#4592](https://github.com/Azure/azure-sdk-for-rust/issues/4592))
 
 ## 0.14.0 (Unreleased)
 

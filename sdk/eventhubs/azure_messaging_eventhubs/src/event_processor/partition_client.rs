@@ -68,8 +68,9 @@ impl PartitionClient {
         if let Some(receiver) = self.event_receiver.get() {
             if let Err(e) = receiver.request_close().await {
                 warn!(
-                    "Failed to close event receiver during revocation for partition {}: {:?}",
-                    self.partition_id, e
+                    partition_id = %self.partition_id,
+                    err = ?e,
+                    "Failed to close event receiver during revocation for partition."
                 );
             }
         }
@@ -87,8 +88,16 @@ impl PartitionClient {
             Box::pin(event_receiver.stream_events())
                 as Pin<Box<dyn Stream<Item = Result<ReceivedEventData>> + '_>>
         } else {
+            warn!(
+                partition_id = %self.partition_id,
+                "stream_events called but event receiver is not set for this partition; \
+                 returning an error stream."
+            );
             Box::pin(futures::stream::once(std::future::ready(Err(
-                EventHubsError::with_message("Event receiver is not set for this partition."),
+                EventHubsError::with_message(format!(
+                    "Event receiver is not set for partition {}.",
+                    self.partition_id
+                )),
             ))))
         }
     }
@@ -116,17 +125,17 @@ impl PartitionClient {
     pub async fn close(mut self) -> Result<()> {
         // Detach the event receiver
         if let Some(event_receiver) = self.event_receiver.take() {
-            debug!("Closing event receiver for partition {}", self.partition_id);
+            debug!(partition_id = %self.partition_id, "Closing event receiver for partition.");
             event_receiver.close().await?;
         } else {
-            debug!("Event receiver not set for partition {}", self.partition_id);
+            debug!(partition_id = %self.partition_id, "Event receiver not set for partition.");
         }
         // Remove the partition client from the processor.
         let consumers = self.consumers.upgrade();
         if let Some(consumers) = consumers {
             debug!(
-                "Removing client for partition {} from the consumers map.",
-                self.partition_id
+                partition_id = %self.partition_id,
+                "Removing client for partition from the consumers map."
             );
             consumers.remove_partition_client(&self.partition_id)?;
         }
@@ -170,6 +179,12 @@ impl PartitionClient {
             }
         }
 
+        debug!(
+            partition_id = %self.partition_id,
+            sequence_number = ?sequence_number_option,
+            offset = ?offset_option,
+            "Updating checkpoint for partition."
+        );
         let checkpoint = Checkpoint {
             fully_qualified_namespace: self.client_details.fully_qualified_namespace.clone(),
             event_hub_name: self.client_details.eventhub_name.clone(),
@@ -194,8 +209,8 @@ impl PartitionClient {
         // Set the event receiver
         self.event_receiver.set(event_receiver).map_err(|_| {
             warn!(
-                "Event receiver already set for partition {}",
-                self.partition_id
+                partition_id = %self.partition_id,
+                "Event receiver already set for partition."
             );
             // If the event receiver is already set, return an error
             EventHubsError::with_message(format!(
@@ -210,8 +225,8 @@ impl PartitionClient {
 impl Drop for PartitionClient {
     fn drop(&mut self) {
         trace!(
-            "Dropping PartitionClient for partition {}",
-            self.partition_id
+            partition_id = %self.partition_id,
+            "Dropping PartitionClient for partition."
         );
     }
 }
