@@ -22,7 +22,7 @@
 > harness validates the reconstruction against the builder. It remains behind the feature because
 > the live driver pipeline does not yet feed the recorder; wiring that feed (so the engine carries
 > every builder field on a real operation) is the remaining work before it could become
-> authoritative (see the notes at the end).
+> authoritative.
 
 ## 1. Problem & goals
 
@@ -280,9 +280,11 @@ actually requested.
 - **Ownership flip, driver-scoped.** The rich diagnostics model moved from
   `diagnostics/diagnostics_context.rs` to `diagnostics/capture/model.rs` (capture owns it); the
   public re-export paths (`diagnostics::DiagnosticsContext`, …) are unchanged.
-- **The driver routes through capture.** At the operation-executor seam, the recorder records the
-  outcome + elapsed and the gate decides whether the canonical `DiagnosticsContext` is surfaced via
-  `CosmosResponse::capture_diagnostics()`.
+- **The driver evaluates the gate directly.** At the operation-executor seam, the driver evaluates
+  the gate (`should_build`) against the operation outcome + elapsed time and decides whether the
+  canonical `DiagnosticsContext` (produced by the builder) is surfaced via
+  `CosmosResponse::capture_diagnostics()` / `CosmosError::capture_diagnostics()`. The event-log
+  recorder (behind `capture_engine`) is not on this default path.
 - **`.NET`-style `summary` block** computed at finalization, and a **`DiagnosticsEncoding`** client
   option — both additive and non-breaking (default encoding `Json`).
 - **No data loss.** The pipeline keeps populating the (now capture-owned) builder, so events,
