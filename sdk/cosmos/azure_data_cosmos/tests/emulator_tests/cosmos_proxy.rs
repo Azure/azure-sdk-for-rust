@@ -6,7 +6,7 @@
 
 use super::framework;
 
-use framework::{TestClient, CONNECTION_STRING_ENV_VAR, EMULATOR_CONNECTION_STRING};
+use framework::{TestClient, TestOptions, CONNECTION_STRING_ENV_VAR, EMULATOR_CONNECTION_STRING};
 use std::error::Error;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
@@ -33,11 +33,14 @@ pub async fn proxy_disabled_by_default_ignores_env() -> Result<(), Box<dyn Error
 
     // Run a real emulator test with proxy disabled (default).
     // TestClient::run uses the default CosmosClientBuilder which has no_proxy().
-    let result = TestClient::run(async |run_context| {
-        let client = run_context.client();
-        let _ = client.database_client("nonexistent").read(None).await;
-        Ok(())
-    })
+    let result = TestClient::run_with_options(
+        async |run_context| {
+            let client = run_context.client();
+            let _ = client.database_client("nonexistent").read(None).await;
+            Ok(())
+        },
+        TestOptions::for_emulator(),
+    )
     .await;
 
     tokio::time::sleep(std::time::Duration::from_millis(100)).await;
@@ -104,12 +107,18 @@ pub async fn proxy_enabled_routes_through_proxy() -> Result<(), Box<dyn Error>> 
     };
     let parsed: azure_data_cosmos_driver::models::ConnectionString = conn_str.parse()?;
 
-    let mut builder = azure_data_cosmos::CosmosClient::builder().with_proxy_allowed(true);
+    let pool_builder = azure_data_cosmos::options::ConnectionPoolOptions::builder()
+        .with_proxy_allowed(true)
+        .with_server_certificate_validation(
+            azure_data_cosmos::options::ServerCertificateValidation::RequiredUnlessEmulator,
+        );
 
-    #[cfg(feature = "allow_invalid_certificates")]
-    {
-        builder = builder.with_allow_emulator_invalid_certificates(true);
-    }
+    let runtime = azure_data_cosmos::CosmosRuntime::builder()
+        .with_connection_pool(pool_builder.build()?)
+        .build()
+        .await?;
+
+    let builder = azure_data_cosmos::CosmosClient::builder().with_runtime(runtime);
 
     let endpoint: azure_data_cosmos::AccountEndpoint = parsed.account_endpoint().parse()?;
 

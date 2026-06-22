@@ -8,7 +8,9 @@
 use crate::framework::DriverTestClient;
 use azure_data_cosmos_driver::diagnostics::TransportKind;
 use azure_data_cosmos_driver::fault_injection::*;
-use azure_data_cosmos_driver::options::{OperationOptionsBuilder, ThrottlingRetryOptionsBuilder};
+use azure_data_cosmos_driver::options::{
+    OperationOptions, OperationOptionsBuilder, Region, ThrottlingRetryOptionsBuilder,
+};
 use std::error::Error;
 use std::sync::Arc;
 use std::time::{Duration, Instant};

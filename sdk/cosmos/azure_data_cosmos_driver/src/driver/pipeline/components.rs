@@ -3,9 +3,7 @@
 
 //! ECS-style state component types for the pipeline.
 //!
-//! Following the DOP principle of separating data from behavior, these types
-//! represent the state that flows through pipeline stages. Each pipeline stage
-//! operates on only the components it needs.
+//! Data-only state carried between pipeline stages.
 
 use std::sync::{atomic::AtomicBool, Arc};
 use std::time::{Duration, Instant};
@@ -71,6 +69,13 @@ impl std::fmt::Display for RoutingDecision {
     }
 }
 
+/// Maximum retries for backend-driven topology signals; about two minutes at 1s spacing.
+pub const MAX_BACKEND_FAILOVER_RETRIES: u32 = 120;
+
+/// Delay between backend-failover attempts; matches Java/Python's 1000ms default.
+pub const BACKEND_FAILOVER_RETRY_INTERVAL: std::time::Duration =
+    std::time::Duration::from_millis(1000);
+
 /// Operation-level retry state.
 ///
 /// Tracks failover retry count, session retry count, location index,
@@ -83,13 +88,7 @@ pub(crate) struct OperationRetryState {
     pub failover_retry_count: u32,
     /// Number of session-token retries attempted.
     ///
-    /// **Invariant:** This counter is incremented only by
-    /// [`Self::advance_session_retry`] on the 404/1002 path. The
-    /// hub-region-processing-only latch trigger in
-    /// `retry_evaluation::try_handle_read_session_not_available` reads
-    /// `== 0` to detect the first 1002 within an operation; if a future
-    /// refactor adds another increment site, that trigger gate must be
-    /// re-validated.
+    /// Invariant: only [`Self::advance_session_retry`] increments this; the 404/1002 latch reads `== 0`.
     pub session_token_retry_count: u32,
     /// Retry state for HTTP 449 RetryWith. `None` until the first 449
     /// for this operation; advanced via [`Self::advance_retry_with`].
@@ -100,40 +99,27 @@ pub(crate) struct OperationRetryState {
     /// retry-with attempts. The state is constructed lazily on first
     /// hit and stays alive for the rest of the operation.
     pub retry_with_state: Option<RetryWithRetryState>,
+    /// Multi-write backend-failover counter, separate from generic failover retries.
+    pub backend_failover_retry_count: u32,
     /// Maximum failover retries.
     pub max_failover_retries: u32,
+    /// Maximum retries for backend-driven topology signals; not customer-tunable.
+    pub max_backend_failover_retries: u32,
     /// Maximum session retries.
     pub max_session_retries: u32,
     /// Whether multiple write locations can be used.
     pub can_use_multiple_write_locations: bool,
     /// Whether this operation is on the data-plane pipeline (vs metadata).
     ///
-    /// Set once at the production call site in `execute_operation_pipeline`
-    /// from `pipeline_type.is_data_plane()`. Used to gate the
-    /// hub-region-processing-only latch so metadata-pipeline operations
-    /// (which ride the same `execute_operation_pipeline` but are scoped out
-    /// of the spec per HUB_REGION_PROCESSING_HEADER_SPEC.md §1.5) never
-    /// emit the header.
-    ///
-    /// LOAD-BEARING for the metadata-pipeline scope gate (AC-8).
-    /// The production call site MUST use the
-    /// `PipelineType::is_data_plane()` accessor — NOT `==` matching —
-    /// because `PipelineType` is `#[non_exhaustive]` and a future variant
-    /// would silently bypass an equality gate.
+    /// Load-bearing: set via `PipelineType::is_data_plane()` so non-exhaustive variants stay scoped out.
     pub is_dataplane: bool,
     /// Hub-region-processing-only latch.
     ///
-    /// Sticky within a single operation. Set on the retry triggered by the
-    /// first `404 / 1002 (READ_SESSION_NOT_AVAILABLE)` on a single-master
-    /// data-plane account; once set, every subsequent transport attempt
-    /// for this operation emits the
-    /// `x-ms-cosmos-hub-region-processing-only: True` header.
+    /// Sticky per operation after the first data-plane 404/1002 single-master retry.
     pub hub_region_processing_only: bool,
     /// Cross-hedge shared hub-region-processing-only latch.
     ///
-    /// `Some(_)` only when this `OperationRetryState` is running inside
-    /// the cross-region hedging race past the threshold; `None` otherwise
-    /// (non-hedged pipeline, and the pre-threshold zero-overhead path).
+    /// `Some(_)` only inside a post-threshold cross-region hedge race.
     pub shared_hub_region_latch: Option<Arc<AtomicBool>>,
     /// Regions excluded for this operation.
     pub excluded_regions: Vec<Region>,
@@ -144,51 +130,17 @@ pub(crate) struct OperationRetryState {
     pub partition_key_range_id: Option<PartitionKeyRangeId>,
     /// Whether PPAF allows non-idempotent write retries on failover.
     ///
-    /// When `true`, a non-idempotent write that receives a 503/429/410/408
-    /// (or transport error) can be retried to a different region for write
-    /// region discovery. Precomputed from partition-level automatic failover
-    /// being enabled on a single-master account.
+    /// Allows non-idempotent write retries for single-master PPAF write-region discovery.
     pub ppaf_write_retry_allowed: bool,
     /// Whether the per-partition circuit breaker is active for this account.
     ///
-    /// When `true`, endpoint-level `MarkEndpointUnavailable` effects are
-    /// suppressed for PPCB-eligible requests (reads, or writes on
-    /// multi-master). Failover is driven by the partition-level failure
-    /// threshold instead of marking the entire endpoint unavailable.
+    /// Suppresses endpoint marks because PPCB failover is partition-threshold driven.
     pub ppcb_active: bool,
     /// Write-path location effects deferred until the write definitively
     /// reaches a region.
     ///
-    /// On the **single-master** write path we cannot tell from a single
-    /// failed response (503, 429/3092, 410, 408, 403/3, transport error)
-    /// whether the failure was a real per-region outage or a transient blip
-    /// we'll never see again. Applying `MarkPartitionUnavailable` (and, for
-    /// PPAF, `MarkEndpointUnavailable`) immediately on every such failure
-    /// pollutes the routing state with unverified failures and makes
-    /// failover behave non-deterministically across retries.
-    ///
-    /// **Multi-master** writes do NOT defer: the per-partition circuit
-    /// breaker is the source of truth for failover, and it must observe
-    /// every failure as it happens (otherwise the breaker can never trip
-    /// for non-idempotent writes that abort).
-    ///
-    /// Deferred effects are flushed only when the write definitively
-    /// reaches a region — either `OperationAction::Complete` (HTTP 2xx) or
-    /// `OperationAction::Abort` with a region-confirming status such as 409
-    /// Conflict or 412 Precondition Failed (statuses that prove the server
-    /// processed the request). On any other abort path the buffer is
-    /// discarded.
-    ///
-    /// **What gets deferred** is decided by `partition_effects_for_deferral`:
-    /// - For single-master writes: `MarkPartitionUnavailable` (per-partition
-    ///   state should never be polluted by unverified retries).
-    /// - Additionally for PPAF on single-master writes
-    ///   (`ppaf_write_retry_allowed`): `MarkEndpointUnavailable` is also
-    ///   deferred so a transient retry doesn't darken the only write region.
-    ///
-    /// Read-path and multi-master write effects are NOT deferred — PPCB
-    /// counters drive threshold-based failover and need the failure signal
-    /// immediately.
+    /// Single-master writes defer unconfirmed marks until the write reaches a region.
+    /// Multi-master writes and reads apply marks immediately so PPCB sees every failure.
     pub pending_write_effects: Vec<LocationEffect>,
     /// Whether a cross-region hedge race has already been dispatched for
     /// this operation.
@@ -227,7 +179,9 @@ impl OperationRetryState {
             failover_retry_count: 0,
             session_token_retry_count: 0,
             retry_with_state: None,
+            backend_failover_retry_count: 0,
             max_failover_retries,
+            max_backend_failover_retries: MAX_BACKEND_FAILOVER_RETRIES,
             max_session_retries,
             can_use_multiple_write_locations,
             is_dataplane: false,
@@ -246,6 +200,11 @@ impl OperationRetryState {
     /// Whether failover retry budget allows another attempt.
     pub fn can_retry_failover(&self) -> bool {
         self.failover_retry_count < self.max_failover_retries
+    }
+
+    /// Whether multi-write backend-failover budget allows another 403/3 or 403/1008 retry.
+    pub fn can_retry_backend_failover(&self) -> bool {
+        self.backend_failover_retry_count < self.max_backend_failover_retries
     }
 
     /// Attaches the cross-hedge shared hub-region-processing-only
@@ -275,6 +234,15 @@ impl OperationRetryState {
     pub fn advance_failover(self) -> Self {
         Self {
             failover_retry_count: self.failover_retry_count + 1,
+            session_retry_routing: SessionRetryRouting::PreferredEndpoints,
+            ..self
+        }
+    }
+
+    /// Advances the dedicated backend-failover counter without touching generic failover retries.
+    pub fn advance_backend_failover(self) -> Self {
+        Self {
+            backend_failover_retry_count: self.backend_failover_retry_count + 1,
             session_retry_routing: SessionRetryRouting::PreferredEndpoints,
             ..self
         }

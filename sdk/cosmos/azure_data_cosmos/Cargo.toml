@@ -87,17 +87,16 @@ hmac_openssl = ["azure_core/hmac_openssl"]
 fault_injection = [
   "azure_data_cosmos_driver/fault_injection",
 ] # Enables support for fault injection testing
+allow_invalid_certificates = [
+] # Enables accepting invalid TLS certificates (e.g., for emulator testing). Must be combined with a TLS feature (`rustls` or `native_tls`).
 __internal_in_memory_emulator = [
   "azure_data_cosmos_driver/__internal_in_memory_emulator",
   "key_auth",
 ]
-allow_invalid_certificates = [
-] # Enables accepting invalid TLS certificates (e.g., for emulator testing). Must be combined with a TLS feature (`rustls` or `native_tls`).
 __tls = []
 
 [package.metadata.docs.rs]
 features = [
-  "allow_invalid_certificates",
   "fault_injection",
   "hmac_openssl",
   "hmac_rust",

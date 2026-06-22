@@ -21,9 +21,10 @@
 use std::sync::{Arc, Mutex};
 
 use azure_core::http::{headers::USER_AGENT, Method, Request, Url};
-use azure_data_cosmos::options::Region;
-use azure_data_cosmos::options::UserAgentSuffix;
-use azure_data_cosmos::{AccountEndpoint, AccountReference, CosmosClientBuilder, RoutingStrategy};
+use azure_data_cosmos::{
+    options::{Region, UserAgentSuffix},
+    AccountEndpoint, AccountReference, CosmosClientBuilder, CosmosRuntimeBuilder, RoutingStrategy,
+};
 use azure_data_cosmos_driver::in_memory_emulator::{
     ConsistencyLevel, InMemoryEmulatorHttpClient, RequestObserver, VirtualAccountConfig,
     VirtualRegion,
@@ -122,8 +123,12 @@ async fn build_client_with_provisioned_container(
         .unwrap(),
     );
 
-    let mut builder =
-        CosmosClientBuilder::new().with_driver_runtime_builder(emulator.runtime_builder());
+    let mut builder = CosmosClientBuilder::new().with_runtime(
+        CosmosRuntimeBuilder::from(emulator.runtime_builder())
+            .build()
+            .await
+            .expect("runtime builds"),
+    );
     if let Some(s) = suffix {
         builder = builder.with_user_agent_suffix(s);
     }

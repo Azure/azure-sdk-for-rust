@@ -1,21 +1,22 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// cspell:ignore behaviour
 //! Builder for creating [`CosmosClient`] instances.
+
+#[cfg(feature = "fault_injection")]
+use std::sync::Arc;
 
 use crate::{
     clients::ClientContext,
-    options::{CosmosClientOptions, ThroughputControlGroupOptions},
-    AccountReference, CosmosClient, CosmosCredential, RoutingStrategy,
+    options::{
+        CosmosClientOptions, OperationOptions, PartitionFailoverOptions,
+        ThroughputControlGroupOptions, UserAgentSuffix,
+    },
+    AccountReference, CosmosClient, CosmosCredential, CosmosRuntime, RoutingStrategy,
 };
-
 use azure_data_cosmos_driver::options::ConnectionPoolOptions;
 #[cfg(all(feature = "allow_invalid_certificates", feature = "__tls",))]
-use azure_data_cosmos_driver::options::EmulatorServerCertValidation;
-use azure_data_cosmos_driver::CosmosDriverRuntimeBuilder;
-
-use crate::constants::AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED;
+use azure_data_cosmos_driver::options::ServerCertificateValidation;
 
 /// Builder for creating [`CosmosClient`] instances.
 ///
@@ -27,6 +28,24 @@ use crate::constants::AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED;
 /// `key_auth` feature), then pass it to `build`.
 ///
 /// A [`RoutingStrategy`] is also required to specify how the SDK should select regions.
+///
+/// # Clients and Runtimes
+///
+/// [`CosmosClient`] instances share some common state and mechanics between each other.
+/// This allows for efficiently creating differently-configured clients for the same account,
+/// as well as connecting to multiple accounts in the same application. To do this efficiently,
+/// the [`CosmosRuntime`] serves as a single hub for all this background state and management.
+/// When building a [`CosmosClient`], the [`CosmosClientBuilder`] uses a single shared process-wide
+/// [`CosmosRuntime`]. However, by calling [`CosmosClientBuilder::with_runtime`], you can override
+/// this and provide your own [`CosmosRuntime`] configured as necessary.
+///
+/// Configuring a [`CosmosRuntime`] manually for a production application is an advanced operation.
+/// For most applications, the default global [`CosmosRuntime`] is sufficient.
+/// However, it may sometimes be necessary to configure a custom [`CosmosRuntime`] in testing scenarios.
+/// For example, when running against an emulator with an untrusted TLS certificate.
+/// Server certificate validation is configured at the runtime layer.
+///
+/// See the documentation for [`CosmosRuntime`] for more information.
 ///
 /// # Examples
 ///
@@ -68,21 +87,22 @@ use crate::constants::AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED;
 #[derive(Default)]
 pub struct CosmosClientBuilder {
     options: CosmosClientOptions,
+    /// Pre-built runtime to attach. If `None`, the client falls back to
+    /// a default global runtime.
+    runtime: Option<CosmosRuntime>,
     /// Whether to allow proxy usage. When false (default), `HTTPS_PROXY` is ignored.
     allow_proxy: bool,
-    /// Throughput control groups to register on the driver runtime.
-    throughput_control_groups: Vec<ThroughputControlGroupOptions>,
     /// Whether to accept invalid TLS certificates when connecting to the emulator.
     #[cfg(all(feature = "allow_invalid_certificates", feature = "__tls",))]
     allow_emulator_invalid_certificates: bool,
-    /// Fault injection rules for testing error handling.
+    /// Throughput control groups to register on this client's driver options.
+    throughput_control_groups: Vec<ThroughputControlGroupOptions>,
+    /// Fault-injection rules to apply on this client's driver.
     ///
-    /// Forwarded to the driver runtime at `build()` time and evaluated by
-    /// the driver's transport-layer fault-injection client. Empty by
-    /// default.
+    /// Evaluated by the driver's transport-layer fault-injection client.
+    /// Empty by default.
     #[cfg(feature = "fault_injection")]
-    fault_injection_rules:
-        Vec<std::sync::Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>>,
+    fault_injection_rules: Vec<Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>>,
     /// Fallback endpoints tried when the primary endpoint is unavailable.
     backup_endpoints: Vec<azure_core::http::Url>,
     /// Operator override for the Gateway 2.0 transport.
@@ -94,9 +114,8 @@ pub struct CosmosClientBuilder {
     /// transport via [`with_gateway20_disabled`](Self::with_gateway20_disabled);
     /// `Some(false)` explicitly opts in (matching the default behavior).
     gateway20_disabled: Option<bool>,
-    /// Custom driver runtime builder for testing (e.g., in-memory emulator transport).
-    #[cfg(feature = "__internal_in_memory_emulator")]
-    driver_runtime_builder: Option<CosmosDriverRuntimeBuilder>,
+    /// Options to use for per-partition failover (PPAF, PPCB)
+    partition_failover_options: Option<PartitionFailoverOptions>,
 }
 
 impl CosmosClientBuilder {
@@ -108,7 +127,46 @@ impl CosmosClientBuilder {
         Self::default()
     }
 
-    /// Sets a suffix to append to the User-Agent header for telemetry.
+    /// Attaches a pre-built [`CosmosRuntime`] for the client to use.
+    ///
+    /// When set, the client uses the supplied runtime instead of the
+    /// default global runtime. Clients constructed with the same
+    /// runtime share its HTTP transport, connection pool, CPU sampler,
+    /// and runtime-level defaults.
+    pub fn with_runtime(mut self, runtime: CosmosRuntime) -> Self {
+        self.runtime = Some(runtime);
+        self
+    }
+
+    /// Overrides the per-client default [`OperationOptions`] applied to all
+    /// requests on this client unless a per-request override is supplied.
+    ///
+    /// The runtime carries its own runtime-wide defaults; values set here
+    /// override them for this client, and per-request options override
+    /// either.
+    pub fn with_default_operation_options(mut self, options: OperationOptions) -> Self {
+        self.options.operation = options;
+        self
+    }
+
+    /// Configures the driver-level partition-failover / PPCB tuning for this
+    /// client.
+    ///
+    /// These knobs are read once when the client's underlying driver is
+    /// constructed (in [`build`](Self::build)) and govern the per-partition
+    /// circuit breaker and partition-level failover for the lifetime of the
+    /// client. They are independent of per-request [`OperationOptions`].
+    ///
+    /// When this setter is not called, the driver falls back to
+    /// [`PartitionFailoverOptions::default`], which honors the
+    /// `AZURE_COSMOS_PPCB_*` environment variables.
+    pub fn with_partition_failover_options(mut self, options: PartitionFailoverOptions) -> Self {
+        self.partition_failover_options = Some(options);
+        self
+    }
+
+    /// Sets a per-client suffix to append to the User-Agent header for
+    /// telemetry, overriding any runtime-wide default suffix.
     ///
     /// Construct the suffix explicitly via
     /// [`UserAgentSuffix::new`](crate::options::UserAgentSuffix::new) for trusted
@@ -120,46 +178,8 @@ impl CosmosClientBuilder {
     /// # Arguments
     ///
     /// * `suffix` - The suffix to append to the User-Agent header.
-    pub fn with_user_agent_suffix(mut self, suffix: crate::options::UserAgentSuffix) -> Self {
+    pub fn with_user_agent_suffix(mut self, suffix: UserAgentSuffix) -> Self {
         self.options.user_agent_suffix = Some(suffix);
-        self
-    }
-
-    /// Sets the maximum number of retries for requests that the service
-    /// throttles (HTTP 429, rate-limited), along with the maximum cumulative
-    /// wait time across those retries, as a single grouped
-    /// [`ThrottlingRetryOptions`](crate::options::ThrottlingRetryOptions) value.
-    ///
-    /// Mirrors the .NET SDK's `MaxRetryAttemptsOnRateLimitedRequests` /
-    /// `MaxRetryWaitTimeOnRateLimitedRequests` (grouped here as the Java SDK
-    /// does via `CosmosClientBuilder.throttlingRetryOptions`). Build the value
-    /// with [`ThrottlingRetryOptionsBuilder`](crate::options::ThrottlingRetryOptionsBuilder):
-    ///
-    /// - `max_retry_count` bounds the transport-level retry loop that honors
-    ///   the service `x-ms-retry-after-ms` header (**default** `9`; a value of
-    ///   `0` disables throttle retries, surfacing the first 429 to the caller).
-    /// - `max_retry_wait_time` caps the cumulative retry delay (**default**
-    ///   30 seconds); once the accumulated delay would exceed it, no further
-    ///   throttle retry is attempted.
-    ///
-    /// **Scope**: applies *per transport-pipeline invocation*, not per logical
-    /// operation. An operation that fans out across regions (failover,
-    /// hedging) enters the transport pipeline once per leg, each with a fresh
-    /// throttle-retry budget. To cap an operation's *total* wall-clock time,
-    /// configure
-    /// [`OperationOptions::end_to_end_latency_policy`](crate::options::OperationOptions::end_to_end_latency_policy).
-    ///
-    /// This client-wide value can be overridden per request via
-    /// [`OperationOptions`](crate::options::OperationOptions).
-    ///
-    /// # Arguments
-    ///
-    /// * `options` - The grouped throttle-retry configuration.
-    pub fn with_throttling_retry_options(
-        mut self,
-        options: crate::options::ThrottlingRetryOptions,
-    ) -> Self {
-        self.options.operation.throttling_retry_options = Some(options);
         self
     }
 
@@ -178,16 +198,18 @@ impl CosmosClientBuilder {
     ///
     /// This is only available when the `fault_injection` feature is enabled.
     #[cfg(feature = "fault_injection")]
-    pub fn with_fault_injection(
+    pub fn with_fault_injection_rules(
         mut self,
-        rules: Vec<std::sync::Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>>,
-    ) -> Self {
+        rules: Vec<Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>>,
+    ) -> crate::Result<Self> {
+        // Defer validation to the driver-options layer which already enforces unique IDs.
+        // Storing the vec here keeps build() lazy and lets us detect duplicates at the
+        // single concatenation point in build_driver_options.
         self.fault_injection_rules = rules;
-        self
+        Ok(self)
     }
 
-    /// Configures the client to accept invalid TLS certificates when connecting
-    /// to the Azure Cosmos DB emulator.
+    /// Registers a per-client [`ThroughputControlGroupOptions`].
     ///
     /// This setting only applies when connecting to the local emulator
     /// (e.g., `https://localhost:8081/`). It should not be used for production endpoints.
@@ -258,14 +280,18 @@ impl CosmosClientBuilder {
         self
     }
 
-    /// Registers a throughput control group on the driver runtime.
-    ///
-    /// Groups define throughput policies (priority level, throughput bucket) that
-    /// are applied to requests referencing the group name via
-    /// [`OperationOptions::throughput_control_group`](crate::options::OperationOptions::throughput_control_group).
-    pub fn with_throughput_control_group(mut self, group: ThroughputControlGroupOptions) -> Self {
+    /// Throughput-control groups are scoped to this client's driver — the
+    /// per-runtime registry has been removed, so every client owns its own
+    /// set of groups. Duplicate group names supplied to the same builder are
+    /// surfaced as an error at `build()` time.
+    pub fn register_throughput_control_group(
+        mut self,
+        group: ThroughputControlGroupOptions,
+    ) -> crate::Result<Self> {
+        // Defer cross-layer validation to build_driver_options where the
+        // full registry is composed; here we only collect.
         self.throughput_control_groups.push(group);
-        self
+        Ok(self)
     }
 
     /// Sets backup endpoints for resilience when the primary global endpoint
@@ -297,49 +323,6 @@ impl CosmosClientBuilder {
         self
     }
 
-    /// Provides a pre-configured [`CosmosDriverRuntimeBuilder`] for the client to use.
-    ///
-    /// When set, the client uses this builder instead of creating a default one.
-    /// This enables testing with custom transports such as the
-    /// [`InMemoryEmulatorHttpClient`](azure_data_cosmos_driver::in_memory_emulator::InMemoryEmulatorHttpClient).
-    ///
-    /// # Field interactions
-    ///
-    /// After `build()` is invoked, the SDK forwards a small set of its own
-    /// settings into the supplied builder. These overwrite the corresponding
-    /// fields on the supplied builder (last-writer-wins):
-    ///
-    /// - **Connection pool** (`with_connection_pool`): always replaced by an
-    ///   SDK-derived pool that reflects `with_proxy_allowed` and
-    ///   `with_allow_emulator_invalid_certificates`. The pool is then passed
-    ///   to whatever `HttpClientFactory` is in effect — the default reqwest
-    ///   factory honors it, but the in-memory emulator transport supplied via
-    ///   `with_http_client_factory` ignores its argument since it does not
-    ///   perform real HTTP. Tests against the emulator therefore see no
-    ///   connection-pool behaviour regardless of what is configured here.
-    /// - **Fault injection rules** (`with_fault_injection_rules`): the SDK
-    ///   appends each rule from its own fault-injection builder to the
-    ///   rules already configured on the supplied builder (additive). Both
-    ///   sources contribute and neither is silently dropped. `build` returns
-    ///   an error if a rule on the SDK builder shares its `id` with one
-    ///   already registered on the supplied driver runtime builder, so
-    ///   callers wiring a runtime builder of their own are responsible for
-    ///   keeping rule ids globally unique.
-    /// - **Throughput control groups** (`register_throughput_control_group`):
-    ///   the SDK appends each group registered via
-    ///   `with_throughput_control_group` (additive — does not clear existing
-    ///   groups on the supplied builder).
-    ///
-    /// All other fields on the supplied builder — most importantly
-    /// `with_http_client_factory` (the in-memory emulator transport),
-    /// `with_cpu_refresh_interval`, and any future fields — are left
-    /// untouched and take effect as configured.
-    #[cfg(feature = "__internal_in_memory_emulator")]
-    pub fn with_driver_runtime_builder(mut self, builder: CosmosDriverRuntimeBuilder) -> Self {
-        self.driver_runtime_builder = Some(builder);
-        self
-    }
-
     /// Builds the [`CosmosClient`] with the specified account reference and region selection strategy.
     ///
     /// The account reference bundles an endpoint and credential. Construct one using
@@ -365,110 +348,56 @@ impl CosmosClientBuilder {
         // Clone credential for the driver before the SDK consumes it for auth policy.
         let driver_credential = credential.clone();
 
-        // Fault-injection rules flow directly to the driver runtime; no
-        // SDK-side translation needed now that the SDK fault-injection types
-        // are pure re-exports of the driver types.
-        #[cfg(feature = "fault_injection")]
-        let driver_fi_rules: Vec<
-            std::sync::Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>,
-        > = self.fault_injection_rules;
+        // Select the runtime. When the caller supplied one, use it as-is.
+        // Otherwise, if any transport-level knob has been customized
+        // (Gateway 2.0 override, proxy, emulator certificate handling), build a
+        // dedicated runtime carrying those connection-pool settings — in the
+        // shared-runtime model the connection pool lives on the runtime. When
+        // nothing is customized, fall back to the shared global runtime.
+        let runtime = match self.runtime {
+            Some(rt) => rt,
+            None => {
+                let mut pool_builder = ConnectionPoolOptions::builder();
+                let mut pool_customized = false;
+                if self.allow_proxy {
+                    pool_builder = pool_builder.with_proxy_allowed(true);
+                    pool_customized = true;
+                }
+                #[cfg(all(feature = "allow_invalid_certificates", feature = "__tls",))]
+                if self.allow_emulator_invalid_certificates {
+                    pool_builder = pool_builder.with_server_certificate_validation(
+                        ServerCertificateValidation::RequiredUnlessEmulator,
+                    );
+                    pool_customized = true;
+                }
+                if let Some(disabled) = self.gateway20_disabled {
+                    pool_builder = pool_builder.with_gateway20_disabled(disabled);
+                    pool_customized = true;
+                }
+                if pool_customized {
+                    CosmosRuntime::builder()
+                        .with_connection_pool(pool_builder.build()?)
+                        .build()
+                        .await?
+                } else {
+                    CosmosRuntime::global().await?
+                }
+            }
+        };
 
-        // Preserve the SDK's historical default: per-partition circuit breaker
-        // (PPCB) is enabled unless the user explicitly opts out via
-        // `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED=false`. The
-        // driver itself defaults to `false`, so the SDK reads the env var
-        // here and explicitly sets it as a runtime-level default on the
-        // driver. The runtime layer sits above the env layer in the driver's
-        // option-resolution hierarchy, so this guarantees PPCB is on by
-        // default for SDK clients while still letting users disable it via
-        // the env var.
-        let ppcb_enabled = std::env::var(AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED)
-            .ok()
-            .and_then(|v| v.parse::<bool>().ok())
-            .unwrap_or(true);
-
-        let driver_user_agent_suffix = self.options.user_agent_suffix.clone();
-
-        // Create the CosmosDriver for eager container metadata resolution.
-        // TODO: Each CosmosClient currently creates its own CosmosDriverRuntime. The runtime
-        // should be shared across clients targeting the same account to avoid duplicate
-        // background tasks and connection pools. See https://github.com/Azure/azure-sdk-for-rust/issues/3908
         let driver_account =
             build_driver_account(endpoint, driver_credential, self.backup_endpoints);
-        #[cfg(feature = "__internal_in_memory_emulator")]
-        let mut driver_runtime_builder = self.driver_runtime_builder.unwrap_or_default();
-        #[cfg(not(feature = "__internal_in_memory_emulator"))]
-        let mut driver_runtime_builder = CosmosDriverRuntimeBuilder::new();
-
-        // Forward SDK connection settings to the driver's connection pool.
-        let mut pool_builder = ConnectionPoolOptions::builder();
-        if self.allow_proxy {
-            pool_builder = pool_builder.with_proxy_allowed(true);
-        }
-        #[cfg(all(feature = "allow_invalid_certificates", feature = "__tls",))]
-        if self.allow_emulator_invalid_certificates {
-            pool_builder = pool_builder.with_emulator_server_cert_validation(
-                EmulatorServerCertValidation::DangerousDisabled,
-            );
-        }
-        if let Some(disabled) = self.gateway20_disabled {
-            pool_builder = pool_builder.with_gateway20_disabled(disabled);
-        }
-        driver_runtime_builder = driver_runtime_builder.with_connection_pool(pool_builder.build()?);
-
-        // The wrapping-SDK identifier always reflects this crate, so requests
-        // can be attributed to `azure_data_cosmos` in addition to the driver.
-        driver_runtime_builder = driver_runtime_builder.with_wrapping_sdk_identifier(format!(
-            "azsdk-rust-cosmos/{}",
-            env!("CARGO_PKG_VERSION")
-        ));
-        // Forward the user-agent suffix captured above to the driver runtime.
-        if let Some(suffix) = driver_user_agent_suffix {
-            driver_runtime_builder = driver_runtime_builder.with_user_agent_suffix(suffix);
-        }
-
-        // Apply the SDK's PPCB default at the runtime layer. This sits above
-        // the env layer in the driver's option-resolution hierarchy, so it
-        // pins the SDK's "enabled by default" behavior even when the env var
-        // is unset.
-        //
-        // Start from the client-level operation defaults (set via the builder,
-        // e.g. `with_throttling_retry_options`) so they are
-        // forwarded to the driver's runtime layer, then force the resolved
-        // PPCB default on top — but only when the SDK builder hasn't already
-        // set an explicit value. No public SDK setter exists today, but the
-        // `is_none()` guard prevents a future PR that adds one from silently
-        // having its value clobbered here.
-        let mut runtime_operation_options = self.options.operation.clone();
-        if runtime_operation_options
-            .per_partition_circuit_breaker_enabled
-            .is_none()
-        {
-            runtime_operation_options.per_partition_circuit_breaker_enabled = Some(ppcb_enabled);
-        }
-        driver_runtime_builder =
-            driver_runtime_builder.with_operation_options(runtime_operation_options);
-
-        #[cfg(feature = "fault_injection")]
-        if !driver_fi_rules.is_empty() {
-            driver_runtime_builder =
-                driver_runtime_builder.with_fault_injection_rules(driver_fi_rules)?;
-        }
-        for group in self.throughput_control_groups {
-            driver_runtime_builder = driver_runtime_builder
-                .register_throughput_control_group(group)
-                .map_err(|e| {
-                    crate::DriverCosmosError::builder()
-                        .with_status(crate::error::CosmosStatus::CLIENT_THROUGHPUT_CONTROL_GROUP_REGISTRATION_FAILED)
-                        .with_message(format!("failed to register throughput control group: {e}"))
-                        .build()
-                })?;
-        }
-        let driver_runtime = driver_runtime_builder.build().await?;
-        let driver_options = build_driver_options(driver_account, routing_strategy);
-        let driver = driver_runtime
-            .get_or_create_driver(driver_options.account().clone(), Some(driver_options))
-            .await?;
+        let driver_options = build_driver_options(
+            driver_account,
+            routing_strategy,
+            self.options.operation,
+            self.options.user_agent_suffix,
+            self.partition_failover_options,
+            #[cfg(feature = "fault_injection")]
+            self.fault_injection_rules,
+            self.throughput_control_groups,
+        )?;
+        let driver = runtime.into_inner().create_driver(driver_options).await?;
 
         Ok(CosmosClient {
             context: ClientContext { driver },
@@ -489,7 +418,14 @@ impl CosmosClientBuilder {
 fn build_driver_options(
     account: azure_data_cosmos_driver::models::AccountReference,
     strategy: RoutingStrategy,
-) -> azure_data_cosmos_driver::options::DriverOptions {
+    operation_options: OperationOptions,
+    user_agent_suffix: Option<UserAgentSuffix>,
+    partition_failover_options: Option<PartitionFailoverOptions>,
+    #[cfg(feature = "fault_injection")] fault_injection_rules: Vec<
+        Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>,
+    >,
+    throughput_control_groups: Vec<ThroughputControlGroupOptions>,
+) -> crate::Result<azure_data_cosmos_driver::options::DriverOptions> {
     let preferred_regions = match strategy {
         RoutingStrategy::ProximityTo(region) =>
             crate::region_proximity::generate_preferred_region_list(&region)
@@ -503,9 +439,27 @@ fn build_driver_options(
                 }),
         RoutingStrategy::PreferredRegions(regions) => regions,
     };
-    azure_data_cosmos_driver::options::DriverOptions::builder(account)
+    let mut builder = azure_data_cosmos_driver::options::DriverOptions::builder(account)
         .with_preferred_regions(preferred_regions)
-        .build()
+        .with_operation_options(operation_options);
+    if let Some(suffix) = user_agent_suffix {
+        builder = builder.with_user_agent_suffix(suffix);
+    }
+    if let Some(pfo) = partition_failover_options {
+        builder = builder.with_partition_failover_options(pfo);
+    }
+    #[cfg(feature = "fault_injection")]
+    if !fault_injection_rules.is_empty() {
+        builder = builder
+            .with_fault_injection_rules(fault_injection_rules)
+            .map_err(crate::CosmosError::from)?;
+    }
+    for group in throughput_control_groups {
+        builder = builder
+            .register_throughput_control_group(group)
+            .map_err(crate::CosmosError::from)?;
+    }
+    Ok(builder.build())
 }
 
 /// Builds a driver [`AccountReference`](azure_data_cosmos_driver::models::AccountReference)
@@ -529,8 +483,13 @@ fn build_driver_account(
 
 #[cfg(test)]
 mod tests {
+    use azure_data_cosmos_driver::CosmosDriverRuntimeBuilder;
+
     use super::*;
-    use crate::options::{Region, UserAgentSuffix};
+    use crate::{
+        options::{PartitionFailoverOptions, Region, UserAgentSuffix},
+        RoutingStrategy,
+    };
 
     /// Reproduces the bug where `CosmosClientBuilder::with_user_agent_suffix`
     /// did not forward the suffix to the driver runtime, causing the
@@ -576,141 +535,11 @@ mod tests {
         assert!(runtime.user_agent_suffix().is_none());
     }
 
-    /// Regression test: the SDK must default to per-partition circuit breaker
-    /// (PPCB) **enabled** unless the user explicitly opts out via
-    /// `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED=false`. The
-    /// underlying driver defaults to `false`, so the SDK must explicitly set
-    /// the runtime-level option to preserve historical behavior.
-    ///
-    /// This test mirrors the wiring from `CosmosClientBuilder::build()`:
-    /// read the env var with `unwrap_or(true)`, then push it onto the
-    /// runtime as the SDK's default. We deliberately do NOT touch the
-    /// process env var here because tests share a process; instead we
-    /// inline the same default-resolution logic and assert the runtime
-    /// reflects the chosen value.
-    #[tokio::test]
-    async fn ppcb_default_is_enabled_when_env_var_unset() {
-        // Simulate "env var unset" → SDK's default is `true`.
-        let ppcb_enabled = Option::<String>::None
-            .and_then(|v: String| v.parse::<bool>().ok())
-            .unwrap_or(true);
-        assert!(
-            ppcb_enabled,
-            "SDK's PPCB default must be `true` when env var is unset"
-        );
-
-        let runtime_op_options = azure_data_cosmos_driver::options::OperationOptionsBuilder::new()
-            .with_per_partition_circuit_breaker_enabled(ppcb_enabled)
-            .build();
-        let runtime = CosmosDriverRuntimeBuilder::new()
-            .with_operation_options(runtime_op_options)
-            .build()
-            .await
-            .expect("runtime builds");
-
-        assert_eq!(
-            runtime
-                .operation_options()
-                .per_partition_circuit_breaker_enabled,
-            Some(true),
-            "PPCB must be enabled by default on a CosmosClient-built runtime"
-        );
-    }
-
-    /// Regression test: when the env var is explicitly set to `false`, the
-    /// SDK must propagate that opt-out to the driver runtime so PPCB is
-    /// disabled.
-    #[tokio::test]
-    async fn ppcb_can_be_opted_out_via_env_var() {
-        // Simulate `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED=false`.
-        let ppcb_enabled = Some("false".to_string())
-            .and_then(|v| v.parse::<bool>().ok())
-            .unwrap_or(true);
-        assert!(!ppcb_enabled, "env var `false` must opt out of PPCB");
-
-        let runtime_op_options = azure_data_cosmos_driver::options::OperationOptionsBuilder::new()
-            .with_per_partition_circuit_breaker_enabled(ppcb_enabled)
-            .build();
-        let runtime = CosmosDriverRuntimeBuilder::new()
-            .with_operation_options(runtime_op_options)
-            .build()
-            .await
-            .expect("runtime builds");
-
-        assert_eq!(
-            runtime
-                .operation_options()
-                .per_partition_circuit_breaker_enabled,
-            Some(false),
-            "explicit env-var opt-out must propagate to the driver runtime"
-        );
-    }
-
-    /// The client-wide throttle-retry setter must populate the operation
-    /// options that `build()` forwards to the driver's runtime layer.
     #[test]
-    fn throttle_retry_setter_populates_operation_options() {
-        let builder = CosmosClientBuilder::new().with_throttling_retry_options(
-            crate::options::ThrottlingRetryOptionsBuilder::new()
-                .with_max_retry_count(4)
-                .with_max_retry_wait_time(std::time::Duration::from_secs(15))
-                .build(),
-        );
-
-        let throttling = builder
-            .options
-            .operation
-            .throttling_retry_options
-            .as_ref()
-            .expect("throttling group should be populated");
-        assert_eq!(throttling.max_retry_count, Some(4));
-        assert_eq!(
-            throttling.max_retry_wait_time,
-            Some(std::time::Duration::from_secs(15))
-        );
-    }
-
-    /// A throttle-retry count of `0` (disable retries) must round-trip through
-    /// the builder unchanged so the driver can surface the first 429.
-    #[test]
-    fn throttle_retry_count_zero_round_trips() {
-        let builder = CosmosClientBuilder::new().with_throttling_retry_options(
-            crate::options::ThrottlingRetryOptionsBuilder::new()
-                .with_max_retry_count(0)
-                .build(),
-        );
-        assert_eq!(
-            builder
-                .options
-                .operation
-                .throttling_retry_options
-                .as_ref()
-                .and_then(|t| t.max_retry_count),
-            Some(0)
-        );
-    }
-
-    /// The grouped `with_throttling_retry_options` setter must replace the
-    /// whole group with the supplied value.
-    #[test]
-    fn grouped_throttling_retry_options_setter_replaces_group() {
-        let group = crate::options::ThrottlingRetryOptionsBuilder::new()
-            .with_max_retry_count(2)
-            .with_max_retry_wait_time(std::time::Duration::from_secs(7))
-            .build();
-        let builder = CosmosClientBuilder::new().with_throttling_retry_options(group);
-
-        let throttling = builder
-            .options
-            .operation
-            .throttling_retry_options
-            .as_ref()
-            .expect("throttling group should be populated");
-        assert_eq!(throttling.max_retry_count, Some(2));
-        assert_eq!(
-            throttling.max_retry_wait_time,
-            Some(std::time::Duration::from_secs(7))
-        );
+    fn user_agent_suffix_setter_records_value() {
+        let suffix = UserAgentSuffix::new("myapp-westus2");
+        let builder = CosmosClientBuilder::new().with_user_agent_suffix(suffix.clone());
+        assert_eq!(builder.options.user_agent_suffix.as_ref(), Some(&suffix));
     }
 
     fn test_account() -> azure_data_cosmos_driver::models::AccountReference {
@@ -727,7 +556,14 @@ mod tests {
         let opts = build_driver_options(
             test_account(),
             RoutingStrategy::ProximityTo(Region::EAST_US),
-        );
+            OperationOptions::default(),
+            None,
+            None,
+            #[cfg(feature = "fault_injection")]
+            Vec::new(),
+            Vec::new(),
+        )
+        .expect("build_driver_options should succeed");
         let regions = opts.preferred_regions();
         assert!(
             !regions.is_empty(),
@@ -743,7 +579,14 @@ mod tests {
         let opts = build_driver_options(
             test_account(),
             RoutingStrategy::ProximityTo(Region::from("not-a-real-region")),
-        );
+            OperationOptions::default(),
+            None,
+            None,
+            #[cfg(feature = "fault_injection")]
+            Vec::new(),
+            Vec::new(),
+        )
+        .expect("build_driver_options should succeed");
         assert!(
             opts.preferred_regions().is_empty(),
             "unrecognized region should yield an empty list"
@@ -757,7 +600,84 @@ mod tests {
         let opts = build_driver_options(
             test_account(),
             RoutingStrategy::PreferredRegions(input.clone()),
-        );
+            OperationOptions::default(),
+            None,
+            None,
+            #[cfg(feature = "fault_injection")]
+            Vec::new(),
+            Vec::new(),
+        )
+        .expect("build_driver_options should succeed");
         assert_eq!(opts.preferred_regions(), input.as_slice());
+    }
+
+    /// The user-agent suffix must flow through to the per-driver options so
+    /// the driver builds a User-Agent that overrides the runtime default.
+    #[test]
+    fn user_agent_suffix_flows_to_driver_options() {
+        let suffix = UserAgentSuffix::new("myapp-westus2");
+        let opts = build_driver_options(
+            test_account(),
+            RoutingStrategy::PreferredRegions(Vec::new()),
+            OperationOptions::default(),
+            Some(suffix.clone()),
+            None,
+            #[cfg(feature = "fault_injection")]
+            Vec::new(),
+            Vec::new(),
+        )
+        .expect("build_driver_options should succeed");
+        assert_eq!(opts.user_agent_suffix(), Some(&suffix));
+    }
+
+    /// Setting partition-failover options via the builder must thread through
+    /// `build_driver_options` and land on the resulting `DriverOptions`.
+    #[test]
+    fn partition_failover_options_flow_to_driver_options() {
+        let pfo = PartitionFailoverOptions::builder()
+            .with_circuit_breaker_enabled(true)
+            .with_read_failure_threshold(42)
+            .build()
+            .expect("valid partition failover options");
+
+        let opts = build_driver_options(
+            test_account(),
+            RoutingStrategy::PreferredRegions(Vec::new()),
+            OperationOptions::default(),
+            None,
+            Some(pfo),
+            #[cfg(feature = "fault_injection")]
+            Vec::new(),
+            Vec::new(),
+        )
+        .expect("build_driver_options should succeed");
+
+        assert!(opts.partition_failover_options().circuit_breaker_enabled());
+        assert_eq!(
+            opts.partition_failover_options().read_failure_threshold(),
+            42
+        );
+    }
+
+    /// Omitting the partition-failover options on the builder must produce
+    /// driver options that carry the type's `Default` value (i.e. PPCB off).
+    #[test]
+    fn missing_partition_failover_options_uses_default() {
+        let opts = build_driver_options(
+            test_account(),
+            RoutingStrategy::PreferredRegions(Vec::new()),
+            OperationOptions::default(),
+            None,
+            None,
+            #[cfg(feature = "fault_injection")]
+            Vec::new(),
+            Vec::new(),
+        )
+        .expect("build_driver_options should succeed");
+
+        assert_eq!(
+            opts.partition_failover_options().circuit_breaker_enabled(),
+            PartitionFailoverOptions::default().circuit_breaker_enabled(),
+        );
     }
 }

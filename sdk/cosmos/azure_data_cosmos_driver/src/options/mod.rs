@@ -22,6 +22,7 @@ mod driver_options;
 pub(crate) mod env_parsing;
 mod identity;
 mod operation_options;
+mod partition_failover;
 mod policies;
 mod priority;
 mod read_consistency;
@@ -38,11 +39,13 @@ pub(crate) use env_parsing::parse_duration_millis_from_env;
 pub use identity::{CorrelationId, UserAgentSuffix, WorkloadId};
 pub use operation_options::{
     OperationOptions, OperationOptionsBuilder, OperationOptionsView, ThrottlingRetryOptions,
-    ThrottlingRetryOptionsBuilder, ThrottlingRetryOptionsView,
+    ThrottlingRetryOptionsBuilder, ThrottlingRetryOptionsView, ThroughputControlOptions,
+    ThroughputControlOptionsBuilder, ThroughputControlOptionsView,
 };
+pub use partition_failover::{PartitionFailoverOptions, PartitionFailoverOptionsBuilder};
 pub use policies::{
-    ContentResponseOnWrite, EmulatorServerCertValidation, EndToEndOperationLatencyPolicy,
-    ExcludedRegions,
+    ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions,
+    ServerCertificateValidation,
 };
 pub use priority::PriorityLevel;
 pub(crate) use read_consistency::resolve_effective_consistency;
@@ -50,5 +53,5 @@ pub use read_consistency::ReadConsistencyStrategy;
 pub use region::Region;
 pub use throughput_control::ThroughputControlGroupOptions;
 pub(crate) use throughput_control::{
-    ThroughputControlGroupRegistry, ThroughputControlGroupSnapshot,
+    ResolvedThroughputControl, ThroughputControlGroupRegistry, ThroughputControlGroupSnapshot,
 };

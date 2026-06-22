@@ -13,12 +13,10 @@ use std::{
 use tracing::warn;
 
 use crate::driver::cache::AccountProperties;
-use crate::options::Region;
+use crate::options::{PartitionFailoverOptions, Region};
 
 use super::{
-    partition_endpoint_state::{
-        HealthStatus, PartitionEndpointState, PartitionFailoverConfig, PartitionFailoverEntry,
-    },
+    partition_endpoint_state::{HealthStatus, PartitionEndpointState, PartitionFailoverEntry},
     partition_key_range_id::PartitionKeyRangeId,
     AccountEndpointState, CosmosEndpoint, UnavailablePartition, UnavailableReason,
 };
@@ -254,12 +252,12 @@ pub(crate) fn is_eligible_for_ppcb(
 pub(crate) fn can_circuit_breaker_trigger_failover(
     entry: &PartitionFailoverEntry,
     is_read_only: bool,
-    config: &PartitionFailoverConfig,
+    config: &PartitionFailoverOptions,
 ) -> bool {
     if is_read_only {
-        entry.read_failure_count >= config.read_failure_threshold
+        entry.read_failure_count >= config.read_failure_threshold() as i32
     } else {
-        entry.write_failure_count >= config.write_failure_threshold
+        entry.write_failure_count >= config.write_failure_threshold() as i32
     }
 }
 
@@ -367,7 +365,7 @@ pub(crate) fn mark_partition_unavailable(
                 last_failure_time: now,
                 health_status: HealthStatus::Unhealthy,
                 failback_jitter: ppcb_failback_jitter(
-                    current_state.config.partition_unavailability_duration,
+                    current_state.config.partition_unavailability_duration(),
                     pk_range_id,
                 ),
             });
@@ -388,7 +386,7 @@ pub(crate) fn mark_partition_unavailable(
             // Re-sample jitter so the next failback window is offset from
             // any other entries that may have failed on the same tick.
             entry.failback_jitter = ppcb_failback_jitter(
-                current_state.config.partition_unavailability_duration,
+                current_state.config.partition_unavailability_duration(),
                 pk_range_id,
             );
             return new_state;
@@ -396,7 +394,7 @@ pub(crate) fn mark_partition_unavailable(
 
         // Reset counters if the counter reset window has elapsed.
         if now.saturating_duration_since(entry.last_failure_time)
-            > current_state.config.counter_reset_window
+            > current_state.config.counter_reset_window()
         {
             entry.read_failure_count = 0;
             entry.write_failure_count = 0;
@@ -542,7 +540,7 @@ pub(crate) fn remove_probe_succeeded_entry(
 
 /// Records an alternate-region hedge win for the given `(partition, primary_region)`
 /// pair and, when the consecutive-win count reaches
-/// [`PartitionFailoverConfig::consecutive_hedge_win_threshold`], trips the
+/// [`PartitionFailoverOptions::consecutive_hedge_win_threshold`], trips the
 /// partition by installing an [`HealthStatus::Unhealthy`] entry in
 /// [`PartitionEndpointState::circuit_breaker_overrides`].
 ///
@@ -570,7 +568,7 @@ pub(crate) fn record_hedge_alternate_win(
         .entry(key.clone())
         .or_insert(0);
     *count = count.saturating_add(1);
-    let triggered = *count >= state.config.consecutive_hedge_win_threshold;
+    let triggered = *count >= state.config.consecutive_hedge_win_threshold();
     if !triggered {
         return new_state;
     }
@@ -634,13 +632,13 @@ pub(crate) fn record_hedge_alternate_win(
         current_endpoint: primary_endpoint.clone(),
         first_failed_endpoint: primary_endpoint.clone(),
         failed_endpoints: Default::default(),
-        read_failure_count: state.config.read_failure_threshold,
-        write_failure_count: state.config.write_failure_threshold,
+        read_failure_count: state.config.read_failure_threshold() as i32,
+        write_failure_count: state.config.write_failure_threshold() as i32,
         first_failure_time: now,
         last_failure_time: now,
         health_status: HealthStatus::Unhealthy,
         failback_jitter: ppcb_failback_jitter(
-            state.config.partition_unavailability_duration,
+            state.config.partition_unavailability_duration(),
             partition_key_range_id,
         ),
     };
@@ -1078,7 +1076,7 @@ mod tests {
 
     #[test]
     fn circuit_breaker_not_triggered_below_threshold() {
-        let config = PartitionFailoverConfig::default();
+        let config = PartitionFailoverOptions::default();
         let entry = PartitionFailoverEntry {
             current_endpoint: regional_endpoint("eastus"),
             first_failed_endpoint: regional_endpoint("eastus"),
@@ -1095,7 +1093,7 @@ mod tests {
 
     #[test]
     fn circuit_breaker_triggered_above_read_threshold() {
-        let config = PartitionFailoverConfig::default();
+        let config = PartitionFailoverOptions::default();
         let entry = PartitionFailoverEntry {
             current_endpoint: regional_endpoint("eastus"),
             first_failed_endpoint: regional_endpoint("eastus"),
@@ -1112,7 +1110,7 @@ mod tests {
 
     #[test]
     fn circuit_breaker_triggered_above_write_threshold() {
-        let config = PartitionFailoverConfig::default();
+        let config = PartitionFailoverOptions::default();
         let entry = PartitionFailoverEntry {
             current_endpoint: regional_endpoint("eastus"),
             first_failed_endpoint: regional_endpoint("eastus"),
@@ -1514,7 +1512,7 @@ mod tests {
 
         let result = mark_partition_unavailable(&ps, &account, &unavail, true);
         let entry = &result.circuit_breaker_overrides["pk-1"];
-        let max = ps.config.partition_unavailability_duration / 2;
+        let max = ps.config.partition_unavailability_duration() / 2;
         assert!(
             entry.failback_jitter < max,
             "jitter {:?} must be < half of unavailability window {:?}",
@@ -1579,7 +1577,7 @@ mod tests {
     #[test]
     fn ppcb_re_failover_after_probe_failure_respects_threshold() {
         let account = single_master_account();
-        let threshold = PartitionFailoverConfig::default().read_failure_threshold;
+        let threshold = PartitionFailoverOptions::default().read_failure_threshold() as i32;
 
         // ── Phase 1: Initial failover (eastus → westus) ─────────────
         let mut ps = partition_state_with_ppaf_ppcb_enabled();
@@ -1812,10 +1810,10 @@ mod tests {
     /// is noisy; 3 is enough to cover the "below threshold / at threshold"
     /// transition.
     fn partition_state_with_hedge_threshold(threshold: u32) -> PartitionEndpointState {
-        let config = PartitionFailoverConfig {
-            consecutive_hedge_win_threshold: threshold,
-            ..PartitionFailoverConfig::default()
-        };
+        let config = PartitionFailoverOptions::builder()
+            .with_consecutive_hedge_win_threshold(threshold)
+            .build()
+            .expect("valid partition failover options");
         let mut state = PartitionEndpointState::new(config);
         state.per_partition_automatic_failover_enabled = true;
         state.per_partition_circuit_breaker_enabled = true;
@@ -1899,12 +1897,14 @@ mod tests {
             .get(pk_range.as_str())
             .expect("threshold-th win must install a circuit breaker entry");
         assert_eq!(
-            entry.read_failure_count, state.config.read_failure_threshold,
+            entry.read_failure_count,
+            state.config.read_failure_threshold() as i32,
             "read_failure_count must equal the configured threshold so a \
              read attempt's `can_circuit_breaker_trigger_failover` returns true",
         );
         assert_eq!(
-            entry.write_failure_count, state.config.write_failure_threshold,
+            entry.write_failure_count,
+            state.config.write_failure_threshold() as i32,
             "write_failure_count must equal the configured threshold so a \
              write attempt's `can_circuit_breaker_trigger_failover` returns true",
         );
@@ -2091,7 +2091,8 @@ mod tests {
             "stale ProbeCandidate must be replaced with a fresh Unhealthy entry"
         );
         assert_eq!(
-            entry.read_failure_count, state.config.read_failure_threshold,
+            entry.read_failure_count,
+            state.config.read_failure_threshold() as i32,
             "re-trip must seed read_failure_count to the threshold so \
              can_circuit_breaker_trigger_failover accepts the entry on the \
              very next routing decision"

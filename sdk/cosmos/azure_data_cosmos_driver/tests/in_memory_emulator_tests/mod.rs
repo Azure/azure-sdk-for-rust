@@ -10,10 +10,16 @@ pub mod error_diagnostics;
 pub mod excluded_regions_fallback;
 #[cfg(feature = "fault_injection")]
 pub mod hedging;
+pub mod host_recorder;
 pub mod multi_region;
 pub mod point_operations;
+pub mod ppaf_dynamic_enablement;
+#[cfg(feature = "fault_injection")]
+pub mod regional_gateway_unreachable;
 pub mod split_merge;
 pub mod throttling;
+#[cfg(feature = "fault_injection")]
+pub mod topology_refresh_on_substatus;
 
 use azure_core::http::{
     headers::{HeaderName, HeaderValue, Headers},
