@@ -37,64 +37,54 @@ use crate::driver_options::DriverOptionsHandle;
 use crate::error::{CosmosErrorCode, CosmosErrorHandle};
 use crate::runtime::RuntimeContext;
 
-pub(crate) struct DriverInner {
+/// The C ABI handle for a [`CosmosDriver`].
+///
+/// A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
+/// opaque type (`cosmos_driver_t`) because C cannot see its fields. The handle
+/// is reference-counted via `Arc` so the submit pipeline and a degenerate
+/// response's stashed side payload can share it with only an atomic bump.
+pub struct DriverHandle {
     /// Consumed by the submit pipeline (`cosmos_driver_*_submit`,
     /// `cosmos_driver_resolve_container_*`) which `Arc::clone`s it
     /// onto each spawned task.
     pub(crate) inner: Arc<CosmosDriver>,
 }
 
-/// Opaque C ABI handle for a [`CosmosDriver`].
-///
-/// Storage pun: same shape as the other reference handles.
-#[repr(C)]
-pub struct DriverHandle {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-struct DriverStorage {
-    _opaque: [u8; 0],
-    inner: Arc<DriverInner>,
-}
-
 impl DriverHandle {
     fn into_raw(inner: Arc<CosmosDriver>) -> *mut Self {
-        let storage = Box::new(DriverStorage {
-            _opaque: [],
-            inner: Arc::new(DriverInner { inner }),
-        });
-        Box::into_raw(storage).cast::<DriverHandle>()
+        Arc::into_raw(Arc::new(DriverHandle { inner })) as *mut Self
     }
 
     /// Allocates a fresh FFI handle that shares an existing
-    /// [`DriverInner`] `Arc`. Used by
+    /// [`DriverHandle`] `Arc`. Used by
     /// [`crate::response::cosmos_response_take_driver`] to mint a
     /// public `cosmos_driver_t *` from a degenerate response's stashed
     /// side payload.
-    pub(crate) fn from_arc_into_raw(inner: Arc<DriverInner>) -> *mut Self {
-        let storage = Box::new(DriverStorage { _opaque: [], inner });
-        Box::into_raw(storage).cast::<DriverHandle>()
+    pub(crate) fn from_arc_into_raw(this: Arc<DriverHandle>) -> *mut Self {
+        Arc::into_raw(this) as *mut Self
     }
 
-    pub(crate) fn inner_arc(p: *const DriverHandle) -> Option<Arc<DriverInner>> {
+    pub(crate) fn inner_arc(p: *const DriverHandle) -> Option<Arc<DriverHandle>> {
         if p.is_null() {
             return None;
         }
-        // SAFETY: caller guarantees `p` was obtained from `into_raw` and
-        // has not been freed.
-        let storage = unsafe { &*(p as *const DriverStorage) };
-        Some(Arc::clone(&storage.inner))
+        // SAFETY: caller guarantees `p` was obtained from `into_raw` and has
+        // not been freed. Bumping the strong count before reconstructing the
+        // `Arc` leaves the caller's reference intact.
+        unsafe {
+            Arc::increment_strong_count(p);
+            Some(Arc::from_raw(p))
+        }
     }
 
     fn drop_raw(p: *mut DriverHandle) {
         if p.is_null() {
             return;
         }
-        // SAFETY: pun back into the `Box<DriverStorage>` we originally
-        // allocated.
+        // SAFETY: caller guarantees `p` was obtained from `into_raw` and has
+        // not already been freed.
         unsafe {
-            drop(Box::from_raw(p.cast::<DriverStorage>()));
+            drop(Arc::from_raw(p as *const DriverHandle));
         }
     }
 }

@@ -27,7 +27,7 @@ use std::sync::{Arc, Condvar, Mutex};
 use std::time::{Duration, Instant};
 
 use crate::error::{CosmosErrorCode, CosmosErrorHandle, CosmosErrorInner};
-use crate::runtime::{RuntimeContext, RuntimeContextInner};
+use crate::runtime::RuntimeContext;
 use crate::safety::MutexExt;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -389,14 +389,14 @@ pub(crate) struct CompletionQueueInner {
     options: CqOptions,
     /// Keep the runtime alive for the queue's lifetime. The submit pipeline
     /// clones this Arc to spawn per-operation tasks.
-    pub(crate) runtime: Arc<RuntimeContextInner>,
+    pub(crate) runtime: Arc<RuntimeContext>,
 }
 
 impl CompletionQueueInner {
     /// Borrows the runtime backing this queue. Used by
     /// [`crate::submit`] to spawn per-operation tasks on the same
     /// Tokio runtime the queue was built against.
-    pub(crate) fn runtime(&self) -> &Arc<RuntimeContextInner> {
+    pub(crate) fn runtime(&self) -> &Arc<RuntimeContext> {
         &self.runtime
     }
 
@@ -441,7 +441,7 @@ struct CompletionQueueStorage {
 }
 
 impl CompletionQueue {
-    fn new_raw(runtime: Arc<RuntimeContextInner>, options: CqOptions) -> *mut Self {
+    fn new_raw(runtime: Arc<RuntimeContext>, options: CqOptions) -> *mut Self {
         let storage = Box::new(CompletionQueueStorage {
             _opaque: [],
             inner: Arc::new(CompletionQueueInner {

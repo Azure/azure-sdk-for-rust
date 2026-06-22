@@ -104,8 +104,8 @@ struct ResponseStorage {
     inner: Arc<ResponseInner>,
     // Side payloads — `Mutex<Option<...>>` so the take accessors can
     // detach ownership in place. NULL on every "real" CRUD completion.
-    driver_payload: Mutex<Option<Arc<crate::driver::DriverInner>>>,
-    container_payload: Mutex<Option<Arc<crate::container_ref::ContainerRefInner>>>,
+    driver_payload: Mutex<Option<Arc<crate::driver::DriverHandle>>>,
+    container_payload: Mutex<Option<Arc<crate::container_ref::ContainerRefHandle>>>,
     // Plan-derived next-page continuation token, captured by the feed
     // submit path from `OperationPlan::to_continuation_token()`. This is
     // distinct from the *response header* continuation (which only carries
@@ -122,12 +122,12 @@ impl ResponseHandle {
         Self::into_raw_with_payloads(Some(inner), None, None, None)
     }
 
-    pub(crate) fn into_raw_with_driver(driver: Arc<crate::driver::DriverInner>) -> *mut Self {
+    pub(crate) fn into_raw_with_driver(driver: Arc<crate::driver::DriverHandle>) -> *mut Self {
         Self::into_raw_with_payloads(None, Some(driver), None, None)
     }
 
     pub(crate) fn into_raw_with_container(
-        container: Arc<crate::container_ref::ContainerRefInner>,
+        container: Arc<crate::container_ref::ContainerRefHandle>,
     ) -> *mut Self {
         Self::into_raw_with_payloads(None, None, Some(container), None)
     }
@@ -158,8 +158,8 @@ impl ResponseHandle {
 
     fn into_raw_with_payloads(
         response: Option<CosmosResponse>,
-        driver: Option<Arc<crate::driver::DriverInner>>,
-        container: Option<Arc<crate::container_ref::ContainerRefInner>>,
+        driver: Option<Arc<crate::driver::DriverHandle>>,
+        container: Option<Arc<crate::container_ref::ContainerRefHandle>>,
         next_continuation: Option<CString>,
     ) -> *mut Self {
         let inner = match response {

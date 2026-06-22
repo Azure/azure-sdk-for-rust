@@ -28,7 +28,13 @@ use azure_data_cosmos_driver::models::DatabaseReference as DriverDatabaseReferen
 use crate::account_ref::AccountRefHandle;
 use crate::error::CosmosErrorCode;
 
-pub(crate) struct DatabaseRefInner {
+/// The C ABI handle for a database reference.
+///
+/// A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
+/// opaque type (`cosmos_database_ref_t`) because C cannot see its fields. The
+/// handle is reference-counted via `Arc` so a sibling handle can share the same
+/// state with only an atomic bump.
+pub struct DatabaseRefHandle {
     /// Consumed by the operation request builder when it takes a database
     /// reference. Tests read it directly via `DatabaseRefHandle::inner_arc`
     /// to assert the wire shape.
@@ -39,56 +45,40 @@ pub(crate) struct DatabaseRefInner {
     pub(crate) inner: DriverDatabaseReference,
 }
 
-/// Opaque C ABI handle for `DatabaseRefInner`.
-///
-/// Storage pun: see the matching pattern on `AccountRefHandle`.
-#[repr(C)]
-pub struct DatabaseRefHandle {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-struct DatabaseRefStorage {
-    _opaque: [u8; 0],
-    inner: Arc<DatabaseRefInner>,
-}
-
 impl DatabaseRefHandle {
     fn into_raw(inner: DriverDatabaseReference) -> *mut Self {
-        let storage = Box::new(DatabaseRefStorage {
-            _opaque: [],
-            inner: Arc::new(DatabaseRefInner { inner }),
-        });
-        Box::into_raw(storage).cast::<DatabaseRefHandle>()
+        Arc::into_raw(Arc::new(DatabaseRefHandle { inner })) as *mut Self
     }
 
-    fn from_arc_into_raw(inner: Arc<DatabaseRefInner>) -> *mut Self {
-        let storage = Box::new(DatabaseRefStorage { _opaque: [], inner });
-        Box::into_raw(storage).cast::<DatabaseRefHandle>()
+    fn from_arc_into_raw(this: Arc<DatabaseRefHandle>) -> *mut Self {
+        Arc::into_raw(this) as *mut Self
     }
 
     #[allow(
         dead_code,
         reason = "first non-test caller is the operation request builder"
     )]
-    pub(crate) fn inner_arc(p: *const DatabaseRefHandle) -> Option<Arc<DatabaseRefInner>> {
+    pub(crate) fn inner_arc(p: *const DatabaseRefHandle) -> Option<Arc<DatabaseRefHandle>> {
         if p.is_null() {
             return None;
         }
-        // SAFETY: caller guarantees `p` was obtained from `into_raw` and
-        // has not been freed.
-        let storage = unsafe { &*(p as *const DatabaseRefStorage) };
-        Some(Arc::clone(&storage.inner))
+        // SAFETY: caller guarantees `p` was obtained from `into_raw` and has
+        // not been freed. Bumping the strong count before reconstructing the
+        // `Arc` leaves the caller's reference intact.
+        unsafe {
+            Arc::increment_strong_count(p);
+            Some(Arc::from_raw(p))
+        }
     }
 
     fn drop_raw(p: *mut DatabaseRefHandle) {
         if p.is_null() {
             return;
         }
-        // SAFETY: pun back into the `Box<DatabaseRefStorage>` we
-        // originally allocated.
+        // SAFETY: caller guarantees `p` was obtained from `into_raw` and has
+        // not already been freed.
         unsafe {
-            drop(Box::from_raw(p.cast::<DatabaseRefStorage>()));
+            drop(Arc::from_raw(p as *const DatabaseRefHandle));
         }
     }
 }

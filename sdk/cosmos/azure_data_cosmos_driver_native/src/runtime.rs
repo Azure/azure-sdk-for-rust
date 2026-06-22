@@ -22,7 +22,16 @@ use tokio::runtime::Runtime;
 
 use crate::runtime_builder::RuntimeBuildError;
 
-/// Internal storage of a `cosmos_runtime_t`.
+/// The C ABI handle for the async runtime.
+///
+/// A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
+/// opaque type (`cosmos_runtime_t`) because C cannot see its fields. The handle
+/// is reference-counted via `Arc` so completion queues can keep the runtime
+/// alive for the duration of in-flight operations independently of the C
+/// handle's lifetime. Construction always goes through
+/// `RuntimeContext::new_default` (test path) or
+/// `RuntimeContext::new_with_builder` (production path called from the public
+/// `cosmos_runtime_builder_build`).
 ///
 /// - `tokio` — the wrapper-side multi-threaded Tokio runtime. Used to
 ///   `block_on(...)` driver builder construction at FFI-call time and to
@@ -31,7 +40,7 @@ use crate::runtime_builder::RuntimeBuildError;
 ///   the per-account driver registry, container cache, account-metadata
 ///   cache, HTTP transport factory, and so on. Cloning the `Arc` is cheap
 ///   and is how the driver / account surfaces hand out handles.
-pub(crate) struct RuntimeContextInner {
+pub struct RuntimeContext {
     /// Required at FFI-call time (e.g. `block_on` for the driver builder
     /// and `spawn` for per-operation submits) but never
     /// read directly outside that context, so the field reads as dead
@@ -49,35 +58,6 @@ pub(crate) struct RuntimeContextInner {
         reason = "first non-test caller is the driver / account references"
     )]
     pub(crate) driver: Arc<CosmosDriverRuntime>,
-}
-
-/// Opaque C ABI handle for the async runtime.
-///
-/// The struct body is intentionally opaque to cbindgen — the real state
-/// lives behind a `Box<RuntimeContextStorage>` whose first field is the same
-/// `_opaque: [u8; 0]` marker. Construction always goes through
-/// `RuntimeContext::new_default` (test path) or
-/// `RuntimeContext::new_with_builder` (production path called from the
-/// public `cosmos_runtime_builder_build`).
-#[repr(C)]
-pub struct RuntimeContext {
-    // Cbindgen-opaque marker: zero-sized array on the C side, real storage
-    // lives in a separately-boxed `RuntimeContextStorage` whose pointer is
-    // recovered via the accessors below. We use this trick (rather than a
-    // plain Rust field of type `Arc<RuntimeContextInner>`) so the public
-    // header doesn't grow `cosmos_Arc_*` typedef noise.
-    _opaque: [u8; 0],
-}
-
-/// Internal box paired with each `RuntimeContext` allocation.
-///
-/// We pun the `RuntimeContext`'s heap allocation: the `Box<RuntimeContext>`
-/// we hand across the FFI is *actually* a `Box<RuntimeContextStorage>`
-/// whose first field is the empty `_opaque` marker.
-#[repr(C)]
-struct RuntimeContextStorage {
-    _opaque: [u8; 0],
-    inner: Arc<RuntimeContextInner>,
 }
 
 impl RuntimeContext {
@@ -119,29 +99,24 @@ impl RuntimeContext {
             .block_on(async move { builder.build().await })
             .map_err(RuntimeBuildError::Driver)?;
 
-        let storage = Box::new(RuntimeContextStorage {
-            _opaque: [],
-            inner: Arc::new(RuntimeContextInner { tokio, driver }),
-        });
-        // SAFETY: `RuntimeContextStorage` and `RuntimeContext` are both
-        // `#[repr(C)]` with `_opaque: [u8; 0]` as the first field. The C
-        // side only ever sees the `_opaque` field; the inner Arc lives in
-        // the trailing bytes of the same allocation.
-        Ok(Box::into_raw(storage).cast::<RuntimeContext>())
+        Ok(Arc::into_raw(Arc::new(RuntimeContext { tokio, driver })) as *mut RuntimeContext)
     }
 
     /// Returns a cloned `Arc` to the inner state, used by completion queues
     /// that need to keep the runtime alive for the duration of in-flight
     /// operations.
-    pub(crate) fn inner_arc(this: *const RuntimeContext) -> Option<Arc<RuntimeContextInner>> {
+    pub(crate) fn inner_arc(this: *const RuntimeContext) -> Option<Arc<RuntimeContext>> {
         if this.is_null() {
             return None;
         }
         // SAFETY: caller guarantees `this` was obtained from a successful
-        // `new_with_builder()` / `new_default()` (i.e. a
-        // `Box<RuntimeContextStorage>` punned to `*mut RuntimeContext`).
-        let storage = unsafe { &*(this as *const RuntimeContextStorage) };
-        Some(Arc::clone(&storage.inner))
+        // `new_with_builder()` / `new_default()`. Bumping the strong count
+        // before reconstructing the `Arc` leaves the caller's reference
+        // intact.
+        unsafe {
+            Arc::increment_strong_count(this);
+            Some(Arc::from_raw(this))
+        }
     }
 
     /// Borrows the wrapper from a raw pointer for the duration of an FFI call.
@@ -165,10 +140,11 @@ impl RuntimeContext {
         if this.is_null() {
             return;
         }
-        // SAFETY: pun back into the `Box<RuntimeContextStorage>` the
-        // allocation actually came from.
+        // SAFETY: caller guarantees `this` was obtained from
+        // `new_with_builder()` / `new_default()` and has not already been
+        // freed.
         unsafe {
-            drop(Box::from_raw(this.cast::<RuntimeContextStorage>()));
+            drop(Arc::from_raw(this as *const RuntimeContext));
         }
     }
 }

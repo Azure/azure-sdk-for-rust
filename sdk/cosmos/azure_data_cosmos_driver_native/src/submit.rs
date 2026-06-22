@@ -34,8 +34,8 @@ use crate::completion::{
     Completion, CompletionQueue, CompletionQueueInner, CosmosCompletionOutcome, CosmosCqState,
     OperationHandle, OperationInner,
 };
-use crate::container_ref::ContainerRefInner;
-use crate::driver::{DriverHandle, DriverInner};
+use crate::container_ref::ContainerRefHandle;
+use crate::driver::DriverHandle;
 use crate::driver_options::DriverOptionsHandle;
 use crate::error::{CosmosErrorCode, CosmosErrorInner};
 use crate::op_request::{build_request, CosmosOperationRequest};
@@ -137,7 +137,7 @@ fn pre_flight_spawn(
 /// queue's `include_error_details` option.
 fn spawn_oneshot<Fut, R>(
     ctx: SpawnContext,
-    runtime: Arc<crate::runtime::RuntimeContextInner>,
+    runtime: Arc<crate::runtime::RuntimeContext>,
     fut: Fut,
     to_response: impl FnOnce(R) -> *mut ResponseHandle + Send + 'static,
 ) where
@@ -522,7 +522,7 @@ pub extern "C" fn cosmos_driver_get_or_create_submit(
             // payload is the driver Arc carried in the side-payload
             // slot. `_take_driver` extracts it; the scalar / header
             // accessors return defaults.
-            let driver_inner = Arc::new(DriverInner { inner: driver_arc });
+            let driver_inner = Arc::new(DriverHandle { inner: driver_arc });
             ResponseHandle::into_raw_with_driver(driver_inner)
         },
     );
@@ -597,7 +597,7 @@ pub extern "C" fn cosmos_driver_resolve_container_submit(
                 .await
         },
         |container_ref: azure_data_cosmos_driver::models::ContainerReference| {
-            let container_inner = Arc::new(ContainerRefInner {
+            let container_inner = Arc::new(ContainerRefHandle {
                 inner: container_ref,
             });
             ResponseHandle::into_raw_with_container(container_inner)

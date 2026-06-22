@@ -537,6 +537,59 @@ typedef struct cosmos_account_ref_t cosmos_account_ref_t;
 typedef struct cosmos_completion_t cosmos_completion_t;
 
 /**
+ * The C ABI handle for a container reference.
+ *
+ * A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
+ * opaque type (`cosmos_container_ref_t`) because C cannot see its fields. The
+ * handle is reference-counted via `Arc` so a degenerate response can stash a
+ * sibling reference and `cosmos_container_ref_clone` can mint another with
+ * only an atomic bump.
+ */
+typedef struct cosmos_container_ref_t cosmos_container_ref_t;
+
+/**
+ * The C ABI handle for a database reference.
+ *
+ * A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
+ * opaque type (`cosmos_database_ref_t`) because C cannot see its fields. The
+ * handle is reference-counted via `Arc` so a sibling handle can share the same
+ * state with only an atomic bump.
+ */
+typedef struct cosmos_database_ref_t cosmos_database_ref_t;
+
+/**
+ * The C ABI handle for a [`CosmosDriver`].
+ *
+ * A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
+ * opaque type (`cosmos_driver_t`) because C cannot see its fields. The handle
+ * is reference-counted via `Arc` so the submit pipeline and a degenerate
+ * response's stashed side payload can share it with only an atomic bump.
+ */
+typedef struct cosmos_driver_t cosmos_driver_t;
+
+/**
+ * The C ABI handle for the async runtime.
+ *
+ * A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
+ * opaque type (`cosmos_runtime_t`) because C cannot see its fields. The handle
+ * is reference-counted via `Arc` so completion queues can keep the runtime
+ * alive for the duration of in-flight operations independently of the C
+ * handle's lifetime. Construction always goes through
+ * `RuntimeContext::new_default` (test path) or
+ * `RuntimeContext::new_with_builder` (production path called from the public
+ * `cosmos_runtime_builder_build`).
+ *
+ * - `tokio` — the wrapper-side multi-threaded Tokio runtime. Used to
+ *   `block_on(...)` driver builder construction at FFI-call time and to
+ *   spawn the per-operation tasks that drive submits.
+ * - `driver` — the underlying `azure_data_cosmos_driver` runtime that owns
+ *   the per-account driver registry, container cache, account-metadata
+ *   cache, HTTP transport factory, and so on. Cloning the `Arc` is cheap
+ *   and is how the driver / account surfaces hand out handles.
+ */
+typedef struct cosmos_runtime_t cosmos_runtime_t;
+
+/**
  * Opaque heap-allocated wrapper around an `Arc<CosmosErrorInner>`.
  *
  * The FFI hands out `*mut CosmosErrorHandle` as `cosmos_error_t *`. Cloning
@@ -584,20 +637,6 @@ typedef struct cosmos_cq_t {
 } cosmos_cq_t;
 
 /**
- * Opaque C ABI handle for the async runtime.
- *
- * The struct body is intentionally opaque to cbindgen — the real state
- * lives behind a `Box<RuntimeContextStorage>` whose first field is the same
- * `_opaque: [u8; 0]` marker. Construction always goes through
- * `RuntimeContext::new_default` (test path) or
- * `RuntimeContext::new_with_builder` (production path called from the
- * public `cosmos_runtime_builder_build`).
- */
-typedef struct cosmos_runtime_t {
-  uint8_t _opaque[0];
-} cosmos_runtime_t;
-
-/**
  * Layout of the `cosmos_cq_options_t` struct as it appears at the C ABI
  * boundary. Caller-owned, pass-by-value (per section 3.1.2 the layout is published
  * for inputs).
@@ -642,33 +681,6 @@ typedef struct cosmos_operation_handle_t {
 typedef struct cosmos_response_t {
   uint8_t _opaque[0];
 } cosmos_response_t;
-
-/**
- * Opaque C ABI handle for `ContainerRefInner`.
- *
- * Storage pun: same shape as the other reference handles.
- */
-typedef struct cosmos_container_ref_t {
-  uint8_t _opaque[0];
-} cosmos_container_ref_t;
-
-/**
- * Opaque C ABI handle for a [`CosmosDriver`].
- *
- * Storage pun: same shape as the other reference handles.
- */
-typedef struct cosmos_driver_t {
-  uint8_t _opaque[0];
-} cosmos_driver_t;
-
-/**
- * Opaque C ABI handle for `DatabaseRefInner`.
- *
- * Storage pun: see the matching pattern on `AccountRefHandle`.
- */
-typedef struct cosmos_database_ref_t {
-  uint8_t _opaque[0];
-} cosmos_database_ref_t;
 
 /**
  * Opaque C ABI handle for a built [`DriverOptions`] value.

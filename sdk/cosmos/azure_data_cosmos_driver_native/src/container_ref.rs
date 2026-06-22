@@ -38,56 +38,47 @@ use crate::driver::DriverHandle;
 use crate::error::{CosmosErrorCode, CosmosErrorHandle};
 use crate::runtime::RuntimeContext;
 
-pub(crate) struct ContainerRefInner {
-    pub(crate) inner: DriverContainerReference,
-}
-
-/// Opaque C ABI handle for `ContainerRefInner`.
+/// The C ABI handle for a container reference.
 ///
-/// Storage pun: same shape as the other reference handles.
-#[repr(C)]
+/// A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
+/// opaque type (`cosmos_container_ref_t`) because C cannot see its fields. The
+/// handle is reference-counted via `Arc` so a degenerate response can stash a
+/// sibling reference and `cosmos_container_ref_clone` can mint another with
+/// only an atomic bump.
 pub struct ContainerRefHandle {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-struct ContainerRefStorage {
-    _opaque: [u8; 0],
-    inner: Arc<ContainerRefInner>,
+    pub(crate) inner: DriverContainerReference,
 }
 
 impl ContainerRefHandle {
     pub(crate) fn into_raw(inner: DriverContainerReference) -> *mut Self {
-        let storage = Box::new(ContainerRefStorage {
-            _opaque: [],
-            inner: Arc::new(ContainerRefInner { inner }),
-        });
-        Box::into_raw(storage).cast::<ContainerRefHandle>()
+        Arc::into_raw(Arc::new(ContainerRefHandle { inner })) as *mut Self
     }
 
-    pub(crate) fn from_arc_into_raw(inner: Arc<ContainerRefInner>) -> *mut Self {
-        let storage = Box::new(ContainerRefStorage { _opaque: [], inner });
-        Box::into_raw(storage).cast::<ContainerRefHandle>()
+    pub(crate) fn from_arc_into_raw(this: Arc<ContainerRefHandle>) -> *mut Self {
+        Arc::into_raw(this) as *mut Self
     }
 
-    pub(crate) fn inner_arc(p: *const ContainerRefHandle) -> Option<Arc<ContainerRefInner>> {
+    pub(crate) fn inner_arc(p: *const ContainerRefHandle) -> Option<Arc<ContainerRefHandle>> {
         if p.is_null() {
             return None;
         }
-        // SAFETY: caller guarantees `p` was obtained from `into_raw` and
-        // has not been freed.
-        let storage = unsafe { &*(p as *const ContainerRefStorage) };
-        Some(Arc::clone(&storage.inner))
+        // SAFETY: caller guarantees `p` was obtained from `into_raw` and has
+        // not been freed. Bumping the strong count before reconstructing the
+        // `Arc` leaves the caller's reference intact.
+        unsafe {
+            Arc::increment_strong_count(p);
+            Some(Arc::from_raw(p))
+        }
     }
 
     fn drop_raw(p: *mut ContainerRefHandle) {
         if p.is_null() {
             return;
         }
-        // SAFETY: pun back into the `Box<ContainerRefStorage>` we
-        // originally allocated.
+        // SAFETY: caller guarantees `p` was obtained from `into_raw` and has
+        // not already been freed.
         unsafe {
-            drop(Box::from_raw(p.cast::<ContainerRefStorage>()));
+            drop(Arc::from_raw(p as *const ContainerRefHandle));
         }
     }
 }
