@@ -897,7 +897,7 @@ typedef struct cosmos_operation_request_t {
   /**
    * Continuation token to resume a feed (NUL-terminated UTF-8). NULL = none.
    * Only meaningful for feed kinds dispatched through
-   * `cosmos_driver_execute_operation_submit`.
+   * `cosmos_submit_operation`.
    */
   const char *continuation_token;
   /**
@@ -1659,7 +1659,7 @@ const char *cosmos_response_continuation_token(const struct cosmos_response_t *r
 
 /**
  * Borrowed pointer to the **next-page** continuation token for a feed
- * page produced by [`crate::submit::cosmos_driver_execute_operation_submit`],
+ * page produced by [`crate::submit::cosmos_submit_operation`],
  * or NULL when this was the last page / the response did not come from a
  * feed submit.
  *
@@ -1828,7 +1828,7 @@ int32_t cosmos_runtime_builder_build(struct cosmos_runtime_builder_t *builder,
  * Submits a feed-capable operation for asynchronous execution, binding to
  * the driver's planner so a single page is produced per call.
  *
- * Unlike [`cosmos_driver_execute_singleton_operation_submit`], this path
+ * Unlike [`cosmos_submit_singleton_operation`], this path
  * runs `plan_operation` + `execute_plan` internally so it can both
  * **resume** from an inbound continuation token
  * ([`CosmosOperationRequest::continuation_token`]) and **surface** the
@@ -1870,11 +1870,11 @@ int32_t cosmos_runtime_builder_build(struct cosmos_runtime_builder_t *builder,
  * values (`INVALID_OPTION_VALUE`), and the queue states
  * (`QUEUE_SHUTDOWN` / `QUEUE_FULL`).
  */
-struct cosmos_operation_handle_t *cosmos_driver_execute_operation_submit(const struct cosmos_driver_t *driver,
-                                                                         const struct cosmos_operation_request_t *request,
-                                                                         struct cosmos_cq_t *queue,
-                                                                         intptr_t user_data,
-                                                                         cosmos_error_code_t *out_pre_error);
+struct cosmos_operation_handle_t *cosmos_submit_operation(const struct cosmos_driver_t *driver,
+                                                          const struct cosmos_operation_request_t *request,
+                                                          struct cosmos_cq_t *queue,
+                                                          intptr_t user_data,
+                                                          cosmos_error_code_t *out_pre_error);
 
 /**
  * Submits a singleton (single-result) operation for asynchronous
@@ -1884,7 +1884,7 @@ struct cosmos_operation_handle_t *cosmos_driver_execute_operation_submit(const s
  * result — create / read / replace / delete / patch item, database and
  * container CRUD, read/replace offer. Feed kinds (queries, read-all,
  * change feed) must go through
- * [`cosmos_driver_execute_operation_submit`] instead; submitting one here
+ * [`cosmos_submit_operation`] instead; submitting one here
  * makes the driver assert in debug builds and yields a
  * `CLIENT_SINGLETON_OPERATION_RETURNED_EMPTY_PAGE`-shaped error in release.
  *
@@ -1893,15 +1893,15 @@ struct cosmos_operation_handle_t *cosmos_driver_execute_operation_submit(const s
  *
  * # Parameters / Returns
  *
- * Identical in shape to [`cosmos_driver_execute_operation_submit`]; the
+ * Identical in shape to [`cosmos_submit_operation`]; the
  * completion always carries a single response (outcome `OK`) or an error
  * (outcome `ERROR`).
  */
-struct cosmos_operation_handle_t *cosmos_driver_execute_singleton_operation_submit(const struct cosmos_driver_t *driver,
-                                                                                   const struct cosmos_operation_request_t *request,
-                                                                                   struct cosmos_cq_t *queue,
-                                                                                   intptr_t user_data,
-                                                                                   cosmos_error_code_t *out_pre_error);
+struct cosmos_operation_handle_t *cosmos_submit_singleton_operation(const struct cosmos_driver_t *driver,
+                                                                    const struct cosmos_operation_request_t *request,
+                                                                    struct cosmos_cq_t *queue,
+                                                                    intptr_t user_data,
+                                                                    cosmos_error_code_t *out_pre_error);
 
 /**
  * Asynchronous variant of [`crate::driver::cosmos_driver_get_or_create_blocking`].

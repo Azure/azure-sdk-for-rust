@@ -4,8 +4,8 @@
 //! Generic submit pipeline.
 //!
 //! The two canonical operation entry points
-//! ([`cosmos_driver_execute_operation_submit`] /
-//! [`cosmos_driver_execute_singleton_operation_submit`]), plus the async
+//! ([`cosmos_submit_operation`] /
+//! [`cosmos_submit_singleton_operation`]), plus the async
 //! driver-creation paths ([`cosmos_driver_get_or_create_submit`],
 //! [`cosmos_driver_resolve_container_submit`]) all share the same
 //! shape:
@@ -234,7 +234,7 @@ fn spawn_oneshot<Fut, R>(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FFI: cosmos_driver_execute_operation_submit / _execute_singleton_operation_submit
+// FFI: cosmos_submit_operation / cosmos_submit_singleton_operation
 //
 // The two canonical entry points host SDKs use. The host fills a flat
 // `cosmos_operation_request_t` (kind + references + body + per-op tweaks +
@@ -246,7 +246,7 @@ fn spawn_oneshot<Fut, R>(
 /// Submits a feed-capable operation for asynchronous execution, binding to
 /// the driver's planner so a single page is produced per call.
 ///
-/// Unlike [`cosmos_driver_execute_singleton_operation_submit`], this path
+/// Unlike [`cosmos_submit_singleton_operation`], this path
 /// runs `plan_operation` + `execute_plan` internally so it can both
 /// **resume** from an inbound continuation token
 /// ([`CosmosOperationRequest::continuation_token`]) and **surface** the
@@ -288,7 +288,7 @@ fn spawn_oneshot<Fut, R>(
 /// values (`INVALID_OPTION_VALUE`), and the queue states
 /// (`QUEUE_SHUTDOWN` / `QUEUE_FULL`).
 #[no_mangle]
-pub extern "C" fn cosmos_driver_execute_operation_submit(
+pub extern "C" fn cosmos_submit_operation(
     driver: *const DriverHandle,
     request: *const CosmosOperationRequest,
     queue: *mut CompletionQueue,
@@ -379,7 +379,7 @@ pub extern "C" fn cosmos_driver_execute_operation_submit(
 /// result — create / read / replace / delete / patch item, database and
 /// container CRUD, read/replace offer. Feed kinds (queries, read-all,
 /// change feed) must go through
-/// [`cosmos_driver_execute_operation_submit`] instead; submitting one here
+/// [`cosmos_submit_operation`] instead; submitting one here
 /// makes the driver assert in debug builds and yields a
 /// `CLIENT_SINGLETON_OPERATION_RETURNED_EMPTY_PAGE`-shaped error in release.
 ///
@@ -388,11 +388,11 @@ pub extern "C" fn cosmos_driver_execute_operation_submit(
 ///
 /// # Parameters / Returns
 ///
-/// Identical in shape to [`cosmos_driver_execute_operation_submit`]; the
+/// Identical in shape to [`cosmos_submit_operation`]; the
 /// completion always carries a single response (outcome `OK`) or an error
 /// (outcome `ERROR`).
 #[no_mangle]
-pub extern "C" fn cosmos_driver_execute_singleton_operation_submit(
+pub extern "C" fn cosmos_submit_singleton_operation(
     driver: *const DriverHandle,
     request: *const CosmosOperationRequest,
     queue: *mut CompletionQueue,
@@ -629,13 +629,7 @@ mod tests {
     #[test]
     fn execute_operation_submit_rejects_null_driver() {
         let mut err = CosmosErrorCode::CosmosErrorCodeSuccess;
-        let h = cosmos_driver_execute_operation_submit(
-            ptr::null(),
-            ptr::null(),
-            ptr::null_mut(),
-            0,
-            &mut err,
-        );
+        let h = cosmos_submit_operation(ptr::null(), ptr::null(), ptr::null_mut(), 0, &mut err);
         assert!(h.is_null());
         assert_eq!(err, CosmosErrorCode::CosmosErrorCodeInvalidArgument);
     }
@@ -643,7 +637,7 @@ mod tests {
     #[test]
     fn execute_singleton_operation_submit_rejects_null_driver() {
         let mut err = CosmosErrorCode::CosmosErrorCodeSuccess;
-        let h = cosmos_driver_execute_singleton_operation_submit(
+        let h = cosmos_submit_singleton_operation(
             ptr::null(),
             ptr::null(),
             ptr::null_mut(),

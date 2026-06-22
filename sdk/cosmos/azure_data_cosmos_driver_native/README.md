@@ -42,8 +42,8 @@ for the full design.
 | Item-CRUD operations (read / create / upsert / replace / delete / patch) | ✅ |
 | Container-CRUD operations (read / replace / delete) | ✅ |
 | Database + account-scope operations | ✅ |
-| `cosmos_driver_execute_singleton_operation_submit` (point ops) | ✅ |
-| `cosmos_driver_execute_operation_submit` (feeds + pagination) | ✅ |
+| `cosmos_submit_singleton_operation` (point ops) | ✅ |
+| `cosmos_submit_operation` (feeds + pagination) | ✅ |
 | Response status / RU / body / activity-id / session-token / etag / continuation | ✅ |
 | Pagination (read-feeds + query result sets) | ⏳ planned |
 | Multi-part response body iteration | ⏳ planned |
@@ -107,10 +107,10 @@ below for the production-shape guidance.
 > `cosmos_CosmosOperationOptions` seeded by `cosmos_operation_options_default`)
 > and executed through exactly two entry points:
 >
-> - `cosmos_driver_execute_singleton_operation_submit` — point operations
+> - `cosmos_submit_singleton_operation` — point operations
 >   (create / read / replace / delete / patch item, database & container CRUD,
 >   read/replace offer).
-> - `cosmos_driver_execute_operation_submit` — feed/paginated operations
+> - `cosmos_submit_operation` — feed/paginated operations
 >   (queries, read-all, change feed); resumes from and surfaces a continuation
 >   token.
 >
@@ -194,8 +194,8 @@ internal static class Cosmos
     }
 
     // The two — and only two — execution entry points.
-    [DllImport(Lib)] public static extern IntPtr cosmos_driver_execute_singleton_operation_submit(IntPtr drv, ref OpRequest req, IntPtr q, IntPtr ud, out int preErr);
-    [DllImport(Lib)] public static extern IntPtr cosmos_driver_execute_operation_submit(IntPtr drv, ref OpRequest req, IntPtr q, IntPtr ud, out int preErr);
+    [DllImport(Lib)] public static extern IntPtr cosmos_submit_singleton_operation(IntPtr drv, ref OpRequest req, IntPtr q, IntPtr ud, out int preErr);
+    [DllImport(Lib)] public static extern IntPtr cosmos_submit_operation(IntPtr drv, ref OpRequest req, IntPtr q, IntPtr ud, out int preErr);
     [DllImport(Lib)] public static extern void   cosmos_operation_handle_free(IntPtr h);
 
     [DllImport(Lib)] public static extern int    cosmos_completion_outcome(IntPtr c);
@@ -214,7 +214,7 @@ internal static class Program
 {
     static IntPtr SubmitAndWait(IntPtr drv, ref Cosmos.OpRequest req, IntPtr q)
     {
-        var h = Cosmos.cosmos_driver_execute_singleton_operation_submit(drv, ref req, q, IntPtr.Zero, out int pre);
+        var h = Cosmos.cosmos_submit_singleton_operation(drv, ref req, q, IntPtr.Zero, out int pre);
         if (h == IntPtr.Zero) throw new InvalidOperationException($"submit pre-flight failed: {pre}");
         var c = Cosmos.cosmos_cq_wait(q, 30_000);
         Cosmos.cosmos_operation_handle_free(h);
@@ -344,7 +344,7 @@ public final class CosmosSample {
     static final MethodHandle PKB_ADD_S         = h("cosmos_partition_key_builder_add_string", FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS));
     static final MethodHandle PKB_BUILD         = h("cosmos_partition_key_builder_build",      FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS));
     static final MethodHandle PK_FREE           = h("cosmos_partition_key_free",               FunctionDescriptor.ofVoid(ADDRESS));
-    static final MethodHandle SUBMIT_SINGLETON  = h("cosmos_driver_execute_singleton_operation_submit", FunctionDescriptor.of(ADDRESS, ADDRESS, ADDRESS, ADDRESS, ADDRESS, ADDRESS));
+    static final MethodHandle SUBMIT_SINGLETON  = h("cosmos_submit_singleton_operation", FunctionDescriptor.of(ADDRESS, ADDRESS, ADDRESS, ADDRESS, ADDRESS, ADDRESS));
     static final MethodHandle OP_HND_FREE       = h("cosmos_operation_handle_free", FunctionDescriptor.ofVoid(ADDRESS));
     static final MethodHandle COMP_OUTCOME      = h("cosmos_completion_outcome",    FunctionDescriptor.of(JAVA_INT, ADDRESS));
     static final MethodHandle COMP_STATUS       = h("cosmos_completion_status",     FunctionDescriptor.of(JAVA_INT, ADDRESS));
@@ -518,7 +518,7 @@ type Doc struct {
 // on return via defer — no ownership crosses the boundary.
 func submit(drv *C.cosmos_driver_t, q *C.cosmos_cq_t, req *C.cosmos_operation_request_t) (*C.cosmos_completion_t, error) {
     var pre C.cosmos_error_code_t
-    h := C.cosmos_driver_execute_singleton_operation_submit(drv, req, q, nil, &pre)
+    h := C.cosmos_submit_singleton_operation(drv, req, q, nil, &pre)
     if h == nil {
         return nil, fmt.Errorf("submit pre-flight failed: %d", int32(pre))
     }
@@ -743,7 +743,7 @@ _pkb_new               = _decl("cosmos_partition_key_builder_new", [], void_p)
 _pkb_add_s             = _decl("cosmos_partition_key_builder_add_string", [void_p, c_char_p], ctypes.c_int32)
 _pkb_build             = _decl("cosmos_partition_key_builder_build", [void_p, ctypes.POINTER(void_p)], ctypes.c_int32)
 _pk_free               = _decl("cosmos_partition_key_free", [void_p], None)
-_submit_singleton      = _decl("cosmos_driver_execute_singleton_operation_submit", [void_p, req_p, void_p, void_p, ctypes.POINTER(ctypes.c_int32)], void_p)
+_submit_singleton      = _decl("cosmos_submit_singleton_operation", [void_p, req_p, void_p, void_p, ctypes.POINTER(ctypes.c_int32)], void_p)
 _op_hnd_free           = _decl("cosmos_operation_handle_free", [void_p], None)
 _comp_outcome          = _decl("cosmos_completion_outcome", [void_p], ctypes.c_int32)
 _comp_status           = _decl("cosmos_completion_status", [void_p], ctypes.c_int32)
@@ -923,8 +923,8 @@ if __name__ == "__main__":
    - `_blocking` / `_create` / `_get_or_create_*` / `_build` produce handles
      the caller owns and must `_free`.
    - The submit entry points
-     (`cosmos_driver_execute_singleton_operation_submit` /
-     `cosmos_driver_execute_operation_submit`) only **borrow** the
+     (`cosmos_submit_singleton_operation` /
+     `cosmos_submit_operation`) only **borrow** the
      `cosmos_CosmosOperationRequest` and every pointer it carries for the
      duration of the call; the wrapper copies what it needs before returning,
      so the host may free its buffers immediately afterward.

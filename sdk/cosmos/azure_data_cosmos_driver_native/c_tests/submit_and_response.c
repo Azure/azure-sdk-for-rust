@@ -135,7 +135,7 @@ static int test_execute_operation_submit_rejects_null_driver(void)
     int result = TEST_PASS;
     cosmos_error_code_t err = COSMOS_ERROR_CODE_SUCCESS;
     cosmos_operation_handle_t *h =
-        cosmos_driver_execute_operation_submit(NULL, NULL, NULL, 0, &err);
+        cosmos_submit_operation(NULL, NULL, NULL, 0, &err);
     ASSERT(h == NULL, "submit returned NULL");
     ASSERT(err == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
            "submit set INVALID_ARGUMENT (err=%d)", err);
@@ -147,7 +147,7 @@ static int test_execute_singleton_operation_submit_rejects_null_driver(void)
     int result = TEST_PASS;
     cosmos_error_code_t err = COSMOS_ERROR_CODE_SUCCESS;
     cosmos_operation_handle_t *h =
-        cosmos_driver_execute_singleton_operation_submit(NULL, NULL, NULL, 0, &err);
+        cosmos_submit_singleton_operation(NULL, NULL, NULL, 0, &err);
     ASSERT(h == NULL, "submit returned NULL");
     ASSERT(err == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
            "submit set INVALID_ARGUMENT (err=%d)", err);
@@ -192,7 +192,7 @@ static int test_singleton_submit_with_request_rejects_null_driver(void)
 
     cosmos_error_code_t err = COSMOS_ERROR_CODE_SUCCESS;
     cosmos_operation_handle_t *h =
-        cosmos_driver_execute_singleton_operation_submit(NULL, &req, NULL, 0, &err);
+        cosmos_submit_singleton_operation(NULL, &req, NULL, 0, &err);
     ASSERT(h == NULL, "submit returned NULL on NULL driver");
     ASSERT(err == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
            "set INVALID_ARGUMENT (err=%d)", err);

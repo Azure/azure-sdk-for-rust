@@ -97,7 +97,7 @@ impl ResponseHandle {
     }
 
     /// Builds a response handle for a feed page produced by
-    /// `cosmos_driver_execute_operation_submit`. `response` is `None` when
+    /// `cosmos_submit_operation`. `response` is `None` when
     /// the feed is exhausted (host treats it as end-of-stream); `next` is
     /// the plan-derived continuation token for the following page (`None`
     /// when this was the last page).
@@ -278,7 +278,7 @@ pub extern "C" fn cosmos_response_continuation_token(
 }
 
 /// Borrowed pointer to the **next-page** continuation token for a feed
-/// page produced by [`crate::submit::cosmos_driver_execute_operation_submit`],
+/// page produced by [`crate::submit::cosmos_submit_operation`],
 /// or NULL when this was the last page / the response did not come from a
 /// feed submit.
 ///

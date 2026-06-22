@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 
 //! Flat C ABI request surface for the two canonical submit entry points
-//! ([`crate::submit::cosmos_driver_execute_operation_submit`] and
-//! [`crate::submit::cosmos_driver_execute_singleton_operation_submit`]).
+//! ([`crate::submit::cosmos_submit_operation`] and
+//! [`crate::submit::cosmos_submit_singleton_operation`]).
 //!
 //! ## Why this module exists
 //!
@@ -600,7 +600,7 @@ pub struct CosmosOperationRequest {
     pub activity_id: *const c_char,
     /// Continuation token to resume a feed (NUL-terminated UTF-8). NULL = none.
     /// Only meaningful for feed kinds dispatched through
-    /// `cosmos_driver_execute_operation_submit`.
+    /// `cosmos_submit_operation`.
     pub continuation_token: *const c_char,
 
     /// Max item count hint for feeds. `< 0` = unset.
