@@ -130,6 +130,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         eprintln!("Error: --concurrency cannot exceed {}.", u32::MAX);
         std::process::exit(1);
     }
+    if let Some(rate) = config.target_rate {
+        if rate == 0 {
+            eprintln!("Error: --target-rate must be at least 1.");
+            std::process::exit(1);
+        }
+        if config.max_in_flight == 0 {
+            eprintln!("Error: --max-in-flight must be at least 1 when --target-rate is set.");
+            std::process::exit(1);
+        }
+    }
     if config.seed_count == 0 {
         eprintln!("Error: --seed-count must be at least 1.");
         std::process::exit(1);
@@ -350,6 +360,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         feed_range_refresher,
         stats,
         concurrency: config.concurrency,
+        target_rate: config.target_rate,
+        max_in_flight: config.max_in_flight,
         duration,
         report_interval: Duration::from_secs(config.report_interval),
         results_container,
