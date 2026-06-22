@@ -921,7 +921,8 @@ impl ContainerClient {
                         .with_precondition(Precondition::if_none_match(Etag::from("*")));
                 }
                 ChangeFeedStartFrom::PointInTime(ts) => {
-                    // RFC 1123 / RFC 7231 IMF-fixdate format as required by Cosmos DB.
+                    // RFC 1123 date format (the IMF fixed-date production in
+                    // RFC 7231) as required by Cosmos DB.
                     use time::format_description::FormatItem;
                     use time::macros::format_description;
                     const RFC1123: &[FormatItem<'_>] = format_description!(

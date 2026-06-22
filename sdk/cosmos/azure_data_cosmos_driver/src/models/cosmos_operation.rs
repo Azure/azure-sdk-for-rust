@@ -625,10 +625,17 @@ impl CosmosOperation {
 
     /// Creates a change feed read operation for a container.
     ///
-    /// Sets the `A-IM` header to `Incremental Feed` (LatestVersion mode) and
-    /// the wire format version header. The caller is responsible for setting
-    /// start-from headers (e.g., `If-None-Match: *` for "Now") via
+    /// Sets the `A-IM` header to `Incremental Feed` (LatestVersion mode). The
+    /// caller is responsible for setting start-from headers (e.g.,
+    /// `If-None-Match: *` for "Now") via
     /// [`with_precondition`](Self::with_precondition).
+    ///
+    /// Note: the `x-ms-cosmos-changefeed-wire-format-version` header is
+    /// intentionally **not** set here. That header opts into the
+    /// full-fidelity (AllVersionsAndDeletes) wire format, which wraps each
+    /// document in `{ current, metadata, ... }`. In LatestVersion mode the
+    /// service must return plain documents, so the header is omitted. It will
+    /// be set by a future AllVersionsAndDeletes change feed operation.
     ///
     /// `target` scopes the change feed to a specific partition or EPK range.
     /// Pass `None` or `Some(FeedRange::full())` to read the entire container.
@@ -638,7 +645,6 @@ impl CosmosOperation {
             .into_feed_reference();
         let mut headers = CosmosRequestHeaders::new();
         headers.incremental_feed = true;
-        headers.changefeed_wire_format_version = true;
         Self::new(OperationType::ReadFeed, resource_ref, target).with_request_headers(headers)
     }
 

@@ -82,9 +82,15 @@ impl OperationOverrides {
     ///
     /// Headers set here take precedence over any previously-set values for
     /// the same header name (they overwrite on conflict).
+    ///
+    /// When `continuation_as_if_none_match` is `true` (change feed reads), the
+    /// continuation token is emitted as the `If-None-Match` header instead of
+    /// `x-ms-continuation`, since the change feed carries its continuation via
+    /// the ETag/`If-None-Match` mechanism.
     pub fn apply_headers(
         &self,
         headers: &mut azure_core::http::headers::Headers,
+        continuation_as_if_none_match: bool,
     ) -> crate::error::Result<()> {
         if let Some(feed_range) = &self.feed_range {
             if feed_range.min_inclusive() != &EffectivePartitionKey::MIN {
@@ -120,8 +126,13 @@ impl OperationOverrides {
         }
 
         if let Some(continuation) = &self.continuation {
+            let header_name = if continuation_as_if_none_match {
+                request_header_names::IF_NONE_MATCH
+            } else {
+                request_header_names::CONTINUATION
+            };
             headers.insert(
-                HeaderName::from_static(request_header_names::CONTINUATION),
+                HeaderName::from_static(header_name),
                 HeaderValue::from(continuation.clone()),
             );
         }
@@ -1352,7 +1363,9 @@ fn build_transport_request(
 
     // Apply overrides — these take precedence over operation-level headers
     // (e.g., an override partition key replaces the operation's partition key).
-    overrides.apply_headers(&mut headers)?;
+    // Change feed reads carry their continuation via `If-None-Match`, not
+    // `x-ms-continuation`.
+    overrides.apply_headers(&mut headers, operation.is_change_feed())?;
 
     // Add resolved session token
     if let Some(token) = &ctx.resolved_session_token {
@@ -3528,7 +3541,7 @@ mod tests {
         };
         let mut headers = azure_core::http::headers::Headers::new();
         overrides
-            .apply_headers(&mut headers)
+            .apply_headers(&mut headers, false)
             .expect("apply_headers should succeed");
 
         assert_eq!(
@@ -3569,7 +3582,7 @@ mod tests {
         };
         let mut headers = azure_core::http::headers::Headers::new();
         overrides
-            .apply_headers(&mut headers)
+            .apply_headers(&mut headers, false)
             .expect("apply_headers should succeed");
 
         assert_eq!(
