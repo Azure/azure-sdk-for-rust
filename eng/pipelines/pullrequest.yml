@@ -12,6 +12,9 @@ pr:
       - feature/*
       - hotfix/*
       - release/*
+  paths:
+    exclude:
+      - .github/skills/azsdk-common-*/**
 
 extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
