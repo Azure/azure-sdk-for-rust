@@ -284,9 +284,13 @@ impl CosmosResourceReference {
                 buf,
                 signing_end: 1,
                 signing_override,
-                // Offers keep percent-encoding (raw RID is not required for the
-                // offer signing scheme, which already signs the lowercased RID).
-                rid_based: false,
+                // Offers are signed over the lowercased RID (`is_name_based =
+                // false`), so the `/offers/{rid}` path must be sent raw — exactly
+                // like any other RID-addressed resource. Percent-encoding a
+                // reserved base64 character in the RID (`+`, `/`, or `=` padding)
+                // makes the gateway treat the segment as a name and reject the
+                // request with an opaque `401`.
+                rid_based: true,
             };
         }
 
@@ -620,8 +624,11 @@ fn is_unreserved(b: u8) -> bool {
 /// a base64 RID makes the gateway treat the segment as a name and reject the
 /// RID-based signature. Callers therefore apply this only to name-based paths.
 ///
-/// Resource ids (names) cannot contain `/`, and Cosmos RIDs use a URL-safe base64
-/// alphabet (no `/`), so splitting on `/` to preserve separators is always safe.
+/// Splitting on `/` to preserve separators is always safe here: resource names
+/// (ids) cannot contain `/`, and Cosmos RIDs use a base64 variant that maps the
+/// standard `/` to `-`, so a RID never contains a literal `/` either. RIDs *can*
+/// still contain other reserved characters (`+`, and `=` padding), which is
+/// precisely why RID-addressed paths bypass this function and are sent raw.
 /// The returned value borrows the input when no character needs encoding.
 pub(crate) fn encode_path_segments(path: &str) -> Cow<'_, str> {
     if path.bytes().all(|b| b == b'/' || is_unreserved(b)) {
@@ -1244,15 +1251,18 @@ mod tests {
     }
 
     #[test]
-    fn offer_is_not_rid_based_for_path_encoding() {
-        // Offers sign the lowercased RID but keep percent-encoding (rid_based
-        // stays false) — their behavior is intentionally left unchanged.
+    fn offer_is_rid_based_and_sent_raw() {
+        // Offers sign the lowercased RID (`is_name_based = false`), so the
+        // `/offers/{rid}` path must be routed raw like any other RID-addressed
+        // resource. An offer RID can carry reserved base64 characters (`+`, `=`
+        // padding); percent-encoding them would make the gateway reject the
+        // request with a `401`.
         let r = CosmosResourceReference::from(test_account())
             .with_resource_type(ResourceType::Offer)
             .with_rid("ABC123XYZ".into());
         let paths = r.compute_paths();
         assert_eq!(paths.signing_link(), "abc123xyz");
-        assert!(!paths.is_rid_based());
+        assert!(paths.is_rid_based());
     }
 
     #[test]

@@ -6,9 +6,11 @@
 
 ### Breaking Changes
 
+- Resource-reference accessors now return `Option` to account for RID-addressed references that have no name. `DatabaseReference::name_based_path`, `ContainerReference::database_name`, and `ContainerReference::name_based_path` return `None` when the reference is addressed by RID (previously they returned `&str`/`String` and assumed a name was always present). Use the new `ContainerReference::base_path` to obtain the addressing-appropriate path (RID-based or name-based) when building request URLs. ([#4640](https://github.com/Azure/azure-sdk-for-rust/pull/4640))
+
 ### Bugs Fixed
 
-- RID-addressed requests are now signed and routed correctly. The driver signs them over the lowercased resource RID (the leaf for point reads, the parent for feeds), matching the service's `is_name_based = false` rule, and sends the RID raw in the request URL path; name-addressed paths continue to be percent-encoded. Previously the driver signed the full name-style resource link and percent-encoded the RID for every request, so RID-addressed reads were rejected with `401 Unauthorized`. ([#4640](https://github.com/Azure/azure-sdk-for-rust/pull/4640))
+- RID-addressed requests are now signed and routed correctly. The driver signs them over the lowercased resource RID (the leaf for point reads, the parent for feeds), matching the service's `is_name_based = false` rule, and sends the RID raw in the request URL path; name-addressed paths continue to be percent-encoded. This includes offer requests, which are always RID-signed and are now routed raw. Previously the driver signed the full name-style resource link and percent-encoded the RID for every request, so RID-addressed reads were rejected with `401 Unauthorized`. ([#4640](https://github.com/Azure/azure-sdk-for-rust/pull/4640))
 
 ### Other Changes
 

@@ -3653,6 +3653,65 @@ mod tests {
         assert_eq!(request.url.path(), "/dbs/mydb");
     }
 
+    /// Builds a transport request for `operation` with default routing/context
+    /// and returns the final `Url::path()` after `set_path` has reprocessed it.
+    /// Used to assert the raw-vs-percent-encoded seam in `build_transport_request`.
+    fn transport_request_path(operation: &CosmosOperation) -> String {
+        let routing = test_routing();
+        let activity_id = ActivityId::from_string("default-activity".to_string());
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+        build_transport_request(operation, &OperationOverrides::default(), None, &ctx)
+            .expect("request should build")
+            .url
+            .path()
+            .to_owned()
+    }
+
+    #[test]
+    fn build_transport_request_rid_path_is_sent_raw() {
+        // A RID-addressed path must reach the gateway raw: the base64 `=` padding
+        // survives `set_path` un-encoded (not `%3D`), otherwise the gateway rejects
+        // the RID-based signature with a `401`.
+        let db = DatabaseReference::from_rid(test_account(), "qjQBAA==");
+        let operation = CosmosOperation::read_database(db);
+        assert_eq!(transport_request_path(&operation), "/dbs/qjQBAA==");
+    }
+
+    #[test]
+    fn build_transport_request_rid_path_with_plus_is_sent_raw() {
+        // RIDs use a base64 variant that can contain `+`; it must also survive raw
+        // (not `%2B`) on a RID-addressed path.
+        let db = DatabaseReference::from_rid(test_account(), "ab+cdEAA=");
+        let operation = CosmosOperation::read_database(db);
+        assert_eq!(transport_request_path(&operation), "/dbs/ab+cdEAA=");
+    }
+
+    #[test]
+    fn build_transport_request_name_path_is_percent_encoded() {
+        // Name-based paths are percent-encoded so the gateway reconstructs the
+        // same resource link we signed: a space becomes `%20` and `+` becomes
+        // `%2B`.
+        let db = DatabaseReference::from_name(test_account(), "my db+x");
+        let operation = CosmosOperation::read_database(db);
+        assert_eq!(transport_request_path(&operation), "/dbs/my%20db%2Bx");
+    }
+
+    #[test]
+    fn build_transport_request_offer_path_is_sent_raw() {
+        // Offers are signed over the lowercased RID, so the `/offers/{rid}` path is
+        // RID-addressed and must be sent raw — reserved base64 characters in the
+        // RID survive un-encoded.
+        let operation = CosmosOperation::read_offer(test_account(), "ab+QBAA==");
+        assert_eq!(transport_request_path(&operation), "/offers/ab+QBAA==");
+    }
+
     #[test]
     fn build_transport_request_uses_operation_activity_id_when_present() {
         let operation = CosmosOperation::read_all_databases(test_account())
