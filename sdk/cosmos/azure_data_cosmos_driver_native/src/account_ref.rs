@@ -29,71 +29,55 @@ use url::Url;
 
 use crate::error::{CosmosErrorCode, CosmosErrorHandle};
 
-/// Internal storage shared between cloned FFI handles.
+/// The C ABI handle for an account reference.
 ///
-/// The driver's `AccountReference` is itself cheap to clone (the inner
-/// state is `Arc`-shared on its side too), but holding it through our own
-/// `Arc` lets `cosmos_account_ref_clone` mint a sibling FFI handle without
-/// touching the driver type. It also keeps the FFI handle's storage shape
-/// consistent with the other reference types (`DatabaseReference`,
-/// `ContainerReference` to come) that don't carry their own internal Arc.
-pub(crate) struct AccountRefInner {
+/// This is a real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as
+/// an opaque type (`cosmos_account_ref_t`) because C cannot see its fields. The
+/// handle is reference-counted via `Arc` so `cosmos_account_ref_clone` can mint
+/// a sibling handle sharing the same state with only an atomic bump. The
+/// driver's `AccountReference` is itself cheap to clone (its inner state is
+/// `Arc`-shared on the driver side too).
+pub struct AccountRefHandle {
     pub(crate) inner: DriverAccountReference,
 }
 
-/// Opaque C ABI handle for `AccountRefInner`.
-///
-/// Storage pun: see the matching pattern on `RuntimeContext` and
-/// `RuntimeBuilderHandle`. The public `#[repr(C)]` struct only carries the
-/// `_opaque` marker; the real `Arc` lives in the trailing
-/// `AccountRefStorage` field allocated by `AccountRefHandle::into_raw`.
-#[repr(C)]
-pub struct AccountRefHandle {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-struct AccountRefStorage {
-    _opaque: [u8; 0],
-    inner: Arc<AccountRefInner>,
-}
-
 impl AccountRefHandle {
-    /// Allocates a fresh FFI handle wrapping the supplied driver reference.
+    /// Allocates a fresh FFI handle wrapping the supplied driver reference,
+    /// returning an opaque pointer the C side holds and hands back to
+    /// [`cosmos_account_ref_free`].
     fn into_raw(inner: DriverAccountReference) -> *mut Self {
-        let storage = Box::new(AccountRefStorage {
-            _opaque: [],
-            inner: Arc::new(AccountRefInner { inner }),
-        });
-        Box::into_raw(storage).cast::<AccountRefHandle>()
+        Arc::into_raw(Arc::new(AccountRefHandle { inner })) as *mut Self
     }
 
-    fn from_arc_into_raw(inner: Arc<AccountRefInner>) -> *mut Self {
-        let storage = Box::new(AccountRefStorage { _opaque: [], inner });
-        Box::into_raw(storage).cast::<AccountRefHandle>()
+    /// Consumes an owned `Arc` into a raw opaque pointer.
+    fn from_arc_into_raw(this: Arc<AccountRefHandle>) -> *mut Self {
+        Arc::into_raw(this) as *mut Self
     }
 
-    /// Borrows the inner `Arc` for the duration of an FFI call. Returns
-    /// `None` for a NULL pointer; the borrow is otherwise valid for the
-    /// lifetime the caller scopes it to.
-    pub(crate) fn inner_arc(p: *const AccountRefHandle) -> Option<Arc<AccountRefInner>> {
+    /// Clones the `Arc` for the duration of an FFI call without consuming the
+    /// caller's pointer. Returns `None` for a NULL pointer.
+    pub(crate) fn inner_arc(p: *const AccountRefHandle) -> Option<Arc<AccountRefHandle>> {
         if p.is_null() {
             return None;
         }
-        // SAFETY: caller guarantees `p` was obtained from `into_raw` and
-        // has not been freed.
-        let storage = unsafe { &*(p as *const AccountRefStorage) };
-        Some(Arc::clone(&storage.inner))
+        // SAFETY: caller guarantees `p` was obtained from `into_raw` and has
+        // not been freed. Bumping the strong count before reconstructing the
+        // `Arc` leaves the caller's reference intact.
+        unsafe {
+            Arc::increment_strong_count(p);
+            Some(Arc::from_raw(p))
+        }
     }
 
+    /// Drops one strong reference held by a raw opaque pointer.
     fn drop_raw(p: *mut AccountRefHandle) {
         if p.is_null() {
             return;
         }
-        // SAFETY: pun back into the `Box<AccountRefStorage>` we originally
-        // allocated.
+        // SAFETY: caller guarantees `p` was obtained from `into_raw` and has
+        // not already been freed.
         unsafe {
-            drop(Box::from_raw(p.cast::<AccountRefStorage>()));
+            drop(Arc::from_raw(p as *const AccountRefHandle));
         }
     }
 }

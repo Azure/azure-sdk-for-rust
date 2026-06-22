@@ -516,6 +516,18 @@ typedef int32_t cosmos_CosmosContentResponseOnWriteOpt;
 #endif // __cplusplus
 
 /**
+ * The C ABI handle for an account reference.
+ *
+ * This is a real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as
+ * an opaque type (`cosmos_account_ref_t`) because C cannot see its fields. The
+ * handle is reference-counted via `Arc` so `cosmos_account_ref_clone` can mint
+ * a sibling handle sharing the same state with only an atomic bump. The
+ * driver's `AccountReference` is itself cheap to clone (its inner state is
+ * `Arc`-shared on the driver side too).
+ */
+typedef struct cosmos_account_ref_t cosmos_account_ref_t;
+
+/**
  * Internal storage of a `cosmos_completion_t`.
  *
  * The optional `response` slot (which `cosmos_completion_take_response`
@@ -523,18 +535,6 @@ typedef int32_t cosmos_CosmosContentResponseOnWriteOpt;
  * every test-synthesized completion.
  */
 typedef struct cosmos_completion_t cosmos_completion_t;
-
-/**
- * Opaque C ABI handle for `AccountRefInner`.
- *
- * Storage pun: see the matching pattern on `RuntimeContext` and
- * `RuntimeBuilderHandle`. The public `#[repr(C)]` struct only carries the
- * `_opaque` marker; the real `Arc` lives in the trailing
- * `AccountRefStorage` field allocated by `AccountRefHandle::into_raw`.
- */
-typedef struct cosmos_account_ref_t {
-  uint8_t _opaque[0];
-} cosmos_account_ref_t;
 
 /**
  * Opaque heap-allocated wrapper around an `Arc<CosmosErrorInner>`.
