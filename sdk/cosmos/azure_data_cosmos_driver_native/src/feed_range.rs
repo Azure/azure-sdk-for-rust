@@ -24,57 +24,47 @@ use crate::container_ref::ContainerRefHandle;
 use crate::error::CosmosErrorCode;
 use crate::partition_key::PartitionKeyHandle;
 
-pub(crate) struct FeedRangeInner {
+/// The C ABI handle for a feed range.
+///
+/// A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
+/// opaque type (`cosmos_feed_range_t`) because C cannot see its fields. The
+/// handle is reference-counted via `Arc`.
+pub struct FeedRangeHandle {
     /// Consumed by the `query_items` request path.
     #[allow(dead_code, reason = "consumed by the query_items request path")]
     pub(crate) inner: DriverFeedRange,
 }
 
-/// Opaque C ABI handle for `FeedRangeInner`.
-///
-/// Storage pun: same shape as the other reference handles.
-#[repr(C)]
-pub struct FeedRangeHandle {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-struct FeedRangeStorage {
-    _opaque: [u8; 0],
-    inner: Arc<FeedRangeInner>,
-}
-
 impl FeedRangeHandle {
     fn into_raw(inner: DriverFeedRange) -> *mut Self {
-        let storage = Box::new(FeedRangeStorage {
-            _opaque: [],
-            inner: Arc::new(FeedRangeInner { inner }),
-        });
-        Box::into_raw(storage).cast::<FeedRangeHandle>()
+        Arc::into_raw(Arc::new(FeedRangeHandle { inner })) as *mut Self
     }
 
-    fn from_arc_into_raw(inner: Arc<FeedRangeInner>) -> *mut Self {
-        let storage = Box::new(FeedRangeStorage { _opaque: [], inner });
-        Box::into_raw(storage).cast::<FeedRangeHandle>()
+    fn from_arc_into_raw(this: Arc<FeedRangeHandle>) -> *mut Self {
+        Arc::into_raw(this) as *mut Self
     }
 
-    pub(crate) fn inner_arc(p: *const FeedRangeHandle) -> Option<Arc<FeedRangeInner>> {
+    pub(crate) fn inner_arc(p: *const FeedRangeHandle) -> Option<Arc<FeedRangeHandle>> {
         if p.is_null() {
             return None;
         }
-        // SAFETY: caller guarantees `p` was obtained from `into_raw` and
-        // has not been freed.
-        let storage = unsafe { &*(p as *const FeedRangeStorage) };
-        Some(Arc::clone(&storage.inner))
+        // SAFETY: caller guarantees `p` was obtained from `into_raw` and has
+        // not been freed. Bumping the strong count before reconstructing the
+        // `Arc` leaves the caller's reference intact.
+        unsafe {
+            Arc::increment_strong_count(p);
+            Some(Arc::from_raw(p))
+        }
     }
 
     fn drop_raw(p: *mut FeedRangeHandle) {
         if p.is_null() {
             return;
         }
-        // SAFETY: pun back into the storage we originally allocated.
+        // SAFETY: caller guarantees `p` was obtained from `into_raw` and has
+        // not already been freed.
         unsafe {
-            drop(Box::from_raw(p.cast::<FeedRangeStorage>()));
+            drop(Arc::from_raw(p as *const FeedRangeHandle));
         }
     }
 }

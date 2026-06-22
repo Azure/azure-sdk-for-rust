@@ -40,52 +40,43 @@ use crate::error::CosmosErrorCode;
 // Built options handle
 // ─────────────────────────────────────────────────────────────────────────────
 
-pub(crate) struct DriverOptionsInner {
-    pub(crate) inner: DriverOptions,
-}
-
-/// Opaque C ABI handle for a built [`DriverOptions`] value.
+/// The C ABI handle for a built [`DriverOptions`] value.
 ///
-/// Storage pun: same shape as `AccountRefHandle`.
-#[repr(C)]
+/// A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
+/// opaque type (`cosmos_driver_options_t`) because C cannot see its fields. The
+/// handle is reference-counted via `Arc`.
 pub struct DriverOptionsHandle {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-struct DriverOptionsStorage {
-    _opaque: [u8; 0],
-    inner: Arc<DriverOptionsInner>,
+    pub(crate) inner: DriverOptions,
 }
 
 impl DriverOptionsHandle {
     fn into_raw(inner: DriverOptions) -> *mut Self {
-        let storage = Box::new(DriverOptionsStorage {
-            _opaque: [],
-            inner: Arc::new(DriverOptionsInner { inner }),
-        });
-        Box::into_raw(storage).cast::<DriverOptionsHandle>()
+        Arc::into_raw(Arc::new(DriverOptionsHandle { inner })) as *mut Self
     }
 
-    /// Borrows the inner `Arc` for the lifetime of an FFI call.
-    pub(crate) fn inner_arc(p: *const DriverOptionsHandle) -> Option<Arc<DriverOptionsInner>> {
+    /// Clones the `Arc` for the lifetime of an FFI call without consuming the
+    /// caller's pointer.
+    pub(crate) fn inner_arc(p: *const DriverOptionsHandle) -> Option<Arc<DriverOptionsHandle>> {
         if p.is_null() {
             return None;
         }
-        // SAFETY: caller guarantees `p` was obtained from `into_raw` and
-        // has not been freed.
-        let storage = unsafe { &*(p as *const DriverOptionsStorage) };
-        Some(Arc::clone(&storage.inner))
+        // SAFETY: caller guarantees `p` was obtained from `into_raw` and has
+        // not been freed. Bumping the strong count before reconstructing the
+        // `Arc` leaves the caller's reference intact.
+        unsafe {
+            Arc::increment_strong_count(p);
+            Some(Arc::from_raw(p))
+        }
     }
 
     fn drop_raw(p: *mut DriverOptionsHandle) {
         if p.is_null() {
             return;
         }
-        // SAFETY: pun back into the `Box<DriverOptionsStorage>` we
-        // originally allocated.
+        // SAFETY: caller guarantees `p` was obtained from `into_raw` and has
+        // not already been freed.
         unsafe {
-            drop(Box::from_raw(p.cast::<DriverOptionsStorage>()));
+            drop(Arc::from_raw(p as *const DriverOptionsHandle));
         }
     }
 }
@@ -104,7 +95,14 @@ pub extern "C" fn cosmos_driver_options_free(options: *mut DriverOptionsHandle) 
 // Builder handle
 // ─────────────────────────────────────────────────────────────────────────────
 
-pub(crate) struct DriverOptionsBuilderInner {
+/// The C ABI handle for a `DriverOptionsBuilder`.
+///
+/// A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
+/// opaque type (`cosmos_driver_options_builder_t`) because C cannot see its
+/// fields. Single-owner and `Box`-managed (not `Arc`): setters mutate in place
+/// (the underlying `with_*` consume `self`, so each setter does a
+/// `Option::take` / call / store dance — mirrors `cosmos_runtime_builder_t`).
+pub struct DriverOptionsBuilderHandle {
     /// Wrapped in `Option` so each setter can `.take()` the builder,
     /// invoke a consuming `with_*` setter, and put the new value back.
     /// `DriverOptionsBuilder` does not derive `Default` (it requires an
@@ -112,64 +110,43 @@ pub(crate) struct DriverOptionsBuilderInner {
     pub(crate) builder: Option<DriverOptionsBuilder>,
 }
 
-/// Opaque C ABI handle for a `DriverOptionsBuilder`.
-///
-/// Setters mutate in place (the underlying `with_*` consume `self` so each
-/// setter does a `mem::take` / call / store dance — mirrors
-/// `cosmos_runtime_builder_t`).
-#[repr(C)]
-pub struct DriverOptionsBuilderHandle {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-struct DriverOptionsBuilderStorage {
-    _opaque: [u8; 0],
-    inner: DriverOptionsBuilderInner,
-}
-
 impl DriverOptionsBuilderHandle {
     fn new_raw(account: azure_data_cosmos_driver::models::AccountReference) -> *mut Self {
-        let storage = Box::new(DriverOptionsBuilderStorage {
-            _opaque: [],
-            inner: DriverOptionsBuilderInner {
-                builder: Some(DriverOptionsBuilder::new(account)),
-            },
-        });
-        Box::into_raw(storage).cast::<DriverOptionsBuilderHandle>()
+        Box::into_raw(Box::new(DriverOptionsBuilderHandle {
+            builder: Some(DriverOptionsBuilder::new(account)),
+        }))
     }
 
     fn inner_mut<'a>(
         p: *mut DriverOptionsBuilderHandle,
-    ) -> Option<&'a mut DriverOptionsBuilderInner> {
+    ) -> Option<&'a mut DriverOptionsBuilderHandle> {
         if p.is_null() {
             return None;
         }
         // SAFETY: caller guarantees `p` was obtained from `new_raw` and
         // has not been freed. The borrow is scoped to a single FFI call.
-        let storage = unsafe { &mut *(p.cast::<DriverOptionsBuilderStorage>()) };
-        Some(&mut storage.inner)
+        Some(unsafe { &mut *p })
     }
 
     fn into_owned_builder(p: *mut DriverOptionsBuilderHandle) -> Option<DriverOptionsBuilder> {
         if p.is_null() {
             return None;
         }
-        // SAFETY: pun back into the storage and move the inner builder
-        // out. The `Option` is always `Some` outside of a setter's
-        // take/restore window, and setters never panic between take and
-        // restore.
-        let storage = unsafe { Box::from_raw(p.cast::<DriverOptionsBuilderStorage>()) };
-        storage.inner.builder
+        // SAFETY: reclaim the `Box` and move the inner builder out. The
+        // `Option` is always `Some` outside of a setter's take/restore
+        // window, and setters never panic between take and restore.
+        let handle = unsafe { Box::from_raw(p) };
+        handle.builder
     }
 
     fn drop_raw(p: *mut DriverOptionsBuilderHandle) {
         if p.is_null() {
             return;
         }
-        // SAFETY: pun back into the storage we originally allocated.
+        // SAFETY: caller guarantees `p` was obtained from `new_raw` and has
+        // not already been freed.
         unsafe {
-            drop(Box::from_raw(p.cast::<DriverOptionsBuilderStorage>()));
+            drop(Box::from_raw(p));
         }
     }
 }

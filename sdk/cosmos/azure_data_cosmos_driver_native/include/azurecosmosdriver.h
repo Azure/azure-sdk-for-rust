@@ -568,6 +568,35 @@ typedef struct cosmos_database_ref_t cosmos_database_ref_t;
 typedef struct cosmos_driver_t cosmos_driver_t;
 
 /**
+ * The C ABI handle for a `DriverOptionsBuilder`.
+ *
+ * A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
+ * opaque type (`cosmos_driver_options_builder_t`) because C cannot see its
+ * fields. Single-owner and `Box`-managed (not `Arc`): setters mutate in place
+ * (the underlying `with_*` consume `self`, so each setter does a
+ * `Option::take` / call / store dance — mirrors `cosmos_runtime_builder_t`).
+ */
+typedef struct cosmos_driver_options_builder_t cosmos_driver_options_builder_t;
+
+/**
+ * The C ABI handle for a built [`DriverOptions`] value.
+ *
+ * A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
+ * opaque type (`cosmos_driver_options_t`) because C cannot see its fields. The
+ * handle is reference-counted via `Arc`.
+ */
+typedef struct cosmos_driver_options_t cosmos_driver_options_t;
+
+/**
+ * The C ABI handle for a feed range.
+ *
+ * A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
+ * opaque type (`cosmos_feed_range_t`) because C cannot see its fields. The
+ * handle is reference-counted via `Arc`.
+ */
+typedef struct cosmos_feed_range_t cosmos_feed_range_t;
+
+/**
  * The C ABI handle for the async runtime.
  *
  * A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
@@ -683,26 +712,6 @@ typedef struct cosmos_response_t {
 } cosmos_response_t;
 
 /**
- * Opaque C ABI handle for a built [`DriverOptions`] value.
- *
- * Storage pun: same shape as `AccountRefHandle`.
- */
-typedef struct cosmos_driver_options_t {
-  uint8_t _opaque[0];
-} cosmos_driver_options_t;
-
-/**
- * Opaque C ABI handle for a `DriverOptionsBuilder`.
- *
- * Setters mutate in place (the underlying `with_*` consume `self` so each
- * setter does a `mem::take` / call / store dance — mirrors
- * `cosmos_runtime_builder_t`).
- */
-typedef struct cosmos_driver_options_builder_t {
-  uint8_t _opaque[0];
-} cosmos_driver_options_builder_t;
-
-/**
  * A single custom request/operation header. Both pointers are
  * NUL-terminated UTF-8 and borrowed for the duration of the submit call;
  * the wrapper copies them before returning.
@@ -786,15 +795,6 @@ typedef struct cosmos_operation_options_t {
    */
   uintptr_t custom_headers_len;
 } cosmos_operation_options_t;
-
-/**
- * Opaque C ABI handle for `FeedRangeInner`.
- *
- * Storage pun: same shape as the other reference handles.
- */
-typedef struct cosmos_feed_range_t {
-  uint8_t _opaque[0];
-} cosmos_feed_range_t;
 
 /**
  * Opaque C ABI handle for an immutable partition key.
