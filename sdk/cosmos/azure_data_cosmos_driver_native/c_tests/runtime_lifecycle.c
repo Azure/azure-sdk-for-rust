@@ -177,11 +177,9 @@ static int test_build_happy_path(void)
     cosmos_cq_t *cq = cosmos_cq_create(runtime, NULL);
     REQUIRE(cq != NULL, "cq_create(runtime) returned non-NULL");
 
-    // Sanity: queue state is RUNNING and runtime accessor round-trips.
+    // Sanity: queue state is RUNNING.
     ASSERT(cosmos_cq_state(cq) == COSMOS_CQ_STATE_RUNNING,
            "queue starts in RUNNING state");
-    ASSERT(cosmos_cq_runtime(cq) != NULL,
-           "cq_runtime() returns the runtime");
 
     cosmos_cq_free(cq);
     cosmos_runtime_free(runtime);

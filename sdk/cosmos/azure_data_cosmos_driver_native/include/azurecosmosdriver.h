@@ -1024,11 +1024,6 @@ struct cosmos_cq_t *cosmos_cq_create(const struct cosmos_runtime_t *runtime,
 void cosmos_cq_free(struct cosmos_cq_t *queue);
 
 /**
- * Returns the runtime the queue was bound to.
- */
-const struct cosmos_runtime_t *cosmos_cq_runtime(const struct cosmos_cq_t *queue);
-
-/**
  * Block until a completion is available or `timeout_ms` elapses.
  *
  * - `timeout_ms == 0` → poll once and return immediately, NULL if empty.
@@ -1040,11 +1035,6 @@ const struct cosmos_runtime_t *cosmos_cq_runtime(const struct cosmos_cq_t *queue
  * [`cosmos_completion_free`].
  */
 struct cosmos_completion_t *cosmos_cq_wait(struct cosmos_cq_t *queue, uint32_t timeout_ms);
-
-/**
- * Non-blocking poll. Equivalent to `cosmos_cq_wait(queue, 0)`.
- */
-struct cosmos_completion_t *cosmos_cq_try_wait(struct cosmos_cq_t *queue);
 
 /**
  * Drains up to `max_count` completions in a single call. Blocks until at

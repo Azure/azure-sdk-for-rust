@@ -11,7 +11,7 @@
 //! Each `cosmos_cq_t` is **multi-producer / single-consumer**: any thread
 //! holding the pointer may enqueue (a successful submit on a Tokio worker
 //! thread); only one thread at a time should call
-//! [`cosmos_cq_wait`] / [`cosmos_cq_try_wait`] / [`cosmos_cq_wait_batch`].
+//! [`cosmos_cq_wait`] / [`cosmos_cq_wait_batch`].
 //! The wrapper does not enforce the single-consumer rule in v1 (no internal
 //! lock around the consumer-side dequeue beyond the queue's own mutex);
 //! calling from two threads simultaneously is undefined behavior. See section 9 Q12.
@@ -582,17 +582,6 @@ pub extern "C" fn cosmos_cq_free(queue: *mut CompletionQueue) {
     CompletionQueue::drop_raw(queue);
 }
 
-/// Returns the runtime the queue was bound to.
-#[no_mangle]
-pub extern "C" fn cosmos_cq_runtime(queue: *const CompletionQueue) -> *const RuntimeContext {
-    // NB: returning the inner Arc as a `*const RuntimeContext` would require
-    // a stable wrapping box. This returns NULL because we don't keep a
-    // back-pointer to the producer's `RuntimeContext` box (we only retain the
-    // inner `Arc`).
-    let _ = queue;
-    std::ptr::null()
-}
-
 /// Block until a completion is available or `timeout_ms` elapses.
 ///
 /// - `timeout_ms == 0` → poll once and return immediately, NULL if empty.
@@ -677,12 +666,6 @@ fn maybe_mark_drained(guard: &mut std::sync::MutexGuard<'_, QueueInner>) {
     }
 }
 
-/// Non-blocking poll. Equivalent to `cosmos_cq_wait(queue, 0)`.
-#[no_mangle]
-pub extern "C" fn cosmos_cq_try_wait(queue: *mut CompletionQueue) -> *mut Completion {
-    cosmos_cq_wait(queue, 0)
-}
-
 /// Drains up to `max_count` completions in a single call. Blocks until at
 /// least one completion is available or `timeout_ms` elapses, then drains
 /// additional already-queued completions without blocking again.
@@ -713,7 +696,7 @@ pub extern "C" fn cosmos_cq_wait_batch(
         unsafe { out_completions.write(first) };
         let mut count = 1u32;
         while count < max_count {
-            let next = cosmos_cq_try_wait(queue);
+            let next = cosmos_cq_wait(queue, 0);
             if next.is_null() {
                 break;
             }
@@ -1130,9 +1113,9 @@ mod tests {
     }
 
     #[test]
-    fn try_wait_returns_null_on_empty() {
+    fn poll_returns_null_on_empty() {
         let q = fresh_queue(0, true);
-        assert!(cosmos_cq_try_wait(q).is_null());
+        assert!(cosmos_cq_wait(q, 0).is_null());
         cosmos_cq_free(q);
     }
 
@@ -1349,13 +1332,13 @@ mod tests {
         cosmos_operation_handle_free(op3);
 
         // Drain one and verify writable.
-        let c = cosmos_cq_try_wait(q);
+        let c = cosmos_cq_wait(q, 0);
         assert!(!c.is_null());
         cosmos_completion_free(c);
         assert!(cosmos_cq_wait_writable(q, 0));
 
         // Drain the rest.
-        let c2 = cosmos_cq_try_wait(q);
+        let c2 = cosmos_cq_wait(q, 0);
         cosmos_completion_free(c2);
         cosmos_cq_free(q);
     }
@@ -1384,7 +1367,7 @@ mod tests {
         assert!(!ok, "should time out on a full queue");
         assert!(start.elapsed() >= Duration::from_millis(20));
         // Drain.
-        let c = cosmos_cq_try_wait(q);
+        let c = cosmos_cq_wait(q, 0);
         cosmos_completion_free(c);
         cosmos_operation_handle_free(op);
         cosmos_cq_free(q);

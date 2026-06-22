@@ -185,7 +185,7 @@ static int test_cancel_before_drain_yields_cancelled_completion(void)
            cosmos_operation_handle_state(handle));
 
     // Exactly one completion: a second non-blocking drain finds nothing.
-    cosmos_completion_t *extra = cosmos_cq_try_wait(cq);
+    cosmos_completion_t *extra = cosmos_cq_wait(cq, 0);
     ASSERT(extra == NULL, "exactly one completion delivered for the submit");
     cosmos_completion_free(extra);
 
