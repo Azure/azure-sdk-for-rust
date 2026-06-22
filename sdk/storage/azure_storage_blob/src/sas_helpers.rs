@@ -47,6 +47,36 @@ pub(crate) fn append_query_excluding(endpoint: &Url, query: &str, exclude: &[&st
     url
 }
 
+/// Extracts decoded path segments from `endpoint`, stripping the leading
+/// account-name segment present in path-style (e.g. Azurite) URLs.
+pub(crate) fn resource_path_segments(endpoint: &Url, account_name: &str) -> Vec<String> {
+    let mut segments: Vec<String> = endpoint
+        .path_segments()
+        .map(|p| {
+            p.filter(|s| !s.is_empty())
+                .map(|s| {
+                    percent_encoding::percent_decode_str(s)
+                        .decode_utf8_lossy()
+                        .into_owned()
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+
+    // Emulator and path-style endpoints (e.g. Azurite) encode the account
+    // name as the first path segment rather than as a subdomain of the host.
+    // Detect this layout and strip the leading segment so that the remainder
+    // contains only resource path components.
+    let is_path_prefix = endpoint
+        .host_str()
+        .map_or(false, |h| !h.starts_with(account_name))
+        && segments.first().map(String::as_str) == Some(account_name);
+    if is_path_prefix {
+        segments.remove(0);
+    }
+    segments
+}
+
 /// Extracts `snapshot` and `versionid` query parameters from a blob endpoint.
 /// Returns an error if both are present (the service does not accept them together).
 pub(crate) fn extract_blob_qualifiers(

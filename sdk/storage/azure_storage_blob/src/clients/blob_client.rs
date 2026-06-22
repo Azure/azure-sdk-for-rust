@@ -382,34 +382,7 @@ impl BlobClient {
         )
             -> azure_storage_sas::SasBuilder<'_, azure_storage_sas::state::BlobState>,
     {
-        let segments: Vec<String> = self
-            .endpoint
-            .path_segments()
-            .map(|p| {
-                p.filter(|s| !s.is_empty())
-                    .map(|s| {
-                        percent_encoding::percent_decode_str(s)
-                            .decode_utf8_lossy()
-                            .into_owned()
-                    })
-                    .collect()
-            })
-            .unwrap_or_default();
-
-        // Emulator and path-style endpoints (e.g. Azurite) encode the account
-        // name as the first path segment rather than as a subdomain of the host.
-        // Detect this layout and strip the leading segment so that the remainder
-        // is always [container, blob_segments...].
-        let is_path_prefix = self
-            .endpoint
-            .host_str()
-            .map_or(false, |h| !h.starts_with(account_name))
-            && segments.first().map(String::as_str) == Some(account_name);
-        let segments: &[String] = if is_path_prefix {
-            &segments[1..]
-        } else {
-            &segments
-        };
+        let segments = crate::sas_helpers::resource_path_segments(&self.endpoint, account_name);
 
         if segments.len() < 2 {
             return Err(azure_core::Error::with_message(

@@ -3,7 +3,7 @@
 
 //! Shared Access Signature (SAS) builder re-exports.
 //!
-//! Available when the `sas` feature is enabled. These are re-exports from
+//! Available when the `sas_builder` feature is enabled. These are re-exports from
 //! the [`azure_storage_sas`](https://docs.rs/azure_storage_sas) crate; see
 //! its documentation for full details on the builder API.
 //!
