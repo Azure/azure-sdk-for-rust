@@ -13,7 +13,7 @@
 //!
 //! ## Cache-hit advisory (`OPTIONS_IGNORED_ON_CACHE_HIT`)
 //!
-//! Spec §4.4.1 requires the wrapper to detect when the driver returns a
+//! Spec section 4.4.1 requires the wrapper to detect when the driver returns a
 //! cached driver for an endpoint that already has an entry, and surface
 //! a `5001` warning. The merged
 //! `CosmosDriverRuntime::get_or_create_driver` API does not expose a
@@ -23,7 +23,7 @@
 //! — `cosmos_driver_get_or_create_blocking` always returns `SUCCESS` on
 //! a cached hit. This is tracked as a follow-up.
 //!
-//! See [`docs/NATIVE_WRAPPER_SPEC.md`] §4.4.
+//! See [`docs/NATIVE_WRAPPER_SPEC.md`] section 4.4.
 //!
 //! [`docs/NATIVE_WRAPPER_SPEC.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md
 
@@ -105,7 +105,7 @@ impl DriverHandle {
 
 /// Frees a driver handle. Drops the FFI-side `Arc` reference; the
 /// underlying driver remains alive in the runtime's cache until the
-/// owning `cosmos_runtime_t` is freed (spec §4.4.1). NULL is a no-op.
+/// owning `cosmos_runtime_t` is freed (spec section 4.4.1). NULL is a no-op.
 #[no_mangle]
 pub extern "C" fn cosmos_driver_free(driver: *mut DriverHandle) {
     if driver.is_null() {
@@ -127,7 +127,7 @@ pub extern "C" fn cosmos_driver_free(driver: *mut DriverHandle) {
 /// startup-time initialization; for runtime use prefer the async
 /// `_submit` variant.
 ///
-/// # Cache behavior (spec §4.4.1)
+/// # Cache behavior (spec section 4.4.1)
 ///
 /// - The runtime caches drivers by endpoint URL. A second call with the
 ///   same endpoint returns the cached driver and **silently ignores**
@@ -138,7 +138,7 @@ pub extern "C" fn cosmos_driver_free(driver: *mut DriverHandle) {
 ///   freed; freeing a `cosmos_driver_t` does not evict.
 ///
 /// The `5001` `OPTIONS_IGNORED_ON_CACHE_HIT` advisory described in spec
-/// §4.4.1 is not emitted today — see the module-level
+/// Section 4.4.1 is not emitted today — see the module-level
 /// `Cache-hit advisory` note for the rationale.
 ///
 /// # Parameters
@@ -159,7 +159,7 @@ pub extern "C" fn cosmos_driver_free(driver: *mut DriverHandle) {
 /// - `INVALID_ARGUMENT` (1) when `runtime`, `account`, or `out_driver`
 ///   is NULL.
 /// - One of the `2xxx` / `3xxx` codes derived from the driver-side
-///   error per spec §3.5.1 when the underlying
+///   error per spec section 3.5.1 when the underlying
 ///   `get_or_create_driver` returns an error.
 #[no_mangle]
 pub extern "C" fn cosmos_driver_get_or_create_blocking(

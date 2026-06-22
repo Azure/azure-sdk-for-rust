@@ -4,7 +4,7 @@
 //! C ABI surface for `cosmos_feed_range_t` — wraps the driver's
 //! [`azure_data_cosmos_driver::models::FeedRange`].
 //!
-//! Two constructors per spec §4.6.4:
+//! Two constructors per spec section 4.6.4:
 //!
 //! - [`cosmos_feed_range_full`] — entire EPK key space, equivalent to
 //!   passing NULL to `cosmos_operation_query_items`.
@@ -14,7 +14,7 @@
 //!
 //! Plus `_clone` / `_free`. EPK-range and PKRangeId variants are
 //! deferred (driver does not expose strongly-typed public constructors
-//! for either yet — see spec §4.6.4 deferred-list).
+//! for either yet — see spec section 4.6.4 deferred-list).
 
 use std::sync::Arc;
 

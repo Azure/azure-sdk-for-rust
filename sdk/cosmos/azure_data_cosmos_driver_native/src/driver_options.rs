@@ -5,7 +5,7 @@
 //! — wraps the driver's
 //! [`azure_data_cosmos_driver::options::DriverOptions`] and its builder.
 //!
-//! `DriverOptions` itself is small (3 fields per spec §4.2): the bound
+//! `DriverOptions` itself is small (3 fields per spec section 4.2): the bound
 //! account, the per-driver `OperationOptions`, and a `Vec<Region>` of
 //! preferred regions. The per-driver defaults are set through
 //! `with_operation_options`, which now takes the flat
@@ -24,7 +24,7 @@
 //! Transport-side knobs (connection pool, user-agent suffix, workload
 //! id, correlation id) live on `cosmos_runtime_builder_t`, not here.
 //!
-//! See [`docs/NATIVE_WRAPPER_SPEC.md`] §4.2.
+//! See [`docs/NATIVE_WRAPPER_SPEC.md`] section 4.2.
 //!
 //! [`docs/NATIVE_WRAPPER_SPEC.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md
 

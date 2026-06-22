@@ -4,9 +4,9 @@
 //! Completion queue, completion record, and operation handle types + their C
 //! ABI surface.
 //!
-//! Implements the async-invocation model from spec §3.1 + §3.6.
+//! Implements the async-invocation model from spec section 3.1 + section 3.6.
 //!
-//! # Concurrency model (spec §3.1.3 + §7)
+//! # Concurrency model (spec section 3.1.3 + section 7)
 //!
 //! Each `cosmos_cq_t` is **multi-producer / single-consumer**: any thread
 //! holding the pointer may enqueue (a successful submit on a Tokio worker
@@ -14,7 +14,7 @@
 //! [`cosmos_cq_wait`] / [`cosmos_cq_try_wait`] / [`cosmos_cq_wait_batch`].
 //! The wrapper does not enforce the single-consumer rule in v1 (no internal
 //! lock around the consumer-side dequeue beyond the queue's own mutex);
-//! calling from two threads simultaneously is undefined behavior. See §9 Q12.
+//! calling from two threads simultaneously is undefined behavior. See section 9 Q12.
 //!
 //! The crate ships the full FFI surface plus internal test-only helpers
 //! ([`__test_only_enqueue_completion`]) so the receive-loop contract can be
@@ -34,7 +34,7 @@ use crate::safety::MutexExt;
 // Outcome enum (cosmos_completion_outcome_t)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Per spec §3.6.1, every completion has exactly one of these outcomes.
+/// Per spec section 3.6.1, every completion has exactly one of these outcomes.
 ///
 /// `CosmosCompletionOutcomeUnknown` is a forward-compat sentinel — older C clients
 /// linked against a newer runtime that grew a variant see this value and can
@@ -59,7 +59,7 @@ pub enum CosmosCompletionOutcome {
 // OperationHandle lifecycle state (cosmos_operation_handle_state_t)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Per spec §3.6.2, the four lifecycle states an operation handle observes.
+/// Per spec section 3.6.2, the four lifecycle states an operation handle observes.
 #[repr(i32)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CosmosOperationHandleState {
@@ -91,7 +91,7 @@ impl CosmosOperationHandleState {
 // CompletionQueue lifecycle state (cosmos_cq_state_t)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Per spec §3.1.3, the three queue-lifecycle states.
+/// Per spec section 3.1.3, the three queue-lifecycle states.
 #[repr(i32)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CosmosCqState {
@@ -332,7 +332,7 @@ struct QueueInner {
     state: CosmosCqState,
 }
 
-/// Per-queue options. Mirrors `cosmos_cq_options_t` from spec §3.1.2 — the
+/// Per-queue options. Mirrors `cosmos_cq_options_t` from spec section 3.1.2 — the
 /// queue honors `max_capacity` and `include_error_details`; `capacity_hint`
 /// is recorded but currently does not trigger any diagnostic (a one-shot
 /// warning when the soft hint is exceeded is a follow-up).
@@ -354,7 +354,7 @@ impl Default for CqOptions {
 }
 
 /// Layout of the `cosmos_cq_options_t` struct as it appears at the C ABI
-/// boundary. Caller-owned, pass-by-value (per §3.1.2 the layout is published
+/// boundary. Caller-owned, pass-by-value (per section 3.1.2 the layout is published
 /// for inputs).
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
@@ -515,7 +515,7 @@ impl CompletionQueue {
         }
         // If the producer-side handle's cancel flag is set, mark the
         // completion so the receive loop can distinguish "cancel won" from
-        // "cancel lost the race" per spec §3.6.1.
+        // "cancel lost the race" per spec section 3.6.1.
         if c.op_inner.cancel_requested.load(Ordering::Acquire) {
             c.was_cancel_requested = true;
         }
@@ -562,7 +562,7 @@ pub extern "C" fn cosmos_cq_create(
     } else {
         // SAFETY: `options` is non-null and the caller guarantees it points
         // at a fully-initialized `CosmosCqOptions` valid for the duration of
-        // the call (per §3.2 Pattern A inputs).
+        // the call (per section 3.2 Pattern A inputs).
         CqOptions::from(*unsafe { &*options })
     };
     CompletionQueue::new_raw(inner_rt, opts)
@@ -570,7 +570,7 @@ pub extern "C" fn cosmos_cq_create(
 
 /// Free a completion queue. NULL is a no-op.
 ///
-/// The "blocks until in-flight ops drain" contract from spec §3.1.2 is
+/// The "blocks until in-flight ops drain" contract from spec section 3.1.2 is
 /// observable here: if anyone enqueued completions but never drained, this
 /// drops them (and thus their `Box`-allocated `Completion`s).
 #[no_mangle]
@@ -1062,7 +1062,7 @@ pub fn __test_only_create_operation_handle() -> *mut OperationHandle {
 /// Test-only: synthesize a completion record and enqueue it onto `queue`.
 ///
 /// Cloning the operation handle's `Arc` keeps both the producer-side handle
-/// and the completion-side borrow alive independently per spec §3.6.2.
+/// and the completion-side borrow alive independently per spec section 3.6.2.
 #[doc(hidden)]
 pub fn __test_only_enqueue_completion(
     queue: *mut CompletionQueue,

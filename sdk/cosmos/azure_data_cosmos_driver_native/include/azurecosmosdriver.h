@@ -14,7 +14,7 @@
 #define AZURECOSMOSDRIVER_H_VERSION "0.1.0"
 
 /**
- * Per spec §3.1.3, the three queue-lifecycle states.
+ * Per spec section 3.1.3, the three queue-lifecycle states.
  */
 enum cosmos_cq_state_t
 #if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
@@ -45,7 +45,7 @@ typedef int32_t cosmos_cq_state_t;
 #endif // __cplusplus
 
 /**
- * Per spec §3.6.1, every completion has exactly one of these outcomes.
+ * Per spec section 3.6.1, every completion has exactly one of these outcomes.
  *
  * `CosmosCompletionOutcomeUnknown` is a forward-compat sentinel — older C clients
  * linked against a newer runtime that grew a variant see this value and can
@@ -87,7 +87,7 @@ typedef int32_t cosmos_completion_outcome_t;
 /**
  * Coarse numeric return value for every fallible C function.
  *
- * Per spec §3.5.1, the layout retains the FFI / Cosmos-specific bands
+ * Per spec section 3.5.1, the layout retains the FFI / Cosmos-specific bands
  * established by the old wrapper:
  *
  * - `0` — success.
@@ -268,7 +268,7 @@ typedef int32_t cosmos_error_code_t;
 #endif // __cplusplus
 
 /**
- * Per spec §3.6.2, the four lifecycle states an operation handle observes.
+ * Per spec section 3.6.2, the four lifecycle states an operation handle observes.
  */
 enum cosmos_operation_handle_state_t
 #if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
@@ -591,7 +591,7 @@ typedef struct cosmos_runtime_t {
 
 /**
  * Layout of the `cosmos_cq_options_t` struct as it appears at the C ABI
- * boundary. Caller-owned, pass-by-value (per §3.1.2 the layout is published
+ * boundary. Caller-owned, pass-by-value (per section 3.1.2 the layout is published
  * for inputs).
  */
 typedef struct cosmos_cq_options_t {
@@ -1032,7 +1032,7 @@ struct cosmos_cq_t *cosmos_cq_create(const struct cosmos_runtime_t *runtime,
 /**
  * Free a completion queue. NULL is a no-op.
  *
- * The "blocks until in-flight ops drain" contract from spec §3.1.2 is
+ * The "blocks until in-flight ops drain" contract from spec section 3.1.2 is
  * observable here: if anyone enqueued completions but never drained, this
  * drops them (and thus their `Box`-allocated `Completion`s).
  */
@@ -1277,7 +1277,7 @@ void cosmos_database_ref_free(struct cosmos_database_ref_t *database);
 /**
  * Frees a driver handle. Drops the FFI-side `Arc` reference; the
  * underlying driver remains alive in the runtime's cache until the
- * owning `cosmos_runtime_t` is freed (spec §4.4.1). NULL is a no-op.
+ * owning `cosmos_runtime_t` is freed (spec section 4.4.1). NULL is a no-op.
  */
 void cosmos_driver_free(struct cosmos_driver_t *driver);
 
@@ -1290,7 +1290,7 @@ void cosmos_driver_free(struct cosmos_driver_t *driver);
  * startup-time initialization; for runtime use prefer the async
  * `_submit` variant.
  *
- * # Cache behavior (spec §4.4.1)
+ * # Cache behavior (spec section 4.4.1)
  *
  * - The runtime caches drivers by endpoint URL. A second call with the
  *   same endpoint returns the cached driver and **silently ignores**
@@ -1301,7 +1301,7 @@ void cosmos_driver_free(struct cosmos_driver_t *driver);
  *   freed; freeing a `cosmos_driver_t` does not evict.
  *
  * The `5001` `OPTIONS_IGNORED_ON_CACHE_HIT` advisory described in spec
- * §4.4.1 is not emitted today — see the module-level
+ * Section 4.4.1 is not emitted today — see the module-level
  * `Cache-hit advisory` note for the rationale.
  *
  * # Parameters
@@ -1322,7 +1322,7 @@ void cosmos_driver_free(struct cosmos_driver_t *driver);
  * - `INVALID_ARGUMENT` (1) when `runtime`, `account`, or `out_driver`
  *   is NULL.
  * - One of the `2xxx` / `3xxx` codes derived from the driver-side
- *   error per spec §3.5.1 when the underlying
+ *   error per spec section 3.5.1 when the underlying
  *   `get_or_create_driver` returns an error.
  */
 int32_t cosmos_driver_get_or_create_blocking(const struct cosmos_runtime_t *runtime,
@@ -1477,7 +1477,7 @@ void cosmos_error_free(struct cosmos_error_t *e);
  * Last-writer-wins across concurrent calls. Pass `0` to either parameter to
  * disable that knob. Environment-derived defaults (`RUST_LIB_BACKTRACE`,
  * `RUST_BACKTRACE`, `AZURE_COSMOS_BACKTRACE_*`) are overridden for the rest
- * of the process once this is called. See spec §6.4.
+ * of the process once this is called. See spec section 6.4.
  */
 void cosmos_set_backtrace_options(uint32_t max_captures_per_second,
                                   uint32_t max_resolutions_per_second);
@@ -1593,7 +1593,7 @@ int32_t cosmos_partition_key_builder_add_undefined(struct cosmos_partition_key_b
  *   The driver's `EMPTY` partition key has a specific meaning
  *   (cross-partition fan-out) and host SDKs cannot construct it via
  *   the builder by accident; if you need it explicitly, use
- *   `cosmos_partition_key_empty` (also added by this phase).
+ *   `cosmos_partition_key_empty`.
  */
 int32_t cosmos_partition_key_builder_build(struct cosmos_partition_key_builder_t *builder,
                                            struct cosmos_partition_key_t **out_pk);

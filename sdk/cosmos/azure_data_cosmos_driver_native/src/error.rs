@@ -4,7 +4,7 @@
 //! Error model for the C ABI boundary.
 //!
 //! Implements the spec's two-layer error contract from
-//! [`docs/NATIVE_WRAPPER_SPEC.md`] §3.5:
+//! [`docs/NATIVE_WRAPPER_SPEC.md`] section 3.5:
 //!
 //! - **Coarse status** ([`CosmosErrorCode`] in Rust / `cosmos_error_code_t` in
 //!   C). A `#[repr(i32)]` enum whose value-range bands (`0`, `1..=999`,
@@ -14,7 +14,7 @@
 //! - **Rich payload** ([`CosmosErrorHandle`] in Rust / `cosmos_error_t *` in C).
 //!   An opaque heap-allocated handle wrapping
 //!   [`azure_data_cosmos_driver::error::CosmosError`]. Accessors mirror the
-//!   merged driver API 1:1 (per spec §3.5.2).
+//!   merged driver API 1:1 (per spec section 3.5.2).
 //!
 //! [`docs/NATIVE_WRAPPER_SPEC.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md
 
@@ -29,7 +29,7 @@ use azure_data_cosmos_driver::error::CosmosError as DriverCosmosError;
 
 /// Coarse numeric return value for every fallible C function.
 ///
-/// Per spec §3.5.1, the layout retains the FFI / Cosmos-specific bands
+/// Per spec section 3.5.1, the layout retains the FFI / Cosmos-specific bands
 /// established by the old wrapper:
 ///
 /// - `0` — success.
@@ -115,7 +115,7 @@ pub enum CosmosErrorCode {
     /// (`SubStatusCode::CLIENT_OPERATION_TIMEOUT` = 20008).
     CosmosErrorCodeClientOperationTimeout = 3005,
 
-    // ── 4001..=4999: driver-wrapper-specific fatal codes (per spec §3.5.1) ──
+    // ── 4001..=4999: driver-wrapper-specific fatal codes (per spec section 3.5.1) ──
     //
     // Code 4001 is intentionally reserved (formerly OPTIONS_IGNORED_ON_CACHE_HIT,
     // moved to the 5xxx warning class).
@@ -168,7 +168,7 @@ pub enum CosmosErrorCode {
     /// `CosmosDriverRuntime`.
     CosmosErrorCodeRuntimeBuildFailed = 4015,
 
-    // ── 5001..=5999: non-fatal warnings (per spec §3.5.1) ──
+    // ── 5001..=5999: non-fatal warnings (per spec section 3.5.1) ──
     /// `cosmos_driver_get_or_create` called with non-NULL options while a
     /// driver for the same account endpoint was already cached. The cached
     /// instance is still delivered.
@@ -182,7 +182,7 @@ impl CosmosErrorCode {
         self as i32
     }
 
-    /// Derives the coarse code from a driver `CosmosError` per spec §6.3.
+    /// Derives the coarse code from a driver `CosmosError` per spec section 6.3.
     ///
     /// The routing is top-to-bottom: more specific synthetic-substatus checks
     /// run first, then synthetic-status branches, then the HTTP-status table.
@@ -381,7 +381,7 @@ impl CosmosErrorHandle {
 // FFI accessors (cosmos_error_*)
 //
 // Each accessor returns NULL / 0 / -1 / false when the input is NULL or when
-// the underlying field is absent. See spec §3.5.2 for the contract per
+// the underlying field is absent. See spec section 3.5.2 for the contract per
 // accessor.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -566,7 +566,7 @@ pub extern "C" fn cosmos_error_free(e: *mut CosmosErrorHandle) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Process-global backtrace knobs (spec §6.4).
+// Process-global backtrace knobs (spec section 6.4).
 //
 // Lives here rather than in lib.rs because it directly drives the optional
 // backtrace surface exposed by `cosmos_error_backtrace` above.
@@ -577,7 +577,7 @@ pub extern "C" fn cosmos_error_free(e: *mut CosmosErrorHandle) {
 /// Last-writer-wins across concurrent calls. Pass `0` to either parameter to
 /// disable that knob. Environment-derived defaults (`RUST_LIB_BACKTRACE`,
 /// `RUST_BACKTRACE`, `AZURE_COSMOS_BACKTRACE_*`) are overridden for the rest
-/// of the process once this is called. See spec §6.4.
+/// of the process once this is called. See spec section 6.4.
 #[no_mangle]
 pub extern "C" fn cosmos_set_backtrace_options(
     max_captures_per_second: u32,

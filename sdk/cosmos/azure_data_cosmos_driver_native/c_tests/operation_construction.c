@@ -3,7 +3,7 @@
 
 // Operation request + options construction (flat C-ABI struct surface).
 //
-// The Phase-5 builder/factory entry points (`cosmos_operation_options_builder_*`,
+// The builder/factory entry points (`cosmos_operation_options_builder_*`,
 // `cosmos_operation_*`) were removed in favor of two submit functions that
 // consume a flat `cosmos_operation_request_t` plus a flat
 // `cosmos_operation_options_t` (seeded by `cosmos_operation_options_default`).

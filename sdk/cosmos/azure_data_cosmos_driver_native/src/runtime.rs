@@ -13,7 +13,7 @@
 //! [`crate::runtime_builder`]).
 //!
 //! The runtime is **opaque** at the FFI boundary — consumers get a
-//! `cosmos_runtime_t *` and never look inside. See spec §3.1.1 + §4.1.
+//! `cosmos_runtime_t *` and never look inside. See spec section 3.1.1 + section 4.1.
 
 use std::sync::Arc;
 

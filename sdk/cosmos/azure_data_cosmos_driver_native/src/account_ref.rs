@@ -16,7 +16,7 @@
 //! (4003) and populates the optional `out_error` slot with a rich
 //! description for diagnostics.
 //!
-//! See [`docs/NATIVE_WRAPPER_SPEC.md`] §4.3.
+//! See [`docs/NATIVE_WRAPPER_SPEC.md`] section 4.3.
 //!
 //! [`docs/NATIVE_WRAPPER_SPEC.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md
 

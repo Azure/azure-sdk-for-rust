@@ -23,7 +23,7 @@
 //! `_add_number` rejects NaN / ±∞ up-front with
 //! `INVALID_OPTION_VALUE` (4014).
 //!
-//! See [`docs/NATIVE_WRAPPER_SPEC.md`] §4.5.
+//! See [`docs/NATIVE_WRAPPER_SPEC.md`] section 4.5.
 //!
 //! [`docs/NATIVE_WRAPPER_SPEC.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md
 
@@ -348,7 +348,7 @@ pub extern "C" fn cosmos_partition_key_builder_add_undefined(
 ///   The driver's `EMPTY` partition key has a specific meaning
 ///   (cross-partition fan-out) and host SDKs cannot construct it via
 ///   the builder by accident; if you need it explicitly, use
-///   `cosmos_partition_key_empty` (also added by this phase).
+///   `cosmos_partition_key_empty`.
 #[no_mangle]
 pub extern "C" fn cosmos_partition_key_builder_build(
     builder: *mut PartitionKeyBuilderHandle,

@@ -945,7 +945,7 @@ if __name__ == "__main__":
 7. **Single-runtime caching.** Drivers are cached by endpoint URL on the
    `cosmos_runtime_t` that created them. Multiple `cosmos_runtime_t`
    instances do **not** share their caches — see
-   [§4.4.1 in the spec](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md)
+   [section 4.4.1 in the spec](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md)
    for the full contract.
 
 ## Repository archaeology — files removed by PR #4103
@@ -958,7 +958,7 @@ reintroduced in this crate; their content now lives elsewhere:
 | Old file | New location |
 |---|---|
 | `azurecosmos.pc.in` (pkg-config template) | This crate ships a sibling `azurecosmosdriver.pc.in` with the same shape but a new package name. |
-| `docs/next_generation_sdks_design_principles.md` | Folded into [NATIVE_WRAPPER_SPEC.md §2](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md). |
+| `docs/next_generation_sdks_design_principles.md` | Folded into [NATIVE_WRAPPER_SPEC.md section 2](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md). |
 | `c_tests/test_common.h` runtime / client / database fixtures | Re-added incrementally as the corresponding C entry points land. |
 
 If you are spelunking the git history of the old crate looking for a behavior

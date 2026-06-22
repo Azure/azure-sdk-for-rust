@@ -16,7 +16,7 @@
 //! across an FFI boundary; callers create, configure, then `_build` (which
 //! consumes the builder).
 //!
-//! See [`docs/NATIVE_WRAPPER_SPEC.md`] §4.1.
+//! See [`docs/NATIVE_WRAPPER_SPEC.md`] section 4.1.
 //!
 //! [`docs/NATIVE_WRAPPER_SPEC.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md
 

@@ -152,7 +152,7 @@ fn spawn_oneshot<Fut, R>(
         // the task boundary, so `enqueue_into_inner` below would never run and
         // the operation handle would stay `IN_FLIGHT` forever — the host
         // continuation hangs and leaks. Catching the panic here lets us still
-        // publish exactly one completion, honoring the spec §3.6 invariant.
+        // publish exactly one completion, honoring the spec section 3.6 invariant.
         let work = std::panic::AssertUnwindSafe(async move { fut.await.map(to_response) });
         let work = work.catch_unwind();
         tokio::pin!(work);
@@ -163,7 +163,7 @@ fn spawn_oneshot<Fut, R>(
         // first poll of `notified()`. `biased` makes a pending cancel win
         // deterministically over a simultaneously-ready result. On cancel we
         // simply stop awaiting `work`; dropping it cancels the driver future
-        // (best-effort cooperative cancellation per spec §3.6.3).
+        // (best-effort cooperative cancellation per spec section 3.6.3).
         let outcome = tokio::select! {
             biased;
             _ = ctx.op_inner.cancel_notify.notified() => None,

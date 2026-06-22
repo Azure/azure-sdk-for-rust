@@ -50,17 +50,16 @@ fn generate_c_header() {
     );
 
     // Renames for the wrapper-defined Rust types so the generated C names match
-    // §2.2 of the spec exactly.
+    // section 2.2 of the spec exactly.
     //
     // cbindgen applies `export.prefix` *after* the rename, so each rename
     // target below is the **unprefixed** final form (`runtime_t`, `cq_t`, ...)
     // and `prefix = "cosmos_"` produces the spec-mandated `cosmos_runtime_t`,
     // `cosmos_cq_t`, etc. Targets that already start with `cosmos_` would
-    // double-prefix into `cosmos_cosmos_runtime_t` and trip the §2.2 CI check.
+    // double-prefix into `cosmos_cosmos_runtime_t` and trip the section 2.2 CI check.
     //
-    // Renames for types that don't exist yet in this phase are no-ops — the
-    // table is laid down up front so the policy is established before later
-    // phases start adding types.
+    // Renames for types not currently emitted are harmless no-ops, so the
+    // table can list the full naming policy in one place.
     let rename = HashMap::from([
         ("RuntimeContext".into(), "runtime_t".into()),
         ("RuntimeBuilderHandle".into(), "runtime_builder_t".into()),

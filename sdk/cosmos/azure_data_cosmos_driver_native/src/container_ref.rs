@@ -25,7 +25,7 @@
 //! the container/item-scope operation factories (`cosmos_operation_read_item`,
 //! `cosmos_operation_create_item`, etc.) consume.
 //!
-//! See [`docs/NATIVE_WRAPPER_SPEC.md`] §4.3 + §4.4 + §4.7.
+//! See [`docs/NATIVE_WRAPPER_SPEC.md`] section 4.3 + section 4.4 + section 4.7.
 //!
 //! [`docs/NATIVE_WRAPPER_SPEC.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md
 

@@ -3,10 +3,10 @@
 
 //! Byte buffer marshalling helpers for the C ABI boundary.
 //!
-//! Per §3.3 of the spec, the wrapper distinguishes two byte-buffer shapes:
+//! Per section 3.3 of the spec, the wrapper distinguishes two byte-buffer shapes:
 //!
 //! - **`cosmos_bytes_view_t`** — a caller-owned by-value view, layout
-//!   published. Used as **input** to the library. Defined in §3.3; not yet
+//!   published. Used as **input** to the library. Defined in section 3.3; not yet
 //!   implemented because no entry point consumes one yet.
 //! - **`cosmos_bytes_t`** — a library-owned opaque handle backing
 //!   heap-allocated bytes that the library returns. The internal
@@ -27,7 +27,7 @@ use std::os::raw::c_void;
 /// never see the storage shape.
 #[repr(C)]
 pub struct CosmosBytes {
-    // PhantomData equivalent — keep cbindgen from emitting a zero-sized
+    // A zero-length array keeps cbindgen from emitting a zero-sized
     // struct body, which some C compilers warn on.
     _opaque: [u8; 0],
 }
