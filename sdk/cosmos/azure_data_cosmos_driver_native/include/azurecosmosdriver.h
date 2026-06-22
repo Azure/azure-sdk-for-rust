@@ -609,6 +609,20 @@ typedef struct cosmos_driver_options_t cosmos_driver_options_t;
 typedef struct cosmos_feed_range_t cosmos_feed_range_t;
 
 /**
+ * The C ABI handle for a [`CosmosResponse`].
+ *
+ * A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
+ * opaque type (`cosmos_response_t`) because C cannot see its fields.
+ * Single-owner and `Box`-managed (responses are never cloned).
+ *
+ * The handle also carries optional "side payloads" populated only on
+ * degenerate responses delivered by the driver-creation / container-resolve
+ * submit paths. `_take_driver` / `_take_container` move these payloads out;
+ * once taken, both accessors return NULL.
+ */
+typedef struct cosmos_response_t cosmos_response_t;
+
+/**
  * The C ABI handle for the async runtime.
  *
  * A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
@@ -689,23 +703,6 @@ typedef struct cosmos_cq_options_t {
 typedef struct cosmos_operation_handle_t {
   uint8_t _opaque[0];
 } cosmos_operation_handle_t;
-
-/**
- * Opaque C ABI handle for [`CosmosResponse`].
- *
- * Storage pun: same shape as `CosmosErrorHandle` — `Arc<ResponseInner>`
- * lives in a trailing storage struct, the C side only sees the
- * `_opaque` marker.
- *
- * The handle also carries optional "side payloads" populated only on
- * degenerate responses delivered by the driver-creation / container-
- * resolve submit paths. `_take_driver` / `_take_container` move these
- * payloads out by stealing the Arc slot's interior; once taken, both
- * accessors return NULL.
- */
-typedef struct cosmos_response_t {
-  uint8_t _opaque[0];
-} cosmos_response_t;
 
 /**
  * A single custom request/operation header. Both pointers are

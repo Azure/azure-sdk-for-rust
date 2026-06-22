@@ -41,12 +41,22 @@ use crate::driver::DriverHandle;
 use crate::error::CosmosErrorCode;
 use crate::safety::MutexExt;
 
-pub(crate) struct ResponseInner {
+/// The C ABI handle for a [`CosmosResponse`].
+///
+/// A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
+/// opaque type (`cosmos_response_t`) because C cannot see its fields.
+/// Single-owner and `Box`-managed (responses are never cloned).
+///
+/// The handle also carries optional "side payloads" populated only on
+/// degenerate responses delivered by the driver-creation / container-resolve
+/// submit paths. `_take_driver` / `_take_container` move these payloads out;
+/// once taken, both accessors return NULL.
+pub struct ResponseHandle {
     /// `None` on degenerate responses (driver-creation and
     /// container-resolve submit paths). On these the scalar / header
     /// accessors return default values; the side-payload
     /// `_take_driver` / `_take_container` accessors carry the real
-    /// payload via the parent storage's separate `Mutex` slots.
+    /// payload via the separate `Mutex` slots below.
     pub(crate) inner: Option<CosmosResponse>,
     // Lazily-cached null-terminated copies of the four header strings
     // exposed via the high-traffic typed accessors. Each is populated on
@@ -56,52 +66,6 @@ pub(crate) struct ResponseInner {
     session_token_cstring: OnceLock<Option<CString>>,
     etag_cstring: OnceLock<Option<CString>>,
     continuation_cstring: OnceLock<Option<CString>>,
-}
-
-impl ResponseInner {
-    pub(crate) fn new(inner: CosmosResponse) -> Self {
-        Self {
-            inner: Some(inner),
-            activity_id_cstring: OnceLock::new(),
-            session_token_cstring: OnceLock::new(),
-            etag_cstring: OnceLock::new(),
-            continuation_cstring: OnceLock::new(),
-        }
-    }
-
-    /// Constructs an empty `ResponseInner` for degenerate side-payload
-    /// responses (driver-creation / container-resolve submits).
-    pub(crate) fn degenerate() -> Self {
-        Self {
-            inner: None,
-            activity_id_cstring: OnceLock::new(),
-            session_token_cstring: OnceLock::new(),
-            etag_cstring: OnceLock::new(),
-            continuation_cstring: OnceLock::new(),
-        }
-    }
-}
-
-/// Opaque C ABI handle for [`CosmosResponse`].
-///
-/// Storage pun: same shape as `CosmosErrorHandle` — `Arc<ResponseInner>`
-/// lives in a trailing storage struct, the C side only sees the
-/// `_opaque` marker.
-///
-/// The handle also carries optional "side payloads" populated only on
-/// degenerate responses delivered by the driver-creation / container-
-/// resolve submit paths. `_take_driver` / `_take_container` move these
-/// payloads out by stealing the Arc slot's interior; once taken, both
-/// accessors return NULL.
-#[repr(C)]
-pub struct ResponseHandle {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-struct ResponseStorage {
-    _opaque: [u8; 0],
-    inner: Arc<ResponseInner>,
     // Side payloads — `Mutex<Option<...>>` so the take accessors can
     // detach ownership in place. NULL on every "real" CRUD completion.
     driver_payload: Mutex<Option<Arc<crate::driver::DriverHandle>>>,
@@ -142,18 +106,7 @@ impl ResponseHandle {
         next: Option<String>,
     ) -> *mut Self {
         let next_continuation = next.and_then(|s| CString::new(s).ok());
-        let inner = match response {
-            Some(r) => Arc::new(ResponseInner::new(r)),
-            None => Arc::new(ResponseInner::degenerate()),
-        };
-        let storage = Box::new(ResponseStorage {
-            _opaque: [],
-            inner,
-            driver_payload: Mutex::new(None),
-            container_payload: Mutex::new(None),
-            next_continuation,
-        });
-        Box::into_raw(storage).cast::<ResponseHandle>()
+        Self::into_raw_with_payloads(response, None, None, next_continuation)
     }
 
     fn into_raw_with_payloads(
@@ -162,35 +115,35 @@ impl ResponseHandle {
         container: Option<Arc<crate::container_ref::ContainerRefHandle>>,
         next_continuation: Option<CString>,
     ) -> *mut Self {
-        let inner = match response {
-            Some(r) => Arc::new(ResponseInner::new(r)),
-            None => Arc::new(ResponseInner::degenerate()),
-        };
-        let storage = Box::new(ResponseStorage {
-            _opaque: [],
-            inner,
+        Box::into_raw(Box::new(ResponseHandle {
+            inner: response,
+            activity_id_cstring: OnceLock::new(),
+            session_token_cstring: OnceLock::new(),
+            etag_cstring: OnceLock::new(),
+            continuation_cstring: OnceLock::new(),
             driver_payload: Mutex::new(driver),
             container_payload: Mutex::new(container),
             next_continuation,
-        });
-        Box::into_raw(storage).cast::<ResponseHandle>()
+        }))
     }
 
-    fn storage<'a>(p: *const ResponseHandle) -> Option<&'a ResponseStorage> {
+    /// Borrows the handle from a raw pointer for the duration of an FFI call.
+    fn from_ptr<'a>(p: *const ResponseHandle) -> Option<&'a ResponseHandle> {
         if p.is_null() {
             return None;
         }
         // SAFETY: caller guarantees `p` came from `into_raw_*`.
-        Some(unsafe { &*(p as *const ResponseStorage) })
+        Some(unsafe { &*p })
     }
 
     fn drop_raw(p: *mut ResponseHandle) {
         if p.is_null() {
             return;
         }
-        // SAFETY: caller guarantees `p` came from `into_raw_*`.
+        // SAFETY: caller guarantees `p` came from `into_raw_*` and has not
+        // already been freed.
         unsafe {
-            drop(Box::from_raw(p.cast::<ResponseStorage>()));
+            drop(Box::from_raw(p));
         }
     }
 }
@@ -217,10 +170,10 @@ pub extern "C" fn cosmos_response_free(response: *mut ResponseHandle) {
 /// 204). Returns `0` for NULL / degenerate responses.
 #[no_mangle]
 pub extern "C" fn cosmos_response_status_code(response: *const ResponseHandle) -> u16 {
-    let Some(storage) = ResponseHandle::storage(response) else {
+    let Some(handle) = ResponseHandle::from_ptr(response) else {
         return 0;
     };
-    let Some(inner) = storage.inner.inner.as_ref() else {
+    let Some(inner) = handle.inner.as_ref() else {
         return 0;
     };
     u16::from(inner.status().status_code())
@@ -230,10 +183,10 @@ pub extern "C" fn cosmos_response_status_code(response: *const ResponseHandle) -
 /// header is absent / response is NULL / response is degenerate.
 #[no_mangle]
 pub extern "C" fn cosmos_response_request_charge(response: *const ResponseHandle) -> f64 {
-    let Some(storage) = ResponseHandle::storage(response) else {
+    let Some(handle) = ResponseHandle::from_ptr(response) else {
         return 0.0;
     };
-    let Some(inner) = storage.inner.inner.as_ref() else {
+    let Some(inner) = handle.inner.as_ref() else {
         return 0.0;
     };
     inner
@@ -253,12 +206,11 @@ pub extern "C" fn cosmos_response_request_charge(response: *const ResponseHandle
 /// is NULL.
 #[no_mangle]
 pub extern "C" fn cosmos_response_activity_id(response: *const ResponseHandle) -> *const c_char {
-    let Some(storage) = ResponseHandle::storage(response) else {
+    let Some(handle) = ResponseHandle::from_ptr(response) else {
         return std::ptr::null();
     };
-    let inner = &storage.inner;
-    let cached = inner.activity_id_cstring.get_or_init(|| {
-        inner
+    let cached = handle.activity_id_cstring.get_or_init(|| {
+        handle
             .inner
             .as_ref()?
             .headers()
@@ -272,12 +224,11 @@ pub extern "C" fn cosmos_response_activity_id(response: *const ResponseHandle) -
 /// Borrowed pointer to the session token, or NULL when absent.
 #[no_mangle]
 pub extern "C" fn cosmos_response_session_token(response: *const ResponseHandle) -> *const c_char {
-    let Some(storage) = ResponseHandle::storage(response) else {
+    let Some(handle) = ResponseHandle::from_ptr(response) else {
         return std::ptr::null();
     };
-    let inner = &storage.inner;
-    let cached = inner.session_token_cstring.get_or_init(|| {
-        inner
+    let cached = handle.session_token_cstring.get_or_init(|| {
+        handle
             .inner
             .as_ref()?
             .headers()
@@ -291,12 +242,11 @@ pub extern "C" fn cosmos_response_session_token(response: *const ResponseHandle)
 /// Borrowed pointer to the ETag, or NULL when absent.
 #[no_mangle]
 pub extern "C" fn cosmos_response_etag(response: *const ResponseHandle) -> *const c_char {
-    let Some(storage) = ResponseHandle::storage(response) else {
+    let Some(handle) = ResponseHandle::from_ptr(response) else {
         return std::ptr::null();
     };
-    let inner = &storage.inner;
-    let cached = inner.etag_cstring.get_or_init(|| {
-        inner
+    let cached = handle.etag_cstring.get_or_init(|| {
+        handle
             .inner
             .as_ref()?
             .headers()
@@ -312,12 +262,11 @@ pub extern "C" fn cosmos_response_etag(response: *const ResponseHandle) -> *cons
 pub extern "C" fn cosmos_response_continuation_token(
     response: *const ResponseHandle,
 ) -> *const c_char {
-    let Some(storage) = ResponseHandle::storage(response) else {
+    let Some(handle) = ResponseHandle::from_ptr(response) else {
         return std::ptr::null();
     };
-    let inner = &storage.inner;
-    let cached = inner.continuation_cstring.get_or_init(|| {
-        inner
+    let cached = handle.continuation_cstring.get_or_init(|| {
+        handle
             .inner
             .as_ref()?
             .headers()
@@ -346,10 +295,10 @@ pub extern "C" fn cosmos_response_continuation_token(
 pub extern "C" fn cosmos_response_next_continuation(
     response: *const ResponseHandle,
 ) -> *const c_char {
-    let Some(storage) = ResponseHandle::storage(response) else {
+    let Some(handle) = ResponseHandle::from_ptr(response) else {
         return std::ptr::null();
     };
-    storage
+    handle
         .next_continuation
         .as_ref()
         .map_or(std::ptr::null(), |c| c.as_ptr())
@@ -382,10 +331,10 @@ pub extern "C" fn cosmos_response_body(
         *out_data = std::ptr::null();
         *out_len = 0;
     }
-    let Some(storage) = ResponseHandle::storage(response) else {
+    let Some(handle) = ResponseHandle::from_ptr(response) else {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
     };
-    let Some(inner_response) = storage.inner.inner.as_ref() else {
+    let Some(inner_response) = handle.inner.as_ref() else {
         // Degenerate response — empty body, success code so callers
         // can distinguish from "NULL handle".
         return CosmosErrorCode::CosmosErrorCodeSuccess.as_i32();
@@ -422,10 +371,10 @@ pub extern "C" fn cosmos_response_body(
 /// `_take_driver`.
 #[no_mangle]
 pub extern "C" fn cosmos_response_take_driver(response: *mut ResponseHandle) -> *mut DriverHandle {
-    let Some(storage) = ResponseHandle::storage(response) else {
+    let Some(handle) = ResponseHandle::from_ptr(response) else {
         return std::ptr::null_mut();
     };
-    let mut slot = storage.driver_payload.lock_recover();
+    let mut slot = handle.driver_payload.lock_recover();
     match slot.take() {
         Some(arc) => crate::driver::DriverHandle::from_arc_into_raw(arc),
         None => std::ptr::null_mut(),
@@ -440,10 +389,10 @@ pub extern "C" fn cosmos_response_take_driver(response: *mut ResponseHandle) -> 
 pub extern "C" fn cosmos_response_take_container(
     response: *mut ResponseHandle,
 ) -> *mut ContainerRefHandle {
-    let Some(storage) = ResponseHandle::storage(response) else {
+    let Some(handle) = ResponseHandle::from_ptr(response) else {
         return std::ptr::null_mut();
     };
-    let mut slot = storage.container_payload.lock_recover();
+    let mut slot = handle.container_payload.lock_recover();
     match slot.take() {
         Some(arc) => crate::container_ref::ContainerRefHandle::from_arc_into_raw(arc),
         None => std::ptr::null_mut(),
