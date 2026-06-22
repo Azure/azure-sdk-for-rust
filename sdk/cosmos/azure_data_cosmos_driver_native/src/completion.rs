@@ -150,30 +150,22 @@ impl OperationInner {
     }
 }
 
-/// Opaque C ABI handle for an in-flight (or just-completed) operation.
+/// The C ABI handle for an in-flight (or just-completed) operation.
 ///
-/// Storage pun: see the comment on [`CompletionQueue`] — the public
-/// `#[repr(C)]` struct only carries the `_opaque` marker; the real `Arc`
-/// state lives in a trailing `OperationHandleStorage` field allocated by
-/// `OperationHandle::new_raw`.
-#[repr(C)]
+/// A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
+/// opaque type (`cosmos_operation_handle_t`) because C cannot see its fields.
+/// Each handle is its own `Box`, but the [`OperationInner`] state behind it is
+/// `Arc`-shared with the published `Completion` (and with any sibling handle
+/// minted by `clone_arc`).
 pub struct OperationHandle {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-struct OperationHandleStorage {
-    _opaque: [u8; 0],
     pub(crate) inner: Arc<OperationInner>,
 }
 
 impl OperationHandle {
     fn new_raw() -> *mut Self {
-        let storage = Box::new(OperationHandleStorage {
-            _opaque: [],
+        Box::into_raw(Box::new(OperationHandle {
             inner: Arc::new(OperationInner::new()),
-        });
-        Box::into_raw(storage).cast::<OperationHandle>()
+        }))
     }
 
     /// Allocates a fresh handle (same as `new_raw`) but exposed to
@@ -186,26 +178,24 @@ impl OperationHandle {
     /// Returns a cloned `Arc<OperationInner>` for the submit pipeline's
     /// tokio-side task to consult / write to.
     pub(crate) fn inner_arc(p: *const OperationHandle) -> Option<Arc<OperationInner>> {
-        Self::storage(p).map(|s| Arc::clone(&s.inner))
+        Self::from_ptr(p).map(|h| Arc::clone(&h.inner))
     }
 
     /// Build a fresh handle that shares the inner state of an existing handle.
     #[allow(dead_code, reason = "first caller is the submit pipeline")]
     fn clone_arc(p: *const OperationHandle) -> Option<*mut OperationHandle> {
-        let storage = Self::storage(p)?;
-        let companion = Box::new(OperationHandleStorage {
-            _opaque: [],
-            inner: Arc::clone(&storage.inner),
-        });
-        Some(Box::into_raw(companion).cast::<OperationHandle>())
+        let handle = Self::from_ptr(p)?;
+        Some(Box::into_raw(Box::new(OperationHandle {
+            inner: Arc::clone(&handle.inner),
+        })))
     }
 
-    fn storage<'a>(p: *const OperationHandle) -> Option<&'a OperationHandleStorage> {
+    fn from_ptr<'a>(p: *const OperationHandle) -> Option<&'a OperationHandle> {
         if p.is_null() {
             None
         } else {
             // SAFETY: caller guarantees `p` came from `new_raw` or `clone_arc`.
-            Some(unsafe { &*(p as *const OperationHandleStorage) })
+            Some(unsafe { &*p })
         }
     }
 
@@ -213,9 +203,10 @@ impl OperationHandle {
         if p.is_null() {
             return;
         }
-        // SAFETY: caller guarantees `p` came from a library API.
+        // SAFETY: caller guarantees `p` came from a library API and has not
+        // already been freed.
         unsafe {
-            drop(Box::from_raw(p.cast::<OperationHandleStorage>()));
+            drop(Box::from_raw(p));
         }
     }
 }
@@ -423,27 +414,20 @@ impl CompletionQueueInner {
     }
 }
 
-/// Opaque C ABI handle for a completion queue.
+/// The C ABI handle for a completion queue.
 ///
-/// Storage pun: see the comment on [`OperationHandle`] — the public
-/// `#[repr(C)]` struct only carries the `_opaque` marker; the real `Arc`
-/// state lives in a trailing `CompletionQueueStorage` field allocated by
-/// `CompletionQueue::new_raw`.
-#[repr(C)]
+/// A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
+/// opaque type (`cosmos_cq_t`) because C cannot see its fields. The
+/// [`CompletionQueueInner`] state behind it is `Arc`-shared so the submit
+/// pipeline's spawned tasks survive a concurrent `cosmos_cq_free` from the
+/// producer side.
 pub struct CompletionQueue {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-struct CompletionQueueStorage {
-    _opaque: [u8; 0],
     inner: Arc<CompletionQueueInner>,
 }
 
 impl CompletionQueue {
     fn new_raw(runtime: Arc<RuntimeContext>, options: CqOptions) -> *mut Self {
-        let storage = Box::new(CompletionQueueStorage {
-            _opaque: [],
+        Box::into_raw(Box::new(CompletionQueue {
             inner: Arc::new(CompletionQueueInner {
                 inner: Mutex::new(QueueInner {
                     deque: VecDeque::new(),
@@ -454,8 +438,7 @@ impl CompletionQueue {
                 options,
                 runtime,
             }),
-        });
-        Box::into_raw(storage).cast::<CompletionQueue>()
+        }))
     }
 
     /// Borrows the inner queue state for the submit pipeline. Returns
@@ -463,18 +446,16 @@ impl CompletionQueue {
     /// `Arc`, inspect capacity / state, and route through
     /// [`CompletionQueue::enqueue`] when the spawned task finishes.
     pub(crate) fn inner_arc(p: *const CompletionQueue) -> Option<Arc<CompletionQueueInner>> {
-        Self::storage(p).map(|s| Arc::clone(&s.inner))
+        Self::from_ptr(p).map(|h| Arc::clone(&h.inner))
     }
 
-    fn storage<'a>(p: *const CompletionQueue) -> Option<&'a CompletionQueueStorage> {
+    fn from_ptr<'a>(p: *const CompletionQueue) -> Option<&'a CompletionQueue> {
         if p.is_null() {
             None
         } else {
             // SAFETY: caller guarantees `p` was obtained from `new_raw` and
-            // has not been freed. The storage pun is sound because both
-            // structs are `#[repr(C)]` with the same `_opaque: [u8; 0]`
-            // first field.
-            Some(unsafe { &*(p as *const CompletionQueueStorage) })
+            // has not been freed.
+            Some(unsafe { &*p })
         }
     }
 
@@ -482,19 +463,20 @@ impl CompletionQueue {
         if p.is_null() {
             return;
         }
-        // SAFETY: caller guarantees `p` came from `new_raw`.
+        // SAFETY: caller guarantees `p` came from `new_raw` and has not
+        // already been freed.
         unsafe {
-            drop(Box::from_raw(p.cast::<CompletionQueueStorage>()));
+            drop(Box::from_raw(p));
         }
     }
 
     /// Internal: pushes a completion onto the queue identified by the
     /// raw pointer.
     pub(crate) fn enqueue(p: *const CompletionQueue, c: Box<Completion>) -> CosmosErrorCode {
-        let Some(storage) = Self::storage(p) else {
+        let Some(handle) = Self::from_ptr(p) else {
             return CosmosErrorCode::CosmosErrorCodeInvalidArgument;
         };
-        Self::enqueue_into_inner(&storage.inner, c)
+        Self::enqueue_into_inner(&handle.inner, c)
     }
 
     /// Internal: pushes a completion onto the queue identified by an
@@ -712,7 +694,7 @@ pub extern "C" fn cosmos_cq_wait_batch(
 /// or `timeout_ms` elapses.
 #[no_mangle]
 pub extern "C" fn cosmos_cq_wait_writable(queue: *mut CompletionQueue, timeout_ms: u32) -> bool {
-    let Some(q) = CompletionQueue::storage(queue) else {
+    let Some(q) = CompletionQueue::from_ptr(queue) else {
         return false;
     };
     let inner = &q.inner;
@@ -773,7 +755,7 @@ pub extern "C" fn cosmos_cq_wait_writable(queue: *mut CompletionQueue, timeout_m
 /// `cosmos_cq_wait` / `_wait_writable` / `_wait_batch`. Idempotent.
 #[no_mangle]
 pub extern "C" fn cosmos_cq_shutdown(queue: *mut CompletionQueue) {
-    let Some(q) = CompletionQueue::storage(queue) else {
+    let Some(q) = CompletionQueue::from_ptr(queue) else {
         return;
     };
     let mut guard = q.inner.inner.lock_recover();
@@ -790,7 +772,7 @@ pub extern "C" fn cosmos_cq_shutdown(queue: *mut CompletionQueue) {
 /// Returns the queue's current lifecycle state.
 #[no_mangle]
 pub extern "C" fn cosmos_cq_state(queue: *const CompletionQueue) -> CosmosCqState {
-    let Some(q) = CompletionQueue::storage(queue) else {
+    let Some(q) = CompletionQueue::from_ptr(queue) else {
         return CosmosCqState::CosmosCqStateRunning;
     };
     let guard = q.inner.inner.lock_recover();
@@ -833,11 +815,10 @@ pub extern "C" fn cosmos_completion_op_handle(c: *const Completion) -> *const Op
         return existing;
     }
     // Lazy-create a fresh borrowed handle that shares the same Arc.
-    let companion = Box::new(OperationHandleStorage {
-        _opaque: [],
+    let companion = Box::new(OperationHandle {
         inner: Arc::clone(&co.op_inner),
     });
-    let raw = Box::into_raw(companion).cast::<OperationHandle>();
+    let raw = Box::into_raw(companion);
     *slot = Some(raw);
     raw
 }
@@ -1058,10 +1039,10 @@ pub fn __test_only_enqueue_completion(
     user_data: *mut c_void,
     error: Option<Arc<CosmosErrorHandle>>,
 ) -> CosmosErrorCode {
-    let Some(storage) = CompletionQueue::storage(queue) else {
+    let Some(storage) = CompletionQueue::from_ptr(queue) else {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument;
     };
-    let Some(op_storage) = OperationHandle::storage(op_handle) else {
+    let Some(op_storage) = OperationHandle::from_ptr(op_handle) else {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument;
     };
     let include_error = storage.inner.options.include_error_details;

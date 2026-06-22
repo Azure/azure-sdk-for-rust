@@ -537,6 +537,17 @@ typedef struct cosmos_account_ref_t cosmos_account_ref_t;
 typedef struct cosmos_completion_t cosmos_completion_t;
 
 /**
+ * The C ABI handle for a completion queue.
+ *
+ * A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
+ * opaque type (`cosmos_cq_t`) because C cannot see its fields. The
+ * [`CompletionQueueInner`] state behind it is `Arc`-shared so the submit
+ * pipeline's spawned tasks survive a concurrent `cosmos_cq_free` from the
+ * producer side.
+ */
+typedef struct cosmos_cq_t cosmos_cq_t;
+
+/**
  * The C ABI handle for a container reference.
  *
  * A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
@@ -607,6 +618,17 @@ typedef struct cosmos_driver_options_t cosmos_driver_options_t;
  * handle is reference-counted via `Arc`.
  */
 typedef struct cosmos_feed_range_t cosmos_feed_range_t;
+
+/**
+ * The C ABI handle for an in-flight (or just-completed) operation.
+ *
+ * A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
+ * opaque type (`cosmos_operation_handle_t`) because C cannot see its fields.
+ * Each handle is its own `Box`, but the [`OperationInner`] state behind it is
+ * `Arc`-shared with the published `Completion` (and with any sibling handle
+ * minted by `clone_arc`).
+ */
+typedef struct cosmos_operation_handle_t cosmos_operation_handle_t;
 
 /**
  * The C ABI handle for an incrementally-populated partition-key builder.
@@ -697,18 +719,6 @@ typedef struct cosmos_bytes_t {
 } cosmos_bytes_t;
 
 /**
- * Opaque C ABI handle for a completion queue.
- *
- * Storage pun: see the comment on [`OperationHandle`] — the public
- * `#[repr(C)]` struct only carries the `_opaque` marker; the real `Arc`
- * state lives in a trailing `CompletionQueueStorage` field allocated by
- * `CompletionQueue::new_raw`.
- */
-typedef struct cosmos_cq_t {
-  uint8_t _opaque[0];
-} cosmos_cq_t;
-
-/**
  * Layout of the `cosmos_cq_options_t` struct as it appears at the C ABI
  * boundary. Caller-owned, pass-by-value (per section 3.1.2 the layout is published
  * for inputs).
@@ -724,18 +734,6 @@ typedef struct cosmos_cq_options_t {
    */
   uint8_t include_error_details;
 } cosmos_cq_options_t;
-
-/**
- * Opaque C ABI handle for an in-flight (or just-completed) operation.
- *
- * Storage pun: see the comment on [`CompletionQueue`] — the public
- * `#[repr(C)]` struct only carries the `_opaque` marker; the real `Arc`
- * state lives in a trailing `OperationHandleStorage` field allocated by
- * `OperationHandle::new_raw`.
- */
-typedef struct cosmos_operation_handle_t {
-  uint8_t _opaque[0];
-} cosmos_operation_handle_t;
 
 /**
  * A single custom request/operation header. Both pointers are
