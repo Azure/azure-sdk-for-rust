@@ -17,6 +17,10 @@ use crate::options::{PartitionFailoverOptions, Region};
 // `operation_pipeline.rs` test helpers referencing the old name, which broke
 // the crate's test build. This keeps those helpers compiling without
 // expanding the scope of the #4574 fix.
+//
+// TODO: remove this alias once the `operation_pipeline.rs` test helpers are
+// migrated to construct `PartitionFailoverOptions` directly (via its builder /
+// public getters) instead of the old `PartitionFailoverConfig` name.
 #[cfg(test)]
 pub(crate) use crate::options::PartitionFailoverOptions as PartitionFailoverConfig;
 

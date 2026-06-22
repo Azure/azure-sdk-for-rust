@@ -223,33 +223,31 @@ async fn plan_fresh(
             .await?;
         let is_point = feed_range.as_epk_point().is_some();
         for resolved_range in resolved {
-            if is_point {
-                // Equality / `IN` predicate: target the *whole* owning partition
-                // by partition-key-range id (no `x-ms-start-epk` / `x-ms-end-epk`); the SQL
-                // predicate filters within the partition. Mirrors .NET's
-                // "EpkRange spans exactly one physical partition" routing.
+            // A point (equality / `IN`) targets its *whole* owning partition by
+            // partition-key-range id (no `x-ms-start-epk` / `x-ms-end-epk`); the
+            // SQL predicate filters within the partition, mirroring .NET's
+            // "EpkRange spans exactly one physical partition" routing. A
+            // half-open range is clipped to the query range as before.
+            let range = if is_point {
+                // De-duplicate co-located points: a second `IN` value hashing
+                // into an already-targeted partition is fully redundant.
                 if !point_targeted_partitions.insert(resolved_range.partition_key_range_id.clone())
                 {
                     continue;
                 }
-                let target = RequestTarget::effective_partition_key_range(
-                    resolved_range.range.clone(),
-                    resolved_range.partition_key_range_id,
-                    resolved_range.range,
-                );
-                nodes.push(Box::new(Request::new(Arc::clone(operation), target, None)));
+                resolved_range.range.clone()
             } else {
-                let range =
-                    intersect_feed_ranges(&resolved_range.range, &feed_range).ok_or_else(|| {
-                        topology_range_not_overlapping_error(&resolved_range.range, &feed_range)
-                    })?;
-                let target = RequestTarget::effective_partition_key_range(
-                    range,
-                    resolved_range.partition_key_range_id,
-                    resolved_range.range,
-                );
-                nodes.push(Box::new(Request::new(Arc::clone(operation), target, None)));
-            }
+                intersect_feed_ranges(&resolved_range.range, &feed_range).ok_or_else(|| {
+                    topology_range_not_overlapping_error(&resolved_range.range, &feed_range)
+                })?
+            };
+
+            let target = RequestTarget::effective_partition_key_range(
+                range,
+                resolved_range.partition_key_range_id,
+                resolved_range.range,
+            );
+            nodes.push(Box::new(Request::new(Arc::clone(operation), target, None)));
         }
     }
     Ok(nodes)
@@ -452,6 +450,12 @@ fn query_range_to_feed_range(
             query_range.min.as_str(),
         )));
     }
+    // Note: a degenerate `is_max_inclusive == false && min == max` range is an
+    // empty interval that the gateway is not expected to emit. We do not special
+    // case it here: it falls through to `FeedRange::new(X, X)` and the half-open
+    // routing path, where `intersect_feed_ranges` returns `None` and the planner
+    // surfaces a structured `CosmosError` (rather than panicking) as the safety
+    // net if that shape ever appears on the wire.
     let min = EffectivePartitionKey::from(query_range.min.as_str());
     let max = EffectivePartitionKey::from(query_range.max.as_str());
     FeedRange::new(min, max)
@@ -660,13 +664,31 @@ fn topology_range_not_overlapping_error(
     crate::error::CosmosError::builder()
         .with_status(crate::error::CosmosStatus::CLIENT_QUERY_PLAN_RANGE_NOT_COVERED_BY_TOPOLOGY)
         .with_message(format!(
-            "resolved topology range [{}, {}) does not overlap query plan EPK range [{}, {})",
-            resolved.min_inclusive().as_str(),
-            resolved.max_exclusive().as_str(),
-            query.min_inclusive().as_str(),
-            query.max_exclusive().as_str(),
+            "resolved topology range {} does not overlap query plan EPK {}",
+            render_feed_range_for_error(resolved),
+            render_feed_range_for_error(query),
         ))
         .build()
+}
+
+/// Renders a feed range for diagnostics, distinguishing a single-EPK point from
+/// a half-open `[min, max)` range. A point — an [`EpkPoint`] or a degenerate
+/// `min == max` range (both arising from an equality / `IN` predicate) — is
+/// shown as `point X` rather than `[X, X)`, which would otherwise read as the
+/// empty set and obscure the predicate shape for the on-call engineer.
+fn render_feed_range_for_error(range: &FeedRange) -> String {
+    if let Some(epk) = range.as_epk_point() {
+        return format!("point {}", epk.as_str());
+    }
+    let (min, max) = (
+        range.min_inclusive().as_str(),
+        range.max_exclusive().as_str(),
+    );
+    if min == max {
+        format!("point {min}")
+    } else {
+        format!("range [{min}, {max})")
+    }
 }
 
 #[cfg(test)]
@@ -1723,6 +1745,99 @@ mod tests {
                 ("55", "AA", "pk-b", "55", "AA", Some("server-token-xyz")),
                 ("AA", "FF", "pk-c", "AA", "FF", None),
             ],
+        );
+    }
+
+    #[tokio::test]
+    async fn resume_in_predicate_drops_point_partition_below_cursor() {
+        // Regression for issue #4574 resume path: an `IN (@a, @b)` whose values
+        // hash into two different partitions, resumed with a cursor that has
+        // fully drained the first point's partition. The point-routing branch
+        // must apply cursor clipping just like the half-open path: the drained
+        // partition is dropped, and only the second point's partition is
+        // emitted (fresh-start, above the cursor).
+        let plan = plan_with_ranges(vec![
+            QueryRange {
+                min: "20".to_string(),
+                max: "20".to_string(),
+                is_min_inclusive: true,
+                is_max_inclusive: true,
+            },
+            QueryRange {
+                min: "C0".to_string(),
+                max: "C0".to_string(),
+                is_min_inclusive: true,
+                is_max_inclusive: true,
+            },
+        ]);
+        let op = cross_partition_query_operation();
+        // One resolve_ranges call per query range: "20" → left, "C0" → right.
+        let mut topology = MockTopologyProvider::new(vec![
+            Ok(vec![rr("", "80", "pk-left")]),
+            Ok(vec![rr("80", "FF", "pk-right")]),
+        ]);
+
+        // Cursor at "80": the left partition ["", "80") is fully drained.
+        let resume = PipelineNodeState::SequentialDrain {
+            left_most_undrained_epk: "80".to_owned(),
+            active_tokens: vec![],
+        };
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+            .await
+            .unwrap();
+        // pk-left dropped (below cursor); pk-right emitted fresh-start.
+        assert_drain_requests_with_partitions_and_continuation(
+            pipeline,
+            &[("80", "FF", "pk-right", "80", "FF", None)],
+        );
+    }
+
+    #[tokio::test]
+    async fn resume_in_predicate_colocated_points_collapse_and_carry_continuation() {
+        // Regression for issue #4574 resume path: an `IN (@a, @b)` whose values
+        // are co-located in ONE partition, resumed while that partition has an
+        // in-flight server continuation. The first point emits a single leaf
+        // carrying the saved continuation; the second (same-partition) point
+        // must de-duplicate, so the resumed query issues exactly one request
+        // (not a duplicate that would re-read the partition).
+        let plan = plan_with_ranges(vec![
+            QueryRange {
+                min: "20".to_string(),
+                max: "20".to_string(),
+                is_min_inclusive: true,
+                is_max_inclusive: true,
+            },
+            QueryRange {
+                min: "50".to_string(),
+                max: "50".to_string(),
+                is_min_inclusive: true,
+                is_max_inclusive: true,
+            },
+        ]);
+        let op = cross_partition_query_operation();
+        // Both points resolve to the same single partition.
+        let mut topology = MockTopologyProvider::new(vec![
+            Ok(vec![rr("", "FF", "pk-0")]),
+            Ok(vec![rr("", "FF", "pk-0")]),
+        ]);
+
+        // The partition has an active continuation covering its whole range.
+        let resume = PipelineNodeState::SequentialDrain {
+            left_most_undrained_epk: "".to_owned(),
+            active_tokens: vec![RangedToken {
+                min_epk: "".to_owned(),
+                max_epk: "FF".to_owned(),
+                server_continuation: "resume-token".to_owned(),
+            }],
+        };
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+            .await
+            .unwrap();
+        assert_drain_requests_with_partitions_and_continuation(
+            pipeline,
+            &[("", "FF", "pk-0", "", "FF", Some("resume-token"))],
         );
     }
 

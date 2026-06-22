@@ -172,6 +172,17 @@ impl FeedRange {
     /// an [`EpkPoint`](FeedRangeRepr::EpkPoint), a [`LogicalPartition`](FeedRangeRepr::LogicalPartition)
     /// (already a point), or a degenerate `Range { min == max }`. Returns `None`
     /// for a proper half-open `[min, max)` range.
+    ///
+    /// Duality note (intentional, transitional): a point can currently be
+    /// spelled two ways — as an [`EpkPoint`](FeedRangeRepr::EpkPoint) (which the
+    /// query planner produces and routes point-aware) or as a degenerate
+    /// `Range { min == max }`. Point-aware callers like [`overlaps`](FeedRange::overlaps)
+    /// honor both via this helper, but the lower-level
+    /// `intersect_feed_ranges` (used on the half-open routing path) still treats
+    /// `min == max` as empty. New point producers should use
+    /// [`epk_point`](FeedRange::epk_point); the longer-term cleanup is to teach
+    /// `intersect_feed_ranges` about point semantics (or funnel all points
+    /// through `EpkPoint`) so the two spellings converge.
     fn single_epk(&self) -> Option<&EffectivePartitionKey> {
         match &self.0 {
             FeedRangeRepr::EpkPoint(epk) => Some(epk),
