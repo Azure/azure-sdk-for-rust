@@ -553,14 +553,22 @@ typedef struct cosmos_error_t {
 } cosmos_error_t;
 
 /**
- * Opaque byte-buffer handle owned by the library.
+ * A library-owned byte buffer returned by value across the C ABI.
  *
- * Internal representation: boxed `Vec<u8>`. The struct is intentionally
- * near-empty — cbindgen emits an opaque forward declaration so consumers
- * never see the storage shape.
+ * The caller reads `ptr` and `len` directly — there are no accessor
+ * functions. Ownership of the backing allocation transfers to the caller, who
+ * must return the struct to [`cosmos_bytes_free`] exactly once. An empty
+ * buffer is represented as a NULL `ptr` with `len == 0`.
  */
 typedef struct cosmos_bytes_t {
-  uint8_t _opaque[0];
+  /**
+   * Pointer to the first byte, or NULL when `len` is `0`.
+   */
+  const uint8_t *ptr;
+  /**
+   * Number of bytes addressable from `ptr`.
+   */
+  uintptr_t len;
 } cosmos_bytes_t;
 
 /**
@@ -991,36 +999,13 @@ int32_t cosmos_account_ref_clone(const struct cosmos_account_ref_t *account,
 void cosmos_account_ref_free(struct cosmos_account_ref_t *account);
 
 /**
- * Returns a borrowed pointer to the start of the byte buffer's payload.
+ * Releases a `cosmos_bytes_t` previously returned by a library API.
  *
- * The returned pointer is valid until [`cosmos_bytes_free`] is called on the
- * same handle. If `b` is null, returns null.
- *
- * # Safety
- *
- * `b` must have been obtained from a library API that returns
- * `cosmos_bytes_t *`. Reading more than [`cosmos_bytes_len`] bytes is
+ * Passing an empty buffer (NULL `ptr` / zero `len`) is a no-op. Passing a
+ * buffer not obtained from this library, or freeing the same buffer twice, is
  * undefined behavior.
  */
-const uint8_t *cosmos_bytes_data(const struct cosmos_bytes_t *b);
-
-/**
- * Returns the number of payload bytes in `b`. Returns 0 if `b` is null.
- *
- * # Safety
- *
- * `b` must have been obtained from a library API that returns
- * `cosmos_bytes_t *`.
- */
-uintptr_t cosmos_bytes_len(const struct cosmos_bytes_t *b);
-
-/**
- * Releases a `cosmos_bytes_t` previously obtained from a library API.
- *
- * Safe to call with a null pointer (no-op). Calling on a non-library handle,
- * or calling twice on the same handle, is undefined behavior.
- */
-void cosmos_bytes_free(struct cosmos_bytes_t *b);
+void cosmos_bytes_free(struct cosmos_bytes_t bytes);
 
 /**
  * Create a completion queue bound to `runtime`. Returns NULL if `runtime`

@@ -3,94 +3,71 @@
 
 //! Byte buffer marshalling helpers for the C ABI boundary.
 //!
-//! Per section 3.3 of the spec, the wrapper distinguishes two byte-buffer shapes:
+//! The wrapper distinguishes two byte-buffer shapes (spec section 3.3):
 //!
-//! - **`cosmos_bytes_view_t`** — a caller-owned by-value view, layout
-//!   published. Used as **input** to the library. Defined in section 3.3; not yet
+//! - **`cosmos_bytes_view_t`** — a caller-owned by-value view. Used as
+//!   **input** to the library. Defined in spec section 3.3; not yet
 //!   implemented because no entry point consumes one yet.
-//! - **`cosmos_bytes_t`** — a library-owned opaque handle backing
-//!   heap-allocated bytes that the library returns. The internal
-//!   representation is intentionally NOT published so the storage can evolve
-//!   (`Box<Vec<u8>>` today; could become `bytes::Bytes` or mmap-backed in the
-//!   future) without an ABI break.
-//!
-//! This module ships only the opaque output type and its three accessors:
-//! [`cosmos_bytes_data`], [`cosmos_bytes_len`], and [`cosmos_bytes_free`].
-//! The first caller of [`cosmos_bytes_data`] is the response/body surface.
+//! - **`cosmos_bytes_t`** — a library-owned buffer returned **by value** as a
+//!   `{ ptr, len }` pair the caller reads directly (no accessor calls). The
+//!   caller hands the struct back to [`cosmos_bytes_free`] to release the
+//!   backing allocation.
 
-use std::os::raw::c_void;
-
-/// Opaque byte-buffer handle owned by the library.
+/// A library-owned byte buffer returned by value across the C ABI.
 ///
-/// Internal representation: boxed `Vec<u8>`. The struct is intentionally
-/// near-empty — cbindgen emits an opaque forward declaration so consumers
-/// never see the storage shape.
+/// The caller reads `ptr` and `len` directly — there are no accessor
+/// functions. Ownership of the backing allocation transfers to the caller, who
+/// must return the struct to [`cosmos_bytes_free`] exactly once. An empty
+/// buffer is represented as a NULL `ptr` with `len == 0`.
 #[repr(C)]
 pub struct CosmosBytes {
-    // A zero-length array keeps cbindgen from emitting a zero-sized
-    // struct body, which some C compilers warn on.
-    _opaque: [u8; 0],
+    /// Pointer to the first byte, or NULL when `len` is `0`.
+    pub ptr: *const u8,
+    /// Number of bytes addressable from `ptr`.
+    pub len: usize,
 }
 
-/// Allocates a new `cosmos_bytes_t` from a `Vec<u8>` and returns a raw
-/// pointer suitable for handing back across the C ABI.
-///
-/// This is an internal-only helper — it is not exposed via `#[no_mangle]`.
-/// The response body surface uses it.
-#[allow(dead_code, reason = "first caller is the response body surface")]
-pub(crate) fn into_raw_bytes(buf: Vec<u8>) -> *mut CosmosBytes {
-    let boxed = Box::new(buf);
-    Box::into_raw(boxed) as *mut CosmosBytes
+impl CosmosBytes {
+    /// An empty buffer: NULL pointer, zero length.
+    pub(crate) fn empty() -> Self {
+        Self {
+            ptr: std::ptr::null(),
+            len: 0,
+        }
+    }
 }
 
-/// Returns a borrowed pointer to the start of the byte buffer's payload.
+/// Builds an owned `cosmos_bytes_t` from a `Vec<u8>`, transferring ownership of
+/// the allocation to the caller. The buffer must be released via
+/// [`cosmos_bytes_free`]. An empty input yields [`CosmosBytes::empty`].
+#[allow(dead_code, reason = "first caller is the response body take surface")]
+pub(crate) fn into_cosmos_bytes(buf: Vec<u8>) -> CosmosBytes {
+    if buf.is_empty() {
+        return CosmosBytes::empty();
+    }
+    let boxed: Box<[u8]> = buf.into_boxed_slice();
+    let len = boxed.len();
+    // Cast the fat slice pointer down to a thin data pointer; `len` carries the
+    // length so `cosmos_bytes_free` can reconstitute the boxed slice.
+    let ptr = Box::into_raw(boxed) as *const u8;
+    CosmosBytes { ptr, len }
+}
+
+/// Releases a `cosmos_bytes_t` previously returned by a library API.
 ///
-/// The returned pointer is valid until [`cosmos_bytes_free`] is called on the
-/// same handle. If `b` is null, returns null.
-///
-/// # Safety
-///
-/// `b` must have been obtained from a library API that returns
-/// `cosmos_bytes_t *`. Reading more than [`cosmos_bytes_len`] bytes is
+/// Passing an empty buffer (NULL `ptr` / zero `len`) is a no-op. Passing a
+/// buffer not obtained from this library, or freeing the same buffer twice, is
 /// undefined behavior.
 #[no_mangle]
-pub extern "C" fn cosmos_bytes_data(b: *const CosmosBytes) -> *const u8 {
-    if b.is_null() {
-        return std::ptr::null();
-    }
-    // SAFETY: callers must satisfy the safety contract above.
-    let vec: &Vec<u8> = unsafe { &*(b as *const Vec<u8>) };
-    vec.as_ptr()
-}
-
-/// Returns the number of payload bytes in `b`. Returns 0 if `b` is null.
-///
-/// # Safety
-///
-/// `b` must have been obtained from a library API that returns
-/// `cosmos_bytes_t *`.
-#[no_mangle]
-pub extern "C" fn cosmos_bytes_len(b: *const CosmosBytes) -> usize {
-    if b.is_null() {
-        return 0;
-    }
-    // SAFETY: see above.
-    let vec: &Vec<u8> = unsafe { &*(b as *const Vec<u8>) };
-    vec.len()
-}
-
-/// Releases a `cosmos_bytes_t` previously obtained from a library API.
-///
-/// Safe to call with a null pointer (no-op). Calling on a non-library handle,
-/// or calling twice on the same handle, is undefined behavior.
-#[no_mangle]
-pub extern "C" fn cosmos_bytes_free(b: *mut CosmosBytes) {
-    if b.is_null() {
+pub extern "C" fn cosmos_bytes_free(bytes: CosmosBytes) {
+    if bytes.ptr.is_null() || bytes.len == 0 {
         return;
     }
-    tracing::trace!(ptr = ?(b as *const c_void), "freeing bytes");
-    // SAFETY: caller guarantees `b` was obtained from `into_raw_bytes`.
+    tracing::trace!(ptr = ?bytes.ptr, len = bytes.len, "freeing bytes");
+    // SAFETY: `bytes` was produced by `into_cosmos_bytes`, which boxed a slice
+    // of exactly `len` bytes whose data pointer is `ptr`.
     unsafe {
-        drop(Box::from_raw(b as *mut Vec<u8>));
+        let slice = std::slice::from_raw_parts_mut(bytes.ptr as *mut u8, bytes.len);
+        drop(Box::from_raw(slice as *mut [u8]));
     }
 }
