@@ -41,68 +41,48 @@ const CPU_REFRESH_INTERVAL_MIN_MS: u64 = 1_000;
 const CPU_REFRESH_INTERVAL_MAX_MS: u64 = 60_000;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// RuntimeBuilderHandle — opaque storage pun
+// RuntimeBuilderHandle
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Internal storage owned by every `cosmos_runtime_builder_t *`.
+/// The C ABI handle for a runtime builder.
+///
+/// A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
+/// opaque type (`cosmos_runtime_builder_t`) because C cannot see its fields.
+/// Single-owner and `Box`-managed.
 ///
 /// We carry the driver's `CosmosDriverRuntimeBuilder` directly. Setters
 /// take `&mut`, but `with_*` on the driver builder consume `self` by value,
-/// so each setter does a `mem::take(&mut inner.builder)` → call → store
+/// so each setter does a `mem::take(&mut handle.builder)` → call → store
 /// dance. `Default` on the builder is cheap (`Self::default()`), so the
 /// take/replace is just two moves.
-pub(crate) struct RuntimeBuilderInner {
-    pub(crate) builder: CosmosDriverRuntimeBuilder,
-}
-
-/// Opaque C ABI handle for a runtime builder.
-///
-/// Storage pun: see the matching pattern on [`RuntimeContext`] in
-/// [`crate::runtime`]. The public `#[repr(C)]` struct only carries the
-/// `_opaque` marker; the real state lives in the trailing
-/// `RuntimeBuilderStorage` field.
-#[repr(C)]
 pub struct RuntimeBuilderHandle {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-struct RuntimeBuilderStorage {
-    _opaque: [u8; 0],
-    inner: RuntimeBuilderInner,
+    pub(crate) builder: CosmosDriverRuntimeBuilder,
 }
 
 impl RuntimeBuilderHandle {
     fn new_raw() -> *mut Self {
-        let storage = Box::new(RuntimeBuilderStorage {
-            _opaque: [],
-            inner: RuntimeBuilderInner {
-                builder: CosmosDriverRuntimeBuilder::new(),
-            },
-        });
-        // SAFETY: both structs share the `_opaque: [u8; 0]` first-field
-        // marker so the pointer is interchangeable across the FFI boundary.
-        Box::into_raw(storage).cast::<RuntimeBuilderHandle>()
+        Box::into_raw(Box::new(RuntimeBuilderHandle {
+            builder: CosmosDriverRuntimeBuilder::new(),
+        }))
     }
 
-    fn inner_mut<'a>(p: *mut RuntimeBuilderHandle) -> Option<&'a mut RuntimeBuilderInner> {
+    fn inner_mut<'a>(p: *mut RuntimeBuilderHandle) -> Option<&'a mut RuntimeBuilderHandle> {
         if p.is_null() {
             return None;
         }
         // SAFETY: caller guarantees `p` was obtained from `new_raw` and not
         // yet freed. Lifetime is scoped to the FFI call.
-        let storage = unsafe { &mut *(p.cast::<RuntimeBuilderStorage>()) };
-        Some(&mut storage.inner)
+        Some(unsafe { &mut *p })
     }
 
     fn drop_raw(p: *mut RuntimeBuilderHandle) {
         if p.is_null() {
             return;
         }
-        // SAFETY: pun back into the `Box<RuntimeBuilderStorage>` we
-        // originally allocated.
+        // SAFETY: caller guarantees `p` was obtained from `new_raw` and has
+        // not already been freed.
         unsafe {
-            drop(Box::from_raw(p.cast::<RuntimeBuilderStorage>()));
+            drop(Box::from_raw(p));
         }
     }
 
@@ -115,10 +95,9 @@ impl RuntimeBuilderHandle {
         if p.is_null() {
             return None;
         }
-        // SAFETY: pun back into the `Box<RuntimeBuilderStorage>` we
-        // originally allocated and move the inner builder out.
-        let storage = unsafe { Box::from_raw(p.cast::<RuntimeBuilderStorage>()) };
-        Some(storage.inner.builder)
+        // SAFETY: reclaim the `Box` and move the inner builder out.
+        let handle = unsafe { Box::from_raw(p) };
+        Some(handle.builder)
     }
 }
 

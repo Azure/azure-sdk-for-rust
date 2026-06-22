@@ -46,65 +46,50 @@ const MAX_COMPONENTS: usize = 3;
 // PartitionKeyBuilderHandle
 // ─────────────────────────────────────────────────────────────────────────────
 
-pub(crate) struct PartitionKeyBuilderInner {
-    pub(crate) components: Vec<PartitionKeyValue>,
-}
-
-/// Opaque C ABI handle for an incrementally-populated partition-key
-/// builder.
+/// The C ABI handle for an incrementally-populated partition-key builder.
 ///
-/// Storage pun: same shape as the other builder handles.
-#[repr(C)]
+/// A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
+/// opaque type (`cosmos_partition_key_builder_t`) because C cannot see its
+/// fields. Single-owner and `Box`-managed.
 pub struct PartitionKeyBuilderHandle {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-struct PartitionKeyBuilderStorage {
-    _opaque: [u8; 0],
-    inner: PartitionKeyBuilderInner,
+    pub(crate) components: Vec<PartitionKeyValue>,
 }
 
 impl PartitionKeyBuilderHandle {
     fn new_raw() -> *mut Self {
-        let storage = Box::new(PartitionKeyBuilderStorage {
-            _opaque: [],
-            inner: PartitionKeyBuilderInner {
-                components: Vec::with_capacity(MAX_COMPONENTS),
-            },
-        });
-        Box::into_raw(storage).cast::<PartitionKeyBuilderHandle>()
+        Box::into_raw(Box::new(PartitionKeyBuilderHandle {
+            components: Vec::with_capacity(MAX_COMPONENTS),
+        }))
     }
 
     fn inner_mut<'a>(
         p: *mut PartitionKeyBuilderHandle,
-    ) -> Option<&'a mut PartitionKeyBuilderInner> {
+    ) -> Option<&'a mut PartitionKeyBuilderHandle> {
         if p.is_null() {
             return None;
         }
         // SAFETY: caller guarantees `p` was obtained from `new_raw` and
         // has not been freed.
-        let storage = unsafe { &mut *(p.cast::<PartitionKeyBuilderStorage>()) };
-        Some(&mut storage.inner)
+        Some(unsafe { &mut *p })
     }
 
     fn into_owned(p: *mut PartitionKeyBuilderHandle) -> Option<Vec<PartitionKeyValue>> {
         if p.is_null() {
             return None;
         }
-        // SAFETY: pun back into the storage we originally allocated and
-        // move the inner components vector out.
-        let storage = unsafe { Box::from_raw(p.cast::<PartitionKeyBuilderStorage>()) };
-        Some(storage.inner.components)
+        // SAFETY: reclaim the `Box` and move the components vector out.
+        let handle = unsafe { Box::from_raw(p) };
+        Some(handle.components)
     }
 
     fn drop_raw(p: *mut PartitionKeyBuilderHandle) {
         if p.is_null() {
             return;
         }
-        // SAFETY: pun back into the storage we originally allocated.
+        // SAFETY: caller guarantees `p` was obtained from `new_raw` and has
+        // not already been freed.
         unsafe {
-            drop(Box::from_raw(p.cast::<PartitionKeyBuilderStorage>()));
+            drop(Box::from_raw(p));
         }
     }
 }
@@ -113,7 +98,12 @@ impl PartitionKeyBuilderHandle {
 // PartitionKeyHandle
 // ─────────────────────────────────────────────────────────────────────────────
 
-pub(crate) struct PartitionKeyInner {
+/// The C ABI handle for an immutable partition key.
+///
+/// A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
+/// opaque type (`cosmos_partition_key_t`) because C cannot see its fields.
+/// Reference-counted via `Arc`; cloning is a cheap atomic refcount bump.
+pub struct PartitionKeyHandle {
     /// Consumed by the operation factories that take a partition key. Tests
     /// read it directly via `PartitionKeyHandle::inner_arc` to assert the
     /// wire shape.
@@ -124,52 +114,36 @@ pub(crate) struct PartitionKeyInner {
     pub(crate) inner: DriverPartitionKey,
 }
 
-/// Opaque C ABI handle for an immutable partition key.
-///
-/// Storage pun: same shape as `AccountRefHandle`. Cloning is a cheap
-/// atomic refcount bump on a single `Arc`.
-#[repr(C)]
-pub struct PartitionKeyHandle {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-struct PartitionKeyStorage {
-    _opaque: [u8; 0],
-    inner: Arc<PartitionKeyInner>,
-}
-
 impl PartitionKeyHandle {
     fn into_raw(pk: DriverPartitionKey) -> *mut Self {
-        let storage = Box::new(PartitionKeyStorage {
-            _opaque: [],
-            inner: Arc::new(PartitionKeyInner { inner: pk }),
-        });
-        Box::into_raw(storage).cast::<PartitionKeyHandle>()
+        Arc::into_raw(Arc::new(PartitionKeyHandle { inner: pk })) as *mut Self
     }
 
-    fn from_arc_into_raw(inner: Arc<PartitionKeyInner>) -> *mut Self {
-        let storage = Box::new(PartitionKeyStorage { _opaque: [], inner });
-        Box::into_raw(storage).cast::<PartitionKeyHandle>()
+    fn from_arc_into_raw(this: Arc<PartitionKeyHandle>) -> *mut Self {
+        Arc::into_raw(this) as *mut Self
     }
 
-    pub(crate) fn inner_arc(p: *const PartitionKeyHandle) -> Option<Arc<PartitionKeyInner>> {
+    pub(crate) fn inner_arc(p: *const PartitionKeyHandle) -> Option<Arc<PartitionKeyHandle>> {
         if p.is_null() {
             return None;
         }
-        // SAFETY: caller guarantees `p` was obtained from `into_raw` and
-        // has not been freed.
-        let storage = unsafe { &*(p as *const PartitionKeyStorage) };
-        Some(Arc::clone(&storage.inner))
+        // SAFETY: caller guarantees `p` was obtained from `into_raw` and has
+        // not been freed. Bumping the strong count before reconstructing the
+        // `Arc` leaves the caller's reference intact.
+        unsafe {
+            Arc::increment_strong_count(p);
+            Some(Arc::from_raw(p))
+        }
     }
 
     fn drop_raw(p: *mut PartitionKeyHandle) {
         if p.is_null() {
             return;
         }
-        // SAFETY: pun back into the storage we originally allocated.
+        // SAFETY: caller guarantees `p` was obtained from `into_raw` and has
+        // not already been freed.
         unsafe {
-            drop(Box::from_raw(p.cast::<PartitionKeyStorage>()));
+            drop(Arc::from_raw(p as *const PartitionKeyHandle));
         }
     }
 }
@@ -191,7 +165,7 @@ fn try_cstr_to_str<'a>(p: *const c_char) -> Result<&'a str, CosmosErrorCode> {
 /// Common pre-flight: borrow the builder, reject NULL, reject overflow.
 fn push_pre_flight<'a>(
     builder: *mut PartitionKeyBuilderHandle,
-) -> Result<&'a mut PartitionKeyBuilderInner, CosmosErrorCode> {
+) -> Result<&'a mut PartitionKeyBuilderHandle, CosmosErrorCode> {
     let Some(inner) = PartitionKeyBuilderHandle::inner_mut(builder) else {
         return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
     };

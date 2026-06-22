@@ -609,6 +609,24 @@ typedef struct cosmos_driver_options_t cosmos_driver_options_t;
 typedef struct cosmos_feed_range_t cosmos_feed_range_t;
 
 /**
+ * The C ABI handle for an incrementally-populated partition-key builder.
+ *
+ * A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
+ * opaque type (`cosmos_partition_key_builder_t`) because C cannot see its
+ * fields. Single-owner and `Box`-managed.
+ */
+typedef struct cosmos_partition_key_builder_t cosmos_partition_key_builder_t;
+
+/**
+ * The C ABI handle for an immutable partition key.
+ *
+ * A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
+ * opaque type (`cosmos_partition_key_t`) because C cannot see its fields.
+ * Reference-counted via `Arc`; cloning is a cheap atomic refcount bump.
+ */
+typedef struct cosmos_partition_key_t cosmos_partition_key_t;
+
+/**
  * The C ABI handle for a [`CosmosResponse`].
  *
  * A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
@@ -621,6 +639,21 @@ typedef struct cosmos_feed_range_t cosmos_feed_range_t;
  * once taken, both accessors return NULL.
  */
 typedef struct cosmos_response_t cosmos_response_t;
+
+/**
+ * The C ABI handle for a runtime builder.
+ *
+ * A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
+ * opaque type (`cosmos_runtime_builder_t`) because C cannot see its fields.
+ * Single-owner and `Box`-managed.
+ *
+ * We carry the driver's `CosmosDriverRuntimeBuilder` directly. Setters
+ * take `&mut`, but `with_*` on the driver builder consume `self` by value,
+ * so each setter does a `mem::take(&mut handle.builder)` → call → store
+ * dance. `Default` on the builder is cheap (`Self::default()`), so the
+ * take/replace is just two moves.
+ */
+typedef struct cosmos_runtime_builder_t cosmos_runtime_builder_t;
 
 /**
  * The C ABI handle for the async runtime.
@@ -788,38 +821,6 @@ typedef struct cosmos_operation_options_t {
    */
   uintptr_t custom_headers_len;
 } cosmos_operation_options_t;
-
-/**
- * Opaque C ABI handle for an immutable partition key.
- *
- * Storage pun: same shape as `AccountRefHandle`. Cloning is a cheap
- * atomic refcount bump on a single `Arc`.
- */
-typedef struct cosmos_partition_key_t {
-  uint8_t _opaque[0];
-} cosmos_partition_key_t;
-
-/**
- * Opaque C ABI handle for an incrementally-populated partition-key
- * builder.
- *
- * Storage pun: same shape as the other builder handles.
- */
-typedef struct cosmos_partition_key_builder_t {
-  uint8_t _opaque[0];
-} cosmos_partition_key_builder_t;
-
-/**
- * Opaque C ABI handle for a runtime builder.
- *
- * Storage pun: see the matching pattern on [`RuntimeContext`] in
- * [`crate::runtime`]. The public `#[repr(C)]` struct only carries the
- * `_opaque` marker; the real state lives in the trailing
- * `RuntimeBuilderStorage` field.
- */
-typedef struct cosmos_runtime_builder_t {
-  uint8_t _opaque[0];
-} cosmos_runtime_builder_t;
 
 /**
  * Borrowed view of a request body. `data` may be NULL iff `len` is `0`.
