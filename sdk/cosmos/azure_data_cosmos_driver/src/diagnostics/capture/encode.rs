@@ -295,7 +295,7 @@ mod tests {
     }
 
     #[test]
-    fn oversized_declared_counts_do_not_overallocate_or_panic() {
+    fn oversized_declared_counts_do_not_over_allocate_or_panic() {
         // A malformed header claiming a huge span/attr count must not drive a giant `with_capacity`
         // allocation; decode caps the pre-allocation against the remaining bytes and then fails
         // cleanly when the promised entries aren't actually present.

@@ -2387,7 +2387,7 @@ impl Clone for DiagnosticsContext {
             status: self.status,
             user_agent: self.user_agent.clone(),
             // `OnceLock` is not `Clone`; propagate any already-computed summary into a fresh lock
-            // (and leave it uncomputed otherwise so the clone stays lazy too).
+            // (and leave it unset otherwise so the clone stays lazy too).
             summary: self
                 .summary
                 .get()

@@ -324,16 +324,16 @@ mod tests {
         let captured = captured_context();
         let reference = reference_context();
         let cap = &captured.requests()[0];
-        let refr = &reference.requests()[0];
-        assert_eq!(cap.execution_context(), refr.execution_context());
-        assert_eq!(cap.pipeline_type(), refr.pipeline_type());
-        assert_eq!(cap.transport_security(), refr.transport_security());
-        assert_eq!(cap.transport_kind(), refr.transport_kind());
-        assert_eq!(cap.transport_http_version(), refr.transport_http_version());
-        assert_eq!(cap.region(), refr.region());
-        assert_eq!(cap.status().status_code(), refr.status().status_code());
-        assert_eq!(cap.request_charge(), refr.request_charge());
-        assert_eq!(cap.server_duration_ms(), refr.server_duration_ms());
+        let ref_req = &reference.requests()[0];
+        assert_eq!(cap.execution_context(), ref_req.execution_context());
+        assert_eq!(cap.pipeline_type(), ref_req.pipeline_type());
+        assert_eq!(cap.transport_security(), ref_req.transport_security());
+        assert_eq!(cap.transport_kind(), ref_req.transport_kind());
+        assert_eq!(cap.transport_http_version(), ref_req.transport_http_version());
+        assert_eq!(cap.region(), ref_req.region());
+        assert_eq!(cap.status().status_code(), ref_req.status().status_code());
+        assert_eq!(cap.request_charge(), ref_req.request_charge());
+        assert_eq!(cap.server_duration_ms(), ref_req.server_duration_ms());
         assert_eq!(captured.request_count(), reference.request_count());
     }
 }
