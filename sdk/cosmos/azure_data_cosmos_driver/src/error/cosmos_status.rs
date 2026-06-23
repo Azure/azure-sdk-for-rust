@@ -1380,6 +1380,15 @@ impl SubStatusCode {
     /// see also 20200, 20203, 20204, 20205.
     pub const CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED: SubStatusCode = SubStatusCode(20213);
 
+    /// A change feed pipeline reported that it was fully drained (20212).
+    /// The change feed is a conceptually infinite stream — "no changes" is
+    /// surfaced as an empty (304) page, never as a drained pipeline — so a
+    /// drained result indicates an internal invariant violation rather than
+    /// a clean end of stream. Surfacing it as an error keeps the failure
+    /// loud instead of silently terminating the caller's polling loop.
+    pub const CLIENT_CHANGE_FEED_PIPELINE_UNEXPECTEDLY_DRAINED: SubStatusCode =
+        SubStatusCode(20212);
+
     // ----- 20300-20349: SDK-detected service contract violations -----
 
     /// The supplied session-token feed ranges contain no overlap with
@@ -2160,6 +2169,13 @@ impl CosmosStatus {
     pub const CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED: CosmosStatus = CosmosStatus {
         status_code: StatusCode::InternalServerError,
         sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED),
+    };
+
+    /// 500 / 20212 — a change feed pipeline reported that it was fully
+    /// drained, which violates the infinite-stream invariant.
+    pub const CLIENT_CHANGE_FEED_PIPELINE_UNEXPECTEDLY_DRAINED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_CHANGE_FEED_PIPELINE_UNEXPECTEDLY_DRAINED),
     };
 
     // SDK-detected service contract violations (HTTP varies, sub-status 20300-20349)

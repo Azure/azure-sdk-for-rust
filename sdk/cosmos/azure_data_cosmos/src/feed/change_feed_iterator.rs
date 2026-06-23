@@ -87,11 +87,23 @@ impl LiveState {
 
         match result {
             Ok(None) => {
-                // Pipeline fully drained — no children left. This is
-                // unusual for change feed but legitimate (e.g., empty
-                // container). Terminate the stream.
+                // The change feed is a conceptually infinite stream: "no
+                // changes" surfaces as a 304 / empty page (handled below),
+                // never as a drained pipeline. A `None` here therefore means
+                // the pipeline drained unexpectedly — an internal invariant
+                // violation. Surface it as an error rather than silently
+                // ending the caller's polling loop.
                 *this.errored = true;
-                task::Poll::Ready(None)
+                let err = crate::DriverCosmosError::builder()
+                    .with_status(
+                        crate::error::CosmosStatus::CLIENT_CHANGE_FEED_PIPELINE_UNEXPECTEDLY_DRAINED,
+                    )
+                    .with_message(
+                        "change feed pipeline drained unexpectedly; the change feed stream is \
+                         infinite and should surface empty pages (304) rather than terminating",
+                    )
+                    .build();
+                task::Poll::Ready(Some(Err(err.into())))
             }
             Err(err) => {
                 *this.errored = true;

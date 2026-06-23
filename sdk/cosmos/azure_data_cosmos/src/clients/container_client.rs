@@ -911,34 +911,37 @@ impl ContainerClient {
             initial_operation = initial_operation.with_max_item_count(hint);
         }
 
-        // start_from → headers (only when no continuation token is present,
-        // because the token carries its own position)
-        if options.feed.continuation_token.is_none() {
-            match &options.start_from {
-                ChangeFeedStartFrom::Beginning => {} // no additional header needed
-                ChangeFeedStartFrom::Now => {
-                    initial_operation = initial_operation
-                        .with_precondition(Precondition::if_none_match(Etag::from("*")));
-                }
-                ChangeFeedStartFrom::PointInTime(ts) => {
-                    // RFC 1123 date format (the IMF fixed-date production in
-                    // RFC 7231) as required by Cosmos DB.
-                    use time::format_description::FormatItem;
-                    use time::macros::format_description;
-                    const RFC1123: &[FormatItem<'_>] = format_description!(
-                        "[weekday repr:short], [day] [month repr:short] [year] [hour]:[minute]:[second] GMT"
-                    );
-                    let utc = ts.to_offset(time::UtcOffset::UTC);
-                    let formatted = utc.format(RFC1123).map_err(|e| {
-                        crate::DriverCosmosError::builder()
-                            .with_status(crate::error::CosmosStatus::new(
-                                azure_core::http::StatusCode::BadRequest,
-                            ))
-                            .with_message(format!("failed to format PointInTime timestamp: {e}"))
-                            .build()
-                    })?;
-                    initial_operation = initial_operation.with_if_modified_since(formatted);
-                }
+        // Apply the start-from position as request headers. These are always
+        // set on the operation, even on resume: the per-partition continuation
+        // (an ETag, sent as `If-None-Match`) takes precedence for partitions
+        // that have already been polled, while partitions that were never
+        // polled before the checkpoint (and thus carry no saved token) must
+        // still honor the original start position rather than silently reading
+        // from the beginning.
+        match &options.start_from {
+            ChangeFeedStartFrom::Beginning => {} // no additional header needed
+            ChangeFeedStartFrom::Now => {
+                initial_operation = initial_operation
+                    .with_precondition(Precondition::if_none_match(Etag::from("*")));
+            }
+            ChangeFeedStartFrom::PointInTime(ts) => {
+                // RFC 1123 date format (the IMF fixed-date production in
+                // RFC 7231) as required by Cosmos DB.
+                use time::format_description::FormatItem;
+                use time::macros::format_description;
+                const RFC1123: &[FormatItem<'_>] = format_description!(
+                    "[weekday repr:short], [day] [month repr:short] [year] [hour]:[minute]:[second] GMT"
+                );
+                let utc = ts.to_offset(time::UtcOffset::UTC);
+                let formatted = utc.format(RFC1123).map_err(|e| {
+                    crate::DriverCosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::new(
+                            azure_core::http::StatusCode::BadRequest,
+                        ))
+                        .with_message(format!("failed to format PointInTime timestamp: {e}"))
+                        .build()
+                })?;
+                initial_operation = initial_operation.with_if_modified_since(formatted);
             }
         }
 

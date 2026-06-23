@@ -14,6 +14,8 @@
 //!   erroring or terminating the stream.
 //! * A continuation token resumes the feed and only yields changes that
 //!   occurred after the captured position.
+//! * Resuming a partially-polled `StartFrom::Now` feed does not replay history
+//!   on the partitions that were never polled before the checkpoint.
 
 use super::framework;
 
@@ -319,6 +321,84 @@ pub async fn change_feed_continuation_token_resume() -> Result<(), Box<dyn Error
             sort_by_id(&mut expected_new);
 
             assert_eq!(expected_new, second_batch);
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+/// Regression: resuming a full-container `StartFrom::Now` feed after only some
+/// physical partitions have been polled must NOT replay historical
+/// (pre-checkpoint) changes on the partitions that were never polled.
+///
+/// Before the fix, the start-from position was applied only on the very first
+/// (non-resumed) request, so on resume the partitions that had no saved token
+/// were rebuilt as fresh reads and silently dumped their entire history from
+/// the beginning.
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+pub async fn change_feed_now_resume_does_not_replay_history() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |_, db_client| {
+            let baseline = test_data::generate_mock_items(10, 10);
+
+            // 11000 RU/s forces at least 2 physical partitions so a single poll
+            // leaves at least one partition unpolled (and thus without a saved
+            // token) at checkpoint time.
+            let container = test_data::create_container_with_items(
+                db_client,
+                baseline,
+                Some(ThroughputProperties::manual(11000)),
+            )
+            .await?;
+
+            let mut iterator = container
+                .read_change_feed::<MockItem>(
+                    FeedScope::full_container(),
+                    Some(ChangeFeedOptions::default().with_start_from(ChangeFeedStartFrom::Now)),
+                )
+                .await?;
+
+            // Poll once: with round-robin fan-out this advances (and captures an
+            // ETag for) only one physical partition, leaving the rest unpolled.
+            // `StartFrom::Now` excludes the baseline, so the page must be empty.
+            let first = iterator
+                .next()
+                .await
+                .expect("change feed stream always yields a page")?;
+            assert!(
+                first.items().is_empty(),
+                "StartFrom::Now must not return baseline items, got {}",
+                first.items().len()
+            );
+
+            // Round-trip the token through its string form to mimic persistence.
+            let token = iterator.to_continuation_token()?;
+            let token = ContinuationToken::from_string(token.as_str().to_owned());
+            drop(iterator);
+
+            // Resume with no intervening writes: every partition — polled or not
+            // — must yield only empty pages. A non-empty page means an unpolled
+            // partition replayed its history instead of honoring `Now`.
+            let mut resumed = container
+                .read_change_feed::<MockItem>(
+                    FeedScope::full_container(),
+                    Some(ChangeFeedOptions::default().with_continuation_token(token)),
+                )
+                .await?;
+
+            let replayed = drain_changes(&mut resumed).await?;
+            assert!(
+                replayed.is_empty(),
+                "resume replayed {} historical change(s); unpolled partitions must \
+                 honor the original StartFrom::Now position rather than reading from \
+                 the beginning",
+                replayed.len()
+            );
             Ok(())
         },
         Some(TestOptions::for_emulator()),

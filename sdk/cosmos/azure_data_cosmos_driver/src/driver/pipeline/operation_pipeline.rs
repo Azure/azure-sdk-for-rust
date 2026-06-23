@@ -135,6 +135,19 @@ impl OperationOverrides {
                 HeaderName::from_static(header_name),
                 HeaderValue::from(continuation.clone()),
             );
+
+            // For change feed reads, the per-partition continuation (carried
+            // via `If-None-Match`) fully describes the resume position. Any
+            // start-from marker the operation set for not-yet-polled partitions
+            // (e.g. `If-Modified-Since` for a `PointInTime` start) must not
+            // co-exist with it, otherwise the request carries two conflicting
+            // position headers. The `Now` start marker (`If-None-Match: *`) is
+            // already overwritten above by this same header insert.
+            if continuation_as_if_none_match {
+                headers.remove(HeaderName::from_static(
+                    request_header_names::IF_MODIFIED_SINCE,
+                ));
+            }
         }
 
         Ok(())
@@ -3747,6 +3760,96 @@ mod tests {
                 .get_optional_str(&HeaderName::from_static(request_header_names::CONTINUATION))
                 .is_none(),
             "change feed must not send x-ms-continuation"
+        );
+    }
+
+    #[test]
+    fn build_transport_request_change_feed_continuation_drops_if_modified_since() {
+        // PointInTime start sets If-Modified-Since on the shared operation.
+        // Once a partition has a continuation (ETag) it must resume purely
+        // from that ETag (sent as If-None-Match); the stale start marker must
+        // not co-exist, otherwise the request carries two conflicting
+        // position headers.
+        let pk_def = test_partition_key_definition("/partition_key");
+        let target = crate::models::FeedRange::for_partition(PartitionKey::from("pk1"), &pk_def);
+        let operation = CosmosOperation::change_feed(test_container(), Some(target))
+            .with_if_modified_since("Mon, 01 Jan 2024 00:00:00 GMT".to_string());
+        assert!(operation.is_change_feed());
+
+        let routing = test_routing();
+        let activity_id = ActivityId::from_string("default-activity".to_string());
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Retry,
+            deadline: Some(std::time::Instant::now() + Duration::from_secs(5)),
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+        let overrides = OperationOverrides {
+            partition_key: Some(PartitionKey::from("pk1")),
+            continuation: Some("\"etag-123\"".to_string()),
+            ..Default::default()
+        };
+        let request = build_transport_request(&operation, &overrides, None, &ctx)
+            .expect("request should build");
+
+        assert_eq!(
+            request
+                .headers
+                .get_optional_str(&HeaderName::from_static(
+                    request_header_names::IF_NONE_MATCH
+                ))
+                .map(|s| s.to_string()),
+            Some("\"etag-123\"".to_string()),
+            "continuation must be sent as If-None-Match"
+        );
+        assert!(
+            request
+                .headers
+                .get_optional_str(&HeaderName::from_static(
+                    request_header_names::IF_MODIFIED_SINCE
+                ))
+                .is_none(),
+            "stale PointInTime start marker must be dropped once a continuation is present"
+        );
+    }
+
+    #[test]
+    fn build_transport_request_change_feed_keeps_if_modified_since_without_continuation() {
+        // A partition that has never been polled (no continuation) must still
+        // honor the PointInTime start marker.
+        let pk_def = test_partition_key_definition("/partition_key");
+        let target = crate::models::FeedRange::for_partition(PartitionKey::from("pk1"), &pk_def);
+        let operation = CosmosOperation::change_feed(test_container(), Some(target))
+            .with_if_modified_since("Mon, 01 Jan 2024 00:00:00 GMT".to_string());
+
+        let routing = test_routing();
+        let activity_id = ActivityId::from_string("default-activity".to_string());
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Retry,
+            deadline: Some(std::time::Instant::now() + Duration::from_secs(5)),
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+        let overrides = OperationOverrides {
+            partition_key: Some(PartitionKey::from("pk1")),
+            ..Default::default()
+        };
+        let request = build_transport_request(&operation, &overrides, None, &ctx)
+            .expect("request should build");
+
+        assert_eq!(
+            request
+                .headers
+                .get_optional_str(&HeaderName::from_static(
+                    request_header_names::IF_MODIFIED_SINCE
+                ))
+                .map(|s| s.to_string()),
+            Some("Mon, 01 Jan 2024 00:00:00 GMT".to_string()),
+            "PointInTime start marker must be kept when no continuation is present"
         );
     }
 
