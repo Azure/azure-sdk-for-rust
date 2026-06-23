@@ -6,7 +6,7 @@
 A native library must be built per platform (OS + architecture + libc). The support surface must be bounded and explicit so build, signing, and testing are tractable, and so consumers get a clear answer on an unsupported platform.
 
 ## Decision
-- The GA matrix is: `win-x64`, `win-arm64`, `linux-x64` (glibc, low floor), `linux-musl-x64`, `linux-arm64`, `osx-x64`, `osx-arm64`.
+- The GA matrix is: `win-x64`, `win-arm64`, `linux-x64` (glibc, **floor 2.17 — the manylinux2014 baseline**), `linux-musl-x64`, `linux-arm64`, `osx-x64`, `osx-arm64`.
 - `linux-musl-x64` is a **separate target** from `linux-x64` (a glibc build will not load on musl).
 - `wasm` is out of scope (no FFI story). An unsupported platform **fails with an actionable error** naming the supported set, never a silent or cryptic failure.
 

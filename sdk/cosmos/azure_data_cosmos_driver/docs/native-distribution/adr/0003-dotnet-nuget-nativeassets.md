@@ -8,7 +8,7 @@
 ## Decision
 - Ship per-RID **`Microsoft.Azure.Cosmos.NativeAssets.<rid>`** packages, each carrying one platform's dynamic lib under `runtimes/<rid>/native/`.
 - Front them with a thin **meta-package** whose `runtime.json` resolves the consumer's RID to the right per-RID package.
-- `Microsoft.Azure.Cosmos` takes an **opt-in** dependency on the meta-package (ADR 0007).
+- The **native-transport major** of `Microsoft.Azure.Cosmos` takes a **direct dependency** on the meta-package (ADR 0007); the per-RID native then restores transitively like any NuGet dependency. There is no opt-in toggle — taking that major *is* taking native. (A `<PackageReference>` always restores transitively, so an "opt-in dependency" would be a contradiction.)
 - Publish to **nuget.org** and the **internal azure-sdk NuGet feed** (per ADR 0002).
 
 ## Consequences
@@ -18,4 +18,4 @@
 
 ## Alternatives considered
 - Single "fat" NativeAssets package — kept only as an **interim** (Phase 1–2) for speed, not GA.
-- Embed natives directly in `Microsoft.Azure.Cosmos` — rejected: bloats the flagship for pure-managed users.
+- Embed every platform's native directly in the `Microsoft.Azure.Cosmos` package — rejected: forces every consumer to download all platforms' binaries (the per-RID split exists precisely to avoid that). Note this is *not* about sparing "pure-managed users" — in the native major (ADR 0007) there are none — it is about not shipping six platforms to every consumer.

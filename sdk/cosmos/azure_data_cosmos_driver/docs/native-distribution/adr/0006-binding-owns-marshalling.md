@@ -3,7 +3,7 @@
 **Status:** Accepted (proposed for review)
 
 ## Context
-The driver core is schema-agnostic: the C-ABI passes request/response bodies as raw bytes (`const uint8_t*` + length), never parsed JSON ([`NATIVE_WRAPPER_SPEC.md`](../../NATIVE_WRAPPER_SPEC.md)). Pushing serialization into the wrapper would re-introduce the parse/re-serialize/re-parse waste the old `azure_data_cosmos_native` crate had.
+The driver core is schema-agnostic: the C-ABI passes request/response bodies as raw bytes (`const uint8_t*` + length), never parsed JSON (see `NATIVE_WRAPPER_SPEC.md`, introduced in #4461). Pushing serialization into the wrapper would re-introduce the parse/re-serialize/re-parse waste the old `azure_data_cosmos_native` crate had.
 
 ## Decision
 - The ABI stays **bytes-in / bytes-out**; the wrapper does no JSON parsing.
