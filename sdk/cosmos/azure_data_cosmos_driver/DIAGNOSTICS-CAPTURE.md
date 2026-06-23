@@ -10,11 +10,12 @@
 > **What actually ships (default):** the always-on `DiagnosticsContextBuilder` (homed in the
 > `model` submodule, re-exported from `crate::diagnostics`) is populated by the driver's pipeline
 > with full fidelity and surfaced via `CosmosResponse::diagnostics()`. The only part of this module
-> that ships unconditionally is the **gate**: a `DiagnosticsPolicy` (`Off` / `Threshold` /
-> `Always`) plus `should_build`, evaluated at operation end to decide whether the
-> builder-produced context is *also* exposed through `CosmosResponse::capture_diagnostics()` /
+> that ships unconditionally is the **gate**: a `DiagnosticsPolicy` (`Threshold` / `Always`) plus
+> `should_build`, evaluated at operation end to decide whether the builder-produced context is
+> *also* exposed through `CosmosResponse::capture_diagnostics()` /
 > `CosmosError::capture_diagnostics()`. The gate never builds the surfaced context; it only governs
-> exposure.
+> exposure. There is **no `Off` mode** — diagnostics are always collected so that every operation
+> can be diagnosed (a customer who silently dropped diagnostics is unsupportable).
 >
 > **Status of the capture path (behind the feature):** the reconstruction in `context.rs` carries
 > the captured per-attempt facets (pipeline type, transport security/kind, HTTP version) and the
@@ -34,16 +35,17 @@ Request-focused diagnostics across SDKs tend to share three shortcomings:
    partition / feed range) that a request-centric model struggles to represent.
 3. **One verbosity for everyone.** No cheap-by-default / full-on-demand split.
 
-We want **outcome-aware** diagnostics: full fidelity when useful (errors / slow ops / explicit
-request) with the option to drop cheaply on a fast success — without losing the rich data or
-breaking the public contract.
+We want **outcome-aware** diagnostics: full fidelity always collected, and surfaced when useful
+(errors / slow ops / explicit request) with the option to drop *exposure* cheaply on a fast
+success — without losing the rich data or breaking the public contract. Diagnostics are never
+turned off entirely: every operation stays diagnosable.
 
 Goals (the capture-engine prototype aims at these; only the gate is realized on the default path):
 
 - **G1** — Hot path is write-preferred, compact, append-only, minimal-allocation (pooled).
 - **G2** — Collection/materialization is governed by the gate, off the hot path.
 - **G3** — A configurable gate evaluated at operation end decides whether to surface diagnostics:
-  latency threshold + on-error, plus Off/Always modes. *(Realized on the default path.)*
+  latency threshold + on-error, plus the `Always` mode. *(Realized on the default path.)*
 - **G4** *(behind `capture_engine`)* — A single canonical model
   ([`DiagnosticsContext`]) reconstructed from the event log, with the rich fields preserved (events,
   transport-shard / failed-shard diagnostics, fault-injection evaluations, true server timing,
@@ -65,17 +67,15 @@ build it:
 
 - **`Always`** (default) — the builder collects fully and the context is exposed through both
   `diagnostics()` and `capture_diagnostics()`. No behavior change versus the historical driver.
-- **`Off`** — the `DiagnosticsContextBuilder` is created **disabled**: `start_request` returns an
-  out-of-range handle without recording, so all per-request population auto-no-ops, and `complete()`
-  yields a minimal context (activity id + final status, empty request list). The per-request build
-  cost is genuinely skipped, not built-then-dropped. `response.diagnostics()` returns that minimal
-  context (the accessor is non-optional), and `capture_diagnostics()` is `None`.
 - **`Threshold`** — the builder collects fully during the operation (the slow/error verdict is only
   known at the end), and at op-end the gate decides whether to **expose** the context via
   `capture_diagnostics()`. On a fast success `capture_diagnostics()` is `None` while
-  `response.diagnostics()` still returns the full context. Note: under the default path the builder
-  population is **not** avoided under `Threshold` (only `Off` disables it); the summary roll-up is
-  computed lazily on first access, so an unread fast-success context pays nothing for it.
+  `response.diagnostics()` still returns the full context. The builder population is **not** avoided
+  under `Threshold` (diagnostics are always collected); the summary roll-up is computed lazily on
+  first access, so an unread fast-success context pays nothing for it.
+
+There is no `Off` mode: diagnostics are always collected so that every operation can be diagnosed.
+The gate governs *exposure* of the captured context, never whether it is collected.
 
 > When the off-by-default `capture_engine` feature is enabled, the event-log
 > [`build_context`](self::context) reconstruction additionally becomes available and is
@@ -95,13 +95,22 @@ retry-then-success, error, and fan-out with N children):
 | **Deferred Gated Capture** ⭐ | Build/keep only when slow or errored (or `Always`) | Append-only capture, then *decide at the end* whether to surface. Cheapest opt-in happy path. |
 
 This crate implements **Deferred Gated Capture** as the diagnostics engine. Measured numbers
-(criterion, dev profile; see [§7](#7-test--bench-results)):
+(criterion, dev profile, reduced measurement time — indicative medians, not a tuned run; see
+[§7](#7-test--bench-results)):
 
 | Path | Cost (criterion) |
 |---|---|
-| Gate drops a fast success (opt-in `Threshold`) | **~0.4 µs** (start + append + gate + return-to-pool) |
-| `Mode::Off` (gate drops without building) | **~0.37 µs** |
-| Gate fires, build standalone `DiagnosticsContext` | **~5 µs** (parse + replay onto the builder) |
+| Gate drops a fast success (opt-in `Threshold`) | **~0.86 µs** (start + append + gate + return-to-pool) |
+| Gate fires, build standalone `DiagnosticsContext` **struct only** (no JSON) | **~3.7 µs** (`capture_built_context`) |
+| Same build **plus** serializing the detailed JSON string | **~10.4 µs** (`capture_built_context_and_json`) |
+
+> **Answering "what does the build number include?":** the original "~5 µs build" figure measured
+> the `DiagnosticsContext` **struct only** — it did **not** serialize JSON (the summary + JSON are
+> lazy). Serializing the detailed JSON on top adds **~6.6 µs** (`capture_built_context_and_json` −
+> `capture_built_context`), i.e. JSON serialization is the **single most expensive step** — it
+> nearly triples the cost of producing the struct. That points to keeping JSON serialization an
+> **on-demand / cached** concern in the SDK, while the struct-build cost (~3.7 µs) is the part a
+> driver-side threshold gate would save by deciding before the build.
 
 ## 4. Comparison with .NET `CosmosDiagnostics`
 
@@ -155,7 +164,7 @@ Components (`azure_data_cosmos_driver::diagnostics::capture`):
   lease. Cancellation- and panic-safe: it just owns the lease, so dropping the recorder (on success,
   error, cancellation, or panic) returns the storage to the pool — there is no explicit
   "return the buffer" step. It records the operation outcome + elapsed time the gate reads.
-- **`DiagnosticsPolicy` / `Mode`** (`gate.rs`) — the gate: `Off`, `Threshold`, `Always` (default).
+- **`DiagnosticsPolicy` / `Mode`** (`gate.rs`) — the gate: `Threshold`, `Always` (default).
 - **`build_context`** (`context.rs`) — walks a captured `EventLogStorage` (spans/attrs) back into a
   tree and replays it onto the capture-owned `DiagnosticsContextBuilder` to materialize a standalone
   `DiagnosticsContext`. The typed log *is* the parsed form, so there is no byte-parse step (used by
@@ -173,8 +182,8 @@ When a `DiagnosticsContext` is built, it carries a top-level [`DiagnosticsSummar
 an aggregatable roll-up modeled on the `Summary` block of .NET's `CosmosDiagnostics`. It is
 **computed once at finalization** (in `complete()`), as a reduction over the already-collected
 requests — **never on the hot path**. Because it lives on a built context, it exists exactly when
-diagnostics are built; a dropped fast success (Off, or Threshold fast-success) produces no context
-and hence no summary.
+diagnostics are built; a dropped fast success (Threshold fast-success) produces no exposed context
+and hence no separately surfaced summary.
 
 Fields (seeded from the high-value signals an investigation branches on first): `final_status`,
 `request_count`, `retry_count`, `throttled_count`, `total_request_charge`, `total_duration_ms`,
@@ -305,11 +314,16 @@ Regenerate the two example outputs (real `DiagnosticsContext` JSON):
 cargo test -p azure_data_cosmos_driver --all-features --test diagnostics_examples -- --nocapture --test-threads=1
 ```
 
-Run the benchmark:
+Run the benchmark (the bench target requires the `capture_engine` feature):
 
 ```text
-cargo bench -p azure_data_cosmos_driver --bench diagnostics_capture
+cargo bench -p azure_data_cosmos_driver --features capture_engine --bench diagnostics_capture
 ```
+
+The three rows it reports — `capture_dropped_fast_success` (gate drop), `capture_built_context`
+(struct build, no JSON), and `capture_built_context_and_json` (struct build + detailed JSON) — are
+the numbers in the [§3](#3-design-exploration--benchmarks) table; the last two isolate the
+JSON-serialization cost.
 
 Run the full gate:
 
@@ -321,10 +335,10 @@ cargo test -p azure_data_cosmos_driver --all-features
 
 ## 8. Known nuances & boundaries
 
-- **`Off` short-circuits the build (resolved).** Under `Off` the builder is created disabled, so the
-  per-request population and per-attempt allocations are skipped entirely — the gate decides before
-  the build, not after. The only residual cost is the trivial minimal `complete()` (an empty request
-  list wrapped in an `Arc`), which is unavoidable because `response.diagnostics()` is non-optional.
+- **Diagnostics are always collected (no `Off`).** There is no mode that disables collection: the
+  builder always populates, so `response.diagnostics()` always returns a full context and every
+  operation stays diagnosable. The gate only governs whether the context is *additionally* exposed
+  through `capture_diagnostics()`.
 - **`Threshold` fast-success build-avoidance — the precise boundary.** Under `Threshold` the
   slow/error verdict is only known at op-end, *after* the pipeline has already populated the builder
   incrementally during I/O. The rich fields (`RequestEvent` timelines, transport-shard /
@@ -362,17 +376,17 @@ hard blockers:
    decode/replay cost when the gate fires. You cannot have sub-µs *and* full fidelity.
 2. **The builder is already the optimal shape.** `DiagnosticsContextBuilder` is already a lock-free
    append (single-owner `&mut Vec<RequestDiagnostics>`, no `Mutex`/atomics on the per-attempt path)
-   with a cheap `complete()` and **lazy JSON** (`OnceLock`). The expensive step is already deferred,
-   and `Off` already disables per-request population. A byte-log would add encode+decode cost and
-   likely make the default `Always` path **slower**.
+   with a cheap `complete()` and **lazy JSON** (`OnceLock`). The expensive step is already deferred.
+   A byte-log would add encode+decode cost and likely make the default `Always` path **slower**.
 3. **Two fields can't be losslessly byte-encoded.** The `Instant` timestamps
    (`RequestDiagnostics::started_at`/`completed_at`, `RequestEvent::timestamp`) have no portable
    byte representation, and `FaultInjectionEvaluation` is a `#[non_exhaustive]` enum whose
    hand-rolled codec would silently lose data when a variant is added.
 
 **Resolution:** keep the live rich path feeding the builder — full fidelity, lock-free append,
-lazy JSON, `Off` as the cheap opt-out, default `Always`. What *did* change is the **recorder's own
-capture representation**: it is now a typed two-list `EventLog` (`Vec<Span>` + `Vec<Attr>`, see
+lazy JSON, always collected, default `Always` (opt into `Threshold` for exposure-gating). What
+*did* change is the **recorder's own capture representation**: it is now a typed two-list
+`EventLog` (`Vec<Span>` + `Vec<Attr>`, see
 [§5d](#5d-the-event-log-representation-hot-path-data-model)) rather than a `Vec<u8>` TLV byte stream. That is the
 idiomatic realization of the "flat, timestamped log of events" idea for the captured subset —
 `Vec::push` of typed structs on the hot path, tree reconstruction on the cold path — and it

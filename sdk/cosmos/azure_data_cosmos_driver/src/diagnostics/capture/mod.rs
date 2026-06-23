@@ -13,13 +13,13 @@
 //!
 //! What ships unconditionally from this module is only the **gate**: a
 //! [`DiagnosticsPolicy`](crate::diagnostics::capture::DiagnosticsPolicy)
-//! ([`Mode::Off`](crate::diagnostics::capture::Mode::Off) /
-//! [`Mode::Threshold`](crate::diagnostics::capture::Mode::Threshold) /
+//! ([`Mode::Threshold`](crate::diagnostics::capture::Mode::Threshold) /
 //! [`Mode::Always`](crate::diagnostics::capture::Mode::Always)) plus
 //! [`should_build`](crate::diagnostics::capture::should_build), evaluated at
 //! operation end against the outcome + elapsed time to decide whether the builder-produced
 //! context is *exposed* through `capture_diagnostics()`. The gate never builds the surfaced
-//! context; it only governs exposure.
+//! context; it only governs exposure. There is no `Off` mode — diagnostics are always collected
+//! so that every operation can be diagnosed.
 //!
 //! The deferred capture design (behind `capture_engine`) evaluates a future
 //! capture-then-reconstruct path: a lock-free per-attempt `DiagnosticsRecorder` appends to a
@@ -32,10 +32,10 @@
 //!
 //! The gate defaults to [`Mode::Always`](crate::diagnostics::capture::Mode::Always) — diagnostics
 //! are exposed out-of-the-box. Set [`Mode::Threshold`](crate::diagnostics::capture::Mode::Threshold)
-//! or [`Mode::Off`](crate::diagnostics::capture::Mode::Off) via
+//! via
 //! [`DriverOptionsBuilder::with_capture_diagnostics_policy`](crate::options::DriverOptionsBuilder)
 //! (reached via [`DriverOptions::builder`](crate::options::DriverOptions::builder)) to make the
-//! gate drop fast-success diagnostics.
+//! gate expose only slow/errored diagnostics.
 //!
 //! # Example (requires `--features capture_engine`)
 //!

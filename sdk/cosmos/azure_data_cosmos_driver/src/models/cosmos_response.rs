@@ -89,7 +89,7 @@ pub struct CosmosResponse {
     /// ([`crate::diagnostics::capture`]). This is the **same** canonical context as `diagnostics`,
     /// gated: `Some` when the capture policy decided to surface it (the default [`Mode::Always`],
     /// or a `Threshold`/error hit) and `None` when the gate dropped it (a fast success under
-    /// `Threshold`, or `Mode::Off`). It is one model, not a parallel one.
+    /// `Threshold`). It is one model, not a parallel one.
     ///
     /// [`Mode::Always`]: crate::diagnostics::capture::Mode::Always
     capture: Option<Arc<DiagnosticsContext>>,
@@ -130,7 +130,7 @@ impl CosmosResponse {
     /// This is the **same** canonical context as [`CosmosResponse::diagnostics`], gated: `Some`
     /// under the default [`Mode::Always`](crate::diagnostics::capture::Mode::Always) (or a
     /// `Threshold`/error hit), and `None` when the gate dropped it (a fast success under
-    /// `Threshold`, or `Mode::Off`).
+    /// `Threshold`).
     pub fn capture_diagnostics(&self) -> Option<&DiagnosticsContext> {
         self.capture.as_deref()
     }

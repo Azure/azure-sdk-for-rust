@@ -22,26 +22,32 @@ use crate::options::DiagnosticsOptions;
 #[cfg(feature = "capture_engine")]
 use std::sync::Arc;
 
-/// How aggressively diagnostics are built at the gate.
+/// How aggressively diagnostics are surfaced at the gate.
+///
+/// There is intentionally **no `Off` mode**: diagnostics are always collected on the default path
+/// so that every operation can be diagnosed (a customer who silently dropped diagnostics is
+/// unsupportable). The gate only governs whether the already-built context is *exposed*, never
+/// whether it is collected.
 ///
 /// `Mode` intentionally does **not** implement [`Default`]: the meaningful default lives on
 /// [`DiagnosticsPolicy`] (which defaults to [`Mode::Always`]). Deriving `Default` here would make
-/// `Mode::default()` return `Off`, silently contradicting the policy default — so it is omitted.
+/// `Mode::default()` return the first variant, silently contradicting the policy default — so it
+/// is omitted.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Mode {
-    /// Never build. Capture is skipped entirely — truly zero cost.
-    Off,
-    /// Build only when the threshold rule fires (slow, or errored when `capture_on_error`).
+    /// Expose diagnostics only when the threshold rule fires (slow, or errored when
+    /// `capture_on_error`).
     Threshold,
-    /// Always build.
+    /// Always expose diagnostics.
     Always,
 }
 
 /// The policy evaluated at the end of an operation to decide whether to surface diagnostics.
 ///
 /// The default is [`Mode::Always`] — diagnostics are produced out-of-the-box (matching the
-/// driver's historical always-on behavior). Set [`Mode::Threshold`] or [`Mode::Off`] via
-/// [`DriverOptions`](crate::options::DriverOptions) to make the hot path cheaper.
+/// driver's historical always-on behavior). Set [`Mode::Threshold`] via
+/// [`DriverOptions`](crate::options::DriverOptions) to expose diagnostics only for slow/errored
+/// operations. Diagnostics are always *collected*; the gate only governs *exposure*.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct DiagnosticsPolicy {
     /// Build aggressiveness.
@@ -55,7 +61,7 @@ pub struct DiagnosticsPolicy {
 impl Default for DiagnosticsPolicy {
     fn default() -> Self {
         // Always-on by default so diagnostics are produced out-of-the-box, matching the driver's
-        // historical behavior. Callers opt into the cheaper Threshold/Off modes explicitly.
+        // historical behavior. Callers opt into the cheaper Threshold mode explicitly.
         Self {
             mode: Mode::Always,
             latency_threshold: None,
@@ -65,17 +71,6 @@ impl Default for DiagnosticsPolicy {
 }
 
 impl DiagnosticsPolicy {
-    /// A policy that never builds diagnostics ([`Mode::Off`]) — the cheapest hot path.
-    ///
-    /// Provided for symmetry with [`threshold`](Self::threshold) and [`always`](Self::always).
-    pub fn off() -> Self {
-        Self {
-            mode: Mode::Off,
-            latency_threshold: None,
-            capture_on_error: true,
-        }
-    }
-
     /// A threshold policy that builds on error or when an operation exceeds `latency_threshold`.
     pub fn threshold(latency_threshold: Duration) -> Self {
         Self {
@@ -98,7 +93,6 @@ impl DiagnosticsPolicy {
 /// Evaluates the gate against a recorder's recorded outcome and elapsed time.
 pub fn should_build(outcome: Outcome, total_ns: u64, policy: &DiagnosticsPolicy) -> bool {
     match policy.mode {
-        Mode::Off => false,
         Mode::Always => true,
         Mode::Threshold => {
             (policy.capture_on_error && outcome == Outcome::Error)
@@ -136,14 +130,6 @@ pub fn finish(
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn off_never_builds() {
-        let p = DiagnosticsPolicy::off();
-        assert_eq!(p.mode, Mode::Off);
-        assert!(!should_build(Outcome::Error, u64::MAX, &p));
-        assert!(!should_build(Outcome::Success, 0, &p));
-    }
 
     #[test]
     fn default_is_always() {

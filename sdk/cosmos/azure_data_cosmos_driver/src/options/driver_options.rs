@@ -62,7 +62,7 @@ pub struct DriverOptions {
     /// the always-on `DiagnosticsContextBuilder`-produced [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext)
     /// is exposed via `capture_diagnostics()`. Defaults to
     /// [`Mode::Always`](crate::diagnostics::capture::Mode::Always) so diagnostics are exposed
-    /// out-of-the-box; configurable to `Threshold`/`Off`.
+    /// out-of-the-box; configurable to `Threshold` to expose only slow/errored operations.
     capture_diagnostics_policy: crate::diagnostics::capture::DiagnosticsPolicy,
     /// How [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext) is rendered to a string
     /// (`Json` / `Compact` / `Encoded`). Defaults to
@@ -228,10 +228,10 @@ impl DriverOptionsBuilder {
     /// `CosmosResponse::capture_diagnostics()` / `CosmosError::capture_diagnostics()`. It does not
     /// build the context (the pipeline does). Defaults to
     /// [`Mode::Always`](crate::diagnostics::capture::Mode::Always) — diagnostics are exposed
-    /// out-of-the-box. Set [`Mode::Threshold`](crate::diagnostics::capture::Mode::Threshold) or
-    /// [`Mode::Off`](crate::diagnostics::capture::Mode::Off) to drop fast-success diagnostics
-    /// (`Off` additionally disables the per-request builder population). The prototype event-log
-    /// capture engine behind the `capture_engine` feature is not involved in this default path.
+    /// out-of-the-box. Set [`Mode::Threshold`](crate::diagnostics::capture::Mode::Threshold) to
+    /// expose only slow or errored operations. Diagnostics are always *collected*; the gate only
+    /// governs *exposure*. The prototype event-log capture engine behind the `capture_engine`
+    /// feature is not involved in this default path.
     ///
     /// [`DiagnosticsContext`]: crate::diagnostics::DiagnosticsContext
     pub fn with_capture_diagnostics_policy(
