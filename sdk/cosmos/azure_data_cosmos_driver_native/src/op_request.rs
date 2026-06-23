@@ -54,7 +54,7 @@ use crate::container_ref::ContainerRefHandle;
 use crate::database_ref::DatabaseRefHandle;
 use crate::error::CosmosErrorCode;
 use crate::feed_range::FeedRangeHandle;
-use crate::partition_key::PartitionKeyHandle;
+use crate::partition_key::{CosmosPartitionKeyComponent, PartitionKeyHandle};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sentinels for tri-state scalar fields
@@ -586,8 +586,18 @@ pub struct CosmosOperationRequest {
     pub resource_link: *const c_char,
 
     /// Partition key handle. Required for item-scope, `read_all_items`, and
-    /// `batch`; otherwise NULL.
+    /// `batch` (unless the inline `partition_key_components` array is supplied
+    /// instead); otherwise NULL.
     pub partition_key: *const PartitionKeyHandle,
+    /// Inline partition-key components, assembled by the host in one array so
+    /// no `cosmos_partition_key_builder_*` round-trips are needed. When
+    /// `partition_key_components` is non-NULL and `partition_key_len > 0` this
+    /// takes precedence over the `partition_key` handle. Each element is a
+    /// [`CosmosPartitionKeyComponent`](crate::partition_key::CosmosPartitionKeyComponent).
+    pub partition_key_components: *const CosmosPartitionKeyComponent,
+    /// Number of elements in `partition_key_components`. `0` = use the
+    /// `partition_key` handle instead.
+    pub partition_key_len: usize,
     /// Feed range handle. Optional for `query_items`; otherwise NULL.
     pub feed_range: *const FeedRangeHandle,
 
@@ -898,6 +908,21 @@ fn require_container(req: &CosmosOperationRequest) -> Result<ContainerReference,
 }
 
 fn require_partition_key(req: &CosmosOperationRequest) -> Result<PartitionKey, CosmosErrorCode> {
+    // Inline tagged-union path (preferred): assemble the partition key in one
+    // shot from the components carried directly on the request, with no
+    // builder/handle FFI round-trips.
+    if !req.partition_key_components.is_null() && req.partition_key_len > 0 {
+        // SAFETY: per the `CosmosOperationRequest` contract (see
+        // `build_request`), `partition_key_components` points to
+        // `partition_key_len` initialized components valid for this call.
+        return unsafe {
+            crate::partition_key::partition_key_from_components(
+                req.partition_key_components,
+                req.partition_key_len,
+            )
+        };
+    }
+    // Fallback: a pre-built `cosmos_partition_key_t` handle.
     let inner = PartitionKeyHandle::inner_arc(req.partition_key)
         .ok_or(CosmosErrorCode::CosmosErrorCodeInvalidArgument)?;
     Ok(inner.inner.clone())

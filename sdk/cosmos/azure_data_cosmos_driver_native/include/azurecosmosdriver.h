@@ -516,6 +516,46 @@ typedef int32_t cosmos_CosmosContentResponseOnWriteOpt;
 #endif // __cplusplus
 
 /**
+ * Discriminant for a [`CosmosPartitionKeyComponent`].
+ *
+ * Stored on the component as a raw `i32` (validated, never transmuted), so an
+ * out-of-range host value yields `INVALID_OPTION_VALUE` instead of UB.
+ */
+enum cosmos_partition_key_component_kind_t
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+  : int32_t
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+ {
+  /**
+   * String component — read from `string_value`.
+   */
+  COSMOS_PARTITION_KEY_COMPONENT_KIND_STRING = 0,
+  /**
+   * Numeric component — read from `number_value` (must be finite).
+   */
+  COSMOS_PARTITION_KEY_COMPONENT_KIND_NUMBER = 1,
+  /**
+   * Boolean component — read from `bool_value` (`0` = false, else true).
+   */
+  COSMOS_PARTITION_KEY_COMPONENT_KIND_BOOL = 2,
+  /**
+   * Explicit JSON `null` component — no value field is read.
+   */
+  COSMOS_PARTITION_KEY_COMPONENT_KIND_NULL = 3,
+  /**
+   * `undefined` (missing-value) component — no value field is read.
+   */
+  COSMOS_PARTITION_KEY_COMPONENT_KIND_UNDEFINED = 4,
+};
+#ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum cosmos_partition_key_component_kind_t cosmos_partition_key_component_kind_t;
+#else
+typedef int32_t cosmos_partition_key_component_kind_t;
+#endif // __STDC_VERSION__ >= 202311L
+#endif // __cplusplus
+
+/**
  * The C ABI handle for an account reference.
  *
  * This is a real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as
@@ -821,6 +861,37 @@ typedef struct cosmos_operation_options_t {
 } cosmos_operation_options_t;
 
 /**
+ * One component of a hierarchical partition key, assembled inline by the host
+ * (a C-style tagged union: a `kind` tag plus all possible value fields).
+ *
+ * This lets a calling SDK assemble a whole partition key in a single array
+ * and drop it straight into [`CosmosOperationRequest`](crate::op_request::CosmosOperationRequest),
+ * avoiding the per-component builder FFI round-trips. Only the field selected
+ * by `kind` is read; the others are ignored.
+ */
+typedef struct cosmos_partition_key_component_t {
+  /**
+   * Which value field to read, as a [`CosmosPartitionKeyComponentKind`]
+   * discriminant.
+   */
+  int32_t kind;
+  /**
+   * String payload (NUL-terminated UTF-8). Read iff `kind` is `String`.
+   */
+  const char *string_value;
+  /**
+   * Numeric payload. Read iff `kind` is `Number`. Must be finite.
+   */
+  double number_value;
+  /**
+   * Boolean payload (`0` = false, non-zero = true). Read iff `kind` is
+   * `Bool`. Taken as `u8` so an arbitrary host byte cannot form an invalid
+   * `bool` (which would be undefined behavior).
+   */
+  uint8_t bool_value;
+} cosmos_partition_key_component_t;
+
+/**
  * Borrowed view of a request body. `data` may be NULL iff `len` is `0`.
  * The wrapper copies the bytes into a driver-owned `Vec<u8>` before
  * returning, so the host may free the buffer immediately after submit.
@@ -875,9 +946,23 @@ typedef struct cosmos_operation_request_t {
   const char *resource_link;
   /**
    * Partition key handle. Required for item-scope, `read_all_items`, and
-   * `batch`; otherwise NULL.
+   * `batch` (unless the inline `partition_key_components` array is supplied
+   * instead); otherwise NULL.
    */
   const struct cosmos_partition_key_t *partition_key;
+  /**
+   * Inline partition-key components, assembled by the host in one array so
+   * no `cosmos_partition_key_builder_*` round-trips are needed. When
+   * `partition_key_components` is non-NULL and `partition_key_len > 0` this
+   * takes precedence over the `partition_key` handle. Each element is a
+   * [`CosmosPartitionKeyComponent`](crate::partition_key::CosmosPartitionKeyComponent).
+   */
+  const struct cosmos_partition_key_component_t *partition_key_components;
+  /**
+   * Number of elements in `partition_key_components`. `0` = use the
+   * `partition_key` handle instead.
+   */
+  uintptr_t partition_key_len;
   /**
    * Feed range handle. Optional for `query_items`; otherwise NULL.
    */

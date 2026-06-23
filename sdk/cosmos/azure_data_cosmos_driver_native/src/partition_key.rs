@@ -43,6 +43,120 @@ use crate::error::CosmosErrorCode;
 const MAX_COMPONENTS: usize = 3;
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Inline tagged-union partition key (cosmos_partition_key_component_t)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Discriminant for a [`CosmosPartitionKeyComponent`].
+///
+/// Stored on the component as a raw `i32` (validated, never transmuted), so an
+/// out-of-range host value yields `INVALID_OPTION_VALUE` instead of UB.
+#[repr(i32)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum CosmosPartitionKeyComponentKind {
+    /// String component — read from `string_value`.
+    CosmosPartitionKeyComponentKindString = 0,
+    /// Numeric component — read from `number_value` (must be finite).
+    CosmosPartitionKeyComponentKindNumber = 1,
+    /// Boolean component — read from `bool_value` (`0` = false, else true).
+    CosmosPartitionKeyComponentKindBool = 2,
+    /// Explicit JSON `null` component — no value field is read.
+    CosmosPartitionKeyComponentKindNull = 3,
+    /// `undefined` (missing-value) component — no value field is read.
+    CosmosPartitionKeyComponentKindUndefined = 4,
+}
+
+impl CosmosPartitionKeyComponentKind {
+    fn from_i32(raw: i32) -> Result<Self, CosmosErrorCode> {
+        Ok(match raw {
+            0 => Self::CosmosPartitionKeyComponentKindString,
+            1 => Self::CosmosPartitionKeyComponentKindNumber,
+            2 => Self::CosmosPartitionKeyComponentKindBool,
+            3 => Self::CosmosPartitionKeyComponentKindNull,
+            4 => Self::CosmosPartitionKeyComponentKindUndefined,
+            _ => return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue),
+        })
+    }
+}
+
+/// One component of a hierarchical partition key, assembled inline by the host
+/// (a C-style tagged union: a `kind` tag plus all possible value fields).
+///
+/// This lets a calling SDK assemble a whole partition key in a single array
+/// and drop it straight into [`CosmosOperationRequest`](crate::op_request::CosmosOperationRequest),
+/// avoiding the per-component builder FFI round-trips. Only the field selected
+/// by `kind` is read; the others are ignored.
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct CosmosPartitionKeyComponent {
+    /// Which value field to read, as a [`CosmosPartitionKeyComponentKind`]
+    /// discriminant.
+    pub kind: i32,
+    /// String payload (NUL-terminated UTF-8). Read iff `kind` is `String`.
+    pub string_value: *const c_char,
+    /// Numeric payload. Read iff `kind` is `Number`. Must be finite.
+    pub number_value: f64,
+    /// Boolean payload (`0` = false, non-zero = true). Read iff `kind` is
+    /// `Bool`. Taken as `u8` so an arbitrary host byte cannot form an invalid
+    /// `bool` (which would be undefined behavior).
+    pub bool_value: u8,
+}
+
+/// Builds a driver [`PartitionKey`](DriverPartitionKey) from an inline
+/// component array carried directly on a request, applying the same
+/// validation as the incremental builder (at most [`MAX_COMPONENTS`]
+/// components, finite numbers, valid UTF-8 strings).
+///
+/// # Safety
+///
+/// `components` must point to `len` initialized [`CosmosPartitionKeyComponent`]
+/// values, and each `String` component's `string_value` must be a valid
+/// NUL-terminated UTF-8 string that outlives the call.
+pub(crate) unsafe fn partition_key_from_components(
+    components: *const CosmosPartitionKeyComponent,
+    len: usize,
+) -> Result<DriverPartitionKey, CosmosErrorCode> {
+    if components.is_null() || len == 0 {
+        return Err(CosmosErrorCode::CosmosErrorCodeInvalidPartitionKey);
+    }
+    if len > MAX_COMPONENTS {
+        // Mirrors the builder's per-`_add_*` cap so `From<Vec<...>>` (which
+        // panics above 3 levels) is never reached with an over-cap vector.
+        return Err(CosmosErrorCode::CosmosErrorCodeInvalidPartitionKey);
+    }
+    // SAFETY: caller guarantees `components` points to `len` initialized values.
+    let slice = unsafe { std::slice::from_raw_parts(components, len) };
+    let mut values = Vec::with_capacity(len);
+    for component in slice {
+        let value = match CosmosPartitionKeyComponentKind::from_i32(component.kind)? {
+            CosmosPartitionKeyComponentKind::CosmosPartitionKeyComponentKindString => {
+                let s = try_cstr_to_str(component.string_value)?;
+                PartitionKeyValue::from(s.to_owned())
+            }
+            CosmosPartitionKeyComponentKind::CosmosPartitionKeyComponentKindNumber => {
+                if !component.number_value.is_finite() {
+                    // The driver's `From<f64>` panics on NaN / ±∞; reject early.
+                    return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue);
+                }
+                PartitionKeyValue::from(component.number_value)
+            }
+            CosmosPartitionKeyComponentKind::CosmosPartitionKeyComponentKindBool => {
+                PartitionKeyValue::from(component.bool_value != 0)
+            }
+            CosmosPartitionKeyComponentKind::CosmosPartitionKeyComponentKindNull => {
+                PartitionKeyValue::NULL
+            }
+            CosmosPartitionKeyComponentKind::CosmosPartitionKeyComponentKindUndefined => {
+                PartitionKeyValue::UNDEFINED
+            }
+        };
+        values.push(value);
+    }
+    // Length is capped at <= MAX_COMPONENTS above, so `From<Vec<...>>` will not
+    // panic here.
+    Ok(DriverPartitionKey::from(values))
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // PartitionKeyBuilderHandle
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -722,5 +836,115 @@ mod tests {
         // code path.
         assert_eq!(our_built.inner, DriverPartitionKey::from(0.0));
         cosmos_partition_key_free(out);
+    }
+
+    // ── Inline tagged-union components ───────────────────────────────────
+
+    /// Helper: a component of a given kind with default value fields.
+    fn component(kind: CosmosPartitionKeyComponentKind) -> CosmosPartitionKeyComponent {
+        CosmosPartitionKeyComponent {
+            kind: kind as i32,
+            string_value: ptr::null(),
+            number_value: 0.0,
+            bool_value: 0,
+        }
+    }
+
+    #[test]
+    fn inline_components_match_builder_for_hierarchical_key() {
+        let s = ok_cstr("tenant-42");
+        let comps = [
+            CosmosPartitionKeyComponent {
+                kind: CosmosPartitionKeyComponentKind::CosmosPartitionKeyComponentKindString as i32,
+                string_value: s.as_ptr(),
+                number_value: 0.0,
+                bool_value: 0,
+            },
+            CosmosPartitionKeyComponent {
+                kind: CosmosPartitionKeyComponentKind::CosmosPartitionKeyComponentKindNumber as i32,
+                string_value: ptr::null(),
+                number_value: 7.0,
+                bool_value: 0,
+            },
+            CosmosPartitionKeyComponent {
+                kind: CosmosPartitionKeyComponentKind::CosmosPartitionKeyComponentKindBool as i32,
+                string_value: ptr::null(),
+                number_value: 0.0,
+                bool_value: 1,
+            },
+        ];
+        // SAFETY: `comps` is a live, fully-initialized array.
+        let built = unsafe { partition_key_from_components(comps.as_ptr(), comps.len()) }
+            .expect("inline build succeeds");
+        let expected = DriverPartitionKey::from(("tenant-42", 7.0, true));
+        assert_eq!(built, expected);
+    }
+
+    #[test]
+    fn inline_components_null_and_undefined() {
+        let comps = [
+            component(CosmosPartitionKeyComponentKind::CosmosPartitionKeyComponentKindNull),
+            component(CosmosPartitionKeyComponentKind::CosmosPartitionKeyComponentKindUndefined),
+        ];
+        // SAFETY: live array.
+        let built = unsafe { partition_key_from_components(comps.as_ptr(), comps.len()) }
+            .expect("inline build succeeds");
+        let expected =
+            DriverPartitionKey::from(vec![PartitionKeyValue::NULL, PartitionKeyValue::UNDEFINED]);
+        assert_eq!(built, expected);
+    }
+
+    #[test]
+    fn inline_empty_or_null_rejected() {
+        // SAFETY: NULL pointer / zero length is explicitly handled.
+        let rc = unsafe { partition_key_from_components(ptr::null(), 0) };
+        assert_eq!(rc, Err(CosmosErrorCode::CosmosErrorCodeInvalidPartitionKey));
+
+        let comps = [component(
+            CosmosPartitionKeyComponentKind::CosmosPartitionKeyComponentKindNull,
+        )];
+        // SAFETY: live array, but len 0 forces the empty-rejection path.
+        let rc = unsafe { partition_key_from_components(comps.as_ptr(), 0) };
+        assert_eq!(rc, Err(CosmosErrorCode::CosmosErrorCodeInvalidPartitionKey));
+    }
+
+    #[test]
+    fn inline_over_cap_rejected() {
+        let comps = [
+            component(CosmosPartitionKeyComponentKind::CosmosPartitionKeyComponentKindNull),
+            component(CosmosPartitionKeyComponentKind::CosmosPartitionKeyComponentKindNull),
+            component(CosmosPartitionKeyComponentKind::CosmosPartitionKeyComponentKindNull),
+            component(CosmosPartitionKeyComponentKind::CosmosPartitionKeyComponentKindNull),
+        ];
+        // SAFETY: live 4-element array; the cap check rejects before any
+        // driver call.
+        let rc = unsafe { partition_key_from_components(comps.as_ptr(), comps.len()) };
+        assert_eq!(rc, Err(CosmosErrorCode::CosmosErrorCodeInvalidPartitionKey));
+    }
+
+    #[test]
+    fn inline_non_finite_number_rejected() {
+        let comps = [CosmosPartitionKeyComponent {
+            kind: CosmosPartitionKeyComponentKind::CosmosPartitionKeyComponentKindNumber as i32,
+            string_value: ptr::null(),
+            number_value: f64::NAN,
+            bool_value: 0,
+        }];
+        // SAFETY: live array.
+        let rc = unsafe { partition_key_from_components(comps.as_ptr(), comps.len()) };
+        assert_eq!(rc, Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue));
+    }
+
+    #[test]
+    fn inline_invalid_kind_rejected() {
+        let comps = [CosmosPartitionKeyComponent {
+            kind: 99,
+            string_value: ptr::null(),
+            number_value: 0.0,
+            bool_value: 0,
+        }];
+        // SAFETY: live array.
+        let rc = unsafe { partition_key_from_components(comps.as_ptr(), comps.len()) };
+        assert_eq!(rc, Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue));
     }
 }

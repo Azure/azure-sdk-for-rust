@@ -110,6 +110,16 @@ fn generate_c_header() {
         ("CosmosBytesView".into(), "bytes_view_t".into()),
         ("CosmosHeaderKv".into(), "header_kv_t".into()),
         (
+            "CosmosPartitionKeyComponent".into(),
+            "partition_key_component_t".into(),
+        ),
+        (
+            "CosmosPartitionKeyComponentKind".into(),
+            "partition_key_component_kind_t".into(),
+        ),
+        ("CosmosResponseView".into(), "response_view_t".into()),
+        ("CosmosCompletionView".into(), "completion_view_t".into()),
+        (
             "CosmosOperationOptions".into(),
             "operation_options_t".into(),
         ),
@@ -182,6 +192,7 @@ fn generate_c_header() {
                 "CosmosPreconditionKind".into(),
                 "CosmosReadConsistencyStrategy".into(),
                 "CosmosContentResponseOnWriteOpt".into(),
+                "CosmosPartitionKeyComponentKind".into(),
             ],
             rename,
             ..Default::default()
