@@ -21,7 +21,7 @@ async-trait.workspace = true
 azure_core = { workspace = true, default-features = false, features = [
   "hmac_rust",
 ] }
-azure_data_cosmos_macros.version = "0.1.0"
+azure_data_cosmos_macros = { version = "0.2.0", path = "../azure_data_cosmos_macros" }
 backtrace.workspace = true
 base64.workspace = true
 bytes.workspace = true
@@ -103,6 +103,7 @@ __internal_backtrace_bench = []
 # gateway-comparison tests. Production code MUST NOT enable this feature; it is
 # not covered by SemVer and may change or disappear at any time.
 __internal_testing = []
+__internal_native_query_plan = []  # gates query_plan_native module and integration tests (requires native DLL)
 __tls = []
 
 [package.metadata.docs.rs]

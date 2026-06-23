@@ -13,23 +13,22 @@ use std::{
 
 use crossbeam_epoch::{self as epoch, Atomic, Owned};
 use futures::future::BoxFuture;
+use url::Url;
 
 #[cfg(feature = "tokio")]
 use crate::driver::transport::background_task_manager::BackgroundTaskManager;
 use crate::{
     driver::cache::{AccountMetadataCache, AccountProperties},
     models::AccountEndpoint,
-    options::Region,
+    options::{PartitionFailoverOptions, Region},
 };
 
 use super::{
     advance_hub_region_discovery, build_account_endpoint_state, cache_hub_region,
-    expire_partition_overrides, expire_unavailable_endpoints, mark_endpoint_unavailable,
-    mark_partition_unavailable,
-    partition_endpoint_state::{PartitionEndpointState, PartitionFailoverConfig},
-    partition_key_range_id::PartitionKeyRangeId,
-    record_hedge_alternate_win, record_hedge_primary_win, AccountEndpointState, CosmosEndpoint,
-    LocationEffect,
+    expire_partition_overrides, mark_endpoint_unavailable, mark_partition_unavailable,
+    partition_endpoint_state::PartitionEndpointState,
+    partition_key_range_id::PartitionKeyRangeId, record_hedge_alternate_win,
+    record_hedge_primary_win, AccountEndpointState, CosmosEndpoint, LocationEffect,
 };
 
 /// Immutable location snapshot consumed by one operation-loop iteration.
@@ -66,6 +65,22 @@ type AccountRefreshFn = Arc<
         + Send
         + Sync,
 >;
+
+/// Connectivity probe for a single endpoint URL.
+///
+/// Returns `true` if the endpoint is reachable (a request to it completed),
+/// `false` if it could not be connected to. Used to gate failback of an
+/// endpoint that was previously marked unavailable: an endpoint only rejoins
+/// the routing rotation after a probe confirms it is reachable, rather than
+/// purely because an unavailability cooldown elapsed.
+#[cfg(feature = "tokio")]
+pub(crate) type EndpointProbeFn = Arc<dyn Fn(Url) -> BoxFuture<'static, bool> + Send + Sync>;
+
+/// Interval between iterations of the background endpoint-probe loop, which
+/// probes endpoints whose unavailability cooldown has elapsed and fails back
+/// only those that are reachable.
+#[cfg(feature = "tokio")]
+pub(crate) const ENDPOINT_PROBE_INTERVAL: Duration = Duration::from_secs(60);
 
 /// Interval between iterations of the background account-metadata refresh
 /// loop. Independent of `LocationStateStore::refresh_interval` (which
@@ -152,11 +167,11 @@ impl LocationStateStore {
         account_refresh_fn: AccountRefreshFn,
         gateway20_enabled: bool,
         endpoint_unavailability_ttl: Duration,
-        partition_failover_config: PartitionFailoverConfig,
+        partition_failover_options: PartitionFailoverOptions,
         preferred_regions: Vec<Region>,
     ) -> Self {
         let account_state = AccountEndpointState::single(default_endpoint.clone());
-        let partition_state = PartitionEndpointState::new(partition_failover_config);
+        let partition_state = PartitionEndpointState::new(partition_failover_options);
 
         let initial_snapshot = LocationSnapshot {
             account: Arc::new(account_state.clone()),
@@ -403,7 +418,7 @@ impl LocationStateStore {
     ///
     /// The `last_refresh_epoch_ms` clock is updated by
     /// [`refresh_account_properties_inner`] only on a successful fetch — if
-    /// this timer-driven refresh fails (network error, service 5xx, …), the
+    /// this timer-driven refresh fails (network error, service 5xx, ...), the
     /// event-driven path is NOT throttled and is free to retry recovery
     /// immediately.
     async fn force_refresh_account_properties(&self) {
@@ -500,8 +515,6 @@ impl LocationStateStore {
             }
         }
 
-        self.prune_expired_unavailable_endpoints();
-
         if !properties.etag.is_empty() {
             let last_etag = self.last_synced_etag.lock().unwrap();
             if *last_etag == properties.etag {
@@ -513,7 +526,6 @@ impl LocationStateStore {
         }
 
         let default_endpoint = default_endpoint.clone();
-        let ttl = self.endpoint_unavailability_ttl;
         self.apply_account(|current| {
             let mut next = build_account_endpoint_state(
                 &properties,
@@ -522,12 +534,12 @@ impl LocationStateStore {
                 self.gateway20_enabled,
                 &self.preferred_regions,
             );
-            // Carry forward unavailability marks from the current state,
-            // filtering out entries that have expired past the configured TTL.
-            let now = Instant::now();
-            let mut unavailable = current.unavailable_endpoints.clone();
-            unavailable.retain(|_, (marked_at, _)| now.saturating_duration_since(*marked_at) < ttl);
-            next.unavailable_endpoints = unavailable;
+            // Carry forward all unavailability marks from the current state.
+            // The background endpoint-probe loop is the sole owner of
+            // account-level failback: a marked endpoint is only cleared once a
+            // connectivity probe confirms it is reachable, never on a time
+            // basis. See `probe_and_failback_unavailable_endpoints`.
+            next.unavailable_endpoints = current.unavailable_endpoints.clone();
             next
         });
 
@@ -541,31 +553,54 @@ impl LocationStateStore {
             properties.enable_per_partition_failover_behavior;
 
         *self.last_synced_properties.lock().unwrap() = Some(properties);
-        self.apply_partition(|current| {
-            let mut next = current.clone();
+        self.apply_partition(|previous| {
+            let mut next = previous.clone();
             next.per_partition_automatic_failover_enabled =
                 per_partition_automatic_failover_enabled;
-            next.per_partition_circuit_breaker_enabled = per_partition_automatic_failover_enabled
-                || current.config.circuit_breaker_option_enabled;
+            // The incident kill switch (`AZURE_COSMOS_PPCB_ENABLED_OVERRIDE`) is
+            // authoritative: when set it wins over both the account property and
+            // the base option. Only when it is unset does PPCB fall back to
+            // `account property || option`.
+            next.per_partition_circuit_breaker_enabled = previous
+                .config
+                .circuit_breaker_enabled_override()
+                .unwrap_or_else(|| {
+                    per_partition_automatic_failover_enabled
+                        || previous.config.circuit_breaker_enabled()
+                });
+
+            // Drop per-partition routing overrides on any edge of either
+            // enablement flag. The eligibility gate in `is_eligible_for_ppaf` /
+            // `is_eligible_for_ppcb` already prevents stale entries from being
+            // *applied* while the corresponding feature is off, but leaving
+            // them in place would let an outdated override silently re-apply
+            // if the operator (or background flip) re-enabled the feature
+            // later. Clearing on every edge -- not just disable -- keeps the
+            // override maps strictly in sync with their owning feature flag
+            // and removes a class of "stale entry survives across a flip"
+            // bugs without any cost on the steady-state path.
+            if previous.per_partition_automatic_failover_enabled
+                != next.per_partition_automatic_failover_enabled
+            {
+                // Clearing to prevent stale PPAF entries from silently
+                // re-applying after a later re-enable. (Disable-time
+                // correctness is already guaranteed by `is_eligible_for_ppaf`
+                // gating every read of this map.)
+                next.failover_overrides.clear();
+            }
+            if previous.per_partition_circuit_breaker_enabled
+                != next.per_partition_circuit_breaker_enabled
+            {
+                // Same rationale as the PPAF clear above, applied to the PPCB
+                // override map. Note that PPCB tracks PPAF here (PPCB is
+                // implicitly on whenever PPAF is on), so an isolated PPAF
+                // flip also flips PPCB and clears both maps -- exactly the
+                // intended invariant.
+                next.circuit_breaker_overrides.clear();
+            }
+
             next
         });
-    }
-
-    fn prune_expired_unavailable_endpoints(&self) {
-        let now = Instant::now();
-        let ttl = self.endpoint_unavailability_ttl;
-        let snapshot = self.account_snapshot();
-
-        let has_expired = snapshot
-            .unavailable_endpoints
-            .values()
-            .any(|(marked_at, _)| now.saturating_duration_since(*marked_at) >= ttl);
-
-        if !has_expired {
-            return;
-        }
-
-        self.apply_account(|current| expire_unavailable_endpoints(current, now, ttl));
     }
 
     /// Starts the background failback loop that periodically sweeps expired
@@ -599,13 +634,108 @@ impl LocationStateStore {
         });
     }
 
+    /// Starts the background endpoint-probe loop.
+    ///
+    /// This loop is the sole owner of account-level endpoint failback. An
+    /// endpoint marked unavailable is never cleared simply because its cooldown
+    /// elapsed; once the cooldown has elapsed the loop probes the endpoint for
+    /// connectivity (via `probe_fn`) and only fails back (clears the
+    /// unavailability mark) endpoints that are reachable. Unreachable endpoints
+    /// have their cooldown reset and stay out of the rotation. This prevents
+    /// repeatedly routing real traffic to an endpoint that is still unreachable
+    /// (e.g. firewall-blocked), which otherwise causes sustained low throughput.
+    ///
+    /// Mirrors `start_failback_loop` (`Weak<Self>` for self-termination,
+    /// `BackgroundTaskManager` for abort-on-drop).
+    #[cfg(feature = "tokio")]
+    pub fn start_endpoint_probe_loop(self: &Arc<Self>, probe_fn: EndpointProbeFn) {
+        let weak_store: Weak<LocationStateStore> = Arc::downgrade(self);
+        self.background_task_manager.spawn(async move {
+            endpoint_probe_loop(weak_store, probe_fn, ENDPOINT_PROBE_INTERVAL).await;
+        });
+    }
+
+    /// Probes every account-level unavailable endpoint whose cooldown has
+    /// elapsed and fails back only those that are reachable.
+    ///
+    /// For each due endpoint the probe is awaited out of band (never under a
+    /// state lock — `apply_account` is only entered to record the result). A
+    /// reachable endpoint has its unavailability mark removed (rejoining the
+    /// rotation); an unreachable endpoint has its cooldown reset so it is
+    /// re-probed after the next interval rather than thrashing.
+    #[cfg(feature = "tokio")]
+    pub(crate) async fn probe_and_failback_unavailable_endpoints(
+        &self,
+        probe_fn: &EndpointProbeFn,
+    ) {
+        let now = Instant::now();
+        let ttl = self.endpoint_unavailability_ttl;
+        let snapshot = self.account_snapshot();
+
+        // Capture each due endpoint's observed `marked_at` so we can detect a
+        // concurrent re-mark that lands while the (potentially slow) probe is in
+        // flight. The URLs are borrowed from `snapshot` (held for the whole
+        // call) — we clone only when handing one to `probe_fn`.
+        let due: Vec<(&Url, Instant)> = snapshot
+            .unavailable_endpoints
+            .iter()
+            .filter(|(_, (marked_at, _))| now.saturating_duration_since(*marked_at) >= ttl)
+            .map(|(url, (marked_at, _))| (url, *marked_at))
+            .collect();
+
+        if due.is_empty() {
+            return;
+        }
+
+        for (url, observed_marked_at) in due {
+            let reachable = probe_fn(url.clone()).await;
+            self.apply_account(|current| {
+                let mut next = current.clone();
+                if let Some((marked_at, _)) = next.unavailable_endpoints.get_mut(url) {
+                    if reachable {
+                        // Only fail back if the mark is the same one we probed.
+                        // A newer `marked_at` means a concurrent transport
+                        // failure re-marked the endpoint while the probe was in
+                        // flight, so keep it out of rotation and re-probe later.
+                        if *marked_at == observed_marked_at {
+                            next.unavailable_endpoints.remove(url);
+                        }
+                    } else {
+                        // Reset the cooldown so the endpoint is re-probed later.
+                        *marked_at = Instant::now();
+                    }
+                }
+                next
+            });
+
+            if reachable {
+                if !self
+                    .account_snapshot()
+                    .unavailable_endpoints
+                    .contains_key(url)
+                {
+                    tracing::info!(
+                        endpoint = %url,
+                        "endpoint passed connectivity probe; failing back",
+                    );
+                }
+            } else {
+                tracing::warn!(
+                    endpoint = %url,
+                    "endpoint failed connectivity probe; keeping it out of rotation \
+                     and resetting its cooldown for a later re-probe",
+                );
+            }
+        }
+    }
+
     /// Records that the alternate (secondary) hedge attempt completed before
     /// the primary in
     /// [`execute_hedged`](crate::driver::pipeline::operation_pipeline).
     ///
     /// Increments a per-`(partition, primary_region)` counter atomically
     /// via [`Self::apply_partition`]. When the counter reaches
-    /// [`PartitionFailoverConfig::consecutive_hedge_win_threshold`] the
+    /// [`PartitionFailoverOptions::consecutive_hedge_win_threshold`] the
     /// partition is tripped by installing an `Unhealthy` entry in
     /// `circuit_breaker_overrides` (the same shape PPCB uses for hard
     /// failures), so subsequent requests route away from the degraded
@@ -685,9 +815,9 @@ async fn account_refresh_loop(weak_store: Weak<LocationStateStore>, interval: Du
 ///
 /// Exits when the `LocationStateStore` is dropped (`Weak::upgrade()` returns `None`).
 #[cfg(feature = "tokio")]
-async fn failback_loop(weak_store: Weak<LocationStateStore>, config: PartitionFailoverConfig) {
+async fn failback_loop(weak_store: Weak<LocationStateStore>, config: PartitionFailoverOptions) {
     loop {
-        tokio::time::sleep(config.failback_sweep_interval).await;
+        tokio::time::sleep(config.failback_sweep_interval()).await;
 
         let Some(store) = weak_store.upgrade() else {
             // LocationStateStore was dropped — exit the loop.
@@ -698,9 +828,33 @@ async fn failback_loop(weak_store: Weak<LocationStateStore>, config: PartitionFa
             expire_partition_overrides(
                 current_partitions,
                 Instant::now(),
-                config.partition_unavailability_duration,
+                config.partition_unavailability_duration(),
             )
         });
+    }
+}
+
+/// Background endpoint-probe loop. Periodically probes account-level endpoints
+/// whose unavailability cooldown has elapsed and fails back only those that are
+/// reachable. Exits when the `LocationStateStore` is dropped (`Weak::upgrade()`
+/// returns `None`).
+#[cfg(feature = "tokio")]
+async fn endpoint_probe_loop(
+    weak_store: Weak<LocationStateStore>,
+    probe_fn: EndpointProbeFn,
+    interval: Duration,
+) {
+    loop {
+        tokio::time::sleep(interval).await;
+
+        let Some(store) = weak_store.upgrade() else {
+            // LocationStateStore was dropped — exit the loop.
+            break;
+        };
+
+        store
+            .probe_and_failback_unavailable_endpoints(&probe_fn)
+            .await;
     }
 }
 
@@ -716,8 +870,11 @@ mod tests {
     use std::sync::atomic::{AtomicUsize, Ordering};
 
     use crate::{
-        driver::routing::{CosmosEndpoint, LocationEffect, UnavailableReason},
-        models::AccountEndpoint,
+        driver::{
+            cache::{AccountRegion, ConsistencyPolicy, ReadPolicy, ReplicationPolicy},
+            routing::{CosmosEndpoint, LocationEffect, UnavailableReason},
+        },
+        models::{AccountEndpoint, DefaultConsistencyLevel},
     };
 
     use super::*;
@@ -726,25 +883,80 @@ mod tests {
         AccountEndpoint::from(url::Url::parse("https://test.documents.azure.com:443/").unwrap())
     }
 
+    /// Single canonical fake account-properties payload used by every test in
+    /// this module. Override only the fields that matter for a specific test
+    /// using struct-update syntax (`..default_account_properties()`):
+    ///
+    /// ```ignore
+    /// AccountProperties {
+    ///     enable_per_partition_failover_behavior: true,
+    ///     etag: "etag-on".into(),
+    ///     ..default_account_properties()
+    /// }
+    /// ```
+    ///
+    /// Wire-format round-trip is exercised in
+    /// `driver::cache::account_metadata_cache::tests::deserialize_full_account_payload`;
+    /// these helpers exist to test `sync_account_properties` flag-edge logic,
+    /// which has nothing to gain from re-running serde on every call.
+    fn default_account_properties() -> AccountProperties {
+        let eastus_endpoint = AccountEndpoint::from(
+            url::Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let eastus_region = AccountRegion {
+            name: Region::from("eastus"),
+            database_account_endpoint: eastus_endpoint,
+        };
+        AccountProperties {
+            self_link: String::new(),
+            id: "test".into(),
+            rid: "test.documents.azure.com".into(),
+            media: "//media/".into(),
+            addresses: "//addresses/".into(),
+            dbs: "//dbs/".into(),
+            writable_locations: vec![eastus_region.clone()],
+            readable_locations: vec![eastus_region],
+            enable_multiple_write_locations: false,
+            continuous_backup_enabled: false,
+            enable_n_region_synchronous_commit: false,
+            enable_per_partition_failover_behavior: false,
+            user_replication_policy: ReplicationPolicy {
+                min_replica_set_size: 3,
+                max_replica_set_size: 4,
+            },
+            user_consistency_policy: ConsistencyPolicy {
+                default_consistency_level: DefaultConsistencyLevel::Session,
+            },
+            system_replication_policy: ReplicationPolicy {
+                min_replica_set_size: 3,
+                max_replica_set_size: 4,
+            },
+            read_policy: ReadPolicy {
+                primary_read_coefficient: 1,
+                secondary_read_coefficient: 1,
+            },
+            query_engine_configuration: "{}".into(),
+            thin_client_writable_locations: Vec::new(),
+            thin_client_readable_locations: Vec::new(),
+            etag: "etag-1".into(),
+        }
+    }
+
     fn test_refresh_payload() -> AccountProperties {
-        serde_json::from_value(serde_json::json!({
-            "_self": "",
-            "id": "test",
-            "_rid": "test.documents.azure.com",
-            "_etag": "etag-1",
-            "media": "//media/",
-            "addresses": "//addresses/",
-            "_dbs": "//dbs/",
-            "writableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com:443/" }],
-            "readableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com:443/" }],
-            "enableMultipleWriteLocations": false,
-            "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
-            "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
-            "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
-            "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
-            "queryEngineConfiguration": "{}"
-        }))
-        .unwrap()
+        default_account_properties()
+    }
+
+    /// Builds an `AccountProperties` payload with explicit
+    /// `enable_per_partition_failover_behavior` and caller-supplied etag --
+    /// successive `sync_account_properties` calls with the same etag would be
+    /// short-circuited by the unchanged-etag fast path, so tests that walk a
+    /// state machine across multiple syncs need distinct etags.
+    fn test_payload_with_ppaf(enabled: bool, etag: &str) -> AccountProperties {
+        AccountProperties {
+            enable_per_partition_failover_behavior: enabled,
+            etag: etag.into(),
+            ..default_account_properties()
+        }
     }
 
     #[tokio::test]
@@ -764,7 +976,7 @@ mod tests {
             refresh,
             false,
             Duration::from_secs(60),
-            PartitionFailoverConfig::default(),
+            PartitionFailoverOptions::default(),
             Vec::new(),
         );
 
@@ -777,6 +989,196 @@ mod tests {
 
         let snapshot = store.snapshot();
         assert_eq!(snapshot.account.unavailable_endpoints.len(), 1);
+    }
+
+    #[cfg(feature = "tokio")]
+    #[tokio::test]
+    async fn unavailable_endpoint_fails_back_only_after_successful_probe() {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
+            let payload = test_refresh_payload();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move { Ok(payload) });
+            fut
+        });
+
+        let store = LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint.clone(),
+            refresh,
+            false,
+            // Cooldown of zero so the marked endpoint is immediately probe-due.
+            Duration::ZERO,
+            PartitionFailoverOptions::default(),
+            Vec::new(),
+        );
+
+        store
+            .apply(&[LocationEffect::MarkEndpointUnavailable {
+                endpoint: default_endpoint.clone(),
+                reason: UnavailableReason::TransportError,
+            }])
+            .await;
+        assert_eq!(store.snapshot().account.unavailable_endpoints.len(), 1);
+
+        // A failing probe keeps the endpoint unavailable (cooldown is reset,
+        // not cleared) — this is the core #4597 behavior: no time-based failback.
+        let unreachable: EndpointProbeFn =
+            Arc::new(|_url: Url| Box::pin(async move { false }) as BoxFuture<'static, bool>);
+        store
+            .probe_and_failback_unavailable_endpoints(&unreachable)
+            .await;
+        assert_eq!(
+            store.snapshot().account.unavailable_endpoints.len(),
+            1,
+            "a failed probe must keep the endpoint unavailable"
+        );
+
+        // A successful probe fails the endpoint back (clears the mark).
+        let reachable: EndpointProbeFn =
+            Arc::new(|_url: Url| Box::pin(async move { true }) as BoxFuture<'static, bool>);
+        store
+            .probe_and_failback_unavailable_endpoints(&reachable)
+            .await;
+        assert_eq!(
+            store.snapshot().account.unavailable_endpoints.len(),
+            0,
+            "a successful probe must fail the endpoint back"
+        );
+    }
+
+    #[cfg(feature = "tokio")]
+    #[tokio::test]
+    async fn failed_probe_resets_cooldown_keeping_endpoint_out_of_rotation() {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
+            let payload = test_refresh_payload();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move { Ok(payload) });
+            fut
+        });
+
+        let make_store = || {
+            LocationStateStore::new(
+                Arc::new(AccountMetadataCache::new()),
+                test_endpoint(),
+                default_endpoint.clone(),
+                refresh.clone(),
+                false,
+                // Non-zero cooldown so the reset-on-failure is observable.
+                Duration::from_secs(60),
+                PartitionFailoverOptions::default(),
+                Vec::new(),
+            )
+        };
+
+        let endpoint = default_endpoint.url().clone();
+        let insert_due_mark = |store: &LocationStateStore| {
+            store.apply_account(|current| {
+                let mut next = current.clone();
+                next.unavailable_endpoints.insert(
+                    endpoint.clone(),
+                    (
+                        // Old enough that the endpoint is already probe-due.
+                        Instant::now() - Duration::from_secs(120),
+                        UnavailableReason::TransportError,
+                    ),
+                );
+                next
+            });
+        };
+
+        let reachable: EndpointProbeFn =
+            Arc::new(|_url: Url| Box::pin(async move { true }) as BoxFuture<'static, bool>);
+        let unreachable: EndpointProbeFn =
+            Arc::new(|_url: Url| Box::pin(async move { false }) as BoxFuture<'static, bool>);
+
+        // Baseline: a due endpoint is failed back by a successful probe.
+        let store = make_store();
+        insert_due_mark(&store);
+        store
+            .probe_and_failback_unavailable_endpoints(&reachable)
+            .await;
+        assert_eq!(
+            store.snapshot().account.unavailable_endpoints.len(),
+            0,
+            "a due endpoint must fail back on a successful probe",
+        );
+
+        // A failed probe resets the cooldown, so the endpoint is no longer due;
+        // an immediately-following successful probe must NOT fail it back
+        // (proving the reset is real, not a no-op as it would be with a zero
+        // cooldown).
+        let store = make_store();
+        insert_due_mark(&store);
+        store
+            .probe_and_failback_unavailable_endpoints(&unreachable)
+            .await;
+        store
+            .probe_and_failback_unavailable_endpoints(&reachable)
+            .await;
+        assert_eq!(
+            store.snapshot().account.unavailable_endpoints.len(),
+            1,
+            "a failed probe must reset the cooldown so the endpoint is not \
+             immediately re-probed and failed back",
+        );
+    }
+
+    #[test]
+    fn account_sync_preserves_unavailable_marks_for_probe_loop() {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
+            let payload = test_refresh_payload();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move { Ok(payload) });
+            fut
+        });
+
+        let store = LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint.clone(),
+            refresh,
+            false,
+            Duration::from_secs(60),
+            PartitionFailoverOptions::default(),
+            Vec::new(),
+        );
+
+        let properties = Arc::new(test_refresh_payload());
+        store.sync_account_properties(Arc::clone(&properties), &default_endpoint);
+
+        let stale_endpoint = CosmosEndpoint::regional(
+            "eastus".into(),
+            url::Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        store.apply_account(|current| {
+            let mut next = current.clone();
+            next.unavailable_endpoints.insert(
+                stale_endpoint.url().clone(),
+                (
+                    Instant::now() - Duration::from_secs(120),
+                    UnavailableReason::TransportError,
+                ),
+            );
+            next
+        });
+
+        // Re-sync with a different Arc (same data, different pointer). The
+        // background endpoint-probe loop is the sole owner of failback, so an
+        // unavailable mark must survive an account sync regardless of how long
+        // ago it was set — only a successful probe may clear it. There is no
+        // longer any time-based pruning on sync.
+        let properties2 = Arc::new(test_refresh_payload());
+        store.sync_account_properties(properties2, &default_endpoint);
+
+        assert_eq!(
+            store.snapshot().account.unavailable_endpoints.len(),
+            1,
+            "account sync must NOT clear unavailable marks; only a probe may",
+        );
     }
 
     #[tokio::test]
@@ -802,7 +1204,7 @@ mod tests {
             refresh,
             false,
             Duration::from_secs(60),
-            PartitionFailoverConfig::default(),
+            PartitionFailoverOptions::default(),
             Vec::new(),
         );
 
@@ -858,7 +1260,7 @@ mod tests {
             refresh,
             false,
             Duration::from_secs(60),
-            PartitionFailoverConfig::default(),
+            PartitionFailoverOptions::default(),
             Vec::new(),
         );
 
@@ -919,7 +1321,7 @@ mod tests {
             refresh,
             false,
             Duration::from_secs(60),
-            PartitionFailoverConfig::default(),
+            PartitionFailoverOptions::default(),
             Vec::new(),
         );
 
@@ -955,54 +1357,6 @@ mod tests {
     }
 
     #[test]
-    fn sync_account_properties_prunes_expired_marks_even_when_etag_is_unchanged() {
-        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
-        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
-            let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move { Ok(payload) });
-            fut
-        });
-
-        let store = LocationStateStore::new(
-            Arc::new(AccountMetadataCache::new()),
-            test_endpoint(),
-            default_endpoint.clone(),
-            refresh,
-            false,
-            Duration::from_secs(60),
-            PartitionFailoverConfig::default(),
-            Vec::new(),
-        );
-
-        let properties = Arc::new(test_refresh_payload());
-        store.sync_account_properties(Arc::clone(&properties), &default_endpoint);
-
-        let expired_endpoint = CosmosEndpoint::regional(
-            "eastus".into(),
-            url::Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
-        );
-        store.apply_account(|current| {
-            let mut next = current.clone();
-            next.unavailable_endpoints.insert(
-                expired_endpoint.url().clone(),
-                (
-                    Instant::now() - Duration::from_secs(120),
-                    UnavailableReason::TransportError,
-                ),
-            );
-            next
-        });
-
-        // Use a different Arc to force a re-sync (same data, different pointer).
-        let properties2 = Arc::new(test_refresh_payload());
-        store.sync_account_properties(properties2, &default_endpoint);
-
-        let snapshot = store.snapshot();
-        assert!(snapshot.account.unavailable_endpoints.is_empty());
-    }
-
-    #[test]
     fn apply_partition_keeps_installed_pointer_live_until_store_drop() {
         // Regression test for a use-after-free in `apply_partition`. Earlier
         // versions called `defer_destroy(installed)` instead of
@@ -1033,7 +1387,7 @@ mod tests {
             refresh,
             false,
             Duration::from_secs(60),
-            PartitionFailoverConfig::default(),
+            PartitionFailoverOptions::default(),
             Vec::new(),
         );
 
@@ -1146,7 +1500,7 @@ mod tests {
             refresh,
             false,
             Duration::from_secs(60),
-            PartitionFailoverConfig::default(),
+            PartitionFailoverOptions::default(),
             Vec::new(),
         );
 
@@ -1198,6 +1552,287 @@ mod tests {
             entry.failed_endpoints.contains(&eastus),
             "re-caching on success must preserve failed_endpoints so a future 403/3 rotation does not re-try eastus, got failed_endpoints={:?}",
             entry.failed_endpoints,
+        );
+    }
+
+    // -- PPAF dynamic enablement (issue #4325) ----------------------------
+    //
+    // The driver consumes `AccountProperties.enable_per_partition_failover_behavior`
+    // as the single source of truth for PPAF enablement. These tests verify
+    // that `sync_account_properties` propagates the server flag into the live
+    // `PartitionEndpointState.per_partition_automatic_failover_enabled` on
+    // every refresh, and that stale `failover_overrides` entries are dropped
+    // when the server flag flips off so they cannot silently re-apply if the
+    // operator re-enables PPAF later.
+
+    fn build_store_for_ppaf_tests() -> LocationStateStore {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
+            let payload = test_refresh_payload();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move { Ok(payload) });
+            fut
+        });
+
+        LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint,
+            refresh,
+            false,
+            Duration::from_secs(60),
+            PartitionFailoverOptions::default(),
+            Vec::new(),
+        )
+    }
+
+    #[test]
+    fn sync_propagates_ppaf_flag_from_account_properties() {
+        let store = build_store_for_ppaf_tests();
+        let default_endpoint = store.default_endpoint().clone();
+
+        // Initial state -- no sync yet, flag is false from `PartitionEndpointState::default()`.
+        assert!(
+            !store
+                .snapshot()
+                .partitions
+                .per_partition_automatic_failover_enabled
+        );
+
+        // First sync with PPAF=true must flip the flag on.
+        store.sync_account_properties(
+            Arc::new(test_payload_with_ppaf(true, "etag-on")),
+            &default_endpoint,
+        );
+        assert!(
+            store
+                .snapshot()
+                .partitions
+                .per_partition_automatic_failover_enabled,
+            "PPAF flag should be true after a sync with enablePerPartitionFailoverBehavior=true"
+        );
+
+        // Second sync with PPAF=false must flip it back off.
+        store.sync_account_properties(
+            Arc::new(test_payload_with_ppaf(false, "etag-off")),
+            &default_endpoint,
+        );
+        assert!(
+            !store
+                .snapshot()
+                .partitions
+                .per_partition_automatic_failover_enabled,
+            "PPAF flag should be false after a sync with enablePerPartitionFailoverBehavior=false"
+        );
+    }
+
+    #[test]
+    fn disabling_ppaf_clears_failover_overrides() {
+        use crate::driver::routing::partition_endpoint_state::{
+            HealthStatus, PartitionFailoverEntry,
+        };
+        use crate::driver::routing::partition_key_range_id::PartitionKeyRangeId;
+        use std::collections::HashSet;
+
+        let store = build_store_for_ppaf_tests();
+        let default_endpoint = store.default_endpoint().clone();
+
+        // Enable PPAF first so the override would actually be honored by the
+        // routing eligibility gate (the test is about transition cleanup, not
+        // about whether the override applies while PPAF is on).
+        store.sync_account_properties(
+            Arc::new(test_payload_with_ppaf(true, "etag-on")),
+            &default_endpoint,
+        );
+
+        // Seed a fake PPAF override entry. This mirrors what
+        // `mark_partition_unavailable` would install during a real
+        // single-master write failover.
+        let endpoint_a = CosmosEndpoint::regional(
+            "eastus".into(),
+            url::Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let endpoint_b = CosmosEndpoint::regional(
+            "westus".into(),
+            url::Url::parse("https://test-westus.documents.azure.com:443/").unwrap(),
+        );
+        let pkrange_id: PartitionKeyRangeId = "0".to_string().into();
+        let entry = PartitionFailoverEntry {
+            current_endpoint: endpoint_b.clone(),
+            first_failed_endpoint: endpoint_a.clone(),
+            failed_endpoints: HashSet::from([endpoint_a]),
+            read_failure_count: 0,
+            write_failure_count: 1,
+            first_failure_time: Instant::now(),
+            last_failure_time: Instant::now(),
+            health_status: HealthStatus::Unhealthy,
+            failback_jitter: Duration::ZERO,
+        };
+
+        store.apply_partition(|current| {
+            let mut next = current.clone();
+            next.failover_overrides
+                .insert(pkrange_id.clone(), entry.clone());
+            next
+        });
+        assert_eq!(
+            store.snapshot().partitions.failover_overrides.len(),
+            1,
+            "test setup: failover override was not installed"
+        );
+
+        // Server flips PPAF off -- the next refresh must drop the stale override
+        // entry so it cannot silently re-apply when PPAF is re-enabled.
+        store.sync_account_properties(
+            Arc::new(test_payload_with_ppaf(false, "etag-off")),
+            &default_endpoint,
+        );
+
+        let snapshot = store.snapshot();
+        assert!(
+            !snapshot.partitions.per_partition_automatic_failover_enabled,
+            "PPAF should be off after sync_account_properties with false"
+        );
+        assert!(
+            snapshot.partitions.failover_overrides.is_empty(),
+            "failover_overrides should be cleared when PPAF flips from true to false; \
+             leaving stale entries lets old failovers re-apply silently on re-enable"
+        );
+    }
+
+    #[test]
+    fn re_enabling_ppaf_does_not_clear_overrides_that_were_installed_after_re_enable() {
+        // The clear path fires on every flag-flip *edge*, not on every refresh.
+        // A same-state sync (true -> true with a new etag) is not an edge, so
+        // overrides installed during a stable enabled window must survive.
+        // (Whether the clear fires on false->true is exercised separately by
+        // `enabling_ppaf_clears_stale_failover_overrides_from_prior_window`.)
+        use crate::driver::routing::partition_endpoint_state::{
+            HealthStatus, PartitionFailoverEntry,
+        };
+        use crate::driver::routing::partition_key_range_id::PartitionKeyRangeId;
+        use std::collections::HashSet;
+
+        let store = build_store_for_ppaf_tests();
+        let default_endpoint = store.default_endpoint().clone();
+
+        // false -> true: clear path must not fire (no prior overrides anyway).
+        store.sync_account_properties(
+            Arc::new(test_payload_with_ppaf(true, "etag-on-1")),
+            &default_endpoint,
+        );
+
+        let endpoint_a = CosmosEndpoint::regional(
+            "eastus".into(),
+            url::Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let endpoint_b = CosmosEndpoint::regional(
+            "westus".into(),
+            url::Url::parse("https://test-westus.documents.azure.com:443/").unwrap(),
+        );
+        let pkrange_id: PartitionKeyRangeId = "0".to_string().into();
+        let entry = PartitionFailoverEntry {
+            current_endpoint: endpoint_b.clone(),
+            first_failed_endpoint: endpoint_a.clone(),
+            failed_endpoints: HashSet::from([endpoint_a]),
+            read_failure_count: 0,
+            write_failure_count: 1,
+            first_failure_time: Instant::now(),
+            last_failure_time: Instant::now(),
+            health_status: HealthStatus::Unhealthy,
+            failback_jitter: Duration::ZERO,
+        };
+        store.apply_partition(|current| {
+            let mut next = current.clone();
+            next.failover_overrides
+                .insert(pkrange_id.clone(), entry.clone());
+            next
+        });
+
+        // true -> true with a new etag (still enabled): clear path must not fire.
+        store.sync_account_properties(
+            Arc::new(test_payload_with_ppaf(true, "etag-on-2")),
+            &default_endpoint,
+        );
+
+        assert_eq!(
+            store.snapshot().partitions.failover_overrides.len(),
+            1,
+            "overrides installed while PPAF is on must not be cleared by a same-state sync"
+        );
+    }
+
+    #[test]
+    fn enabling_ppaf_clears_stale_failover_overrides_from_prior_window() {
+        // Covers the false->true edge: an entry left over from a *prior*
+        // enabled window must be dropped on re-enable so it cannot silently
+        // re-apply against a routing topology the operator never re-confirmed.
+        use crate::driver::routing::partition_endpoint_state::{
+            HealthStatus, PartitionFailoverEntry,
+        };
+        use crate::driver::routing::partition_key_range_id::PartitionKeyRangeId;
+        use std::collections::HashSet;
+
+        let store = build_store_for_ppaf_tests();
+        let default_endpoint = store.default_endpoint().clone();
+
+        // Land in a known PPAF-off baseline first.
+        store.sync_account_properties(
+            Arc::new(test_payload_with_ppaf(false, "etag-off")),
+            &default_endpoint,
+        );
+
+        // Simulate a stale entry that survived from a prior enabled window
+        // (e.g. before the clear-on-disable fix shipped, or because state was
+        // mutated through a different code path).
+        let endpoint_a = CosmosEndpoint::regional(
+            "eastus".into(),
+            url::Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let endpoint_b = CosmosEndpoint::regional(
+            "westus".into(),
+            url::Url::parse("https://test-westus.documents.azure.com:443/").unwrap(),
+        );
+        let pkrange_id: PartitionKeyRangeId = "0".to_string().into();
+        let stale_entry = PartitionFailoverEntry {
+            current_endpoint: endpoint_b.clone(),
+            first_failed_endpoint: endpoint_a.clone(),
+            failed_endpoints: HashSet::from([endpoint_a]),
+            read_failure_count: 0,
+            write_failure_count: 1,
+            first_failure_time: Instant::now(),
+            last_failure_time: Instant::now(),
+            health_status: HealthStatus::Unhealthy,
+            failback_jitter: Duration::ZERO,
+        };
+        store.apply_partition(|current| {
+            let mut next = current.clone();
+            next.failover_overrides
+                .insert(pkrange_id.clone(), stale_entry.clone());
+            next
+        });
+        assert_eq!(
+            store.snapshot().partitions.failover_overrides.len(),
+            1,
+            "test setup: stale override was not installed"
+        );
+
+        // Server flips PPAF on -- false->true edge must drop the stale entry.
+        store.sync_account_properties(
+            Arc::new(test_payload_with_ppaf(true, "etag-on")),
+            &default_endpoint,
+        );
+
+        let snapshot = store.snapshot();
+        assert!(
+            snapshot.partitions.per_partition_automatic_failover_enabled,
+            "PPAF should be on after sync with enablePerPartitionFailoverBehavior=true"
+        );
+        assert!(
+            snapshot.partitions.failover_overrides.is_empty(),
+            "stale failover_overrides from a prior enabled window must be cleared \
+             on re-enable so they cannot silently re-apply against a routing \
+             topology the operator never re-confirmed"
         );
     }
 }

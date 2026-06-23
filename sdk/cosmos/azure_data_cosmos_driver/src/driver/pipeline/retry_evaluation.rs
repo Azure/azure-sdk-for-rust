@@ -24,7 +24,10 @@ use crate::{
 
 use std::sync::atomic::Ordering;
 
-use super::components::{OperationAction, OperationRetryState, TransportOutcome, TransportResult};
+use super::components::{
+    OperationAction, OperationRetryState, TransportOutcome, TransportResult,
+    BACKEND_FAILOVER_RETRY_INTERVAL,
+};
 
 /// Whether the current request is handled by the PPCB threshold mechanism.
 ///
@@ -117,7 +120,7 @@ pub(crate) fn is_region_confirming_status(status: &CosmosStatus) -> bool {
         return false;
     }
 
-    if status.is_write_forbidden() {
+    if status.is_write_forbidden() || status.is_database_account_not_found() {
         return false;
     }
 
@@ -281,6 +284,10 @@ pub(crate) fn evaluate_hedge_leg_effects(
                 try_handle_write_forbidden(operation, endpoint, retry_state, status)
             {
                 eval.effects = effects;
+            } else if let Some((_action, effects)) =
+                try_handle_database_account_not_found(operation, endpoint, retry_state, status)
+            {
+                eval.effects = effects;
             } else if let Some((_action, effects)) = try_handle_retry_trigger_group(
                 operation,
                 endpoint,
@@ -348,6 +355,12 @@ fn evaluate_http_outcome(
     }
 
     if let Some(result) =
+        try_handle_database_account_not_found(operation, endpoint, retry_state, &status)
+    {
+        return result;
+    }
+
+    if let Some(result) =
         try_handle_read_session_not_available(retry_state, &status, &cosmos_headers, &body)
     {
         return result;
@@ -395,7 +408,7 @@ fn try_handle_write_forbidden(
     retry_state: &OperationRetryState,
     status: &CosmosStatus,
 ) -> Option<(OperationAction, Vec<LocationEffect>)> {
-    if !(status.is_write_forbidden() && retry_state.can_retry_failover()) {
+    if !status.is_write_forbidden() {
         return None;
     }
 
@@ -452,25 +465,77 @@ fn try_handle_write_forbidden(
         ));
     }
 
-    Some((
-        OperationAction::FailoverRetry {
-            new_state: retry_state.clone().advance_failover(),
-            delay: None,
-        },
-        vec![
-            LocationEffect::RefreshAccountProperties,
-            LocationEffect::MarkEndpointUnavailable {
-                endpoint: endpoint.clone(),
-                reason: UnavailableReason::WriteForbidden,
-            },
-            LocationEffect::MarkPartitionUnavailable(make_partition_unavailable(
-                operation,
-                endpoint,
-                retry_state,
-                false,
-            )),
-        ],
-    ))
+    // Multi-write 403/3 gets the larger backend-failover budget; single-write uses the generic budget.
+    let (new_state, delay) = if retry_state.can_use_multiple_write_locations {
+        if !retry_state.can_retry_backend_failover() {
+            return None;
+        }
+        (
+            retry_state.clone().advance_backend_failover(),
+            Some(BACKEND_FAILOVER_RETRY_INTERVAL),
+        )
+    } else {
+        if !retry_state.can_retry_failover() {
+            return None;
+        }
+        (retry_state.clone().advance_failover(), None)
+    };
+
+    let mut effects = vec![
+        LocationEffect::RefreshAccountProperties,
+        LocationEffect::MarkPartitionUnavailable(make_partition_unavailable(
+            operation,
+            endpoint,
+            retry_state,
+            false,
+        )),
+    ];
+    if !is_ppcb_managed(operation, retry_state) {
+        // PPCB-managed 403/3 is per-partition; do not block the whole endpoint for 60s.
+        effects.push(LocationEffect::MarkEndpointUnavailable {
+            endpoint: endpoint.clone(),
+            reason: UnavailableReason::WriteForbidden,
+        });
+    }
+    Some((OperationAction::FailoverRetry { new_state, delay }, effects))
+}
+
+/// Handles 403/1008 DatabaseAccountNotFound for all operation types.
+///
+/// The region no longer owns the account; refresh topology and fail over with bounded retries.
+fn try_handle_database_account_not_found(
+    operation: &CosmosOperation,
+    endpoint: &CosmosEndpoint,
+    retry_state: &OperationRetryState,
+    status: &CosmosStatus,
+) -> Option<(OperationAction, Vec<LocationEffect>)> {
+    if !status.is_database_account_not_found() {
+        return None;
+    }
+
+    if !retry_state.can_retry_backend_failover() {
+        return None;
+    }
+    let new_state = retry_state.clone().advance_backend_failover();
+    let delay = Some(BACKEND_FAILOVER_RETRY_INTERVAL);
+
+    let mut effects = vec![
+        LocationEffect::RefreshAccountProperties,
+        LocationEffect::MarkPartitionUnavailable(make_partition_unavailable(
+            operation,
+            endpoint,
+            retry_state,
+            operation.is_read_only(),
+        )),
+    ];
+    if !is_ppcb_managed(operation, retry_state) {
+        // PPCB-managed 1008 is per-partition; do not block the whole endpoint for 60s.
+        effects.push(LocationEffect::MarkEndpointUnavailable {
+            endpoint: endpoint.clone(),
+            reason: UnavailableReason::DatabaseAccountNotFound,
+        });
+    }
+    Some((OperationAction::FailoverRetry { new_state, delay }, effects))
 }
 
 /// Handles 404/1002 ReadSessionNotAvailable — session token is ahead of the
@@ -656,25 +721,9 @@ fn try_handle_server_error(
     ))
 }
 
-/// Handles transport-layer errors (connection failures, TLS errors, etc.) —
-/// no HTTP response was produced.
+/// Handles transport-layer errors where no HTTP response was produced.
 ///
-/// Two sub-cases with **inverted** marking semantics:
-///
-/// 1. **Request definitely not sent** (connection refused, DNS failure, TLS
-///    error before any bytes left the client) → the endpoint itself is
-///    unreachable. Emit `MarkEndpointUnavailable` (affects all partitions
-///    on this endpoint) and `MarkPartitionUnavailable` (so PPCB also
-///    increments), then failover retry.
-///
-/// 2. **Request sent (or unknown)** → the endpoint accepted the connection
-///    but the operation failed for this partition. Emit only
-///    `MarkPartitionUnavailable` (PPCB tracks partition-level failures);
-///    do *not* mark the endpoint unavailable since it is clearly reachable.
-///
-/// This matches .NET (Gateway-mode `HttpRequestException` marks the full
-/// endpoint; Direct-mode 503 marks partition only) and Python
-/// (`ServiceRequestError` marks endpoint; `ServiceResponseError` does not).
+/// Not-sent marks the endpoint only; sent/unknown marks the partition only, matching .NET/Python.
 fn evaluate_transport_layer_outcome(
     operation: &CosmosOperation,
     endpoint: &CosmosEndpoint,
@@ -684,21 +733,11 @@ fn evaluate_transport_layer_outcome(
     request_sent: RequestSentStatus,
 ) -> (OperationAction, Vec<LocationEffect>) {
     if request_sent.definitely_not_sent() {
-        // Endpoint is unreachable — mark it unavailable regardless of PPCB
-        // state, since a connection failure affects all partitions on this
-        // endpoint. Also record a partition-level failure for PPCB tracking.
-        let effects = vec![
-            LocationEffect::MarkEndpointUnavailable {
-                endpoint: endpoint.clone(),
-                reason: UnavailableReason::TransportError,
-            },
-            LocationEffect::MarkPartitionUnavailable(make_partition_unavailable(
-                operation,
-                endpoint,
-                retry_state,
-                operation.is_read_only(),
-            )),
-        ];
+        // Not-sent means endpoint-wide failure; do not inflate PPCB's partition counter.
+        let effects = vec![LocationEffect::MarkEndpointUnavailable {
+            endpoint: endpoint.clone(),
+            reason: UnavailableReason::TransportError,
+        }];
 
         if retry_state.can_retry_failover() {
             return (
@@ -893,11 +932,35 @@ mod tests {
     use crate::{
         diagnostics::RequestSentStatus,
         models::{
-            AccountReference, CosmosOperation, CosmosResponseHeaders, CosmosStatus,
-            DatabaseReference,
+            AccountReference, ContainerProperties, ContainerReference, CosmosOperation,
+            CosmosResponseHeaders, CosmosStatus, DatabaseReference, ItemReference, PartitionKey,
+            PartitionKeyDefinition, SystemProperties,
         },
     };
     use azure_core::http::StatusCode;
+
+    fn make_create_item_operation() -> CosmosOperation {
+        let account = AccountReference::with_master_key(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            "dGVzdA==",
+        );
+        let pk_def: PartitionKeyDefinition = serde_json::from_str(r#"{"paths":["/pk"]}"#).unwrap();
+        let props = ContainerProperties {
+            id: "testcontainer".into(),
+            partition_key: pk_def,
+            system_properties: SystemProperties::default(),
+        };
+        let container = ContainerReference::new(
+            account,
+            "testdb",
+            "testdb_rid",
+            "testcontainer",
+            "testcontainer_rid",
+            &props,
+        );
+        let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
+        CosmosOperation::create_item(item).with_body(b"{}".to_vec())
+    }
 
     fn make_read_operation() -> CosmosOperation {
         let account = AccountReference::with_master_key(
@@ -987,11 +1050,11 @@ mod tests {
         );
         let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
         assert!(matches!(action, OperationAction::FailoverRetry { .. }));
-        // Not-sent → endpoint is unreachable, mark both endpoint and partition.
+        // Not-sent marks the endpoint only; Gateway connect failures are not partition-specific.
         assert!(effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
-        assert!(effects
+        assert!(!effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
     }
@@ -1038,10 +1101,7 @@ mod tests {
 
     #[test]
     fn build_transport_error_forwards_inner_diagnostics() {
-        // The wrap performed by `build_transport_error` must not silently
-        // drop the inner error's diagnostics: callers reading
-        // `outer.diagnostics()` should see the same `Arc<DiagnosticsContext>`
-        // that was attached to the inner cosmos error, not `None`.
+        // Wrapping must preserve the inner diagnostics `Arc`.
         let diag: std::sync::Arc<crate::diagnostics::DiagnosticsContext> = std::sync::Arc::new(
             crate::diagnostics::DiagnosticsContextBuilder::new(
                 crate::models::ActivityId::new_uuid(),
@@ -1092,11 +1152,7 @@ mod tests {
 
         match action {
             OperationAction::Abort { error } => {
-                // `error` is the typed Cosmos error directly. The fact
-                // that `.status()` resolves at all is itself the proof:
-                // that accessor only exists on `crate::error::CosmosError`, so
-                // any regression that downgraded the abort site to a
-                // foreign error type would fail to compile.
+                // `.status()` compiling proves this stayed a typed `CosmosError`.
                 assert_eq!(error.status(), CosmosStatus::TRANSPORT_GENERATED_503);
                 let text = error.to_string();
                 assert!(text.contains("HTTP 503/20003"));
@@ -1116,7 +1172,9 @@ mod tests {
             location: crate::driver::routing::LocationIndex::initial(0),
             failover_retry_count: 1,
             session_token_retry_count: 0,
+            backend_failover_retry_count: 0,
             max_failover_retries: 1,
+            max_backend_failover_retries: 120,
             max_session_retries: 1,
             can_use_multiple_write_locations: false,
             is_dataplane: false,
@@ -1225,6 +1283,400 @@ mod tests {
         assert!(effects
             .iter()
             .any(|e| matches!(e, LocationEffect::RefreshAccountProperties)));
+        // PPCB disabled (default) → endpoint mark is emitted so non-PPCB
+        // accounts still get region-wide failover for the 60 s TTL.
+        assert!(
+            effects
+                .iter()
+                .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })),
+            "non-PPCB 403/3 must mark the endpoint unavailable"
+        );
+        assert!(
+            effects
+                .iter()
+                .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))),
+            "403/3 must always mark the partition unavailable"
+        );
+    }
+
+    #[test]
+    fn write_forbidden_when_ppcb_managed_skips_endpoint_mark() {
+        // PPCB-managed 403/3 must not mark the whole endpoint unavailable.
+        let op = make_create_item_operation();
+        let mut state =
+            OperationRetryState::initial(0, true /* multi-write */, Vec::new(), 3, 1);
+        state.ppcb_active = true;
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            &state,
+        );
+
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert!(
+            effects
+                .iter()
+                .any(|e| matches!(e, LocationEffect::RefreshAccountProperties)),
+            "403/3 must still refresh account properties"
+        );
+        assert!(
+            effects
+                .iter()
+                .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))),
+            "PPCB-managed 403/3 must still mark the partition unavailable"
+        );
+        assert!(
+            !effects
+                .iter()
+                .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })),
+            "PPCB-managed 403/3 must NOT mark the endpoint unavailable; \
+             per-partition counter drives failover"
+        );
+    }
+
+    fn http_error_status(status: CosmosStatus) -> TransportResult {
+        TransportResult {
+            outcome: TransportOutcome::HttpError {
+                status,
+                cosmos_headers: CosmosResponseHeaders::default(),
+                body: vec![],
+                request_sent: RequestSentStatus::Sent,
+            },
+        }
+    }
+
+    #[test]
+    fn database_account_not_found_on_write_emits_refresh_mark_endpoint_and_failover() {
+        // 403/1008 must refresh topology, mark endpoint/partition, and failover-retry.
+        let op = make_create_operation();
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            http_error_status(CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND),
+            &state,
+        );
+
+        assert!(
+            matches!(
+                action,
+                OperationAction::FailoverRetry { delay: Some(_), .. }
+            ),
+            "expected FailoverRetry with backend-failover delay, got {:?}",
+            action
+        );
+        assert!(
+            effects
+                .iter()
+                .any(|e| matches!(e, LocationEffect::RefreshAccountProperties)),
+            "missing RefreshAccountProperties effect; effects={:?}",
+            effects
+        );
+        assert!(
+            effects.iter().any(|e| matches!(
+                e,
+                LocationEffect::MarkEndpointUnavailable {
+                    reason: UnavailableReason::DatabaseAccountNotFound,
+                    ..
+                }
+            )),
+            "missing MarkEndpointUnavailable{{DatabaseAccountNotFound}}; effects={:?}",
+            effects
+        );
+        assert!(
+            effects
+                .iter()
+                .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))),
+            "missing MarkPartitionUnavailable; effects={:?}",
+            effects
+        );
+    }
+
+    #[test]
+    fn database_account_not_found_on_read_uses_op_read_only_for_partition_mark() {
+        // 1008 fires on reads too; partition marks must preserve operation direction.
+        let op = make_read_operation();
+        let state = OperationRetryState::initial(0, true, Vec::new(), 3, 1);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            http_error_status(CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND),
+            &state,
+        );
+
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        let mark = effects.iter().find_map(|e| match e {
+            LocationEffect::MarkPartitionUnavailable(p) => Some(p),
+            _ => None,
+        });
+        let mark = mark.expect("expected MarkPartitionUnavailable for 1008 on read");
+        assert!(
+            mark.is_read,
+            "1008 on a read op must mark the partition with is_read=true so PPCB \
+             credits the read-direction failure counter, not the write counter"
+        );
+    }
+
+    #[test]
+    fn database_account_not_found_aborts_when_backend_failover_budget_exhausted() {
+        // Exhausting the 1008 budget must bubble up the original backend status.
+        let op = make_create_operation();
+        // Multi-write account so the handler uses the dedicated
+        // backend-failover budget rather than the generic one.
+        let mut state = OperationRetryState::initial(0, true, Vec::new(), 3, 1);
+        // Drive the backend-failover counter directly to the cap rather than
+        // looping 120× through `advance_backend_failover`.
+        state.backend_failover_retry_count = state.max_backend_failover_retries;
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, _effects) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            http_error_status(CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND),
+            &state,
+        );
+
+        match action {
+            OperationAction::Abort { error } => {
+                assert_eq!(
+                    error.status(),
+                    CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND,
+                    "1008 exhausted-budget bubble-up must surface the original status unchanged"
+                );
+            }
+            other => panic!(
+                "expected Abort once backend-failover budget is exhausted, got {:?}",
+                other
+            ),
+        }
+    }
+
+    #[test]
+    fn write_forbidden_aborts_when_backend_failover_budget_exhausted() {
+        // Exhausting the 403/3 backend-failover budget must bubble up the original status.
+        let op = make_create_operation();
+        let mut state = OperationRetryState::initial(0, true, Vec::new(), 3, 1);
+        state.backend_failover_retry_count = state.max_backend_failover_retries;
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, _effects) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            &state,
+        );
+
+        match action {
+            OperationAction::Abort { error } => {
+                assert_eq!(
+                    error.status(),
+                    CosmosStatus::WRITE_FORBIDDEN,
+                    "403/3 exhausted-budget bubble-up must surface the original status unchanged"
+                );
+            }
+            other => panic!("expected Abort, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn database_account_not_found_does_not_consume_generic_failover_budget() {
+        // Backend-failover retries must not consume the generic failover budget.
+        let op = make_create_operation();
+        let state = OperationRetryState::initial(0, true, Vec::new(), 3, 1);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, _effects) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            http_error_status(CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND),
+            &state,
+        );
+
+        match action {
+            OperationAction::FailoverRetry { new_state, delay } => {
+                assert_eq!(new_state.failover_retry_count, 0);
+                assert_eq!(new_state.backend_failover_retry_count, 1);
+                assert_eq!(
+                    delay,
+                    Some(BACKEND_FAILOVER_RETRY_INTERVAL),
+                    "multi-write 1008 must pace retries with BACKEND_FAILOVER_RETRY_INTERVAL"
+                );
+            }
+            other => panic!("expected FailoverRetry, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn write_forbidden_does_not_consume_generic_failover_budget() {
+        // Mirror of the 1008 test for 403/3 on a multi-write account.
+        let op = make_create_operation();
+        let state = OperationRetryState::initial(0, true, Vec::new(), 3, 1);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, _effects) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            &state,
+        );
+
+        match action {
+            OperationAction::FailoverRetry { new_state, delay } => {
+                assert_eq!(new_state.failover_retry_count, 0);
+                assert_eq!(new_state.backend_failover_retry_count, 1);
+                assert_eq!(
+                    delay,
+                    Some(BACKEND_FAILOVER_RETRY_INTERVAL),
+                    "multi-write 403/3 must pace retries with BACKEND_FAILOVER_RETRY_INTERVAL"
+                );
+            }
+            other => panic!("expected FailoverRetry, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn write_forbidden_on_single_write_uses_generic_failover_budget() {
+        // Single-write 403/3 uses the generic budget, not the multi-write rotation budget.
+        let op = make_create_operation();
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, _effects) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            &state,
+        );
+
+        match action {
+            OperationAction::FailoverRetry { new_state, delay } => {
+                assert_eq!(new_state.failover_retry_count, 1);
+                assert_eq!(new_state.backend_failover_retry_count, 0);
+                assert_eq!(
+                    delay, None,
+                    "single-write 403/3 uses the generic budget and must not pace retries"
+                );
+            }
+            other => panic!("expected FailoverRetry, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn write_forbidden_on_single_write_aborts_when_generic_budget_exhausted() {
+        // Single-write 403/3 must bubble up once the generic budget is exhausted.
+        let op = make_create_operation();
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        state.failover_retry_count = state.max_failover_retries;
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, _effects) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            &state,
+        );
+
+        assert!(
+            matches!(action, OperationAction::Abort { .. }),
+            "single-write 403/3 must abort once generic failover budget is exhausted, got {:?}",
+            action
+        );
+    }
+
+    #[test]
+    fn database_account_not_found_on_single_write_uses_backend_failover_budget() {
+        // Single-write 1008 also uses backend-failover budget + delay; the topology-not-found
+        // signal is identical to multi-write and needs the same convergence window.
+        let op = make_create_operation();
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, _effects) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            http_error_status(CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND),
+            &state,
+        );
+
+        match action {
+            OperationAction::FailoverRetry { new_state, delay } => {
+                assert_eq!(new_state.failover_retry_count, 0);
+                assert_eq!(new_state.backend_failover_retry_count, 1);
+                assert_eq!(
+                    delay,
+                    Some(BACKEND_FAILOVER_RETRY_INTERVAL),
+                    "single-write 1008 must pace retries with BACKEND_FAILOVER_RETRY_INTERVAL"
+                );
+            }
+            other => panic!("expected FailoverRetry, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn database_account_not_found_when_ppcb_managed_skips_endpoint_mark() {
+        // PPCB-managed 1008 must not mark the whole endpoint unavailable;
+        // the per-partition counter drives failover.
+        let op = make_create_item_operation();
+        let mut state = OperationRetryState::initial(0, true, Vec::new(), 3, 1);
+        state.ppcb_active = true;
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            http_error_status(CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND),
+            &state,
+        );
+
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert!(
+            effects
+                .iter()
+                .any(|e| matches!(e, LocationEffect::RefreshAccountProperties)),
+            "1008 must still refresh account properties"
+        );
+        assert!(
+            effects
+                .iter()
+                .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))),
+            "PPCB-managed 1008 must still mark the partition unavailable"
+        );
+        assert!(
+            !effects
+                .iter()
+                .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })),
+            "PPCB-managed 1008 must NOT mark the endpoint unavailable; \
+             per-partition counter drives failover"
+        );
     }
 
     #[test]
@@ -1450,8 +1902,8 @@ mod tests {
     }
 
     #[test]
-    fn transport_error_not_sent_marks_endpoint_and_partition() {
-        // Not-sent → endpoint is unreachable, mark both endpoint and partition.
+    fn transport_error_not_sent_marks_endpoint_only() {
+        // Not-sent marks the endpoint only; Gateway connect failures are endpoint-wide.
         let op = make_read_operation();
         let result = make_transport_error(RequestSentStatus::NotSent);
         let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
@@ -1464,7 +1916,7 @@ mod tests {
         assert!(effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
-        assert!(effects
+        assert!(!effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
     }
@@ -1473,7 +1925,8 @@ mod tests {
     fn transport_error_not_sent_with_ppcb_still_marks_endpoint() {
         // Not-sent with PPCB active → endpoint is unreachable regardless of
         // PPCB state. Connection failures are endpoint-wide, so the endpoint
-        // mark must not be suppressed by PPCB.
+        // mark must not be suppressed by PPCB. The per-partition mark is
+        // intentionally not emitted in either case for this branch.
         let op = make_read_operation();
         let result = make_transport_error(RequestSentStatus::NotSent);
         let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
@@ -1487,7 +1940,7 @@ mod tests {
         assert!(effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
-        assert!(effects
+        assert!(!effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
     }
@@ -1515,15 +1968,16 @@ mod tests {
 
     #[test]
     fn transport_error_not_sent_over_budget_aborts_with_marks() {
-        // Not-sent with budget exhausted → abort, but still emit endpoint +
-        // partition marks so routing state is updated for future requests.
+        // Even over budget, not-sent updates endpoint routing state only.
         let op = make_read_operation();
         let result = make_transport_error(RequestSentStatus::NotSent);
         let state = OperationRetryState {
             location: crate::driver::routing::LocationIndex::initial(0),
             failover_retry_count: 1,
             session_token_retry_count: 0,
+            backend_failover_retry_count: 0,
             max_failover_retries: 1,
+            max_backend_failover_retries: 120,
             max_session_retries: 1,
             can_use_multiple_write_locations: false,
             is_dataplane: false,
@@ -1547,7 +2001,7 @@ mod tests {
         assert!(effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
-        assert!(effects
+        assert!(!effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
     }
@@ -1664,6 +2118,16 @@ mod tests {
         assert!(!is_region_confirming_status(&status_with_substatus(
             StatusCode::Forbidden,
             SubStatusCode::WRITE_FORBIDDEN
+        )));
+        // 403/1008 is a topology signal; the dedicated handler refreshes and fails over.
+        assert!(!is_region_confirming_status(&status_with_substatus(
+            StatusCode::Forbidden,
+            SubStatusCode::DATABASE_ACCOUNT_NOT_FOUND
+        )));
+        // 410/1008 is partition migration, not DatabaseAccountNotFound.
+        assert!(!is_region_confirming_status(&status_with_substatus(
+            StatusCode::Gone,
+            SubStatusCode::COMPLETING_PARTITION_MIGRATION
         )));
     }
 

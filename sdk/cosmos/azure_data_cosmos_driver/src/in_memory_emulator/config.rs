@@ -5,12 +5,24 @@
 //! Virtual account configuration for the in-memory emulator.
 
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use std::time::Duration;
 use url::Url;
 
 use super::ru_model::RuChargingModel;
 
 /// Configures the emulated Cosmos DB account.
+///
+/// # Runtime-mutable fields
+///
+/// Most fields are set at construction time and never change. The
+/// per-partition-failover flag (PPAF, exposed in the synthesized account
+/// JSON as `enablePerPartitionFailoverBehavior`) is intentionally backed by
+/// an `Arc<AtomicBool>` so tests can flip it at runtime through a
+/// shared-reference handle. Flipping it through `set_per_partition_failover`
+/// changes what the emulator returns on the *next* account-read response,
+/// which is what the driver's background refresh loop polls.
 #[derive(Clone, Debug)]
 pub struct VirtualAccountConfig {
     regions: Vec<VirtualRegion>,
@@ -20,6 +32,11 @@ pub struct VirtualAccountConfig {
     replication_overrides: HashMap<(String, String), ReplicationConfig>,
     ru_model: RuChargingModel,
     throttling_enabled: bool,
+    /// Server-side per-partition automatic failover flag -- emitted as
+    /// `enablePerPartitionFailoverBehavior` in the account JSON. Atomic and
+    /// shared so test code can toggle the value after the config has been
+    /// moved into `EmulatorStore` and is reachable only by `&self`.
+    enable_per_partition_failover: Arc<AtomicBool>,
 }
 
 impl VirtualAccountConfig {
@@ -52,6 +69,7 @@ impl VirtualAccountConfig {
             replication_overrides: HashMap::new(),
             ru_model: RuChargingModel::default(),
             throttling_enabled: false,
+            enable_per_partition_failover: Arc::new(AtomicBool::new(false)),
         })
     }
 
@@ -139,6 +157,38 @@ impl VirtualAccountConfig {
         self.throttling_enabled
     }
 
+    /// Sets the initial value of the server-side per-partition automatic
+    /// failover (PPAF) flag. This is the JSON field
+    /// `enablePerPartitionFailoverBehavior` in the synthesized account-read
+    /// response and the input the driver consumes to enable PPAF dynamically.
+    ///
+    /// Most tests should use this builder method for the initial state, and
+    /// only fall back to [`Self::set_per_partition_failover`] when they need
+    /// to flip the value at runtime to exercise the driver's dynamic
+    /// enablement / disablement code path.
+    pub fn with_per_partition_failover(self, enabled: bool) -> Self {
+        self.enable_per_partition_failover
+            .store(enabled, Ordering::SeqCst);
+        self
+    }
+
+    /// Returns the current value of the server-side PPAF flag.
+    pub fn per_partition_failover_enabled(&self) -> bool {
+        self.enable_per_partition_failover.load(Ordering::SeqCst)
+    }
+
+    /// Flips the server-side PPAF flag at runtime. The next account-read
+    /// response served by the emulator will include the new value, and the
+    /// driver's background account-refresh loop will pick it up on its next
+    /// tick.
+    ///
+    /// Takes `&self` so test code can call it through the shared
+    /// `Arc<EmulatorStore>` handle without needing exclusive access.
+    pub fn set_per_partition_failover(&self, enabled: bool) {
+        self.enable_per_partition_failover
+            .store(enabled, Ordering::SeqCst);
+    }
+
     pub fn regions(&self) -> &[VirtualRegion] {
         &self.regions
     }
@@ -182,7 +232,7 @@ impl VirtualAccountConfig {
 
     /// Finds the region name for a given gateway URL.
     ///
-    /// Matches on `(scheme, host, port)` — not host alone — so two regions
+    /// Matches on (scheme, host, port) — not host alone — so two regions
     /// that share a hostname but differ in port (or scheme) route correctly.
     /// Useful when adding e.g. `https://localhost:8081` and
     /// `https://localhost:8082` regions for parity tests.

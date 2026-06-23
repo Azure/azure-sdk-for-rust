@@ -167,6 +167,11 @@ pub(crate) fn account_properties_to_json(
         "readableLocations": readable,
         "writableLocations": writable,
         "enableMultipleWriteLocations": config.write_mode() == super::config::WriteMode::Multi,
+        // Mirrors the real service contract for PPAF dynamic enablement. The
+        // driver's background account-refresh loop polls this field; tests
+        // that flip `VirtualAccountConfig::set_per_partition_failover(...)`
+        // observe the change here on the next refresh tick.
+        "enablePerPartitionFailoverBehavior": config.per_partition_failover_enabled(),
         "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
         "userConsistencyPolicy": {
             "defaultConsistencyLevel": config.consistency().as_str()

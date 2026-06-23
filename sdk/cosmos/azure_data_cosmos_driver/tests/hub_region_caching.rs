@@ -11,11 +11,13 @@
 //! `sdk/cosmos/test-resources.bicep`), so per-PR builds skip it entirely.
 //!
 //! The test does not require the live account to advertise PPAF natively;
-//! `context.force_ppaf_enabled()` enables the in-memory partition flag so the
-//! hub-region latch arms regardless of account capability. Inside the live leg
-//! the framework reads `AZURE_COSMOS_CONNECTION_STRING` exported by the bicep
-//! template; if it is unset the test skips cleanly via
-//! `DriverTestClient::run_with_*`.
+//! it runs both reads through a single persistent driver and calls
+//! `context.force_ppaf_enabled(&driver)` to set the in-memory partition flag
+//! so the hub-region latch arms regardless of account capability. Sharing one
+//! driver across both reads is what lets the warm (R2) read observe the cache
+//! entry populated by the cold (R1) read. Inside the live leg the framework
+//! reads `AZURE_COSMOS_CONNECTION_STRING` exported by the bicep template; if it
+//! is unset the test skips cleanly via `DriverTestClient::run_with_*`.
 
 #![cfg(feature = "fault_injection")]
 #![cfg(feature = "__internal_testing")]
@@ -164,14 +166,20 @@ pub async fn read_hub_region_caching_cold_then_warm() -> Result<(), Box<dyn Erro
                 .await
                 .expect("seed CreateItem should succeed");
 
+            // Every hub-region cache assertion below must observe the same
+            // driver across both reads, so create one persistent driver and
+            // issue every read through it. The per-operation helpers each
+            // build a throwaway driver and would never share cache state.
+            let driver = context.create_persistent_driver().await?;
+
             // Force PPAF on the in-memory partition state. The bicep-
             // provisioned test account does not advertise PPAF natively,
             // which would leave the hub-region latch in
             // `build_session_retry_state` permanently disarmed. Harmless
             // no-op on accounts that already advertise PPAF.
-            context.force_ppaf_enabled().await?;
+            context.force_ppaf_enabled(&driver);
 
-            let cache_before = context.hub_region_cache_snapshot().await?;
+            let cache_before = context.hub_region_cache_snapshot(&driver);
             assert!(
                 cache_before.is_empty(),
                 "hub-region cache should be empty before any read, got {:?}",
@@ -180,7 +188,7 @@ pub async fn read_hub_region_caching_cold_then_warm() -> Result<(), Box<dyn Erro
 
             // ── R1 (cold cache) ────────────────────────────────────────
             let r1 = context
-                .read_item(&container, "hub-cache-item", "pk1")
+                .read_item_on(&driver, &container, "hub-cache-item", "pk1")
                 .await
                 .expect("R1 (cold) ReadItem should succeed via hub-region discovery");
             let r1_diag = r1.diagnostics();
@@ -228,7 +236,7 @@ pub async fn read_hub_region_caching_cold_then_warm() -> Result<(), Box<dyn Erro
             // the hub. This is the strongest single-test signal that the
             // hub-region header was attached on retries — without the
             // header the cache would converge on the satellite region.
-            let cache_after_r1 = context.hub_region_cache_snapshot().await?;
+            let cache_after_r1 = context.hub_region_cache_snapshot(&driver);
             assert_eq!(
                 cache_after_r1.len(),
                 1,
@@ -254,7 +262,7 @@ pub async fn read_hub_region_caching_cold_then_warm() -> Result<(), Box<dyn Erro
             rule_1002_r2.enable();
 
             let r2 = context
-                .read_item(&container, "hub-cache-item", "pk1")
+                .read_item_on(&driver, &container, "hub-cache-item", "pk1")
                 .await
                 .expect("R2 (warm) ReadItem should succeed via cache short-circuit");
             let r2_diag = r2.diagnostics();
@@ -304,7 +312,7 @@ pub async fn read_hub_region_caching_cold_then_warm() -> Result<(), Box<dyn Erro
             // Cache snapshot must be byte-for-byte unchanged — the warm
             // path's success only refreshed `current_endpoint` to the
             // same hub value (cache_hub_region is idempotent).
-            let cache_after_r2 = context.hub_region_cache_snapshot().await?;
+            let cache_after_r2 = context.hub_region_cache_snapshot(&driver);
             assert_eq!(
                 cache_after_r2, cache_after_r1,
                 "R2: hub-region cache snapshot should be unchanged from R1"

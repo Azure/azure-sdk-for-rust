@@ -30,7 +30,7 @@ conventions for an Azure SDK for Rust crate.
 
     To install the rustup tool, follow the [rust-lang install instructions](https://rust-lang.org/tools/install)
 
-1. **Node.js 20+** and **npm**
+1. **Node.js 22+** and **npm**
 
     To install node initially, follow the [node installation instructions](https://nodejs.org/en/download)
 

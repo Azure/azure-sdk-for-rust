@@ -68,6 +68,54 @@ Every option that participates at the **Runtime** layer is specifiable via an `A
 - `HashSet<Url>` — comma-separated
 - Nested groups — individual fields have their own env vars
 
+#### `_OVERRIDE` kill switches
+
+Selected options also recognize a second `{ENV}_OVERRIDE` variant that acts as a
+process-wide **kill switch**: when set, it takes precedence over **every** layer
+— including a hard-coded per-request (operation-layer) value. This is the
+highest-priority layer in the resolution chain:
+
+```text
+{ENV}_OVERRIDE  →  operation  →  account  →  runtime  →  {ENV}
+   (highest)                                              (lowest)
+```
+
+The override is intended as an operational safety valve for edge-case livesite
+incidents — flipping a feature off (or on) fleet-wide without a code change or
+redeploy — and should normally be left unset. Today the following options expose
+an override:
+
+| Base env var | Kill switch | Effect when set |
+| --- | --- | --- |
+| `AZURE_COSMOS_HEDGING_ENABLED` | `AZURE_COSMOS_HEDGING_ENABLED_OVERRIDE` | Forces cross-region read hedging on/off regardless of any programmatic `AvailabilityStrategy` or per-request value. |
+| `AZURE_COSMOS_PPCB_ENABLED` | `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` | Forces the per-partition circuit breaker (PPCB) on/off regardless of the `PartitionFailoverOptions` setting **and** the account property `enable_per_partition_failover_behavior`. |
+
+> **Note on the PPCB kill switch.** Unlike the hedging switch, PPCB enablement
+> is a **driver-level** (`PartitionFailoverOptions`) setting rather than a
+> per-operation option, so its `_OVERRIDE` does not participate in the
+> operation → account → runtime layering above. Instead it is authoritative over
+> the only two PPCB enablement sources that exist: the
+> `PartitionFailoverOptions::circuit_breaker_enabled` option and the server
+> account property.
+
+> **Read once at startup.** Both the base variable and its `_OVERRIDE` variant
+> are read a single time when the driver runtime is built, not per request.
+> Flipping either value mid-incident therefore requires a process restart to
+> take effect.
+>
+> **Deliberate inversion of the .NET/Java model.** .NET and Java treat
+> environment variables / system properties as *defaults that programmatic code
+> overrides*. These kill switches intentionally invert that: when set, the
+> environment value wins over code — including an explicit
+> `AvailabilityStrategy::Disabled`. This is by design so an operator can
+> override an application's hard-coded configuration during a livesite incident
+> without a redeploy.
+>
+> **Lenient boolean parsing.** These boolean switches accept `true`/`false`,
+> `1`/`0`, `yes`/`no`, and `on`/`off` (case-insensitive). An unrecognized value
+> is logged and ignored (treated as unset) rather than silently flipping the
+> switch the wrong way.
+
 ---
 
 ## 2. Standalone Types
@@ -157,8 +205,9 @@ pub struct OperationOptions { /* fields below */ }
 | `read_consistency_strategy` | `Option<ReadConsistencyStrategy>` | `AZURE_COSMOS_READ_CONSISTENCY_STRATEGY` | Read consistency for the operation. Replaces the legacy `consistency_level` field. The SDK enforces weakening-only semantics relative to the account default. |
 | `excluded_regions` | `Option<Vec<RegionName>>` | `AZURE_COSMOS_EXCLUDED_REGIONS` | Regions to exclude from routing. `None` inherits from a lower layer; `Some(vec![])` explicitly clears exclusions. Env var is comma-separated (e.g. `"West US,East US"`). |
 | `content_response_on_write` | `Option<bool>` | `AZURE_COSMOS_CONTENT_RESPONSE_ON_WRITE` | Whether write operations return the resource body in the response. Only applicable to write operations; ignored by reads and queries. Cascades from runtime → account → operation, matching .NET/Java/Go behavior. |
-| `throttling_retry_options.max_retry_count` | `Option<u32>` | `AZURE_COSMOS_MAX_THROTTLE_RETRY_COUNT` | Maximum number of retries when a request is throttled (HTTP 429, rate-limited) before the error surfaces to the caller. Field of the nested `ThrottlingRetryOptions` group. Analogous to .NET's `MaxRetryAttemptsOnRateLimitedRequests`. Defaults to `9` when unset; `0` disables throttle retries entirely. **Scope**: applies per transport-pipeline invocation, not per logical operation — an operation that fans out across regions (failover, hedging) gets a fresh budget per leg. Use `end_to_end_latency_policy` to bound total per-operation time. Settable client-wide via [`CosmosClientBuilder::with_throttling_retry_options`]. |
-| `throttling_retry_options.max_retry_wait_time` | `Option<Duration>` | — | Maximum cumulative time to spend waiting across throttle (HTTP 429) retries before the error surfaces. Field of the nested `ThrottlingRetryOptions` group. Analogous to .NET's `MaxRetryWaitTimeOnRateLimitedRequests`. Defaults to `30s` when unset. No env var because `Duration` is not parseable from a single string. **Scope**: same per-invocation scope as `max_retry_count` — not a per-operation cap. Settable client-wide via [`CosmosClientBuilder::with_throttling_retry_options`]. |
+| `hedging_enabled` | `Option<bool>` | `AZURE_COSMOS_HEDGING_ENABLED` | Master switch for cross-region read hedging. `None` (unset) means **no env override**: resolution defers to the programmatic `AvailabilityStrategy` (which may explicitly disable hedging). Only when neither the env switch nor a programmatic strategy is set does the driver default to hedging **on**, using the built-in default threshold of `min(1000ms, request_timeout / 2)`. When set, it is the **source of truth** and takes precedence over the programmatic `AvailabilityStrategy` in both directions: `false` disables hedging even when an explicit `AvailabilityStrategy::Hedging(..)` is configured, and `true` enables hedging even when an explicit `AvailabilityStrategy::Disabled` is configured (a programmatic `Hedging(..)` still supplies its custom threshold). Also recognizes the `AZURE_COSMOS_HEDGING_ENABLED_OVERRIDE` kill switch (see [`_OVERRIDE` kill switches](#_override-kill-switches)), which wins over every layer including a per-request value. |
+| `throttling_retry_options.max_retry_count` | `Option<u32>` | `AZURE_COSMOS_MAX_THROTTLE_RETRY_COUNT` | Maximum number of retries when a request is throttled (HTTP 429, rate-limited) before the error surfaces to the caller. Field of the nested `ThrottlingRetryOptions` group. Analogous to .NET's `MaxRetryAttemptsOnRateLimitedRequests`. Defaults to `9` when unset; `0` disables throttle retries entirely. **Scope**: applies per transport-pipeline invocation, not per logical operation — an operation that fans out across regions (failover, hedging) gets a fresh budget per leg. Use `end_to_end_latency_policy` to bound total per-operation time. Settable client-wide via [`CosmosClientBuilder::with_default_operation_options`]. |
+| `throttling_retry_options.max_retry_wait_time` | `Option<Duration>` | — | Maximum cumulative time to spend waiting across throttle (HTTP 429) retries before the error surfaces. Field of the nested `ThrottlingRetryOptions` group. Analogous to .NET's `MaxRetryWaitTimeOnRateLimitedRequests`. Defaults to `30s` when unset. No env var because `Duration` is not parseable from a single string. **Scope**: same per-invocation scope as `max_retry_count` — not a per-operation cap. Settable client-wide via [`CosmosClientBuilder::with_default_operation_options`]. |
 
 ### 3.2 `ConnectionOptions`
 

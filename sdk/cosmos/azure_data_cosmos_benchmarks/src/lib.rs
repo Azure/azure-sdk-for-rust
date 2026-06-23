@@ -18,7 +18,7 @@ use async_trait::async_trait;
 use azure_data_cosmos_driver::{
     driver::CosmosDriverRuntimeBuilder,
     models::{AccountReference, CosmosOperation, DatabaseReference, ItemReference, PartitionKey},
-    options::OperationOptions,
+    options::{DriverOptions, OperationOptions},
     testing::{
         ConnectionPoolOptions, HttpClientConfig, HttpClientFactory, HttpRequest, HttpResponse,
         TransportClient, TransportError,
@@ -261,7 +261,7 @@ pub async fn setup_live() -> (Arc<CosmosDriver>, ItemReference) {
         .expect("failed to build runtime");
 
     let driver = runtime
-        .get_or_create_driver(account.clone(), None)
+        .create_driver(DriverOptions::builder(account.clone()).build())
         .await
         .expect("failed to create driver");
 
@@ -365,7 +365,7 @@ pub async fn setup() -> (Arc<CosmosDriver>, ItemReference) {
     );
 
     let driver = runtime
-        .get_or_create_driver(account, None)
+        .create_driver(DriverOptions::builder(account).build())
         .await
         .expect("failed to create driver");
 

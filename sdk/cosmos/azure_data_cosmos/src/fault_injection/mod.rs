@@ -6,6 +6,15 @@
 //! Provides types that allow injecting simulated faults into the Cosmos DB client transport layer.
 //! This enables testing of application resilience, retry logic, and failover handling without
 //! needing to induce real faults in the service.
+//! This module is a pure re-export facade over the driver's fault-injection
+//! primitives — every type is re-exported directly from
+//! [`azure_data_cosmos_driver::fault_injection`]. Build
+//! [`FaultInjectionRule`]s with [`FaultInjectionRuleBuilder`] and pass the
+//! `Vec<Arc<FaultInjectionRule>>` to
+//! [`CosmosClientBuilder::with_fault_injection_rules`](crate::CosmosClientBuilder::with_fault_injection_rules),
+//! which threads them through to the per-driver options; the driver's own
+//! fault-injection transport client evaluates the rules on every in-flight
+//! request.
 //!
 //! The fault injection framework enables testing of:
 //!
@@ -28,7 +37,7 @@
 //! - [`FaultInjectionRule`] — Combines a condition with a result and
 //!   additional controls like duration, start delay, and hit limit. Build
 //!   with [`FaultInjectionRuleBuilder`]; pass a `Vec<Arc<FaultInjectionRule>>`
-//!   to [`CosmosClientBuilder::with_fault_injection`](crate::CosmosClientBuilder::with_fault_injection).
+//!   to [`CosmosClientBuilder::with_fault_injection_rules`](crate::CosmosClientBuilder::with_fault_injection_rules).
 //! - [`FaultInjectionCondition`] — Defines when a fault should be applied,
 //!   filtering by operation type, region, container ID, or transport kind.
 //! - [`FaultInjectionResult`] — Defines what error to inject, including
@@ -71,7 +80,8 @@
 //! // 4. Create the client with fault injection — pass the rules directly,
 //! //    no SDK-side wrapper builder.
 //! let client = CosmosClientBuilder::new()
-//!     .with_fault_injection(vec![rule])
+//!     .with_fault_injection_rules(vec![rule])
+//!     .unwrap()
 //!     .build(
 //!         AccountReference::with_authentication_key(
 //!             "https://myaccount.documents.azure.com/".parse().unwrap(),
