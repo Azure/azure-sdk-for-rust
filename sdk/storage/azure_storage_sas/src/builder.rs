@@ -247,9 +247,9 @@ impl Fields {
 ///
 /// The type parameter `S` tracks the builder state, gating which methods
 /// are available at compile time. Call a resource method (e.g.,
-/// [`.blob()`](SasBuilder::blob)) to transition from
-/// [`Untyped`](state::Untyped) to a typed state, then call
-/// [`.build()`](SasBuilder::build) to produce the signed query string.
+/// [`.blob()`](SasBuilder::blob)) to transition from the initial untyped
+/// state to a typed state, then call [`.build()`](SasBuilder::build) to
+/// produce the signed query string.
 pub struct SasBuilder<'a, S> {
     key: ValidatedKey<'a>,
     fields: Fields,
