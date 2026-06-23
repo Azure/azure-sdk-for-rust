@@ -156,6 +156,19 @@ impl ServerCertificateValidation {
     }
 }
 
+/// Selects the TLS backend used by the officially-supported `reqwest` transport.
+///
+/// The driver does not expose direct access to the underlying HTTP transport, so
+/// this option is the supported mechanism for asserting a specific TLS backend.
+/// The default is [`TlsBackend::Rustls`].
+#[non_exhaustive]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum TlsBackend {
+    /// Use the `rustls` TLS backend.
+    #[default]
+    Rustls,
+}
+
 #[cfg(test)]
 mod tests {
     use std::time::Duration;
