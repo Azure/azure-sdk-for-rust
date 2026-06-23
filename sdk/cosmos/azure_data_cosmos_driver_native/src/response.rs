@@ -136,6 +136,30 @@ impl ResponseHandle {
         Some(unsafe { &*p })
     }
 
+    /// Returns the borrowed `(ptr, len)` view of the body, normalizing an
+    /// empty / degenerate / feed-envelope body to `(NULL, 0)`. The pointer is
+    /// valid until the response is freed. Shared by `cosmos_response_body` and
+    /// `cosmos_response_view`.
+    fn body_view(&self) -> (*const u8, usize) {
+        let Some(inner_response) = self.inner.as_ref() else {
+            return (std::ptr::null(), 0);
+        };
+        match inner_response.body() {
+            // Normalize an empty `Bytes` body to a NULL pointer so it matches
+            // the documented "NULL pointer + 0 length when empty" contract (a
+            // non-empty `Vec`'s `as_ptr()` is a dangling sentinel a host might
+            // mistake for a present body when checking `ptr != NULL`).
+            ResponseBody::Bytes(b) if b.is_empty() => (std::ptr::null(), 0),
+            ResponseBody::Bytes(b) => (b.as_ptr(), b.len()),
+            ResponseBody::Items(items) => items
+                .first()
+                .filter(|b| !b.is_empty())
+                .map(|b| (b.as_ptr(), b.len()))
+                .unwrap_or((std::ptr::null(), 0)),
+            ResponseBody::NoPayload => (std::ptr::null(), 0),
+        }
+    }
+
     fn drop_raw(p: *mut ResponseHandle) {
         if p.is_null() {
             return;
@@ -334,29 +358,85 @@ pub extern "C" fn cosmos_response_body(
     let Some(handle) = ResponseHandle::from_ptr(response) else {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
     };
-    let Some(inner_response) = handle.inner.as_ref() else {
-        // Degenerate response — empty body, success code so callers
-        // can distinguish from "NULL handle".
-        return CosmosErrorCode::CosmosErrorCodeSuccess.as_i32();
-    };
-    let (ptr, len) = match inner_response.body() {
-        // Normalize an empty `Bytes` body to a NULL pointer so it matches the
-        // documented "NULL pointer + 0 length when the body is empty" contract
-        // (a non-empty `Vec`'s `as_ptr()` is a dangling sentinel a host might
-        // mistake for a present body when checking `ptr != NULL`).
-        ResponseBody::Bytes(b) if b.is_empty() => (std::ptr::null(), 0),
-        ResponseBody::Bytes(b) => (b.as_ptr(), b.len()),
-        ResponseBody::Items(items) => items
-            .first()
-            .filter(|b| !b.is_empty())
-            .map(|b| (b.as_ptr(), b.len()))
-            .unwrap_or((std::ptr::null(), 0)),
-        ResponseBody::NoPayload => (std::ptr::null(), 0),
-    };
+    let (ptr, len) = handle.body_view();
     // SAFETY: same writable contract as above.
     unsafe {
         *out_data = ptr;
         *out_len = len;
+    }
+    CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
+}
+
+/// A flat snapshot of a response's scalar + borrowed-string fields, read in
+/// one FFI call.
+///
+/// Lets a host pull the common response fields (status, RU charge, the four
+/// typed header strings, both continuation tokens, and the body view) in a
+/// single `cosmos_response_view` call instead of up to eight separate accessor
+/// round-trips. All string pointers and `body_data` are **borrowed** — valid
+/// until the response is freed — exactly like the individual accessors. The
+/// detachable side payloads (`_take_driver` / `_take_container`) are not
+/// included; they carry ownership and stay on their own accessors.
+#[repr(C)]
+pub struct CosmosResponseView {
+    /// HTTP status code (`0` for a degenerate response).
+    pub status_code: u16,
+    /// Request charge in RU (`0.0` when absent).
+    pub request_charge: f64,
+    /// Borrowed activity id, or NULL when absent.
+    pub activity_id: *const c_char,
+    /// Borrowed session token, or NULL when absent.
+    pub session_token: *const c_char,
+    /// Borrowed ETag, or NULL when absent.
+    pub etag: *const c_char,
+    /// Borrowed server header continuation token, or NULL when absent.
+    pub continuation_token: *const c_char,
+    /// Borrowed planner-derived next-page continuation token, or NULL when
+    /// this was the last page / not a feed response.
+    pub next_continuation: *const c_char,
+    /// Borrowed pointer to the body bytes, or NULL when the body is empty.
+    pub body_data: *const u8,
+    /// Number of bytes addressable from `body_data`.
+    pub body_len: usize,
+}
+
+/// Fills `out_view` with a snapshot of the response's scalar and
+/// borrowed-string fields and returns `SUCCESS`. Returns `INVALID_ARGUMENT`
+/// (leaving `*out_view` untouched) when `response` or `out_view` is NULL.
+///
+/// This is the single-call alternative to `cosmos_response_status_code` +
+/// `_request_charge` + `_activity_id` + `_session_token` + `_etag` +
+/// `_continuation_token` + `_next_continuation` + `_body`. Every borrowed
+/// pointer it returns is valid until [`cosmos_response_free`].
+#[no_mangle]
+pub extern "C" fn cosmos_response_view(
+    response: *const ResponseHandle,
+    out_view: *mut CosmosResponseView,
+) -> i32 {
+    if out_view.is_null() {
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+    }
+    let Some(handle) = ResponseHandle::from_ptr(response) else {
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+    };
+    let (body_data, body_len) = handle.body_view();
+    // Reuse the individual accessors: each lazily populates its cached
+    // `CString` and returns a pointer stable until the response is freed.
+    let view = CosmosResponseView {
+        status_code: cosmos_response_status_code(response),
+        request_charge: cosmos_response_request_charge(response),
+        activity_id: cosmos_response_activity_id(response),
+        session_token: cosmos_response_session_token(response),
+        etag: cosmos_response_etag(response),
+        continuation_token: cosmos_response_continuation_token(response),
+        next_continuation: cosmos_response_next_continuation(response),
+        body_data,
+        body_len,
+    };
+    // SAFETY: `out_view` is non-NULL and the caller guarantees it is writable
+    // for one `CosmosResponseView`.
+    unsafe {
+        *out_view = view;
     }
     CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
 }
@@ -435,5 +515,68 @@ mod tests {
         // We can't construct a `CosmosResponse` directly here without
         // touching `pub(crate)` API, but the take-on-NULL paths above
         // already exercise both code paths.
+    }
+
+    #[test]
+    fn response_view_rejects_null() {
+        let mut view = blank_view();
+        assert_eq!(
+            cosmos_response_view(ptr::null(), &mut view),
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
+        );
+        assert_eq!(
+            cosmos_response_view(ptr::null(), ptr::null_mut()),
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
+        );
+    }
+
+    #[test]
+    fn response_view_matches_accessors_on_degenerate_with_next_token() {
+        // A degenerate (no-body) response carrying a planner next-page token.
+        // The view must agree with every individual accessor.
+        let handle = ResponseHandle::into_raw_with_next_continuation(
+            None,
+            Some("next-page-token".to_owned()),
+        );
+
+        let mut view = blank_view();
+        assert_eq!(
+            cosmos_response_view(handle, &mut view),
+            CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
+        );
+
+        assert_eq!(view.status_code, cosmos_response_status_code(handle));
+        assert_eq!(view.request_charge, cosmos_response_request_charge(handle));
+        assert_eq!(view.activity_id, cosmos_response_activity_id(handle));
+        assert_eq!(view.session_token, cosmos_response_session_token(handle));
+        assert_eq!(view.etag, cosmos_response_etag(handle));
+        assert_eq!(
+            view.continuation_token,
+            cosmos_response_continuation_token(handle)
+        );
+        assert_eq!(
+            view.next_continuation,
+            cosmos_response_next_continuation(handle)
+        );
+        // Degenerate response: no body, but a populated next-page token.
+        assert!(view.body_data.is_null());
+        assert_eq!(view.body_len, 0);
+        assert!(!view.next_continuation.is_null());
+
+        cosmos_response_free(handle);
+    }
+
+    fn blank_view() -> CosmosResponseView {
+        CosmosResponseView {
+            status_code: 0,
+            request_charge: 0.0,
+            activity_id: ptr::null(),
+            session_token: ptr::null(),
+            etag: ptr::null(),
+            continuation_token: ptr::null(),
+            next_continuation: ptr::null(),
+            body_data: ptr::null(),
+            body_len: 0,
+        }
     }
 }

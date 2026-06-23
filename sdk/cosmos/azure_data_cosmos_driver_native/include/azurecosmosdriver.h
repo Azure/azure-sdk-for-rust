@@ -776,6 +776,35 @@ typedef struct cosmos_cq_options_t {
 } cosmos_cq_options_t;
 
 /**
+ * A flat snapshot of a completion's scalar fields, read in one FFI call.
+ *
+ * Lets a host pull the common scalars (outcome, status, user-data, cancel
+ * flag) in a single `cosmos_completion_view` call instead of four separate
+ * accessor round-trips. The detachable payloads (response, error) and the
+ * borrowed operation handle are intentionally **not** included — those carry
+ * ownership semantics and stay on their dedicated
+ * `cosmos_completion_take_response` / `_take_error` / `_op_handle` accessors.
+ */
+typedef struct cosmos_completion_view_t {
+  /**
+   * The completion outcome (`Ok` / `Error` / `Cancelled` / `Unknown`).
+   */
+  cosmos_completion_outcome_t outcome;
+  /**
+   * Coarse status code (always populated).
+   */
+  cosmos_error_code_t status;
+  /**
+   * The host's opaque `intptr_t` cookie, round-tripped verbatim.
+   */
+  intptr_t user_data;
+  /**
+   * `true` iff cancellation was observed before the completion posted.
+   */
+  bool was_cancel_requested;
+} cosmos_completion_view_t;
+
+/**
  * A single custom request/operation header. Both pointers are
  * NUL-terminated UTF-8 and borrowed for the duration of the submit call;
  * the wrapper copies them before returning.
@@ -859,6 +888,58 @@ typedef struct cosmos_operation_options_t {
    */
   uintptr_t custom_headers_len;
 } cosmos_operation_options_t;
+
+/**
+ * A flat snapshot of a response's scalar + borrowed-string fields, read in
+ * one FFI call.
+ *
+ * Lets a host pull the common response fields (status, RU charge, the four
+ * typed header strings, both continuation tokens, and the body view) in a
+ * single `cosmos_response_view` call instead of up to eight separate accessor
+ * round-trips. All string pointers and `body_data` are **borrowed** — valid
+ * until the response is freed — exactly like the individual accessors. The
+ * detachable side payloads (`_take_driver` / `_take_container`) are not
+ * included; they carry ownership and stay on their own accessors.
+ */
+typedef struct cosmos_response_view_t {
+  /**
+   * HTTP status code (`0` for a degenerate response).
+   */
+  uint16_t status_code;
+  /**
+   * Request charge in RU (`0.0` when absent).
+   */
+  double request_charge;
+  /**
+   * Borrowed activity id, or NULL when absent.
+   */
+  const char *activity_id;
+  /**
+   * Borrowed session token, or NULL when absent.
+   */
+  const char *session_token;
+  /**
+   * Borrowed ETag, or NULL when absent.
+   */
+  const char *etag;
+  /**
+   * Borrowed server header continuation token, or NULL when absent.
+   */
+  const char *continuation_token;
+  /**
+   * Borrowed planner-derived next-page continuation token, or NULL when
+   * this was the last page / not a feed response.
+   */
+  const char *next_continuation;
+  /**
+   * Borrowed pointer to the body bytes, or NULL when the body is empty.
+   */
+  const uint8_t *body_data;
+  /**
+   * Number of bytes addressable from `body_data`.
+   */
+  uintptr_t body_len;
+} cosmos_response_view_t;
 
 /**
  * One component of a hierarchical partition key, assembled inline by the host
@@ -1188,6 +1269,17 @@ cosmos_error_code_t cosmos_completion_status(const struct cosmos_completion_t *c
  * handle before the completion was posted.
  */
 bool cosmos_completion_was_cancel_requested(const struct cosmos_completion_t *c);
+
+/**
+ * Fills `out_view` with a snapshot of the completion's scalar fields and
+ * returns `SUCCESS`. Returns `INVALID_ARGUMENT` (leaving `*out_view`
+ * untouched) when `c` or `out_view` is NULL.
+ *
+ * This is the single-call alternative to `cosmos_completion_outcome` +
+ * `_status` + `_user_data` + `_was_cancel_requested`.
+ */
+cosmos_error_code_t cosmos_completion_view(const struct cosmos_completion_t *c,
+                                           struct cosmos_completion_view_t *out_view);
 
 /**
  * Takes ownership of the response delivered by an `Ok` completion.
@@ -1774,6 +1866,19 @@ const char *cosmos_response_next_continuation(const struct cosmos_response_t *re
 int32_t cosmos_response_body(const struct cosmos_response_t *response,
                              const uint8_t **out_data,
                              uintptr_t *out_len);
+
+/**
+ * Fills `out_view` with a snapshot of the response's scalar and
+ * borrowed-string fields and returns `SUCCESS`. Returns `INVALID_ARGUMENT`
+ * (leaving `*out_view` untouched) when `response` or `out_view` is NULL.
+ *
+ * This is the single-call alternative to `cosmos_response_status_code` +
+ * `_request_charge` + `_activity_id` + `_session_token` + `_etag` +
+ * `_continuation_token` + `_next_continuation` + `_body`. Every borrowed
+ * pointer it returns is valid until [`cosmos_response_free`].
+ */
+int32_t cosmos_response_view(const struct cosmos_response_t *response,
+                             struct cosmos_response_view_t *out_view);
 
 /**
  * Takes ownership of the driver handle stashed inside a degenerate

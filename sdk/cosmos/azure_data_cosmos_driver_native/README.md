@@ -123,6 +123,26 @@ below for the production-shape guidance.
 > factory flow — translate them field-for-field from the C# example and the
 > header until they are updated.
 
+> **Minimizing FFI round-trips.** Two parts of the surface let a host avoid
+> chatty per-field calls:
+>
+> - **Inline partition keys.** Instead of the
+>   `cosmos_partition_key_builder_new` / `_add_*` / `_build` / `_free` dance,
+>   fill an array of `cosmos_partition_key_component_t` (a tagged union: a
+>   `kind` plus `string_value` / `number_value` / `bool_value`) and point
+>   `cosmos_CosmosOperationRequest.partition_key_components` /
+>   `partition_key_len` at it. When set, this takes precedence over the
+>   `partition_key` handle and is assembled in one shot. The pre-built handle
+>   path still works for reusable keys.
+> - **Snapshot views.** `cosmos_response_view(resp, &view)` fills a flat
+>   `cosmos_response_view_t` (status, RU, the four header strings, both
+>   continuation tokens, and the body pointer/len) in one call, replacing up
+>   to eight accessors. `cosmos_completion_view(c, &view)` does the same for a
+>   completion's scalars (outcome, status, user-data, cancel flag). Every
+>   borrowed pointer in a view stays valid until the owning handle is freed.
+>   The ownership-transfer accessors (`cosmos_completion_take_response` /
+>   `_take_error`) are intentionally not part of the views.
+
 ### .NET (C# 12 / .NET 8+)
 
 Copy `azurecosmosdriver.{dll,so,dylib}` next to the executable, then

@@ -58,6 +58,32 @@ static int test_response_accessors_handle_null(void)
     return result;
 }
 
+static int test_response_view_rejects_null(void)
+{
+    int result = TEST_PASS;
+    cosmos_response_view_t view;
+    int32_t rc = cosmos_response_view(NULL, &view);
+    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
+           "response_view(NULL, &view) rejected (rc=%d)", rc);
+    rc = cosmos_response_view(NULL, NULL);
+    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
+           "response_view(NULL, NULL) rejected (rc=%d)", rc);
+    return result;
+}
+
+static int test_completion_view_rejects_null(void)
+{
+    int result = TEST_PASS;
+    cosmos_completion_view_t view;
+    cosmos_error_code_t rc = cosmos_completion_view(NULL, &view);
+    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
+           "completion_view(NULL, &view) rejected (rc=%d)", rc);
+    rc = cosmos_completion_view(NULL, NULL);
+    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
+           "completion_view(NULL, NULL) rejected (rc=%d)", rc);
+    return result;
+}
+
 // ─────────────────────────────────────────────────────────────────────
 // Section 3 — feed range builders
 // ─────────────────────────────────────────────────────────────────────
@@ -202,6 +228,8 @@ static int test_singleton_submit_with_request_rejects_null_driver(void)
 TEST_SUITE_BEGIN("Submit + Response + Container + Feed Range")
 TEST_REGISTER(lifecycle_null_safe)
 TEST_REGISTER(response_accessors_handle_null)
+TEST_REGISTER(response_view_rejects_null)
+TEST_REGISTER(completion_view_rejects_null)
 TEST_REGISTER(feed_range_full_roundtrip)
 TEST_REGISTER(feed_range_full_rejects_null_out)
 TEST_REGISTER(feed_range_for_pk_rejects_nulls)

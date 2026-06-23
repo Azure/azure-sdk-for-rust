@@ -838,6 +838,58 @@ pub extern "C" fn cosmos_completion_was_cancel_requested(c: *const Completion) -
     Completion::from_ptr(c).is_some_and(|co| co.was_cancel_requested)
 }
 
+/// A flat snapshot of a completion's scalar fields, read in one FFI call.
+///
+/// Lets a host pull the common scalars (outcome, status, user-data, cancel
+/// flag) in a single `cosmos_completion_view` call instead of four separate
+/// accessor round-trips. The detachable payloads (response, error) and the
+/// borrowed operation handle are intentionally **not** included — those carry
+/// ownership semantics and stay on their dedicated
+/// `cosmos_completion_take_response` / `_take_error` / `_op_handle` accessors.
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct CosmosCompletionView {
+    /// The completion outcome (`Ok` / `Error` / `Cancelled` / `Unknown`).
+    pub outcome: CosmosCompletionOutcome,
+    /// Coarse status code (always populated).
+    pub status: CosmosErrorCode,
+    /// The host's opaque `intptr_t` cookie, round-tripped verbatim.
+    pub user_data: isize,
+    /// `true` iff cancellation was observed before the completion posted.
+    pub was_cancel_requested: bool,
+}
+
+/// Fills `out_view` with a snapshot of the completion's scalar fields and
+/// returns `SUCCESS`. Returns `INVALID_ARGUMENT` (leaving `*out_view`
+/// untouched) when `c` or `out_view` is NULL.
+///
+/// This is the single-call alternative to `cosmos_completion_outcome` +
+/// `_status` + `_user_data` + `_was_cancel_requested`.
+#[no_mangle]
+pub extern "C" fn cosmos_completion_view(
+    c: *const Completion,
+    out_view: *mut CosmosCompletionView,
+) -> CosmosErrorCode {
+    if out_view.is_null() {
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument;
+    }
+    let Some(co) = Completion::from_ptr(c) else {
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument;
+    };
+    let view = CosmosCompletionView {
+        outcome: co.outcome,
+        status: co.status,
+        user_data: co.user_data,
+        was_cancel_requested: co.was_cancel_requested,
+    };
+    // SAFETY: `out_view` is non-NULL and the caller guarantees it is writable
+    // for one `CosmosCompletionView`.
+    unsafe {
+        *out_view = view;
+    }
+    CosmosErrorCode::CosmosErrorCodeSuccess
+}
+
 /// Takes ownership of the response delivered by an `Ok` completion.
 /// Returns NULL on `Error` / `Cancelled` completions, on NULL input,
 /// and on every subsequent call after the first successful take.
@@ -1162,6 +1214,67 @@ mod tests {
         cosmos_completion_free(c);
         cosmos_operation_handle_free(op);
         cosmos_cq_free(q);
+    }
+
+    #[test]
+    fn completion_view_matches_individual_accessors() {
+        let q = fresh_queue(0, true);
+        let op = __test_only_create_operation_handle();
+        let token = 0x1234_5678u64;
+        let code = __test_only_enqueue_completion(
+            q,
+            op,
+            CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
+            CosmosErrorCode::CosmosErrorCodeSuccess,
+            token as *mut c_void,
+            None,
+        );
+        assert_eq!(code, CosmosErrorCode::CosmosErrorCodeSuccess);
+
+        let c = cosmos_cq_wait(q, 100);
+        assert!(!c.is_null());
+
+        let mut view = CosmosCompletionView {
+            outcome: CosmosCompletionOutcome::CosmosCompletionOutcomeUnknown,
+            status: CosmosErrorCode::CosmosErrorCodeInvalidArgument,
+            user_data: 0,
+            was_cancel_requested: true,
+        };
+        assert_eq!(
+            cosmos_completion_view(c, &mut view),
+            CosmosErrorCode::CosmosErrorCodeSuccess
+        );
+        // Every field matches its individual accessor.
+        assert_eq!(view.outcome, cosmos_completion_outcome(c));
+        assert_eq!(view.status, cosmos_completion_status(c));
+        assert_eq!(view.user_data, cosmos_completion_user_data(c));
+        assert_eq!(
+            view.was_cancel_requested,
+            cosmos_completion_was_cancel_requested(c)
+        );
+        assert_eq!(view.user_data, token as isize);
+
+        cosmos_completion_free(c);
+        cosmos_operation_handle_free(op);
+        cosmos_cq_free(q);
+    }
+
+    #[test]
+    fn completion_view_rejects_null() {
+        let mut view = CosmosCompletionView {
+            outcome: CosmosCompletionOutcome::CosmosCompletionOutcomeUnknown,
+            status: CosmosErrorCode::CosmosErrorCodeSuccess,
+            user_data: 0,
+            was_cancel_requested: false,
+        };
+        assert_eq!(
+            cosmos_completion_view(std::ptr::null(), &mut view),
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument
+        );
+        assert_eq!(
+            cosmos_completion_view(std::ptr::null(), std::ptr::null_mut()),
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument
+        );
     }
 
     #[test]
