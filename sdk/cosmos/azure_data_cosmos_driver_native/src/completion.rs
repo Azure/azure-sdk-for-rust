@@ -154,7 +154,7 @@ impl OperationInner {
 ///
 /// A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
 /// opaque type (`cosmos_operation_handle_t`) because C cannot see its fields.
-/// Each handle is its own `Box`, but the [`OperationInner`] state behind it is
+/// Each handle is its own `Box`, but the `OperationInner` state behind it is
 /// `Arc`-shared with the published `Completion` (and with any sibling handle
 /// minted by `clone_arc`).
 pub struct OperationHandle {
@@ -418,7 +418,7 @@ impl CompletionQueueInner {
 ///
 /// A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
 /// opaque type (`cosmos_cq_t`) because C cannot see its fields. The
-/// [`CompletionQueueInner`] state behind it is `Arc`-shared so the submit
+/// `CompletionQueueInner` state behind it is `Arc`-shared so the submit
 /// pipeline's spawned tasks survive a concurrent `cosmos_cq_free` from the
 /// producer side.
 pub struct CompletionQueue {

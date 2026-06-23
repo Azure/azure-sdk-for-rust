@@ -593,7 +593,7 @@ pub struct CosmosOperationRequest {
     /// no `cosmos_partition_key_builder_*` round-trips are needed. When
     /// `partition_key_components` is non-NULL and `partition_key_len > 0` this
     /// takes precedence over the `partition_key` handle. Each element is a
-    /// [`CosmosPartitionKeyComponent`](crate::partition_key::CosmosPartitionKeyComponent).
+    /// [`CosmosPartitionKeyComponent`].
     pub partition_key_components: *const CosmosPartitionKeyComponent,
     /// Number of elements in `partition_key_components`. `0` = use the
     /// `partition_key` handle instead.
