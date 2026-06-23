@@ -1,4 +1,4 @@
-# ADR 0008 — One build, sign binaries once, fan-out; jobs never rebuild
+# ADR 0009 — One build, sign binaries once, fan-out; jobs never rebuild
 
 **Status:** Accepted (proposed for review)
 

@@ -1,4 +1,4 @@
-# ADR 0004 — Native lib exports an ABI version; hosts check it before use
+# ADR 0005 — Native lib exports an ABI version; hosts check it before use
 
 **Status:** Accepted (proposed for review)
 

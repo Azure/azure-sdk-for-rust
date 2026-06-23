@@ -1,4 +1,4 @@
-# ADR 0003 — Go consumes via cgo against a prebuilt header + lib from the Go feed
+# ADR 0004 — Go consumes via cgo against a prebuilt header + lib from the Go feed
 
 **Status:** Accepted (proposed for review)
 
@@ -13,9 +13,9 @@ Go has no NuGet. Go links C libraries through cgo, which needs a C header and a 
 ## Consequences
 - Go reuses the exact same signed binaries as .NET — no Go-specific build of the driver.
 - cgo + static lib means `CGO_ENABLED=1` and a C toolchain on the Go build host; cross-compilation needs a cross C toolchain.
-- Everything resolves at `go build` — no runtime resolver / `runtime.json` / RID probing. The same `ABI_VERSION` feeds Go's handshake (ADR 0004).
+- Everything resolves at `go build` — no runtime resolver / `runtime.json` / RID probing. The same `ABI_VERSION` feeds Go's handshake (ADR 0005).
 
 ## Alternatives considered
 - Wrap the lib in NuGet for Go — rejected: Go can't consume NuGet.
-- A neutral consumer bundle Go downloads — rejected (ADR 0001/0009): pulls irrelevant formats.
+- A neutral consumer bundle Go downloads — rejected (ADR 0001/0002): pulls irrelevant formats.
 - Pure-Go reimplementation of the driver — rejected: defeats the shared-core goal.

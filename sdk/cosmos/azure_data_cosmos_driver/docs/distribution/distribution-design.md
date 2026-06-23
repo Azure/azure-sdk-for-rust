@@ -16,7 +16,7 @@ Non-goal: the C-ABI surface itself — that is owned by `NATIVE_WRAPPER_SPEC.md`
 
 ## 2. Core principle: separate provenance from distribution
 
-An earlier draft fused two roles into one consumer-facing "bundle". They are different concerns and must be decoupled:
+Provenance and distribution are two different concerns, and the design keeps them decoupled:
 
 - **Provenance (build-once):** there must be exactly **one** build + binary-signing of the machine code per release, or .NET, Go, and Java silently drift onto different driver builds. This lives **internal to CI** and is never consumer-facing.
 - **Distribution:** how a consumer physically pulls the bytes. This should be **each language's existing, idiomatic feed** — not a new neutral feed, and not a cross-language bundle.
@@ -42,14 +42,14 @@ Recorded as ADRs; this is the index with one-line rationale. See [`adr/`](adr/00
 | ADR | Decision | One-line why |
 |---|---|---|
 | [0001](adr/0001-build-once-internal-handoff.md) | One build produces all platform binaries + header + ABI version as an **internal-only hand-off artifact**; no neutral consumer bundle/feed. | Single provenance without forcing a cross-language download. |
-| [0002](adr/0002-dotnet-nuget-nativeassets.md) | .NET consumes via **per-RID NuGet NativeAssets + meta-package** on nuget.org + the internal NuGet feed. | Matches SkiaSharp / SqlClient.SNI; download only your RID. |
-| [0003](adr/0003-go-cgo-prebuilt.md) | Go consumes via **cgo against a prebuilt header + lib** delivered through the azure-sdk-for-go feed (Universal Package / vendored module). | Go has no NuGet; cgo links a C header + lib at build time. |
-| [0004](adr/0004-abi-version-handshake.md) | The native lib exports **`cosmos_abi_version()`**; every host checks it before first use. | Independent cadences drift; fail fast, not corrupt. |
-| [0005](adr/0005-binding-owns-marshalling.md) | Each binding **owns its marshalling and buffer copy-out**; the ABI stays bytes-in/bytes-out. | Keeps the ABI schema-agnostic. |
-| [0006](adr/0006-native-is-opt-in.md) | Native transport is **opt-in** until GA on all platforms, then may default with fallback. | Preserve the "runs anywhere" guarantee. |
-| [0007](adr/0007-platform-matrix.md) | A defined **platform matrix**; unsupported platforms fail with an actionable error. | Bounded support surface. |
-| [0008](adr/0008-build-and-signing-pipeline.md) | **One build, sign the binaries once, fan-out** to per-language publish jobs that must consume the hand-off and never rebuild. | Provenance + trust enforced by pipeline discipline. |
-| [0009](adr/0009-per-language-feed-distribution.md) | Distribution is **per-language native packages into each language's existing internal + external feed**; no neutral consumer feed. | Idiomatic; reuses mature per-language infra; download-only-your-format. |
+| [0002](adr/0002-per-language-feed-distribution.md) | Distribution is **per-language native packages into each language's existing internal + external feed**; no neutral consumer feed. | Idiomatic; reuses mature per-language infra; download-only-your-format. |
+| [0003](adr/0003-dotnet-nuget-nativeassets.md) | .NET consumes via **per-RID NuGet NativeAssets + meta-package** on nuget.org + the internal NuGet feed. | Matches SkiaSharp / SqlClient.SNI; download only your RID. |
+| [0004](adr/0004-go-cgo-prebuilt.md) | Go consumes via **cgo against a prebuilt header + lib** delivered through the azure-sdk-for-go feed (Universal Package / vendored module). | Go has no NuGet; cgo links a C header + lib at build time. |
+| [0005](adr/0005-abi-version-handshake.md) | The native lib exports **`cosmos_abi_version()`**; every host checks it before first use. | Independent cadences drift; fail fast, not corrupt. |
+| [0006](adr/0006-binding-owns-marshalling.md) | Each binding **owns its marshalling and buffer copy-out**; the ABI stays bytes-in/bytes-out. | Keeps the ABI schema-agnostic. |
+| [0007](adr/0007-native-is-opt-in.md) | Native transport is **opt-in** until GA on all platforms, then may default with fallback. | Preserve the "runs anywhere" guarantee. |
+| [0008](adr/0008-platform-matrix.md) | A defined **platform matrix**; unsupported platforms fail with an actionable error. | Bounded support surface. |
+| [0009](adr/0009-build-and-signing-pipeline.md) | **One build, sign the binaries once, fan-out** to per-language publish jobs that must consume the hand-off and never rebuild. | Provenance + trust enforced by pipeline discipline. |
 
 ## 5. The model
 
@@ -65,30 +65,30 @@ Recorded as ADRs; this is the index with one-line rationale. See [`adr/`](adr/00
                           │
         ┌─────────────────┼──────────────────┐
  .NET   │           Go    │            Java   │   ← each job pulls the SAME signed binaries
- job    ▼           job   ▼            job    ▼      (never rebuilds — ADR 0008)
+ job    ▼           job   ▼            job    ▼      (never rebuilds — ADR 0009)
  NuGet NativeAssets   Go module /        JAR w/ natives
  → nuget.org +        Universal Package  → azure-sdk-for-java
    internal NuGet     → azure-sdk-for-go   Maven feed + Central
         │             feed                 │
    .NET consumers     │              Java consumers
    (only .nupkg)  Go consumers       (only .jar)
-                  (only Go artifact)                  ← ADR 0009
+                  (only Go artifact)                  ← ADR 0002
 ```
 
-Consumer distribution is **per-language feeds**; the "bundle" is demoted from the distributed product to an **internal CI hand-off** no consumer touches. This removes any need for a new neutral consumer feed and ensures a consumer downloads only its own package format.
+Consumer distribution is **per-language feeds**; the build-once "bundle" is an **internal CI hand-off**, not the distributed product, so no consumer touches it. This removes any need for a new neutral consumer feed and ensures a consumer downloads only its own package format.
 
 ## 6. Per-consumer link model
 
-### 6.1 .NET — NuGet (ADR 0002)
+### 6.1 .NET — NuGet (ADR 0003)
 Per-RID **NativeAssets** packages (`Microsoft.Azure.Cosmos.NativeAssets.<rid>`) each carry one platform's dynamic lib under `runtimes/<rid>/native/`, fronted by a thin **meta-package** whose `runtime.json` resolves the consumer's RID (Runtime IDentifier — the `<os>-<arch>` platform string) to the right per-RID package. The managed package takes an **opt-in** dependency on the meta-package. Published to nuget.org **and** the internal azure-sdk NuGet feed. At runtime a custom resolver (`NativeLibrary.SetDllImportResolver`) loads the lib, runs the ABI handshake, and errors clearly on unsupported RIDs; P/Invoke uses source-generated `LibraryImport`.
 
-### 6.2 Go — cgo prebuilt (ADR 0003)
+### 6.2 Go — cgo prebuilt (ADR 0004)
 Go cannot consume NuGet. cgo links a **C header + library** at `go build` time: a `#cgo CFLAGS: -I<include>` makes `#include "azurecosmosdriver.h"` resolve to the prebuilt header (cgo auto-generates the callable `C.*` symbols — no hand-written signatures), and `#cgo <os> LDFLAGS: -L<lib/rid> -lazurecosmosdriver` links the lib (static `.a` by default for a self-contained binary). The header + lib are delivered through the **azure-sdk-for-go feed** as an Azure Artifacts Universal Package fetched at build, or a vendored "binaries" Go module with per-OS build tags (open Q3). The Go layer already owns the completion-queue receive loop, `cgo.Handle` correlation, and copy-out of response buffers. **No runtime resolver / runtime.json / RID probing** — everything resolves at `go build`.
 
 ### 6.3 Java — JAR (future, not finalized)
 Likely a JAR bundling per-OS dynamic libs extracted and loaded via `System.load`, with JNI or Panama (Project Panama / FFM) as the FFI, published to the azure-sdk-for-java Maven feed + Maven Central. **Deliberately unspecified** — flagged so the build-once hand-off (ADR 0001) stays general enough to repackage into a JAR later without redesign.
 
-## 7. Platform matrix (ADR 0007)
+## 7. Platform matrix (ADR 0008)
 
 | Target / RID | Notes |
 |---|---|
@@ -100,15 +100,15 @@ Likely a JAR bundling per-OS dynamic libs extracted and loaded via `System.load`
 
 Out: `wasm` (no FFI story). Open: `win-x86`, `linux-musl-arm64`, mobile.
 
-## 8. Build, signing, and CI (ADR 0008)
+## 8. Build, signing, and CI (ADR 0009)
 
 One pipeline next to the Rust build produces the per-platform binaries, **signs each binary once** (Authenticode / codesign + notarize), checksums them, and publishes the **internal hand-off artifact**. Per-language publish jobs consume that artifact and emit NuGet / Go-consumable / JAR packages, signing only their **package wrapper** in that language's existing ESRP flow — they **never rebuild or re-sign the native binary**. Build-once is enforced by discipline: all language jobs consume one hand-off from one Rust build. Supply chain: SBOM / component governance for the Rust crate graph is new surface for the consuming orgs — owner TBD (Q7).
 
-## 9. ABI and versioning (ADR 0004)
+## 9. ABI and versioning (ADR 0005)
 
 The lib exports `cosmos_abi_version() -> u32`; each host reads it at load and fails fast on `< MinSupported` with a versioned message. The native binaries carry their own SemVer; each language package pins a **compatible range**. A breaking C-ABI change = major bump + coordinated SDK releases.
 
-## 10. Compatibility posture (ADR 0006)
+## 10. Compatibility posture (ADR 0007)
 
 Native is **opt-in** per SDK (client option / build flag) until GA on every supported platform. Only then may a given SDK make native the default, and only with a **fallback** to the managed/pure path on unsupported platforms or load failure. No consumer is force-migrated by a version bump.
 

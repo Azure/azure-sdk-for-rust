@@ -1,4 +1,4 @@
-# ADR 0007 — A defined platform matrix; unsupported platforms error clearly
+# ADR 0008 — A defined platform matrix; unsupported platforms error clearly
 
 **Status:** Accepted (proposed for review)
 

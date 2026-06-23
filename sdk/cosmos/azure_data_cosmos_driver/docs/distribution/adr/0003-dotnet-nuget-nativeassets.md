@@ -1,4 +1,4 @@
-# ADR 0002 — .NET consumes via per-RID NuGet NativeAssets + meta-package
+# ADR 0003 — .NET consumes via per-RID NuGet NativeAssets + meta-package
 
 **Status:** Accepted (proposed for review)
 
@@ -8,8 +8,8 @@
 ## Decision
 - Ship per-RID **`Microsoft.Azure.Cosmos.NativeAssets.<rid>`** packages, each carrying one platform's dynamic lib under `runtimes/<rid>/native/`.
 - Front them with a thin **meta-package** whose `runtime.json` resolves the consumer's RID to the right per-RID package.
-- `Microsoft.Azure.Cosmos` takes an **opt-in** dependency on the meta-package (ADR 0006).
-- Publish to **nuget.org** and the **internal azure-sdk NuGet feed** (per ADR 0009).
+- `Microsoft.Azure.Cosmos` takes an **opt-in** dependency on the meta-package (ADR 0007).
+- Publish to **nuget.org** and the **internal azure-sdk NuGet feed** (per ADR 0002).
 
 ## Consequences
 - A consumer downloads only its platform's binary.

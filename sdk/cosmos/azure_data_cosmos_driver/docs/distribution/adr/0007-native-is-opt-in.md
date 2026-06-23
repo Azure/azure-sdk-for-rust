@@ -1,4 +1,4 @@
-# ADR 0006 — Native transport is opt-in until GA, then default-with-fallback
+# ADR 0007 — Native transport is opt-in until GA, then default-with-fallback
 
 **Status:** Accepted (proposed for review)
 

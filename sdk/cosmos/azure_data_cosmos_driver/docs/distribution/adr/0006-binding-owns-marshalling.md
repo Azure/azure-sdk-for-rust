@@ -1,4 +1,4 @@
-# ADR 0005 — Each language binding owns marshalling and buffer copy-out
+# ADR 0006 — Each language binding owns marshalling and buffer copy-out
 
 **Status:** Accepted (proposed for review)
 
