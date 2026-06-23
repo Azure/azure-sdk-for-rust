@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added support for `download_into` to `BlobClient`, which downloads a blob into a caller-provided buffer using a managed partitioned-download pipeline.
 - Added support for `get_user_delegation_key` to `BlobServiceClient`.
 - Added support for `list_blobs_hierarchical` to `BlobContainerClient`.
 - Added support for `list_page_ranges` to `PageBlobClient`.
