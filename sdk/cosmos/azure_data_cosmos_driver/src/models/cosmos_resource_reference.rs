@@ -208,6 +208,9 @@ impl CosmosResourceReference {
     /// item id) but still POST to the parent (collection) URL and sign
     /// against the parent resource.
     pub(crate) fn compute_feed_paths(&self) -> ResourcePaths {
+        #[cfg(debug_assertions)]
+        self.debug_assert_addressing_consistent();
+
         // Temporarily treat the reference as a feed for path computation.
         let parent = self.parent_link_cow();
         let segment = self.resource_type.path_segment();
@@ -464,12 +467,15 @@ impl CosmosResourceReference {
     ///
     /// Under the no-mix addressing rule a RID database implies a RID container,
     /// so checking the container and database covers database, container, and
-    /// item operations. The leaf `id` is also checked so the raw-path decision
-    /// can never diverge from [`rid_signing_override`](Self::rid_signing_override),
-    /// which signs over the leaf RID when `id` carries one: a request signed as
-    /// RID-based must always be routed RID-based (raw), otherwise the gateway
-    /// rejects it with an opaque `401`. Offers are handled separately and are
-    /// not considered RID-addressed for path-encoding purposes.
+    /// item operations. The leaf `id` is also checked to uphold the one
+    /// guaranteed direction of the routing/signing invariant: whenever
+    /// [`rid_signing_override`](Self::rid_signing_override) signs over a leaf RID,
+    /// the path is also routed RID-based (raw), since a request signed as
+    /// RID-based must be sent raw or the gateway rejects it with an opaque `401`.
+    /// The converse does not hold — a name leaf under a RID-addressed parent is
+    /// routed raw but still full-link-signed — so do not derive one helper from
+    /// the other. Offers are handled separately and are not considered
+    /// RID-addressed for path-encoding purposes.
     fn is_rid_addressed(&self) -> bool {
         if let Some(ref container) = self.container {
             if container.is_by_rid() {
@@ -624,7 +630,7 @@ fn is_unreserved(b: u8) -> bool {
 /// a base64 RID makes the gateway treat the segment as a name and reject the
 /// RID-based signature. Callers therefore apply this only to name-based paths.
 ///
-/// Splitting on `/` to preserve separators is always safe here: resource names
+/// Leaving `/` separators intact is always safe here: resource names
 /// (ids) cannot contain `/`, and Cosmos RIDs use a base64 variant that maps the
 /// standard `/` to `-`, so a RID never contains a literal `/` either. RIDs *can*
 /// still contain other reserved characters (`+`, and `=` padding), which is
