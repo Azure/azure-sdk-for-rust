@@ -1440,8 +1440,7 @@ pub async fn error_diagnostics_includes_fault_injection_evaluations() -> Result<
 }
 
 /// Gateway 2.0 449 RetryWith — like `fault_injection_449_retry_with_hit_limit`,
-/// but scoped to the Gateway 2.0 transport. Live-account coverage gated on
-/// `test_category = "gateway20"` / `"gateway20_multi_region"`.
+/// but scoped to the Gateway 2.0 transport.
 #[tokio::test]
 #[cfg_attr(
     not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),

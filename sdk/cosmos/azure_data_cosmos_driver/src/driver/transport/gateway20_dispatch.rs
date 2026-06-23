@@ -96,8 +96,7 @@ pub(crate) fn wrap_request_for_gateway20(
     let epk_payload = effective_partition_key_payload(inputs)?;
 
     let mut metadata = Vec::with_capacity(16);
-    // Thin-client requires this exact leading ordering for the routing tokens
-    // (Java `RntbdConstants.thinClientHeadersInOrderList`):
+    // Thin-client requires this exact leading ordering for the routing tokens:
     //   EffectivePartitionKey, StartEpkHash, EndEpkHash, GlobalDatabaseAccountName,
     //   DatabaseName, CollectionName, CollectionRid, ResourceId, PayloadPresent,
     //   DocumentName, AuthorizationToken, Date.
@@ -106,11 +105,10 @@ pub(crate) fn wrap_request_for_gateway20(
     if let Some(EpkPayload::Point(epk)) = epk_payload.as_ref() {
         metadata.push(Token::effective_partition_key(epk.clone()));
     }
-    // Per-partition routing tokens for thin-client queries. Java's
-    // `ThinClientStoreModel` emits `StartEpkHash`/`EndEpkHash` (Bytes) when
-    // there is a resolved partition key range and NO partition key — the two
-    // forms are mutually exclusive (see Java's if/else in
-    // `ThinClientStoreModel.serializeRequest`). The Rust pipeline surfaces
+    // Per-partition routing tokens for thin-client queries.
+    // `StartEpkHash`/`EndEpkHash` (Bytes) are emitted when there is a resolved
+    // partition key range and NO partition key — the two forms are mutually
+    // exclusive. The Rust pipeline surfaces
     // pkrange boundaries as the `x-ms-start-epk`/`x-ms-end-epk` HTTP headers
     // (lower-hex strings), so decode and forward them here when we did NOT
     // already emit an `EffectivePartitionKey` point token. Empty string is a
@@ -153,7 +151,7 @@ pub(crate) fn wrap_request_for_gateway20(
     metadata.push(Token::collection_name(resource_names.collection));
     if let Some(rid) = inputs.collection_rid.filter(|s| !s.is_empty()) {
         metadata.push(Token::collection_rid(rid.to_owned()));
-        // Java emits both CollectionRid (string, base64) and ResourceId (binary, 8 bytes).
+        // Both CollectionRid (string, base64) and ResourceId (binary, 8 bytes) are emitted.
         // The proxy uses ResourceId as the document routing key — without it requests
         // fail with sub-status 13007 ("error routing the request"). Cosmos rids may use
         // either standard (`+/`) or url-safe (`-_`) base64; try url-safe first since
@@ -177,7 +175,7 @@ pub(crate) fn wrap_request_for_gateway20(
     }
     metadata.push(Token::authorization_token(authorization));
     metadata.push(Token::date(date));
-    // String-form partition key (e.g. `["pk1"]`) — Java emits this alongside
+    // String-form partition key (e.g. `["pk1"]`) emitted alongside
     // EffectivePartitionKey. The V1 request already carries it as the
     // x-ms-documentdb-partitionkey header, so forward that JSON unchanged.
     let pk_header = HeaderName::from_static(request_header_names::PARTITION_KEY);
@@ -186,9 +184,9 @@ pub(crate) fn wrap_request_for_gateway20(
             metadata.push(Token::partition_key(pk_json.to_owned()));
         }
     }
-    // PartitionKeyRangeId (0x002C) — Java fills this token from the
-    // `x-ms-documentdb-partitionkeyrangeid` HTTP header via
-    // `fillTokenFromHeader`. The thin-client proxy uses it alongside
+    // PartitionKeyRangeId (0x002C) — filled from the
+    // `x-ms-documentdb-partitionkeyrangeid` HTTP header. The thin-client proxy
+    // uses it alongside
     // StartEpkHash/EndEpkHash to disambiguate the target physical partition
     // when the EPK range straddles boundaries. Without it the proxy/backend
     // interprets the empty StartEpkHash as a `[]` partition-key value and
@@ -203,7 +201,7 @@ pub(crate) fn wrap_request_for_gateway20(
         metadata.push(Token::partition_key_range_id(pkr_id.to_owned()));
     }
     // AllowTentativeWrites (0x0066) and ReturnPreference (0x0082) must be CONDITIONAL,
-    // not unconditional. Java only emits them when the caller passes the corresponding
+    // not unconditional — emit them only when the caller passes the corresponding
     // HTTP headers (`x-ms-cosmos-allow-tentative-writes` and `Prefer: return=minimal`).
     // Emitting `ReturnPreference=true` unconditionally tells the server "return minimal"
     // (no body) -- which on a Create silently discards the document body server-side
@@ -228,8 +226,7 @@ pub(crate) fn wrap_request_for_gateway20(
     }
     // QueryPlan token forwarding — when the SDK negotiates query features via
     // the standard HTTP headers, mirror them into the RNTBD body so the proxy
-    // can resolve a compatible plan. Mirrors Java PR #47759
-    // (RntbdRequestHeaders lines 199-200, fillTokenFromHeader).
+    // can resolve a compatible plan.
     let supported_query_features_header =
         HeaderName::from_static(request_header_names::SUPPORTED_QUERY_FEATURES);
     if let Some(features) = request
@@ -258,9 +255,9 @@ pub(crate) fn wrap_request_for_gateway20(
     } else {
         metadata.push(Token::consistency_level(inputs.effective_consistency));
     }
-    // TransportRequestId (0x004D) is in Java's thin-client exclusion list — the
+    // TransportRequestId (0x004D) is in the thin-client exclusion list — the
     // proxy assigns its own request id, so emitting one here triggers a routing
-    // error. See `RntbdConstants.thinClientExclusionList`.
+    // error.
     metadata.push(Token::sdk_supported_capabilities(
         SUPPORTED_CAPABILITIES_BITS,
     ));
@@ -286,7 +283,7 @@ pub(crate) fn wrap_request_for_gateway20(
         headers.insert(USER_AGENT, HeaderValue::from(user_agent.to_owned()));
     }
     headers.insert(X_MS_ACTIVITY_ID, HeaderValue::from(activity_id.to_string()));
-    // Forward x-ms-version (defaults match Java's CURRENT_VERSION = 2020-07-15)
+    // Forward x-ms-version (defaults to CURRENT_VERSION = 2020-07-15)
     // and Cache-Control. The proxy requires x-ms-version to dispatch the request.
     if let Some(version) = request.headers.get_optional_str(&X_MS_VERSION) {
         headers.insert(X_MS_VERSION, HeaderValue::from(version.to_owned()));
@@ -316,8 +313,8 @@ pub(crate) fn wrap_request_for_gateway20(
     if inputs.operation_type == OperationType::Query
         && !matches!(epk_payload.as_ref(), Some(EpkPayload::Point(_)))
     {
-        // For cross-partition Query (no partition-key-scoped EPK), Java's
-        // `setThinclientHeaders` sets these headers to the literal `"true"`
+        // For cross-partition Query (no partition-key-scoped EPK), these
+        // headers are set to the literal `"true"`
         // to signal the proxy that the EPK boundaries are carried in the
         // RNTBD body as `StartEpkHash`/`EndEpkHash` tokens. For partition-
         // scoped queries (point or prefix EPK on the body), the proxy uses
@@ -504,8 +501,7 @@ fn proxy_resource_type_name(rt: ResourceType) -> &'static str {
 /// fans out across multiple physical partitions, or a feed/cross-partition
 /// operation scoped to a sub-range — and is emitted as the
 /// `x-ms-thinclient-range-min` / `-max` outer HTTP headers carrying the
-/// canonical, un-padded hex EPK string per `GATEWAY_20_SPEC §"Range header
-/// wire format"`.
+/// canonical, un-padded hex EPK string.
 /// Encapsulates the EPK information for a Gateway 2.0 request.
 ///
 /// The proxy routes by `EffectivePartitionKey` (binary EPK token in the RNTBD
@@ -543,11 +539,11 @@ fn effective_partition_key_payload(
         ));
     }
 
-    // Match Java's `getEffectivePartitionKeyBytes`: pick the binary form
+    // Pick the binary form
     // matching the collection's partition-key kind/version. For partial-HPK
     // keys this naturally yields a prefix EPK (16 * N bytes for N supplied
     // components) which the proxy treats as a partition-key prefix scope —
-    // Java's `ThinClientStoreModel` emits this token whenever a partition key
+    // this token is emitted whenever a partition key
     // is present, point or prefix.
     let bytes = match partition_key_definition.kind() {
         PartitionKeyKind::Hash => match partition_key_definition.version() {
@@ -560,7 +556,7 @@ fn effective_partition_key_payload(
         PartitionKeyKind::MultiHash => {
             effective_partition_key_multi_hash_v2_binary(partition_key.values())
         }
-        // Range: V2 single-hash matches Java's hash-partitioning fallback for
+        // Range: V2 single-hash, the hash-partitioning fallback for
         // point ops.
         PartitionKeyKind::Range => effective_partition_key_v2_binary(partition_key.values()),
     };
@@ -615,8 +611,8 @@ fn data_conversion_error(message: impl Into<String>) -> azure_core::Error {
 }
 
 /// Decodes a lower- or upper-hex EPK string from `x-ms-start-epk` /
-/// `x-ms-end-epk` HTTP headers into the raw bytes Java's
-/// `ThinClientStoreModel` passes to `StartEpkHash` / `EndEpkHash`.
+/// `x-ms-end-epk` HTTP headers into the raw bytes passed to
+/// `StartEpkHash` / `EndEpkHash`.
 /// Returns `None` on invalid input — the dispatcher then omits the token
 /// rather than failing the request.
 fn decode_epk_hex(hex: &str) -> Option<Vec<u8>> {
@@ -775,12 +771,11 @@ mod tests {
 
     #[test]
     fn wrap_emits_tokens_in_thin_client_required_order() {
-        // Java's `RntbdTokenStreamTests.withReorderingForThinClient` mandates
-        // the relative ordering EffectivePartitionKey -> GlobalDatabaseAccountName
-        // -> PayloadPresent on every thin-client request (the fourth token
-        // Java tracks, CorrelatedActivityId, is not emitted by the Rust
-        // driver). Rust hard-codes the emission order in
-        // `wrap_request_for_gateway20`; pin the Java contract here so a
+        // The thin-client contract mandates the relative ordering
+        // EffectivePartitionKey -> GlobalDatabaseAccountName -> PayloadPresent
+        // on every thin-client request (CorrelatedActivityId is not emitted by
+        // the Rust driver). The emission order is hard-coded in
+        // `wrap_request_for_gateway20`; pin the contract here so a
         // future refactor that shuffles the token order is a compile-time
         // failure rather than a silent wire-compat break.
         let request = signed_request(None);
@@ -843,11 +838,11 @@ mod tests {
 
         assert!(
             epk < global_account,
-            "EffectivePartitionKey (0x005A) must precede GlobalDatabaseAccountName (0x00CE) per Java thin-client contract; got {emitted_ids:?}"
+            "EffectivePartitionKey (0x005A) must precede GlobalDatabaseAccountName (0x00CE) per thin-client contract; got {emitted_ids:?}"
         );
         assert!(
             global_account < payload_present,
-            "GlobalDatabaseAccountName (0x00CE) must precede PayloadPresent (0x0002) per Java thin-client contract; got {emitted_ids:?}"
+            "GlobalDatabaseAccountName (0x00CE) must precede PayloadPresent (0x0002) per thin-client contract; got {emitted_ids:?}"
         );
     }
 
@@ -927,7 +922,7 @@ mod tests {
             ParsedTokenValue::String("doc1".into())
         );
         // TransportRequestId (0x004D) is intentionally NOT emitted on the G2
-        // path — it is in Java's `thinClientExclusionList` and the proxy assigns
+        // path — it is in the thin-client exclusion list and the proxy assigns
         // its own request id.
         assert!(!parsed.tokens.contains_key(&0x004D));
         assert_eq!(
@@ -988,7 +983,7 @@ mod tests {
 
     #[test]
     fn wrap_omits_allow_tentative_writes_and_return_preference_by_default() {
-        // Regression: Java's `addReturnPreference` only sets `ReturnPreference=1`
+        // Regression: `ReturnPreference=1` is only set
         // when the caller passes `Prefer: return=minimal`; otherwise the token
         // is absent and the server returns the full body. Likewise
         // `AllowTentativeWrites` is only set when the caller passes the
@@ -1024,7 +1019,7 @@ mod tests {
 
     #[test]
     fn wrap_emits_return_preference_when_prefer_return_minimal_header_is_set() {
-        // Mirror of Java's `addReturnPreference`: emit `ReturnPreference=1`
+        // Emit `ReturnPreference=1`
         // when the request carries `Prefer: return=minimal` and only then.
         let mut request = signed_request(None);
         request
@@ -1052,8 +1047,8 @@ mod tests {
 
     #[test]
     fn wrap_emits_allow_tentative_writes_when_header_is_set_to_true() {
-        // Mirror of Java's `fillTokenFromHeader(getAllowTentativeWrites, BackendHeaders.ALLOW_TENTATIVE_WRITES)`:
-        // emit `AllowTentativeWrites=1` only when the caller forwards the header.
+        // Emit `AllowTentativeWrites=1` only when the caller forwards the
+        // `x-ms-cosmos-allow-tentative-writes` header.
         let mut request = signed_request(None);
         request.headers.insert(
             HeaderName::from_static("x-ms-cosmos-allow-tentative-writes"),
@@ -1082,8 +1077,8 @@ mod tests {
     #[test]
     fn wrap_emits_collection_rid_and_decoded_resource_id_when_supplied() {
         // Regression: the proxy uses the binary `ResourceId` token (0x0000, 8
-        // bytes) as the document routing key. Java emits both `CollectionRid`
-        // (string base64) and `ResourceId` (decoded bytes); Rust must too.
+        // bytes) as the document routing key. Both `CollectionRid`
+        // (string base64) and `ResourceId` (decoded bytes) must be emitted.
         // Cosmos rids use URL-safe base64 (e.g. `wT0aAOnu_xc=`); pin the
         // url-safe-first decode path so plain `STANDARD` rejection of `-_`
         // does not cause us to silently drop the routing key.
@@ -1142,9 +1137,8 @@ mod tests {
         // Regression: cross-partition Query routes via StartEpkHash/EndEpkHash
         // bytes, but the thin-client proxy ALSO requires the
         // PartitionKeyRangeId (0x002C, String) RNTBD token to disambiguate
-        // the target physical partition. Java fills this from the
-        // `x-ms-documentdb-partitionkeyrangeid` HTTP header via
-        // `RntbdRequestHeaders.fillTokenFromHeader`. Without it, the proxy
+        // the target physical partition. This is filled from the
+        // `x-ms-documentdb-partitionkeyrangeid` HTTP header. Without it, the proxy
         // misinterprets an empty StartEpkHash as a `[]` partition-key value
         // and rejects with "PartitionKey supplied in x-ms-partitionkey header
         // has fewer components than defined in the the collection."
@@ -1379,9 +1373,8 @@ mod tests {
     /// HPK partial-PK (prefix on a MultiHash container) emits an
     /// `EffectivePartitionKey` RNTBD token containing the per-component
     /// MultiHash V2 binary for the supplied prefix components (16 * N bytes
-    /// for N supplied components). Matches Java's `ThinClientStoreModel`,
-    /// which emits the same token for point AND prefix keys whenever a
-    /// partition key is present on the request.
+    /// for N supplied components). The same token is emitted for point AND
+    /// prefix keys whenever a partition key is present on the request.
     #[test]
     fn wrap_emits_prefix_epk_token_for_hpk_prefix_partition_key() {
         let request = signed_request(None);
@@ -1412,7 +1405,7 @@ mod tests {
         // Token layout for a partial-HPK Query: 9 base tokens + EPK = 10.
         let parsed = parse_wrapped_request(&wrapped, 10);
         assert_eq!(parsed.tokens[&0x005A], ParsedTokenValue::Bytes(expected));
-        // Range headers must NOT be emitted in the EPK-token path — Java's
+        // Range headers must NOT be emitted in the EPK-token path — the
         // emission is mutually exclusive: partition key present → EPK token,
         // otherwise → StartEpkHash/EndEpkHash range tokens.
         assert!(
@@ -1584,11 +1577,9 @@ mod tests {
 
     #[test]
     fn wrap_emits_empty_continuation_token_when_header_value_empty() {
-        // Symmetry with .NET (`ThinClientStoreClient.PrepareRequestForProxyAsync`),
-        // Java (`RntbdRequestHeader.ContinuationToken` is *not* in
-        // `thinClientProxyExcludedSet`), and the unwrap side which forwards
-        // empty continuation strings verbatim. Continuation is opaque on the
-        // wire — the wrap path does not infer intent from emptiness.
+        // The wrap side forwards empty continuation strings verbatim, matching
+        // the unwrap side. Continuation is opaque on the wire — the wrap path
+        // does not infer intent from emptiness.
         let mut request = signed_request(None);
         request.headers.insert(X_MS_CONTINUATION, "");
         let auth_context =

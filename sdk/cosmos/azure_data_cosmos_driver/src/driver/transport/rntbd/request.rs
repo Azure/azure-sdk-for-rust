@@ -47,8 +47,7 @@ impl RntbdRequestFrame {
         // The `LengthInBytes` field on the wire covers only the request header
         // section (the length field itself, resource/operation type, activity
         // ID, and metadata tokens). The body length prefix and body bytes
-        // follow the header section and are NOT counted here. This matches
-        // Java's `RntbdRequest.computeLength()`.
+        // follow the header section and are NOT counted here.
         let header_len_u32 = u32::try_from(header_len).map_err(|_| {
             data_conversion_error(format!(
                 "RNTBD request header length {header_len} exceeds u32::MAX"
@@ -178,7 +177,7 @@ mod tests {
     /// into that field, which the proxy then interpreted as a giant token
     /// stream and rejected with HTTP 400 sub-status 13007 ("error routing the
     /// request"). Pin the header-only convention so a future refactor cannot
-    /// silently re-break wire compatibility with the proxy (and Java).
+    /// silently re-break wire compatibility with the proxy.
     #[test]
     fn length_in_bytes_covers_header_section_only_excluding_body() {
         let body = b"{\"id\":\"doc1\"}".to_vec();
@@ -321,8 +320,7 @@ mod tests {
     }
 
     /// Pin that `LengthInBytes` is encoded as little-endian u32 in the first
-    /// four bytes of the frame. Java's `RntbdRequest` writes
-    /// `LITTLE_ENDIAN` u32 here; a big-endian encoding would parse as a
+    /// four bytes of the frame; a big-endian encoding would parse as a
     /// nonsense large value on the proxy.
     #[test]
     fn length_in_bytes_is_little_endian_u32_at_offset_zero() {
@@ -387,8 +385,7 @@ mod tests {
     /// Pin that the proxy can locate the body by jumping to offset
     /// `LengthInBytes` from the start of the frame: the next 4 bytes are the
     /// body-length prefix, and the body bytes that follow round-trip exactly.
-    /// This is the proxy's actual extraction algorithm (Java's
-    /// `RntbdRequestDecoder.decode`).
+    /// This is the proxy's actual extraction algorithm.
     #[test]
     fn body_is_locatable_at_offset_length_in_bytes() {
         let body = b"{\"id\":\"doc1\",\"pk\":\"abc\"}".to_vec();

@@ -17,8 +17,7 @@ const SDK_SUPPORTED_CAPABILITIES: HeaderName =
 const IGNORE_UNKNOWN_RNTBD_TOKENS_BIT: u32 = 8;
 pub(crate) const SUPPORTED_CAPABILITIES_BITS: u32 = IGNORE_UNKNOWN_RNTBD_TOKENS_BIT;
 const _: () = assert!(SUPPORTED_CAPABILITIES_BITS == 8);
-/// String-encoded SDK capabilities bitmask. Scoped to `IGNORE_UNKNOWN_RNTBD_TOKENS`
-/// (Java's `HttpConstants.SUPPORTED_CAPABILITIES_IGNORE_UNKNOWN_RNTBD_TOKENS`),
+/// String-encoded SDK capabilities bitmask. Scoped to `IGNORE_UNKNOWN_RNTBD_TOKENS`,
 /// which Gateway 2.0 needs to forward-compat unrecognized RNTBD tokens.
 /// Additional bits (`PARTITION_MERGE`, `CHANGE_FEED_WITH_START_TIME_POST_MERGE`)
 /// will be added in a follow-up once their handling is wired through.

@@ -1450,11 +1450,6 @@ fn build_transport_request(
                 azure_core::http::headers::CONTENT_TYPE,
                 HeaderValue::from_static(QUERY_CONTENT_TYPE),
             );
-            // The thin-client proxy mirrors these out of the RNTBD body and rejects
-            // Query frames where they're missing entirely (HTTP 400, no body) — same
-            // requirement as QueryPlan. Java's RntbdRequestHeaders fills them
-            // unconditionally for any request that carries the matching HTTP headers
-            // (PR #47759, RntbdRequestHeaders lines 199-200).
             let supported_features_header =
                 HeaderName::from_static(request_header_names::SUPPORTED_QUERY_FEATURES);
             if headers
@@ -1484,7 +1479,7 @@ fn build_transport_request(
                 HeaderName::from_static(request_header_names::IS_QUERY_PLAN_REQUEST),
                 HeaderValue::from_static("True"),
             );
-            // Java's QueryPlanRetriever always sets these two headers on QueryPlan
+            // These two headers must always be set on QueryPlan
             // requests. The thin-client proxy reads them out of the RNTBD body
             // (mirrored from these HTTP headers in gateway20_dispatch) and rejects
             // requests where they're missing entirely. Default them here when the

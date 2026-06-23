@@ -260,9 +260,6 @@ impl CosmosClientBuilder {
         // Clone credential for the driver before the SDK consumes it for auth policy.
         let driver_credential = credential.clone();
 
-        // Connection-pool and transport configuration (including Gateway 2.0
-        // disablement) lives on the runtime: use the caller-supplied runtime
-        // when present, otherwise fall back to the shared global runtime.
         let runtime = match self.runtime {
             Some(rt) => rt,
             None => CosmosRuntime::global().await?,

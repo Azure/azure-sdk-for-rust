@@ -343,8 +343,7 @@ impl Token {
     }
 
     /// Binary resource id (8 bytes) emitted alongside `CollectionRid`. Required by
-    /// the Gateway 2.0 proxy as the document routing key. Java emits both — see
-    /// `RntbdRequestHeader.ResourceId` (ID 0x0000, Bytes).
+    /// the Gateway 2.0 proxy as the document routing key (ID 0x0000, Bytes).
     pub(crate) fn resource_id(value: Vec<u8>) -> Self {
         Self::new(
             RntbdRequestToken::ResourceId.into(),
@@ -352,8 +351,8 @@ impl Token {
         )
     }
 
-    /// String-form partition key (JSON array) emitted alongside `EffectivePartitionKey`.
-    /// Java emits both — see `RntbdRequestHeader.PartitionKey` (ID 0x002B, String).
+    /// String-form partition key (JSON array) emitted alongside
+    /// `EffectivePartitionKey` (ID 0x002B, String).
     pub(crate) fn partition_key(value: String) -> Self {
         Self::new(
             RntbdRequestToken::PartitionKey.into(),
@@ -382,7 +381,7 @@ impl Token {
         )
     }
 
-    /// `AllowTentativeWrites` (ID 0x0066, Byte). Java emits `1` on every request.
+    /// `AllowTentativeWrites` (ID 0x0066, Byte). Emitted as `1` on every request.
     pub(crate) fn allow_tentative_writes(value: bool) -> Self {
         Self::new(
             RntbdRequestToken::AllowTentativeWrites.into(),
@@ -390,7 +389,7 @@ impl Token {
         )
     }
 
-    /// `ReturnPreference` (ID 0x0082, Byte). Java emits `1` on every request.
+    /// `ReturnPreference` (ID 0x0082, Byte). Emitted as `1` on every request.
     pub(crate) fn return_preference(value: bool) -> Self {
         Self::new(
             RntbdRequestToken::ReturnPreference.into(),
@@ -408,7 +407,6 @@ impl Token {
     /// `SupportedQueryFeatures` (ID 0x00FF, String). Forwarded from the HTTP
     /// header `x-ms-cosmos-supported-query-features` so the proxy can resolve a
     /// QueryPlan compatible with what the client supports.
-    /// Matches Java RntbdConstants.java line 610.
     pub(crate) fn supported_query_features(value: String) -> Self {
         Self::new(
             RntbdRequestToken::SupportedQueryFeatures.into(),
@@ -417,7 +415,7 @@ impl Token {
     }
 
     /// `QueryVersion` (ID 0x0100, SmallString). Forwarded from the HTTP header
-    /// `x-ms-cosmos-query-version`. Matches Java RntbdConstants.java line 611.
+    /// `x-ms-cosmos-query-version`.
     pub(crate) fn query_version(value: String) -> Self {
         Self::new(
             RntbdRequestToken::QueryVersion.into(),
@@ -426,9 +424,8 @@ impl Token {
     }
 
     /// `StartEpkHash` (ID 0x00D2, Bytes). Per-partition routing key for
-    /// thin-client cross-partition queries. Java's `ThinClientStoreModel`
-    /// converts the partition's `minInclusive` hex string to bytes and emits
-    /// this token alongside `EndEpkHash`. See Java RntbdConstants.java line 598.
+    /// thin-client cross-partition queries. The partition's `minInclusive` hex
+    /// string is converted to bytes and emitted alongside `EndEpkHash`.
     pub(crate) fn start_epk_hash(value: Vec<u8>) -> Self {
         Self::new(
             RntbdRequestToken::StartEpkHash.into(),
@@ -444,11 +441,10 @@ impl Token {
         )
     }
 
-    /// `PartitionKeyRangeId` (ID 0x002C, String). Java's `RntbdRequestHeaders`
-    /// fills this token from the `x-ms-documentdb-partitionkeyrangeid` HTTP
-    /// header via `fillTokenFromHeader`. The thin-client proxy expects this
-    /// token alongside StartEpkHash/EndEpkHash to identify the target physical
-    /// partition. See Java RntbdConstants.java line 543.
+    /// `PartitionKeyRangeId` (ID 0x002C, String). Filled from the
+    /// `x-ms-documentdb-partitionkeyrangeid` HTTP header. The thin-client proxy
+    /// expects this token alongside StartEpkHash/EndEpkHash to identify the
+    /// target physical partition.
     pub(crate) fn partition_key_range_id(value: String) -> Self {
         Self::new(
             RntbdRequestToken::PartitionKeyRangeId.into(),
@@ -457,9 +453,8 @@ impl Token {
     }
 
     /// Pagination cursor echoed back to the proxy on subsequent feed/query
-    /// requests. Wire format matches Java's `RntbdRequestHeader.ContinuationToken`
-    /// (ID 0x0006, string) — the SDK passes the value through unchanged so
-    /// the backend can resume from the previous offset.
+    /// requests (ID 0x0006, String) — the SDK passes the value through
+    /// unchanged so the backend can resume from the previous offset.
     pub(crate) fn continuation_token(value: String) -> Self {
         Self::new(
             RntbdRequestToken::ContinuationToken.into(),
@@ -719,9 +714,8 @@ impl From<OperationType> for RntbdOperationType {
             OperationType::Replace => 0x0006,
             OperationType::Execute => 0x0008,
             OperationType::SqlQuery => 0x0009,
-            // Java's RntbdConstants.OperationType.QueryPlan = 0x0042; the Gateway V2
-            // thin-client proxy dispatches QueryPlan via this distinct op id (not
-            // SqlQuery's 0x0009).
+            // The Gateway V2 thin-client proxy dispatches QueryPlan via this
+            // distinct op id 0x0042 (not SqlQuery's 0x0009).
             OperationType::QueryPlan => 0x0042,
             OperationType::Query => 0x000F,
             OperationType::Head => 0x0011,
@@ -783,8 +777,7 @@ pub(super) fn data_conversion_error(message: impl Into<String>) -> azure_core::E
     azure_core::Error::with_message(ErrorKind::DataConversion, message.into())
 }
 
-/// Writes a UUID using the Microsoft GUID wire format produced by
-/// `System.Guid.ToByteArray` (.NET) and `RntbdUUID.encode` (Java).
+/// Writes a UUID using the Microsoft GUID wire format.
 ///
 /// The wire form is `Data1` (u32 LE), `Data2` (u16 LE), `Data3` (u16 LE),
 /// then the final 8 bytes (`Data4`) in their natural order. This is the
@@ -921,9 +914,8 @@ mod tests {
 
     #[test]
     fn all_token_types_round_trip_through_wire_id() {
-        // Mirrors the scenario from Java's
-        // `RntbdTokenTypeTests.allTokenTypes()`: every recognized `TokenType`
-        // value must round-trip from enum -> u8 -> enum without loss.
+        // Every recognized `TokenType` value must round-trip from
+        // enum -> u8 -> enum without loss.
         let all_token_types = [
             TokenType::Byte,
             TokenType::UShort,
@@ -953,13 +945,10 @@ mod tests {
     }
 
     #[test]
-    fn token_value_guid_matches_dotnet_and_java_reference_bytes() {
-        // Mirrors the scenario from Java's
-        // `RntbdTokenTypeTests.uuidConversion()`: a `Guid` token value must
-        // round-trip to the canonical 16-byte MS GUID layout produced by
-        // .NET's `Guid.ToByteArray()` and Java's `RntbdUUID.encode`. The
-        // reference UUID + bytes here are lifted verbatim from those tests
-        // so a future endianness regression in `write_guid_ms` is caught.
+    fn token_value_guid_matches_reference_bytes() {
+        // A `Guid` token value must round-trip to the canonical 16-byte MS
+        // GUID layout. The reference UUID + bytes here are fixed so a future
+        // endianness regression in `write_guid_ms` is caught.
         let id = Uuid::parse_str("8f3322cc-1786-4db4-9b97-b229c2c6f0aa").unwrap();
         let expected_bytes: [u8; 16] = [
             0xCC, 0x22, 0x33, 0x8F, 0x86, 0x17, 0xB4, 0x4D, 0x9B, 0x97, 0xB2, 0x29, 0xC2, 0xC6,
@@ -993,7 +982,7 @@ mod tests {
     }
 
     #[test]
-    fn read_consistency_strategy_token_byte_mapping_matches_java() {
+    fn read_consistency_strategy_token_byte_mapping() {
         // The RNTBD `ReadConsistencyStrategy` token has id `0x00F0`, `Byte`
         // type, and these exact byte values. A drift here means the SDK and
         // the gateway disagree about what consistency the caller requested.

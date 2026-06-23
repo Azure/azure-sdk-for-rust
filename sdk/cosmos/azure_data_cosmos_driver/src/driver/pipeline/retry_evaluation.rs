@@ -639,7 +639,7 @@ fn try_handle_retry_trigger_group(
 /// the store, RBAC info momentarily unavailable, etc.) and asking the
 /// client to retry in the same region after a short delay.
 ///
-/// Mirrors the .NET / Java `RetryWithRetryPolicy` (nested in
+/// Mirrors the cross-SDK `RetryWithRetryPolicy` (nested in
 /// `GoneAndRetryWithRequestRetryPolicy`): the retry schedule starts at
 /// ~10ms + a small random salt, exponentially backs off up to ~1s per
 /// retry, and gives up once the cumulative delay budget is exhausted

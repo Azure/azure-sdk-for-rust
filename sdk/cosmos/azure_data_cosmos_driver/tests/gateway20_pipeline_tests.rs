@@ -3,10 +3,8 @@
 
 //! Integration tests that lock in the Gateway 2.0 transport pipeline contract.
 //!
-//! These tests lock in the Gateway 2.0 transport pipeline contract (see
-//! `docs/GATEWAY_20_SPEC.md`). They run as a standalone integration target so
-//! they exercise the public surface of the driver crate end-to-end (no
-//! `pub(crate)` access).
+//! These tests run as a standalone integration target so they exercise the
+//! public surface of the driver crate end-to-end (no `pub(crate)` access).
 //!
 //! ## Categories
 //!
@@ -413,8 +411,8 @@ async fn v2_rntbd_never_emits_both_consistency_tokens() {
 /// Every outgoing HTTP request must carry
 /// `x-ms-cosmos-sdk-supportedcapabilities: 8`. The bitmask "8" is
 /// `IGNORE_UNKNOWN_RNTBD_TOKENS` (bit 0x08), matching the
-/// `SUPPORTED_CAPABILITIES_IGNORE_UNKNOWN_RNTBD_TOKENS` constant in
-/// Java's `HttpConstants`. Gateway 2.0 inspects this to decide whether
+/// `SUPPORTED_CAPABILITIES_IGNORE_UNKNOWN_RNTBD_TOKENS` constant.
+/// Gateway 2.0 inspects this to decide whether
 /// the SDK can tolerate unknown RNTBD tokens; it MUST stay pinned to
 /// "8" in this PR. Additional bits (`PARTITION_MERGE`,
 /// `CHANGE_FEED_WITH_START_TIME_POST_MERGE`) will be added in a

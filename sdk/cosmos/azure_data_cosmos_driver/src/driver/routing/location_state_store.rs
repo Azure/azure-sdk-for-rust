@@ -496,6 +496,20 @@ impl LocationStateStore {
         self.sync_account_properties(properties, &default_endpoint);
     }
 
+    /// Runs the Gateway 2.0 connectivity probe, then syncs the routing
+    /// snapshot from `properties`. Used on bootstrap so the first operation
+    /// routes against a probe-verified snapshot rather than the optimistic
+    /// "Gateway 2.0 on" snapshot that `build_account_endpoint_state` derives
+    /// from `thinClient*Locations` alone.
+    pub async fn sync_account_properties_with_probe(
+        &self,
+        properties: Arc<AccountProperties>,
+        default_endpoint: &CosmosEndpoint,
+    ) {
+        self.run_connectivity_probe(&properties).await;
+        self.sync_account_properties(properties, default_endpoint);
+    }
+
     /// Returns `gateway20_enabled && !gateway20_runtime_blocked`. The
     /// snapshot builder uses this in place of the static configured flag so
     /// a failed connectivity probe transparently disables Gateway 2.0
@@ -1598,6 +1612,134 @@ mod tests {
                 .as_str(),
             "https://test-eastus.documents.azure.com/",
             "fallback URL must be the standard compute-gateway URL from writable/readableLocations"
+        );
+    }
+
+    /// End-to-end coverage for the "service starts advertising Gateway 2.0"
+    /// adoption. The store is initialized with `gateway20_enabled=true`,
+    /// then fed two successive `AccountProperties` payloads via
+    /// `sync_account_properties`:
+    ///
+    /// 1. First payload omits `thinClient*Locations`, simulating a client
+    ///    that bootstraps against an account still on the standard gateway.
+    ///    The rebuilt snapshot must have no `gateway20_url` and
+    ///    `uses_gateway20(true)` must report `false`.
+    /// 2. Second payload adds `thinClient*Locations`, simulating the
+    ///    database-account call beginning to return thin-client endpoints.
+    ///    The rebuilt snapshot must adopt `gateway20_url` on every preferred
+    ///    endpoint, bump the generation, and flip `uses_gateway20(true)` to
+    ///    `true` so subsequent operations route through Gateway 2.0.
+    #[test]
+    fn sync_account_properties_adopts_gateway20_when_thin_client_locations_appear() {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
+            let payload = test_refresh_payload();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move { Ok(payload) });
+            fut
+        });
+
+        let store = LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint.clone(),
+            refresh,
+            // gateway20_enabled — operator has Gateway 2.0 on.
+            true,
+            Duration::from_secs(60),
+            PartitionFailoverOptions::default(),
+            Vec::new(),
+            None,
+        );
+
+        // ── First refresh: service advertises only standard locations. ───
+        let without_g2: AccountProperties = serde_json::from_value(serde_json::json!({
+            "_self": "",
+            "id": "test",
+            "_rid": "test.documents.azure.com",
+            "_etag": "etag-without-g2",
+            "media": "//media/",
+            "addresses": "//addresses/",
+            "_dbs": "//dbs/",
+            "writableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com:443/" }],
+            "readableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com:443/" }],
+            "enableMultipleWriteLocations": false,
+            "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
+            "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
+            "queryEngineConfiguration": "{}"
+        })).unwrap();
+        store.sync_account_properties(Arc::new(without_g2), &default_endpoint);
+
+        let snap_g1 = store.snapshot();
+        assert!(
+            snap_g1.account.preferred_read_endpoints[0]
+                .gateway20_url()
+                .is_none(),
+            "before the service advertises thin-client endpoints the read endpoint must carry no Gateway 2.0 URL"
+        );
+        assert!(
+            snap_g1.account.preferred_write_endpoints[0]
+                .gateway20_url()
+                .is_none(),
+            "before the service advertises thin-client endpoints the write endpoint must carry no Gateway 2.0 URL"
+        );
+        assert!(
+            !snap_g1.account.preferred_read_endpoints[0].uses_gateway20(true),
+            "request pipeline must route reads via the standard gateway while no thin-client endpoints are advertised"
+        );
+        assert!(
+            !snap_g1.account.preferred_write_endpoints[0].uses_gateway20(true),
+            "request pipeline must route writes via the standard gateway while no thin-client endpoints are advertised"
+        );
+
+        // ── Second refresh: service starts advertising Gateway 2.0. ──────
+        let with_g2: AccountProperties = serde_json::from_value(serde_json::json!({
+            "_self": "",
+            "id": "test",
+            "_rid": "test.documents.azure.com",
+            "_etag": "etag-with-g2",
+            "media": "//media/",
+            "addresses": "//addresses/",
+            "_dbs": "//dbs/",
+            "writableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com:443/" }],
+            "readableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com:443/" }],
+            "thinClientWritableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus-thin.documents.azure.com:444/" }],
+            "thinClientReadableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus-thin.documents.azure.com:444/" }],
+            "enableMultipleWriteLocations": false,
+            "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
+            "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
+            "queryEngineConfiguration": "{}"
+        })).unwrap();
+        store.sync_account_properties(Arc::new(with_g2), &default_endpoint);
+
+        let snap_g2 = store.snapshot();
+        assert!(
+            snap_g2.account.generation > snap_g1.account.generation,
+            "adopting Gateway 2.0 must bump generation so callers re-resolve endpoints"
+        );
+        assert!(
+            snap_g2.account.preferred_read_endpoints[0]
+                .gateway20_url()
+                .is_some(),
+            "read endpoint must gain a Gateway 2.0 URL once the service advertises thinClientReadableLocations"
+        );
+        assert!(
+            snap_g2.account.preferred_write_endpoints[0]
+                .gateway20_url()
+                .is_some(),
+            "write endpoint must gain a Gateway 2.0 URL once the service advertises thinClientWritableLocations"
+        );
+        assert!(
+            snap_g2.account.preferred_read_endpoints[0].uses_gateway20(true),
+            "request pipeline must route reads via Gateway 2.0 once thin-client endpoints are advertised"
+        );
+        assert!(
+            snap_g2.account.preferred_write_endpoints[0].uses_gateway20(true),
+            "request pipeline must route writes via Gateway 2.0 once thin-client endpoints are advertised"
         );
     }
 

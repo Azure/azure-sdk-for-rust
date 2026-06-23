@@ -88,10 +88,9 @@ pub enum FaultInjectionErrorType {
     ///
     /// Simulates the transient concurrency-conflict signal that triggers
     /// the client-side RetryWith policy
-    /// (`retry_evaluation::try_handle_retry_with`), matching the
-    /// `RetryWith` fault available in the .NET/Java SDKs' fault-injection
-    /// surfaces. The driver retries the request in the same region with
-    /// exponential backoff until the cumulative-wait budget is exhausted.
+    /// (`retry_evaluation::try_handle_retry_with`). The driver retries the
+    /// request in the same region with exponential backoff until the
+    /// cumulative-wait budget is exhausted.
     RetryWith,
     /// 404-1002 from server.
     ReadSessionNotAvailable,

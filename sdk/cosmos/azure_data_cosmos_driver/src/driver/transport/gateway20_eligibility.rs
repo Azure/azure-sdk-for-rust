@@ -7,8 +7,8 @@ use crate::models::{OperationType, ResourceType};
 
 /// Returns `true` when the resource and operation pair is eligible for Gateway 2.0.
 ///
-/// Only `ResourceType::Document` is currently eligible, matching Java's
-/// `ThinClientStoreModel`. Stored-procedure execution is explicitly out of
+/// Only `ResourceType::Document` is currently eligible. Stored-procedure
+/// execution is explicitly out of
 /// scope for Rust SDK GA; every non-Document resource type falls back to
 /// standard Gateway via the eligibility-fallback path.
 ///

@@ -168,14 +168,6 @@ fn resolve_gateway20_env(test_mode: CosmosTestMode) -> Result<Option<TestEnv>, B
 
     match (endpoint, key) {
         (Some(endpoint), Some(key)) => {
-            // Pre-provisioned Gateway 2.0 secret variables in the
-            // `azure-sdk-tests-cosmos` service connection are stored as bare
-            // hostnames (e.g. `gw20-test.documents.azure.com`) — they lack
-            // both the `https://` scheme and a trailing slash that `Url::parse`
-            // requires. Normalize defensively so the parse can't fail with
-            // `RelativeUrlWithoutBase` here while the SDK-side path
-            // (`gateway20_e2e.rs`) silently does the same trick via its own
-            // `build_client` helper.
             let normalized = normalize_gateway20_endpoint(&endpoint);
             let endpoint = normalized
                 .parse()
@@ -216,20 +208,9 @@ fn resolve_gateway20_env(test_mode: CosmosTestMode) -> Result<Option<TestEnv>, B
     }
 }
 
-/// Normalizes a Gateway 2.0 endpoint string so it can be parsed by `Url::parse`.
-///
-/// The pre-provisioned Gateway 2.0 secret variables in the `azure-sdk-tests-cosmos`
-/// service connection are stored without scheme or trailing slash (e.g.
-/// `gw20-test.documents.azure.com`). `Url::parse` requires an absolute URL with
-/// a scheme, so this helper:
-///
-/// * trims surrounding whitespace,
-/// * prepends `https://` when no scheme is present, and
-/// * appends a trailing `/` so the result matches Cosmos's canonical
-///   `https://<host>/` endpoint form.
-///
-/// Values that already include a scheme (e.g. `https://...`) are passed through
-/// after the whitespace trim and trailing-slash normalization.
+/// Normalizes a Gateway 2.0 endpoint string so it can be parsed by `Url::parse`:
+/// trims whitespace, prepends `https://` when no scheme is present, and appends a
+/// trailing `/` to match Cosmos's canonical `https://<host>/` form.
 #[cfg(any(test_category = "gateway20", test_category = "gateway20_multi_region"))]
 fn normalize_gateway20_endpoint(raw: &str) -> String {
     let trimmed = raw.trim();

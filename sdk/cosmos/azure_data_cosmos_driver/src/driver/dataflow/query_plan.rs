@@ -116,8 +116,7 @@ impl RawQueryPlan {
     /// [`EffectivePartitionKey::compute`].
     ///
     /// After conversion the ranges are sorted by `min` so the planner can
-    /// match them against the routing map. Matches Java's
-    /// `PartitionKeyInternalHelper.convertToSortedEpkRanges`.
+    /// match them against the routing map.
     pub(crate) fn resolve(self, pk_definition: &PartitionKeyDefinition) -> Result<QueryPlan> {
         let mut query_ranges = Vec::with_capacity(self.query_ranges.len());
         for raw in self.query_ranges {
@@ -207,8 +206,7 @@ fn pki_component_to_pk_value(value: &serde_json::Value) -> Result<PartitionKeyVa
             // PartitionKeyInternal serializes its special sentinels as
             // `{"type":"Infinity"}` and `{"type":"Undefined"}`. Map the
             // former to the EPK MAX sentinel and the latter to the SDK's
-            // UNDEFINED value (matches Java's PartitionKeyInternal Jackson
-            // deserializer).
+            // UNDEFINED value.
             match obj.get("type").and_then(|t| t.as_str()) {
                 Some("Infinity") => Ok(PartitionKeyValue::INFINITY),
                 Some("Undefined") => Ok(PartitionKeyValue::UNDEFINED),
@@ -587,8 +585,7 @@ mod tests {
 
     /// Proxy returns a concrete partition-key value in the PKI array; the
     /// resolver must hash it to the same EPK the SDK would compute client-side
-    /// for that value. Mirrors Java PR #47759
-    /// (`PartitionKeyInternalHelper.partitionKeyInternalToEpkString`).
+    /// for that value.
     #[test]
     fn resolves_concrete_single_path_pk_value() {
         let json = r#"{
@@ -648,7 +645,7 @@ mod tests {
     }
 
     /// The resolver sorts ranges by `min` so the planner sees a stable order
-    /// regardless of how the proxy emits them. Matches Java's `MinComparator`.
+    /// regardless of how the proxy emits them.
     #[test]
     fn resolves_sorts_ranges_by_min() {
         let json = r#"{

@@ -1567,8 +1567,8 @@ impl CosmosStatus {
     /// store, RBAC info momentarily unavailable). The client is expected
     /// to retry in the same region after a short delay. See
     /// `try_handle_retry_with` in
-    /// `driver::pipeline::retry_evaluation` and the Java/.NET parallels
-    /// (`RetryWithRetryPolicy`) for the policy.
+    /// `driver::pipeline::retry_evaluation` and the cross-SDK
+    /// `RetryWithRetryPolicy` for the policy.
     pub fn is_retry_with(&self) -> bool {
         u16::from(self.status_code) == 449
     }

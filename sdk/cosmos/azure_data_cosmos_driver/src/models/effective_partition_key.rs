@@ -261,9 +261,8 @@ fn hash_v2_to_epk(data: &[u8]) -> String {
 
 /// V2 EPK raw bytes (16 bytes): MurmurHash3-128, reversed, top 2 bits of byte 0 cleared.
 ///
-/// This is the binary form Java sends in the RNTBD `EffectivePartitionKey`
-/// token (0x005A) for V2 hash-partitioned collections (see
-/// `getEffectivePartitionKeyBytesForHashPartitioningV2` in the Java SDK).
+/// This is the binary form sent in the RNTBD `EffectivePartitionKey`
+/// token (0x005A) for V2 hash-partitioned collections.
 pub(crate) fn hash_v2_raw_bytes(data: &[u8]) -> [u8; 16] {
     let hash_128 = murmurhash3_128(data, 0);
     let mut hash_bytes = hash_128.to_le_bytes();
@@ -283,8 +282,7 @@ pub(crate) fn effective_partition_key_v2_binary(pk_values: &[PartitionKeyValue])
 
 /// MultiHash V2 EPK raw bytes: per-component MurmurHash3-128, concatenated.
 ///
-/// Mirrors Java's `getEffectivePartitionKeyBytesForMultiHashPartitioning` —
-/// each component is independently encoded and hashed, and the 16-byte hashes
+/// Each component is independently encoded and hashed, and the 16-byte hashes
 /// are concatenated to produce `16 * N` bytes for `N` components. This is the
 /// binary form the proxy expects for `MultiHash` containers in the RNTBD
 /// `EffectivePartitionKey` token (0x005A).
@@ -308,7 +306,7 @@ fn effective_partition_key_hash_v1(pk_values: &[PartitionKeyValue]) -> String {
 
 /// Builds the V1-binary-encoded effective partition key bytes for hash partitions.
 ///
-/// This is the raw byte form Java sends in the RNTBD `EffectivePartitionKey`
+/// This is the raw byte form sent in the RNTBD `EffectivePartitionKey`
 /// token (0x005A). It's the binary tuple `Number(hash) + truncated_components`,
 /// not the hex-encoded routing string. Empty-component and infinity cases are
 /// handled by the caller (see [`EffectivePartitionKey::compute`]).
@@ -360,7 +358,7 @@ mod tests {
         assert_eq!(result, EffectivePartitionKey::MAX.clone());
     }
 
-    /// V2 test cases ported from Java SDK tests via the Rust SDK's hash.rs.
+    /// V2 hash test cases.
     #[test]
     fn effective_partition_key_hash_v2() {
         let thousand_a = "a".repeat(1024);
@@ -470,7 +468,7 @@ mod tests {
         assert_eq!(actual.as_str(), expected);
     }
 
-    /// V1 test cases ported from Java SDK tests via the Rust SDK's hash.rs.
+    /// V1 hash test cases.
     #[test]
     fn effective_partition_key_hash_v1() {
         let thousand_a = "a".repeat(1024);
@@ -581,7 +579,7 @@ mod tests {
         assert_eq!(multi.as_str().len(), 64);
 
         // Expected values from the effective_partition_key_hash_v2 test cases above,
-        // verified against cross-SDK baselines (.NET, Go, Java).
+        // verified against cross-SDK baselines.
         // First 32 chars should match the single-component hash of "redmond"
         assert_eq!(&multi.as_str()[..32], "22E342F38A486A088463DFF7838A5963");
         // Second 32 chars should match the single-component hash of 5.0
@@ -604,7 +602,7 @@ mod tests {
         assert_eq!(multi.as_str().len(), 96);
 
         // Expected values from the effective_partition_key_hash_v2 test cases above,
-        // verified against cross-SDK baselines (.NET, Go, Java).
+        // verified against cross-SDK baselines.
         assert_eq!(&multi.as_str()[..32], "22E342F38A486A088463DFF7838A5963");
         assert_eq!(&multi.as_str()[32..64], "0E711127C5B5A8E4726AC6DD306A3E59");
         assert_eq!(&multi.as_str()[64..], "378867E4430E67857ACE5C908374FE16");
@@ -1106,7 +1104,7 @@ mod baseline_tests {
             // --- Cross-SDK raw hash baseline ---
             //
             // Verifies byte encoding + MurmurHash correctness against the same
-            // baselines used by Go, .NET, Java, and Python SDKs.  Uses canonical
+            // cross-SDK baselines. Uses canonical
             // encoding (no V1 truncation, no V2 masking) so raw hashes match.
             let actual_v1 = compute_v1_baseline(&values);
             assert_eq!(

@@ -303,7 +303,7 @@ impl OperationRetryState {
 /// 449 RetryWith is the Cosmos backend's signal for transient concurrency
 /// conflicts (e.g. concurrent writes racing through the store, RBAC info
 /// momentarily unavailable). The client retries in the same region after
-/// a short delay, following the policy used by the .NET and Java SDKs:
+/// a short delay, following the established cross-SDK retry policy:
 ///
 /// * First retry after `initial_delay` (default 10ms) + a small random
 ///   salt in `[0, salt_max)`, exponentially backing off by `backoff_factor`
@@ -317,8 +317,7 @@ impl OperationRetryState {
 ///   conflict).
 ///
 /// Mirrors the policy described in
-/// `sdk/cosmos/azure-cosmos/docs/TimeoutAndRetriesConfig.md` in
-/// `Azure/azure-sdk-for-java`.
+/// `sdk/cosmos/azure-cosmos/docs/TimeoutAndRetriesConfig.md`.
 #[derive(Clone, Debug)]
 pub(crate) struct RetryWithRetryState {
     /// Number of 449 retries already attempted for this operation.
@@ -338,7 +337,7 @@ pub(crate) struct RetryWithRetryState {
     pub salt_max_millis: u64,
 }
 
-/// Hard-coded defaults for RetryWith retry, matching Java / .NET SDK.
+/// Hard-coded defaults for RetryWith retry, matching the cross-SDK baseline.
 const DEFAULT_RETRY_WITH_INITIAL_DELAY: Duration = Duration::from_millis(10);
 const DEFAULT_RETRY_WITH_MAX_PER_RETRY: Duration = Duration::from_secs(1);
 const DEFAULT_RETRY_WITH_MAX_TOTAL: Duration = Duration::from_secs(30);
@@ -346,7 +345,7 @@ const DEFAULT_RETRY_WITH_BACKOFF_FACTOR: f64 = 2.0;
 const DEFAULT_RETRY_WITH_SALT_MAX_MILLIS: u64 = 5;
 
 impl RetryWithRetryState {
-    /// Creates a new retry-with state with default Java/.NET-matching parameters.
+    /// Creates a new retry-with state with default cross-SDK-matching parameters.
     pub fn new() -> Self {
         Self {
             attempt_count: 0,
@@ -908,10 +907,10 @@ mod tests {
     }
 
     #[test]
-    fn retry_with_retry_state_defaults_match_java_dotnet() {
-        // Java SDK's RetryWithRetryPolicy: 10ms initial + [0,5)ms salt,
+    fn retry_with_retry_state_defaults_match_baseline() {
+        // RetryWithRetryPolicy: 10ms initial + [0,5)ms salt,
         // exponential to 1s per retry, 30s cumulative cap. Mirroring those
-        // values is load-bearing for parity with the other SDKs.
+        // values is load-bearing for cross-SDK parity.
         let state = RetryWithRetryState::new();
         assert_eq!(state.attempt_count, 0);
         assert_eq!(state.cumulative_delay, Duration::ZERO);

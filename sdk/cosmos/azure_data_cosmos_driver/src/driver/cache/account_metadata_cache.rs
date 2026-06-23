@@ -147,20 +147,12 @@ pub(crate) struct AccountProperties {
     /// Regional Gateway 2.0 endpoints accepting writes.
     /// When present, indicates that Gateway 2.0 should be used for the
     /// dataplane transport instead of the standard gateway endpoint.
-    ///
-    /// The Rust field name retains the `thin_client_*` prefix because the
-    /// struct uses `#[serde(rename_all = "camelCase")]` to deserialize from
-    /// the wire-defined property `thinClientWritableLocations`. Renaming the
-    /// field would break the serde mapping.
     #[serde(default)]
     pub thin_client_writable_locations: Vec<AccountRegion>,
 
     /// Regional Gateway 2.0 endpoints for reads.
     /// When present, indicates that Gateway 2.0 should be used for the
     /// dataplane transport instead of the standard gateway endpoint.
-    ///
-    /// See note on `thin_client_writable_locations` for why the field name
-    /// retains the `thin_client_*` prefix.
     #[serde(default)]
     pub thin_client_readable_locations: Vec<AccountRegion>,
 

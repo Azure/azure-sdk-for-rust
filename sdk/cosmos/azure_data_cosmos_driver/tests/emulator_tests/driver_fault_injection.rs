@@ -364,7 +364,7 @@ pub async fn fault_injection_connection_error() -> Result<(), Box<dyn Error>> {
 /// fire on standard-gateway requests issued during account discovery. The
 /// emulator does not yet expose Gateway 2.0 endpoints, so this test is
 /// gated behind the `gateway20` test category until CI gains a Gateway 2.0
-/// account; see `docs/GATEWAY_20_SPEC.md`.
+/// account.
 #[tokio::test]
 #[cfg_attr(
     not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
@@ -646,8 +646,7 @@ pub async fn gateway20_unknown_rntbd_response_token_is_silently_skipped(
 /// unknown token ID (`0xFFFE`) sandwiched between two recognized tokens.
 ///
 /// Wire layout (matches `RntbdResponse::deserialize` in
-/// `src/driver/transport/rntbd/response.rs`, which mirrors the Java
-/// `RntbdResponse.decode` wire format):
+/// `src/driver/transport/rntbd/response.rs`):
 ///
 /// ```text
 ///   u32 LE  total_len            (24 + metadata bytes; does NOT include body)
@@ -866,11 +865,6 @@ pub async fn gateway20_hit_limit_caps_fault_count() -> Result<(), Box<dyn Error>
 /// rule disabled and succeeds. The caller's `read_item` returns `Ok` even
 /// though three 449s were injected mid-operation. The rule's `hit_count` is
 /// asserted to land exactly at the limit, proving the retries happened.
-///
-/// **Live-account coverage**: this test is gated on `test_category =
-/// "emulator"` so it runs against a real Cosmos account in the live-test
-/// pipeline matrix (emulator-based runs use the same code path through
-/// `DriverTestClient`).
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "emulator"),
@@ -948,10 +942,6 @@ pub async fn fault_injection_449_retry_with_succeeds_after_hit_limit() -> Result
 /// default for eligible data-plane reads, a `read_item` against a Gateway 2.0
 /// account fires the rule for each in-region retry until the hit-limit is
 /// exhausted, after which the read succeeds.
-///
-/// **Live-account coverage**: gated on `test_category = "gateway20"` /
-/// `"gateway20_multi_region"`, so the test runs against the pre-provisioned
-/// Gateway 2.0 account from `sdk/cosmos/ci.yml`.
 #[tokio::test]
 #[cfg_attr(
     not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),

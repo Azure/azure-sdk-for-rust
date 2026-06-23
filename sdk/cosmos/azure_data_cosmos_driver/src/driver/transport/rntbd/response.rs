@@ -53,7 +53,7 @@ pub(crate) struct RntbdResponse {
 impl RntbdResponse {
     /// Deserializes a Gateway 2.0 RNTBD response frame.
     ///
-    /// Wire layout (matches Java `RntbdResponse.decode`):
+    /// Wire layout:
     ///   * `u32` LE length — total bytes of `[u32 status + 16-byte activity id + metadata tokens]` (24 + metadata).
     ///     The length does NOT include the trailing body section.
     ///   * `u32` LE status (frame HTTP status).

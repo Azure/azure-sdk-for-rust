@@ -4,6 +4,7 @@
 #![cfg(feature = "key_auth")]
 
 use azure_core::credentials::Secret;
+use azure_data_cosmos::diagnostics::{DiagnosticsContext, TransportKind};
 use azure_data_cosmos::models::{
     ContainerProperties, PartitionKeyDefinition, ThroughputProperties,
 };
@@ -19,14 +20,26 @@ fn read_env(name: &str) -> Option<String> {
     std::env::var(name).ok().filter(|v| !v.trim().is_empty())
 }
 
+/// Asserts every request recorded in `diagnostics` used `expected` transport.
+fn assert_transport_kind(diagnostics: &DiagnosticsContext, expected: TransportKind) {
+    let kinds: Vec<TransportKind> = diagnostics
+        .requests()
+        .iter()
+        .map(|r| r.transport_kind())
+        .collect();
+    assert!(
+        !kinds.is_empty(),
+        "expected at least one request in diagnostics"
+    );
+    assert!(
+        kinds.iter().all(|k| *k == expected),
+        "expected all requests to use {expected:?}, got {kinds:?}"
+    );
+}
+
 /// Normalizes a Gateway 2.0 endpoint string so it can be parsed by
-/// `AccountEndpoint::from_str` (which is a thin wrapper over
-/// `Url::parse`).
-///
-/// The pre-provisioned Gateway 2.0 secret variables in the
-/// `azure-sdk-tests-cosmos` service connection are stored as bare hostnames
-/// (e.g. `gw20-test.documents.azure.com`) without scheme or trailing slash.
-/// Prepend `https://` and a trailing `/` so the URL parser accepts them.
+/// `AccountEndpoint::from_str` (a thin wrapper over `Url::parse`): prepends
+/// `https://` and a trailing `/` when missing.
 fn normalize_gateway20_endpoint(raw: &str) -> String {
     let trimmed = raw.trim();
     let with_scheme = if trimmed.contains("://") {
@@ -96,10 +109,7 @@ async fn build_client(
 /// subsequent first data-plane request can race the gateway's
 /// container-create completion; this helper keeps retrying the metadata
 /// resolution *and* a follow-up `read` until both succeed or until a
-/// non-1013 error surfaces. Without this, the gateway20 E2E tests
-/// intermittently failed in CI on the
-/// `thin-client-multi-writer-ci-eastus2` account with the same 1013
-/// substatus across 10 of 11 tests.
+/// non-1013 error surfaces.
 async fn wait_for_container_ready(
     db_client: &azure_data_cosmos::clients::DatabaseClient,
     container_name: &str,
@@ -176,10 +186,6 @@ struct Gw20TestItem {
 
 /// Drives a point CRUD round-trip (create → read → replace → delete) against
 /// the live Gateway 2.0 account.
-///
-/// TODO: tighten the per-response diagnostics check to assert
-/// `TransportKind::Gateway20` once `CosmosDiagnostics` surfaces the
-/// transport kind from the driver.
 #[tokio::test]
 #[cfg_attr(
     not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
@@ -205,10 +211,12 @@ pub async fn gateway20_point_crud_round_trip() -> Result<(), Box<dyn std::error:
     let create_resp = container
         .create_item(&pk_value, &item_id, &item, None)
         .await?;
+    assert_transport_kind(&create_resp.diagnostics(), TransportKind::Gateway20);
     assert!(!create_resp.diagnostics().activity_id().as_str().is_empty());
     assert!(create_resp.diagnostics().duration() > std::time::Duration::ZERO);
 
     let read_resp = container.read_item(&pk_value, &item_id, None).await?;
+    assert_transport_kind(&read_resp.diagnostics(), TransportKind::Gateway20);
     assert!(!read_resp.diagnostics().activity_id().as_str().is_empty());
     let read_item: Gw20TestItem = read_resp.into_model()?;
     assert_eq!(read_item, item);
@@ -218,18 +226,18 @@ pub async fn gateway20_point_crud_round_trip() -> Result<(), Box<dyn std::error:
     let replace_resp = container
         .replace_item(&pk_value, &item_id, &item, None)
         .await?;
+    assert_transport_kind(&replace_resp.diagnostics(), TransportKind::Gateway20);
     assert!(!replace_resp.diagnostics().activity_id().as_str().is_empty());
 
     let delete_resp = container.delete_item(&pk_value, &item_id, None).await?;
+    assert_transport_kind(&delete_resp.diagnostics(), TransportKind::Gateway20);
     assert!(!delete_resp.diagnostics().activity_id().as_str().is_empty());
 
     drop_database(&client, &db_name).await;
     Ok(())
 }
 
-///
-/// TODO: tighten the diagnostics check to assert `TransportKind::Gateway20`
-/// once the SDK surfaces the driver transport kind on batch diagnostics.
+/// Exercises a transactional batch routed through Gateway 2.0.
 #[tokio::test]
 #[cfg_attr(
     not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
@@ -269,6 +277,7 @@ pub async fn gateway20_transactional_batch() -> Result<(), Box<dyn std::error::E
         .upsert_item(&upsert, None)?;
 
     let response = container.execute_transactional_batch(batch, None).await?;
+    assert_transport_kind(&response.diagnostics(), TransportKind::Gateway20);
     let body = response.into_model()?;
     let codes: Vec<u16> = body.results().iter().map(|r| r.status_code()).collect();
     assert_eq!(codes, vec![201, 201, 201]);
@@ -278,14 +287,7 @@ pub async fn gateway20_transactional_batch() -> Result<(), Box<dyn std::error::E
 }
 
 /// Verifies that diagnostics are populated for SDK-issued requests routed
-/// through Gateway 2.0.
-///
-/// TODO: extend this test to assert `TransportKind::Gateway20` once
-/// `CosmosDiagnostics` surfaces the driver transport kind. Today the SDK
-/// `CosmosDiagnostics` only carries `activity_id` and `server_duration_ms`,
-/// so the strongest behavioral assertion we can make is that those fields
-/// are populated when the request was routed through the Gateway 2.0
-/// pipeline.
+/// through Gateway 2.0, including the `Gateway20` transport kind.
 #[tokio::test]
 #[cfg_attr(
     not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
@@ -312,6 +314,7 @@ pub async fn gateway20_diagnostics_validation() -> Result<(), Box<dyn std::error
 
     let read_resp = container.read_item(&pk_value, "diag-item", None).await?;
     let diagnostics = read_resp.diagnostics();
+    assert_transport_kind(&diagnostics, TransportKind::Gateway20);
     assert!(
         !diagnostics.activity_id().as_str().is_empty(),
         "expected activity_id to be populated for a Gateway 2.0 request"
@@ -329,9 +332,6 @@ pub async fn gateway20_diagnostics_validation() -> Result<(), Box<dyn std::error
 /// built from a [`CosmosRuntime`] whose connection pool sets
 /// `with_gateway20_disabled(true)`, every request must route through the
 /// standard gateway even though the account advertises a Gateway 2.0 endpoint.
-///
-/// TODO: tighten the assertion to inspect `TransportKind::StandardGateway`
-/// in the diagnostics once the SDK exposes the driver transport kind.
 #[tokio::test]
 #[cfg_attr(
     not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
@@ -361,6 +361,7 @@ pub async fn gateway20_operator_override_at_sdk_boundary() -> Result<(), Box<dyn
         .read_item(&pk_value, "override-item", None)
         .await?;
     let diagnostics = read_resp.diagnostics();
+    assert_transport_kind(&diagnostics, TransportKind::Gateway);
     assert!(!diagnostics.activity_id().as_str().is_empty());
 
     drop_database(&client, &db_name).await;
@@ -418,9 +419,6 @@ struct Gw20HpkItem {
 /// `gateway20_dispatch::tests`; this E2E test guards the SDK-public surface
 /// against regressions where partial-PK queries silently degrade to
 /// single-partition or fail.
-///
-/// TODO: tighten the diagnostics check to assert `TransportKind::Gateway20`
-/// once the SDK surfaces the driver transport kind.
 #[tokio::test]
 #[cfg_attr(
     not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
@@ -476,6 +474,7 @@ pub async fn gateway20_hpk_full_and_partial_partition_key_round_trip(
     ));
     let full_id = format!("{target_tenant}-user-0-session-0");
     let read_resp = container.read_item(full_pk, &full_id, None).await?;
+    assert_transport_kind(&read_resp.diagnostics(), TransportKind::Gateway20);
     let item: Gw20HpkItem = read_resp.into_model()?;
     assert_eq!(item.id, full_id);
     assert_eq!(item.tenant_id, target_tenant);
@@ -496,6 +495,7 @@ pub async fn gateway20_hpk_full_and_partial_partition_key_round_trip(
     while let Some(page) = pages.next().await {
         let page = page?;
         pages_seen += 1;
+        assert_transport_kind(&page.diagnostics(), TransportKind::Gateway20);
         assert!(!page.diagnostics().activity_id().as_str().is_empty());
         for it in page.items() {
             assert_eq!(

@@ -27,8 +27,7 @@
 //!
 //! ## SDK gating policy
 //!
-//! The Rust SDK applies a **strict, all-or-nothing** policy that mirrors the
-//! Java/.NET cross-SDK guidance:
+//! The Rust SDK applies a **strict, all-or-nothing** policy:
 //!
 //! 1. **Strict**: only `200` counts as success. A `503` (feature disabled)
 //!    fails the probe. The federation has not opted in to Gateway 2.0 yet,
@@ -39,14 +38,6 @@
 //! 3. **No opt-in**: the probe runs whenever `thinClient*Locations` are
 //!    advertised. There is no SDK-side opt-out — the federation flag is the
 //!    operator-facing kill switch.
-
-// The probe is committed but currently NOT wired into production
-// (`CosmosDriver::new` passes `connectivity_probe = None`) — every Cosmos
-// federation still returns 503 because `enableConnectivityProbe` is off, and
-// the strict gating below would otherwise permanently force GW V1. The
-// allow(dead_code) keeps the module + its unit tests in tree as a drop-in
-// for the follow-up that re-enables wiring once the federations opt in.
-#![allow(dead_code)]
 
 use std::{
     collections::HashMap,

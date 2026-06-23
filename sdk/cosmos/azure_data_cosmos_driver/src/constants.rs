@@ -50,9 +50,7 @@ pub const GATEWAY20_RANGE_MAX: HeaderName = HeaderName::from_static("x-ms-thincl
 /// `thinClientWritableLocations` / `thinClientReadableLocations` in the
 /// metadata response. Without this header the server suppresses those
 /// fields even when the federation has thin-client enabled, which
-/// silently disables Gateway 2.0 routing for the client. Matches Java
-/// (`HttpConstants.HttpHeaders.THINCLIENT_OPT_IN`) and .NET
-/// (`ThinClientConstants.EnableThinClientEndpointDiscoveryHeaderName`).
+/// silently disables Gateway 2.0 routing for the client.
 pub const GATEWAY20_DISCOVERY_OPT_IN: HeaderName =
     HeaderName::from_static("x-ms-cosmos-use-thinclient");
 

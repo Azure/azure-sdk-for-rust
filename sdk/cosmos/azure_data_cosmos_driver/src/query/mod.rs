@@ -27,7 +27,7 @@ pub(crate) use parser::parse;
 /// advertises to the Cosmos DB Gateway via
 /// `x-ms-cosmos-supported-query-features`.
 ///
-/// Advertised as `"None"` (Java's `QueryFeature.None`): the cross-partition
+/// Advertised as `"None"`: the cross-partition
 /// query pipeline does not yet support any of the advanced rewrite shapes the
 /// Gateway can plan (Aggregate, CompositeAggregate, CountIf, DCount, Distinct,
 /// GroupBy, HybridSearch, MultipleAggregates, MultipleOrderBy,

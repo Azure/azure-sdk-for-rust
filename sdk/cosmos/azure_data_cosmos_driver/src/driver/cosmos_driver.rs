@@ -47,9 +47,11 @@ use super::routing::EndpointProbeFn;
 use super::{
     cache::{parse_pk_ranges_response, AccountRegion},
     transport::{
-        connectivity_probe::ConnectivityProbe, cosmos_headers,
-        cosmos_transport_client::HttpRequest, request_signing, AuthorizationContext,
-        CosmosTransport,
+        connectivity_probe::{ConnectivityProbe, Http2ConnectivityProbe},
+        cosmos_headers,
+        cosmos_transport_client::HttpRequest,
+        http_client_factory::HttpClientConfig,
+        request_signing, AuthorizationContext, CosmosTransport,
     },
     CosmosDriverRuntime,
 };
@@ -94,8 +96,8 @@ fn request_target_overrides(
             // partial-HPK prefix from `FeedScope::partition(...)`) so the
             // `x-ms-documentdb-partitionkey` HTTP header is emitted on
             // per-pkrange query fan-out requests. The thin-client proxy
-            // (and Java's `ThinClientStoreModel`) use this to filter docs
-            // within a pkrange by the supplied prefix; without it, the
+            // uses this to filter docs within a pkrange by the supplied
+            // prefix; without it, the
             // backend returns every document in the physical partition.
             partition_key: operation_partition_key.cloned(),
             continuation,
@@ -704,8 +706,8 @@ impl CosmosDriver {
     ///
     /// Always sets `x-ms-cosmos-use-thinclient: true` so the server emits
     /// `thinClient*Locations` whenever the federation has thin-client
-    /// enabled. Matches Java/.NET behavior; without this header the server
-    /// suppresses those fields and Gateway 2.0 is silently disabled.
+    /// enabled. Without this header the server suppresses those fields and
+    /// Gateway 2.0 is silently disabled.
     fn build_account_properties_request(
         endpoint: &AccountEndpoint,
         user_agent: &azure_core::http::headers::HeaderValue,
@@ -1251,16 +1253,23 @@ impl CosmosDriver {
                     .unwrap_or(Duration::from_secs(60))
             });
 
-        // NOTE: Gateway 2.0 connectivity probe is disabled in production for
-        // now. The wire contract (POST /connectivity-probe -> 200) is correct
-        // per the design spec, but every Cosmos federation we route through
-        // today still returns 503 because the `enableConnectivityProbe` flag
-        // has not been turned on yet. With strict, all-or-nothing gating that
-        // 503 would permanently force the data plane onto Gateway V1 and
-        // silently break every Gateway 2.0 code path. Re-enable this by
-        // constructing the probe via `Http2ConnectivityProbe::new(...)` once
-        // the federations have opted in.
-        let connectivity_probe: Option<Arc<dyn ConnectivityProbe>> = None;
+        // Wire the Gateway 2.0 connectivity probe. Before routing data-plane
+        // traffic to a thin-client proxy endpoint, the store issues a
+        // `POST /connectivity-probe` over HTTP/2 and gates Gateway 2.0 off for
+        // all regions unless every probe returns 200. The probe shares the
+        // data plane's Gateway 2.0 HTTP/2 config so it negotiates the same
+        // protocol the real traffic uses. Skip building it entirely when
+        // Gateway 2.0 is operator-disabled; otherwise the store still no-ops
+        // the probe when the account advertises no thin-client endpoints.
+        let connectivity_probe: Option<Arc<dyn ConnectivityProbe>> =
+            if runtime.connection_pool().gateway20_disabled() {
+                None
+            } else {
+                let probe_config = HttpClientConfig::dataplane_gateway20(runtime.connection_pool());
+                let probe_client =
+                    http_client_factory.build(runtime.connection_pool(), probe_config)?;
+                Some(Arc::new(Http2ConnectivityProbe::new(probe_client)))
+            };
 
         let location_state_store = Arc::new(LocationStateStore::new(
             runtime.account_metadata_cache().clone(),
@@ -1465,14 +1474,16 @@ impl CosmosDriver {
 
         // Seed the routing snapshot with the initial account properties so
         // server-controlled flags (PPAF/PPCB) and writable-region selection
-        // are correct before the first operation runs. Without this, the
-        // routing state would stay at defaults until either the first
-        // operation triggers `sync_account_properties` or the background
-        // refresh loop fires (after `BACKGROUND_REFRESH_INTERVAL`).
-        self.location_state_store.sync_account_properties(
-            cached_properties,
-            self.location_state_store.default_endpoint(),
-        );
+        // are correct before the first operation runs. The probe runs first so
+        // the first operation routes against a probe-verified Gateway 2.0
+        // snapshot rather than the optimistic snapshot derived from
+        // `thinClient*Locations` alone.
+        self.location_state_store
+            .sync_account_properties_with_probe(
+                cached_properties,
+                self.location_state_store.default_endpoint(),
+            )
+            .await;
 
         // Create the per-account transport with the negotiated version.
         let new_transport = Arc::new(CosmosTransport::with_factory(
@@ -3008,7 +3019,7 @@ mod tests {
             .expect("getDatabaseAccount must send x-ms-cosmos-use-thinclient so the server emits thinClient*Locations");
         assert_eq!(
             opt_in, "true",
-            "x-ms-cosmos-use-thinclient must be `true` to match Java/.NET wire contract"
+            "x-ms-cosmos-use-thinclient must be `true` to enable thin-client discovery"
         );
         assert_eq!(request.method, azure_core::http::Method::Get);
         assert!(request.url.as_str().starts_with(endpoint.url().as_str()));
@@ -3432,8 +3443,7 @@ mod tests {
         // (it rejects them paired with `partitionkeyrangeid` when min is the
         // empty-string sentinel). The pkrange bounds are still carried in
         // `pkrange_bounds` for the GW20 dispatcher to derive its
-        // `StartEpkHash`/`EndEpkHash` RNTBD tokens (mirroring Java
-        // `ThinClientStoreModel`).
+        // `StartEpkHash`/`EndEpkHash` RNTBD tokens.
         let range = crate::models::FeedRange::new(
             EffectivePartitionKey::from("10"),
             EffectivePartitionKey::from("20"),

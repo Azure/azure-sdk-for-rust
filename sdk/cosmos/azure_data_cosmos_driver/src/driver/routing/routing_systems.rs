@@ -894,6 +894,110 @@ mod tests {
         );
     }
 
+    /// Regression guard for the "service starts advertising Gateway 2.0" case.
+    ///
+    /// When the account previously returned only standard locations but a
+    /// subsequent metadata refresh adds `thinClient*Locations` (e.g., the
+    /// service rolled the account onto Gateway 2.0), the rebuilt endpoint
+    /// state must adopt a `gateway20_url` on every endpoint so that follow-up
+    /// requests route through Gateway 2.0 while the operator toggle is on.
+    #[test]
+    fn build_state_adopts_gateway20_when_thin_client_locations_appear() {
+        // First refresh: account advertises only standard locations. With
+        // `gateway20_enabled=true` but no thin-client endpoints, no preferred
+        // endpoint may carry a `gateway20_url`.
+        let without_g2: AccountProperties = serde_json::from_value(serde_json::json!({
+            "_self": "",
+            "id": "test",
+            "_rid": "test.documents.azure.com",
+            "media": "//media/",
+            "addresses": "//addresses/",
+            "_dbs": "//dbs/",
+            "writableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com:443/" }],
+            "readableLocations": [{ "name": "westus2", "databaseAccountEndpoint": "https://test-westus2.documents.azure.com:443/" }],
+            "enableMultipleWriteLocations": true,
+            "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
+            "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
+            "queryEngineConfiguration": "{}"
+        })).unwrap();
+
+        let initial =
+            build_account_endpoint_state(&without_g2, default_endpoint(), None, true, &[]);
+        assert!(
+            initial.preferred_read_endpoints[0]
+                .gateway20_url()
+                .is_none(),
+            "initial read endpoint must carry no Gateway 2.0 URL"
+        );
+        assert!(
+            initial.preferred_write_endpoints[0]
+                .gateway20_url()
+                .is_none(),
+            "initial write endpoint must carry no Gateway 2.0 URL"
+        );
+        assert!(
+            !initial.preferred_read_endpoints[0].uses_gateway20(true),
+            "initial read endpoint must route through the standard gateway"
+        );
+        assert!(
+            !initial.preferred_write_endpoints[0].uses_gateway20(true),
+            "initial write endpoint must route through the standard gateway"
+        );
+
+        // Second refresh: same standard endpoints, but the service has begun
+        // returning thin-client locations. Mimics the database-account call
+        // starting to advertise Gateway 2.0.
+        let with_g2: AccountProperties = serde_json::from_value(serde_json::json!({
+            "_self": "",
+            "id": "test",
+            "_rid": "test.documents.azure.com",
+            "media": "//media/",
+            "addresses": "//addresses/",
+            "_dbs": "//dbs/",
+            "writableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com:443/" }],
+            "readableLocations": [{ "name": "westus2", "databaseAccountEndpoint": "https://test-westus2.documents.azure.com:443/" }],
+            "thinClientWritableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus-thin.documents.azure.com:444/" }],
+            "thinClientReadableLocations": [{ "name": "westus2", "databaseAccountEndpoint": "https://test-westus2-thin.documents.azure.com:444/" }],
+            "enableMultipleWriteLocations": true,
+            "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
+            "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
+            "queryEngineConfiguration": "{}"
+        })).unwrap();
+
+        let rebuilt = build_account_endpoint_state(
+            &with_g2,
+            default_endpoint(),
+            Some(initial.generation),
+            true,
+            &[],
+        );
+        assert_eq!(rebuilt.generation, initial.generation + 1);
+        assert!(
+            rebuilt.preferred_read_endpoints[0]
+                .gateway20_url()
+                .is_some(),
+            "read endpoint must gain a Gateway 2.0 URL once the service advertises thinClientReadableLocations"
+        );
+        assert!(
+            rebuilt.preferred_write_endpoints[0]
+                .gateway20_url()
+                .is_some(),
+            "write endpoint must gain a Gateway 2.0 URL once the service advertises thinClientWritableLocations"
+        );
+        assert!(
+            rebuilt.preferred_read_endpoints[0].uses_gateway20(true),
+            "read request must route through Gateway 2.0 once thin-client endpoints are advertised"
+        );
+        assert!(
+            rebuilt.preferred_write_endpoints[0].uses_gateway20(true),
+            "write request must route through Gateway 2.0 once thin-client endpoints are advertised"
+        );
+    }
+
     #[test]
     fn mark_and_expire_unavailable_endpoint() {
         let state =
