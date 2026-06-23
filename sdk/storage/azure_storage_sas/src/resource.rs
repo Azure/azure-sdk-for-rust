@@ -8,4 +8,4 @@ pub mod blob;
 mod queue;
 
 pub(crate) use queue::{queue_udk_query_parameters, queue_udk_string_to_sign};
-pub use queue::{Queue, QueuePermissions};
+pub use queue::{QueuePermissions, QueueResource};

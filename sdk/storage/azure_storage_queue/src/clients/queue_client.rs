@@ -86,11 +86,12 @@ impl QueueClient {
         }
     }
 
-    /// Generates a user delegation SAS URL for this queue.
+    /// Begins building a user delegation SAS URL for this queue.
     ///
-    /// The `configure` closure receives a [`SasBuilder`](azure_storage_sas::SasBuilder)
-    /// pre-initialized with this queue's resource info and the requested
-    /// permissions.
+    /// Returns a [`QueueSasBuilder`](crate::models::sas::QueueSasBuilder) pre-initialized with
+    /// this queue's resource info and the requested permissions. Chain optional
+    /// setters, then call [`url()`](crate::models::sas::QueueSasBuilder::url) to produce the
+    /// signed URL.
     ///
     /// The returned URL can be passed directly to [`QueueClient::new`] with
     /// `None` for the credential to construct a SAS-authenticated client.
@@ -108,13 +109,14 @@ impl QueueClient {
     /// # use azure_storage_queue::models::sas::{QueuePermissions, UserDelegationKey};
     /// # use time::OffsetDateTime;
     /// # fn example(client: &QueueClient, udk: UserDelegationKey) -> azure_core::Result<()> {
-    /// let url = client.generate_user_delegation_sas_url(
-    ///     "myaccount",
-    ///     &udk,
-    ///     QueuePermissions::new().read().process(),
-    ///     OffsetDateTime::now_utc() + time::Duration::hours(1),
-    ///     |sas| sas, // no customization needed
-    /// )?;
+    /// let url = client
+    ///     .user_delegation_sas(
+    ///         "myaccount",
+    ///         &udk,
+    ///         QueuePermissions::new().read().process(),
+    ///         OffsetDateTime::now_utc() + time::Duration::hours(1),
+    ///     )?
+    ///     .url();
     /// # Ok(()) }
     /// ```
     ///
@@ -126,31 +128,26 @@ impl QueueClient {
     /// # use azure_storage_sas::SasProtocol;
     /// # use time::OffsetDateTime;
     /// # fn example(client: &QueueClient, udk: UserDelegationKey) -> azure_core::Result<()> {
-    /// let url = client.generate_user_delegation_sas_url(
-    ///     "myaccount",
-    ///     &udk,
-    ///     QueuePermissions::new().read().process().add(),
-    ///     OffsetDateTime::now_utc() + time::Duration::hours(8),
-    ///     |sas| sas.protocol(SasProtocol::Https),
-    /// )?;
+    /// let url = client
+    ///     .user_delegation_sas(
+    ///         "myaccount",
+    ///         &udk,
+    ///         QueuePermissions::new().read().process().add(),
+    ///         OffsetDateTime::now_utc() + time::Duration::hours(8),
+    ///     )?
+    ///     .protocol(SasProtocol::Https)
+    ///     .url();
     /// # Ok(()) }
     /// ```
     #[cfg(feature = "sas_builder")]
     #[cfg_attr(docsrs, doc(cfg(feature = "sas_builder")))]
-    pub fn generate_user_delegation_sas_url<F>(
+    pub fn user_delegation_sas<'a>(
         &self,
         account_name: &str,
-        key: &azure_storage_common::models::UserDelegationKey,
+        key: &'a azure_storage_common::models::UserDelegationKey,
         permissions: azure_storage_sas::resource::QueuePermissions,
         expiry: time::OffsetDateTime,
-        configure: F,
-    ) -> Result<Url>
-    where
-        F: FnOnce(
-            azure_storage_sas::SasBuilder<'_, azure_storage_sas::state::QueueState>,
-        )
-            -> azure_storage_sas::SasBuilder<'_, azure_storage_sas::state::QueueState>,
-    {
+    ) -> Result<crate::sas::QueueSasBuilder<'a>> {
         let segments: Vec<String> = self
             .endpoint
             .path_segments()
@@ -187,27 +184,14 @@ impl QueueClient {
             ));
         }
 
-        let queue = azure_storage_sas::resource::Queue::new(&segments[0]);
-        let builder = azure_storage_sas::SasBuilder::new(account_name, key, expiry)?
+        let queue = azure_storage_sas::resource::QueueResource::new(&segments[0]);
+        let inner = azure_storage_sas::SasBuilder::new(account_name, key, expiry)?
             .queue(queue, permissions);
-        let token = configure(builder).build();
-        Ok(append_sas_query(&self.endpoint, &token))
+        Ok(crate::sas::QueueSasBuilder::new(
+            self.endpoint.clone(),
+            inner,
+        ))
     }
-}
-
-/// Appends a SAS query string to a URL, preserving existing query parameters.
-#[cfg(feature = "sas_builder")]
-fn append_sas_query(endpoint: &Url, query: &str) -> Url {
-    let mut url = endpoint.clone();
-    match url.query() {
-        Some(existing) if !existing.is_empty() => {
-            url.set_query(Some(&format!("{existing}&{query}")));
-        }
-        _ => {
-            url.set_query(Some(query));
-        }
-    }
-    url
 }
 
 #[cfg(test)]
@@ -249,7 +233,7 @@ mod tests {
 
     #[cfg(feature = "sas_builder")]
     #[test]
-    fn generate_user_delegation_sas_url_attaches_sas_query() {
+    fn user_delegation_sas_attaches_sas_query() {
         use crate::models::sas::{QueuePermissions, UserDelegationKey};
         use time::macros::datetime;
 
@@ -267,14 +251,14 @@ mod tests {
         };
 
         let sas_url = client
-            .generate_user_delegation_sas_url(
+            .user_delegation_sas(
                 "acct",
                 &udk,
                 QueuePermissions::new().read().add(),
                 datetime!(2025-06-01 12:00:00 UTC),
-                |sas| sas,
             )
-            .unwrap();
+            .unwrap()
+            .url();
 
         let query = sas_url.query().unwrap();
         assert!(query.contains("sp=ra"), "got: {query}");
@@ -301,14 +285,14 @@ mod tests {
         };
 
         let sas_url = client
-            .generate_user_delegation_sas_url(
+            .user_delegation_sas(
                 "devstoreaccount1",
                 &udk,
                 QueuePermissions::new().read().process(),
                 datetime!(2025-06-01 12:00:00 UTC),
-                |sas| sas,
             )
-            .unwrap();
+            .unwrap()
+            .url();
 
         assert_eq!(sas_url.path(), "/devstoreaccount1/myqueue");
         let query = sas_url.query().unwrap();
@@ -336,14 +320,14 @@ mod tests {
         };
 
         let sas_url = client
-            .generate_user_delegation_sas_url(
+            .user_delegation_sas(
                 "acct",
                 &udk,
                 QueuePermissions::new().read(),
                 datetime!(2025-06-01 12:00:00 UTC),
-                |sas| sas,
             )
-            .unwrap();
+            .unwrap()
+            .url();
 
         let query = sas_url.query().unwrap();
         assert!(query.contains("sig="), "got: {query}");

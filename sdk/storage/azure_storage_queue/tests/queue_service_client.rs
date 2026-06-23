@@ -754,13 +754,14 @@ async fn test_queue_user_delegation_sas(ctx: TestContext) -> Result<()> {
         .into_model()?;
 
     // Generate a SAS URL for the queue.
-    let sas_url = queue_client.generate_user_delegation_sas_url(
-        &account_name,
-        &udk,
-        QueuePermissions::new().read().add().process(),
-        now + Duration::hours(1),
-        |sas| sas,
-    )?;
+    let sas_url = queue_client
+        .user_delegation_sas(
+            &account_name,
+            &udk,
+            QueuePermissions::new().read().add().process(),
+            now + Duration::hours(1),
+        )?
+        .url();
 
     // Use the SAS URL to create an unauthenticated QueueClient and enqueue a message.
     let sas_client = QueueClient::new(sas_url, None, None)?;
@@ -820,13 +821,14 @@ async fn test_queue_user_delegation_sas_message_lifecycle(ctx: TestContext) -> R
         .into_model()?;
 
     // Grant read, add, update, and process so the SAS can do the whole lifecycle.
-    let sas_url = queue_client.generate_user_delegation_sas_url(
-        &account_name,
-        &udk,
-        QueuePermissions::new().read().add().update().process(),
-        now + Duration::hours(1),
-        |sas| sas,
-    )?;
+    let sas_url = queue_client
+        .user_delegation_sas(
+            &account_name,
+            &udk,
+            QueuePermissions::new().read().add().update().process(),
+            now + Duration::hours(1),
+        )?
+        .url();
     let sas_client = QueueClient::new(sas_url, None, None)?;
 
     // Add.

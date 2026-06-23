@@ -5,16 +5,16 @@ use std::fmt;
 
 /// A blob resource for user delegation SAS.
 ///
-/// By default targets a base blob (`sr=b`). Use [`Blob::snapshot`] or
-/// [`Blob::version`] to target a snapshot (`sr=bs`) or version (`sr=bv`).
-pub struct Blob {
+/// By default targets a base blob (`sr=b`). Use [`BlobResource::snapshot`] or
+/// [`BlobResource::version`] to target a snapshot (`sr=bs`) or version (`sr=bv`).
+pub struct BlobResource {
     container: String,
     blob: String,
     snapshot: Option<String>,
     version_id: Option<String>,
 }
 
-impl Blob {
+impl BlobResource {
     /// Creates a new blob resource targeting the base blob.
     pub fn new(container: impl Into<String>, blob: impl Into<String>) -> Self {
         Self {
@@ -29,7 +29,7 @@ impl Blob {
     ///
     /// `snapshot` is the snapshot timestamp (e.g., `"2025-01-15T12:00:00.0000000Z"`).
     ///
-    /// When using `BlobClient::generate_user_delegation_sas_url`, you don't
+    /// When using `BlobClient::user_delegation_sas`, you don't
     /// need to set this yourself; it is read from the endpoint URL's
     /// `snapshot=` query parameter automatically.
     pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
@@ -39,7 +39,7 @@ impl Blob {
 
     /// Targets a specific version of the blob (`sr=bv`).
     ///
-    /// When using `BlobClient::generate_user_delegation_sas_url`, you don't
+    /// When using `BlobClient::user_delegation_sas`, you don't
     /// need to set this yourself; it is read from the endpoint URL's
     /// `versionid=` query parameter automatically and preserved on the
     /// resulting URL.

@@ -4,11 +4,11 @@
 use std::fmt;
 
 /// A container resource for user delegation SAS.
-pub struct Container {
+pub struct ContainerResource {
     container: String,
 }
 
-impl Container {
+impl ContainerResource {
     /// Creates a new container resource.
     pub fn new(container: impl Into<String>) -> Self {
         Self {

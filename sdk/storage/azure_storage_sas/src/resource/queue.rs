@@ -6,14 +6,14 @@
 //! # Example
 //!
 //! ```rust no_run
-//! use azure_storage_sas::{SasBuilder, SasProtocol, UserDelegationKey, resource::{Queue, QueuePermissions}};
+//! use azure_storage_sas::{SasBuilder, SasProtocol, UserDelegationKey, resource::{QueueResource, QueuePermissions}};
 //! use time::OffsetDateTime;
 //!
 //! # fn example(udk: UserDelegationKey) -> azure_core::Result<()> {
 //! let token = SasBuilder::new("myaccount", &udk,
 //!         OffsetDateTime::now_utc() + time::Duration::hours(8))?
 //!     .protocol(SasProtocol::Https)
-//!     .queue(Queue::new("work-items"), QueuePermissions::new().read().process())
+//!     .queue(QueueResource::new("work-items"), QueuePermissions::new().read().process())
 //!     .build();
 //! # Ok(())
 //! # }
@@ -25,11 +25,11 @@ use crate::builder::{Fields, ValidatedKey};
 use crate::SAS_VERSION;
 
 /// A queue resource for user delegation SAS.
-pub struct Queue {
+pub struct QueueResource {
     queue: String,
 }
 
-impl Queue {
+impl QueueResource {
     /// Creates a new queue resource.
     pub fn new(queue: impl Into<String>) -> Self {
         Self {

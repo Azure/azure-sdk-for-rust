@@ -61,13 +61,14 @@ async fn test_blob_user_delegation_sas_read(ctx: TestContext) -> Result<(), Box<
     let service_client = get_blob_service_client(recording, StorageAccount::Standard, None)?;
     let udk = get_udk(&service_client).await?;
 
-    let sas_url = blob_client.generate_user_delegation_sas_url(
-        &account_name,
-        &udk,
-        BlobPermissions::new().read(),
-        OffsetDateTime::now_utc() + Duration::hours(1),
-        |sas| sas,
-    )?;
+    let sas_url = blob_client
+        .user_delegation_sas(
+            &account_name,
+            &udk,
+            BlobPermissions::new().read(),
+            OffsetDateTime::now_utc() + Duration::hours(1),
+        )?
+        .url();
 
     // Download via an unauthenticated client using only the SAS URL.
     let sas_client = BlobClient::new(sas_url, None, None)?;
@@ -93,13 +94,14 @@ async fn test_blob_user_delegation_sas_write(ctx: TestContext) -> Result<(), Box
     let service_client = get_blob_service_client(recording, StorageAccount::Standard, None)?;
     let udk = get_udk(&service_client).await?;
 
-    let sas_url = blob_client.generate_user_delegation_sas_url(
-        &account_name,
-        &udk,
-        BlobPermissions::new().read().write().create(),
-        OffsetDateTime::now_utc() + Duration::hours(1),
-        |sas| sas,
-    )?;
+    let sas_url = blob_client
+        .user_delegation_sas(
+            &account_name,
+            &udk,
+            BlobPermissions::new().read().write().create(),
+            OffsetDateTime::now_utc() + Duration::hours(1),
+        )?
+        .url();
 
     let sas_client = BlobClient::new(sas_url, None, None)?;
     let new_data = b"written through sas";
@@ -153,13 +155,14 @@ async fn test_blob_version_user_delegation_sas(ctx: TestContext) -> Result<(), B
     // Generate a SAS scoped to version 1. `with_version` puts `versionid=` on the
     // endpoint, which drives `sr=bv` and places the version id in the signature.
     let version_1_client = blob_client.with_version(&version_1)?;
-    let sas_url = version_1_client.generate_user_delegation_sas_url(
-        &account_name,
-        &udk,
-        BlobPermissions::new().read(),
-        OffsetDateTime::now_utc() + Duration::hours(1),
-        |sas| sas,
-    )?;
+    let sas_url = version_1_client
+        .user_delegation_sas(
+            &account_name,
+            &udk,
+            BlobPermissions::new().read(),
+            OffsetDateTime::now_utc() + Duration::hours(1),
+        )?
+        .url();
     assert!(
         sas_url.query().is_some_and(|q| q.contains("sr=bv")),
         "expected sr=bv in SAS URL, got: {sas_url}"
@@ -211,13 +214,14 @@ async fn test_blob_snapshot_user_delegation_sas(ctx: TestContext) -> Result<(), 
     let udk = get_udk(&service_client).await?;
 
     let snapshot_client = blob_client.with_snapshot(&snapshot)?;
-    let sas_url = snapshot_client.generate_user_delegation_sas_url(
-        &account_name,
-        &udk,
-        BlobPermissions::new().read(),
-        OffsetDateTime::now_utc() + Duration::hours(1),
-        |sas| sas,
-    )?;
+    let sas_url = snapshot_client
+        .user_delegation_sas(
+            &account_name,
+            &udk,
+            BlobPermissions::new().read(),
+            OffsetDateTime::now_utc() + Duration::hours(1),
+        )?
+        .url();
     assert!(
         sas_url.query().is_some_and(|q| q.contains("sr=bs")),
         "expected sr=bs in SAS URL, got: {sas_url}"
@@ -253,13 +257,14 @@ async fn test_container_user_delegation_sas(ctx: TestContext) -> Result<(), Box<
     let service_client = get_blob_service_client(recording, StorageAccount::Standard, None)?;
     let udk = get_udk(&service_client).await?;
 
-    let container_sas_url = container_client.generate_user_delegation_sas_url(
-        &account_name,
-        &udk,
-        ContainerPermissions::new().read().list(),
-        OffsetDateTime::now_utc() + Duration::hours(1),
-        |sas| sas,
-    )?;
+    let container_sas_url = container_client
+        .user_delegation_sas(
+            &account_name,
+            &udk,
+            ContainerPermissions::new().read().list(),
+            OffsetDateTime::now_utc() + Duration::hours(1),
+        )?
+        .url();
 
     // Build a blob URL that carries the container SAS query, then download.
     let mut blob_url = container_sas_url.clone();

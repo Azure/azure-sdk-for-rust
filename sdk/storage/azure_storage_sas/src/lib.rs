@@ -5,10 +5,10 @@
 //!
 //! # Supported resource types
 //!
-//! - [`Blob`](resource::blob::Blob) — blob-level user delegation SAS (also covers snapshots and versions)
-//! - [`Container`](resource::blob::Container) — container-level user delegation SAS
-//! - [`Directory`](resource::blob::Directory) — directory-level (ADLS Gen2) user delegation SAS
-//! - [`Queue`](resource::Queue) — queue-level user delegation SAS
+//! - [`BlobResource`](resource::blob::BlobResource) — blob-level user delegation SAS (also covers snapshots and versions)
+//! - [`ContainerResource`](resource::blob::ContainerResource) — container-level user delegation SAS
+//! - [`DirectoryResource`](resource::blob::DirectoryResource) — directory-level (ADLS Gen2) user delegation SAS
+//! - [`QueueResource`](resource::QueueResource) — queue-level user delegation SAS
 
 mod builder;
 mod ip_range;

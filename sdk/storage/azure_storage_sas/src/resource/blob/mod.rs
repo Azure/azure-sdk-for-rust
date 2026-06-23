@@ -8,13 +8,13 @@
 //! ## Blob user delegation SAS
 //!
 //! ```rust no_run
-//! use azure_storage_sas::{SasBuilder, UserDelegationKey, resource::blob::{Blob, BlobPermissions}};
+//! use azure_storage_sas::{SasBuilder, UserDelegationKey, resource::blob::{BlobResource, BlobPermissions}};
 //! use time::OffsetDateTime;
 //!
 //! # fn example(udk: UserDelegationKey) -> azure_core::Result<()> {
 //! let token = SasBuilder::new("myaccount", &udk,
 //!         OffsetDateTime::now_utc() + time::Duration::hours(1))?
-//!     .blob(Blob::new("images", "photo.jpg"), BlobPermissions::new().read())
+//!     .blob(BlobResource::new("images", "photo.jpg"), BlobPermissions::new().read())
 //!     .content_type("image/jpeg")
 //!     .build();
 //! # Ok(())
@@ -24,25 +24,32 @@
 //! ## Container SAS
 //!
 //! ```rust no_run
-//! use azure_storage_sas::{SasBuilder, UserDelegationKey, resource::blob::{Container, ContainerPermissions}};
+//! use azure_storage_sas::{SasBuilder, UserDelegationKey, resource::blob::{ContainerResource, ContainerPermissions}};
 //! use time::OffsetDateTime;
 //!
 //! # fn example(udk: UserDelegationKey) -> azure_core::Result<()> {
 //! let token = SasBuilder::new("myaccount", &udk,
 //!         OffsetDateTime::now_utc() + time::Duration::hours(4))?
-//!     .container(Container::new("logs"), ContainerPermissions::new().read().list())
+//!     .container(ContainerResource::new("logs"), ContainerPermissions::new().read().list())
 //!     .build();
 //! # Ok(())
 //! # }
 //! ```
+//!
+//! # SAS field abbreviations
+//!
+//! The string-to-sign and the emitted query string use the short field names
+//! (`sp`, `st`, `se`, `sv`, `sr`, `skoid`, ...) defined by the Storage REST
+//! API. For the meaning of each field, see
+//! [Create a user delegation SAS](https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas).
 
 mod blob_resource;
 mod container_resource;
 mod directory_resource;
 
-pub use blob_resource::{Blob, BlobPermissions};
-pub use container_resource::Container;
-pub use directory_resource::Directory;
+pub use blob_resource::{BlobPermissions, BlobResource};
+pub use container_resource::ContainerResource;
+pub use directory_resource::DirectoryResource;
 
 /// Permissions shared by container and directory resources.
 ///

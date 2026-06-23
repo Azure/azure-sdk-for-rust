@@ -2,12 +2,12 @@
 // Licensed under the MIT License.
 
 /// A directory resource (ADLS Gen2) for user delegation SAS.
-pub struct Directory {
+pub struct DirectoryResource {
     container: String,
     directory: String,
 }
 
-impl Directory {
+impl DirectoryResource {
     /// Creates a new directory resource.
     ///
     /// The directory depth (`sdd`) is computed automatically from the path

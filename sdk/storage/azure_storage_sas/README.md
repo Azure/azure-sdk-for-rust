@@ -6,7 +6,7 @@ User delegation SAS tokens are signed with a `UserDelegationKey` obtained from `
 
 ## Which API should I use?
 
-Most users should depend on `azure_storage_blob` or `azure_storage_queue` with the `sas_builder` feature enabled and call the `generate_user_delegation_sas_url` method on `BlobClient`, `BlobContainerClient`, or `QueueClient`.
+Most users should depend on `azure_storage_blob` or `azure_storage_queue` with the `sas_builder` feature enabled and call the `user_delegation_sas` method on `BlobClient`, `BlobContainerClient`, or `QueueClient`.
 
 Reach for `SasBuilder` directly when:
 

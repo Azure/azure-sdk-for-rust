@@ -8,13 +8,14 @@
 //! its documentation for full details on the builder API.
 //!
 //! For most cases you want the
-//! [`BlobClient::generate_user_delegation_sas_url`](crate::BlobClient::generate_user_delegation_sas_url)
-//! and [`BlobContainerClient::generate_user_delegation_sas_url`](crate::BlobContainerClient::generate_user_delegation_sas_url)
+//! [`BlobClient::user_delegation_sas`](crate::BlobClient::user_delegation_sas)
+//! and [`BlobContainerClient::user_delegation_sas`](crate::BlobContainerClient::user_delegation_sas)
 //! convenience methods rather than the lower-level [`SasBuilder`].
 
+pub use crate::sas::{BlobContainerSasBuilder, BlobSasBuilder};
 pub use azure_storage_common::models::UserDelegationKey;
 pub use azure_storage_sas::resource::blob::{
-    Blob, BlobPermissions, Container, ContainerPermissions, Directory,
+    BlobPermissions, BlobResource, ContainerPermissions, ContainerResource, DirectoryResource,
 };
 pub use azure_storage_sas::state::{BlobState, ContainerState, DirectoryState};
 pub use azure_storage_sas::{BlobServiceState, SasBuilder, SasIpRange, SasProtocol, SAS_VERSION};
