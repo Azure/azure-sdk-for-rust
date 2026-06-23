@@ -33,6 +33,13 @@ use std::{
 /// println!("{:?}", event_data);
 /// ```
 ///
+// SENSITIVE-DATA: SafeDebug redacts the `#[safe(false)]` fields
+// (body, properties) ONLY when the azure_core / typespec `debug` cargo feature
+// is OFF (the default). If that feature is enabled, `{:?}` on an EventData dumps
+// the full customer payload body and any PII in application properties. Do not
+// log whole EventData values at info/debug; prefer sequence_number / offset /
+// partition_id. Do not change the SafeDebug derive or the `#[safe(...)]`
+// attributes to "fix" this; the gating is intentional.
 #[derive(Default, PartialEq, Clone, SafeDebug)]
 #[safe(true)]
 pub struct EventData {
@@ -157,6 +164,13 @@ impl From<EventData> for AmqpMessage {
 /// Represents the data associated with an event received from an Event Hub.
 ///
 /// This struct provides the event data, enqueued time, offset, sequence number, partition key, and system properties of the event.
+// SENSITIVE-DATA: The manual `Debug` impl below prints the raw AMQP
+// message, which carries the full customer payload body and any PII. That body
+// is redacted by SafeDebug ONLY while the azure_core / typespec `debug` cargo
+// feature is OFF (the default). If a build enables that feature, `{:?}` on a
+// ReceivedEventData (e.g. the trace! in consumer/event_receiver.rs) emits the
+// full payload. Keep such logging at trace! and prefer logging only
+// sequence_number() / offset() / partition_key() at higher levels.
 pub struct ReceivedEventData {
     message: AmqpMessage,
     event_data: OnceLock<EventData>,

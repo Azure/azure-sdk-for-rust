@@ -1,6 +1,6 @@
 [package]
 name = "azure_data_cosmos_driver"
-version = "0.5.0"
+version = "0.6.0"
 description = "Core implementation layer for Azure Cosmos DB - provides transport, routing, and protocol handling for cross-language SDK reuse"
 readme = "README.md"
 authors.workspace = true
@@ -21,7 +21,7 @@ async-trait.workspace = true
 azure_core = { workspace = true, default-features = false, features = [
   "hmac_rust",
 ] }
-azure_data_cosmos_macros = { version = "0.2.0", path = "../azure_data_cosmos_macros" }
+azure_data_cosmos_macros = { version = "0.3.0", path = "../azure_data_cosmos_macros" }
 backtrace.workspace = true
 base64.workspace = true
 bytes.workspace = true
