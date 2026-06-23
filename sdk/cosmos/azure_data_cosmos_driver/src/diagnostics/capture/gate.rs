@@ -85,7 +85,7 @@ impl DiagnosticsPolicy {
         }
     }
 
-    /// Always build a [`DiagnosticsContext`].
+    /// Always build a [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext).
     pub fn always() -> Self {
         Self {
             mode: Mode::Always,
