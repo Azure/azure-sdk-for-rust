@@ -499,7 +499,9 @@ pub(crate) async fn execute_operation_pipeline(
         )
         .await;
 
-        // Capture partition key range ID from response headers (first time only).
+        // Fallback: capture the partition key range ID from response headers
+        // only if pre-resolution (from the request's partition key / EPK range)
+        // did not already seed it. Set once, on the first response that carries it.
         if retry_state.partition_key_range_id.is_none() {
             if let Some(headers) = result.cosmos_headers() {
                 if let Some(pk_range_id) = headers.partition_key_range_id.as_deref() {
@@ -1110,6 +1112,13 @@ fn resolve_endpoint(
                 .chain(account.preferred_write_endpoints.iter())
                 .any(|known| known.region() == Some(region))
         };
+        // Caller-supplied `excluded_regions` is a hard per-region filter on
+        // override fast-paths (reads). A global / hub endpoint with no region
+        // is never excluded.
+        let region_excluded = |ep: &CosmosEndpoint| -> bool {
+            ep.region()
+                .is_some_and(|r| retry_state.excluded_regions.iter().any(|e| e == r))
+        };
         let ppcb_should_skip = |ep: &CosmosEndpoint| -> bool {
             if region_in_flight_failed(ep) {
                 return true;
@@ -1117,10 +1126,7 @@ fn resolve_endpoint(
             if region_not_in_topology(ep) {
                 return true;
             }
-            let region = ep.region();
-            let excluded =
-                region.is_some_and(|r| retry_state.excluded_regions.iter().any(|e| e == r));
-            if excluded {
+            if region_excluded(ep) {
                 return true;
             }
             !endpoint_is_available(operation, ep, account, now, endpoint_unavailability_ttl)
@@ -1142,15 +1148,18 @@ fn resolve_endpoint(
         // gate so the hub cache is consulted only when PPAF is on.
         //
         // Skip when the cached hub region is already buffered as failed in
-        // this operation (the same in-flight skip set PPAF uses): fall
-        // through to the default selection rather than retrying the same
-        // failed region.
+        // this operation (the same in-flight skip set PPAF uses) or when the
+        // caller excluded it via `excluded_regions`: fall through to the
+        // default selection (which also honors the exclusion) rather than
+        // retrying the same failed/excluded region.
         let hub_latch_active = is_read
             && retry_state.hub_region_processing_only
             && partitions.per_partition_automatic_failover_enabled;
         if hub_latch_active {
             if let Some(entry) = partitions.failover_overrides.get(pk_range_id) {
-                if !ppaf_should_skip(&entry.current_endpoint) {
+                if !ppaf_should_skip(&entry.current_endpoint)
+                    && !region_excluded(&entry.current_endpoint)
+                {
                     return make_partition_routing(entry.current_endpoint.clone());
                 }
             }
@@ -4333,6 +4342,46 @@ mod tests {
         assert_ne!(
             routing.endpoint, westus,
             "warm-path hub cache must not route when PPAF is disabled on the partition state",
+        );
+    }
+
+    /// Hub-region warm-path routing honors the caller's `excluded_regions`:
+    /// even with the latch set, PPAF enabled, and a cache entry present, a
+    /// cached hub endpoint whose region the caller excluded must not be
+    /// selected. Selection falls through to the default path, which also
+    /// honors the exclusion. Mirrors the PPCB read-side exclusion gate.
+    #[test]
+    fn resolve_endpoint_hub_cache_honors_excluded_regions() {
+        let pk_range = "0";
+        let hub = CosmosEndpoint::regional(
+            "westus".into(),
+            Url::parse("https://test-westus.documents.azure.com:443/").unwrap(),
+        );
+        let (location, eastus, _westus) = hub_cache_location_snapshot(pk_range, &hub);
+
+        let operation = CosmosOperation::read_database(DatabaseReference::from_name(
+            test_account(),
+            "mydb",
+        ));
+        let mut retry_state = read_state_with_hub_latch(pk_range);
+        // Caller pins reads away from the cached hub region.
+        retry_state.excluded_regions = vec![crate::options::Region::from("westus")];
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            Duration::from_secs(60),
+        );
+
+        assert_ne!(
+            routing.endpoint, hub,
+            "warm-path hub cache must not route to an excluded region",
+        );
+        assert_eq!(
+            routing.endpoint, eastus,
+            "selection must fall through to the non-excluded preferred region",
         );
     }
 
@@ -7583,8 +7632,8 @@ mod tests {
     }
 
     /// T-S9 — Emission helper: shared latch alone (Acquire-load `true`)
-    /// emits, even when per-state latch is `false`. This is the new
-    /// cross-hedge propagation rule from PR #5815.
+    /// emits, even when per-state latch is `false`. This is the
+    /// cross-hedge propagation rule.
     #[test]
     fn should_emit_hub_region_header_shared_only() {
         use std::sync::{
@@ -7609,9 +7658,8 @@ mod tests {
     }
 
     /// T-S11 — `apply_hub_region_header` emits the header when only the
-    /// shared latch is `true` on the retry state. Mirrors the PR #5815
-    /// `CrossRegionAvailabilityContext_PropagatesHubHeaderFlagToHedgedRequests`
-    /// test at the emission layer.
+    /// shared latch is `true` on the retry state, verifying cross-hedge
+    /// propagation at the emission layer.
     #[test]
     fn apply_hub_region_header_emits_when_only_shared_latch_set() {
         use std::sync::{atomic::AtomicBool, Arc};
