@@ -983,26 +983,17 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
 }
 
 // ----------------------------------------------------------------------------
-// Gateway 2.0 fault injection coverage (Phase 6)
+// Gateway 2.0 fault injection coverage
 // ----------------------------------------------------------------------------
 
 /// Gateway 2.0 ConnectionError on every region must surface a connection
 /// failure to the caller — Rust does **not** silently fall back to the
-/// standard gateway. The driver attempts the request on every preferred
-/// region's Gateway 2.0 endpoint and, when all of them return a connection
-/// error, fails fast with the underlying connectivity error so that
-/// firewall / port-10250-blocked misconfigurations are visible to the
-/// operator rather than masked by a transparent fallback.
-///
-/// The rule used to be scoped to [`TransportKind::Gateway20`] via
-/// `with_transport_kind`, but on some test accounts that filter caused
-/// the rule to silently miss the read attempts and the test reported a
-/// false-negative ("got 200, expected fail-fast error"). The transport
-/// filter has been dropped — the rule now matches every `ReadItem`
-/// regardless of transport — so the test reliably exercises the
-/// fail-fast contract on whichever transport the driver chooses, while
-/// the Gateway 2.0-specific routing behaviour is asserted at the unit
-/// level in the driver's gateway20 pipeline tests.
+/// standard gateway, so firewall / port-10250-blocked misconfigurations stay
+/// visible to the operator. The fault-injection rule matches every `ReadItem`
+/// regardless of transport (a prior `with_transport_kind` filter caused
+/// false-negatives on some accounts), while the Gateway 2.0-specific routing
+/// behaviour is asserted at the unit level in the driver's gateway20 pipeline
+/// tests.
 #[tokio::test]
 #[cfg_attr(
     not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
@@ -1015,14 +1006,11 @@ pub async fn gateway20_connection_error_fails_fast_after_all_regions_attempted(
         .with_probability(1.0)
         .build();
 
-    // The transport_kind filter has been removed: on accounts where the
-    // account-level config or build flags route a particular read through
-    // the standard gateway instead of Gateway 2.0, the rule was never
-    // matching and the test was failing with "expected a fail-fast error,
-    // got 200". The fail-fast contract being asserted is "connection
-    // errors injected on every region cause the read to surface a
-    // connection error rather than silently fall back", which holds
-    // regardless of which transport actually carries the read.
+    // No transport_kind filter: the rule must match the read regardless of
+    // which transport carries it, since account config or build flags can
+    // route a read through the standard gateway instead of Gateway 2.0. The
+    // asserted contract is that connection errors injected on every region
+    // surface a connection error rather than silently falling back.
     let condition = FaultInjectionConditionBuilder::new()
         .with_operation_type(FaultOperationType::ReadItem)
         .build();
@@ -1265,20 +1253,16 @@ pub async fn error_diagnostics_records_retry_history() -> Result<(), Box<dyn Err
 
 // ── 449 RetryWith policy — live SDK coverage ─────────────────────────────────
 //
-// 449 RetryWith is the Cosmos backend's signal for transient concurrency
-// conflicts that the client must retry in the same region. The driver
-// implements the policy in `try_handle_retry_with`. The tests below exercise
-// the policy from the SDK surface — `ContainerClient::read_item` — so a
-// regression that disables the driver-side retry would surface as a
-// user-visible 449 here.
+// 449 RetryWith signals a transient same-region concurrency conflict that the
+// driver retries internally (in `try_handle_retry_with`). These tests exercise
+// the policy from the SDK surface (`ContainerClient::read_item`) so a regression
+// that disables the driver-side retry surfaces as a user-visible 449.
 
-/// Test that 449 RetryWith faults are transparently retried by the driver,
-/// and the SDK caller sees `Ok` once the rule's hit-limit is exhausted.
-///
-/// Mirrors `fault_injection_429_retry_with_hit_limit` in shape; the only
-/// material difference is the error type, since both 429 and 449 trigger a
-/// driver-side retry policy without reaching the caller. Asserts that
-/// `read_item` returns success after the rule fires `hit_limit` times.
+/// Test that 449 RetryWith faults are transparently retried by the driver, so
+/// the SDK caller sees `Ok` once the rule's hit-limit is exhausted. Mirrors
+/// `fault_injection_429_retry_with_hit_limit`, differing only in the error type
+/// since both 429 and 449 trigger a driver-side retry without reaching the
+/// caller.
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "emulator"),
@@ -1456,13 +1440,8 @@ pub async fn error_diagnostics_includes_fault_injection_evaluations() -> Result<
 }
 
 /// Gateway 2.0 449 RetryWith — like `fault_injection_449_retry_with_hit_limit`,
-/// but the fault is scoped to `TransportKind::Gateway20` so it only fires on
-/// Gateway 2.0 traffic. Verifies the RetryWith policy is exercised on the
-/// Gateway 2.0 transport (RNTBD-over-HTTP/2), not just the standard gateway.
-///
-/// **Live-account coverage**: gated on `test_category = "gateway20"` /
-/// `"gateway20_multi_region"`, so the test runs against the pre-provisioned
-/// Gateway 2.0 account from `sdk/cosmos/ci.yml`.
+/// but scoped to the Gateway 2.0 transport. Live-account coverage gated on
+/// `test_category = "gateway20"` / `"gateway20_multi_region"`.
 #[tokio::test]
 #[cfg_attr(
     not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),

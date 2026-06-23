@@ -13,9 +13,8 @@ use crate::{
         dataflow::{
             planner,
             query_plan::{QueryPlan, RawQueryPlan},
-            CachedTopologyProvider, OperationPlan,
-            PartitionRoutingRefresh, PipelineContext, PipelineNodeState, RequestExecutor,
-            RequestTarget, TopologyProvider,
+            CachedTopologyProvider, OperationPlan, PartitionRoutingRefresh, PipelineContext,
+            PipelineNodeState, RequestExecutor, RequestTarget, TopologyProvider,
         },
         pipeline::operation_pipeline::OperationOverrides,
         routing::{

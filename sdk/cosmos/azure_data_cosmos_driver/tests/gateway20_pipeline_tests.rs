@@ -3,7 +3,7 @@
 
 //! Integration tests that lock in the Gateway 2.0 transport pipeline contract.
 //!
-//! These tests cover Phase 6 of the Gateway 2.0 specification (see
+//! These tests lock in the Gateway 2.0 transport pipeline contract (see
 //! `docs/GATEWAY_20_SPEC.md`). They run as a standalone integration target so
 //! they exercise the public surface of the driver crate end-to-end (no
 //! `pub(crate)` access).
@@ -177,8 +177,8 @@ async fn capturing_runtime(
 /// error. We only care about the captured frames.
 async fn probe(runtime: &Arc<CosmosDriverRuntime>) {
     let account = fake_account();
-    let options = DriverOptions::builder(account.clone()).build();
-    let _ = runtime.get_or_create_driver(account, Some(options)).await;
+    let options = DriverOptions::builder(account).build();
+    let _ = runtime.create_driver(options).await;
 }
 
 // ----------------------------------------------------------------------------
@@ -227,7 +227,7 @@ async fn operator_override_routes_reads_to_standard_gateway() {
         return;
     };
 
-    // TODO(Phase 6): once diagnostics expose `TransportKind` per request,
+    // TODO: once diagnostics expose `TransportKind` per request,
     // assert that every request used `TransportKind::StandardGateway`.
     let pool = ConnectionPoolOptions::builder()
         .with_gateway20_disabled(true)
@@ -238,8 +238,9 @@ async fn operator_override_routes_reads_to_standard_gateway() {
         .build()
         .await
         .expect("runtime builds");
+    let options = DriverOptions::builder(account).build();
     let driver = runtime
-        .get_or_create_driver(account.clone(), None)
+        .create_driver(options)
         .await
         .expect("driver init succeeds against the live account");
 
@@ -275,7 +276,7 @@ async fn stored_proc_execute_falls_back_to_standard_gateway() {
     let Some(_account) = live_account_from_env() else {
         return;
     };
-    // TODO(Phase 6): drive `CosmosOperation::execute_stored_procedure(...)`
+    // TODO: drive `CosmosOperation::execute_stored_procedure(...)`
     // against a real account and assert the diagnostics record
     // `TransportKind::StandardGateway` for that request specifically while
     // co-located point reads/writes record `TransportKind::Gateway20`.
@@ -298,7 +299,7 @@ async fn diagnostics_records_gateway20_transport_kind() {
     let Some(_account) = live_account_from_env() else {
         return;
     };
-    // TODO(Phase 6): once `TransportKind` is exposed on the public
+    // TODO: once `TransportKind` is exposed on the public
     // `RequestDiagnostics`, drive a point read against the live Gateway 2.0
     // account and assert the diagnostics report `TransportKind::Gateway20`.
 }
@@ -388,7 +389,7 @@ async fn v2_rntbd_never_emits_both_consistency_tokens() {
     // structurally decoded to assert mutual exclusion of `ConsistencyLevel`
     // and any future `ReadConsistencyStrategy` token.
     //
-    // TODO(Phase 6): when a `ReadConsistencyStrategy` RNTBD token lands,
+    // TODO: when a `ReadConsistencyStrategy` RNTBD token lands,
     // replace this scheme check with a structural decode of the wrapped
     // frame and assert at-most-one consistency token per wrapped request.
     for req in &captured {

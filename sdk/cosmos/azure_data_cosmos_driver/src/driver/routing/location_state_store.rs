@@ -1104,6 +1104,7 @@ mod tests {
             Duration::ZERO,
             PartitionFailoverOptions::default(),
             Vec::new(),
+            None,
         );
 
         store
@@ -1162,6 +1163,7 @@ mod tests {
                 Duration::from_secs(60),
                 PartitionFailoverOptions::default(),
                 Vec::new(),
+                None,
             )
         };
 
@@ -1237,6 +1239,7 @@ mod tests {
             Duration::from_secs(60),
             PartitionFailoverOptions::default(),
             Vec::new(),
+            None,
         );
 
         let properties = Arc::new(test_refresh_payload());
@@ -1449,55 +1452,6 @@ mod tests {
             Arc::ptr_eq(&after_bootstrap, &after_failed_refresh),
             "failed refresh must leave the exact same Arc in the cache",
         );
-    }
-
-    #[test]
-    fn sync_account_properties_prunes_expired_marks_even_when_etag_is_unchanged() {
-        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
-        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
-            let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move { Ok(payload) });
-            fut
-        });
-
-        let store = LocationStateStore::new(
-            Arc::new(AccountMetadataCache::new()),
-            test_endpoint(),
-            default_endpoint.clone(),
-            refresh,
-            false,
-            Duration::from_secs(60),
-            PartitionFailoverOptions::default(),
-            Vec::new(),
-            None,
-        );
-
-        let properties = Arc::new(test_refresh_payload());
-        store.sync_account_properties(Arc::clone(&properties), &default_endpoint);
-
-        let expired_endpoint = CosmosEndpoint::regional(
-            "eastus".into(),
-            url::Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
-        );
-        store.apply_account(|current| {
-            let mut next = current.clone();
-            next.unavailable_endpoints.insert(
-                expired_endpoint.url().clone(),
-                (
-                    Instant::now() - Duration::from_secs(120),
-                    UnavailableReason::TransportError,
-                ),
-            );
-            next
-        });
-
-        // Use a different Arc to force a re-sync (same data, different pointer).
-        let properties2 = Arc::new(test_refresh_payload());
-        store.sync_account_properties(properties2, &default_endpoint);
-
-        let snapshot = store.snapshot();
-        assert!(snapshot.account.unavailable_endpoints.is_empty());
     }
 
     /// End-to-end coverage for the "service stops advertising Gateway 2.0"

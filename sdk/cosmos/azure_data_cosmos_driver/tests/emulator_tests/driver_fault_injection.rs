@@ -338,7 +338,7 @@ pub async fn fault_injection_connection_error() -> Result<(), Box<dyn Error>> {
 }
 
 // ----------------------------------------------------------------------------
-// Gateway 2.0 fault injection coverage (Phase 6)
+// Gateway 2.0 fault injection coverage
 // ----------------------------------------------------------------------------
 //
 // The following three tests lock in the retry/failover behavior the Gateway
@@ -364,7 +364,7 @@ pub async fn fault_injection_connection_error() -> Result<(), Box<dyn Error>> {
 /// fire on standard-gateway requests issued during account discovery. The
 /// emulator does not yet expose Gateway 2.0 endpoints, so this test is
 /// gated behind the `gateway20` test category until CI gains a Gateway 2.0
-/// account; see `docs/GATEWAY_20_SPEC.md` (Phase 6).
+/// account; see `docs/GATEWAY_20_SPEC.md`.
 #[tokio::test]
 #[cfg_attr(
     not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
@@ -464,7 +464,7 @@ pub async fn gateway20_request_timeout_cross_region_for_reads() -> Result<(), Bo
             "Read should ultimately fail when 408 fires on every attempt"
         );
 
-        // TODO(Phase 6): once diagnostics expose retry attempts, assert that
+        // TODO: once diagnostics expose retry attempts, assert that
         // a single-region account exhausts local-only retries while a
         // multi-region account performs at least one cross-region attempt.
         assert!(rule.hit_count() > 0, "Rule should have been hit");
@@ -524,7 +524,7 @@ pub async fn gateway20_read_session_not_available_remote_preferred() -> Result<(
             "Read should fail when 404/1002 fires on every attempt"
         );
 
-        // TODO(Phase 6): once diagnostics record metadata-cache hits, assert
+        // TODO: once diagnostics record metadata-cache hits, assert
         // that the PKRange cache was NOT refreshed during these retries (a
         // 404/1002 is a session-token issue, not a routing-topology issue).
         assert!(rule.hit_count() > 0, "Rule should have been hit");

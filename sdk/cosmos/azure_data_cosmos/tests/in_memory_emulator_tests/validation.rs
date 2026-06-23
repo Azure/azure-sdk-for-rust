@@ -21,25 +21,6 @@ use std::collections::HashMap;
 use azure_data_cosmos_driver::models::{CosmosResponseHeaders, ResponseBody};
 use azure_data_cosmos_driver::CosmosResponse;
 
-/// Headers the vnext (Linux Docker) Cosmos emulator does not consistently
-/// emit but the production gateway and the in-memory emulator do. Used by
-/// [`compare_responses`] to relax `Symmetric` rules to `Ignore` for these
-/// headers when `AZURE_COSMOS_EMULATOR_FLAVOR=vnext`. The list errs on the
-/// broader side: any header the vnext gateway omits on point-ops would
-/// otherwise fail the `Symmetric` presence check, so we add headers here as
-/// we discover them.
-const VNEXT_OMITTED_HEADERS: &[&str] = &[
-    "transport_request_id",
-    "global_committed_lsn",
-    "local_lsn",
-    "number_of_read_regions",
-    "last_state_change_utc",
-    "service_version",
-    "gateway_version",
-    "collection_index_transformation_progress",
-    "has_tentative_writes",
-];
-
 /// How a single header field should be validated between real and emulator responses.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[allow(dead_code)]
@@ -306,19 +287,9 @@ pub fn compare_responses(
     );
 
     // ── Headers ──────────────────────────────────────────────────
-    // The vnext (Linux) Docker emulator does not emit a handful of headers
-    // that the production gateway and the in-memory emulator do (most
-    // notably `x-ms-transport-request-id`). Downgrade those rules to
-    // `Ignore` so dual-backend assertions remain meaningful on vnext
-    // without forcing every test site to special-case it.
-    let on_vnext = std::env::var("AZURE_COSMOS_EMULATOR_FLAVOR").as_deref() == Ok("vnext");
     let header_pairs = extract_header_pairs(&real.headers, &emulator.headers);
     for (name, real_val, emu_val) in &header_pairs {
-        let mut rule = header_spec.rule_for(name);
-        if on_vnext && VNEXT_OMITTED_HEADERS.contains(name) {
-            rule = HeaderMatch::Ignore;
-        }
-        validate_header_field(name, real_val, emu_val, rule);
+        validate_header_field(name, real_val, emu_val, header_spec.rule_for(name));
     }
 
     // ── Body ─────────────────────────────────────────────────────

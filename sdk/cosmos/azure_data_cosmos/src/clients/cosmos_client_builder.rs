@@ -14,9 +14,6 @@ use crate::{
     },
     AccountReference, CosmosClient, CosmosCredential, CosmosRuntime, RoutingStrategy,
 };
-use azure_data_cosmos_driver::options::ConnectionPoolOptions;
-#[cfg(all(feature = "allow_invalid_certificates", feature = "__tls",))]
-use azure_data_cosmos_driver::options::ServerCertificateValidation;
 
 /// Builder for creating [`CosmosClient`] instances.
 ///
@@ -90,11 +87,6 @@ pub struct CosmosClientBuilder {
     /// Pre-built runtime to attach. If `None`, the client falls back to
     /// a default global runtime.
     runtime: Option<CosmosRuntime>,
-    /// Whether to allow proxy usage. When false (default), `HTTPS_PROXY` is ignored.
-    allow_proxy: bool,
-    /// Whether to accept invalid TLS certificates when connecting to the emulator.
-    #[cfg(all(feature = "allow_invalid_certificates", feature = "__tls",))]
-    allow_emulator_invalid_certificates: bool,
     /// Throughput control groups to register on this client's driver options.
     throughput_control_groups: Vec<ThroughputControlGroupOptions>,
     /// Fault-injection rules to apply on this client's driver.
@@ -105,15 +97,6 @@ pub struct CosmosClientBuilder {
     fault_injection_rules: Vec<Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>>,
     /// Fallback endpoints tried when the primary endpoint is unavailable.
     backup_endpoints: Vec<azure_core::http::Url>,
-    /// Operator override for the Gateway 2.0 transport.
-    ///
-    /// `None` (the default) leaves the underlying driver in charge of
-    /// routing — Gateway 2.0 is selected automatically whenever the
-    /// account advertises a Gateway 2.0 endpoint and HTTP/2 is allowed.
-    /// `Some(true)` forces every request through the standard gateway
-    /// transport via [`with_gateway20_disabled`](Self::with_gateway20_disabled);
-    /// `Some(false)` explicitly opts in (matching the default behavior).
-    gateway20_disabled: Option<bool>,
     /// Options to use for per-partition failover (PPAF, PPCB)
     partition_failover_options: Option<PartitionFailoverOptions>,
 }
@@ -209,77 +192,6 @@ impl CosmosClientBuilder {
         Ok(self)
     }
 
-    /// Registers a per-client [`ThroughputControlGroupOptions`].
-    ///
-    /// This setting only applies when connecting to the local emulator
-    /// (e.g., `https://localhost:8081/`). It should not be used for production endpoints.
-    ///
-    /// # Arguments
-    ///
-    /// * `allow` - Whether to accept invalid certificates for emulator connections.
-    #[cfg(all(feature = "allow_invalid_certificates", feature = "__tls",))]
-    pub fn with_allow_emulator_invalid_certificates(mut self, allow: bool) -> Self {
-        self.allow_emulator_invalid_certificates = allow;
-        self
-    }
-
-    /// Allows the SDK to use HTTP proxies and respect system proxy settings.
-    ///
-    /// By default, the Cosmos DB SDK ignores the `HTTPS_PROXY`, `HTTP_PROXY`,
-    /// `ALL_PROXY` environment variables and their lowercase variants. Proxies
-    /// can cause issues for Cosmos DB connectivity, availability, and throughput.
-    ///
-    /// When enabled, the SDK will respect system-configured proxy settings
-    /// (such as proxy-related environment variables, including any exclusions).
-    ///
-    /// NOTE: End-to-end latency, availability, and throughput guarantees cannot
-    /// be provided when a proxy is in use. Full backend support is provided,
-    /// but client/proxy interactions are supported on a best-effort basis only.
-    ///
-    /// # Arguments
-    ///
-    /// * `allow` - Whether to allow proxy usage.
-    pub fn with_proxy_allowed(mut self, allow: bool) -> Self {
-        self.allow_proxy = allow;
-        self
-    }
-
-    /// Disables the Gateway 2.0 transport for this client.
-    ///
-    /// Gateway 2.0 is the next-generation Cosmos DB dataplane transport:
-    /// SDK connections terminate at a regional Gateway 2.0 proxy that
-    /// forwards RNTBD-over-HTTP/2 to the backend. **Gateway 2.0 is enabled
-    /// by default** — whenever the account advertises a Gateway 2.0 endpoint
-    /// the SDK routes eligible dataplane operations through it and falls
-    /// back to the standard gateway only for operations Gateway 2.0 cannot
-    /// serve (e.g. metadata requests or accounts that do not advertise a
-    /// Gateway 2.0 endpoint).
-    ///
-    /// Pass `true` to opt out and force every request through the standard
-    /// gateway transport. The standard gateway path remains supported and
-    /// stable — disabling Gateway 2.0 is the recommended workaround if you
-    /// hit a regression on the new transport.
-    ///
-    /// # Latency caveat
-    ///
-    /// Gateway 2.0 traffic flows through a regional thin-client proxy.
-    /// Note that the standard gateway (Gateway 1.0) does not provide
-    /// any per-request latency guarantees, so neither transport offers
-    /// a latency SLA today. If you need to opt out of Gateway 2.0 — for
-    /// example to A/B test transport behavior, isolate a
-    /// transport-specific issue, or stay on the standard gateway during
-    /// a controlled rollout — set `with_gateway20_disabled(true)`.
-    ///
-    /// # Arguments
-    ///
-    /// * `disabled` - `true` to suppress Gateway 2.0 and force the standard
-    ///   gateway transport; `false` (or leaving the builder untouched) keeps
-    ///   the default Gateway 2.0 behavior.
-    pub fn with_gateway20_disabled(mut self, disabled: bool) -> Self {
-        self.gateway20_disabled = Some(disabled);
-        self
-    }
-
     /// Throughput-control groups are scoped to this client's driver — the
     /// per-runtime registry has been removed, so every client owns its own
     /// set of groups. Duplicate group names supplied to the same builder are
@@ -348,41 +260,12 @@ impl CosmosClientBuilder {
         // Clone credential for the driver before the SDK consumes it for auth policy.
         let driver_credential = credential.clone();
 
-        // Select the runtime. When the caller supplied one, use it as-is.
-        // Otherwise, if any transport-level knob has been customized
-        // (Gateway 2.0 override, proxy, emulator certificate handling), build a
-        // dedicated runtime carrying those connection-pool settings — in the
-        // shared-runtime model the connection pool lives on the runtime. When
-        // nothing is customized, fall back to the shared global runtime.
+        // Connection-pool and transport configuration (including Gateway 2.0
+        // disablement) lives on the runtime: use the caller-supplied runtime
+        // when present, otherwise fall back to the shared global runtime.
         let runtime = match self.runtime {
             Some(rt) => rt,
-            None => {
-                let mut pool_builder = ConnectionPoolOptions::builder();
-                let mut pool_customized = false;
-                if self.allow_proxy {
-                    pool_builder = pool_builder.with_proxy_allowed(true);
-                    pool_customized = true;
-                }
-                #[cfg(all(feature = "allow_invalid_certificates", feature = "__tls",))]
-                if self.allow_emulator_invalid_certificates {
-                    pool_builder = pool_builder.with_server_certificate_validation(
-                        ServerCertificateValidation::RequiredUnlessEmulator,
-                    );
-                    pool_customized = true;
-                }
-                if let Some(disabled) = self.gateway20_disabled {
-                    pool_builder = pool_builder.with_gateway20_disabled(disabled);
-                    pool_customized = true;
-                }
-                if pool_customized {
-                    CosmosRuntime::builder()
-                        .with_connection_pool(pool_builder.build()?)
-                        .build()
-                        .await?
-                } else {
-                    CosmosRuntime::global().await?
-                }
-            }
+            None => CosmosRuntime::global().await?,
         };
 
         let driver_account =

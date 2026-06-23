@@ -77,15 +77,6 @@ parameters:
   type: object
   default: {}
 - name: VariableGroups
-  # Variable groups (by name) to link onto every live-test stage spawned
-  # by this archetype. Required when a service's live tests need secrets
-  # that aren't part of the default Rust variable-group set (e.g. the
-  # Cosmos Gateway 2.0 thin-client credentials in the
-  # `Test Secrets for Cosmos Live Tests - user administered` group).
-  #
-  # The first run of a pipeline that newly references a variable group
-  # is blocked by Azure DevOps until an admin approves the access request
-  # in the pipeline UI (Permissions tab on the variable group).
   type: object
   default: []
 
@@ -125,9 +116,6 @@ extends:
               - template: /eng/pipelines/templates/variables/globals.yml
               - template: /eng/pipelines/templates/variables/image.yml
               - template: /eng/pipelines/templates/variables/rust.yml
-              # Additional variable groups requested by the calling pipeline
-              # (e.g. service-specific live-test secrets). See the
-              # `VariableGroups` parameter docs at the top of this file.
               - ${{ each group in parameters.VariableGroups }}:
                 - group: ${{ group }}
               dependsOn: []

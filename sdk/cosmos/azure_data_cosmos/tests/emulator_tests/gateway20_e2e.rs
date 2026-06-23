@@ -1,61 +1,16 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! End-to-end tests for the Gateway 2.0 transport, exercised through the
-//! `azure_data_cosmos` SDK surface (not the underlying driver crate).
-//!
-//! These tests run against a pre-provisioned Gateway 2.0 account. The
-//! endpoint and primary key are read from the
-//! `AZURE_COSMOS_GW20_ENDPOINT` and `AZURE_COSMOS_GW20_KEY` environment
-//! variables and gated by the `gateway20` test category. They are skipped by
-//! default; the main Cosmos Rust pipeline (`sdk/cosmos/ci.yml`) injects those
-//! env vars from the `azure-sdk-tests-cosmos` service connection's secret
-//! variable group, and the `Cosmos_gateway20_live_test` matrix entry sets the
-//! `testCategory` to `gateway20` (or `gateway20_multi_region`) so the tests
-//! run in CI against the live account.
-//!
-//! ## What these tests assert today
-//!
-//! [`CosmosClientBuilder::with_gateway20_disabled`] now propagates the
-//! Gateway 2.0 toggle into the underlying driver, so the tests exercise the
-//! real SDK opt-in path against the live account.
-//!
-//! Each implemented test:
-//!
-//! * Builds a [`CosmosClient`] with `with_gateway20_disabled(false)` (or
-//!   `true`, for the operator-override scenario), pointing at the
-//!   `AZURE_COSMOS_GW20_ENDPOINT/_KEY` account.
-//! * Provisions a fresh database + container and drives the operation
-//!   appropriate to the test (CRUD, query, batch, point read).
-//! * Asserts the operation succeeds and the standard
-//!   [`CosmosDiagnostics`] fields (activity ID + server duration) are
-//!   populated.
-//!
-//! ## Future work (`TODO`)
-//!
-//! The SDK-level [`CosmosDiagnostics`] type does not yet surface the driver's
-//! `TransportKind` — that gap is documented on `CosmosDiagnostics` itself
-//! ("will be expanded ... once the SDK pipeline is ported to the driver's
-//! transport pipeline"). Once that exposure lands, each test should be
-//! tightened to assert `TransportKind::Gateway20` (or `StandardGateway` for
-//! the override case) on the diagnostics instance returned from the
-//! operation.
-//!
-//! The change-feed test stays a placeholder until the SDK gains a public
-//! change-feed API on `ContainerClient` (only the routing-layer change-feed
-//! plumbing exists today; there is no `ContainerClient::change_feed` to
-//! call from a public test).
-
 #![cfg(feature = "key_auth")]
 
 use azure_core::credentials::Secret;
 use azure_data_cosmos::models::{
     ContainerProperties, PartitionKeyDefinition, ThroughputProperties,
 };
-use azure_data_cosmos::options::{CreateContainerOptions, Region};
+use azure_data_cosmos::options::{ConnectionPoolOptions, CreateContainerOptions, Region};
 use azure_data_cosmos::{
-    AccountEndpoint, AccountReference, CosmosClient, FeedScope, Query, RoutingStrategy,
-    SubStatusCode, TransactionalBatch,
+    AccountEndpoint, AccountReference, CosmosClient, CosmosRuntime, FeedScope, Query,
+    RoutingStrategy, SubStatusCode, TransactionalBatch,
 };
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};
@@ -117,8 +72,18 @@ async fn build_client(
     let endpoint: AccountEndpoint = normalize_gateway20_endpoint(endpoint).parse()?;
     let account_ref =
         AccountReference::with_authentication_key(endpoint, Secret::from(key.to_string()));
+    // Gateway 2.0 disablement is a connection-pool (runtime) concern, so it is
+    // configured on a dedicated CosmosRuntime rather than the client builder.
+    let runtime = CosmosRuntime::builder()
+        .with_connection_pool(
+            ConnectionPoolOptions::builder()
+                .with_gateway20_disabled(gateway20_disabled)
+                .build()?,
+        )
+        .build()
+        .await?;
     let client = CosmosClient::builder()
-        .with_gateway20_disabled(gateway20_disabled)
+        .with_runtime(runtime)
         .build(account_ref, RoutingStrategy::ProximityTo(Region::EAST_US))
         .await?;
     Ok(client)
@@ -312,26 +277,6 @@ pub async fn gateway20_transactional_batch() -> Result<(), Box<dyn std::error::E
     Ok(())
 }
 
-/// Drives a `LatestVersion` change feed iterator through Gateway 2.0.
-///
-/// TODO: implement once the SDK exposes a public change-feed API on
-/// `ContainerClient`. Only routing-layer change-feed plumbing exists today
-/// (`execute_partition_key_range_read_change_feed`); there is no public
-/// `ContainerClient::change_feed` entry point yet, so the test cannot
-/// exercise the SDK surface end-to-end. Tracking item: SDK change-feed
-/// public API.
-#[tokio::test]
-#[cfg_attr(
-    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
-    ignore = "requires test_category 'gateway20' and AZURE_COSMOS_GW20_ENDPOINT/_KEY"
-)]
-pub async fn gateway20_change_feed_latest_version() {
-    let Some((_endpoint, _key)) = live_credentials() else {
-        return;
-    };
-    // Intentionally empty — see the test docs above for why.
-}
-
 /// Verifies that diagnostics are populated for SDK-issued requests routed
 /// through Gateway 2.0.
 ///
@@ -380,15 +325,13 @@ pub async fn gateway20_diagnostics_validation() -> Result<(), Box<dyn std::error
     Ok(())
 }
 
-/// Verifies the operator override at the SDK boundary: when the operator
-/// disables Gateway 2.0 via [`CosmosClientBuilder::with_gateway20_disabled`],
-/// every request must route through the standard gateway even though the
-/// account advertises a Gateway 2.0 endpoint.
+/// Verifies the operator override at the SDK boundary: when the client is
+/// built from a [`CosmosRuntime`] whose connection pool sets
+/// `with_gateway20_disabled(true)`, every request must route through the
+/// standard gateway even though the account advertises a Gateway 2.0 endpoint.
 ///
 /// TODO: tighten the assertion to inspect `TransportKind::StandardGateway`
 /// in the diagnostics once the SDK exposes the driver transport kind.
-///
-/// [`CosmosClientBuilder::with_gateway20_disabled`]: azure_data_cosmos::CosmosClientBuilder::with_gateway20_disabled
 #[tokio::test]
 #[cfg_attr(
     not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),

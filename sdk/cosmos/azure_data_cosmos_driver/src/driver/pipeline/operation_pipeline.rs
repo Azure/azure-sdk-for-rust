@@ -5326,6 +5326,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            false,
             Duration::from_secs(60),
         );
         assert_eq!(
@@ -5682,6 +5683,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            false,
             Duration::from_secs(60),
         );
         assert_eq!(
@@ -5735,6 +5737,7 @@ mod tests {
             &operation,
             &retry_state,
             &location,
+            false,
             false,
             Duration::from_secs(60),
         );
@@ -5799,6 +5802,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            false,
             Duration::from_secs(60),
         );
         assert_eq!(
@@ -5852,6 +5856,7 @@ mod tests {
             &operation,
             &retry_state,
             &location,
+            false,
             false,
             Duration::from_secs(60),
         );
@@ -5925,6 +5930,7 @@ mod tests {
             &operation,
             &retry_state,
             &location,
+            false,
             false,
             Duration::from_secs(60),
         );
@@ -6007,6 +6013,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            false,
             Duration::from_secs(60),
         );
         assert_eq!(
@@ -6082,6 +6089,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            false,
             Duration::from_secs(60),
         );
         assert_ne!(
@@ -6153,6 +6161,7 @@ mod tests {
             &operation,
             &retry_state,
             &location,
+            false,
             false,
             Duration::from_secs(60),
         );
@@ -6237,6 +6246,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            false,
             Duration::from_secs(60),
         );
         assert_ne!(
@@ -6305,6 +6315,7 @@ mod tests {
             &operation,
             &retry_state,
             &location,
+            false,
             false,
             Duration::from_secs(60),
         );
@@ -7036,7 +7047,7 @@ mod tests {
             resolved_session_token: None,
             throughput_control: None,
             effective_consistency: DefaultConsistencyLevel::Session,
-            read_consistency_strategy: ReadConsistencyStrategy::Default,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
         };
         build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
             .expect("request should build")

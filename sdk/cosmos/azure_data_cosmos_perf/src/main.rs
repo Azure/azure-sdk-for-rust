@@ -324,11 +324,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .ok()
             .and_then(|v| v.parse::<bool>().ok())
             .unwrap_or(true),
-        // Gateway 2.0 is intentionally not toggled via env var (see
-        // GATEWAY_20_SPEC.md §3). Until the perf binary wires through the
-        // public SDK toggle (`CosmosClientOptions::with_gateway20_disabled`),
-        // it inherits whatever default the SDK ships with — currently
-        // disabled (pre-GA).
+        // Gateway 2.0 is intentionally not toggled via env var here. The perf
+        // binary does not yet wire a custom CosmosRuntime through to the SDK,
+        // so this flag is recorded for reporting only and the client inherits
+        // the SDK's default transport selection.
         gateway20_disabled: true,
         pyroscope_enabled: std::env::var("PYROSCOPE_SERVER_URL")
             .map(|v| !v.is_empty())

@@ -261,12 +261,9 @@ impl ConnectionPoolOptions {
 /// - `AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_INTERVAL_MS`: TCP keepalive probe interval in milliseconds (default: `1_000`, min: `1_000` when set)
 /// - `AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_RETRIES`: TCP keepalive retry count (default: none, min: `1`, max: `255`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_IS_HTTP2_ALLOWED`: Whether HTTP/2 is allowed for gateway mode connections (default: `true`)
+/// - `AZURE_COSMOS_CONNECTION_POOL_GATEWAY20_DISABLED`: Opt out of the Gateway 2.0 transport (default: `false`; Gateway 2.0 also requires HTTP/2)
+/// - `AZURE_COSMOS_GATEWAY20_ENABLED_OVERRIDE`: Incident kill switch that forces Gateway 2.0 on (`true`) or off (`false`), authoritative over the opt-out above (default: unset; HTTP/2 remains a prerequisite)
 /// - `AZURE_COSMOS_EMULATOR_SERVER_CERT_VALIDATION_DISABLED`: Whether server certificate validation is relaxed for emulator connections; `true` maps to [`ServerCertificateValidation::RequiredUnlessEmulator`], `false` to [`ServerCertificateValidation::Required`] (default: `false`)
-///
-/// Gateway 2.0 is intentionally **not** controlled by an environment variable:
-/// the only supported disablement mechanism is the
-/// [`with_gateway20_disabled`](ConnectionPoolOptionsBuilder::with_gateway20_disabled)
-/// builder method.
 /// - `AZURE_COSMOS_LOCAL_ADDRESS`: Local IP address to bind to (default: none)
 ///
 /// # Example
@@ -391,7 +388,10 @@ pub struct ConnectionPoolOptionsBuilder {
     tcp_keepalive_retries: Option<u32>,
     #[option(env = "AZURE_COSMOS_CONNECTION_POOL_IS_HTTP2_ALLOWED")]
     is_http2_allowed: Option<bool>,
+    #[option(env = "AZURE_COSMOS_CONNECTION_POOL_GATEWAY20_DISABLED")]
     gateway20_disabled: Option<bool>,
+    #[option(env = "AZURE_COSMOS_GATEWAY20_ENABLED_OVERRIDE")]
+    gateway20_enabled_override: Option<bool>,
     #[option(
         env = "AZURE_COSMOS_EMULATOR_SERVER_CERT_VALIDATION_DISABLED",
         parser = parse_env_server_cert_validation
@@ -597,21 +597,39 @@ impl ConnectionPoolOptionsBuilder {
     /// request through the standard gateway transport regardless of the
     /// account advertisement (operator override).
     ///
-    /// There is intentionally no `AZURE_COSMOS_*` environment variable that
-    /// toggles Gateway 2.0 — the override must be applied programmatically
-    /// via this method.
+    /// This builder value resolves with the
+    /// `AZURE_COSMOS_CONNECTION_POOL_GATEWAY20_DISABLED` environment variable
+    /// (the builder value wins). The `AZURE_COSMOS_GATEWAY20_ENABLED_OVERRIDE`
+    /// incident kill switch, when set, is authoritative over both.
     ///
     /// # Opting out
     ///
-    /// Gateway 2.0 traffic flows through a regional thin-client proxy. Note
-    /// that the standard gateway (Gateway 1.0) does not provide any
-    /// per-request latency guarantees, so neither transport offers a latency
-    /// SLA today. Call this method with `true` if you need to keep traffic
-    /// on the standard gateway — for example to A/B test transport behavior,
-    /// isolate a transport-specific issue, or stay on Gateway 1.0 during a
-    /// controlled rollout.
+    /// Gateway 2.0 traffic flows through a regional thin-client proxy. Call
+    /// this method with `true` if you need to keep traffic on the standard
+    /// gateway (Gateway 1.0) — for example to A/B test transport behavior,
+    /// isolate a transport-specific issue, or stay on the standard gateway
+    /// during a controlled rollout.
     pub fn with_gateway20_disabled(mut self, value: bool) -> Self {
         self.gateway20_disabled = Some(value);
+        self
+    }
+
+    /// Sets the Gateway 2.0 incident kill switch (mirrors the
+    /// `AZURE_COSMOS_GATEWAY20_ENABLED_OVERRIDE` environment variable).
+    ///
+    /// When `Some(_)`, this value is authoritative over the
+    /// [`with_gateway20_disabled`](Self::with_gateway20_disabled) opt-out:
+    /// `true` forces Gateway 2.0 on, `false` forces it off. HTTP/2 remains a
+    /// hard prerequisite, so the override cannot enable Gateway 2.0 when HTTP/2
+    /// is disabled.
+    ///
+    /// Not part of the public API: the kill switch is operator-facing and is set
+    /// exclusively via the `AZURE_COSMOS_GATEWAY20_ENABLED_OVERRIDE` environment
+    /// variable. This helper exists only so in-crate tests can exercise the
+    /// authoritative-override resolution without mutating process-wide env.
+    #[cfg(test)]
+    pub(crate) fn with_gateway20_enabled_override(mut self, value: bool) -> Self {
+        self.gateway20_enabled_override = Some(value);
         self
     }
 
@@ -659,16 +677,27 @@ impl ConnectionPoolOptionsBuilder {
             ValidationBounds::none(),
         )?;
 
-        // Gateway 2.0 is enabled by default whenever HTTP/2 is allowed and
-        // the account advertises a Gateway 2.0 endpoint. The flag uses a
-        // negative-term name so that the absence of an opt-in is the on
-        // state; operators disable Gateway 2.0 by setting this to `true`.
-        // There is intentionally no `AZURE_COSMOS_*` env var that toggles
-        // Gateway 2.0 — the override must be applied programmatically.
-        let explicit_disabled = self.gateway20_disabled.unwrap_or(false);
-        // HTTP/2 is a hard prerequisite for Gateway 2.0 — when HTTP/2 is off
-        // the pool is effectively gateway20-disabled regardless of the flag.
-        let effective_gateway20_disabled = explicit_disabled || !effective_is_http2_allowed;
+        // Gateway 2.0 is enabled by default whenever HTTP/2 is allowed and the
+        // account advertises a Gateway 2.0 endpoint. `gateway20_disabled` is a
+        // negative opt-out: builder value →
+        // `AZURE_COSMOS_CONNECTION_POOL_GATEWAY20_DISABLED` → default `false`.
+        let explicit_disabled = self
+            .gateway20_disabled
+            .or(env.gateway20_disabled)
+            .unwrap_or(false);
+        // Incident kill switch (`AZURE_COSMOS_GATEWAY20_ENABLED_OVERRIDE`): when
+        // set it is authoritative over the opt-out above — `true` forces
+        // Gateway 2.0 on, `false` forces it off. Builder value wins over env.
+        let base_disabled = match self
+            .gateway20_enabled_override
+            .or(env.gateway20_enabled_override)
+        {
+            Some(enabled) => !enabled,
+            None => explicit_disabled,
+        };
+        // HTTP/2 is a hard prerequisite for Gateway 2.0 — when HTTP/2 is off the
+        // pool is effectively gateway20-disabled regardless of the flags above.
+        let effective_gateway20_disabled = base_disabled || !effective_is_http2_allowed;
 
         let max_connection_pool_size_default = if effective_is_http2_allowed {
             1_000
@@ -1399,6 +1428,45 @@ mod tests {
 
         // Gateway 2.0 must be reported as disabled if HTTP/2 is not allowed,
         // even when the operator explicitly opted in via with_gateway20_disabled(false).
+        assert!(options.gateway20_disabled());
+    }
+
+    #[test]
+    fn gateway20_enabled_override_off_wins_over_opt_in() {
+        // The kill switch (`AZURE_COSMOS_GATEWAY20_ENABLED_OVERRIDE=false`)
+        // forces Gateway 2.0 off even when the operator opted in.
+        let options = ConnectionPoolOptionsBuilder::new()
+            .with_gateway20_disabled(false)
+            .with_gateway20_enabled_override(false)
+            .build()
+            .unwrap();
+
+        assert!(options.gateway20_disabled());
+    }
+
+    #[test]
+    fn gateway20_enabled_override_on_wins_over_opt_out() {
+        // The kill switch (`=true`) forces Gateway 2.0 on even when the operator
+        // explicitly disabled it via `with_gateway20_disabled(true)`.
+        let options = ConnectionPoolOptionsBuilder::new()
+            .with_gateway20_disabled(true)
+            .with_gateway20_enabled_override(true)
+            .build()
+            .unwrap();
+
+        assert!(!options.gateway20_disabled());
+    }
+
+    #[test]
+    fn gateway20_enabled_override_on_still_requires_http2() {
+        // HTTP/2 is a hard prerequisite: the kill switch cannot enable Gateway
+        // 2.0 when HTTP/2 is disabled.
+        let options = ConnectionPoolOptionsBuilder::new()
+            .with_is_http2_allowed(false)
+            .with_gateway20_enabled_override(true)
+            .build()
+            .unwrap();
+
         assert!(options.gateway20_disabled());
     }
 
