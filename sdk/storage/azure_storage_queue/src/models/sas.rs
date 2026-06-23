@@ -13,6 +13,6 @@
 
 pub use crate::sas::QueueSasBuilder;
 pub use azure_storage_common::models::UserDelegationKey;
-pub use azure_storage_sas::resource::{QueuePermissions, QueueResource};
-pub use azure_storage_sas::state::QueueState;
-pub use azure_storage_sas::{SasBuilder, SasIpRange, SasProtocol, SAS_VERSION};
+pub use azure_storage_sas::resource::queue::{QueuePermissions, QueueResource};
+pub use azure_storage_sas::QueueState;
+pub use azure_storage_sas::{SasBuilder, SasIpRange, SasProtocol};

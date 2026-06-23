@@ -6,7 +6,7 @@
 //! # Example
 //!
 //! ```rust no_run
-//! use azure_storage_sas::{SasBuilder, SasProtocol, UserDelegationKey, resource::{QueueResource, QueuePermissions}};
+//! use azure_storage_sas::{SasBuilder, SasProtocol, UserDelegationKey, resource::queue::{QueueResource, QueuePermissions}};
 //! use time::OffsetDateTime;
 //!
 //! # fn example(udk: UserDelegationKey) -> azure_core::Result<()> {
@@ -18,8 +18,6 @@
 //! # Ok(())
 //! # }
 //! ```
-
-use std::fmt;
 
 use crate::builder::{Fields, ValidatedKey};
 use crate::SAS_VERSION;
@@ -82,23 +80,23 @@ impl QueuePermissions {
         self.process = true;
         self
     }
-}
 
-impl fmt::Display for QueuePermissions {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    /// Serializes the enabled permissions to the SAS token format.
+    pub(crate) fn to_sas_str(&self) -> String {
+        let mut s = String::with_capacity(4);
         if self.read {
-            f.write_str("r")?;
+            s.push('r');
         }
         if self.add {
-            f.write_str("a")?;
+            s.push('a');
         }
         if self.update {
-            f.write_str("u")?;
+            s.push('u');
         }
         if self.process {
-            f.write_str("p")?;
+            s.push('p');
         }
-        Ok(())
+        s
     }
 }
 
@@ -106,48 +104,44 @@ impl fmt::Display for QueuePermissions {
 ///
 /// See <https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas#specify-the-signature>.
 pub(crate) fn queue_udk_string_to_sign(
-    permissions: &impl std::fmt::Display,
+    permissions: &str,
     fields: &Fields,
     key: &ValidatedKey<'_>,
     canonicalized_resource: &str,
 ) -> String {
-    format!(
-        "{sp}\n\
-         {st}\n\
-         {se}\n\
-         {cr}\n\
-         {skoid}\n\
-         {sktid}\n\
-         {skt}\n\
-         {ske}\n\
-         {sks}\n\
-         {skv}\n\
-         {skdutid}\n\
-         {sduoid}\n\
-         {sip}\n\
-         {spr}\n\
-         {sv}",
-        sp = permissions,
-        st = fields.start_str(),
-        se = fields.expiry_str(),
-        cr = canonicalized_resource,
-        skoid = key.signed_oid,
-        sktid = key.signed_tid,
-        skt = Fields::format_time(key.signed_start),
-        ske = Fields::format_time(key.signed_expiry),
-        sks = key.signed_service,
-        skv = key.signed_version,
-        skdutid = key.signed_delegated_user_tid.unwrap_or(""),
-        sduoid = fields.delegated_user_object_id.as_deref().unwrap_or(""),
-        sip = fields.ip_str(),
-        spr = fields.protocol_str(),
-        sv = SAS_VERSION,
-    )
+    let skdutid = key.signed_delegated_user_tid.unwrap_or("");
+    let sduoid = fields.delegated_user_object_id.as_deref().unwrap_or("");
+    let sip = fields.ip_str();
+    let spr = fields.protocol_str();
+    let st = fields.start_str();
+    let se = fields.expiry_str();
+    let skt = Fields::format_time(key.signed_start);
+    let ske = Fields::format_time(key.signed_expiry);
+
+    #[rustfmt::skip]
+    let parts: Vec<&str> = vec![
+        permissions,            // [0]  signedPermissions
+        &st,                    // [1]  signedStart
+        &se,                    // [2]  signedExpiry
+        canonicalized_resource, // [3]  canonicalizedResource
+        key.signed_oid,         // [4]  signedKeyObjectId
+        key.signed_tid,         // [5]  signedKeyTenantId
+        &skt,                   // [6]  signedKeyStart
+        &ske,                   // [7]  signedKeyExpiry
+        key.signed_service,     // [8]  signedKeyService
+        key.signed_version,     // [9]  signedKeyVersion
+        skdutid,                // [10] signedDelegatedUserTenantId
+        sduoid,                 // [11] signedDelegatedUserObjectId
+        &sip,                   // [12] signedIP
+        &spr,                   // [13] signedProtocol
+        SAS_VERSION,            // [14] signedVersion
+    ];
+    parts.join("\n")
 }
 
 /// Builds the queue-service user delegation SAS query parameters.
 pub(crate) fn queue_udk_query_parameters(
-    permissions: &impl std::fmt::Display,
+    permissions: &str,
     fields: &Fields,
     key: &ValidatedKey<'_>,
     signature: &str,

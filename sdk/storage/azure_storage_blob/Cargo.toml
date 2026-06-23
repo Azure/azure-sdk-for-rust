@@ -61,6 +61,10 @@ tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 [package.metadata.docs.rs]
 all-features = true
 
+[[test]]
+name = "blob_sas"
+required-features = ["sas_builder"]
+
 [[bench]]
 name = "perf"
 path = "perf/perf_tests.rs"

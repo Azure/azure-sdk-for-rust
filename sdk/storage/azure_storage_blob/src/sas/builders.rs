@@ -9,10 +9,7 @@
 //! returns a ready-to-use [`Url`], not just a token.
 
 use azure_core::http::Url;
-use azure_storage_sas::{
-    state::{BlobState, ContainerState},
-    SasBuilder, SasIpRange, SasProtocol,
-};
+use azure_storage_sas::{BlobState, ContainerState, SasBuilder, SasIpRange, SasProtocol};
 
 /// Builder for a blob user delegation SAS URL.
 ///

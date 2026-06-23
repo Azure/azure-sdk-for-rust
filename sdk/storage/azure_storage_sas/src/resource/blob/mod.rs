@@ -64,75 +64,70 @@ use crate::SAS_VERSION;
 /// Used by all blob-service resource types (blob, snapshot, version, container, directory).
 /// See <https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas#specify-the-signature>.
 pub(crate) fn blob_udk_string_to_sign(
-    permissions: &impl std::fmt::Display,
+    permissions: &str,
     fields: &Fields,
     key: &ValidatedKey<'_>,
     sr: &str,
     canonicalized_resource: &str,
     snapshot_time: &str,
 ) -> String {
-    format!(
-        "{sp}\n\
-         {st}\n\
-         {se}\n\
-         {cr}\n\
-         {skoid}\n\
-         {sktid}\n\
-         {skt}\n\
-         {ske}\n\
-         {sks}\n\
-         {skv}\n\
-         {saoid}\n\
-         {suoid}\n\
-         {scid}\n\
-         {skdutid}\n\
-         {sduoid}\n\
-         {sip}\n\
-         {spr}\n\
-         {sv}\n\
-         {sr}\n\
-         {snapshot}\n\
-         {ses}\n\
-         {srh}\n\
-         {srq}\n\
-         {rscc}\n\
-         {rscd}\n\
-         {rsce}\n\
-         {rscl}\n\
-         {rsct}",
-        sp = permissions,
-        st = fields.start_str(),
-        se = fields.expiry_str(),
-        cr = canonicalized_resource,
-        skoid = key.signed_oid,
-        sktid = key.signed_tid,
-        skt = Fields::format_time(key.signed_start),
-        ske = Fields::format_time(key.signed_expiry),
-        sks = key.signed_service,
-        skv = key.signed_version,
-        saoid = fields.authorized_object_id.as_deref().unwrap_or(""),
-        suoid = fields.unauthorized_object_id.as_deref().unwrap_or(""),
-        scid = fields.correlation_id.as_deref().unwrap_or(""),
-        skdutid = key.signed_delegated_user_tid.unwrap_or(""),
-        sduoid = fields.delegated_user_object_id.as_deref().unwrap_or(""),
-        sip = fields.ip_str(),
-        spr = fields.protocol_str(),
-        sv = SAS_VERSION,
-        snapshot = snapshot_time,
-        ses = fields.encryption_scope_str(),
-        srh = fields.signed_request_headers_str(),
-        srq = fields.signed_request_query_parameters_str(),
-        rscc = fields.cache_control.as_deref().unwrap_or(""),
-        rscd = fields.content_disposition.as_deref().unwrap_or(""),
-        rsce = fields.content_encoding.as_deref().unwrap_or(""),
-        rscl = fields.content_language.as_deref().unwrap_or(""),
-        rsct = fields.content_type.as_deref().unwrap_or(""),
-    )
+    let saoid = fields.authorized_object_id.as_deref().unwrap_or("");
+    let suoid = fields.unauthorized_object_id.as_deref().unwrap_or("");
+    let scid = fields.correlation_id.as_deref().unwrap_or("");
+    let skdutid = key.signed_delegated_user_tid.unwrap_or("");
+    let sduoid = fields.delegated_user_object_id.as_deref().unwrap_or("");
+    let sip = fields.ip_str();
+    let spr = fields.protocol_str();
+    let ses = fields.encryption_scope_str();
+    let srh = fields.signed_request_headers_str();
+    let srq = fields.signed_request_query_parameters_str();
+    let st = fields.start_str();
+    let se = fields.expiry_str();
+    let skt = Fields::format_time(key.signed_start);
+    let ske = Fields::format_time(key.signed_expiry);
+    let rscc = fields.cache_control.as_deref().unwrap_or("");
+    let rscd = fields.content_disposition.as_deref().unwrap_or("");
+    let rsce = fields.content_encoding.as_deref().unwrap_or("");
+    let rscl = fields.content_language.as_deref().unwrap_or("");
+    let rsct = fields.content_type.as_deref().unwrap_or("");
+
+    #[rustfmt::skip]
+    let parts: Vec<&str> = vec![
+        permissions,                                              // [0]  signedPermissions
+        &st,                                                      // [1]  signedStart
+        &se,                                                      // [2]  signedExpiry
+        canonicalized_resource,                                   // [3]  canonicalizedResource
+        key.signed_oid,                                           // [4]  signedKeyObjectId
+        key.signed_tid,                                           // [5]  signedKeyTenantId
+        &skt,                                                     // [6]  signedKeyStart
+        &ske,                                                     // [7]  signedKeyExpiry
+        key.signed_service,                                       // [8]  signedKeyService
+        key.signed_version,                                       // [9]  signedKeyVersion
+        saoid,                                                    // [10] signedAuthorizedUserObjectId
+        suoid,                                                    // [11] signedUnauthorizedUserObjectId
+        scid,                                                     // [12] signedCorrelationId
+        skdutid,                                                  // [13] signedDelegatedUserTenantId
+        sduoid,                                                   // [14] signedDelegatedUserObjectId
+        &sip,                                                     // [15] signedIP
+        &spr,                                                     // [16] signedProtocol
+        SAS_VERSION,                                              // [17] signedVersion
+        sr,                                                       // [18] signedResource
+        snapshot_time,                                            // [19] signedSnapshotTime
+        &ses,                                                     // [20] signedEncryptionScope
+        &srh,                                                     // [21] canonicalizedSignedRequestHeaders
+        &srq,                                                     // [22] canonicalizedSignedRequestQueryParameters
+        rscc,                                                     // [23] rscc
+        rscd,                                                     // [24] rscd
+        rsce,                                                     // [25] rsce
+        rscl,                                                     // [26] rscl
+        rsct,                                                     // [27] rsct
+    ];
+    parts.join("\n")
 }
 
 /// Builds the blob-service user delegation SAS query parameters.
 pub(crate) fn blob_udk_query_parameters(
-    permissions: &impl std::fmt::Display,
+    permissions: &str,
     fields: &Fields,
     key: &ValidatedKey<'_>,
     sr: &str,

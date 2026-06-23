@@ -7,9 +7,8 @@ use crate::resource::blob::{
     blob_udk_query_parameters, blob_udk_string_to_sign, BlobPermissions, BlobResource,
     ContainerPermissions, ContainerResource, DirectoryResource,
 };
-use crate::resource::{
-    queue_udk_query_parameters, queue_udk_string_to_sign, QueuePermissions, QueueResource,
-};
+use crate::resource::queue::{QueuePermissions, QueueResource};
+use crate::resource::{queue_udk_query_parameters, queue_udk_string_to_sign};
 use azure_core::error::{Error, ErrorKind};
 use azure_storage_common::models::UserDelegationKey;
 use base64::Engine;
@@ -29,11 +28,11 @@ const ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
     .remove(b'~');
 
 /// Typestate markers for [`SasBuilder`].
-pub mod state {
+pub(crate) mod state {
     use crate::resource::blob::{
         BlobPermissions, BlobResource, ContainerPermissions, ContainerResource, DirectoryResource,
     };
-    use crate::resource::{QueuePermissions, QueueResource};
+    use crate::resource::queue::{QueuePermissions, QueueResource};
 
     /// Initial state before a resource type has been selected.
     pub struct Untyped;
@@ -97,6 +96,7 @@ pub(crate) struct ValidatedKey<'a> {
 
 impl<'a> ValidatedKey<'a> {
     fn from_key(key: &'a UserDelegationKey) -> azure_core::Result<Self> {
+        #[inline]
         fn missing(field: &'static str) -> Error {
             Error::with_message_fn(ErrorKind::DataConversion, move || {
                 format!("user delegation key is missing required field: {field}")
@@ -485,6 +485,7 @@ impl<S: BlobServiceState> SasBuilder<'_, S> {
 impl SasBuilder<'_, state::BlobState> {
     /// Builds the signed SAS query parameter string.
     pub fn build(&self) -> String {
+        let sp = self.state.permissions.to_sas_str();
         let canonical = self
             .state
             .resource
@@ -495,7 +496,7 @@ impl SasBuilder<'_, state::BlobState> {
         // for a version SAS (`sr=bv`), the version ID. The `snapshot=` query
         // parameter remains snapshot-only; the version ID is not emitted there.
         let sts = blob_udk_string_to_sign(
-            &self.state.permissions,
+            &sp,
             &self.fields,
             &self.key,
             sr,
@@ -503,65 +504,37 @@ impl SasBuilder<'_, state::BlobState> {
             self.state.resource.snapshot_or_version_time().unwrap_or(""),
         );
         let signature = sign(self.key.value, &sts);
-        blob_udk_query_parameters(
-            &self.state.permissions,
-            &self.fields,
-            &self.key,
-            sr,
-            snapshot,
-            None,
-            &signature,
-        )
+        blob_udk_query_parameters(&sp, &self.fields, &self.key, sr, snapshot, None, &signature)
     }
 }
 
 impl SasBuilder<'_, state::ContainerState> {
     /// Builds the signed SAS query parameter string.
     pub fn build(&self) -> String {
+        let sp = self.state.permissions.to_sas_str();
         let canonical = self
             .state
             .resource
             .canonicalized_resource(&self.fields.account);
-        let sts = blob_udk_string_to_sign(
-            &self.state.permissions,
-            &self.fields,
-            &self.key,
-            "c",
-            &canonical,
-            "",
-        );
+        let sts = blob_udk_string_to_sign(&sp, &self.fields, &self.key, "c", &canonical, "");
         let signature = sign(self.key.value, &sts);
-        blob_udk_query_parameters(
-            &self.state.permissions,
-            &self.fields,
-            &self.key,
-            "c",
-            None,
-            None,
-            &signature,
-        )
+        blob_udk_query_parameters(&sp, &self.fields, &self.key, "c", None, None, &signature)
     }
 }
 
 impl SasBuilder<'_, state::DirectoryState> {
     /// Builds the signed SAS query parameter string.
     pub fn build(&self) -> String {
+        let sp = self.state.permissions.to_sas_str();
         let depth = self.state.resource.depth();
         let canonical = self
             .state
             .resource
             .canonicalized_resource(&self.fields.account);
-        let sts = blob_udk_string_to_sign(
-            &self.state.permissions,
-            &self.fields,
-            &self.key,
-            "d",
-            &canonical,
-            "",
-        );
+        let sts = blob_udk_string_to_sign(&sp, &self.fields, &self.key, "d", &canonical, "");
         let signature = sign(self.key.value, &sts);
         blob_udk_query_parameters(
-            &self.state.permissions,
+            &sp,
             &self.fields,
             &self.key,
             "d",
@@ -575,14 +548,14 @@ impl SasBuilder<'_, state::DirectoryState> {
 impl SasBuilder<'_, state::QueueState> {
     /// Builds the signed SAS query parameter string.
     pub fn build(&self) -> String {
+        let sp = self.state.permissions.to_sas_str();
         let canonical = self
             .state
             .resource
             .canonicalized_resource(&self.fields.account);
-        let sts =
-            queue_udk_string_to_sign(&self.state.permissions, &self.fields, &self.key, &canonical);
+        let sts = queue_udk_string_to_sign(&sp, &self.fields, &self.key, &canonical);
         let signature = sign(self.key.value, &sts);
-        queue_udk_query_parameters(&self.state.permissions, &self.fields, &self.key, &signature)
+        queue_udk_query_parameters(&sp, &self.fields, &self.key, &signature)
     }
 }
 
@@ -599,7 +572,7 @@ mod tests {
     use crate::resource::blob::{
         BlobPermissions, BlobResource, ContainerPermissions, ContainerResource,
     };
-    use crate::resource::{QueuePermissions, QueueResource};
+    use crate::resource::queue::{QueuePermissions, QueueResource};
     use time::macros::datetime;
 
     fn test_udk() -> UserDelegationKey {
@@ -1086,7 +1059,7 @@ mod tests {
         fields.content_type = Some("rsct".into());
 
         let sts = blob_udk_string_to_sign(
-            &BlobPermissions::new().read().write(),
+            &BlobPermissions::new().read().write().to_sas_str(),
             &fields,
             &key,
             "b",
@@ -1129,7 +1102,7 @@ mod tests {
         let key = ValidatedKey::from_key(&udk).unwrap();
         let fields = test_fields(datetime!(2025-06-01 12:00:00 UTC));
         let sts = blob_udk_string_to_sign(
-            &BlobPermissions::new().read(),
+            &BlobPermissions::new().read().to_sas_str(),
             &fields,
             &key,
             "bv",
@@ -1148,7 +1121,7 @@ mod tests {
         let key = ValidatedKey::from_key(&udk).unwrap();
         let fields = test_fields(datetime!(2025-06-01 12:00:00 UTC));
         let sts = blob_udk_string_to_sign(
-            &BlobPermissions::new().read(),
+            &BlobPermissions::new().read().to_sas_str(),
             &fields,
             &key,
             "bs",
@@ -1169,7 +1142,7 @@ mod tests {
         fields.delegated_user_object_id = Some("duoid".into());
 
         let sts = queue_udk_string_to_sign(
-            &QueuePermissions::new().read().add(),
+            &QueuePermissions::new().read().add().to_sas_str(),
             &fields,
             &key,
             "/queue/acct/q",
@@ -1191,7 +1164,7 @@ mod tests {
         let key = ValidatedKey::from_key(&udk).unwrap();
         let fields = test_fields(datetime!(2025-06-01 12:00:00 UTC));
         let sts = queue_udk_string_to_sign(
-            &QueuePermissions::new().read(),
+            &QueuePermissions::new().read().to_sas_str(),
             &fields,
             &key,
             "/queue/acct/q",
@@ -1267,12 +1240,12 @@ mod tests {
 
     #[test]
     fn ip_range_single_address_in_query() {
-        use std::net::{IpAddr, Ipv4Addr};
+        use std::net::Ipv4Addr;
         let udk = test_udk();
         let expiry = datetime!(2025-06-01 12:00:00 UTC);
         let qp = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
-            .ip_range(SasIpRange::Address(IpAddr::V4(Ipv4Addr::new(1, 2, 3, 4))))
+            .ip_range(SasIpRange::Address(Ipv4Addr::new(1, 2, 3, 4)))
             .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
             .build();
         assert!(qp.contains("sip=1.2.3.4"), "got: {qp}");
@@ -1280,14 +1253,14 @@ mod tests {
 
     #[test]
     fn ip_range_span_in_query() {
-        use std::net::{IpAddr, Ipv4Addr};
+        use std::net::Ipv4Addr;
         let udk = test_udk();
         let expiry = datetime!(2025-06-01 12:00:00 UTC);
         let qp = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
-            .ip_range(SasIpRange::Range {
-                start: IpAddr::V4(Ipv4Addr::new(10, 0, 0, 1)),
-                end: IpAddr::V4(Ipv4Addr::new(10, 0, 0, 255)),
+            .ip_range(SasIpRange::InclusiveRange {
+                start: Ipv4Addr::new(10, 0, 0, 1),
+                end: Ipv4Addr::new(10, 0, 0, 255),
             })
             .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
             .build();
@@ -1357,7 +1330,7 @@ mod tests {
             .create()
             .add()
             .read();
-        assert_eq!(perms.to_string(), "racwdxytmeopi");
+        assert_eq!(perms.to_sas_str(), "racwdxytmeopi");
     }
 
     #[test]

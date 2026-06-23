@@ -7,8 +7,6 @@
 //! the SAS (via an unauthenticated client) to access the resource. This proves
 //! the signature the SDK computes matches what the service expects.
 
-#![cfg(feature = "sas_builder")]
-
 use azure_core::{
     http::{RequestContent, Url, XmlFormat},
     time::OffsetDateTime,

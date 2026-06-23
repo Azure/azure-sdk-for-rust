@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::fmt;
-
 /// A blob resource for user delegation SAS.
 ///
 /// By default targets a base blob (`sr=b`). Use [`BlobResource::snapshot`] or
@@ -181,49 +179,49 @@ impl BlobPermissions {
         self.set_immutability_policy = true;
         self
     }
-}
 
-impl fmt::Display for BlobPermissions {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    /// Serializes the enabled permissions to the SAS token format.
+    pub(crate) fn to_sas_str(&self) -> String {
+        let mut s = String::with_capacity(13);
         if self.read {
-            f.write_str("r")?;
+            s.push('r');
         }
         if self.add {
-            f.write_str("a")?;
+            s.push('a');
         }
         if self.create {
-            f.write_str("c")?;
+            s.push('c');
         }
         if self.write {
-            f.write_str("w")?;
+            s.push('w');
         }
         if self.delete {
-            f.write_str("d")?;
+            s.push('d');
         }
         if self.delete_version {
-            f.write_str("x")?;
+            s.push('x');
         }
         if self.permanent_delete {
-            f.write_str("y")?;
+            s.push('y');
         }
         if self.tags {
-            f.write_str("t")?;
+            s.push('t');
         }
         if self.move_blob {
-            f.write_str("m")?;
+            s.push('m');
         }
         if self.execute {
-            f.write_str("e")?;
+            s.push('e');
         }
         if self.ownership {
-            f.write_str("o")?;
+            s.push('o');
         }
         if self.permissions {
-            f.write_str("p")?;
+            s.push('p');
         }
         if self.set_immutability_policy {
-            f.write_str("i")?;
+            s.push('i');
         }
-        Ok(())
+        s
     }
 }

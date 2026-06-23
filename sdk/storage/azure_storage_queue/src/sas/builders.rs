@@ -4,7 +4,7 @@
 //! Type-state builder for queue user delegation SAS **URLs**.
 
 use azure_core::http::Url;
-use azure_storage_sas::{state::QueueState, SasBuilder, SasIpRange, SasProtocol};
+use azure_storage_sas::{QueueState, SasBuilder, SasIpRange, SasProtocol};
 
 /// Builder for a queue user delegation SAS URL.
 ///

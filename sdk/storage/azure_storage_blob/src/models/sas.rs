@@ -17,5 +17,5 @@ pub use azure_storage_common::models::UserDelegationKey;
 pub use azure_storage_sas::resource::blob::{
     BlobPermissions, BlobResource, ContainerPermissions, ContainerResource, DirectoryResource,
 };
-pub use azure_storage_sas::state::{BlobState, ContainerState, DirectoryState};
-pub use azure_storage_sas::{BlobServiceState, SasBuilder, SasIpRange, SasProtocol, SAS_VERSION};
+pub use azure_storage_sas::{BlobServiceState, SasBuilder, SasIpRange, SasProtocol};
+pub use azure_storage_sas::{BlobState, ContainerState, DirectoryState};

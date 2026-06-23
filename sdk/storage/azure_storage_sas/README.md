@@ -2,13 +2,114 @@
 
 This crate provides a type-safe builder for constructing **user delegation** Shared Access Signature (SAS) tokens for Azure Storage resources. Account SAS and stored access policies are not supported.
 
-User delegation SAS tokens are signed with a `UserDelegationKey` obtained from `BlobServiceClient::get_user_delegation_key` or `QueueServiceClient::get_user_delegation_key`.
+[Source code] | [Package (crates.io)] | [API reference documentation] | [REST API documentation] | [Product documentation]
 
-## Which API should I use?
+## Getting started
 
-Most users should depend on `azure_storage_blob` or `azure_storage_queue` with the `sas_builder` feature enabled and call the `user_delegation_sas` method on `BlobClient`, `BlobContainerClient`, or `QueueClient`.
+### Install the package
 
-Reach for `SasBuilder` directly when:
+Install the Azure Storage User Delegation SAS builder for Rust with [cargo]:
 
-- you need to generate a SAS for a directory; there is no client method for directory SAS, so `SasBuilder::directory` must be called directly, or
-- you need fields or resource shapes the client methods don't expose.
+```sh
+cargo add azure_storage_sas
+```
+
+### Prerequisites
+
+- You must have an [Azure subscription] and an [Azure storage account] to use this package.
+- A `UserDelegationKey` obtained from `BlobServiceClient::get_user_delegation_key` (in `azure_storage_blob`) or `QueueServiceClient::get_user_delegation_key` (in `azure_storage_queue`). The key is signed by Microsoft Entra ID and is what binds the SAS to a delegated identity.
+
+### Which API should I use?
+
+Most users should depend on `azure_storage_blob` or `azure_storage_queue` with the `sas_builder` Cargo feature enabled and call `user_delegation_sas` on `BlobClient`, `BlobContainerClient`, or `QueueClient`. Those wrappers infer the account name, container/blob/queue path, and snapshot/version qualifier from the client's endpoint, so you only supply the key, permissions, and expiry.
+
+Reach for `SasBuilder` directly when you need fields or resource shapes the client methods don't expose.
+
+## Examples
+
+### Generate a read-only blob SAS
+
+Produce the signed SAS query string and append it to a blob URL. Use the resulting URL with an unauthenticated `BlobClient::new` to grant a caller time-bound read access:
+
+```rust no_run
+use azure_storage_sas::{
+    resource::blob::{BlobPermissions, BlobResource},
+    SasBuilder, UserDelegationKey,
+};
+use time::OffsetDateTime;
+
+# fn example(udk: UserDelegationKey) -> azure_core::Result<()> {
+let sas = SasBuilder::new(
+        "myaccount",
+        &udk,
+        OffsetDateTime::now_utc() + time::Duration::hours(1),
+    )?
+    .blob(
+        BlobResource::new("images", "photo.jpg"),
+        BlobPermissions::new().read(),
+    )
+    .content_type("image/jpeg")
+    .build();
+
+let sas_url = format!(
+    "https://myaccount.blob.core.windows.net/images/photo.jpg?{sas}"
+);
+# let _ = sas_url;
+# Ok(()) }
+```
+
+### Scope a container SAS to HTTPS and a single IP range
+
+Layer optional restrictions onto a container-level SAS: limit the caller to HTTPS only, pin them to a corporate egress range, and grant just enough permissions to list and read:
+
+```rust no_run
+use azure_storage_sas::{
+    resource::blob::{ContainerPermissions, ContainerResource},
+    SasBuilder, SasIpRange, SasProtocol, UserDelegationKey,
+};
+use std::net::Ipv4Addr;
+use time::OffsetDateTime;
+
+# fn example(udk: UserDelegationKey) -> azure_core::Result<()> {
+let sas = SasBuilder::new(
+        "myaccount",
+        &udk,
+        OffsetDateTime::now_utc() + time::Duration::hours(4),
+    )?
+    .container(
+        ContainerResource::new("logs"),
+        ContainerPermissions::new().read().list(),
+    )
+    .protocol(SasProtocol::Https)
+    .ip_range(SasIpRange::InclusiveRange {
+        start: Ipv4Addr::new(10, 0, 0, 1),
+        end: Ipv4Addr::new(10, 0, 0, 255),
+    })
+    .build();
+# let _ = sas;
+# Ok(()) }
+```
+
+## Next steps
+
+### Provide feedback
+
+If you encounter bugs or have suggestions, [open an issue](https://github.com/Azure/azure-sdk-for-rust/issues).
+
+## Contributing
+
+This project welcomes contributions and suggestions. Most contributions require you to agree to a Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us the rights to use your contribution. For details, visit [https://cla.microsoft.com](https://cla.microsoft.com).
+
+When you submit a pull request, a CLA-bot will automatically determine whether you need to provide a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the instructions provided by the bot. You'll only need to do this once across all repos using our CLA.
+
+This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information, see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+
+<!-- LINKS -->
+[Azure subscription]: https://azure.microsoft.com/free/
+[Azure storage account]: https://learn.microsoft.com/azure/storage/common/storage-account-overview
+[cargo]: https://doc.rust-lang.org/cargo/
+[API reference documentation]: https://docs.rs/crate/azure_storage_sas/latest
+[Package (crates.io)]: https://crates.io/crates/azure_storage_sas
+[Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_sas
+[REST API documentation]: https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas
+[Product documentation]: https://learn.microsoft.com/azure/storage/common/storage-sas-overview

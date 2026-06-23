@@ -359,9 +359,9 @@ impl BlobClient {
     ///         OffsetDateTime::now_utc() + time::Duration::hours(4),
     ///     )?
     ///     .protocol(SasProtocol::Https)
-    ///     .ip_range(SasIpRange::Range {
-    ///         start: Ipv4Addr::new(10, 0, 0, 1).into(),
-    ///         end: Ipv4Addr::new(10, 0, 0, 255).into(),
+    ///     .ip_range(SasIpRange::InclusiveRange {
+    ///         start: Ipv4Addr::new(10, 0, 0, 1),
+    ///         end: Ipv4Addr::new(10, 0, 0, 255),
     ///     })
     ///     .content_type("application/octet-stream")
     ///     .url();

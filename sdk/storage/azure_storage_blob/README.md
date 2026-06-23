@@ -130,7 +130,55 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Generating SAS URLs
 
-Enable the `sas_builder` Cargo feature to get the `user_delegation_sas` method on `BlobClient` and `BlobContainerClient`, plus the lower-level builder re-exported under `azure_storage_blob::models::sas`. Snapshot-scoped and version-scoped clients built with `BlobClient::with_snapshot` or `BlobClient::with_version` flow their qualifier through automatically.
+Enable the `sas_builder` Cargo feature to get the `user_delegation_sas` method on `BlobClient` and `BlobContainerClient`, plus the lower-level builder re-exported under `azure_storage_blob::models::sas`. Snapshot-scoped and version-scoped clients built with `BlobClient::with_snapshot` or `BlobClient::with_version` flow their qualifier through automatically. For building a SAS without a client, see the [`azure_storage_sas`] crate directly.
+
+```rust no_run
+use azure_core::{
+    http::{RequestContent, Url, XmlFormat},
+    time::OffsetDateTime,
+};
+use azure_storage_blob::{
+    models::{sas::BlobPermissions, KeyInfo},
+    BlobServiceClient,
+};
+use azure_identity::DeveloperToolsCredential;
+use time::Duration;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let credential = DeveloperToolsCredential::new(None)?;
+    let service_url = Url::parse("https://<storage_account_name>.blob.core.windows.net/")?;
+    let service_client = BlobServiceClient::new(service_url, Some(credential), None)?;
+
+    // Request a user delegation key from the service. The key is signed by
+    // Microsoft Entra ID and binds the SAS to the caller's identity.
+    let now = OffsetDateTime::now_utc();
+    let key_info = KeyInfo {
+        start: Some(now),
+        expiry: Some(now + Duration::hours(1)),
+        ..Default::default()
+    };
+    let request_content: RequestContent<KeyInfo, XmlFormat> = key_info.try_into()?;
+    let udk = service_client
+        .get_user_delegation_key(request_content, None)
+        .await?
+        .into_model()?;
+
+    // Generate a read-only SAS URL for a single blob.
+    let blob_client = service_client.blob_client("<container_name>", "<blob_name>");
+    let sas_url = blob_client
+        .user_delegation_sas(
+            "<storage_account_name>",
+            &udk,
+            BlobPermissions::new().read(),
+            now + Duration::hours(1),
+        )?
+        .url();
+
+    println!("{sas_url}");
+    Ok(())
+}
+```
 
 ### Automatic decompression with custom HTTP transports
 
@@ -168,3 +216,4 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 [REST API documentation]: https://learn.microsoft.com/rest/api/storageservices/blob-service-rest-api
 [Product documentation]: https://learn.microsoft.com/azure/storage/blobs/storage-blobs-overview
 [Assign an Azure role for access to blob data]: https://learn.microsoft.com/azure/storage/blobs/assign-azure-role-data-access?tabs=portal
+[`azure_storage_sas`]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_sas

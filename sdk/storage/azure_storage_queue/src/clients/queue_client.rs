@@ -145,7 +145,7 @@ impl QueueClient {
         &self,
         account_name: &str,
         key: &'a azure_storage_common::models::UserDelegationKey,
-        permissions: azure_storage_sas::resource::QueuePermissions,
+        permissions: azure_storage_sas::resource::queue::QueuePermissions,
         expiry: time::OffsetDateTime,
     ) -> Result<crate::sas::QueueSasBuilder<'a>> {
         let segments: Vec<String> = self
@@ -184,7 +184,7 @@ impl QueueClient {
             ));
         }
 
-        let queue = azure_storage_sas::resource::QueueResource::new(&segments[0]);
+        let queue = azure_storage_sas::resource::queue::QueueResource::new(&segments[0]);
         let inner = azure_storage_sas::SasBuilder::new(account_name, key, expiry)?
             .queue(queue, permissions);
         Ok(crate::sas::QueueSasBuilder::new(
