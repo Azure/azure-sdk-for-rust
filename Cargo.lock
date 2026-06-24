@@ -849,7 +849,7 @@ dependencies = [
 
 [[package]]
 name = "azure_storage_common"
-version = "1.0.0"
+version = "0.1.0"
 dependencies = [
  "azure_core 1.0.0",
  "serde",
