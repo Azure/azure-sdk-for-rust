@@ -10,7 +10,7 @@ use azure_core_amqp::{
 };
 use futures::{select, FutureExt};
 use std::sync::Weak;
-use tracing::debug;
+use tracing::{debug, instrument, trace};
 
 pub(crate) struct RecoverableReceiver {
     recoverable_connection: Weak<RecoverableConnection>,
@@ -71,6 +71,9 @@ impl AmqpReceiverApis for RecoverableReceiver {
         unimplemented!("AmqpReceiverClient does not support credit_mode operation");
     }
 
+    // Hot per-event path: trace level and no `err` attribute to avoid per-delivery
+    // error spam; carry only the partition source URL for correlation.
+    #[instrument(level = "trace", skip_all, fields(source_url = %self.source_url))]
     async fn receive_delivery(&self) -> Result<azure_core_amqp::AmqpDelivery> {
         let retry_options = {
             self.recoverable_connection
@@ -81,7 +84,7 @@ impl AmqpReceiverApis for RecoverableReceiver {
         };
         let delivery = recover_azure_operation(
             || async move {
-                debug!("Starting receive_delivery operation");
+                trace!(source_url = %self.source_url, "Starting receive_delivery operation.");
                 let receiver = {
                     let connection = self
                         .recoverable_connection
