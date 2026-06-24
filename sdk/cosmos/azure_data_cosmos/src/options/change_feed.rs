@@ -35,6 +35,25 @@ pub enum ChangeFeedStartFrom {
     PointInTime(OffsetDateTime),
 }
 
+/// Selects which change feed mode to read.
+///
+/// Only [`LatestVersion`](Self::LatestVersion) is supported today;
+/// [`AllVersionsAndDeletes`](Self::AllVersionsAndDeletes) is reserved for a
+/// future release and currently rejected by
+/// [`ContainerClient::read_change_feed()`](crate::clients::ContainerClient::read_change_feed).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum ChangeFeedMode {
+    /// Returns the latest version of each changed item ("incremental" feed).
+    #[default]
+    LatestVersion,
+
+    /// Returns every intermediate version plus deletes ("full fidelity" feed).
+    ///
+    /// Not yet implemented.
+    AllVersionsAndDeletes,
+}
+
 /// Options for change feed operations.
 ///
 /// Used by [`ContainerClient::read_change_feed()`](crate::clients::ContainerClient::read_change_feed).
@@ -65,11 +84,20 @@ pub struct ChangeFeedOptions {
     /// Session token for session-consistent reads.
     pub session_token: Option<SessionToken>,
 
+    /// Which change feed mode to read. Defaults to [`ChangeFeedMode::LatestVersion`].
+    pub mode: ChangeFeedMode,
+
     /// Where to start reading the change feed. Defaults to [`ChangeFeedStartFrom::Beginning`].
     pub start_from: ChangeFeedStartFrom,
 }
 
 impl ChangeFeedOptions {
+    /// Sets which change feed mode to read.
+    pub fn with_mode(mut self, mode: ChangeFeedMode) -> Self {
+        self.mode = mode;
+        self
+    }
+
     /// Sets where to start reading the change feed.
     pub fn with_start_from(mut self, start_from: ChangeFeedStartFrom) -> Self {
         self.start_from = start_from;
@@ -126,9 +154,21 @@ mod tests {
     }
 
     #[test]
+    fn default_mode_is_latest_version() {
+        assert_eq!(ChangeFeedMode::default(), ChangeFeedMode::LatestVersion);
+        assert_eq!(
+            ChangeFeedOptions::default().mode,
+            ChangeFeedMode::LatestVersion
+        );
+    }
+
+    #[test]
     fn options_builder_chain() {
-        let opts = ChangeFeedOptions::default().with_start_from(ChangeFeedStartFrom::Now);
+        let opts = ChangeFeedOptions::default()
+            .with_start_from(ChangeFeedStartFrom::Now)
+            .with_mode(ChangeFeedMode::AllVersionsAndDeletes);
 
         assert!(matches!(opts.start_from, ChangeFeedStartFrom::Now));
+        assert_eq!(opts.mode, ChangeFeedMode::AllVersionsAndDeletes);
     }
 }

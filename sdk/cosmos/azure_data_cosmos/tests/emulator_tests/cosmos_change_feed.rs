@@ -34,11 +34,19 @@ use serde::de::DeserializeOwned;
 /// forever if a test's stop condition is never met.
 const MAX_DRAIN_POLLS: usize = 200;
 
-/// Number of consecutive empty (304) pages that signals the feed is fully
-/// drained. Because [`UnorderedMerge`] resets to a non-empty page as soon as
-/// any partition has data, a short streak of consecutive empties reliably
-/// means every partition has caught up.
-const EMPTY_STREAK_TO_STOP: usize = 4;
+/// Number of consecutive empty (304) pages that a test treats as "the feed has
+/// caught up". Because [`UnorderedMerge`] resets to a non-empty page as soon as
+/// any partition has data, a streak of consecutive empties reliably means every
+/// partition has drained its backlog.
+///
+/// This is purely a **test heuristic** for terminating a drain loop against the
+/// emulator — it is *not* a protocol guarantee. The change feed is a
+/// conceptually infinite stream and the service never signals "end of feed", so
+/// production consumers must rely on continuation tokens rather than an empty
+/// streak. The streak is kept comfortably above 1 so a transient single empty
+/// page (e.g. one partition briefly quiescent while another still has data)
+/// does not end the loop prematurely.
+const EMPTY_STREAK_TO_STOP: usize = 5;
 
 /// Polls a change feed iterator until it reports no further changes (a streak
 /// of empty 304 pages) or a poll cap is reached, returning every item seen.

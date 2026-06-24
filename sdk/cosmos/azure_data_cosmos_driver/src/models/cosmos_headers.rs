@@ -178,7 +178,9 @@ pub struct CosmosRequestHeaders {
     /// When `true`, emits the change-feed wire format version header
     /// (`x-ms-cosmos-changefeed-wire-format-version: 2021-09-15`).
     ///
-    /// Required for LatestVersion mode (and future modes).
+    /// This wire format is required by the AllVersionsAndDeletes change feed
+    /// mode. It is **not** sent for LatestVersion mode, which uses the default
+    /// wire format.
     pub changefeed_wire_format_version: bool,
 
     /// If-Modified-Since timestamp for change feed point-in-time start.

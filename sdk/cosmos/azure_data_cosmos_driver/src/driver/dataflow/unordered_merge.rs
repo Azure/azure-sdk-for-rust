@@ -14,6 +14,7 @@ use std::collections::VecDeque;
 use async_trait::async_trait;
 
 use super::{PageResult, PipelineContext, PipelineNode, PipelineNodeState, RangedToken};
+use crate::models::ChangeFeedStartMarker;
 
 /// Maximum number of consecutive split retries before giving up.
 const MAX_SPLIT_RETRIES: usize = 10;
@@ -29,6 +30,11 @@ pub(crate) struct UnorderedMerge {
     children: VecDeque<Box<dyn PipelineNode>>,
     /// Index of the next child to poll (wraps around).
     cursor: usize,
+    /// The feed's original start position, carried so it can be re-persisted in
+    /// the continuation token on every checkpoint. Partitions that were never
+    /// polled re-apply it on resume instead of reading from the beginning.
+    /// `None` means the feed started from the beginning.
+    start_marker: Option<ChangeFeedStartMarker>,
 }
 
 impl UnorderedMerge {
@@ -37,7 +43,14 @@ impl UnorderedMerge {
         Self {
             children: children.into(),
             cursor: 0,
+            start_marker: None,
         }
+    }
+
+    /// Sets the change feed start marker carried in snapshots of this node.
+    pub(crate) fn with_start_marker(mut self, start_marker: Option<ChangeFeedStartMarker>) -> Self {
+        self.start_marker = start_marker;
+        self
     }
 }
 
@@ -98,10 +111,10 @@ impl PipelineNode for UnorderedMerge {
                     if self.children.is_empty() {
                         return Ok(PageResult::Drained);
                     }
-                    // Adjust cursor if we removed before it.
-                    if idx < self.cursor && self.cursor > 0 {
-                        self.cursor -= 1;
-                    }
+                    // `idx == self.cursor` here (idx is `cursor % len`), so the
+                    // removed element is at the cursor itself: the next child
+                    // simply shifts into `idx`. No decrement is needed; just
+                    // re-wrap the cursor against the new, smaller length.
                     self.cursor %= self.children.len();
                     attempts += 1;
                     if attempts >= children_count {
@@ -176,7 +189,10 @@ impl PipelineNode for UnorderedMerge {
             }
         }
 
-        Ok(PipelineNodeState::UnorderedMerge { active_tokens })
+        Ok(PipelineNodeState::UnorderedMerge {
+            active_tokens,
+            start_from: self.start_marker.clone(),
+        })
     }
 
     fn topology_can_change(&self) -> bool {

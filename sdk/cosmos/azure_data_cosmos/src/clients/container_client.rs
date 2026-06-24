@@ -8,18 +8,17 @@ use crate::{
     models::{BatchResponse, ItemResponse, ResourceResponse},
     models::{ContainerProperties, PatchInstructions, ThroughputProperties},
     options::{
-        BatchOptions, ChangeFeedOptions, ChangeFeedStartFrom, DeleteContainerOptions,
-        ItemReadOptions, ItemWriteOptions, PatchItemOptions, Precondition, QueryOptions,
-        ReadContainerOptions, ReadFeedRangesOptions, ReplaceContainerOptions, SessionToken,
-        ThroughputOptions,
+        BatchOptions, ChangeFeedMode, ChangeFeedOptions, ChangeFeedStartFrom,
+        DeleteContainerOptions, ItemReadOptions, ItemWriteOptions, PatchItemOptions, Precondition,
+        QueryOptions, ReadContainerOptions, ReadFeedRangesOptions, ReplaceContainerOptions,
+        SessionToken, ThroughputOptions,
     },
     PartitionKey, Query,
 };
 
 use super::ThroughputPoller;
-use azure_core::http::Etag;
 use azure_data_cosmos_driver::models::{
-    ContainerReference, CosmosOperation, ItemReference, PartitionKeyKind,
+    ChangeFeedStartMarker, ContainerReference, CosmosOperation, ItemReference, PartitionKeyKind,
 };
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -899,6 +898,21 @@ impl ContainerClient {
     ) -> crate::Result<ChangeFeedPageIterator<T>> {
         let options = options.unwrap_or_default();
 
+        // AllVersionsAndDeletes is reserved for a future release. Reject it
+        // explicitly rather than silently behaving like LatestVersion.
+        if options.mode == ChangeFeedMode::AllVersionsAndDeletes {
+            return Err(crate::DriverCosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::NotImplemented,
+                ))
+                .with_message(
+                    "AllVersionsAndDeletes change feed mode is not yet supported; \
+                     use ChangeFeedMode::LatestVersion",
+                )
+                .build()
+                .into());
+        }
+
         let mut initial_operation = CosmosOperation::change_feed(
             self.container_ref.clone(),
             Some(scope.into_feed_range(self.container_ref.partition_key_definition())),
@@ -911,19 +925,16 @@ impl ContainerClient {
             initial_operation = initial_operation.with_max_item_count(hint);
         }
 
-        // Apply the start-from position as request headers. These are always
-        // set on the operation, even on resume: the per-partition continuation
-        // (an ETag, sent as `If-None-Match`) takes precedence for partitions
-        // that have already been polled, while partitions that were never
-        // polled before the checkpoint (and thus carry no saved token) must
-        // still honor the original start position rather than silently reading
-        // from the beginning.
-        match &options.start_from {
-            ChangeFeedStartFrom::Beginning => {} // no additional header needed
-            ChangeFeedStartFrom::Now => {
-                initial_operation = initial_operation
-                    .with_precondition(Precondition::if_none_match(Etag::from("*")));
-            }
+        // Translate the start position into a persisted start marker. The marker
+        // is recorded on the operation and serialized into the continuation
+        // token, so partitions that were never polled before a checkpoint can
+        // re-apply the original start position on resume instead of silently
+        // reading from the beginning. Partitions that have already been polled
+        // resume from their saved per-partition ETag, which takes precedence.
+        // `Beginning` needs no marker.
+        let start_marker = match &options.start_from {
+            ChangeFeedStartFrom::Beginning => None,
+            ChangeFeedStartFrom::Now => Some(ChangeFeedStartMarker::Now),
             ChangeFeedStartFrom::PointInTime(ts) => {
                 // RFC 1123 date format (the IMF fixed-date production in
                 // RFC 7231) as required by Cosmos DB.
@@ -941,8 +952,11 @@ impl ContainerClient {
                         .with_message(format!("failed to format PointInTime timestamp: {e}"))
                         .build()
                 })?;
-                initial_operation = initial_operation.with_if_modified_since(formatted);
+                Some(ChangeFeedStartMarker::PointInTime(formatted))
             }
+        };
+        if let Some(marker) = start_marker {
+            initial_operation = initial_operation.with_change_feed_start(marker);
         }
 
         let plan = self

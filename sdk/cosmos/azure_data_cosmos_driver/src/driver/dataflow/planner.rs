@@ -210,23 +210,28 @@ pub(crate) async fn build_sequential_drain(
 /// them round-robin without evicting children on 304.
 ///
 /// `resume` is an optional [`PipelineNodeState`] from a continuation token.
-/// On resume, `UnorderedMerge { active_tokens }` entries carry per-partition
-/// server continuations. Each entry's range is intersected with the current
-/// topology to rebuild the leaf nodes.
+/// On resume, `UnorderedMerge { active_tokens, start_from }` carries per-
+/// partition server continuations plus the feed's original start position.
+/// Each token's range is intersected with the current topology to rebuild the
+/// leaf nodes; partitions with no saved continuation re-apply `start_from`.
 pub(crate) async fn build_unordered_merge(
     feed_range: &FeedRange,
     topology_provider: &mut dyn TopologyProvider,
     operation: &Arc<CosmosOperation>,
     resume: Option<PipelineNodeState>,
 ) -> crate::error::Result<Pipeline> {
-    let saved_tokens = match resume {
-        None => None,
+    let (saved_tokens, resume_start) = match resume {
+        None => (None, None),
         Some(PipelineNodeState::Drained) => {
             return Ok(Pipeline::new(Box::new(DrainedLeaf)));
         }
-        Some(PipelineNodeState::UnorderedMerge { active_tokens }) => {
-            Some(validate_unordered_merge_tokens(active_tokens)?)
-        }
+        Some(PipelineNodeState::UnorderedMerge {
+            active_tokens,
+            start_from,
+        }) => (
+            Some(validate_unordered_merge_tokens(active_tokens)?),
+            start_from,
+        ),
         Some(other) => {
             return Err(crate::error::CosmosError::builder()
                 .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
@@ -236,6 +241,30 @@ pub(crate) async fn build_unordered_merge(
                 ))
                 .build());
         }
+    };
+
+    // The start marker is carried so every checkpoint re-persists it. On a
+    // fresh start it comes from the operation; on resume the token's persisted
+    // marker wins, because the caller only hands back the token and does not
+    // repeat the original start position.
+    let is_resume = saved_tokens.is_some();
+    let start_marker = if is_resume {
+        resume_start
+    } else {
+        operation.change_feed_start().cloned()
+    };
+
+    // On resume the operation rebuilt by the SDK no longer carries the original
+    // start headers (the caller only passed the continuation token). Re-derive
+    // them from the persisted marker so partitions with no saved continuation
+    // (never polled before the checkpoint) honor the original start position
+    // instead of silently reading from the beginning. Partitions that do have a
+    // saved continuation still take precedence via their `If-None-Match` ETag.
+    let operation: Arc<CosmosOperation> = match (is_resume, &start_marker) {
+        (true, Some(marker)) => {
+            Arc::new((**operation).clone().with_change_feed_start(marker.clone()))
+        }
+        _ => Arc::clone(operation),
     };
 
     let resolved = topology_provider
@@ -269,7 +298,7 @@ pub(crate) async fn build_unordered_merge(
             resolved_range.range,
         );
         request_nodes.push(Box::new(Request::new(
-            Arc::clone(operation),
+            Arc::clone(&operation),
             target,
             continuation,
         )));
@@ -282,7 +311,7 @@ pub(crate) async fn build_unordered_merge(
             .build());
     }
 
-    let root = Box::new(UnorderedMerge::new(request_nodes));
+    let root = Box::new(UnorderedMerge::new(request_nodes).with_start_marker(start_marker));
     Ok(Pipeline::new(root))
 }
 

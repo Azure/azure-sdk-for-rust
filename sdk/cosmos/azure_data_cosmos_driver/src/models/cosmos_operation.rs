@@ -8,7 +8,35 @@ use crate::models::{
     DatabaseReference, FeedRange, ItemReference, OperationType, PartitionKey, Precondition,
     ResourceType,
 };
+use azure_core::http::Etag;
+use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
+
+/// The position a change feed was originally started from, in a form that can
+/// be persisted inside a continuation token.
+///
+/// On resume, partitions that were never polled before the checkpoint carry no
+/// per-partition continuation, so they must re-apply the feed's original start
+/// position instead of silently reading from the beginning. Only the two
+/// non-default positions are represented: [`ChangeFeedStartFrom::Beginning`] is
+/// the implicit default and is encoded as the absence of a marker (`None`).
+///
+/// [`ChangeFeedStartFrom::Beginning`]: https://docs.rs/azure_data_cosmos
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", content = "value", rename_all = "snake_case")]
+pub enum ChangeFeedStartMarker {
+    /// Start from the current point in time (wire header `If-None-Match: *`).
+    ///
+    /// "Now" is evaluated when the request is sent, so on resume a never-polled
+    /// partition starts from resume time rather than the original start time.
+    Now,
+
+    /// Start from a specific point in time (wire header `If-Modified-Since`).
+    ///
+    /// The value is the pre-formatted RFC 1123 timestamp, persisted verbatim so
+    /// resume is exact.
+    PointInTime(String),
+}
 
 /// Represents a Cosmos DB operation with its routing and execution context.
 ///
@@ -73,6 +101,14 @@ pub struct CosmosOperation {
     /// make. Only consulted when `operation_type == OperationType::Patch`;
     /// ignored for every other op. `None` selects the handler default (5).
     patch_max_attempts: Option<std::num::NonZeroU8>,
+    /// `true` when this operation is a change feed read. Set explicitly by
+    /// [`change_feed`](Self::change_feed) rather than inferred from a header,
+    /// so future change feed modes can be added without ambiguity.
+    is_change_feed: bool,
+    /// The original change feed start position, persisted into the continuation
+    /// token so never-polled partitions can re-apply it on resume. `None` for
+    /// non-change-feed operations and for `Beginning` starts.
+    change_feed_start: Option<ChangeFeedStartMarker>,
 }
 
 impl CosmosOperation {
@@ -126,11 +162,12 @@ impl CosmosOperation {
         self.target.as_ref().and_then(|t| t.partition_key())
     }
 
-    /// Returns `true` if this operation is a change feed request.
+    /// Returns `true` if this is a change feed request.
     ///
-    /// Detected by the presence of the `A-IM: Incremental Feed` header.
+    /// Set explicitly by [`change_feed`](Self::change_feed); not inferred from
+    /// request headers.
     pub fn is_change_feed(&self) -> bool {
-        self.request_headers.incremental_feed
+        self.is_change_feed
     }
 
     /// Returns the request headers.
@@ -201,6 +238,35 @@ impl CosmosOperation {
         self
     }
 
+    /// Records the change feed start position and emits its wire header.
+    ///
+    /// This is the single source of truth for translating a start marker into
+    /// the appropriate header, so both the initial request and a resume that
+    /// reconstructs the marker from a continuation token stay in sync:
+    ///
+    /// - [`ChangeFeedStartMarker::Now`] → `If-None-Match: *`
+    /// - [`ChangeFeedStartMarker::PointInTime`] → `If-Modified-Since: <value>`
+    ///
+    /// `Beginning` is represented by simply not calling this method.
+    pub fn with_change_feed_start(mut self, marker: ChangeFeedStartMarker) -> Self {
+        match &marker {
+            ChangeFeedStartMarker::Now => {
+                self.request_headers.precondition =
+                    Some(Precondition::if_none_match(Etag::from("*")));
+            }
+            ChangeFeedStartMarker::PointInTime(timestamp) => {
+                self.request_headers.if_modified_since = Some(timestamp.clone());
+            }
+        }
+        self.change_feed_start = Some(marker);
+        self
+    }
+
+    /// Returns the change feed start marker, if one was set.
+    pub fn change_feed_start(&self) -> Option<&ChangeFeedStartMarker> {
+        self.change_feed_start.as_ref()
+    }
+
     /// Returns the precondition, if set.
     pub fn precondition(&self) -> Option<&Precondition> {
         self.request_headers.precondition.as_ref()
@@ -251,6 +317,8 @@ impl CosmosOperation {
             request_headers: CosmosRequestHeaders::new(),
             body: None,
             patch_max_attempts: None,
+            is_change_feed: false,
+            change_feed_start: None,
         }
     }
 
@@ -625,10 +693,10 @@ impl CosmosOperation {
 
     /// Creates a change feed read operation for a container.
     ///
-    /// Sets the `A-IM` header to `Incremental Feed` (LatestVersion mode). The
-    /// caller is responsible for setting start-from headers (e.g.,
-    /// `If-None-Match: *` for "Now") via
-    /// [`with_precondition`](Self::with_precondition).
+    /// Sets the `A-IM` header to `Incremental Feed` (LatestVersion mode) and
+    /// marks the operation as a change feed read. The caller sets the start
+    /// position via [`with_change_feed_start`](Self::with_change_feed_start),
+    /// which both records the marker and emits the matching header.
     ///
     /// Note: the `x-ms-cosmos-changefeed-wire-format-version` header is
     /// intentionally **not** set here. That header opts into the
@@ -645,7 +713,10 @@ impl CosmosOperation {
             .into_feed_reference();
         let mut headers = CosmosRequestHeaders::new();
         headers.incremental_feed = true;
-        Self::new(OperationType::ReadFeed, resource_ref, target).with_request_headers(headers)
+        let mut operation =
+            Self::new(OperationType::ReadFeed, resource_ref, target).with_request_headers(headers);
+        operation.is_change_feed = true;
+        operation
     }
 
     /// Queries items in a container.

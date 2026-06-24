@@ -16,6 +16,8 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::models::ChangeFeedStartMarker;
+
 /// Serializable snapshot of a [`PipelineNode`](super::PipelineNode) subtree.
 ///
 /// The shape is intentionally open to future intermediate node kinds so a
@@ -64,9 +66,16 @@ pub(crate) enum PipelineNodeState {
     /// `active_tokens` carries one entry per child partition that has a
     /// server continuation. Children with no entry are fresh-start on
     /// resume.
+    ///
+    /// `start_from` records the feed's original start position so partitions
+    /// that were never polled before the checkpoint (and thus have no entry in
+    /// `active_tokens`) re-apply it on resume instead of reading from the
+    /// beginning. `None` means the feed started from the beginning.
     UnorderedMerge {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         active_tokens: Vec<RangedToken>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        start_from: Option<ChangeFeedStartMarker>,
     },
 }
 
@@ -307,6 +316,7 @@ mod tests {
     fn into_child_contribution_rejects_nested_unordered_merge() {
         let err = PipelineNodeState::UnorderedMerge {
             active_tokens: vec![],
+            start_from: None,
         }
         .into_child_contribution("Parent", 0, 1)
         .expect_err("nested UnorderedMerge is not a supported child shape");
@@ -321,6 +331,7 @@ mod tests {
     fn unordered_merge_round_trips_empty() {
         let state = PipelineNodeState::UnorderedMerge {
             active_tokens: vec![],
+            start_from: None,
         };
         let json = serde_json::to_string(&state).unwrap();
         assert_eq!(
@@ -335,9 +346,39 @@ mod tests {
     fn unordered_merge_round_trips_with_tokens() {
         let state = PipelineNodeState::UnorderedMerge {
             active_tokens: vec![token("00", "55", "t1"), token("55", "AA", "t2")],
+            start_from: None,
         };
         let json = serde_json::to_string(&state).unwrap();
         let parsed: PipelineNodeState = serde_json::from_str(&json).unwrap();
         assert_eq!(parsed, state);
+    }
+
+    #[test]
+    fn unordered_merge_round_trips_with_start_from() {
+        let now = PipelineNodeState::UnorderedMerge {
+            active_tokens: vec![],
+            start_from: Some(ChangeFeedStartMarker::Now),
+        };
+        let json = serde_json::to_string(&now).unwrap();
+        assert_eq!(
+            json, r#"{"kind":"unordered_merge","start_from":{"kind":"now"}}"#,
+            "start_from must be persisted so never-polled partitions honor it on resume",
+        );
+        assert_eq!(
+            serde_json::from_str::<PipelineNodeState>(&json).unwrap(),
+            now
+        );
+
+        let point_in_time = PipelineNodeState::UnorderedMerge {
+            active_tokens: vec![token("00", "FF", "t1")],
+            start_from: Some(ChangeFeedStartMarker::PointInTime(
+                "Wed, 21 Oct 2015 07:28:00 GMT".to_string(),
+            )),
+        };
+        let json = serde_json::to_string(&point_in_time).unwrap();
+        assert_eq!(
+            serde_json::from_str::<PipelineNodeState>(&json).unwrap(),
+            point_in_time
+        );
     }
 }
