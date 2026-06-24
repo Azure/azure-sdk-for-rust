@@ -129,7 +129,7 @@ impl<'a> BlobSasBuilder<'a> {
     /// The endpoint's `snapshot=` query parameter (if any) is replaced by the
     /// signed token; the `versionid=` parameter, when present, is preserved.
     pub fn url(self) -> Url {
-        let token = self.inner.build();
+        let token = self.inner.token();
         super::helpers::append_query_excluding(&self.endpoint, &token, &["snapshot"])
     }
 }
@@ -250,7 +250,7 @@ impl<'a> BlobContainerSasBuilder<'a> {
 
     /// Signs the SAS and returns the full container URL with the token appended.
     pub fn url(self) -> Url {
-        let token = self.inner.build();
+        let token = self.inner.token();
         super::helpers::append_query(&self.endpoint, &token)
     }
 }

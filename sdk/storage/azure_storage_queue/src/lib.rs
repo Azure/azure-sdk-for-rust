@@ -12,7 +12,4 @@ mod logging;
 pub mod clients;
 pub mod models;
 
-#[cfg(feature = "sas_builder")]
-mod sas;
-
 pub use clients::{QueueClient, QueueClientOptions, QueueServiceClient, QueueServiceClientOptions};

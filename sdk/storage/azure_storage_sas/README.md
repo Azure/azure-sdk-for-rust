@@ -21,25 +21,25 @@ cargo add azure_storage_sas
 
 ### Which API should I use?
 
-Most users should depend on `azure_storage_blob` or `azure_storage_queue` with the `sas_builder` Cargo feature enabled and call `user_delegation_sas` on `BlobClient`, `BlobContainerClient`, or `QueueClient`. Those wrappers infer the account name, container/blob/queue path, and snapshot/version qualifier from the client's endpoint, so you only supply the key, permissions, and expiry.
-
-Reach for `SasBuilder` directly when you need fields or resource shapes the client methods don't expose.
+Use `SasBuilder` to construct a user delegation SAS token, then append it to the resource URL with `append_token`. Obtain the `UserDelegationKey` from `BlobServiceClient::get_user_delegation_key` (in `azure_storage_blob`) or `QueueServiceClient::get_user_delegation_key` (in `azure_storage_queue`), then pass it to `SasBuilder::new` along with the account name, permissions, and expiry.
 
 ## Examples
 
 ### Generate a read-only blob SAS
 
-Produce the signed SAS query string and append it to a blob URL. Use the resulting URL with an unauthenticated `BlobClient::new` to grant a caller time-bound read access:
+Produce the signed SAS token and append it to a blob URL. Use the resulting URL with an unauthenticated `BlobClient::new` to grant a caller time-bound read access:
 
 ```rust no_run
+use azure_core::http::Url;
 use azure_storage_sas::{
+    append_token,
     resource::blob::{BlobPermissions, BlobResource},
     SasBuilder, UserDelegationKey,
 };
 use time::OffsetDateTime;
 
 # fn example(udk: UserDelegationKey) -> azure_core::Result<()> {
-let sas = SasBuilder::new(
+let token = SasBuilder::new(
         "myaccount",
         &udk,
         OffsetDateTime::now_utc() + time::Duration::hours(1),
@@ -49,11 +49,12 @@ let sas = SasBuilder::new(
         BlobPermissions::new().read(),
     )
     .content_type("image/jpeg")
-    .build();
+    .token();
 
-let sas_url = format!(
-    "https://myaccount.blob.core.windows.net/images/photo.jpg?{sas}"
-);
+// `append_token` preserves any existing query string and does not re-encode
+// the already-encoded token.
+let blob_url = Url::parse("https://myaccount.blob.core.windows.net/images/photo.jpg")?;
+let sas_url = append_token(blob_url, &token);
 # let _ = sas_url;
 # Ok(()) }
 ```
@@ -85,7 +86,7 @@ let sas = SasBuilder::new(
         start: Ipv4Addr::new(10, 0, 0, 1),
         end: Ipv4Addr::new(10, 0, 0, 255),
     })
-    .build();
+    .token();
 # let _ = sas;
 # Ok(()) }
 ```

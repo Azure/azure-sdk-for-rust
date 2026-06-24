@@ -16,7 +16,7 @@
 //!         OffsetDateTime::now_utc() + time::Duration::hours(1))?
 //!     .blob(BlobResource::new("images", "photo.jpg"), BlobPermissions::new().read())
 //!     .content_type("image/jpeg")
-//!     .build();
+//!     .token();
 //! # Ok(())
 //! # }
 //! ```
@@ -31,7 +31,7 @@
 //! let token = SasBuilder::new("myaccount", &udk,
 //!         OffsetDateTime::now_utc() + time::Duration::hours(4))?
 //!     .container(ContainerResource::new("logs"), ContainerPermissions::new().read().list())
-//!     .build();
+//!     .token();
 //! # Ok(())
 //! # }
 //! ```

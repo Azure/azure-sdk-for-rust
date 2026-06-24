@@ -724,12 +724,12 @@ pub async fn get_queue_service_client_secondary(
 }
 
 /// SAS E2E: generate a user delegation SAS URL for a queue and use it to enqueue/dequeue a message.
-#[cfg(feature = "sas_builder")]
 #[recorded::test(live)]
 async fn test_queue_user_delegation_sas(ctx: TestContext) -> Result<()> {
-    use azure_storage_queue::models::sas::QueuePermissions;
     use azure_storage_queue::models::QueueMessage;
     use azure_storage_queue::QueueClient;
+    use azure_storage_sas::resource::queue::{QueuePermissions, QueueResource};
+    use azure_storage_sas::{append_token, SasBuilder};
 
     let recording = ctx.recording();
     let account_name = recording.var("AZURE_STORAGE_ACCOUNT_NAME", None);
@@ -753,15 +753,14 @@ async fn test_queue_user_delegation_sas(ctx: TestContext) -> Result<()> {
         .await?
         .into_model()?;
 
-    // Generate a SAS URL for the queue.
-    let sas_url = queue_client
-        .user_delegation_sas(
-            &account_name,
-            &udk,
+    // Generate a SAS token for the queue and append it to the queue URL.
+    let token = SasBuilder::new(account_name.as_str(), &udk, now + Duration::hours(1))?
+        .queue(
+            QueueResource::new(&queue_name),
             QueuePermissions::new().read().add().process(),
-            now + Duration::hours(1),
-        )?
-        .url();
+        )
+        .token();
+    let sas_url = append_token(queue_client.url().clone(), &token);
 
     // Use the SAS URL to create an unauthenticated QueueClient and enqueue a message.
     let sas_client = QueueClient::new(sas_url, None, None)?;
@@ -793,12 +792,12 @@ async fn test_queue_user_delegation_sas(ctx: TestContext) -> Result<()> {
 /// Exercise the full message lifecycle (add, update, process/delete)
 /// through a user delegation SAS, validating the `update` permission and that
 /// each permission grants exactly the operation it names.
-#[cfg(feature = "sas_builder")]
 #[recorded::test(live)]
 async fn test_queue_user_delegation_sas_message_lifecycle(ctx: TestContext) -> Result<()> {
-    use azure_storage_queue::models::sas::QueuePermissions;
     use azure_storage_queue::models::{QueueClientUpdateMessageOptions, QueueMessage};
     use azure_storage_queue::QueueClient;
+    use azure_storage_sas::resource::queue::{QueuePermissions, QueueResource};
+    use azure_storage_sas::{append_token, SasBuilder};
 
     let recording = ctx.recording();
     let account_name = recording.var("AZURE_STORAGE_ACCOUNT_NAME", None);
@@ -821,14 +820,13 @@ async fn test_queue_user_delegation_sas_message_lifecycle(ctx: TestContext) -> R
         .into_model()?;
 
     // Grant read, add, update, and process so the SAS can do the whole lifecycle.
-    let sas_url = queue_client
-        .user_delegation_sas(
-            &account_name,
-            &udk,
+    let token = SasBuilder::new(account_name.as_str(), &udk, now + Duration::hours(1))?
+        .queue(
+            QueueResource::new(&queue_name),
             QueuePermissions::new().read().add().update().process(),
-            now + Duration::hours(1),
-        )?
-        .url();
+        )
+        .token();
+    let sas_url = append_token(queue_client.url().clone(), &token);
     let sas_client = QueueClient::new(sas_url, None, None)?;
 
     // Add.

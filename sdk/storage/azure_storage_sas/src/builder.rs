@@ -248,8 +248,9 @@ impl Fields {
 /// The type parameter `S` tracks the builder state, gating which methods
 /// are available at compile time. Call a resource method (e.g.,
 /// [`.blob()`](SasBuilder::blob)) to transition from the initial untyped
-/// state to a typed state, then call [`.build()`](SasBuilder::build) to
-/// produce the signed query string.
+/// state to a typed state, then call `.token()` to produce the signed SAS
+/// token. Use [`append_token`](crate::append_token) to attach the token to
+/// the resource URL.
 pub struct SasBuilder<'a, S> {
     key: ValidatedKey<'a>,
     fields: Fields,
@@ -483,8 +484,11 @@ impl<S: BlobServiceState> SasBuilder<'_, S> {
 }
 
 impl SasBuilder<'_, state::BlobState> {
-    /// Builds the signed SAS query parameter string.
-    pub fn build(&self) -> String {
+    /// Signs the SAS and returns the token.
+    ///
+    /// Use [`append_token`](crate::append_token) to attach the returned token
+    /// to a blob URL.
+    pub fn token(&self) -> String {
         let sp = self.state.permissions.to_sas_str();
         let canonical = self
             .state
@@ -509,8 +513,11 @@ impl SasBuilder<'_, state::BlobState> {
 }
 
 impl SasBuilder<'_, state::ContainerState> {
-    /// Builds the signed SAS query parameter string.
-    pub fn build(&self) -> String {
+    /// Signs the SAS and returns the token.
+    ///
+    /// Use [`append_token`](crate::append_token) to attach the returned token
+    /// to a container URL.
+    pub fn token(&self) -> String {
         let sp = self.state.permissions.to_sas_str();
         let canonical = self
             .state
@@ -523,8 +530,11 @@ impl SasBuilder<'_, state::ContainerState> {
 }
 
 impl SasBuilder<'_, state::DirectoryState> {
-    /// Builds the signed SAS query parameter string.
-    pub fn build(&self) -> String {
+    /// Signs the SAS and returns the token.
+    ///
+    /// Use [`append_token`](crate::append_token) to attach the returned token
+    /// to a directory URL.
+    pub fn token(&self) -> String {
         let sp = self.state.permissions.to_sas_str();
         let depth = self.state.resource.depth();
         let canonical = self
@@ -546,8 +556,11 @@ impl SasBuilder<'_, state::DirectoryState> {
 }
 
 impl SasBuilder<'_, state::QueueState> {
-    /// Builds the signed SAS query parameter string.
-    pub fn build(&self) -> String {
+    /// Signs the SAS and returns the token.
+    ///
+    /// Use [`append_token`](crate::append_token) to attach the returned token
+    /// to a queue URL.
+    pub fn token(&self) -> String {
         let sp = self.state.permissions.to_sas_str();
         let canonical = self
             .state
@@ -625,7 +638,7 @@ mod tests {
                 BlobResource::new("mycontainer", "myblob.txt"),
                 BlobPermissions::new().read().write(),
             )
-            .build();
+            .token();
 
         assert!(qp.contains("sp=rw"));
         assert!(qp.contains("sr=b"));
@@ -646,7 +659,7 @@ mod tests {
                 BlobPermissions::new().read(),
             )
             .cache_control("no-cache")
-            .build();
+            .token();
 
         assert!(qp.starts_with("sv=2026-04-06&sr=b&"));
         assert!(qp.contains("sp=r"));
@@ -666,7 +679,7 @@ mod tests {
                 ContainerResource::new("mycontainer"),
                 ContainerPermissions::new().read().list(),
             )
-            .build();
+            .token();
 
         assert!(qp.starts_with("sv=2026-04-06&sr=c&"));
         assert!(qp.contains("sp=rl"));
@@ -684,7 +697,7 @@ mod tests {
                 QueueResource::new("myqueue"),
                 QueuePermissions::new().read().add(),
             )
-            .build();
+            .token();
 
         assert!(qp.starts_with("sv=2026-04-06&"));
         assert!(qp.contains("sp=ra"));
@@ -705,7 +718,7 @@ mod tests {
             .unwrap()
             .delegated_user_object_id("user/oid")
             .queue(QueueResource::new("q"), QueuePermissions::new().read())
-            .build();
+            .token();
 
         assert!(qp.contains("skdutid=tenant%20id"), "got: {qp}");
         assert!(qp.contains("sduoid=user%2Foid"), "got: {qp}");
@@ -729,7 +742,7 @@ mod tests {
             .authorized_object_id("saoid")
             .unauthorized_object_id("suoid")
             .correlation_id("scid")
-            .build();
+            .token();
 
         assert!(qp.contains("skdutid=dtid"));
         assert!(qp.contains("sduoid=duoid"));
@@ -751,7 +764,7 @@ mod tests {
                 BlobResource::new("c", "b").snapshot("2025-01-15T12:00:00.0000000Z"),
                 BlobPermissions::new().read(),
             )
-            .build();
+            .token();
 
         assert!(qp.contains("sr=bs"));
         // The `:` characters in the snapshot timestamp are percent-encoded
@@ -769,7 +782,7 @@ mod tests {
             .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
             .content_type("image/jpeg")
             .content_disposition("attachment; filename=\"my file.txt\"")
-            .build();
+            .token();
 
         // `/`, `;`, spaces, and quotes in user-supplied values must be
         // percent-encoded so the resulting URL remains parseable.
@@ -794,7 +807,7 @@ mod tests {
             .authorized_object_id("saoid/value")
             .unauthorized_object_id("suoid value")
             .correlation_id("scid id")
-            .build();
+            .token();
 
         assert!(qp.contains("ses=scope%20name"), "got: {qp}");
         assert!(qp.contains("skdutid=tenant%20id"), "got: {qp}");
@@ -815,7 +828,7 @@ mod tests {
                 BlobResource::new("c", "b").version("2025-01-15T12:00:00.0000000Z"),
                 BlobPermissions::new().read(),
             )
-            .build();
+            .token();
 
         assert!(qp.contains("sr=bv"));
     }
@@ -832,7 +845,7 @@ mod tests {
                     BlobResource::new("c", "b").version(version),
                     BlobPermissions::new().read(),
                 )
-                .build();
+                .token();
             qp.split("sig=").nth(1).unwrap().to_string()
         };
 
@@ -855,7 +868,7 @@ mod tests {
         let qp = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
             .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
-            .build();
+            .token();
 
         assert!(qp.contains("skdutid=delegated-tenant"), "got: {qp}");
     }
@@ -869,7 +882,7 @@ mod tests {
         let qp = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
             .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
-            .build();
+            .token();
 
         assert!(!qp.contains("skdutid="), "got: {qp}");
     }
@@ -895,8 +908,8 @@ mod tests {
             .unwrap()
             .blob(BlobResource::new("c", "b"), BlobPermissions::new().read());
 
-        let first = builder.build();
-        let second = builder.build();
+        let first = builder.token();
+        let second = builder.token();
         assert_eq!(first, second);
     }
 
@@ -911,7 +924,7 @@ mod tests {
             .protocol(SasProtocol::Https)
             .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
             .start(datetime!(2025-01-15 00:00:00 UTC))
-            .build();
+            .token();
 
         assert!(qp.contains("spr=https"));
         assert!(qp.contains("st=2025-01-15T00:00:00Z"));
@@ -939,7 +952,7 @@ mod tests {
             .unwrap()
             .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
             .signed_request_header("x-ms-blob-content-type", "application/json")
-            .build();
+            .token();
 
         assert!(qp.contains("srh=x-ms-blob-content-type"), "got: {qp}");
         assert!(qp.contains("sig="), "got: {qp}");
@@ -954,7 +967,7 @@ mod tests {
             .unwrap()
             .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
             .signed_request_query_parameter("comp", "list")
-            .build();
+            .token();
 
         assert!(qp.contains("srq=comp"), "got: {qp}");
         assert!(qp.contains("sig="), "got: {qp}");
@@ -970,7 +983,7 @@ mod tests {
             .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
             .signed_request_header("x-ms-blob-type", "BlockBlob")
             .signed_request_header("x-ms-blob-content-type", "text/plain")
-            .build();
+            .token();
 
         // BTreeMap sorts keys: x-ms-blob-content-type < x-ms-blob-type.
         // Commas between keys are structural separators and must NOT be
@@ -989,13 +1002,13 @@ mod tests {
         let without = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
             .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
-            .build();
+            .token();
 
         let with_headers = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
             .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
             .signed_request_header("x-ms-blob-content-type", "application/json")
-            .build();
+            .token();
 
         // Different string-to-sign must produce a different signature
         let sig_without = without.split("sig=").nth(1).unwrap();
@@ -1015,7 +1028,7 @@ mod tests {
                 ContainerPermissions::new().read().list(),
             )
             .signed_request_header("x-ms-blob-content-type", "text/plain")
-            .build();
+            .token();
 
         assert!(qp.contains("srh=x-ms-blob-content-type"), "got: {qp}");
     }
@@ -1028,7 +1041,7 @@ mod tests {
         let qp = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
             .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
-            .build();
+            .token();
 
         assert!(!qp.contains("srh="), "got: {qp}");
         assert!(!qp.contains("srq="), "got: {qp}");
@@ -1185,7 +1198,7 @@ mod tests {
                 BlobResource::new("c", "b").version("2025-01-15T12:00:00.0000000Z"),
                 BlobPermissions::new().read(),
             )
-            .build();
+            .token();
         assert!(qp.contains("sr=bv"));
         assert!(
             !qp.contains("snapshot="),
@@ -1203,7 +1216,7 @@ mod tests {
                 BlobResource::new("c", "b").snapshot("2025-01-15T12:00:00.0000000Z"),
                 BlobPermissions::new().read(),
             )
-            .build();
+            .token();
         assert!(qp.contains("sr=bs"));
         assert!(qp.contains("snapshot=2025-01-15T12%3A00%3A00.0000000Z"));
         assert!(!qp.contains("versionid="), "got: {qp}");
@@ -1219,7 +1232,7 @@ mod tests {
                 DirectoryResource::new("fs", "a/b/c"),
                 ContainerPermissions::new().read(),
             )
-            .build();
+            .token();
         assert!(qp.contains("sr=d"), "got: {qp}");
         assert!(qp.contains("sdd=3"), "got: {qp}");
     }
@@ -1234,7 +1247,7 @@ mod tests {
                 DirectoryResource::new("fs", ""),
                 ContainerPermissions::new().read(),
             )
-            .build();
+            .token();
         assert!(qp.contains("sdd=0"), "got: {qp}");
     }
 
@@ -1247,7 +1260,7 @@ mod tests {
             .unwrap()
             .ip_range(SasIpRange::Address(Ipv4Addr::new(1, 2, 3, 4)))
             .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
-            .build();
+            .token();
         assert!(qp.contains("sip=1.2.3.4"), "got: {qp}");
     }
 
@@ -1263,7 +1276,7 @@ mod tests {
                 end: Ipv4Addr::new(10, 0, 0, 255),
             })
             .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
-            .build();
+            .token();
         // The `-` between addresses must not be percent-encoded.
         assert!(qp.contains("sip=10.0.0.1-10.0.0.255"), "got: {qp}");
     }
@@ -1276,7 +1289,7 @@ mod tests {
             .unwrap()
             .protocol(SasProtocol::Https)
             .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
-            .build();
+            .token();
         assert!(qp.contains("spr=https"), "got: {qp}");
         assert!(!qp.contains("spr=https,"), "got: {qp}");
     }
@@ -1288,7 +1301,7 @@ mod tests {
         let qp = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
             .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
-            .build();
+            .token();
         for absent in [
             "st=",
             "sip=",
@@ -1340,7 +1353,7 @@ mod tests {
         let qp = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
             .queue(QueueResource::new("q"), QueuePermissions::new().read())
-            .build();
+            .token();
         for absent in ["sr=", "snapshot=", "sdd=", "rscc=", "ses="] {
             assert!(!qp.contains(absent), "unexpected `{absent}` in: {qp}");
         }
@@ -1354,7 +1367,7 @@ mod tests {
             .unwrap()
             .start(datetime!(2025-05-01 08:00:00 UTC))
             .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
-            .build();
+            .token();
         assert!(qp.contains("st=2025-05-01T08:00:00Z"), "got: {qp}");
     }
 
@@ -1368,14 +1381,14 @@ mod tests {
         let sig_none = SasBuilder::new("acct", &udk_none, expiry)
             .unwrap()
             .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
-            .build();
+            .token();
 
         let mut udk_some = test_udk();
         udk_some.signed_delegated_user_tid = Some("tenant".into());
         let sig_some = SasBuilder::new("acct", &udk_some, expiry)
             .unwrap()
             .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
-            .build();
+            .token();
 
         let a = sig_none.split("sig=").nth(1).unwrap();
         let b = sig_some.split("sig=").nth(1).unwrap();

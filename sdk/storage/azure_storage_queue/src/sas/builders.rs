@@ -53,7 +53,7 @@ impl<'a> QueueSasBuilder<'a> {
 
     /// Signs the SAS and returns the full queue URL with the token appended.
     pub fn url(self) -> Url {
-        let token = self.inner.build();
+        let token = self.inner.token();
         append_sas_query(&self.endpoint, &token)
     }
 }

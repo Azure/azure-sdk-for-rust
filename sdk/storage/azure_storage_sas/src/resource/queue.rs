@@ -14,7 +14,7 @@
 //!         OffsetDateTime::now_utc() + time::Duration::hours(8))?
 //!     .protocol(SasProtocol::Https)
 //!     .queue(QueueResource::new("work-items"), QueuePermissions::new().read().process())
-//!     .build();
+//!     .token();
 //! # Ok(())
 //! # }
 //! ```

@@ -130,16 +130,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Generating SAS URLs
 
-Enable the `sas_builder` Cargo feature to get the `user_delegation_sas` method on `BlobClient` and `BlobContainerClient`, plus the lower-level builder re-exported under `azure_storage_blob::models::sas`. Snapshot-scoped and version-scoped clients built with `BlobClient::with_snapshot` or `BlobClient::with_version` flow their qualifier through automatically. For building a SAS without a client, see the [`azure_storage_sas`] crate directly.
+Use the [`azure_storage_sas`] crate to create a user delegation SAS. Obtain a `UserDelegationKey` from `BlobServiceClient::get_user_delegation_key`, build the token with `SasBuilder`, then append it to the resource URL.
 
 ```rust no_run
 use azure_core::{
     http::{RequestContent, Url, XmlFormat},
     time::OffsetDateTime,
 };
-use azure_storage_blob::{
-    models::{sas::BlobPermissions, KeyInfo},
-    BlobServiceClient,
+use azure_storage_blob::{models::KeyInfo, BlobServiceClient};
+use azure_storage_sas::{
+    append_token,
+    resource::blob::{BlobPermissions, BlobResource},
+    SasBuilder,
 };
 use azure_identity::DeveloperToolsCredential;
 use time::Duration;
@@ -164,16 +166,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?
         .into_model()?;
 
-    // Generate a read-only SAS URL for a single blob.
-    let blob_client = service_client.blob_client("<container_name>", "<blob_name>");
-    let sas_url = blob_client
-        .user_delegation_sas(
-            "<storage_account_name>",
-            &udk,
+    // Build a read-only SAS token for a single blob, then append it to the blob URL.
+    let token = SasBuilder::new("<storage_account_name>", &udk, now + Duration::hours(1))?
+        .blob(
+            BlobResource::new("<container_name>", "<blob_name>"),
             BlobPermissions::new().read(),
-            now + Duration::hours(1),
-        )?
-        .url();
+        )
+        .token();
+    let blob_client = service_client.blob_client("<container_name>", "<blob_name>");
+    let sas_url = append_token(blob_client.url().clone(), &token);
 
     println!("{sas_url}");
     Ok(())

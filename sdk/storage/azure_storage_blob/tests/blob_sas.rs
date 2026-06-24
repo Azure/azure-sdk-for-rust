@@ -3,22 +3,26 @@
 
 //! End-to-end tests for blob user delegation SAS generation.
 //!
-//! These tests generate a SAS URL from a real user delegation key and then use
-//! the SAS (via an unauthenticated client) to access the resource. This proves
-//! the signature the SDK computes matches what the service expects.
+//! These tests build a SAS token from a real user delegation key with
+//! [`SasBuilder`], assemble the authenticated URL by appending the token to the
+//! resource URL, and then use that URL (via an unauthenticated client) to access
+//! the resource. This proves the signature the SDK computes matches what the
+//! service expects.
 
 use azure_core::{
     http::{RequestContent, Url, XmlFormat},
     time::OffsetDateTime,
 };
 use azure_core_test::{recorded, TestContext};
-use azure_storage_blob::models::{
-    sas::{BlobPermissions, ContainerPermissions, UserDelegationKey},
-    BlobClientGetPropertiesResultHeaders, KeyInfo,
-};
+use azure_storage_blob::models::{BlobClientGetPropertiesResultHeaders, KeyInfo};
 use azure_storage_blob::{BlobClient, BlobServiceClient};
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_blob_service_client, get_container_client, StorageAccount,
+};
+use azure_storage_sas::{
+    append_token,
+    resource::blob::{BlobPermissions, BlobResource, ContainerPermissions, ContainerResource},
+    SasBuilder, UserDelegationKey,
 };
 use std::error::Error;
 use time::Duration;
@@ -39,6 +43,17 @@ async fn get_udk(service_client: &BlobServiceClient) -> Result<UserDelegationKey
     Ok(udk)
 }
 
+/// Extracts the container name from a container client URL (its last non-empty
+/// path segment).
+fn extract_container_name(url: &Url) -> String {
+    url.path_segments()
+        .into_iter()
+        .flatten()
+        .rfind(|segment| !segment.is_empty())
+        .unwrap_or_default()
+        .to_string()
+}
+
 /// Base blob: generate a read SAS and download the blob through it.
 #[recorded::test(live)]
 async fn test_blob_user_delegation_sas_read(ctx: TestContext) -> Result<(), Box<dyn Error>> {
@@ -46,7 +61,9 @@ async fn test_blob_user_delegation_sas_read(ctx: TestContext) -> Result<(), Box<
     let account_name = recording.var("AZURE_STORAGE_ACCOUNT_NAME", None);
     let container_client =
         get_container_client(recording, true, StorageAccount::Standard, None).await?;
-    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let container_name = extract_container_name(container_client.url());
+    let blob_name = get_blob_name(recording);
+    let blob_client = container_client.blob_client(&blob_name);
 
     let data = b"sas-e2e read content";
     create_test_blob(
@@ -59,14 +76,17 @@ async fn test_blob_user_delegation_sas_read(ctx: TestContext) -> Result<(), Box<
     let service_client = get_blob_service_client(recording, StorageAccount::Standard, None)?;
     let udk = get_udk(&service_client).await?;
 
-    let sas_url = blob_client
-        .user_delegation_sas(
-            &account_name,
-            &udk,
-            BlobPermissions::new().read(),
-            OffsetDateTime::now_utc() + Duration::hours(1),
-        )?
-        .url();
+    let token = SasBuilder::new(
+        account_name.as_str(),
+        &udk,
+        OffsetDateTime::now_utc() + Duration::hours(1),
+    )?
+    .blob(
+        BlobResource::new(&container_name, &blob_name),
+        BlobPermissions::new().read(),
+    )
+    .token();
+    let sas_url = append_token(blob_client.url().clone(), &token);
 
     // Download via an unauthenticated client using only the SAS URL.
     let sas_client = BlobClient::new(sas_url, None, None)?;
@@ -84,7 +104,9 @@ async fn test_blob_user_delegation_sas_write(ctx: TestContext) -> Result<(), Box
     let account_name = recording.var("AZURE_STORAGE_ACCOUNT_NAME", None);
     let container_client =
         get_container_client(recording, true, StorageAccount::Standard, None).await?;
-    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let container_name = extract_container_name(container_client.url());
+    let blob_name = get_blob_name(recording);
+    let blob_client = container_client.blob_client(&blob_name);
 
     // Create the blob first (so the container/blob path exists), then overwrite via SAS.
     create_test_blob(&blob_client, None, None).await?;
@@ -92,14 +114,17 @@ async fn test_blob_user_delegation_sas_write(ctx: TestContext) -> Result<(), Box
     let service_client = get_blob_service_client(recording, StorageAccount::Standard, None)?;
     let udk = get_udk(&service_client).await?;
 
-    let sas_url = blob_client
-        .user_delegation_sas(
-            &account_name,
-            &udk,
-            BlobPermissions::new().read().write().create(),
-            OffsetDateTime::now_utc() + Duration::hours(1),
-        )?
-        .url();
+    let token = SasBuilder::new(
+        account_name.as_str(),
+        &udk,
+        OffsetDateTime::now_utc() + Duration::hours(1),
+    )?
+    .blob(
+        BlobResource::new(&container_name, &blob_name),
+        BlobPermissions::new().read().write().create(),
+    )
+    .token();
+    let sas_url = append_token(blob_client.url().clone(), &token);
 
     let sas_client = BlobClient::new(sas_url, None, None)?;
     let new_data = b"written through sas";
@@ -123,7 +148,9 @@ async fn test_blob_version_user_delegation_sas(ctx: TestContext) -> Result<(), B
     let account_name = recording.var("VERSIONED_AZURE_STORAGE_ACCOUNT_NAME", None);
     let container_client =
         get_container_client(recording, true, StorageAccount::Versioned, None).await?;
-    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let container_name = extract_container_name(container_client.url());
+    let blob_name = get_blob_name(recording);
+    let blob_client = container_client.blob_client(&blob_name);
 
     // Create two versions with distinct content.
     let data_v1 = b"version 1 content";
@@ -150,17 +177,21 @@ async fn test_blob_version_user_delegation_sas(ctx: TestContext) -> Result<(), B
     let service_client = get_blob_service_client(recording, StorageAccount::Versioned, None)?;
     let udk = get_udk(&service_client).await?;
 
-    // Generate a SAS scoped to version 1. `with_version` puts `versionid=` on the
-    // endpoint, which drives `sr=bv` and places the version id in the signature.
+    // Generate a SAS scoped to version 1. The version id drives `sr=bv` and is
+    // signed in the snapshot slot, but it is not emitted in the token, so the
+    // base URL must carry `versionid=` (supplied here by `with_version`).
     let version_1_client = blob_client.with_version(&version_1)?;
-    let sas_url = version_1_client
-        .user_delegation_sas(
-            &account_name,
-            &udk,
-            BlobPermissions::new().read(),
-            OffsetDateTime::now_utc() + Duration::hours(1),
-        )?
-        .url();
+    let token = SasBuilder::new(
+        account_name.as_str(),
+        &udk,
+        OffsetDateTime::now_utc() + Duration::hours(1),
+    )?
+    .blob(
+        BlobResource::new(&container_name, &blob_name).version(&version_1),
+        BlobPermissions::new().read(),
+    )
+    .token();
+    let sas_url = append_token(version_1_client.url().clone(), &token);
     assert!(
         sas_url.query().is_some_and(|q| q.contains("sr=bv")),
         "expected sr=bv in SAS URL, got: {sas_url}"
@@ -185,7 +216,9 @@ async fn test_blob_snapshot_user_delegation_sas(ctx: TestContext) -> Result<(), 
     let account_name = recording.var("AZURE_STORAGE_ACCOUNT_NAME", None);
     let container_client =
         get_container_client(recording, true, StorageAccount::Standard, None).await?;
-    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let container_name = extract_container_name(container_client.url());
+    let blob_name = get_blob_name(recording);
+    let blob_client = container_client.blob_client(&blob_name);
 
     let snapshot_data = b"snapshot content";
     create_test_blob(
@@ -211,15 +244,20 @@ async fn test_blob_snapshot_user_delegation_sas(ctx: TestContext) -> Result<(), 
     let service_client = get_blob_service_client(recording, StorageAccount::Standard, None)?;
     let udk = get_udk(&service_client).await?;
 
-    let snapshot_client = blob_client.with_snapshot(&snapshot)?;
-    let sas_url = snapshot_client
-        .user_delegation_sas(
-            &account_name,
-            &udk,
-            BlobPermissions::new().read(),
-            OffsetDateTime::now_utc() + Duration::hours(1),
-        )?
-        .url();
+    // The snapshot timestamp is signed in the snapshot slot and emitted as the
+    // `snapshot=` query parameter of the token, so append the token to the plain
+    // blob URL (the token already carries `snapshot=`).
+    let token = SasBuilder::new(
+        account_name.as_str(),
+        &udk,
+        OffsetDateTime::now_utc() + Duration::hours(1),
+    )?
+    .blob(
+        BlobResource::new(&container_name, &blob_name).snapshot(&snapshot),
+        BlobPermissions::new().read(),
+    )
+    .token();
+    let sas_url = append_token(blob_client.url().clone(), &token);
     assert!(
         sas_url.query().is_some_and(|q| q.contains("sr=bs")),
         "expected sr=bs in SAS URL, got: {sas_url}"
@@ -241,6 +279,7 @@ async fn test_container_user_delegation_sas(ctx: TestContext) -> Result<(), Box<
     let account_name = recording.var("AZURE_STORAGE_ACCOUNT_NAME", None);
     let container_client =
         get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let container_name = extract_container_name(container_client.url());
     let blob_name = get_blob_name(recording);
     let blob_client = container_client.blob_client(&blob_name);
 
@@ -255,31 +294,29 @@ async fn test_container_user_delegation_sas(ctx: TestContext) -> Result<(), Box<
     let service_client = get_blob_service_client(recording, StorageAccount::Standard, None)?;
     let udk = get_udk(&service_client).await?;
 
-    let container_sas_url = container_client
-        .user_delegation_sas(
-            &account_name,
-            &udk,
-            ContainerPermissions::new().read().list(),
-            OffsetDateTime::now_utc() + Duration::hours(1),
-        )?
-        .url();
+    let token = SasBuilder::new(
+        account_name.as_str(),
+        &udk,
+        OffsetDateTime::now_utc() + Duration::hours(1),
+    )?
+    .container(
+        ContainerResource::new(&container_name),
+        ContainerPermissions::new().read().list(),
+    )
+    .token();
 
-    // Build a blob URL that carries the container SAS query, then download.
-    let mut blob_url = container_sas_url.clone();
-    {
-        let query = blob_url.query().map(str::to_owned);
-        blob_url
-            .path_segments_mut()
-            .map_err(|_| {
-                azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    "cannot append blob name to container SAS URL",
-                )
-            })?
-            .push(&blob_name);
-        blob_url.set_query(query.as_deref());
-    }
-    let _ = Url::parse(blob_url.as_str())?; // sanity: still a valid URL
+    // Build the blob URL within the container, then append the container SAS.
+    let mut blob_url = container_client.url().clone();
+    blob_url
+        .path_segments_mut()
+        .map_err(|_| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "cannot append blob name to container URL",
+            )
+        })?
+        .push(&blob_name);
+    let blob_url = append_token(blob_url, &token);
 
     let sas_client = BlobClient::new(blob_url, None, None)?;
     let body = sas_client.download(None).await?.body.collect().await?;
