@@ -13,6 +13,7 @@ use std::{
 
 use crossbeam_epoch::{self as epoch, Atomic, Owned};
 use futures::future::BoxFuture;
+use url::Url;
 
 #[cfg(feature = "tokio")]
 use crate::driver::transport::background_task_manager::BackgroundTaskManager;
@@ -23,11 +24,10 @@ use crate::{
 };
 
 use super::{
-    build_account_endpoint_state, expire_partition_overrides, expire_unavailable_endpoints,
-    mark_endpoint_unavailable, mark_partition_unavailable,
-    partition_endpoint_state::PartitionEndpointState, partition_key_range_id::PartitionKeyRangeId,
-    record_hedge_alternate_win, record_hedge_primary_win, AccountEndpointState, CosmosEndpoint,
-    LocationEffect,
+    build_account_endpoint_state, expire_partition_overrides, mark_endpoint_unavailable,
+    mark_partition_unavailable, partition_endpoint_state::PartitionEndpointState,
+    partition_key_range_id::PartitionKeyRangeId, record_hedge_alternate_win,
+    record_hedge_primary_win, AccountEndpointState, CosmosEndpoint, LocationEffect,
 };
 
 /// Immutable location snapshot consumed by one operation-loop iteration.
@@ -64,6 +64,22 @@ type AccountRefreshFn = Arc<
         + Send
         + Sync,
 >;
+
+/// Connectivity probe for a single endpoint URL.
+///
+/// Returns `true` if the endpoint is reachable (a request to it completed),
+/// `false` if it could not be connected to. Used to gate failback of an
+/// endpoint that was previously marked unavailable: an endpoint only rejoins
+/// the routing rotation after a probe confirms it is reachable, rather than
+/// purely because an unavailability cooldown elapsed.
+#[cfg(feature = "tokio")]
+pub(crate) type EndpointProbeFn = Arc<dyn Fn(Url) -> BoxFuture<'static, bool> + Send + Sync>;
+
+/// Interval between iterations of the background endpoint-probe loop, which
+/// probes endpoints whose unavailability cooldown has elapsed and fails back
+/// only those that are reachable.
+#[cfg(feature = "tokio")]
+pub(crate) const ENDPOINT_PROBE_INTERVAL: Duration = Duration::from_secs(60);
 
 /// Interval between iterations of the background account-metadata refresh
 /// loop. Independent of `LocationStateStore::refresh_interval` (which
@@ -472,8 +488,6 @@ impl LocationStateStore {
             }
         }
 
-        self.prune_expired_unavailable_endpoints();
-
         if !properties.etag.is_empty() {
             let last_etag = self.last_synced_etag.lock().unwrap();
             if *last_etag == properties.etag {
@@ -485,7 +499,6 @@ impl LocationStateStore {
         }
 
         let default_endpoint = default_endpoint.clone();
-        let ttl = self.endpoint_unavailability_ttl;
         self.apply_account(|current| {
             let mut next = build_account_endpoint_state(
                 &properties,
@@ -494,12 +507,12 @@ impl LocationStateStore {
                 self.gateway20_enabled,
                 &self.preferred_regions,
             );
-            // Carry forward unavailability marks from the current state,
-            // filtering out entries that have expired past the configured TTL.
-            let now = Instant::now();
-            let mut unavailable = current.unavailable_endpoints.clone();
-            unavailable.retain(|_, (marked_at, _)| now.saturating_duration_since(*marked_at) < ttl);
-            next.unavailable_endpoints = unavailable;
+            // Carry forward all unavailability marks from the current state.
+            // The background endpoint-probe loop is the sole owner of
+            // account-level failback: a marked endpoint is only cleared once a
+            // connectivity probe confirms it is reachable, never on a time
+            // basis. See `probe_and_failback_unavailable_endpoints`.
+            next.unavailable_endpoints = current.unavailable_endpoints.clone();
             next
         });
 
@@ -517,8 +530,17 @@ impl LocationStateStore {
             let mut next = previous.clone();
             next.per_partition_automatic_failover_enabled =
                 per_partition_automatic_failover_enabled;
-            next.per_partition_circuit_breaker_enabled = per_partition_automatic_failover_enabled
-                || previous.config.circuit_breaker_enabled();
+            // The incident kill switch (`AZURE_COSMOS_PPCB_ENABLED_OVERRIDE`) is
+            // authoritative: when set it wins over both the account property and
+            // the base option. Only when it is unset does PPCB fall back to
+            // `account property || option`.
+            next.per_partition_circuit_breaker_enabled = previous
+                .config
+                .circuit_breaker_enabled_override()
+                .unwrap_or_else(|| {
+                    per_partition_automatic_failover_enabled
+                        || previous.config.circuit_breaker_enabled()
+                });
 
             // Drop per-partition routing overrides on any edge of either
             // enablement flag. The eligibility gate in `is_eligible_for_ppaf` /
@@ -554,23 +576,6 @@ impl LocationStateStore {
         });
     }
 
-    fn prune_expired_unavailable_endpoints(&self) {
-        let now = Instant::now();
-        let ttl = self.endpoint_unavailability_ttl;
-        let snapshot = self.account_snapshot();
-
-        let has_expired = snapshot
-            .unavailable_endpoints
-            .values()
-            .any(|(marked_at, _)| now.saturating_duration_since(*marked_at) >= ttl);
-
-        if !has_expired {
-            return;
-        }
-
-        self.apply_account(|current| expire_unavailable_endpoints(current, now, ttl));
-    }
-
     /// Starts the background failback loop that periodically sweeps expired
     /// partition override entries.
     ///
@@ -600,6 +605,101 @@ impl LocationStateStore {
         self.background_task_manager.spawn(async move {
             account_refresh_loop(weak_store, BACKGROUND_REFRESH_INTERVAL).await;
         });
+    }
+
+    /// Starts the background endpoint-probe loop.
+    ///
+    /// This loop is the sole owner of account-level endpoint failback. An
+    /// endpoint marked unavailable is never cleared simply because its cooldown
+    /// elapsed; once the cooldown has elapsed the loop probes the endpoint for
+    /// connectivity (via `probe_fn`) and only fails back (clears the
+    /// unavailability mark) endpoints that are reachable. Unreachable endpoints
+    /// have their cooldown reset and stay out of the rotation. This prevents
+    /// repeatedly routing real traffic to an endpoint that is still unreachable
+    /// (e.g. firewall-blocked), which otherwise causes sustained low throughput.
+    ///
+    /// Mirrors `start_failback_loop` (`Weak<Self>` for self-termination,
+    /// `BackgroundTaskManager` for abort-on-drop).
+    #[cfg(feature = "tokio")]
+    pub fn start_endpoint_probe_loop(self: &Arc<Self>, probe_fn: EndpointProbeFn) {
+        let weak_store: Weak<LocationStateStore> = Arc::downgrade(self);
+        self.background_task_manager.spawn(async move {
+            endpoint_probe_loop(weak_store, probe_fn, ENDPOINT_PROBE_INTERVAL).await;
+        });
+    }
+
+    /// Probes every account-level unavailable endpoint whose cooldown has
+    /// elapsed and fails back only those that are reachable.
+    ///
+    /// For each due endpoint the probe is awaited out of band (never under a
+    /// state lock — `apply_account` is only entered to record the result). A
+    /// reachable endpoint has its unavailability mark removed (rejoining the
+    /// rotation); an unreachable endpoint has its cooldown reset so it is
+    /// re-probed after the next interval rather than thrashing.
+    #[cfg(feature = "tokio")]
+    pub(crate) async fn probe_and_failback_unavailable_endpoints(
+        &self,
+        probe_fn: &EndpointProbeFn,
+    ) {
+        let now = Instant::now();
+        let ttl = self.endpoint_unavailability_ttl;
+        let snapshot = self.account_snapshot();
+
+        // Capture each due endpoint's observed `marked_at` so we can detect a
+        // concurrent re-mark that lands while the (potentially slow) probe is in
+        // flight. The URLs are borrowed from `snapshot` (held for the whole
+        // call) — we clone only when handing one to `probe_fn`.
+        let due: Vec<(&Url, Instant)> = snapshot
+            .unavailable_endpoints
+            .iter()
+            .filter(|(_, (marked_at, _))| now.saturating_duration_since(*marked_at) >= ttl)
+            .map(|(url, (marked_at, _))| (url, *marked_at))
+            .collect();
+
+        if due.is_empty() {
+            return;
+        }
+
+        for (url, observed_marked_at) in due {
+            let reachable = probe_fn(url.clone()).await;
+            self.apply_account(|current| {
+                let mut next = current.clone();
+                if let Some((marked_at, _)) = next.unavailable_endpoints.get_mut(url) {
+                    if reachable {
+                        // Only fail back if the mark is the same one we probed.
+                        // A newer `marked_at` means a concurrent transport
+                        // failure re-marked the endpoint while the probe was in
+                        // flight, so keep it out of rotation and re-probe later.
+                        if *marked_at == observed_marked_at {
+                            next.unavailable_endpoints.remove(url);
+                        }
+                    } else {
+                        // Reset the cooldown so the endpoint is re-probed later.
+                        *marked_at = Instant::now();
+                    }
+                }
+                next
+            });
+
+            if reachable {
+                if !self
+                    .account_snapshot()
+                    .unavailable_endpoints
+                    .contains_key(url)
+                {
+                    tracing::info!(
+                        endpoint = %url,
+                        "endpoint passed connectivity probe; failing back",
+                    );
+                }
+            } else {
+                tracing::warn!(
+                    endpoint = %url,
+                    "endpoint failed connectivity probe; keeping it out of rotation \
+                     and resetting its cooldown for a later re-probe",
+                );
+            }
+        }
     }
 
     /// Records that the alternate (secondary) hedge attempt completed before
@@ -704,6 +804,30 @@ async fn failback_loop(weak_store: Weak<LocationStateStore>, config: PartitionFa
                 config.partition_unavailability_duration(),
             )
         });
+    }
+}
+
+/// Background endpoint-probe loop. Periodically probes account-level endpoints
+/// whose unavailability cooldown has elapsed and fails back only those that are
+/// reachable. Exits when the `LocationStateStore` is dropped (`Weak::upgrade()`
+/// returns `None`).
+#[cfg(feature = "tokio")]
+async fn endpoint_probe_loop(
+    weak_store: Weak<LocationStateStore>,
+    probe_fn: EndpointProbeFn,
+    interval: Duration,
+) {
+    loop {
+        tokio::time::sleep(interval).await;
+
+        let Some(store) = weak_store.upgrade() else {
+            // LocationStateStore was dropped — exit the loop.
+            break;
+        };
+
+        store
+            .probe_and_failback_unavailable_endpoints(&probe_fn)
+            .await;
     }
 }
 
@@ -838,6 +962,196 @@ mod tests {
 
         let snapshot = store.snapshot();
         assert_eq!(snapshot.account.unavailable_endpoints.len(), 1);
+    }
+
+    #[cfg(feature = "tokio")]
+    #[tokio::test]
+    async fn unavailable_endpoint_fails_back_only_after_successful_probe() {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
+            let payload = test_refresh_payload();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move { Ok(payload) });
+            fut
+        });
+
+        let store = LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint.clone(),
+            refresh,
+            false,
+            // Cooldown of zero so the marked endpoint is immediately probe-due.
+            Duration::ZERO,
+            PartitionFailoverOptions::default(),
+            Vec::new(),
+        );
+
+        store
+            .apply(&[LocationEffect::MarkEndpointUnavailable {
+                endpoint: default_endpoint.clone(),
+                reason: UnavailableReason::TransportError,
+            }])
+            .await;
+        assert_eq!(store.snapshot().account.unavailable_endpoints.len(), 1);
+
+        // A failing probe keeps the endpoint unavailable (cooldown is reset,
+        // not cleared) — this is the core #4597 behavior: no time-based failback.
+        let unreachable: EndpointProbeFn =
+            Arc::new(|_url: Url| Box::pin(async move { false }) as BoxFuture<'static, bool>);
+        store
+            .probe_and_failback_unavailable_endpoints(&unreachable)
+            .await;
+        assert_eq!(
+            store.snapshot().account.unavailable_endpoints.len(),
+            1,
+            "a failed probe must keep the endpoint unavailable"
+        );
+
+        // A successful probe fails the endpoint back (clears the mark).
+        let reachable: EndpointProbeFn =
+            Arc::new(|_url: Url| Box::pin(async move { true }) as BoxFuture<'static, bool>);
+        store
+            .probe_and_failback_unavailable_endpoints(&reachable)
+            .await;
+        assert_eq!(
+            store.snapshot().account.unavailable_endpoints.len(),
+            0,
+            "a successful probe must fail the endpoint back"
+        );
+    }
+
+    #[cfg(feature = "tokio")]
+    #[tokio::test]
+    async fn failed_probe_resets_cooldown_keeping_endpoint_out_of_rotation() {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
+            let payload = test_refresh_payload();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move { Ok(payload) });
+            fut
+        });
+
+        let make_store = || {
+            LocationStateStore::new(
+                Arc::new(AccountMetadataCache::new()),
+                test_endpoint(),
+                default_endpoint.clone(),
+                refresh.clone(),
+                false,
+                // Non-zero cooldown so the reset-on-failure is observable.
+                Duration::from_secs(60),
+                PartitionFailoverOptions::default(),
+                Vec::new(),
+            )
+        };
+
+        let endpoint = default_endpoint.url().clone();
+        let insert_due_mark = |store: &LocationStateStore| {
+            store.apply_account(|current| {
+                let mut next = current.clone();
+                next.unavailable_endpoints.insert(
+                    endpoint.clone(),
+                    (
+                        // Old enough that the endpoint is already probe-due.
+                        Instant::now() - Duration::from_secs(120),
+                        UnavailableReason::TransportError,
+                    ),
+                );
+                next
+            });
+        };
+
+        let reachable: EndpointProbeFn =
+            Arc::new(|_url: Url| Box::pin(async move { true }) as BoxFuture<'static, bool>);
+        let unreachable: EndpointProbeFn =
+            Arc::new(|_url: Url| Box::pin(async move { false }) as BoxFuture<'static, bool>);
+
+        // Baseline: a due endpoint is failed back by a successful probe.
+        let store = make_store();
+        insert_due_mark(&store);
+        store
+            .probe_and_failback_unavailable_endpoints(&reachable)
+            .await;
+        assert_eq!(
+            store.snapshot().account.unavailable_endpoints.len(),
+            0,
+            "a due endpoint must fail back on a successful probe",
+        );
+
+        // A failed probe resets the cooldown, so the endpoint is no longer due;
+        // an immediately-following successful probe must NOT fail it back
+        // (proving the reset is real, not a no-op as it would be with a zero
+        // cooldown).
+        let store = make_store();
+        insert_due_mark(&store);
+        store
+            .probe_and_failback_unavailable_endpoints(&unreachable)
+            .await;
+        store
+            .probe_and_failback_unavailable_endpoints(&reachable)
+            .await;
+        assert_eq!(
+            store.snapshot().account.unavailable_endpoints.len(),
+            1,
+            "a failed probe must reset the cooldown so the endpoint is not \
+             immediately re-probed and failed back",
+        );
+    }
+
+    #[test]
+    fn account_sync_preserves_unavailable_marks_for_probe_loop() {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
+            let payload = test_refresh_payload();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move { Ok(payload) });
+            fut
+        });
+
+        let store = LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint.clone(),
+            refresh,
+            false,
+            Duration::from_secs(60),
+            PartitionFailoverOptions::default(),
+            Vec::new(),
+        );
+
+        let properties = Arc::new(test_refresh_payload());
+        store.sync_account_properties(Arc::clone(&properties), &default_endpoint);
+
+        let stale_endpoint = CosmosEndpoint::regional(
+            "eastus".into(),
+            url::Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        store.apply_account(|current| {
+            let mut next = current.clone();
+            next.unavailable_endpoints.insert(
+                stale_endpoint.url().clone(),
+                (
+                    Instant::now() - Duration::from_secs(120),
+                    UnavailableReason::TransportError,
+                ),
+            );
+            next
+        });
+
+        // Re-sync with a different Arc (same data, different pointer). The
+        // background endpoint-probe loop is the sole owner of failback, so an
+        // unavailable mark must survive an account sync regardless of how long
+        // ago it was set — only a successful probe may clear it. There is no
+        // longer any time-based pruning on sync.
+        let properties2 = Arc::new(test_refresh_payload());
+        store.sync_account_properties(properties2, &default_endpoint);
+
+        assert_eq!(
+            store.snapshot().account.unavailable_endpoints.len(),
+            1,
+            "account sync must NOT clear unavailable marks; only a probe may",
+        );
     }
 
     #[tokio::test]
@@ -1013,54 +1327,6 @@ mod tests {
             Arc::ptr_eq(&after_bootstrap, &after_failed_refresh),
             "failed refresh must leave the exact same Arc in the cache",
         );
-    }
-
-    #[test]
-    fn sync_account_properties_prunes_expired_marks_even_when_etag_is_unchanged() {
-        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
-        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
-            let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move { Ok(payload) });
-            fut
-        });
-
-        let store = LocationStateStore::new(
-            Arc::new(AccountMetadataCache::new()),
-            test_endpoint(),
-            default_endpoint.clone(),
-            refresh,
-            false,
-            Duration::from_secs(60),
-            PartitionFailoverOptions::default(),
-            Vec::new(),
-        );
-
-        let properties = Arc::new(test_refresh_payload());
-        store.sync_account_properties(Arc::clone(&properties), &default_endpoint);
-
-        let expired_endpoint = CosmosEndpoint::regional(
-            "eastus".into(),
-            url::Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
-        );
-        store.apply_account(|current| {
-            let mut next = current.clone();
-            next.unavailable_endpoints.insert(
-                expired_endpoint.url().clone(),
-                (
-                    Instant::now() - Duration::from_secs(120),
-                    UnavailableReason::TransportError,
-                ),
-            );
-            next
-        });
-
-        // Use a different Arc to force a re-sync (same data, different pointer).
-        let properties2 = Arc::new(test_refresh_payload());
-        store.sync_account_properties(properties2, &default_endpoint);
-
-        let snapshot = store.snapshot();
-        assert!(snapshot.account.unavailable_endpoints.is_empty());
     }
 
     #[test]

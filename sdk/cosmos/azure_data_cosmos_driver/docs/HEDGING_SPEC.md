@@ -535,12 +535,26 @@ pub struct OperationOptions {
 
 ### 4.4 Environment Variable Support
 
-This driver does **not** expose environment-variable overrides for hedging.
-Deploy-time intent should be expressed in code via the
-`AvailabilityStrategy` knobs on `DriverOptions` / `OperationOptions`
-(§11). There is no env var for the hedge threshold, write hedging, or
-SDK-default suppression because none of those features exist (see §4.1
-divergence note).
+The driver exposes a single boolean master switch for hedging via the
+`AZURE_COSMOS_HEDGING_ENABLED` environment variable (mapped to
+`OperationOptions::hedging_enabled`). It is **enabled by default**: leaving
+the variable unset preserves the code-driven behavior described in §11. When
+set it becomes the source of truth and takes precedence over the programmatic
+`AvailabilityStrategy` in **both** directions — `false` disables hedging even
+when an explicit `AvailabilityStrategy::Hedging(..)` is configured, and `true`
+enables hedging even when an explicit `AvailabilityStrategy::Disabled` is
+configured (a programmatic `Hedging(..)` still supplies its custom threshold).
+
+A second `AZURE_COSMOS_HEDGING_ENABLED_OVERRIDE` variant acts as a
+process-wide incident kill switch that wins over **every** configuration
+layer, including a per-request value. Both variables are read once at
+runtime-build time (not per request), so flipping one mid-incident requires a
+process restart, and both are inert unless set. Boolean values are parsed
+leniently — `true`/`false`, `1`/`0`, `yes`/`no`, `on`/`off`, case-insensitive
+— so a kill switch does not silently fail open on a common spelling.
+
+There is still no env var for the hedge threshold or write hedging because
+those features do not exist (see §4.1 divergence note).
 
 ---
 
@@ -2126,14 +2140,22 @@ let options = OperationOptionsBuilder::new()
 
 ### 11.3 Layered Resolution
 
-The existing `OperationOptionsView` layered resolution applies:
+The `OperationOptionsView` layered resolution applies. For most fields it is:
 
 ```
 operation > account > runtime > environment
 ```
 
-If the operation sets `AvailabilityStrategy::Disabled`, it overrides a client-level
-hedging strategy.
+The `hedging_enabled` master switch additionally recognizes a top-priority
+`{ENV}_OVERRIDE` layer, making its full chain:
+
+```
+{ENV}_OVERRIDE > operation > account > runtime > {ENV}
+```
+
+If the operation sets `AvailabilityStrategy::Disabled`, it overrides a
+client-level hedging strategy — unless a `hedging_enabled` value (from the
+env switch or its `_OVERRIDE`) forces hedging on; see §11.3.1.
 
 #### 11.3.1 Availability-strategy resolution priority
 
@@ -2142,6 +2164,7 @@ The driver picks the effective strategy in the following priority order
 
 | Priority | Source | Notes |
 |:---:|---|---|
+| 0 | `hedging_enabled` master switch (`AZURE_COSMOS_HEDGING_ENABLED` and its `_OVERRIDE`, resolved through the layered view) | When set it is the source of truth: `Some(false)` forces hedging **off** even over an explicit `Hedging(..)`; `Some(true)` forces hedging **on** even over an explicit `Disabled` (a programmatic `Hedging(..)` still supplies its threshold). `None` (the default) defers to the layers below. |
 | 1 | Operation `availability_strategy` (incl. `Disabled`) | Per-request override |
 | 2 | Client / runtime `availability_strategy` | Applies to all requests |
 | 3 | **Driver default** (§5.2) | Default-on for accounts with ≥ 2 applicable preferred regions; threshold = `min(1000ms, request_timeout / 2)`; independent of PPAF/PPCB |
@@ -2154,13 +2177,17 @@ chosen threshold and the secondary `RoutingDecision`. The pipeline
 does the resolution lookup once per per-attempt iteration; there is
 no separate orchestrator-side resolution step.
 
-A user-configured `AvailabilityStrategy::Disabled` at any layer suppresses every
-lower layer (including the driver default) — explicit opt-out always
-wins.
+A user-configured `AvailabilityStrategy::Disabled` suppresses every lower
+layer (the client/runtime strategy and the driver default) — **unless** the
+`hedging_enabled` master switch (Priority 0) forces hedging on. Conversely,
+`hedging_enabled = Some(false)` disables hedging even when an explicit
+`Hedging(..)` is configured at any layer.
 
-There is no environment-variable opt-out; operators who want to globally
-disable hedging should set `AvailabilityStrategy::Disabled` on the
-client (§11.1).
+Operators who want to globally enable or disable hedging without a code
+change can set `AZURE_COSMOS_HEDGING_ENABLED`; for an incident kill switch
+that overrides even per-request code, set
+`AZURE_COSMOS_HEDGING_ENABLED_OVERRIDE`. Leaving both unset preserves the
+code-driven `AvailabilityStrategy` behavior described in §11.1.
 
 ---
 

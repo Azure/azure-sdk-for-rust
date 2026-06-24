@@ -1,6 +1,18 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+//! Resolution and validation helpers for option groups.
+//!
+//! Most environment variables are read and parsed by the `CosmosOptions`
+//! derive macro's generated `from_env()`/`from_env_vars()`; the `resolve_*`
+//! helpers here only resolve a final value from
+//! `builder override → pre-read env value → default` and validate it against
+//! bounds. A few driver-level helpers (`parse_duration_millis_from_env`,
+//! `parse_from_env`, `parse_optional_bool_from_env`) additionally read
+//! `std::env::var` directly for option builders that are not macro-generated;
+//! like the macro, they log and ignore a present-but-unparseable value
+//! (fail-soft) rather than erroring.
+
 use std::time::Duration;
 
 /// Validation bounds for parsed values.
@@ -35,78 +47,40 @@ impl<T> ValidationBounds<T> {
     }
 }
 
-/// Parses a value from an environment variable with proper error handling and optional validation.
+/// Resolves a value from a builder override and a pre-read environment value,
+/// falling back to a default, then validates against optional bounds.
 ///
-/// Returns the value from the builder if present, otherwise attempts to parse from the environment variable.
-/// Falls back to the default value if the environment variable is not set.
-///
-/// Optionally validates the final value against min/max bounds.
-pub(super) fn parse_from_env<T>(
+/// The environment value is read and parsed by the `CosmosOptions`-generated
+/// `from_env()` (the single env-reading mechanism); this helper only performs
+/// the `builder → env → default` resolution and bounds validation.
+pub(super) fn resolve_from_env<T>(
     builder_value: Option<T>,
+    env_value: Option<T>,
     env_var_name: &str,
     default: T,
     bounds: ValidationBounds<T>,
 ) -> crate::error::Result<T>
 where
-    T: std::str::FromStr + PartialOrd + std::fmt::Debug,
-    <T as std::str::FromStr>::Err: std::fmt::Display,
+    T: PartialOrd + std::fmt::Debug,
 {
-    let value = match builder_value {
-        Some(v) => v,
-        None => match std::env::var(env_var_name) {
-            Ok(v) => v.parse().map_err(|e| {
-                crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::new(
-                        azure_core::http::StatusCode::BadRequest,
-                    ))
-                    .with_message(format!(
-                        "Failed to parse {} as {}: {} ({})",
-                        env_var_name,
-                        std::any::type_name::<T>(),
-                        v,
-                        e
-                    ))
-                    .build()
-            })?,
-            Err(_) => default,
-        },
-    };
-
+    let value = builder_value.or(env_value).unwrap_or(default);
     validate_bounds(value, env_var_name, bounds)
 }
 
-/// Parses an optional value from an environment variable with proper validation.
-pub(super) fn parse_optional_from_env<T>(
+/// Resolves an optional value from a builder override and a pre-read
+/// environment value, validating against optional bounds when present.
+pub(super) fn resolve_optional_from_env<T>(
     builder_value: Option<T>,
+    env_value: Option<T>,
     env_var_name: &str,
     bounds: ValidationBounds<T>,
 ) -> crate::error::Result<Option<T>>
 where
-    T: std::str::FromStr + PartialOrd + std::fmt::Debug,
-    <T as std::str::FromStr>::Err: std::fmt::Display,
+    T: PartialOrd + std::fmt::Debug,
 {
-    match builder_value {
+    match builder_value.or(env_value) {
         Some(value) => validate_bounds(value, env_var_name, bounds).map(Some),
-        None => match std::env::var(env_var_name) {
-            Ok(raw) => raw
-                .parse()
-                .map_err(|e| {
-                    crate::error::CosmosError::builder()
-                        .with_status(crate::error::CosmosStatus::new(
-                            azure_core::http::StatusCode::BadRequest,
-                        ))
-                        .with_message(format!(
-                            "Failed to parse {} as {}: {} ({})",
-                            env_var_name,
-                            std::any::type_name::<T>(),
-                            raw,
-                            e
-                        ))
-                        .build()
-                })
-                .and_then(|value| validate_bounds(value, env_var_name, bounds).map(Some)),
-            Err(_) => Ok(None),
-        },
+        None => Ok(None),
     }
 }
 
@@ -165,7 +139,33 @@ fn short_field_name(env_var_name: &str) -> String {
         .to_lowercase()
 }
 
-/// Parses a duration from an environment variable (in milliseconds) with validation.
+/// Resolves a duration (in milliseconds) from a builder override and a
+/// pre-read environment value, falling back to a default, then validates
+/// against millisecond bounds.
+pub(crate) fn resolve_duration_ms(
+    builder_value: Option<Duration>,
+    env_millis: Option<u64>,
+    env_var_name: &str,
+    default_millis: u64,
+    min_millis: u64,
+    max_millis: u64,
+) -> crate::error::Result<Duration> {
+    let value = builder_value
+        .or_else(|| env_millis.map(Duration::from_millis))
+        .unwrap_or_else(|| Duration::from_millis(default_millis));
+
+    validate_duration_bounds(value, env_var_name, min_millis, max_millis)?;
+    Ok(value)
+}
+
+/// Reads, resolves, and validates a millisecond-duration environment variable
+/// in a single call.
+///
+/// Reads `env_var_name` itself (parsing it as `u64` milliseconds), then applies
+/// the shared `builder → env → default` resolution and bounds validation. This
+/// is the single duration env-reading path shared by the driver-level option
+/// builders (e.g. [`PartitionFailoverOptions`](crate::options::PartitionFailoverOptions))
+/// and the runtime CPU-refresh interval.
 pub(crate) fn parse_duration_millis_from_env(
     builder_value: Option<Duration>,
     env_var_name: &str,
@@ -173,29 +173,86 @@ pub(crate) fn parse_duration_millis_from_env(
     min_millis: u64,
     max_millis: u64,
 ) -> crate::error::Result<Duration> {
-    let value = match builder_value {
-        Some(v) => v,
-        None => match std::env::var(env_var_name) {
-            Ok(v) => {
-                let millis = v.parse::<u64>().map_err(|e| {
-                    crate::error::CosmosError::builder()
-                        .with_status(crate::error::CosmosStatus::new(
-                            azure_core::http::StatusCode::BadRequest,
-                        ))
-                        .with_message(format!(
-                            "Failed to parse {} as u64 milliseconds: {} ({})",
-                            env_var_name, v, e
-                        ))
-                        .build()
-                })?;
-                Duration::from_millis(millis)
-            }
-            Err(_) => Duration::from_millis(default_millis),
-        },
-    };
+    let env_millis = std::env::var(env_var_name).ok().and_then(|raw| {
+        raw.parse::<u64>().ok().or_else(|| {
+            // Fail-soft: a present-but-unparseable value is logged and ignored
+            // (falls back to the default), matching the macro's lenient
+            // env-parsing behavior.
+            tracing::warn!(
+                env_var = env_var_name,
+                value = %raw,
+                "failed to parse millisecond duration from environment variable; ignoring",
+            );
+            None
+        })
+    });
 
-    validate_duration_bounds(value, env_var_name, min_millis, max_millis)?;
-    Ok(value)
+    resolve_duration_ms(
+        builder_value,
+        env_millis,
+        env_var_name,
+        default_millis,
+        min_millis,
+        max_millis,
+    )
+}
+
+/// Compatibility wrapper for call sites that still use the legacy helper name.
+pub(super) fn parse_from_env<T>(
+    builder_value: Option<T>,
+    env_var_name: &str,
+    default: T,
+    bounds: ValidationBounds<T>,
+) -> crate::error::Result<T>
+where
+    T: PartialOrd + std::fmt::Debug + std::str::FromStr,
+{
+    let env_value = std::env::var(env_var_name).ok().and_then(|raw| {
+        raw.parse::<T>().ok().or_else(|| {
+            // Fail-soft: a present-but-unparseable value is logged and ignored
+            // (falls back to the default), matching the macro's lenient
+            // env-parsing behavior.
+            tracing::warn!(
+                env_var = env_var_name,
+                value = %raw,
+                "failed to parse environment variable; ignoring",
+            );
+            None
+        })
+    });
+    resolve_from_env(builder_value, env_value, env_var_name, default, bounds)
+}
+
+/// Parses an *optional* boolean from `env_var_name` using the same lenient
+/// spellings the `CosmosOptions` derive uses for kill-switch booleans
+/// (`true`/`false`, `1`/`0`, `yes`/`no`, `on`/`off`, case-insensitive). A
+/// builder value, when present, wins over the environment; an unrecognized
+/// env value is logged and ignored (treated as unset) so an operator typo on
+/// an incident kill switch does not silently flip the switch the wrong way.
+///
+/// Returns `None` when neither a builder value nor a recognized env value is
+/// present, letting the caller fall through to its own default.
+pub(super) fn parse_optional_bool_from_env(
+    builder_value: Option<bool>,
+    env_var_name: &str,
+) -> Option<bool> {
+    if let Some(value) = builder_value {
+        return Some(value);
+    }
+
+    let raw = std::env::var(env_var_name).ok()?;
+    match raw.trim().to_ascii_lowercase().as_str() {
+        "true" | "1" | "yes" | "on" => Some(true),
+        "false" | "0" | "no" | "off" => Some(false),
+        _ => {
+            tracing::warn!(
+                env_var = env_var_name,
+                value = %raw,
+                "failed to parse boolean environment variable; ignoring",
+            );
+            None
+        }
+    }
 }
 
 /// Validates a duration value against min/max bounds (in milliseconds).
@@ -240,119 +297,73 @@ fn validate_duration_bounds(
     Ok(())
 }
 
-/// Parses an optional duration from an environment variable (in milliseconds) with validation.
-pub(super) fn parse_optional_duration_millis_from_env(
+/// Resolves an optional duration (in milliseconds) from a builder override
+/// and a pre-read environment value, validating against millisecond bounds
+/// when a value is present.
+pub(super) fn resolve_optional_duration_ms(
     builder_value: Option<Duration>,
+    env_millis: Option<u64>,
     env_var_name: &str,
     min_millis: u64,
     max_millis: u64,
 ) -> crate::error::Result<Option<Duration>> {
-    match builder_value {
-        Some(timeout) => {
-            validate_duration_bounds(timeout, env_var_name, min_millis, max_millis)?;
-            Ok(Some(timeout))
+    match builder_value.or_else(|| env_millis.map(Duration::from_millis)) {
+        Some(value) => {
+            validate_duration_bounds(value, env_var_name, min_millis, max_millis)?;
+            Ok(Some(value))
         }
-        None => match std::env::var(env_var_name) {
-            Ok(v) => {
-                let timeout = v.parse::<u64>().map(Duration::from_millis).map_err(|e| {
-                    crate::error::CosmosError::builder()
-                        .with_status(crate::error::CosmosStatus::new(
-                            azure_core::http::StatusCode::BadRequest,
-                        ))
-                        .with_message(format!(
-                            "Failed to parse {} as milliseconds: {} ({})",
-                            env_var_name, v, e
-                        ))
-                        .build()
-                })?;
-                validate_duration_bounds(timeout, env_var_name, min_millis, max_millis)?;
-                Ok(Some(timeout))
-            }
-            Err(_) => Ok(None),
-        },
+        None => Ok(None),
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::{Mutex, OnceLock};
 
-    fn env_lock() -> &'static Mutex<()> {
-        static ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-        ENV_LOCK.get_or_init(|| Mutex::new(()))
-    }
-
-    fn with_env_var<R>(name: &str, value: Option<&str>, f: impl FnOnce() -> R) -> R {
-        let _guard = env_lock().lock().expect("env lock poisoned");
-        let previous = std::env::var(name).ok();
-
-        match value {
-            Some(v) => std::env::set_var(name, v),
-            None => std::env::remove_var(name),
-        }
-
-        let result = f();
-
-        match previous {
-            Some(v) => std::env::set_var(name, v),
-            None => std::env::remove_var(name),
-        }
-
-        result
+    #[test]
+    fn resolve_from_env_prefers_builder_value() {
+        let value = resolve_from_env(
+            Some(7_u32),
+            Some(42_u32),
+            "AZURE_COSMOS_TEST_INT",
+            1_u32,
+            ValidationBounds::none(),
+        )
+        .unwrap();
+        assert_eq!(value, 7);
     }
 
     #[test]
-    fn parse_from_env_prefers_builder_value() {
-        with_env_var("AZURE_COSMOS_TEST_INT", Some("42"), || {
-            let value = parse_from_env(
-                Some(7_u32),
-                "AZURE_COSMOS_TEST_INT",
-                1_u32,
-                ValidationBounds::none(),
-            )
-            .unwrap();
-
-            assert_eq!(value, 7);
-        });
+    fn resolve_from_env_uses_env_when_no_builder_value() {
+        let value = resolve_from_env(
+            None::<u32>,
+            Some(42_u32),
+            "AZURE_COSMOS_TEST_INT",
+            1_u32,
+            ValidationBounds::none(),
+        )
+        .unwrap();
+        assert_eq!(value, 42);
     }
 
     #[test]
-    fn parse_from_env_uses_default_when_env_missing() {
-        with_env_var("AZURE_COSMOS_TEST_DEFAULT", None, || {
-            let value = parse_from_env(
-                None::<u32>,
-                "AZURE_COSMOS_TEST_DEFAULT",
-                99_u32,
-                ValidationBounds::none(),
-            )
-            .unwrap();
-
-            assert_eq!(value, 99);
-        });
+    fn resolve_from_env_uses_default_when_builder_and_env_missing() {
+        let value = resolve_from_env(
+            None::<u32>,
+            None,
+            "AZURE_COSMOS_TEST_DEFAULT",
+            99_u32,
+            ValidationBounds::none(),
+        )
+        .unwrap();
+        assert_eq!(value, 99);
     }
 
     #[test]
-    fn parse_from_env_reports_parse_error() {
-        with_env_var("AZURE_COSMOS_TEST_PARSE_ERR", Some("not-a-number"), || {
-            let err = parse_from_env(
-                None::<u32>,
-                "AZURE_COSMOS_TEST_PARSE_ERR",
-                5_u32,
-                ValidationBounds::none(),
-            )
-            .unwrap_err();
-
-            let message = err.to_string();
-            assert!(message.contains("AZURE_COSMOS_TEST_PARSE_ERR"));
-            assert!(message.contains("Failed to parse"));
-        });
-    }
-
-    #[test]
-    fn parse_from_env_validates_min_and_max_bounds() {
-        let below_min = parse_from_env(
+    fn resolve_from_env_validates_min_and_max_bounds() {
+        let below_min = resolve_from_env(
             Some(4_u32),
+            None,
             "AZURE_COSMOS_CONNECTION_POOL_TEST_LIMIT",
             0_u32,
             ValidationBounds::range(5_u32, 10_u32),
@@ -361,7 +372,8 @@ mod tests {
         .to_string();
         assert!(below_min.contains("test_limit must be at least 5"));
 
-        let above_max = parse_from_env(
+        let above_max = resolve_from_env(
+            None,
             Some(11_u32),
             "AZURE_COSMOS_CONNECTION_POOL_TEST_LIMIT",
             0_u32,
@@ -373,63 +385,96 @@ mod tests {
     }
 
     #[test]
-    fn parse_duration_millis_from_env_parses_and_validates() {
-        with_env_var("AZURE_COSMOS_TEST_DURATION", Some("250"), || {
-            let value =
-                parse_duration_millis_from_env(None, "AZURE_COSMOS_TEST_DURATION", 100, 50, 500)
-                    .unwrap();
-
-            assert_eq!(value, Duration::from_millis(250));
-        });
+    fn resolve_optional_from_env_none_when_unset() {
+        let value = resolve_optional_from_env(
+            None::<u32>,
+            None,
+            "AZURE_COSMOS_TEST_OPTIONAL",
+            ValidationBounds::none(),
+        )
+        .unwrap();
+        assert_eq!(value, None);
     }
 
     #[test]
-    fn parse_duration_millis_from_env_uses_default_when_missing() {
-        with_env_var("AZURE_COSMOS_TEST_DURATION_DEFAULT", None, || {
-            let value = parse_duration_millis_from_env(
-                None,
-                "AZURE_COSMOS_TEST_DURATION_DEFAULT",
-                123,
-                50,
-                500,
+    fn resolve_optional_from_env_validates_present_value() {
+        let err = resolve_optional_from_env(
+            None,
+            Some(99_u32),
+            "AZURE_COSMOS_CONNECTION_POOL_TEST_LIMIT",
+            ValidationBounds::range(1_u32, 10_u32),
+        )
+        .unwrap_err()
+        .to_string();
+        assert!(err.contains("test_limit must be at most 10"));
+    }
+
+    #[test]
+    fn resolve_duration_ms_prefers_builder_then_env_then_default() {
+        // Builder wins.
+        assert_eq!(
+            resolve_duration_ms(
+                Some(Duration::from_millis(7)),
+                Some(42),
+                "AZURE_COSMOS_TEST_DURATION",
+                100,
+                1,
+                500
             )
-            .unwrap();
-
-            assert_eq!(value, Duration::from_millis(123));
-        });
-    }
-
-    #[test]
-    fn parse_optional_duration_millis_from_env_none_when_missing() {
-        with_env_var("AZURE_COSMOS_TEST_OPTIONAL_DURATION", None, || {
-            let value = parse_optional_duration_millis_from_env(
-                None,
-                "AZURE_COSMOS_TEST_OPTIONAL_DURATION",
-                10,
-                1000,
-            )
-            .unwrap();
-
-            assert_eq!(value, None);
-        });
-    }
-
-    #[test]
-    fn parse_optional_duration_millis_from_env_parses_and_validates() {
-        with_env_var(
-            "AZURE_COSMOS_TEST_OPTIONAL_DURATION_SET",
-            Some("450"),
-            || {
-                let value = parse_optional_duration_millis_from_env(
-                    None,
-                    "AZURE_COSMOS_TEST_OPTIONAL_DURATION_SET",
-                    100,
-                    500,
-                )
-                .unwrap();
-
-                assert_eq!(value, Some(Duration::from_millis(450)));
-            },
+            .unwrap(),
+            Duration::from_millis(7)
         );
+        // Env used when no builder value.
+        assert_eq!(
+            resolve_duration_ms(None, Some(250), "AZURE_COSMOS_TEST_DURATION", 100, 1, 500)
+                .unwrap(),
+            Duration::from_millis(250)
+        );
+        // Default used when neither present.
+        assert_eq!(
+            resolve_duration_ms(None, None, "AZURE_COSMOS_TEST_DURATION", 123, 1, 500).unwrap(),
+            Duration::from_millis(123)
+        );
+    }
+
+    #[test]
+    fn resolve_duration_ms_validates_bounds() {
+        let err = resolve_duration_ms(
+            None,
+            Some(50),
+            "AZURE_COSMOS_CONNECTION_POOL_MIN_CONNECT_TIMEOUT_MS",
+            100,
+            100,
+            6_000,
+        )
+        .unwrap_err()
+        .to_string();
+        assert!(err.contains("min_connect_timeout_ms must be at least 100ms"));
+    }
+
+    #[test]
+    fn resolve_optional_duration_ms_none_when_unset() {
+        let value = resolve_optional_duration_ms(
+            None,
+            None,
+            "AZURE_COSMOS_TEST_OPTIONAL_DURATION",
+            10,
+            1_000,
+        )
+        .unwrap();
+        assert_eq!(value, None);
+    }
+
+    #[test]
+    fn resolve_optional_duration_ms_uses_env_and_validates() {
+        let value = resolve_optional_duration_ms(
+            None,
+            Some(450),
+            "AZURE_COSMOS_TEST_OPTIONAL_DURATION_SET",
+            100,
+            500,
+        )
+        .unwrap();
+        assert_eq!(value, Some(Duration::from_millis(450)));
     }
 }
