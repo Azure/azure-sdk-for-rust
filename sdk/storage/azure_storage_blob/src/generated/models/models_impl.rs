@@ -5,7 +5,7 @@
 
 use super::{
     BlobItem, BlobServiceProperties, BlobTags, BlockLookupList, ContainerItem, FilterBlobItem,
-    FilteredBlobResponse, ListBlobsResponse, ListContainersResponse, SignedIdentifiers,
+    FilteredBlobResponse, KeyInfo, ListBlobsResponse, ListContainersResponse, SignedIdentifiers,
 };
 use async_trait::async_trait;
 use azure_core::{
@@ -58,6 +58,13 @@ impl TryFrom<BlobTags> for RequestContent<BlobTags, XmlFormat> {
 impl TryFrom<BlockLookupList> for RequestContent<BlockLookupList, XmlFormat> {
     type Error = azure_core::Error;
     fn try_from(value: BlockLookupList) -> Result<Self> {
+        Ok(to_xml(&value)?.into())
+    }
+}
+
+impl TryFrom<KeyInfo> for RequestContent<KeyInfo, XmlFormat> {
+    type Error = azure_core::Error;
+    fn try_from(value: KeyInfo) -> Result<Self> {
         Ok(to_xml(&value)?.into())
     }
 }

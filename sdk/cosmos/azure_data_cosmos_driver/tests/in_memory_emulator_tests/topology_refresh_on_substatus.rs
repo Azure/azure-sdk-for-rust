@@ -1,0 +1,940 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+//! Integration tests for topology-related 403/1008 and 403/3 retry behavior.
+
+#![cfg(feature = "fault_injection")]
+
+use std::sync::Arc;
+use std::time::Duration;
+
+use azure_core::http::Url;
+
+use azure_data_cosmos_driver::driver::CosmosDriver;
+use azure_data_cosmos_driver::fault_injection::{
+    FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
+    FaultInjectionRule, FaultInjectionRuleBuilder, FaultOperationType,
+};
+use azure_data_cosmos_driver::in_memory_emulator::{
+    ConsistencyLevel, InMemoryEmulatorHttpClient, ReplicationConfig, VirtualAccountConfig,
+    VirtualRegion, WriteMode,
+};
+use azure_data_cosmos_driver::models::{
+    AccountReference, CosmosOperation, CosmosStatus, ItemReference, PartitionKey,
+};
+use azure_data_cosmos_driver::options::{DriverOptions, ExcludedRegions, OperationOptions, Region};
+
+use super::host_recorder::HostRecorder;
+
+const EAST_URL: &str = "https://eastus.emulator.local";
+const WEST_URL: &str = "https://westus.emulator.local";
+const EAST_HOST: &str = "eastus.emulator.local";
+const WEST_HOST: &str = "westus.emulator.local";
+
+const DB_NAME: &str = "testdb";
+const COLL_NAME: &str = "testcoll";
+const PK_VALUE: &str = "pk1";
+
+/// Builds a two-region in-memory emulator wired through fault injection.
+async fn build_driver_with_faults(
+    write_mode: WriteMode,
+    observer: Arc<HostRecorder>,
+    rules: Vec<Arc<FaultInjectionRule>>,
+) -> (Arc<CosmosDriver>, AccountReference) {
+    let config = VirtualAccountConfig::new(vec![
+        VirtualRegion::new("East US", Url::parse(EAST_URL).unwrap()),
+        VirtualRegion::new("West US", Url::parse(WEST_URL).unwrap()),
+    ])
+    .unwrap()
+    .with_write_mode(write_mode)
+    .with_consistency(ConsistencyLevel::Session)
+    .with_replication_config(ReplicationConfig::immediate());
+
+    let emulator =
+        Arc::new(InMemoryEmulatorHttpClient::new(config).with_request_observer(observer));
+    let store = emulator.store();
+    store.create_database(DB_NAME);
+    store.create_container(
+        DB_NAME,
+        COLL_NAME,
+        serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"],
+            "kind": "Hash",
+            "version": 2
+        }))
+        .unwrap(),
+    );
+
+    let runtime = emulator
+        .runtime_builder_with_fault_rules(rules)
+        .build()
+        .await
+        .expect("runtime builds against the in-memory emulator");
+
+    let account =
+        AccountReference::with_master_key(Url::parse(EAST_URL).unwrap(), "ZW11bGF0b3Ita2V5");
+
+    let driver_options = DriverOptions::builder(account.clone())
+        .with_preferred_regions(vec![Region::EAST_US, Region::WEST_US])
+        .build();
+
+    let driver = runtime
+        .create_driver(driver_options)
+        .await
+        .expect("driver initializes against emulator metadata");
+
+    (driver, account)
+}
+
+/// Seeds a known item via the driver under default options.
+async fn seed_item_via_driver(driver: &CosmosDriver, item_id: &str) {
+    let container = driver
+        .resolve_container_by_name(DB_NAME, COLL_NAME)
+        .await
+        .expect("container resolves for seeding");
+    let item_ref = ItemReference::from_name(
+        &container,
+        PartitionKey::from(PK_VALUE),
+        item_id.to_string(),
+    );
+    let body = serde_json::json!({
+        "id": item_id,
+        "pk": PK_VALUE,
+        "value": 1,
+    });
+    let op = CosmosOperation::create_item(item_ref).with_body(serde_json::to_vec(&body).unwrap());
+    driver
+        .execute_operation(op, OperationOptions::default())
+        .await
+        .expect("seeding write succeeds before faults are installed");
+}
+
+/// Builds a fault rule that returns `error_type` for a single region's `op` requests.
+fn region_fault_rule(
+    id: &'static str,
+    op: FaultOperationType,
+    region: Region,
+    error_type: FaultInjectionErrorType,
+    hit_limit: Option<u32>,
+) -> Arc<FaultInjectionRule> {
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(op)
+        .with_region(region)
+        .build();
+    let result = FaultInjectionResultBuilder::new()
+        .with_error(error_type)
+        .with_probability(1.0)
+        .build();
+    let mut builder = FaultInjectionRuleBuilder::new(id, result).with_condition(condition);
+    if let Some(limit) = hit_limit {
+        builder = builder.with_hit_limit(limit);
+    }
+    Arc::new(builder.build())
+}
+
+/// Convenience: reads an item by id under `pk1`.
+async fn read_item(
+    driver: &CosmosDriver,
+    item_id: &str,
+) -> Result<
+    Option<azure_data_cosmos_driver::models::CosmosResponse>,
+    azure_data_cosmos_driver::error::CosmosError,
+> {
+    let container = driver
+        .resolve_container_by_name(DB_NAME, COLL_NAME)
+        .await
+        .expect("container resolves");
+    let item_ref = ItemReference::from_name(
+        &container,
+        PartitionKey::from(PK_VALUE),
+        item_id.to_string(),
+    );
+    driver
+        .execute_operation(
+            CosmosOperation::read_item(item_ref),
+            OperationOptions::default(),
+        )
+        .await
+}
+
+/// Convenience: creates a new item.
+async fn create_item(
+    driver: &CosmosDriver,
+    item_id: &str,
+) -> Result<
+    Option<azure_data_cosmos_driver::models::CosmosResponse>,
+    azure_data_cosmos_driver::error::CosmosError,
+> {
+    let container = driver
+        .resolve_container_by_name(DB_NAME, COLL_NAME)
+        .await
+        .expect("container resolves");
+    let item_ref = ItemReference::from_name(
+        &container,
+        PartitionKey::from(PK_VALUE),
+        item_id.to_string(),
+    );
+    let body = serde_json::json!({
+        "id": item_id,
+        "pk": PK_VALUE,
+        "value": 2,
+    });
+    let op = CosmosOperation::create_item(item_ref).with_body(serde_json::to_vec(&body).unwrap());
+    driver
+        .execute_operation(op, OperationOptions::default())
+        .await
+}
+
+/// Convenience: upserts an item.
+async fn upsert_item(
+    driver: &CosmosDriver,
+    item_id: &str,
+) -> Result<
+    Option<azure_data_cosmos_driver::models::CosmosResponse>,
+    azure_data_cosmos_driver::error::CosmosError,
+> {
+    let container = driver
+        .resolve_container_by_name(DB_NAME, COLL_NAME)
+        .await
+        .expect("container resolves");
+    let item_ref = ItemReference::from_name(
+        &container,
+        PartitionKey::from(PK_VALUE),
+        item_id.to_string(),
+    );
+    let body = serde_json::json!({
+        "id": item_id,
+        "pk": PK_VALUE,
+        "value": 3,
+    });
+    let op = CosmosOperation::upsert_item(item_ref).with_body(serde_json::to_vec(&body).unwrap());
+    driver
+        .execute_operation(op, OperationOptions::default())
+        .await
+}
+
+// 1008 / DatabaseAccountNotFound
+
+/// **403/1008 — ReadItem.** Must refresh topology and retry against West US.
+#[tokio::test]
+async fn read_item_403_1008_triggers_refresh_and_cross_region_retry() {
+    let recorder = HostRecorder::new();
+    let rule = region_fault_rule(
+        "1008-read-east",
+        FaultOperationType::ReadItem,
+        Region::EAST_US,
+        FaultInjectionErrorType::DatabaseAccountNotFound,
+        Some(1),
+    );
+    let (driver, _account) =
+        build_driver_with_faults(WriteMode::Multi, recorder.clone(), vec![rule.clone()]).await;
+
+    seed_item_via_driver(&driver, "read-1008-item").await;
+    recorder.clear();
+
+    let response = read_item(&driver, "read-1008-item")
+        .await
+        .expect("post-fix: refresh + cross-region retry must succeed")
+        .expect("read returns a response body");
+
+    assert!(
+        rule.hit_count() >= 1,
+        "the East US 1008 fault rule should have been applied at least once",
+    );
+    assert!(
+        response.diagnostics().request_count() >= 2,
+        "post-fix: the SDK must retry at least once after 1008; \
+         observed request_count={}",
+        response.diagnostics().request_count(),
+    );
+    let hosts = recorder.data_plane_hosts();
+    assert!(
+        hosts.iter().any(|h| h == WEST_HOST),
+        "post-fix: at least one data-plane request must land on West US \
+         after East US returns 1008; observed hosts={hosts:?}",
+    );
+    let regions = response.diagnostics().regions_contacted();
+    assert!(
+        regions.contains(&Region::WEST_US),
+        "regions_contacted must include West US post-fix; observed={regions:?}",
+    );
+}
+
+/// **403/1008 — CreateItem.** Same shape as the read test but for a write.
+#[tokio::test]
+async fn create_item_403_1008_triggers_refresh_and_cross_region_retry() {
+    let recorder = HostRecorder::new();
+    let rule = region_fault_rule(
+        "1008-create-east",
+        FaultOperationType::CreateItem,
+        Region::EAST_US,
+        FaultInjectionErrorType::DatabaseAccountNotFound,
+        Some(1),
+    );
+    let (driver, _account) =
+        build_driver_with_faults(WriteMode::Multi, recorder.clone(), vec![rule.clone()]).await;
+
+    // No seed needed for create — but build the driver first, then
+    // clear the recorder so the initial topology fetch doesn't count.
+    recorder.clear();
+
+    let response = create_item(&driver, "create-1008-item")
+        .await
+        .expect("post-fix: refresh + cross-region retry must succeed")
+        .expect("create returns a response body");
+
+    assert!(rule.hit_count() >= 1);
+    assert!(
+        response.diagnostics().request_count() >= 2,
+        "post-fix: the SDK must retry CreateItem at least once after \
+         1008; observed request_count={}",
+        response.diagnostics().request_count(),
+    );
+    let hosts = recorder.data_plane_hosts();
+    assert!(
+        hosts.iter().any(|h| h == WEST_HOST),
+        "post-fix: CreateItem retry must reach West US; \
+         observed hosts={hosts:?}",
+    );
+}
+
+/// **403/1008 — UpsertItem.** Extends write coverage for the topology-refresh path.
+#[tokio::test]
+async fn upsert_item_403_1008_triggers_refresh_and_cross_region_retry() {
+    let recorder = HostRecorder::new();
+    let rule = region_fault_rule(
+        "1008-upsert-east",
+        FaultOperationType::UpsertItem,
+        Region::EAST_US,
+        FaultInjectionErrorType::DatabaseAccountNotFound,
+        Some(1),
+    );
+    let (driver, _account) =
+        build_driver_with_faults(WriteMode::Multi, recorder.clone(), vec![rule.clone()]).await;
+
+    recorder.clear();
+
+    let response = upsert_item(&driver, "upsert-1008-item")
+        .await
+        .expect("post-fix: refresh + cross-region retry must succeed")
+        .expect("upsert returns a response body");
+
+    assert!(rule.hit_count() >= 1);
+    assert!(
+        response.diagnostics().request_count() >= 2,
+        "post-fix: the SDK must retry UpsertItem at least once after \
+         1008; observed request_count={}",
+        response.diagnostics().request_count(),
+    );
+    let hosts = recorder.data_plane_hosts();
+    assert!(
+        hosts.iter().any(|h| h == WEST_HOST),
+        "post-fix: UpsertItem retry must reach West US; \
+         observed hosts={hosts:?}",
+    );
+}
+
+/// **403/1008 — bounded bubble-up.** All-region 1008 retries must terminate.
+#[tokio::test]
+async fn all_regions_403_1008_bounded_retries_then_bubble_up() {
+    let recorder = HostRecorder::new();
+    let east_rule = region_fault_rule(
+        "1008-read-east-all",
+        FaultOperationType::ReadItem,
+        Region::EAST_US,
+        FaultInjectionErrorType::DatabaseAccountNotFound,
+        None,
+    );
+    let west_rule = region_fault_rule(
+        "1008-read-west-all",
+        FaultOperationType::ReadItem,
+        Region::WEST_US,
+        FaultInjectionErrorType::DatabaseAccountNotFound,
+        None,
+    );
+    let (driver, _account) = build_driver_with_faults(
+        WriteMode::Multi,
+        recorder.clone(),
+        vec![east_rule.clone(), west_rule.clone()],
+    )
+    .await;
+
+    seed_item_via_driver(&driver, "all-stale-item").await;
+    recorder.clear();
+
+    // Timeout is the runaway-loop guard for the 120-attempt backend-failover budget.
+    let result = tokio::time::timeout(
+        Duration::from_secs(180),
+        read_item(&driver, "all-stale-item"),
+    )
+    .await
+    .expect("post-fix retry budget must be bounded — operation hung past 180s");
+
+    let err = result.expect_err("with both regions returning 1008, the read must fail");
+    let status = err.status();
+    assert_eq!(
+        status,
+        CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND,
+        "1008 exhausted-budget bubble-up must surface the original status unchanged; \
+         observed status={status:?}",
+    );
+
+    let diagnostics = err
+        .diagnostics()
+        .expect("wire-response error must carry diagnostics");
+    assert!(
+        diagnostics.request_count() >= 2,
+        "post-fix: SDK must attempt ≥ 2 requests (one per region) \
+         before bubbling up 1008; observed request_count={}",
+        diagnostics.request_count(),
+    );
+    // Sanity guardrail against an unbounded retry loop.
+    assert!(
+        diagnostics.request_count() <= 250,
+        "retry budget for 1008 must be bounded; observed \
+         request_count={} which suggests an infinite-retry regression",
+        diagnostics.request_count(),
+    );
+}
+
+/// **403/1008 — refresh is what changes.** Pins the `GET /` topology refresh.
+#[tokio::test]
+async fn read_item_403_1008_triggers_topology_refresh() {
+    let recorder = HostRecorder::new();
+    let rule = region_fault_rule(
+        "1008-read-east-refresh",
+        FaultOperationType::ReadItem,
+        Region::EAST_US,
+        FaultInjectionErrorType::DatabaseAccountNotFound,
+        Some(1),
+    );
+    let (driver, _account) =
+        build_driver_with_faults(WriteMode::Multi, recorder.clone(), vec![rule.clone()]).await;
+
+    seed_item_via_driver(&driver, "refresh-signal-item").await;
+    recorder.clear();
+
+    // Ignore the result; this test only cares about whether the emulator saw an additional account-topology fetch as a side effect of the 1008.
+    let _ = read_item(&driver, "refresh-signal-item").await;
+
+    assert!(rule.hit_count() >= 1);
+    let refresh_count = recorder.account_read_count();
+    assert!(
+        refresh_count >= 1,
+        "post-fix: receipt of 1008 must trigger at least one \
+         account-topology refresh (`GET /`); observed refresh_count={refresh_count}",
+    );
+}
+
+// 403 / 3 — WriteForbidden
+
+/// **403/3 — stale write region.** Must refresh topology and retry against West US.
+#[tokio::test]
+async fn write_403_3_triggers_refresh_and_cross_region_retry() {
+    let recorder = HostRecorder::new();
+    let rule = region_fault_rule(
+        "403-3-create-east",
+        FaultOperationType::CreateItem,
+        Region::EAST_US,
+        FaultInjectionErrorType::WriteForbidden,
+        Some(1),
+    );
+    let (driver, _account) =
+        build_driver_with_faults(WriteMode::Multi, recorder.clone(), vec![rule.clone()]).await;
+
+    recorder.clear();
+
+    let response = create_item(&driver, "403-3-item")
+        .await
+        .expect("post-fix: retry against the refreshed write region must succeed")
+        .expect("create returns a response body");
+
+    assert!(rule.hit_count() >= 1);
+    assert!(
+        response.diagnostics().request_count() >= 2,
+        "the SDK must retry CreateItem after 403/3; \
+         observed request_count={}",
+        response.diagnostics().request_count(),
+    );
+    let hosts = recorder.data_plane_hosts();
+    assert!(
+        hosts.iter().any(|h| h == WEST_HOST),
+        "the post-403/3 retry must reach West US; observed hosts={hosts:?}",
+    );
+}
+
+/// **403/3 — refresh is what changes.** Pins the `GET /` topology refresh.
+#[tokio::test]
+async fn write_403_3_triggers_topology_refresh() {
+    let recorder = HostRecorder::new();
+    let rule = region_fault_rule(
+        "403-3-create-east-refresh",
+        FaultOperationType::CreateItem,
+        Region::EAST_US,
+        FaultInjectionErrorType::WriteForbidden,
+        Some(1),
+    );
+    let (driver, _account) =
+        build_driver_with_faults(WriteMode::Multi, recorder.clone(), vec![rule.clone()]).await;
+
+    recorder.clear();
+    let _ = create_item(&driver, "403-3-refresh-item").await;
+
+    assert!(rule.hit_count() >= 1);
+    let refresh_count = recorder.account_read_count();
+    assert!(
+        refresh_count >= 1,
+        "receipt of 403/3 must trigger at least one account-topology \
+         refresh; observed refresh_count={refresh_count}",
+    );
+}
+
+/// **403/3 — bounded bubble-up.** All-region 403/3 retries must terminate.
+#[tokio::test]
+async fn all_regions_403_3_bounded_retries_then_bubble_up() {
+    let recorder = HostRecorder::new();
+    let east = region_fault_rule(
+        "403-3-create-east-all",
+        FaultOperationType::CreateItem,
+        Region::EAST_US,
+        FaultInjectionErrorType::WriteForbidden,
+        None,
+    );
+    let west = region_fault_rule(
+        "403-3-create-west-all",
+        FaultOperationType::CreateItem,
+        Region::WEST_US,
+        FaultInjectionErrorType::WriteForbidden,
+        None,
+    );
+    let (driver, _account) = build_driver_with_faults(
+        WriteMode::Multi,
+        recorder.clone(),
+        vec![east.clone(), west.clone()],
+    )
+    .await;
+
+    recorder.clear();
+
+    // Timeout is the runaway-loop guard for the 120-attempt backend-failover budget.
+    let result = tokio::time::timeout(
+        Duration::from_secs(180),
+        create_item(&driver, "403-3-all-forbidden-item"),
+    )
+    .await
+    .expect("retry budget must be bounded — operation hung past 180s");
+
+    let err = result.expect_err("with both regions returning 403/3, the create must fail");
+    let status = err.status();
+    assert_eq!(
+        status,
+        CosmosStatus::WRITE_FORBIDDEN,
+        "403/3 exhausted-budget bubble-up must surface the original status unchanged; \
+         observed status={status:?}",
+    );
+
+    let diagnostics = err
+        .diagnostics()
+        .expect("wire-response error must carry diagnostics");
+    assert!(
+        diagnostics.request_count() <= 250,
+        "retry budget for 403/3 must be bounded; observed \
+         request_count={} which suggests an infinite-retry regression",
+        diagnostics.request_count(),
+    );
+}
+
+/// **403/3 — second attempt must land in a different region.**
+#[tokio::test]
+async fn write_403_3_second_attempt_targets_different_region() {
+    let recorder = HostRecorder::new();
+    let rule = region_fault_rule(
+        "403-3-create-east-region-honesty",
+        FaultOperationType::CreateItem,
+        Region::EAST_US,
+        FaultInjectionErrorType::WriteForbidden,
+        Some(1),
+    );
+    let (driver, _account) =
+        build_driver_with_faults(WriteMode::Multi, recorder.clone(), vec![rule.clone()]).await;
+
+    recorder.clear();
+
+    let response = create_item(&driver, "403-3-region-honesty-item")
+        .await
+        .expect("post-fix: the retry succeeds against a different region")
+        .expect("create returns a response body");
+
+    assert!(rule.hit_count() >= 1);
+
+    let diagnostics = response.diagnostics();
+    let requests = diagnostics.requests();
+    assert!(
+        requests.len() >= 2,
+        "expected at least 2 attempts to compare regions; \
+         observed request_count={}",
+        requests.len(),
+    );
+
+    // The fault factory records the East attempt in diagnostics even though the emulator never saw it.
+    let first_region = requests[0].region().cloned();
+    let second_region = requests[1].region().cloned();
+    assert_ne!(
+        first_region, second_region,
+        "post-fix: the second attempt must target a different region \
+         than the first (the 403/3 retry must actually fail over). \
+         attempts[0]={first_region:?}, attempts[1]={second_region:?}, \
+         full={requests:?}",
+    );
+
+    // Pin the assertion stronger via the emulator's view: at least one post-fault data-plane request must reach West.
+    let hosts = recorder.data_plane_hosts();
+    assert!(
+        hosts.iter().any(|h| h == WEST_HOST),
+        "the 403/3 retry must reach West US; observed hosts={hosts:?}",
+    );
+}
+
+/// **403/3 — persistent one-region failures must not pin retries there.**
+#[tokio::test]
+async fn write_403_3_persistent_fault_pins_retries_to_same_region() {
+    let recorder = HostRecorder::new();
+    let rule = region_fault_rule(
+        "403-3-create-east-persistent",
+        FaultOperationType::CreateItem,
+        Region::EAST_US,
+        FaultInjectionErrorType::WriteForbidden,
+        None,
+    );
+    let (driver, _account) =
+        build_driver_with_faults(WriteMode::Multi, recorder.clone(), vec![rule.clone()]).await;
+
+    recorder.clear();
+
+    let result = tokio::time::timeout(
+        Duration::from_secs(10),
+        create_item(&driver, "403-3-pin-item"),
+    )
+    .await
+    .expect("create must not hang");
+
+    assert!(
+        rule.hit_count() >= 1,
+        "fault rule must fire at least once on East US",
+    );
+
+    match result {
+        // Post-fix success path: failover actually rerouted to West US.
+        Ok(Some(response)) => {
+            let diagnostics = response.diagnostics();
+            let requests = diagnostics.requests();
+            let east_attempts = requests
+                .iter()
+                .filter(|r| r.region().map(|r| r == &Region::EAST_US).unwrap_or(false))
+                .count();
+            let west_attempts = requests
+                .iter()
+                .filter(|r| r.region().map(|r| r == &Region::WEST_US).unwrap_or(false))
+                .count();
+            assert!(
+                west_attempts >= 1,
+                "post-fix: at least one attempt must reach West US once East US is \
+                 known to be persistently 403/3; attempts={requests:?}",
+            );
+            // Surface the production-observed pin shape on the success
+            // branch so the assertion message is informative.
+            assert!(
+                east_attempts < requests.len(),
+                "all attempts targeted East US even after persistent 403/3 — this is \
+                 the production retry-pin shape. attempts={requests:?}",
+            );
+        }
+        // Pre-fix failure path: persistent 403/3, all attempts pinned to East US, bubble-up after N attempts.
+        Err(err) => {
+            let diagnostics = err
+                .diagnostics()
+                .expect("a wire-level 403/3 must carry diagnostics");
+            let requests = diagnostics.requests();
+            let east_attempts = requests
+                .iter()
+                .filter(|r| r.region().map(|r| r == &Region::EAST_US).unwrap_or(false))
+                .count();
+            let west_attempts = requests
+                .iter()
+                .filter(|r| r.region().map(|r| r == &Region::WEST_US).unwrap_or(false))
+                .count();
+            panic!(
+                "Basic 403/3 failover regression: persistent 403/3 on East with a healthy \
+                 West must reroute. Observed request_count={} with east_attempts={} / \
+                 west_attempts={}. NOTE: this is NOT the production pin shape — that pin needs \
+                 the PPCB override cache populated (5+ consecutive failures across many \
+                 partition keys); see the `_reproduces_prod_403_3_loop` unit test in \
+                 `operation_pipeline::tests` for the actual production pinning shape. \
+                 attempts={requests:?}",
+                diagnostics.request_count(),
+                east_attempts,
+                west_attempts,
+            );
+        }
+        Ok(None) => panic!("create must return a response body on the post-fix path"),
+    }
+}
+
+/// **403/3 — backend-driven failover honors caller `excluded_regions`.**
+#[tokio::test]
+async fn write_403_3_retry_honors_excluded_region() {
+    let recorder = HostRecorder::new();
+    let rule = region_fault_rule(
+        "403-3-create-east-honors-excluded",
+        FaultOperationType::CreateItem,
+        Region::EAST_US,
+        FaultInjectionErrorType::WriteForbidden,
+        None,
+    );
+    let (driver, _account) =
+        build_driver_with_faults(WriteMode::Multi, recorder.clone(), vec![rule.clone()]).await;
+
+    recorder.clear();
+
+    let container = driver
+        .resolve_container_by_name(DB_NAME, COLL_NAME)
+        .await
+        .expect("container resolves");
+    let item_ref = ItemReference::from_name(
+        &container,
+        PartitionKey::from(PK_VALUE),
+        "403-3-honors-excluded-item".to_string(),
+    );
+    let body = serde_json::json!({
+        "id": "403-3-honors-excluded-item",
+        "pk": PK_VALUE,
+        "value": 4,
+    });
+    let op = CosmosOperation::create_item(item_ref).with_body(serde_json::to_vec(&body).unwrap());
+
+    let mut opts = OperationOptions::default();
+    opts.excluded_regions = Some(ExcludedRegions::from_iter([Region::WEST_US]));
+
+    // Timeout leaves headroom for the 120-attempt backend-failover budget.
+    let result = tokio::time::timeout(
+        std::time::Duration::from_secs(180),
+        driver.execute_operation(op, opts),
+    )
+    .await
+    .expect("operation must not hang when its only fallback region is excluded");
+
+    assert!(
+        result.is_err(),
+        "with West excluded and East persistently returning 403/3, the operation \
+         must bubble up rather than crossing into the excluded region; got {result:?}",
+    );
+    assert!(rule.hit_count() >= 1, "fault rule must fire on East US");
+
+    let hosts = recorder.data_plane_hosts();
+    assert!(
+        hosts.iter().all(|h| h != WEST_HOST),
+        "no data-plane request may reach West US (the excluded region) \
+         during 403/3 retries; observed hosts={hosts:?}",
+    );
+}
+
+/// **403/1008 — backend-driven failover honors caller `excluded_regions`.**
+#[tokio::test]
+async fn create_item_403_1008_retry_honors_excluded_region() {
+    let recorder = HostRecorder::new();
+    let rule = region_fault_rule(
+        "403-1008-create-east-honors-excluded",
+        FaultOperationType::CreateItem,
+        Region::EAST_US,
+        FaultInjectionErrorType::DatabaseAccountNotFound,
+        None,
+    );
+    let (driver, _account) =
+        build_driver_with_faults(WriteMode::Multi, recorder.clone(), vec![rule.clone()]).await;
+
+    recorder.clear();
+
+    let container = driver
+        .resolve_container_by_name(DB_NAME, COLL_NAME)
+        .await
+        .expect("container resolves");
+    let item_ref = ItemReference::from_name(
+        &container,
+        PartitionKey::from(PK_VALUE),
+        "403-1008-honors-excluded-item".to_string(),
+    );
+    let body = serde_json::json!({
+        "id": "403-1008-honors-excluded-item",
+        "pk": PK_VALUE,
+        "value": 5,
+    });
+    let op = CosmosOperation::create_item(item_ref).with_body(serde_json::to_vec(&body).unwrap());
+
+    let mut opts = OperationOptions::default();
+    opts.excluded_regions = Some(ExcludedRegions::from_iter([Region::WEST_US]));
+
+    // 120-attempt budget x 1000ms BACKEND_FAILOVER_RETRY_INTERVAL = up to ~120s wall time.
+    let result = tokio::time::timeout(
+        std::time::Duration::from_secs(180),
+        driver.execute_operation(op, opts),
+    )
+    .await
+    .expect("operation must not hang when its only fallback region is excluded");
+
+    assert!(
+        result.is_err(),
+        "with West excluded and East persistently returning 403/1008, the operation \
+         must bubble up rather than crossing into the excluded region; got {result:?}",
+    );
+    assert!(rule.hit_count() >= 1, "fault rule must fire on East US");
+
+    let hosts = recorder.data_plane_hosts();
+    assert!(
+        hosts.iter().all(|h| h != WEST_HOST),
+        "no data-plane request may reach West US (the excluded region) \
+         during 403/1008 retries; observed hosts={hosts:?}",
+    );
+}
+
+/// **GetDatabaseAccount metadata refresh is independent of `excluded_regions`.**
+#[tokio::test]
+async fn metadata_refresh_ignores_excluded_regions() {
+    let recorder = HostRecorder::new();
+    let rule = region_fault_rule(
+        "403-1008-west-metadata-refresh-ignores-excluded",
+        FaultOperationType::CreateItem,
+        Region::WEST_US,
+        FaultInjectionErrorType::DatabaseAccountNotFound,
+        None,
+    );
+    let (driver, _account) =
+        build_driver_with_faults(WriteMode::Multi, recorder.clone(), vec![rule.clone()]).await;
+
+    // Drop bootstrap-time observations so the assertions below only
+    // reflect activity triggered by the post-clear operation.
+    recorder.clear();
+
+    let container = driver
+        .resolve_container_by_name(DB_NAME, COLL_NAME)
+        .await
+        .expect("container resolves");
+    let item_ref = ItemReference::from_name(
+        &container,
+        PartitionKey::from(PK_VALUE),
+        "metadata-refresh-ignores-excluded-item".to_string(),
+    );
+    let body = serde_json::json!({
+        "id": "metadata-refresh-ignores-excluded-item",
+        "pk": PK_VALUE,
+        "value": 6,
+    });
+    let op = CosmosOperation::create_item(item_ref).with_body(serde_json::to_vec(&body).unwrap());
+
+    let mut opts = OperationOptions::default();
+    // Exclude East — the same region that hosts the global bootstrap endpoint.
+    opts.excluded_regions = Some(ExcludedRegions::from_iter([Region::EAST_US]));
+
+    // 120-attempt budget x 1000ms BACKEND_FAILOVER_RETRY_INTERVAL = up
+    // to ~120s wall time on bubble-up; 180s leaves CI headroom.
+    let result = tokio::time::timeout(
+        std::time::Duration::from_secs(180),
+        driver.execute_operation(op, opts),
+    )
+    .await
+    .expect("operation must not hang while the SDK retries on the only non-excluded region");
+
+    assert!(
+        result.is_err(),
+        "with East excluded and West persistently 403/1008, the operation must \
+         bubble up rather than cross into the excluded region; got {result:?}",
+    );
+    assert!(
+        rule.hit_count() >= 1,
+        "fault rule must fire on West US (the only non-excluded region)",
+    );
+
+    let topology_hosts = recorder.topology_hosts();
+    assert!(
+        topology_hosts.iter().any(|h| h == EAST_HOST),
+        "metadata refresh must hit East US (the global bootstrap endpoint) \
+         even though East is in the caller's excluded_regions list; \
+         observed topology_hosts={topology_hosts:?}",
+    );
+    assert!(
+        topology_hosts.iter().all(|h| h != WEST_HOST),
+        "`GET /` is always routed via the global endpoint, not the \
+         excluded-region-filtered data-plane list; observed \
+         topology_hosts={topology_hosts:?}",
+    );
+}
+
+/// **Regional-endpoint metadata-refresh fallback ignores `excluded_regions`.**
+#[tokio::test]
+async fn metadata_refresh_regional_fallback_ignores_excluded_regions() {
+    let recorder = HostRecorder::new();
+    let data_plane_rule = region_fault_rule(
+        "403-1008-east-drives-refresh",
+        FaultOperationType::ReadItem,
+        Region::EAST_US,
+        FaultInjectionErrorType::DatabaseAccountNotFound,
+        None,
+    );
+    let metadata_rule = region_fault_rule(
+        "503-east-metadata-forces-regional-fallback",
+        FaultOperationType::MetadataReadDatabaseAccount,
+        Region::EAST_US,
+        FaultInjectionErrorType::ServiceUnavailable,
+        None,
+    );
+    // Suppress the metadata fault during bootstrap so driver initialization can probe the global endpoint successfully.
+    metadata_rule.disable();
+    let (driver, _account) = build_driver_with_faults(
+        WriteMode::Multi,
+        recorder.clone(),
+        vec![data_plane_rule.clone(), metadata_rule.clone()],
+    )
+    .await;
+
+    recorder.clear();
+    metadata_rule.enable();
+
+    let container = driver
+        .resolve_container_by_name(DB_NAME, COLL_NAME)
+        .await
+        .expect("container resolves");
+    let item_ref = ItemReference::from_name(
+        &container,
+        PartitionKey::from(PK_VALUE),
+        "regional-fallback-ignores-excluded-item".to_string(),
+    );
+    let op = CosmosOperation::read_item(item_ref);
+
+    let mut opts = OperationOptions::default();
+    // If regional fallback honored exclusions, West would be filtered out and refresh would fail.
+    opts.excluded_regions = Some(ExcludedRegions::from_iter([Region::WEST_US]));
+
+    let _ = tokio::time::timeout(
+        std::time::Duration::from_secs(180),
+        driver.execute_operation(op, opts),
+    )
+    .await
+    .expect("operation must not hang while the SDK retries on the only non-excluded region");
+
+    assert!(
+        data_plane_rule.hit_count() >= 1,
+        "data-plane ReadItem must hit the East fault at least once to trigger \
+         RefreshAccountProperties",
+    );
+    assert!(
+        metadata_rule.hit_count() >= 1,
+        "global GET / probe at East must hit the metadata fault at least once \
+         to exercise the regional-endpoint fallback",
+    );
+
+    let topology_hosts = recorder.topology_hosts();
+    assert!(
+        topology_hosts.iter().any(|h| h == WEST_HOST),
+        "regional-endpoint metadata fallback must hit West US even though West \
+         is in the caller's excluded_regions list; observed topology_hosts={topology_hosts:?}",
+    );
+}

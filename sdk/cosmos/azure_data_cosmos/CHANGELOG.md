@@ -1,6 +1,16 @@
 # Release History
 
-## 0.36.0 (Unreleased)
+## 0.37.0 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
+## 0.36.0 (2026-06-19)
 
 ### Features Added
 
@@ -43,6 +53,11 @@
 
 ### Bugs Fixed
 
+- `403/1008 (DatabaseAccountNotFound)` and `403/3 (WriteForbidden)` now trigger an account-topology refresh and retry against the refreshed endpoints instead of bubbling up. ([#4590](https://github.com/Azure/azure-sdk-for-rust/pull/4590))
+- Gateway-mode transport connect failures no longer bump the per-partition circuit breaker counter; only the endpoint-unavailable mark is emitted. ([#4590](https://github.com/Azure/azure-sdk-for-rust/pull/4590))
+- `403/3 (WriteForbidden)` and `403/1008 (DatabaseAccountNotFound)` on a PPCB-managed multi-write partition no longer mark the endpoint unavailable; the per-partition counter drives failover so other partitions on the same endpoint keep writing normally. ([#4590](https://github.com/Azure/azure-sdk-for-rust/pull/4590))
+- The per-partition circuit breaker override now respects `OperationOptions::excluded_regions`; previously a tripped override could silently route to a region the caller had excluded. ([#4590](https://github.com/Azure/azure-sdk-for-rust/pull/4590))
+
 ### Other Changes
 
 - `DatabaseClient::read_throughput` and `begin_replace_throughput` no longer panic in release builds if the service returns an offer without `_rid`; they now return a synthetic `CosmosError`. ([#4512](https://github.com/Azure/azure-sdk-for-rust/pull/4512))
@@ -53,6 +68,8 @@
 
 ### Features Added
 
+- Added `AZURE_COSMOS_HEDGING_ENABLED_OVERRIDE` and `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` kill-switch environment variables. When set, an override wins over **every** source of that feature's enablement — for hedging, every configuration layer including a hard-coded per-request value and a programmatic `AvailabilityStrategy`; for the per-partition circuit breaker, both the `PartitionFailoverOptions::circuit_breaker_enabled` driver option and the server account property `enable_per_partition_failover_behavior`. This lets operators force hedging or PPCB on/off fleet-wide during a livesite incident without a code change or redeploy. Overrides are inert unless set and should normally be left unset. ([#4562](https://github.com/Azure/azure-sdk-for-rust/pull/4562))
+- Added the `AZURE_COSMOS_HEDGING_ENABLED` environment variable as a master switch for cross-region read hedging. Hedging remains **enabled by default**. When set, the variable is the **source of truth** and takes precedence over a programmatic `AvailabilityStrategy` in **both** directions: `false` disables hedging even when an explicit `AvailabilityStrategy::Hedging(..)` is configured, and `true` enables hedging even when an explicit `AvailabilityStrategy::Disabled` is configured (a programmatic `Hedging(..)` still supplies its custom threshold). This applies whether the strategy is set on a request or via `CosmosClientBuilder::with_operation_options`. Leaving it unset defers to the programmatic strategy and keeps the built-in default threshold of `min(1000ms, request_timeout / 2)`. ([#4562](https://github.com/Azure/azure-sdk-for-rust/pull/4562))
 - Exposed cross-regional read hedging. Enable it by attaching an `OperationOptions` built with `OperationOptionsBuilder::with_availability_strategy(AvailabilityStrategy::Hedging(HedgingStrategy::new(HedgeThreshold::new(threshold)?)))` to a request (e.g. `ItemReadOptions::with_operation_options`) or to the client defaults via `CosmosClientBuilder::with_operation_options`. The `AvailabilityStrategy`, `HedgingStrategy`, and `HedgeThreshold` types are now re-exported from `azure_data_cosmos`. When enabled, the driver speculatively dispatches the read to a second preferred region after the configured threshold elapses and returns whichever response classifies as final first, cancelling the losing leg structurally (no detached tasks); `AvailabilityStrategy::Disabled` turns hedging off for that scope, and when no strategy is configured the driver applies a built-in default for multi-region reads. ([#4432](https://github.com/Azure/azure-sdk-for-rust/pull/4432))
 - Added configurable retry limits for throttled (HTTP 429, rate-limited) requests, mirroring the .NET and Java SDKs' `ThrottlingRetryOptions`. A new nested `ThrottlingRetryOptions` group on `OperationOptions` (field `throttling_retry_options`) carries `max_retry_count` (env `AZURE_COSMOS_MAX_THROTTLE_RETRY_COUNT`, default `9`, `0` disables throttle retries) and `max_retry_wait_time` (default `30s`), settable per-request via `OperationOptions`/`OperationOptionsBuilder` and `ThrottlingRetryOptionsBuilder`. New client-wide setter `CosmosClientBuilder::with_throttling_retry_options(ThrottlingRetryOptions)` forwards the group as runtime-layer defaults. Both budgets apply *per transport-pipeline invocation*, not per logical operation — an operation that fans out across regions (failover, hedging) starts a fresh budget per leg; use `OperationOptions::end_to_end_latency_policy` to bound total per-operation wall-clock time. ([#4544](https://github.com/Azure/azure-sdk-for-rust/pull/4544))
 

@@ -6,7 +6,9 @@
 
 use std::time::Duration;
 
-use super::env_parsing::{parse_duration_millis_from_env, parse_from_env, ValidationBounds};
+use super::env_parsing::{
+    parse_duration_millis_from_env, parse_from_env, parse_optional_bool_from_env, ValidationBounds,
+};
 
 /// Configuration for partition-level failover and the per-partition circuit
 /// breaker (PPCB).
@@ -36,6 +38,7 @@ use super::env_parsing::{parse_duration_millis_from_env, parse_from_env, Validat
 #[derive(Clone, Debug)]
 pub struct PartitionFailoverOptions {
     circuit_breaker_enabled: bool,
+    circuit_breaker_enabled_override: Option<bool>,
     read_failure_threshold: u32,
     write_failure_threshold: u32,
     counter_reset_window: Duration,
@@ -48,6 +51,7 @@ impl Default for PartitionFailoverOptions {
     fn default() -> Self {
         Self {
             circuit_breaker_enabled: true, // PPCB is enabled by default.
+            circuit_breaker_enabled_override: None,
             read_failure_threshold: 10,
             write_failure_threshold: 5,
             counter_reset_window: Duration::from_millis(300_000),
@@ -69,9 +73,32 @@ impl PartitionFailoverOptions {
     ///
     /// The effective in-driver value is `enabled_via_options ||
     /// account_property_enable_per_partition_failover_behavior`, so PPCB still
-    /// turns on when the account property is set even if this flag is `false`.
+    /// turns on when the account property is set even if this flag is `false`
+    /// — unless the internal incident kill switch
+    /// (`AZURE_COSMOS_PPCB_ENABLED_OVERRIDE`) is set, which wins over both.
     pub fn circuit_breaker_enabled(&self) -> bool {
         self.circuit_breaker_enabled
+    }
+
+    /// Returns the per-partition circuit breaker (PPCB) incident kill switch,
+    /// if set via the `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` environment variable.
+    ///
+    /// When `Some(_)`, this value is **authoritative**: it overrides every
+    /// other source of PPCB enablement — the base
+    /// [`circuit_breaker_enabled`](Self::circuit_breaker_enabled) option **and**
+    /// the account property `enable_per_partition_failover_behavior`. It exists
+    /// as a process-wide operational safety valve so an operator can force PPCB
+    /// on or off fleet-wide during a livesite incident without a code change or
+    /// redeploy. `None` (the default) defers to the normal
+    /// `option || account property` resolution.
+    ///
+    /// Read once when the driver runtime is built, not per request; flipping it
+    /// mid-incident requires a process restart.
+    ///
+    /// Internal: the kill switch is operator-facing (env-only) and is not part
+    /// of the public configuration surface, so this accessor is crate-private.
+    pub(crate) fn circuit_breaker_enabled_override(&self) -> Option<bool> {
+        self.circuit_breaker_enabled_override
     }
 
     /// Returns the read failure count threshold before the per-partition
@@ -123,6 +150,12 @@ impl PartitionFailoverOptions {
 ///
 /// - `AZURE_COSMOS_PPCB_ENABLED`: Enables PPCB via driver options (default:
 ///   `true`).
+/// - `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE`: Incident kill switch that wins over
+///   **every** other source of PPCB enablement — the base option **and** the
+///   account property `enable_per_partition_failover_behavior`. Inert unless
+///   set; intended for fleet-wide livesite incident response without a code
+///   change. Boolean values are parsed leniently (`true`/`false`, `1`/`0`,
+///   `yes`/`no`, `on`/`off`, case-insensitive).
 /// - `AZURE_COSMOS_PPCB_READ_FAILURE_THRESHOLD`: Read failure count before
 ///   the breaker trips (default: `10`, min: `1`).
 /// - `AZURE_COSMOS_PPCB_WRITE_FAILURE_THRESHOLD`: Write failure count before
@@ -154,6 +187,7 @@ impl PartitionFailoverOptions {
 #[derive(Clone, Debug, Default)]
 pub struct PartitionFailoverOptionsBuilder {
     circuit_breaker_enabled: Option<bool>,
+    circuit_breaker_enabled_override: Option<bool>,
     read_failure_threshold: Option<u32>,
     write_failure_threshold: Option<u32>,
     counter_reset_window: Option<Duration>,
@@ -176,6 +210,18 @@ impl PartitionFailoverOptionsBuilder {
     /// if this value is `false`.
     pub fn with_circuit_breaker_enabled(mut self, value: bool) -> Self {
         self.circuit_breaker_enabled = Some(value);
+        self
+    }
+
+    /// Test-only setter for the PPCB incident kill switch.
+    ///
+    /// Not part of the public API: the kill switch is operator-facing and is set
+    /// exclusively via the `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` environment
+    /// variable. This helper exists only so in-crate tests can exercise the
+    /// authoritative-override resolution without mutating process-wide env.
+    #[cfg(test)]
+    pub(crate) fn with_circuit_breaker_enabled_override(mut self, value: bool) -> Self {
+        self.circuit_breaker_enabled_override = Some(value);
         self
     }
 
@@ -260,6 +306,15 @@ impl PartitionFailoverOptionsBuilder {
             ValidationBounds::none(),
         )?;
 
+        // Incident kill switch — lenient bool, builder wins over env, and an
+        // unrecognized env value is ignored (treated as unset) so a typo can't
+        // silently flip the switch the wrong way. Authoritative over both the
+        // base option and the account property; applied in `LocationStateStore`.
+        let circuit_breaker_enabled_override = parse_optional_bool_from_env(
+            self.circuit_breaker_enabled_override,
+            "AZURE_COSMOS_PPCB_ENABLED_OVERRIDE",
+        );
+
         let read_failure_threshold = parse_from_env(
             self.read_failure_threshold,
             "AZURE_COSMOS_PPCB_READ_FAILURE_THRESHOLD",
@@ -307,6 +362,7 @@ impl PartitionFailoverOptionsBuilder {
 
         Ok(PartitionFailoverOptions {
             circuit_breaker_enabled,
+            circuit_breaker_enabled_override,
             read_failure_threshold,
             write_failure_threshold,
             counter_reset_window,
@@ -360,6 +416,27 @@ mod tests {
         );
         assert_eq!(options.failback_sweep_interval(), Duration::from_secs(120));
         assert_eq!(options.consecutive_hedge_win_threshold(), 3);
+    }
+
+    #[test]
+    fn circuit_breaker_override_unset_by_default() {
+        let options = PartitionFailoverOptionsBuilder::new().build().unwrap();
+        assert_eq!(options.circuit_breaker_enabled_override(), None);
+    }
+
+    #[test]
+    fn circuit_breaker_override_builder_value_round_trips() {
+        let off = PartitionFailoverOptionsBuilder::new()
+            .with_circuit_breaker_enabled_override(false)
+            .build()
+            .unwrap();
+        assert_eq!(off.circuit_breaker_enabled_override(), Some(false));
+
+        let on = PartitionFailoverOptionsBuilder::new()
+            .with_circuit_breaker_enabled_override(true)
+            .build()
+            .unwrap();
+        assert_eq!(on.circuit_breaker_enabled_override(), Some(true));
     }
 
     #[test]

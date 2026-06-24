@@ -25,7 +25,7 @@ use azure_storage_blob::{
 use futures::TryStreamExt;
 use std::{collections::HashMap, sync::Arc};
 use time::OffsetDateTime;
-use tracing::{debug, info, warn};
+use tracing::{debug, error, info, warn};
 
 /// Azure Blob Storage implementation of the [`CheckpointStore`] trait.
 ///
@@ -142,6 +142,7 @@ impl BlobCheckpointStore {
 #[async_trait::async_trait]
 impl CheckpointStore for BlobCheckpointStore {
     /// Claims ownership of the specified partitions.
+    #[tracing::instrument(level = "debug", skip_all, fields(partition_count = ownerships.len()), err)]
     async fn claim_ownership(&self, ownerships: &[Ownership]) -> Result<Vec<Ownership>> {
         debug!("Claiming ownership for {} partitions", ownerships.len());
 
@@ -167,15 +168,34 @@ impl CheckpointStore for BlobCheckpointStore {
             let (last_modified_time, etag) = match set_metadata_result {
                 Ok((last_modified_time, etag)) => (last_modified_time, etag),
                 Err(e) if e.http_status() == Some(StatusCode::PreconditionFailed) => {
-                    debug!("PreconditionFailed error for blob {}", blob_name);
+                    info!(
+                        event = "claim-conflict",
+                        partition_id = %ownership.partition_id,
+                        owner_id = ?ownership.owner_id,
+                        etag = ?ownership.etag,
+                        blob_name = %blob_name,
+                        "Lost ownership claim: precondition (etag) failed"
+                    );
                     (None, None)
                 }
                 Err(e) if e.http_status() == Some(StatusCode::Conflict) => {
-                    debug!("Blob already exists, skipping");
+                    info!(
+                        event = "claim-conflict",
+                        partition_id = %ownership.partition_id,
+                        owner_id = ?ownership.owner_id,
+                        etag = ?ownership.etag,
+                        blob_name = %blob_name,
+                        "Lost ownership claim: blob already exists"
+                    );
                     (None, None)
                 }
                 Err(e) => {
-                    warn!("Error claiming ownership for blob {}: {}", blob_name, e);
+                    warn!(
+                        partition_id = %ownership.partition_id,
+                        blob_name = %blob_name,
+                        error = %e,
+                        "Error claiming ownership for blob"
+                    );
                     return Err(e);
                 }
             };
@@ -197,6 +217,16 @@ impl CheckpointStore for BlobCheckpointStore {
     }
 
     /// Lists all checkpoints for the specified Event Hub and consumer group.
+    #[tracing::instrument(
+        level = "debug",
+        skip_all,
+        fields(
+            fully_qualified_namespace = %namespace,
+            eventhub = %event_hub_name,
+            consumer_group = %consumer_group,
+        ),
+        err,
+    )]
     async fn list_checkpoints(
         &self,
         namespace: &str,
@@ -230,7 +260,6 @@ impl CheckpointStore for BlobCheckpointStore {
         };
 
         while let Some(blob) = blobs.try_next().await? {
-            debug!("Blob body: {blob:?}");
             let mut checkpoint = checkpoint.clone();
             if let Some(name) = &blob.name {
                 checkpoint.partition_id = name
@@ -247,6 +276,13 @@ impl CheckpointStore for BlobCheckpointStore {
                     }
                 }
             }
+            debug!(
+                blob_name = ?blob.name,
+                partition_id = %checkpoint.partition_id,
+                sequence_number = ?checkpoint.sequence_number,
+                offset = ?checkpoint.offset,
+                "Parsed checkpoint blob"
+            );
 
             checkpoints.push(checkpoint);
         }
@@ -256,6 +292,16 @@ impl CheckpointStore for BlobCheckpointStore {
     }
 
     /// Lists all ownerships for the specified Event Hub and consumer group.
+    #[tracing::instrument(
+        level = "debug",
+        skip_all,
+        fields(
+            fully_qualified_namespace = %namespace,
+            eventhub = %event_hub_name,
+            consumer_group = %consumer_group,
+        ),
+        err,
+    )]
     async fn list_ownerships(
         &self,
         namespace: &str,
@@ -288,7 +334,6 @@ impl CheckpointStore for BlobCheckpointStore {
         };
 
         while let Some(blob) = blobs.try_next().await? {
-            debug!("Blob body: {blob:?}");
             let mut ownership = ownership.clone();
             if let Some(name) = &blob.name {
                 ownership.partition_id = name
@@ -306,6 +351,13 @@ impl CheckpointStore for BlobCheckpointStore {
                 ownership.etag = properties.etag.clone();
                 ownership.last_modified_time = properties.last_modified;
             }
+            debug!(
+                blob_name = ?blob.name,
+                partition_id = %ownership.partition_id,
+                owner_id = ?ownership.owner_id,
+                etag = ?ownership.etag,
+                "Parsed ownership blob"
+            );
 
             ownerships.push(ownership);
         }
@@ -315,7 +367,25 @@ impl CheckpointStore for BlobCheckpointStore {
     }
 
     /// Updates the checkpoint for a specific partition.
+    #[tracing::instrument(
+        level = "debug",
+        skip_all,
+        fields(
+            partition_id = %checkpoint.partition_id,
+            eventhub = %checkpoint.event_hub_name,
+            consumer_group = %checkpoint.consumer_group,
+            sequence_number = ?checkpoint.sequence_number,
+            offset = ?checkpoint.offset,
+        ),
+    )]
     async fn update_checkpoint(&self, checkpoint: Checkpoint) -> Result<()> {
+        debug!(
+            partition_id = %checkpoint.partition_id,
+            sequence_number = ?checkpoint.sequence_number,
+            offset = ?checkpoint.offset,
+            "Updating checkpoint"
+        );
+        let partition_id = checkpoint.partition_id.clone();
         let blob_name = Checkpoint::get_checkpoint_blob_name(
             &checkpoint.fully_qualified_namespace,
             &checkpoint.event_hub_name,
@@ -329,8 +399,18 @@ impl CheckpointStore for BlobCheckpointStore {
         if let Some(offset) = checkpoint.offset {
             metadata.insert(OFFSET.to_string(), offset);
         }
-        self.set_checkpoint_metadata_on_blob(&blob_name, metadata)
-            .await?;
+        if let Err(e) = self
+            .set_checkpoint_metadata_on_blob(&blob_name, metadata)
+            .await
+        {
+            error!(
+                partition_id = %partition_id,
+                blob_name = %blob_name,
+                error = %e,
+                "Failed to persist checkpoint to blob storage"
+            );
+            return Err(e);
+        }
         Ok(())
     }
 }

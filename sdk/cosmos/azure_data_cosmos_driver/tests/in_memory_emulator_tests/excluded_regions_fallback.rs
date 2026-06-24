@@ -42,13 +42,13 @@
 //! endpoint), and assert the surviving data-plane / metadata requests
 //! all hit the hub.
 
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
-use azure_core::http::{Method, Request, Url};
+use azure_core::http::Url;
 
 use azure_data_cosmos_driver::in_memory_emulator::{
-    ConsistencyLevel, InMemoryEmulatorHttpClient, ReplicationConfig, RequestObserver,
-    VirtualAccountConfig, VirtualRegion, WriteMode,
+    ConsistencyLevel, InMemoryEmulatorHttpClient, ReplicationConfig, VirtualAccountConfig,
+    VirtualRegion, WriteMode,
 };
 use azure_data_cosmos_driver::models::{
     AccountReference, CosmosOperation, DatabaseReference, ItemReference, PartitionKey,
@@ -56,45 +56,11 @@ use azure_data_cosmos_driver::models::{
 use azure_data_cosmos_driver::options::DriverOptions;
 use azure_data_cosmos_driver::options::{ExcludedRegions, OperationOptions, Region};
 
+use super::host_recorder::HostRecorder;
+
 const EAST_URL: &str = "https://eastus.emulator.local";
 const WEST_URL: &str = "https://westus.emulator.local";
 const EAST_HOST: &str = "eastus.emulator.local";
-
-/// `RequestObserver` that records the host of every dispatched request
-/// along with whether the request was an account-topology fetch
-/// (`GET /`). Tests filter out the `GET /` requests when asserting where
-/// data-plane and metadata-CRUD traffic landed, because account-topology
-/// fetches bypass the routing path under test.
-#[derive(Debug, Default)]
-struct HostRecorder {
-    /// Tuples of `(host, is_account_read)`.
-    requests: Mutex<Vec<(String, bool)>>,
-}
-
-impl HostRecorder {
-    fn new() -> Arc<Self> {
-        Arc::new(Self::default())
-    }
-
-    /// Hosts of all requests EXCEPT account-topology reads (`GET /`).
-    fn data_plane_hosts(&self) -> Vec<String> {
-        self.requests
-            .lock()
-            .unwrap()
-            .iter()
-            .filter(|(_, is_account)| !*is_account)
-            .map(|(host, _)| host.clone())
-            .collect()
-    }
-}
-
-impl RequestObserver for HostRecorder {
-    fn on_request(&self, request: &Request) {
-        let host = request.url().host_str().unwrap_or_default().to_string();
-        let is_account_read = request.method() == Method::Get && request.url().path() == "/";
-        self.requests.lock().unwrap().push((host, is_account_read));
-    }
-}
 
 /// Builds a two-region in-memory emulator (East US = hub, West US =
 /// satellite) with a pre-provisioned `testdb`/`testcoll`. `write_mode`
@@ -181,7 +147,7 @@ async fn dataplane_excluded_all_preferred_multi_master_falls_back_to_hub() {
 
     // Drop everything captured during init + seeding — only the post-
     // exclusion read matters for the assertion.
-    recorder.requests.lock().unwrap().clear();
+    recorder.clear();
 
     let read_item =
         ItemReference::from_name(&container, PartitionKey::from(pk), item_id.to_string());
@@ -247,7 +213,7 @@ async fn dataplane_excluded_all_preferred_single_master_falls_back_to_hub() {
         .await
         .expect("seeding write should succeed before exclusion is applied");
 
-    recorder.requests.lock().unwrap().clear();
+    recorder.clear();
 
     let read_item =
         ItemReference::from_name(&container, PartitionKey::from(pk), item_id.to_string());
@@ -298,7 +264,7 @@ async fn metadata_excluded_all_preferred_falls_back_to_hub() {
         .expect("driver should initialize");
 
     // Drop init traffic so only the post-exclusion metadata op counts.
-    recorder.requests.lock().unwrap().clear();
+    recorder.clear();
 
     let db_ref = DatabaseReference::from_name(driver.account().clone(), "testdb".to_string());
     let mut opts = OperationOptions::default();

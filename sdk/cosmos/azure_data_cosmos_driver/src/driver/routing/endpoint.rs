@@ -190,6 +190,7 @@ impl LocationIndex {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum UnavailableReason {
     WriteForbidden,
+    DatabaseAccountNotFound,
     ServiceUnavailable,
     RequestTimeout,
     InternalServerError,

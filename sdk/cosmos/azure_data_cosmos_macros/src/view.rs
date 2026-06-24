@@ -15,44 +15,91 @@ pub fn generate_view(input: &OptionsInput) -> Result<TokenStream> {
 
     let layers = &input.layers;
     let last_layer_idx = layers.len() - 1;
+    let has_override = input.has_overridable_fields();
 
-    // Build struct fields: env + explicit layers.
-    // The env layer is always present so that nested Views have a uniform constructor
-    // signature regardless of whether their fields use `#[option(env)]`.
+    // Build struct fields: [env_override?] + env + explicit layers.
+    // The optional `env_override` layer is the highest-priority layer and is
+    // only emitted when the group has any `#[option(env = "...", overridable)]`
+    // field (the kill-switch `{ENV}_OVERRIDE` source). The env layer is always
+    // present so that nested Views have a uniform constructor signature
+    // regardless of whether their fields use `#[option(env)]`.
     // All layers are wrapped in Option. Arc layers are Option<Arc<T>>,
-    // the last (highest-priority) layer is Option<&'a T> to avoid cloning.
+    // the last (highest-priority) explicit layer is Option<&'a T> to avoid cloning.
     let mut struct_fields = Vec::new();
-    let mut new_params = Vec::new();
 
+    if has_override {
+        struct_fields.push(quote! { env_override: Option<::std::sync::Arc<#struct_name>> });
+    }
     struct_fields.push(quote! { env: Option<::std::sync::Arc<#struct_name>> });
-    new_params.push(quote! { env: Option<::std::sync::Arc<#struct_name>> });
+
+    // Parameters shared by both constructors (env + explicit layers), in
+    // declaration order.
+    let mut base_params = Vec::new();
+    base_params.push(quote! { env: Option<::std::sync::Arc<#struct_name>> });
 
     for (i, layer) in layers.iter().enumerate() {
         let field_name = layer.ident();
         if i == last_layer_idx {
             // Last layer is borrowed
             struct_fields.push(quote! { #field_name: Option<&'a #struct_name> });
-            new_params.push(quote! { #field_name: Option<&'a #struct_name> });
+            base_params.push(quote! { #field_name: Option<&'a #struct_name> });
         } else {
             struct_fields.push(quote! { #field_name: Option<::std::sync::Arc<#struct_name>> });
-            new_params.push(quote! { #field_name: Option<::std::sync::Arc<#struct_name>> });
+            base_params.push(quote! { #field_name: Option<::std::sync::Arc<#struct_name>> });
         }
     }
 
-    // Build accessor methods — env layer is always checked.
+    // Build accessor methods — env (and env_override, when present) are checked
+    // inside each accessor.
     let accessors = input
         .fields
         .iter()
         .map(|field| generate_accessor(field, layers))
         .collect::<Result<Vec<_>>>()?;
 
-    // Build the new() constructor body
-    let mut new_body_fields = Vec::new();
-    new_body_fields.push(quote! { env });
+    // Constructor bodies. `new` always exposes the base (override-free)
+    // signature so existing call sites are unaffected; when the group has
+    // overridable fields, `new_with_override` additionally accepts the
+    // top-priority `env_override` layer.
+    let mut base_body_fields = Vec::new();
+    base_body_fields.push(quote! { env });
     for layer in layers {
         let field_name = layer.ident();
-        new_body_fields.push(quote! { #field_name });
+        base_body_fields.push(quote! { #field_name });
     }
+
+    let constructors = if has_override {
+        quote! {
+            /// Creates a new view from layer snapshots (no override layer).
+            ///
+            /// Equivalent to [`Self::new_with_override`] with `env_override`
+            /// set to `None`.
+            #vis fn new(#(#base_params),*) -> Self {
+                Self::new_with_override(None, #(#base_body_fields),*)
+            }
+
+            /// Creates a new view including the highest-priority `env_override`
+            /// kill-switch layer (sourced from `{ENV}_OVERRIDE` variables).
+            #vis fn new_with_override(
+                env_override: Option<::std::sync::Arc<#struct_name>>,
+                #(#base_params),*
+            ) -> Self {
+                Self {
+                    env_override,
+                    #(#base_body_fields),*
+                }
+            }
+        }
+    } else {
+        quote! {
+            /// Creates a new view from layer snapshots.
+            #vis fn new(#(#base_params),*) -> Self {
+                Self {
+                    #(#base_body_fields),*
+                }
+            }
+        }
+    };
 
     Ok(quote! {
         /// Snapshot view across all layers for resolution.
@@ -63,12 +110,7 @@ pub fn generate_view(input: &OptionsInput) -> Result<TokenStream> {
 
         #[automatically_derived]
         impl<'a> #view_name<'a> {
-            /// Creates a new view from layer snapshots.
-            #vis fn new(#(#new_params),*) -> Self {
-                Self {
-                    #(#new_body_fields),*
-                }
-            }
+            #constructors
 
             #(#accessors)*
         }
@@ -93,10 +135,20 @@ fn generate_shadow_accessor(field: &OptionField, layers: &[Layer]) -> Result<Tok
     let inner_type = &field.inner_type;
     let last_layer_idx = layers.len() - 1;
 
-    // Build the chain: operation → account → runtime → env
+    // Build the chain (highest priority first):
+    //   [env_override?] → operation → account → runtime → env
     // Layers are stored in order [runtime, account, operation], so we walk in reverse.
     // Each layer is Option<...>, so we unwrap with and_then.
     let mut chain_parts = Vec::new();
+
+    // The override layer wins over every other layer for `overridable` fields.
+    // Only emitted for overridable fields; the `env_override` struct field is
+    // guaranteed present whenever the group has any overridable field.
+    if field.overridable {
+        chain_parts.push(quote! {
+            self.env_override.as_ref().and_then(|l| l.#field_name.as_ref())
+        });
+    }
 
     for (i, layer) in layers.iter().enumerate().rev() {
         let layer_name = layer.ident();
@@ -559,5 +611,57 @@ mod tests {
         };
 
         assert_eq!(expected.to_string(), tokens.to_string());
+    }
+
+    #[test]
+    fn view_emits_env_override_layer_and_constructors_for_overridable_field() {
+        let input: syn::DeriveInput = syn::parse_quote! {
+            #[options(layers(runtime, account, operation))]
+            pub struct TestOptions {
+                #[option(env = "MY_VAR", overridable)]
+                pub my_field: Option<bool>,
+            }
+        };
+        let parsed = OptionsInput::from_derive_input(&input).unwrap();
+        let tokens = generate_view(&parsed).unwrap().to_string();
+
+        // The struct gains the highest-priority env_override layer.
+        assert!(tokens.contains("env_override"));
+        // Both constructors are emitted; `new` stays backward-compatible.
+        // `fn new (` is checked specifically so it is not satisfied by the
+        // substring in `fn new_with_override (`.
+        assert!(tokens.contains("fn new ("));
+        assert!(tokens.contains("fn new_with_override ("));
+        // The accessor checks env_override before the operation layer.
+        let accessor_start = tokens
+            .find("fn my_field")
+            .expect("accessor should be generated");
+        let accessor = &tokens[accessor_start..];
+        let override_pos = accessor
+            .find("env_override")
+            .expect("override layer must be in the accessor chain");
+        let operation_pos = accessor
+            .find("self . operation")
+            .expect("operation layer must be in the accessor chain");
+        assert!(
+            override_pos < operation_pos,
+            "env_override must be resolved before the operation layer",
+        );
+    }
+
+    #[test]
+    fn view_omits_env_override_layer_without_overridable_field() {
+        let input: syn::DeriveInput = syn::parse_quote! {
+            #[options(layers(runtime, account, operation))]
+            pub struct TestOptions {
+                #[option(env = "MY_VAR")]
+                pub my_field: Option<bool>,
+            }
+        };
+        let parsed = OptionsInput::from_derive_input(&input).unwrap();
+        let tokens = generate_view(&parsed).unwrap().to_string();
+
+        assert!(!tokens.contains("env_override"));
+        assert!(!tokens.contains("new_with_override"));
     }
 }

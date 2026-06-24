@@ -64,8 +64,14 @@ pub(crate) struct PartitionEndpointState {
 impl PartitionEndpointState {
     /// Creates a new `PartitionEndpointState` from the given partition failover options.
     pub fn new(config: PartitionFailoverOptions) -> Self {
+        // The incident kill switch (`AZURE_COSMOS_PPCB_ENABLED_OVERRIDE`), when
+        // set, is authoritative over the base option here. It also wins over the
+        // account property later in `LocationStateStore` when properties refresh.
+        let per_partition_circuit_breaker_enabled = config
+            .circuit_breaker_enabled_override()
+            .unwrap_or_else(|| config.circuit_breaker_enabled());
         Self {
-            per_partition_circuit_breaker_enabled: config.circuit_breaker_enabled(),
+            per_partition_circuit_breaker_enabled,
             failover_overrides: HashMap::new(),
             circuit_breaker_overrides: HashMap::new(),
             consecutive_hedge_wins: HashMap::new(),
@@ -155,5 +161,32 @@ mod tests {
         let state = PartitionEndpointState::new(opts);
         assert!(state.per_partition_circuit_breaker_enabled);
         assert!(state.config.circuit_breaker_enabled());
+    }
+
+    #[test]
+    fn new_override_off_wins_over_enabled_base_option() {
+        // The PPCB incident kill switch (`AZURE_COSMOS_PPCB_ENABLED_OVERRIDE`)
+        // is authoritative: an override of `false` forces PPCB off at
+        // construction even though the base option is enabled.
+        let opts = PartitionFailoverOptions::builder()
+            .with_circuit_breaker_enabled(true)
+            .with_circuit_breaker_enabled_override(false)
+            .build()
+            .unwrap();
+        let state = PartitionEndpointState::new(opts);
+        assert!(!state.per_partition_circuit_breaker_enabled);
+    }
+
+    #[test]
+    fn new_override_on_wins_over_disabled_base_option() {
+        // Parity in the other direction: an override of `true` forces PPCB on
+        // even though the base option is disabled.
+        let opts = PartitionFailoverOptions::builder()
+            .with_circuit_breaker_enabled(false)
+            .with_circuit_breaker_enabled_override(true)
+            .build()
+            .unwrap();
+        let state = PartitionEndpointState::new(opts);
+        assert!(state.per_partition_circuit_breaker_enabled);
     }
 }

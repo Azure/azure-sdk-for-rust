@@ -6,9 +6,10 @@
 use crate::generated::models::{
     BlobServiceClientFindBlobsByTagsOptions, BlobServiceClientGetAccountInfoOptions,
     BlobServiceClientGetAccountInfoResult, BlobServiceClientGetPropertiesOptions,
-    BlobServiceClientGetStatisticsOptions, BlobServiceClientListContainersOptions,
-    BlobServiceClientSetPropertiesOptions, BlobServiceProperties, FilteredBlobResponse,
-    ListContainersResponse, StorageServiceStats,
+    BlobServiceClientGetStatisticsOptions, BlobServiceClientGetUserDelegationKeyOptions,
+    BlobServiceClientListContainersOptions, BlobServiceClientSetPropertiesOptions,
+    BlobServiceProperties, FilteredBlobResponse, KeyInfo, ListContainersResponse,
+    StorageServiceStats,
 };
 use azure_core::{
     error::CheckSuccessOptions,
@@ -20,6 +21,7 @@ use azure_core::{
     },
     tracing, xml, Result,
 };
+use azure_storage_common::models::UserDelegationKey;
 
 #[tracing::client]
 pub struct BlobServiceClient {
@@ -254,6 +256,50 @@ impl BlobServiceClient {
         let mut request = Request::new(url, Method::Get);
         request.insert_header("accept", "application/xml");
         request.insert_header("x-ms-version", &self.version);
+        let rsp = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut request,
+                Some(PipelineSendOptions {
+                    check_success: CheckSuccessOptions {
+                        success_codes: &[200],
+                    },
+                    ..Default::default()
+                }),
+            )
+            .await?;
+        Ok(rsp.into())
+    }
+
+    /// Retrieves a user delegation key for the Blob service. This is only a valid operation when using bearer token authentication.
+    ///
+    /// # Arguments
+    ///
+    /// * `key_info` - Key information provided in the request.
+    /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.BlobServiceClient.getUserDelegationKey")]
+    pub async fn get_user_delegation_key(
+        &self,
+        key_info: RequestContent<KeyInfo, XmlFormat>,
+        options: Option<BlobServiceClientGetUserDelegationKeyOptions<'_>>,
+    ) -> Result<Response<UserDelegationKey, XmlFormat>> {
+        let options = options.unwrap_or_default();
+        let ctx = options.method_options.context.to_borrowed();
+        let mut url = self.endpoint.clone();
+        let mut query_builder = url.query_builder();
+        query_builder
+            .append_pair("comp", "userdelegationkey")
+            .append_pair("restype", "service");
+        if let Some(timeout) = options.timeout {
+            query_builder.set_pair("timeout", timeout.to_string());
+        }
+        query_builder.build();
+        let mut request = Request::new(url, Method::Post);
+        request.insert_header("accept", "application/xml");
+        request.insert_header("content-type", "application/xml");
+        request.insert_header("x-ms-version", &self.version);
+        request.set_body(key_info);
         let rsp = self
             .pipeline
             .send(

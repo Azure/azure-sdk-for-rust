@@ -5,6 +5,7 @@
 ### Features Added
 
 - Added `ListOfSentMessage::into_message()` to extract the single `SentMessage` returned by `QueueClient::send_message()`.
+- Added `QueueServiceClient::get_user_delegation_key()` to obtain a user delegation key for creating user delegation SAS tokens.
 
 ### Breaking Changes
 

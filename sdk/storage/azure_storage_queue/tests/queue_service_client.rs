@@ -4,20 +4,21 @@
 mod common;
 
 use azure_core::{
-    http::{StatusCode, Url},
+    http::{RequestContent, StatusCode, Url, XmlFormat},
     time::OffsetDateTime,
     Result,
 };
 use azure_core_test::{recorded, Recording, TestContext};
 use azure_storage_queue::{
     models::{
-        CorsRule, GeoReplicationStatus, ListQueuesIncludeType, Logging, Metrics,
+        CorsRule, GeoReplicationStatus, KeyInfo, ListQueuesIncludeType, Logging, Metrics,
         QueueServiceClientListQueuesOptions, QueueServiceProperties, RetentionPolicy,
     },
     QueueServiceClient, QueueServiceClientOptions,
 };
 use common::{get_queue_name, recorded_test_setup};
 use futures::StreamExt;
+use time::Duration;
 
 use std::collections::HashMap;
 
@@ -623,6 +624,58 @@ async fn test_set_retention_too_long(ctx: TestContext) -> Result<()> {
     .await;
 
     test_result?;
+    Ok(())
+}
+
+#[recorded::test(live)]
+async fn test_get_user_delegation_key(ctx: TestContext) -> Result<()> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let queue_service_client = get_queue_service_client(recording).await?;
+
+    let now = OffsetDateTime::now_utc();
+    let key_info = KeyInfo {
+        start: Some(now),
+        expiry: Some(now + Duration::hours(1)),
+        ..Default::default()
+    };
+    let request_content: RequestContent<KeyInfo, XmlFormat> = key_info.try_into()?;
+
+    // Act
+    let response = queue_service_client
+        .get_user_delegation_key(request_content, None)
+        .await?;
+    let user_delegation_key = response.into_model()?;
+
+    // Assert
+    assert!(
+        user_delegation_key.signed_oid.is_some(),
+        "expected signed_oid to be populated"
+    );
+    assert!(
+        user_delegation_key.signed_tid.is_some(),
+        "expected signed_tid to be populated"
+    );
+    assert!(
+        user_delegation_key.signed_start.is_some(),
+        "expected signed_start to be populated"
+    );
+    assert!(
+        user_delegation_key.signed_expiry.is_some(),
+        "expected signed_expiry to be populated"
+    );
+    assert!(
+        user_delegation_key.signed_service.is_some(),
+        "expected signed_service to be populated"
+    );
+    assert!(
+        user_delegation_key.signed_version.is_some(),
+        "expected signed_version to be populated"
+    );
+    assert!(
+        user_delegation_key.value.is_some(),
+        "expected value to be populated"
+    );
     Ok(())
 }
 

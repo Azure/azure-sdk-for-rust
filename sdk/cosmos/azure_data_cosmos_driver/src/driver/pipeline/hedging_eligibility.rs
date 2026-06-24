@@ -102,18 +102,50 @@ pub(crate) fn should_hedge(
 ///
 /// Priority order (highest first):
 ///
-/// 1. Operation / account / runtime `availability_strategy` (resolved by
-///    [`OperationOptionsView`] before we are called).
+/// 0. Environment-driven master switch — `hedging_enabled` (typically set via
+///    `AZURE_COSMOS_HEDGING_ENABLED`). When set, it is the **source of truth**
+///    and takes precedence over the programmatic `availability_strategy` in
+///    both directions:
+///    - `Some(false)` → hedging is disabled (returns `None`) even when an
+///      explicit `AvailabilityStrategy::Hedging(..)` is configured.
+///    - `Some(true)` → hedging is enabled even when an explicit
+///      `AvailabilityStrategy::Disabled` is configured. A programmatic
+///      `AvailabilityStrategy::Hedging(..)` still supplies its custom
+///      threshold; otherwise the driver default threshold applies.
+/// 1. Programmatic operation / account / runtime `availability_strategy`
+///    (resolved by [`OperationOptionsView`] before we are called).
 /// 2. Driver default — `min(1000ms, request_timeout / 2)`.
 ///
-/// Returns `None` only when an explicit `AvailabilityStrategy::Disabled`
-/// at layer 1 turns hedging off; otherwise always returns `Some(_)`.
-/// The "single-region account / insufficient regions" case is enforced
-/// separately in [`should_hedge`].
+/// Returns `None` when hedging is disabled — either through the
+/// `hedging_enabled` switch resolving to `Some(false)` (layer 0) or an explicit
+/// `AvailabilityStrategy::Disabled` with no overriding env switch (layer 1);
+/// otherwise returns `Some(_)`. The "single-region account / insufficient
+/// regions" case is enforced separately in [`should_hedge`].
 pub(crate) fn resolve_availability_strategy(
     view: &OperationOptionsView<'_>,
     request_timeout: Option<Duration>,
 ) -> Option<HedgingStrategy> {
+    // Priority 0 — environment-driven master switch (source of truth). When
+    // set, the env switch wins over the programmatic `availability_strategy`
+    // in both directions, keeping the two enablement hooks in parity.
+    match view.hedging_enabled() {
+        // Explicitly disabled — no hedging even if the caller passed an
+        // explicit `AvailabilityStrategy::Hedging(..)` at any layer.
+        Some(&false) => return None,
+        // Explicitly enabled — hedge even if the caller passed an explicit
+        // `AvailabilityStrategy::Disabled`. Honor a programmatic
+        // `Hedging(..)` strategy's custom threshold when one is present,
+        // otherwise fall back to the driver default threshold.
+        Some(&true) => {
+            return match view.availability_strategy() {
+                Some(AvailabilityStrategy::Hedging(s)) => Some(*s),
+                _ => Some(HedgingStrategy::new(default_threshold(request_timeout))),
+            };
+        }
+        // Unset — defer to the programmatic strategy below.
+        None => {}
+    }
+
     // Priority 1 — code-level strategy.
     match view.availability_strategy() {
         Some(AvailabilityStrategy::Disabled) => return None,
@@ -445,14 +477,10 @@ mod tests {
 
     #[test]
     fn is_final_result_403_is_final_regardless_of_sub_status() {
-        // 403 is authorization/ownership (RBAC, write-forbidden, account
-        // ownership) — racing another region either duplicates the denial
-        // or doubles a security-sensitive signal. Dedicated retry paths
-        // (e.g., PPAF write-forbidden) handle the retriable sub-statuses
-        // through the normal retry loop rather than via a hedge race.
+        // Most 403s are final for hedging; 403/1008 is topology ownership and must reach retry.
         assert!(status(403, None).is_final_result());
         assert!(status(403, Some(3)).is_final_result()); // WRITE_FORBIDDEN
-        assert!(status(403, Some(1008)).is_final_result()); // DATABASE_ACCOUNT_NOT_FOUND
+        assert!(!status(403, Some(1008)).is_final_result()); // DATABASE_ACCOUNT_NOT_FOUND
         assert!(status(403, Some(5)).is_final_result()); // arbitrary unknown sub-status
     }
 
@@ -546,6 +574,141 @@ mod tests {
 
         let strategy = resolve_availability_strategy(&view, None).expect("Some");
         assert_eq!(strategy.threshold().get(), Duration::from_millis(200));
+    }
+
+    #[test]
+    fn resolve_hedging_enabled_flag_false_returns_none() {
+        // `hedging_enabled = Some(false)` at the env layer disables hedging
+        // even when the operation has no explicit availability strategy.
+        let env = OperationOptionsBuilder::new()
+            .with_hedging_enabled(false)
+            .build();
+        let op = OperationOptions::default();
+        let view = OperationOptionsView::new(Some(std::sync::Arc::new(env)), None, None, Some(&op));
+
+        assert!(resolve_availability_strategy(&view, None).is_none());
+    }
+
+    #[test]
+    fn resolve_hedging_enabled_flag_false_overrides_explicit_strategy() {
+        // The env-resolved kill-switch is the source of truth: it disables
+        // hedging even when the caller passes an explicit
+        // `AvailabilityStrategy::Hedging(..)` at the operation layer.
+        let op_strategy =
+            HedgingStrategy::new(HedgeThreshold::new(Duration::from_millis(200)).unwrap());
+        let env = OperationOptionsBuilder::new()
+            .with_hedging_enabled(false)
+            .build();
+        let op = OperationOptionsBuilder::new()
+            .with_availability_strategy(AvailabilityStrategy::Hedging(op_strategy))
+            .build();
+        let view = OperationOptionsView::new(Some(std::sync::Arc::new(env)), None, None, Some(&op));
+
+        assert!(resolve_availability_strategy(&view, None).is_none());
+    }
+
+    #[test]
+    fn resolve_hedging_enabled_flag_true_keeps_default_threshold() {
+        // Explicitly enabling hedging (without an explicit strategy) keeps the
+        // unchanged driver-default threshold of `min(1000ms, timeout / 2)`.
+        let env = OperationOptionsBuilder::new()
+            .with_hedging_enabled(true)
+            .build();
+        let op = OperationOptions::default();
+        let view = OperationOptionsView::new(Some(std::sync::Arc::new(env)), None, None, Some(&op));
+
+        let strategy = resolve_availability_strategy(&view, None).expect("Some");
+        assert_eq!(strategy.threshold().get(), Duration::from_millis(1000));
+    }
+
+    #[test]
+    fn resolve_hedging_enabled_flag_true_overrides_explicit_disabled() {
+        // Parity: the env switch is the source of truth in both directions.
+        // `hedging_enabled = Some(true)` enables hedging even when the caller
+        // passed an explicit `AvailabilityStrategy::Disabled`.
+        let env = OperationOptionsBuilder::new()
+            .with_hedging_enabled(true)
+            .build();
+        let op = OperationOptionsBuilder::new()
+            .with_availability_strategy(AvailabilityStrategy::Disabled)
+            .build();
+        let view = OperationOptionsView::new(Some(std::sync::Arc::new(env)), None, None, Some(&op));
+
+        let strategy =
+            resolve_availability_strategy(&view, None).expect("env=true enables hedging");
+        assert_eq!(strategy.threshold().get(), Duration::from_millis(1000));
+    }
+
+    #[test]
+    fn resolve_hedging_enabled_flag_true_honors_programmatic_custom_threshold() {
+        // When the env switch enables hedging and the caller also configured a
+        // programmatic `Hedging(..)` strategy, the custom threshold is honored
+        // (env=true means "on", it does not reset an explicit threshold).
+        let op_strategy =
+            HedgingStrategy::new(HedgeThreshold::new(Duration::from_millis(200)).unwrap());
+        let env = OperationOptionsBuilder::new()
+            .with_hedging_enabled(true)
+            .build();
+        let op = OperationOptionsBuilder::new()
+            .with_availability_strategy(AvailabilityStrategy::Hedging(op_strategy))
+            .build();
+        let view = OperationOptionsView::new(Some(std::sync::Arc::new(env)), None, None, Some(&op));
+
+        let strategy = resolve_availability_strategy(&view, None).expect("Some");
+        assert_eq!(strategy.threshold().get(), Duration::from_millis(200));
+    }
+
+    #[test]
+    fn resolve_env_override_layer_disables_hedging_over_operation() {
+        // End-to-end: the top-priority `env_override` kill-switch layer
+        // (sourced from `AZURE_COSMOS_HEDGING_ENABLED_OVERRIDE`) must reach the
+        // live `resolve_availability_strategy` and beat a per-operation
+        // `hedging_enabled = Some(true)` *and* an explicit `Hedging(..)`.
+        let op_strategy =
+            HedgingStrategy::new(HedgeThreshold::new(Duration::from_millis(200)).unwrap());
+        let env_override = OperationOptionsBuilder::new()
+            .with_hedging_enabled(false)
+            .build();
+        let op = OperationOptionsBuilder::new()
+            .with_hedging_enabled(true)
+            .with_availability_strategy(AvailabilityStrategy::Hedging(op_strategy))
+            .build();
+        let view = OperationOptionsView::new_with_override(
+            Some(std::sync::Arc::new(env_override)),
+            None,
+            None,
+            None,
+            Some(&op),
+        );
+
+        assert!(
+            resolve_availability_strategy(&view, None).is_none(),
+            "env_override hedging=false must disable hedging through the pipeline resolver",
+        );
+    }
+
+    #[test]
+    fn resolve_env_override_layer_enables_hedging_over_disabled_operation() {
+        // Parity in the other direction through the pipeline resolver: an
+        // override of `true` enables hedging even when the operation layer
+        // explicitly set `Disabled`.
+        let env_override = OperationOptionsBuilder::new()
+            .with_hedging_enabled(true)
+            .build();
+        let op = OperationOptionsBuilder::new()
+            .with_availability_strategy(AvailabilityStrategy::Disabled)
+            .build();
+        let view = OperationOptionsView::new_with_override(
+            Some(std::sync::Arc::new(env_override)),
+            None,
+            None,
+            None,
+            Some(&op),
+        );
+
+        let strategy = resolve_availability_strategy(&view, None)
+            .expect("env_override hedging=true must enable hedging through the pipeline resolver");
+        assert_eq!(strategy.threshold().get(), Duration::from_millis(1000));
     }
 
     // ───────────────────────── ExcludedRegions integration ─────────────────────────

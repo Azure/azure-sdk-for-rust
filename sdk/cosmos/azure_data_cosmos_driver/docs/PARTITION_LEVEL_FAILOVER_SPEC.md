@@ -209,9 +209,11 @@ via the CAS loop when account properties are refreshed:
 ```rust
 // In CosmosDriver construction:
 
-// 1. Build a layered OperationOptionsView (env → runtime → account) to resolve
-//    init-time config. No per-operation overrides exist at construction time.
-let init_view = OperationOptionsView::new(
+// 1. Build a layered OperationOptionsView (env_override → env → runtime →
+//    account) to resolve init-time config. No per-operation overrides exist at
+//    construction time; the `env_override` kill-switch layer still applies.
+let init_view = OperationOptionsView::new_with_override(
+    Some(Arc::clone(runtime.env_override_operation_options())),
     Some(Arc::clone(runtime.env_operation_options())),
     Some(runtime.default_operation_options()),
     Some(options.operation_options().clone()),
