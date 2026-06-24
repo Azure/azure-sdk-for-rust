@@ -60,8 +60,11 @@ pub(crate) mod system;
 pub mod testing;
 
 // Re-export key types at crate root
+pub use diagnostics::capture::{
+    DiagnosticsPolicy as CaptureDiagnosticsPolicy, Mode as CaptureMode,
+};
 pub use diagnostics::{DiagnosticsContext, ExecutionContext, RequestDiagnostics, RequestHandle};
 pub use driver::{CosmosDriver, CosmosDriverRuntime, CosmosDriverRuntimeBuilder, OperationPlan};
 pub use error::{CosmosError, CosmosErrorBuilder, CosmosStatus, Result, SubStatusCode};
 pub use models::{ActivityId, CosmosResponse, RequestCharge, ResponseBody};
-pub use options::{DiagnosticsOptions, DiagnosticsVerbosity, DriverOptions};
+pub use options::{DiagnosticsEncoding, DiagnosticsOptions, DiagnosticsVerbosity, DriverOptions};

@@ -480,18 +480,17 @@ impl CosmosDriver {
         endpoint: &AccountEndpoint,
         fault_injection_enabled: bool,
     ) -> (DiagnosticsContextBuilder, TransportSecurity) {
-        let mut diagnostics = DiagnosticsContextBuilder::new(
-            activity_id,
-            Arc::new(crate::options::DiagnosticsOptions::default()),
-        );
+        #[cfg(not(feature = "fault_injection"))]
+        let _ = fault_injection_enabled;
+        let options = Arc::new(crate::options::DiagnosticsOptions::default());
+        let mut diagnostics = DiagnosticsContextBuilder::new(activity_id, options);
         diagnostics.set_cpu_monitor(runtime.cpu_monitor().clone());
         diagnostics.set_machine_id(Arc::clone(runtime.machine_id()));
+        diagnostics.set_user_agent(Arc::from(runtime.user_agent().as_str()));
         #[cfg(feature = "fault_injection")]
         if fault_injection_enabled {
             diagnostics.set_fault_injection_enabled(true);
         }
-        #[cfg(not(feature = "fault_injection"))]
-        let _ = fault_injection_enabled;
         let transport_security = if runtime
             .connection_pool()
             .server_certificate_validation()
@@ -528,7 +527,8 @@ impl CosmosDriver {
         };
 
         // Off-pipeline envelope: same shape as the operation pipeline's Step 7 so
-        // err.diagnostics() exposes the same fields data-plane callers see.
+        // err.diagnostics() exposes the same fields data-plane callers see. Bootstrap
+        // account-metadata diagnostics feed error reporting for connection/auth failures.
         let (mut diagnostics, transport_security) = Self::new_diagnostics_envelope(
             runtime,
             crate::models::ActivityId::new_uuid(),
@@ -2007,6 +2007,9 @@ impl CosmosDriver {
         let resource_type = operation.resource_type();
         let is_dataplane = uses_dataplane_pipeline(resource_type, operation_type);
         // Step 7: Initialize diagnostics (shared envelope shape with the bootstrap fetch).
+        // Diagnostics are always collected on the default path; the capture gate only governs
+        // whether the builder-produced context is *exposed* through `capture_diagnostics()`.
+        let capture_policy = self.options.capture_diagnostics_policy();
         let fault_injection_enabled = {
             #[cfg(feature = "fault_injection")]
             {
@@ -2033,8 +2036,18 @@ impl CosmosDriver {
         let user_agent =
             azure_core::http::headers::HeaderValue::from(self.user_agent.as_str().to_owned());
 
+        // Diagnostics exposure gate. The shipping diagnostics path is the always-on
+        // `DiagnosticsContextBuilder`, populated by the pipeline and surfaced via
+        // `CosmosResponse::diagnostics()`. Here we only run the Threshold/Always gate against the
+        // operation's outcome + elapsed time to decide whether that builder-produced context is
+        // *also* exposed through `CosmosResponse::capture_diagnostics()`. The prototype event-log
+        // capture engine (`diagnostics::capture`, behind the off-by-default `capture_engine`
+        // feature) is not wired here; the gate never builds the surfaced context, it only governs
+        // exposure. (No per-op endpoint formatting on this path.)
+        let capture_op_start = std::time::Instant::now();
+
         // Step 8: Execute via the new operation pipeline
-        super::pipeline::operation_pipeline::execute_operation_pipeline(
+        let result = super::pipeline::operation_pipeline::execute_operation_pipeline(
             operation,
             overrides,
             &effective_options,
@@ -2055,7 +2068,42 @@ impl CosmosDriver {
             effective_throughput_control,
             pre_resolved_pk_range_id,
         )
-        .await
+        .await;
+
+        let capture_elapsed_ns = capture_op_start
+            .elapsed()
+            .as_nanos()
+            .min(u128::from(u64::MAX)) as u64;
+
+        match result {
+            Ok(response) => {
+                // Expose the builder-produced `DiagnosticsContext` through the gate: `Some` under
+                // the default `Always` (or a `Threshold`/error hit), `None` when the gate drops a
+                // fast success.
+                use crate::diagnostics::capture::{should_build, Outcome};
+                let outcome = if response.status().is_success() {
+                    Outcome::Success
+                } else {
+                    Outcome::Error
+                };
+                let captured = should_build(outcome, capture_elapsed_ns, &capture_policy)
+                    .then(|| response.diagnostics());
+                Ok(response.with_capture_diagnostics(captured))
+            }
+            Err(e) => {
+                // Symmetric with the success path: a failed operation's canonical diagnostics are
+                // attached to the error by the pipeline; expose them through the same gate via
+                // `CosmosError::capture_diagnostics()`.
+                use crate::diagnostics::capture::{should_build, Outcome};
+                if should_build(Outcome::Error, capture_elapsed_ns, &capture_policy) {
+                    let captured = e.diagnostics();
+                    if captured.is_some() {
+                        return Err(e.with_capture_diagnostics(captured));
+                    }
+                }
+                Err(e)
+            }
+        }
     }
 
     /// Resolves a container by database and container name.

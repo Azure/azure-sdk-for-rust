@@ -84,6 +84,15 @@ pub struct CosmosResponse {
 
     /// Full diagnostics context for this operation.
     diagnostics: Arc<DiagnosticsContext>,
+
+    /// The operation's [`DiagnosticsContext`] as surfaced through the diagnostics **capture** gate
+    /// ([`crate::diagnostics::capture`]). This is the **same** canonical context as `diagnostics`,
+    /// gated: `Some` when the capture policy decided to surface it (the default [`Mode::Always`],
+    /// or a `Threshold`/error hit) and `None` when the gate dropped it (a fast success under
+    /// `Threshold`). It is one model, not a parallel one.
+    ///
+    /// [`Mode::Always`]: crate::diagnostics::capture::Mode::Always
+    capture: Option<Arc<DiagnosticsContext>>,
 }
 
 impl CosmosResponse {
@@ -102,7 +111,28 @@ impl CosmosResponse {
             payload: CosmosResponsePayload::new(body, headers),
             status,
             diagnostics,
+            capture: None,
         }
+    }
+
+    /// Attaches the gated capture diagnostics to this response (builder-style).
+    pub(crate) fn with_capture_diagnostics(
+        mut self,
+        capture: Option<Arc<DiagnosticsContext>>,
+    ) -> Self {
+        self.capture = capture;
+        self
+    }
+
+    /// Returns the operation's [`DiagnosticsContext`] as surfaced through the diagnostics
+    /// **capture** gate ([`crate::diagnostics::capture`]).
+    ///
+    /// This is the **same** canonical context as [`CosmosResponse::diagnostics`], gated: `Some`
+    /// under the default [`Mode::Always`](crate::diagnostics::capture::Mode::Always) (or a
+    /// `Threshold`/error hit), and `None` when the gate dropped it (a fast success under
+    /// `Threshold`).
+    pub fn capture_diagnostics(&self) -> Option<&DiagnosticsContext> {
+        self.capture.as_deref()
     }
 
     /// Returns a reference to the wire-level payload (body + headers).
@@ -154,6 +184,16 @@ impl CosmosResponse {
     /// Returns a borrow of the diagnostics [`Arc`] without cloning it.
     pub fn diagnostics_ref(&self) -> &Arc<DiagnosticsContext> {
         &self.diagnostics
+    }
+
+    /// Renders this operation's [`DiagnosticsContext`] to a string using the given encoding.
+    ///
+    /// A convenience over [`DiagnosticsContext::encode`]. Pass the driver's configured encoding —
+    /// [`DriverOptions::diagnostics_encoding`](crate::options::DriverOptions::diagnostics_encoding)
+    /// — to honor the client option, e.g.
+    /// `response.diagnostics_string(driver_options.diagnostics_encoding())`.
+    pub fn diagnostics_string(&self, encoding: crate::options::DiagnosticsEncoding) -> String {
+        self.diagnostics.encode(encoding)
     }
 
     /// Prepends the per-request diagnostics from one or more prior

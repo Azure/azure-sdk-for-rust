@@ -10,16 +10,48 @@
 use crate::{
     driver::{pipeline::hedging_diagnostics::HedgeDiagnostics, routing::CosmosEndpoint},
     models::{ActivityId, CosmosResponseHeaders, CosmosStatus, RequestCharge, SubStatusCode},
-    options::{DiagnosticsOptions, DiagnosticsVerbosity, Region},
+    options::{DiagnosticsEncoding, DiagnosticsOptions, DiagnosticsVerbosity, Region},
     system::CpuMemoryMonitor,
 };
+use azure_core::fmt::SafeDebug;
 use azure_core::http::StatusCode;
+use azure_core::time::{to_rfc3339, OffsetDateTime};
 use serde::Serialize;
 use std::{
     collections::HashMap,
     sync::{Arc, OnceLock},
     time::{Duration, Instant},
 };
+
+/// Serde helpers that serialize wall-clock [`OffsetDateTime`] values as RFC 3339 strings, matching
+/// the repository's timestamp convention (`azure_core::time::to_rfc3339`).
+mod rfc3339 {
+    use super::{to_rfc3339, OffsetDateTime};
+    use serde::Serializer;
+
+    /// Serializes a required timestamp as an RFC 3339 string.
+    pub(super) fn serialize<S: Serializer>(
+        value: &OffsetDateTime,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(&to_rfc3339(value))
+    }
+
+    /// Serializes an optional timestamp as an RFC 3339 string, or `null`.
+    pub(super) mod option {
+        use super::{to_rfc3339, OffsetDateTime, Serializer};
+
+        pub(in crate::diagnostics::capture::model) fn serialize<S: Serializer>(
+            value: &Option<OffsetDateTime>,
+            serializer: S,
+        ) -> Result<S::Ok, S::Error> {
+            match value {
+                Some(dt) => serializer.serialize_str(&to_rfc3339(dt)),
+                None => serializer.serialize_none(),
+            }
+        }
+    }
+}
 
 // =============================================================================
 // Execution Context
@@ -408,13 +440,24 @@ pub struct RequestDiagnostics {
     /// Server-side request processing duration in milliseconds (`x-ms-request-duration-ms`).
     server_duration_ms: Option<crate::models::FiniteF64>,
 
-    /// When this request was started.
+    /// When this request was started (monotonic clock, for precise elapsed; not serialized).
     #[serde(skip)]
     started_at: Instant,
 
-    /// When this request completed (response received or error).
+    /// When this request completed (monotonic clock; not serialized).
     #[serde(skip)]
     pub(crate) completed_at: Option<Instant>,
+
+    /// Wall-clock time the request started, serialized as an RFC 3339 string.
+    #[serde(serialize_with = "rfc3339::serialize")]
+    start_time: OffsetDateTime,
+
+    /// Wall-clock time the request completed, serialized as an RFC 3339 string (absent until done).
+    #[serde(
+        serialize_with = "rfc3339::option::serialize",
+        skip_serializing_if = "Option::is_none"
+    )]
+    end_time: Option<OffsetDateTime>,
 
     /// Duration in milliseconds (computed from started_at/completed_at).
     duration_ms: u64,
@@ -485,6 +528,8 @@ impl RequestDiagnostics {
             server_duration_ms: None,
             started_at: Instant::now(),
             completed_at: None,
+            start_time: OffsetDateTime::now_utc(),
+            end_time: None,
             duration_ms: 0,
             events: Vec::new(),
             transport_shard: None,
@@ -503,6 +548,7 @@ impl RequestDiagnostics {
     /// Since we received a response, the request was definitely sent.
     pub(crate) fn complete(&mut self, status_code: StatusCode, sub_status: Option<SubStatusCode>) {
         self.completed_at = Some(Instant::now());
+        self.end_time = Some(OffsetDateTime::now_utc());
         self.status = CosmosStatus::new(status_code);
         if let Some(sub_status) = sub_status {
             self.with_sub_status(sub_status);
@@ -529,6 +575,7 @@ impl RequestDiagnostics {
     /// operation timeout from the client side.
     pub(crate) fn timeout(&mut self) {
         self.completed_at = Some(Instant::now());
+        self.end_time = Some(OffsetDateTime::now_utc());
         self.timed_out = true;
         self.status = CosmosStatus::from_parts(
             StatusCode::RequestTimeout,
@@ -550,6 +597,7 @@ impl RequestDiagnostics {
         status: CosmosStatus,
     ) {
         self.completed_at = Some(Instant::now());
+        self.end_time = Some(OffsetDateTime::now_utc());
         self.status = status;
         self.with_error(error);
         self.request_sent = request_sent;
@@ -591,8 +639,28 @@ impl RequestDiagnostics {
         self.server_duration_ms = Some(crate::models::FiniteF64::new_lossy(duration));
     }
 
-    /// Adds a pipeline event.
-    pub(crate) fn add_event(&mut self, event: RequestEvent) {
+    /// Adds a pipeline event, stamping it with the duration of the stage it
+    /// concludes.
+    ///
+    /// The stage duration is the time elapsed since the previous event on this
+    /// request, or since the request started for the first event, so e.g. a
+    /// `ResponseHeadersReceived` event carries the transport time-to-first-byte.
+    /// A duration the caller already set (via [`RequestEvent::with_duration`]) is
+    /// left untouched.
+    pub(crate) fn add_event(&mut self, mut event: RequestEvent) {
+        if event.duration_ms.is_none() {
+            let stage_start = self
+                .events
+                .last()
+                .map(|prev| prev.timestamp)
+                .unwrap_or(self.started_at);
+            event.duration_ms = Some(
+                event
+                    .timestamp
+                    .saturating_duration_since(stage_start)
+                    .as_millis() as u64,
+            );
+        }
         self.events.push(event);
     }
 
@@ -686,6 +754,16 @@ impl RequestDiagnostics {
     /// Returns when this request completed, if it has completed.
     pub fn completed_at(&self) -> Option<Instant> {
         self.completed_at
+    }
+
+    /// Returns the wall-clock time this request started (serialized as RFC 3339).
+    pub fn start_time(&self) -> OffsetDateTime {
+        self.start_time
+    }
+
+    /// Returns the wall-clock time this request completed, if it has (serialized as RFC 3339).
+    pub fn end_time(&self) -> Option<OffsetDateTime> {
+        self.end_time
     }
 
     /// Returns the duration in milliseconds.
@@ -866,7 +944,13 @@ pub struct RequestEvent {
     #[serde(skip)]
     timestamp: Instant,
 
-    /// Duration of this stage, if applicable.
+    /// Duration of the stage this event concludes, in milliseconds.
+    ///
+    /// Computed when the event is recorded on a request as the time elapsed
+    /// since the previous event (or since the request started, for the first
+    /// event). For [`ResponseHeadersReceived`](RequestEventType::ResponseHeadersReceived)
+    /// this is the transport time-to-first-byte. `None` only for a free-standing
+    /// event that was never attached to a request.
     duration_ms: Option<u64>,
 
     /// Additional context for this event.
@@ -1044,10 +1128,205 @@ enum DiagnosticsPayload<'a> {
     Summary { regions: Vec<RegionSummary> },
 }
 
+/// A single `(status, sub-status) -> count` entry of the [`DiagnosticsSummary`] histogram.
+#[derive(Clone, SafeDebug, Serialize)]
+struct StatusCount {
+    /// HTTP status code.
+    status: u16,
+    /// Cosmos sub-status code, when present.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    sub_status: Option<u16>,
+    /// Number of requests that returned this `(status, sub-status)`.
+    count: usize,
+}
+
+/// A compact, aggregatable roll-up of an operation's diagnostics, modeled on the top-level
+/// `Summary` block of .NET's `CosmosDiagnostics`.
+///
+/// Computed **once at finalization** (`DiagnosticsContextBuilder::complete`) as a reduction over
+/// the already-collected [`RequestDiagnostics`] — never on the hot path. It therefore exists only
+/// when a [`DiagnosticsContext`] is built (i.e. when the gate fires); a dropped fast success
+/// produces no context and hence no summary. Serialized as the top-level `summary` section of the
+/// diagnostics output.
+///
+/// The field set is seeded from the high-value signals a support investigation branches on first:
+/// final status, per-attempt status mix (the histogram), retry/throttle counts, total RU, total
+/// elapsed, regions contacted, and the first error.
+#[derive(Clone, SafeDebug, Serialize)]
+#[non_exhaustive]
+pub struct DiagnosticsSummary {
+    /// Wall-clock time the operation started, serialized as an RFC 3339 string.
+    #[serde(serialize_with = "rfc3339::serialize")]
+    start_time: OffsetDateTime,
+    /// Wall-clock time the operation finished, serialized as an RFC 3339 string.
+    #[serde(serialize_with = "rfc3339::serialize")]
+    end_time: OffsetDateTime,
+    /// Final operation status (HTTP + Cosmos sub-status) after all retries/failovers.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    final_status: Option<CosmosStatus>,
+    /// Total number of requests recorded (attempts + hedge legs).
+    request_count: usize,
+    /// Number of retried requests (`ExecutionContext::Retry` / `TransportRetry`).
+    retry_count: usize,
+    /// Number of throttled (HTTP 429) requests.
+    throttled_count: usize,
+    /// Total request charge (RU) summed across all requests.
+    total_request_charge: RequestCharge,
+    /// Total operation elapsed time, in milliseconds.
+    total_duration_ms: u64,
+    /// Distinct regions contacted, sorted (normalized names, e.g. `"eastus"`).
+    regions_contacted: Vec<String>,
+    /// Histogram of `(status, sub-status) -> count` across all requests (like .NET's call
+    /// histogram), sorted by status then sub-status for deterministic output.
+    status_counts: Vec<StatusCount>,
+    /// The first error message observed across the requests, if any.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    top_error: Option<String>,
+    /// The client User-Agent string for the operation (SDK + runtime identity). Present only when
+    /// the driver supplied it; omitted otherwise so existing output is unchanged.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    user_agent: Option<String>,
+}
+
+impl DiagnosticsSummary {
+    /// Reduces the collected requests into a summary. Called only at finalization, off the hot path.
+    fn compute(
+        requests: &[RequestDiagnostics],
+        status: Option<CosmosStatus>,
+        duration: Duration,
+        start_time: OffsetDateTime,
+        end_time: OffsetDateTime,
+        user_agent: Option<String>,
+    ) -> Self {
+        let mut retry_count = 0usize;
+        let mut throttled_count = 0usize;
+        let mut top_error: Option<String> = None;
+        let mut histogram: HashMap<(u16, Option<u16>), usize> = HashMap::new();
+        let mut regions: Vec<String> = Vec::new();
+
+        for req in requests {
+            if matches!(
+                req.execution_context,
+                ExecutionContext::Retry | ExecutionContext::TransportRetry
+            ) {
+                retry_count += 1;
+            }
+            if req.status.is_throttled() {
+                throttled_count += 1;
+            }
+            if top_error.is_none() {
+                if let Some(err) = req.error.as_deref() {
+                    top_error = Some(err.to_string());
+                }
+            }
+            let key = (
+                u16::from(req.status.status_code()),
+                req.status.sub_status().map(|s| s.value()),
+            );
+            *histogram.entry(key).or_insert(0) += 1;
+            if let Some(region) = &req.region {
+                let name = region.as_str().to_string();
+                if !regions.contains(&name) {
+                    regions.push(name);
+                }
+            }
+        }
+
+        regions.sort();
+        let mut status_counts: Vec<StatusCount> = histogram
+            .into_iter()
+            .map(|((status, sub_status), count)| StatusCount {
+                status,
+                sub_status,
+                count,
+            })
+            .collect();
+        status_counts.sort_by_key(|c| (c.status, c.sub_status));
+
+        Self {
+            start_time,
+            end_time,
+            final_status: status,
+            request_count: requests.len(),
+            retry_count,
+            throttled_count,
+            total_request_charge: requests.iter().map(|r| r.request_charge).sum(),
+            total_duration_ms: duration.as_millis() as u64,
+            regions_contacted: regions,
+            status_counts,
+            top_error,
+            user_agent,
+        }
+    }
+
+    /// The wall-clock time the operation started.
+    pub fn start_time(&self) -> OffsetDateTime {
+        self.start_time
+    }
+
+    /// The wall-clock time the operation finished.
+    pub fn end_time(&self) -> OffsetDateTime {
+        self.end_time
+    }
+
+    /// The final operation status (HTTP + Cosmos sub-status), if recorded.
+    pub fn final_status(&self) -> Option<&CosmosStatus> {
+        self.final_status.as_ref()
+    }
+
+    /// Total number of requests recorded (attempts + hedge legs).
+    pub fn request_count(&self) -> usize {
+        self.request_count
+    }
+
+    /// Number of retried requests.
+    pub fn retry_count(&self) -> usize {
+        self.retry_count
+    }
+
+    /// Number of throttled (HTTP 429) requests.
+    pub fn throttled_count(&self) -> usize {
+        self.throttled_count
+    }
+
+    /// Total request charge (RU) across all requests.
+    pub fn total_request_charge(&self) -> RequestCharge {
+        self.total_request_charge
+    }
+
+    /// Total operation elapsed time, in milliseconds.
+    pub fn total_duration_ms(&self) -> u64 {
+        self.total_duration_ms
+    }
+
+    /// Distinct regions contacted (normalized names), sorted.
+    pub fn regions_contacted(&self) -> &[String] {
+        &self.regions_contacted
+    }
+
+    /// The first error message observed across the requests, if any.
+    pub fn top_error(&self) -> Option<&str> {
+        self.top_error.as_deref()
+    }
+
+    /// The client User-Agent string for the operation (SDK + runtime identity), if recorded.
+    pub fn user_agent(&self) -> Option<&str> {
+        self.user_agent.as_deref()
+    }
+}
+
 /// Diagnostics output structure for JSON serialization.
 #[derive(Serialize)]
 struct DiagnosticsOutput<'a> {
+    /// Aggregatable roll-up, emitted first (like .NET's top-level Summary block).
+    summary: &'a DiagnosticsSummary,
     activity_id: &'a ActivityId,
+    /// Wall-clock operation start, serialized as an RFC 3339 string.
+    #[serde(serialize_with = "rfc3339::serialize")]
+    start_time: OffsetDateTime,
+    /// Wall-clock operation end, serialized as an RFC 3339 string.
+    #[serde(serialize_with = "rfc3339::serialize")]
+    end_time: OffsetDateTime,
     total_duration_ms: u64,
     total_request_charge: RequestCharge,
     request_count: usize,
@@ -1112,7 +1391,13 @@ struct DeduplicatedGroup {
 /// Truncated output indicator.
 #[derive(Serialize)]
 struct TruncatedOutput<'a> {
+    /// Aggregatable roll-up, retained even when the detail is truncated.
+    summary: &'a DiagnosticsSummary,
     activity_id: &'a ActivityId,
+    #[serde(serialize_with = "rfc3339::serialize")]
+    start_time: OffsetDateTime,
+    #[serde(serialize_with = "rfc3339::serialize")]
+    end_time: OffsetDateTime,
     total_duration_ms: u64,
     request_count: usize,
     truncated: bool,
@@ -1231,6 +1516,9 @@ pub(crate) struct DiagnosticsContextBuilder {
     /// When this operation started.
     started_at: Instant,
 
+    /// Wall-clock time the operation started (for the absolute `start_time` timestamp).
+    start_time: OffsetDateTime,
+
     /// All request diagnostics collected during this operation.
     ///
     /// `Vec<T>` in Rust guarantees insertion order, so requests are stored in
@@ -1248,6 +1536,10 @@ pub(crate) struct DiagnosticsContextBuilder {
 
     /// Machine identifier (VM ID on Azure, generated UUID otherwise).
     machine_id: Option<Arc<String>>,
+
+    /// Client User-Agent string (SDK + runtime identity) for this operation, surfaced in the
+    /// summary. `None` until the driver supplies it.
+    user_agent: Option<Arc<str>>,
 
     /// Whether fault injection is enabled for this operation's runtime.
     #[cfg(feature = "fault_injection")]
@@ -1268,11 +1560,13 @@ impl DiagnosticsContextBuilder {
         Self {
             activity_id,
             started_at: Instant::now(),
+            start_time: OffsetDateTime::now_utc(),
             requests: Vec::with_capacity(4), // Expect 1-4 requests in most cases
             status: None,
             options,
             cpu_monitor: None,
             machine_id: None,
+            user_agent: None,
             #[cfg(feature = "fault_injection")]
             fault_injection_enabled: false,
             hedge_diagnostics: None,
@@ -1289,6 +1583,11 @@ impl DiagnosticsContextBuilder {
     /// Sets the machine identifier (from [`VmMetadataService`](crate::system::VmMetadataService)).
     pub(crate) fn set_machine_id(&mut self, machine_id: Arc<String>) {
         self.machine_id = Some(machine_id);
+    }
+
+    /// Sets the client User-Agent string (SDK + runtime identity), surfaced in the summary.
+    pub(crate) fn set_user_agent(&mut self, user_agent: Arc<str>) {
+        self.user_agent = Some(user_agent);
     }
 
     /// Sets the hedging diagnostics for this operation.
@@ -1308,11 +1607,13 @@ impl DiagnosticsContextBuilder {
         Self {
             activity_id: self.activity_id.clone(),
             started_at: Instant::now(),
+            start_time: OffsetDateTime::now_utc(),
             requests: Vec::with_capacity(2),
             status: None,
             options: Arc::clone(&self.options),
             cpu_monitor: self.cpu_monitor.clone(),
             machine_id: self.machine_id.clone(),
+            user_agent: self.user_agent.clone(),
             #[cfg(feature = "fault_injection")]
             fault_injection_enabled: self.fault_injection_enabled,
             hedge_diagnostics: None,
@@ -1562,11 +1863,21 @@ impl DiagnosticsContextBuilder {
     /// shared via `Arc` without any locking overhead.
     pub(crate) fn complete(self) -> DiagnosticsContext {
         let duration = self.started_at.elapsed();
+        let start_time = self.start_time;
+        let end_time = OffsetDateTime::now_utc();
+        // The aggregatable summary is computed lazily on first access (see `DiagnosticsContext::
+        // summary`), not here — a fast-success caller that never reads the summary or serializes the
+        // context pays nothing for it. The reduction inputs (requests, status, timing, user agent)
+        // are all retained on the context.
         DiagnosticsContext {
             activity_id: self.activity_id,
             duration,
+            start_time,
+            end_time,
             requests: Arc::new(self.requests),
             status: self.status,
+            user_agent: self.user_agent,
+            summary: OnceLock::new(),
             options: self.options,
             cpu_monitor: self.cpu_monitor,
             machine_id: self.machine_id,
@@ -1627,6 +1938,12 @@ pub struct DiagnosticsContext {
     /// Total duration of the operation (from start to completion).
     duration: Duration,
 
+    /// Wall-clock time the operation started.
+    start_time: OffsetDateTime,
+
+    /// Wall-clock time the operation finished (set at `complete()`).
+    end_time: OffsetDateTime,
+
     /// All request diagnostics (shared via `Arc` for efficient multi-read).
     ///
     /// `Vec<T>` in Rust guarantees insertion order, so requests are stored in
@@ -1635,6 +1952,14 @@ pub struct DiagnosticsContext {
 
     /// Operation-level combined HTTP status and sub-status (final status after retries).
     status: Option<CosmosStatus>,
+
+    /// User agent retained so [`summary()`](Self::summary) can be computed lazily on first access.
+    user_agent: Option<Arc<str>>,
+
+    /// Aggregatable roll-up over `requests`, computed **lazily** on first access to
+    /// [`summary()`](Self::summary) via `OnceLock` — never on the hot path, and only if a caller
+    /// actually reads the summary or serializes the context.
+    summary: OnceLock<DiagnosticsSummary>,
 
     /// Reference to diagnostics configuration.
     options: Arc<DiagnosticsOptions>,
@@ -1713,6 +2038,7 @@ impl DiagnosticsContext {
     /// Returns `None` only when `sources` is empty.
     pub(crate) fn aggregate_sub_operations(sources: &[Arc<DiagnosticsContext>]) -> Option<Self> {
         let last = sources.last()?;
+        let first = sources.first()?;
         let aggregated_requests: Vec<RequestDiagnostics> = sources
             .iter()
             .flat_map(|c| c.requests.iter().cloned())
@@ -1721,11 +2047,18 @@ impl DiagnosticsContext {
             .iter()
             .map(|c| c.duration)
             .fold(Duration::ZERO, |a, b| a.saturating_add(b));
+        // The aggregated operation spans the first sub-op's start to the last sub-op's end.
+        let start_time = first.start_time;
+        let end_time = last.end_time;
         Some(DiagnosticsContext {
             activity_id: last.activity_id.clone(),
             duration: aggregated_duration,
+            start_time,
+            end_time,
             requests: Arc::new(aggregated_requests),
             status: last.status,
+            user_agent: last.user_agent.clone(),
+            summary: OnceLock::new(),
             options: Arc::clone(&last.options),
             cpu_monitor: last.cpu_monitor.clone(),
             machine_id: last.machine_id.clone(),
@@ -1750,11 +2083,70 @@ impl DiagnosticsContext {
         self.duration
     }
 
+    /// Returns the wall-clock time at which the operation started.
+    ///
+    /// Serialized as an RFC 3339 / ISO 8601 timestamp in the diagnostics output. Use [`duration`]
+    /// for precise elapsed time; this absolute timestamp is for correlating against server-side
+    /// and external logs.
+    ///
+    /// [`duration`]: Self::duration
+    pub fn start_time(&self) -> OffsetDateTime {
+        self.start_time
+    }
+
+    /// Returns the wall-clock time at which the operation completed.
+    ///
+    /// Serialized as an RFC 3339 / ISO 8601 timestamp in the diagnostics output.
+    pub fn end_time(&self) -> OffsetDateTime {
+        self.end_time
+    }
+
     /// Returns the operation-level combined HTTP status and sub-status code.
     ///
     /// This is the final status after all retries and failovers.
     pub fn status(&self) -> Option<&CosmosStatus> {
         self.status.as_ref()
+    }
+
+    /// Returns the aggregatable [`DiagnosticsSummary`] for this operation.
+    ///
+    /// The summary is a `.NET CosmosDiagnostics`-style roll-up (status/sub-status histogram,
+    /// retry/throttle counts, total RU, regions, final status, top error, total elapsed). It is
+    /// computed **lazily** on first access (a reduction over the requests) and cached via
+    /// `OnceLock`, so an operation whose diagnostics are never inspected pays nothing for it.
+    pub fn summary(&self) -> &DiagnosticsSummary {
+        self.summary.get_or_init(|| {
+            DiagnosticsSummary::compute(
+                &self.requests,
+                self.status,
+                self.duration,
+                self.start_time,
+                self.end_time,
+                self.user_agent.as_deref().map(str::to_string),
+            )
+        })
+    }
+
+    /// Encodes the diagnostics to a string using the given [`DiagnosticsEncoding`].
+    ///
+    /// - [`DiagnosticsEncoding::Json`] — pretty-printed, human-readable JSON.
+    /// - [`DiagnosticsEncoding::Compact`] — minified JSON (same content, smallest text form).
+    /// - [`DiagnosticsEncoding::Encoded`] — base64 of the compact JSON, for size-sensitive logging;
+    ///   decode with standard base64 then parse the JSON.
+    ///
+    /// All encodings carry the full detailed diagnostics (including the top-level `summary`).
+    pub fn encode(&self, encoding: DiagnosticsEncoding) -> String {
+        let compact = self.to_json_string(Some(DiagnosticsVerbosity::Detailed));
+        match encoding {
+            DiagnosticsEncoding::Compact => compact.to_string(),
+            DiagnosticsEncoding::Json => serde_json::from_str::<serde_json::Value>(compact)
+                .and_then(|v| serde_json::to_string_pretty(&v))
+                .unwrap_or_else(|_| compact.to_string()),
+            DiagnosticsEncoding::Encoded => {
+                use base64::Engine as _;
+                base64::engine::general_purpose::STANDARD.encode(compact.as_bytes())
+            }
+        }
     }
 
     /// Returns the total request charge (RU) across all requests.
@@ -1865,7 +2257,10 @@ impl DiagnosticsContext {
         let total_duration_ms = self.duration.as_millis() as u64;
         let system_usage = self.resolve_system_usage();
         let output = DiagnosticsOutput {
+            summary: self.summary(),
             activity_id: &self.activity_id,
+            start_time: self.start_time,
+            end_time: self.end_time,
             total_duration_ms,
             total_request_charge: self.requests.iter().map(|r| r.request_charge).sum(),
             request_count: self.requests.len(),
@@ -1901,7 +2296,10 @@ impl DiagnosticsContext {
         region_summaries.sort_by(|a, b| a.region.cmp(&b.region));
 
         let output = DiagnosticsOutput {
+            summary: self.summary(),
             activity_id: &self.activity_id,
+            start_time: self.start_time,
+            end_time: self.end_time,
             total_duration_ms,
             total_request_charge: self.requests.iter().map(|r| r.request_charge).sum(),
             request_count: self.requests.len(),
@@ -1921,7 +2319,10 @@ impl DiagnosticsContext {
         } else {
             // Return a truncated indicator
             let truncated = TruncatedOutput {
+                summary: self.summary(),
                 activity_id: &self.activity_id,
+                start_time: self.start_time,
+                end_time: self.end_time,
                 total_duration_ms,
                 request_count: self.requests.len(),
                 truncated: true,
@@ -1939,8 +2340,19 @@ impl Clone for DiagnosticsContext {
         Self {
             activity_id: self.activity_id.clone(),
             duration: self.duration,
+            start_time: self.start_time,
+            end_time: self.end_time,
             requests: Arc::clone(&self.requests),
             status: self.status,
+            user_agent: self.user_agent.clone(),
+            // `OnceLock` is not `Clone`; propagate any already-computed summary into a fresh lock
+            // (and leave it unset otherwise so the clone stays lazy too).
+            summary: self
+                .summary
+                .get()
+                .cloned()
+                .map(OnceLock::from)
+                .unwrap_or_default(),
             options: Arc::clone(&self.options),
             cpu_monitor: self.cpu_monitor.clone(),
             machine_id: self.machine_id.clone(),
@@ -2116,6 +2528,19 @@ mod tests {
         builder.complete()
     }
 
+    #[test]
+    fn builder_records_fully() {
+        let mut builder = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("on-op".to_string()),
+            make_options(),
+        );
+        let h = builder.start_test_request(ExecutionContext::Initial, None, "https://acct/");
+        assert_eq!(h.0, 0);
+        builder.complete_request(h, StatusCode::Ok, None);
+        let ctx = builder.complete();
+        assert_eq!(ctx.request_count(), 1);
+    }
+
     /// Helper extension trait for test-friendly start_request.
     trait TestBuilderExt {
         fn start_test_request(
@@ -2165,6 +2590,14 @@ mod tests {
                     serde_json::Value::Number(0.into()),
                 );
             }
+            // The top-level `summary` block is exercised by dedicated summary tests; strip it here
+            // so the structural golden tests stay focused on the requests/regions/system fields and
+            // are unaffected by the summary's timing-dependent `total_duration_ms`.
+            obj.remove("summary");
+            // Wall-clock timestamps are non-deterministic; strip them here and assert their
+            // presence/format in dedicated timestamp tests instead.
+            obj.remove("start_time");
+            obj.remove("end_time");
         }
 
         // Normalize duration_ms in individual requests (detailed mode)
@@ -2177,6 +2610,9 @@ mod tests {
                             serde_json::Value::Number(0.into()),
                         );
                     }
+                    // Per-attempt wall-clock timestamps are non-deterministic.
+                    obj.remove("start_time");
+                    obj.remove("end_time");
                 }
             }
         }
@@ -2461,6 +2897,232 @@ mod tests {
     }
 
     #[test]
+    fn summary_aggregates_typical_success() {
+        let ctx = make_context_with(ActivityId::from_string("sum-typical".to_string()), |b| {
+            let h = b.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::new("East US")),
+                "https://e/",
+            );
+            b.update_request(h, |r| r.request_charge = RequestCharge::new(2.5));
+            b.complete_request(h, StatusCode::Ok, None);
+            b.set_operation_status(StatusCode::Ok, None);
+        });
+        let s = ctx.summary();
+        assert_eq!(s.request_count(), 1);
+        assert_eq!(s.retry_count(), 0);
+        assert_eq!(s.throttled_count(), 0);
+        assert_eq!(s.total_request_charge(), RequestCharge::new(2.5));
+        assert_eq!(s.regions_contacted(), ["eastus".to_string()]);
+        assert_eq!(
+            s.final_status().map(|st| u16::from(st.status_code())),
+            Some(200)
+        );
+        assert!(s.top_error().is_none());
+    }
+
+    #[test]
+    fn summary_carries_user_agent_when_set() {
+        let ctx = make_context_with(ActivityId::from_string("sum-ua".to_string()), |b| {
+            b.set_user_agent(Arc::from("azsdk-rust-cosmos/1.0 (test)"));
+            let h = b.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::new("East US")),
+                "https://e/",
+            );
+            b.complete_request(h, StatusCode::Ok, None);
+            b.set_operation_status(StatusCode::Ok, None);
+        });
+        let s = ctx.summary();
+        assert_eq!(s.user_agent(), Some("azsdk-rust-cosmos/1.0 (test)"));
+        // The user agent is serialized inside the top-level summary block (whitespace-independent).
+        let json = ctx.to_json_string(None);
+        assert!(
+            json.contains("\"user_agent\"") && json.contains("azsdk-rust-cosmos/1.0 (test)"),
+            "user_agent should appear in the diagnostics JSON: {json}"
+        );
+    }
+
+    #[test]
+    fn summary_omits_user_agent_when_unset() {
+        let ctx = make_context_with(ActivityId::from_string("sum-no-ua".to_string()), |b| {
+            let h = b.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::new("East US")),
+                "https://e/",
+            );
+            b.complete_request(h, StatusCode::Ok, None);
+            b.set_operation_status(StatusCode::Ok, None);
+        });
+        let s = ctx.summary();
+        assert!(s.user_agent().is_none());
+        // Absent => no `user_agent` key, so existing output is unchanged.
+        assert!(!ctx.to_json_string(None).contains("user_agent"));
+    }
+
+    #[test]
+    fn summary_aggregates_retry_and_throttle() {
+        let ctx = make_context_with(ActivityId::from_string("sum-retry".to_string()), |b| {
+            let h1 = b.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::new("East US")),
+                "https://e/",
+            );
+            b.update_request(h1, |r| r.request_charge = RequestCharge::new(4.2));
+            b.complete_request(
+                h1,
+                StatusCode::TooManyRequests,
+                Some(SubStatusCode::new(3200)),
+            );
+            let h2 = b.start_test_request(
+                ExecutionContext::Retry,
+                Some(Region::new("East US")),
+                "https://e/",
+            );
+            b.update_request(h2, |r| r.request_charge = RequestCharge::new(4.2));
+            b.complete_request(h2, StatusCode::Ok, None);
+            b.set_operation_status(StatusCode::Ok, None);
+        });
+        let s = ctx.summary();
+        assert_eq!(s.request_count(), 2);
+        assert_eq!(s.retry_count(), 1, "one Retry request");
+        assert_eq!(s.throttled_count(), 1, "one 429");
+        assert_eq!(s.total_request_charge(), RequestCharge::new(8.4));
+        assert!(s.top_error().is_none());
+
+        // The (status, sub-status) histogram is serialized; assert both entries are present.
+        let value = serde_json::to_value(s).expect("summary serializes");
+        let counts = value["status_counts"]
+            .as_array()
+            .expect("status_counts array");
+        assert_eq!(counts.len(), 2);
+        // Sorted by status then sub-status: 200 first, then 429/3200.
+        assert_eq!(counts[0]["status"], 200);
+        assert_eq!(counts[0]["count"], 1);
+        assert_eq!(counts[1]["status"], 429);
+        assert_eq!(counts[1]["sub_status"], 3200);
+        assert_eq!(counts[1]["count"], 1);
+    }
+
+    #[test]
+    fn summary_aggregates_error() {
+        let ctx = make_context_with(ActivityId::from_string("sum-error".to_string()), |b| {
+            let h = b.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::new("East US")),
+                "https://e/",
+            );
+            b.fail_transport_request(
+                h,
+                "connection refused",
+                RequestSentStatus::NotSent,
+                CosmosStatus::from_parts(StatusCode::ServiceUnavailable, None),
+            );
+            b.set_operation_status(StatusCode::ServiceUnavailable, None);
+        });
+        let s = ctx.summary();
+        assert_eq!(s.request_count(), 1);
+        assert_eq!(s.top_error(), Some("connection refused"));
+        assert_eq!(
+            s.final_status().map(|st| u16::from(st.status_code())),
+            Some(503)
+        );
+    }
+
+    #[test]
+    fn summary_aggregates_hedged_legs() {
+        let ctx = make_context_with(ActivityId::from_string("sum-hedged".to_string()), |b| {
+            let h1 = b.start_test_request(
+                ExecutionContext::Hedging,
+                Some(Region::new("East US")),
+                "https://e/",
+            );
+            b.fail_transport_request(
+                h1,
+                "transport failure (no response)",
+                RequestSentStatus::Sent,
+                CosmosStatus::from_parts(StatusCode::ServiceUnavailable, None),
+            );
+            let h2 = b.start_test_request(
+                ExecutionContext::Hedging,
+                Some(Region::new("West US")),
+                "https://w/",
+            );
+            b.update_request(h2, |r| r.request_charge = RequestCharge::new(3.1));
+            b.complete_request(h2, StatusCode::Ok, None);
+            b.set_operation_status(StatusCode::Ok, None);
+        });
+        let s = ctx.summary();
+        assert_eq!(s.request_count(), 2);
+        assert_eq!(
+            s.regions_contacted(),
+            ["eastus".to_string(), "westus".to_string()]
+        );
+        assert_eq!(s.total_request_charge(), RequestCharge::new(3.1));
+        assert_eq!(s.top_error(), Some("transport failure (no response)"));
+        let value = serde_json::to_value(s).expect("summary serializes");
+        let counts = value["status_counts"]
+            .as_array()
+            .expect("status_counts array");
+        assert_eq!(counts.len(), 2, "200 and 503");
+    }
+
+    #[test]
+    fn summary_appears_at_top_of_detailed_json() {
+        let ctx = make_context_with(ActivityId::from_string("sum-top".to_string()), |b| {
+            let h = b.start_test_request(ExecutionContext::Initial, None, "https://e/");
+            b.complete_request(h, StatusCode::Ok, None);
+            b.set_operation_status(StatusCode::Ok, None);
+        });
+        let json = ctx.to_json_string(Some(DiagnosticsVerbosity::Detailed));
+        let value: serde_json::Value = serde_json::from_str(json).unwrap();
+        assert!(
+            value.get("summary").is_some(),
+            "detailed JSON carries a top-level summary block"
+        );
+        assert_eq!(value["summary"]["request_count"], 1);
+    }
+
+    #[test]
+    fn encode_modes_roundtrip() {
+        use base64::Engine as _;
+        let ctx = make_context_with(ActivityId::from_string("enc-id".to_string()), |b| {
+            let h = b.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::new("East US")),
+                "https://e/",
+            );
+            b.update_request(h, |r| r.request_charge = RequestCharge::new(1.5));
+            b.complete_request(h, StatusCode::Ok, None);
+            b.set_operation_status(StatusCode::Ok, None);
+        });
+
+        let compact = ctx.encode(DiagnosticsEncoding::Compact);
+        let pretty = ctx.encode(DiagnosticsEncoding::Json);
+        let encoded = ctx.encode(DiagnosticsEncoding::Encoded);
+
+        // Compact equals the detailed JSON; pretty is the same content, just formatted.
+        assert_eq!(
+            compact,
+            ctx.to_json_string(Some(DiagnosticsVerbosity::Detailed))
+        );
+        assert!(!compact.contains('\n'), "compact is single-line");
+        assert!(pretty.contains('\n'), "json is pretty-printed");
+        let pretty_value: serde_json::Value = serde_json::from_str(&pretty).unwrap();
+        let compact_value: serde_json::Value = serde_json::from_str(&compact).unwrap();
+        assert_eq!(
+            pretty_value, compact_value,
+            "Json and Compact carry the same data"
+        );
+
+        // Encoded is base64 of the compact JSON and round-trips losslessly.
+        let decoded = base64::engine::general_purpose::STANDARD
+            .decode(encoded.as_bytes())
+            .expect("encoded is valid base64");
+        assert_eq!(String::from_utf8(decoded).unwrap(), compact);
+    }
+
+    #[test]
     fn to_json_detailed_with_known_sub_status() {
         // Verifies that when a request completes with a sub-status that has
         // a well-known name (e.g. 3200 → RUBudgetExceeded), the serialized
@@ -2588,6 +3250,67 @@ mod tests {
             }]
         });
         assert_eq!(actual, expected, "Summary JSON mismatch.\nActual:\n{json}");
+    }
+
+    #[test]
+    fn timestamps_present_and_rfc3339() {
+        // Wall-clock timestamps must be captured on the context, the summary, and each attempt, and
+        // must serialize as RFC 3339 strings in both Detailed and Summary verbosities.
+        let before = OffsetDateTime::now_utc();
+        let ctx = make_context_with(ActivityId::from_string("ts-test".to_string()), |builder| {
+            let handle = builder.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::WEST_US_2),
+                "https://test.documents.azure.com",
+            );
+            builder.complete_request(handle, StatusCode::Ok, None);
+        });
+        let after = OffsetDateTime::now_utc();
+
+        // Accessor-level: context start/end are within the wall-clock window and ordered.
+        assert!(ctx.start_time() >= before && ctx.start_time() <= after);
+        assert!(ctx.end_time() >= ctx.start_time() && ctx.end_time() <= after);
+        // Summary carries the same operation window.
+        assert_eq!(ctx.summary().start_time(), ctx.start_time());
+        assert_eq!(ctx.summary().end_time(), ctx.end_time());
+        // The single attempt has a start time and a completion (end) time.
+        let req = &ctx.requests()[0];
+        assert!(req.start_time() >= before && req.start_time() <= after);
+        let req_end = req.end_time().expect("completed attempt has an end_time");
+        assert!(req_end >= req.start_time() && req_end <= after);
+
+        // Serialized form: RFC 3339 strings at the top level and per attempt (Detailed).
+        let detailed: serde_json::Value =
+            serde_json::from_str(&ctx.to_json_string(Some(DiagnosticsVerbosity::Detailed)))
+                .expect("detailed JSON parses");
+        for key in ["start_time", "end_time"] {
+            let s = detailed[key].as_str().unwrap_or_else(|| {
+                panic!("top-level `{key}` missing or not a string in {detailed}")
+            });
+            azure_core::time::parse_rfc3339(s)
+                .unwrap_or_else(|e| panic!("top-level `{key}` not RFC3339 ({s}): {e}"));
+        }
+        let req_json = &detailed["requests"][0];
+        let attempt_start = req_json["start_time"]
+            .as_str()
+            .expect("attempt start_time present");
+        azure_core::time::parse_rfc3339(attempt_start).expect("attempt start_time is RFC3339");
+        let attempt_end = req_json["end_time"]
+            .as_str()
+            .expect("attempt end_time present for a completed attempt");
+        azure_core::time::parse_rfc3339(attempt_end).expect("attempt end_time is RFC3339");
+
+        // Summary verbosity also surfaces the top-level operation timestamps.
+        let summary: serde_json::Value =
+            serde_json::from_str(&ctx.to_json_string(Some(DiagnosticsVerbosity::Summary)))
+                .expect("summary JSON parses");
+        for key in ["start_time", "end_time"] {
+            let s = summary[key]
+                .as_str()
+                .unwrap_or_else(|| panic!("summary-mode top-level `{key}` missing in {summary}"));
+            azure_core::time::parse_rfc3339(s)
+                .unwrap_or_else(|e| panic!("summary-mode `{key}` not RFC3339 ({s}): {e}"));
+        }
     }
 
     #[test]
@@ -3003,6 +3726,37 @@ mod tests {
             Duration::from_millis(50),
         );
         assert_eq!(event.duration_ms, Some(50));
+    }
+
+    #[test]
+    fn added_events_carry_stage_durations() {
+        // Events recorded on a request must always carry a stage duration, so the
+        // serialized `duration_ms` is a real number rather than `null`.
+        let endpoint = CosmosEndpoint::global(url::Url::parse("https://acct/").unwrap());
+        let mut request = RequestDiagnostics::new(
+            ExecutionContext::Initial,
+            PipelineType::DataPlane,
+            TransportSecurity::Secure,
+            TransportKind::Gateway,
+            TransportHttpVersion::Http2,
+            &endpoint,
+        );
+
+        request.add_event(RequestEvent::new(RequestEventType::TransportStart));
+        request.add_event(RequestEvent::new(RequestEventType::ResponseHeadersReceived));
+
+        assert_eq!(request.events.len(), 2);
+        assert!(
+            request.events.iter().all(|e| e.duration_ms.is_some()),
+            "every recorded event should carry a stage duration"
+        );
+
+        // A caller-provided duration is preserved rather than overwritten.
+        request.add_event(RequestEvent::with_duration(
+            RequestEventType::TransportComplete,
+            Duration::from_millis(7),
+        ));
+        assert_eq!(request.events[2].duration_ms, Some(7));
     }
 
     // =========================================================================

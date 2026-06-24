@@ -32,7 +32,7 @@ mod throughput_control;
 pub use availability_strategy::{AvailabilityStrategy, HedgeThreshold, HedgingStrategy};
 pub use connection_pool::{ConnectionPoolOptions, ConnectionPoolOptionsBuilder};
 pub use diagnostics_options::{
-    DiagnosticsOptions, DiagnosticsOptionsBuilder, DiagnosticsVerbosity,
+    DiagnosticsEncoding, DiagnosticsOptions, DiagnosticsOptionsBuilder, DiagnosticsVerbosity,
 };
 pub use driver_options::{DriverOptions, DriverOptionsBuilder};
 pub(crate) use env_parsing::parse_duration_millis_from_env;

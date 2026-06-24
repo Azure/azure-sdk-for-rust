@@ -543,6 +543,7 @@ dependencies = [
  "backtrace",
  "base64 0.22.1",
  "bytes",
+ "criterion",
  "crossbeam-epoch",
  "futures",
  "h2",

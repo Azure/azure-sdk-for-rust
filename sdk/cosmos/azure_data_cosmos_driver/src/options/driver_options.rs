@@ -58,6 +58,16 @@ pub struct DriverOptions {
     /// endpoints matching these regions appear first. Regions that don't match
     /// any account endpoint are silently skipped.
     preferred_regions: Vec<Region>,
+    /// Diagnostics exposure-gate policy ([`crate::diagnostics::capture`]). The gate decides whether
+    /// the always-on `DiagnosticsContextBuilder`-produced [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext)
+    /// is exposed via `capture_diagnostics()`. Defaults to
+    /// [`Mode::Always`](crate::diagnostics::capture::Mode::Always) so diagnostics are exposed
+    /// out-of-the-box; configurable to `Threshold` to expose only slow/errored operations.
+    capture_diagnostics_policy: crate::diagnostics::capture::DiagnosticsPolicy,
+    /// How [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext) is rendered to a string
+    /// (`Json` / `Compact` / `Encoded`). Defaults to
+    /// [`DiagnosticsEncoding::Json`](crate::options::DiagnosticsEncoding::Json).
+    diagnostics_encoding: crate::options::DiagnosticsEncoding,
     /// Optional driver-level override for the User-Agent suffix.
     ///
     /// When `Some`, this driver stamps requests with a User-Agent computed from
@@ -119,6 +129,17 @@ impl DriverOptions {
         &self.preferred_regions
     }
 
+    /// Returns the diagnostics **capture** policy ([`crate::diagnostics::capture`]).
+    pub fn capture_diagnostics_policy(&self) -> crate::diagnostics::capture::DiagnosticsPolicy {
+        self.capture_diagnostics_policy
+    }
+
+    /// Returns the configured diagnostics string encoding (defaults to
+    /// [`DiagnosticsEncoding::Json`](crate::options::DiagnosticsEncoding::Json)).
+    pub fn diagnostics_encoding(&self) -> crate::options::DiagnosticsEncoding {
+        self.diagnostics_encoding
+    }
+
     /// Returns the driver-level User-Agent suffix override, if any.
     pub fn user_agent_suffix(&self) -> Option<&UserAgentSuffix> {
         self.user_agent_suffix.as_ref()
@@ -158,6 +179,8 @@ pub struct DriverOptionsBuilder {
     account: AccountReference,
     operation_options: Option<OperationOptions>,
     preferred_regions: Vec<Region>,
+    capture_diagnostics_policy: crate::diagnostics::capture::DiagnosticsPolicy,
+    diagnostics_encoding: crate::options::DiagnosticsEncoding,
     user_agent_suffix: Option<UserAgentSuffix>,
     #[cfg(feature = "fault_injection")]
     fault_injection_rules: Option<Vec<Arc<FaultInjectionRule>>>,
@@ -172,6 +195,8 @@ impl DriverOptionsBuilder {
             account,
             operation_options: None,
             preferred_regions: Vec::new(),
+            capture_diagnostics_policy: crate::diagnostics::capture::DiagnosticsPolicy::default(),
+            diagnostics_encoding: crate::options::DiagnosticsEncoding::default(),
             user_agent_suffix: None,
             #[cfg(feature = "fault_injection")]
             fault_injection_rules: None,
@@ -193,6 +218,41 @@ impl DriverOptionsBuilder {
     /// and writes. Regions not present in the account are silently skipped.
     pub fn with_preferred_regions(mut self, regions: Vec<Region>) -> Self {
         self.preferred_regions = regions;
+        self
+    }
+
+    /// Sets the diagnostics exposure-gate policy ([`crate::diagnostics::capture`]).
+    ///
+    /// The gate is an operation-end policy that governs whether the always-on
+    /// `DiagnosticsContextBuilder`-produced [`DiagnosticsContext`] is exposed through
+    /// `CosmosResponse::capture_diagnostics()` / `CosmosError::capture_diagnostics()`. It does not
+    /// build the context (the pipeline does). Defaults to
+    /// [`Mode::Always`](crate::diagnostics::capture::Mode::Always) — diagnostics are exposed
+    /// out-of-the-box. Set [`Mode::Threshold`](crate::diagnostics::capture::Mode::Threshold) to
+    /// expose only slow or errored operations. Diagnostics are always *collected*; the gate only
+    /// governs *exposure*. The prototype event-log capture engine behind the `capture_engine`
+    /// feature is not involved in this default path.
+    ///
+    /// [`DiagnosticsContext`]: crate::diagnostics::DiagnosticsContext
+    pub fn with_capture_diagnostics_policy(
+        mut self,
+        policy: crate::diagnostics::capture::DiagnosticsPolicy,
+    ) -> Self {
+        self.capture_diagnostics_policy = policy;
+        self
+    }
+
+    /// Sets how [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext) is rendered to a
+    /// string by [`encode`](crate::diagnostics::DiagnosticsContext::encode) and
+    /// [`CosmosResponse::diagnostics_string`](crate::models::CosmosResponse::diagnostics_string).
+    ///
+    /// Defaults to [`DiagnosticsEncoding::Json`](crate::options::DiagnosticsEncoding::Json), so
+    /// existing output is unchanged.
+    pub fn with_diagnostics_encoding(
+        mut self,
+        encoding: crate::options::DiagnosticsEncoding,
+    ) -> Self {
+        self.diagnostics_encoding = encoding;
         self
     }
 
@@ -299,6 +359,8 @@ impl DriverOptionsBuilder {
             account: self.account,
             operation_options: Arc::new(self.operation_options.unwrap_or_default()),
             preferred_regions: self.preferred_regions,
+            capture_diagnostics_policy: self.capture_diagnostics_policy,
+            diagnostics_encoding: self.diagnostics_encoding,
             user_agent_suffix: self.user_agent_suffix,
             #[cfg(feature = "fault_injection")]
             fault_injection_rules: self.fault_injection_rules.filter(|r| !r.is_empty()),
@@ -391,5 +453,29 @@ mod tests {
             .build();
 
         assert_eq!(options.preferred_regions(), &regions);
+    }
+
+    #[test]
+    fn capture_diagnostics_policy_defaults_always_and_is_configurable() {
+        use crate::diagnostics::capture::{DiagnosticsPolicy, Mode};
+        use std::time::Duration;
+
+        let default_options = DriverOptionsBuilder::new(test_account()).build();
+        assert_eq!(
+            default_options.capture_diagnostics_policy().mode,
+            Mode::Always
+        );
+
+        let configured = DriverOptionsBuilder::new(test_account())
+            .with_capture_diagnostics_policy(DiagnosticsPolicy::threshold(Duration::from_millis(5)))
+            .build();
+        assert_eq!(
+            configured.capture_diagnostics_policy().mode,
+            Mode::Threshold
+        );
+        assert_eq!(
+            configured.capture_diagnostics_policy().latency_threshold,
+            Some(Duration::from_millis(5))
+        );
     }
 }

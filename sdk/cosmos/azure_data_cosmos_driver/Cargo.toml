@@ -41,6 +41,7 @@ uuid = { workspace = true, features = ["v4", "fast-rng"] }
 
 [dev-dependencies]
 azure_identity.workspace = true
+criterion.workspace = true
 quick-xml.workspace = true
 serde = { workspace = true, features = ["derive"] }
 tokio = { workspace = true, features = [
@@ -77,6 +78,15 @@ reqwest = [
 rustls = ["reqwest", "reqwest/rustls", "__tls"]
 native_tls = ["reqwest", "reqwest/native-tls", "__tls"]
 fault_injection = ["dep:rand"]
+# `capture_engine` exposes the prototype deferred, append-only diagnostics
+# **capture** engine (`diagnostics::capture::{event, context, encode, pool,
+# recorder}` plus `gate::finish`). It is OFF by default and is NOT
+# production-ready: the shipping diagnostics path is the always-on
+# `DiagnosticsContextBuilder` and the unconditional Off/Threshold/Always gate.
+# The event-log engine is opt-in scaffolding for evaluating a future capture
+# -> reconstruct path (see DIAGNOSTICS-CAPTURE.md). It is not covered by SemVer
+# and may change or disappear at any time.
+capture_engine = []
 # `__internal_in_memory_emulator` exposes the in-memory query evaluator
 # (`crate::query::eval`, `crate::query::value`) used by the in-memory Cosmos DB
 # emulator. The evaluator intentionally trades full Cosmos parity for emulator
@@ -135,3 +145,16 @@ required-features = ["__internal_testing"]
 name = "in_memory_emulator"
 path = "tests/in_memory_emulator.rs"
 required-features = ["__internal_in_memory_emulator"]
+
+# The capture-engine example tests exercise `diagnostics::capture::{recorder,
+# pool, finish}`, which only exist behind the off-by-default `capture_engine`
+# feature.
+[[test]]
+name = "diagnostics_examples"
+path = "tests/diagnostics_examples.rs"
+required-features = ["capture_engine"]
+
+[[bench]]
+name = "diagnostics_capture"
+harness = false
+required-features = ["capture_engine"]
