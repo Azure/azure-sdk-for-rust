@@ -8,9 +8,13 @@
 //! helpers here only resolve a final value from
 //! `builder override → pre-read env value → default` and validate it against
 //! bounds. A few driver-level helpers (`parse_duration_millis_from_env`,
-//! `parse_from_env`, `parse_optional_bool_from_env`) additionally read
-//! `std::env::var` directly for option builders that are not macro-generated;
-//! like the macro, they log and ignore a present-but-unparseable value
+//! `parse_from_env`, `parse_optional_bool_from_env`) additionally look up
+//! environment variables for option builders that are not macro-generated.
+//! Rather than calling `std::env::var` directly, they take a
+//! `get_env: &dyn Fn(&str) -> Option<String>` accessor (production passes
+//! `|k| std::env::var(k).ok()`; tests inject a deterministic map so option
+//! resolution can be exercised without racing on process-wide environment).
+//! Like the macro, they log and ignore a present-but-unparseable value
 //! (fail-soft) rather than erroring.
 
 use std::time::Duration;
@@ -161,10 +165,13 @@ pub(crate) fn resolve_duration_ms(
 /// Reads, resolves, and validates a millisecond-duration environment variable
 /// in a single call.
 ///
-/// Reads `env_var_name` itself (parsing it as `u64` milliseconds), then applies
-/// the shared `builder → env → default` resolution and bounds validation. This
-/// is the single duration env-reading path shared by the driver-level option
-/// builders (e.g. [`PartitionFailoverOptions`](crate::options::PartitionFailoverOptions))
+/// Looks up `env_var_name` through the supplied `get_env` accessor (parsing it
+/// as `u64` milliseconds), then applies the shared `builder → env → default`
+/// resolution and bounds validation. `get_env` is normally
+/// `|k| std::env::var(k).ok()`; tests inject a deterministic map so they don't
+/// race on process-wide environment. This is the single duration env-reading
+/// path shared by the driver-level option builders (e.g.
+/// [`PartitionFailoverOptions`](crate::options::PartitionFailoverOptions))
 /// and the runtime CPU-refresh interval.
 pub(crate) fn parse_duration_millis_from_env(
     builder_value: Option<Duration>,
@@ -172,8 +179,9 @@ pub(crate) fn parse_duration_millis_from_env(
     default_millis: u64,
     min_millis: u64,
     max_millis: u64,
+    get_env: &dyn Fn(&str) -> Option<String>,
 ) -> crate::error::Result<Duration> {
-    let env_millis = std::env::var(env_var_name).ok().and_then(|raw| {
+    let env_millis = get_env(env_var_name).and_then(|raw| {
         raw.parse::<u64>().ok().or_else(|| {
             // Fail-soft: a present-but-unparseable value is logged and ignored
             // (falls back to the default), matching the macro's lenient
@@ -203,11 +211,12 @@ pub(super) fn parse_from_env<T>(
     env_var_name: &str,
     default: T,
     bounds: ValidationBounds<T>,
+    get_env: &dyn Fn(&str) -> Option<String>,
 ) -> crate::error::Result<T>
 where
     T: PartialOrd + std::fmt::Debug + std::str::FromStr,
 {
-    let env_value = std::env::var(env_var_name).ok().and_then(|raw| {
+    let env_value = get_env(env_var_name).and_then(|raw| {
         raw.parse::<T>().ok().or_else(|| {
             // Fail-soft: a present-but-unparseable value is logged and ignored
             // (falls back to the default), matching the macro's lenient
@@ -235,12 +244,13 @@ where
 pub(super) fn parse_optional_bool_from_env(
     builder_value: Option<bool>,
     env_var_name: &str,
+    get_env: &dyn Fn(&str) -> Option<String>,
 ) -> Option<bool> {
     if let Some(value) = builder_value {
         return Some(value);
     }
 
-    let raw = std::env::var(env_var_name).ok()?;
+    let raw = get_env(env_var_name)?;
     match raw.trim().to_ascii_lowercase().as_str() {
         "true" | "1" | "yes" | "on" => Some(true),
         "false" | "0" | "no" | "off" => Some(false),
