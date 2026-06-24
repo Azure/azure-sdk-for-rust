@@ -321,6 +321,15 @@ impl Completion {
 struct QueueInner {
     deque: VecDeque<Box<Completion>>,
     state: CosmosCqState,
+    /// Count of operations that have been admitted by the submit pre-flight
+    /// (`reserve_in_flight`) but whose completion has not yet been drained by
+    /// the host. An op is in-flight for its whole submit → run → enqueue →
+    /// drain lifecycle. Gating the `SHUTDOWN` → `DRAINED` transition on this
+    /// reaching zero (in addition to an empty deque) prevents the queue from
+    /// declaring itself drained while an op is still running but has not yet
+    /// enqueued its completion — which would otherwise strand that op handle
+    /// `IN_FLIGHT` and leak the host continuation.
+    in_flight: u32,
 }
 
 /// Per-queue options. Mirrors `cosmos_cq_options_t` from spec section 3.1.2 — the
@@ -391,21 +400,38 @@ impl CompletionQueueInner {
         &self.runtime
     }
 
-    /// Returns this queue's capacity hard cap (0 = unbounded).
-    pub(crate) fn max_capacity(&self) -> u32 {
-        self.options.max_capacity
+    /// Atomically admits a new operation, reserving an in-flight slot for the
+    /// whole submit → run → enqueue → drain lifecycle. Used by the submit
+    /// pre-flight ([`crate::submit`]) instead of separate state/length checks
+    /// so the admission decision and the reservation happen under a single
+    /// lock acquisition.
+    ///
+    /// Rejects (without reserving) when the queue is no longer running
+    /// (`QUEUE_SHUTDOWN`) or — for a capacity-bounded queue — when it is
+    /// already at its hard cap (`QUEUE_FULL`). Reserving here, rather than
+    /// only checking at enqueue time, keeps `in_flight` an accurate count of
+    /// admitted-but-undrained ops so the `SHUTDOWN` → `DRAINED` transition
+    /// cannot race ahead of an op that is still running.
+    pub(crate) fn reserve_in_flight(&self) -> Result<(), CosmosErrorCode> {
+        let mut guard = self.inner.lock_recover();
+        if guard.state != CosmosCqState::CosmosCqStateRunning {
+            return Err(CosmosErrorCode::CosmosErrorCodeQueueShutdown);
+        }
+        if self.options.max_capacity > 0 && guard.deque.len() as u32 >= self.options.max_capacity {
+            return Err(CosmosErrorCode::CosmosErrorCodeQueueFull);
+        }
+        guard.in_flight += 1;
+        Ok(())
     }
 
-    /// Snapshots the current queue length under the mutex.
-    pub(crate) fn current_len(&self) -> usize {
-        self.inner.lock_recover().deque.len()
-    }
-
-    /// Snapshots the queue's current lifecycle state under the mutex.
-    /// Used by the submit pre-flight to reject submissions to a queue that
-    /// is already shutting down or drained before spawning a doomed task.
-    pub(crate) fn state(&self) -> CosmosCqState {
-        self.inner.lock_recover().state
+    /// Releases a previously-reserved in-flight slot without delivering a
+    /// completion. Used only on the rare pre-flight abort path (the operation
+    /// handle could not be allocated after the slot was reserved), so the
+    /// queue can still reach `DRAINED`.
+    pub(crate) fn release_in_flight(&self) {
+        let mut guard = self.inner.lock_recover();
+        guard.in_flight = guard.in_flight.saturating_sub(1);
+        maybe_mark_drained(&mut guard);
     }
 
     /// Returns whether this queue captures rich error payloads.
@@ -432,6 +458,7 @@ impl CompletionQueue {
                 inner: Mutex::new(QueueInner {
                     deque: VecDeque::new(),
                     state: CosmosCqState::CosmosCqStateRunning,
+                    in_flight: 0,
                 }),
                 data_available: Condvar::new(),
                 space_available: Condvar::new(),
@@ -488,22 +515,19 @@ impl CompletionQueue {
         mut c: Box<Completion>,
     ) -> CosmosErrorCode {
         let mut guard = inner.inner.lock_recover();
-        if guard.state != CosmosCqState::CosmosCqStateRunning {
-            return CosmosErrorCode::CosmosErrorCodeQueueShutdown;
-        }
-        if inner.options.max_capacity > 0 && guard.deque.len() as u32 >= inner.options.max_capacity
-        {
-            return CosmosErrorCode::CosmosErrorCodeQueueFull;
-        }
+
         // If the producer-side handle's cancel flag is set, mark the
         // completion so the receive loop can distinguish "cancel won" from
         // "cancel lost the race" per spec section 3.6.1.
         if c.op_inner.cancel_requested.load(Ordering::Acquire) {
             c.was_cancel_requested = true;
         }
-        // Reflect the final outcome on the operation handle's state field so
-        // `cosmos_operation_handle_state` reports the right answer to a
-        // producer that did not drain the queue.
+        // The terminal operation-handle state this completion implies. It is
+        // stored on *every* path below \u2014 whether the completion is delivered
+        // or rejected \u2014 so the op handle never stays stuck `IN_FLIGHT`: a host
+        // that observes the outcome via `cosmos_operation_handle_state` is
+        // always released and its `user_data` is always reclaimable (the
+        // exactly-one-completion invariant, spec section 3.6).
         let next_state = match c.outcome {
             CosmosCompletionOutcome::CosmosCompletionOutcomeOk => {
                 CosmosOperationHandleState::CosmosOperationHandleStateCompleted
@@ -518,6 +542,32 @@ impl CompletionQueue {
                 CosmosOperationHandleState::CosmosOperationHandleStateFailed
             }
         };
+
+        // A `DRAINED` queue has no consumer left (the host saw the queue empty
+        // after shutdown and stopped draining), so a late completion is
+        // dropped. `SHUTDOWN` (not yet drained) still *accepts* completions
+        // from already-admitted in-flight ops: shutdown only blocks *new*
+        // submissions, it must never strand work that was already running.
+        if guard.state == CosmosCqState::CosmosCqStateDrained {
+            c.op_inner.state.store(next_state as u8, Ordering::Release);
+            guard.in_flight = guard.in_flight.saturating_sub(1);
+            maybe_mark_drained(&mut guard);
+            return CosmosErrorCode::CosmosErrorCodeQueueShutdown;
+        }
+
+        // Capacity backstop. Per-submit reservation (`reserve_in_flight`)
+        // normally keeps the deque within bounds, but a burst of concurrent
+        // submits can still race it to the hard cap before any drains; reject
+        // the overflow rather than exceed the cap. The handle is still
+        // advanced to its terminal state so nothing is stranded.
+        if inner.options.max_capacity > 0 && guard.deque.len() as u32 >= inner.options.max_capacity
+        {
+            c.op_inner.state.store(next_state as u8, Ordering::Release);
+            guard.in_flight = guard.in_flight.saturating_sub(1);
+            maybe_mark_drained(&mut guard);
+            return CosmosErrorCode::CosmosErrorCodeQueueFull;
+        }
+
         c.op_inner.state.store(next_state as u8, Ordering::Release);
         guard.deque.push_back(c);
         inner.data_available.notify_one();
@@ -590,6 +640,7 @@ pub extern "C" fn cosmos_cq_wait(queue: *mut CompletionQueue, timeout_ms: u32) -
     if timeout_ms == 0 {
         // Poll-only: return immediately whatever's there (possibly nothing).
         if let Some(c) = guard.deque.pop_front() {
+            guard.in_flight = guard.in_flight.saturating_sub(1);
             inner.space_available.notify_one();
             maybe_mark_drained(&mut guard);
             return Box::into_raw(c);
@@ -605,16 +656,19 @@ pub extern "C" fn cosmos_cq_wait(queue: *mut CompletionQueue, timeout_ms: u32) -
 
     loop {
         if let Some(c) = guard.deque.pop_front() {
+            guard.in_flight = guard.in_flight.saturating_sub(1);
             inner.space_available.notify_one();
             maybe_mark_drained(&mut guard);
             return Box::into_raw(c);
         }
-        // Empty. If we've been shut down and there's nothing left, surface
-        // NULL immediately so the consumer can stop looping.
-        if guard.state == CosmosCqState::CosmosCqStateShutdown {
-            maybe_mark_drained(&mut guard);
-            return std::ptr::null_mut();
-        }
+        // Nothing ready. Promote to DRAINED if a requested shutdown has fully
+        // completed (no in-flight ops remain and the deque is empty) and only
+        // then surface NULL, so a consumer that called shutdown can stop
+        // looping. While ops are still in-flight we keep waiting so their
+        // completions are delivered (exactly-one-completion, spec section 3.6);
+        // those ops run on the Tokio runtime and will enqueue + signal
+        // `data_available`, so this cannot deadlock.
+        maybe_mark_drained(&mut guard);
         if guard.state == CosmosCqState::CosmosCqStateDrained {
             return std::ptr::null_mut();
         }
@@ -643,7 +697,14 @@ pub extern "C" fn cosmos_cq_wait(queue: *mut CompletionQueue, timeout_ms: u32) -
 }
 
 fn maybe_mark_drained(guard: &mut std::sync::MutexGuard<'_, QueueInner>) {
-    if guard.state == CosmosCqState::CosmosCqStateShutdown && guard.deque.is_empty() {
+    // DRAINED requires more than an empty deque: every admitted op must also
+    // have been drained (`in_flight == 0`). Without the in-flight check a
+    // queue could declare itself drained while an op is still running but has
+    // not yet enqueued its completion — stranding that op handle `IN_FLIGHT`.
+    if guard.state == CosmosCqState::CosmosCqStateShutdown
+        && guard.deque.is_empty()
+        && guard.in_flight == 0
+    {
         guard.state = CosmosCqState::CosmosCqStateDrained;
     }
 }
@@ -694,10 +755,15 @@ pub extern "C" fn cosmos_cq_wait_batch(
 /// or `timeout_ms` elapses.
 #[no_mangle]
 pub extern "C" fn cosmos_cq_wait_writable(queue: *mut CompletionQueue, timeout_ms: u32) -> bool {
-    let Some(q) = CompletionQueue::from_ptr(queue) else {
+    // Clone the `Arc<CompletionQueueInner>` (rather than borrowing the storage
+    // box) so the inner mutex/condvar this thread may park on outlives a
+    // concurrent `cosmos_cq_free`. This mirrors `cosmos_cq_wait`; borrowing the
+    // box here would otherwise leave a use-after-free window for a thread
+    // blocked in `space_available.wait(..)` when the producer frees the queue.
+    let Some(inner_arc) = CompletionQueue::inner_arc(queue) else {
         return false;
     };
-    let inner = &q.inner;
+    let inner = &*inner_arc;
     if inner.options.max_capacity == 0 {
         // Unbounded — always writable.
         return true;
@@ -750,23 +816,29 @@ pub extern "C" fn cosmos_cq_wait_writable(queue: *mut CompletionQueue, timeout_m
     }
 }
 
-/// Signal shutdown: marks the queue as shutting down, cancels in-flight ops,
-/// and wakes any thread blocked in
-/// `cosmos_cq_wait` / `_wait_writable` / `_wait_batch`. Idempotent.
+/// Signal shutdown: marks the queue as shutting down so no *new* submissions
+/// are accepted, and wakes any thread blocked in
+/// `cosmos_cq_wait` / `_wait_writable` / `_wait_batch`. Operations already
+/// in flight are left to run to completion — their completions are still
+/// accepted and can be drained — and the queue advances to `DRAINED` once the
+/// last in-flight op has been drained. Idempotent.
 #[no_mangle]
 pub extern "C" fn cosmos_cq_shutdown(queue: *mut CompletionQueue) {
-    let Some(q) = CompletionQueue::from_ptr(queue) else {
+    // Clone the `Arc` so the inner state survives a concurrent `cosmos_cq_free`
+    // while we hold the lock and signal the condvars.
+    let Some(inner_arc) = CompletionQueue::inner_arc(queue) else {
         return;
     };
-    let mut guard = q.inner.inner.lock_recover();
+    let inner = &*inner_arc;
+    let mut guard = inner.inner.lock_recover();
     if guard.state == CosmosCqState::CosmosCqStateRunning {
         guard.state = CosmosCqState::CosmosCqStateShutdown;
-        if guard.deque.is_empty() {
-            guard.state = CosmosCqState::CosmosCqStateDrained;
-        }
+        // Promote straight to DRAINED when nothing is outstanding (no pending
+        // completions and no in-flight ops).
+        maybe_mark_drained(&mut guard);
     }
-    q.inner.data_available.notify_all();
-    q.inner.space_available.notify_all();
+    inner.data_available.notify_all();
+    inner.space_available.notify_all();
 }
 
 /// Returns the queue's current lifecycle state.
@@ -1075,6 +1147,22 @@ pub fn __test_only_create_operation_handle() -> *mut OperationHandle {
     OperationHandle::new_raw()
 }
 
+/// Test-only: reserve an in-flight slot on `queue`, simulating what the real
+/// submit pre-flight does when it admits an operation. Lets tests exercise the
+/// `in_flight` accounting (which gates the `SHUTDOWN` → `DRAINED` transition)
+/// without standing up the full submit pipeline. Returns the coarse code from
+/// [`CompletionQueueInner::reserve_in_flight`].
+#[doc(hidden)]
+pub fn __test_only_reserve_in_flight(queue: *mut CompletionQueue) -> CosmosErrorCode {
+    let Some(inner_arc) = CompletionQueue::inner_arc(queue) else {
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument;
+    };
+    match inner_arc.reserve_in_flight() {
+        Ok(()) => CosmosErrorCode::CosmosErrorCodeSuccess,
+        Err(code) => code,
+    }
+}
+
 /// Test-only: synthesize a completion record and enqueue it onto `queue`.
 ///
 /// Cloning the operation handle's `Arc` keeps both the producer-side handle
@@ -1296,6 +1384,59 @@ mod tests {
             None,
         );
         assert_eq!(code, CosmosErrorCode::CosmosErrorCodeQueueShutdown);
+        // Even though the completion was rejected, the operation handle must
+        // never be left stuck `IN_FLIGHT`: it is advanced to a terminal state
+        // so a host polling `cosmos_operation_handle_state` is released and its
+        // `user_data` is reclaimable.
+        assert_eq!(
+            cosmos_operation_handle_state(op),
+            CosmosOperationHandleState::CosmosOperationHandleStateCompleted
+        );
+        cosmos_operation_handle_free(op);
+        cosmos_cq_free(q);
+    }
+
+    #[test]
+    fn in_flight_op_keeps_queue_out_of_drained_until_delivered() {
+        // Reproduces the lost-completion bug: an op admitted by pre-flight but
+        // still running (no completion enqueued yet) must keep the queue in
+        // SHUTDOWN — not DRAINED — so its completion is still accepted and
+        // delivered, rather than dropped.
+        let q = fresh_queue(0, true);
+        // Simulate the submit pre-flight admitting one operation.
+        assert_eq!(
+            __test_only_reserve_in_flight(q),
+            CosmosErrorCode::CosmosErrorCodeSuccess
+        );
+
+        // Shutting down now must NOT jump straight to Drained — an op is still
+        // in flight.
+        cosmos_cq_shutdown(q);
+        assert_eq!(cosmos_cq_state(q), CosmosCqState::CosmosCqStateShutdown);
+
+        // The in-flight op finishes and enqueues its completion. Even though
+        // the queue is SHUTDOWN, the completion is accepted (shutdown only
+        // blocks *new* submissions).
+        let op = __test_only_create_operation_handle();
+        let code = __test_only_enqueue_completion(
+            q,
+            op,
+            CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
+            CosmosErrorCode::CosmosErrorCodeSuccess,
+            0x42 as *mut c_void,
+            None,
+        );
+        assert_eq!(code, CosmosErrorCode::CosmosErrorCodeSuccess);
+        assert_eq!(cosmos_cq_state(q), CosmosCqState::CosmosCqStateShutdown);
+
+        // The host drains it (the completion is delivered, not lost). Draining
+        // the last in-flight op flips the queue to Drained.
+        let c = cosmos_cq_wait(q, 100);
+        assert!(!c.is_null());
+        assert_eq!(cosmos_completion_user_data(c), 0x42);
+        assert_eq!(cosmos_cq_state(q), CosmosCqState::CosmosCqStateDrained);
+
+        cosmos_completion_free(c);
         cosmos_operation_handle_free(op);
         cosmos_cq_free(q);
     }
@@ -1423,6 +1564,12 @@ mod tests {
             None,
         );
         assert_eq!(code, CosmosErrorCode::CosmosErrorCodeQueueFull);
+        // A capacity rejection must still advance the handle out of
+        // `IN_FLIGHT` so the host is never stranded waiting on it.
+        assert_eq!(
+            cosmos_operation_handle_state(op3),
+            CosmosOperationHandleState::CosmosOperationHandleStateCompleted
+        );
         cosmos_operation_handle_free(op3);
 
         // Drain one and verify writable.
@@ -1582,6 +1729,45 @@ mod tests {
             elapsed < Duration::from_millis(500),
             "wait should wake within ~milliseconds of shutdown, took {elapsed:?}"
         );
+        cosmos_cq_free(q);
+    }
+
+    #[test]
+    fn shutdown_wakes_blocked_writable_waiter() {
+        // A thread parked in `cosmos_cq_wait_writable` on a full bounded queue
+        // must wake on shutdown and report not-writable. This also exercises
+        // the `Arc`-clone path that lets the parked thread's mutex/condvar
+        // survive a concurrent free of the queue handle.
+        let q = fresh_queue(1, true);
+        let op = __test_only_create_operation_handle();
+        // Fill the single slot so writability blocks.
+        __test_only_enqueue_completion(
+            q,
+            op,
+            CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
+            CosmosErrorCode::CosmosErrorCodeSuccess,
+            std::ptr::null_mut(),
+            None,
+        );
+        let q_addr = q as usize;
+        let handle = std::thread::spawn(move || {
+            let q = q_addr as *mut CompletionQueue;
+            let start = Instant::now();
+            let writable = cosmos_cq_wait_writable(q, 5_000); // 5s timeout
+            (writable, start.elapsed())
+        });
+        std::thread::sleep(Duration::from_millis(20));
+        cosmos_cq_shutdown(q);
+        let (writable, elapsed) = handle.join().unwrap();
+        assert!(!writable, "shutdown should report not-writable");
+        assert!(
+            elapsed < Duration::from_millis(500),
+            "wait_writable should wake within ~milliseconds of shutdown, took {elapsed:?}"
+        );
+        // Drain the queued completion and free.
+        let c = cosmos_cq_wait(q, 0);
+        cosmos_completion_free(c);
+        cosmos_operation_handle_free(op);
         cosmos_cq_free(q);
     }
 

@@ -31,8 +31,8 @@ use azure_data_cosmos_driver::options::DriverOptions;
 
 use crate::account_ref::AccountRefHandle;
 use crate::completion::{
-    Completion, CompletionQueue, CompletionQueueInner, CosmosCompletionOutcome, CosmosCqState,
-    OperationHandle, OperationInner,
+    Completion, CompletionQueue, CompletionQueueInner, CosmosCompletionOutcome, OperationHandle,
+    OperationInner,
 };
 use crate::container_ref::ContainerRefHandle;
 use crate::driver::DriverHandle;
@@ -88,32 +88,25 @@ fn pre_flight_spawn(
     let Some(queue_inner) = CompletionQueue::inner_arc(queue) else {
         return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
     };
-    // Reject submissions to a queue that is no longer running. Without this
-    // the task would still spawn, run the driver work, and then have its
-    // completion rejected by `enqueue_into_inner` — leaking the operation
-    // handle as `IN_FLIGHT` forever and never delivering a completion to the
-    // host. Bailing out here returns `QUEUE_SHUTDOWN` synchronously so the
-    // caller gets a NULL handle and a definitive coarse code.
-    if queue_inner.state() != CosmosCqState::CosmosCqStateRunning {
-        return Err(CosmosErrorCode::CosmosErrorCodeQueueShutdown);
-    }
-    // Pre-flight queue state. The spawned task does a second check
-    // inside the lock when it finally enqueues — this is just an early
-    // bailout so we don't spend a spawn on a doomed submit.
-    // `current_len() >= max_capacity` is the doomed case for
-    // capacity-bounded queues.
-    if queue_inner.max_capacity() > 0
-        && queue_inner.current_len() as u32 >= queue_inner.max_capacity()
-    {
-        return Err(CosmosErrorCode::CosmosErrorCodeQueueFull);
-    }
+    // Atomically validate the queue is accepting work and reserve an
+    // in-flight slot for this op's whole submit → run → enqueue → drain
+    // lifecycle. Reserving here (rather than only checking deque length and
+    // state separately) keeps the queue's in-flight count accurate, so a
+    // shutdown that races this still-running op cannot transition the queue
+    // to DRAINED before the op enqueues its completion — which would strand
+    // the operation handle as `IN_FLIGHT` forever and leak the host
+    // continuation. The reservation is released on drain, or on the abort
+    // path below.
+    queue_inner.reserve_in_flight()?;
 
     let op_handle = OperationHandle::allocate();
     let op_inner = match OperationHandle::inner_arc(op_handle) {
         Some(a) => a,
         None => {
-            // Should not happen — `allocate` returns non-NULL.
+            // Should not happen — `allocate` returns non-NULL. Release the
+            // reservation we just took so the queue can still reach DRAINED.
             OperationHandle::drop_raw(op_handle);
+            queue_inner.release_in_flight();
             return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
         }
     };

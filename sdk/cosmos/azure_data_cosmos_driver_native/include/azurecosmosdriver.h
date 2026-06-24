@@ -1227,9 +1227,12 @@ uint32_t cosmos_cq_wait_batch(struct cosmos_cq_t *queue,
 bool cosmos_cq_wait_writable(struct cosmos_cq_t *queue, uint32_t timeout_ms);
 
 /**
- * Signal shutdown: marks the queue as shutting down, cancels in-flight ops,
- * and wakes any thread blocked in
- * `cosmos_cq_wait` / `_wait_writable` / `_wait_batch`. Idempotent.
+ * Signal shutdown: marks the queue as shutting down so no *new* submissions
+ * are accepted, and wakes any thread blocked in
+ * `cosmos_cq_wait` / `_wait_writable` / `_wait_batch`. Operations already
+ * in flight are left to run to completion — their completions are still
+ * accepted and can be drained — and the queue advances to `DRAINED` once the
+ * last in-flight op has been drained. Idempotent.
  */
 void cosmos_cq_shutdown(struct cosmos_cq_t *queue);
 
