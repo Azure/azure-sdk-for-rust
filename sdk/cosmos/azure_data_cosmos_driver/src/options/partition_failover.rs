@@ -402,7 +402,13 @@ mod tests {
 
     #[test]
     fn builder_defaults_match_documented_values() {
-        let options = PartitionFailoverOptionsBuilder::new().build().unwrap();
+        // Resolve against an explicitly empty environment so the documented
+        // compile-time defaults are asserted deterministically, regardless of
+        // any ambient `AZURE_COSMOS_PPCB_*` value. (Real-environment resolution
+        // is covered by the `real_env_tests` module below.)
+        let options = PartitionFailoverOptionsBuilder::new()
+            .build_from_env(&|_| None)
+            .unwrap();
 
         assert!(options.circuit_breaker_enabled());
         assert_eq!(options.read_failure_threshold(), 10);
@@ -443,7 +449,11 @@ mod tests {
 
     #[test]
     fn circuit_breaker_override_unset_by_default() {
-        let options = PartitionFailoverOptionsBuilder::new().build().unwrap();
+        // Empty environment → the kill switch is unset. (Real-environment
+        // resolution of the override is covered by `real_env_tests`.)
+        let options = PartitionFailoverOptionsBuilder::new()
+            .build_from_env(&|_| None)
+            .unwrap();
         assert_eq!(options.circuit_breaker_enabled_override(), None);
     }
 
@@ -849,5 +859,214 @@ mod env_matrix_tests {
             Duration::from_secs(5)
         ); // env garbage -> default
         assert_eq!(o.failback_sweep_interval(), Duration::from_secs(300)); // default
+    }
+}
+
+/// Real-process-environment tests for the production
+/// [`PartitionFailoverOptionsBuilder::build`] path.
+///
+/// Unlike `env_matrix_tests` (which inject a closure), these set actual
+/// `AZURE_COSMOS_PPCB_*` variables via `std::env` and call the public `build()`
+/// — proving the production accessor (`|k| std::env::var(k).ok()`) is wired
+/// correctly and that the variables genuinely enable / disable / tune PPCB.
+/// Every case runs inside [`with_scoped_env`], which serializes on a shared
+/// lock and clears + restores the PPCB variables, so the cases are hermetic and
+/// safe under parallel test execution.
+#[cfg(test)]
+mod real_env_tests {
+    use super::*;
+    use crate::options::env_parsing::test_env::{with_scoped_env, PPCB_ENV_VARS};
+    use std::time::Duration;
+
+    #[test]
+    fn real_env_enable_false_disables_ppcb() {
+        with_scoped_env(
+            PPCB_ENV_VARS,
+            &[("AZURE_COSMOS_PPCB_ENABLED", "false")],
+            || {
+                let o = PartitionFailoverOptionsBuilder::new().build().unwrap();
+                assert!(!o.circuit_breaker_enabled());
+            },
+        );
+    }
+
+    #[test]
+    fn real_env_enable_true_keeps_ppcb_on() {
+        with_scoped_env(
+            PPCB_ENV_VARS,
+            &[("AZURE_COSMOS_PPCB_ENABLED", "true")],
+            || {
+                let o = PartitionFailoverOptionsBuilder::new().build().unwrap();
+                assert!(o.circuit_breaker_enabled());
+            },
+        );
+    }
+
+    #[test]
+    fn real_env_empty_uses_default_enabled() {
+        with_scoped_env(PPCB_ENV_VARS, &[], || {
+            let o = PartitionFailoverOptionsBuilder::new().build().unwrap();
+            assert!(o.circuit_breaker_enabled());
+            assert_eq!(o.circuit_breaker_enabled_override(), None);
+            assert_eq!(o.read_failure_threshold(), 10);
+        });
+    }
+
+    #[test]
+    fn real_env_kill_switch_false() {
+        with_scoped_env(
+            PPCB_ENV_VARS,
+            &[("AZURE_COSMOS_PPCB_ENABLED_OVERRIDE", "false")],
+            || {
+                let o = PartitionFailoverOptionsBuilder::new().build().unwrap();
+                assert_eq!(o.circuit_breaker_enabled_override(), Some(false));
+            },
+        );
+    }
+
+    #[test]
+    fn real_env_kill_switch_true() {
+        with_scoped_env(
+            PPCB_ENV_VARS,
+            &[("AZURE_COSMOS_PPCB_ENABLED_OVERRIDE", "true")],
+            || {
+                let o = PartitionFailoverOptionsBuilder::new().build().unwrap();
+                assert_eq!(o.circuit_breaker_enabled_override(), Some(true));
+            },
+        );
+    }
+
+    #[test]
+    fn real_env_kill_switch_lenient_spellings() {
+        for raw in ["1", "yes", "ON", " no ", "Off"] {
+            with_scoped_env(
+                PPCB_ENV_VARS,
+                &[("AZURE_COSMOS_PPCB_ENABLED_OVERRIDE", raw)],
+                || {
+                    let expected =
+                        matches!(raw.trim().to_ascii_lowercase().as_str(), "1" | "yes" | "on");
+                    let o = PartitionFailoverOptionsBuilder::new().build().unwrap();
+                    assert_eq!(
+                        o.circuit_breaker_enabled_override(),
+                        Some(expected),
+                        "override spelling {raw:?}",
+                    );
+                },
+            );
+        }
+    }
+
+    #[test]
+    fn real_env_thresholds_applied() {
+        with_scoped_env(
+            PPCB_ENV_VARS,
+            &[
+                ("AZURE_COSMOS_PPCB_READ_FAILURE_THRESHOLD", "20"),
+                ("AZURE_COSMOS_PPCB_WRITE_FAILURE_THRESHOLD", "8"),
+                ("AZURE_COSMOS_PPCB_CONSECUTIVE_HEDGE_WIN_THRESHOLD", "3"),
+            ],
+            || {
+                let o = PartitionFailoverOptionsBuilder::new().build().unwrap();
+                assert_eq!(o.read_failure_threshold(), 20);
+                assert_eq!(o.write_failure_threshold(), 8);
+                assert_eq!(o.consecutive_hedge_win_threshold(), 3);
+            },
+        );
+    }
+
+    #[test]
+    fn real_env_durations_applied() {
+        with_scoped_env(
+            PPCB_ENV_VARS,
+            &[
+                ("AZURE_COSMOS_PPCB_COUNTER_RESET_WINDOW_MS", "60000"),
+                (
+                    "AZURE_COSMOS_PPCB_PARTITION_UNAVAILABILITY_DURATION_MS",
+                    "30000",
+                ),
+                ("AZURE_COSMOS_PPCB_FAILBACK_SWEEP_INTERVAL_MS", "120000"),
+            ],
+            || {
+                let o = PartitionFailoverOptionsBuilder::new().build().unwrap();
+                assert_eq!(o.counter_reset_window(), Duration::from_millis(60_000));
+                assert_eq!(
+                    o.partition_unavailability_duration(),
+                    Duration::from_millis(30_000)
+                );
+                assert_eq!(o.failback_sweep_interval(), Duration::from_millis(120_000));
+            },
+        );
+    }
+
+    #[test]
+    fn real_env_combination_disable_with_override_and_tuning() {
+        // The weird-but-valid mix: base disabled, kill switch forces it on,
+        // and a couple of tuning knobs are set — all from real env at once.
+        with_scoped_env(
+            PPCB_ENV_VARS,
+            &[
+                ("AZURE_COSMOS_PPCB_ENABLED", "false"),
+                ("AZURE_COSMOS_PPCB_ENABLED_OVERRIDE", "true"),
+                ("AZURE_COSMOS_PPCB_READ_FAILURE_THRESHOLD", "15"),
+                ("AZURE_COSMOS_PPCB_COUNTER_RESET_WINDOW_MS", "45000"),
+            ],
+            || {
+                let o = PartitionFailoverOptionsBuilder::new().build().unwrap();
+                // Base option observes the env `false`...
+                assert!(!o.circuit_breaker_enabled());
+                // ...while the kill switch is independently `Some(true)` (the
+                // routing layer applies `override ?? base`, so PPCB is on).
+                assert_eq!(o.circuit_breaker_enabled_override(), Some(true));
+                assert_eq!(o.read_failure_threshold(), 15);
+                assert_eq!(o.counter_reset_window(), Duration::from_millis(45_000));
+                // Untouched knobs keep their defaults.
+                assert_eq!(o.write_failure_threshold(), 5);
+                assert_eq!(o.failback_sweep_interval(), Duration::from_secs(300));
+            },
+        );
+    }
+
+    #[test]
+    fn real_env_builder_value_beats_env() {
+        with_scoped_env(
+            PPCB_ENV_VARS,
+            &[("AZURE_COSMOS_PPCB_ENABLED", "false")],
+            || {
+                // Explicit builder value wins over the env `false`.
+                let o = PartitionFailoverOptionsBuilder::new()
+                    .with_circuit_breaker_enabled(true)
+                    .build()
+                    .unwrap();
+                assert!(o.circuit_breaker_enabled());
+            },
+        );
+    }
+
+    #[test]
+    fn real_env_out_of_bounds_threshold_errors() {
+        with_scoped_env(
+            PPCB_ENV_VARS,
+            &[("AZURE_COSMOS_PPCB_READ_FAILURE_THRESHOLD", "0")],
+            || {
+                let err = PartitionFailoverOptionsBuilder::new()
+                    .build()
+                    .unwrap_err()
+                    .to_string();
+                assert!(
+                    err.contains("read_failure_threshold must be at least 1"),
+                    "unexpected error: {err}",
+                );
+            },
+        );
+    }
+
+    #[test]
+    fn real_env_garbage_enable_falls_back_to_default() {
+        // `AZURE_COSMOS_PPCB_ENABLED` is strict-parsed; a non-`true`/`false`
+        // value is ignored and the default (enabled) applies.
+        with_scoped_env(PPCB_ENV_VARS, &[("AZURE_COSMOS_PPCB_ENABLED", "1")], || {
+            let o = PartitionFailoverOptionsBuilder::new().build().unwrap();
+            assert!(o.circuit_breaker_enabled());
+        });
     }
 }
