@@ -424,6 +424,9 @@ mod tests {
 
     #[test]
     fn builder_round_trips_custom_values() {
+        // Resolve against an empty environment so the builder values are the
+        // only inputs (and the test can't race the env-mutating
+        // `real_env_tests`).
         let options = PartitionFailoverOptionsBuilder::new()
             .with_circuit_breaker_enabled(true)
             .with_read_failure_threshold(20)
@@ -432,7 +435,7 @@ mod tests {
             .with_partition_unavailability_duration(Duration::from_secs(30))
             .with_failback_sweep_interval(Duration::from_secs(120))
             .with_consecutive_hedge_win_threshold(3)
-            .build()
+            .build_from_env(&|_| None)
             .unwrap();
 
         assert!(options.circuit_breaker_enabled());
@@ -459,15 +462,17 @@ mod tests {
 
     #[test]
     fn circuit_breaker_override_builder_value_round_trips() {
+        // Empty env so the *other* (unset) PPCB vars can't leak in from a
+        // concurrently-running env-mutating test and fail bounds validation.
         let off = PartitionFailoverOptionsBuilder::new()
             .with_circuit_breaker_enabled_override(false)
-            .build()
+            .build_from_env(&|_| None)
             .unwrap();
         assert_eq!(off.circuit_breaker_enabled_override(), Some(false));
 
         let on = PartitionFailoverOptionsBuilder::new()
             .with_circuit_breaker_enabled_override(true)
-            .build()
+            .build_from_env(&|_| None)
             .unwrap();
         assert_eq!(on.circuit_breaker_enabled_override(), Some(true));
     }
@@ -476,7 +481,7 @@ mod tests {
     fn read_failure_threshold_zero_rejected() {
         let err = PartitionFailoverOptionsBuilder::new()
             .with_read_failure_threshold(0)
-            .build()
+            .build_from_env(&|_| None)
             .unwrap_err()
             .to_string();
         assert!(
@@ -489,7 +494,7 @@ mod tests {
     fn counter_reset_window_below_min_rejected() {
         let err = PartitionFailoverOptionsBuilder::new()
             .with_counter_reset_window(Duration::from_millis(500))
-            .build()
+            .build_from_env(&|_| None)
             .unwrap_err()
             .to_string();
         assert!(
@@ -502,7 +507,7 @@ mod tests {
     fn partition_unavailability_duration_below_min_rejected() {
         let err = PartitionFailoverOptionsBuilder::new()
             .with_partition_unavailability_duration(Duration::from_millis(50))
-            .build()
+            .build_from_env(&|_| None)
             .unwrap_err()
             .to_string();
         assert!(
@@ -515,7 +520,7 @@ mod tests {
     fn failback_sweep_interval_below_min_rejected() {
         let err = PartitionFailoverOptionsBuilder::new()
             .with_failback_sweep_interval(Duration::from_millis(100))
-            .build()
+            .build_from_env(&|_| None)
             .unwrap_err()
             .to_string();
         assert!(
