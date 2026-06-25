@@ -219,6 +219,7 @@
     "undrained",
     "unfaulted",
     "unparseable",
+    "unrepresentable",
     "unroutable",
     "unsharded",
     "upsert",

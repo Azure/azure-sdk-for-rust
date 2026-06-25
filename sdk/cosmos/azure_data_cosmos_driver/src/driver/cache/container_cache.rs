@@ -5,8 +5,10 @@
 //!
 //! Maintains two lookup indices — by name and by RID — so that a resolved
 //! [`ContainerReference`] can be retrieved efficiently regardless of which
-//! identifier the caller has. When a reference is fetched or inserted,
-//! both caches are cross-populated to keep them in sync.
+//! identifier the caller has. Name-addressed references are cross-populated
+//! into both indices to keep them in sync; RID-addressed references are stored
+//! only in the by-RID index, since they carry no database name to form a safe
+//! by-name key.
 
 use super::AsyncCache;
 use crate::models::ContainerReference;
@@ -63,8 +65,10 @@ impl ContainerRidKey {
 ///
 /// Stores fully-resolved [`ContainerReference`] values and indexes them by
 /// both name (`account + db_name + container_name`) and RID
-/// (`account + container_rid`). When a reference is fetched or inserted via
-/// either index, the other index is cross-populated automatically.
+/// (`account + container_rid`). A name-addressed reference fetched or inserted
+/// via either index is cross-populated into the other automatically; a
+/// RID-addressed reference is stored only in the by-RID index, because it has
+/// no database name to form a safe by-name key.
 ///
 /// Uses single-pending-I/O semantics per key — concurrent requests for the
 /// same container share one fetch operation.

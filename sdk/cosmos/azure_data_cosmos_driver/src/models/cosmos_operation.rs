@@ -215,7 +215,7 @@ impl CosmosOperation {
     // ===== Factory Methods =====
 
     /// Creates a new operation with the specified type, resource reference, and target.
-    fn new(
+    pub(crate) fn new(
         operation_type: OperationType,
         resource_reference: impl Into<CosmosResourceReference>,
         target: Option<FeedRange>,

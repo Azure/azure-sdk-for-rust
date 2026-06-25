@@ -488,6 +488,8 @@ impl SubStatusCode {
             20115 => Some("ClientQueryPlanComplexProjectionUnsupported"),
             20116 => Some("ClientOpaqueTokenInvalidForCrossPartitionQuery"),
             20117 => Some("ClientContinuationTokenNonQueryOperation"),
+            20118 => Some("ClientInvalidResourceId"),
+            20119 => Some("ClientMixedNameRidAddressing"),
             20150 => Some("ClientDuplicateFaultInjectionRuleId"),
             20151 => Some("ClientThroughputControlGroupRegistrationFailed"),
             20152 => Some("ClientThroughputControlGroupNotRegistered"),
@@ -2340,6 +2342,20 @@ mod tests {
         assert!(status.sub_status().is_none());
         assert!(status.is_success());
         assert!(status.name().is_none());
+    }
+
+    #[test]
+    fn client_rid_addressing_status_names() {
+        // The 20118/20119 client statuses must resolve to searchable names so the
+        // deterministic client-side errors are useful in diagnostics and logs.
+        assert_eq!(
+            CosmosStatus::CLIENT_INVALID_RESOURCE_ID.name(),
+            Some("ClientInvalidResourceId")
+        );
+        assert_eq!(
+            CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING.name(),
+            Some("ClientMixedNameRidAddressing")
+        );
     }
 
     #[test]

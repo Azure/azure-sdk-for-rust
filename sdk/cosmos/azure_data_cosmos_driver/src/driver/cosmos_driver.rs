@@ -1906,17 +1906,6 @@ impl CosmosDriver {
         operation: CosmosOperation,
         options: OperationOptions,
     ) -> crate::error::Result<Option<crate::models::CosmosResponse>> {
-        // Reject mixed name/RID addressing before any work is done. This is the
-        // release-mode guard backing the debug-time addressing assertion: a
-        // reference that mixes a name-addressed parent with a RID-addressed child
-        // (or vice versa) signs and routes inconsistently and the gateway rejects
-        // it with an opaque 401. Failing here turns that into a deterministic
-        // client-side error for references built through any path, not just the
-        // SDK's ContainerClient. The check is a cheap in-memory field comparison
-        // and is a no-op for every consistently-addressed reference, so it does
-        // not change the request flow or issue any additional network calls.
-        operation.resource_reference().validate_addressing()?;
-
         // PATCH is a virtual operation type: dispatch it to the dedicated
         // Read-Modify-Write handler before any of the standard pipeline steps
         // run, because the handler issues its own Read/Replace operations
@@ -2283,6 +2272,20 @@ impl CosmosDriver {
         options: &OperationOptions,
         continuation: Option<&ContinuationToken>,
     ) -> crate::error::Result<OperationPlan> {
+        // Reject mixed name/RID addressing before any work is done. This is the
+        // release-mode guard backing the debug-time addressing assertion: a
+        // reference that mixes a name-addressed parent with a RID-addressed child
+        // (or vice versa) signs and routes inconsistently and the gateway rejects
+        // it with an opaque 401. Validating here — the single choke point every
+        // externally executable operation passes through on its way to a plan —
+        // turns that into a deterministic client-side error for references built
+        // through any path (including direct `plan_operation` + `execute_plan`
+        // callers and multi-page queries), not just `execute_operation`. The
+        // check is a cheap in-memory field comparison and a no-op for every
+        // consistently-addressed reference, so it issues no additional network
+        // calls and does not change the request flow.
+        operation.resource_reference().validate_addressing()?;
+
         if !self.initialized.load(Ordering::Acquire) {
             let endpoint = AccountEndpoint::from(self.options.account());
             return Err(crate::error::CosmosError::builder()
@@ -2756,6 +2759,39 @@ mod tests {
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "test-key",
         )
+    }
+
+    #[tokio::test]
+    async fn plan_operation_rejects_mixed_addressing() {
+        // The mixed name/RID guard lives in plan_operation, the single choke
+        // point every externally executable operation passes through. Calling
+        // plan_operation directly (the path queries and direct callers use,
+        // bypassing execute_operation) must still reject a mixed reference with
+        // the deterministic CLIENT_MIXED_NAME_RID_ADDRESSING error before any
+        // plan is built or signed.
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+
+        // Name-addressed database parent with a RID-addressed collection leaf.
+        let db = DatabaseReference::from_name(test_account(), "testdb");
+        let mixed = crate::models::CosmosResourceReference::from(db)
+            .with_resource_type(ResourceType::DocumentCollection)
+            .with_rid("Lx1BALxJyZ8=".into());
+        let operation = CosmosOperation::new(crate::models::OperationType::Read, mixed, None);
+
+        let err = match driver
+            .plan_operation(operation, &OperationOptions::default(), None)
+            .await
+        {
+            Ok(_) => panic!("mixed addressing must be rejected before planning"),
+            Err(e) => e,
+        };
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING
+        );
     }
 
     #[tokio::test]
