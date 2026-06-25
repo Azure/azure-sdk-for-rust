@@ -36,6 +36,7 @@ use azure_data_cosmos_driver::in_memory_emulator::{
 use azure_data_cosmos_driver::models::ConnectionString;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
+use std::time::{Duration, Instant};
 use uuid::Uuid;
 
 use super::validation::{
@@ -316,12 +317,7 @@ impl SdkDualBackend {
             .await?;
 
         let real = if let Some(ref client) = self.real_client {
-            Some(
-                client
-                    .database_client(db_name)
-                    .container_client(container_name)
-                    .await?,
-            )
+            Some(resolve_container_when_ready(client, db_name, container_name).await?)
         } else {
             None
         };
@@ -363,6 +359,72 @@ fn write_options_with_content() -> ItemWriteOptions {
     let mut operation = OperationOptions::default();
     operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
     ItemWriteOptions::default().with_operation_options(operation)
+}
+
+/// Extracts the session token's global LSN from a write response, asserting the
+/// token is present (every write under Session consistency must return one).
+fn session_global_lsn(resp: &ItemResponse, label: &str, op: &str) -> u64 {
+    let token = resp
+        .headers()
+        .session_token()
+        .unwrap_or_else(|| panic!("[{label}] {op} response must carry a session token"))
+        .as_str();
+    super::session_token::global_lsn(token)
+}
+
+/// Drives a create → replace → delete sequence against a single backend and
+/// asserts the response session token's global LSN strictly advances on every
+/// write. This is the live counterpart to the in-memory
+/// `cache_advances_as_write_responses_arrive` test: real Cosmos bumps the
+/// partition LSN (and thus the returned session token) on every write, and the
+/// in-memory emulator must match so it stays a faithful test double.
+async fn assert_session_token_advances(container: &ContainerClient, label: &str) {
+    let pk = "pk1";
+    let id = format!("advance-{label}");
+
+    let created = container
+        .create_item(
+            pk,
+            &id,
+            &TestItem {
+                id: id.clone(),
+                pk: pk.into(),
+                value: 1,
+            },
+            Some(write_options_with_content()),
+        )
+        .await
+        .unwrap();
+    let create_lsn = session_global_lsn(&created, label, "create");
+
+    let replaced = container
+        .replace_item(
+            pk,
+            &id,
+            &TestItem {
+                id: id.clone(),
+                pk: pk.into(),
+                value: 2,
+            },
+            Some(write_options_with_content()),
+        )
+        .await
+        .unwrap();
+    let replace_lsn = session_global_lsn(&replaced, label, "replace");
+
+    let deleted = container.delete_item(pk, &id, None).await.unwrap();
+    let delete_lsn = session_global_lsn(&deleted, label, "delete");
+
+    assert!(
+        replace_lsn > create_lsn,
+        "[{label}] replace must advance the session token's global LSN: \
+         create={create_lsn} replace={replace_lsn}"
+    );
+    assert!(
+        delete_lsn > replace_lsn,
+        "[{label}] delete must advance the session token's global LSN: \
+         replace={replace_lsn} delete={delete_lsn}"
+    );
 }
 
 fn padded_test_item(id: &str, value: i64, padding_len: usize) -> PaddedTestItem {
@@ -740,6 +802,22 @@ async fn sdk_delete_item() {
             .await
             .expect_err("real: reading deleted item should fail");
         compare_sdk_errors(&real_err, &emu_err);
+    }
+
+    backend.cleanup_real_database(&db_name).await;
+}
+#[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
+async fn sdk_session_token_advances_on_create_replace_delete() {
+    let (backend, db_name, emu_container, real_container) = setup_with_container().await;
+
+    assert_session_token_advances(&emu_container, "emulator").await;
+
+    if let Some(ref real) = real_container {
+        assert_session_token_advances(real, "real").await;
     }
 
     backend.cleanup_real_database(&db_name).await;
@@ -1470,4 +1548,74 @@ async fn resolve_real_client() -> Result<Option<CosmosClient>, Box<dyn Error>> {
         .await?;
 
     Ok(Some(client))
+}
+
+/// Detects the transient `404 / 1013 CollectionCreateInProgress` status that a
+/// real Cosmos account returns while a freshly created container is still being
+/// provisioned in the background.
+fn collection_create_in_progress(err: &azure_data_cosmos::CosmosError) -> bool {
+    let status = err.status();
+    status.status_code() == StatusCode::NotFound
+        && status.sub_status().map(|s| s.value()) == Some(1013)
+}
+
+/// Resolves a container on a real account, tolerating asynchronous container
+/// provisioning.
+///
+/// Real accounts create containers in the background, so the first metadata
+/// resolve — and the first data-plane request — can fail with
+/// `404 / 1013 CollectionCreateInProgress` for several seconds after
+/// `create_container` returns. This polls (with exponential backoff up to a
+/// bounded deadline) until the container both resolves and serves a data-plane
+/// read, so live dual-backend tests don't flake on creation timing. The
+/// in-memory emulator provisions synchronously and never hits this path.
+async fn resolve_container_when_ready(
+    client: &CosmosClient,
+    db_name: &str,
+    container_name: &str,
+) -> Result<ContainerClient, Box<dyn Error>> {
+    const READY_TIMEOUT: Duration = Duration::from_secs(120);
+    const MAX_BACKOFF: Duration = Duration::from_secs(5);
+    let deadline = Instant::now() + READY_TIMEOUT;
+
+    // Phase 1: resolve the container's metadata (routing / PK ranges).
+    let mut backoff = Duration::from_millis(250);
+    let container = loop {
+        match client
+            .database_client(db_name)
+            .container_client(container_name)
+            .await
+        {
+            Ok(container) => break container,
+            Err(e) if collection_create_in_progress(&e) && Instant::now() < deadline => {
+                tokio::time::sleep(backoff).await;
+                backoff = (backoff * 2).min(MAX_BACKOFF);
+            }
+            Err(e) => return Err(e.into()),
+        }
+    };
+
+    // Phase 2: confirm the container serves data-plane reads. A guaranteed-
+    // missing item returns `404 / 1003 NotFound` once the container is ready,
+    // versus `404 / 1013` while it is still provisioning.
+    backoff = Duration::from_millis(250);
+    loop {
+        match container
+            .read_item("readiness-probe", "readiness-probe", None)
+            .await
+        {
+            Ok(_) => return Ok(container),
+            Err(e)
+                if e.status().status_code() == StatusCode::NotFound
+                    && !collection_create_in_progress(&e) =>
+            {
+                return Ok(container)
+            }
+            Err(e) if collection_create_in_progress(&e) && Instant::now() < deadline => {
+                tokio::time::sleep(backoff).await;
+                backoff = (backoff * 2).min(MAX_BACKOFF);
+            }
+            Err(e) => return Err(e.into()),
+        }
+    }
 }
