@@ -27,9 +27,9 @@ impl BlobResource {
     ///
     /// `snapshot` is the snapshot timestamp (e.g., `"2025-01-15T12:00:00.0000000Z"`).
     ///
-    /// When using `BlobClient::user_delegation_sas`, you don't
-    /// need to set this yourself; it is read from the endpoint URL's
-    /// `snapshot=` query parameter automatically.
+    /// The snapshot timestamp is emitted as the `snapshot=` query parameter of
+    /// the token, so [`append_token`](crate::append_token) carries it onto the
+    /// final URL automatically.
     pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
         self.snapshot = Some(snapshot.into());
         self
@@ -37,14 +37,11 @@ impl BlobResource {
 
     /// Targets a specific version of the blob (`sr=bv`).
     ///
-    /// When using `BlobClient::user_delegation_sas`, you don't
-    /// need to set this yourself; it is read from the endpoint URL's
-    /// `versionid=` query parameter automatically and preserved on the
-    /// resulting URL.
-    ///
-    /// When using [`crate::SasBuilder`] directly, the version ID is not
-    /// included in the SAS token; the caller is responsible for
-    /// appending `&versionid=...` to the final request URL.
+    /// The version ID is not included in the SAS token; it must travel on the
+    /// request URL as a `versionid=` query parameter. Append the token to a URL
+    /// that already carries `versionid=` (for example
+    /// `BlobClient::with_version(...).url()`) with
+    /// [`append_token`](crate::append_token), which preserves the existing query.
     pub fn version(mut self, version_id: impl Into<String>) -> Self {
         self.version_id = Some(version_id.into());
         self
