@@ -258,6 +258,34 @@ When you interact with the Azure Event Hubs client library using the Rust SDK, e
 The Event Hubs SDK client uses the [tracing](https://docs.rs/tracing/latest/tracing/) package to
 enable diagnostics.
 
+The crate does not set custom tracing `target=` values. Events are emitted on the standard
+tracing module-path targets, which match the module that produced them (for example,
+`azure_messaging_eventhubs::common::recoverable::connection`). You can filter events by module
+path with `RUST_LOG` or an [`EnvFilter`](https://docs.rs/tracing-subscriber/latest/tracing_subscriber/filter/struct.EnvFilter.html).
+For example, `RUST_LOG=azure_messaging_eventhubs=debug` enables debug-and-above for the whole
+crate, while `RUST_LOG=azure_messaging_eventhubs::common::recoverable=trace` narrows tracing to
+the connection recovery path.
+
+Diagnostic values are attached as structured fields (`connection_id`, `partition_id`, `url`, and
+similar) rather than being interpolated into the message text, so they can be captured and queried
+by structured subscribers. Credentials (tokens, shared-access keys, and connection strings) are
+never logged. Event payloads and message bodies are redacted: the only site that logs a message
+does so at `trace`, and its body and application properties are stripped by `SafeDebug`. Enabling
+the `azure_core` `debug` cargo feature turns that redaction off, so avoid it in production when
+event contents are sensitive.
+
+Events follow a consistent level policy so you can pick the verbosity you need:
+
+* `error` - terminal or fatal failures that abort an operation, plus the exit of a long-lived background task.
+* `warn` - recoverable or anomalous-but-handled conditions, such as a send being rejected,
+  modified, or released, attach failures, retry exhaustion, a recovery action being required, an
+  etag mismatch, a missing management key, or an unauthorized fast-fail.
+* `info` - lifecycle success milestones, such as a connection or link opening, a link attaching, a
+  receiver attaching on a partition, recovery completing, or partition ownership being claimed.
+* `debug` - per-operation bookkeeping, error classification decisions, retry chatter, and internal
+  map updates.
+* `trace` - very-high-frequency or per-message detail, including the hot send path.
+
 ## Contributing
 
 See the [CONTRIBUTING.md] for details on building, testing, and contributing to these libraries.

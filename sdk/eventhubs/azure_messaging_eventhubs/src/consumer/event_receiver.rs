@@ -17,16 +17,45 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
     Arc,
 };
-use tracing::trace;
+use tracing::{debug, trace, warn, Instrument};
 
 /// Maps `amqp:link:stolen` (broker-initiated epoch displacement) on the
 /// receive path to the typed `ConsumerDisconnected` variant. Other errors
 /// pass through unchanged.
-fn translate_receive_error(error: AmqpError) -> EventHubsError {
+///
+/// `partition_id` and `source_url` are accepted purely for diagnostics so the
+/// silent failure path (link-stolen displacement and other receive errors) is
+/// logged with the partition/link context before the error propagates.
+fn translate_receive_error(
+    error: AmqpError,
+    partition_id: &str,
+    source_url: &Url,
+) -> EventHubsError {
     if let AmqpErrorKind::AmqpDescribedError(described) = error.kind() {
         if matches!(described.condition, AmqpErrorCondition::LinkStolen) {
+            // Broker displaced this consumer (a higher epoch/owner attached).
+            // Recoverable on the processor path, so warn rather than error.
+            warn!(
+                partition_id = %partition_id,
+                source_url = %source_url,
+                condition = ?described.condition,
+                "Receiver link stolen by the broker (epoch displacement); mapping to ConsumerDisconnected."
+            );
             return EventHubsError::from(ErrorKind::ConsumerDisconnected(Some(described.clone())));
         }
+        warn!(
+            partition_id = %partition_id,
+            source_url = %source_url,
+            condition = ?described.condition,
+            "Receive delivery failed with an AMQP error condition."
+        );
+    } else {
+        warn!(
+            partition_id = %partition_id,
+            source_url = %source_url,
+            err = ?error,
+            "Receive delivery failed."
+        );
     }
     EventHubsError::from(error)
 }
@@ -143,26 +172,57 @@ impl EventReceiver {
     /// ```
     ///
     pub fn stream_events(&self) -> impl Stream<Item = Result<ReceivedEventData>> + '_ {
+        // Attach a span to the returned stream rather than using
+        // `#[tracing::instrument]` on this sync fn: the attribute would only span
+        // the stream's *construction* (which returns immediately), leaving the
+        // receive loop's awaits and events with no parent span. Instrumenting each
+        // awaited future with this span keeps per-partition correlation for the loop.
+        let span = tracing::debug_span!(
+            "stream_events",
+            connection_id = %self.connection.get_connection_id(),
+            partition_id = %self.partition_id,
+            source_url = %self.source_url,
+        );
         Box::pin(try_stream! {
             loop {
                 // Stop here if `request_close` has been called; otherwise
                 // `get_receiver` below would reattach a new link.
                 if self.closed.load(Ordering::Acquire) {
+                    span.in_scope(|| debug!(
+                        partition_id = %self.partition_id,
+                        source_url = %self.source_url,
+                        "Event stream terminating: receiver was closed by request_close()."
+                    ));
                     Err(EventHubsError::from(ErrorKind::ConsumerDisconnected(None)))?;
                 }
 
+                // Instrument each awaited operation with the stream's span so the
+                // receive loop is parented under it on every poll (see the span
+                // construction above for why this is not a fn-level attribute).
                 let receiver = self.connection.get_receiver(&self.source_url,
                     self.message_source.clone(),
                     self.receiver_options.clone(),
                     self.timeout
-                ).await?;
+                ).instrument(span.clone()).await?;
 
-                let delivery = receiver.receive_delivery().await.map_err(translate_receive_error)?;
+                let delivery = receiver
+                    .receive_delivery()
+                    .instrument(span.clone())
+                    .await
+                    .map_err(|e| translate_receive_error(e, &self.partition_id, &self.source_url))?;
 
                 // Now that we have a delivery, we can process it.
                 let message = delivery.into_message();
                 let message = ReceivedEventData::from(message);
-                trace!("Received message: {:?}", message);
+                // SENSITIVE-DATA: `{:?}` on a ReceivedEventData dumps the
+                // raw AMQP message, including the customer payload body and any PII in
+                // application properties. This is redacted by the SafeDebug derive ONLY
+                // when the azure_core / typespec `debug` cargo feature is OFF (the
+                // default). If a downstream build enables that feature, this trace will
+                // emit full message bodies. Keep this at trace! and prefer logging only
+                // sequence_number / offset / partition_id at higher levels. See the
+                // matching note on EventData/ReceivedEventData in models/event_data.rs.
+                span.in_scope(|| trace!("Received message: {:?}", message));
                 yield message;
             }
         })
