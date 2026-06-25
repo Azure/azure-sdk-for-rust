@@ -34,19 +34,22 @@
 //! match the service byte-for-byte. See the binary-encoding spec
 //! (`docs/BINARY_ENCODING_SPEC.md`) for the full design and phased plan.
 //!
-//! > **Status:** foundational scaffolding (phase P0). The constants, error
-//! > vocabulary, and system-string dictionary here carry no behavior change;
-//! > the decoder, encoder, and request/response wiring are added in later
-//! > phases (P1+).
+//! > **Status:** the decoder is being built incrementally (phase P1). Phase
+//! > P1a — the [`Reader`](reader)/[`decode`] scalar decode path — is in place;
+//! > containers, user/reference strings, and the exotic forms follow in P1b–P1c,
+//! > and wiring the decoder into the response path lands in P1e. Nothing is
+//! > wired into the request/response path yet, so there is no behavior change.
 
 pub mod error;
 pub mod markers;
+pub mod reader;
 pub mod system_strings;
 
 #[cfg(test)]
 mod vectors;
 
 pub use error::{BinaryError, Result};
+pub use reader::decode;
 
 /// The Cosmos binary JSON preamble byte.
 ///

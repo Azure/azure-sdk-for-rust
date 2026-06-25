@@ -50,6 +50,13 @@ pub enum BinaryError {
         offset: usize,
     },
 
+    /// A decoded number cannot be represented as JSON (for example a non-finite
+    /// `double` such as NaN or infinity, which JSON does not permit).
+    InvalidNumber {
+        /// Human-readable detail about why the number is not representable.
+        detail: &'static str,
+    },
+
     /// A reference string ([`StrR1`](crate::binary_json::markers::STR_R1)–[`StrR4`](crate::binary_json::markers::STR_R4))
     /// pointed at an offset that does not correspond to an earlier string.
     UnresolvedReference {
@@ -98,6 +105,12 @@ impl fmt::Display for BinaryError {
             }
             BinaryError::InvalidUtf8 { offset } => {
                 write!(f, "invalid UTF-8 in binary JSON string at offset {offset}")
+            }
+            BinaryError::InvalidNumber { detail } => {
+                write!(
+                    f,
+                    "binary JSON number is not representable as JSON: {detail}"
+                )
             }
             BinaryError::UnresolvedReference { target } => {
                 write!(
