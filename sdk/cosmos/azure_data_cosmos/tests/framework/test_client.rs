@@ -855,7 +855,7 @@ impl TestRunContext {
             {
                 Ok(response) => {
                     let created = response.into_model()?;
-                    return db_client.container_client(&created.id).await;
+                    return db_client.container_client(&*created.id).await;
                 }
                 Err(e) if e.status().status_code() == StatusCode::TooManyRequests => {
                     println!(
@@ -867,7 +867,7 @@ impl TestRunContext {
                 }
                 Err(e) if e.status().status_code() == StatusCode::Conflict => {
                     // Container already exists, delete and recreate it, then return a client
-                    let container_client = db_client.container_client(&properties.id).await?;
+                    let container_client = db_client.container_client(&*properties.id).await?;
                     container_client.delete(None).await?;
 
                     // recreate
@@ -875,7 +875,7 @@ impl TestRunContext {
                         .create_container(properties.clone(), options.clone())
                         .await?;
                     let created = response.into_model()?;
-                    return db_client.container_client(&created.id).await;
+                    return db_client.container_client(&*created.id).await;
                 }
                 Err(e) => return Err(e),
             }
@@ -912,7 +912,7 @@ impl TestRunContext {
             let satellite_client =
                 Self::create_client_with_preferred_region(SATELLITE_REGION).await?;
 
-            let container_id = &created_properties.id;
+            let container_id: &str = &created_properties.id;
 
             // Wait for hub region client to successfully resolve and read the container.
             // Both `container_client()` (which resolves metadata via the driver) and

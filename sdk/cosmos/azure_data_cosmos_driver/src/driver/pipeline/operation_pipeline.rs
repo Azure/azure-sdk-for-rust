@@ -27,9 +27,9 @@ use crate::{
         transport::CosmosTransport,
     },
     models::{
-        cosmos_headers::QUERY_CONTENT_TYPE, request_header_names, AccountEndpoint, ActivityId,
-        CosmosOperation, CosmosResponse, Credential, DefaultConsistencyLevel,
-        EffectivePartitionKey, OperationType, SessionToken, SubStatusCode,
+        cosmos_headers::QUERY_CONTENT_TYPE, encode_path_segments, request_header_names,
+        AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse, Credential,
+        DefaultConsistencyLevel, EffectivePartitionKey, OperationType, SessionToken, SubStatusCode,
     },
     options::{
         HedgeThreshold, OperationOptionsView, ReadConsistencyStrategy, Region,
@@ -1269,7 +1269,17 @@ fn build_transport_request(
         } else {
             format!("/{}", request_path)
         };
-        base.set_path(&normalized);
+        // Name-based paths are percent-encoded so the gateway reconstructs the
+        // same resource link we signed (names may contain reserved characters).
+        // RID-based paths must be sent raw: encoding the `=` padding of a base64
+        // RID makes the gateway treat the segment as a name and reject the
+        // RID-based signature. The authorization signature is derived from
+        // `paths` below (a lowercased RID for RID-addressed requests).
+        if paths.is_rid_based() {
+            base.set_path(&normalized);
+        } else {
+            base.set_path(&encode_path_segments(&normalized));
+        }
         base
     };
 

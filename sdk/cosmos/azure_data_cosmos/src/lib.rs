@@ -17,6 +17,7 @@ pub use error::{CosmosError, CosmosStatus, Result, SubStatusCode};
 pub use feed::{FeedScope, Query};
 pub use models::{PartitionKey, TransactionalBatch};
 pub use options::RoutingStrategy;
+pub use resource_identity::{ResourceId, ResourceIdentity};
 pub use runtime::{CosmosRuntime, CosmosRuntimeBuilder};
 
 // =========================================================================
@@ -42,6 +43,7 @@ mod constants;
 mod credential;
 mod driver_bridge;
 mod region_proximity;
+mod resource_identity;
 mod runtime;
 mod session_helpers;
 

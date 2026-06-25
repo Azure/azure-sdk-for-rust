@@ -8,6 +8,8 @@
 
 ### Bugs Fixed
 
+- RID-addressed requests are now signed and routed correctly. The driver signs them over the lowercased resource RID (the leaf for point reads, the parent for feeds), matching the service's `is_name_based = false` rule, and sends the RID raw in the request URL path. Name-addressed paths continue to be percent-encoded. Previously the driver signed the full name-style resource link and percent-encoded the RID for every request, so RID reads (for example resolving a database or container by RID) were rejected with `401 Unauthorized`. ([#4613](https://github.com/Azure/azure-sdk-for-rust/pull/4613))
+
 ### Other Changes
 
 ## 0.5.0 (2026-06-19)
