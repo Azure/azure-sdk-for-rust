@@ -119,7 +119,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Generating SAS URLs
 
-Use the [`azure_storage_sas`] crate to create a user delegation SAS. Obtain a `UserDelegationKey` from `QueueServiceClient::get_user_delegation_key`, build the token with `SasBuilder`, then append it to the queue URL.
+Use the [`azure_storage_sas`] crate to create a user delegation SAS. Obtain a `UserDelegationKey` from `QueueServiceClient::get_user_delegation_key`, build the token with `SasBuilder`, then set it as the query string on the queue URL.
 
 ```rust no_run
 use azure_core::{
@@ -128,7 +128,6 @@ use azure_core::{
 };
 use azure_storage_queue::{models::KeyInfo, QueueServiceClient};
 use azure_storage_sas::{
-    append_token,
     resource::queue::{QueuePermissions, QueueResource},
     SasBuilder,
 };
@@ -138,7 +137,12 @@ use time::Duration;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DeveloperToolsCredential::new(None)?;
-    let service_url = Url::parse("https://<storage_account_name>.queue.core.windows.net/")?;
+    let storage_account_name = "<storage_account_name>";
+    let queue_name = "<queue_name>";
+
+    let service_url = Url::parse(&format!(
+        "https://{storage_account_name}.queue.core.windows.net/"
+    ))?;
     let service_client = QueueServiceClient::new(service_url, Some(credential), None)?;
 
     // Request a user delegation key from the service. The key is signed by
@@ -155,15 +159,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?
         .into_model()?;
 
-    // Build a SAS token for a queue, then append it to the queue URL.
-    let token = SasBuilder::new("<storage_account_name>", &udk, now + Duration::hours(1))?
+    // Build a SAS token for a queue, then set it on the queue URL.
+    let token = SasBuilder::new(storage_account_name, &udk, now + Duration::hours(1))?
         .queue(
-            QueueResource::new("<queue_name>"),
+            QueueResource::new(queue_name),
             QueuePermissions::new().read().add().process(),
         )
         .token();
-    let queue_client = service_client.queue_client("<queue_name>")?;
-    let sas_url = append_token(queue_client.url().clone(), &token);
+    let mut sas_url = Url::parse(&format!(
+        "https://{storage_account_name}.queue.core.windows.net/{queue_name}"
+    ))?;
+    sas_url.set_query(Some(&token));
 
     println!("{sas_url}");
     Ok(())

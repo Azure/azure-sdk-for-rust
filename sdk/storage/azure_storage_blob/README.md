@@ -130,7 +130,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ### Generating SAS URLs
 
-Use the [`azure_storage_sas`] crate to create a user delegation SAS. Obtain a `UserDelegationKey` from `BlobServiceClient::get_user_delegation_key`, build the token with `SasBuilder`, then append it to the resource URL.
+Use the [`azure_storage_sas`] crate to create a user delegation SAS. Obtain a `UserDelegationKey` from `BlobServiceClient::get_user_delegation_key`, build the token with `SasBuilder`, then set it as the query string on the resource URL.
 
 ```rust no_run
 use azure_core::{
@@ -139,7 +139,6 @@ use azure_core::{
 };
 use azure_storage_blob::{models::KeyInfo, BlobServiceClient};
 use azure_storage_sas::{
-    append_token,
     resource::blob::{BlobPermissions, BlobResource},
     SasBuilder,
 };
@@ -149,7 +148,13 @@ use time::Duration;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DeveloperToolsCredential::new(None)?;
-    let service_url = Url::parse("https://<storage_account_name>.blob.core.windows.net/")?;
+    let storage_account_name = "<storage_account_name>";
+    let container_name = "<container_name>";
+    let blob_name = "<blob_name>";
+
+    let service_url = Url::parse(&format!(
+        "https://{storage_account_name}.blob.core.windows.net/"
+    ))?;
     let service_client = BlobServiceClient::new(service_url, Some(credential), None)?;
 
     // Request a user delegation key from the service. The key is signed by
@@ -166,15 +171,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?
         .into_model()?;
 
-    // Build a read-only SAS token for a single blob, then append it to the blob URL.
-    let token = SasBuilder::new("<storage_account_name>", &udk, now + Duration::hours(1))?
+    // Build a read-only SAS token for a single blob, then set it on the blob URL.
+    let token = SasBuilder::new(storage_account_name, &udk, now + Duration::hours(1))?
         .blob(
-            BlobResource::new("<container_name>", "<blob_name>"),
+            BlobResource::new(container_name, blob_name),
             BlobPermissions::new().read(),
         )
         .token();
-    let blob_client = service_client.blob_client("<container_name>", "<blob_name>");
-    let sas_url = append_token(blob_client.url().clone(), &token);
+    let mut sas_url = Url::parse(&format!(
+        "https://{storage_account_name}.blob.core.windows.net/{container_name}/{blob_name}"
+    ))?;
+    sas_url.set_query(Some(&token));
 
     println!("{sas_url}");
     Ok(())

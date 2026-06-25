@@ -249,8 +249,7 @@ impl Fields {
 /// are available at compile time. Call a resource method (e.g.,
 /// [`.blob()`](SasBuilder::blob)) to transition from the initial untyped
 /// state to a typed state, then call `.token()` to produce the signed SAS
-/// token. Use [`append_token`](crate::append_token) to attach the token to
-/// the resource URL.
+/// token.
 pub struct SasBuilder<'a, S> {
     key: ValidatedKey<'a>,
     fields: Fields,
@@ -485,9 +484,6 @@ impl<S: BlobServiceState> SasBuilder<'_, S> {
 
 impl SasBuilder<'_, state::BlobState> {
     /// Signs the SAS and returns the token.
-    ///
-    /// Use [`append_token`](crate::append_token) to attach the returned token
-    /// to a blob URL.
     pub fn token(&self) -> String {
         let sp = self.state.permissions.to_sas_str();
         let canonical = self
@@ -514,9 +510,6 @@ impl SasBuilder<'_, state::BlobState> {
 
 impl SasBuilder<'_, state::ContainerState> {
     /// Signs the SAS and returns the token.
-    ///
-    /// Use [`append_token`](crate::append_token) to attach the returned token
-    /// to a container URL.
     pub fn token(&self) -> String {
         let sp = self.state.permissions.to_sas_str();
         let canonical = self
@@ -531,9 +524,6 @@ impl SasBuilder<'_, state::ContainerState> {
 
 impl SasBuilder<'_, state::DirectoryState> {
     /// Signs the SAS and returns the token.
-    ///
-    /// Use [`append_token`](crate::append_token) to attach the returned token
-    /// to a directory URL.
     pub fn token(&self) -> String {
         let sp = self.state.permissions.to_sas_str();
         let depth = self.state.resource.depth();
@@ -557,9 +547,6 @@ impl SasBuilder<'_, state::DirectoryState> {
 
 impl SasBuilder<'_, state::QueueState> {
     /// Signs the SAS and returns the token.
-    ///
-    /// Use [`append_token`](crate::append_token) to attach the returned token
-    /// to a queue URL.
     pub fn token(&self) -> String {
         let sp = self.state.permissions.to_sas_str();
         let canonical = self

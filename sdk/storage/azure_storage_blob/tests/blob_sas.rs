@@ -20,7 +20,6 @@ use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_blob_service_client, get_container_client, StorageAccount,
 };
 use azure_storage_sas::{
-    append_token,
     resource::blob::{BlobPermissions, BlobResource, ContainerPermissions, ContainerResource},
     SasBuilder, UserDelegationKey,
 };
@@ -86,7 +85,8 @@ async fn test_blob_user_delegation_sas_read(ctx: TestContext) -> Result<(), Box<
         BlobPermissions::new().read(),
     )
     .token();
-    let sas_url = append_token(blob_client.url().clone(), &token);
+    let mut sas_url = blob_client.url().clone();
+    sas_url.set_query(Some(&token));
 
     // Download via an unauthenticated client using only the SAS URL.
     let sas_client = BlobClient::new(sas_url, None, None)?;
@@ -124,7 +124,8 @@ async fn test_blob_user_delegation_sas_write(ctx: TestContext) -> Result<(), Box
         BlobPermissions::new().read().write().create(),
     )
     .token();
-    let sas_url = append_token(blob_client.url().clone(), &token);
+    let mut sas_url = blob_client.url().clone();
+    sas_url.set_query(Some(&token));
 
     let sas_client = BlobClient::new(sas_url, None, None)?;
     let new_data = b"written through sas";
@@ -191,7 +192,14 @@ async fn test_blob_version_user_delegation_sas(ctx: TestContext) -> Result<(), B
         BlobPermissions::new().read(),
     )
     .token();
-    let sas_url = append_token(version_1_client.url().clone(), &token);
+    let mut sas_url = version_1_client.url().clone();
+    // Preserve the existing `versionid=` query parameter.
+    match sas_url.query() {
+        Some(existing) if !existing.is_empty() => {
+            sas_url.set_query(Some(&format!("{existing}&{token}")));
+        }
+        _ => sas_url.set_query(Some(&token)),
+    }
     assert!(
         sas_url.query().is_some_and(|q| q.contains("sr=bv")),
         "expected sr=bv in SAS URL, got: {sas_url}"
@@ -257,7 +265,8 @@ async fn test_blob_snapshot_user_delegation_sas(ctx: TestContext) -> Result<(), 
         BlobPermissions::new().read(),
     )
     .token();
-    let sas_url = append_token(blob_client.url().clone(), &token);
+    let mut sas_url = blob_client.url().clone();
+    sas_url.set_query(Some(&token));
     assert!(
         sas_url.query().is_some_and(|q| q.contains("sr=bs")),
         "expected sr=bs in SAS URL, got: {sas_url}"
@@ -316,7 +325,7 @@ async fn test_container_user_delegation_sas(ctx: TestContext) -> Result<(), Box<
             )
         })?
         .push(&blob_name);
-    let blob_url = append_token(blob_url, &token);
+    blob_url.set_query(Some(&token));
 
     let sas_client = BlobClient::new(blob_url, None, None)?;
     let body = sas_client.download(None).await?.body.collect().await?;

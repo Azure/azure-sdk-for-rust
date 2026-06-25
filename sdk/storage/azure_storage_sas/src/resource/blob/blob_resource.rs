@@ -28,8 +28,7 @@ impl BlobResource {
     /// `snapshot` is the snapshot timestamp (e.g., `"2025-01-15T12:00:00.0000000Z"`).
     ///
     /// The snapshot timestamp is emitted as the `snapshot=` query parameter of
-    /// the token, so [`append_token`](crate::append_token) carries it onto the
-    /// final URL automatically.
+    /// the token.
     pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
         self.snapshot = Some(snapshot.into());
         self
@@ -40,8 +39,7 @@ impl BlobResource {
     /// The version ID is not included in the SAS token; it must travel on the
     /// request URL as a `versionid=` query parameter. Append the token to a URL
     /// that already carries `versionid=` (for example
-    /// `BlobClient::with_version(...).url()`) with
-    /// [`append_token`](crate::append_token), which preserves the existing query.
+    /// `BlobClient::with_version(...).url()`).
     pub fn version(mut self, version_id: impl Into<String>) -> Self {
         self.version_id = Some(version_id.into());
         self

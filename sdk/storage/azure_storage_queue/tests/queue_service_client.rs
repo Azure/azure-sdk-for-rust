@@ -729,7 +729,7 @@ async fn test_queue_user_delegation_sas(ctx: TestContext) -> Result<()> {
     use azure_storage_queue::models::QueueMessage;
     use azure_storage_queue::QueueClient;
     use azure_storage_sas::resource::queue::{QueuePermissions, QueueResource};
-    use azure_storage_sas::{append_token, SasBuilder};
+    use azure_storage_sas::SasBuilder;
 
     let recording = ctx.recording();
     let account_name = recording.var("AZURE_STORAGE_ACCOUNT_NAME", None);
@@ -753,14 +753,15 @@ async fn test_queue_user_delegation_sas(ctx: TestContext) -> Result<()> {
         .await?
         .into_model()?;
 
-    // Generate a SAS token for the queue and append it to the queue URL.
+    // Generate a SAS token for the queue and set it on the queue URL.
     let token = SasBuilder::new(account_name.as_str(), &udk, now + Duration::hours(1))?
         .queue(
             QueueResource::new(&queue_name),
             QueuePermissions::new().read().add().process(),
         )
         .token();
-    let sas_url = append_token(queue_client.url().clone(), &token);
+    let mut sas_url = queue_client.url().clone();
+    sas_url.set_query(Some(&token));
 
     // Use the SAS URL to create an unauthenticated QueueClient and enqueue a message.
     let sas_client = QueueClient::new(sas_url, None, None)?;
@@ -797,7 +798,7 @@ async fn test_queue_user_delegation_sas_message_lifecycle(ctx: TestContext) -> R
     use azure_storage_queue::models::{QueueClientUpdateMessageOptions, QueueMessage};
     use azure_storage_queue::QueueClient;
     use azure_storage_sas::resource::queue::{QueuePermissions, QueueResource};
-    use azure_storage_sas::{append_token, SasBuilder};
+    use azure_storage_sas::SasBuilder;
 
     let recording = ctx.recording();
     let account_name = recording.var("AZURE_STORAGE_ACCOUNT_NAME", None);
@@ -826,7 +827,8 @@ async fn test_queue_user_delegation_sas_message_lifecycle(ctx: TestContext) -> R
             QueuePermissions::new().read().add().update().process(),
         )
         .token();
-    let sas_url = append_token(queue_client.url().clone(), &token);
+    let mut sas_url = queue_client.url().clone();
+    sas_url.set_query(Some(&token));
     let sas_client = QueueClient::new(sas_url, None, None)?;
 
     // Add.

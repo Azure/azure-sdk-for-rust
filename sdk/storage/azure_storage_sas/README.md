@@ -21,40 +21,43 @@ cargo add azure_storage_sas
 
 ### Which API should I use?
 
-Use `SasBuilder` to construct a user delegation SAS token, then append it to the resource URL with `append_token`. Obtain the `UserDelegationKey` from `BlobServiceClient::get_user_delegation_key` (in `azure_storage_blob`) or `QueueServiceClient::get_user_delegation_key` (in `azure_storage_queue`), then pass it to `SasBuilder::new` along with the account name, permissions, and expiry.
+Use `SasBuilder` to construct a user delegation SAS token, then set it as the query string on the resource URL. Obtain the `UserDelegationKey` from `BlobServiceClient::get_user_delegation_key` (in `azure_storage_blob`) or `QueueServiceClient::get_user_delegation_key` (in `azure_storage_queue`), then pass it to `SasBuilder::new` along with the account name, permissions, and expiry.
 
 ## Examples
 
 ### Generate a read-only blob SAS
 
-Produce the signed SAS token and append it to a blob URL. Use the resulting URL with an unauthenticated `BlobClient::new` to grant a caller time-bound read access:
+Produce the signed SAS token and set it as the query on a blob URL. Use the resulting URL with an unauthenticated `BlobClient::new` to grant a caller time-bound read access:
 
 ```rust no_run
 use azure_core::http::Url;
 use azure_storage_sas::{
-    append_token,
     resource::blob::{BlobPermissions, BlobResource},
     SasBuilder, UserDelegationKey,
 };
 use time::OffsetDateTime;
 
 # fn example(udk: UserDelegationKey) -> azure_core::Result<()> {
+let storage_account_name = "myaccount";
+let container_name = "images";
+let blob_name = "photo.jpg";
+
 let token = SasBuilder::new(
-        "myaccount",
+        storage_account_name,
         &udk,
         OffsetDateTime::now_utc() + time::Duration::hours(1),
     )?
     .blob(
-        BlobResource::new("images", "photo.jpg"),
+        BlobResource::new(container_name, blob_name),
         BlobPermissions::new().read(),
     )
     .content_type("image/jpeg")
     .token();
 
-// `append_token` preserves any existing query string and does not re-encode
-// the already-encoded token.
-let blob_url = Url::parse("https://myaccount.blob.core.windows.net/images/photo.jpg")?;
-let sas_url = append_token(blob_url, &token);
+let mut sas_url = Url::parse(&format!(
+    "https://{storage_account_name}.blob.core.windows.net/{container_name}/{blob_name}"
+))?;
+sas_url.set_query(Some(&token));
 # let _ = sas_url;
 # Ok(()) }
 ```
@@ -109,8 +112,8 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 [Azure subscription]: https://azure.microsoft.com/free/
 [Azure storage account]: https://learn.microsoft.com/azure/storage/common/storage-account-overview
 [cargo]: https://doc.rust-lang.org/cargo/
-[API reference documentation]: https://docs.rs/crate/azure_storage_sas/latest
-[Package (crates.io)]: https://crates.io/crates/azure_storage_sas
+[API reference documentation]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_sas
+[Package (crates.io)]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_sas
 [Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_sas
 [REST API documentation]: https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas
 [Product documentation]: https://learn.microsoft.com/azure/storage/common/storage-sas-overview
