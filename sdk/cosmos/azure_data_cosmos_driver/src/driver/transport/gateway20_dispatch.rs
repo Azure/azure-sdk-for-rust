@@ -17,7 +17,6 @@ use base64::{
 use uuid::Uuid;
 
 use crate::{
-    constants::{GATEWAY20_RANGE_MAX, GATEWAY20_RANGE_MIN},
     models::{
         cosmos_headers::{request_header_names, response_header_names},
         effective_partition_key::{
@@ -37,27 +36,34 @@ use super::{
     AuthorizationContext,
 };
 
-const X_MS_THINCLIENT_PROXY_OPERATION_TYPE: HeaderName =
-    HeaderName::from_static("x-ms-thinclient-proxy-operation-type");
-const X_MS_THINCLIENT_PROXY_RESOURCE_TYPE: HeaderName =
-    HeaderName::from_static("x-ms-thinclient-proxy-resource-type");
+// Thin `HeaderName` aliases over the canonical wire strings in
+// `models::cosmos_headers`, so the dispatcher shares a single source of truth
+// with the rest of the crate instead of re-declaring the literals here.
 const GLOBAL_DATABASE_ACCOUNT_NAME: HeaderName =
-    HeaderName::from_static("globaldatabaseaccountname");
+    HeaderName::from_static(request_header_names::GLOBAL_DATABASE_ACCOUNT_NAME);
 const X_MS_DOCUMENTDB_COLLECTION_RID: HeaderName =
-    HeaderName::from_static("x-ms-documentdb-collection-rid");
-const X_MS_ACTIVITY_ID: HeaderName = HeaderName::from_static("x-ms-activity-id");
-const X_MS_DATE: HeaderName = HeaderName::from_static("x-ms-date");
-const X_MS_LSN: HeaderName = HeaderName::from_static("x-ms-lsn");
-const X_MS_GLOBAL_COMMITTED_LSN: HeaderName = HeaderName::from_static("x-ms-global-committed-lsn");
-const X_MS_CONTINUATION: HeaderName = HeaderName::from_static("x-ms-continuation");
-const X_MS_VERSION: HeaderName = HeaderName::from_static("x-ms-version");
-const CACHE_CONTROL: HeaderName = HeaderName::from_static("cache-control");
-const X_MS_COSMOS_USE_THINCLIENT: HeaderName =
-    HeaderName::from_static("x-ms-cosmos-use-thinclient");
+    HeaderName::from_static(request_header_names::COLLECTION_RID);
+const X_MS_ACTIVITY_ID: HeaderName = HeaderName::from_static(request_header_names::ACTIVITY_ID);
+const X_MS_DATE: HeaderName = HeaderName::from_static(request_header_names::DATE);
+const X_MS_LSN: HeaderName = HeaderName::from_static(response_header_names::MS_LSN);
+const X_MS_GLOBAL_COMMITTED_LSN: HeaderName =
+    HeaderName::from_static(response_header_names::GLOBAL_COMMITTED_LSN);
+const X_MS_CONTINUATION: HeaderName = HeaderName::from_static(request_header_names::CONTINUATION);
+const X_MS_VERSION: HeaderName = HeaderName::from_static(request_header_names::VERSION);
+const CACHE_CONTROL: HeaderName = HeaderName::from_static(request_header_names::CACHE_CONTROL);
 
-// Env-gated wire-frame dump. Set G2_DUMP_DIR=/path to capture request/response
-// RNTBD frames during debugging. Zero overhead when the env var is unset.
-static G2_DUMP_SEQ: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+// Gateway 2.0 (thin-client) outer header aliases, sharing the canonical wire
+// strings in `models::cosmos_headers` rather than re-declaring the literals.
+const GATEWAY20_OPERATION_TYPE: HeaderName =
+    HeaderName::from_static(request_header_names::THINCLIENT_PROXY_OPERATION_TYPE);
+const GATEWAY20_RESOURCE_TYPE: HeaderName =
+    HeaderName::from_static(request_header_names::THINCLIENT_PROXY_RESOURCE_TYPE);
+const GATEWAY20_RANGE_MIN: HeaderName =
+    HeaderName::from_static(request_header_names::THINCLIENT_RANGE_MIN);
+const GATEWAY20_RANGE_MAX: HeaderName =
+    HeaderName::from_static(request_header_names::THINCLIENT_RANGE_MAX);
+const GATEWAY20_DISCOVERY_OPT_IN: HeaderName =
+    HeaderName::from_static(request_header_names::USE_THINCLIENT);
 
 /// Inputs resolved by the operation pipeline before a Gateway 2.0 dispatch.
 pub(crate) struct WrapInputs<'a> {
@@ -121,8 +127,8 @@ pub(crate) fn wrap_request_for_gateway20(
         // headers that carry the full physical pkrange bounds (set by
         // `OperationOverrides::apply_headers` for the full-pkrange XPK
         // fan-out path, where the public EPK headers must NOT be emitted —
-        // the legacy gateway rejects an empty-string min paired with
-        // `partitionkeyrangeid` with bare HTTP 400/500).
+        // the standard gateway rejects public EPK headers paired with
+        // `partitionkeyrangeid` with HTTP 400, regardless of the min bound).
         let start_epk_header = HeaderName::from_static(request_header_names::START_EPK);
         let start_fallback = HeaderName::from_static(request_header_names::THINCLIENT_PKRANGE_MIN);
         if let Some(epk_hex) = request
@@ -291,13 +297,13 @@ pub(crate) fn wrap_request_for_gateway20(
         headers.insert(X_MS_VERSION, HeaderValue::from("2020-07-15"));
     }
     headers.insert(CACHE_CONTROL, HeaderValue::from("no-cache"));
-    headers.insert(X_MS_COSMOS_USE_THINCLIENT, HeaderValue::from("true"));
+    headers.insert(GATEWAY20_DISCOVERY_OPT_IN, HeaderValue::from("true"));
     headers.insert(
-        X_MS_THINCLIENT_PROXY_OPERATION_TYPE,
+        GATEWAY20_OPERATION_TYPE,
         HeaderValue::from(proxy_operation_type_name(inputs.operation_type)),
     );
     headers.insert(
-        X_MS_THINCLIENT_PROXY_RESOURCE_TYPE,
+        GATEWAY20_RESOURCE_TYPE,
         HeaderValue::from(proxy_resource_type_name(inputs.resource_type)),
     );
     headers.insert(
@@ -338,17 +344,6 @@ pub(crate) fn wrap_request_for_gateway20(
     }
 
     let url = request.url.clone();
-    if std::env::var_os("G2_DUMP_DIR").is_some() {
-        let dir = std::env::var("G2_DUMP_DIR").unwrap();
-        let n = G2_DUMP_SEQ.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-        let path = format!("{dir}/g2-{n:03}-send.bin");
-        if std::fs::write(&path, &frame).is_ok() {
-            eprintln!(
-                "[G2-DIAG-SEND] n={n} url={url} frame_len={} -> {path}",
-                frame.len()
-            );
-        }
-    }
     Ok(HttpRequest {
         url,
         method: Method::Post,
@@ -364,26 +359,6 @@ pub(crate) fn wrap_request_for_gateway20(
 pub(crate) fn unwrap_response_for_gateway20(
     response: HttpResponse,
 ) -> azure_core::Result<HttpResponse> {
-    if std::env::var_os("G2_DUMP_DIR").is_some() {
-        let dir = std::env::var("G2_DUMP_DIR").unwrap();
-        let n = G2_DUMP_SEQ.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-        let path = format!("{dir}/g2-{n:03}-recv.bin");
-        if std::fs::write(&path, &response.body).is_ok() {
-            eprintln!(
-                "[G2-DIAG-RECV] n={n} status={} frame_len={} -> {path}",
-                response.status,
-                response.body.len()
-            );
-        }
-        if response.status >= 400 {
-            eprintln!(
-                "[G2-DIAG-RECV-ERR] n={n} status={} headers={:?} body_utf8={:?}",
-                response.status,
-                response.headers,
-                String::from_utf8_lossy(&response.body)
-            );
-        }
-    }
     let response = RntbdResponse::deserialize(&response.body)?;
     let status = u16::from(response.status.status_code());
     if !(100..=599).contains(&status) {

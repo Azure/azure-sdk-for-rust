@@ -41,6 +41,14 @@ use std::sync::Arc;
 use std::time::Duration;
 use url::Url;
 
+/// Gateway 2.0 endpoint-discovery opt-in header, sent on every
+/// `getDatabaseAccount` request. Aliases the canonical wire string in
+/// `models::cosmos_headers`.
+const GATEWAY20_DISCOVERY_OPT_IN: azure_core::http::headers::HeaderName =
+    azure_core::http::headers::HeaderName::from_static(
+        crate::models::cosmos_headers::request_header_names::USE_THINCLIENT,
+    );
+
 #[cfg(feature = "tokio")]
 use super::routing::EndpointProbeFn;
 
@@ -79,18 +87,22 @@ fn request_target_overrides(
         } => OperationOverrides {
             partition_key_range_id: Some(partition_key_range_id),
             // Only emit `x-ms-start-epk`/`x-ms-end-epk` for the narrowed case
-            // (range < partition_key_range). The legacy gateway rejects an
-            // empty-string min paired with `partitionkeyrangeid` with bare
-            // HTTP 400/500, so we never want the public EPK headers on the
-            // full-pkrange XPK fan-out path. The GW20 dispatcher derives its
-            // RNTBD `StartEpkHash`/`EndEpkHash` tokens from `pkrange_bounds`
-            // (below) when the public headers are absent.
+            // (range < partition_key_range). The public EPK headers paired with
+            // `partitionkeyrangeid` are accepted by Gateway 2.0 but rejected by
+            // the standard gateway with HTTP 400 (verified against live
+            // accounts, independent of the min bound value), so we never emit
+            // them on the full-pkrange XPK fan-out path that must also work on
+            // the standard gateway. Because the narrowed case emits both
+            // headers together, it is only valid on the wire against Gateway
+            // 2.0. The GW20 dispatcher derives its RNTBD
+            // `StartEpkHash`/`EndEpkHash` tokens from `pkrange_bounds` (below)
+            // when the public headers are absent.
             feed_range: range,
             // Always carry the physical pkrange bounds so the GW20 dispatcher
             // can synthesize StartEpkHash/EndEpkHash tokens (which the
             // thin-client proxy requires on every Query frame). Surfaced via
             // internal `x-ms-thinclient-pkrange-min`/`-max` headers in
-            // `apply_headers`; legacy gateway ignores unknown headers.
+            // `apply_headers`; the standard gateway ignores unknown headers.
             pkrange_bounds: Some(partition_key_range),
             // Propagate the operation's logical partition key (e.g. the
             // partial-HPK prefix from `FeedScope::partition(...)`) so the
@@ -723,7 +735,7 @@ impl CosmosDriver {
         };
         cosmos_headers::apply_cosmos_headers(&mut request, user_agent);
         request.headers.insert(
-            crate::constants::GATEWAY20_DISCOVERY_OPT_IN,
+            GATEWAY20_DISCOVERY_OPT_IN,
             azure_core::http::headers::HeaderValue::from_static("true"),
         );
         request
@@ -3015,7 +3027,7 @@ mod tests {
 
         let opt_in = request
             .headers
-            .get_optional_str(&crate::constants::GATEWAY20_DISCOVERY_OPT_IN)
+            .get_optional_str(&GATEWAY20_DISCOVERY_OPT_IN)
             .expect("getDatabaseAccount must send x-ms-cosmos-use-thinclient so the server emits thinClient*Locations");
         assert_eq!(
             opt_in, "true",

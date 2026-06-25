@@ -91,6 +91,35 @@ pub(crate) mod request_header_names {
     /// region. The same wire name appears under
     /// [`response_header_names::HAS_TENTATIVE_WRITES`] on responses.
     pub const ALLOW_TENTATIVE_WRITES: &str = "x-ms-cosmos-allow-tentative-writes";
+
+    pub const DATE: &str = "x-ms-date";
+    pub const VERSION: &str = "x-ms-version";
+    pub const CACHE_CONTROL: &str = "cache-control";
+    pub const COLLECTION_RID: &str = "x-ms-documentdb-collection-rid";
+
+    /// Account name the Gateway 2.0 proxy uses to route an outer HTTP/2
+    /// request to the correct backend.
+    pub const GLOBAL_DATABASE_ACCOUNT_NAME: &str = "globaldatabaseaccountname";
+
+    // Gateway 2.0 (thin-client) outer HTTP/2 header names. The wire strings
+    // keep the historical `x-ms-thinclient-*` form because the proxy is
+    // server-defined; only the Rust identifiers follow this module's
+    // convention. These are consumed solely by the Gateway 2.0 dispatch path.
+
+    /// Numeric proxy operation type, sent on every Gateway 2.0 request.
+    pub const THINCLIENT_PROXY_OPERATION_TYPE: &str = "x-ms-thinclient-proxy-operation-type";
+    /// Numeric proxy resource type, sent on every Gateway 2.0 request.
+    pub const THINCLIENT_PROXY_RESOURCE_TYPE: &str = "x-ms-thinclient-proxy-resource-type";
+    /// Lower bound of the EPK range; sent for feed/cross-partition operations only.
+    pub const THINCLIENT_RANGE_MIN: &str = "x-ms-thinclient-range-min";
+    /// Upper bound of the EPK range; sent for feed/cross-partition operations only.
+    pub const THINCLIENT_RANGE_MAX: &str = "x-ms-thinclient-range-max";
+    /// Gateway 2.0 endpoint-discovery opt-in, sent on every `getDatabaseAccount`
+    /// request so the server emits `thinClientWritableLocations` /
+    /// `thinClientReadableLocations`. Without it the server suppresses those
+    /// fields even when the federation has thin-client enabled, silently
+    /// disabling Gateway 2.0 routing for the client.
+    pub const USE_THINCLIENT: &str = "x-ms-cosmos-use-thinclient";
 }
 
 /// Standard Cosmos DB response header names.
@@ -107,6 +136,9 @@ pub(crate) mod response_header_names {
     pub const QUERY_METRICS: &str = "x-ms-documentdb-query-metrics";
     pub const SERVER_DURATION_MS: &str = "x-ms-request-duration-ms";
     pub const LSN: &str = "lsn";
+    /// `x-ms-`-prefixed mirror of [`LSN`], emitted on Gateway 2.0 responses
+    /// alongside the bare `lsn` header.
+    pub const MS_LSN: &str = "x-ms-lsn";
     pub const ITEM_LSN: &str = "x-ms-item-lsn";
     pub const OWNER_FULL_NAME: &str = "x-ms-alt-content-path";
     pub const OWNER_ID: &str = "x-ms-content-path";
@@ -1434,5 +1466,35 @@ mod tests {
     fn to_raw_headers_empty_when_all_fields_none() {
         let raw = CosmosResponseHeaders::default().to_raw_headers();
         assert_eq!(raw.iter().count(), 0);
+    }
+
+    #[test]
+    fn gateway20_proxy_header_wire_strings() {
+        use request_header_names as r;
+        let cases = [
+            (
+                r::THINCLIENT_PROXY_OPERATION_TYPE,
+                "x-ms-thinclient-proxy-operation-type",
+            ),
+            (
+                r::THINCLIENT_PROXY_RESOURCE_TYPE,
+                "x-ms-thinclient-proxy-resource-type",
+            ),
+            (r::THINCLIENT_RANGE_MIN, "x-ms-thinclient-range-min"),
+            (r::THINCLIENT_RANGE_MAX, "x-ms-thinclient-range-max"),
+            (r::USE_THINCLIENT, "x-ms-cosmos-use-thinclient"),
+        ];
+
+        for (actual, expected) in cases {
+            assert_eq!(actual, expected);
+            // Must be a valid static header name (lowercased, no panic).
+            let _ = HeaderName::from_static(actual);
+        }
+
+        for (index, (left, _)) in cases.iter().enumerate() {
+            for (right, _) in cases.iter().skip(index + 1) {
+                assert_ne!(left, right, "Gateway 2.0 headers must be distinct");
+            }
+        }
     }
 }

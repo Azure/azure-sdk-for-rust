@@ -78,7 +78,6 @@ where
 #[derive(Debug, Default, Deserialize)]
 #[serde(default)]
 #[serde(rename_all = "camelCase")]
-#[allow(dead_code)] // Wire-format fields; not all are consumed today.
 pub(crate) struct RawQueryPlan {
     #[serde(default)]
     pub partitioned_query_execution_info_version: usize,
@@ -246,7 +245,6 @@ fn json_type_name(v: &serde_json::Value) -> &'static str {
 #[derive(Debug, Default, Deserialize, Serialize, PartialEq)]
 #[serde(default)]
 #[serde(rename_all = "camelCase")]
-#[allow(dead_code)] // Wire-format fields; not all are consumed today.
 pub(crate) struct QueryPlan {
     /// The version of the query plan format.
     pub partitioned_query_execution_info_version: usize,

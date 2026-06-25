@@ -96,11 +96,12 @@ impl OperationOverrides {
     ) -> crate::error::Result<()> {
         if let Some(feed_range) = &self.feed_range {
             // Narrowed-range XPK case (range < pkrange) AND scoped reads via
-            // `FeedRange`. Both gateways accept these headers when the bounds
-            // are non-empty hex. The full-pkrange XPK fan-out path uses
-            // `pkrange_bounds` (below) instead so the public EPK headers stay
-            // absent (legacy gateway rejects an empty-string min paired with
-            // partitionkeyrangeid).
+            // `FeedRange`. These public EPK headers are honored by Gateway 2.0;
+            // the standard gateway rejects them when paired with
+            // `partitionkeyrangeid` (HTTP 400, regardless of the min bound —
+            // verified against live accounts), so the full-pkrange XPK fan-out
+            // path uses the internal `pkrange_bounds` headers (below) instead
+            // and leaves these absent.
             headers.insert(
                 HeaderName::from_static(request_header_names::START_EPK),
                 HeaderValue::from(feed_range.min_inclusive().as_str().to_owned()),
@@ -2400,7 +2401,7 @@ async fn perform_single_attempt(
             user_agent: ctx.user_agent,
             pipeline_type: ctx.pipeline_type,
             transport_security: ctx.transport_security,
-            endpoint_key: routing.endpoint.endpoint_key(),
+            endpoint_key: routing.endpoint_key.clone(),
             account_name: ctx.account_name.clone(),
             collection_rid: ctx.operation.container().map(|c| c.rid().to_owned()),
             max_throttle_attempts,

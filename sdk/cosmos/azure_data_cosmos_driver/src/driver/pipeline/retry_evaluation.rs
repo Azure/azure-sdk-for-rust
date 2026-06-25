@@ -314,10 +314,17 @@ pub(crate) fn evaluate_hedge_leg_effects(
         }
 
         TransportOutcome::TransportError { request_sent, .. } => {
-            // Mirrors `evaluate_transport_layer_outcome`: `definitely_not_sent`
-            // emits no effects; `sent` marks the partition unavailable and
-            // (when PPCB is not managing failover) the endpoint too.
-            if !request_sent.definitely_not_sent() {
+            // Mirrors `evaluate_transport_layer_outcome`: a not-sent failure is
+            // endpoint-wide (mark the endpoint, leave PPCB's partition counter
+            // untouched); a sent/unknown failure means the endpoint is
+            // reachable but this partition had an issue (mark the partition
+            // only — sibling partitions on the endpoint are unaffected).
+            if request_sent.definitely_not_sent() {
+                eval.effects.push(LocationEffect::MarkEndpointUnavailable {
+                    endpoint: endpoint.clone(),
+                    reason: UnavailableReason::TransportError,
+                });
+            } else {
                 eval.effects.push(LocationEffect::MarkPartitionUnavailable(
                     make_partition_unavailable(
                         operation,
@@ -326,12 +333,6 @@ pub(crate) fn evaluate_hedge_leg_effects(
                         operation.is_read_only(),
                     ),
                 ));
-                if !is_ppcb_managed(operation, retry_state) {
-                    eval.effects.push(LocationEffect::MarkEndpointUnavailable {
-                        endpoint: endpoint.clone(),
-                        reason: UnavailableReason::TransportError,
-                    });
-                }
             }
         }
 
@@ -2800,12 +2801,12 @@ mod tests {
         assert!(!eval.observed_session_unavailable);
     }
 
-    /// Transport error with `RequestSentStatus::Sent` on a read emits
-    /// the same `MarkPartitionUnavailable` + `MarkEndpointUnavailable`
-    /// pair the consuming path emits — see
+    /// Transport error with `RequestSentStatus::Sent` means the endpoint was
+    /// reachable but this partition had an issue — emits `MarkPartitionUnavailable`
+    /// ONLY (no endpoint mark), matching the sent branch of
     /// `evaluate_transport_layer_outcome`.
     #[test]
-    fn hedge_leg_effects_transport_sent_emits_marks() {
+    fn hedge_leg_effects_transport_sent_marks_partition_only() {
         let op = make_read_operation();
         let endpoint = test_endpoint();
         let state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
@@ -2816,18 +2817,23 @@ mod tests {
             .effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
-        assert!(eval
-            .effects
-            .iter()
-            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+        assert!(
+            !eval
+                .effects
+                .iter()
+                .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })),
+            "sent transport error must not mark the endpoint — siblings are unaffected",
+        );
     }
 
-    /// Transport error with `RequestSentStatus::NotSent` emits NO
-    /// effects (the failure is purely client-side; failing over is safe
-    /// and incurs no routing-state consequences) — matches the
+    /// Transport error with `RequestSentStatus::NotSent` is an endpoint-wide
+    /// failure — emits `MarkEndpointUnavailable` (and no partition mark, so
+    /// PPCB's partition counter is not inflated), matching the
     /// `definitely_not_sent` branch in `evaluate_transport_layer_outcome`.
+    /// This is what drives G2 fail-fast: an unreachable thin-client proxy
+    /// rotates its region out instead of being retried.
     #[test]
-    fn hedge_leg_effects_transport_not_sent_is_empty() {
+    fn hedge_leg_effects_transport_not_sent_marks_endpoint() {
         let op = make_create_operation();
         let endpoint = test_endpoint();
         let state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
@@ -2835,8 +2841,17 @@ mod tests {
 
         let eval = evaluate_hedge_leg_effects(&op, &endpoint, &state, &result);
         assert!(
-            eval.effects.is_empty(),
-            "not-sent transport error must not mark routing state",
+            eval.effects
+                .iter()
+                .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })),
+            "not-sent transport error must mark the endpoint unavailable",
+        );
+        assert!(
+            !eval
+                .effects
+                .iter()
+                .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))),
+            "not-sent transport error must not inflate the partition counter",
         );
     }
 
