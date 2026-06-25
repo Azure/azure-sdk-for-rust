@@ -43,6 +43,9 @@ pub mod error;
 pub mod markers;
 pub mod system_strings;
 
+#[cfg(test)]
+mod vectors;
+
 pub use error::{BinaryError, Result};
 
 /// The Cosmos binary JSON preamble byte.
