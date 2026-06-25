@@ -358,6 +358,20 @@ pub(crate) mod test_env {
         "AZURE_COSMOS_PPCB_CONSECUTIVE_HEDGE_WIN_THRESHOLD",
     ];
 
+    /// Every environment variable read by `OperationOptions::from_env` /
+    /// `from_env_override` (including the nested `ThrottlingRetryOptions`).
+    /// Tests clear all of these so an ambient value can't leak into an
+    /// assertion about a single field.
+    pub(crate) const OPERATION_ENV_VARS: &[&str] = &[
+        "AZURE_COSMOS_READ_CONSISTENCY_STRATEGY",
+        "AZURE_COSMOS_CONTENT_RESPONSE_ON_WRITE",
+        "AZURE_COSMOS_MAX_FAILOVER_RETRY_COUNT",
+        "AZURE_COSMOS_MAX_SESSION_RETRY_COUNT",
+        "AZURE_COSMOS_MAX_THROTTLE_RETRY_COUNT",
+        "AZURE_COSMOS_HEDGING_ENABLED",
+        "AZURE_COSMOS_HEDGING_ENABLED_OVERRIDE",
+    ];
+
     /// Runs `body` with a hermetic view of the named environment variables.
     ///
     /// Holds the shared [`ENV_TEST_LOCK`] for the whole call (so parallel tests
