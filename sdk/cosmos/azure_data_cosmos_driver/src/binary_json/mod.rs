@@ -34,12 +34,14 @@
 //! match the service byte-for-byte. See the binary-encoding spec
 //! (`docs/BINARY_ENCODING_SPEC.md`) for the full design and phased plan.
 //!
-//! > **Status:** foundational scaffolding (phase P0a). The decoder, encoder,
-//! > system-string table, and request/response wiring are added in later
-//! > phases; the constants and error vocabulary here carry no behavior change.
+//! > **Status:** foundational scaffolding (phase P0). The constants, error
+//! > vocabulary, and system-string dictionary here carry no behavior change;
+//! > the decoder, encoder, and request/response wiring are added in later
+//! > phases (P1+).
 
 pub mod error;
 pub mod markers;
+pub mod system_strings;
 
 pub use error::{BinaryError, Result};
 
