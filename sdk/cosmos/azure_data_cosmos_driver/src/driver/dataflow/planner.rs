@@ -10,7 +10,6 @@
 //! [`QueryPlan`](super::query_plan::QueryPlan) and resolves the query's EPK
 //! ranges against the current topology to produce a fan-out pipeline.
 
-use std::collections::HashSet;
 use std::sync::Arc;
 
 use crate::{
@@ -209,34 +208,31 @@ async fn plan_fresh(
     operation: &Arc<CosmosOperation>,
 ) -> crate::error::Result<Vec<Box<dyn PipelineNode>>> {
     let mut nodes: Vec<Box<dyn PipelineNode>> = Vec::new();
-    // Tracks partitions already targeted by a point (equality / `IN`) range so
-    // that an `IN (@a, @b)` whose values hash into the same physical partition
-    // issues a single request instead of duplicating results. Only point ranges
-    // de-duplicate: each targets its whole owning partition, so a second point in the
-    // same partition is fully redundant. Half-open ranges are never de-duplicated —
-    // distinct sub-slices of one partition are separate, non-redundant work.
-    let mut point_targeted_partitions: HashSet<String> = HashSet::new();
+    // Tracks partitions already emitted as whole-partition point requests, so
+    // multiple `IN` values that resolve to the same partition don't produce
+    // duplicate identical requests (and hence duplicate documents).
+    let mut point_partitions_emitted = std::collections::HashSet::new();
     for query_range in &query_plan.query_ranges {
         let feed_range = query_range_to_feed_range(query_range)?;
+        let is_point = feed_range.min_inclusive() == feed_range.max_exclusive();
         let resolved = topology_provider
             .resolve_ranges(&feed_range, PartitionRoutingRefresh::UseCached)
             .await?;
-        let is_point = feed_range.as_epk_point().is_some();
         for resolved_range in resolved {
-            // A point (equality / `IN`) targets its *whole* owning partition by
-            // partition-key-range id (no `x-ms-start-epk` / `x-ms-end-epk`); the
-            // SQL predicate filters within the partition, mirroring .NET's
-            // "EpkRange spans exactly one physical partition" routing. A
-            // half-open range is clipped to the query range as before.
             let range = if is_point {
-                // De-duplicate co-located points: a second `IN` value hashing
-                // into an already-targeted partition is fully redundant.
-                if !point_targeted_partitions.insert(resolved_range.partition_key_range_id.clone())
+                // Equality / `IN` predicate: route the point to its *whole*
+                // owning physical partition (`partitionkeyrangeid` only, no
+                // `start`/`end-epk`). The gateway rejects interior EPK windows
+                // on query ops (#4574 / #4638); the SQL predicate still filters
+                // to the single logical partition. Matches the Java SDK.
+                if !point_partitions_emitted
+                    .insert(resolved_range.partition_key_range_id.clone())
                 {
                     continue;
                 }
                 resolved_range.range.clone()
             } else {
+                // Clip the resolved partition to the (non-point) query range.
                 intersect_feed_ranges(&resolved_range.range, &feed_range).ok_or_else(|| {
                     topology_range_not_overlapping_error(&resolved_range.range, &feed_range)
                 })?
@@ -281,33 +277,66 @@ async fn plan_resume_from_saved_snapshot(
 ) -> crate::error::Result<Vec<Box<dyn PipelineNode>>> {
     let mut nodes: Vec<Box<dyn PipelineNode>> = Vec::new();
     let mut coverage: Vec<Vec<FeedRange>> = vec![Vec::new(); saved.active_tokens.len()];
-    // See `plan_fresh`: point (equality / `IN`) ranges target a whole partition,
-    // so co-located points de-duplicate to one leaf per partition.
-    let mut point_targeted_partitions: HashSet<String> = HashSet::new();
+    // Partitions already emitted as whole-partition point requests (see
+    // `plan_fresh`); dedups colocated `IN` values so they don't produce
+    // duplicate whole-partition requests.
+    let mut point_partitions_emitted = std::collections::HashSet::new();
 
     for query_range in &query_plan.query_ranges {
         let feed_range = query_range_to_feed_range(query_range)?;
+        let is_point = feed_range.min_inclusive() == feed_range.max_exclusive();
         let resolved = topology_provider
             .resolve_ranges(&feed_range, PartitionRoutingRefresh::UseCached)
             .await?;
-        let is_point = feed_range.as_epk_point().is_some();
 
         for resolved_range in resolved {
-            // A point (equality / `IN`) targets its whole owning partition; a
-            // half-open range is clipped to the query range. Computing the
-            // point's intersection would collapse `[X, X)` to empty (issue
-            // #4574), so the whole resolved partition is used instead.
-            let leaf_scope = if is_point {
-                if !point_targeted_partitions.insert(resolved_range.partition_key_range_id.clone())
+            if is_point {
+                // Equality / `IN` point: route the *whole* owning partition
+                // (no interior EPK window — see `plan_fresh` / #4638). The point
+                // resolves to exactly one partition, so at most one saved token
+                // covers it; resume is driven solely by that continuation token,
+                // never by EPK sub-windowing.
+                if !point_partitions_emitted
+                    .insert(resolved_range.partition_key_range_id.clone())
                 {
                     continue;
                 }
-                resolved_range.range.clone()
-            } else {
+                // Drop the partition if it is entirely at or below the cursor.
+                if resolved_range.range.max_exclusive() <= &saved.cursor {
+                    continue;
+                }
+                // Equality queries route whole partitions, so a saved token's
+                // range is the whole partition that contains this point.
+                let continuation = saved
+                    .active_tokens
+                    .iter()
+                    .enumerate()
+                    .find(|(_, entry)| {
+                        entry.range.min_inclusive() <= resolved_range.range.min_inclusive()
+                            && resolved_range.range.max_exclusive() <= entry.range.max_exclusive()
+                    })
+                    .map(|(idx, entry)| {
+                        coverage[idx].push(resolved_range.range.clone());
+                        entry.server_continuation.clone()
+                    });
+                let target = RequestTarget::effective_partition_key_range(
+                    resolved_range.range.clone(),
+                    resolved_range.partition_key_range_id.clone(),
+                    resolved_range.range.clone(),
+                );
+                nodes.push(Box::new(Request::new(
+                    Arc::clone(operation),
+                    target,
+                    continuation,
+                )));
+                continue;
+            }
+
+            // Clip the resolved partition to the (non-point) query range.
+            let leaf_scope =
                 intersect_feed_ranges(&resolved_range.range, &feed_range).ok_or_else(|| {
                     topology_range_not_overlapping_error(&resolved_range.range, &feed_range)
-                })?
-            };
+                })?;
 
             // Clip to "at or above cursor". Drop leaves entirely below.
             if leaf_scope.max_exclusive() <= &saved.cursor {
@@ -438,26 +467,29 @@ async fn plan_resume_from_saved_snapshot(
 /// The gateway returns a *closed* point range `[X, X]`
 /// (`isMinInclusive == isMaxInclusive == true`) when a query filters on the
 /// partition key with an equality / `IN` predicate (issue #4574), and a normal
-/// half-open `[min, max)` range otherwise. A closed point becomes a
-/// [`FeedRange::epk_point`] (which routes to its owning partition) rather than a
-/// degenerate `Range { min == max }` that would collapse to the empty set in
-/// interval math.
+/// half-open `[min, max)` range otherwise. The closed point is kept as the
+/// point [`FeedRange`] `[X, X]` (`min == max`) and routed to its *whole* owning
+/// physical partition at emit time (see [`plan_fresh`]) — `partitionkeyrangeid`
+/// only, no `start`/`end-epk` window. This matches the Java SDK, which resolves
+/// an equality point to the whole partition and never emits per-key EPK headers
+/// on a query op; the live gateway rejects interior EPK windows on query
+/// operations (issue #4638). A closed *non-point* range `[a, b]` (`a < b`) still
+/// has its inclusive upper bound made exclusive so it flows through half-open
+/// routing.
 fn query_range_to_feed_range(
     query_range: &super::query_plan::QueryRange,
 ) -> crate::error::Result<FeedRange> {
-    if query_range.is_max_inclusive && query_range.min == query_range.max {
-        return Ok(FeedRange::epk_point(EffectivePartitionKey::from(
-            query_range.min.as_str(),
-        )));
-    }
-    // Note: a degenerate `is_max_inclusive == false && min == max` range is an
-    // empty interval that the gateway is not expected to emit. We do not special
-    // case it here: it falls through to `FeedRange::new(X, X)` and the half-open
-    // routing path, where `intersect_feed_ranges` returns `None` and the planner
-    // surfaces a structured `CosmosError` (rather than panicking) as the safety
-    // net if that shape ever appears on the wire.
     let min = EffectivePartitionKey::from(query_range.min.as_str());
     let max = EffectivePartitionKey::from(query_range.max.as_str());
+    let max = if query_range.is_max_inclusive && min != max {
+        // Closed non-point range `[a, b]` (a < b): make the inclusive upper
+        // bound exclusive.
+        max.successor()
+    } else {
+        // Half-open `[min, max)` as-is, or the closed point `[X, X]` kept as a
+        // point (min == max) and widened to its whole partition at emit time.
+        max
+    };
     FeedRange::new(min, max)
 }
 
@@ -671,24 +703,13 @@ fn topology_range_not_overlapping_error(
         .build()
 }
 
-/// Renders a feed range for diagnostics, distinguishing a single-EPK point from
-/// a half-open `[min, max)` range. A point — an [`EpkPoint`] or a degenerate
-/// `min == max` range (both arising from an equality / `IN` predicate) — is
-/// shown as `point X` rather than `[X, X)`, which would otherwise read as the
-/// empty set and obscure the predicate shape for the on-call engineer.
+/// Renders a feed range for diagnostics as a half-open `[min, max)` range.
 fn render_feed_range_for_error(range: &FeedRange) -> String {
-    if let Some(epk) = range.as_epk_point() {
-        return format!("point {}", epk.as_str());
-    }
-    let (min, max) = (
+    format!(
+        "range [{}, {})",
         range.min_inclusive().as_str(),
         range.max_exclusive().as_str(),
-    );
-    if min == max {
-        format!("point {min}")
-    } else {
-        format!("range [{min}, {max})")
-    }
+    )
 }
 
 #[cfg(test)]
@@ -1084,13 +1105,14 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn closed_point_query_range_routes_to_owning_partition() {
-        // Regression for issue #4574: an equality / `IN` predicate on the
-        // partition key makes the gateway return a *closed* point range
-        // `[X, X]` (isMinInclusive == isMaxInclusive == true). The planner must
-        // route it to the partition that owns `X` and target the WHOLE
-        // partition (partition-key-range id only, no start/end-epk) so the SQL predicate
-        // filters — never collapse it to an empty `[X, X)` that panics.
+    async fn closed_point_query_range_routes_to_whole_partition() {
+        // Regression for issues #4574 / #4638: an equality / `IN` predicate on
+        // the partition key makes the gateway return a *closed* point range
+        // `[X, X]` (isMinInclusive == isMaxInclusive == true). The planner keeps
+        // it as the point `[X, X]` and routes the *whole* owning partition
+        // (`partitionkeyrangeid` only, no start/end-epk) — the live gateway
+        // rejects interior EPK windows on query ops. `range` collapses to
+        // `None`, and the point never panics on an empty intersection.
         let point = QueryRange {
             min: "30".to_string(),
             max: "30".to_string(),
@@ -1106,18 +1128,18 @@ mod tests {
             .await
             .unwrap();
 
-        // Target == whole owning partition ⇒ request range equals the partition
-        // range ⇒ no x-ms-start-epk / x-ms-end-epk emitted (partition-key-range id only).
-        assert_drain_requests(pipeline, &[("", "FF", "pkrange-0")]);
+        // Whole owning partition, no EPK window (range == partition => None).
+        assert_drain_requests_with_partitions(pipeline, &[("", "FF", "pkrange-0", "", "FF")]);
     }
 
     #[tokio::test]
-    async fn in_predicate_colocated_points_collapse_to_one_request() {
+    async fn in_predicate_colocated_points_emit_single_request() {
         // `WHERE c.pk IN (@a, @b)` where both values hash into the same
         // physical partition: the gateway returns two point ranges, both
-        // resolving to `pkrange-0`. The planner must emit a SINGLE request
-        // (the predicate returns both rows) — emitting two would duplicate
-        // every matching document.
+        // resolving to `pkrange-0`. Each point widens to the *whole* partition,
+        // so a second identical whole-partition request would return duplicate
+        // documents. The planner de-duplicates by partition and emits exactly
+        // one whole-partition request; the SQL predicate filters both values.
         let plan = plan_with_ranges(vec![
             QueryRange {
                 min: "30".to_string(),
@@ -1143,13 +1165,14 @@ mod tests {
             .await
             .unwrap();
 
-        assert_drain_requests(pipeline, &[("", "FF", "pkrange-0")]);
+        assert_drain_requests_with_partitions(pipeline, &[("", "FF", "pkrange-0", "", "FF")]);
     }
 
     #[tokio::test]
     async fn in_predicate_points_across_partitions_emit_one_request_each() {
         // `WHERE c.pk IN (@a, @b)` where the values live in different
-        // partitions: one whole-partition request per distinct partition.
+        // partitions: each point widens to its own owning partition, one
+        // whole-partition request each (no EPK window).
         let plan = plan_with_ranges(vec![
             QueryRange {
                 min: "20".to_string(),
@@ -1174,16 +1197,20 @@ mod tests {
             .await
             .unwrap();
 
-        assert_drain_requests(
+        assert_drain_requests_with_partitions(
             pipeline,
-            &[("", "80", "pkrange-left"), ("80", "FF", "pkrange-right")],
+            &[
+                ("", "80", "pkrange-left", "", "80"),
+                ("80", "FF", "pkrange-right", "80", "FF"),
+            ],
         );
     }
 
     #[test]
-    fn query_range_to_feed_range_makes_closed_point_an_epk_point() {
-        // A closed point range `[X, X]` (isMaxInclusive=true) becomes an
-        // EpkPoint, not a degenerate half-open range (issue #4574).
+    fn query_range_to_feed_range_keeps_closed_point() {
+        // A closed point range `[X, X]` (isMaxInclusive=true) is kept as the
+        // point FeedRange `[X, X]` (min == max) and widened to its whole
+        // partition at emit time (issues #4574 / #4638).
         let point = QueryRange {
             min: "30".to_string(),
             max: "30".to_string(),
@@ -1191,15 +1218,15 @@ mod tests {
             is_max_inclusive: true,
         };
         let fr = query_range_to_feed_range(&point).unwrap();
-        assert_eq!(fr.as_epk_point().map(|e| e.as_str()), Some("30"));
+        assert_eq!(fr.min_inclusive().as_str(), "30");
+        assert_eq!(fr.max_exclusive().as_str(), "30");
     }
 
     #[test]
     fn query_range_to_feed_range_preserves_half_open() {
-        // A half-open range `[A, B)` (isMaxInclusive=false) is a plain range,
-        // not a point — the common full-container / split case.
+        // A half-open range `[A, B)` (isMaxInclusive=false) is a plain range —
+        // the common full-container / split case.
         let fr = query_range_to_feed_range(&qr("20", "80")).unwrap();
-        assert!(fr.as_epk_point().is_none());
         assert_eq!(fr.min_inclusive().as_str(), "20");
         assert_eq!(fr.max_exclusive().as_str(), "80");
     }
@@ -1750,12 +1777,11 @@ mod tests {
 
     #[tokio::test]
     async fn resume_in_predicate_drops_point_partition_below_cursor() {
-        // Regression for issue #4574 resume path: an `IN (@a, @b)` whose values
-        // hash into two different partitions, resumed with a cursor that has
-        // fully drained the first point's partition. The point-routing branch
-        // must apply cursor clipping just like the half-open path: the drained
-        // partition is dropped, and only the second point's partition is
-        // emitted (fresh-start, above the cursor).
+        // Regression for issues #4574 / #4638 resume path: an `IN (@a, @b)`
+        // whose values hash into two different partitions, resumed with a cursor
+        // that has fully drained the first point's partition. The point branch
+        // routes whole partitions: the drained partition is dropped, and only
+        // the second point's whole partition is emitted (fresh-start, no token).
         let plan = plan_with_ranges(vec![
             QueryRange {
                 min: "20".to_string(),
@@ -1786,7 +1812,8 @@ mod tests {
         let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
             .await
             .unwrap();
-        // pk-left dropped (below cursor); pk-right emitted fresh-start.
+        // pk-left dropped (at/below cursor); pk-right emitted fresh-start as the
+        // whole partition (no EPK window).
         assert_drain_requests_with_partitions_and_continuation(
             pipeline,
             &[("80", "FF", "pk-right", "80", "FF", None)],
@@ -1794,13 +1821,12 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn resume_in_predicate_colocated_points_collapse_and_carry_continuation() {
-        // Regression for issue #4574 resume path: an `IN (@a, @b)` whose values
-        // are co-located in ONE partition, resumed while that partition has an
-        // in-flight server continuation. The first point emits a single leaf
-        // carrying the saved continuation; the second (same-partition) point
-        // must de-duplicate, so the resumed query issues exactly one request
-        // (not a duplicate that would re-read the partition).
+    async fn resume_in_predicate_colocated_points_emit_single_request_carrying_continuation() {
+        // Resume path, Option B: an `IN (@a, @b)` whose values are co-located in
+        // ONE partition. Equality queries route the whole partition, so the
+        // saved snapshot carries a single whole-partition continuation. Both
+        // points de-duplicate to one whole-partition leaf carrying that token —
+        // no EPK sub-windowing, no duplicate leaves.
         let plan = plan_with_ranges(vec![
             QueryRange {
                 min: "20".to_string(),
@@ -1822,13 +1848,13 @@ mod tests {
             Ok(vec![rr("", "FF", "pk-0")]),
         ]);
 
-        // The partition has an active continuation covering its whole range.
+        // The whole partition has one in-flight server continuation.
         let resume = PipelineNodeState::SequentialDrain {
             left_most_undrained_epk: "".to_owned(),
             active_tokens: vec![RangedToken {
                 min_epk: "".to_owned(),
                 max_epk: "FF".to_owned(),
-                server_continuation: "resume-token".to_owned(),
+                server_continuation: "tok-0".to_owned(),
             }],
         };
 
@@ -1837,7 +1863,7 @@ mod tests {
             .unwrap();
         assert_drain_requests_with_partitions_and_continuation(
             pipeline,
-            &[("", "FF", "pk-0", "", "FF", Some("resume-token"))],
+            &[("", "FF", "pk-0", "", "FF", Some("tok-0"))],
         );
     }
 

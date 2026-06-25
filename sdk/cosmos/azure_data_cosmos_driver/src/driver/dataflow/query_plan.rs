@@ -190,8 +190,9 @@ pub(crate) enum SortOrder {
 #[serde(rename_all = "camelCase")]
 // `is_min_inclusive` is wire-format only: query-plan ranges are always
 // min-inclusive and `FeedRange` is half-open `[min, max)`. `is_max_inclusive`
-// IS honored when converting to a `FeedRange` (see `query_range_to_feed_range`)
-// so closed point ranges from equality predicates route correctly (#4574).
+// IS honored when converting to a `FeedRange` (see `query_range_to_feed_range`):
+// a closed range from an equality / `IN` predicate is normalized to
+// `[min, successor(max))` so it routes correctly (#4574).
 #[allow(dead_code)]
 pub(crate) struct QueryRange {
     /// The minimum EPK value.

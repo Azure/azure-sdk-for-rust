@@ -58,30 +58,15 @@ where
     ) -> BoxFuture<'a, crate::error::Result<Vec<ResolvedRange>>> {
         let force_refresh = matches!(refresh, PartitionRoutingRefresh::ForceRefresh);
         Box::pin(async move {
-            // A bare EPK point (gateway equality / `IN` predicate, issue #4574)
-            // routes by containment to its single owning partition. A half-open
-            // range uses interval-overlap resolution. Resolving a point as the
-            // degenerate interval `X..X` would return nothing at a partition
-            // boundary, so the two cases must be kept distinct here.
-            let pk_ranges = if let Some(epk) = range.as_epk_point() {
-                self.cache
-                    .resolve_range_containing(
-                        &self.container,
-                        epk,
-                        force_refresh,
-                        &self.fetch_pk_ranges,
-                    )
-                    .await
-            } else {
-                self.cache
-                    .resolve_overlapping_ranges(
-                        &self.container,
-                        range.min_inclusive()..range.max_exclusive(),
-                        force_refresh,
-                        &self.fetch_pk_ranges,
-                    )
-                    .await
-            };
+            let pk_ranges = self
+                .cache
+                .resolve_overlapping_ranges(
+                    &self.container,
+                    range.min_inclusive()..range.max_exclusive(),
+                    force_refresh,
+                    &self.fetch_pk_ranges,
+                )
+                .await;
 
             let pk_ranges = match pk_ranges {
                 Some(ranges) if !ranges.is_empty() => ranges,
@@ -199,16 +184,17 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn resolves_epk_point_to_owning_partition_including_boundary() {
-        // Issue #4574: a bare EPK point (equality / `IN` predicate) must resolve
-        // to exactly its owning partition via containment. Topology is split at
-        // "80"; a point inside the right partition and a point exactly at the
-        // "80" boundary both belong to partition "2" — the half-open `X..X`
-        // overlap path would return nothing for the boundary case.
+    async fn resolves_normalized_point_to_owning_partition_including_boundary() {
+        // Issue #4574: an equality / `IN` predicate's closed point `[X, X]` is
+        // normalized to the half-open `[X, successor(X))`, which must resolve to
+        // exactly its owning partition. Topology is split at "80"; a point
+        // inside the right partition and a point exactly at the "80" boundary
+        // both belong to partition "2".
         let cache = PartitionKeyRangeCache::new();
         let mut provider = CachedTopologyProvider::new(&cache, make_container(), two_range_fetch);
 
-        let inside = FeedRange::epk_point(EffectivePartitionKey::from("C0"));
+        let inside_epk = EffectivePartitionKey::from("C0");
+        let inside = FeedRange::new(inside_epk.clone(), inside_epk.successor()).unwrap();
         let ranges = provider
             .resolve_ranges(&inside, PartitionRoutingRefresh::ForceRefresh)
             .await
@@ -216,7 +202,8 @@ mod tests {
         assert_eq!(ranges.len(), 1);
         assert_eq!(ranges[0].partition_key_range_id, "2");
 
-        let at_boundary = FeedRange::epk_point(EffectivePartitionKey::from("80"));
+        let boundary_epk = EffectivePartitionKey::from("80");
+        let at_boundary = FeedRange::new(boundary_epk.clone(), boundary_epk.successor()).unwrap();
         let ranges = provider
             .resolve_ranges(&at_boundary, PartitionRoutingRefresh::UseCached)
             .await

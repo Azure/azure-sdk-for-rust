@@ -48,21 +48,6 @@ enum FeedRangeRepr {
         min_inclusive: EffectivePartitionKey,
         max_exclusive: EffectivePartitionKey,
     },
-
-    /// A single effective-partition-key point with no associated logical
-    /// partition key.
-    ///
-    /// This is the shape the gateway query plan produces for an equality /
-    /// `IN` predicate on the partition key (`WHERE c.pk = @pk`): a closed point
-    /// range `[X, X]`. Unlike [`FeedRangeRepr::LogicalPartition`] it carries no
-    /// [`PartitionKey`] (the gateway only hands back the *hashed* EPK, which
-    /// cannot be reversed), so it routes by resolving the owning physical
-    /// partition rather than by emitting a logical-partition-key header.
-    ///
-    /// Representing the point explicitly — rather than as a degenerate
-    /// half-open `Range { min == max }` — keeps it from collapsing to the empty
-    /// set in `[min, max)` interval math (see issue #4574).
-    EpkPoint(EffectivePartitionKey),
 }
 
 #[derive(Serialize, Deserialize)]
@@ -136,16 +121,6 @@ impl FeedRange {
         })
     }
 
-    /// Creates a feed range for a single effective-partition-key point that has
-    /// no associated logical partition key.
-    ///
-    /// This is used by the query planner for the closed point range the gateway
-    /// returns for an equality / `IN` predicate on the partition key (issue
-    /// #4574). See [`FeedRangeRepr::EpkPoint`].
-    pub(crate) fn epk_point(effective_partition_key: EffectivePartitionKey) -> Self {
-        Self(FeedRangeRepr::EpkPoint(effective_partition_key))
-    }
-
     /// Returns the logical partition key if this feed range represents a single logical partition or prefix.
     ///
     /// It is the caller's responsibility to determine whether the returned partition key represents a full logical partition (i.e. has values for all levels of the hierarchy)
@@ -153,47 +128,6 @@ impl FeedRange {
     pub(crate) fn partition_key(&self) -> Option<&PartitionKey> {
         match &self.0 {
             FeedRangeRepr::LogicalPartition { partition_key, .. } => Some(partition_key),
-            FeedRangeRepr::Range { .. } | FeedRangeRepr::EpkPoint(_) => None,
-        }
-    }
-
-    /// Returns the EPK value if this feed range is a bare effective-partition-key
-    /// point (no logical partition key) — i.e. the gateway equality / `IN`
-    /// predicate shape. Returns `None` for logical-partition and `[min, max)`
-    /// ranges.
-    pub(crate) fn as_epk_point(&self) -> Option<&EffectivePartitionKey> {
-        match &self.0 {
-            FeedRangeRepr::EpkPoint(epk) => Some(epk),
-            FeedRangeRepr::LogicalPartition { .. } | FeedRangeRepr::Range { .. } => None,
-        }
-    }
-
-    /// Returns `Some(epk)` when this feed range covers exactly one EPK value:
-    /// an [`EpkPoint`](FeedRangeRepr::EpkPoint), a [`LogicalPartition`](FeedRangeRepr::LogicalPartition)
-    /// (already a point), or a degenerate `Range { min == max }`. Returns `None`
-    /// for a proper half-open `[min, max)` range.
-    ///
-    /// Duality note (intentional, transitional): a point can currently be
-    /// spelled two ways — as an [`EpkPoint`](FeedRangeRepr::EpkPoint) (which the
-    /// query planner produces and routes point-aware) or as a degenerate
-    /// `Range { min == max }`. Point-aware callers like [`overlaps`](FeedRange::overlaps)
-    /// honor both via this helper, but the lower-level
-    /// `intersect_feed_ranges` (used on the half-open routing path) still treats
-    /// `min == max` as empty. New point producers should use
-    /// [`epk_point`](FeedRange::epk_point); the longer-term cleanup is to teach
-    /// `intersect_feed_ranges` about point semantics (or funnel all points
-    /// through `EpkPoint`) so the two spellings converge.
-    fn single_epk(&self) -> Option<&EffectivePartitionKey> {
-        match &self.0 {
-            FeedRangeRepr::EpkPoint(epk) => Some(epk),
-            FeedRangeRepr::LogicalPartition {
-                effective_partition_key,
-                ..
-            } => Some(effective_partition_key),
-            FeedRangeRepr::Range {
-                min_inclusive,
-                max_exclusive,
-            } if min_inclusive == max_exclusive => Some(min_inclusive),
             FeedRangeRepr::Range { .. } => None,
         }
     }
@@ -216,8 +150,7 @@ impl FeedRange {
             FeedRangeRepr::LogicalPartition {
                 effective_partition_key,
                 ..
-            }
-            | FeedRangeRepr::EpkPoint(effective_partition_key) => effective_partition_key,
+            } => effective_partition_key,
             FeedRangeRepr::Range { min_inclusive, .. } => min_inclusive,
         }
     }
@@ -231,8 +164,7 @@ impl FeedRange {
             FeedRangeRepr::LogicalPartition {
                 effective_partition_key,
                 ..
-            }
-            | FeedRangeRepr::EpkPoint(effective_partition_key) => effective_partition_key,
+            } => effective_partition_key,
             FeedRangeRepr::Range { max_exclusive, .. } => max_exclusive,
         }
     }
@@ -245,22 +177,9 @@ impl FeedRange {
 
     /// Returns `true` if this feed range and `other` share any portion of the EPK space.
     ///
-    /// Point-aware: a single-EPK point `X` (a bare EPK point, a logical
-    /// partition, or a degenerate `min == max` range) is treated as the single
-    /// value it represents rather than as an empty `[X, X)` interval, so a point
-    /// overlaps a half-open range iff `min <= X < max`, and two points overlap
-    /// iff they are the same EPK. Without this, the `min < max` interval test
-    /// would report a point as overlapping nothing (issue #4574).
+    /// Two feed ranges overlap when one starts before the other ends and vice versa.
     pub fn overlaps(&self, other: &FeedRange) -> bool {
-        match (self.single_epk(), other.single_epk()) {
-            (Some(a), Some(b)) => a == b,
-            (Some(p), None) => other.min_inclusive() <= p && p < other.max_exclusive(),
-            (None, Some(p)) => self.min_inclusive() <= p && p < self.max_exclusive(),
-            (None, None) => {
-                self.min_inclusive() < other.max_exclusive()
-                    && other.min_inclusive() < self.max_exclusive()
-            }
-        }
+        self.min_inclusive() < other.max_exclusive() && other.min_inclusive() < self.max_exclusive()
     }
 
     fn to_json(&self) -> FeedRangeJson {
@@ -458,60 +377,6 @@ mod tests {
         .unwrap();
         assert!(!a.overlaps(&b));
         assert!(!b.overlaps(&a));
-    }
-
-    #[test]
-    fn epk_point_overlaps_containing_range_inclusive_of_lower_bound() {
-        // An EpkPoint must NOT collapse to an empty `[X, X)` interval. A point
-        // overlaps a half-open range `[min, max)` iff `min <= X < max`, so a
-        // point exactly at the partition's inclusive lower bound still overlaps
-        // (the `min < max` interval test would wrongly say it does not).
-        let partition = FeedRange::new(
-            EffectivePartitionKey::from("30"),
-            EffectivePartitionKey::from("80"),
-        )
-        .unwrap();
-
-        let inside = FeedRange::epk_point(EffectivePartitionKey::from("50"));
-        assert!(inside.overlaps(&partition));
-        assert!(partition.overlaps(&inside));
-
-        let at_lower_bound = FeedRange::epk_point(EffectivePartitionKey::from("30"));
-        assert!(at_lower_bound.overlaps(&partition));
-        assert!(partition.overlaps(&at_lower_bound));
-
-        // The exclusive upper bound is NOT contained.
-        let at_upper_bound = FeedRange::epk_point(EffectivePartitionKey::from("80"));
-        assert!(!at_upper_bound.overlaps(&partition));
-        assert!(!partition.overlaps(&at_upper_bound));
-    }
-
-    #[test]
-    fn epk_points_overlap_only_when_equal() {
-        let a = FeedRange::epk_point(EffectivePartitionKey::from("42"));
-        let same = FeedRange::epk_point(EffectivePartitionKey::from("42"));
-        let other = FeedRange::epk_point(EffectivePartitionKey::from("43"));
-        assert!(a.overlaps(&same));
-        assert!(!a.overlaps(&other));
-    }
-
-    #[test]
-    fn epk_point_accessors() {
-        let p = FeedRange::epk_point(EffectivePartitionKey::from("42"));
-        assert_eq!(p.as_epk_point().map(|e| e.as_str()), Some("42"));
-        assert!(p.partition_key().is_none());
-        assert!(!p.is_logical_partition());
-        // A point reports min == max (a single value), per the documented
-        // `max_exclusive` override semantics.
-        assert_eq!(p.min_inclusive(), p.max_exclusive());
-
-        // A plain range is not a point.
-        let r = FeedRange::new(
-            EffectivePartitionKey::from("00"),
-            EffectivePartitionKey::from("80"),
-        )
-        .unwrap();
-        assert!(r.as_epk_point().is_none());
     }
 
     #[test]
