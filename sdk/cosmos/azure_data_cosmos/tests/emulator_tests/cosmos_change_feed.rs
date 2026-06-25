@@ -20,13 +20,16 @@
 use super::framework;
 
 use std::error::Error;
+use std::num::NonZeroU32;
+use std::time::Duration;
 
 use azure_data_cosmos::feed::{ChangeFeedPageIterator, ContinuationToken, FeedScope};
 use azure_data_cosmos::models::ThroughputProperties;
-use azure_data_cosmos::options::{ChangeFeedOptions, ChangeFeedStartFrom};
+use azure_data_cosmos::options::{ChangeFeedOptions, ChangeFeedStartFrom, MaxItemCountHint};
 use framework::{test_data, MockItem, TestClient, TestOptions};
 use futures::StreamExt;
 use serde::de::DeserializeOwned;
+use time::OffsetDateTime;
 
 /// Maximum number of page polls a drain loop will perform before giving up.
 ///
@@ -406,6 +409,156 @@ pub async fn change_feed_now_resume_does_not_replay_history() -> Result<(), Box<
                  honor the original StartFrom::Now position rather than reading from \
                  the beginning",
                 replayed.len()
+            );
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+/// `StartFrom::PointInTime` begins the feed at a captured timestamp: changes
+/// written before the marker are excluded and only changes written after it are
+/// returned.
+///
+/// The change feed start time has one-second granularity (it is sent as an
+/// RFC 1123 `If-Modified-Since` header), so the baseline writes, the captured
+/// marker, and the post-marker writes are each separated by a short guard band
+/// to keep the boundary unambiguous.
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+pub async fn change_feed_point_in_time_excludes_earlier_changes() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |_, db_client| {
+            // Baseline items written before the point-in-time marker.
+            let baseline = test_data::generate_mock_items(10, 5);
+            let container =
+                test_data::create_container_with_items(db_client, baseline, None).await?;
+
+            // Guard band on each side of the captured marker so second-level
+            // granularity cannot blur the baseline and the new writes together.
+            tokio::time::sleep(Duration::from_secs(2)).await;
+            let marker = OffsetDateTime::now_utc();
+            tokio::time::sleep(Duration::from_secs(2)).await;
+
+            // New items written strictly after the marker.
+            let new_items: Vec<MockItem> = (0..3)
+                .map(|i| MockItem {
+                    id: format!("500{i}"),
+                    partition_key: "partition0".to_string(),
+                    merge_order: 5000 + i,
+                })
+                .collect();
+            for item in &new_items {
+                container
+                    .create_item("partition0", &item.id, item, None)
+                    .await?;
+            }
+
+            let mut iterator = container
+                .read_change_feed::<MockItem>(
+                    FeedScope::partition("partition0"),
+                    Some(
+                        ChangeFeedOptions::default()
+                            .with_start_from(ChangeFeedStartFrom::PointInTime(marker)),
+                    ),
+                )
+                .await?;
+
+            let mut actual = drain_changes(&mut iterator).await?;
+            sort_by_id(&mut actual);
+
+            let mut expected = new_items;
+            sort_by_id(&mut expected);
+
+            assert_eq!(
+                expected, actual,
+                "PointInTime must return only changes written after the marker"
+            );
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+/// A `max_item_count` limit caps how many items each change feed page returns,
+/// so a backlog larger than the limit is delivered across multiple pages while
+/// still surfacing every item exactly once.
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+pub async fn change_feed_max_item_count_pages_backlog() -> Result<(), Box<dyn Error>> {
+    const PAGE_LIMIT: u32 = 10;
+
+    TestClient::run_with_unique_db(
+        async |_, db_client| {
+            // 25 items in a single logical partition; at a page limit of 10 the
+            // backlog must span multiple pages.
+            let items: Vec<MockItem> = (0..25)
+                .map(|i| MockItem {
+                    id: format!("{i}"),
+                    partition_key: "partition0".to_string(),
+                    merge_order: i,
+                })
+                .collect();
+            let mut expected = items.clone();
+            sort_by_id(&mut expected);
+
+            let container =
+                test_data::create_container_with_items(db_client, items, None).await?;
+
+            let mut iterator = container
+                .read_change_feed::<MockItem>(
+                    FeedScope::partition("partition0"),
+                    Some(ChangeFeedOptions::default().with_max_item_count(
+                        MaxItemCountHint::Limit(NonZeroU32::new(PAGE_LIMIT).unwrap()),
+                    )),
+                )
+                .await?;
+
+            let mut collected: Vec<MockItem> = Vec::new();
+            let mut non_empty_pages = 0usize;
+            let mut empty_streak = 0usize;
+            let mut polls = 0usize;
+            while let Some(page) = iterator.next().await {
+                let page = page?;
+                polls += 1;
+
+                if page.items().is_empty() {
+                    empty_streak += 1;
+                    if empty_streak >= EMPTY_STREAK_TO_STOP {
+                        break;
+                    }
+                } else {
+                    empty_streak = 0;
+                    non_empty_pages += 1;
+                    assert!(
+                        page.items().len() <= PAGE_LIMIT as usize,
+                        "page returned {} items, exceeding the max_item_count limit of {PAGE_LIMIT}",
+                        page.items().len()
+                    );
+                    collected.extend(page.into_items());
+                }
+
+                if polls >= MAX_DRAIN_POLLS {
+                    break;
+                }
+            }
+
+            assert!(
+                non_empty_pages >= 2,
+                "a 25-item backlog at a page limit of {PAGE_LIMIT} should span multiple pages, saw {non_empty_pages}"
+            );
+            sort_by_id(&mut collected);
+            assert_eq!(
+                expected, collected,
+                "every item must be delivered exactly once across the paged reads"
             );
             Ok(())
         },
