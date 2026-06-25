@@ -89,6 +89,26 @@ pub fn assert_local_retry_attempted_on_region(
     );
 }
 
+/// Asserts an operation never contacted `excluded_region`, even while other regions fail.
+pub fn assert_region_not_contacted(
+    diagnostics: &azure_data_cosmos::diagnostics::DiagnosticsContext,
+    excluded_region: &Region,
+) {
+    let requests = diagnostics.requests();
+    let on_region = requests
+        .iter()
+        .filter(|r| r.region() == Some(excluded_region))
+        .count();
+    assert_eq!(
+        on_region, 0,
+        "expected zero tracked requests on excluded region {:?}, but {} of {} requests landed there (regions contacted: {:?})",
+        excluded_region,
+        on_region,
+        diagnostics.request_count(),
+        diagnostics.regions_contacted()
+    );
+}
+
 /// Default timeout for tests (80 seconds).
 pub const DEFAULT_TEST_TIMEOUT: Duration = Duration::from_secs(80);
 

@@ -100,6 +100,30 @@ pub struct OperationOptions {
     /// etc.), configure [`end_to_end_latency_policy`](Self::end_to_end_latency_policy).
     #[option(nested)]
     pub throttling_retry_options: Option<ThrottlingRetryOptions>,
+    /// Master switch that enables or disables cross-region read hedging.
+    ///
+    /// **Default**: `None`, which the driver treats as **enabled** — eligible
+    /// requests are hedged using the built-in default threshold of
+    /// `min(1000ms, request_timeout / 2)` (falling back to `1000ms`).
+    ///
+    /// **Environment variable**: `AZURE_COSMOS_HEDGING_ENABLED`. When set, it is
+    /// the **source of truth** and takes precedence over the programmatic
+    /// [`Self::availability_strategy`] in both directions:
+    /// - `Some(false)` turns hedging off even when an explicit
+    ///   [`AvailabilityStrategy::Hedging`] is configured.
+    /// - `Some(true)` turns hedging on even when an explicit
+    ///   [`AvailabilityStrategy::Disabled`] is configured; a programmatic
+    ///   `Hedging(..)` strategy still supplies its custom threshold, otherwise
+    ///   the default threshold above applies.
+    ///
+    /// Leaving it unset (`None`) defers to the programmatic strategy.
+    ///
+    /// **Kill switch**: `AZURE_COSMOS_HEDGING_ENABLED_OVERRIDE` takes
+    /// precedence over **every** layer (including a programmatic per-request
+    /// value and [`Self::availability_strategy`]). It is intended as a
+    /// fleet-wide incident override and should normally be left unset.
+    #[option(env = "AZURE_COSMOS_HEDGING_ENABLED", overridable)]
+    pub hedging_enabled: Option<bool>,
 
     /// Cross-region availability strategy controlling whether eligible
     /// requests are hedged to additional regions when the primary is slow.
@@ -108,6 +132,11 @@ pub struct OperationOptions {
     /// strategy. Setting
     /// `Some(AvailabilityStrategy::Disabled)` at any layer turns hedging
     /// off for that scope.
+    ///
+    /// **Note**: This strategy is overridden by [`Self::hedging_enabled`]
+    /// whenever the latter resolves to `Some(_)` (for example via
+    /// `AZURE_COSMOS_HEDGING_ENABLED`): `Some(false)` forces hedging off and
+    /// `Some(true)` forces it on, regardless of the strategy configured here.
     pub availability_strategy: Option<AvailabilityStrategy>,
 
     // Additional headers beyond those natively supported by the driver.
@@ -336,6 +365,7 @@ mod tests {
             "AZURE_COSMOS_CONTENT_RESPONSE_ON_WRITE" => Ok("true".to_string()),
             "AZURE_COSMOS_MAX_FAILOVER_RETRY_COUNT" => Ok("7".to_string()),
             "AZURE_COSMOS_MAX_SESSION_RETRY_COUNT" => Ok("3".to_string()),
+            "AZURE_COSMOS_HEDGING_ENABLED" => Ok("false".to_string()),
             _ => Err(std::env::VarError::NotPresent),
         });
 
@@ -349,6 +379,7 @@ mod tests {
         );
         assert_eq!(options.max_failover_retry_count, Some(7));
         assert_eq!(options.max_session_retry_count, Some(3));
+        assert_eq!(options.hedging_enabled, Some(false));
         // Fields without env annotation remain None
         assert!(options.excluded_regions.is_none());
         // Nested option groups are not populated by the parent's `from_env`;
@@ -380,6 +411,7 @@ mod tests {
         assert!(options.max_failover_retry_count.is_none());
         assert!(options.max_session_retry_count.is_none());
         assert!(options.availability_strategy.is_none());
+        assert!(options.hedging_enabled.is_none());
     }
 
     #[test]
@@ -511,6 +543,93 @@ mod tests {
 
         assert!(throttling.max_retry_count().is_none());
         assert!(throttling.max_retry_wait_time().is_none());
+    }
+
+    /// The `env_override` kill-switch layer must win over the operation layer
+    /// for an `overridable` field — this is the whole point of the
+    /// `{ENV}_OVERRIDE` variant: a fleet-wide incident override that beats a
+    /// hard-coded per-request value.
+    #[test]
+    fn env_override_layer_wins_over_operation_for_hedging_enabled() {
+        use std::sync::Arc;
+
+        // Override layer disables hedging.
+        let env_override = Arc::new(OperationOptions {
+            hedging_enabled: Some(false),
+            ..Default::default()
+        });
+
+        // Operation layer tries to enable hedging.
+        let operation = OperationOptions {
+            hedging_enabled: Some(true),
+            ..Default::default()
+        };
+
+        let view = OperationOptionsView::new_with_override(
+            Some(env_override),
+            None,
+            None,
+            None,
+            Some(&operation),
+        );
+
+        assert_eq!(
+            view.hedging_enabled(),
+            Some(&false),
+            "env_override must beat the operation layer for hedging_enabled",
+        );
+    }
+
+    /// When the `env_override` layer leaves a field unset, resolution falls
+    /// through to the normal layer chain (operation → … → env), so the
+    /// kill switch is inert unless the `{ENV}_OVERRIDE` variant is set.
+    #[test]
+    fn env_override_unset_falls_through_to_operation() {
+        let operation = OperationOptions {
+            hedging_enabled: Some(true),
+            ..Default::default()
+        };
+
+        // Override layer present but the field is None — must not mask the
+        // operation value.
+        let env_override = std::sync::Arc::new(OperationOptions::default());
+
+        let view = OperationOptionsView::new_with_override(
+            Some(env_override),
+            None,
+            None,
+            None,
+            Some(&operation),
+        );
+
+        assert_eq!(view.hedging_enabled(), Some(&true));
+    }
+
+    /// `from_env_override_vars` populates only the `overridable` fields from
+    /// their `{ENV}_OVERRIDE` variants and leaves every other env field
+    /// `None` (the base `from_env_vars` path is unaffected).
+    #[test]
+    fn from_env_override_vars_reads_only_override_variants() {
+        let options = OperationOptions::from_env_override_vars(|key| match key {
+            "AZURE_COSMOS_HEDGING_ENABLED_OVERRIDE" => Ok("false".to_string()),
+            // A non-override env var must be ignored by the override path.
+            "AZURE_COSMOS_HEDGING_ENABLED" => Ok("true".to_string()),
+            _ => Err(std::env::VarError::NotPresent),
+        });
+
+        assert_eq!(options.hedging_enabled, Some(false));
+        // A non-overridable env field must stay None on the override layer.
+        assert!(options.availability_strategy.is_none());
+    }
+
+    /// With nothing set, the override constructor produces an all-`None`
+    /// instance.
+    #[test]
+    fn from_env_override_vars_returns_none_when_unset() {
+        let options =
+            OperationOptions::from_env_override_vars(|_| Err(std::env::VarError::NotPresent));
+        assert!(options.hedging_enabled.is_none());
+        assert!(options.availability_strategy.is_none());
     }
 
     /// Each inner field on the nested [`ThroughputControlOptions`] group must

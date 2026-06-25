@@ -409,6 +409,17 @@ impl DriverTestRunContext {
             run_id: Uuid::new_v4().to_string()[..8].to_string(),
         }
     }
+
+    /// Returns the underlying driver runtime.
+    ///
+    /// Useful for assertions that need to inspect runtime-level resolved
+    /// configuration that is populated once at build time, such as the
+    /// `{ENV}_OVERRIDE` kill-switch layer exposed via
+    /// [`CosmosDriverRuntime::env_override_operation_options`].
+    pub fn runtime(&self) -> &Arc<CosmosDriverRuntime> {
+        &self.client.runtime
+    }
+
     /// Generates a unique database name for this test run.
     pub fn unique_database_name(&self) -> String {
         format!("test-db-{}", self.run_id)

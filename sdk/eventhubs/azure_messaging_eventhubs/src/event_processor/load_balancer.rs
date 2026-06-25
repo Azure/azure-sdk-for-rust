@@ -16,7 +16,7 @@ use std::{
     sync::{Arc, Mutex, MutexGuard},
     time::SystemTime,
 };
-use tracing::{debug, trace};
+use tracing::{debug, info, trace};
 
 /// LoadBalancerInfo contains information about the current ownership of partitions
 /// and the partitions that are unowned or expired.
@@ -283,9 +283,11 @@ impl LoadBalancer {
         ours.append(&mut random_ownerships);
 
         if ours.len() < load_balancer_info.max_allowed {
-            debug!("Not enough expired or unowned partitions, will need to steal from other processors. Stealing up to {} partitions.",
-                load_balancer_info.max_allowed - ours.len());
-            debug!("Stealing from {:?}", load_balancer_info.above_max);
+            info!(
+                count = load_balancer_info.max_allowed - ours.len(),
+                "Not enough expired or unowned partitions, will need to steal from other processors."
+            );
+            debug!(above_max = ?load_balancer_info.above_max, "Stealing from above-max owners.");
             random_ownerships = self.get_random_ownerships(
                 &load_balancer_info.above_max,
                 load_balancer_info.max_allowed - ours.len(),
@@ -326,8 +328,19 @@ impl LoadBalancer {
     ///
     /// # Errors
     /// Returns an error if the load balancing process fails.
+    #[tracing::instrument(
+        level = "debug",
+        skip_all,
+        fields(
+            eventhub = %self.consumer_client_details.eventhub_name,
+            consumer_group = %self.consumer_client_details.consumer_group,
+            fully_qualified_namespace = %self.consumer_client_details.fully_qualified_namespace,
+            owner_id = %self.consumer_client_details.client_id,
+        ),
+        err,
+    )]
     pub async fn load_balance(&self, partition_ids: &[&str]) -> Result<Vec<Ownership>> {
-        debug!("Load balance for partitions: {}", partition_ids.join(", "));
+        debug!(partitions = %partition_ids.join(", "), "Load balance for partitions.");
         let load_balancer_info = self.get_available_partitions(partition_ids).await?;
         trace!(
             "[{}] Load balancer info: {:?}",
@@ -346,9 +359,10 @@ impl LoadBalancer {
                     );
                     let ownership = self.balanced_load_balancer(&load_balancer_info)?;
                     if let Some(ownership) = ownership {
-                        debug!(
-                            "[{}] Claiming ownership of partition: {}",
-                            self.consumer_client_details.client_id, ownership.partition_id
+                        info!(
+                            owner_id = %self.consumer_client_details.client_id,
+                            partition_id = %ownership.partition_id,
+                            "Claiming ownership of partition."
                         );
                         ownerships.push(ownership);
                     }
@@ -359,11 +373,11 @@ impl LoadBalancer {
                         self.consumer_client_details.client_id
                     );
                     ownerships = self.greedy_load_balancer(&load_balancer_info)?;
-                    debug!(
-                        "[{}] Claiming ownership of {} partitions: {}",
-                        self.consumer_client_details.client_id,
-                        ownerships.len(),
-                        Self::partitions_for_ownership(&ownerships)
+                    info!(
+                        owner_id = %self.consumer_client_details.client_id,
+                        count = ownerships.len(),
+                        partitions = %Self::partitions_for_ownership(&ownerships),
+                        "Claiming ownership of partitions."
                     );
                 }
             }
@@ -991,10 +1005,10 @@ pub(crate) mod tests {
                     .load_balance(&all_partition_ids)
                     .await?;
 
-                info!("Too Few ownerships: {:?}", ownerships);
+                trace!("Too Few ownerships: {:?}", ownerships);
                 let mut owned_partitions = map_to_strings(&ownerships, |o| o.partition_id.clone());
                 owned_partitions.sort();
-                info!(
+                trace!(
                     "Claimed ownership of partitions: {}",
                     owned_partitions.join(", ")
                 );
@@ -1029,13 +1043,13 @@ pub(crate) mod tests {
                 ])
                 .await?;
 
-            info!(
+            trace!(
                 "Expiring ownership for partition {}",
                 middle_ownership.partition_id
             );
             relinquish_ownership(checkpoint_store.clone(), &middle_ownership).await?;
 
-            info!("Load balancing with strategy: {:?}", strategy);
+            trace!("Load balancing with strategy: {:?}", strategy);
             let load_balancer = LoadBalancer::new(
                 checkpoint_store.clone(),
                 new_test_consumer_client_details(CLIENT_B),
@@ -1056,12 +1070,12 @@ pub(crate) mod tests {
 
     #[recorded::test]
     async fn unit_test_load_balancer_balanced(_ctx: TestContext) -> Result<()> {
-        info!("Unit test for load balancer");
+        trace!("Unit test for load balancer");
 
         //cspell: ignore abbc abbcc aaaabbb
         for state in ["abc", "abbc", "abbcc"] {
             for owner in ["a", "b", "c"] {
-                info!("Layout {state} with owner {owner}");
+                trace!("Layout {state} with owner {owner}");
 
                 let (lb, parts) = create_load_balancer_for_unit_tests(state, owner).await?;
                 let load_balancer_info = lb
@@ -1075,7 +1089,7 @@ pub(crate) mod tests {
             }
         }
 
-        info!("Balanced with unequal ownership");
+        trace!("Balanced with unequal ownership");
         let (lb, parts) = create_load_balancer_for_unit_tests("aaaabbb", "a").await?;
         let load_balancer_info = lb
             .get_available_partitions(&parts.iter().map(String::as_str).collect::<Vec<&str>>())
@@ -1103,12 +1117,12 @@ pub(crate) mod tests {
 
     #[recorded::test]
     async fn unit_test_load_balancer_unbalanced(_ctx: TestContext) -> Result<()> {
-        info!("Unit test for load balancer (unbalanced)");
+        trace!("Unit test for load balancer (unbalanced)");
 
         //cspell: ignore aaaabb aaabbbcccd aaabbbccde aaaabbc
 
         {
-            info!("A new owner enters the field.");
+            trace!("A new owner enters the field.");
             let (load_balancer, partitions) =
                 create_load_balancer_for_unit_tests("abb", "c").await?;
             let load_balancer_info = load_balancer
@@ -1124,7 +1138,7 @@ pub(crate) mod tests {
         }
 
         {
-            info!("deficit, single partition");
+            trace!("deficit, single partition");
             // Existing owner needs to steal a partition.
             let (load_balancer, partitions) =
                 create_load_balancer_for_unit_tests("aaaabb", "b").await?;
@@ -1140,7 +1154,7 @@ pub(crate) mod tests {
             assert_eq!("..b.bb", load_balance_result);
         }
         {
-            info!("deficit, multiple partitions");
+            trace!("deficit, multiple partitions");
             let (load_balancer, partitions) =
                 create_load_balancer_for_unit_tests("aaabbbcccd", "d").await?;
             let load_balancer_info = load_balancer
@@ -1156,7 +1170,7 @@ pub(crate) mod tests {
         }
 
         {
-            info!("deficit, multiple owners");
+            trace!("deficit, multiple owners");
             let (load_balancer, partitions) =
                 create_load_balancer_for_unit_tests("aaabbbccde", "d").await?;
             let load_balancer_info = load_balancer
@@ -1172,7 +1186,7 @@ pub(crate) mod tests {
         }
 
         {
-            info!("can grab an extra partition");
+            trace!("can grab an extra partition");
             let (load_balancer, partitions) =
                 create_load_balancer_for_unit_tests("aaaabbc", "b").await?;
             let load_balancer_info = load_balancer
@@ -1218,7 +1232,7 @@ pub(crate) mod tests {
 
         let owned_as_string = ownerships_as_string(&ownerships, partition_count);
 
-        info!("Claimed ownership of partitions: {}", owned_as_string);
+        trace!("Claimed ownership of partitions: {}", owned_as_string);
 
         Ok(owned_as_string)
     }

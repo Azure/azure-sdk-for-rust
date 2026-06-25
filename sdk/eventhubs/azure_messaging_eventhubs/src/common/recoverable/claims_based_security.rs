@@ -60,13 +60,38 @@ impl RecoverableClaimsBasedSecurity {
     }
 
     fn should_retry_claims_based_security_response(e: &AmqpError) -> ErrorRecoveryAction {
-        warn!("Amqp operation failed: {:?}", e);
-        RecoverableConnection::should_retry_amqp_error(e)
+        let action = RecoverableConnection::should_retry_amqp_error(e);
+        // This classifier is shared by the create and authorize_path CBS paths.
+        // `recover_azure_operation` only hands us the error (a plain `fn`
+        // pointer, not a closure), so we cannot capture the link path here; the
+        // path-scoped context is logged at the call site in `authorize_path`.
+        // Surface the error condition and the resulting retry decision so a
+        // failing CBS round-trip is diagnosable.
+        warn!(
+            operation = "claims_based_security",
+            action = ?action,
+            err = ?e,
+            "Claims-based-security AMQP operation failed."
+        );
+        action
     }
 }
 
 #[async_trait::async_trait]
 impl AmqpClaimsBasedSecurityApis for RecoverableClaimsBasedSecurity {
+    // skip_all keeps the `secret` (the SAS/bearer token) out of the span; only
+    // the safe identifiers are promoted into fields. `expires_on` is a timestamp,
+    // not a credential, so it is safe to record.
+    #[tracing::instrument(
+        level = "debug",
+        skip_all,
+        fields(
+            path = %path,
+            operation = "authorize_path",
+            expires_on = %expires_on,
+        ),
+        err(level = "warn"),
+    )]
     async fn authorize_path(
         &self,
         path: String,
