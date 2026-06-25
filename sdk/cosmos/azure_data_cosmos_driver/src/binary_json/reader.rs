@@ -10,30 +10,38 @@
 //!
 //! # Phase status
 //!
-//! This is phase **P1a**: the [`Reader`] cursor infrastructure plus the scalar
-//! value forms ([`null`](serde_json::Value::Null), booleans, literal and
-//! fixed-width numbers, and the common string forms — system strings,
-//! encoded-length strings, and `StrL1`/`StrL2`/`StrL4`). The remaining forms
-//! surface as [`BinaryError::InvalidMarker`] until their sub-phase lands:
+//! Implemented so far: the `Reader` cursor infrastructure, the scalar value
+//! forms ([`null`](serde_json::Value::Null), booleans, literal and fixed-width
+//! numbers, and the common string forms — system strings, encoded-length
+//! strings, and `StrL1`/`StrL2`/`StrL4`), and **containers** (arrays
+//! `0xE0`–`0xE7` and objects `0xE8`–`0xEF`) with a nesting-depth guard. The
+//! remaining forms surface as [`BinaryError::InvalidMarker`] until their
+//! sub-phase lands:
 //!
-//! - **P1b:** containers (arrays `0xE0`–`0xE7`, objects `0xE8`–`0xEF`).
-//! - **P1b:** user strings (`0x40`–`0x67`) and reference strings
+//! - **P1c:** user strings (`0x40`–`0x67`) and reference strings
 //!   (`StrR1`–`StrR4`, `0xC3`–`0xC6`).
-//! - **P1c:** exotic strings (base64 / GUID / compressed, `0x68`–`0x7F`),
+//! - **P1d:** exotic strings (base64 / GUID / compressed, `0x68`–`0x7F`),
 //!   `Float16`/`Float32`/`Float64` (`0xCD`–`0xCF`), sized ints (`0xD7`–`0xDC`),
 //!   binary (`0xDD`–`0xDF`), and uniform number arrays (`0xF0`–`0xF3`).
 
-use serde_json::Value;
+use serde_json::{Map, Value};
 
 use super::markers::{
-    ENCODED_STRING_LENGTH_MASK, ENCODED_STRING_LENGTH_MAX, ENCODED_STRING_LENGTH_MIN,
-    LITERAL_INT_MAX, LITERAL_INT_MIN, NUMBER_DOUBLE, NUMBER_INT16, NUMBER_INT32, NUMBER_INT64,
-    NUMBER_UINT64, NUMBER_UINT8, STR_L1, STR_L2, STR_L4, SYSTEM_STRING_1BYTE_MAX,
-    SYSTEM_STRING_1BYTE_MIN, TRUE,
+    ARR0, ARR1, ARR_L1, ARR_L2, ARR_L4, ARR_LC1, ARR_LC2, ARR_LC4, ENCODED_STRING_LENGTH_MASK,
+    ENCODED_STRING_LENGTH_MAX, ENCODED_STRING_LENGTH_MIN, FALSE, LITERAL_INT_MAX, LITERAL_INT_MIN,
+    NULL, NUMBER_DOUBLE, NUMBER_INT16, NUMBER_INT32, NUMBER_INT64, NUMBER_UINT64, NUMBER_UINT8,
+    OBJ0, OBJ1, OBJ_L1, OBJ_L2, OBJ_L4, OBJ_LC1, OBJ_LC2, OBJ_LC4, STR_L1, STR_L2, STR_L4,
+    SYSTEM_STRING_1BYTE_MAX, SYSTEM_STRING_1BYTE_MIN, TRUE,
 };
-use super::markers::{FALSE, NULL};
 use super::system_strings::system_string_for_marker;
 use super::{is_binary, BinaryError, Result};
+
+/// Maximum container nesting depth the decoder will descend before returning
+/// [`BinaryError::DepthLimitExceeded`]. This mirrors the .NET Cosmos JSON
+/// stack's `JsonObjectState.JsonMaxNestingDepth` (256 simultaneously-open
+/// containers), so the Rust decoder enforces the same nesting policy while
+/// guarding against stack exhaustion from adversarial input.
+const MAX_DEPTH: usize = 256;
 
 /// Decodes a complete Cosmos binary JSON buffer into a [`serde_json::Value`].
 ///
@@ -70,7 +78,7 @@ pub fn decode(buffer: &[u8]) -> Result<Value> {
         buf: buffer,
         pos: 1,
     };
-    let value = reader.read_value()?;
+    let value = reader.read_value(0)?;
     let remaining = buffer.len() - reader.pos;
     if remaining != 0 {
         return Err(BinaryError::TrailingBytes { remaining });
@@ -169,7 +177,16 @@ impl<'a> Reader<'a> {
     }
 
     /// Reads one complete value at the current position.
-    fn read_value(&mut self) -> Result<Value> {
+    ///
+    /// `depth` is the value's nesting depth (`0` for the top-level value);
+    /// container children are read at `depth + 1`. Exceeding [`MAX_DEPTH`]
+    /// returns [`BinaryError::DepthLimitExceeded`] rather than risking stack
+    /// exhaustion on deeply nested adversarial input.
+    fn read_value(&mut self, depth: usize) -> Result<Value> {
+        if depth > MAX_DEPTH {
+            return Err(BinaryError::DepthLimitExceeded { limit: MAX_DEPTH });
+        }
+
         // Offset of this value's type marker, captured before consuming it so
         // error positions point at the marker.
         let offset = self.pos;
@@ -218,15 +235,164 @@ impl<'a> Reader<'a> {
                 Ok(Value::String(self.read_string(len, offset)?))
             }
 
+            // Arrays.
+            ARR0 => Ok(Value::Array(Vec::new())),
+            ARR1 => {
+                let item = self.read_value(depth + 1)?;
+                Ok(Value::Array(vec![item]))
+            }
+            ARR_L1 => self.read_array_value(1, false, depth),
+            ARR_L2 => self.read_array_value(2, false, depth),
+            ARR_L4 => self.read_array_value(4, false, depth),
+            ARR_LC1 => self.read_array_value(1, true, depth),
+            ARR_LC2 => self.read_array_value(2, true, depth),
+            ARR_LC4 => self.read_array_value(4, true, depth),
+
+            // Objects.
+            OBJ0 => Ok(Value::Object(Map::new())),
+            OBJ1 => {
+                let (name, value) = self.read_member(depth + 1)?;
+                let mut map = Map::new();
+                map.insert(name, value);
+                Ok(Value::Object(map))
+            }
+            OBJ_L1 => self.read_object_value(1, false, depth),
+            OBJ_L2 => self.read_object_value(2, false, depth),
+            OBJ_L4 => self.read_object_value(4, false, depth),
+            OBJ_LC1 => self.read_object_value(1, true, depth),
+            OBJ_LC2 => self.read_object_value(2, true, depth),
+            OBJ_LC4 => self.read_object_value(4, true, depth),
+
             // Every other (valid-but-not-yet-implemented or genuinely invalid)
-            // marker is reported as invalid. Containers, user/reference strings,
-            // and the exotic string/number forms are filled in by later P1
-            // sub-phases (see the module-level docs).
+            // marker is reported as invalid. User/reference strings and the
+            // exotic string/number forms are filled in by later P1 sub-phases
+            // (see the module-level docs).
             other => Err(BinaryError::InvalidMarker {
                 marker: other,
                 offset,
             }),
         }
+    }
+
+    /// Reads a 1-, 2-, or 4-byte little-endian length or count field.
+    fn read_len(&mut self, width: usize) -> Result<usize> {
+        match width {
+            1 => Ok(usize::from(self.read_u8()?)),
+            2 => Ok(usize::from(self.read_u16_le()?)),
+            // The only other width the callers pass is 4.
+            _ => Ok(self.read_u32_le()? as usize),
+        }
+    }
+
+    /// Computes the absolute end offset of a `payload_len`-byte payload starting
+    /// at the current position, verifying it fits within the buffer.
+    fn bounded_end(&self, payload_len: usize) -> Result<usize> {
+        let end = self
+            .pos
+            .checked_add(payload_len)
+            .ok_or(BinaryError::InvalidLength {
+                detail: "container length overflows the address space",
+            })?;
+        if end > self.buf.len() {
+            return Err(BinaryError::UnexpectedEof {
+                needed: end - self.buf.len(),
+            });
+        }
+        Ok(end)
+    }
+
+    /// Reads a length-prefixed array body. `width` is the length/count prefix
+    /// width in bytes (1, 2, or 4); when `has_count` is set, a count field of
+    /// the same width follows the length and is validated against the number of
+    /// items actually decoded.
+    fn read_array_value(&mut self, width: usize, has_count: bool, depth: usize) -> Result<Value> {
+        let payload_len = self.read_len(width)?;
+        let count = if has_count {
+            Some(self.read_len(width)?)
+        } else {
+            None
+        };
+        let end = self.bounded_end(payload_len)?;
+
+        let mut items = Vec::new();
+        while self.pos < end {
+            let item = self.read_value(depth + 1)?;
+            if self.pos > end {
+                return Err(BinaryError::InvalidLength {
+                    detail: "array element extends past the array's declared length",
+                });
+            }
+            items.push(item);
+        }
+
+        if let Some(expected) = count {
+            if items.len() != expected {
+                return Err(BinaryError::InvalidLength {
+                    detail: "array item count does not match its declared count",
+                });
+            }
+        }
+        Ok(Value::Array(items))
+    }
+
+    /// Reads a length-prefixed object body, mirroring [`read_array_value`] but
+    /// decoding name/value member pairs. The declared count (when present) is
+    /// the number of members, validated against the number actually decoded.
+    ///
+    /// [`read_array_value`]: Reader::read_array_value
+    fn read_object_value(&mut self, width: usize, has_count: bool, depth: usize) -> Result<Value> {
+        let payload_len = self.read_len(width)?;
+        let count = if has_count {
+            Some(self.read_len(width)?)
+        } else {
+            None
+        };
+        let end = self.bounded_end(payload_len)?;
+
+        let mut map = Map::new();
+        let mut members = 0usize;
+        while self.pos < end {
+            let (name, value) = self.read_member(depth + 1)?;
+            if self.pos > end {
+                return Err(BinaryError::InvalidLength {
+                    detail: "object member extends past the object's declared length",
+                });
+            }
+            map.insert(name, value);
+            members += 1;
+        }
+
+        if let Some(expected) = count {
+            if members != expected {
+                return Err(BinaryError::InvalidLength {
+                    detail: "object member count does not match its declared count",
+                });
+            }
+        }
+        Ok(Value::Object(map))
+    }
+
+    /// Reads one object member: a string name followed by its value. The name
+    /// must decode to a string; any other form is reported as an
+    /// [`BinaryError::InvalidMarker`] at the name's marker offset, since a
+    /// non-string is not valid in a property-name position.
+    fn read_member(&mut self, depth: usize) -> Result<(String, Value)> {
+        let name_offset = self.pos;
+        let name = self.read_value(depth)?;
+        let name = match name {
+            Value::String(s) => s,
+            _ => {
+                // The byte at `name_offset` was necessarily present (the
+                // `read_value` above consumed it), so this index is in bounds.
+                let marker = self.buf[name_offset];
+                return Err(BinaryError::InvalidMarker {
+                    marker,
+                    offset: name_offset,
+                });
+            }
+        };
+        let value = self.read_value(depth)?;
+        Ok((name, value))
     }
 }
 
@@ -417,15 +583,165 @@ mod tests {
 
     #[test]
     fn deferred_markers_report_invalid_for_now() {
-        // An object marker is valid in the format but implemented in P1b; until
-        // then it surfaces as InvalidMarker. The offset points at the marker
-        // (index 1, just past the preamble).
+        // A reference-string marker (StrR1) is valid in the format but
+        // implemented in a later sub-phase (P1c); until then it surfaces as
+        // InvalidMarker. The offset points at the marker (index 1, just past
+        // the preamble).
         assert_eq!(
-            decode(&[PREAMBLE, markers::OBJ0]),
+            decode(&[PREAMBLE, markers::STR_R1]),
             Err(BinaryError::InvalidMarker {
-                marker: markers::OBJ0,
+                marker: markers::STR_R1,
                 offset: 1,
             }),
+        );
+    }
+
+    #[test]
+    fn decodes_empty_containers() {
+        assert_eq!(
+            decode(&buf(&[markers::ARR0])).unwrap(),
+            serde_json::json!([])
+        );
+        assert_eq!(
+            decode(&buf(&[markers::OBJ0])).unwrap(),
+            serde_json::json!({}),
+        );
+    }
+
+    #[test]
+    fn decodes_single_item_containers() {
+        // [true]
+        assert_eq!(
+            decode(&buf(&[markers::ARR1, markers::TRUE])).unwrap(),
+            serde_json::json!([true]),
+        );
+        // {"id": true} — the name is the 1-byte system string for "id" (idx 12).
+        let id_name = markers::SYSTEM_STRING_1BYTE_MIN + 12;
+        assert_eq!(
+            decode(&buf(&[markers::OBJ1, id_name, markers::TRUE])).unwrap(),
+            serde_json::json!({ "id": true }),
+        );
+    }
+
+    #[test]
+    fn decodes_length_prefixed_array() {
+        // ArrL1 [0, 1, null]: three 1-byte scalar elements.
+        let payload = [0x00u8, 0x01, markers::NULL];
+        let mut bytes = vec![markers::ARR_L1, payload.len() as u8];
+        bytes.extend_from_slice(&payload);
+        assert_eq!(
+            decode(&buf(&bytes)).unwrap(),
+            serde_json::json!([0, 1, null]),
+        );
+    }
+
+    #[test]
+    fn decodes_length_and_count_array() {
+        // ArrLC1 [0, 1, null]: payload length 3, count 3.
+        let payload = [0x00u8, 0x01, markers::NULL];
+        let mut bytes = vec![markers::ARR_LC1, payload.len() as u8, 3u8];
+        bytes.extend_from_slice(&payload);
+        assert_eq!(
+            decode(&buf(&bytes)).unwrap(),
+            serde_json::json!([0, 1, null]),
+        );
+    }
+
+    #[test]
+    fn decodes_length_prefixed_object() {
+        let id_name = markers::SYSTEM_STRING_1BYTE_MIN + 12; // "id"
+        let type_name = markers::SYSTEM_STRING_1BYTE_MIN + 27; // "type"
+        let payload = [id_name, 0x00, type_name, 0x01];
+        let mut bytes = vec![markers::OBJ_L1, payload.len() as u8];
+        bytes.extend_from_slice(&payload);
+        assert_eq!(
+            decode(&buf(&bytes)).unwrap(),
+            serde_json::json!({ "id": 0, "type": 1 }),
+        );
+    }
+
+    #[test]
+    fn decodes_length_and_count_object() {
+        let id_name = markers::SYSTEM_STRING_1BYTE_MIN + 12;
+        let type_name = markers::SYSTEM_STRING_1BYTE_MIN + 27;
+        let payload = [id_name, 0x00, type_name, 0x01];
+        let mut bytes = vec![markers::OBJ_LC1, payload.len() as u8, 2u8];
+        bytes.extend_from_slice(&payload);
+        assert_eq!(
+            decode(&buf(&bytes)).unwrap(),
+            serde_json::json!({ "id": 0, "type": 1 }),
+        );
+    }
+
+    #[test]
+    fn decodes_nested_containers() {
+        let id_name = markers::SYSTEM_STRING_1BYTE_MIN + 12;
+        // Outer ArrL1 wrapping `[0]` then `{"id": 1}`.
+        let payload = [markers::ARR1, 0x00, markers::OBJ1, id_name, 0x01];
+        let mut bytes = vec![markers::ARR_L1, payload.len() as u8];
+        bytes.extend_from_slice(&payload);
+        assert_eq!(
+            decode(&buf(&bytes)).unwrap(),
+            serde_json::json!([[0], { "id": 1 }]),
+        );
+    }
+
+    #[test]
+    fn rejects_count_mismatch() {
+        // ArrLC1 declares count 5 but only one item fits in the 1-byte payload.
+        let mut bytes = vec![markers::ARR_LC1, 1u8, 5u8];
+        bytes.push(0x00);
+        assert!(matches!(
+            decode(&buf(&bytes)),
+            Err(BinaryError::InvalidLength { .. }),
+        ));
+    }
+
+    #[test]
+    fn rejects_element_past_declared_length() {
+        // ArrL1 declares payload length 1, but its single element is an Int16
+        // (3 bytes) that runs past the declared region.
+        let mut bytes = vec![markers::ARR_L1, 1u8, markers::NUMBER_INT16];
+        bytes.extend_from_slice(&5i16.to_le_bytes());
+        assert!(matches!(
+            decode(&buf(&bytes)),
+            Err(BinaryError::InvalidLength { .. }),
+        ));
+    }
+
+    #[test]
+    fn rejects_non_string_object_key() {
+        // OBJ1 whose name slot is a literal integer (0x00) rather than a string.
+        assert_eq!(
+            decode(&buf(&[markers::OBJ1, 0x00, markers::TRUE])),
+            Err(BinaryError::InvalidMarker {
+                marker: 0x00,
+                offset: 2,
+            }),
+        );
+    }
+
+    #[test]
+    fn accepts_max_depth_nesting() {
+        // MAX_DEPTH nested single-item arrays around a scalar leaf is exactly at
+        // the limit and must decode successfully.
+        let mut bytes = vec![markers::ARR1; MAX_DEPTH];
+        bytes.push(0x00); // literal int 0 leaf
+        let mut expected = serde_json::json!(0);
+        for _ in 0..MAX_DEPTH {
+            expected = Value::Array(vec![expected]);
+        }
+        assert_eq!(decode(&buf(&bytes)).unwrap(), expected);
+    }
+
+    #[test]
+    fn rejects_excessive_nesting() {
+        // One level beyond MAX_DEPTH trips the depth guard.
+        let mut bytes = vec![markers::ARR1; MAX_DEPTH + 1];
+        bytes.push(0x00);
+        assert_eq!(
+            decode(&buf(&bytes)),
+            Err(BinaryError::DepthLimitExceeded { limit: MAX_DEPTH }),
         );
     }
 }

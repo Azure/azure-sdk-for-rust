@@ -5,7 +5,7 @@
 //!
 //! System strings are a fixed, hardcoded dictionary of common Cosmos property
 //! names and GeoJSON keywords. A 1-byte system-string type marker (in the range
-//! [`SYSTEM_STRING_1BYTE_MIN`](crate::binary_json::markers::SYSTEM_STRING_1BYTE_MIN)..[`SYSTEM_STRING_1BYTE_MAX`](crate::binary_json::markers::SYSTEM_STRING_1BYTE_MAX))
+//! [`SYSTEM_STRING_1BYTE_MIN`]..[`SYSTEM_STRING_1BYTE_MAX`])
 //! encodes a string by **index** into this table: `index = marker - SYSTEM_STRING_1BYTE_MIN`.
 //!
 //! The table **must** match the service byte-for-byte and in the same order; an
