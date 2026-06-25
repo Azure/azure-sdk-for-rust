@@ -451,6 +451,7 @@ impl SubStatusCode {
             20006 => Some("ChannelClosed"),
             20007 => Some("MalformedContinuationToken"),
             20008 => Some("ClientOperationTimeout"),
+            20401 => Some("ClientGenerated401"),
             20901 => Some("NegativeTimeoutProvided"),
             20902 => Some("MissingPartitionKeyRangeIdInContext"),
             20903 => Some("InvalidRegionsInSessionToken"),
@@ -2574,6 +2575,17 @@ mod tests {
         assert_eq!(
             SubStatusCode::RU_BUDGET_EXCEEDED.name(None),
             Some("RUBudgetExceeded")
+        );
+    }
+
+    #[test]
+    fn name_returns_client_generated_401() {
+        // Regression guard: the 20401 name mapping must stay in lockstep with
+        // the `CLIENT_GENERATED_401` constant so diagnostics keep rendering a
+        // name instead of `None`.
+        assert_eq!(
+            SubStatusCode::CLIENT_GENERATED_401.name(None),
+            Some("ClientGenerated401")
         );
     }
 
