@@ -5,4 +5,5 @@ components = [
   "cargo",
   "rust-docs",
   "rust-std",
+  "rustc-dev",
 ]
