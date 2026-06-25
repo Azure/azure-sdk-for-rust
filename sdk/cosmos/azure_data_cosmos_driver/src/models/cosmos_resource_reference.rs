@@ -334,7 +334,6 @@ impl CosmosResourceReference {
     /// Returns whether this reference's database/container parent chain is
     /// RID-addressed (`Some(true)`), name-addressed (`Some(false)`), or has no
     /// parent chain to classify (`None`, e.g. account-level references).
-    #[cfg(debug_assertions)]
     fn parent_chain_is_rid(&self) -> Option<bool> {
         if let Some(ref container) = self.container {
             return Some(container.is_by_rid());
@@ -360,7 +359,6 @@ impl CosmosResourceReference {
     /// independent of the container's addressing mode), so only the database and
     /// container parent chain — plus a database/container leaf addressed directly
     /// by `id` — are checked.
-    #[cfg(debug_assertions)]
     fn addressing_conflict(&self) -> Option<String> {
         if let (Some(db), Some(container)) = (self.database.as_ref(), self.container.as_ref()) {
             if db.is_by_rid() != container.is_by_rid() {
@@ -393,12 +391,40 @@ impl CosmosResourceReference {
         None
     }
 
+    /// Validates that this reference does not mix name and RID addressing.
+    ///
+    /// This is the release-mode counterpart to
+    /// [`debug_assert_addressing_consistent`](Self::debug_assert_addressing_consistent):
+    /// the debug assert turns a mixed reference into a loud panic during tests,
+    /// while this returns a deterministic [`CLIENT_MIXED_NAME_RID_ADDRESSING`]
+    /// error in every build before the request is signed and sent — converting an
+    /// opaque gateway `401` into a clear client-side failure. The driver calls
+    /// this once per operation so the guarantee holds for references built
+    /// through any construction path, not just the SDK's `ContainerClient`.
+    ///
+    /// [`CLIENT_MIXED_NAME_RID_ADDRESSING`]: crate::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING
+    pub(crate) fn validate_addressing(&self) -> crate::error::Result<()> {
+        if let Some(conflict) = self.addressing_conflict() {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING)
+                .with_message(format!(
+                    "mixed name/RID addressing is not allowed ({conflict}); a RID-addressed \
+                     database can only contain RID-addressed containers and vice versa"
+                ))
+                .with_source(std::io::Error::other("mixed name/RID addressing"))
+                .build());
+        }
+        Ok(())
+    }
+
     /// Debug-only check that this reference does not mix name and RID addressing
     /// across its database/container parent chain.
     ///
     /// See [`addressing_conflict`](Self::addressing_conflict) for the exact rule
     /// and which leaf ids are exempt. This guard turns such a programming error
-    /// into a deterministic panic in debug/test builds.
+    /// into a deterministic panic in debug/test builds;
+    /// [`validate_addressing`](Self::validate_addressing) is the release-mode
+    /// counterpart that returns a typed error.
     #[cfg(debug_assertions)]
     fn debug_assert_addressing_consistent(&self) {
         if let Some(conflict) = self.addressing_conflict() {
@@ -1186,6 +1212,41 @@ mod tests {
             .with_resource_type(ResourceType::DocumentCollection)
             .with_rid("Lx1BALxJyZ8=".into());
         let _ = r.compute_paths();
+    }
+
+    #[test]
+    fn validate_addressing_rejects_mixed_name_parent_rid_leaf() {
+        // Release-mode guard: the same mixed shape that panics in debug must
+        // return a typed CLIENT_MIXED_NAME_RID_ADDRESSING error in every build,
+        // so the driver fails deterministically before signing instead of
+        // emitting an opaque 401.
+        let db = DatabaseReference::from_name(test_account(), "testdb");
+        let r = CosmosResourceReference::from(db)
+            .with_resource_type(ResourceType::DocumentCollection)
+            .with_rid("Lx1BALxJyZ8=".into());
+        let err = r
+            .validate_addressing()
+            .expect_err("mixed addressing must be rejected");
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING
+        );
+    }
+
+    #[test]
+    fn validate_addressing_accepts_consistent_addressing() {
+        // A fully name-addressed and a fully RID-addressed reference are both
+        // consistent, so validation is a no-op (returns Ok) and the flow is
+        // unchanged.
+        let name_ref: CosmosResourceReference = test_container().into();
+        name_ref
+            .validate_addressing()
+            .expect("name addressing is consistent");
+
+        let rid_ref: CosmosResourceReference = test_container_by_rid().into();
+        rid_ref
+            .validate_addressing()
+            .expect("RID addressing is consistent");
     }
 
     #[test]

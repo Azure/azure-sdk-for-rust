@@ -25,21 +25,14 @@ struct ContainerNameKey {
 }
 
 impl ContainerNameKey {
-    fn from_container(c: &ContainerReference) -> Self {
-        Self {
+    /// Builds a name key from a container reference, or `None` if the container
+    /// was addressed by RID (no database name is available to key on).
+    fn from_container(c: &ContainerReference) -> Option<Self> {
+        Some(Self {
             account_endpoint: c.account().endpoint().as_str().to_owned(),
-            // TODO(Slice 2): `database_name()` is `None` for a RID-addressed
-            // container, so `unwrap_or_default()` collapses the key to
-            // `{endpoint, "", container_name}`. That is harmless today because
-            // nothing produces RID-addressed references yet, but once Slice 2's
-            // resolution layer starts caching them, two RID-resolved containers
-            // that share a name across different databases would alias to the
-            // same by-name key. Slice 2 must skip the by-name index for
-            // RID-addressed containers (or key it differently) before relying on
-            // this path.
-            db_name: c.database_name().unwrap_or_default().to_owned(),
+            db_name: c.database_name()?.to_owned(),
             container_name: c.name().to_owned(),
-        }
+        })
     }
 }
 
@@ -112,6 +105,29 @@ impl ContainerCache {
             container_name: container_name.to_owned(),
         };
         self.get_or_fetch_impl(&self.by_name, key, fetch_fn).await
+    }
+
+    /// Looks up a container by RID, fetching if not cached.
+    ///
+    /// On a cache miss, calls `fetch_fn` to resolve the container from the
+    /// service. The resolved (RID-addressed) reference is populated into the
+    /// by-RID cache; the by-name cache is left untouched because a RID-addressed
+    /// reference has no database name to key on.
+    pub(crate) async fn get_or_fetch_by_rid<F, Fut>(
+        &self,
+        account_endpoint: &str,
+        container_rid: &str,
+        fetch_fn: F,
+    ) -> crate::error::Result<Arc<ContainerReference>>
+    where
+        F: FnOnce() -> Fut,
+        Fut: std::future::Future<Output = crate::error::Result<ContainerReference>>,
+    {
+        let key = ContainerRidKey {
+            account_endpoint: account_endpoint.to_owned(),
+            container_rid: container_rid.to_owned(),
+        };
+        self.get_or_fetch_impl(&self.by_rid, key, fetch_fn).await
     }
 
     /// Returns a cached container looked up by name, or `None` if not cached.
@@ -197,17 +213,20 @@ impl ContainerCache {
     /// Inserts a known-resolved container reference into both caches.
     ///
     /// If an entry already exists under either key, the existing entry is
-    /// preserved (first-write-wins).
+    /// preserved (first-write-wins). RID-addressed references are inserted only
+    /// into the by-RID cache, since they carry no database name to key on.
     pub(crate) async fn put(&self, container: ContainerReference) {
         let name_key = ContainerNameKey::from_container(&container);
         let rid_key = ContainerRidKey::from_container(&container);
-        let container_for_rid = container.clone();
 
-        self.by_name
-            .get_or_insert_with(name_key, || async { Ok(container) })
-            .await;
+        if let Some(name_key) = name_key {
+            let container_for_name = container.clone();
+            self.by_name
+                .get_or_insert_with(name_key, || async { Ok(container_for_name) })
+                .await;
+        }
         self.by_rid
-            .get_or_insert_with(rid_key, || async { Ok(container_for_rid) })
+            .get_or_insert_with(rid_key, || async { Ok(container) })
             .await;
     }
 }
@@ -257,6 +276,16 @@ mod tests {
             format!("{db}_rid"),
             container.to_owned(),
             format!("{db}_{container}_rid"),
+            &test_container_props(),
+        )
+    }
+
+    fn test_container_by_rid(db_rid: &str, container_rid: &str) -> ContainerReference {
+        ContainerReference::new_by_rid(
+            test_account(),
+            db_rid.to_owned(),
+            "testcontainer".to_owned(),
+            container_rid.to_owned(),
             &test_container_props(),
         )
     }
@@ -341,6 +370,64 @@ mod tests {
             .await
             .is_some());
         assert!(cache.get_by_rid(ACCOUNT_ENDPOINT, &rid).await.is_some());
+    }
+
+    // --- get_or_fetch_by_rid ---
+
+    #[tokio::test]
+    async fn fetch_by_rid_caches_without_name_index() {
+        let cache = ContainerCache::new();
+        let counter = Arc::new(AtomicUsize::new(0));
+
+        let container = test_container_by_rid("db_rid", "coll_rid");
+        let container_clone = container.clone();
+        let counter_clone = counter.clone();
+
+        let resolved = cache
+            .get_or_fetch_by_rid(ACCOUNT_ENDPOINT, "coll_rid", || async move {
+                counter_clone.fetch_add(1, Ordering::SeqCst);
+                Ok(container_clone)
+            })
+            .await
+            .unwrap();
+
+        assert!(resolved.is_by_rid());
+        assert_eq!(counter.load(Ordering::SeqCst), 1);
+
+        // Retrievable by RID.
+        assert!(cache
+            .get_by_rid(ACCOUNT_ENDPOINT, "coll_rid")
+            .await
+            .is_some());
+
+        // A second fetch is served from cache, not the factory.
+        let counter2 = counter.clone();
+        cache
+            .get_or_fetch_by_rid(ACCOUNT_ENDPOINT, "coll_rid", || async move {
+                counter2.fetch_add(1, Ordering::SeqCst);
+                Ok(test_container_by_rid("db_rid", "coll_rid"))
+            })
+            .await
+            .unwrap();
+        assert_eq!(counter.load(Ordering::SeqCst), 1);
+    }
+
+    #[tokio::test]
+    async fn put_rid_only_skips_name_cache() {
+        let cache = ContainerCache::new();
+        let container = test_container_by_rid("db_rid", "coll_rid");
+
+        cache.put(container).await;
+
+        // The by-RID index is populated, the by-name index is not (no db name).
+        assert!(cache
+            .get_by_rid(ACCOUNT_ENDPOINT, "coll_rid")
+            .await
+            .is_some());
+        assert!(cache
+            .get_by_name(ACCOUNT_ENDPOINT, "db_rid", "testcontainer")
+            .await
+            .is_none());
     }
 
     // --- different containers ---

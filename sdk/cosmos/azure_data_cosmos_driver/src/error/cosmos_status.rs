@@ -516,6 +516,7 @@ impl SubStatusCode {
             20303 => Some("ServiceReturnedOfferWithoutId"),
             20304 => Some("ClientThroughputPollerIncomplete"),
             20305 => Some("ClientTopologyResolutionFailed"),
+            20306 => Some("ServiceReturnedObjectWithoutRid"),
 
             // SDK Server-side codes (21xxx) - consistent across .NET and Java
             21001 => Some("NameCacheIsStaleExceededRetryLimit"),
@@ -1273,6 +1274,17 @@ impl SubStatusCode {
     /// Client-side continuation tokens are only valid for query
     /// operations.
     pub const CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION: SubStatusCode = SubStatusCode(20117);
+
+    /// A caller-supplied resource RID could not be parsed as a valid Cosmos DB
+    /// RID (20118). RIDs are Base64-encoded byte sequences; this is raised when
+    /// the bytes cannot be decoded or are too short to extract the expected
+    /// resource hierarchy.
+    pub const CLIENT_INVALID_RESOURCE_ID: SubStatusCode = SubStatusCode(20118);
+
+    /// Name-based and RID-based addressing were mixed across the
+    /// database/container hierarchy (20119). A RID-addressed database requires a
+    /// RID-addressed container and vice versa.
+    pub const CLIENT_MIXED_NAME_RID_ADDRESSING: SubStatusCode = SubStatusCode(20119);
 
     // ----- 20150-20199: SDK configuration / setup errors -----
 
@@ -2035,6 +2047,19 @@ impl CosmosStatus {
     pub const CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION: CosmosStatus = CosmosStatus {
         status_code: StatusCode::BadRequest,
         sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION),
+    };
+
+    /// 400 / 20118 — caller-supplied resource RID could not be parsed.
+    pub const CLIENT_INVALID_RESOURCE_ID: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_INVALID_RESOURCE_ID),
+    };
+
+    /// 400 / 20119 — name-based and RID-based addressing were mixed across the
+    /// database/container hierarchy.
+    pub const CLIENT_MIXED_NAME_RID_ADDRESSING: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_MIXED_NAME_RID_ADDRESSING),
     };
 
     // Configuration / setup (HTTP 400, sub-status 20150-20199)
