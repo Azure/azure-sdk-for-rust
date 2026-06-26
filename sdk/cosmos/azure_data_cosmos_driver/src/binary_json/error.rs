@@ -64,6 +64,15 @@ pub enum BinaryError {
         target: usize,
     },
 
+    /// A user string ([`UserString1ByteLengthMin`](crate::binary_json::markers::USER_STRING_1BYTE_MIN)–`0x67`)
+    /// was encountered. User strings are encoded against an external string
+    /// dictionary that the Cosmos data plane does not provide, so the string
+    /// cannot be resolved.
+    UnsupportedUserString {
+        /// The decoded user-string dictionary id.
+        id: usize,
+    },
+
     /// The buffer nests containers more deeply than the decoder's configured
     /// limit. A depth bound prevents stack exhaustion from adversarial input.
     DepthLimitExceeded {
@@ -116,6 +125,12 @@ impl fmt::Display for BinaryError {
                 write!(
                     f,
                     "binary JSON reference string targets unresolved offset {target}"
+                )
+            }
+            BinaryError::UnsupportedUserString { id } => {
+                write!(
+                    f,
+                    "binary JSON user string (id {id}) requires a string dictionary that is not available"
                 )
             }
             BinaryError::DepthLimitExceeded { limit } => {

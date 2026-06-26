@@ -13,13 +13,14 @@
 //! Implemented so far: the `Reader` cursor infrastructure, the scalar value
 //! forms ([`null`](serde_json::Value::Null), booleans, literal and fixed-width
 //! numbers, and the common string forms — system strings, encoded-length
-//! strings, and `StrL1`/`StrL2`/`StrL4`), and **containers** (arrays
-//! `0xE0`–`0xE7` and objects `0xE8`–`0xEF`) with a nesting-depth guard. The
+//! strings, `StrL1`/`StrL2`/`StrL4`, and reference strings
+//! `StrR1`–`StrR4`), and **containers** (arrays `0xE0`–`0xE7` and objects
+//! `0xE8`–`0xEF`) with a nesting-depth guard. User strings (`0x40`–`0x67`)
+//! are recognized but report [`BinaryError::UnsupportedUserString`] because
+//! they reference an external dictionary the data plane does not supply. The
 //! remaining forms surface as [`BinaryError::InvalidMarker`] until their
 //! sub-phase lands:
 //!
-//! - **P1c:** user strings (`0x40`–`0x67`) and reference strings
-//!   (`StrR1`–`StrR4`, `0xC3`–`0xC6`).
 //! - **P1d:** exotic strings (base64 / GUID / compressed, `0x68`–`0x7F`),
 //!   `Float16`/`Float32`/`Float64` (`0xCD`–`0xCF`), sized ints (`0xD7`–`0xDC`),
 //!   binary (`0xDD`–`0xDF`), and uniform number arrays (`0xF0`–`0xF3`).
@@ -30,8 +31,9 @@ use super::markers::{
     ARR0, ARR1, ARR_L1, ARR_L2, ARR_L4, ARR_LC1, ARR_LC2, ARR_LC4, ENCODED_STRING_LENGTH_MASK,
     ENCODED_STRING_LENGTH_MAX, ENCODED_STRING_LENGTH_MIN, FALSE, LITERAL_INT_MAX, LITERAL_INT_MIN,
     NULL, NUMBER_DOUBLE, NUMBER_INT16, NUMBER_INT32, NUMBER_INT64, NUMBER_UINT64, NUMBER_UINT8,
-    OBJ0, OBJ1, OBJ_L1, OBJ_L2, OBJ_L4, OBJ_LC1, OBJ_LC2, OBJ_LC4, STR_L1, STR_L2, STR_L4,
-    SYSTEM_STRING_1BYTE_MAX, SYSTEM_STRING_1BYTE_MIN, TRUE,
+    OBJ0, OBJ1, OBJ_L1, OBJ_L2, OBJ_L4, OBJ_LC1, OBJ_LC2, OBJ_LC4, STR_L1, STR_L2, STR_L4, STR_R1,
+    STR_R2, STR_R3, STR_R4, SYSTEM_STRING_1BYTE_MAX, SYSTEM_STRING_1BYTE_MIN, TRUE,
+    USER_STRING_1BYTE_MAX, USER_STRING_1BYTE_MIN, USER_STRING_2BYTE_MAX, USER_STRING_2BYTE_MIN,
 };
 use super::system_strings::system_string_for_marker;
 use super::{is_binary, BinaryError, Result};
@@ -145,6 +147,12 @@ impl<'a> Reader<'a> {
         Ok(u32::from_le_bytes(self.read_array()?))
     }
 
+    /// Reads a 3-byte little-endian unsigned integer (the `StrR3` offset width).
+    fn read_u24_le(&mut self) -> Result<u32> {
+        let [b0, b1, b2] = self.read_array::<3>()?;
+        Ok(u32::from(b0) | (u32::from(b1) << 8) | (u32::from(b2) << 16))
+    }
+
     fn read_u64_le(&mut self) -> Result<u64> {
         Ok(u64::from_le_bytes(self.read_array()?))
     }
@@ -233,6 +241,45 @@ impl<'a> Reader<'a> {
             STR_L4 => {
                 let len = self.read_u32_le()? as usize;
                 Ok(Value::String(self.read_string(len, offset)?))
+            }
+
+            // User strings reference an external string dictionary that the
+            // Cosmos data plane does not supply, so they cannot be resolved to
+            // text. We still consume the id bytes (1-byte vs 2-byte form) so the
+            // error reflects the correct id, then report it as unsupported.
+            m if (USER_STRING_1BYTE_MIN..USER_STRING_1BYTE_MAX).contains(&m) => {
+                let id = usize::from(m - USER_STRING_1BYTE_MIN);
+                Err(BinaryError::UnsupportedUserString { id })
+            }
+            m if (USER_STRING_2BYTE_MIN..USER_STRING_2BYTE_MAX).contains(&m) => {
+                // Two-byte form: id = one_byte_count + low_byte + (high * 256),
+                // where `high` is the marker's offset from USER_STRING_2BYTE_MIN
+                // and `low` is the byte that follows. Mirrors .NET
+                // TryGetUserStringId.
+                let one_byte_count = usize::from(USER_STRING_1BYTE_MAX - USER_STRING_1BYTE_MIN);
+                let low = usize::from(self.read_u8()?);
+                let high = usize::from(m - USER_STRING_2BYTE_MIN);
+                let id = one_byte_count + low + high * 256;
+                Err(BinaryError::UnsupportedUserString { id })
+            }
+
+            // Reference strings point back to an earlier string's byte offset in
+            // the buffer. The offset width grows with the marker (1..4 bytes).
+            STR_R1 => {
+                let target = usize::from(self.read_u8()?);
+                self.resolve_reference(target)
+            }
+            STR_R2 => {
+                let target = usize::from(self.read_u16_le()?);
+                self.resolve_reference(target)
+            }
+            STR_R3 => {
+                let target = self.read_u24_le()? as usize;
+                self.resolve_reference(target)
+            }
+            STR_R4 => {
+                let target = self.read_u32_le()? as usize;
+                self.resolve_reference(target)
             }
 
             // Arrays.
@@ -393,6 +440,42 @@ impl<'a> Reader<'a> {
         };
         let value = self.read_value(depth)?;
         Ok((name, value))
+    }
+
+    /// Resolves a reference string ([`STR_R1`]–[`STR_R4`]) whose `target` is an
+    /// absolute byte offset into the buffer (the same frame as [`Reader::pos`],
+    /// where the [`PREAMBLE`](super::PREAMBLE) is offset `0`).
+    ///
+    /// The target must lie within the buffer and hold a string that is **not**
+    /// itself a reference string; this mirrors .NET's
+    /// `IsValidReferenceStringTarget` and makes reference chains (and therefore
+    /// cycles) impossible, so the lookup terminates without recursion guards.
+    /// The referenced string is decoded from a fresh cursor positioned at
+    /// `target`, leaving `self` untouched.
+    ///
+    /// [`STR_R1`]: super::markers::STR_R1
+    /// [`STR_R4`]: super::markers::STR_R4
+    fn resolve_reference(&self, target: usize) -> Result<Value> {
+        let marker = *self
+            .buf
+            .get(target)
+            .ok_or(BinaryError::UnresolvedReference { target })?;
+
+        // The target must be a string, and must not itself be a reference
+        // string (no chains/cycles).
+        let is_string = (SYSTEM_STRING_1BYTE_MIN..NUMBER_UINT64).contains(&marker);
+        let is_reference = (STR_R1..=STR_R4).contains(&marker);
+        if !is_string || is_reference {
+            return Err(BinaryError::UnresolvedReference { target });
+        }
+
+        // Decode the referenced string from its own cursor. It is a single
+        // string value, so depth does not grow and a bare reader suffices.
+        let mut sub = Reader {
+            buf: self.buf,
+            pos: target,
+        };
+        sub.read_value(0)
     }
 }
 
@@ -583,16 +666,127 @@ mod tests {
 
     #[test]
     fn deferred_markers_report_invalid_for_now() {
-        // A reference-string marker (StrR1) is valid in the format but
-        // implemented in a later sub-phase (P1c); until then it surfaces as
-        // InvalidMarker. The offset points at the marker (index 1, just past
-        // the preamble).
+        // A Float32 marker is valid in the format but implemented in a later
+        // sub-phase (P1d); until then it surfaces as InvalidMarker. The offset
+        // points at the marker (index 1, just past the preamble).
         assert_eq!(
-            decode(&[PREAMBLE, markers::STR_R1]),
+            decode(&[PREAMBLE, markers::FLOAT32]),
             Err(BinaryError::InvalidMarker {
-                marker: markers::STR_R1,
+                marker: markers::FLOAT32,
                 offset: 1,
             }),
+        );
+    }
+
+    #[test]
+    fn user_strings_report_unsupported() {
+        // 1-byte user string: id == marker - USER_STRING_1BYTE_MIN.
+        assert_eq!(
+            decode(&buf(&[markers::USER_STRING_1BYTE_MIN + 3])),
+            Err(BinaryError::UnsupportedUserString { id: 3 }),
+        );
+        // The very first 1-byte user string id is 0.
+        assert_eq!(
+            decode(&buf(&[markers::USER_STRING_1BYTE_MIN])),
+            Err(BinaryError::UnsupportedUserString { id: 0 }),
+        );
+        // 2-byte user string: id == one_byte_count + low + high * 256, where
+        // one_byte_count = USER_STRING_1BYTE_MAX - USER_STRING_1BYTE_MIN (32),
+        // high = marker - USER_STRING_2BYTE_MIN, low = following byte.
+        let one_byte_count =
+            usize::from(markers::USER_STRING_1BYTE_MAX - markers::USER_STRING_1BYTE_MIN);
+        assert_eq!(
+            decode(&buf(&[markers::USER_STRING_2BYTE_MIN, 5])),
+            Err(BinaryError::UnsupportedUserString {
+                id: one_byte_count + 5,
+            }),
+        );
+        assert_eq!(
+            decode(&buf(&[markers::USER_STRING_2BYTE_MIN + 1, 5])),
+            Err(BinaryError::UnsupportedUserString {
+                id: one_byte_count + 5 + 256,
+            }),
+        );
+    }
+
+    #[test]
+    fn decodes_reference_string() {
+        // Buffer: preamble, then a StrL1 "hello" at offset 1, then a StrR1 that
+        // points back to offset 1. The top-level value is the array [<the
+        // string>, <the reference>] so both resolve to "hello".
+        //
+        // Layout (absolute offsets):
+        //   0: PREAMBLE
+        //   1: ARR_L1
+        //   2: payload length (7)
+        //   3: STR_L1, 4: len 5, 5..10: "hello"   (string token at offset 3)
+        //  10: STR_R1, 11: target offset 3
+        let mut payload = vec![markers::STR_L1, 5];
+        payload.extend_from_slice(b"hello");
+        payload.push(markers::STR_R1);
+        payload.push(3); // absolute offset of the StrL1 token
+        let mut bytes = vec![markers::ARR_L1, payload.len() as u8];
+        bytes.extend_from_slice(&payload);
+        assert_eq!(
+            decode(&buf(&bytes)).unwrap(),
+            serde_json::json!(["hello", "hello"]),
+        );
+    }
+
+    #[test]
+    fn reference_string_to_system_string_resolves() {
+        // StrR1 may target a system string. Place the 1-byte system string for
+        // "id" (idx 12) at offset 1, then reference it.
+        let id_name = markers::SYSTEM_STRING_1BYTE_MIN + 12;
+        let mut payload = vec![id_name];
+        payload.push(markers::STR_R1);
+        payload.push(3); // offset of `id_name` within the full buffer
+        let mut bytes = vec![markers::ARR_L1, payload.len() as u8];
+        bytes.extend_from_slice(&payload);
+        assert_eq!(
+            decode(&buf(&bytes)).unwrap(),
+            serde_json::json!(["id", "id"]),
+        );
+    }
+
+    #[test]
+    fn rejects_out_of_range_reference() {
+        // StrR1 target points past the end of the buffer.
+        assert_eq!(
+            decode(&[PREAMBLE, markers::STR_R1, 200]),
+            Err(BinaryError::UnresolvedReference { target: 200 }),
+        );
+    }
+
+    #[test]
+    fn rejects_reference_to_non_string() {
+        // StrR1 target (offset 4) lands on a literal-int marker, not a string.
+        //   0: PREAMBLE
+        //   1: ARR_L1, 2: len 4
+        //   3: literal int 0  <- NOT a string
+        //   4: STR_R1, 5: target 3
+        let payload = [0x00u8, markers::STR_R1, 3];
+        let mut bytes = vec![markers::ARR_L1, payload.len() as u8];
+        bytes.extend_from_slice(&payload);
+        assert_eq!(
+            decode(&buf(&bytes)),
+            Err(BinaryError::UnresolvedReference { target: 3 }),
+        );
+    }
+
+    #[test]
+    fn rejects_reference_to_reference() {
+        // A StrR1 that targets another StrR1 is rejected (no chains/cycles).
+        //   0: PREAMBLE
+        //   1: ARR_L1, 2: len 4
+        //   3: STR_R1, 4: target 3 (self-reference)
+        //   5: STR_R1, 6: target 3
+        let payload = [markers::STR_R1, 3, markers::STR_R1, 3];
+        let mut bytes = vec![markers::ARR_L1, payload.len() as u8];
+        bytes.extend_from_slice(&payload);
+        assert_eq!(
+            decode(&buf(&bytes)),
+            Err(BinaryError::UnresolvedReference { target: 3 }),
         );
     }
 
