@@ -10,43 +10,35 @@
 //!
 //! # Phase status
 //!
-//! Implemented so far: the `Reader` cursor infrastructure, the scalar value
-//! forms ([`null`](serde_json::Value::Null), booleans, literal and fixed-width
-//! numbers — including the extended `Int8`/`Int16`/`Int32`/`Int64`/`UInt32`
-//! and `Float32`/`Float64` forms — and the common string forms (system
-//! strings, encoded-length strings, `StrL1`/`StrL2`/`StrL4`, and reference
-//! strings `StrR1`–`StrR4`), and **containers** (arrays `0xE0`–`0xE7` and
-//! objects `0xE8`–`0xEF`) with a nesting-depth guard. User strings
-//! (`0x40`–`0x67`) are recognized but report
-//! [`BinaryError::UnsupportedUserString`] because they reference an external
-//! dictionary the data plane does not supply. `Float16` (`0xCF`) and the
-//! extended `UInt8` (`0xD7`) have no JSON node type and are rejected as
-//! [`BinaryError::InvalidMarker`]. The remaining forms surface as
-//! [`BinaryError::InvalidMarker`] until their sub-phase lands:
-//!
-//! - **P1d-2 (done):** GUID strings (`0x75`–`0x77`).
-//! - **P1d-3 (done):** base64 strings (`0x71`–`0x74`).
-//! - **P1d-4 (done):** compressed strings (`0x78`–`0x7F`).
-//! - **P1d-5a (done):** GUID value (`0xD3`) and binary (`0xDD`–`0xDF`).
-//! - **P1d-5b:** uniform number arrays (`0xF0`–`0xF3`).
+//! The decoder is **complete**: it handles every value form the service can
+//! emit — [`null`](serde_json::Value::Null), booleans, all literal, fixed-width
+//! and extended numbers, every string form (system, user, reference,
+//! encoded-length, length-prefixed, GUID, base64, and compressed), the GUID
+//! value, binary blobs, containers (arrays and objects, with a nesting-depth
+//! guard), and uniform number arrays. Two cases are reported as errors rather
+//! than decoded because they have no JSON representation: user strings
+//! (`0x40`–`0x67`) report [`BinaryError::UnsupportedUserString`] (they
+//! reference an external dictionary the data plane does not supply), and
+//! `Float16` (`0xCF`) plus the standalone extended `UInt8` (`0xD7`) report
+//! [`BinaryError::InvalidMarker`] (no JSON node type).
 
 use base64::Engine;
 use serde_json::{Map, Value};
 
 use super::markers::{
-    ARR0, ARR1, ARR_L1, ARR_L2, ARR_L4, ARR_LC1, ARR_LC2, ARR_LC4, BASE64_STRING_LENGTH1,
-    BASE64_STRING_LENGTH2, BASE64_URL_STRING_LENGTH1, BASE64_URL_STRING_LENGTH2,
-    BINARY_1BYTE_LENGTH, BINARY_2BYTE_LENGTH, BINARY_4BYTE_LENGTH, COMPRESSED_DATE_TIME_STRING,
-    COMPRESSED_LOWERCASE_HEX_STRING, COMPRESSED_UPPERCASE_HEX_STRING,
-    DOUBLE_QUOTED_LOWERCASE_GUID_STRING, ENCODED_STRING_LENGTH_MASK, ENCODED_STRING_LENGTH_MAX,
-    ENCODED_STRING_LENGTH_MIN, FALSE, FLOAT32, FLOAT64, GUID, INT16, INT32, INT64, INT8,
-    LITERAL_INT_MAX, LITERAL_INT_MIN, LOWERCASE_GUID_STRING, NULL, NUMBER_DOUBLE, NUMBER_INT16,
-    NUMBER_INT32, NUMBER_INT64, NUMBER_UINT64, NUMBER_UINT8, OBJ0, OBJ1, OBJ_L1, OBJ_L2, OBJ_L4,
-    OBJ_LC1, OBJ_LC2, OBJ_LC4, PACKED_4BIT_STRING, PACKED_5BIT_STRING, PACKED_6BIT_STRING,
-    PACKED_7BIT_STRING_LENGTH1, PACKED_7BIT_STRING_LENGTH2, STR_L1, STR_L2, STR_L4, STR_R1, STR_R2,
-    STR_R3, STR_R4, SYSTEM_STRING_1BYTE_MAX, SYSTEM_STRING_1BYTE_MIN, TRUE, UINT32,
-    UPPERCASE_GUID_STRING, USER_STRING_1BYTE_MAX, USER_STRING_1BYTE_MIN, USER_STRING_2BYTE_MAX,
-    USER_STRING_2BYTE_MIN,
+    ARR0, ARR1, ARR_ARR_NUM_C1C1, ARR_ARR_NUM_C2C2, ARR_L1, ARR_L2, ARR_L4, ARR_LC1, ARR_LC2,
+    ARR_LC4, ARR_NUM_C1, ARR_NUM_C2, BASE64_STRING_LENGTH1, BASE64_STRING_LENGTH2,
+    BASE64_URL_STRING_LENGTH1, BASE64_URL_STRING_LENGTH2, BINARY_1BYTE_LENGTH, BINARY_2BYTE_LENGTH,
+    BINARY_4BYTE_LENGTH, COMPRESSED_DATE_TIME_STRING, COMPRESSED_LOWERCASE_HEX_STRING,
+    COMPRESSED_UPPERCASE_HEX_STRING, DOUBLE_QUOTED_LOWERCASE_GUID_STRING,
+    ENCODED_STRING_LENGTH_MASK, ENCODED_STRING_LENGTH_MAX, ENCODED_STRING_LENGTH_MIN, FALSE,
+    FLOAT32, FLOAT64, GUID, INT16, INT32, INT64, INT8, LITERAL_INT_MAX, LITERAL_INT_MIN,
+    LOWERCASE_GUID_STRING, NULL, NUMBER_DOUBLE, NUMBER_INT16, NUMBER_INT32, NUMBER_INT64,
+    NUMBER_UINT64, NUMBER_UINT8, OBJ0, OBJ1, OBJ_L1, OBJ_L2, OBJ_L4, OBJ_LC1, OBJ_LC2, OBJ_LC4,
+    PACKED_4BIT_STRING, PACKED_5BIT_STRING, PACKED_6BIT_STRING, PACKED_7BIT_STRING_LENGTH1,
+    PACKED_7BIT_STRING_LENGTH2, STR_L1, STR_L2, STR_L4, STR_R1, STR_R2, STR_R3, STR_R4,
+    SYSTEM_STRING_1BYTE_MAX, SYSTEM_STRING_1BYTE_MIN, TRUE, UINT32, UINT8, UPPERCASE_GUID_STRING,
+    USER_STRING_1BYTE_MAX, USER_STRING_1BYTE_MIN, USER_STRING_2BYTE_MAX, USER_STRING_2BYTE_MIN,
 };
 use super::system_strings::system_string_for_marker;
 use super::{is_binary, BinaryError, Result};
@@ -326,6 +318,13 @@ impl<'a> Reader<'a> {
             BINARY_1BYTE_LENGTH => self.read_binary(1),
             BINARY_2BYTE_LENGTH => self.read_binary(2),
             BINARY_4BYTE_LENGTH => self.read_binary(4),
+
+            // Uniform number arrays: a typed, marker-shared sequence of bare
+            // numbers (`ArrNumC*`) or a sequence of such arrays (`ArrArrNumC*`).
+            ARR_NUM_C1 => self.read_uniform_number_array(1),
+            ARR_NUM_C2 => self.read_uniform_number_array(2),
+            ARR_ARR_NUM_C1C1 => self.read_uniform_array_of_number_arrays(1),
+            ARR_ARR_NUM_C2C2 => self.read_uniform_array_of_number_arrays(2),
 
             // User strings reference an external string dictionary that the
             // Cosmos data plane does not supply, so they cannot be resolved to
@@ -720,6 +719,70 @@ impl<'a> Reader<'a> {
         Ok(Value::String(encoded))
     }
 
+    /// Reads one **bare** number value of the given uniform-array item type.
+    ///
+    /// Inside a uniform number array the item type marker is shared, so each
+    /// element is just the little-endian value with no per-item marker.
+    /// `marker_offset` is the offset of the array's item-type marker, used to
+    /// report an unsupported item type. Mirrors the uniform-array branch of
+    /// .NET `TryGetNumberValue`.
+    fn read_bare_number(&mut self, item_marker: u8, marker_offset: usize) -> Result<Value> {
+        match item_marker {
+            INT8 => Ok(int_value(i64::from(self.read_i8()?))),
+            UINT8 => Ok(int_value(i64::from(self.read_u8()?))),
+            INT16 => Ok(int_value(i64::from(self.read_i16_le()?))),
+            INT32 => Ok(int_value(i64::from(self.read_i32_le()?))),
+            INT64 => Ok(int_value(self.read_i64_le()?)),
+            UINT32 => Ok(int_value(i64::from(self.read_u32_le()?))),
+            FLOAT32 => double_value(f64::from(self.read_f32_le()?)),
+            FLOAT64 => double_value(self.read_f64_le()?),
+            other => Err(BinaryError::InvalidMarker {
+                marker: other,
+                offset: marker_offset,
+            }),
+        }
+    }
+
+    /// Reads a uniform number array (`ArrNumC1`/`ArrNumC2`). The prefix is the
+    /// shared item-type marker followed by a `count_width`-byte little-endian
+    /// item count; the body is that many bare numbers of the shared type.
+    fn read_uniform_number_array(&mut self, count_width: usize) -> Result<Value> {
+        let item_marker_offset = self.pos;
+        let item_marker = self.read_u8()?;
+        let count = self.read_len(count_width)?;
+
+        let mut items = Vec::with_capacity(count.min(1024));
+        for _ in 0..count {
+            items.push(self.read_bare_number(item_marker, item_marker_offset)?);
+        }
+        Ok(Value::Array(items))
+    }
+
+    /// Reads a uniform array of uniform number arrays (`ArrArrNumC1C1` /
+    /// `ArrArrNumC2C2`). The prefix is the inner-array type marker, the shared
+    /// number item-type marker, the per-inner-array number count, then the outer
+    /// array count (each a `count_width`-byte little-endian field). The body is
+    /// `outer_count` inner arrays, each holding `inner_count` bare numbers.
+    fn read_uniform_array_of_number_arrays(&mut self, count_width: usize) -> Result<Value> {
+        // Inner-array type marker (ArrNumC1/ArrNumC2); consumed but not needed
+        // beyond confirming the structure, since the shared number type follows.
+        let _inner_array_marker = self.read_u8()?;
+        let item_marker_offset = self.pos;
+        let item_marker = self.read_u8()?;
+        let inner_count = self.read_len(count_width)?;
+        let outer_count = self.read_len(count_width)?;
+
+        let mut outer = Vec::with_capacity(outer_count.min(1024));
+        for _ in 0..outer_count {
+            let mut inner = Vec::with_capacity(inner_count.min(1024));
+            for _ in 0..inner_count {
+                inner.push(self.read_bare_number(item_marker, item_marker_offset)?);
+            }
+            outer.push(Value::Array(inner));
+        }
+        Ok(Value::Array(outer))
+    }
+
     /// Resolves a reference string ([`STR_R1`]–[`STR_R4`]) whose `target` is an
     /// absolute byte offset into the buffer (the same frame as [`Reader::pos`],
     /// where the [`PREAMBLE`](super::PREAMBLE) is offset `0`).
@@ -960,15 +1023,21 @@ mod tests {
     }
 
     #[test]
-    fn deferred_markers_report_invalid_for_now() {
-        // The uniform number array marker (0xF0) is valid in the format but
-        // implemented in a later sub-phase (P1d-5b); until then it surfaces as
-        // InvalidMarker. The offset points at the marker (index 1, just past
-        // the preamble).
+    fn reserved_and_invalid_markers_are_rejected() {
+        // 0xFF is the explicit Invalid marker; 0xD4 is a reserved/empty slot.
+        // Neither has a value form, so both report InvalidMarker at the marker
+        // offset (index 1, just past the preamble).
         assert_eq!(
-            decode(&[PREAMBLE, markers::ARR_NUM_C1]),
+            decode(&[PREAMBLE, markers::INVALID]),
             Err(BinaryError::InvalidMarker {
-                marker: markers::ARR_NUM_C1,
+                marker: markers::INVALID,
+                offset: 1,
+            }),
+        );
+        assert_eq!(
+            decode(&[PREAMBLE, 0xD4]),
+            Err(BinaryError::InvalidMarker {
+                marker: 0xD4,
                 offset: 1,
             }),
         );
@@ -1288,6 +1357,99 @@ mod tests {
         assert_eq!(
             decode(&buf(&bytes)),
             Err(BinaryError::UnexpectedEof { needed: 8 }),
+        );
+    }
+
+    #[test]
+    fn decodes_uniform_number_array_c1() {
+        // ArrNumC1 of three Int32 values [1, 2, 3]: shared Int32 marker, 1-byte
+        // count, then three bare little-endian i32 values.
+        let mut bytes = vec![markers::ARR_NUM_C1, markers::INT32, 3];
+        for n in [1i32, 2, 3] {
+            bytes.extend_from_slice(&n.to_le_bytes());
+        }
+        assert_eq!(decode(&buf(&bytes)).unwrap(), serde_json::json!([1, 2, 3]));
+
+        // ArrNumC1 of UInt8 values: each item is a single bare byte.
+        let bytes = [markers::ARR_NUM_C1, markers::UINT8, 3, 10, 20, 30];
+        assert_eq!(
+            decode(&buf(&bytes)).unwrap(),
+            serde_json::json!([10, 20, 30]),
+        );
+
+        // Empty uniform array.
+        let bytes = [markers::ARR_NUM_C1, markers::INT32, 0];
+        assert_eq!(decode(&buf(&bytes)).unwrap(), serde_json::json!([]));
+    }
+
+    #[test]
+    fn decodes_uniform_number_array_c2() {
+        // ArrNumC2 uses a 2-byte little-endian count; three Int16 values.
+        let mut bytes = vec![markers::ARR_NUM_C2, markers::INT16];
+        bytes.extend_from_slice(&3u16.to_le_bytes());
+        for n in [-1i16, 0, 1000] {
+            bytes.extend_from_slice(&n.to_le_bytes());
+        }
+        assert_eq!(
+            decode(&buf(&bytes)).unwrap(),
+            serde_json::json!([-1, 0, 1000]),
+        );
+    }
+
+    #[test]
+    fn decodes_uniform_float_array() {
+        // Float32 uniform array round-trips through JSON numbers.
+        let mut bytes = vec![markers::ARR_NUM_C1, markers::FLOAT32, 2];
+        bytes.extend_from_slice(&1.5f32.to_le_bytes());
+        bytes.extend_from_slice(&(-0.25f32).to_le_bytes());
+        assert_eq!(
+            decode(&buf(&bytes)).unwrap(),
+            serde_json::json!([1.5, -0.25]),
+        );
+    }
+
+    #[test]
+    fn decodes_uniform_array_of_number_arrays() {
+        // ArrArrNumC1C1: inner-array marker, shared Int32 marker, inner count 2,
+        // outer count 2, then 2x2 bare i32 values -> [[1,2],[3,4]].
+        let mut bytes = vec![
+            markers::ARR_ARR_NUM_C1C1,
+            markers::ARR_NUM_C1,
+            markers::INT32,
+            2, // numbers per inner array
+            2, // inner arrays
+        ];
+        for n in [1i32, 2, 3, 4] {
+            bytes.extend_from_slice(&n.to_le_bytes());
+        }
+        assert_eq!(
+            decode(&buf(&bytes)).unwrap(),
+            serde_json::json!([[1, 2], [3, 4]]),
+        );
+    }
+
+    #[test]
+    fn rejects_uniform_array_with_invalid_item_type() {
+        // The shared item-type marker (here NULL) is not a number type.
+        let bytes = [markers::ARR_NUM_C1, markers::NULL, 1, 0x00];
+        assert_eq!(
+            decode(&buf(&bytes)),
+            Err(BinaryError::InvalidMarker {
+                marker: markers::NULL,
+                // Marker sits at index 2: preamble (0) + ArrNumC1 (1) + item (2).
+                offset: 2,
+            }),
+        );
+    }
+
+    #[test]
+    fn rejects_truncated_uniform_array() {
+        // Declares three Int32 items but only one value's worth of bytes follow.
+        let mut bytes = vec![markers::ARR_NUM_C1, markers::INT32, 3];
+        bytes.extend_from_slice(&1i32.to_le_bytes());
+        assert_eq!(
+            decode(&buf(&bytes)),
+            Err(BinaryError::UnexpectedEof { needed: 4 }),
         );
     }
 

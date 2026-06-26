@@ -34,10 +34,9 @@
 //! match the service byte-for-byte. See the binary-encoding spec
 //! (`docs/BINARY_ENCODING_SPEC.md`) for the full design and phased plan.
 //!
-//! > **Status:** the decoder is being built incrementally (phase P1). Phase
-//! > P1a — the [`Reader`](reader)/[`decode`] scalar decode path — is in place;
-//! > containers, user/reference strings, and the exotic forms follow in P1b–P1c,
-//! > and wiring the decoder into the response path lands in P1e. Nothing is
+//! > **Status:** the decoder ([`Reader`](reader)/[`decode`]) is **complete** —
+//! > it decodes every binary value form into a [`serde_json::Value`]. Wiring
+//! > the decoder into the response path lands in a later phase; nothing is
 //! > wired into the request/response path yet, so there is no behavior change.
 
 pub mod error;
