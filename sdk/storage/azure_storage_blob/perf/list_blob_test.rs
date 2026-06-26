@@ -3,13 +3,12 @@
 
 use std::sync::{Arc, OnceLock};
 
-use azure_core::{error::ErrorKind, http::Url, Bytes};
+use azure_core::{http::Url, Bytes};
 use azure_core_test::{
     perf::{CreatePerfTestReturn, PerfTest},
     TestContext,
 };
 use azure_storage_blob::BlobContainerClient;
-use azure_storage_blob_test::get_test_credential;
 use clap::Args;
 use futures::{FutureExt, StreamExt, TryStreamExt};
 
