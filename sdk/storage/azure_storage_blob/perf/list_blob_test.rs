@@ -5,44 +5,40 @@ use std::sync::{Arc, OnceLock};
 
 use azure_core::{error::ErrorKind, http::Url, Bytes};
 use azure_core_test::{
-    perf::{CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata},
+    perf::{CreatePerfTestReturn, PerfTest},
     TestContext,
 };
-
-use super::options;
 use azure_storage_blob::BlobContainerClient;
 use azure_storage_blob_test::get_test_credential;
-use futures::{FutureExt, StreamExt, TryStreamExt};
+use clap::Args;
+use futures::{FutureExt, TryStreamExt};
+
+#[derive(Args, Clone, Debug)]
+pub struct ListBlobTestOptions {
+    // The number of blobs to download.
+    #[arg(long)]
+    count: usize,
+
+    #[arg(long)]
+    endpoint: Option<Url>,
+}
 
 pub struct ListBlobTest {
-    count: u32,
-    endpoint: Option<String>,
+    count: usize,
+    endpoint: Option<Url>,
     client: OnceLock<BlobContainerClient>,
 }
 
 impl ListBlobTest {
-    fn create_list_blob_test(runner: PerfRunner) -> CreatePerfTestReturn {
+    pub fn new(args: ListBlobTestOptions) -> CreatePerfTestReturn {
         async move {
-            let endpoint: Option<String> = runner.try_get_test_arg("endpoint")?;
-
             Ok(Box::new(ListBlobTest {
-                count: runner
-                    .try_get_test_arg("count")?
-                    .expect("count argument is mandatory"),
-                endpoint,
+                count: args.count,
+                endpoint: args.endpoint,
                 client: OnceLock::new(),
             }) as Box<dyn PerfTest>)
         }
         .boxed()
-    }
-
-    pub fn test_metadata() -> PerfTestMetadata {
-        PerfTestMetadata {
-            name: "list_blob",
-            description: "List blobs in a container",
-            options: vec![options::count(), options::endpoint()],
-            create_test: Self::create_list_blob_test,
-        }
     }
 }
 
@@ -54,15 +50,13 @@ impl PerfTest for ListBlobTest {
         let recording = context.recording();
         let credential = get_test_credential(recording);
         let container_name = format!("perf-container-{}", azure_core::Uuid::new_v4());
-        let endpoint = match &self.endpoint {
+        let mut container_url = match &self.endpoint {
             Some(e) => e.clone(),
-            None => format!(
+            None => Url::parse(&format!(
                 "https://{}.blob.core.windows.net",
                 recording.var("AZURE_STORAGE_ACCOUNT_NAME", None)
-            ),
+            ))?,
         };
-        println!("Using endpoint: {}", endpoint);
-        let mut container_url = Url::parse(&endpoint)?;
         container_url
             .path_segments_mut()
             .expect("endpoint must be a valid base URL")
