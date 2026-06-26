@@ -698,12 +698,14 @@ impl CosmosOperation {
     /// position via [`with_change_feed_start`](Self::with_change_feed_start),
     /// which both records the marker and emits the matching header.
     ///
-    /// Note: the `x-ms-cosmos-changefeed-wire-format-version` header is
-    /// intentionally **not** set here. That header opts into the
-    /// full-fidelity (AllVersionsAndDeletes) wire format, which wraps each
-    /// document in `{ current, metadata, ... }`. In LatestVersion mode the
-    /// service must return plain documents, so the header is omitted. It will
-    /// be set by a future AllVersionsAndDeletes change feed operation.
+    /// Also sets the `x-ms-cosmos-changefeed-wire-format-version` header so the
+    /// service returns the structured change feed envelope (`{ current, ... }`)
+    /// for every mode. Sending it on LatestVersion (not just
+    /// AllVersionsAndDeletes) keeps the response shape consistent across modes:
+    /// LatestVersion has no pre-image, but the envelope still carries `current`
+    /// plus any per-item metadata, so callers don't have to special-case the
+    /// payload per mode. The SDK iterator unwraps `current` back into the
+    /// caller's document type.
     ///
     /// `target` scopes the change feed to a specific partition or EPK range.
     /// Pass `None` or `Some(FeedRange::full())` to read the entire container.
@@ -713,6 +715,7 @@ impl CosmosOperation {
             .into_feed_reference();
         let mut headers = CosmosRequestHeaders::new();
         headers.incremental_feed = true;
+        headers.changefeed_wire_format_version = true;
         let mut operation =
             Self::new(OperationType::ReadFeed, resource_ref, target).with_request_headers(headers);
         operation.is_change_feed = true;
@@ -970,6 +973,18 @@ mod tests {
 
         assert!(!op.is_read_only());
         assert!(!op.is_idempotent());
+    }
+
+    /// The change feed factory sets both the incremental-feed indicator and the
+    /// wire-format-version header so LatestVersion responses use the structured
+    /// envelope wire format consistent with AllVersionsAndDeletes.
+    #[test]
+    fn change_feed_sets_wire_format_header() {
+        let op = CosmosOperation::change_feed(test_container(), Some(FeedRange::full()));
+
+        assert!(op.is_change_feed());
+        assert!(op.request_headers().incremental_feed);
+        assert!(op.request_headers().changefeed_wire_format_version);
     }
 
     /// Creating a partitioned operation without a partition target panics in
