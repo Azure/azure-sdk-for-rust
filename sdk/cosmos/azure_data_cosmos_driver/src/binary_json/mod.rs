@@ -35,9 +35,12 @@
 //! (`docs/BINARY_ENCODING_SPEC.md`) for the full design and phased plan.
 //!
 //! > **Status:** the decoder ([`Reader`](reader)/[`decode`]) is **complete** —
-//! > it decodes every binary value form into a [`serde_json::Value`]. Wiring
-//! > the decoder into the response path lands in a later phase; nothing is
-//! > wired into the request/response path yet, so there is no behavior change.
+//! > it decodes every binary value form into a [`serde_json::Value`] — and is
+//! > wired into the response path: the driver's `ResponseBody::into_single` /
+//! > `into_items` auto-detect the `0x80` preamble and route binary buffers
+//! > through [`decode`], leaving the text path unchanged. The branch stays
+//! > inert until the service negotiates binary responses (a later phase adds
+//! > the request-side negotiation header and the encoder).
 
 pub mod error;
 pub mod markers;
