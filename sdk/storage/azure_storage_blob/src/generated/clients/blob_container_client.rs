@@ -798,12 +798,14 @@ impl BlobContainerClient {
                         )
                         .await?;
                     let (status, headers, body) = rsp.deconstruct();
-                    let next_marker = from_xml_borrowed::<ListBlobsResponseMetadata<'_>>(&body)?
-                        .next_marker
-                        .filter(|next_marker| !next_marker.is_empty())
-                        .map(|next_marker| next_marker.into_owned());
+                    let continuation_token =
+                        from_xml_borrowed::<ListBlobsResponseMetadata<'_>>(&body)?
+                            .next_marker
+                            .and_then(|marker_cow| {
+                                (!marker_cow.is_empty()).then(|| marker_cow.into_owned())
+                            });
                     let rsp = RawResponse::from_bytes(status, headers, body).into();
-                    Ok(match next_marker {
+                    Ok(match continuation_token {
                         Some(next_marker) => PagerResult::More {
                             response: rsp,
                             continuation: PagerContinuation::Token(next_marker),
