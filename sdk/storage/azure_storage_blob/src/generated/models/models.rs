@@ -16,7 +16,7 @@ use super::{
 use crate::models::BlobMetadata;
 use azure_core::{base64, fmt::SafeDebug, http::Etag, time::OffsetDateTime};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::{borrow::Cow, collections::HashMap};
 
 /// Represents an access policy.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
@@ -996,6 +996,13 @@ pub struct ListBlobsResponse {
     /// The service endpoint.
     #[serde(rename = "@ServiceEndpoint", skip_serializing_if = "Option::is_none")]
     pub service_endpoint: Option<String>,
+}
+
+#[derive(Debug, Default, Deserialize)]
+#[serde(default, rename = "EnumerationResults")]
+pub(crate) struct ListBlobsResponseMetadata<'a> {
+    #[serde(borrow, rename = "NextMarker")]
+    pub(crate) next_marker: Option<Cow<'a, str>>,
 }
 
 /// The result of the List Containers API.
