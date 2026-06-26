@@ -74,6 +74,13 @@ impl BinaryEncoding {
     pub(crate) fn enabled(self) -> bool {
         self.enabled
     }
+
+    /// Test-only constructor for a fixed enablement state, so tests don't depend
+    /// on (or race on) the process environment.
+    #[cfg(test)]
+    pub(crate) fn for_test(enabled: bool) -> Self {
+        Self { enabled }
+    }
 }
 
 /// Returns `true` if the named environment variable is set to a truthy value
