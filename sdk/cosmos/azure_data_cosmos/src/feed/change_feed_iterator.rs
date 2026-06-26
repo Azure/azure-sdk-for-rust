@@ -217,7 +217,7 @@ fn unwrap_change_feed_item(item: serde_json::Value) -> serde_json::Value {
 /// # Examples
 ///
 /// ```rust,no_run
-/// use azure_data_cosmos::{clients::ContainerClient, feed::FeedScope};
+/// use azure_data_cosmos::{clients::ContainerClient, feed::FeedScope, options::ChangeFeedStartFrom};
 /// use futures::StreamExt;
 /// use serde::Deserialize;
 ///
@@ -226,7 +226,7 @@ fn unwrap_change_feed_item(item: serde_json::Value) -> serde_json::Value {
 ///
 /// # async fn example(container: ContainerClient) -> Result<(), Box<dyn std::error::Error>> {
 /// let mut pages = container
-///     .read_change_feed::<MyItem>(FeedScope::full_container(), None)
+///     .read_change_feed::<MyItem>(FeedScope::full_container(), ChangeFeedStartFrom::Beginning, None)
 ///     .await?;
 ///
 /// while let Some(page) = pages.next().await {

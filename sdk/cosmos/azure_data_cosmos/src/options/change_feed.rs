@@ -12,16 +12,17 @@ use crate::options::FeedOptions;
 
 /// Determines where the change feed starts reading from.
 ///
-/// This is only consulted when no continuation token is provided. If a
+/// There is no default: callers pass this explicitly to
+/// [`ContainerClient::read_change_feed()`](crate::clients::ContainerClient::read_change_feed).
+/// It is only consulted when no continuation token is provided. If a
 /// continuation token is set, it carries its own position and this value is
 /// ignored.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 #[non_exhaustive]
 pub enum ChangeFeedStartFrom {
     /// Start from the beginning of the change feed (all available changes).
     ///
     /// No additional headers are sent.
-    #[default]
     Beginning,
 
     /// Start from the current point in time (only changes after the request).
@@ -68,8 +69,11 @@ pub enum ChangeFeedMode {
 /// [`with_continuation_token`](Self::with_continuation_token) delegate to the
 /// inner [`FeedOptions`].
 ///
-/// When a continuation token is set, [`start_from`](Self::start_from) is
-/// ignored because the token carries its own position.
+/// The start position is **not** part of these options: it is a required
+/// argument of
+/// [`ContainerClient::read_change_feed()`](crate::clients::ContainerClient::read_change_feed).
+/// When a continuation token is set, that start position is ignored because the
+/// token carries its own.
 #[derive(Clone, Default)]
 #[non_exhaustive]
 pub struct ChangeFeedOptions {
@@ -86,21 +90,12 @@ pub struct ChangeFeedOptions {
 
     /// Which change feed mode to read. Defaults to [`ChangeFeedMode::LatestVersion`].
     pub mode: ChangeFeedMode,
-
-    /// Where to start reading the change feed. Defaults to [`ChangeFeedStartFrom::Beginning`].
-    pub start_from: ChangeFeedStartFrom,
 }
 
 impl ChangeFeedOptions {
     /// Sets which change feed mode to read.
     pub fn with_mode(mut self, mode: ChangeFeedMode) -> Self {
         self.mode = mode;
-        self
-    }
-
-    /// Sets where to start reading the change feed.
-    pub fn with_start_from(mut self, start_from: ChangeFeedStartFrom) -> Self {
-        self.start_from = start_from;
         self
     }
 
@@ -133,8 +128,9 @@ impl ChangeFeedOptions {
 
     /// Sets a continuation token to resume the change feed at a previous position.
     ///
-    /// When continuation is set, [`start_from`](Self::start_from) is ignored
-    /// because the token carries its own position.
+    /// When continuation is set, the `start_from` argument to
+    /// [`read_change_feed`](crate::clients::ContainerClient::read_change_feed)
+    /// is ignored because the token carries its own position.
     pub fn with_continuation_token(mut self, token: ContinuationToken) -> Self {
         self.feed = self.feed.with_continuation_token(token);
         self
@@ -144,14 +140,6 @@ impl ChangeFeedOptions {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn default_start_from_is_beginning() {
-        assert!(matches!(
-            ChangeFeedStartFrom::default(),
-            ChangeFeedStartFrom::Beginning
-        ));
-    }
 
     #[test]
     fn default_mode_is_latest_version() {
@@ -164,11 +152,8 @@ mod tests {
 
     #[test]
     fn options_builder_chain() {
-        let opts = ChangeFeedOptions::default()
-            .with_start_from(ChangeFeedStartFrom::Now)
-            .with_mode(ChangeFeedMode::AllVersionsAndDeletes);
+        let opts = ChangeFeedOptions::default().with_mode(ChangeFeedMode::AllVersionsAndDeletes);
 
-        assert!(matches!(opts.start_from, ChangeFeedStartFrom::Now));
         assert_eq!(opts.mode, ChangeFeedMode::AllVersionsAndDeletes);
     }
 }

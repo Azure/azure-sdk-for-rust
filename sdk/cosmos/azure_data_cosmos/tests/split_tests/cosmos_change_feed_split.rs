@@ -126,10 +126,8 @@ pub async fn change_feed_resume_across_split() -> Result<(), Box<dyn Error>> {
             let mut iterator = container_client
                 .read_change_feed::<MockItem>(
                     FeedScope::full_container(),
-                    Some(
-                        ChangeFeedOptions::default()
-                            .with_start_from(ChangeFeedStartFrom::Beginning),
-                    ),
+                    ChangeFeedStartFrom::Beginning,
+                    None,
                 )
                 .await?;
             let baseline_seen = drain_changes(&mut iterator).await?;
@@ -175,6 +173,8 @@ pub async fn change_feed_resume_across_split() -> Result<(), Box<dyn Error>> {
             let mut resumed = container_client
                 .read_change_feed::<MockItem>(
                     FeedScope::full_container(),
+                    // Ignored on resume: the token carries its own position.
+                    ChangeFeedStartFrom::Beginning,
                     Some(ChangeFeedOptions::default().with_continuation_token(token)),
                 )
                 .await?;
