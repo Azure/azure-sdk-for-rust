@@ -302,9 +302,9 @@ mod token_kind {
 }
 
 const RUST_KEYWORDS: &[&str] = &[
-    "as", "async", "auto", "const", "crate", "dyn", "enum", "extern", "false", "fn", "for", "impl",
-    "in", "mod", "move", "mut", "pub", "ref", "self", "Self", "static", "struct", "super", "trait",
-    "true", "type", "union", "unsafe", "use", "where",
+    "as", "async", "auto", "const", "crate", "derive", "dyn", "enum", "extern", "false", "fn",
+    "for", "impl", "in", "mod", "move", "mut", "pub", "ref", "self", "Self", "static", "struct",
+    "super", "trait", "true", "type", "union", "unsafe", "use", "where",
 ];
 
 fn is_rust_keyword(s: &str) -> bool {
@@ -443,5 +443,88 @@ fn doc_token(value: &str) -> ReviewToken {
         is_documentation: true,
         navigation_display_name: None,
         render_classes: None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::{ApiAttribute, ApiMember};
+
+    #[test]
+    fn renders_trait_impl_tokens_with_typed_members() {
+        let module = ApiModule {
+            path: "demo".to_string(),
+            doc_comments: Vec::new(),
+            attributes: Vec::new(),
+            items: vec![ApiItem {
+                name: "MyType".to_string(),
+                kind: ApiItemKind::TraitImpl,
+                doc_comments: Vec::new(),
+                attributes: vec![ApiAttribute {
+                    text: "#[cfg(feature = \"std\")]".to_string(),
+                }],
+                declaration: "impl fmt::Debug for MyType {".to_string(),
+                members: vec![ApiMember {
+                    name: "fmt".to_string(),
+                    doc_comments: Vec::new(),
+                    attributes: Vec::new(),
+                    declaration: "fn fmt(self: &Self, f: &mut fmt::Formatter) -> fmt::Result;"
+                        .to_string(),
+                }],
+            }],
+            modules: Vec::new(),
+        };
+
+        let lines = render_root_module(&module);
+
+        assert_eq!(lines.len(), 3);
+        assert_eq!(
+            lines[1]
+                .tokens
+                .iter()
+                .map(|token| (token.kind, token.value.as_str()))
+                .collect::<Vec<_>>(),
+            vec![
+                (token_kind::KEYWORD, "impl"),
+                (token_kind::TYPE_NAME, "fmt"),
+                (token_kind::PUNCTUATION, "::"),
+                (token_kind::TYPE_NAME, "Debug"),
+                (token_kind::KEYWORD, "for"),
+                (token_kind::TYPE_NAME, "MyType"),
+                (token_kind::PUNCTUATION, "{"),
+            ]
+        );
+        assert_eq!(lines[1].children.len(), 1);
+        assert_eq!(
+            lines[1].children[0]
+                .tokens
+                .iter()
+                .map(|token| (token.kind, token.value.as_str()))
+                .collect::<Vec<_>>(),
+            vec![
+                (token_kind::KEYWORD, "fn"),
+                (token_kind::MEMBER_NAME, "fmt"),
+                (token_kind::PUNCTUATION, "("),
+                (token_kind::KEYWORD, "self"),
+                (token_kind::PUNCTUATION, ":"),
+                (token_kind::PUNCTUATION, "&"),
+                (token_kind::KEYWORD, "Self"),
+                (token_kind::PUNCTUATION, ","),
+                (token_kind::TYPE_NAME, "f"),
+                (token_kind::PUNCTUATION, ":"),
+                (token_kind::PUNCTUATION, "&"),
+                (token_kind::KEYWORD, "mut"),
+                (token_kind::TYPE_NAME, "fmt"),
+                (token_kind::PUNCTUATION, "::"),
+                (token_kind::TYPE_NAME, "Formatter"),
+                (token_kind::PUNCTUATION, ")"),
+                (token_kind::PUNCTUATION, "->"),
+                (token_kind::TYPE_NAME, "fmt"),
+                (token_kind::PUNCTUATION, "::"),
+                (token_kind::TYPE_NAME, "Result"),
+                (token_kind::PUNCTUATION, ";"),
+            ]
+        );
     }
 }

@@ -78,6 +78,7 @@ pub(crate) enum ApiItemKind {
     Enum,
     Trait,
     TraitAlias,
+    TraitImpl,
     Union,
     TypeAlias,
     Const,
@@ -85,7 +86,7 @@ pub(crate) enum ApiItemKind {
 }
 
 impl ApiItemKind {
-    pub(crate) const ORDER: [Self; 12] = [
+    pub(crate) const ORDER: [Self; 13] = [
         Self::Use,
         Self::Macro,
         Self::ProcMacro,
@@ -94,6 +95,7 @@ impl ApiItemKind {
         Self::Enum,
         Self::Trait,
         Self::TraitAlias,
+        Self::TraitImpl,
         Self::Union,
         Self::TypeAlias,
         Self::Const,

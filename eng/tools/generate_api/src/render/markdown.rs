@@ -85,3 +85,49 @@ fn push_line(output: &mut String, indent: usize, text: &str) {
     output.push_str(text);
     output.push('\n');
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::{ApiAttribute, ApiItemKind};
+
+    #[test]
+    fn renders_explicit_trait_impl_blocks() {
+        let model = ApiModel {
+            package_name: "demo".to_string(),
+            package_version: "1.0.0".to_string(),
+            parser_version: "0.0.0".to_string(),
+            root_module: ApiModule {
+                path: "demo".to_string(),
+                doc_comments: Vec::new(),
+                attributes: Vec::new(),
+                items: vec![ApiItem {
+                    name: "MyType".to_string(),
+                    kind: ApiItemKind::TraitImpl,
+                    doc_comments: Vec::new(),
+                    attributes: vec![ApiAttribute {
+                        text: "#[cfg(feature = \"std\")]".to_string(),
+                    }],
+                    declaration: "impl fmt::Debug for MyType {".to_string(),
+                    members: vec![ApiMember {
+                        name: "fmt".to_string(),
+                        doc_comments: Vec::new(),
+                        attributes: Vec::new(),
+                        declaration: "fn fmt(self: &Self, f: &mut fmt::Formatter) -> fmt::Result;"
+                            .to_string(),
+                    }],
+                }],
+                modules: Vec::new(),
+            },
+        };
+
+        let rendered = render(&model);
+
+        assert!(rendered.contains("#[cfg(feature = \"std\")]"));
+        assert!(rendered.contains("impl fmt::Debug for MyType {"));
+        assert!(
+            rendered.contains("    fn fmt(self: &Self, f: &mut fmt::Formatter) -> fmt::Result;")
+        );
+        assert!(rendered.contains("}\n```\n"));
+    }
+}

@@ -58,6 +58,7 @@ It currently models:
 - item doc comments
 - item attributes
 - public items
+- explicit trait impl blocks
 - associated members (including trait methods, associated types, and associated consts)
 
 Workspace crate models are cached via `Arc<T>` to avoid deep-cloning on repeated lookups during workspace-dep expansion.
@@ -71,6 +72,7 @@ Supported item kinds include:
 - enums
 - traits
 - trait aliases
+- explicit trait impls
 - unions
 - type aliases
 - constants
@@ -99,6 +101,9 @@ Ordering is deterministic and shared by both output formats.
   rather than embedded in the declaration string.  Both renderers handle the opening `{` in the
   declaration and the implied closing `}` separately, which makes each trait member navigable with
   its own `LineId` in APIView output.
+- Non-derived trait impls are also extracted as items with `ApiItem.members`, so both renderers can
+  emit source-shaped `impl Trait for Type { ... }` blocks and make each implemented member
+  navigable in APIView.
 
 ## Re-export rules
 
@@ -115,6 +120,10 @@ Re-export handling is driven by public reachability and workspace membership.
 - Re-exports from crates that are also defined in this repository workspace are expanded into declarations at the re-export site.
 - This applies both at crate root and inside public modules.
 - Example consequence: if `azure_core::tracing` re-exports a type from `typespec_client_core::tracing`, the type is declared under `azure_core::tracing`.
+- When a workspace re-export lifts a concrete type declaration, sibling explicit trait impl blocks for
+  that type are lifted alongside it so public surfaces such as `azure_core::Error` still show
+  `impl fmt::Debug for Error { ... }`, `impl fmt::Display for Error { ... }`, and similar
+  declarations.
 
 ### External-crate re-exports
 
@@ -130,6 +139,21 @@ Current normalization rules include:
 - fix rustdoc pretty-printed `cfg` / `cfg_attr` forms
 - rewrite `pin(__private(...))` forms to `pin_project(...)` / `pin_project`
 - remove spaces around `clippy::` lint paths in `allow`, `deny`, and `expect` attrs
+- synthesize `#[derive(...)]` for known non-workspace derive traits discovered via impl blocks on
+  structs, enums, and unions when the impl item carries `#[automatically_derived]`. Current
+  recognized derives are `Clone`, `Copy`, `Debug`, `Default`, `Eq`, `Hash`, `Ord`, `PartialEq`,
+  `PartialOrd`, `serde::Serialize`, and `serde::Deserialize`. `Debug` is recognized from `Debug`,
+  `fmt::Debug`, `core::fmt::Debug`, and `std::fmt::Debug`. `Serialize` and `Deserialize` are
+  recognized from either qualified or unqualified rustdoc paths and are normalized to their
+  `serde::...` spellings. Workspace-defined derives such as `SafeDebug` are not synthesized.
+- synthesized derive attributes follow lifted type declarations across same-crate and workspace-crate
+  re-export expansion, so the visible public API keeps `#[derive(...)]` on the same declaration
+  surface where the type itself is emitted
+- non-derived trait impls are rendered as explicit `impl` blocks instead of being folded into
+  synthesized `#[derive(...)]` attributes
+- explicit trait impl blocks follow lifted type declarations across same-crate and workspace-crate
+  re-export expansion, so the visible public API keeps source-shaped impl declarations even when the
+  type itself is surfaced through `pub use`
 
 Documentation handling:
 
@@ -205,7 +229,14 @@ Current APIView decisions:
 - all declaration tokens are typed: keywords use `Keyword`, the item's own name uses `TypeName`
   (structs, enums, traits, etc.) or `MemberName` (functions), other identifiers default to
   `TypeName`, and punctuation uses `Punctuation`
+- synthesized derive attributes are tokenized the same way as other attributes: `derive` is a
+  `Keyword`, the derived trait names are `TypeName`, and `#`, `[`, `]`, `(`, `)`, `,`, and `::`
+  use `Punctuation`
 - trait members are rendered as children with individual `LineId` values, enabling navigation
+- explicit trait impl blocks use the same typed tokens as source-shaped item declarations: `impl`,
+  `for`, and `fn` are `Keyword`, trait and type identifiers are `TypeName`, implemented method
+  names are `MemberName`, and punctuation such as `#`, `[`, `]`, `(`, `)`, `,`, `:`, `;`, `->`,
+  `&`, `{`, `}`, and `::` uses `Punctuation`
 
 ## Rustdoc / librustdoc alignment
 
