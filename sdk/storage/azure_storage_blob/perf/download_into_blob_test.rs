@@ -8,17 +8,14 @@ use std::{
 };
 
 use azure_core_test::{
-    perf::{CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata},
+    perf::{CreatePerfTestReturn, PerfRunner, PerfTest},
     TestContext,
 };
 use azure_storage_blob::{models::BlobClientDownloadOptions, BlobContainerClient};
 use bytes::Bytes;
 use futures::{lock::Mutex, FutureExt, TryStreamExt};
 
-use crate::{
-    extensions::{OnceLockExt, RecordingExt},
-    options,
-};
+use crate::extensions::{OnceLockExt, RecordingExt};
 
 const DEFAULT_NUM_BLOBS: usize = 5;
 

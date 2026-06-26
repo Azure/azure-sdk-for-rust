@@ -7,20 +7,47 @@ use std::{
     sync::{Arc, OnceLock},
 };
 
-use azure_core::{error::ErrorKind, http::Url, Bytes};
+use azure_core::{http::Url, Bytes};
 use azure_core_test::{
-    perf::{CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata},
+    perf::{CreatePerfTestReturn, PerfTest},
     TestContext,
 };
-
-use super::options;
 use azure_storage_blob::{models::BlobClientDownloadOptions, BlobClient, BlobContainerClient};
 use azure_storage_blob_test::get_test_credential;
 use bytes::BytesMut;
+use clap::{Args, ValueEnum};
 use futures::{FutureExt, StreamExt};
+
+use crate::clap_parsers::non_zero_usize;
 
 const BLOB_NAME: &str = "perf-blob";
 
+#[derive(Args, Clone, Debug)]
+pub struct DownloadBlobTestOptions {
+    // The size of each blob in bytes.
+    #[arg(long)]
+    size: usize,
+
+    // The number of blobs to download.
+    #[arg(long, default_value_t = 5)]
+    count: usize,
+
+    #[arg(long)]
+    collect: CollectOptions,
+
+    // Number of concurrent network transfers.
+    #[arg(long, value_parser = non_zero_usize)]
+    concurrency: Option<NonZero<usize>>,
+
+    // Size in bytes to partition data into for each transfer.
+    #[arg(long, value_parser = non_zero_usize)]
+    partition_size: Option<NonZero<usize>>,
+
+    #[arg(long)]
+    endpoint: Option<Url>,
+}
+
+#[derive(ValueEnum, Clone, Debug)]
 enum CollectOptions {
     Stream,
     Core,
@@ -34,63 +61,23 @@ pub struct DownloadBlobTest {
     collect: CollectOptions,
     concurrency: Option<NonZero<usize>>,
     partition_size: Option<NonZero<usize>>,
-    endpoint: Option<String>,
+    endpoint: Option<Url>,
     client: OnceLock<BlobContainerClient>,
 }
 
 impl DownloadBlobTest {
-    fn create_download_blob_test(runner: PerfRunner) -> CreatePerfTestReturn {
+    pub fn new(args: DownloadBlobTestOptions) -> CreatePerfTestReturn {
         async move {
-            let endpoint: Option<String> = runner.try_get_test_arg("endpoint")?;
-
-            let collect = runner.try_get_test_arg("collect")?.unwrap_or(String::new());
-
-            let collect_options = match collect.as_str() {
-                "stream" => CollectOptions::Stream,
-                "core" => CollectOptions::Core,
-                "vec_bytes" => CollectOptions::VecBytes,
-                "simple" => CollectOptions::Simple,
-                "into" => CollectOptions::Into,
-                "" => CollectOptions::Stream, // Default to streaming if no option is provided
-                _ => {
-                    return Err(azure_core::Error::with_message(
-                        ErrorKind::Other,
-                        format!("Invalid collect option '{}'", collect),
-                    ))
-                }
-            };
-
             Ok(Box::new(DownloadBlobTest {
-                size: runner
-                    .try_get_test_arg("size")?
-                    .expect("size argument is mandatory"),
-                collect: collect_options,
-                concurrency: runner
-                    .try_get_test_arg::<usize>("concurrency")?
-                    .and_then(NonZero::new),
-                partition_size: runner
-                    .try_get_test_arg::<usize>("partition-size")?
-                    .and_then(NonZero::new),
-                endpoint,
+                size: args.size,
+                collect: args.collect,
+                concurrency: args.concurrency,
+                partition_size: args.partition_size,
+                endpoint: args.endpoint,
                 client: OnceLock::new(),
             }) as Box<dyn PerfTest>)
         }
         .boxed()
-    }
-
-    pub fn test_metadata() -> PerfTestMetadata {
-        PerfTestMetadata {
-            name: "download_blob",
-            description: "Download a single blob from a container",
-            options: vec![
-                options::collect(),
-                options::size(),
-                options::concurrency(),
-                options::partition_size(),
-                options::endpoint(),
-            ],
-            create_test: Self::create_download_blob_test,
-        }
     }
 
     fn download_options(&self) -> BlobClientDownloadOptions<'_> {
@@ -181,15 +168,13 @@ impl PerfTest for DownloadBlobTest {
         let recording = context.recording();
         let credential = get_test_credential(recording);
         let container_name = format!("perf-container-{}", azure_core::Uuid::new_v4());
-        let endpoint = match &self.endpoint {
+        let mut container_url = match &self.endpoint {
             Some(e) => e.clone(),
-            None => format!(
+            None => Url::parse(&format!(
                 "https://{}.blob.core.windows.net",
                 recording.var("AZURE_STORAGE_ACCOUNT_NAME", None)
-            ),
+            ))?,
         };
-        println!("Using endpoint: {}", endpoint);
-        let mut container_url = Url::parse(&endpoint)?;
         container_url
             .path_segments_mut()
             .expect("endpoint must be a valid base URL")
