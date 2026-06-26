@@ -51,6 +51,8 @@ pub mod system_strings;
 pub mod writer;
 
 #[cfg(test)]
+mod fuzz_tests;
+#[cfg(test)]
 mod vectors;
 
 pub use error::{BinaryError, Result};
