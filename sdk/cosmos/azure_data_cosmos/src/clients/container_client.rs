@@ -301,7 +301,7 @@ impl ContainerClient {
         options: Option<ItemWriteOptions>,
     ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
-        let body = serde_json::to_vec(&item)?;
+        let body = serialize_item_body(&item, binary_request_encoding_enabled())?;
 
         // Build the driver's item reference from our stored container metadata.
         let item_ref = ItemReference::from_name(
@@ -399,7 +399,7 @@ impl ContainerClient {
         options: Option<ItemWriteOptions>,
     ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
-        let body = serde_json::to_vec(&item)?;
+        let body = serialize_item_body(&item, binary_request_encoding_enabled())?;
 
         // Build the driver's item reference from our stored container metadata.
         let item_ref = ItemReference::from_name(
@@ -607,7 +607,7 @@ impl ContainerClient {
         options: Option<ItemWriteOptions>,
     ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
-        let body = serde_json::to_vec(&item)?;
+        let body = serialize_item_body(&item, binary_request_encoding_enabled())?;
 
         // Build the driver's item reference from our stored container metadata.
         let item_ref = ItemReference::from_name(
@@ -1151,6 +1151,44 @@ fn apply_item_options(
     operation
 }
 
+/// Whether item write bodies should be encoded as Cosmos binary JSON instead of
+/// UTF-8 text JSON.
+///
+/// **Temporary internal switch (P2b).** Reads
+/// `AZURE_COSMOS_BINARY_ENCODING_ENABLED` from the environment on each call and
+/// is disabled unless it is set to a truthy value (`1` / `true` / `yes` / `on`,
+/// case-insensitive, trimmed). It exists only to exercise the encoder end to
+/// end; a proper client/driver option (defaulting from this same variable)
+/// replaces it in P3, when the request-side negotiation header is also emitted.
+fn binary_request_encoding_enabled() -> bool {
+    std::env::var("AZURE_COSMOS_BINARY_ENCODING_ENABLED")
+        .map(|v| {
+            matches!(
+                v.trim().to_ascii_lowercase().as_str(),
+                "1" | "true" | "yes" | "on"
+            )
+        })
+        .unwrap_or(false)
+}
+
+/// Serializes an item write body as either Cosmos binary JSON (`binary`) or
+/// UTF-8 text JSON.
+///
+/// The binary path is `T` → [`serde_json::Value`] →
+/// [`binary_json::encode`](azure_data_cosmos_driver::binary_json::encode); the
+/// text path is the original [`serde_json::to_vec`]. Both produce a body the
+/// service accepts — the binary form begins with the `0x80` preamble, which the
+/// service detects from the first byte, so the request `Content-Type` stays
+/// `application/json`.
+fn serialize_item_body<T: Serialize>(item: &T, binary: bool) -> crate::Result<Vec<u8>> {
+    if binary {
+        let value = serde_json::to_value(item)?;
+        Ok(azure_data_cosmos_driver::binary_json::encode(&value))
+    } else {
+        Ok(serde_json::to_vec(item)?)
+    }
+}
+
 /// Applies [`BatchOptions`] fields to a [`CosmosOperation`].
 ///
 /// [`BatchOptions`] carries a session token but no precondition (ETag-based
@@ -1178,4 +1216,40 @@ fn _assert_futures_are_send() {
     let patch: PatchInstructions = todo!();
     let options: Option<PatchItemOptions> = todo!();
     assert_send(client.patch_item(partition_key, item_id, patch, options));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn serialize_item_body_text_matches_serde_to_vec() {
+        // The text path is byte-for-byte the original `serde_json::to_vec`.
+        let item = json!({ "id": "1", "count": 7, "tags": ["a", "b"] });
+        let body = serialize_item_body(&item, false).unwrap();
+        assert_eq!(body, serde_json::to_vec(&item).unwrap());
+    }
+
+    #[test]
+    fn serialize_item_body_binary_round_trips() {
+        // The binary path begins with the `0x80` preamble and decodes back to
+        // the same value the text path would have serialized.
+        let item = json!({ "id": "doc-1", "count": 42, "nested": { "ok": true } });
+        let body = serialize_item_body(&item, true).unwrap();
+        assert_eq!(body.first(), Some(&0x80));
+        let decoded: serde_json::Value =
+            azure_data_cosmos_driver::binary_json::decode(&body).unwrap();
+        assert_eq!(decoded, item);
+    }
+
+    #[test]
+    fn serialize_item_body_binary_differs_from_text() {
+        // Sanity check that the two paths actually produce different bytes.
+        let item = json!({ "id": "x" });
+        let text = serialize_item_body(&item, false).unwrap();
+        let binary = serialize_item_body(&item, true).unwrap();
+        assert_ne!(text, binary);
+        assert_ne!(text.first(), Some(&0x80));
+    }
 }
