@@ -16,6 +16,8 @@ use download_blob_test::DownloadBlobTestOptions;
 use list_blob_test::ListBlobTestOptions;
 use upload_blob_test::UploadBlobTestOptions;
 
+use crate::download_into_blob_test::DownloadIntoBlobTestOptions;
+
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
     match PerfRunner::<BlobTest>::new(env!("CARGO_MANIFEST_DIR"), file!()) {
@@ -31,6 +33,7 @@ async fn main() -> azure_core::Result<()> {
 enum BlobTest {
     Upload(UploadBlobTestOptions),
     Download(DownloadBlobTestOptions),
+    DownloadInto(DownloadIntoBlobTestOptions),
     List(ListBlobTestOptions),
 }
 
@@ -39,6 +42,7 @@ impl PerfTestFactory for BlobTest {
         match self {
             BlobTest::Upload(_) => "UploadBlob",
             BlobTest::Download(_) => "DownloadBlob",
+            BlobTest::DownloadInto(_) => "DownloadIntoBlob",
             BlobTest::List(_) => "ListBlob",
         }
     }
@@ -47,6 +51,9 @@ impl PerfTestFactory for BlobTest {
             BlobTest::Upload(options) => upload_blob_test::UploadBlobTest::new(options.clone()),
             BlobTest::Download(options) => {
                 download_blob_test::DownloadBlobTest::new(options.clone())
+            }
+            BlobTest::DownloadInto(options) => {
+                download_into_blob_test::DownloadIntoBlobTest::new(options.clone())
             }
             BlobTest::List(options) => list_blob_test::ListBlobTest::new(options.clone()),
         }
