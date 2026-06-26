@@ -289,11 +289,8 @@ fn expand_item_with_impls(krate: &Crate, target: &Item, current_module_path: &st
 }
 
 fn trait_impls_for_item(krate: &Crate, target: &Item, current_module_path: &str) -> Vec<ApiItem> {
-    let impl_ids = match &target.inner {
-        ItemEnum::Struct(struct_item) => &struct_item.impls,
-        ItemEnum::Enum(enum_item) => &enum_item.impls,
-        ItemEnum::Union(union_item) => &union_item.impls,
-        _ => return Vec::new(),
+    let Some(impl_ids) = item_impl_ids(target) else {
+        return Vec::new();
     };
 
     impl_ids
@@ -309,15 +306,12 @@ fn trait_impls_for_item(krate: &Crate, target: &Item, current_module_path: &str)
         .collect()
 }
 
-fn rebase_trait_impl_item(mut item: ApiItem, current_module_path: &str) -> ApiItem {
+fn rebase_trait_impl_item(mut item: ApiItem, _current_module_path: &str) -> ApiItem {
     if let Some((trait_name, _)) = item.declaration.split_once(" for ") {
         let trait_name = trait_name
             .trim_start_matches("unsafe ")
             .trim_start_matches("impl ");
         item.name = format!("{}_{}", last_path_segment(trait_name), item.name);
-    }
-    if current_module_path.is_empty() {
-        return item;
     }
     item
 }
@@ -635,22 +629,17 @@ fn extract_item(krate: &Crate, item: &Item) -> ApiItem {
 }
 
 fn extract_members(krate: &Crate, item: &Item) -> Vec<ApiMember> {
+    if let Some(impl_ids) = item_impl_ids(item) {
+        return extract_inherent_impl_members(krate, impl_ids);
+    }
     match &item.inner {
-        ItemEnum::Struct(struct_item) => extract_inherent_impl_members(krate, &struct_item.impls),
-        ItemEnum::Enum(enum_item) => extract_inherent_impl_members(krate, &enum_item.impls),
-        ItemEnum::Union(union_item) => extract_inherent_impl_members(krate, &union_item.impls),
         ItemEnum::Trait(trait_item) => extract_trait_members(krate, trait_item),
         _ => Vec::new(),
     }
 }
 
 fn synthesize_derive_attribute(krate: &Crate, item: &Item) -> Option<ApiAttribute> {
-    let impl_ids = match &item.inner {
-        ItemEnum::Struct(struct_item) => &struct_item.impls,
-        ItemEnum::Enum(enum_item) => &enum_item.impls,
-        ItemEnum::Union(union_item) => &union_item.impls,
-        _ => return None,
-    };
+    let impl_ids = item_impl_ids(item)?;
 
     let mut derived = BTreeSet::new();
     for impl_id in impl_ids {
@@ -766,43 +755,46 @@ fn extract_trait_members(krate: &Crate, trait_item: &Trait) -> Vec<ApiMember> {
         .collect()
 }
 
+fn api_member(item: &Item, declaration: String) -> ApiMember {
+    ApiMember {
+        name: item.name.clone().unwrap_or_default(),
+        doc_comments: extract_doc_comments(item),
+        attributes: extract_attributes(item),
+        declaration,
+    }
+}
+
 fn extract_associated_member(item: &Item) -> Option<ApiMember> {
     match &item.inner {
-        ItemEnum::Function(function) => Some(ApiMember {
-            name: item.name.clone().unwrap_or_default(),
-            doc_comments: extract_doc_comments(item),
-            attributes: extract_attributes(item),
-            declaration: render_function_declaration(
+        ItemEnum::Function(function) => Some(api_member(
+            item,
+            render_function_declaration(
                 item.name.as_deref().unwrap_or("unknown_fn"),
                 function,
                 false,
             ),
-        }),
-        ItemEnum::AssocConst { type_, value } => Some(ApiMember {
-            name: item.name.clone().unwrap_or_default(),
-            doc_comments: extract_doc_comments(item),
-            attributes: extract_attributes(item),
-            declaration: render_assoc_const(
+        )),
+        ItemEnum::AssocConst { type_, value } => Some(api_member(
+            item,
+            render_assoc_const(
                 item.name.as_deref().unwrap_or("UNKNOWN_CONST"),
                 type_,
                 value.as_deref(),
             ),
-        }),
+        )),
         ItemEnum::AssocType {
             generics,
             bounds,
             type_,
-        } => Some(ApiMember {
-            name: item.name.clone().unwrap_or_default(),
-            doc_comments: extract_doc_comments(item),
-            attributes: extract_attributes(item),
-            declaration: render_assoc_type(
+        } => Some(api_member(
+            item,
+            render_assoc_type(
                 item.name.as_deref().unwrap_or("UnknownType"),
                 generics,
                 bounds,
                 type_.as_ref(),
             ),
-        }),
+        )),
         _ => None,
     }
 }
@@ -814,6 +806,15 @@ fn extract_attributes(item: &Item) -> Vec<ApiAttribute> {
             text: normalize_attribute(text),
         })
         .collect()
+}
+
+fn item_impl_ids(item: &Item) -> Option<&[Id]> {
+    match &item.inner {
+        ItemEnum::Struct(struct_item) => Some(&struct_item.impls),
+        ItemEnum::Enum(enum_item) => Some(&enum_item.impls),
+        ItemEnum::Union(union_item) => Some(&union_item.impls),
+        _ => None,
+    }
 }
 
 fn extract_doc_comments(item: &Item) -> Vec<String> {
@@ -927,32 +928,30 @@ fn collapse_attribute_whitespace(attribute: &str) -> String {
 
 fn collapse_path_separator_whitespace(attribute: &str) -> String {
     let mut normalized = String::new();
-    let chars = attribute.chars().collect::<Vec<_>>();
-    let mut index = 0;
+    let mut chars = attribute.chars().peekable();
 
-    while index < chars.len() {
-        if chars[index] == ':' {
-            let mut left = normalized.len();
-            while left > 0 && normalized[..left].ends_with(' ') {
+    while let Some(ch) = chars.next() {
+        if ch == ':' {
+            // Strip any trailing space we just wrote before the first colon.
+            while normalized.ends_with(' ') {
                 normalized.pop();
-                left -= 1;
             }
-
             normalized.push(':');
-            index += 1;
-            while index < chars.len() && chars[index].is_whitespace() {
-                index += 1;
+
+            // Skip whitespace between the two colons.
+            while chars.peek().is_some_and(|c| c.is_whitespace()) {
+                chars.next();
             }
 
-            if index < chars.len() && chars[index] == ':' {
+            // Consume the second colon if present.
+            if chars.peek() == Some(&':') {
+                chars.next();
                 normalized.push(':');
-                index += 1;
             }
             continue;
         }
 
-        normalized.push(chars[index]);
-        index += 1;
+        normalized.push(ch);
     }
 
     normalized
@@ -2036,7 +2035,8 @@ fn last_path_segment(path: &str) -> &str {
 mod tests {
     use super::*;
     use rustdoc_types::{
-        Abi, FunctionSignature, Generics, ItemSummary, Module, Struct, Target, Type,
+        Abi, Enum as RustdocEnum, FunctionSignature, Generics, ItemSummary, Module, Struct, Target,
+        Type,
     };
     use std::collections::HashMap;
 
@@ -2545,6 +2545,189 @@ mod tests {
             ),
             "#[allow(elided_named_lifetimes, clippy::shadow_same, clippy::type_complexity)]"
         );
+    }
+
+    #[test]
+    fn extract_members_for_enum_includes_inherent_impl_methods() {
+        let enum_id = Id(1);
+        let impl_id = Id(2);
+        let func_id = Id(3);
+
+        let krate = crate_with_items(vec![
+            item(
+                enum_id,
+                Some("Status"),
+                ItemEnum::Enum(RustdocEnum {
+                    generics: empty_generics(),
+                    has_stripped_variants: false,
+                    variants: Vec::new(),
+                    impls: vec![impl_id],
+                }),
+            ),
+            item(
+                impl_id,
+                None,
+                ItemEnum::Impl(Impl {
+                    is_unsafe: false,
+                    generics: empty_generics(),
+                    provided_trait_methods: Vec::new(),
+                    trait_: None,
+                    for_: Type::ResolvedPath(path("Status", enum_id.0)),
+                    items: vec![func_id],
+                    is_negative: false,
+                    is_synthetic: false,
+                    blanket_impl: None,
+                }),
+            ),
+            item(
+                func_id,
+                Some("is_ready"),
+                ItemEnum::Function(Function {
+                    sig: FunctionSignature {
+                        inputs: vec![(
+                            "self".to_string(),
+                            Type::BorrowedRef {
+                                lifetime: None,
+                                is_mutable: false,
+                                type_: Box::new(Type::Generic("Self".to_string())),
+                            },
+                        )],
+                        output: Some(Type::Primitive("bool".to_string())),
+                        is_c_variadic: false,
+                    },
+                    generics: empty_generics(),
+                    header: FunctionHeader {
+                        is_const: false,
+                        is_unsafe: false,
+                        is_async: false,
+                        abi: Abi::Rust,
+                    },
+                    has_body: true,
+                }),
+            ),
+        ]);
+
+        let enum_item = krate.index.get(&enum_id).expect("enum item present");
+        let extracted = extract_item(&krate, enum_item);
+
+        assert_eq!(extracted.members.len(), 1);
+        assert_eq!(
+            extracted.members[0].declaration,
+            "fn is_ready(&self) -> bool;"
+        );
+    }
+
+    #[test]
+    fn synthesize_derive_attribute_for_enum() {
+        let enum_id = Id(1);
+        let clone_impl_id = Id(2);
+        let debug_impl_id = Id(3);
+
+        let krate = crate_with_items(vec![
+            item(
+                enum_id,
+                Some("Kind"),
+                ItemEnum::Enum(RustdocEnum {
+                    generics: empty_generics(),
+                    has_stripped_variants: false,
+                    variants: Vec::new(),
+                    impls: vec![clone_impl_id, debug_impl_id],
+                }),
+            ),
+            impl_item(
+                clone_impl_id,
+                Some(path("Clone", 10)),
+                "Kind",
+                enum_id,
+                true,
+            ),
+            impl_item(
+                debug_impl_id,
+                Some(path("Debug", 11)),
+                "Kind",
+                enum_id,
+                true,
+            ),
+        ]);
+
+        let enum_item = krate.index.get(&enum_id).expect("enum item present");
+        let attribute = synthesize_derive_attribute(&krate, enum_item)
+            .expect("derive attribute should be synthesized for enum");
+
+        assert_eq!(attribute.text, "#[derive(Clone, Debug)]");
+    }
+
+    #[test]
+    fn extracts_assoc_const_member_from_trait() {
+        let trait_id = Id(1);
+        let const_id = Id(2);
+
+        let krate = crate_with_items(vec![
+            item(
+                trait_id,
+                Some("Configurable"),
+                ItemEnum::Trait(Trait {
+                    is_auto: false,
+                    is_unsafe: false,
+                    is_dyn_compatible: true,
+                    items: vec![const_id],
+                    generics: empty_generics(),
+                    bounds: Vec::new(),
+                    implementations: Vec::new(),
+                }),
+            ),
+            item(
+                const_id,
+                Some("MAX"),
+                ItemEnum::AssocConst {
+                    type_: Type::Primitive("u32".to_string()),
+                    value: None,
+                },
+            ),
+        ]);
+
+        let trait_item = krate.index.get(&trait_id).expect("trait item present");
+        let extracted = extract_item(&krate, trait_item);
+
+        assert_eq!(extracted.members.len(), 1);
+        assert_eq!(extracted.members[0].declaration, "const MAX: u32;");
+    }
+
+    #[test]
+    fn extracts_assoc_type_member_from_trait() {
+        let trait_id = Id(1);
+        let type_id = Id(2);
+
+        let krate = crate_with_items(vec![
+            item(
+                trait_id,
+                Some("IntoIter"),
+                ItemEnum::Trait(Trait {
+                    is_auto: false,
+                    is_unsafe: false,
+                    is_dyn_compatible: true,
+                    items: vec![type_id],
+                    generics: empty_generics(),
+                    bounds: Vec::new(),
+                    implementations: Vec::new(),
+                }),
+            ),
+            item(
+                type_id,
+                Some("Item"),
+                ItemEnum::AssocType {
+                    generics: empty_generics(),
+                    bounds: Vec::new(),
+                    type_: None,
+                },
+            ),
+        ]);
+
+        let trait_item = krate.index.get(&trait_id).expect("trait item present");
+        let extracted = extract_item(&krate, trait_item);
+
+        assert_eq!(extracted.members.len(), 1);
+        assert_eq!(extracted.members[0].declaration, "type Item;");
     }
 
     fn crate_with_items(items: Vec<Item>) -> Crate {

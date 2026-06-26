@@ -43,6 +43,17 @@ impl ApiModule {
             .rsplit_once("::")
             .map_or(self.path.as_str(), |(_, name)| name)
     }
+
+    pub(crate) fn sorted_items(&self) -> Vec<&ApiItem> {
+        let mut items: Vec<&ApiItem> = self.items.iter().collect();
+        items.sort_by(|left, right| {
+            left.kind
+                .sort_rank()
+                .cmp(&right.kind.sort_rank())
+                .then_with(|| left.name.cmp(&right.name))
+        });
+        items
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -86,26 +97,21 @@ pub(crate) enum ApiItemKind {
 }
 
 impl ApiItemKind {
-    pub(crate) const ORDER: [Self; 13] = [
-        Self::Use,
-        Self::Macro,
-        Self::ProcMacro,
-        Self::Function,
-        Self::Struct,
-        Self::Enum,
-        Self::Trait,
-        Self::TraitAlias,
-        Self::TraitImpl,
-        Self::Union,
-        Self::TypeAlias,
-        Self::Const,
-        Self::Static,
-    ];
-
     pub(crate) fn sort_rank(self) -> usize {
-        Self::ORDER
-            .iter()
-            .position(|candidate| *candidate == self)
-            .expect("all item kinds are present in the stable ordering")
+        match self {
+            Self::Use => 0,
+            Self::Macro => 1,
+            Self::ProcMacro => 2,
+            Self::Function => 3,
+            Self::Struct => 4,
+            Self::Enum => 5,
+            Self::Trait => 6,
+            Self::TraitAlias => 7,
+            Self::TraitImpl => 8,
+            Self::Union => 9,
+            Self::TypeAlias => 10,
+            Self::Const => 11,
+            Self::Static => 12,
+        }
     }
 }

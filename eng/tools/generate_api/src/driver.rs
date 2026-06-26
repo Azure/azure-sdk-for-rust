@@ -19,6 +19,30 @@ pub(crate) fn load_model(request: &Request) -> Result<ApiModel, String> {
     Ok((*loader.load_model_for_workspace(&metadata.current_package)?).clone())
 }
 
+fn run_command(mut command: Command, error_prefix: &str) -> Result<std::process::Output, String> {
+    diagnostics::info(format!(
+        "Running command: {} {}",
+        command.get_program().to_string_lossy(),
+        command
+            .get_args()
+            .collect::<Vec<&OsStr>>()
+            .join(OsStr::new(" "))
+            .to_string_lossy(),
+    ));
+
+    let output = command
+        .output()
+        .map_err(|error| format!("{error_prefix}: {error}"))?;
+    if !output.status.success() {
+        return Err(format!(
+            "{error_prefix}: {}",
+            String::from_utf8_lossy(&output.stderr)
+        ));
+    }
+
+    Ok(output)
+}
+
 fn generate_rustdoc_json(package: &PackageMetadata) -> Result<PathBuf, String> {
     let channel = env!("TOOLCHAIN_CHANNEL");
     let mut command = Command::new("cargo");
@@ -33,25 +57,7 @@ fn generate_rustdoc_json(package: &PackageMetadata) -> Result<PathBuf, String> {
         .arg(&package.manifest_path)
         .arg("--all-features");
 
-    diagnostics::info(format!(
-        "Running command: {} {}",
-        command.get_program().to_string_lossy(),
-        command
-            .get_args()
-            .collect::<Vec<&OsStr>>()
-            .join(OsStr::new(" "))
-            .to_string_lossy(),
-    ));
-
-    let output = command
-        .output()
-        .map_err(|error| format!("Failed to run cargo rustdoc: {error}"))?;
-    if !output.status.success() {
-        return Err(format!(
-            "Failed to generate rustdoc JSON: {}",
-            String::from_utf8_lossy(&output.stderr)
-        ));
-    }
+    run_command(command, "Failed to generate rustdoc JSON")?;
 
     Ok(PathBuf::from("target")
         .join("doc")
@@ -89,25 +95,7 @@ fn load_workspace_metadata(request: &Request) -> Result<WorkspaceMetadata, Strin
         .arg("--manifest-path")
         .arg(&request.manifest_path);
 
-    diagnostics::info(format!(
-        "Running command: {} {}",
-        command.get_program().to_string_lossy(),
-        command
-            .get_args()
-            .collect::<Vec<&OsStr>>()
-            .join(OsStr::new(" "))
-            .to_string_lossy(),
-    ));
-
-    let output = command
-        .output()
-        .map_err(|error| format!("Failed to run cargo metadata: {error}"))?;
-    if !output.status.success() {
-        return Err(format!(
-            "Failed to run cargo metadata: {}",
-            String::from_utf8_lossy(&output.stderr)
-        ));
-    }
+    let output = run_command(command, "Failed to run cargo metadata")?;
 
     let metadata: CargoMetadata = serde_json::from_slice(&output.stdout)
         .map_err(|error| format!("Failed to parse cargo metadata JSON: {error}"))?;

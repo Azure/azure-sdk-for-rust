@@ -60,7 +60,7 @@ pub(crate) fn render(model: &ApiModel) -> Result<String, String> {
         package_version: &model.package_version,
         parser_version: &model.parser_version,
         language: "Rust",
-        review_lines: render_root_module(&model.root_module),
+        review_lines: render_module_contents(&model.root_module),
     };
     validate_code_file(&document)?;
 
@@ -103,10 +103,6 @@ fn validate_review_lines(
     }
 
     Ok(())
-}
-
-fn render_root_module(module: &ApiModule) -> Vec<ReviewLine> {
-    render_module_contents(module)
 }
 
 fn render_module_contents(module: &ApiModule) -> Vec<ReviewLine> {
@@ -160,16 +156,9 @@ fn render_module(module: &ApiModule) -> Vec<ReviewLine> {
 }
 
 fn render_items(module: &ApiModule) -> Vec<ReviewLine> {
-    let mut items = module.items.clone();
-    items.sort_by(|left, right| {
-        left.kind
-            .sort_rank()
-            .cmp(&right.kind.sort_rank())
-            .then_with(|| left.name.cmp(&right.name))
-    });
-
+    let items = module.sorted_items();
     let mut lines = Vec::new();
-    for (index, item) in items.iter().enumerate() {
+    for (index, item) in items.into_iter().enumerate() {
         lines.extend(render_item(module, item, index));
     }
     lines
@@ -476,7 +465,7 @@ mod tests {
             modules: Vec::new(),
         };
 
-        let lines = render_root_module(&module);
+        let lines = render_module_contents(&module);
 
         assert_eq!(lines.len(), 3);
         assert_eq!(

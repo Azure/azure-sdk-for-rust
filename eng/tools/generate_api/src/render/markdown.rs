@@ -11,13 +11,7 @@ pub(crate) fn render(model: &ApiModel) -> String {
 }
 
 fn render_module(output: &mut String, module: &ApiModule, is_root: bool, indent: usize) {
-    let mut items = module.items.clone();
-    items.sort_by(|left, right| {
-        left.kind
-            .sort_rank()
-            .cmp(&right.kind.sort_rank())
-            .then_with(|| left.name.cmp(&right.name))
-    });
+    let items = module.sorted_items();
 
     let mut modules = module.modules.clone();
     modules.sort_by(|left, right| left.path.cmp(&right.path));
@@ -34,7 +28,7 @@ fn render_module(output: &mut String, module: &ApiModule, is_root: bool, indent:
         );
     }
 
-    for item in &items {
+    for item in items {
         render_item(output, item, body_indent);
     }
 
