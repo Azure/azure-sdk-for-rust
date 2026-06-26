@@ -1175,6 +1175,8 @@ impl CosmosDriver {
         ))
     }
 
+    /// Creates a new driver instance.
+    ///
     /// This is internal - use [`CosmosDriverRuntime::create_driver()`] instead.
     pub(crate) fn new(
         runtime: Arc<CosmosDriverRuntime>,
