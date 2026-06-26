@@ -178,9 +178,12 @@ pub struct CosmosRequestHeaders {
     /// When `true`, emits the change-feed wire format version header
     /// (`x-ms-cosmos-changefeed-wire-format-version: 2021-09-15`).
     ///
-    /// This wire format is required by the AllVersionsAndDeletes change feed
-    /// mode. It is **not** sent for LatestVersion mode, which uses the default
-    /// wire format.
+    /// This selects the structured change feed wire format, where each item is
+    /// returned inside an envelope (`{ current, ... }`). It is sent for both
+    /// LatestVersion and AllVersionsAndDeletes so the response shape stays
+    /// consistent across modes; for LatestVersion the envelope simply omits the
+    /// pre-image. The SDK iterator unwraps `current` back into the caller's
+    /// document type.
     pub changefeed_wire_format_version: bool,
 
     /// If-Modified-Since timestamp for change feed point-in-time start.
