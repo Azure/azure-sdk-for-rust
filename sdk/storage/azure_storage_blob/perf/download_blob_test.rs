@@ -81,7 +81,7 @@ impl DownloadBlobTest {
     pub fn test_metadata() -> PerfTestMetadata {
         PerfTestMetadata {
             name: "download_blob",
-            description: "Download blobs from a container",
+            description: "Download a single blob from a container",
             options: vec![
                 options::collect(),
                 options::size(),
