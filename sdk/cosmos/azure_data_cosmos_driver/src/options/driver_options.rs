@@ -296,17 +296,10 @@ impl DriverOptionsBuilder {
     /// Builds the [`DriverOptions`].
     ///
     /// When [`with_partition_failover_options`](Self::with_partition_failover_options)
-    /// was **not** called, the partition-failover / PPCB options are resolved
-    /// from the `AZURE_COSMOS_PPCB_*` environment variables (including the
-    /// `AZURE_COSMOS_PPCB_ENABLED` master switch and the
-    /// `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` kill switch). This is the single
-    /// place those variables are honored when the caller does not supply
-    /// explicit options, so omitting them no longer silently forces PPCB on.
-    /// If the environment carries an out-of-bounds value the error is logged
-    /// and the options fall back to [`PartitionFailoverOptions::default`]
-    /// (so `build` stays infallible); callers that want strict validation
-    /// should build [`PartitionFailoverOptions`] themselves and pass them via
-    /// [`with_partition_failover_options`](Self::with_partition_failover_options).
+    /// was not called, the partition-failover / PPCB options are resolved from
+    /// the `AZURE_COSMOS_PPCB_*` environment variables. Resolution is fail-soft:
+    /// an out-of-bounds value is logged and the group falls back to
+    /// [`PartitionFailoverOptions::default`], so `build` stays infallible.
     pub fn build(self) -> DriverOptions {
         self.build_from_env(&|k| std::env::var(k).ok())
     }
@@ -321,12 +314,7 @@ impl DriverOptionsBuilder {
     /// deterministically, without mutating process-wide environment.
     pub(crate) fn build_from_env(self, get_env: &dyn Fn(&str) -> Option<String>) -> DriverOptions {
         // When the caller supplied explicit partition-failover options, honor
-        // them verbatim. Otherwise resolve them from the environment — this is
-        // the fix for "PPCB stays enabled even though AZURE_COSMOS_PPCB_ENABLED
-        // (or the kill switch) is set to false": the env is only consulted by
-        // the builder's `build`, which a caller that omits the options would
-        // never reach, so the bare `unwrap_or_default()` used to bypass every
-        // AZURE_COSMOS_PPCB_* variable.
+        // them verbatim. Otherwise resolve them from the environment.
         let partition_failover_options = match self.partition_failover_options {
             Some(options) => options,
             None => PartitionFailoverOptions::builder()
@@ -358,6 +346,7 @@ impl DriverOptionsBuilder {
 mod tests {
     use super::*;
     use crate::options::OperationOptionsBuilder;
+    use std::collections::HashMap;
     use url::Url;
 
     fn test_account() -> AccountReference {
@@ -446,8 +435,6 @@ mod tests {
     // resolve PPCB from `AZURE_COSMOS_PPCB_*` (rather than a bare `Default`
     // that bypasses the environment). They drive `build_from_env` with an
     // injected map so they don't race on process-wide `std::env`.
-
-    use std::collections::HashMap;
 
     fn env_of(pairs: &[(&str, &str)]) -> impl Fn(&str) -> Option<String> {
         let map: HashMap<String, String> = pairs
