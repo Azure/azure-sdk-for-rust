@@ -154,9 +154,12 @@ mod tests {
 
     #[test]
     fn new_propagates_circuit_breaker_enabled_to_state_flag() {
+        // Resolve against an empty environment so unrelated `AZURE_COSMOS_PPCB_*`
+        // values from a concurrently-running env-mutating test can't fail the
+        // build's bounds validation.
         let opts = PartitionFailoverOptions::builder()
             .with_circuit_breaker_enabled(true)
-            .build()
+            .build_from_env(&|_| None)
             .unwrap();
         let state = PartitionEndpointState::new(opts);
         assert!(state.per_partition_circuit_breaker_enabled);
@@ -171,7 +174,7 @@ mod tests {
         let opts = PartitionFailoverOptions::builder()
             .with_circuit_breaker_enabled(true)
             .with_circuit_breaker_enabled_override(false)
-            .build()
+            .build_from_env(&|_| None)
             .unwrap();
         let state = PartitionEndpointState::new(opts);
         assert!(!state.per_partition_circuit_breaker_enabled);
@@ -184,7 +187,7 @@ mod tests {
         let opts = PartitionFailoverOptions::builder()
             .with_circuit_breaker_enabled(false)
             .with_circuit_breaker_enabled_override(true)
-            .build()
+            .build_from_env(&|_| None)
             .unwrap();
         let state = PartitionEndpointState::new(opts);
         assert!(state.per_partition_circuit_breaker_enabled);
