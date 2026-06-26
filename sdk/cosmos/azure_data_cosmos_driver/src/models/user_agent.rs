@@ -3,7 +3,10 @@
 
 //! User agent string for HTTP requests to Cosmos DB.
 
-use std::{fmt, ops::BitOr, ops::BitOrAssign};
+use std::{
+    fmt,
+    ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign},
+};
 
 use crate::options::{CorrelationId, UserAgentSuffix, WorkloadId};
 
@@ -30,40 +33,52 @@ const MAX_USER_AGENT_LENGTH: usize = 255;
 /// assert_eq!(flags.to_string(), "|F12"); // 0x2 | 0x10 == 0x12
 /// ```
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
-pub struct UserAgentFeatureFlags(u32);
+pub(crate) struct UserAgentFeatureFlags(u32);
 
 impl UserAgentFeatureFlags {
     /// No features advertised. Renders to an empty token.
-    pub const NONE: Self = Self(0);
+    pub(crate) const NONE: Self = Self(0);
 
     /// Per-partition automatic failover (PPAF). Cross-SDK bit value `0x1`.
-    pub const PER_PARTITION_AUTOMATIC_FAILOVER: Self = Self(1);
+    ///
+    /// Reserved to keep Rust's bit assignments aligned with the .NET and Java
+    /// Cosmos SDKs; this driver does not advertise it yet (PPAF is server-driven
+    /// and resolved per-partition at request time, so it is unknown when the
+    /// shared header value is computed).
+    #[allow(dead_code)] // Reserved cross-SDK bit; not advertised by this driver yet.
+    pub(crate) const PER_PARTITION_AUTOMATIC_FAILOVER: Self = Self(1);
 
     /// Per-partition circuit breaker (PPCB). Cross-SDK bit value `0x2`.
-    pub const PER_PARTITION_CIRCUIT_BREAKER: Self = Self(2);
+    pub(crate) const PER_PARTITION_CIRCUIT_BREAKER: Self = Self(2);
 
     /// Thin client mode. Cross-SDK bit value `0x4`.
-    pub const THIN_CLIENT: Self = Self(4);
+    ///
+    /// Reserved for cross-SDK parity; not advertised by this driver yet.
+    #[allow(dead_code)] // Reserved cross-SDK bit; not advertised by this driver yet.
+    pub(crate) const THIN_CLIENT: Self = Self(4);
 
     /// Cosmos binary encoding. Cross-SDK bit value `0x8`.
-    pub const BINARY_ENCODING: Self = Self(8);
+    ///
+    /// Reserved for cross-SDK parity; not advertised by this driver yet.
+    #[allow(dead_code)] // Reserved cross-SDK bit; not advertised by this driver yet.
+    pub(crate) const BINARY_ENCODING: Self = Self(8);
 
     /// HTTP/2 transport. Cross-SDK bit value `0x10`.
-    pub const HTTP2: Self = Self(16);
+    pub(crate) const HTTP2: Self = Self(16);
 
     /// Returns the raw bitmask value.
-    pub const fn bits(self) -> u32 {
+    pub(crate) const fn bits(self) -> u32 {
         self.0
     }
 
     /// Returns `true` when no feature bits are set.
-    pub const fn is_empty(self) -> bool {
+    pub(crate) const fn is_empty(self) -> bool {
         self.0 == 0
     }
 
-    /// Returns `true` when every bit in `other` is set in `self`.
-    pub const fn contains(self, other: Self) -> bool {
-        (self.0 & other.0) == other.0
+    /// Returns the union of two flag sets (every bit set in either operand).
+    pub(crate) const fn union(self, other: Self) -> Self {
+        Self(self.0 | other.0)
     }
 
     /// Maps the statically-known client configuration to feature flags.
@@ -88,13 +103,27 @@ impl BitOr for UserAgentFeatureFlags {
     type Output = Self;
 
     fn bitor(self, rhs: Self) -> Self {
-        Self(self.0 | rhs.0)
+        self.union(rhs)
     }
 }
 
 impl BitOrAssign for UserAgentFeatureFlags {
     fn bitor_assign(&mut self, rhs: Self) {
-        self.0 |= rhs.0;
+        *self = self.union(rhs);
+    }
+}
+
+impl BitAnd for UserAgentFeatureFlags {
+    type Output = Self;
+
+    fn bitand(self, rhs: Self) -> Self {
+        Self(self.0 & rhs.0)
+    }
+}
+
+impl BitAndAssign for UserAgentFeatureFlags {
+    fn bitand_assign(&mut self, rhs: Self) {
+        self.0 &= rhs.0;
     }
 }
 
@@ -106,7 +135,7 @@ impl fmt::Display for UserAgentFeatureFlags {
         if self.is_empty() {
             Ok(())
         } else {
-            write!(f, "|F{:X}", self.0)
+            write!(f, "|F{:X}", self.bits())
         }
     }
 }
@@ -132,7 +161,7 @@ const SDK_VERSION: &str = env!("CARGO_PKG_VERSION");
 ///
 /// An optional suffix can be appended (typically from [`UserAgentSuffix`],
 /// [`WorkloadId`], or [`CorrelationId`]), followed by an optional cross-SDK
-/// feature-flag token (see [`UserAgentFeatureFlags`]).
+/// feature-flag token (`|F<HEX>`).
 ///
 /// # Example
 ///
@@ -151,8 +180,6 @@ pub struct UserAgent {
     full_user_agent: String,
     /// The suffix that was appended (if any).
     suffix: Option<String>,
-    /// The feature flags advertised in the trailing `|F<HEX>` token (if any).
-    feature_flags: UserAgentFeatureFlags,
 }
 
 impl Default for UserAgent {
@@ -302,7 +329,6 @@ impl UserAgent {
         Self {
             full_user_agent,
             suffix: effective_suffix,
-            feature_flags,
         }
     }
 
@@ -361,11 +387,6 @@ impl UserAgent {
     /// Returns the suffix that was used, if any.
     pub fn suffix(&self) -> Option<&str> {
         self.suffix.as_deref()
-    }
-
-    /// Returns the feature flags advertised in the trailing `|F<HEX>` token.
-    pub fn feature_flags(&self) -> UserAgentFeatureFlags {
-        self.feature_flags
     }
 }
 
@@ -580,9 +601,26 @@ mod tests {
         flags |= UserAgentFeatureFlags::PER_PARTITION_CIRCUIT_BREAKER;
         assert!(!flags.is_empty());
         assert_eq!(flags.bits(), 0x12);
-        assert!(flags.contains(UserAgentFeatureFlags::HTTP2));
-        assert!(flags.contains(UserAgentFeatureFlags::PER_PARTITION_CIRCUIT_BREAKER));
-        assert!(!flags.contains(UserAgentFeatureFlags::PER_PARTITION_AUTOMATIC_FAILOVER));
+
+        // `union` matches the `|` operator.
+        assert_eq!(
+            UserAgentFeatureFlags::HTTP2
+                .union(UserAgentFeatureFlags::PER_PARTITION_CIRCUIT_BREAKER),
+            flags
+        );
+
+        // `&` / `&=` mask down to the intersecting bits.
+        assert_eq!(
+            flags & UserAgentFeatureFlags::HTTP2,
+            UserAgentFeatureFlags::HTTP2
+        );
+        assert_eq!(
+            flags & UserAgentFeatureFlags::PER_PARTITION_AUTOMATIC_FAILOVER,
+            UserAgentFeatureFlags::NONE
+        );
+        let mut masked = flags;
+        masked &= UserAgentFeatureFlags::HTTP2;
+        assert_eq!(masked, UserAgentFeatureFlags::HTTP2);
     }
 
     #[test]
@@ -619,7 +657,6 @@ mod tests {
             ua.as_str()
         );
         assert_eq!(ua.suffix(), Some("myapp-westus2"));
-        assert_eq!(ua.feature_flags(), flags);
     }
 
     #[test]

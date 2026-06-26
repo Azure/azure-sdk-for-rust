@@ -4314,10 +4314,6 @@ mod tests {
             "driver disabling PPCB must own a distinct User-Agent Arc"
         );
         // PPCB bit (0x2) dropped, HTTP/2 (0x10) retained -> |F10.
-        assert_eq!(
-            driver.user_agent().feature_flags(),
-            UserAgentFeatureFlags::HTTP2,
-        );
         assert!(
             driver.user_agent().as_str().ends_with("|F10"),
             "expected driver User-Agent to drop the PPCB bit (|F10): {}",

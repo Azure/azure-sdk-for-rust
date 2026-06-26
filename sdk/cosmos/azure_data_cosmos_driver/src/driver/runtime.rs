@@ -316,7 +316,7 @@ impl CosmosDriverRuntime {
 
     /// Returns the cross-SDK feature flags advertised in this runtime's base
     /// `User-Agent` header.
-    pub fn user_agent_feature_flags(&self) -> UserAgentFeatureFlags {
+    pub(crate) fn user_agent_feature_flags(&self) -> UserAgentFeatureFlags {
         self.user_agent_feature_flags
     }
 
