@@ -224,11 +224,9 @@ impl ContainerReference {
     /// own name is still recorded because the service returns it in the container
     /// read response.
     ///
-    /// Not exposed publicly — used by the driver's RID-based container
-    /// resolution to obtain a RID-addressed container reference.
-    // Constructed only by unit tests in this slice; the RID-based resolution path
-    // that calls it lands in a follow-up change.
-    #[allow(dead_code)]
+    /// Not exposed publicly — use
+    /// [`CosmosDriver::resolve_container_by_rid()`](crate::driver::CosmosDriver::resolve_container_by_rid)
+    /// to obtain a RID-addressed container reference.
     pub(crate) fn new_by_rid(
         account: AccountReference,
         db_rid: impl Into<ResourceId>,

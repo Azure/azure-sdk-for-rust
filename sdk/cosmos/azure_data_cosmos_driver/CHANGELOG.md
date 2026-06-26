@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added driver-internal resolution of containers by resource id (RID). `CosmosDriver::resolve_container_by_rid` reads a container's metadata addressing it purely by RID (deriving the parent database RID from the container RID, so no `read_database` round-trip is needed) and caches the result in a by-RID index. References are validated for consistent name/RID addressing in `plan_operation` — the single choke point every executable operation passes through, including multi-page queries — returning a deterministic `CLIENT_MIXED_NAME_RID_ADDRESSING` error before signing instead of letting the gateway reject a mixed name/RID request with an opaque `401`. The new `CLIENT_INVALID_RESOURCE_ID` and `CLIENT_MIXED_NAME_RID_ADDRESSING` client statuses carry searchable names for diagnostics. ([#4663](https://github.com/Azure/azure-sdk-for-rust/pull/4663))
+
 ### Breaking Changes
 
 - Resource-reference accessors now return `Option` to account for RID-addressed references that have no name. `DatabaseReference::name_based_path`, `ContainerReference::database_name`, and `ContainerReference::name_based_path` return `None` when the reference is addressed by RID (previously they returned `&str`/`String` and assumed a name was always present). Use the new `ContainerReference::base_path` to obtain the addressing-appropriate path (RID-based or name-based) when building request URLs. ([#4640](https://github.com/Azure/azure-sdk-for-rust/pull/4640))

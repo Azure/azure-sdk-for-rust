@@ -215,7 +215,7 @@ impl CosmosOperation {
     // ===== Factory Methods =====
 
     /// Creates a new operation with the specified type, resource reference, and target.
-    fn new(
+    pub(crate) fn new(
         operation_type: OperationType,
         resource_reference: impl Into<CosmosResourceReference>,
         target: Option<FeedRange>,
@@ -441,6 +441,26 @@ impl CosmosOperation {
         let resource_ref: CosmosResourceReference = CosmosResourceReference::from(database)
             .with_resource_type(ResourceType::DocumentCollection)
             .with_name(container_name.into());
+        Self::new(OperationType::Read, resource_ref, None)
+    }
+
+    /// Reads a container's properties by database and container RID.
+    ///
+    /// Like [`read_container_by_name`](Self::read_container_by_name) but addresses
+    /// the container by RID. Taking the raw `db_rid` and `container_rid` (rather
+    /// than a pre-built [`DatabaseReference`]) makes a mixed name/RID path
+    /// unrepresentable: the parent database reference is always constructed
+    /// RID-based here, so the request path is guaranteed to be fully RID-based
+    /// (`/dbs/{db_rid}/colls/{container_rid}`).
+    pub fn read_container_by_rid(
+        account: AccountReference,
+        db_rid: impl Into<std::borrow::Cow<'static, str>>,
+        container_rid: impl Into<std::borrow::Cow<'static, str>>,
+    ) -> Self {
+        let database = DatabaseReference::from_rid(account, db_rid.into());
+        let resource_ref: CosmosResourceReference = CosmosResourceReference::from(database)
+            .with_resource_type(ResourceType::DocumentCollection)
+            .with_rid(container_rid.into());
         Self::new(OperationType::Read, resource_ref, None)
     }
 
