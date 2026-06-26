@@ -15,10 +15,11 @@ use crate::generated::models::{
     BlobContainerClientReleaseLeaseOptions, BlobContainerClientReleaseLeaseResult,
     BlobContainerClientRenewLeaseOptions, BlobContainerClientRenewLeaseResult,
     BlobContainerClientSetAccessPolicyOptions, BlobContainerClientSetMetadataOptions,
-    FilteredBlobResponse, ListBlobsHierarchicalResponse, ListBlobsResponse, SignedIdentifiers,
+    FilteredBlobResponse, ListBlobsHierarchicalResponse, ListBlobsResponse,
+    ListBlobsResponseMetadata, SignedIdentifiers,
 };
 use azure_core::{
-    error::CheckSuccessOptions,
+    error::{CheckSuccessOptions, ErrorKind},
     fmt::SafeDebug,
     http::{
         pager::{PagerContinuation, PagerResult, PagerState},
@@ -29,6 +30,32 @@ use azure_core::{
     tracing, xml, Result,
 };
 use std::collections::HashMap;
+
+const UTF8_BOM: [u8; 3] = [0xEF, 0xBB, 0xBF];
+
+fn from_xml_borrowed<'a, T>(body: &'a [u8]) -> Result<T>
+where
+    T: serde::Deserialize<'a>,
+{
+    let body = if body.len() > 3 && body[0..3] == UTF8_BOM {
+        &body[3..]
+    } else {
+        body
+    };
+    let xml = std::str::from_utf8(body).map_err(|err| {
+        azure_core::Error::with_error_fn(ErrorKind::DataConversion, err, || {
+            let t = core::any::type_name::<T>();
+            format!("failed to deserialize the following xml into a {t}\n(XML is not UTF8-encoded)")
+        })
+    })?;
+
+    quick_xml::de::from_str(xml).map_err(|err| {
+        azure_core::Error::with_error_fn(ErrorKind::DataConversion, err, || {
+            let t = core::any::type_name::<T>();
+            format!("failed to deserialize the following xml into a {t}\n{xml}")
+        })
+    })
+}
 
 #[tracing::client]
 pub struct BlobContainerClient {
@@ -771,10 +798,13 @@ impl BlobContainerClient {
                         )
                         .await?;
                     let (status, headers, body) = rsp.deconstruct();
-                    let res: ListBlobsResponse = xml::from_xml(&body)?;
+                    let next_marker = from_xml_borrowed::<ListBlobsResponseMetadata<'_>>(&body)?
+                        .next_marker
+                        .filter(|next_marker| !next_marker.is_empty())
+                        .map(|next_marker| next_marker.into_owned());
                     let rsp = RawResponse::from_bytes(status, headers, body).into();
-                    Ok(match res.next_marker {
-                        Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
+                    Ok(match next_marker {
+                        Some(next_marker) => PagerResult::More {
                             response: rsp,
                             continuation: PagerContinuation::Token(next_marker),
                         },

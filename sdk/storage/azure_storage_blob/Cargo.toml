@@ -26,6 +26,7 @@ bytes.workspace = true
 futures.workspace = true
 percent-encoding.workspace = true
 pin-project.workspace = true
+quick-xml.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 time.workspace = true
