@@ -27,6 +27,11 @@ const NO_CACHE: HeaderValue = HeaderValue::from_static("no-cache");
 pub(crate) const CONSISTENCY_LEVEL: HeaderName = HeaderName::from_static("x-ms-consistency-level");
 pub(crate) const READ_CONSISTENCY_STRATEGY: HeaderName =
     HeaderName::from_static("x-ms-cosmos-read-consistency-strategy");
+/// Disables ComputeGateway's server-side 449 RetryWith retry on Gateway V1
+/// requests so RetryWith is always handled client-side by the SDK, matching
+/// Java's `RxGatewayStoreModel.applyGatewayRetryWithHeaders`. Not sent on the
+/// thin-client (Gateway 2.0) path, where 449 is never produced server-side.
+pub(crate) const NO_RETRY_449: HeaderName = HeaderName::from_static("x-ms-noretry-449");
 
 /// Applies standard Cosmos DB headers to an outgoing HTTP request.
 ///
@@ -62,8 +67,8 @@ pub(crate) fn apply_cosmos_headers(request: &mut HttpRequest, user_agent: &Heade
 /// When `strategy` is `Default` or `is_read = false`, this is a no-op so the
 /// pre-RCS behavior of forwarding any custom `x-ms-consistency-level` header is
 /// preserved verbatim. Callers MUST invoke this only on the V1 Gateway path
-/// (Gateway20 emits the equivalent metadata via the RNTBD
-/// `ReadConsistencyStrategy` token in `wrap_request_for_gateway20`).
+/// (GatewayV2 emits the equivalent metadata via the RNTBD
+/// `ReadConsistencyStrategy` token in `wrap_request_for_gateway_v2`).
 pub(crate) fn apply_read_consistency_strategy(
     request: &mut HttpRequest,
     strategy: ReadConsistencyStrategy,

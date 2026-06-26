@@ -281,6 +281,16 @@ impl Token {
         )
     }
 
+    /// Session token (id `0x0005`, `String`) carrying the client's per-partition
+    /// LSN progress so the backend can serve session-consistent reads from a
+    /// replica that is caught up. Populated from the `x-ms-session-token` header.
+    pub(crate) fn session_token(value: String) -> Self {
+        Self::new(
+            RntbdRequestToken::SessionToken.into(),
+            TokenValue::String(value),
+        )
+    }
+
     pub(crate) fn consistency_level(value: DefaultConsistencyLevel) -> Self {
         let value = match value {
             DefaultConsistencyLevel::Strong => 0x00,
@@ -493,6 +503,7 @@ pub(crate) enum RntbdRequestToken {
     AuthorizationToken,
     PayloadPresent,
     Date,
+    SessionToken,
     ContinuationToken,
     ConsistencyLevel,
     DatabaseName,
@@ -523,6 +534,7 @@ impl TryFrom<u16> for RntbdRequestToken {
             0x0001 => Ok(Self::AuthorizationToken),
             0x0002 => Ok(Self::PayloadPresent),
             0x0003 => Ok(Self::Date),
+            0x0005 => Ok(Self::SessionToken),
             0x0006 => Ok(Self::ContinuationToken),
             0x0010 => Ok(Self::ConsistencyLevel),
             0x0015 => Ok(Self::DatabaseName),
@@ -554,6 +566,7 @@ impl From<RntbdRequestToken> for u16 {
             RntbdRequestToken::AuthorizationToken => 0x0001,
             RntbdRequestToken::PayloadPresent => 0x0002,
             RntbdRequestToken::Date => 0x0003,
+            RntbdRequestToken::SessionToken => 0x0005,
             RntbdRequestToken::ContinuationToken => 0x0006,
             RntbdRequestToken::ConsistencyLevel => 0x0010,
             RntbdRequestToken::DatabaseName => 0x0015,

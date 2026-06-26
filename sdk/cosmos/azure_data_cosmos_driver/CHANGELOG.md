@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added Gateway 2.0 transport (a regional proxy forwarding RNTBD-over-HTTP/2), enabled by default. Set `ConnectionPoolOptionsBuilder::with_gateway20_disabled(true)` (or `AZURE_COSMOS_CONNECTION_POOL_GATEWAY20_DISABLED`) to stay on Gateway 1.0; `AZURE_COSMOS_GATEWAY20_ENABLED_OVERRIDE` is a process-wide kill switch authoritative over that opt-out. HTTP/2 is required. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319))
+- Added Gateway 2.0 transport (a regional proxy forwarding RNTBD-over-HTTP/2), enabled by default. Set `ConnectionPoolOptionsBuilder::with_gateway_v2_disabled(true)` (or `AZURE_COSMOS_CONNECTION_POOL_GATEWAY_V2_DISABLED`) to stay on Gateway 1.0; `AZURE_COSMOS_CONNECTION_POOL_GATEWAY_V2_DISABLED_OVERRIDE` is a process-wide kill switch authoritative over that opt-out. HTTP/2 is required. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319))
 - Added a retry policy for HTTP 449 (RetryWith): the driver retries in-region with exponential backoff (bounded by a ~30s budget) instead of failing over. Adds `CosmosStatus::is_retry_with()` and `FaultInjectionErrorType::RetryWith`. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319))
 
 ### Breaking Changes

@@ -49,20 +49,21 @@ const X_MS_LSN: HeaderName = HeaderName::from_static(response_header_names::MS_L
 const X_MS_GLOBAL_COMMITTED_LSN: HeaderName =
     HeaderName::from_static(response_header_names::GLOBAL_COMMITTED_LSN);
 const X_MS_CONTINUATION: HeaderName = HeaderName::from_static(request_header_names::CONTINUATION);
+const X_MS_SESSION_TOKEN: HeaderName = HeaderName::from_static(request_header_names::SESSION_TOKEN);
 const X_MS_VERSION: HeaderName = HeaderName::from_static(request_header_names::VERSION);
 const CACHE_CONTROL: HeaderName = HeaderName::from_static(request_header_names::CACHE_CONTROL);
 
 // Gateway 2.0 (thin-client) outer header aliases, sharing the canonical wire
 // strings in `models::cosmos_headers` rather than re-declaring the literals.
-const GATEWAY20_OPERATION_TYPE: HeaderName =
+const GATEWAY_V2_OPERATION_TYPE: HeaderName =
     HeaderName::from_static(request_header_names::THINCLIENT_PROXY_OPERATION_TYPE);
-const GATEWAY20_RESOURCE_TYPE: HeaderName =
+const GATEWAY_V2_RESOURCE_TYPE: HeaderName =
     HeaderName::from_static(request_header_names::THINCLIENT_PROXY_RESOURCE_TYPE);
-const GATEWAY20_RANGE_MIN: HeaderName =
+const GATEWAY_V2_RANGE_MIN: HeaderName =
     HeaderName::from_static(request_header_names::THINCLIENT_RANGE_MIN);
-const GATEWAY20_RANGE_MAX: HeaderName =
+const GATEWAY_V2_RANGE_MAX: HeaderName =
     HeaderName::from_static(request_header_names::THINCLIENT_RANGE_MAX);
-const GATEWAY20_DISCOVERY_OPT_IN: HeaderName =
+const GATEWAY_V2_DISCOVERY_OPT_IN: HeaderName =
     HeaderName::from_static(request_header_names::USE_THINCLIENT);
 
 /// Inputs resolved by the operation pipeline before a Gateway 2.0 dispatch.
@@ -82,7 +83,7 @@ pub(crate) struct WrapInputs<'a> {
 }
 
 /// Wraps a signed Cosmos HTTP request into a Gateway 2.0 RNTBD request frame.
-pub(crate) fn wrap_request_for_gateway20(
+pub(crate) fn wrap_request_for_gateway_v2(
     request: &HttpRequest,
     inputs: &WrapInputs<'_>,
 ) -> azure_core::Result<HttpRequest> {
@@ -270,6 +271,16 @@ pub(crate) fn wrap_request_for_gateway20(
     if let Some(continuation) = request.headers.get_optional_str(&X_MS_CONTINUATION) {
         metadata.push(Token::continuation_token(continuation.to_owned()));
     }
+    // Session token (0x0005) carries the client's per-partition LSN progress so
+    // the backend can serve session-consistent reads. Java's thin-client encoder
+    // forwards it from the `x-ms-session-token` header; empty values are skipped.
+    if let Some(session_token) = request
+        .headers
+        .get_optional_str(&X_MS_SESSION_TOKEN)
+        .filter(|s| !s.is_empty())
+    {
+        metadata.push(Token::session_token(session_token.to_owned()));
+    }
 
     let frame = RntbdRequestFrame {
         resource_type: inputs.resource_type,
@@ -297,13 +308,13 @@ pub(crate) fn wrap_request_for_gateway20(
         headers.insert(X_MS_VERSION, HeaderValue::from("2020-07-15"));
     }
     headers.insert(CACHE_CONTROL, HeaderValue::from("no-cache"));
-    headers.insert(GATEWAY20_DISCOVERY_OPT_IN, HeaderValue::from("true"));
+    headers.insert(GATEWAY_V2_DISCOVERY_OPT_IN, HeaderValue::from("true"));
     headers.insert(
-        GATEWAY20_OPERATION_TYPE,
+        GATEWAY_V2_OPERATION_TYPE,
         HeaderValue::from(proxy_operation_type_name(inputs.operation_type)),
     );
     headers.insert(
-        GATEWAY20_RESOURCE_TYPE,
+        GATEWAY_V2_RESOURCE_TYPE,
         HeaderValue::from(proxy_resource_type_name(inputs.resource_type)),
     );
     headers.insert(
@@ -327,8 +338,8 @@ pub(crate) fn wrap_request_for_gateway20(
         // the `EffectivePartitionKey` token directly and these flag headers
         // must NOT be sent — otherwise the proxy looks for absent
         // Start/End EPK hash tokens and rejects the request with a bare 400.
-        headers.insert(GATEWAY20_RANGE_MIN, HeaderValue::from("true"));
-        headers.insert(GATEWAY20_RANGE_MAX, HeaderValue::from("true"));
+        headers.insert(GATEWAY_V2_RANGE_MIN, HeaderValue::from("true"));
+        headers.insert(GATEWAY_V2_RANGE_MAX, HeaderValue::from("true"));
     }
     // The G2 wrap synthesizes a fresh HTTP header set carrying only what the
     // proxy needs (the RNTBD frame is in the body). The fault-injection
@@ -356,7 +367,7 @@ pub(crate) fn wrap_request_for_gateway20(
 }
 
 /// Decodes a Gateway 2.0 RNTBD response body into a synthetic HTTP response.
-pub(crate) fn unwrap_response_for_gateway20(
+pub(crate) fn unwrap_response_for_gateway_v2(
     response: HttpResponse,
 ) -> azure_core::Result<HttpResponse> {
     let response = RntbdResponse::deserialize(&response.body)?;
@@ -750,7 +761,7 @@ mod tests {
         // EffectivePartitionKey -> GlobalDatabaseAccountName -> PayloadPresent
         // on every thin-client request (CorrelatedActivityId is not emitted by
         // the Rust driver). The emission order is hard-coded in
-        // `wrap_request_for_gateway20`; pin the contract here so a
+        // `wrap_request_for_gateway_v2`; pin the contract here so a
         // future refactor that shuffles the token order is a compile-time
         // failure rather than a silent wire-compat break.
         let request = signed_request(None);
@@ -762,7 +773,7 @@ mod tests {
         let partition_key = PartitionKey::from("pk-value");
         let partition_key_definition = PartitionKeyDefinition::new(vec![Cow::from("/pk")]);
 
-        let wrapped = wrap_request_for_gateway20(
+        let wrapped = wrap_request_for_gateway_v2(
             &request,
             &wrap_inputs(
                 &auth_context,
@@ -839,7 +850,7 @@ mod tests {
             ResourceType::Document,
             "dbs/db1/colls/coll1/docs/doc1",
         );
-        let wrapped = wrap_request_for_gateway20(
+        let wrapped = wrap_request_for_gateway_v2(
             &request,
             &wrap_inputs(&auth_context, OperationType::Read, None, None),
         )
@@ -863,7 +874,7 @@ mod tests {
             "dbs/db1/colls/coll1/docs/doc1",
         );
 
-        let wrapped = wrap_request_for_gateway20(
+        let wrapped = wrap_request_for_gateway_v2(
             &request,
             &wrap_inputs(&auth_context, OperationType::Read, None, None),
         )
@@ -926,7 +937,7 @@ mod tests {
         let auth_context =
             AuthorizationContext::new(Method::Post, ResourceType::Document, "dbs/db1/colls/coll1");
 
-        let wrapped = wrap_request_for_gateway20(
+        let wrapped = wrap_request_for_gateway_v2(
             &request,
             &wrap_inputs(&auth_context, OperationType::Create, None, None),
         )
@@ -975,7 +986,7 @@ mod tests {
             "dbs/db1/colls/coll1/docs/doc1",
         );
 
-        let wrapped = wrap_request_for_gateway20(
+        let wrapped = wrap_request_for_gateway_v2(
             &request,
             &wrap_inputs(&auth_context, OperationType::Read, None, None),
         )
@@ -1006,7 +1017,7 @@ mod tests {
             "dbs/db1/colls/coll1/docs",
         );
 
-        let wrapped = wrap_request_for_gateway20(
+        let wrapped = wrap_request_for_gateway_v2(
             &request,
             &wrap_inputs(&auth_context, OperationType::Create, None, None),
         )
@@ -1035,7 +1046,7 @@ mod tests {
             "dbs/db1/colls/coll1/docs/doc1",
         );
 
-        let wrapped = wrap_request_for_gateway20(
+        let wrapped = wrap_request_for_gateway_v2(
             &request,
             &wrap_inputs(&auth_context, OperationType::Read, None, None),
         )
@@ -1068,7 +1079,7 @@ mod tests {
         let rid = "wT0aAOnu_xc=";
         inputs.collection_rid = Some(rid);
 
-        let wrapped = wrap_request_for_gateway20(&request, &inputs).unwrap();
+        let wrapped = wrap_request_for_gateway_v2(&request, &inputs).unwrap();
         let parsed = parse_wrapped_request(&wrapped, 0);
 
         assert_eq!(
@@ -1096,7 +1107,7 @@ mod tests {
             "dbs/db1/colls/coll1/docs/doc1",
         );
 
-        let wrapped = wrap_request_for_gateway20(
+        let wrapped = wrap_request_for_gateway_v2(
             &request,
             &wrap_inputs(&auth_context, OperationType::Read, None, None),
         )
@@ -1128,7 +1139,7 @@ mod tests {
             "dbs/db1/colls/coll1/docs",
         );
 
-        let wrapped = wrap_request_for_gateway20(
+        let wrapped = wrap_request_for_gateway_v2(
             &request,
             &wrap_inputs(&auth_context, OperationType::Query, None, None),
         )
@@ -1154,7 +1165,7 @@ mod tests {
             "dbs/db1/colls/coll1/docs/doc1",
         );
 
-        let wrapped = wrap_request_for_gateway20(
+        let wrapped = wrap_request_for_gateway_v2(
             &request,
             &wrap_inputs(&auth_context, OperationType::Read, None, None),
         )
@@ -1165,12 +1176,77 @@ mod tests {
     }
 
     #[test]
+    fn wrap_emits_session_token_when_http_header_present() {
+        // Session-consistent reads require the client's per-partition LSN
+        // progress so the backend can pick a caught-up replica. Java's
+        // thin-client encoder forwards it as the SessionToken (0x0005, String)
+        // RNTBD token, filled from the `x-ms-session-token` header.
+        let mut request = signed_request(None);
+        request.headers.insert(
+            HeaderName::from_static(request_header_names::SESSION_TOKEN),
+            "0:1#42",
+        );
+        let auth_context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs/doc1",
+        );
+
+        let wrapped = wrap_request_for_gateway_v2(
+            &request,
+            &wrap_inputs(&auth_context, OperationType::Read, None, None),
+        )
+        .unwrap();
+        let parsed = parse_wrapped_request(&wrapped, 0);
+
+        assert_eq!(
+            parsed.tokens[&0x0005],
+            ParsedTokenValue::String("0:1#42".into()),
+            "SessionToken (0x0005) must be emitted from the HTTP header"
+        );
+    }
+
+    #[test]
+    fn wrap_omits_session_token_when_http_header_absent_or_empty() {
+        // No header => no token. An empty value is also skipped so the proxy
+        // never receives a zero-length session token it would have to reject.
+        let request = signed_request(None);
+        let auth_context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs/doc1",
+        );
+        let wrapped = wrap_request_for_gateway_v2(
+            &request,
+            &wrap_inputs(&auth_context, OperationType::Read, None, None),
+        )
+        .unwrap();
+        assert!(!parse_wrapped_request(&wrapped, 0)
+            .tokens
+            .contains_key(&0x0005));
+
+        let mut empty = signed_request(None);
+        empty.headers.insert(
+            HeaderName::from_static(request_header_names::SESSION_TOKEN),
+            "",
+        );
+        let wrapped_empty = wrap_request_for_gateway_v2(
+            &empty,
+            &wrap_inputs(&auth_context, OperationType::Read, None, None),
+        )
+        .unwrap();
+        assert!(!parse_wrapped_request(&wrapped_empty, 0)
+            .tokens
+            .contains_key(&0x0005));
+    }
+
+    #[test]
     fn wrap_preserves_payload_and_sets_payload_present() {
         let request = signed_request(Some(br#"{"id":"doc1"}"#));
         let auth_context =
             AuthorizationContext::new(Method::Post, ResourceType::Document, "dbs/db1/colls/coll1");
 
-        let wrapped = wrap_request_for_gateway20(
+        let wrapped = wrap_request_for_gateway_v2(
             &request,
             &wrap_inputs(&auth_context, OperationType::Create, None, None),
         )
@@ -1187,7 +1263,7 @@ mod tests {
         let auth_context =
             AuthorizationContext::new(Method::Post, ResourceType::Document, "dbs/db1/colls/coll1");
 
-        let wrapped = wrap_request_for_gateway20(
+        let wrapped = wrap_request_for_gateway_v2(
             &request,
             &wrap_inputs(&auth_context, OperationType::Create, None, None),
         )
@@ -1208,7 +1284,7 @@ mod tests {
         let mut inputs = wrap_inputs(&auth_context, OperationType::Read, None, None);
         inputs.effective_consistency = DefaultConsistencyLevel::Eventual;
 
-        let wrapped = wrap_request_for_gateway20(&request, &inputs).unwrap();
+        let wrapped = wrap_request_for_gateway_v2(&request, &inputs).unwrap();
         let parsed = parse_wrapped_request(&wrapped, 10);
 
         assert_eq!(parsed.tokens[&0x0010], ParsedTokenValue::Byte(0x03));
@@ -1238,7 +1314,7 @@ mod tests {
             let mut inputs = wrap_inputs(&auth_context, OperationType::Read, None, None);
             inputs.read_consistency_strategy = strategy;
 
-            let wrapped = wrap_request_for_gateway20(&request, &inputs).unwrap();
+            let wrapped = wrap_request_for_gateway_v2(&request, &inputs).unwrap();
             let parsed = parse_wrapped_request(&wrapped, 10);
 
             assert_eq!(
@@ -1269,7 +1345,7 @@ mod tests {
         inputs.read_consistency_strategy = ReadConsistencyStrategy::Default;
         inputs.effective_consistency = DefaultConsistencyLevel::Session;
 
-        let wrapped = wrap_request_for_gateway20(&request, &inputs).unwrap();
+        let wrapped = wrap_request_for_gateway_v2(&request, &inputs).unwrap();
         let parsed = parse_wrapped_request(&wrapped, 10);
 
         assert_eq!(parsed.tokens[&0x0010], ParsedTokenValue::Byte(0x02));
@@ -1299,7 +1375,7 @@ mod tests {
         );
         let expected = effective_partition_key_v2_binary(partition_key.values());
 
-        let wrapped = wrap_request_for_gateway20(
+        let wrapped = wrap_request_for_gateway_v2(
             &request,
             &wrap_inputs(
                 &auth_context,
@@ -1330,7 +1406,7 @@ mod tests {
             .with_version(PartitionKeyVersion::V1);
         let expected = effective_partition_key_v1_binary(partition_key.values());
 
-        let wrapped = wrap_request_for_gateway20(
+        let wrapped = wrap_request_for_gateway_v2(
             &request,
             &wrap_inputs(
                 &auth_context,
@@ -1366,7 +1442,7 @@ mod tests {
             "1-of-3 component prefix must produce a single 16-byte MultiHash V2 chunk"
         );
 
-        let wrapped = wrap_request_for_gateway20(
+        let wrapped = wrap_request_for_gateway_v2(
             &request,
             &wrap_inputs(
                 &auth_context,
@@ -1386,14 +1462,14 @@ mod tests {
         assert!(
             wrapped
                 .headers
-                .get_optional_str(&GATEWAY20_RANGE_MIN)
+                .get_optional_str(&GATEWAY_V2_RANGE_MIN)
                 .is_none(),
             "range-min header must not be emitted alongside EPK token"
         );
         assert!(
             wrapped
                 .headers
-                .get_optional_str(&GATEWAY20_RANGE_MAX)
+                .get_optional_str(&GATEWAY_V2_RANGE_MAX)
                 .is_none(),
             "range-max header must not be emitted alongside EPK token"
         );
@@ -1417,7 +1493,7 @@ mod tests {
         let partition_key_definition =
             PartitionKeyDefinition::from(("/tenantId", "/userId", "/sessionId"));
 
-        let wrapped = wrap_request_for_gateway20(
+        let wrapped = wrap_request_for_gateway_v2(
             &request,
             &wrap_inputs(
                 &auth_context,
@@ -1431,11 +1507,11 @@ mod tests {
         // Range headers must NOT be present on the point path.
         assert!(wrapped
             .headers
-            .get_optional_str(&GATEWAY20_RANGE_MIN)
+            .get_optional_str(&GATEWAY_V2_RANGE_MIN)
             .is_none());
         assert!(wrapped
             .headers
-            .get_optional_str(&GATEWAY20_RANGE_MAX)
+            .get_optional_str(&GATEWAY_V2_RANGE_MAX)
             .is_none());
 
         // EPK token present in the inner RNTBD frame, and bytes must be the
@@ -1469,7 +1545,7 @@ mod tests {
         ]);
         let partition_key_definition = PartitionKeyDefinition::from("/tenantId");
 
-        let error = wrap_request_for_gateway20(
+        let error = wrap_request_for_gateway_v2(
             &request,
             &wrap_inputs(
                 &auth_context,
@@ -1490,7 +1566,7 @@ mod tests {
         let auth_context =
             AuthorizationContext::new(Method::Get, ResourceType::Document, "dbs/db1/colls/coll1");
 
-        let wrapped = wrap_request_for_gateway20(
+        let wrapped = wrap_request_for_gateway_v2(
             &request,
             &WrapInputs {
                 auth_context: &auth_context,
@@ -1527,7 +1603,7 @@ mod tests {
         let auth_context =
             AuthorizationContext::new(Method::Get, ResourceType::Document, "dbs/db1/colls/coll1");
 
-        let wrapped = wrap_request_for_gateway20(
+        let wrapped = wrap_request_for_gateway_v2(
             &request,
             &WrapInputs {
                 auth_context: &auth_context,
@@ -1560,7 +1636,7 @@ mod tests {
         let auth_context =
             AuthorizationContext::new(Method::Get, ResourceType::Document, "dbs/db1/colls/coll1");
 
-        let wrapped = wrap_request_for_gateway20(
+        let wrapped = wrap_request_for_gateway_v2(
             &request,
             &WrapInputs {
                 auth_context: &auth_context,
@@ -1593,7 +1669,7 @@ mod tests {
             "dbs/db1/colls/coll1/docs/doc1",
         );
 
-        let wrapped = wrap_request_for_gateway20(
+        let wrapped = wrap_request_for_gateway_v2(
             &request,
             &wrap_inputs(&auth_context, OperationType::Read, None, None),
         )
@@ -1623,7 +1699,7 @@ mod tests {
             "dbs/db1/colls/coll1/docs/doc1",
         );
 
-        let error = wrap_request_for_gateway20(
+        let error = wrap_request_for_gateway_v2(
             &request,
             &wrap_inputs(&auth_context, OperationType::Read, None, None),
         )
@@ -1642,7 +1718,7 @@ mod tests {
             "dbs/db1/colls/coll1/docs/doc1",
         );
 
-        let error = wrap_request_for_gateway20(
+        let error = wrap_request_for_gateway_v2(
             &request,
             &wrap_inputs(&auth_context, OperationType::Read, None, None),
         )
@@ -1661,7 +1737,7 @@ mod tests {
             "dbs/db1/colls/coll1/docs/doc1",
         );
 
-        let error = wrap_request_for_gateway20(
+        let error = wrap_request_for_gateway_v2(
             &request,
             &wrap_inputs(&auth_context, OperationType::Read, None, None),
         )
@@ -1694,7 +1770,7 @@ mod tests {
             ),
         };
 
-        let unwrapped = unwrap_response_for_gateway20(response).unwrap();
+        let unwrapped = unwrap_response_for_gateway_v2(response).unwrap();
 
         assert_eq!(unwrapped.status, 404);
         assert_eq!(unwrapped.body, b"{}".to_vec());
@@ -1766,7 +1842,7 @@ mod tests {
             ),
         };
 
-        let unwrapped = unwrap_response_for_gateway20(response).unwrap();
+        let unwrapped = unwrap_response_for_gateway_v2(response).unwrap();
 
         assert_eq!(unwrapped.status, 429);
         assert_eq!(
@@ -1785,7 +1861,7 @@ mod tests {
             body: vec![1, 2, 3],
         };
 
-        let error = unwrap_response_for_gateway20(response).unwrap_err();
+        let error = unwrap_response_for_gateway_v2(response).unwrap_err();
 
         assert_eq!(error.kind(), &ErrorKind::DataConversion);
     }
@@ -1798,7 +1874,7 @@ mod tests {
             body: response_frame(70_000, Uuid::parse_str(ACTIVITY_ID).unwrap(), |_| {}, b""),
         };
 
-        let error = unwrap_response_for_gateway20(response).unwrap_err();
+        let error = unwrap_response_for_gateway_v2(response).unwrap_err();
 
         assert_eq!(error.kind(), &ErrorKind::DataConversion);
     }

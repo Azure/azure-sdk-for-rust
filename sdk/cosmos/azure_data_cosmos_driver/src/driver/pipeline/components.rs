@@ -40,7 +40,7 @@ pub(crate) enum TransportMode {
     /// Standard gateway (HTTP/1.1 or HTTP/2 via ALPN).
     Gateway,
     /// Gateway 2.0 (HTTP/2 with prior knowledge).
-    Gateway20,
+    GatewayV2,
 }
 
 /// Routing decision for the current attempt.

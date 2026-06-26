@@ -328,7 +328,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // binary does not yet wire a custom CosmosRuntime through to the SDK,
         // so this flag is recorded for reporting only and the client inherits
         // the SDK's default transport selection.
-        gateway20_disabled: true,
+        gateway_v2_disabled: true,
         pyroscope_enabled: std::env::var("PYROSCOPE_SERVER_URL")
             .map(|v| !v.is_empty())
             .unwrap_or(false),

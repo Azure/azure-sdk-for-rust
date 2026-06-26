@@ -12,7 +12,7 @@ mod cosmos_patch;
 mod cosmos_proxy;
 mod cosmos_query;
 mod cosmos_response_metadata;
-mod gateway20_e2e;
+mod gateway_v2_e2e;
 
 #[path = "../framework/mod.rs"]
 mod framework;

@@ -18,7 +18,7 @@ use crate::models::{OperationType, ResourceType};
 /// so the outer `Patch` operation never reaches Gateway 2.0 transport. The
 /// sub-operations the patch handler issues (`Read` / `Replace`) are each
 /// evaluated on their own merits.
-pub(crate) fn is_operation_supported_by_gateway20(
+pub(crate) fn is_operation_supported_by_gateway_v2(
     resource_type: ResourceType,
     operation_type: OperationType,
 ) -> bool {
@@ -90,7 +90,7 @@ mod tests {
         ]
     }
 
-    fn expected_gateway20_eligibility(
+    fn expected_gateway_v2_eligibility(
         resource_type: ResourceType,
         operation_type: OperationType,
     ) -> bool {
@@ -123,12 +123,12 @@ mod tests {
     }
 
     #[test]
-    fn gateway20_eligibility_matrix_is_exhaustive() {
+    fn gateway_v2_eligibility_matrix_is_exhaustive() {
         for resource_type in all_resource_types() {
             for operation_type in all_operation_types() {
                 assert_eq!(
-                    is_operation_supported_by_gateway20(resource_type, operation_type),
-                    expected_gateway20_eligibility(resource_type, operation_type),
+                    is_operation_supported_by_gateway_v2(resource_type, operation_type),
+                    expected_gateway_v2_eligibility(resource_type, operation_type),
                     "unexpected Gateway 2.0 eligibility for {resource_type:?} {operation_type:?}"
                 );
             }

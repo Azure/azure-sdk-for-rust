@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Gateway 2.0 transport (a regional proxy forwarding RNTBD-over-HTTP/2) is now enabled by default. To stay on the standard gateway, attach a `CosmosRuntime` whose connection pool sets `ConnectionPoolOptions::with_gateway20_disabled(true)` (or set `AZURE_COSMOS_CONNECTION_POOL_GATEWAY20_DISABLED`) via `CosmosClientBuilder::with_runtime`. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319))
+- Gateway 2.0 transport (a regional proxy forwarding RNTBD-over-HTTP/2) is now enabled by default. To stay on the standard gateway, attach a `CosmosRuntime` whose connection pool sets `ConnectionPoolOptions::with_gateway_v2_disabled(true)` (or set `AZURE_COSMOS_CONNECTION_POOL_GATEWAY_V2_DISABLED`) via `CosmosClientBuilder::with_runtime`. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319))
 - HTTP 449 (RetryWith) responses are now retried transparently in-region with exponential backoff, so callers no longer see spurious 449 errors from concurrent writes. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319))
 - `ReadConsistencyStrategy` is now honored across Gateway V1 and V2 reads. Adds the `LatestCommitted` variant (a quorum read independent of the account default); `GlobalStrong` is rejected with `BadRequest` unless the account default is `Strong`. Per-request strategy overrides the client default. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319))
 

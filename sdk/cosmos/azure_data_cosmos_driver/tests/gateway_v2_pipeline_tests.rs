@@ -10,7 +10,7 @@
 //!
 //! 1. **Operator override** — the operator can opt out of Gateway 2.0 even when
 //!    the account advertises a Gateway 2.0 endpoint. Verified via the public
-//!    [`ConnectionPoolOptions::with_gateway20_disabled`] toggle.
+//!    [`ConnectionPoolOptions::with_gateway_v2_disabled`] toggle.
 //!
 //! 2. **Operation eligibility** — operations that Gateway 2.0 does not yet
 //!    support (e.g., stored procedure execution) must transparently fall back
@@ -131,7 +131,7 @@ impl HttpClientFactory for CapturingFactory {
 
 fn fake_account() -> AccountReference {
     let url =
-        Url::parse("https://gw20-pipeline-tests.documents.azure.com/").expect("static URL parses");
+        Url::parse("https://gw_v2-pipeline-tests.documents.azure.com/").expect("static URL parses");
     // Master-key value is base64-encoded; the bytes never reach the wire because
     // the capturing transport short-circuits every send.
     AccountReference::with_master_key(url, "dGVzdC1tYXN0ZXIta2V5")
@@ -142,8 +142,8 @@ fn read_env(name: &str) -> Option<String> {
 }
 
 fn live_account_from_env() -> Option<AccountReference> {
-    let endpoint = read_env("AZURE_COSMOS_GW20_ENDPOINT")?;
-    let key = read_env("AZURE_COSMOS_GW20_KEY")?;
+    let endpoint = read_env("AZURE_COSMOS_GW_V2_ENDPOINT")?;
+    let key = read_env("AZURE_COSMOS_GW_V2_KEY")?;
     let url = Url::parse(&endpoint).ok()?;
     Some(AccountReference::with_master_key(url, key))
 }
@@ -153,11 +153,11 @@ fn live_account_from_env() -> Option<AccountReference> {
 /// `ConnectionPoolOptions` — passing `true` forces every request through the
 /// standard gateway transport.
 async fn capturing_runtime(
-    gateway20_disabled: bool,
+    gateway_v2_disabled: bool,
 ) -> (Arc<CosmosDriverRuntime>, Arc<CapturingTransport>) {
     let (factory, transport) = CapturingFactory::new();
     let pool = ConnectionPoolOptions::builder()
-        .with_gateway20_disabled(gateway20_disabled)
+        .with_gateway_v2_disabled(gateway_v2_disabled)
         .build()
         .expect("connection pool builds");
     let runtime = CosmosDriverRuntime::builder()
@@ -183,34 +183,34 @@ async fn probe(runtime: &Arc<CosmosDriverRuntime>) {
 // (a) Operator override forces standard gateway routing
 // ----------------------------------------------------------------------------
 
-/// Verifies that the operator override flag (`with_gateway20_disabled(true)`)
+/// Verifies that the operator override flag (`with_gateway_v2_disabled(true)`)
 /// is honored end-to-end at the connection-pool level. When the flag is set,
 /// the runtime must not select the Gateway 2.0 transport even if account
 /// metadata advertises a Gateway 2.0 endpoint.
 ///
 /// We assert the contract structurally via `ConnectionPoolOptions`: when the
-/// flag is `true`, `gateway20_disabled()` reports `true`, and the
+/// flag is `true`, `gateway_v2_disabled()` reports `true`, and the
 /// transport-layer dispatcher branches to the standard gateway (this branching
 /// is covered by the inside-crate tests in
 /// `driver::transport::tests::dataplane_transport_*`).
 #[tokio::test]
-async fn operator_override_disables_gateway20_at_pool_level() {
+async fn operator_override_disables_gateway_v2_at_pool_level() {
     let off = ConnectionPoolOptions::builder()
-        .with_gateway20_disabled(true)
+        .with_gateway_v2_disabled(true)
         .build()
         .expect("pool builds");
     assert!(
-        off.gateway20_disabled(),
-        "operator-disabled pool must report gateway20_disabled = true"
+        off.gateway_v2_disabled(),
+        "operator-disabled pool must report gateway_v2_disabled = true"
     );
 
     let on = ConnectionPoolOptions::builder()
-        .with_gateway20_disabled(false)
+        .with_gateway_v2_disabled(false)
         .build()
         .expect("pool builds");
     assert!(
-        !on.gateway20_disabled(),
-        "operator-enabled pool must report gateway20_disabled = false"
+        !on.gateway_v2_disabled(),
+        "operator-enabled pool must report gateway_v2_disabled = false"
     );
 }
 
@@ -219,7 +219,7 @@ async fn operator_override_disables_gateway20_at_pool_level() {
 /// then asserts (TODO once diagnostics expose `TransportKind`) that the
 /// request used the standard gateway transport.
 #[tokio::test]
-#[ignore = "Requires AZURE_COSMOS_GW20_ENDPOINT/_KEY to a Gateway 2.0 account"]
+#[ignore = "Requires AZURE_COSMOS_GW_V2_ENDPOINT/_KEY to a Gateway 2.0 account"]
 async fn operator_override_routes_reads_to_standard_gateway() {
     let Some(account) = live_account_from_env() else {
         return;
@@ -228,7 +228,7 @@ async fn operator_override_routes_reads_to_standard_gateway() {
     // TODO: once diagnostics expose `TransportKind` per request,
     // assert that every request used `TransportKind::StandardGateway`.
     let pool = ConnectionPoolOptions::builder()
-        .with_gateway20_disabled(true)
+        .with_gateway_v2_disabled(true)
         .build()
         .expect("pool builds");
     let runtime = CosmosDriverRuntime::builder()
@@ -242,7 +242,7 @@ async fn operator_override_routes_reads_to_standard_gateway() {
         .await
         .expect("driver init succeeds against the live account");
 
-    let db = read_env("AZURE_COSMOS_GW20_DATABASE").unwrap_or_else(|| "gw20-tests".to_string());
+    let db = read_env("AZURE_COSMOS_GW_V2_DATABASE").unwrap_or_else(|| "gw_v2-tests".to_string());
     let db_ref = DatabaseReference::from_name(driver.account().clone(), db);
 
     let _ = driver
@@ -267,9 +267,9 @@ async fn operator_override_routes_reads_to_standard_gateway() {
 /// lock — once `TransportKind` is exposed in diagnostics, assert that the
 /// stored-procedure-execute request used `TransportKind::StandardGateway`
 /// while a co-located point read on the same account used
-/// `TransportKind::Gateway20`.
+/// `TransportKind::GatewayV2`.
 #[tokio::test]
-#[ignore = "Requires AZURE_COSMOS_GW20_ENDPOINT/_KEY plus a stored procedure resource"]
+#[ignore = "Requires AZURE_COSMOS_GW_V2_ENDPOINT/_KEY plus a stored procedure resource"]
 async fn stored_proc_execute_falls_back_to_standard_gateway() {
     let Some(_account) = live_account_from_env() else {
         return;
@@ -277,29 +277,29 @@ async fn stored_proc_execute_falls_back_to_standard_gateway() {
     // TODO: drive `CosmosOperation::execute_stored_procedure(...)`
     // against a real account and assert the diagnostics record
     // `TransportKind::StandardGateway` for that request specifically while
-    // co-located point reads/writes record `TransportKind::Gateway20`.
+    // co-located point reads/writes record `TransportKind::GatewayV2`.
 }
 
 // ----------------------------------------------------------------------------
-// (c) Diagnostics records TransportKind::Gateway20
+// (c) Diagnostics records TransportKind::GatewayV2
 // ----------------------------------------------------------------------------
 
 /// Once Gateway 2.0 has dispatched a request, the recorded
-/// `RequestDiagnostics` for that request must indicate `TransportKind::Gateway20`.
+/// `RequestDiagnostics` for that request must indicate `TransportKind::GatewayV2`.
 ///
 /// This contract requires a live Gateway 2.0 account. The inside-crate test
-/// `transport_pipeline::tests::gateway20_pipeline_records_transport_kind`
+/// `transport_pipeline::tests::gateway_v2_pipeline_records_transport_kind`
 /// already covers the wiring at the unit-test level; this standalone test is
 /// the live-account companion.
 #[tokio::test]
-#[ignore = "Requires AZURE_COSMOS_GW20_ENDPOINT/_KEY to a Gateway 2.0 account"]
-async fn diagnostics_records_gateway20_transport_kind() {
+#[ignore = "Requires AZURE_COSMOS_GW_V2_ENDPOINT/_KEY to a Gateway 2.0 account"]
+async fn diagnostics_records_gateway_v2_transport_kind() {
     let Some(_account) = live_account_from_env() else {
         return;
     };
     // TODO: once `TransportKind` is exposed on the public
     // `RequestDiagnostics`, drive a point read against the live Gateway 2.0
-    // account and assert the diagnostics report `TransportKind::Gateway20`.
+    // account and assert the diagnostics report `TransportKind::GatewayV2`.
 }
 
 // ----------------------------------------------------------------------------
@@ -366,7 +366,7 @@ async fn v1_http_never_emits_both_consistency_headers() {
 ///    the wrapped frame and assert at-most-one consistency token per frame.
 ///
 /// The structural invariant inside the wrapped frame is exhaustively covered
-/// by the inside-crate tests in `gateway20_dispatch::tests::wraps_with_*`;
+/// by the inside-crate tests in `gateway_v2_dispatch::tests::wraps_with_*`;
 /// this test exists to prevent that coverage from silently disappearing if
 /// the V2 transport boundary moves.
 #[tokio::test]

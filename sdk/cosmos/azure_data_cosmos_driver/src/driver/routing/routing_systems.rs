@@ -31,7 +31,7 @@ pub(crate) fn build_account_endpoint_state(
     properties: &AccountProperties,
     default_endpoint: CosmosEndpoint,
     previous_generation: Option<u64>,
-    gateway20_enabled: bool,
+    gateway_v2_enabled: bool,
     preferred_regions: &[Region],
 ) -> AccountEndpointState {
     let generation = previous_generation.map_or(0, |g| g.saturating_add(1));
@@ -39,13 +39,13 @@ pub(crate) fn build_account_endpoint_state(
     let mut preferred_read_endpoints = build_preferred_endpoints(
         &properties.readable_locations,
         &properties.thin_client_readable_locations,
-        gateway20_enabled,
+        gateway_v2_enabled,
     );
 
     let mut preferred_write_endpoints = build_preferred_endpoints(
         &properties.writable_locations,
         &properties.thin_client_writable_locations,
-        gateway20_enabled,
+        gateway_v2_enabled,
     );
 
     if !preferred_regions.is_empty() {
@@ -74,11 +74,11 @@ pub(crate) fn build_account_endpoint_state(
 
 fn build_preferred_endpoints(
     standard_locations: &[crate::driver::cache::AccountRegion],
-    gateway20_locations: &[crate::driver::cache::AccountRegion],
-    gateway20_enabled: bool,
+    gateway_v2_locations: &[crate::driver::cache::AccountRegion],
+    gateway_v2_enabled: bool,
 ) -> Vec<CosmosEndpoint> {
-    let gateway20_urls = if gateway20_enabled {
-        parse_gateway20_locations(gateway20_locations)
+    let gateway_v2_urls = if gateway_v2_enabled {
+        parse_gateway_v2_locations(gateway_v2_locations)
     } else {
         HashMap::new()
     };
@@ -87,14 +87,14 @@ fn build_preferred_endpoints(
     for region in standard_locations {
         let url = region.database_account_endpoint.url().clone();
 
-        let endpoint = gateway20_urls
+        let endpoint = gateway_v2_urls
             .get(&region.name)
             .cloned()
-            .map(|gateway20_url| {
-                CosmosEndpoint::regional_with_gateway20(
+            .map(|gateway_v2_url| {
+                CosmosEndpoint::regional_with_gateway_v2(
                     region.name.clone(),
                     url.clone(),
-                    gateway20_url,
+                    gateway_v2_url,
                 )
             })
             .unwrap_or_else(|| CosmosEndpoint::regional(region.name.clone(), url));
@@ -105,12 +105,12 @@ fn build_preferred_endpoints(
     endpoints
 }
 
-fn parse_gateway20_locations(
-    gateway20_locations: &[crate::driver::cache::AccountRegion],
+fn parse_gateway_v2_locations(
+    gateway_v2_locations: &[crate::driver::cache::AccountRegion],
 ) -> HashMap<crate::options::Region, url::Url> {
     let mut urls = HashMap::new();
 
-    for region in gateway20_locations {
+    for region in gateway_v2_locations {
         let url = region.database_account_endpoint.url().clone();
 
         if url.scheme() != "https" {
@@ -728,7 +728,7 @@ mod tests {
     }
 
     #[test]
-    fn build_state_adds_gateway20_endpoint_when_enabled() {
+    fn build_state_adds_gateway_v2_endpoint_when_enabled() {
         let properties: AccountProperties = serde_json::from_value(serde_json::json!({
             "_self": "",
             "id": "test",
@@ -750,12 +750,14 @@ mod tests {
 
         let state = build_account_endpoint_state(&properties, default_endpoint(), None, true, &[]);
 
-        assert!(state.preferred_read_endpoints[0].gateway20_url().is_some());
-        assert!(state.preferred_write_endpoints[0].gateway20_url().is_none());
+        assert!(state.preferred_read_endpoints[0].gateway_v2_url().is_some());
+        assert!(state.preferred_write_endpoints[0]
+            .gateway_v2_url()
+            .is_none());
     }
 
     #[test]
-    fn build_state_adds_gateway20_for_write_endpoints_when_present() {
+    fn build_state_adds_gateway_v2_for_write_endpoints_when_present() {
         let properties: AccountProperties = serde_json::from_value(serde_json::json!({
             "_self": "",
             "id": "test",
@@ -778,8 +780,10 @@ mod tests {
 
         let state = build_account_endpoint_state(&properties, default_endpoint(), None, true, &[]);
 
-        assert!(state.preferred_read_endpoints[0].gateway20_url().is_some());
-        assert!(state.preferred_write_endpoints[0].gateway20_url().is_some());
+        assert!(state.preferred_read_endpoints[0].gateway_v2_url().is_some());
+        assert!(state.preferred_write_endpoints[0]
+            .gateway_v2_url()
+            .is_some());
     }
 
     /// Regression guard for the "service stops advertising Gateway 2.0" case.
@@ -788,18 +792,18 @@ mod tests {
     /// subsequent metadata refresh omits them (e.g., the service rolled the
     /// account off Gateway 2.0, or thin-client routing was disabled
     /// region-side), the rebuilt endpoint state must drop the
-    /// `gateway20_url` on every endpoint so that follow-up requests route
+    /// `gateway_v2_url` on every endpoint so that follow-up requests route
     /// through the standard compute-gateway URL.
     ///
-    /// `uses_gateway20(prefer_gateway20=true)` checks
-    /// `gateway20_url.is_some()`, so a `None` URL is sufficient to force
+    /// `uses_gateway_v2(prefer_gateway_v2=true)` checks
+    /// `gateway_v2_url.is_some()`, so a `None` URL is sufficient to force
     /// the request pipeline back onto the standard gateway transport even
-    /// while the operator-level `gateway20_enabled` toggle remains on.
+    /// while the operator-level `gateway_v2_enabled` toggle remains on.
     #[test]
-    fn build_state_drops_gateway20_when_thin_client_locations_disappear() {
+    fn build_state_drops_gateway_v2_when_thin_client_locations_disappear() {
         // First refresh: account advertises both thin-client read and write
-        // endpoints. With `gateway20_enabled=true`, every preferred endpoint
-        // must carry a `gateway20_url`.
+        // endpoints. With `gateway_v2_enabled=true`, every preferred endpoint
+        // must carry a `gateway_v2_url`.
         let with_g2: AccountProperties = serde_json::from_value(serde_json::json!({
             "_self": "",
             "id": "test",
@@ -822,23 +826,23 @@ mod tests {
         let initial = build_account_endpoint_state(&with_g2, default_endpoint(), None, true, &[]);
         assert!(
             initial.preferred_read_endpoints[0]
-                .gateway20_url()
+                .gateway_v2_url()
                 .is_some(),
             "initial read endpoint must carry a Gateway 2.0 URL"
         );
         assert!(
             initial.preferred_write_endpoints[0]
-                .gateway20_url()
+                .gateway_v2_url()
                 .is_some(),
             "initial write endpoint must carry a Gateway 2.0 URL"
         );
         assert!(
-            initial.preferred_read_endpoints[0].uses_gateway20(true),
-            "initial read endpoint must route through Gateway 2.0 when prefer_gateway20=true"
+            initial.preferred_read_endpoints[0].uses_gateway_v2(true),
+            "initial read endpoint must route through Gateway 2.0 when prefer_gateway_v2=true"
         );
         assert!(
-            initial.preferred_write_endpoints[0].uses_gateway20(true),
-            "initial write endpoint must route through Gateway 2.0 when prefer_gateway20=true"
+            initial.preferred_write_endpoints[0].uses_gateway_v2(true),
+            "initial write endpoint must route through Gateway 2.0 when prefer_gateway_v2=true"
         );
 
         // Second refresh: same standard `writable`/`readable` endpoints, but
@@ -861,9 +865,9 @@ mod tests {
             "queryEngineConfiguration": "{}"
         })).unwrap();
 
-        // `gateway20_enabled` is still `true` on the store — only the wire
+        // `gateway_v2_enabled` is still `true` on the store — only the wire
         // payload has changed. The rebuilt endpoints must nevertheless have
-        // no `gateway20_url`, forcing fallback to the compute gateway.
+        // no `gateway_v2_url`, forcing fallback to the compute gateway.
         let rebuilt = build_account_endpoint_state(
             &without_g2,
             default_endpoint(),
@@ -874,23 +878,23 @@ mod tests {
         assert_eq!(rebuilt.generation, initial.generation + 1);
         assert!(
             rebuilt.preferred_read_endpoints[0]
-                .gateway20_url()
+                .gateway_v2_url()
                 .is_none(),
             "read endpoint must lose its Gateway 2.0 URL when the service stops advertising thinClientReadableLocations"
         );
         assert!(
             rebuilt.preferred_write_endpoints[0]
-                .gateway20_url()
+                .gateway_v2_url()
                 .is_none(),
             "write endpoint must lose its Gateway 2.0 URL when the service stops advertising thinClientWritableLocations"
         );
         assert!(
-            !rebuilt.preferred_read_endpoints[0].uses_gateway20(true),
-            "read request must fall back to the compute gateway even when the operator toggle (prefer_gateway20) is still true"
+            !rebuilt.preferred_read_endpoints[0].uses_gateway_v2(true),
+            "read request must fall back to the compute gateway even when the operator toggle (prefer_gateway_v2) is still true"
         );
         assert!(
-            !rebuilt.preferred_write_endpoints[0].uses_gateway20(true),
-            "write request must fall back to the compute gateway even when the operator toggle (prefer_gateway20) is still true"
+            !rebuilt.preferred_write_endpoints[0].uses_gateway_v2(true),
+            "write request must fall back to the compute gateway even when the operator toggle (prefer_gateway_v2) is still true"
         );
     }
 
@@ -899,13 +903,13 @@ mod tests {
     /// When the account previously returned only standard locations but a
     /// subsequent metadata refresh adds `thinClient*Locations` (e.g., the
     /// service rolled the account onto Gateway 2.0), the rebuilt endpoint
-    /// state must adopt a `gateway20_url` on every endpoint so that follow-up
+    /// state must adopt a `gateway_v2_url` on every endpoint so that follow-up
     /// requests route through Gateway 2.0 while the operator toggle is on.
     #[test]
-    fn build_state_adopts_gateway20_when_thin_client_locations_appear() {
+    fn build_state_adopts_gateway_v2_when_thin_client_locations_appear() {
         // First refresh: account advertises only standard locations. With
-        // `gateway20_enabled=true` but no thin-client endpoints, no preferred
-        // endpoint may carry a `gateway20_url`.
+        // `gateway_v2_enabled=true` but no thin-client endpoints, no preferred
+        // endpoint may carry a `gateway_v2_url`.
         let without_g2: AccountProperties = serde_json::from_value(serde_json::json!({
             "_self": "",
             "id": "test",
@@ -927,22 +931,22 @@ mod tests {
             build_account_endpoint_state(&without_g2, default_endpoint(), None, true, &[]);
         assert!(
             initial.preferred_read_endpoints[0]
-                .gateway20_url()
+                .gateway_v2_url()
                 .is_none(),
             "initial read endpoint must carry no Gateway 2.0 URL"
         );
         assert!(
             initial.preferred_write_endpoints[0]
-                .gateway20_url()
+                .gateway_v2_url()
                 .is_none(),
             "initial write endpoint must carry no Gateway 2.0 URL"
         );
         assert!(
-            !initial.preferred_read_endpoints[0].uses_gateway20(true),
+            !initial.preferred_read_endpoints[0].uses_gateway_v2(true),
             "initial read endpoint must route through the standard gateway"
         );
         assert!(
-            !initial.preferred_write_endpoints[0].uses_gateway20(true),
+            !initial.preferred_write_endpoints[0].uses_gateway_v2(true),
             "initial write endpoint must route through the standard gateway"
         );
 
@@ -978,22 +982,22 @@ mod tests {
         assert_eq!(rebuilt.generation, initial.generation + 1);
         assert!(
             rebuilt.preferred_read_endpoints[0]
-                .gateway20_url()
+                .gateway_v2_url()
                 .is_some(),
             "read endpoint must gain a Gateway 2.0 URL once the service advertises thinClientReadableLocations"
         );
         assert!(
             rebuilt.preferred_write_endpoints[0]
-                .gateway20_url()
+                .gateway_v2_url()
                 .is_some(),
             "write endpoint must gain a Gateway 2.0 URL once the service advertises thinClientWritableLocations"
         );
         assert!(
-            rebuilt.preferred_read_endpoints[0].uses_gateway20(true),
+            rebuilt.preferred_read_endpoints[0].uses_gateway_v2(true),
             "read request must route through Gateway 2.0 once thin-client endpoints are advertised"
         );
         assert!(
-            rebuilt.preferred_write_endpoints[0].uses_gateway20(true),
+            rebuilt.preferred_write_endpoints[0].uses_gateway_v2(true),
             "write request must route through Gateway 2.0 once thin-client endpoints are advertised"
         );
     }

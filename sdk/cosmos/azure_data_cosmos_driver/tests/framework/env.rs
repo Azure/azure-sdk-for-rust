@@ -11,35 +11,36 @@ pub const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
 /// Environment variable name for the pre-provisioned Gateway 2.0 account
 /// endpoint. Surfaced from the `azure-sdk-tests-cosmos` service connection's
 /// secret variable group by `sdk/cosmos/ci.yml` and consumed by driver tests
-/// scoped to `test_category = "gateway20"`.
+/// scoped to `test_category = "gateway_v2"`.
 ///
-/// The ARM-provisioned account in the `Session SingleRegion Gateway20` matrix
+/// The ARM-provisioned account in the `Session SingleRegion GatewayV2` matrix
 /// entry does NOT advertise a Gateway 2.0 endpoint, so driver tests that
-/// inject faults gated on `TransportKind::Gateway20` (and SDK tests in
-/// `sdk/cosmos/azure_data_cosmos/tests/emulator_tests/gateway20_e2e.rs`) must
+/// inject faults gated on `TransportKind::GatewayV2` (and SDK tests in
+/// `sdk/cosmos/azure_data_cosmos/tests/emulator_tests/gateway_v2_e2e.rs`) must
 /// point at this pre-provisioned account instead of the standard
 /// `AZURE_COSMOS_CONNECTION_STRING`.
 #[allow(dead_code)]
-pub const GATEWAY20_ENDPOINT_ENV_VAR: &str = "AZURE_COSMOS_GW20_ENDPOINT";
+pub const GATEWAY_V2_ENDPOINT_ENV_VAR: &str = "AZURE_COSMOS_GW_V2_ENDPOINT";
 
 /// Environment variable name for the pre-provisioned Gateway 2.0 account
-/// master key. See [`GATEWAY20_ENDPOINT_ENV_VAR`].
+/// master key. See [`GATEWAY_V2_ENDPOINT_ENV_VAR`].
 #[allow(dead_code)]
-pub const GATEWAY20_KEY_ENV_VAR: &str = "AZURE_COSMOS_GW20_KEY";
+pub const GATEWAY_V2_KEY_ENV_VAR: &str = "AZURE_COSMOS_GW_V2_KEY";
 
 /// Environment variable name for the pre-provisioned **multi-region**
 /// Gateway 2.0 account endpoint, consumed by driver tests scoped to
-/// `test_category = "gateway20_multi_region"`. The single-region account
-/// referenced by [`GATEWAY20_ENDPOINT_ENV_VAR`] cannot exercise
+/// `test_category = "gateway_v2_multi_region"`. The single-region account
+/// referenced by [`GATEWAY_V2_ENDPOINT_ENV_VAR`] cannot exercise
 /// regional-failover behaviors, so multi-region tests need a dedicated
-/// multi-region GW20 account.
+/// multi-region GW_V2 account.
 #[allow(dead_code)]
-pub const GATEWAY20_MULTI_REGION_ENDPOINT_ENV_VAR: &str = "AZURE_COSMOS_GW20_MULTI_REGION_ENDPOINT";
+pub const GATEWAY_V2_MULTI_REGION_ENDPOINT_ENV_VAR: &str =
+    "AZURE_COSMOS_GW_V2_MULTI_REGION_ENDPOINT";
 
 /// Environment variable name for the pre-provisioned multi-region Gateway 2.0
-/// account master key. See [`GATEWAY20_MULTI_REGION_ENDPOINT_ENV_VAR`].
+/// account master key. See [`GATEWAY_V2_MULTI_REGION_ENDPOINT_ENV_VAR`].
 #[allow(dead_code)]
-pub const GATEWAY20_MULTI_REGION_KEY_ENV_VAR: &str = "AZURE_COSMOS_GW20_MULTI_REGION_KEY";
+pub const GATEWAY_V2_MULTI_REGION_KEY_ENV_VAR: &str = "AZURE_COSMOS_GW_V2_MULTI_REGION_KEY";
 
 /// Environment variable for shared database name.
 #[allow(dead_code)]

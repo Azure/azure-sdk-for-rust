@@ -76,13 +76,13 @@ impl HttpClientConfig {
     }
 
     /// Config for Gateway 2.0 requests (always HTTP/2).
-    pub(crate) fn dataplane_gateway20(connection_pool: &ConnectionPoolOptions) -> Self {
+    pub(crate) fn dataplane_gateway_v2(connection_pool: &ConnectionPoolOptions) -> Self {
         Self {
             version_policy: HttpVersionPolicy::Http2Only,
             request_timeout: connection_pool.max_dataplane_request_timeout(),
             allow_invalid_cert: false,
             http2_keep_alive_while_idle: true,
-            transport_kind: Some(TransportKind::Gateway20),
+            transport_kind: Some(TransportKind::GatewayV2),
         }
     }
 
@@ -134,10 +134,10 @@ mod tests {
     }
 
     #[test]
-    fn dataplane_gateway20_always_uses_http2_only() {
+    fn dataplane_gateway_v2_always_uses_http2_only() {
         let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
         assert_eq!(
-            HttpClientConfig::dataplane_gateway20(&pool).version_policy,
+            HttpClientConfig::dataplane_gateway_v2(&pool).version_policy,
             HttpVersionPolicy::Http2Only
         );
     }

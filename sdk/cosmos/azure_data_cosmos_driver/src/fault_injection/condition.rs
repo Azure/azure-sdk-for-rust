@@ -36,7 +36,7 @@ impl FaultInjectionCondition {
     /// Returns the transport kind to which the fault injection applies.
     ///
     /// When `Some`, the rule only matches requests sent over the specified
-    /// transport (e.g. `TransportKind::Gateway20`). When `None`, the rule
+    /// transport (e.g. `TransportKind::GatewayV2`). When `None`, the rule
     /// matches every transport (including metadata, gateway, and Gateway 2.0).
     pub fn transport_kind(&self) -> Option<TransportKind> {
         self.transport_kind
@@ -85,7 +85,7 @@ impl FaultInjectionConditionBuilder {
     /// Restricts the rule to a specific transport kind.
     ///
     /// Use this to scope a fault to (for example) only Gateway 2.0 traffic
-    /// (`TransportKind::Gateway20`) while leaving the standard gateway path
+    /// (`TransportKind::GatewayV2`) while leaving the standard gateway path
     /// untouched. When unset, the rule applies regardless of which transport
     /// carried the request.
     pub fn with_transport_kind(mut self, transport_kind: TransportKind) -> Self {
@@ -121,8 +121,8 @@ mod tests {
     #[test]
     fn with_transport_kind_round_trip() {
         let condition = FaultInjectionConditionBuilder::new()
-            .with_transport_kind(TransportKind::Gateway20)
+            .with_transport_kind(TransportKind::GatewayV2)
             .build();
-        assert_eq!(condition.transport_kind(), Some(TransportKind::Gateway20));
+        assert_eq!(condition.transport_kind(), Some(TransportKind::GatewayV2));
     }
 }

@@ -44,7 +44,7 @@ use url::Url;
 /// Gateway 2.0 endpoint-discovery opt-in header, sent on every
 /// `getDatabaseAccount` request. Aliases the canonical wire string in
 /// `models::cosmos_headers`.
-const GATEWAY20_DISCOVERY_OPT_IN: azure_core::http::headers::HeaderName =
+const GATEWAY_V2_DISCOVERY_OPT_IN: azure_core::http::headers::HeaderName =
     azure_core::http::headers::HeaderName::from_static(
         crate::models::cosmos_headers::request_header_names::USE_THINCLIENT,
     );
@@ -94,11 +94,11 @@ fn request_target_overrides(
             // them on the full-pkrange XPK fan-out path that must also work on
             // the standard gateway. Because the narrowed case emits both
             // headers together, it is only valid on the wire against Gateway
-            // 2.0. The GW20 dispatcher derives its RNTBD
+            // 2.0. The GW_V2 dispatcher derives its RNTBD
             // `StartEpkHash`/`EndEpkHash` tokens from `pkrange_bounds` (below)
             // when the public headers are absent.
             feed_range: range,
-            // Always carry the physical pkrange bounds so the GW20 dispatcher
+            // Always carry the physical pkrange bounds so the GW_V2 dispatcher
             // can synthesize StartEpkHash/EndEpkHash tokens (which the
             // thin-client proxy requires on every Query frame). Surfaced via
             // internal `x-ms-thinclient-pkrange-min`/`-max` headers in
@@ -707,8 +707,8 @@ impl CosmosDriver {
             writable_locations = props.writable_locations.len(),
             thin_client_readable_locations = props.thin_client_readable_locations.len(),
             thin_client_writable_locations = props.thin_client_writable_locations.len(),
-            thin_client_readable_regions = ?props.gateway20_readable_regions(),
-            thin_client_writable_regions = ?props.gateway20_writable_regions(),
+            thin_client_readable_regions = ?props.gateway_v2_readable_regions(),
+            thin_client_writable_regions = ?props.gateway_v2_writable_regions(),
             "AccountProperties retrieved successfully"
         );
         Ok(props)
@@ -735,7 +735,7 @@ impl CosmosDriver {
         };
         cosmos_headers::apply_cosmos_headers(&mut request, user_agent);
         request.headers.insert(
-            GATEWAY20_DISCOVERY_OPT_IN,
+            GATEWAY_V2_DISCOVERY_OPT_IN,
             azure_core::http::headers::HeaderValue::from_static("true"),
         );
         request
@@ -1274,10 +1274,11 @@ impl CosmosDriver {
         // Gateway 2.0 is operator-disabled; otherwise the store still no-ops
         // the probe when the account advertises no thin-client endpoints.
         let connectivity_probe: Option<Arc<dyn ConnectivityProbe>> =
-            if runtime.connection_pool().gateway20_disabled() {
+            if runtime.connection_pool().gateway_v2_disabled() {
                 None
             } else {
-                let probe_config = HttpClientConfig::dataplane_gateway20(runtime.connection_pool());
+                let probe_config =
+                    HttpClientConfig::dataplane_gateway_v2(runtime.connection_pool());
                 let probe_client =
                     http_client_factory.build(runtime.connection_pool(), probe_config)?;
                 Some(Arc::new(Http2ConnectivityProbe::new(probe_client)))
@@ -1288,7 +1289,7 @@ impl CosmosDriver {
             account_endpoint,
             default_endpoint,
             refresh_callback,
-            !runtime.connection_pool().gateway20_disabled(),
+            !runtime.connection_pool().gateway_v2_disabled(),
             endpoint_unavailability_ttl,
             options.partition_failover_options().clone(),
             options.preferred_regions().to_vec(),
@@ -3027,7 +3028,7 @@ mod tests {
 
         let opt_in = request
             .headers
-            .get_optional_str(&GATEWAY20_DISCOVERY_OPT_IN)
+            .get_optional_str(&GATEWAY_V2_DISCOVERY_OPT_IN)
             .expect("getDatabaseAccount must send x-ms-cosmos-use-thinclient so the server emits thinClient*Locations");
         assert_eq!(
             opt_in, "true",
@@ -3454,7 +3455,7 @@ mod tests {
         // `x-ms-start-epk`/`x-ms-end-epk` headers on the legacy gateway path
         // (it rejects them paired with `partitionkeyrangeid` when min is the
         // empty-string sentinel). The pkrange bounds are still carried in
-        // `pkrange_bounds` for the GW20 dispatcher to derive its
+        // `pkrange_bounds` for the GW_V2 dispatcher to derive its
         // `StartEpkHash`/`EndEpkHash` RNTBD tokens.
         let range = crate::models::FeedRange::new(
             EffectivePartitionKey::from("10"),

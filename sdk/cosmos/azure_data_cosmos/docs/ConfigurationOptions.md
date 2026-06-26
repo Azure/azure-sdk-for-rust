@@ -89,7 +89,7 @@ an override:
 | --- | --- | --- |
 | `AZURE_COSMOS_HEDGING_ENABLED` | `AZURE_COSMOS_HEDGING_ENABLED_OVERRIDE` | Forces cross-region read hedging on/off regardless of any programmatic `AvailabilityStrategy` or per-request value. |
 | `AZURE_COSMOS_PPCB_ENABLED` | `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` | Forces the per-partition circuit breaker (PPCB) on/off regardless of the `PartitionFailoverOptions` setting **and** the account property `enable_per_partition_failover_behavior`. |
-| `AZURE_COSMOS_CONNECTION_POOL_GATEWAY20_DISABLED` | `AZURE_COSMOS_GATEWAY20_ENABLED_OVERRIDE` | Forces the Gateway 2.0 transport on/off regardless of the `ConnectionPoolOptionsBuilder::with_gateway20_disabled` opt-out. HTTP/2 is a hard prerequisite, so the override cannot enable Gateway 2.0 when HTTP/2 is disabled. |
+| `AZURE_COSMOS_CONNECTION_POOL_GATEWAY_V2_DISABLED` | `AZURE_COSMOS_CONNECTION_POOL_GATEWAY_V2_DISABLED_OVERRIDE` | Forces the Gateway 2.0 transport on/off regardless of the `ConnectionPoolOptionsBuilder::with_gateway_v2_disabled` opt-out. HTTP/2 is a hard prerequisite, so the override cannot enable Gateway 2.0 when HTTP/2 is disabled. |
 
 > **Note on the PPCB kill switch.** Unlike the hedging switch, PPCB enablement
 > is a **driver-level** (`PartitionFailoverOptions`) setting rather than a

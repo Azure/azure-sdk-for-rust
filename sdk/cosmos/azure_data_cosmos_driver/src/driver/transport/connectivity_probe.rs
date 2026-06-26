@@ -101,12 +101,6 @@ pub(crate) enum ProbeOutcome {
     },
 }
 
-impl ProbeOutcome {
-    pub(crate) fn is_healthy(&self) -> bool {
-        matches!(self, ProbeOutcome::AllHealthy)
-    }
-}
-
 /// Trait abstracting the connectivity probe so tests can inject canned
 /// outcomes without standing up an HTTP server.
 #[async_trait::async_trait]

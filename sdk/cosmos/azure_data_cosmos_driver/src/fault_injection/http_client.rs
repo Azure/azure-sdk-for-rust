@@ -1099,12 +1099,12 @@ mod tests {
 
         // Rule scoped to Gateway 2.0 only.
         let condition = FaultInjectionConditionBuilder::new()
-            .with_transport_kind(TransportKind::Gateway20)
+            .with_transport_kind(TransportKind::GatewayV2)
             .build();
         let error = FaultInjectionResultBuilder::new()
             .with_error(FaultInjectionErrorType::ServiceUnavailable)
             .build();
-        let rule = FaultInjectionRuleBuilder::new("gw20-only", error)
+        let rule = FaultInjectionRuleBuilder::new("gw_v2-only", error)
             .with_condition(condition)
             .build();
 
@@ -1126,7 +1126,7 @@ mod tests {
         assert_eq!(evals.len(), 1);
         assert!(matches!(
             &evals[0],
-            super::FaultInjectionEvaluation::TransportKindMismatch { rule_id } if rule_id == "gw20-only"
+            super::FaultInjectionEvaluation::TransportKindMismatch { rule_id } if rule_id == "gw_v2-only"
         ));
     }
 
@@ -1135,12 +1135,12 @@ mod tests {
         let mock_client = Arc::new(MockTransportClient::new());
 
         let condition = FaultInjectionConditionBuilder::new()
-            .with_transport_kind(TransportKind::Gateway20)
+            .with_transport_kind(TransportKind::GatewayV2)
             .build();
         let error = FaultInjectionResultBuilder::new()
             .with_error(FaultInjectionErrorType::ServiceUnavailable)
             .build();
-        let rule = FaultInjectionRuleBuilder::new("gw20-only", error)
+        let rule = FaultInjectionRuleBuilder::new("gw_v2-only", error)
             .with_condition(condition)
             .build();
 
@@ -1149,7 +1149,7 @@ mod tests {
         let fault_client = FaultClient::new(
             mock_client.clone(),
             vec![Arc::new(rule)],
-            Some(TransportKind::Gateway20),
+            Some(TransportKind::GatewayV2),
         );
 
         let (request, _collector) = create_test_request();
@@ -1166,12 +1166,12 @@ mod tests {
         let mock_client = Arc::new(MockTransportClient::new());
 
         let condition = FaultInjectionConditionBuilder::new()
-            .with_transport_kind(TransportKind::Gateway20)
+            .with_transport_kind(TransportKind::GatewayV2)
             .build();
         let error = FaultInjectionResultBuilder::new()
             .with_error(FaultInjectionErrorType::ServiceUnavailable)
             .build();
-        let rule = FaultInjectionRuleBuilder::new("gw20-only", error)
+        let rule = FaultInjectionRuleBuilder::new("gw_v2-only", error)
             .with_condition(condition)
             .build();
 
@@ -1188,7 +1188,7 @@ mod tests {
         let evals = collector.take();
         assert!(matches!(
             evals.as_slice(),
-            [super::FaultInjectionEvaluation::TransportKindMismatch { rule_id }] if rule_id == "gw20-only"
+            [super::FaultInjectionEvaluation::TransportKindMismatch { rule_id }] if rule_id == "gw_v2-only"
         ));
     }
 

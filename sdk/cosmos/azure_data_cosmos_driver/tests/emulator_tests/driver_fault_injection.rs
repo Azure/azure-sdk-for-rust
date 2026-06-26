@@ -349,32 +349,35 @@ pub async fn fault_injection_connection_error() -> Result<(), Box<dyn Error>> {
 //   - 408 Request Timeout     → cross-region for reads / local-only for writes
 //   - 404/1002 Read Session   → remote-preferred + no PKRange refresh
 //
-// Each rule is scoped to `TransportKind::Gateway20` via
+// Each rule is scoped to `TransportKind::GatewayV2` via
 // `with_transport_kind(...)` so it only fires on Gateway 2.0 traffic. The
 // emulator does not expose Gateway 2.0 endpoints, so these tests are gated
-// behind the `gateway20` test category and rely on the
-// `Session SingleRegion Gateway20` CI matrix entry pointing at a
+// behind the `gateway_v2` test category and rely on the
+// `Session SingleRegion GatewayV2` CI matrix entry pointing at a
 // pre-provisioned Gateway 2.0 account (see `sdk/cosmos/ci.yml` and the
-// `AZURE_COSMOS_GW20_ENDPOINT` / `AZURE_COSMOS_GW20_KEY` plumbing in the
+// `AZURE_COSMOS_GW_V2_ENDPOINT` / `AZURE_COSMOS_GW_V2_KEY` plumbing in the
 // driver test framework's `resolve_test_env`).
 
 /// Gateway 2.0 503 Service Unavailable should trigger regional failover.
 ///
-/// The rule is scoped to [`TransportKind::Gateway20`] so it does not also
+/// The rule is scoped to [`TransportKind::GatewayV2`] so it does not also
 /// fire on standard-gateway requests issued during account discovery. The
 /// emulator does not yet expose Gateway 2.0 endpoints, so this test is
-/// gated behind the `gateway20` test category until CI gains a Gateway 2.0
+/// gated behind the `gateway_v2` test category until CI gains a Gateway 2.0
 /// account.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
-    ignore = "requires test_category 'gateway20'"
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires test_category 'gateway_v2'"
 )]
-pub async fn gateway20_service_unavailable_triggers_regional_failover() -> Result<(), Box<dyn Error>>
-{
+pub async fn gateway_v2_service_unavailable_triggers_regional_failover(
+) -> Result<(), Box<dyn Error>> {
     let condition = FaultInjectionConditionBuilder::new()
         .with_operation_type(FaultOperationType::ReadItem)
-        .with_transport_kind(TransportKind::Gateway20)
+        .with_transport_kind(TransportKind::GatewayV2)
         .build();
 
     let result = FaultInjectionResultBuilder::new()
@@ -383,7 +386,7 @@ pub async fn gateway20_service_unavailable_triggers_regional_failover() -> Resul
         .build();
 
     let rule = Arc::new(
-        FaultInjectionRuleBuilder::new("gateway20-503-failover", result)
+        FaultInjectionRuleBuilder::new("gateway_v2-503-failover", result)
             .with_condition(condition)
             .build(),
     );
@@ -421,18 +424,21 @@ pub async fn gateway20_service_unavailable_triggers_regional_failover() -> Resul
 /// but stay local-only for writes (single-region writes can't safely retry
 /// across regions without risking duplicates).
 ///
-/// The rule is scoped to [`TransportKind::Gateway20`] so it does not affect
+/// The rule is scoped to [`TransportKind::GatewayV2`] so it does not affect
 /// standard-gateway traffic. The emulator does not yet expose Gateway 2.0
-/// endpoints, so this test is gated behind the `gateway20` test category.
+/// endpoints, so this test is gated behind the `gateway_v2` test category.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
-    ignore = "requires test_category 'gateway20'"
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires test_category 'gateway_v2'"
 )]
-pub async fn gateway20_request_timeout_cross_region_for_reads() -> Result<(), Box<dyn Error>> {
+pub async fn gateway_v2_request_timeout_cross_region_for_reads() -> Result<(), Box<dyn Error>> {
     let condition = FaultInjectionConditionBuilder::new()
         .with_operation_type(FaultOperationType::ReadItem)
-        .with_transport_kind(TransportKind::Gateway20)
+        .with_transport_kind(TransportKind::GatewayV2)
         .build();
 
     let result = FaultInjectionResultBuilder::new()
@@ -441,7 +447,7 @@ pub async fn gateway20_request_timeout_cross_region_for_reads() -> Result<(), Bo
         .build();
 
     let rule = Arc::new(
-        FaultInjectionRuleBuilder::new("gateway20-408-cross-region", result)
+        FaultInjectionRuleBuilder::new("gateway_v2-408-cross-region", result)
             .with_condition(condition)
             .build(),
     );
@@ -480,19 +486,23 @@ pub async fn gateway20_request_timeout_cross_region_for_reads() -> Result<(), Bo
 /// mismatch, which is unrelated to the routing topology — refreshing PKRange
 /// would be a wasted metadata round-trip.
 ///
-/// The rule is scoped to [`TransportKind::Gateway20`] so it does not also
+/// The rule is scoped to [`TransportKind::GatewayV2`] so it does not also
 /// fire on standard-gateway requests. The emulator does not yet expose
-/// Gateway 2.0 endpoints, so this test is gated behind the `gateway20`
+/// Gateway 2.0 endpoints, so this test is gated behind the `gateway_v2`
 /// test category until CI gains a Gateway 2.0 account.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
-    ignore = "requires test_category 'gateway20'"
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires test_category 'gateway_v2'"
 )]
-pub async fn gateway20_read_session_not_available_remote_preferred() -> Result<(), Box<dyn Error>> {
+pub async fn gateway_v2_read_session_not_available_remote_preferred() -> Result<(), Box<dyn Error>>
+{
     let condition = FaultInjectionConditionBuilder::new()
         .with_operation_type(FaultOperationType::ReadItem)
-        .with_transport_kind(TransportKind::Gateway20)
+        .with_transport_kind(TransportKind::GatewayV2)
         .build();
 
     let result = FaultInjectionResultBuilder::new()
@@ -501,7 +511,7 @@ pub async fn gateway20_read_session_not_available_remote_preferred() -> Result<(
         .build();
 
     let rule = Arc::new(
-        FaultInjectionRuleBuilder::new("gateway20-1002-remote-preferred", result)
+        FaultInjectionRuleBuilder::new("gateway_v2-1002-remote-preferred", result)
             .with_condition(condition)
             .build(),
     );
@@ -546,7 +556,7 @@ pub async fn gateway20_read_session_not_available_remote_preferred() -> Result<(
 /// this test exercises the full end-to-end path:
 ///
 ///   driver -> HTTP/2 transport (fault client) -> synthetic RNTBD frame
-///   -> `unwrap_response_for_gateway20` -> `CosmosResponse` returned to the caller
+///   -> `unwrap_response_for_gateway_v2` -> `CosmosResponse` returned to the caller
 ///
 /// The frame is built as raw bytes so the test does NOT depend on the
 /// `pub(crate)` codec types, and is shaped so the unknown token (id `0xFFFE`)
@@ -555,15 +565,18 @@ pub async fn gateway20_read_session_not_available_remote_preferred() -> Result<(
 /// proves the parser resumed correctly after the skip.
 ///
 /// The Cosmos DB emulator does not support Gateway 2.0, so this test is
-/// gated behind the `gateway20` test category and requires a real
+/// gated behind the `gateway_v2` test category and requires a real
 /// Gateway 2.0-enabled account in CI; the SDK in-memory emulator does not
 /// implement Gateway 2.0 either.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
-    ignore = "requires test_category 'gateway20'"
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires test_category 'gateway_v2'"
 )]
-pub async fn gateway20_unknown_rntbd_response_token_is_silently_skipped(
+pub async fn gateway_v2_unknown_rntbd_response_token_is_silently_skipped(
 ) -> Result<(), Box<dyn Error>> {
     const ITEM_JSON: &[u8] = br#"{"id": "item1", "pk": "pk1", "value": "test"}"#;
     const EXPECTED_RU: f64 = 3.5;
@@ -576,7 +589,7 @@ pub async fn gateway20_unknown_rntbd_response_token_is_silently_skipped(
 
     let condition = FaultInjectionConditionBuilder::new()
         .with_operation_type(FaultOperationType::ReadItem)
-        .with_transport_kind(TransportKind::Gateway20)
+        .with_transport_kind(TransportKind::GatewayV2)
         .build();
 
     let result = FaultInjectionResultBuilder::new()
@@ -585,7 +598,7 @@ pub async fn gateway20_unknown_rntbd_response_token_is_silently_skipped(
         .build();
 
     let rule = Arc::new(
-        FaultInjectionRuleBuilder::new("gateway20-unknown-rntbd-token", result)
+        FaultInjectionRuleBuilder::new("gateway_v2-unknown-rntbd-token", result)
             .with_condition(condition)
             .build(),
     );
@@ -718,7 +731,7 @@ fn build_rntbd_response_with_unknown_token(request_charge: f64, body: &[u8]) -> 
 
 /// Gateway 2.0 server-response-delay fault injection.
 ///
-/// A rule scoped to [`TransportKind::Gateway20`] with `with_delay(...)` and
+/// A rule scoped to [`TransportKind::GatewayV2`] with `with_delay(...)` and
 /// no error type should cause every matched G2 request to take at least the
 /// configured delay before returning. This test asserts the rule fires and
 /// the read still completes — the latency assertion is loose (only confirms
@@ -726,15 +739,18 @@ fn build_rntbd_response_with_unknown_token(request_charge: f64, body: &[u8]) -> 
 /// are noisy.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
-    ignore = "requires test_category 'gateway20'"
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires test_category 'gateway_v2'"
 )]
-pub async fn gateway20_server_response_delay_is_injected() -> Result<(), Box<dyn Error>> {
+pub async fn gateway_v2_server_response_delay_is_injected() -> Result<(), Box<dyn Error>> {
     const INJECTED_DELAY: Duration = Duration::from_millis(500);
 
     let condition = FaultInjectionConditionBuilder::new()
         .with_operation_type(FaultOperationType::ReadItem)
-        .with_transport_kind(TransportKind::Gateway20)
+        .with_transport_kind(TransportKind::GatewayV2)
         .build();
 
     let result = FaultInjectionResultBuilder::new()
@@ -743,7 +759,7 @@ pub async fn gateway20_server_response_delay_is_injected() -> Result<(), Box<dyn
         .build();
 
     let rule = Arc::new(
-        FaultInjectionRuleBuilder::new("gateway20-response-delay", result)
+        FaultInjectionRuleBuilder::new("gateway_v2-response-delay", result)
             .with_condition(condition)
             .build(),
     );
@@ -785,22 +801,25 @@ pub async fn gateway20_server_response_delay_is_injected() -> Result<(), Box<dyn
 
 /// Gateway 2.0 hit-limit caps fault firing.
 ///
-/// A rule with `with_hit_limit(N)` scoped to [`TransportKind::Gateway20`]
+/// A rule with `with_hit_limit(N)` scoped to [`TransportKind::GatewayV2`]
 /// fires for the first N matching G2 attempts and then stops. The test
 /// drives more than N reads and asserts the recorded hit count equals N
 /// (never exceeds the limit).
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
-    ignore = "requires test_category 'gateway20'"
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires test_category 'gateway_v2'"
 )]
-pub async fn gateway20_hit_limit_caps_fault_count() -> Result<(), Box<dyn Error>> {
+pub async fn gateway_v2_hit_limit_caps_fault_count() -> Result<(), Box<dyn Error>> {
     const HIT_LIMIT: u32 = 2;
     const TOTAL_READS: u32 = 5;
 
     let condition = FaultInjectionConditionBuilder::new()
         .with_operation_type(FaultOperationType::ReadItem)
-        .with_transport_kind(TransportKind::Gateway20)
+        .with_transport_kind(TransportKind::GatewayV2)
         .build();
 
     let result = FaultInjectionResultBuilder::new()
@@ -809,7 +828,7 @@ pub async fn gateway20_hit_limit_caps_fault_count() -> Result<(), Box<dyn Error>
         .build();
 
     let rule = Arc::new(
-        FaultInjectionRuleBuilder::new("gateway20-hit-limit", result)
+        FaultInjectionRuleBuilder::new("gateway_v2-hit-limit", result)
             .with_condition(condition)
             .with_hit_limit(HIT_LIMIT)
             .build(),
@@ -933,31 +952,34 @@ pub async fn fault_injection_449_retry_with_succeeds_after_hit_limit() -> Result
     .await
 }
 
-/// Verifies that 449 RetryWith retries are scoped to `TransportKind::Gateway20`
+/// Verifies that 449 RetryWith retries are scoped to `TransportKind::GatewayV2`
 /// when the rule is so-scoped — i.e. the same policy works on the Gateway 2.0
 /// transport, not just on the standard gateway.
 ///
-/// The fault-injection condition adds `with_transport_kind(TransportKind::Gateway20)`,
+/// The fault-injection condition adds `with_transport_kind(TransportKind::GatewayV2)`,
 /// so the rule only fires on Gateway 2.0 traffic. With Gateway 2.0 enabled by
 /// default for eligible data-plane reads, a `read_item` against a Gateway 2.0
 /// account fires the rule for each in-region retry until the hit-limit is
 /// exhausted, after which the read succeeds.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
-    ignore = "requires test_category 'gateway20'"
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires test_category 'gateway_v2'"
 )]
-pub async fn gateway20_449_retry_with_succeeds_after_hit_limit() -> Result<(), Box<dyn Error>> {
+pub async fn gateway_v2_449_retry_with_succeeds_after_hit_limit() -> Result<(), Box<dyn Error>> {
     let condition = FaultInjectionConditionBuilder::new()
         .with_operation_type(FaultOperationType::ReadItem)
-        .with_transport_kind(TransportKind::Gateway20)
+        .with_transport_kind(TransportKind::GatewayV2)
         .build();
     let result = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::RetryWith)
         .with_probability(1.0)
         .build();
     let rule = Arc::new(
-        FaultInjectionRuleBuilder::new("gateway20-449-retry-with-succeeds", result)
+        FaultInjectionRuleBuilder::new("gateway_v2-449-retry-with-succeeds", result)
             .with_condition(condition)
             .with_hit_limit(3)
             .build(),
@@ -972,7 +994,7 @@ pub async fn gateway20_449_retry_with_succeeds_after_hit_limit() -> Result<(), B
                 .create_container(&database, &container_name, "/pk")
                 .await?;
 
-            let item_json = br#"{"id": "item1", "pk": "pk1", "value": "gw20-retry-with"}"#;
+            let item_json = br#"{"id": "item1", "pk": "pk1", "value": "gw_v2-retry-with"}"#;
             context
                 .create_item(&container, "item1", "pk1", item_json)
                 .await?;
@@ -1006,7 +1028,7 @@ pub async fn gateway20_449_retry_with_succeeds_after_hit_limit() -> Result<(), B
                     matches!(
                         e,
                         FaultInjectionEvaluation::Applied { rule_id, .. }
-                            if rule_id == "gateway20-449-retry-with-succeeds"
+                            if rule_id == "gateway_v2-449-retry-with-succeeds"
                     )
                 })
             });

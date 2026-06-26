@@ -992,14 +992,17 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
 /// visible to the operator. The fault-injection rule matches every `ReadItem`
 /// regardless of transport (a prior `with_transport_kind` filter caused
 /// false-negatives on some accounts), while the Gateway 2.0-specific routing
-/// behaviour is asserted at the unit level in the driver's gateway20 pipeline
+/// behavior is asserted at the unit level in the driver's gateway_v2 pipeline
 /// tests.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
-    ignore = "requires test_category 'gateway20'"
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires test_category 'gateway_v2'"
 )]
-pub async fn gateway20_connection_error_fails_fast_after_all_regions_attempted(
+pub async fn gateway_v2_connection_error_fails_fast_after_all_regions_attempted(
 ) -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::ConnectionError)
@@ -1015,7 +1018,7 @@ pub async fn gateway20_connection_error_fails_fast_after_all_regions_attempted(
         .with_operation_type(FaultOperationType::ReadItem)
         .build();
 
-    let rule = FaultInjectionRuleBuilder::new("gateway20-conn-error-fail-fast", server_error)
+    let rule = FaultInjectionRuleBuilder::new("gateway_v2-conn-error-fail-fast", server_error)
         .with_condition(condition)
         .build();
 
@@ -1443,20 +1446,23 @@ pub async fn error_diagnostics_includes_fault_injection_evaluations() -> Result<
 /// but scoped to the Gateway 2.0 transport.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
-    ignore = "requires test_category 'gateway20'"
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires test_category 'gateway_v2'"
 )]
-pub async fn gateway20_449_retry_with_hit_limit() -> Result<(), Box<dyn Error>> {
+pub async fn gateway_v2_449_retry_with_hit_limit() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::RetryWith)
         .build();
 
     let condition = FaultInjectionConditionBuilder::new()
         .with_operation_type(FaultOperationType::ReadItem)
-        .with_transport_kind(TransportKind::Gateway20)
+        .with_transport_kind(TransportKind::GatewayV2)
         .build();
 
-    let rule = FaultInjectionRuleBuilder::new("gateway20-449-retry-with-limit", server_error)
+    let rule = FaultInjectionRuleBuilder::new("gateway_v2-449-retry-with-limit", server_error)
         .with_condition(condition)
         .with_hit_limit(2)
         .build();

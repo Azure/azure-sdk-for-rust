@@ -63,7 +63,7 @@ pub(crate) mod request_header_names {
     pub const END_EPK: &str = "x-ms-end-epk";
     pub const READ_FEED_KEY_TYPE: &str = "x-ms-read-key-type";
     /// Internal-only headers carrying the physical pkrange's full EPK bounds
-    /// to the GW20 dispatcher. The thin-client (Gateway 2.0) proxy requires
+    /// to the GW_V2 dispatcher. The thin-client (Gateway 2.0) proxy requires
     /// `StartEpkHash`/`EndEpkHash` RNTBD body tokens on every Query frame; in
     /// the full-pkrange XPK case we don't emit the public `x-ms-start-epk`/
     /// `x-ms-end-epk` headers (the legacy gateway rejects an empty-string min
@@ -1469,7 +1469,7 @@ mod tests {
     }
 
     #[test]
-    fn gateway20_proxy_header_wire_strings() {
+    fn gateway_v2_proxy_header_wire_strings() {
         use request_header_names as r;
         let cases = [
             (

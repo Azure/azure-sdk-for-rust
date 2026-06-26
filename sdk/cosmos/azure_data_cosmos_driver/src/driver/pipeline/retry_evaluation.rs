@@ -2535,7 +2535,7 @@ mod tests {
 
     // ── 449 RetryWith ─────────────────────────────────────────────────────
     //
-    // The handler-level tests below lock in the behaviour described in
+    // The handler-level tests below lock in the behavior described in
     // `try_handle_retry_with`:
     //
     //   1. 449 alone triggers an in-region FailoverRetry with a non-zero delay.

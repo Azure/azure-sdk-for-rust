@@ -40,7 +40,7 @@ fn assert_transport_kind(diagnostics: &DiagnosticsContext, expected: TransportKi
 /// Normalizes a Gateway 2.0 endpoint string so it can be parsed by
 /// `AccountEndpoint::from_str` (a thin wrapper over `Url::parse`): prepends
 /// `https://` and a trailing `/` when missing.
-fn normalize_gateway20_endpoint(raw: &str) -> String {
+fn normalize_gateway_v2_endpoint(raw: &str) -> String {
     let trimmed = raw.trim();
     let with_scheme = if trimmed.contains("://") {
         trimmed.to_owned()
@@ -56,33 +56,33 @@ fn normalize_gateway20_endpoint(raw: &str) -> String {
 
 /// Returns `Some((endpoint, key))` only when both env vars are set.
 ///
-/// Multi-region tests (`test_category = "gateway20_multi_region"`) read the
-/// multi-region GW20 account; single-region tests read the single-region
+/// Multi-region tests (`test_category = "gateway_v2_multi_region"`) read the
+/// multi-region GW_V2 account; single-region tests read the single-region
 /// account. The pair is gated at compile time so the test code stays
 /// uniform.
 fn live_credentials() -> Option<(String, String)> {
-    #[cfg(test_category = "gateway20_multi_region")]
+    #[cfg(test_category = "gateway_v2_multi_region")]
     let (endpoint_var, key_var) = (
-        "AZURE_COSMOS_GW20_MULTI_REGION_ENDPOINT",
-        "AZURE_COSMOS_GW20_MULTI_REGION_KEY",
+        "AZURE_COSMOS_GW_V2_MULTI_REGION_ENDPOINT",
+        "AZURE_COSMOS_GW_V2_MULTI_REGION_KEY",
     );
-    #[cfg(not(test_category = "gateway20_multi_region"))]
-    let (endpoint_var, key_var) = ("AZURE_COSMOS_GW20_ENDPOINT", "AZURE_COSMOS_GW20_KEY");
+    #[cfg(not(test_category = "gateway_v2_multi_region"))]
+    let (endpoint_var, key_var) = ("AZURE_COSMOS_GW_V2_ENDPOINT", "AZURE_COSMOS_GW_V2_KEY");
 
     Some((read_env(endpoint_var)?, read_env(key_var)?))
 }
 
 /// Build a [`CosmosClient`] against the live Gateway 2.0 account.
 ///
-/// `gateway20_disabled = false` opts the client in to Gateway 2.0; passing
+/// `gateway_v2_disabled = false` opts the client in to Gateway 2.0; passing
 /// `true` exercises the operator-override path that pins the client to the
 /// standard gateway even when the account advertises a Gateway 2.0 endpoint.
 async fn build_client(
     endpoint: &str,
     key: &str,
-    gateway20_disabled: bool,
+    gateway_v2_disabled: bool,
 ) -> Result<CosmosClient, Box<dyn std::error::Error>> {
-    let endpoint: AccountEndpoint = normalize_gateway20_endpoint(endpoint).parse()?;
+    let endpoint: AccountEndpoint = normalize_gateway_v2_endpoint(endpoint).parse()?;
     let account_ref =
         AccountReference::with_authentication_key(endpoint, Secret::from(key.to_string()));
     // Gateway 2.0 disablement is a connection-pool (runtime) concern, so it is
@@ -90,7 +90,7 @@ async fn build_client(
     let runtime = CosmosRuntime::builder()
         .with_connection_pool(
             ConnectionPoolOptions::builder()
-                .with_gateway20_disabled(gateway20_disabled)
+                .with_gateway_v2_disabled(gateway_v2_disabled)
                 .build()?,
         )
         .build()
@@ -157,8 +157,8 @@ async fn provision_database_and_container(
     client: &CosmosClient,
 ) -> Result<(String, azure_data_cosmos::clients::ContainerClient), Box<dyn std::error::Error>> {
     let unique = azure_core::Uuid::new_v4();
-    let db_name = format!("gw20-test-db-{unique}");
-    let container_name = format!("gw20-test-container-{unique}");
+    let db_name = format!("gw_v2-test-db-{unique}");
+    let container_name = format!("gw_v2-test-container-{unique}");
 
     client.create_database(&db_name, None).await?;
     let db_client = client.database_client(&db_name);
@@ -177,7 +177,7 @@ async fn drop_database(client: &CosmosClient, db_name: &str) {
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone)]
-struct Gw20TestItem {
+struct GwV2TestItem {
     id: String,
     pk: String,
     value: i64,
@@ -188,10 +188,13 @@ struct Gw20TestItem {
 /// the live Gateway 2.0 account.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
-    ignore = "requires test_category 'gateway20' and AZURE_COSMOS_GW20_ENDPOINT/_KEY"
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
 )]
-pub async fn gateway20_point_crud_round_trip() -> Result<(), Box<dyn std::error::Error>> {
+pub async fn gateway_v2_point_crud_round_trip() -> Result<(), Box<dyn std::error::Error>> {
     let Some((endpoint, key)) = live_credentials() else {
         return Ok(());
     };
@@ -201,7 +204,7 @@ pub async fn gateway20_point_crud_round_trip() -> Result<(), Box<dyn std::error:
 
     let pk_value = format!("pk-{}", azure_core::Uuid::new_v4());
     let item_id = format!("item-{}", azure_core::Uuid::new_v4());
-    let mut item = Gw20TestItem {
+    let mut item = GwV2TestItem {
         id: item_id.clone(),
         pk: pk_value.clone(),
         value: 1,
@@ -211,14 +214,14 @@ pub async fn gateway20_point_crud_round_trip() -> Result<(), Box<dyn std::error:
     let create_resp = container
         .create_item(&pk_value, &item_id, &item, None)
         .await?;
-    assert_transport_kind(&create_resp.diagnostics(), TransportKind::Gateway20);
+    assert_transport_kind(&create_resp.diagnostics(), TransportKind::GatewayV2);
     assert!(!create_resp.diagnostics().activity_id().as_str().is_empty());
     assert!(create_resp.diagnostics().duration() > std::time::Duration::ZERO);
 
     let read_resp = container.read_item(&pk_value, &item_id, None).await?;
-    assert_transport_kind(&read_resp.diagnostics(), TransportKind::Gateway20);
+    assert_transport_kind(&read_resp.diagnostics(), TransportKind::GatewayV2);
     assert!(!read_resp.diagnostics().activity_id().as_str().is_empty());
-    let read_item: Gw20TestItem = read_resp.into_model()?;
+    let read_item: GwV2TestItem = read_resp.into_model()?;
     assert_eq!(read_item, item);
 
     item.value = 2;
@@ -226,11 +229,11 @@ pub async fn gateway20_point_crud_round_trip() -> Result<(), Box<dyn std::error:
     let replace_resp = container
         .replace_item(&pk_value, &item_id, &item, None)
         .await?;
-    assert_transport_kind(&replace_resp.diagnostics(), TransportKind::Gateway20);
+    assert_transport_kind(&replace_resp.diagnostics(), TransportKind::GatewayV2);
     assert!(!replace_resp.diagnostics().activity_id().as_str().is_empty());
 
     let delete_resp = container.delete_item(&pk_value, &item_id, None).await?;
-    assert_transport_kind(&delete_resp.diagnostics(), TransportKind::Gateway20);
+    assert_transport_kind(&delete_resp.diagnostics(), TransportKind::GatewayV2);
     assert!(!delete_resp.diagnostics().activity_id().as_str().is_empty());
 
     drop_database(&client, &db_name).await;
@@ -240,10 +243,13 @@ pub async fn gateway20_point_crud_round_trip() -> Result<(), Box<dyn std::error:
 /// Exercises a transactional batch routed through Gateway 2.0.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
-    ignore = "requires test_category 'gateway20' and AZURE_COSMOS_GW20_ENDPOINT/_KEY"
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
 )]
-pub async fn gateway20_transactional_batch() -> Result<(), Box<dyn std::error::Error>> {
+pub async fn gateway_v2_transactional_batch() -> Result<(), Box<dyn std::error::Error>> {
     let Some((endpoint, key)) = live_credentials() else {
         return Ok(());
     };
@@ -252,19 +258,19 @@ pub async fn gateway20_transactional_batch() -> Result<(), Box<dyn std::error::E
     let (db_name, container) = provision_database_and_container(&client).await?;
 
     let pk_value = format!("pk-{}", azure_core::Uuid::new_v4());
-    let item_a = Gw20TestItem {
+    let item_a = GwV2TestItem {
         id: "batch-a".into(),
         pk: pk_value.clone(),
         value: 10,
         label: "a".into(),
     };
-    let item_b = Gw20TestItem {
+    let item_b = GwV2TestItem {
         id: "batch-b".into(),
         pk: pk_value.clone(),
         value: 20,
         label: "b".into(),
     };
-    let upsert = Gw20TestItem {
+    let upsert = GwV2TestItem {
         id: "batch-c".into(),
         pk: pk_value.clone(),
         value: 30,
@@ -277,7 +283,7 @@ pub async fn gateway20_transactional_batch() -> Result<(), Box<dyn std::error::E
         .upsert_item(&upsert, None)?;
 
     let response = container.execute_transactional_batch(batch, None).await?;
-    assert_transport_kind(&response.diagnostics(), TransportKind::Gateway20);
+    assert_transport_kind(&response.diagnostics(), TransportKind::GatewayV2);
     let body = response.into_model()?;
     let codes: Vec<u16> = body.results().iter().map(|r| r.status_code()).collect();
     assert_eq!(codes, vec![201, 201, 201]);
@@ -287,13 +293,16 @@ pub async fn gateway20_transactional_batch() -> Result<(), Box<dyn std::error::E
 }
 
 /// Verifies that diagnostics are populated for SDK-issued requests routed
-/// through Gateway 2.0, including the `Gateway20` transport kind.
+/// through Gateway 2.0, including the `GatewayV2` transport kind.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
-    ignore = "requires test_category 'gateway20' and AZURE_COSMOS_GW20_ENDPOINT/_KEY"
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
 )]
-pub async fn gateway20_diagnostics_validation() -> Result<(), Box<dyn std::error::Error>> {
+pub async fn gateway_v2_diagnostics_validation() -> Result<(), Box<dyn std::error::Error>> {
     let Some((endpoint, key)) = live_credentials() else {
         return Ok(());
     };
@@ -302,7 +311,7 @@ pub async fn gateway20_diagnostics_validation() -> Result<(), Box<dyn std::error
     let (db_name, container) = provision_database_and_container(&client).await?;
 
     let pk_value = format!("pk-{}", azure_core::Uuid::new_v4());
-    let item = Gw20TestItem {
+    let item = GwV2TestItem {
         id: "diag-item".into(),
         pk: pk_value.clone(),
         value: 99,
@@ -314,7 +323,7 @@ pub async fn gateway20_diagnostics_validation() -> Result<(), Box<dyn std::error
 
     let read_resp = container.read_item(&pk_value, "diag-item", None).await?;
     let diagnostics = read_resp.diagnostics();
-    assert_transport_kind(&diagnostics, TransportKind::Gateway20);
+    assert_transport_kind(&diagnostics, TransportKind::GatewayV2);
     assert!(
         !diagnostics.activity_id().as_str().is_empty(),
         "expected activity_id to be populated for a Gateway 2.0 request"
@@ -330,14 +339,17 @@ pub async fn gateway20_diagnostics_validation() -> Result<(), Box<dyn std::error
 
 /// Verifies the operator override at the SDK boundary: when the client is
 /// built from a [`CosmosRuntime`] whose connection pool sets
-/// `with_gateway20_disabled(true)`, every request must route through the
+/// `with_gateway_v2_disabled(true)`, every request must route through the
 /// standard gateway even though the account advertises a Gateway 2.0 endpoint.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
-    ignore = "requires test_category 'gateway20' and AZURE_COSMOS_GW20_ENDPOINT/_KEY"
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
 )]
-pub async fn gateway20_operator_override_at_sdk_boundary() -> Result<(), Box<dyn std::error::Error>>
+pub async fn gateway_v2_operator_override_at_sdk_boundary() -> Result<(), Box<dyn std::error::Error>>
 {
     let Some((endpoint, key)) = live_credentials() else {
         return Ok(());
@@ -347,7 +359,7 @@ pub async fn gateway20_operator_override_at_sdk_boundary() -> Result<(), Box<dyn
     let (db_name, container) = provision_database_and_container(&client).await?;
 
     let pk_value = format!("pk-{}", azure_core::Uuid::new_v4());
-    let item = Gw20TestItem {
+    let item = GwV2TestItem {
         id: "override-item".into(),
         pk: pk_value.clone(),
         value: 7,
@@ -377,8 +389,8 @@ async fn provision_database_and_hpk_container(
     client: &CosmosClient,
 ) -> Result<(String, azure_data_cosmos::clients::ContainerClient), Box<dyn std::error::Error>> {
     let unique = azure_core::Uuid::new_v4();
-    let db_name = format!("gw20-test-db-{unique}");
-    let container_name = format!("gw20-test-hpk-container-{unique}");
+    let db_name = format!("gw_v2-test-db-{unique}");
+    let container_name = format!("gw_v2-test-hpk-container-{unique}");
 
     client.create_database(&db_name, None).await?;
     let db_client = client.database_client(&db_name);
@@ -392,7 +404,7 @@ async fn provision_database_and_hpk_container(
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone)]
-struct Gw20HpkItem {
+struct GwV2HpkItem {
     id: String,
     #[serde(rename = "tenantId")]
     tenant_id: String,
@@ -416,15 +428,18 @@ struct Gw20HpkItem {
 ///    proxy fans out into.
 ///
 /// The point-vs-range header emission is asserted at unit level in
-/// `gateway20_dispatch::tests`; this E2E test guards the SDK-public surface
+/// `gateway_v2_dispatch::tests`; this E2E test guards the SDK-public surface
 /// against regressions where partial-PK queries silently degrade to
 /// single-partition or fail.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
-    ignore = "requires test_category 'gateway20' and AZURE_COSMOS_GW20_ENDPOINT/_KEY"
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
 )]
-pub async fn gateway20_hpk_full_and_partial_partition_key_round_trip(
+pub async fn gateway_v2_hpk_full_and_partial_partition_key_round_trip(
 ) -> Result<(), Box<dyn std::error::Error>> {
     use azure_data_cosmos::models::PartitionKeyValue;
     use azure_data_cosmos::PartitionKey;
@@ -450,7 +465,7 @@ pub async fn gateway20_hpk_full_and_partial_partition_key_round_trip(
                 if tenant == target_tenant {
                     expected_target_ids.push(id.clone());
                 }
-                let item = Gw20HpkItem {
+                let item = GwV2HpkItem {
                     id: id.clone(),
                     tenant_id: tenant.to_string(),
                     user_id: user_id.clone(),
@@ -474,8 +489,8 @@ pub async fn gateway20_hpk_full_and_partial_partition_key_round_trip(
     ));
     let full_id = format!("{target_tenant}-user-0-session-0");
     let read_resp = container.read_item(full_pk, &full_id, None).await?;
-    assert_transport_kind(&read_resp.diagnostics(), TransportKind::Gateway20);
-    let item: Gw20HpkItem = read_resp.into_model()?;
+    assert_transport_kind(&read_resp.diagnostics(), TransportKind::GatewayV2);
+    let item: GwV2HpkItem = read_resp.into_model()?;
     assert_eq!(item.id, full_id);
     assert_eq!(item.tenant_id, target_tenant);
 
@@ -486,7 +501,7 @@ pub async fn gateway20_hpk_full_and_partial_partition_key_round_trip(
     let partial_pk = PartitionKey::from(vec![PartitionKeyValue::from(target_tenant.clone())]);
     let query = Query::from("SELECT * FROM c");
     let mut pages = container
-        .query_items::<Gw20HpkItem>(query, FeedScope::partition(partial_pk), None)
+        .query_items::<GwV2HpkItem>(query, FeedScope::partition(partial_pk), None)
         .await?
         .into_pages();
 
@@ -495,7 +510,7 @@ pub async fn gateway20_hpk_full_and_partial_partition_key_round_trip(
     while let Some(page) = pages.next().await {
         let page = page?;
         pages_seen += 1;
-        assert_transport_kind(&page.diagnostics(), TransportKind::Gateway20);
+        assert_transport_kind(&page.diagnostics(), TransportKind::GatewayV2);
         assert!(!page.diagnostics().activity_id().as_str().is_empty());
         for it in page.items() {
             assert_eq!(
@@ -525,7 +540,7 @@ pub async fn gateway20_hpk_full_and_partial_partition_key_round_trip(
 // node per physical partition, with each leaf request flowing through the
 // standard operation pipeline (and therefore the Gateway 2.0 transport when
 // the operation is eligible — `Query` / `SqlQuery` / `QueryPlan` / `ReadFeed`
-// on `Document` are all Gateway-2.0-eligible per `gateway20_eligibility.rs`).
+// on `Document` are all Gateway-2.0-eligible per `gateway_v2_eligibility.rs`).
 //
 // The tests below provision a **multi-partition** container (11 000 RU/s
 // forces at least two physical partitions on a real Cosmos account) and then
@@ -546,14 +561,14 @@ pub async fn gateway20_hpk_full_and_partial_partition_key_round_trip(
 /// physical partitions on a standard provisioned-throughput account today
 /// (the per-partition cap is 10 000 RU/s). This makes
 /// `FeedScope::full_container()` fan out into more than one leaf request
-/// at the driver layer, which is the behaviour these tests need to
+/// at the driver layer, which is the behavior these tests need to
 /// observe.
 async fn provision_database_and_multi_partition_container(
     client: &CosmosClient,
 ) -> Result<(String, azure_data_cosmos::clients::ContainerClient), Box<dyn std::error::Error>> {
     let unique = azure_core::Uuid::new_v4();
-    let db_name = format!("gw20-test-db-{unique}");
-    let container_name = format!("gw20-test-xpart-container-{unique}");
+    let db_name = format!("gw_v2-test-db-{unique}");
+    let container_name = format!("gw_v2-test-xpart-container-{unique}");
 
     client.create_database(&db_name, None).await?;
     let db_client = client.database_client(&db_name);
@@ -578,16 +593,19 @@ async fn provision_database_and_multi_partition_container(
 /// This is the headline regression test for PR #4440 (Feed Operation
 /// Pipeline) running on the Gateway 2.0 transport: each leaf request the
 /// `SequentialDrain` issues is a `Query`/`Document` operation, which
-/// `gateway20_eligibility::is_operation_supported_by_gateway20` reports as
+/// `gateway_v2_eligibility::is_operation_supported_by_gateway_v2` reports as
 /// eligible, so all N leaf requests must route through Gateway 2.0 and
 /// their pages must reassemble into the full result set with no
 /// duplicates and no drops across partition boundaries.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
-    ignore = "requires test_category 'gateway20' and AZURE_COSMOS_GW20_ENDPOINT/_KEY"
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
 )]
-pub async fn gateway20_cross_partition_query_full_container(
+pub async fn gateway_v2_cross_partition_query_full_container(
 ) -> Result<(), Box<dyn std::error::Error>> {
     use std::collections::HashSet;
 
@@ -605,7 +623,7 @@ pub async fn gateway20_cross_partition_query_full_container(
     for i in 0..total_items {
         let pk = format!("pk-{i:02}-{}", azure_core::Uuid::new_v4());
         let id = format!("xpart-item-{i:02}");
-        let item = Gw20TestItem {
+        let item = GwV2TestItem {
             id: id.clone(),
             pk: pk.clone(),
             value: i as i64,
@@ -617,7 +635,7 @@ pub async fn gateway20_cross_partition_query_full_container(
 
     let query = Query::from("SELECT * FROM c");
     let mut pages = container
-        .query_items::<Gw20TestItem>(query, FeedScope::full_container(), None)
+        .query_items::<GwV2TestItem>(query, FeedScope::full_container(), None)
         .await?
         .into_pages();
 
@@ -660,10 +678,13 @@ pub async fn gateway20_cross_partition_query_full_container(
 /// produce equivalent results against the Gateway 2.0 transport.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
-    ignore = "requires test_category 'gateway20' and AZURE_COSMOS_GW20_ENDPOINT/_KEY"
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
 )]
-pub async fn gateway20_cross_partition_query_via_feed_range_full(
+pub async fn gateway_v2_cross_partition_query_via_feed_range_full(
 ) -> Result<(), Box<dyn std::error::Error>> {
     use azure_data_cosmos::feed::FeedRange;
     use std::collections::HashSet;
@@ -680,7 +701,7 @@ pub async fn gateway20_cross_partition_query_via_feed_range_full(
     for i in 0..total_items {
         let pk = format!("pk-{i:02}-{}", azure_core::Uuid::new_v4());
         let id = format!("xpart-range-{i:02}");
-        let item = Gw20TestItem {
+        let item = GwV2TestItem {
             id: id.clone(),
             pk: pk.clone(),
             value: i as i64,
@@ -692,7 +713,7 @@ pub async fn gateway20_cross_partition_query_via_feed_range_full(
 
     let query = Query::from("SELECT * FROM c");
     let mut pages = container
-        .query_items::<Gw20TestItem>(query, FeedScope::range(FeedRange::full()), None)
+        .query_items::<GwV2TestItem>(query, FeedScope::range(FeedRange::full()), None)
         .await?
         .into_pages();
 
