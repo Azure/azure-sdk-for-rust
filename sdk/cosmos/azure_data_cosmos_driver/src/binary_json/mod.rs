@@ -38,20 +38,24 @@
 //! > it decodes every binary value form into a [`serde_json::Value`] — and is
 //! > wired into the response path: the driver's `ResponseBody::into_single` /
 //! > `into_items` auto-detect the `0x80` preamble and route binary buffers
-//! > through [`decode`], leaving the text path unchanged. The branch stays
-//! > inert until the service negotiates binary responses (a later phase adds
-//! > the request-side negotiation header and the encoder).
+//! > through [`decode`], leaving the text path unchanged. The
+//! > minimal-but-valid [`encode`] direction is also available and round-trips
+//! > with [`decode`]. Both stay inert on the wire until the service negotiates
+//! > binary responses (a later phase adds the request-side negotiation header
+//! > and wires the encoder into the SDK write/query paths).
 
 pub mod error;
 pub mod markers;
 pub mod reader;
 pub mod system_strings;
+pub mod writer;
 
 #[cfg(test)]
 mod vectors;
 
 pub use error::{BinaryError, Result};
 pub use reader::decode;
+pub use writer::encode;
 
 /// The Cosmos binary JSON preamble byte.
 ///
