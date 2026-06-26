@@ -838,11 +838,11 @@ fn normalize_attribute(text: &str) -> String {
         .replace("#[<cfg>(", "#[cfg(")
         .replace("#![<cfg>(", "#![cfg(")
         .replace("#[<cfg_attr>(", "#[cfg_attr(")
-        .replace("#![<cfg_attr>(", "#![cfg_attr(")
-        .replace("clippy :: ", "clippy::")
-        .replace("clippy ::", "clippy::");
+        .replace("#![<cfg_attr>(", "#![cfg_attr(");
 
     normalized = normalize_pin_attribute(&normalized);
+    normalized = collapse_attribute_whitespace(&normalized);
+    normalized = collapse_path_separator_whitespace(&normalized);
     normalized = collapse_clippy_lint_whitespace(&normalized);
     normalized
 }
@@ -876,6 +876,85 @@ fn collapse_clippy_lint_whitespace(attribute: &str) -> String {
     }
 
     normalized.push_str(remaining);
+    normalized
+}
+
+fn collapse_attribute_whitespace(attribute: &str) -> String {
+    let mut normalized = String::new();
+    let mut chars = attribute.chars().peekable();
+    let mut in_string = false;
+    let mut previous_was_escape = false;
+    let mut pending_space = false;
+
+    while let Some(ch) = chars.next() {
+        if in_string {
+            normalized.push(ch);
+            if previous_was_escape {
+                previous_was_escape = false;
+            } else if ch == '\\' {
+                previous_was_escape = true;
+            } else if ch == '"' {
+                in_string = false;
+            }
+            continue;
+        }
+
+        if ch == '"' {
+            if pending_space && !normalized.is_empty() && !normalized.ends_with(['(', '[', '{']) {
+                normalized.push(' ');
+            }
+            pending_space = false;
+            in_string = true;
+            normalized.push(ch);
+            continue;
+        }
+
+        if ch.is_whitespace() {
+            pending_space = !normalized.is_empty();
+            while chars.next_if(|next| next.is_whitespace()).is_some() {}
+            continue;
+        }
+
+        if pending_space && !normalized.is_empty() && !normalized.ends_with(['(', '[', '{']) {
+            normalized.push(' ');
+        }
+        pending_space = false;
+        normalized.push(ch);
+    }
+
+    normalized
+}
+
+fn collapse_path_separator_whitespace(attribute: &str) -> String {
+    let mut normalized = String::new();
+    let chars = attribute.chars().collect::<Vec<_>>();
+    let mut index = 0;
+
+    while index < chars.len() {
+        if chars[index] == ':' {
+            let mut left = normalized.len();
+            while left > 0 && normalized[..left].ends_with(' ') {
+                normalized.pop();
+                left -= 1;
+            }
+
+            normalized.push(':');
+            index += 1;
+            while index < chars.len() && chars[index].is_whitespace() {
+                index += 1;
+            }
+
+            if index < chars.len() && chars[index] == ':' {
+                normalized.push(':');
+                index += 1;
+            }
+            continue;
+        }
+
+        normalized.push(chars[index]);
+        index += 1;
+    }
+
     normalized
 }
 
@@ -2435,6 +2514,36 @@ mod tests {
                 .map(|attribute| attribute.text.as_str())
                 .collect::<Vec<_>>(),
             vec!["#[derive(Clone, Debug)]"]
+        );
+    }
+
+    #[test]
+    fn normalize_attribute_flattens_multiline_reason_strings() {
+        assert_eq!(
+            normalize_attribute(
+                "#[allow(unknown_lints, clippy::infallible_try_from, reason =\n\"maintain a consistent pattern of `try_into()`\")]"
+            ),
+            "#[allow(unknown_lints, clippy::infallible_try_from, reason = \"maintain a consistent pattern of `try_into()`\")]"
+        );
+    }
+
+    #[test]
+    fn normalize_attribute_flattens_multiline_pin_project_arguments() {
+        assert_eq!(
+            normalize_attribute(
+                "#[pin_project(project = ItemIteratorProjection, project_replace =\nItemIteratorProjectionOwned)]"
+            ),
+            "#[pin_project(project = ItemIteratorProjection, project_replace = ItemIteratorProjectionOwned)]"
+        );
+    }
+
+    #[test]
+    fn normalize_attribute_removes_path_separator_spacing() {
+        assert_eq!(
+            normalize_attribute(
+                "#[allow(elided_named_lifetimes, clippy\n:: shadow_same, clippy :: type_complexity)]"
+            ),
+            "#[allow(elided_named_lifetimes, clippy::shadow_same, clippy::type_complexity)]"
         );
     }
 

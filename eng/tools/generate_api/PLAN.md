@@ -138,6 +138,11 @@ Current normalization rules include:
 
 - fix rustdoc pretty-printed `cfg` / `cfg_attr` forms
 - rewrite `pin(__private(...))` forms to `pin_project(...)` / `pin_project`
+- flatten rustdoc-introduced newlines and repeated whitespace inside attributes while preserving
+  string literal contents, so review output stays source-like for cases such as multiline
+  `#[allow(..., reason = "...")]` and `#[pin_project(...)]`
+- remove whitespace around path separators inside attributes, so paths like `clippy :: shadow_same`
+  normalize to `clippy::shadow_same`
 - remove spaces around `clippy::` lint paths in `allow`, `deny`, and `expect` attrs
 - synthesize `#[derive(...)]` for known non-workspace derive traits discovered via impl blocks on
   structs, enums, and unions when the impl item carries `#[automatically_derived]`. Current
