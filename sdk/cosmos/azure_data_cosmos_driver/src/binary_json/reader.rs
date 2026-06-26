@@ -24,22 +24,23 @@
 //! [`BinaryError::InvalidMarker`]. The remaining forms surface as
 //! [`BinaryError::InvalidMarker`] until their sub-phase lands:
 //!
-//! - **P1d-2:** compact string scalars — base64 (`0x71`–`0x74`), GUID
-//!   strings (`0x75`–`0x77`), and the GUID value (`0xD3`).
-//! - **P1d-3:** compressed strings (`0x78`–`0x7F`).
-//! - **P1d-4:** binary (`0xDD`–`0xDF`) and uniform number arrays
-//!   (`0xF0`–`0xF3`).
+//! - **P1d-2 (done):** GUID strings (`0x75`–`0x77`).
+//! - **P1d-3:** base64 strings (`0x71`–`0x74`).
+//! - **P1d-4:** compressed strings (`0x78`–`0x7F`).
+//! - **P1d-5:** GUID value (`0xD3`), binary (`0xDD`–`0xDF`), and uniform
+//!   number arrays (`0xF0`–`0xF3`).
 
 use serde_json::{Map, Value};
 
 use super::markers::{
-    ARR0, ARR1, ARR_L1, ARR_L2, ARR_L4, ARR_LC1, ARR_LC2, ARR_LC4, ENCODED_STRING_LENGTH_MASK,
-    ENCODED_STRING_LENGTH_MAX, ENCODED_STRING_LENGTH_MIN, FALSE, FLOAT32, FLOAT64, INT16, INT32,
-    INT64, INT8, LITERAL_INT_MAX, LITERAL_INT_MIN, NULL, NUMBER_DOUBLE, NUMBER_INT16, NUMBER_INT32,
+    ARR0, ARR1, ARR_L1, ARR_L2, ARR_L4, ARR_LC1, ARR_LC2, ARR_LC4,
+    DOUBLE_QUOTED_LOWERCASE_GUID_STRING, ENCODED_STRING_LENGTH_MASK, ENCODED_STRING_LENGTH_MAX,
+    ENCODED_STRING_LENGTH_MIN, FALSE, FLOAT32, FLOAT64, INT16, INT32, INT64, INT8, LITERAL_INT_MAX,
+    LITERAL_INT_MIN, LOWERCASE_GUID_STRING, NULL, NUMBER_DOUBLE, NUMBER_INT16, NUMBER_INT32,
     NUMBER_INT64, NUMBER_UINT64, NUMBER_UINT8, OBJ0, OBJ1, OBJ_L1, OBJ_L2, OBJ_L4, OBJ_LC1,
     OBJ_LC2, OBJ_LC4, STR_L1, STR_L2, STR_L4, STR_R1, STR_R2, STR_R3, STR_R4,
-    SYSTEM_STRING_1BYTE_MAX, SYSTEM_STRING_1BYTE_MIN, TRUE, UINT32, USER_STRING_1BYTE_MAX,
-    USER_STRING_1BYTE_MIN, USER_STRING_2BYTE_MAX, USER_STRING_2BYTE_MIN,
+    SYSTEM_STRING_1BYTE_MAX, SYSTEM_STRING_1BYTE_MIN, TRUE, UINT32, UPPERCASE_GUID_STRING,
+    USER_STRING_1BYTE_MAX, USER_STRING_1BYTE_MIN, USER_STRING_2BYTE_MAX, USER_STRING_2BYTE_MIN,
 };
 use super::system_strings::system_string_for_marker;
 use super::{is_binary, BinaryError, Result};
@@ -270,6 +271,17 @@ impl<'a> Reader<'a> {
                 Ok(Value::String(self.read_string(len, offset)?))
             }
 
+            // GUID strings: a 16-byte encoded form expanded to the canonical
+            // 36-character hex text. The lowercase/uppercase variants differ
+            // only in hex case; the double-quoted variant additionally wraps
+            // the text in literal quote characters (the original JSON string
+            // value included the quotes).
+            LOWERCASE_GUID_STRING => Ok(Value::String(self.read_guid_string(false, false)?)),
+            UPPERCASE_GUID_STRING => Ok(Value::String(self.read_guid_string(true, false)?)),
+            DOUBLE_QUOTED_LOWERCASE_GUID_STRING => {
+                Ok(Value::String(self.read_guid_string(false, true)?))
+            }
+
             // User strings reference an external string dictionary that the
             // Cosmos data plane does not supply, so they cannot be resolved to
             // text. We still consume the id bytes (1-byte vs 2-byte form) so the
@@ -467,6 +479,42 @@ impl<'a> Reader<'a> {
         };
         let value = self.read_value(depth)?;
         Ok((name, value))
+    }
+
+    /// Reads a GUID string: the 16-byte encoded form (following the marker)
+    /// expanded to the canonical `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` hex text.
+    ///
+    /// This is a straight sequential hex dump of the 16 bytes (not the .NET
+    /// `Guid` mixed-endian layout), mirroring .NET `DecodeGuidStringValue`.
+    /// `uppercase` selects the hex case. When `quoted`, the original JSON string
+    /// included literal quote characters, so they are re-added around the text.
+    fn read_guid_string(&mut self, uppercase: bool, quoted: bool) -> Result<String> {
+        const DASH_POSITIONS: [usize; 4] = [4, 6, 8, 10];
+        let bytes = self.read_array::<16>()?;
+        let digits = if uppercase {
+            b"0123456789ABCDEF"
+        } else {
+            b"0123456789abcdef"
+        };
+
+        // 36 hex/dash chars, plus the two optional surrounding quotes.
+        let mut out = String::with_capacity(if quoted { 38 } else { 36 });
+        if quoted {
+            out.push('"');
+        }
+        for (index, byte) in bytes.iter().enumerate() {
+            // A dash precedes the byte at each group boundary (after bytes 4, 6,
+            // 8, and 10), producing the 8-4-4-4-12 grouping.
+            if DASH_POSITIONS.contains(&index) {
+                out.push('-');
+            }
+            out.push(char::from(digits[usize::from(byte >> 4)]));
+            out.push(char::from(digits[usize::from(byte & 0x0F)]));
+        }
+        if quoted {
+            out.push('"');
+        }
+        Ok(out)
     }
 
     /// Resolves a reference string ([`STR_R1`]–[`STR_R4`]) whose `target` is an
@@ -784,6 +832,43 @@ mod tests {
         assert_eq!(
             decode(&[PREAMBLE, markers::INT32, 0x01, 0x02]),
             Err(BinaryError::UnexpectedEof { needed: 2 }),
+        );
+    }
+
+    #[test]
+    fn decodes_guid_strings() {
+        // 16 encoded bytes 0x00..0x0F expand to the canonical hex text.
+        let encoded: [u8; 16] = std::array::from_fn(|i| i as u8);
+        let mut lower = vec![markers::LOWERCASE_GUID_STRING];
+        lower.extend_from_slice(&encoded);
+        assert_eq!(
+            decode(&buf(&lower)).unwrap(),
+            serde_json::json!("00010203-0405-0607-0809-0a0b0c0d0e0f"),
+        );
+        // Uppercase variant differs only in hex case.
+        let mut upper = vec![markers::UPPERCASE_GUID_STRING];
+        upper.extend_from_slice(&encoded);
+        assert_eq!(
+            decode(&buf(&upper)).unwrap(),
+            serde_json::json!("00010203-0405-0607-0809-0A0B0C0D0E0F"),
+        );
+        // Double-quoted variant wraps the text in literal quotes.
+        let mut quoted = vec![markers::DOUBLE_QUOTED_LOWERCASE_GUID_STRING];
+        quoted.extend_from_slice(&encoded);
+        assert_eq!(
+            decode(&buf(&quoted)).unwrap(),
+            serde_json::json!("\"00010203-0405-0607-0809-0a0b0c0d0e0f\""),
+        );
+    }
+
+    #[test]
+    fn rejects_truncated_guid_string() {
+        // GUID string marker claims 16 encoded bytes but only 4 follow.
+        let mut bytes = vec![markers::LOWERCASE_GUID_STRING];
+        bytes.extend_from_slice(&[0x01, 0x02, 0x03, 0x04]);
+        assert_eq!(
+            decode(&buf(&bytes)),
+            Err(BinaryError::UnexpectedEof { needed: 12 }),
         );
     }
 
