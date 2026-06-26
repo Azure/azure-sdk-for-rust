@@ -484,6 +484,48 @@ mod tests {
     }
 
     #[test]
+    fn omitted_pfo_env_override_wins_over_env_base_enable() {
+        use crate::driver::routing::partition_endpoint_state::PartitionEndpointState;
+
+        // Base env var enables PPCB, but the kill switch disables it. The
+        // override is authoritative, so the effective in-driver value is off.
+        let options = DriverOptionsBuilder::new(test_account()).build_from_env(&env_of(&[
+            ("AZURE_COSMOS_PPCB_ENABLED", "true"),
+            ("AZURE_COSMOS_PPCB_ENABLED_OVERRIDE", "false"),
+        ]));
+        let pfo = options.partition_failover_options();
+        // Both values are resolved from the environment as specified.
+        assert!(pfo.circuit_breaker_enabled());
+        assert_eq!(pfo.circuit_breaker_enabled_override(), Some(false));
+        // And the override wins where the value is actually applied.
+        let state = PartitionEndpointState::new(pfo.clone());
+        assert!(!state.per_partition_circuit_breaker_enabled);
+    }
+
+    #[test]
+    fn explicit_pfo_override_wins_over_base_enable() {
+        use crate::driver::routing::partition_endpoint_state::PartitionEndpointState;
+
+        // The override also wins when the options are supplied explicitly (not
+        // from the environment): base enabled, override disabled -> off.
+        let explicit = PartitionFailoverOptions::builder()
+            .with_circuit_breaker_enabled(true)
+            .with_circuit_breaker_enabled_override(false)
+            .build_from_env(&|_| None)
+            .expect("valid options");
+
+        let options = DriverOptionsBuilder::new(test_account())
+            .with_partition_failover_options(explicit)
+            // Env would say "enabled" but explicit options must be honored.
+            .build_from_env(&env_of(&[("AZURE_COSMOS_PPCB_ENABLED", "true")]));
+        let pfo = options.partition_failover_options();
+        assert!(pfo.circuit_breaker_enabled());
+        assert_eq!(pfo.circuit_breaker_enabled_override(), Some(false));
+        let state = PartitionEndpointState::new(pfo.clone());
+        assert!(!state.per_partition_circuit_breaker_enabled);
+    }
+
+    #[test]
     fn omitted_pfo_honors_env_thresholds_and_durations() {
         let options = DriverOptionsBuilder::new(test_account()).build_from_env(&env_of(&[
             ("AZURE_COSMOS_PPCB_READ_FAILURE_THRESHOLD", "21"),
