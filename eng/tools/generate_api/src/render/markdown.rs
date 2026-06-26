@@ -51,11 +51,16 @@ fn render_item(output: &mut String, item: &ApiItem, indent: usize) {
     let mut members = item.members.clone();
     members.sort_by(|left, right| left.name.cmp(&right.name));
 
-    for member in &members {
-        render_member(output, member, indent + 1);
-    }
-
     if item.declaration.trim_end().ends_with('{') {
+        for member in &members {
+            render_member(output, member, indent + 1);
+        }
+        push_line(output, indent, "}");
+    } else if !members.is_empty() {
+        push_line(output, indent, &format!("impl {} {{", item.name));
+        for member in &members {
+            render_member(output, member, indent + 1);
+        }
         push_line(output, indent, "}");
     }
 }
@@ -121,5 +126,39 @@ mod tests {
         assert!(rendered.contains("impl fmt::Debug for MyType {"));
         assert!(rendered.contains("    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result;"));
         assert!(rendered.contains("}\n```\n"));
+    }
+
+    #[test]
+    fn renders_inherent_members_inside_impl_blocks() {
+        let model = ApiModel {
+            package_name: "demo".to_string(),
+            package_version: "1.0.0".to_string(),
+            parser_version: "0.0.0".to_string(),
+            root_module: ApiModule {
+                path: "demo".to_string(),
+                doc_comments: Vec::new(),
+                attributes: Vec::new(),
+                items: vec![ApiItem {
+                    name: "Foo".to_string(),
+                    kind: ApiItemKind::Struct,
+                    doc_comments: Vec::new(),
+                    attributes: Vec::new(),
+                    declaration: "pub struct Foo;".to_string(),
+                    members: vec![ApiMember {
+                        name: "method".to_string(),
+                        doc_comments: Vec::new(),
+                        attributes: Vec::new(),
+                        declaration: "pub fn method(&self);".to_string(),
+                    }],
+                }],
+                modules: Vec::new(),
+            },
+        };
+
+        let rendered = render(&model);
+
+        assert!(rendered.contains("pub struct Foo;"));
+        assert!(rendered.contains("impl Foo {\n    pub fn method(&self);\n}"));
+        assert!(!rendered.contains("pub struct Foo;\n    pub fn method(&self);"));
     }
 }

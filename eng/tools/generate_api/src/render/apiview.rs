@@ -184,33 +184,15 @@ fn render_item(module: &ApiModule, item: &ApiItem, index: usize) -> Vec<ReviewLi
         });
     }
 
-    let mut children = Vec::new();
     let mut members = item.members.clone();
     members.sort_by(|left, right| left.name.cmp(&right.name));
-    for (member_index, member) in members.iter().enumerate() {
-        children.extend(render_doc_comment_lines(
-            &member.doc_comments,
-            Some(line_id.clone()),
-        ));
-
-        for attribute in &member.attributes {
-            children.push(ReviewLine {
-                line_id: None,
-                tokens: tokenize_line(&attribute.text, "", token_kind::TYPE_NAME),
-                children: Vec::new(),
-                is_context_end_line: None,
-                related_to_line: Some(line_id.clone()),
-            });
-        }
-
-        children.push(ReviewLine {
-            line_id: Some(format!("{line_id}.{}_{member_index}", member.name)),
-            tokens: tokenize_line(&member.declaration, &member.name, token_kind::MEMBER_NAME),
-            children: Vec::new(),
-            is_context_end_line: None,
-            related_to_line: Some(line_id.clone()),
-        });
-    }
+    let declaration_owns_members = item.declaration.trim_end().ends_with('{');
+    let member_related_line = if declaration_owns_members {
+        line_id.clone()
+    } else {
+        format!("{line_id}.impl")
+    };
+    let member_lines = render_member_lines(&members, &member_related_line);
 
     for (declaration_index, declaration_line) in item.declaration.lines().enumerate() {
         if declaration_line.trim().is_empty() {
@@ -224,8 +206,8 @@ fn render_item(module: &ApiModule, item: &ApiItem, index: usize) -> Vec<ReviewLi
                 None
             },
             tokens: tokenize_line(declaration_line, &item.name, name_token_kind),
-            children: if declaration_index == 0 {
-                children.clone()
+            children: if declaration_index == 0 && declaration_owns_members {
+                member_lines.clone()
             } else {
                 Vec::new()
             },
@@ -238,7 +220,7 @@ fn render_item(module: &ApiModule, item: &ApiItem, index: usize) -> Vec<ReviewLi
         });
     }
 
-    if item.declaration.trim_end().ends_with('{') {
+    if declaration_owns_members {
         lines.push(ReviewLine {
             line_id: None,
             tokens: tokenize_line("}", "", token_kind::TYPE_NAME),
@@ -246,8 +228,59 @@ fn render_item(module: &ApiModule, item: &ApiItem, index: usize) -> Vec<ReviewLi
             is_context_end_line: Some(true),
             related_to_line: Some(line_id),
         });
+    } else if !member_lines.is_empty() {
+        lines.push(ReviewLine {
+            line_id: Some(member_related_line.clone()),
+            tokens: tokenize_line(
+                &format!("impl {} {{", item.name),
+                &item.name,
+                token_kind::TYPE_NAME,
+            ),
+            children: member_lines,
+            is_context_end_line: None,
+            related_to_line: Some(line_id.clone()),
+        });
+        lines.push(ReviewLine {
+            line_id: None,
+            tokens: tokenize_line("}", "", token_kind::TYPE_NAME),
+            children: Vec::new(),
+            is_context_end_line: Some(true),
+            related_to_line: Some(member_related_line),
+        });
     }
 
+    lines
+}
+
+fn render_member_lines(
+    members: &[crate::model::ApiMember],
+    related_to_line: &str,
+) -> Vec<ReviewLine> {
+    let mut lines = Vec::new();
+    for (member_index, member) in members.iter().enumerate() {
+        lines.extend(render_doc_comment_lines(
+            &member.doc_comments,
+            Some(related_to_line.to_string()),
+        ));
+
+        for attribute in &member.attributes {
+            lines.push(ReviewLine {
+                line_id: None,
+                tokens: tokenize_line(&attribute.text, "", token_kind::TYPE_NAME),
+                children: Vec::new(),
+                is_context_end_line: None,
+                related_to_line: Some(related_to_line.to_string()),
+            });
+        }
+
+        lines.push(ReviewLine {
+            line_id: Some(format!("{related_to_line}.{}_{member_index}", member.name)),
+            tokens: tokenize_line(&member.declaration, &member.name, token_kind::MEMBER_NAME),
+            children: Vec::new(),
+            is_context_end_line: None,
+            related_to_line: Some(related_to_line.to_string()),
+        });
+    }
     lines
 }
 
@@ -512,6 +545,62 @@ mod tests {
                 (token_kind::TYPE_NAME, "Result"),
                 (token_kind::PUNCTUATION, ";"),
             ]
+        );
+    }
+
+    #[test]
+    fn renders_inherent_members_inside_impl_blocks() {
+        let module = ApiModule {
+            path: "demo".to_string(),
+            doc_comments: Vec::new(),
+            attributes: Vec::new(),
+            items: vec![ApiItem {
+                name: "Foo".to_string(),
+                kind: ApiItemKind::Struct,
+                doc_comments: Vec::new(),
+                attributes: Vec::new(),
+                declaration: "pub struct Foo;".to_string(),
+                members: vec![ApiMember {
+                    name: "method".to_string(),
+                    doc_comments: Vec::new(),
+                    attributes: Vec::new(),
+                    declaration: "pub fn method(&self);".to_string(),
+                }],
+            }],
+            modules: Vec::new(),
+        };
+
+        let lines = render_module_contents(&module);
+
+        assert_eq!(lines.len(), 3);
+        assert_eq!(
+            lines[0]
+                .tokens
+                .iter()
+                .map(|token| token.value.as_str())
+                .collect::<Vec<_>>(),
+            vec!["pub", "struct", "Foo", ";"]
+        );
+        assert_eq!(
+            lines[1]
+                .tokens
+                .iter()
+                .map(|token| token.value.as_str())
+                .collect::<Vec<_>>(),
+            vec!["impl", "Foo", "{"]
+        );
+        assert_eq!(lines[1].children.len(), 1);
+        assert_eq!(
+            lines[1].children[0]
+                .tokens
+                .iter()
+                .map(|token| token.value.as_str())
+                .collect::<Vec<_>>(),
+            vec!["pub", "fn", "method", "(", "&", "self", ")", ";"]
+        );
+        assert_eq!(
+            lines[2].related_to_line.as_deref(),
+            Some("module.demo.Foo_0.impl")
         );
     }
 }

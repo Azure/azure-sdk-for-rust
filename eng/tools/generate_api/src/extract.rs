@@ -206,10 +206,7 @@ fn expand_local_reexport(
         }
         if let Some(target_id) = &other_import.id {
             if let Some(raw_target) = krate.index.get(target_id) {
-                merge_expanded(
-                    &mut expanded,
-                    expand_item_with_impls(krate, raw_target, current_module_path),
-                );
+                merge_expanded(&mut expanded, expand_item_with_impls(krate, raw_target));
             }
         }
         if expanded.items.is_empty() && expanded.modules.is_empty() {
@@ -235,7 +232,7 @@ fn expand_local_reexport(
                 }
             }
         }
-        _ if !import.is_glob => expand_item_with_impls(krate, target, current_module_path),
+        _ if !import.is_glob => expand_item_with_impls(krate, target),
         _ => return Ok(None),
     };
     apply_import_attributes(&mut expanded, import_attributes);
@@ -269,26 +266,26 @@ fn expand_model_reexport(
             )],
         }
     } else {
-        expand_model_item_reexport(&model.root_module, target_segments, current_module_path)?
+        expand_model_item_reexport(&model.root_module, target_segments)?
     };
     apply_import_attributes(&mut expanded, import_attributes);
     Some(expanded)
 }
 
-fn expand_item_with_impls(krate: &Crate, target: &Item, current_module_path: &str) -> ExpandedUse {
+fn expand_item_with_impls(krate: &Crate, target: &Item) -> ExpandedUse {
     let mut expanded = ExpandedUse {
         items: vec![extract_item(krate, target)],
         modules: Vec::new(),
     };
 
-    for sibling in trait_impls_for_item(krate, target, current_module_path) {
+    for sibling in trait_impls_for_item(krate, target) {
         expanded.items.push(sibling);
     }
 
     expanded
 }
 
-fn trait_impls_for_item(krate: &Crate, target: &Item, current_module_path: &str) -> Vec<ApiItem> {
+fn trait_impls_for_item(krate: &Crate, target: &Item) -> Vec<ApiItem> {
     let Some(impl_ids) = item_impl_ids(target) else {
         return Vec::new();
     };
@@ -302,11 +299,11 @@ fn trait_impls_for_item(krate: &Crate, target: &Item, current_module_path: &str)
             }
             _ => None,
         })
-        .map(|item| rebase_trait_impl_item(item, current_module_path))
+        .map(rebase_trait_impl_item)
         .collect()
 }
 
-fn rebase_trait_impl_item(mut item: ApiItem, _current_module_path: &str) -> ApiItem {
+fn rebase_trait_impl_item(mut item: ApiItem) -> ApiItem {
     if let Some((trait_name, _)) = item.declaration.split_once(" for ") {
         let trait_name = trait_name
             .trim_start_matches("unsafe ")
@@ -316,11 +313,7 @@ fn rebase_trait_impl_item(mut item: ApiItem, _current_module_path: &str) -> ApiI
     item
 }
 
-fn expand_model_item_reexport(
-    module: &ApiModule,
-    target_segments: &[&str],
-    current_module_path: &str,
-) -> Option<ExpandedUse> {
+fn expand_model_item_reexport(module: &ApiModule, target_segments: &[&str]) -> Option<ExpandedUse> {
     let target = find_item(module, target_segments)?.clone();
     let local_name = target_segments.last().copied()?;
     let items = module
@@ -334,7 +327,7 @@ fn expand_model_item_reexport(
                         .contains(&format!(" for {local_name}")))
         })
         .cloned()
-        .map(|item| rebase_trait_impl_item(item, current_module_path))
+        .map(rebase_trait_impl_item)
         .collect::<Vec<_>>();
 
     if items.is_empty() {

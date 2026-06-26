@@ -173,6 +173,8 @@ Signature normalization:
   `&mut self`
 - `Self` remains rendered normally when it appears as a non-receiver type, such as `Pin<Self>`, a
   return type, or an associated type
+- inherent associated members on structs, enums, and unions render in a synthetic source-shaped
+  `impl TypeName { ... }` block after the type declaration, rather than as indented loose members
 
 ## Async-trait rendering
 
