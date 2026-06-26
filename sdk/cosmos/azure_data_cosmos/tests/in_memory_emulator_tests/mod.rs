@@ -6,6 +6,7 @@
 //! azure_data_cosmos client surface and (optionally) compare against a
 //! real Cosmos DB account.
 
+pub mod binary_round_trip;
 pub mod driver_end_to_end;
 pub mod dual_backend;
 pub mod end_to_end;

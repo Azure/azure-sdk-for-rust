@@ -209,8 +209,22 @@ impl ResponseBuilder {
         self
     }
 
-    pub fn with_json_body(mut self, body: &serde_json::Value) -> Self {
-        self.body = serde_json::to_vec(body).unwrap_or_default();
+    pub fn with_json_body(self, body: &serde_json::Value) -> Self {
+        self.with_value_body(body, false)
+    }
+
+    /// Sets the body from a JSON value, encoded as Cosmos binary JSON when
+    /// `binary` is set (the client negotiated it) or UTF-8 text JSON otherwise.
+    ///
+    /// The binary form begins with the `0x80` preamble, which the SDK
+    /// auto-detects from the first byte, so the `Content-Type` stays
+    /// `application/json` either way (mirroring the real service).
+    pub fn with_value_body(mut self, body: &serde_json::Value, binary: bool) -> Self {
+        self.body = if binary {
+            crate::binary_json::encode(body)
+        } else {
+            serde_json::to_vec(body).unwrap_or_default()
+        };
         self
     }
 
@@ -233,10 +247,24 @@ pub(crate) fn success_response(
     session_token: &str,
     start: Instant,
 ) -> ResponseBuilder {
+    success_response_with_format(status, body, false, charge, session_token, start)
+}
+
+/// Like [`success_response`], but encodes the body as Cosmos binary JSON when
+/// `binary` is set. Used by the item read/write handlers to honor a client that
+/// negotiated binary responses via `x-ms-cosmos-supported-serialization-formats`.
+pub(crate) fn success_response_with_format(
+    status: StatusCode,
+    body: &serde_json::Value,
+    binary: bool,
+    charge: f64,
+    session_token: &str,
+    start: Instant,
+) -> ResponseBuilder {
     ResponseBuilder::new(status, start)
         .with_request_charge(charge)
         .with_session_token(session_token)
-        .with_json_body(body)
+        .with_value_body(body, binary)
 }
 
 /// Creates an error response.
