@@ -27,8 +27,8 @@
 //! - **P1d-2 (done):** GUID strings (`0x75`–`0x77`).
 //! - **P1d-3 (done):** base64 strings (`0x71`–`0x74`).
 //! - **P1d-4 (done):** compressed strings (`0x78`–`0x7F`).
-//! - **P1d-5:** GUID value (`0xD3`), binary (`0xDD`–`0xDF`), and uniform
-//!   number arrays (`0xF0`–`0xF3`).
+//! - **P1d-5a (done):** GUID value (`0xD3`) and binary (`0xDD`–`0xDF`).
+//! - **P1d-5b:** uniform number arrays (`0xF0`–`0xF3`).
 
 use base64::Engine;
 use serde_json::{Map, Value};
@@ -36,12 +36,13 @@ use serde_json::{Map, Value};
 use super::markers::{
     ARR0, ARR1, ARR_L1, ARR_L2, ARR_L4, ARR_LC1, ARR_LC2, ARR_LC4, BASE64_STRING_LENGTH1,
     BASE64_STRING_LENGTH2, BASE64_URL_STRING_LENGTH1, BASE64_URL_STRING_LENGTH2,
-    COMPRESSED_DATE_TIME_STRING, COMPRESSED_LOWERCASE_HEX_STRING, COMPRESSED_UPPERCASE_HEX_STRING,
+    BINARY_1BYTE_LENGTH, BINARY_2BYTE_LENGTH, BINARY_4BYTE_LENGTH, COMPRESSED_DATE_TIME_STRING,
+    COMPRESSED_LOWERCASE_HEX_STRING, COMPRESSED_UPPERCASE_HEX_STRING,
     DOUBLE_QUOTED_LOWERCASE_GUID_STRING, ENCODED_STRING_LENGTH_MASK, ENCODED_STRING_LENGTH_MAX,
-    ENCODED_STRING_LENGTH_MIN, FALSE, FLOAT32, FLOAT64, INT16, INT32, INT64, INT8, LITERAL_INT_MAX,
-    LITERAL_INT_MIN, LOWERCASE_GUID_STRING, NULL, NUMBER_DOUBLE, NUMBER_INT16, NUMBER_INT32,
-    NUMBER_INT64, NUMBER_UINT64, NUMBER_UINT8, OBJ0, OBJ1, OBJ_L1, OBJ_L2, OBJ_L4, OBJ_LC1,
-    OBJ_LC2, OBJ_LC4, PACKED_4BIT_STRING, PACKED_5BIT_STRING, PACKED_6BIT_STRING,
+    ENCODED_STRING_LENGTH_MIN, FALSE, FLOAT32, FLOAT64, GUID, INT16, INT32, INT64, INT8,
+    LITERAL_INT_MAX, LITERAL_INT_MIN, LOWERCASE_GUID_STRING, NULL, NUMBER_DOUBLE, NUMBER_INT16,
+    NUMBER_INT32, NUMBER_INT64, NUMBER_UINT64, NUMBER_UINT8, OBJ0, OBJ1, OBJ_L1, OBJ_L2, OBJ_L4,
+    OBJ_LC1, OBJ_LC2, OBJ_LC4, PACKED_4BIT_STRING, PACKED_5BIT_STRING, PACKED_6BIT_STRING,
     PACKED_7BIT_STRING_LENGTH1, PACKED_7BIT_STRING_LENGTH2, STR_L1, STR_L2, STR_L4, STR_R1, STR_R2,
     STR_R3, STR_R4, SYSTEM_STRING_1BYTE_MAX, SYSTEM_STRING_1BYTE_MIN, TRUE, UINT32,
     UPPERCASE_GUID_STRING, USER_STRING_1BYTE_MAX, USER_STRING_1BYTE_MIN, USER_STRING_2BYTE_MAX,
@@ -313,6 +314,18 @@ impl<'a> Reader<'a> {
             PACKED_6BIT_STRING => Ok(Value::String(self.read_packed_string(6, true, 1)?)),
             PACKED_7BIT_STRING_LENGTH1 => Ok(Value::String(self.read_packed_string(7, false, 1)?)),
             PACKED_7BIT_STRING_LENGTH2 => Ok(Value::String(self.read_packed_string(7, false, 2)?)),
+
+            // The GUID *value* is 16 bytes interpreted as a .NET `Guid`
+            // (mixed-endian) and rendered as the canonical lowercase text. This
+            // differs from the GUID *strings* above, which are a straight hex
+            // dump. JSON has no GUID type, so it maps to a string.
+            GUID => Ok(Value::String(self.read_guid_value()?)),
+
+            // Binary blobs have no JSON representation; the raw bytes are mapped
+            // to a standard base64 string (the conventional JSON byte encoding).
+            BINARY_1BYTE_LENGTH => self.read_binary(1),
+            BINARY_2BYTE_LENGTH => self.read_binary(2),
+            BINARY_4BYTE_LENGTH => self.read_binary(4),
 
             // User strings reference an external string dictionary that the
             // Cosmos data plane does not supply, so they cannot be resolved to
@@ -674,6 +687,39 @@ impl<'a> Reader<'a> {
         Ok(out)
     }
 
+    /// Reads a GUID value: 16 bytes interpreted as a .NET `Guid` and rendered as
+    /// the canonical lowercase `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` text.
+    ///
+    /// The .NET `Guid` memory layout is mixed-endian: the first three groups
+    /// (4, 2, 2 bytes) are little-endian integers, while the final 8 bytes are
+    /// taken in order. This matches `Guid`'s in-memory representation that the
+    /// service writes, and differs from the GUID *string* forms (which dump the
+    /// 16 bytes sequentially).
+    fn read_guid_value(&mut self) -> Result<String> {
+        let b = self.read_array::<16>()?;
+        Ok(format!(
+            "{:02x}{:02x}{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}",
+            // Data1 (little-endian u32).
+            b[3], b[2], b[1], b[0],
+            // Data2 (little-endian u16).
+            b[5], b[4],
+            // Data3 (little-endian u16).
+            b[7], b[6],
+            // Data4 (sequential).
+            b[8], b[9], b[10], b[11], b[12], b[13], b[14], b[15],
+        ))
+    }
+
+    /// Reads a binary blob: a `length_width`-byte little-endian length followed
+    /// by that many raw bytes, mapped to a standard base64 [`Value::String`]
+    /// (JSON has no native binary type).
+    fn read_binary(&mut self, length_width: usize) -> Result<Value> {
+        let len = self.read_len(length_width)?;
+        let bytes = self.read_bytes(len)?;
+        let encoded = base64::engine::general_purpose::STANDARD.encode(bytes);
+        Ok(Value::String(encoded))
+    }
+
     /// Resolves a reference string ([`STR_R1`]–[`STR_R4`]) whose `target` is an
     /// absolute byte offset into the buffer (the same frame as [`Reader::pos`],
     /// where the [`PREAMBLE`](super::PREAMBLE) is offset `0`).
@@ -915,13 +961,14 @@ mod tests {
 
     #[test]
     fn deferred_markers_report_invalid_for_now() {
-        // The GUID value marker (0xD3) is valid in the format but implemented
-        // in a later sub-phase (P1d-5); until then it surfaces as InvalidMarker.
-        // The offset points at the marker (index 1, just past the preamble).
+        // The uniform number array marker (0xF0) is valid in the format but
+        // implemented in a later sub-phase (P1d-5b); until then it surfaces as
+        // InvalidMarker. The offset points at the marker (index 1, just past
+        // the preamble).
         assert_eq!(
-            decode(&[PREAMBLE, markers::GUID]),
+            decode(&[PREAMBLE, markers::ARR_NUM_C1]),
             Err(BinaryError::InvalidMarker {
-                marker: markers::GUID,
+                marker: markers::ARR_NUM_C1,
                 offset: 1,
             }),
         );
@@ -1187,6 +1234,60 @@ mod tests {
         assert_eq!(
             decode(&[PREAMBLE, markers::PACKED_7BIT_STRING_LENGTH1, 4, 0x00]),
             Err(BinaryError::UnexpectedEof { needed: 3 }),
+        );
+    }
+
+    #[test]
+    fn decodes_guid_value() {
+        // Bytes 0x00..0x0F as a .NET Guid (mixed-endian) render with the first
+        // three groups byte-reversed and the last eight in order.
+        let encoded: [u8; 16] = std::array::from_fn(|i| i as u8);
+        let mut bytes = vec![markers::GUID];
+        bytes.extend_from_slice(&encoded);
+        assert_eq!(
+            decode(&buf(&bytes)).unwrap(),
+            serde_json::json!("03020100-0504-0706-0809-0a0b0c0d0e0f"),
+        );
+    }
+
+    #[test]
+    fn rejects_truncated_guid_value() {
+        // GUID value needs 16 bytes; only four follow.
+        let mut bytes = vec![markers::GUID];
+        bytes.extend_from_slice(&[0x01, 0x02, 0x03, 0x04]);
+        assert_eq!(
+            decode(&buf(&bytes)),
+            Err(BinaryError::UnexpectedEof { needed: 12 }),
+        );
+    }
+
+    #[test]
+    fn decodes_binary_blobs() {
+        // cSpell:ignore AQID
+        // Binary1ByteLength: 4 bytes [0xDE,0xAD,0xBE,0xEF] -> base64 "3q2+7w==".
+        let mut bin1 = vec![markers::BINARY_1BYTE_LENGTH, 4];
+        bin1.extend_from_slice(&[0xDE, 0xAD, 0xBE, 0xEF]);
+        assert_eq!(decode(&buf(&bin1)).unwrap(), serde_json::json!("3q2+7w=="));
+        // Empty blob -> empty string.
+        assert_eq!(
+            decode(&buf(&[markers::BINARY_1BYTE_LENGTH, 0])).unwrap(),
+            serde_json::json!(""),
+        );
+        // Binary2ByteLength with a 2-byte little-endian length.
+        let mut bin2 = vec![markers::BINARY_2BYTE_LENGTH];
+        bin2.extend_from_slice(&3u16.to_le_bytes());
+        bin2.extend_from_slice(&[1, 2, 3]);
+        assert_eq!(decode(&buf(&bin2)).unwrap(), serde_json::json!("AQID"));
+    }
+
+    #[test]
+    fn rejects_truncated_binary_blob() {
+        // Declares 10 bytes but only 2 follow.
+        let mut bytes = vec![markers::BINARY_1BYTE_LENGTH, 10];
+        bytes.extend_from_slice(&[0x01, 0x02]);
+        assert_eq!(
+            decode(&buf(&bytes)),
+            Err(BinaryError::UnexpectedEof { needed: 8 }),
         );
     }
 
