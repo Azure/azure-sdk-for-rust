@@ -693,14 +693,15 @@ mod tests {
     }
 }
 
-/// Real-process-environment tests for `OperationOptions::from_env` /
-/// `from_env_override` (and the nested `ThrottlingRetryOptions::from_env`).
+/// Smoke tests that the production `OperationOptions::from_env` path is wired
+/// to the real process environment.
 ///
-/// The tests above inject a closure; these set actual `AZURE_COSMOS_*`
-/// variables via `std::env` and call the real production constructors the
-/// runtime uses, proving each env field is wired to its option. Every case
-/// runs inside [`with_scoped_env`] (shared lock + clear/restore) so it is
-/// hermetic and safe under parallel execution.
+/// The exhaustive per-field matrix lives in the injected-closure tests above.
+/// These two cases exist only to prove that the real production constructor
+/// actually reads `std::env::var` — a gap the injected tests cannot cover — by
+/// setting a real `AZURE_COSMOS_*` variable and observing it flow through. They
+/// run inside [`with_scoped_env`] (shared lock + clear/restore) so they stay
+/// hermetic.
 #[cfg(test)]
 mod real_env_tests {
     use super::*;
@@ -708,6 +709,7 @@ mod real_env_tests {
 
     #[test]
     fn real_env_empty_yields_all_none() {
+        // With no variables set, the env layer contributes nothing.
         with_scoped_env(OPERATION_ENV_VARS, &[], || {
             let o = OperationOptions::from_env();
             assert!(o.read_consistency_strategy.is_none());
@@ -719,7 +721,9 @@ mod real_env_tests {
     }
 
     #[test]
-    fn real_env_read_consistency_strategy() {
+    fn real_env_value_flows_through() {
+        // A real `AZURE_COSMOS_READ_CONSISTENCY_STRATEGY` flows through
+        // `from_env`, proving the production accessor is connected.
         with_scoped_env(
             OPERATION_ENV_VARS,
             &[("AZURE_COSMOS_READ_CONSISTENCY_STRATEGY", "Session")],
@@ -729,143 +733,6 @@ mod real_env_tests {
                     o.read_consistency_strategy,
                     Some(ReadConsistencyStrategy::Session)
                 );
-            },
-        );
-    }
-
-    #[test]
-    fn real_env_content_response_on_write_toggles() {
-        with_scoped_env(
-            OPERATION_ENV_VARS,
-            &[("AZURE_COSMOS_CONTENT_RESPONSE_ON_WRITE", "true")],
-            || {
-                let o = OperationOptions::from_env();
-                assert_eq!(
-                    o.content_response_on_write,
-                    Some(ContentResponseOnWrite::Enabled)
-                );
-            },
-        );
-        with_scoped_env(
-            OPERATION_ENV_VARS,
-            &[("AZURE_COSMOS_CONTENT_RESPONSE_ON_WRITE", "false")],
-            || {
-                let o = OperationOptions::from_env();
-                assert_eq!(
-                    o.content_response_on_write,
-                    Some(ContentResponseOnWrite::Disabled)
-                );
-            },
-        );
-    }
-
-    #[test]
-    fn real_env_retry_counts() {
-        with_scoped_env(
-            OPERATION_ENV_VARS,
-            &[
-                ("AZURE_COSMOS_MAX_FAILOVER_RETRY_COUNT", "7"),
-                ("AZURE_COSMOS_MAX_SESSION_RETRY_COUNT", "3"),
-            ],
-            || {
-                let o = OperationOptions::from_env();
-                assert_eq!(o.max_failover_retry_count, Some(7));
-                assert_eq!(o.max_session_retry_count, Some(3));
-            },
-        );
-    }
-
-    #[test]
-    fn real_env_hedging_enabled_toggles() {
-        for (raw, expected) in [("false", false), ("true", true)] {
-            with_scoped_env(
-                OPERATION_ENV_VARS,
-                &[("AZURE_COSMOS_HEDGING_ENABLED", raw)],
-                || {
-                    let o = OperationOptions::from_env();
-                    assert_eq!(o.hedging_enabled, Some(expected), "hedging {raw:?}");
-                },
-            );
-        }
-    }
-
-    #[test]
-    fn real_env_hedging_override_only_on_override_path() {
-        with_scoped_env(
-            OPERATION_ENV_VARS,
-            &[
-                // The base var must NOT leak into the override layer...
-                ("AZURE_COSMOS_HEDGING_ENABLED", "true"),
-                ("AZURE_COSMOS_HEDGING_ENABLED_OVERRIDE", "false"),
-            ],
-            || {
-                // `from_env_override` reads only the `_OVERRIDE` variants.
-                let over = OperationOptions::from_env_override();
-                assert_eq!(over.hedging_enabled, Some(false));
-
-                // The base `from_env` reads the non-override var.
-                let base = OperationOptions::from_env();
-                assert_eq!(base.hedging_enabled, Some(true));
-            },
-        );
-    }
-
-    #[test]
-    fn real_env_throttle_retry_count_nested_group() {
-        // `OperationOptions::from_env` does not recurse into nested groups;
-        // the runtime loads `ThrottlingRetryOptions::from_env` separately, so
-        // that's what this exercises.
-        with_scoped_env(
-            OPERATION_ENV_VARS,
-            &[("AZURE_COSMOS_MAX_THROTTLE_RETRY_COUNT", "4")],
-            || {
-                let t = ThrottlingRetryOptions::from_env();
-                assert_eq!(t.max_retry_count, Some(4));
-                assert!(t.max_retry_wait_time.is_none());
-            },
-        );
-    }
-
-    #[test]
-    fn real_env_all_base_fields_at_once() {
-        with_scoped_env(
-            OPERATION_ENV_VARS,
-            &[
-                ("AZURE_COSMOS_READ_CONSISTENCY_STRATEGY", "Session"),
-                ("AZURE_COSMOS_CONTENT_RESPONSE_ON_WRITE", "true"),
-                ("AZURE_COSMOS_MAX_FAILOVER_RETRY_COUNT", "9"),
-                ("AZURE_COSMOS_MAX_SESSION_RETRY_COUNT", "2"),
-                ("AZURE_COSMOS_HEDGING_ENABLED", "false"),
-            ],
-            || {
-                let o = OperationOptions::from_env();
-                assert_eq!(
-                    o.read_consistency_strategy,
-                    Some(ReadConsistencyStrategy::Session)
-                );
-                assert_eq!(
-                    o.content_response_on_write,
-                    Some(ContentResponseOnWrite::Enabled)
-                );
-                assert_eq!(o.max_failover_retry_count, Some(9));
-                assert_eq!(o.max_session_retry_count, Some(2));
-                assert_eq!(o.hedging_enabled, Some(false));
-                // A field with no env annotation stays None.
-                assert!(o.excluded_regions.is_none());
-            },
-        );
-    }
-
-    #[test]
-    fn real_env_unparseable_numeric_is_ignored() {
-        // The derive macro is lenient: a non-numeric value is logged and
-        // ignored, leaving the field `None` (inherits a lower layer).
-        with_scoped_env(
-            OPERATION_ENV_VARS,
-            &[("AZURE_COSMOS_MAX_FAILOVER_RETRY_COUNT", "not-a-number")],
-            || {
-                let o = OperationOptions::from_env();
-                assert!(o.max_failover_retry_count.is_none());
             },
         );
     }
