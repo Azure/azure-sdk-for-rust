@@ -11,7 +11,9 @@ use azure_core_test::{
 use azure_storage_blob::BlobContainerClient;
 use azure_storage_blob_test::get_test_credential;
 use clap::Args;
-use futures::{FutureExt, TryStreamExt};
+use futures::{FutureExt, StreamExt, TryStreamExt};
+
+use crate::extensions::{OnceLockExt, RecordingExt};
 
 #[derive(Args, Clone, Debug)]
 pub struct ListBlobTestOptions {
@@ -45,29 +47,11 @@ impl ListBlobTest {
 #[async_trait::async_trait]
 impl PerfTest for ListBlobTest {
     async fn setup(&self, context: Arc<TestContext>) -> azure_core::Result<()> {
-        // Setup code before running the test
-
-        let recording = context.recording();
-        let credential = get_test_credential(recording);
-        let container_name = format!("perf-container-{}", azure_core::Uuid::new_v4());
-        let mut container_url = match &self.endpoint {
-            Some(e) => e.clone(),
-            None => Url::parse(&format!(
-                "https://{}.blob.core.windows.net",
-                recording.var("AZURE_STORAGE_ACCOUNT_NAME", None)
-            ))?,
-        };
-        container_url
-            .path_segments_mut()
-            .expect("endpoint must be a valid base URL")
-            .push(&container_name);
-        let client = BlobContainerClient::new(container_url, Some(credential), None)?;
-        self.client.set(client).map_err(|_| {
-            azure_core::Error::with_message(ErrorKind::Other, "Failed to set client")
+        let container_client = self.client.try_get_or_init(|| {
+            context
+                .recording()
+                .get_container_client(self.endpoint.clone())
         })?;
-
-        // Retrieve the blob container client we just set (it's safe to unwrap here because we *just* set it above).
-        let container_client = self.client.get().unwrap();
         let _result = container_client.create(None).await?;
 
         let body_bytes = Bytes::from(vec![0u8; 10 * 1024]); // 10 KiB blob
