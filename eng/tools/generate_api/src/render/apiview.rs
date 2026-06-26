@@ -469,7 +469,7 @@ mod tests {
                     name: "fmt".to_string(),
                     doc_comments: Vec::new(),
                     attributes: Vec::new(),
-                    declaration: "fn fmt(self: &Self, f: &mut fmt::Formatter) -> fmt::Result;"
+                    declaration: "fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result;"
                         .to_string(),
                 }],
             }],
@@ -506,10 +506,8 @@ mod tests {
                 (token_kind::KEYWORD, "fn"),
                 (token_kind::MEMBER_NAME, "fmt"),
                 (token_kind::PUNCTUATION, "("),
-                (token_kind::KEYWORD, "self"),
-                (token_kind::PUNCTUATION, ":"),
                 (token_kind::PUNCTUATION, "&"),
-                (token_kind::KEYWORD, "Self"),
+                (token_kind::KEYWORD, "self"),
                 (token_kind::PUNCTUATION, ","),
                 (token_kind::TYPE_NAME, "f"),
                 (token_kind::PUNCTUATION, ":"),

@@ -113,7 +113,7 @@ mod tests {
                         name: "fmt".to_string(),
                         doc_comments: Vec::new(),
                         attributes: Vec::new(),
-                        declaration: "fn fmt(self: &Self, f: &mut fmt::Formatter) -> fmt::Result;"
+                        declaration: "fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result;"
                             .to_string(),
                     }],
                 }],
@@ -125,9 +125,7 @@ mod tests {
 
         assert!(rendered.contains("#[cfg(feature = \"std\")]"));
         assert!(rendered.contains("impl fmt::Debug for MyType {"));
-        assert!(
-            rendered.contains("    fn fmt(self: &Self, f: &mut fmt::Formatter) -> fmt::Result;")
-        );
+        assert!(rendered.contains("    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result;"));
         assert!(rendered.contains("}\n```\n"));
     }
 }

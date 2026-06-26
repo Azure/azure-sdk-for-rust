@@ -1033,14 +1033,7 @@ fn render_function_declaration(name: &str, function: &Function, is_public: bool)
             .inputs
             .iter()
             .map(|(argument_name, argument_type)| {
-                if argument_name.is_empty() {
-                    render_type_with_elision(argument_type, &synthetic_lifetimes)
-                } else {
-                    format!(
-                        "{argument_name}: {}",
-                        render_type_with_elision(argument_type, &synthetic_lifetimes)
-                    )
-                }
+                render_function_parameter(argument_name, argument_type, &synthetic_lifetimes)
             })
             .collect::<Vec<String>>()
             .join(", "),
@@ -1065,6 +1058,41 @@ fn render_function_declaration(name: &str, function: &Function, is_public: bool)
     ));
     declaration.push(';');
     declaration
+}
+
+fn render_function_parameter(
+    argument_name: &str,
+    argument_type: &Type,
+    synthetic_lifetimes: &HashSet<String>,
+) -> String {
+    if let Some(receiver) = render_self_parameter(argument_name, argument_type) {
+        return receiver;
+    }
+
+    if argument_name.is_empty() {
+        render_type_with_elision(argument_type, synthetic_lifetimes)
+    } else {
+        format!(
+            "{argument_name}: {}",
+            render_type_with_elision(argument_type, synthetic_lifetimes)
+        )
+    }
+}
+
+fn render_self_parameter(argument_name: &str, argument_type: &Type) -> Option<String> {
+    if argument_name != "self" {
+        return None;
+    }
+
+    match argument_type {
+        Type::Generic(name) if name == "Self" => Some("self".to_string()),
+        Type::BorrowedRef {
+            is_mutable, type_, ..
+        } if matches!(type_.as_ref(), Type::Generic(name) if name == "Self") => {
+            Some(if *is_mutable { "&mut self" } else { "&self" }.to_string())
+        }
+        _ => None,
+    }
 }
 
 fn render_function_header(header: &FunctionHeader) -> String {
@@ -2105,7 +2133,7 @@ mod tests {
         assert_eq!(trait_impl.members.len(), 1);
         assert_eq!(
             trait_impl.members[0].declaration,
-            "fn fmt(self: &Self, f: &mut fmt::Formatter) -> fmt::Result;"
+            "fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result;"
         );
     }
 
@@ -2170,7 +2198,70 @@ mod tests {
             "trait should synthesize #[async_trait]"
         );
         assert_eq!(extracted.members.len(), 1);
-        assert_eq!(extracted.members[0].declaration, "fn poll(self: &Self);");
+        assert_eq!(extracted.members[0].declaration, "fn poll(&self);");
+    }
+
+    #[test]
+    fn renders_self_receivers_in_source_like_forms() {
+        let function = Function {
+            sig: FunctionSignature {
+                inputs: vec![
+                    ("self".to_string(), Type::Generic("Self".to_string())),
+                    (
+                        "other".to_string(),
+                        Type::ResolvedPath(path("Pin", 30).with_args(
+                            GenericArgs::AngleBracketed {
+                                args: vec![GenericArg::Type(Type::Generic("Self".to_string()))],
+                                constraints: Vec::new(),
+                            },
+                        )),
+                    ),
+                ],
+                output: Some(Type::Generic("Self".to_string())),
+                is_c_variadic: false,
+            },
+            generics: empty_generics(),
+            header: FunctionHeader {
+                is_const: false,
+                is_unsafe: false,
+                is_async: false,
+                abi: Abi::Rust,
+            },
+            has_body: false,
+        };
+
+        assert_eq!(
+            render_function_declaration("into_self", &function, false),
+            "fn into_self(self, other: Pin<Self>) -> Self;"
+        );
+
+        let mut_ref_function = Function {
+            sig: FunctionSignature {
+                inputs: vec![(
+                    "self".to_string(),
+                    Type::BorrowedRef {
+                        lifetime: None,
+                        is_mutable: true,
+                        type_: Box::new(Type::Generic("Self".to_string())),
+                    },
+                )],
+                output: None,
+                is_c_variadic: false,
+            },
+            generics: empty_generics(),
+            header: FunctionHeader {
+                is_const: false,
+                is_unsafe: false,
+                is_async: false,
+                abi: Abi::Rust,
+            },
+            has_body: false,
+        };
+
+        assert_eq!(
+            render_function_declaration("touch", &mut_ref_function, false),
+            "fn touch(&mut self);"
+        );
     }
 
     #[test]
@@ -2463,6 +2554,17 @@ mod tests {
             path: path.to_string(),
             id: Id(id),
             args: None,
+        }
+    }
+
+    trait PathTestExt {
+        fn with_args(self, args: GenericArgs) -> Self;
+    }
+
+    impl PathTestExt for Path {
+        fn with_args(mut self, args: GenericArgs) -> Self {
+            self.args = Some(Box::new(args));
+            self
         }
     }
 

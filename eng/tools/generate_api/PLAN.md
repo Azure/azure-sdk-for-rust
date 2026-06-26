@@ -161,6 +161,14 @@ Documentation handling:
 - review output renders them as `///` comment lines
 - APIView output renders them as comment/documentation tokens
 
+Signature normalization:
+
+- receiver parameters are rendered in source-like Rust forms when rustdoc JSON spells them as
+  `self: Self`, `self: &Self`, or `self: &mut Self`; those become `self`, `&self`, and
+  `&mut self`
+- `Self` remains rendered normally when it appears as a non-receiver type, such as `Pin<Self>`, a
+  return type, or an associated type
+
 ## Async-trait rendering
 
 Traits whose rustdoc-expanded methods carry synthetic async-trait lifetimes are normalized to better match source intent.
