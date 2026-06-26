@@ -862,12 +862,15 @@ impl ContainerClient {
     ///
     /// # Arguments
     /// * `scope` - Determines which partitions to read changes from.
-    /// * `options` - Optional parameters controlling mode, start position, and paging.
+    /// * `start_from` - Where to begin reading when no continuation token is
+    ///   provided. Ignored when `options` carries a continuation token, since
+    ///   the token holds its own position.
+    /// * `options` - Optional parameters controlling mode, session token, and paging.
     ///
     /// # Examples
     ///
     /// ```rust,no_run
-    /// use azure_data_cosmos::{clients::ContainerClient, feed::FeedScope};
+    /// use azure_data_cosmos::{clients::ContainerClient, feed::FeedScope, options::ChangeFeedStartFrom};
     /// use futures::StreamExt;
     /// use serde::Deserialize;
     ///
@@ -877,7 +880,7 @@ impl ContainerClient {
     /// # async fn example(container: ContainerClient) -> Result<(), Box<dyn std::error::Error>> {
     /// // Read all changes from the beginning
     /// let mut pages = container
-    ///     .read_change_feed::<MyItem>(FeedScope::full_container(), None)
+    ///     .read_change_feed::<MyItem>(FeedScope::full_container(), ChangeFeedStartFrom::Beginning, None)
     ///     .await?;
     ///
     /// while let Some(page) = pages.next().await {
@@ -894,12 +897,27 @@ impl ContainerClient {
     pub async fn read_change_feed<T: DeserializeOwned + Send + 'static>(
         &self,
         scope: FeedScope,
+        start_from: ChangeFeedStartFrom,
         options: Option<ChangeFeedOptions>,
     ) -> crate::Result<ChangeFeedPageIterator<T>> {
         let options = options.unwrap_or_default();
 
         // AllVersionsAndDeletes is reserved for a future release. Reject it
         // explicitly rather than silently behaving like LatestVersion.
+        //
+        // TODO: When enabling AllVersionsAndDeletes, revisit start/resume
+        // semantics — they differ from LatestVersion:
+        //   - `Beginning` is invalid under AVAD (bounded retention window);
+        //     require `Now` or a `PointInTime` within retention and reject
+        //     `Beginning` for this mode.
+        //   - `Now` is re-evaluated per request, so a range never polled before
+        //     a checkpoint resumes from resume-time and would drop the
+        //     intermediate versions/deletes between the original start and the
+        //     resume. Resolve `Now` to a concrete per-range start position (or
+        //     snapshot the start time as a `PointInTime`) so AVAD resume is
+        //     lossless.
+        //   - The continuation token does not persist the feed mode; callers
+        //     must re-pass AllVersionsAndDeletes on resume.
         if options.mode == ChangeFeedMode::AllVersionsAndDeletes {
             return Err(crate::DriverCosmosError::builder()
                 .with_status(crate::error::CosmosStatus::new(
@@ -932,7 +950,7 @@ impl ContainerClient {
         // reading from the beginning. Partitions that have already been polled
         // resume from their saved per-partition ETag, which takes precedence.
         // `Beginning` needs no marker.
-        let start_marker = match &options.start_from {
+        let start_marker = match &start_from {
             ChangeFeedStartFrom::Beginning => None,
             ChangeFeedStartFrom::Now => Some(ChangeFeedStartMarker::Now),
             ChangeFeedStartFrom::PointInTime(ts) => {

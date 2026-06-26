@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added change feed pull support via `ContainerClient::read_change_feed()`, returning a `ChangeFeedPageIterator<T>` that streams `FeedPage<T>` results. New `feed` types `ChangeFeedPageIterator`, `FeedScope`, and `ContinuationToken`, plus `options` types `ChangeFeedOptions`, `ChangeFeedStartFrom` (`Beginning`, `Now`, `PointInTime`), and `ChangeFeedMode` (`LatestVersion` default; `AllVersionsAndDeletes` is reserved for a future release and currently returns an error); supports single-partition, per-partition-key, and full-container (cross-partition fan-out) reads with continuation-token resumption that persists the original start position so never-polled partitions don't replay history on resume. ([#4621](https://github.com/Azure/azure-sdk-for-rust/pull/4621))
+- Added change feed pull support via `ContainerClient::read_change_feed()`, which takes a required `ChangeFeedStartFrom` start position (`Beginning`, `Now`, `PointInTime`) and returns a `ChangeFeedPageIterator<T>` that streams `FeedPage<T>` results. New `feed` types `ChangeFeedPageIterator`, `FeedScope`, and `ContinuationToken`, plus `options` types `ChangeFeedOptions` and `ChangeFeedMode` (`LatestVersion` default; `AllVersionsAndDeletes` is reserved for a future release and currently returns an error); supports single-partition, per-partition-key, and full-container (cross-partition fan-out) reads with continuation-token resumption that persists the original start position so never-polled partitions don't replay history on resume. ([#4621](https://github.com/Azure/azure-sdk-for-rust/pull/4621))
 
 ### Breaking Changes
 

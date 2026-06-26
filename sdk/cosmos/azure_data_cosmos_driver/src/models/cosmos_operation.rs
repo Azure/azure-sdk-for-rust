@@ -18,8 +18,9 @@ use std::borrow::Cow;
 /// On resume, partitions that were never polled before the checkpoint carry no
 /// per-partition continuation, so they must re-apply the feed's original start
 /// position instead of silently reading from the beginning. Only the two
-/// non-default positions are represented: [`ChangeFeedStartFrom::Beginning`] is
-/// the implicit default and is encoded as the absence of a marker (`None`).
+/// positions that need a wire header are represented:
+/// [`ChangeFeedStartFrom::Beginning`] carries no marker and is encoded as the
+/// absence of one (`None`).
 ///
 /// [`ChangeFeedStartFrom::Beginning`]: https://docs.rs/azure_data_cosmos
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -29,6 +30,10 @@ pub enum ChangeFeedStartMarker {
     ///
     /// "Now" is evaluated when the request is sent, so on resume a never-polled
     /// partition starts from resume time rather than the original start time.
+    /// This is acceptable for LatestVersion (it still converges to the latest
+    /// state under at-least-once delivery), but AllVersionsAndDeletes must
+    /// resolve "Now" to a concrete start position before persisting so resume
+    /// does not drop intermediate versions/deletes.
     Now,
 
     /// Start from a specific point in time (wire header `If-Modified-Since`).
