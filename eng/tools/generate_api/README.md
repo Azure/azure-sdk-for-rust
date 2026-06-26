@@ -9,20 +9,21 @@ Run from the repository root:
 ```sh
 cargo run --manifest-path eng/tools/Cargo.toml -p generate_api -- \
   --manifest-path sdk/core/azure_core/Cargo.toml \
-  --format review \
   --output /tmp/generate_api
 ```
 
 ### Arguments
 
 - `--manifest-path <path>`: path to the target crate's `Cargo.toml`
-- `--format <review|apiview>`: output format to generate
+- `--format <review|apiview>`: optional output format to generate; defaults to `review`
+- `--no-docs`: when generating `apiview`, omit documentation comment tokens
 - `--output <dir>`: directory where generated files are written
 
 ### Outputs
 
-- `--format review` writes `API.md`
+- default `review` output writes `API.md`
 - `--format apiview` writes `apiview.json`
+- `--format apiview --no-docs` writes `apiview.json` without doc comment tokens
 
 ## Toolchain
 

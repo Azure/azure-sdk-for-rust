@@ -37,7 +37,10 @@ fn run() -> Result<(), String> {
 
     let rendered = match request.format {
         cli::OutputFormat::Review => render::markdown::render(&model),
-        cli::OutputFormat::Apiview => render::apiview::render(&model)?,
+        cli::OutputFormat::Apiview => {
+            let options = render::apiview::RenderOptions::new(!request.no_docs);
+            render::apiview::render(&model, &options)?
+        }
     };
 
     output::write_file(&output_path, &rendered)?;

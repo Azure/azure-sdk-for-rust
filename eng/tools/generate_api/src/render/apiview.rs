@@ -5,6 +5,23 @@ use crate::model::{ApiItem, ApiItemKind, ApiModel, ApiModule};
 use serde::Serialize;
 use std::collections::BTreeSet;
 
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct RenderOptions {
+    pub(crate) include_docs: bool,
+}
+
+impl Default for RenderOptions {
+    fn default() -> Self {
+        Self { include_docs: true }
+    }
+}
+
+impl RenderOptions {
+    pub(crate) fn new(include_docs: bool) -> Self {
+        Self { include_docs }
+    }
+}
+
 #[derive(Debug, Serialize)]
 struct CodeFile<'a> {
     #[serde(rename = "PackageName")]
@@ -54,13 +71,13 @@ struct ReviewToken {
     render_classes: Option<Vec<String>>,
 }
 
-pub(crate) fn render(model: &ApiModel) -> Result<String, String> {
+pub(crate) fn render(model: &ApiModel, options: &RenderOptions) -> Result<String, String> {
     let document = CodeFile {
         package_name: &model.package_name,
         package_version: &model.package_version,
         parser_version: &model.parser_version,
         language: "Rust",
-        review_lines: render_module_contents(&model.root_module),
+        review_lines: render_module_contents(&model.root_module, options),
     };
     validate_code_file(&document)?;
 
@@ -105,24 +122,26 @@ fn validate_review_lines(
     Ok(())
 }
 
-fn render_module_contents(module: &ApiModule) -> Vec<ReviewLine> {
-    let mut lines = render_items(module);
+fn render_module_contents(module: &ApiModule, options: &RenderOptions) -> Vec<ReviewLine> {
+    let mut lines = render_items(module, options);
     let mut child_modules = module.modules.clone();
     child_modules.sort_by(|left, right| left.path.cmp(&right.path));
     for child in &child_modules {
-        lines.extend(render_module(child));
+        lines.extend(render_module(child, options));
     }
     lines
 }
 
-fn render_module(module: &ApiModule) -> Vec<ReviewLine> {
+fn render_module(module: &ApiModule, options: &RenderOptions) -> Vec<ReviewLine> {
     let line_id = module_line_id(&module.path);
     let mut lines = Vec::new();
 
-    lines.extend(render_doc_comment_lines(
-        &module.doc_comments,
-        Some(line_id.clone()),
-    ));
+    if options.include_docs {
+        lines.extend(render_doc_comment_lines(
+            &module.doc_comments,
+            Some(line_id.clone()),
+        ));
+    }
 
     for attribute in &module.attributes {
         lines.push(ReviewLine {
@@ -141,7 +160,7 @@ fn render_module(module: &ApiModule) -> Vec<ReviewLine> {
             module.local_name(),
             token_kind::TYPE_NAME,
         ),
-        children: render_module_contents(module),
+        children: render_module_contents(module, options),
         is_context_end_line: None,
         related_to_line: None,
     });
@@ -155,24 +174,31 @@ fn render_module(module: &ApiModule) -> Vec<ReviewLine> {
     lines
 }
 
-fn render_items(module: &ApiModule) -> Vec<ReviewLine> {
+fn render_items(module: &ApiModule, options: &RenderOptions) -> Vec<ReviewLine> {
     let items = module.sorted_items();
     let mut lines = Vec::new();
     for (index, item) in items.into_iter().enumerate() {
-        lines.extend(render_item(module, item, index));
+        lines.extend(render_item(module, item, index, options));
     }
     lines
 }
 
-fn render_item(module: &ApiModule, item: &ApiItem, index: usize) -> Vec<ReviewLine> {
+fn render_item(
+    module: &ApiModule,
+    item: &ApiItem,
+    index: usize,
+    options: &RenderOptions,
+) -> Vec<ReviewLine> {
     let line_id = format!("{}.{}_{index}", module_line_id(&module.path), item.name);
     let name_token_kind = item_name_token_kind(item.kind);
     let mut lines = Vec::new();
 
-    lines.extend(render_doc_comment_lines(
-        &item.doc_comments,
-        Some(line_id.clone()),
-    ));
+    if options.include_docs {
+        lines.extend(render_doc_comment_lines(
+            &item.doc_comments,
+            Some(line_id.clone()),
+        ));
+    }
 
     for attribute in &item.attributes {
         lines.push(ReviewLine {
@@ -192,7 +218,7 @@ fn render_item(module: &ApiModule, item: &ApiItem, index: usize) -> Vec<ReviewLi
     } else {
         format!("{line_id}.impl")
     };
-    let member_lines = render_member_lines(&members, &member_related_line);
+    let member_lines = render_member_lines(&members, &member_related_line, options);
 
     for (declaration_index, declaration_line) in item.declaration.lines().enumerate() {
         if declaration_line.trim().is_empty() {
@@ -255,13 +281,16 @@ fn render_item(module: &ApiModule, item: &ApiItem, index: usize) -> Vec<ReviewLi
 fn render_member_lines(
     members: &[crate::model::ApiMember],
     related_to_line: &str,
+    options: &RenderOptions,
 ) -> Vec<ReviewLine> {
     let mut lines = Vec::new();
     for (member_index, member) in members.iter().enumerate() {
-        lines.extend(render_doc_comment_lines(
-            &member.doc_comments,
-            Some(related_to_line.to_string()),
-        ));
+        if options.include_docs {
+            lines.extend(render_doc_comment_lines(
+                &member.doc_comments,
+                Some(related_to_line.to_string()),
+            ));
+        }
 
         for attribute in &member.attributes {
             lines.push(ReviewLine {
@@ -498,7 +527,7 @@ mod tests {
             modules: Vec::new(),
         };
 
-        let lines = render_module_contents(&module);
+        let lines = render_module_contents(&module, &RenderOptions::default());
 
         assert_eq!(lines.len(), 3);
         assert_eq!(
@@ -570,7 +599,7 @@ mod tests {
             modules: Vec::new(),
         };
 
-        let lines = render_module_contents(&module);
+        let lines = render_module_contents(&module, &RenderOptions::default());
 
         assert_eq!(lines.len(), 3);
         assert_eq!(
@@ -602,5 +631,40 @@ mod tests {
             lines[2].related_to_line.as_deref(),
             Some("module.demo.Foo_0.impl")
         );
+    }
+
+    #[test]
+    fn omits_doc_comment_lines_when_docs_are_disabled() {
+        let module = ApiModule {
+            path: "demo".to_string(),
+            doc_comments: vec!["/// module docs".to_string()],
+            attributes: Vec::new(),
+            items: vec![ApiItem {
+                name: "Foo".to_string(),
+                kind: ApiItemKind::Struct,
+                doc_comments: vec!["/// item docs".to_string()],
+                attributes: Vec::new(),
+                declaration: "pub struct Foo;".to_string(),
+                members: vec![ApiMember {
+                    name: "method".to_string(),
+                    doc_comments: vec!["/// member docs".to_string()],
+                    attributes: Vec::new(),
+                    declaration: "pub fn method(&self);".to_string(),
+                }],
+            }],
+            modules: Vec::new(),
+        };
+
+        let with_docs = render_module(&module, &RenderOptions::default());
+        let without_docs = render_module(&module, &RenderOptions::new(false));
+
+        assert!(with_docs.iter().any(|line| {
+            line.tokens
+                .iter()
+                .any(|token| token.is_documentation && token.value == "/// module docs")
+        }));
+        assert!(!without_docs
+            .iter()
+            .any(|line| { line.tokens.iter().any(|token| token.is_documentation) }));
     }
 }

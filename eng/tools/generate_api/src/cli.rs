@@ -15,9 +15,13 @@ struct Args {
     #[arg(long, value_name = "PATH")]
     manifest_path: PathBuf,
 
-    /// Output format to generate.
-    #[arg(long, value_enum)]
+    /// Output format to generate. Defaults to review.
+    #[arg(long, value_enum, default_value_t = OutputFormat::Review)]
     format: OutputFormat,
+
+    /// Do not emit documentation comments in APIView output.
+    #[arg(long)]
+    no_docs: bool,
 
     /// Directory where generated files will be written.
     #[arg(long, value_name = "DIR")]
@@ -28,6 +32,7 @@ struct Args {
 pub(crate) struct Request {
     pub(crate) manifest_path: PathBuf,
     pub(crate) format: OutputFormat,
+    pub(crate) no_docs: bool,
     pub(crate) output_dir: PathBuf,
 }
 
@@ -51,6 +56,57 @@ pub(crate) fn parse() -> Request {
     Request {
         manifest_path: args.manifest_path,
         format: args.format,
+        no_docs: args.no_docs,
         output_dir: args.output,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn defaults_to_review_format() {
+        let args = Args::parse_from([
+            "generate_api",
+            "--manifest-path",
+            "sdk/core/azure_core/Cargo.toml",
+            "--output",
+            "/tmp/generate_api",
+        ]);
+
+        assert_eq!(args.format, OutputFormat::Review);
+        assert!(!args.no_docs);
+    }
+
+    #[test]
+    fn accepts_explicit_apiview_format() {
+        let args = Args::parse_from([
+            "generate_api",
+            "--manifest-path",
+            "sdk/core/azure_core/Cargo.toml",
+            "--format",
+            "apiview",
+            "--output",
+            "/tmp/generate_api",
+        ]);
+
+        assert_eq!(args.format, OutputFormat::Apiview);
+    }
+
+    #[test]
+    fn accepts_no_docs_switch() {
+        let args = Args::parse_from([
+            "generate_api",
+            "--manifest-path",
+            "sdk/core/azure_core/Cargo.toml",
+            "--format",
+            "apiview",
+            "--no-docs",
+            "--output",
+            "/tmp/generate_api",
+        ]);
+
+        assert!(args.no_docs);
     }
 }

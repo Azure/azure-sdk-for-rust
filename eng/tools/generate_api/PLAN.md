@@ -18,13 +18,15 @@
 The tool exposes:
 
 - `--manifest-path <path/to/Cargo.toml>`
-- `--format <review|apiview>`
+- `--format <review|apiview>` (optional; defaults to `review`)
+- `--no-docs` (optional; suppresses doc comments in `apiview` output only)
 - `--output <directory>`
 
 Behavior:
 
-- `--format review` writes `API.md`
+- default `review` output writes `API.md`
 - `--format apiview` writes `apiview.json`
+- `--no-docs` applies only to `apiview` and suppresses emitted doc comment tokens
 - progress messages go to stdout
 - fatal errors go to stderr and exit with code `1`
 
@@ -46,6 +48,9 @@ The current extraction pipeline is:
 5. render either Markdown or APIView from that shared model
 
 This is intentionally structured so renderer code does not depend directly on unstable upstream `rustdoc-types` details.
+Renderer-specific configuration should use forward-compatible options structs instead of threading
+individual booleans through the call stack, so future rendering controls can be added without
+reworking every render helper signature.
 
 ## Shared intermediate model
 
