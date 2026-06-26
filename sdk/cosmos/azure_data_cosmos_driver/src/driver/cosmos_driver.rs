@@ -2274,8 +2274,7 @@ impl CosmosDriver {
         options: &OperationOptions,
         continuation: Option<&ContinuationToken>,
     ) -> crate::error::Result<OperationPlan> {
-        // Reject mixed name/RID addressing before any work is done. This is the
-        // release-mode guard backing the debug-time addressing assertion: a
+        // Reject mixed name/RID addressing before any IO work is done. A
         // reference that mixes a name-addressed parent with a RID-addressed child
         // (or vice versa) signs and routes inconsistently and the gateway rejects
         // it with an opaque 401. Validating here — the single choke point every
