@@ -3,7 +3,7 @@
 
 //! Concurrent operation execution engine.
 
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -13,7 +13,9 @@ use azure_data_cosmos_driver::DiagnosticsVerbosity;
 use rand::RngExt;
 use serde::Serialize;
 use sysinfo::System;
+use tokio::sync::Semaphore;
 use tokio::task::JoinSet;
+use tokio::time::MissedTickBehavior;
 use uuid::Uuid;
 
 use crate::operations::{FeedRangeRefresher, Operation};
@@ -157,6 +159,13 @@ pub struct RunConfig {
     pub feed_range_refresher: Option<FeedRangeRefresher>,
     pub stats: Arc<Stats>,
     pub concurrency: usize,
+    /// Target arrival rate (ops/sec) for open-loop mode. When `Some`, the
+    /// runner issues requests at this fixed rate instead of using the
+    /// closed-loop `concurrency` worker pool.
+    pub target_rate: Option<u64>,
+    /// Maximum in-flight requests in open-loop mode. Ignored when
+    /// `target_rate` is `None`.
+    pub max_in_flight: usize,
     pub duration: Option<Duration>,
     pub report_interval: Duration,
     pub results_container: ContainerClient,
@@ -181,12 +190,49 @@ pub struct ConfigSnapshot {
     pub valgrind_tool: String,
 }
 
-/// Runs operations concurrently until cancelled or duration expires.
+/// Executes a single operation against `container`, recording its latency on
+/// success or its error (and an error document) on failure. Shared by both the
+/// closed-loop worker pool and the open-loop rate scheduler.
+async fn run_one(
+    op: &Arc<dyn Operation>,
+    container: &ContainerClient,
+    stats: &Stats,
+    err_container: &ContainerClient,
+    workload_id: &str,
+    commit_sha: &str,
+    hostname: &str,
+) {
+    let op_start = Instant::now();
+    match op.execute(container).await {
+        Ok(backend_duration) => {
+            stats.record_latency(op.name(), op_start.elapsed(), backend_duration);
+        }
+        Err(e) => {
+            stats.record_error(op.name());
+            upsert_error(
+                err_container,
+                op.name(),
+                &e,
+                workload_id,
+                commit_sha,
+                hostname,
+            )
+            .await;
+        }
+    }
+}
+
+/// Runs operations until cancelled or duration expires.
 ///
-/// Spawns `concurrency` tasks, each continuously picking a random operation
-/// from `operations` and executing it against `container`. Latency and errors
-/// are recorded in `stats`. A background reporter prints summaries at the
-/// given `report_interval` and upserts results into `results_container`.
+/// In the default closed-loop mode, spawns `concurrency` worker tasks, each
+/// continuously picking a random operation and executing it serially. When
+/// `target_rate` is set, switches to open-loop mode: operations are issued at
+/// a fixed arrival rate (bounded by `max_in_flight` concurrent requests),
+/// decoupling issuance from completion to avoid coordinated-omission bias.
+///
+/// Latency and errors are recorded in `stats`. A background reporter prints
+/// summaries at the given `report_interval` and upserts results into
+/// `results_container`.
 pub async fn run(config: RunConfig) {
     let RunConfig {
         container,
@@ -194,6 +240,8 @@ pub async fn run(config: RunConfig) {
         feed_range_refresher,
         stats,
         concurrency,
+        target_rate,
+        max_in_flight,
         duration,
         report_interval,
         results_container,
@@ -308,49 +356,126 @@ pub async fn run(config: RunConfig) {
         }
     });
 
-    // Spawn fixed worker pool — each worker loops until cancelled
+    // Issue operations until cancelled — open-loop (fixed rate) or
+    // closed-loop (fixed worker pool), depending on `target_rate`.
     let start = Instant::now();
-    let mut workers = JoinSet::new();
 
-    for _ in 0..concurrency {
-        let ops = operations.clone();
-        let container = container.clone();
-        let stats = stats.clone();
-        let cancelled = cancelled.clone();
-        let err_container = results_container.clone();
-        let err_workload_id = workload_id.clone();
-        let err_commit_sha = commit_sha.clone();
-        let err_hostname = hostname.clone();
+    if let Some(rate) = target_rate {
+        // Open-loop: issue at a fixed arrival rate, decoupled from request
+        // completion. Borrow the id Strings as `Arc<str>` (clone, not move)
+        // so the final report below can still use the originals.
+        let workload_id: Arc<str> = Arc::from(workload_id.as_str());
+        let commit_sha: Arc<str> = Arc::from(commit_sha.as_str());
+        let hostname: Arc<str> = Arc::from(hostname.as_str());
+        let semaphore = Arc::new(Semaphore::new(max_in_flight));
+        let skipped = Arc::new(AtomicU64::new(0));
 
-        workers.spawn(async move {
-            while !cancelled.load(Ordering::Relaxed) {
-                let op_idx = rand::rng().random_range(0..ops.len());
-                let op = &ops[op_idx];
+        println!("Open-loop mode: target_rate={rate} ops/s, max_in_flight={max_in_flight}");
 
-                let op_start = Instant::now();
-                match op.execute(&container).await {
-                    Ok(backend_duration) => {
-                        stats.record_latency(op.name(), op_start.elapsed(), backend_duration);
+        // 1ms ticker; each tick issues up to `elapsed * rate` so issuance
+        // self-corrects against wall-clock drift. Burst on missed ticks.
+        let mut ticker = tokio::time::interval(Duration::from_millis(1));
+        ticker.set_missed_tick_behavior(MissedTickBehavior::Burst);
+        let mut issued: u64 = 0;
+
+        while !cancelled.load(Ordering::Relaxed) {
+            ticker.tick().await;
+            let elapsed_secs = start.elapsed().as_secs_f64();
+            let target = (elapsed_secs * rate as f64) as u64;
+            while issued < target {
+                if cancelled.load(Ordering::Relaxed) {
+                    break;
+                }
+                // Count every scheduled issuance against `issued` (even
+                // skips) so saturation doesn't trigger a catch-up burst once
+                // the backend recovers.
+                issued += 1;
+                match Arc::clone(&semaphore).try_acquire_owned() {
+                    Ok(permit) => {
+                        let op = operations[rand::rng().random_range(0..operations.len())].clone();
+                        let container = container.clone();
+                        let stats = stats.clone();
+                        let err_container = results_container.clone();
+                        let workload_id = workload_id.clone();
+                        let commit_sha = commit_sha.clone();
+                        let hostname = hostname.clone();
+                        tokio::spawn(async move {
+                            run_one(
+                                &op,
+                                &container,
+                                &stats,
+                                &err_container,
+                                &workload_id,
+                                &commit_sha,
+                                &hostname,
+                            )
+                            .await;
+                            drop(permit);
+                        });
                     }
-                    Err(e) => {
-                        stats.record_error(op.name());
-                        upsert_error(
-                            &err_container,
-                            op.name(),
-                            &e,
-                            &err_workload_id,
-                            &err_commit_sha,
-                            &err_hostname,
-                        )
-                        .await;
+                    Err(_) => {
+                        let n = skipped.fetch_add(1, Ordering::Relaxed) + 1;
+                        if n.is_multiple_of(10_000) {
+                            println!(
+                                "WARN: max_in_flight={max_in_flight} saturated, skipped {n} \
+                                 issuance(s) (requests completing slower than target_rate)"
+                            );
+                        }
                     }
                 }
             }
-        });
-    }
+        }
 
-    // Wait for all workers to finish
-    workers.join_all().await;
+        // Best-effort drain: wait up to 30s for in-flight requests to finish
+        // so their latency/error stats land before the final report. A permit
+        // is returned only after `run_one` fully records its result, so
+        // `available_permits == max_in_flight` means all stats are recorded.
+        let drain_deadline = Instant::now() + Duration::from_secs(30);
+        while semaphore.available_permits() < max_in_flight && Instant::now() < drain_deadline {
+            tokio::time::sleep(Duration::from_millis(50)).await;
+        }
+
+        let total_skipped = skipped.load(Ordering::Relaxed);
+        if total_skipped > 0 {
+            println!(
+                "Open-loop summary: skipped {total_skipped} issuance(s) due to \
+                 max_in_flight saturation"
+            );
+        }
+    } else {
+        // Closed-loop: fixed worker pool — each worker loops until cancelled.
+        let mut workers = JoinSet::new();
+
+        for _ in 0..concurrency {
+            let ops = operations.clone();
+            let container = container.clone();
+            let stats = stats.clone();
+            let cancelled = cancelled.clone();
+            let err_container = results_container.clone();
+            let err_workload_id = workload_id.clone();
+            let err_commit_sha = commit_sha.clone();
+            let err_hostname = hostname.clone();
+
+            workers.spawn(async move {
+                while !cancelled.load(Ordering::Relaxed) {
+                    let op_idx = rand::rng().random_range(0..ops.len());
+                    run_one(
+                        &ops[op_idx],
+                        &container,
+                        &stats,
+                        &err_container,
+                        &err_workload_id,
+                        &err_commit_sha,
+                        &err_hostname,
+                    )
+                    .await;
+                }
+            });
+        }
+
+        // Wait for all workers to finish
+        workers.join_all().await;
+    }
 
     // Print final report
     let total_elapsed = start.elapsed();

@@ -82,8 +82,34 @@ pub struct Config {
     pub feed_range_refresh_secs: u64,
 
     /// Number of concurrent operations (minimum: 1).
+    ///
+    /// Drives the default closed-loop mode: the harness spawns this many
+    /// persistent worker tasks, each serially issuing one operation at a
+    /// time (so this is also the maximum number of in-flight requests).
+    /// Ignored when `--target-rate` is set, which switches to open-loop
+    /// (fixed arrival rate) issuance instead.
     #[arg(long, default_value_t = 50)]
     pub concurrency: usize,
+
+    /// Target arrival rate in operations per second (open-loop mode).
+    ///
+    /// When set, requests are issued at this fixed rate regardless of how
+    /// fast prior requests complete, eliminating the coordinated-omission
+    /// bias of the closed-loop `--concurrency` model. In-flight requests
+    /// are bounded by `--max-in-flight`; once that bound is hit, excess
+    /// issuances are skipped and counted (not buffered) so a slow backend
+    /// surfaces as visible omission rather than unbounded memory growth.
+    /// Omit to use the default closed-loop `--concurrency` model.
+    #[arg(long)]
+    pub target_rate: Option<u64>,
+
+    /// Maximum number of in-flight requests in open-loop mode (minimum: 1).
+    ///
+    /// Only used when `--target-rate` is set. Bounds memory/socket growth
+    /// when the backend can't keep up with the target rate: issuances that
+    /// would exceed this cap are skipped and counted instead of queued.
+    #[arg(long, default_value_t = 100_000)]
+    pub max_in_flight: usize,
 
     /// Run duration in seconds. Omit for indefinite.
     #[arg(long)]
