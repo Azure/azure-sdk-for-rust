@@ -105,7 +105,9 @@ impl PerfTest for ListBlobTest {
 
     async fn cleanup(&self, _context: Arc<TestContext>) -> azure_core::Result<()> {
         // Cleanup code after running the test
-        self.client.get().unwrap().delete(None).await?;
+        if let Some(container_client) = self.client.get() {
+            container_client.delete(None).await?;
+        }
         Ok(())
     }
 }
