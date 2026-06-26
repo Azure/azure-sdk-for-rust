@@ -12,7 +12,6 @@ use azure_core_test::{
     TestContext,
 };
 use azure_storage_blob::{models::BlobClientUploadOptions, BlobContainerClient};
-use azure_storage_blob_test::get_test_credential;
 use clap::Args;
 use futures::FutureExt;
 
@@ -73,6 +72,10 @@ impl PerfTest for UploadBlobTest {
                 .get_container_client(self.endpoint.clone())
         })?;
         container_client.create(None).await?;
+
+        let data = vec![0u8; self.size];
+        self.upload_buffer
+            .get_or_init(|| Bytes::copy_from_slice(&data));
 
         Ok(())
     }
