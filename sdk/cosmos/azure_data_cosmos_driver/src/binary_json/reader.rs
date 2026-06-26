@@ -25,15 +25,17 @@
 //! [`BinaryError::InvalidMarker`] until their sub-phase lands:
 //!
 //! - **P1d-2 (done):** GUID strings (`0x75`–`0x77`).
-//! - **P1d-3:** base64 strings (`0x71`–`0x74`).
+//! - **P1d-3 (done):** base64 strings (`0x71`–`0x74`).
 //! - **P1d-4:** compressed strings (`0x78`–`0x7F`).
 //! - **P1d-5:** GUID value (`0xD3`), binary (`0xDD`–`0xDF`), and uniform
 //!   number arrays (`0xF0`–`0xF3`).
 
+use base64::Engine;
 use serde_json::{Map, Value};
 
 use super::markers::{
-    ARR0, ARR1, ARR_L1, ARR_L2, ARR_L4, ARR_LC1, ARR_LC2, ARR_LC4,
+    ARR0, ARR1, ARR_L1, ARR_L2, ARR_L4, ARR_LC1, ARR_LC2, ARR_LC4, BASE64_STRING_LENGTH1,
+    BASE64_STRING_LENGTH2, BASE64_URL_STRING_LENGTH1, BASE64_URL_STRING_LENGTH2,
     DOUBLE_QUOTED_LOWERCASE_GUID_STRING, ENCODED_STRING_LENGTH_MASK, ENCODED_STRING_LENGTH_MAX,
     ENCODED_STRING_LENGTH_MIN, FALSE, FLOAT32, FLOAT64, INT16, INT32, INT64, INT8, LITERAL_INT_MAX,
     LITERAL_INT_MIN, LOWERCASE_GUID_STRING, NULL, NUMBER_DOUBLE, NUMBER_INT16, NUMBER_INT32,
@@ -282,6 +284,15 @@ impl<'a> Reader<'a> {
                 Ok(Value::String(self.read_guid_string(false, true)?))
             }
 
+            // Base64 strings: the raw (already base64-decoded) bytes are stored
+            // inline; decoding re-encodes them to the JSON string. The width of
+            // the group-count prefix (1 vs 2 bytes) and the alphabet (standard
+            // vs URL-safe) depend on the marker.
+            BASE64_STRING_LENGTH1 => Ok(Value::String(self.read_base64_string(1, false)?)),
+            BASE64_STRING_LENGTH2 => Ok(Value::String(self.read_base64_string(2, false)?)),
+            BASE64_URL_STRING_LENGTH1 => Ok(Value::String(self.read_base64_string(1, true)?)),
+            BASE64_URL_STRING_LENGTH2 => Ok(Value::String(self.read_base64_string(2, true)?)),
+
             // User strings reference an external string dictionary that the
             // Cosmos data plane does not supply, so they cannot be resolved to
             // text. We still consume the id bytes (1-byte vs 2-byte form) so the
@@ -517,6 +528,62 @@ impl<'a> Reader<'a> {
         Ok(out)
     }
 
+    /// Reads a base64 string. The inline payload is the **raw** (already
+    /// base64-decoded) bytes; this re-encodes them to the original base64 text.
+    ///
+    /// `length_width` is the width (1 or 2 bytes, little-endian) of the
+    /// group-count prefix that precedes a 1-byte padding field; `url_safe`
+    /// selects the URL-safe alphabet. The group count times four is the padded
+    /// base64 length, and the padding byte records how many `=` characters the
+    /// original text carried (or, when greater than 2, that padding was omitted,
+    /// in which case the encoded length shrinks accordingly). Mirrors .NET
+    /// `ConvertBytesToBase64String`.
+    fn read_base64_string(&mut self, length_width: usize, url_safe: bool) -> Result<String> {
+        let groups = self.read_len(length_width)?;
+        let padding = self.read_u8()?;
+
+        // Padded length is always a multiple of four; `effective_padding` is the
+        // literal `=` count (0..=2), or `!padding` when padding was omitted.
+        let padded_len = groups.checked_mul(4).ok_or(BinaryError::InvalidLength {
+            detail: "base64 length overflows the address space",
+        })?;
+        let omitted = padding > 2;
+        let effective_padding = usize::from(if omitted { !padding } else { padding });
+        let final_len = padded_len
+            .checked_sub(if omitted { effective_padding } else { 0 })
+            .ok_or(BinaryError::InvalidLength {
+                detail: "base64 padding exceeds the encoded length",
+            })?;
+        let raw_len = padded_len
+            .checked_sub(effective_padding)
+            .ok_or(BinaryError::InvalidLength {
+                detail: "base64 padding exceeds the encoded length",
+            })?
+            .checked_mul(3)
+            .ok_or(BinaryError::InvalidLength {
+                detail: "base64 length overflows the address space",
+            })?
+            / 4;
+
+        let raw = self.read_bytes(raw_len)?;
+        let engine = if url_safe {
+            &base64::engine::general_purpose::URL_SAFE
+        } else {
+            &base64::engine::general_purpose::STANDARD
+        };
+        let mut encoded = engine.encode(raw);
+
+        // The padded encoding may carry trailing `=`; keep only the original
+        // text length (this drops padding the service chose to omit).
+        if final_len > encoded.len() {
+            return Err(BinaryError::InvalidLength {
+                detail: "base64 encoded length is shorter than the declared length",
+            });
+        }
+        encoded.truncate(final_len);
+        Ok(encoded)
+    }
+
     /// Resolves a reference string ([`STR_R1`]–[`STR_R4`]) whose `target` is an
     /// absolute byte offset into the buffer (the same frame as [`Reader::pos`],
     /// where the [`PREAMBLE`](super::PREAMBLE) is offset `0`).
@@ -741,13 +808,13 @@ mod tests {
 
     #[test]
     fn deferred_markers_report_invalid_for_now() {
-        // A base64 string marker is valid in the format but implemented in a
-        // later sub-phase (P1d-2); until then it surfaces as InvalidMarker. The
-        // offset points at the marker (index 1, just past the preamble).
+        // A compressed-string marker is valid in the format but implemented in
+        // a later sub-phase (P1d-4); until then it surfaces as InvalidMarker.
+        // The offset points at the marker (index 1, just past the preamble).
         assert_eq!(
-            decode(&[PREAMBLE, markers::BASE64_STRING_LENGTH1]),
+            decode(&[PREAMBLE, markers::COMPRESSED_LOWERCASE_HEX_STRING]),
             Err(BinaryError::InvalidMarker {
-                marker: markers::BASE64_STRING_LENGTH1,
+                marker: markers::COMPRESSED_LOWERCASE_HEX_STRING,
                 offset: 1,
             }),
         );
@@ -869,6 +936,75 @@ mod tests {
         assert_eq!(
             decode(&buf(&bytes)),
             Err(BinaryError::UnexpectedEof { needed: 12 }),
+        );
+    }
+
+    /// Builds a Base64StringLength1 token: marker, 1-byte group count, 1-byte
+    /// padding, then the raw bytes.
+    fn base64_len1(groups: u8, padding: u8, raw: &[u8]) -> Vec<u8> {
+        let mut v = vec![markers::BASE64_STRING_LENGTH1, groups, padding];
+        v.extend_from_slice(raw);
+        v
+    }
+
+    #[test]
+    fn decodes_base64_strings_with_literal_padding() {
+        // "foo" -> "Zm9v" (3 raw bytes, one group, no padding).
+        assert_eq!(
+            decode(&buf(&base64_len1(1, 0, b"foo"))).unwrap(),
+            serde_json::json!("Zm9v"),
+        );
+        // "fo" -> "Zm8=" (2 raw bytes, one group, one '=').
+        assert_eq!(
+            decode(&buf(&base64_len1(1, 1, b"fo"))).unwrap(),
+            serde_json::json!("Zm8="),
+        );
+        // "A" -> "QQ==" (1 raw byte, one group, two '=').
+        assert_eq!(
+            decode(&buf(&base64_len1(1, 2, b"A"))).unwrap(),
+            serde_json::json!("QQ=="),
+        );
+    }
+
+    #[test]
+    fn decodes_base64_string_with_omitted_padding() {
+        // "A" encoded without the trailing "==": padding byte is !2 (253),
+        // shrinking the final length from 4 to 2, so the text is "QQ".
+        assert_eq!(
+            decode(&buf(&base64_len1(1, !2u8, b"A"))).unwrap(),
+            serde_json::json!("QQ"),
+        );
+    }
+
+    #[test]
+    fn decodes_base64_string_length2() {
+        // "foobar" -> "Zm9vYmFy" (6 raw bytes, two groups, no padding); the
+        // group count is a 2-byte little-endian field.
+        let mut bytes = vec![markers::BASE64_STRING_LENGTH2];
+        bytes.extend_from_slice(&2u16.to_le_bytes());
+        bytes.push(0); // padding
+        bytes.extend_from_slice(b"foobar");
+        assert_eq!(decode(&buf(&bytes)).unwrap(), serde_json::json!("Zm9vYmFy"),);
+    }
+
+    #[test]
+    fn decodes_base64_url_string() {
+        // Bytes [0xFB, 0xFF, 0xFE] encode to "+//+" in standard base64 and
+        // "-__-" in the URL-safe alphabet.
+        let mut std_bytes = vec![markers::BASE64_STRING_LENGTH1, 1, 0];
+        std_bytes.extend_from_slice(&[0xFB, 0xFF, 0xFE]);
+        assert_eq!(decode(&buf(&std_bytes)).unwrap(), serde_json::json!("+//+"),);
+        let mut url_bytes = vec![markers::BASE64_URL_STRING_LENGTH1, 1, 0];
+        url_bytes.extend_from_slice(&[0xFB, 0xFF, 0xFE]);
+        assert_eq!(decode(&buf(&url_bytes)).unwrap(), serde_json::json!("-__-"),);
+    }
+
+    #[test]
+    fn rejects_truncated_base64_string() {
+        // Declares one group (3 raw bytes) but only one byte follows.
+        assert_eq!(
+            decode(&buf(&base64_len1(1, 0, b"f"))),
+            Err(BinaryError::UnexpectedEof { needed: 2 }),
         );
     }
 
