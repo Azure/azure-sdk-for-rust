@@ -12,28 +12,34 @@
 //!
 //! Implemented so far: the `Reader` cursor infrastructure, the scalar value
 //! forms ([`null`](serde_json::Value::Null), booleans, literal and fixed-width
-//! numbers, and the common string forms — system strings, encoded-length
-//! strings, `StrL1`/`StrL2`/`StrL4`, and reference strings
-//! `StrR1`–`StrR4`), and **containers** (arrays `0xE0`–`0xE7` and objects
-//! `0xE8`–`0xEF`) with a nesting-depth guard. User strings (`0x40`–`0x67`)
-//! are recognized but report [`BinaryError::UnsupportedUserString`] because
-//! they reference an external dictionary the data plane does not supply. The
-//! remaining forms surface as [`BinaryError::InvalidMarker`] until their
-//! sub-phase lands:
+//! numbers — including the extended `Int8`/`Int16`/`Int32`/`Int64`/`UInt32`
+//! and `Float32`/`Float64` forms — and the common string forms (system
+//! strings, encoded-length strings, `StrL1`/`StrL2`/`StrL4`, and reference
+//! strings `StrR1`–`StrR4`), and **containers** (arrays `0xE0`–`0xE7` and
+//! objects `0xE8`–`0xEF`) with a nesting-depth guard. User strings
+//! (`0x40`–`0x67`) are recognized but report
+//! [`BinaryError::UnsupportedUserString`] because they reference an external
+//! dictionary the data plane does not supply. `Float16` (`0xCF`) and the
+//! extended `UInt8` (`0xD7`) have no JSON node type and are rejected as
+//! [`BinaryError::InvalidMarker`]. The remaining forms surface as
+//! [`BinaryError::InvalidMarker`] until their sub-phase lands:
 //!
-//! - **P1d:** exotic strings (base64 / GUID / compressed, `0x68`–`0x7F`),
-//!   `Float16`/`Float32`/`Float64` (`0xCD`–`0xCF`), sized ints (`0xD7`–`0xDC`),
-//!   binary (`0xDD`–`0xDF`), and uniform number arrays (`0xF0`–`0xF3`).
+//! - **P1d-2:** compact string scalars — base64 (`0x71`–`0x74`), GUID
+//!   strings (`0x75`–`0x77`), and the GUID value (`0xD3`).
+//! - **P1d-3:** compressed strings (`0x78`–`0x7F`).
+//! - **P1d-4:** binary (`0xDD`–`0xDF`) and uniform number arrays
+//!   (`0xF0`–`0xF3`).
 
 use serde_json::{Map, Value};
 
 use super::markers::{
     ARR0, ARR1, ARR_L1, ARR_L2, ARR_L4, ARR_LC1, ARR_LC2, ARR_LC4, ENCODED_STRING_LENGTH_MASK,
-    ENCODED_STRING_LENGTH_MAX, ENCODED_STRING_LENGTH_MIN, FALSE, LITERAL_INT_MAX, LITERAL_INT_MIN,
-    NULL, NUMBER_DOUBLE, NUMBER_INT16, NUMBER_INT32, NUMBER_INT64, NUMBER_UINT64, NUMBER_UINT8,
-    OBJ0, OBJ1, OBJ_L1, OBJ_L2, OBJ_L4, OBJ_LC1, OBJ_LC2, OBJ_LC4, STR_L1, STR_L2, STR_L4, STR_R1,
-    STR_R2, STR_R3, STR_R4, SYSTEM_STRING_1BYTE_MAX, SYSTEM_STRING_1BYTE_MIN, TRUE,
-    USER_STRING_1BYTE_MAX, USER_STRING_1BYTE_MIN, USER_STRING_2BYTE_MAX, USER_STRING_2BYTE_MIN,
+    ENCODED_STRING_LENGTH_MAX, ENCODED_STRING_LENGTH_MIN, FALSE, FLOAT32, FLOAT64, INT16, INT32,
+    INT64, INT8, LITERAL_INT_MAX, LITERAL_INT_MIN, NULL, NUMBER_DOUBLE, NUMBER_INT16, NUMBER_INT32,
+    NUMBER_INT64, NUMBER_UINT64, NUMBER_UINT8, OBJ0, OBJ1, OBJ_L1, OBJ_L2, OBJ_L4, OBJ_LC1,
+    OBJ_LC2, OBJ_LC4, STR_L1, STR_L2, STR_L4, STR_R1, STR_R2, STR_R3, STR_R4,
+    SYSTEM_STRING_1BYTE_MAX, SYSTEM_STRING_1BYTE_MIN, TRUE, UINT32, USER_STRING_1BYTE_MAX,
+    USER_STRING_1BYTE_MIN, USER_STRING_2BYTE_MAX, USER_STRING_2BYTE_MIN,
 };
 use super::system_strings::system_string_for_marker;
 use super::{is_binary, BinaryError, Result};
@@ -157,6 +163,10 @@ impl<'a> Reader<'a> {
         Ok(u64::from_le_bytes(self.read_array()?))
     }
 
+    fn read_i8(&mut self) -> Result<i8> {
+        Ok(self.read_u8()? as i8)
+    }
+
     fn read_i16_le(&mut self) -> Result<i16> {
         Ok(i16::from_le_bytes(self.read_array()?))
     }
@@ -167,6 +177,10 @@ impl<'a> Reader<'a> {
 
     fn read_i64_le(&mut self) -> Result<i64> {
         Ok(i64::from_le_bytes(self.read_array()?))
+    }
+
+    fn read_f32_le(&mut self) -> Result<f32> {
+        Ok(f32::from_le_bytes(self.read_array()?))
     }
 
     fn read_f64_le(&mut self) -> Result<f64> {
@@ -215,6 +229,19 @@ impl<'a> Reader<'a> {
             NUMBER_INT64 => Ok(int_value(self.read_i64_le()?)),
             NUMBER_UINT64 => Ok(uint_value(self.read_u64_le()?)),
             NUMBER_DOUBLE => double_value(self.read_f64_le()?),
+
+            // Extended fixed-width numbers (value follows the marker, no length
+            // prefix). These are part of the Cosmos extended type system; each
+            // has a natural JSON-number projection. `Float16` (0xCF) and the
+            // extended `UInt8` (0xD7) have no JSON node type in the service and
+            // therefore fall through to the catch-all as InvalidMarker.
+            INT8 => Ok(int_value(i64::from(self.read_i8()?))),
+            INT16 => Ok(int_value(i64::from(self.read_i16_le()?))),
+            INT32 => Ok(int_value(i64::from(self.read_i32_le()?))),
+            INT64 => Ok(int_value(self.read_i64_le()?)),
+            UINT32 => Ok(int_value(i64::from(self.read_u32_le()?))),
+            FLOAT32 => double_value(f64::from(self.read_f32_le()?)),
+            FLOAT64 => double_value(self.read_f64_le()?),
 
             // 1-byte system string: index into the fixed dictionary.
             m if (SYSTEM_STRING_1BYTE_MIN..SYSTEM_STRING_1BYTE_MAX).contains(&m) => {
@@ -666,15 +693,97 @@ mod tests {
 
     #[test]
     fn deferred_markers_report_invalid_for_now() {
-        // A Float32 marker is valid in the format but implemented in a later
-        // sub-phase (P1d); until then it surfaces as InvalidMarker. The offset
-        // points at the marker (index 1, just past the preamble).
+        // A base64 string marker is valid in the format but implemented in a
+        // later sub-phase (P1d-2); until then it surfaces as InvalidMarker. The
+        // offset points at the marker (index 1, just past the preamble).
         assert_eq!(
-            decode(&[PREAMBLE, markers::FLOAT32]),
+            decode(&[PREAMBLE, markers::BASE64_STRING_LENGTH1]),
             Err(BinaryError::InvalidMarker {
-                marker: markers::FLOAT32,
+                marker: markers::BASE64_STRING_LENGTH1,
                 offset: 1,
             }),
+        );
+    }
+
+    #[test]
+    fn decodes_extended_integers() {
+        // Int8 = -5.
+        let mut int8 = vec![markers::INT8];
+        int8.extend_from_slice(&(-5i8).to_le_bytes());
+        assert_eq!(decode(&buf(&int8)).unwrap(), serde_json::json!(-5));
+        // Int16 = -1000.
+        let mut int16 = vec![markers::INT16];
+        int16.extend_from_slice(&(-1000i16).to_le_bytes());
+        assert_eq!(decode(&buf(&int16)).unwrap(), serde_json::json!(-1000));
+        // Int32 = -70000.
+        let mut int32 = vec![markers::INT32];
+        int32.extend_from_slice(&(-70_000i32).to_le_bytes());
+        assert_eq!(decode(&buf(&int32)).unwrap(), serde_json::json!(-70_000));
+        // Int64 = a large negative value.
+        let mut int64 = vec![markers::INT64];
+        int64.extend_from_slice(&(-5_000_000_000i64).to_le_bytes());
+        assert_eq!(
+            decode(&buf(&int64)).unwrap(),
+            serde_json::json!(-5_000_000_000i64),
+        );
+        // UInt32 near u32::MAX must round-trip as a positive number.
+        let big = u32::MAX - 1;
+        let mut uint32 = vec![markers::UINT32];
+        uint32.extend_from_slice(&big.to_le_bytes());
+        assert_eq!(decode(&buf(&uint32)).unwrap(), serde_json::json!(big));
+    }
+
+    #[test]
+    fn decodes_extended_floats() {
+        // Float32 = 1.5 (exactly representable).
+        let mut f32v = vec![markers::FLOAT32];
+        f32v.extend_from_slice(&1.5f32.to_le_bytes());
+        assert_eq!(decode(&buf(&f32v)).unwrap(), serde_json::json!(1.5));
+        // Float64 = -2.25.
+        let mut f64v = vec![markers::FLOAT64];
+        f64v.extend_from_slice(&(-2.25f64).to_le_bytes());
+        assert_eq!(decode(&buf(&f64v)).unwrap(), serde_json::json!(-2.25));
+    }
+
+    #[test]
+    fn rejects_non_finite_extended_float() {
+        // Float32 carrying infinity has no JSON representation.
+        let mut inf = vec![markers::FLOAT32];
+        inf.extend_from_slice(&f32::INFINITY.to_le_bytes());
+        assert_eq!(
+            decode(&buf(&inf)),
+            Err(BinaryError::InvalidNumber {
+                detail: "non-finite double (NaN or infinity)",
+            }),
+        );
+    }
+
+    #[test]
+    fn float16_and_extended_uint8_have_no_json_node() {
+        // Float16 (0xCF) and the extended UInt8 (0xD7) map to no JSON node type
+        // in the service, so the decoder rejects them as invalid markers.
+        assert_eq!(
+            decode(&[PREAMBLE, markers::FLOAT16, 0x00, 0x00]),
+            Err(BinaryError::InvalidMarker {
+                marker: markers::FLOAT16,
+                offset: 1,
+            }),
+        );
+        assert_eq!(
+            decode(&[PREAMBLE, markers::UINT8, 0x00]),
+            Err(BinaryError::InvalidMarker {
+                marker: markers::UINT8,
+                offset: 1,
+            }),
+        );
+    }
+
+    #[test]
+    fn rejects_truncated_extended_number() {
+        // Int32 marker with only two payload bytes present.
+        assert_eq!(
+            decode(&[PREAMBLE, markers::INT32, 0x01, 0x02]),
+            Err(BinaryError::UnexpectedEof { needed: 2 }),
         );
     }
 
