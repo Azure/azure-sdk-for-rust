@@ -26,7 +26,7 @@
 //!
 //! - **P1d-2 (done):** GUID strings (`0x75`–`0x77`).
 //! - **P1d-3 (done):** base64 strings (`0x71`–`0x74`).
-//! - **P1d-4:** compressed strings (`0x78`–`0x7F`).
+//! - **P1d-4 (done):** compressed strings (`0x78`–`0x7F`).
 //! - **P1d-5:** GUID value (`0xD3`), binary (`0xDD`–`0xDF`), and uniform
 //!   number arrays (`0xF0`–`0xF3`).
 
@@ -36,13 +36,16 @@ use serde_json::{Map, Value};
 use super::markers::{
     ARR0, ARR1, ARR_L1, ARR_L2, ARR_L4, ARR_LC1, ARR_LC2, ARR_LC4, BASE64_STRING_LENGTH1,
     BASE64_STRING_LENGTH2, BASE64_URL_STRING_LENGTH1, BASE64_URL_STRING_LENGTH2,
+    COMPRESSED_DATE_TIME_STRING, COMPRESSED_LOWERCASE_HEX_STRING, COMPRESSED_UPPERCASE_HEX_STRING,
     DOUBLE_QUOTED_LOWERCASE_GUID_STRING, ENCODED_STRING_LENGTH_MASK, ENCODED_STRING_LENGTH_MAX,
     ENCODED_STRING_LENGTH_MIN, FALSE, FLOAT32, FLOAT64, INT16, INT32, INT64, INT8, LITERAL_INT_MAX,
     LITERAL_INT_MIN, LOWERCASE_GUID_STRING, NULL, NUMBER_DOUBLE, NUMBER_INT16, NUMBER_INT32,
     NUMBER_INT64, NUMBER_UINT64, NUMBER_UINT8, OBJ0, OBJ1, OBJ_L1, OBJ_L2, OBJ_L4, OBJ_LC1,
-    OBJ_LC2, OBJ_LC4, STR_L1, STR_L2, STR_L4, STR_R1, STR_R2, STR_R3, STR_R4,
-    SYSTEM_STRING_1BYTE_MAX, SYSTEM_STRING_1BYTE_MIN, TRUE, UINT32, UPPERCASE_GUID_STRING,
-    USER_STRING_1BYTE_MAX, USER_STRING_1BYTE_MIN, USER_STRING_2BYTE_MAX, USER_STRING_2BYTE_MIN,
+    OBJ_LC2, OBJ_LC4, PACKED_4BIT_STRING, PACKED_5BIT_STRING, PACKED_6BIT_STRING,
+    PACKED_7BIT_STRING_LENGTH1, PACKED_7BIT_STRING_LENGTH2, STR_L1, STR_L2, STR_L4, STR_R1, STR_R2,
+    STR_R3, STR_R4, SYSTEM_STRING_1BYTE_MAX, SYSTEM_STRING_1BYTE_MIN, TRUE, UINT32,
+    UPPERCASE_GUID_STRING, USER_STRING_1BYTE_MAX, USER_STRING_1BYTE_MIN, USER_STRING_2BYTE_MAX,
+    USER_STRING_2BYTE_MIN,
 };
 use super::system_strings::system_string_for_marker;
 use super::{is_binary, BinaryError, Result};
@@ -292,6 +295,24 @@ impl<'a> Reader<'a> {
             BASE64_STRING_LENGTH2 => Ok(Value::String(self.read_base64_string(2, false)?)),
             BASE64_URL_STRING_LENGTH1 => Ok(Value::String(self.read_base64_string(1, true)?)),
             BASE64_URL_STRING_LENGTH2 => Ok(Value::String(self.read_base64_string(2, true)?)),
+
+            // Compressed strings. The 4-bit table forms map each nibble through
+            // a fixed character set; the packed N-bit forms unpack N-bit values
+            // (optionally offset by a base character). All decode to ASCII text.
+            COMPRESSED_LOWERCASE_HEX_STRING => Ok(Value::String(
+                self.read_table_string(compression::LOWERCASE_HEX)?,
+            )),
+            COMPRESSED_UPPERCASE_HEX_STRING => Ok(Value::String(
+                self.read_table_string(compression::UPPERCASE_HEX)?,
+            )),
+            COMPRESSED_DATE_TIME_STRING => Ok(Value::String(
+                self.read_table_string(compression::DATE_TIME)?,
+            )),
+            PACKED_4BIT_STRING => Ok(Value::String(self.read_packed_string(4, true, 1)?)),
+            PACKED_5BIT_STRING => Ok(Value::String(self.read_packed_string(5, true, 1)?)),
+            PACKED_6BIT_STRING => Ok(Value::String(self.read_packed_string(6, true, 1)?)),
+            PACKED_7BIT_STRING_LENGTH1 => Ok(Value::String(self.read_packed_string(7, false, 1)?)),
+            PACKED_7BIT_STRING_LENGTH2 => Ok(Value::String(self.read_packed_string(7, false, 2)?)),
 
             // User strings reference an external string dictionary that the
             // Cosmos data plane does not supply, so they cannot be resolved to
@@ -584,6 +605,75 @@ impl<'a> Reader<'a> {
         Ok(encoded)
     }
 
+    /// Reads a 4-bit table-compressed string (lowercase hex, uppercase hex, or
+    /// date-time). A 1-byte prefix gives the decoded character count `len`; the
+    /// payload is `ceil(len / 2)` bytes, each holding two 4-bit indices into
+    /// `table` (low nibble first, then high nibble), mirroring .NET
+    /// `Decode4BitCharacterStringValue`.
+    fn read_table_string(&mut self, table: &[u8; 16]) -> Result<String> {
+        let len = usize::from(self.read_u8()?);
+        let byte_count = len.div_ceil(2);
+        let bytes = self.read_bytes(byte_count)?;
+
+        let mut out = String::with_capacity(len);
+        for (index, &byte) in bytes.iter().enumerate() {
+            // Low nibble is the first character of the pair.
+            out.push(char::from(table[usize::from(byte & 0x0F)]));
+            // The final byte of an odd-length string contributes only its low
+            // nibble; its high nibble is padding and must be zero.
+            let produced_low_only = index == byte_count - 1 && len % 2 == 1;
+            if produced_low_only {
+                if byte >> 4 != 0 {
+                    return Err(BinaryError::InvalidLength {
+                        detail: "compressed string has non-zero padding nibble",
+                    });
+                }
+            } else {
+                out.push(char::from(table[usize::from(byte >> 4)]));
+            }
+        }
+        Ok(out)
+    }
+
+    /// Reads a packed N-bit compressed string. A length prefix (`length_width`
+    /// bytes, little-endian) gives the decoded character count `len`; the
+    /// payload is `ceil(len * bits / 8)` bytes holding `len` little-endian
+    /// `bits`-wide values. When `has_base`, a 1-byte base character precedes the
+    /// payload and is added to every unpacked value. Mirrors .NET
+    /// `DecodeCompressedStringValue`.
+    fn read_packed_string(
+        &mut self,
+        bits: u32,
+        has_base: bool,
+        length_width: usize,
+    ) -> Result<String> {
+        let len = self.read_len(length_width)?;
+        let base = if has_base { self.read_u8()? } else { 0 };
+        let byte_count = (len * bits as usize).div_ceil(8);
+        let bytes = self.read_bytes(byte_count)?;
+
+        // Unpack `len` values of `bits` bits each, least-significant bit first,
+        // from a contiguous little-endian bit stream.
+        let mask = (1u32 << bits) - 1;
+        let mut out = String::with_capacity(len);
+        let mut bit_pos = 0usize;
+        for _ in 0..len {
+            let byte_index = bit_pos / 8;
+            let bit_offset = bit_pos % 8;
+            // A value spans at most two bytes for bits <= 8; read a little-endian
+            // 16-bit window so the value is always fully covered.
+            let lo = u32::from(bytes[byte_index]);
+            let hi = bytes.get(byte_index + 1).map_or(0, |&b| u32::from(b));
+            let window = lo | (hi << 8);
+            let value = (window >> bit_offset) & mask;
+            // Each unpacked value is a byte; `+ base` yields the ASCII char.
+            let ch = (value as u8).wrapping_add(base);
+            out.push(char::from(ch));
+            bit_pos += bits as usize;
+        }
+        Ok(out)
+    }
+
     /// Resolves a reference string ([`STR_R1`]–[`STR_R4`]) whose `target` is an
     /// absolute byte offset into the buffer (the same frame as [`Reader::pos`],
     /// where the [`PREAMBLE`](super::PREAMBLE) is offset `0`).
@@ -640,6 +730,23 @@ fn double_value(n: f64) -> Result<Value> {
         .ok_or(BinaryError::InvalidNumber {
             detail: "non-finite double (NaN or infinity)",
         })
+}
+
+/// Character lookup tables for the 4-bit table-compressed string forms.
+///
+/// Each table maps a 4-bit nibble (`0x0`–`0xF`) to one ASCII byte, transcribed
+/// verbatim from the .NET `StringCompressionLookupTables` `list` arrays
+/// (`JsonBinaryEncoding.Chars.cs`).
+mod compression {
+    /// Lowercase hexadecimal digits (`CompressedLowercaseHexString`).
+    pub(super) const LOWERCASE_HEX: &[u8; 16] = b"0123456789abcdef";
+
+    /// Uppercase hexadecimal digits (`CompressedUppercaseHexString`).
+    pub(super) const UPPERCASE_HEX: &[u8; 16] = b"0123456789ABCDEF";
+
+    /// Date-time character set (`CompressedDateTimeString`): space, digits, and
+    /// the `:`, `-`, `.`, `T`, `Z` separators used in ISO-8601 timestamps.
+    pub(super) const DATE_TIME: &[u8; 16] = b" 0123456789:-.TZ";
 }
 
 #[cfg(test)]
@@ -808,13 +915,13 @@ mod tests {
 
     #[test]
     fn deferred_markers_report_invalid_for_now() {
-        // A compressed-string marker is valid in the format but implemented in
-        // a later sub-phase (P1d-4); until then it surfaces as InvalidMarker.
+        // The GUID value marker (0xD3) is valid in the format but implemented
+        // in a later sub-phase (P1d-5); until then it surfaces as InvalidMarker.
         // The offset points at the marker (index 1, just past the preamble).
         assert_eq!(
-            decode(&[PREAMBLE, markers::COMPRESSED_LOWERCASE_HEX_STRING]),
+            decode(&[PREAMBLE, markers::GUID]),
             Err(BinaryError::InvalidMarker {
-                marker: markers::COMPRESSED_LOWERCASE_HEX_STRING,
+                marker: markers::GUID,
                 offset: 1,
             }),
         );
@@ -1005,6 +1112,81 @@ mod tests {
         assert_eq!(
             decode(&buf(&base64_len1(1, 0, b"f"))),
             Err(BinaryError::UnexpectedEof { needed: 2 }),
+        );
+    }
+
+    #[test]
+    fn decodes_table_compressed_strings() {
+        // Lowercase hex "1a2b": chars [1, a, 2, b] pack low-nibble-first into
+        // bytes [0xA1, 0xB2] (len 4).
+        let lower = [markers::COMPRESSED_LOWERCASE_HEX_STRING, 4, 0xA1, 0xB2];
+        assert_eq!(decode(&buf(&lower)).unwrap(), serde_json::json!("1a2b"));
+        // Uppercase hex with the same bytes yields uppercase digits.
+        let upper = [markers::COMPRESSED_UPPERCASE_HEX_STRING, 4, 0xA1, 0xB2];
+        assert_eq!(decode(&buf(&upper)).unwrap(), serde_json::json!("1A2B"));
+        // Odd length: a single 'f' (index 15) occupies one byte's low nibble;
+        // the high nibble must be zero.
+        let odd = [markers::COMPRESSED_LOWERCASE_HEX_STRING, 1, 0x0F];
+        assert_eq!(decode(&buf(&odd)).unwrap(), serde_json::json!("f"));
+        // Date-time set: "2024-01" -> chars 2,0,2,4,-,0,1 (7 chars).
+        // Indices: '2'=3,'0'=1,'2'=3,'4'=5,'-'=12,'0'=1,'1'=2.
+        // Packed pairs (low,high): (3,1)->0x13, (3,5)->0x53, (12,1)->0x1C,
+        // then trailing '1'=2 alone -> 0x02.
+        let dt = [
+            markers::COMPRESSED_DATE_TIME_STRING,
+            7,
+            0x13,
+            0x53,
+            0x1C,
+            0x02,
+        ];
+        assert_eq!(decode(&buf(&dt)).unwrap(), serde_json::json!("2024-01"));
+    }
+
+    #[test]
+    fn rejects_table_compressed_string_with_padding_nibble() {
+        // Odd length 1 but the (only) byte's high nibble is non-zero padding.
+        let bad = [markers::COMPRESSED_LOWERCASE_HEX_STRING, 1, 0x1F];
+        assert!(matches!(
+            decode(&buf(&bad)),
+            Err(BinaryError::InvalidLength { .. }),
+        ));
+    }
+
+    #[test]
+    fn decodes_packed_compressed_strings() {
+        // 7-bit "Hi" (values 0x48, 0x69) packs to [0xC8, 0x34], no base char.
+        let p7 = [markers::PACKED_7BIT_STRING_LENGTH1, 2, 0xC8, 0x34];
+        assert_eq!(decode(&buf(&p7)).unwrap(), serde_json::json!("Hi"));
+        // 4-bit packed "0123" relative to base '0': values 0..3 pack to
+        // [0x10, 0x32].
+        let p4 = [markers::PACKED_4BIT_STRING, 4, b'0', 0x10, 0x32];
+        assert_eq!(decode(&buf(&p4)).unwrap(), serde_json::json!("0123"));
+        // 5-bit packed "abc" relative to base 'a': values 0..2 pack to
+        // [0x20, 0x08].
+        let p5 = [markers::PACKED_5BIT_STRING, 3, b'a', 0x20, 0x08];
+        assert_eq!(decode(&buf(&p5)).unwrap(), serde_json::json!("abc"));
+        // 6-bit packed "abcd" relative to base 'a': values 0..3 pack to
+        // [0x40, 0x20, 0x0C].
+        let p6 = [markers::PACKED_6BIT_STRING, 4, b'a', 0x40, 0x20, 0x0C];
+        assert_eq!(decode(&buf(&p6)).unwrap(), serde_json::json!("abcd"));
+    }
+
+    #[test]
+    fn decodes_packed_7bit_length2() {
+        // Packed7BitStringLength2 uses a 2-byte little-endian length prefix.
+        let mut bytes = vec![markers::PACKED_7BIT_STRING_LENGTH2];
+        bytes.extend_from_slice(&2u16.to_le_bytes());
+        bytes.extend_from_slice(&[0xC8, 0x34]); // "Hi"
+        assert_eq!(decode(&buf(&bytes)).unwrap(), serde_json::json!("Hi"));
+    }
+
+    #[test]
+    fn rejects_truncated_compressed_string() {
+        // 7-bit length 4 needs ceil(4*7/8) = 4 payload bytes; only one follows.
+        assert_eq!(
+            decode(&[PREAMBLE, markers::PACKED_7BIT_STRING_LENGTH1, 4, 0x00]),
+            Err(BinaryError::UnexpectedEof { needed: 3 }),
         );
     }
 
