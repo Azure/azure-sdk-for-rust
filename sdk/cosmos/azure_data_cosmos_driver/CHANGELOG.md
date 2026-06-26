@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added `TlsBackend` (currently `TlsBackend::Rustls`, the default) and a `tls_backend` option on `ConnectionPoolOptions` (`ConnectionPoolOptionsBuilder::with_tls_backend` / `ConnectionPoolOptions::tls_backend`), available under the `rustls` feature. The driver asserts the selected backend on the `reqwest` transport, giving a supported way to pin the TLS backend without direct transport access. This is additive and changes no behavior for the default (rustls-only) build, where reqwest already negotiates rustls; it only has an effect in builds that compile in multiple reqwest TLS backends (e.g. `rustls` plus `native_tls`, absent reqwest's `http3` feature), where reqwest would otherwise default to native-tls and the driver now pins rustls instead. ([#4649](https://github.com/Azure/azure-sdk-for-rust/pull/4649))
+
 ### Breaking Changes
 
 ### Bugs Fixed
