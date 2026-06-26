@@ -291,6 +291,20 @@ impl Token {
         )
     }
 
+    /// Page size (id `0x0004`, `ULong`) carrying the requested max item count
+    /// for query/read-feed pages. Populated from the `x-ms-max-item-count`
+    /// header; a negative request value (unbounded) is encoded as `0xFFFFFFFF`.
+    pub(crate) fn page_size(value: u32) -> Self {
+        Self::new(RntbdRequestToken::PageSize.into(), TokenValue::ULong(value))
+    }
+
+    /// Match condition (id `0x0008`, `String`) carrying the ETag precondition.
+    /// Populated from `If-None-Match` on reads/read-feeds and from `If-Match`
+    /// on all other operations.
+    pub(crate) fn match_condition(value: String) -> Self {
+        Self::new(RntbdRequestToken::Match.into(), TokenValue::String(value))
+    }
+
     pub(crate) fn consistency_level(value: DefaultConsistencyLevel) -> Self {
         let value = match value {
             DefaultConsistencyLevel::Strong => 0x00,
@@ -503,8 +517,10 @@ pub(crate) enum RntbdRequestToken {
     AuthorizationToken,
     PayloadPresent,
     Date,
+    PageSize,
     SessionToken,
     ContinuationToken,
+    Match,
     ConsistencyLevel,
     DatabaseName,
     CollectionName,
@@ -534,8 +550,10 @@ impl TryFrom<u16> for RntbdRequestToken {
             0x0001 => Ok(Self::AuthorizationToken),
             0x0002 => Ok(Self::PayloadPresent),
             0x0003 => Ok(Self::Date),
+            0x0004 => Ok(Self::PageSize),
             0x0005 => Ok(Self::SessionToken),
             0x0006 => Ok(Self::ContinuationToken),
+            0x0008 => Ok(Self::Match),
             0x0010 => Ok(Self::ConsistencyLevel),
             0x0015 => Ok(Self::DatabaseName),
             0x0016 => Ok(Self::CollectionName),
@@ -566,8 +584,10 @@ impl From<RntbdRequestToken> for u16 {
             RntbdRequestToken::AuthorizationToken => 0x0001,
             RntbdRequestToken::PayloadPresent => 0x0002,
             RntbdRequestToken::Date => 0x0003,
+            RntbdRequestToken::PageSize => 0x0004,
             RntbdRequestToken::SessionToken => 0x0005,
             RntbdRequestToken::ContinuationToken => 0x0006,
+            RntbdRequestToken::Match => 0x0008,
             RntbdRequestToken::ConsistencyLevel => 0x0010,
             RntbdRequestToken::DatabaseName => 0x0015,
             RntbdRequestToken::CollectionName => 0x0016,

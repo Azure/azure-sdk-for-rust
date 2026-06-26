@@ -50,6 +50,10 @@ const X_MS_GLOBAL_COMMITTED_LSN: HeaderName =
     HeaderName::from_static(response_header_names::GLOBAL_COMMITTED_LSN);
 const X_MS_CONTINUATION: HeaderName = HeaderName::from_static(request_header_names::CONTINUATION);
 const X_MS_SESSION_TOKEN: HeaderName = HeaderName::from_static(request_header_names::SESSION_TOKEN);
+const X_MS_MAX_ITEM_COUNT: HeaderName =
+    HeaderName::from_static(request_header_names::MAX_ITEM_COUNT);
+const IF_MATCH: HeaderName = HeaderName::from_static(request_header_names::IF_MATCH);
+const IF_NONE_MATCH: HeaderName = HeaderName::from_static(request_header_names::IF_NONE_MATCH);
 const X_MS_VERSION: HeaderName = HeaderName::from_static(request_header_names::VERSION);
 const CACHE_CONTROL: HeaderName = HeaderName::from_static(request_header_names::CACHE_CONTROL);
 
@@ -280,6 +284,40 @@ pub(crate) fn wrap_request_for_gateway_v2(
         .filter(|s| !s.is_empty())
     {
         metadata.push(Token::session_token(session_token.to_owned()));
+    }
+
+    // Page size (0x0004) carries the requested max item count for query and
+    // read-feed pages, parsed from the `x-ms-max-item-count` header. A negative
+    // (unbounded) request is encoded as 0xFFFFFFFF. Empty or unparseable values
+    // are skipped.
+    if let Some(value) = request
+        .headers
+        .get_optional_str(&X_MS_MAX_ITEM_COUNT)
+        .filter(|s| !s.is_empty())
+    {
+        if let Ok(parsed) = value.parse::<i64>() {
+            let page_size = if parsed < 0 {
+                0xFFFF_FFFF
+            } else {
+                parsed.min(0xFFFF_FFFF) as u32
+            };
+            metadata.push(Token::page_size(page_size));
+        }
+    }
+
+    // Match condition (0x0008): reads and read-feeds carry `If-None-Match`
+    // (conditional GET), all other operations carry `If-Match` (the ETag write
+    // precondition). Empty values are skipped.
+    let match_header = match inputs.operation_type {
+        OperationType::Read | OperationType::ReadFeed => &IF_NONE_MATCH,
+        _ => &IF_MATCH,
+    };
+    if let Some(value) = request
+        .headers
+        .get_optional_str(match_header)
+        .filter(|s| !s.is_empty())
+    {
+        metadata.push(Token::match_condition(value.to_owned()));
     }
 
     let frame = RntbdRequestFrame {
@@ -1238,6 +1276,128 @@ mod tests {
         assert!(!parse_wrapped_request(&wrapped_empty, 0)
             .tokens
             .contains_key(&0x0005));
+    }
+
+    #[test]
+    fn wrap_emits_page_size_from_max_item_count_header() {
+        // Query/read-feed page size must reach the proxy as PageSize (0x0004,
+        // ULong), filled from `x-ms-max-item-count`. A negative (unbounded)
+        // request is encoded as 0xFFFFFFFF.
+        let auth_context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs/doc1",
+        );
+
+        let mut request = signed_request(None);
+        request.headers.insert(
+            HeaderName::from_static(request_header_names::MAX_ITEM_COUNT),
+            "100",
+        );
+        let wrapped = wrap_request_for_gateway_v2(
+            &request,
+            &wrap_inputs(&auth_context, OperationType::ReadFeed, None, None),
+        )
+        .unwrap();
+        assert_eq!(
+            parse_wrapped_request(&wrapped, 0).tokens[&0x0004],
+            ParsedTokenValue::ULong(100),
+            "PageSize (0x0004) must be emitted from x-ms-max-item-count"
+        );
+
+        let mut unbounded = signed_request(None);
+        unbounded.headers.insert(
+            HeaderName::from_static(request_header_names::MAX_ITEM_COUNT),
+            "-1",
+        );
+        let wrapped_unbounded = wrap_request_for_gateway_v2(
+            &unbounded,
+            &wrap_inputs(&auth_context, OperationType::ReadFeed, None, None),
+        )
+        .unwrap();
+        assert_eq!(
+            parse_wrapped_request(&wrapped_unbounded, 0).tokens[&0x0004],
+            ParsedTokenValue::ULong(0xFFFF_FFFF),
+            "a negative max item count must encode as 0xFFFFFFFF"
+        );
+    }
+
+    #[test]
+    fn wrap_omits_page_size_when_header_absent() {
+        let request = signed_request(None);
+        let auth_context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs/doc1",
+        );
+        let wrapped = wrap_request_for_gateway_v2(
+            &request,
+            &wrap_inputs(&auth_context, OperationType::ReadFeed, None, None),
+        )
+        .unwrap();
+        assert!(!parse_wrapped_request(&wrapped, 0)
+            .tokens
+            .contains_key(&0x0004));
+    }
+
+    #[test]
+    fn wrap_emits_match_from_if_match_on_writes() {
+        // Writes carry the ETag precondition as Match (0x0008, String) filled
+        // from `If-Match`; `If-None-Match` is ignored on a write.
+        let auth_context = AuthorizationContext::new(
+            Method::Put,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs/doc1",
+        );
+        let mut request = signed_request(Some(b"{}"));
+        request.headers.insert(
+            HeaderName::from_static(request_header_names::IF_MATCH),
+            "\"etag-42\"",
+        );
+        request.headers.insert(
+            HeaderName::from_static(request_header_names::IF_NONE_MATCH),
+            "\"ignored\"",
+        );
+        let wrapped = wrap_request_for_gateway_v2(
+            &request,
+            &wrap_inputs(&auth_context, OperationType::Replace, None, None),
+        )
+        .unwrap();
+        assert_eq!(
+            parse_wrapped_request(&wrapped, 0).tokens[&0x0008],
+            ParsedTokenValue::String("\"etag-42\"".into()),
+            "Match (0x0008) on a write must come from If-Match"
+        );
+    }
+
+    #[test]
+    fn wrap_emits_match_from_if_none_match_on_reads() {
+        // Reads/read-feeds carry the conditional-GET precondition as Match
+        // (0x0008) filled from `If-None-Match`; `If-Match` is ignored on reads.
+        let auth_context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs/doc1",
+        );
+        let mut request = signed_request(None);
+        request.headers.insert(
+            HeaderName::from_static(request_header_names::IF_NONE_MATCH),
+            "\"etag-7\"",
+        );
+        request.headers.insert(
+            HeaderName::from_static(request_header_names::IF_MATCH),
+            "\"ignored\"",
+        );
+        let wrapped = wrap_request_for_gateway_v2(
+            &request,
+            &wrap_inputs(&auth_context, OperationType::Read, None, None),
+        )
+        .unwrap();
+        assert_eq!(
+            parse_wrapped_request(&wrapped, 0).tokens[&0x0008],
+            ParsedTokenValue::String("\"etag-7\"".into()),
+            "Match (0x0008) on a read must come from If-None-Match"
+        );
     }
 
     #[test]
