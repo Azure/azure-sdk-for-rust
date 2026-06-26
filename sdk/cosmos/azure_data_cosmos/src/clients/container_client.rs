@@ -301,7 +301,7 @@ impl ContainerClient {
         options: Option<ItemWriteOptions>,
     ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
-        let body = serialize_item_body(&item, binary_request_encoding_enabled())?;
+        let body = serialize_item_body(&item, self.context.binary_encoding.enabled())?;
 
         // Build the driver's item reference from our stored container metadata.
         let item_ref = ItemReference::from_name(
@@ -399,7 +399,7 @@ impl ContainerClient {
         options: Option<ItemWriteOptions>,
     ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
-        let body = serialize_item_body(&item, binary_request_encoding_enabled())?;
+        let body = serialize_item_body(&item, self.context.binary_encoding.enabled())?;
 
         // Build the driver's item reference from our stored container metadata.
         let item_ref = ItemReference::from_name(
@@ -607,7 +607,7 @@ impl ContainerClient {
         options: Option<ItemWriteOptions>,
     ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
-        let body = serialize_item_body(&item, binary_request_encoding_enabled())?;
+        let body = serialize_item_body(&item, self.context.binary_encoding.enabled())?;
 
         // Build the driver's item reference from our stored container metadata.
         let item_ref = ItemReference::from_name(
@@ -1149,26 +1149,6 @@ fn apply_item_options(
         operation = operation.with_precondition(precondition);
     }
     operation
-}
-
-/// Whether item write bodies should be encoded as Cosmos binary JSON instead of
-/// UTF-8 text JSON.
-///
-/// **Temporary internal switch (P2b).** Reads
-/// `AZURE_COSMOS_BINARY_ENCODING_ENABLED` from the environment on each call and
-/// is disabled unless it is set to a truthy value (`1` / `true` / `yes` / `on`,
-/// case-insensitive, trimmed). It exists only to exercise the encoder end to
-/// end; a proper client/driver option (defaulting from this same variable)
-/// replaces it in P3, when the request-side negotiation header is also emitted.
-fn binary_request_encoding_enabled() -> bool {
-    std::env::var("AZURE_COSMOS_BINARY_ENCODING_ENABLED")
-        .map(|v| {
-            matches!(
-                v.trim().to_ascii_lowercase().as_str(),
-                "1" | "true" | "yes" | "on"
-            )
-        })
-        .unwrap_or(false)
 }
 
 /// Serializes an item write body as either Cosmos binary JSON (`binary`) or
