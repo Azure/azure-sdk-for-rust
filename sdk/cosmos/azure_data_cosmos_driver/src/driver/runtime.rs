@@ -596,6 +596,7 @@ impl CosmosDriverRuntimeBuilder {
             5_000,
             1_000,
             60_000,
+            &|k| std::env::var(k).ok(),
         )?;
         let cpu_monitor = CpuMemoryMonitor::get_or_init(refresh_interval);
         let vm_metadata = VmMetadataService::get_or_init().await;
