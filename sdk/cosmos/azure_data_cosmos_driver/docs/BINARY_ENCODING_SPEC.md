@@ -28,7 +28,7 @@ text-equivalent results.
 - Decode binary response bodies for **reads**, **write responses**, and
   **query** result envelopes.
 - Keep the data-plane driver **schema-agnostic** — it never parses item bodies
-  (see [ARCHITECTURE.md](../ARCHITECTURE.md)).
+  (see [ARCHITECTURE.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/ARCHITECTURE.md)).
 - Make decoding robust via **first-byte auto-detection**, independent of
   header negotiation.
 
@@ -37,7 +37,7 @@ text-equivalent results.
 - **Patch**, **transactional batch**, and **bulk** operations. These mirror the
   .NET out-of-scope set. Patch in particular is the only driver code path that
   decodes-merges-re-encodes a body (see
-  [PATCH_HANDLER_SPEC.md](./PATCH_HANDLER_SPEC.md)), so it needs the codec but
+  [PATCH_HANDLER_SPEC.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/PATCH_HANDLER_SPEC.md)), so it needs the codec but
   is sequenced after the core read/write/query path lands.
 
 ## 2. Scope
@@ -313,6 +313,6 @@ intermediate `Value`, eliminating an allocation and a copy on the hot path.
   <https://github.com/Azure/azure-cosmos-dotnet-v3/pull/4652>
 - .NET type markers —
   `Microsoft.Azure.Cosmos/src/Json/JsonBinaryEncoding.TypeMarker.cs`
-- [ARCHITECTURE.md](../ARCHITECTURE.md) — schema-agnostic data-plane principle.
-- [PATCH_HANDLER_SPEC.md](./PATCH_HANDLER_SPEC.md) — the deferred body-parsing path.
-- [TRANSPORT_PIPELINE_SPEC.md](./TRANSPORT_PIPELINE_SPEC.md) — header application.
+- [ARCHITECTURE.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/ARCHITECTURE.md) — schema-agnostic data-plane principle.
+- [PATCH_HANDLER_SPEC.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/PATCH_HANDLER_SPEC.md) — the deferred body-parsing path.
+- [TRANSPORT_PIPELINE_SPEC.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/TRANSPORT_PIPELINE_SPEC.md) — header application.
