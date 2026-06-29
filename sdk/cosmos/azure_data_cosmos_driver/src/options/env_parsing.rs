@@ -8,9 +8,13 @@
 //! helpers here only resolve a final value from
 //! `builder override → pre-read env value → default` and validate it against
 //! bounds. A few driver-level helpers (`parse_duration_millis_from_env`,
-//! `parse_from_env`, `parse_optional_bool_from_env`) additionally read
-//! `std::env::var` directly for option builders that are not macro-generated;
-//! like the macro, they log and ignore a present-but-unparseable value
+//! `parse_from_env`, `parse_optional_bool_from_env`) additionally look up
+//! environment variables for option builders that are not macro-generated.
+//! Rather than calling `std::env::var` directly, they take a
+//! `get_env: &dyn Fn(&str) -> Option<String>` accessor (production passes
+//! `|k| std::env::var(k).ok()`; tests inject a deterministic map so option
+//! resolution can be exercised without racing on process-wide environment).
+//! Like the macro, they log and ignore a present-but-unparseable value
 //! (fail-soft) rather than erroring.
 
 use std::time::Duration;
@@ -161,10 +165,13 @@ pub(crate) fn resolve_duration_ms(
 /// Reads, resolves, and validates a millisecond-duration environment variable
 /// in a single call.
 ///
-/// Reads `env_var_name` itself (parsing it as `u64` milliseconds), then applies
-/// the shared `builder → env → default` resolution and bounds validation. This
-/// is the single duration env-reading path shared by the driver-level option
-/// builders (e.g. [`PartitionFailoverOptions`](crate::options::PartitionFailoverOptions))
+/// Looks up `env_var_name` through the supplied `get_env` accessor (parsing it
+/// as `u64` milliseconds), then applies the shared `builder → env → default`
+/// resolution and bounds validation. `get_env` is normally
+/// `|k| std::env::var(k).ok()`; tests inject a deterministic map so they don't
+/// race on process-wide environment. This is the single duration env-reading
+/// path shared by the driver-level option builders (e.g.
+/// [`PartitionFailoverOptions`](crate::options::PartitionFailoverOptions))
 /// and the runtime CPU-refresh interval.
 pub(crate) fn parse_duration_millis_from_env(
     builder_value: Option<Duration>,
@@ -172,8 +179,9 @@ pub(crate) fn parse_duration_millis_from_env(
     default_millis: u64,
     min_millis: u64,
     max_millis: u64,
+    get_env: &dyn Fn(&str) -> Option<String>,
 ) -> crate::error::Result<Duration> {
-    let env_millis = std::env::var(env_var_name).ok().and_then(|raw| {
+    let env_millis = get_env(env_var_name).and_then(|raw| {
         raw.parse::<u64>().ok().or_else(|| {
             // Fail-soft: a present-but-unparseable value is logged and ignored
             // (falls back to the default), matching the macro's lenient
@@ -203,11 +211,12 @@ pub(super) fn parse_from_env<T>(
     env_var_name: &str,
     default: T,
     bounds: ValidationBounds<T>,
+    get_env: &dyn Fn(&str) -> Option<String>,
 ) -> crate::error::Result<T>
 where
     T: PartialOrd + std::fmt::Debug + std::str::FromStr,
 {
-    let env_value = std::env::var(env_var_name).ok().and_then(|raw| {
+    let env_value = get_env(env_var_name).and_then(|raw| {
         raw.parse::<T>().ok().or_else(|| {
             // Fail-soft: a present-but-unparseable value is logged and ignored
             // (falls back to the default), matching the macro's lenient
@@ -235,12 +244,13 @@ where
 pub(super) fn parse_optional_bool_from_env(
     builder_value: Option<bool>,
     env_var_name: &str,
+    get_env: &dyn Fn(&str) -> Option<String>,
 ) -> Option<bool> {
     if let Some(value) = builder_value {
         return Some(value);
     }
 
-    let raw = std::env::var(env_var_name).ok()?;
+    let raw = get_env(env_var_name)?;
     match raw.trim().to_ascii_lowercase().as_str() {
         "true" | "1" | "yes" | "on" => Some(true),
         "false" | "0" | "no" | "off" => Some(false),
@@ -313,6 +323,106 @@ pub(super) fn resolve_optional_duration_ms(
             Ok(Some(value))
         }
         None => Ok(None),
+    }
+}
+
+/// Shared helpers for tests that exercise the *real* process environment.
+///
+/// Mutating `std::env` is process-global, so every test that does so — in any
+/// module — must serialize on one lock and restore what it changed, otherwise
+/// tests racing in parallel corrupt each other's view of the environment. This
+/// module provides that single lock plus a scoping helper, so the partition-
+/// failover and driver-options test modules can validate that the production
+/// `build()` path (which reads `std::env::var`) honors the `AZURE_COSMOS_PPCB_*`
+/// variables.
+#[cfg(test)]
+pub(crate) mod test_env {
+    use std::sync::Mutex;
+
+    /// Process-wide lock serializing every test that mutates real environment
+    /// variables through [`with_scoped_env`].
+    static ENV_TEST_LOCK: Mutex<()> = Mutex::new(());
+
+    /// Every `AZURE_COSMOS_PPCB_*` environment variable read by
+    /// [`PartitionFailoverOptionsBuilder::build`](crate::options::PartitionFailoverOptionsBuilder::build).
+    /// Tests clear all of these before applying their own subset so a value left
+    /// in the ambient / CI environment cannot leak into an assertion.
+    pub(crate) const PPCB_ENV_VARS: &[&str] = &[
+        "AZURE_COSMOS_PPCB_ENABLED",
+        "AZURE_COSMOS_PPCB_ENABLED_OVERRIDE",
+        "AZURE_COSMOS_PPCB_READ_FAILURE_THRESHOLD",
+        "AZURE_COSMOS_PPCB_WRITE_FAILURE_THRESHOLD",
+        "AZURE_COSMOS_PPCB_COUNTER_RESET_WINDOW_MS",
+        "AZURE_COSMOS_PPCB_PARTITION_UNAVAILABILITY_DURATION_MS",
+        "AZURE_COSMOS_PPCB_FAILBACK_SWEEP_INTERVAL_MS",
+        "AZURE_COSMOS_PPCB_CONSECUTIVE_HEDGE_WIN_THRESHOLD",
+    ];
+
+    /// Every environment variable read by `OperationOptions::from_env` /
+    /// `from_env_override` (including the nested `ThrottlingRetryOptions`).
+    /// Tests clear all of these so an ambient value can't leak into an
+    /// assertion about a single field.
+    pub(crate) const OPERATION_ENV_VARS: &[&str] = &[
+        "AZURE_COSMOS_READ_CONSISTENCY_STRATEGY",
+        "AZURE_COSMOS_CONTENT_RESPONSE_ON_WRITE",
+        "AZURE_COSMOS_MAX_FAILOVER_RETRY_COUNT",
+        "AZURE_COSMOS_MAX_SESSION_RETRY_COUNT",
+        "AZURE_COSMOS_MAX_THROTTLE_RETRY_COUNT",
+        "AZURE_COSMOS_HEDGING_ENABLED",
+        "AZURE_COSMOS_HEDGING_ENABLED_OVERRIDE",
+    ];
+
+    /// Runs `body` with a hermetic view of the named environment variables.
+    ///
+    /// Holds the shared [`ENV_TEST_LOCK`] for the whole call (so parallel tests
+    /// don't race), snapshots and **removes** every key in `clear` (so the test
+    /// starts from a known-empty state regardless of ambient environment), then
+    /// applies each `(key, value)` in `set`. The original values of all `clear`
+    /// keys are restored when the call returns — including on panic, via a
+    /// `Drop` guard — and the restore happens before the lock is released.
+    ///
+    /// `std::env::set_var` / `remove_var` are safe to call here on the crate's
+    /// edition; the serialization above is what makes that sound under parallel
+    /// test execution.
+    pub(crate) fn with_scoped_env<R>(
+        clear: &[&str],
+        set: &[(&str, &str)],
+        body: impl FnOnce() -> R,
+    ) -> R {
+        // Recover a poisoned lock: a prior test panicking while holding it left
+        // no shared state behind (the env is restored by the `Drop` guard), so
+        // the lock is still usable.
+        let _guard = ENV_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+
+        let saved: Vec<(String, Option<String>)> = clear
+            .iter()
+            .map(|&k| (k.to_string(), std::env::var(k).ok()))
+            .collect();
+
+        // Restore-on-drop runs before `_guard` drops (reverse declaration
+        // order), so the environment is repaired while the lock is still held,
+        // even if `body` panics.
+        struct Restore(Vec<(String, Option<String>)>);
+        impl Drop for Restore {
+            fn drop(&mut self) {
+                for (k, original) in &self.0 {
+                    match original {
+                        Some(v) => std::env::set_var(k, v),
+                        None => std::env::remove_var(k),
+                    }
+                }
+            }
+        }
+        let _restore = Restore(saved);
+
+        for &k in clear {
+            std::env::remove_var(k);
+        }
+        for &(k, v) in set {
+            std::env::set_var(k, v);
+        }
+
+        body()
     }
 }
 

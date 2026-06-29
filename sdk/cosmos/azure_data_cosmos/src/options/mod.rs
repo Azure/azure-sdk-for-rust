@@ -20,7 +20,7 @@ pub use azure_data_cosmos_driver::options::{
     ReadConsistencyStrategy, Region, ServerCertificateValidation, ThrottlingRetryOptions,
     ThrottlingRetryOptionsBuilder, ThrottlingRetryOptionsView, ThroughputControlGroupOptions,
     ThroughputControlOptions, ThroughputControlOptionsBuilder, ThroughputControlOptionsView,
-    UserAgentSuffix,
+    TlsBackend, UserAgentSuffix,
 };
 pub use batch::{
     BatchDeleteOptions, BatchOptions, BatchReadOptions, BatchReplaceOptions, BatchUpsertOptions,
