@@ -15,11 +15,10 @@ use crate::generated::models::{
     BlobContainerClientReleaseLeaseOptions, BlobContainerClientReleaseLeaseResult,
     BlobContainerClientRenewLeaseOptions, BlobContainerClientRenewLeaseResult,
     BlobContainerClientSetAccessPolicyOptions, BlobContainerClientSetMetadataOptions,
-    FilteredBlobResponse, ListBlobsHierarchicalResponse, ListBlobsResponse,
-    ListBlobsResponseMetadata, SignedIdentifiers,
+    FilteredBlobResponse, ListBlobsHierarchicalResponse, ListBlobsResponse, SignedIdentifiers,
 };
 use azure_core::{
-    error::{CheckSuccessOptions, ErrorKind},
+    error::CheckSuccessOptions,
     fmt::SafeDebug,
     http::{
         pager::{PagerContinuation, PagerResult, PagerState},
@@ -30,32 +29,6 @@ use azure_core::{
     tracing, xml, Result,
 };
 use std::collections::HashMap;
-
-const UTF8_BOM: [u8; 3] = [0xEF, 0xBB, 0xBF];
-
-fn from_xml_borrowed<'a, T>(body: &'a [u8]) -> Result<T>
-where
-    T: serde::Deserialize<'a>,
-{
-    let body = if body.len() > 3 && body[0..3] == UTF8_BOM {
-        &body[3..]
-    } else {
-        body
-    };
-    let xml = std::str::from_utf8(body).map_err(|err| {
-        azure_core::Error::with_error_fn(ErrorKind::DataConversion, err, || {
-            let t = core::any::type_name::<T>();
-            format!("failed to deserialize the following xml into a {t}\n(XML is not UTF8-encoded)")
-        })
-    })?;
-
-    quick_xml::de::from_str(xml).map_err(|err| {
-        azure_core::Error::with_error_fn(ErrorKind::DataConversion, err, || {
-            let t = core::any::type_name::<T>();
-            format!("failed to deserialize the following xml into a {t}\n{xml}")
-        })
-    })
-}
 
 #[tracing::client]
 pub struct BlobContainerClient {
@@ -738,6 +711,13 @@ impl BlobContainerClient {
         &self,
         options: Option<BlobContainerClientListBlobsOptions<'_>>,
     ) -> Result<Pager<ListBlobsResponse, XmlFormat>> {
+        #[derive(serde::Deserialize)]
+        #[serde(rename = "EnumerationResults")]
+        struct BlobContainerClientListBlobsResponse<'a> {
+            #[serde(borrow, rename = "NextMarker")]
+            next_marker: Option<std::borrow::Cow<'a, str>>,
+        }
+
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
@@ -798,12 +778,11 @@ impl BlobContainerClient {
                         )
                         .await?;
                     let (status, headers, body) = rsp.deconstruct();
-                    let continuation_token =
-                        from_xml_borrowed::<ListBlobsResponseMetadata<'_>>(&body)?
-                            .next_marker
-                            .and_then(|marker_cow| {
-                                (!marker_cow.is_empty()).then(|| marker_cow.into_owned())
-                            });
+                    let metadata: BlobContainerClientListBlobsResponse<'_> =
+                        xml::from_xml_ref(&body)?;
+                    let continuation_token = metadata.next_marker.and_then(|marker_cow| {
+                        (!marker_cow.is_empty()).then(|| marker_cow.into_owned())
+                    });
                     let rsp = RawResponse::from_bytes(status, headers, body).into();
                     Ok(match continuation_token {
                         Some(next_marker) => PagerResult::More {
