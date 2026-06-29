@@ -20,6 +20,7 @@
     "backpressure",
     "BADFUNC",
     "bindgen",
+    "bitmask",
     "brazilsouth",
     "BUFFERTOOSMALL",
     "bytearray",
