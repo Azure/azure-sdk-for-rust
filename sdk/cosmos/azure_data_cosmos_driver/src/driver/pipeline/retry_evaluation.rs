@@ -398,7 +398,9 @@ fn evaluate_http_outcome(
 /// current hub for this partition". The handler emits an
 /// [`LocationEffect::AdvanceHubRegionDiscovery`] that rotates the cached
 /// hub endpoint to the next preferred-read endpoint and consumes a
-/// failover-budget attempt. It does NOT emit
+/// failover-budget attempt. Once that budget is exhausted the branch returns
+/// `None`, which aborts the operation rather than retrying indefinitely. It
+/// does NOT emit
 /// [`LocationEffect::MarkEndpointUnavailable`] or
 /// [`LocationEffect::RefreshAccountProperties`] — the endpoint is healthy
 /// for non-hub reads of other partitions, and the topology is unchanged.
@@ -424,31 +426,27 @@ fn try_handle_write_forbidden(
     // `RefreshAccountProperties` / `MarkEndpointUnavailable` /
     // `MarkPartitionUnavailable` would poison routing state for unrelated
     // partitions. When the partition key range ID is known, emit
-    // `AdvanceHubRegionDiscovery` to rotate the cache; when missing
-    // (defense in depth — should not happen for dispatched data-plane
-    // reads since PK range resolution precedes execution), retry failover
-    // with no location effects.
+    // `AdvanceHubRegionDiscovery` to rotate the cache; when missing, retry
+    // failover with no location effects.
     if retry_state.hub_region_processing_only && operation.is_read_only() {
+        // Enforce the failover budget here — the outer pipeline does not cap
+        // failover attempts on its own, so returning `None` (which aborts) is
+        // the only thing that terminates a persistent 403/3 read.
+        if !retry_state.can_retry_failover() {
+            return None;
+        }
+
         let effects = if let Some(pk_range_id) = retry_state.partition_key_range_id.clone() {
             vec![LocationEffect::AdvanceHubRegionDiscovery {
                 partition_key_range_id: pk_range_id,
                 failed_endpoint: endpoint.clone(),
             }]
         } else {
-            // Invariant violation: a hub-region-mode read should always have
-            // its partition key range resolved before dispatch. Reaching this
-            // branch means the latch was armed without PK resolution, which
-            // is either a routing bug or a non-PK operation being misclassified
-            // as data-plane. Log loudly and assert in debug builds. We still
-            // return `FailoverRetry` rather than poisoning account state with
-            // the standard 403/3 effects (they would punish unrelated
-            // partitions for what is a partition-scoped signal).
-            debug_assert!(
-                false,
-                "hub_region_processing_only latched but partition_key_range_id is None; \
-                 PK resolution should precede data-plane dispatch",
-            );
-            tracing::error!(
+            // No partition key range ID available for this hub-region read
+            // (e.g. a read that did not go through PK-range pre-resolution).
+            // Without it we cannot rotate a per-partition cache entry, so fall
+            // back to a plain failover retry with no location effects.
+            tracing::warn!(
                 endpoint = %endpoint.url(),
                 failover_retries = retry_state.failover_retry_count,
                 "hub-region 403/3 retry has no partition_key_range_id; \
@@ -2633,17 +2631,11 @@ mod tests {
             .any(|e| matches!(e, LocationEffect::AdvanceHubRegionDiscovery { .. })));
     }
 
-    /// Hub-region branch on a read with the latch active but **no** partition
-    /// key range ID. In production this is unreachable on dispatched data-plane
-    /// reads (PK range resolution precedes execution), so we hold a
-    /// `debug_assert!` against it to catch the contract violation loudly
-    /// during development. In release builds we still avoid poisoning
-    /// account-level state (the upstream 403/3 fall-through is the wrong
-    /// signal for a partition-scoped hub-region failure); the test guards the
-    /// debug-time panic contract.
+    /// Hub-region read with the latch active but no partition key range ID
+    /// falls back to a plain failover retry with no location effects, and
+    /// never panics. (Validates #618.)
     #[test]
-    #[should_panic(expected = "hub_region_processing_only latched but partition_key_range_id is None")]
-    fn read_403_3_with_hub_latch_panics_in_debug_without_pk_range_id() {
+    fn read_403_3_with_hub_latch_no_pk_range_id_falls_back_gracefully() {
         let op = make_read_operation();
         let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
         state.is_dataplane = true;
@@ -2651,12 +2643,43 @@ mod tests {
         // partition_key_range_id intentionally left as None.
 
         let endpoint = test_endpoint();
-        let _ = evaluate_transport_result(
+        let (action, effects) = evaluate_transport_result(
             &op,
             &endpoint,
             make_http_error_status(CosmosStatus::WRITE_FORBIDDEN),
             &state,
         );
+
+        // Graceful fallback: failover retry with no effects (no panic).
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert!(
+            effects.is_empty(),
+            "missing pk_range_id must not emit any location effects, got {effects:?}",
+        );
+    }
+
+    /// Hub-region 403/3 read aborts once the failover budget is exhausted
+    /// rather than retrying indefinitely. (Validates #579.)
+    #[test]
+    fn read_403_3_with_hub_latch_aborts_when_failover_budget_exhausted() {
+        let op = make_read_operation();
+        let mut state = state_with_hub_latch("0");
+        state.failover_retry_count = state.max_failover_retries;
+        let endpoint = test_endpoint();
+
+        let (action, effects) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            make_http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            &state,
+        );
+
+        assert!(
+            matches!(action, OperationAction::Abort { .. }),
+            "hub-region 403/3 must abort once the failover budget is exhausted, got {action:?}",
+        );
+        // No routing-state mutations on the terminal abort.
+        assert!(effects.is_empty(), "aborted hub-region 403/3 must emit no effects");
     }
 
     // ── Shared hub-region latch (Part 5) ──────────────────────────

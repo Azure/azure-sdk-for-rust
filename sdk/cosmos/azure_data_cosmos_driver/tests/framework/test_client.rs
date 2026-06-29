@@ -7,9 +7,11 @@
 use azure_data_cosmos_driver::fault_injection::FaultInjectionRule;
 #[cfg(feature = "__internal_testing")]
 use azure_data_cosmos_driver::CosmosDriver;
+use azure_core::http::StatusCode;
 use azure_data_cosmos_driver::{
     diagnostics::{DiagnosticsContext, PipelineType, TransportSecurity},
     driver::CosmosDriverRuntime,
+    SubStatusCode,
     models::{
         AccountReference, ConnectionString, ContainerReference, CosmosOperation, CosmosResponse,
         DatabaseReference, ItemReference, PartitionKey,
@@ -596,11 +598,15 @@ impl DriverTestRunContext {
             {
                 Ok(c) => return Ok(c),
                 Err(e) => {
-                    let msg = format!("{e}");
-                    if msg.contains("1013") || msg.contains("CollectionCreateInProgress") {
+                    // Match on the typed status/sub-status (404/1013) rather
+                    // than substring-scanning the error message.
+                    let status = e.status();
+                    let create_in_progress = status.status_code() == StatusCode::NotFound
+                        && status.sub_status() == Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS);
+                    if create_in_progress {
                         tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
                         delay_ms = (delay_ms * 2).min(5000);
-                        last_err_msg = Some(msg);
+                        last_err_msg = Some(format!("{e}"));
                         continue;
                     }
                     return Err(e.into());

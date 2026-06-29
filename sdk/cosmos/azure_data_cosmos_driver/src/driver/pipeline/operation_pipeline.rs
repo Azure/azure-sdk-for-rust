@@ -610,12 +610,22 @@ pub(crate) async fn execute_operation_pipeline(
                 if let Some(pk_range_id) =
                     hub_region_cache_populate_target(&retry_state, operation)
                 {
-                    location_state_store
-                        .apply(&[LocationEffect::CacheHubRegion {
-                            partition_key_range_id: pk_range_id,
-                            hub_endpoint: routing.endpoint.clone(),
-                        }])
-                        .await;
+                    // Skip the apply when it would not change state: PPAF off
+                    // (the cache effect is a no-op) or the entry already points
+                    // at this hub endpoint. Both would only churn a clone + CAS.
+                    let partitions = location_state_store.snapshot().partitions;
+                    let already_cached = partitions
+                        .failover_overrides
+                        .get(pk_range_id.as_str())
+                        .is_some_and(|entry| entry.current_endpoint == routing.endpoint);
+                    if partitions.per_partition_automatic_failover_enabled && !already_cached {
+                        location_state_store
+                            .apply(&[LocationEffect::CacheHubRegion {
+                                partition_key_range_id: pk_range_id,
+                                hub_endpoint: routing.endpoint.clone(),
+                            }])
+                            .await;
+                    }
                 }
 
                 return build_cosmos_response(result, diagnostics);
@@ -1147,11 +1157,11 @@ fn resolve_endpoint(
         // `per_partition_automatic_failover_enabled` check mirrors that
         // gate so the hub cache is consulted only when PPAF is on.
         //
-        // Skip when the cached hub region is already buffered as failed in
-        // this operation (the same in-flight skip set PPAF uses) or when the
-        // caller excluded it via `excluded_regions`: fall through to the
-        // default selection (which also honors the exclusion) rather than
-        // retrying the same failed/excluded region.
+        // Skip the cached hub endpoint and fall through to default selection
+        // when it is not a safe target for this read: buffered as failed in
+        // this operation, excluded via `excluded_regions`, or marked
+        // unavailable account-wide (the same availability check the PPCB read
+        // path uses).
         let hub_latch_active = is_read
             && retry_state.hub_region_processing_only
             && partitions.per_partition_automatic_failover_enabled;
@@ -1159,6 +1169,13 @@ fn resolve_endpoint(
             if let Some(entry) = partitions.failover_overrides.get(pk_range_id) {
                 if !ppaf_should_skip(&entry.current_endpoint)
                     && !region_excluded(&entry.current_endpoint)
+                    && endpoint_is_available(
+                        operation,
+                        &entry.current_endpoint,
+                        account,
+                        now,
+                        endpoint_unavailability_ttl,
+                    )
                 {
                     return make_partition_routing(entry.current_endpoint.clone());
                 }
@@ -1824,9 +1841,9 @@ fn try_cleanup_probe_candidate(
 /// completed operation satisfies the populate gate; otherwise `None`.
 ///
 /// The gate requires all three: the hub-region-processing-only latch was
-/// active for this attempt, a partition key range ID is known, 
-/// and the operation is a read.
-
+/// active for this attempt, a partition key range ID is known, and the
+/// operation is a read. The caller additionally skips the apply when PPAF is
+/// disabled or the entry already points at the hub endpoint.
 fn hub_region_cache_populate_target(
     retry_state: &OperationRetryState,
     operation: &CosmosOperation,
@@ -4382,6 +4399,87 @@ mod tests {
         assert_eq!(
             routing.endpoint, eastus,
             "selection must fall through to the non-excluded preferred region",
+        );
+    }
+
+    /// Hub-region warm-path routing skips a cached hub endpoint that has been
+    /// marked unavailable account-wide and falls through to the next available
+    /// read endpoint. (Validates #604.)
+    #[test]
+    fn resolve_endpoint_hub_cache_skips_unavailable_hub() {
+        use crate::driver::routing::partition_endpoint_state::{
+            HealthStatus, PartitionEndpointState, PartitionFailoverEntry,
+        };
+        use crate::driver::routing::UnavailableReason;
+
+        let pk_range = "0";
+        let eastus = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let westus = CosmosEndpoint::regional(
+            "westus".into(),
+            Url::parse("https://test-westus.documents.azure.com:443/").unwrap(),
+        );
+
+        // The cache points the partition at the westus hub, but westus has
+        // just been marked unavailable for a non-write reason.
+        let mut unavailable = std::collections::HashMap::new();
+        unavailable.insert(
+            westus.url().clone(),
+            (
+                std::time::Instant::now(),
+                UnavailableReason::ServiceUnavailable,
+            ),
+        );
+        let account = Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![eastus.clone(), westus.clone()].into(),
+            preferred_write_endpoints: vec![eastus.clone()].into(),
+            unavailable_endpoints: unavailable,
+            multiple_write_locations_enabled: false,
+            default_endpoint: eastus.clone(),
+        });
+        let mut partitions = PartitionEndpointState::default();
+        partitions.per_partition_automatic_failover_enabled = true;
+        partitions.failover_overrides.insert(
+            pk_range.parse().unwrap(),
+            PartitionFailoverEntry {
+                current_endpoint: westus.clone(),
+                first_failed_endpoint: westus.clone(),
+                failed_endpoints: Default::default(),
+                read_failure_count: 0,
+                write_failure_count: 0,
+                first_failure_time: std::time::Instant::now(),
+                last_failure_time: std::time::Instant::now(),
+                health_status: HealthStatus::Unhealthy,
+                failback_jitter: Duration::ZERO,
+            },
+        );
+        let location =
+            LocationSnapshot::for_tests_with_partitions(account, Arc::new(partitions));
+
+        let operation = CosmosOperation::read_database(DatabaseReference::from_name(
+            test_account(),
+            "mydb",
+        ));
+        let retry_state = read_state_with_hub_latch(pk_range);
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            Duration::from_secs(60),
+        );
+
+        assert_ne!(
+            routing.endpoint, westus,
+            "warm-path hub cache must not route to an unavailable hub endpoint",
+        );
+        assert_eq!(
+            routing.endpoint, eastus,
+            "with the hub unavailable, selection falls through to the next available read endpoint",
         );
     }
 

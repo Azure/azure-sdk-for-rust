@@ -585,13 +585,12 @@ pub(crate) fn advance_hub_region_discovery(
             failback_jitter: Duration::ZERO,
         });
 
-    entry.last_failure_time = now;
-
-    if !try_move_next_endpoint(entry, next_endpoints, failed_endpoint) {
-        // All preferred-read endpoints exhausted — drop the entry so the
-        // next attempt falls back to default selection in resolve_endpoint
-        // (and the operation will be aborted by the failover-budget guard
-        // in try_handle_write_forbidden once that budget is depleted).
+    if try_move_next_endpoint(entry, next_endpoints, failed_endpoint) {
+        entry.last_failure_time = now;
+    } else {
+        // All preferred-read endpoints exhausted — drop the entry so the next
+        // attempt falls back to default selection, and the operation aborts via
+        // the failover-budget guard once that budget is depleted.
         new_state.failover_overrides.remove(pk_range_id.as_str());
     }
 
