@@ -149,6 +149,22 @@ mod tests {
         assert!(!config.allow_invalid_cert);
         assert!(config.with_allow_invalid_cert().allow_invalid_cert);
     }
+
+    #[cfg(feature = "rustls")]
+    #[test]
+    fn default_factory_builds_client_with_default_tls_backend() {
+        // The default backend is `TlsBackend::Rustls`; building the client must
+        // succeed (i.e. `tls_backend_rustls()` is wired up under the `rustls`
+        // feature).
+        let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
+        assert_eq!(pool.tls_backend(), crate::options::TlsBackend::Rustls);
+        let config = HttpClientConfig::metadata(&pool, TransportHttpVersion::Http2);
+        let factory = DefaultHttpClientFactory::new();
+        assert!(
+            factory.build(&pool, config).is_ok(),
+            "building the reqwest client with the default TLS backend should succeed"
+        );
+    }
 }
 
 pub trait HttpClientFactory: fmt::Debug + Send + Sync {
@@ -200,6 +216,19 @@ impl HttpClientFactory for DefaultHttpClientFactory {
             {
                 builder = builder.danger_accept_invalid_certs(true);
             }
+        }
+
+        // Enforce the selected TLS backend on the reqwest transport. The driver
+        // does not otherwise expose the transport, so this is the supported way
+        // to assert a specific backend. The whole block compiles in only under
+        // the `rustls` feature: `tls_backend_rustls()` (and the `tls_backend()`
+        // accessor it reads) exist only then. With a different TLS feature the
+        // backend is not driver-selectable and reqwest's own default applies.
+        #[cfg(feature = "rustls")]
+        {
+            builder = match connection_pool.tls_backend() {
+                crate::options::TlsBackend::Rustls => builder.tls_backend_rustls(),
+            };
         }
 
         builder = match config.version_policy {

@@ -10,6 +10,8 @@ use super::env_parsing::{
     ValidationBounds,
 };
 use crate::options::ServerCertificateValidation;
+#[cfg(feature = "rustls")]
+use crate::options::TlsBackend;
 
 /// Configuration for connection pooling behavior.
 ///
@@ -68,6 +70,9 @@ pub struct ConnectionPoolOptions {
     gateway_v2_disabled: bool,
 
     server_certificate_validation: ServerCertificateValidation,
+
+    #[cfg(feature = "rustls")]
+    tls_backend: TlsBackend,
 
     local_address: Option<IpAddr>,
 }
@@ -224,6 +229,16 @@ impl ConnectionPoolOptions {
     /// Returns the server certificate validation setting.
     pub fn server_certificate_validation(&self) -> ServerCertificateValidation {
         self.server_certificate_validation
+    }
+
+    /// Returns the TLS backend the `reqwest` transport is configured to use.
+    ///
+    /// Only available when the `rustls` feature is enabled. With a different
+    /// TLS feature the backend is not driver-selectable, so there is no honest
+    /// value to report and this accessor is not compiled in.
+    #[cfg(feature = "rustls")]
+    pub fn tls_backend(&self) -> TlsBackend {
+        self.tls_backend
     }
 
     /// Returns the local IP address to bind to, if set.
@@ -397,6 +412,8 @@ pub struct ConnectionPoolOptionsBuilder {
         parser = parse_env_server_cert_validation
     )]
     server_certificate_validation: Option<ServerCertificateValidation>,
+    #[cfg(feature = "rustls")]
+    tls_backend: Option<TlsBackend>,
     #[option(env = "AZURE_COSMOS_LOCAL_ADDRESS")]
     local_address: Option<IpAddr>,
 }
@@ -642,6 +659,17 @@ impl ConnectionPoolOptionsBuilder {
         value: ServerCertificateValidation,
     ) -> Self {
         self.server_certificate_validation = Some(value);
+        self
+    }
+
+    /// Sets the TLS backend used by the `reqwest` transport.
+    ///
+    /// Defaults to [`TlsBackend::Rustls`] when unset. Only available when the
+    /// `rustls` feature is enabled; with a different TLS feature the backend is
+    /// not driver-selectable.
+    #[cfg(feature = "rustls")]
+    pub fn with_tls_backend(mut self, value: TlsBackend) -> Self {
+        self.tls_backend = Some(value);
         self
     }
 
@@ -947,6 +975,12 @@ impl ConnectionPoolOptionsBuilder {
                 .server_certificate_validation
                 .or(env.server_certificate_validation)
                 .unwrap_or(ServerCertificateValidation::Required),
+            // TLS backend is builder-only (not env-configurable); defaults to
+            // `TlsBackend::Rustls`. Only present under the `rustls` feature.
+            #[cfg(feature = "rustls")]
+            tls_backend: self.tls_backend.unwrap_or_default(),
+            // Builder override wins; otherwise the macro-parsed env value (or
+            // `None` when unset / unparseable).
             local_address: self.local_address.or(env.local_address),
         })
     }
@@ -1158,6 +1192,21 @@ mod tests {
             options.server_certificate_validation(),
             ServerCertificateValidation::RequiredUnlessEmulator
         );
+    }
+
+    #[cfg(feature = "rustls")]
+    #[test]
+    fn tls_backend_defaults_to_rustls_and_is_settable() {
+        // Default build yields `TlsBackend::Rustls`...
+        let defaults = ConnectionPoolOptionsBuilder::new().build().unwrap();
+        assert_eq!(defaults.tls_backend(), TlsBackend::Rustls);
+
+        // ...and the builder round-trips an explicitly set backend.
+        let configured = ConnectionPoolOptionsBuilder::new()
+            .with_tls_backend(TlsBackend::Rustls)
+            .build()
+            .unwrap();
+        assert_eq!(configured.tls_backend(), TlsBackend::Rustls);
     }
 
     #[test]
