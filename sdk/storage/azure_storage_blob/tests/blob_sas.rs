@@ -84,7 +84,7 @@ async fn test_blob_user_delegation_sas_read(ctx: TestContext) -> Result<(), Box<
         BlobResource::new(&container_name, &blob_name),
         BlobPermissions::new().read(),
     )
-    .token();
+    .build();
     let mut sas_url = blob_client.url().clone();
     sas_url.set_query(Some(&token));
 
@@ -123,7 +123,7 @@ async fn test_blob_user_delegation_sas_write(ctx: TestContext) -> Result<(), Box
         BlobResource::new(&container_name, &blob_name),
         BlobPermissions::new().read().write().create(),
     )
-    .token();
+    .build();
     let mut sas_url = blob_client.url().clone();
     sas_url.set_query(Some(&token));
 
@@ -191,7 +191,7 @@ async fn test_blob_version_user_delegation_sas(ctx: TestContext) -> Result<(), B
         BlobResource::new(&container_name, &blob_name).version(&version_1),
         BlobPermissions::new().read(),
     )
-    .token();
+    .build();
     let mut sas_url = version_1_client.url().clone();
     // Preserve the existing `versionid=` query parameter.
     match sas_url.query() {
@@ -264,7 +264,7 @@ async fn test_blob_snapshot_user_delegation_sas(ctx: TestContext) -> Result<(), 
         BlobResource::new(&container_name, &blob_name).snapshot(&snapshot),
         BlobPermissions::new().read(),
     )
-    .token();
+    .build();
     let mut sas_url = blob_client.url().clone();
     sas_url.set_query(Some(&token));
     assert!(
@@ -312,7 +312,7 @@ async fn test_container_user_delegation_sas(ctx: TestContext) -> Result<(), Box<
         ContainerResource::new(&container_name),
         ContainerPermissions::new().read().list(),
     )
-    .token();
+    .build();
 
     // Build the blob URL within the container, then append the container SAS.
     let mut blob_url = container_client.url().clone();

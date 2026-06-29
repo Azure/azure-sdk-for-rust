@@ -177,7 +177,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             BlobResource::new(container_name, blob_name),
             BlobPermissions::new().read(),
         )
-        .token();
+        .build();
     let mut sas_url = Url::parse(&format!(
         "https://{storage_account_name}.blob.core.windows.net/{container_name}/{blob_name}"
     ))?;

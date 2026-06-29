@@ -52,7 +52,7 @@ let token = SasBuilder::new(
         BlobPermissions::new().read(),
     )
     .content_type("image/jpeg")
-    .token();
+    .build();
 
 let mut sas_url = Url::parse(&format!(
     "https://{storage_account_name}.blob.core.windows.net/{container_name}/{blob_name}"
@@ -89,7 +89,7 @@ let sas = SasBuilder::new(
         start: Ipv4Addr::new(10, 0, 0, 1),
         end: Ipv4Addr::new(10, 0, 0, 255),
     })
-    .token();
+    .build();
 # let _ = sas;
 # Ok(()) }
 ```

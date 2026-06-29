@@ -165,7 +165,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             QueueResource::new(queue_name),
             QueuePermissions::new().read().add().process(),
         )
-        .token();
+        .build();
     let mut sas_url = Url::parse(&format!(
         "https://{storage_account_name}.queue.core.windows.net/{queue_name}"
     ))?;

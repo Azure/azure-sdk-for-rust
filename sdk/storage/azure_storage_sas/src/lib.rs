@@ -13,14 +13,19 @@
 mod builder;
 mod ip_range;
 mod protocol;
-pub mod resource;
+mod signing;
+
+pub mod resource {
+    pub mod blob;
+    pub mod queue;
+}
 
 pub use azure_storage_common::models::UserDelegationKey;
-pub use builder::state::{BlobState, ContainerState, DirectoryState, QueueState};
-pub use builder::BlobServiceState;
 pub use builder::SasBuilder;
 pub use ip_range::SasIpRange;
 pub use protocol::SasProtocol;
+pub use resource::blob::{BlobServiceState, BlobState, ContainerState, DirectoryState};
+pub use resource::queue::QueueState;
 
 /// The SAS service version targeted by this crate.
 pub(crate) const SAS_VERSION: &str = "2026-04-06";

@@ -759,7 +759,7 @@ async fn test_queue_user_delegation_sas(ctx: TestContext) -> Result<()> {
             QueueResource::new(&queue_name),
             QueuePermissions::new().read().add().process(),
         )
-        .token();
+        .build();
     let mut sas_url = queue_client.url().clone();
     sas_url.set_query(Some(&token));
 
@@ -826,7 +826,7 @@ async fn test_queue_user_delegation_sas_message_lifecycle(ctx: TestContext) -> R
             QueueResource::new(&queue_name),
             QueuePermissions::new().read().add().update().process(),
         )
-        .token();
+        .build();
     let mut sas_url = queue_client.url().clone();
     sas_url.set_query(Some(&token));
     let sas_client = QueueClient::new(sas_url, None, None)?;

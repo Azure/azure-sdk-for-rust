@@ -14,12 +14,13 @@
 //!         OffsetDateTime::now_utc() + time::Duration::hours(8))?
 //!     .protocol(SasProtocol::Https)
 //!     .queue(QueueResource::new("work-items"), QueuePermissions::new().read().process())
-//!     .token();
+//!     .build();
 //! # Ok(())
 //! # }
 //! ```
 
-use crate::builder::{CommonFields, ValidatedKey};
+use crate::signing::sealed::Sealed;
+use crate::signing::{CommonFields, SasResource, ValidatedKey};
 use crate::SAS_VERSION;
 
 /// A queue resource for user delegation SAS.
@@ -100,10 +101,36 @@ impl QueuePermissions {
     }
 }
 
+/// State after selecting a queue resource.
+pub struct QueueState {
+    pub(crate) resource: QueueResource,
+    pub(crate) permissions: QueuePermissions,
+}
+
+impl Sealed for QueueState {}
+
+impl SasResource for QueueState {
+    fn string_to_sign(&self, common: &CommonFields, key: &ValidatedKey<'_>) -> String {
+        let sp = self.permissions.to_sas_str();
+        let canonical = self.resource.canonicalized_resource(&common.account);
+        queue_udk_string_to_sign(&sp, common, key, &canonical)
+    }
+
+    fn query_parameters(
+        &self,
+        common: &CommonFields,
+        key: &ValidatedKey<'_>,
+        signature: &str,
+    ) -> String {
+        let sp = self.permissions.to_sas_str();
+        queue_udk_query_parameters(&sp, common, key, signature)
+    }
+}
+
 /// Builds the queue-service user delegation SAS string-to-sign.
 ///
 /// See <https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas#specify-the-signature>.
-pub(crate) fn queue_udk_string_to_sign(
+fn queue_udk_string_to_sign(
     permissions: &str,
     common: &CommonFields,
     key: &ValidatedKey<'_>,
@@ -140,7 +167,7 @@ pub(crate) fn queue_udk_string_to_sign(
 }
 
 /// Builds the queue-service user delegation SAS query parameters.
-pub(crate) fn queue_udk_query_parameters(
+fn queue_udk_query_parameters(
     permissions: &str,
     common: &CommonFields,
     key: &ValidatedKey<'_>,
@@ -179,4 +206,51 @@ pub(crate) fn queue_udk_query_parameters(
     }
     parts.push(format!("sig={}", CommonFields::encode(signature)));
     parts.join("&")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::signing::test_support::{test_common, test_udk};
+    use time::macros::datetime;
+
+    #[test]
+    fn queue_string_to_sign_has_15_fields_in_order() {
+        let mut udk = test_udk();
+        udk.signed_delegated_user_tid = Some("q-tenant".into());
+        let key = ValidatedKey::from_key(&udk).unwrap();
+        let mut common = test_common(datetime!(2025-06-01 12:00:00 UTC));
+        common.delegated_user_object_id = Some("duoid".into());
+
+        let sts = queue_udk_string_to_sign(
+            &QueuePermissions::new().read().add().to_sas_str(),
+            &common,
+            &key,
+            "/queue/acct/q",
+        );
+        let lines: Vec<&str> = sts.split('\n').collect();
+        assert_eq!(lines.len(), 15, "queue STS must have exactly 15 fields");
+        assert_eq!(lines[0], "ra"); // sp
+        assert_eq!(lines[3], "/queue/acct/q"); // cr
+        assert_eq!(lines[4], "oid-value"); // skoid
+        assert_eq!(lines[9], "2025-11-05"); // skv
+        assert_eq!(lines[10], "q-tenant"); // skdutid (from key)
+        assert_eq!(lines[11], "duoid"); // sduoid (from builder)
+        assert_eq!(lines[14], "2026-04-06"); // sv
+    }
+
+    #[test]
+    fn queue_string_to_sign_skdutid_empty_when_key_omits() {
+        let udk = test_udk(); // signed_delegated_user_tid: None
+        let key = ValidatedKey::from_key(&udk).unwrap();
+        let common = test_common(datetime!(2025-06-01 12:00:00 UTC));
+        let sts = queue_udk_string_to_sign(
+            &QueuePermissions::new().read().to_sas_str(),
+            &common,
+            &key,
+            "/queue/acct/q",
+        );
+        let lines: Vec<&str> = sts.split('\n').collect();
+        assert_eq!(lines[10], ""); // skdutid empty
+    }
 }
