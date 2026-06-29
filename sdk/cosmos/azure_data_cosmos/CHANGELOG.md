@@ -4,9 +4,13 @@
 
 ### Features Added
 
+- Added `TlsBackend` (re-exported) and a `tls_backend` option on `ConnectionPoolOptions` (`ConnectionPoolOptionsBuilder::with_tls_backend`), defaulting to `TlsBackend::Rustls`, available under the `rustls` feature, to pin the TLS backend used by the transport. This is additive and changes no behavior for the default (rustls) build; it only has an effect in builds that compile in multiple reqwest TLS backends, where reqwest would otherwise default to native-tls and the driver now pins rustls instead. ([#4649](https://github.com/Azure/azure-sdk-for-rust/pull/4649))
+
 ### Breaking Changes
 
 ### Bugs Fixed
+
+- Fixed the `AZURE_COSMOS_PPCB_*` environment variables (including `AZURE_COSMOS_PPCB_ENABLED` and the `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` kill switch) being ignored when a `CosmosClient` was built without calling `CosmosClientBuilder::with_partition_failover_options`. The per-partition circuit breaker (PPCB) stayed enabled even with `AZURE_COSMOS_PPCB_ENABLED=false`. The client's driver now resolves these options from the environment when they are not supplied explicitly. ([#4655](https://github.com/Azure/azure-sdk-for-rust/pull/4655))
 
 ### Other Changes
 

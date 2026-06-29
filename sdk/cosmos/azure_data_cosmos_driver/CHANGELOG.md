@@ -4,9 +4,13 @@
 
 ### Features Added
 
+- Added `TlsBackend` (currently `TlsBackend::Rustls`, the default) and a `tls_backend` option on `ConnectionPoolOptions` (`ConnectionPoolOptionsBuilder::with_tls_backend` / `ConnectionPoolOptions::tls_backend`), available under the `rustls` feature. The driver asserts the selected backend on the `reqwest` transport, giving a supported way to pin the TLS backend without direct transport access. This is additive and changes no behavior for the default (rustls-only) build, where reqwest already negotiates rustls; it only has an effect in builds that compile in multiple reqwest TLS backends (e.g. `rustls` plus `native_tls`, absent reqwest's `http3` feature), where reqwest would otherwise default to native-tls and the driver now pins rustls instead. ([#4649](https://github.com/Azure/azure-sdk-for-rust/pull/4649))
+
 ### Breaking Changes
 
 ### Bugs Fixed
+
+- Fixed `AZURE_COSMOS_PPCB_*` environment variables (including the `AZURE_COSMOS_PPCB_ENABLED` master switch and the `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` kill switch) being silently ignored when a caller built `DriverOptions` without calling `DriverOptionsBuilder::with_partition_failover_options`. The environment is read only by `PartitionFailoverOptionsBuilder::build`, but the omitted-options path used a bare `PartitionFailoverOptions::default()` (which hard-codes PPCB enabled and reads no environment), so PPCB stayed on even with `AZURE_COSMOS_PPCB_ENABLED=false`. `DriverOptionsBuilder::build` now resolves the partition-failover options from the environment when the caller does not supply them (falling back to defaults, fail-soft, if an environment value is out of bounds). An explicitly supplied `PartitionFailoverOptions` continues to take precedence. ([#4655](https://github.com/Azure/azure-sdk-for-rust/pull/4655))
 
 ### Other Changes
 
@@ -14,6 +18,7 @@
 
 ### Features Added
 
+- The `User-Agent` header now advertises enabled client features (PPCB, HTTP/2) via the cross-SDK `|F<HEX>` feature-flag token, consistent with the .NET and Java Cosmos SDKs. ([#4635](https://github.com/Azure/azure-sdk-for-rust/pull/4635))
 - Added support for using a native query planning library to generate query plans locally, avoiding a Gateway round-trip on cross-partition queries. Gated behind the `__internal_native_query_plan` feature flag. ([#4554](https://github.com/Azure/azure-sdk-for-rust/pull/4554))
 - Restructured the client / runtime options layering on the driver. Two new nested option groups, a per-client overrides surface on `DriverOptionsBuilder`, and a single canonical `AZURE_COSMOS_PPCB_*` namespace for partition-failover environment variables. The driver now consumes partition-failover configuration once at construction (`CosmosDriver::new` no longer fabricates an `OperationOptionsView` outside any operation context) ([#4588](https://github.com/Azure/azure-sdk-for-rust/pull/4588)):
 - Added new nested `OperationOptions::throughput_control` group (`ThroughputControlOptions` / `…Builder` / `…View`, mirroring the `ThrottlingRetryOptions` pattern). Exposes three layered fields ([#4588](https://github.com/Azure/azure-sdk-for-rust/pull/4588)):
