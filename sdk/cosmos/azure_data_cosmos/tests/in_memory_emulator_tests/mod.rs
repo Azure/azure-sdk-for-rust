@@ -9,5 +9,6 @@
 pub mod driver_end_to_end;
 pub mod dual_backend;
 pub mod end_to_end;
+pub mod session_token;
 pub mod user_agent;
 pub mod validation;

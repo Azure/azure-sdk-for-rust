@@ -1579,6 +1579,16 @@ async fn handle_replace(
             new_doc
         };
 
+        // Recompute the session token after the write committed so the success
+        // response reflects the advanced LSN. The earlier `token` is computed
+        // before `advance_lsn` and is only correct for the error paths above
+        // (which do not advance the partition), mirroring how handle_create and
+        // handle_upsert compute the token post-commit.
+        let token = session_token_for(
+            partition,
+            region_id,
+            incoming_session_for(parsed, partition.id).as_ref(),
+        );
         let headers = Some(PointResponseHeaders::from_partition(
             partition,
             store.next_transport_request_id(),
@@ -1987,6 +1997,16 @@ async fn handle_delete(
             }
         };
 
+        // Recompute the session token after the delete committed so the success
+        // response reflects the advanced LSN. The earlier `token` is computed
+        // before `advance_lsn` and is only correct for the error paths above
+        // (which do not advance the partition), mirroring how handle_create and
+        // handle_upsert compute the token post-commit.
+        let token = session_token_for(
+            partition,
+            region_id,
+            incoming_session_for(parsed, partition.id).as_ref(),
+        );
         let headers = Some(PointResponseHeaders::from_partition(
             partition,
             store.next_transport_request_id(),
