@@ -6,7 +6,7 @@ use crate::error::{ErrorKind, Result, ResultExt};
 use bytes::Bytes;
 pub use quick_xml::serde_helpers::text_content as content;
 use quick_xml::{
-    de::from_reader,
+    de::{from_reader, from_str},
     se::{to_string, to_string_with_root},
 };
 use serde::de::DeserializeOwned;
@@ -27,6 +27,23 @@ where
     from_reader(slice_bom(body)).with_context_fn(ErrorKind::DataConversion, || {
         let t = core::any::type_name::<T>();
         let xml = std::str::from_utf8(body).unwrap_or("(XML is not UTF8-encoded)");
+        format!("failed to deserialize the following xml into a {t}\n{xml}")
+    })
+}
+
+/// Reads XML from bytes while allowing the result to borrow from the input.
+pub fn from_xml_ref<'de, S, T>(body: &'de S) -> Result<T>
+where
+    S: AsRef<[u8]> + ?Sized,
+    T: serde::Deserialize<'de>,
+{
+    let body = body.as_ref();
+    let xml = std::str::from_utf8(body).with_context_fn(ErrorKind::DataConversion, || {
+        let t = core::any::type_name::<T>();
+        format!("failed to deserialize the following xml into a {t}\n(XML is not UTF8-encoded)")
+    })?;
+    from_str(xml).with_context_fn(ErrorKind::DataConversion, || {
+        let t = core::any::type_name::<T>();
         format!("failed to deserialize the following xml into a {t}\n{xml}")
     })
 }
@@ -105,6 +122,20 @@ mod test {
 
         let error = from_xml::<_, Test>(&xml[..xml.len() - 2]).unwrap_err();
         assert!(format!("{error}").contains("typespec::xml::test::Test"));
+        Ok(())
+    }
+
+    #[derive(Deserialize, Debug, PartialEq)]
+    #[serde(rename = "Foo")]
+    struct BorrowedTest<'a> {
+        x: &'a str,
+    }
+
+    #[test]
+    fn reading_xml_ref() -> Result<()> {
+        let xml = br#"<Foo><x>Hello, world!</x></Foo>"#;
+        let test: BorrowedTest<'_> = from_xml_ref(&xml)?;
+        assert_eq!(test.x, "Hello, world!");
         Ok(())
     }
 

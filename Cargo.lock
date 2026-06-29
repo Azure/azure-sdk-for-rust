@@ -727,7 +727,6 @@ dependencies = [
  "opentelemetry_sdk",
  "percent-encoding",
  "pin-project",
- "quick-xml",
  "rand 0.10.1",
  "serde",
  "serde_json",
