@@ -884,7 +884,6 @@ dependencies = [
  "futures",
  "opentelemetry-stdout",
  "opentelemetry_sdk",
- "percent-encoding",
  "rand 0.10.1",
  "serde",
  "time",

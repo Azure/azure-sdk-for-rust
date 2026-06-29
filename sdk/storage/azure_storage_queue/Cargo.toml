@@ -20,7 +20,6 @@ default = ["azure_core/default"]
 async-trait.workspace = true
 azure_core = { workspace = true, features = ["xml"] }
 azure_storage_common = { path = "../azure_storage_common", version = "0.1.0" }
-percent-encoding.workspace = true
 serde = { workspace = true }
 time.workspace = true
 

@@ -157,6 +157,7 @@ pub(crate) struct Fields {
 impl Fields {
     /// Formats an `OffsetDateTime` as an ISO 8601 UTC string for SAS.
     pub fn format_time(t: &OffsetDateTime) -> String {
+        let t = t.to_offset(time::UtcOffset::UTC);
         format!(
             "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z",
             t.year(),
@@ -877,6 +878,13 @@ mod tests {
     #[test]
     fn format_time_produces_iso8601() {
         let t = datetime!(2025-01-15 09:30:45 UTC);
+        assert_eq!(Fields::format_time(&t), "2025-01-15T09:30:45Z");
+    }
+
+    #[test]
+    fn format_time_normalizes_non_utc_to_utc() {
+        // 2025-01-15 14:30:45 +05:00 is the same instant as 09:30:45 UTC.
+        let t = datetime!(2025-01-15 14:30:45 +5);
         assert_eq!(Fields::format_time(&t), "2025-01-15T09:30:45Z");
     }
 
