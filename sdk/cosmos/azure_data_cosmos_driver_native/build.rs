@@ -128,6 +128,11 @@ fn generate_c_header() {
             "CosmosOperationRequest".into(),
             "operation_request_t".into(),
         ),
+        ("CosmosRuntimeOptions".into(), "runtime_options_t".into()),
+        (
+            "CosmosDriverOptionsConfig".into(),
+            "driver_options_config_t".into(),
+        ),
         // Enums / option structs. Variant prefixes are baked into
         // the Rust variant names (e.g. `CqStateRunning`,
         // `CompletionOutcomeOk`) so the `ScreamingSnakeCase` enum rule

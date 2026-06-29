@@ -890,6 +890,43 @@ typedef struct cosmos_operation_options_t {
 } cosmos_operation_options_t;
 
 /**
+ * Flat C ABI config for building a `cosmos_driver_options_t` in a single call.
+ *
+ * All fields are sentinel-encoded so a zeroed struct (or a NULL pointer passed
+ * to [`cosmos_driver_options_build`]) means "no preferred regions and the
+ * driver's default operation options":
+ *
+ * - `preferred_regions` / `preferred_regions_len`: NULL / `0` = no preferred
+ *   regions. A non-NULL pointer with `0` length is treated as empty.
+ * - `operation_options`: pointer to a flat
+ *   [`cosmos_operation_options_t`](crate::op_request::CosmosOperationOptions),
+ *   or NULL to inherit the driver defaults.
+ *
+ * The account reference stays a separate handle parameter on
+ * [`cosmos_driver_options_build`] — it owns `Arc`-shared state and cannot be
+ * flattened into bytes.
+ *
+ * Construct with [`cosmos_driver_options_config_default`] to obtain an
+ * all-unset value, then set the fields you care about.
+ */
+typedef struct cosmos_driver_options_config_t {
+  /**
+   * Preferred regions for routing — array of NUL-terminated UTF-8 region
+   * names. NULL / `0` length = none.
+   */
+  const char *const *preferred_regions;
+  /**
+   * Number of entries in `preferred_regions`.
+   */
+  uintptr_t preferred_regions_len;
+  /**
+   * Per-driver default operation options, or NULL to inherit the driver
+   * defaults.
+   */
+  const struct cosmos_operation_options_t *operation_options;
+} cosmos_driver_options_config_t;
+
+/**
  * A flat snapshot of an error's scalar + borrowed-string fields, read in one
  * FFI call.
  *
@@ -994,6 +1031,48 @@ typedef struct cosmos_response_view_t {
    */
   uintptr_t body_len;
 } cosmos_response_view_t;
+
+/**
+ * Flat C ABI options for building a `cosmos_runtime_t` in a single call.
+ *
+ * Every field is sentinel-encoded so a zeroed struct (or a NULL pointer
+ * passed to [`cosmos_runtime_build`]) means "use the driver defaults for
+ * everything":
+ *
+ * - `workload_id`: `0` = unset (valid range otherwise `1`–`50`).
+ * - `correlation_id` / `user_agent_suffix` / `wrapping_sdk_identifier`:
+ *   NULL = unset (otherwise a NUL-terminated UTF-8 string).
+ * - `cpu_refresh_interval_ms`: `0` = unset (valid range otherwise
+ *   `1000`–`60000`).
+ *
+ * Construct with [`cosmos_runtime_options_default`] to obtain an all-unset
+ * value, then set the fields you care about.
+ */
+typedef struct cosmos_runtime_options_t {
+  /**
+   * Workload identifier (valid range `1`–`50`). `0` = unset.
+   */
+  uint8_t workload_id;
+  /**
+   * Correlation id for client-side metrics (NUL-terminated UTF-8), or NULL
+   * = unset.
+   */
+  const char *correlation_id;
+  /**
+   * User-agent suffix (NUL-terminated UTF-8), or NULL = unset.
+   */
+  const char *user_agent_suffix;
+  /**
+   * Wrapping-SDK identifier prepended to the User-Agent header
+   * (NUL-terminated UTF-8), or NULL = unset.
+   */
+  const char *wrapping_sdk_identifier;
+  /**
+   * CPU/memory monitoring refresh interval in milliseconds (valid range
+   * `1000`–`60000`). `0` = unset.
+   */
+  uint64_t cpu_refresh_interval_ms;
+} cosmos_runtime_options_t;
 
 /**
  * One component of a hierarchical partition key, assembled inline by the host
@@ -1563,29 +1642,6 @@ struct cosmos_driver_options_builder_t *cosmos_driver_options_builder_new(const 
  */
 void cosmos_driver_options_builder_free(struct cosmos_driver_options_builder_t *builder);
 
-/**
- * Sets the preferred regions for routing.
- *
- * Mirrors [`DriverOptionsBuilder::with_preferred_regions`].
- *
- * # Parameters
- *
- * - `builder` — non-NULL builder.
- * - `regions` — pointer to an array of NUL-terminated UTF-8 region
- *   names. May be NULL when `regions_len == 0`.
- * - `regions_len` — number of entries in `regions`.
- *
- * # Returns
- *
- * - `SUCCESS` (0) on success.
- * - `INVALID_ARGUMENT` (1) when `builder` is NULL or `regions` is NULL
- *   but `regions_len > 0`.
- * - `INVALID_UTF8` (2) when any region name is not valid UTF-8.
- *
- * Each call replaces the previously configured list (mirrors the
- * driver's `with_*` semantics). Calling with `regions_len == 0` clears
- * the list.
- */
 int32_t cosmos_driver_options_builder_with_preferred_regions(struct cosmos_driver_options_builder_t *builder,
                                                              const char *const *regions,
                                                              uintptr_t regions_len);
@@ -1623,6 +1679,42 @@ int32_t cosmos_driver_options_builder_with_operation_options(struct cosmos_drive
  */
 int32_t cosmos_driver_options_builder_build(struct cosmos_driver_options_builder_t *builder,
                                             struct cosmos_driver_options_t **out_options);
+
+/**
+ * Returns an all-unset [`CosmosDriverOptionsConfig`] by value. The host
+ * mutates the fields it cares about and leaves the rest at their default
+ * sentinels.
+ */
+struct cosmos_driver_options_config_t cosmos_driver_options_config_default(void);
+
+/**
+ * Builds a `cosmos_driver_options_t *` from an account reference and a flat
+ * [`CosmosDriverOptionsConfig`] in a single call — the single-call
+ * alternative to `cosmos_driver_options_builder_new` + the per-field setters +
+ * `cosmos_driver_options_builder_build`.
+ *
+ * # Parameters
+ *
+ * - `account` — non-NULL account reference. Cloned into the options, so
+ *   freeing `account` afterwards does not invalidate the result.
+ * - `config` — the flat config. A NULL pointer means "no preferred regions,
+ *   default operation options" (equivalent to
+ *   [`cosmos_driver_options_config_default`]).
+ * - `out_options` — on success, receives the new options handle. Must be
+ *   non-NULL.
+ *
+ * # Returns
+ *
+ * - `SUCCESS` (0) with `*out_options` populated.
+ * - `INVALID_ARGUMENT` (1) when `account` or `out_options` is NULL, or a
+ *   region entry is NULL.
+ * - `INVALID_UTF8` (2) when a region name is not valid UTF-8.
+ * - `INVALID_OPTION_VALUE` (4014) when an operation-option value is out of
+ *   range.
+ */
+int32_t cosmos_driver_options_build(const struct cosmos_account_ref_t *account,
+                                    const struct cosmos_driver_options_config_t *config,
+                                    struct cosmos_driver_options_t **out_options);
 
 /**
  * HTTP status code (always populated, including for synthetic errors).
@@ -2083,6 +2175,41 @@ int32_t cosmos_runtime_builder_with_cpu_refresh_interval_ms(struct cosmos_runtim
 int32_t cosmos_runtime_builder_build(struct cosmos_runtime_builder_t *builder,
                                      struct cosmos_runtime_t **out_runtime,
                                      struct cosmos_error_t **out_error);
+
+/**
+ * Returns an all-unset [`CosmosRuntimeOptions`] by value. The host mutates the
+ * fields it cares about and leaves the rest at their default sentinels.
+ */
+struct cosmos_runtime_options_t cosmos_runtime_options_default(void);
+
+/**
+ * Builds a `cosmos_runtime_t *` from a flat [`CosmosRuntimeOptions`] in a
+ * single call — the single-call alternative to `cosmos_runtime_builder_new` +
+ * the per-field setters + `cosmos_runtime_builder_build`.
+ *
+ * # Parameters
+ *
+ * - `options` — the flat options. A NULL pointer uses the driver defaults for
+ *   every field (equivalent to [`cosmos_runtime_options_default`]).
+ * - `out_runtime` — on success, receives the new runtime handle. Must be
+ *   non-NULL.
+ * - `out_error` — optional. On `RUNTIME_BUILD_FAILED`, receives a rich
+ *   `cosmos_error_t *` describing the driver-side failure. If NULL the rich
+ *   error is dropped. Never populated on success.
+ *
+ * # Returns
+ *
+ * - `SUCCESS` (0) with `*out_runtime` populated.
+ * - `INVALID_ARGUMENT` (1) when `out_runtime` is NULL.
+ * - `INVALID_UTF8` (2) when a string field is not valid UTF-8.
+ * - `INVALID_OPTION_VALUE` (4014) when a field is outside its documented
+ *   range.
+ * - `RUNTIME_BUILD_FAILED` (4015) when the underlying build failed;
+ *   `*out_error` is populated when non-NULL.
+ */
+int32_t cosmos_runtime_build(const struct cosmos_runtime_options_t *options,
+                             struct cosmos_runtime_t **out_runtime,
+                             struct cosmos_error_t **out_error);
 
 /**
  * Submits a feed-capable operation for asynchronous execution, binding to
