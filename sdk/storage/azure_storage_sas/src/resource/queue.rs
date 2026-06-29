@@ -19,7 +19,7 @@
 //! # }
 //! ```
 
-use crate::builder::{Fields, ValidatedKey};
+use crate::builder::{CommonFields, ValidatedKey};
 use crate::SAS_VERSION;
 
 /// A queue resource for user delegation SAS.
@@ -105,18 +105,18 @@ impl QueuePermissions {
 /// See <https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas#specify-the-signature>.
 pub(crate) fn queue_udk_string_to_sign(
     permissions: &str,
-    fields: &Fields,
+    common: &CommonFields,
     key: &ValidatedKey<'_>,
     canonicalized_resource: &str,
 ) -> String {
     let skdutid = key.signed_delegated_user_tid.unwrap_or("");
-    let sduoid = fields.delegated_user_object_id.as_deref().unwrap_or("");
-    let sip = fields.ip_str();
-    let spr = fields.protocol_str();
-    let st = fields.start_str();
-    let se = fields.expiry_str();
-    let skt = Fields::format_time(key.signed_start);
-    let ske = Fields::format_time(key.signed_expiry);
+    let sduoid = common.delegated_user_object_id.as_deref().unwrap_or("");
+    let sip = common.ip_str();
+    let spr = common.protocol_str();
+    let st = common.start_str();
+    let se = common.expiry_str();
+    let skt = CommonFields::format_time(key.signed_start);
+    let ske = CommonFields::format_time(key.signed_expiry);
 
     #[rustfmt::skip]
     let parts: Vec<&str> = vec![
@@ -142,35 +142,41 @@ pub(crate) fn queue_udk_string_to_sign(
 /// Builds the queue-service user delegation SAS query parameters.
 pub(crate) fn queue_udk_query_parameters(
     permissions: &str,
-    fields: &Fields,
+    common: &CommonFields,
     key: &ValidatedKey<'_>,
     signature: &str,
 ) -> String {
     let mut parts = Vec::with_capacity(15);
     parts.push(format!("sv={SAS_VERSION}"));
-    if let Some(ref start) = fields.start {
-        parts.push(format!("st={}", Fields::format_time(start)));
+    if let Some(ref start) = common.start {
+        parts.push(format!("st={}", CommonFields::format_time(start)));
     }
-    parts.push(format!("se={}", fields.expiry_str()));
+    parts.push(format!("se={}", common.expiry_str()));
     parts.push(format!("sp={permissions}"));
-    if let Some(ref ip) = fields.ip_range {
+    if let Some(ref ip) = common.ip_range {
         parts.push(format!("sip={ip}"));
     }
-    if let Some(ref proto) = fields.protocol {
+    if let Some(ref proto) = common.protocol {
         parts.push(format!("spr={proto}"));
     }
     parts.push(format!("skoid={}", key.signed_oid));
     parts.push(format!("sktid={}", key.signed_tid));
-    parts.push(format!("skt={}", Fields::format_time(key.signed_start)));
-    parts.push(format!("ske={}", Fields::format_time(key.signed_expiry)));
+    parts.push(format!(
+        "skt={}",
+        CommonFields::format_time(key.signed_start)
+    ));
+    parts.push(format!(
+        "ske={}",
+        CommonFields::format_time(key.signed_expiry)
+    ));
     parts.push(format!("sks={}", key.signed_service));
     parts.push(format!("skv={}", key.signed_version));
     if let Some(v) = key.signed_delegated_user_tid {
-        parts.push(format!("skdutid={}", Fields::encode(v)));
+        parts.push(format!("skdutid={}", CommonFields::encode(v)));
     }
-    if let Some(ref v) = fields.delegated_user_object_id {
-        parts.push(format!("sduoid={}", Fields::encode(v)));
+    if let Some(ref v) = common.delegated_user_object_id {
+        parts.push(format!("sduoid={}", CommonFields::encode(v)));
     }
-    parts.push(format!("sig={}", Fields::encode(signature)));
+    parts.push(format!("sig={}", CommonFields::encode(signature)));
     parts.join("&")
 }

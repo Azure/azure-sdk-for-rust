@@ -29,6 +29,7 @@ const ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
 
 /// Typestate markers for [`SasBuilder`].
 pub(crate) mod state {
+    use super::BlobSasOptions;
     use crate::resource::blob::{
         BlobPermissions, BlobResource, ContainerPermissions, ContainerResource, DirectoryResource,
     };
@@ -41,18 +42,21 @@ pub(crate) mod state {
     pub struct BlobState {
         pub(crate) resource: BlobResource,
         pub(crate) permissions: BlobPermissions,
+        pub(crate) options: BlobSasOptions,
     }
 
     /// State after selecting a container resource.
     pub struct ContainerState {
         pub(crate) resource: ContainerResource,
         pub(crate) permissions: ContainerPermissions,
+        pub(crate) options: BlobSasOptions,
     }
 
     /// State after selecting a directory resource.
     pub struct DirectoryState {
         pub(crate) resource: DirectoryResource,
         pub(crate) permissions: ContainerPermissions,
+        pub(crate) options: BlobSasOptions,
     }
 
     /// State after selecting a queue resource.
@@ -63,10 +67,40 @@ pub(crate) mod state {
 }
 
 mod sealed {
+    #![allow(private_interfaces)]
+    use super::state;
+    use super::BlobSasOptions;
+
     pub trait Sealed {}
-    impl Sealed for super::state::BlobState {}
-    impl Sealed for super::state::ContainerState {}
-    impl Sealed for super::state::DirectoryState {}
+    impl Sealed for state::BlobState {}
+    impl Sealed for state::ContainerState {}
+    impl Sealed for state::DirectoryState {}
+    impl Sealed for state::QueueState {}
+
+    /// Sealed accessor granting the blob-service setters mutable access to the
+    /// per-resource [`BlobSasOptions`] without exposing the field publicly.
+    ///
+    /// The blob-service state markers are publicly re-exported, so the
+    /// conservative `private_interfaces` lint flags this crate-internal
+    /// accessor even though `BlobSasOptions` is unreachable outside the crate.
+    pub(crate) trait BlobOptions {
+        fn options_mut(&mut self) -> &mut BlobSasOptions;
+    }
+    impl BlobOptions for state::BlobState {
+        fn options_mut(&mut self) -> &mut BlobSasOptions {
+            &mut self.options
+        }
+    }
+    impl BlobOptions for state::ContainerState {
+        fn options_mut(&mut self) -> &mut BlobSasOptions {
+            &mut self.options
+        }
+    }
+    impl BlobOptions for state::DirectoryState {
+        fn options_mut(&mut self) -> &mut BlobSasOptions {
+            &mut self.options
+        }
+    }
 }
 
 /// Marker trait for blob-service typestate markers.
@@ -77,6 +111,125 @@ pub trait BlobServiceState: sealed::Sealed {}
 impl BlobServiceState for state::BlobState {}
 impl BlobServiceState for state::ContainerState {}
 impl BlobServiceState for state::DirectoryState {}
+
+/// Computes the SAS string-to-sign and query parameters for a resource state.
+///
+/// Each typed state owns its service-specific signing logic, so adding a new
+/// field to one service does not affect the others.
+pub(crate) trait SasResource: sealed::Sealed {
+    /// Builds the string-to-sign for this resource.
+    fn string_to_sign(&self, common: &CommonFields, key: &ValidatedKey<'_>) -> String;
+
+    /// Builds the signed query string for this resource.
+    fn query_parameters(
+        &self,
+        common: &CommonFields,
+        key: &ValidatedKey<'_>,
+        signature: &str,
+    ) -> String;
+}
+
+impl SasResource for state::BlobState {
+    fn string_to_sign(&self, common: &CommonFields, key: &ValidatedKey<'_>) -> String {
+        let sp = self.permissions.to_sas_str();
+        let canonical = self.resource.canonicalized_resource(&common.account);
+        // The string-to-sign snapshot slot carries the snapshot timestamp or,
+        // for a version SAS (`sr=bv`), the version ID. The `snapshot=` query
+        // parameter remains snapshot-only; the version ID is not emitted there.
+        blob_udk_string_to_sign(
+            &sp,
+            common,
+            &self.options,
+            key,
+            self.resource.signed_resource(),
+            &canonical,
+            self.resource.snapshot_or_version_time().unwrap_or(""),
+        )
+    }
+
+    fn query_parameters(
+        &self,
+        common: &CommonFields,
+        key: &ValidatedKey<'_>,
+        signature: &str,
+    ) -> String {
+        let sp = self.permissions.to_sas_str();
+        blob_udk_query_parameters(
+            &sp,
+            common,
+            &self.options,
+            key,
+            self.resource.signed_resource(),
+            self.resource.snapshot_time(),
+            None,
+            signature,
+        )
+    }
+}
+
+impl SasResource for state::ContainerState {
+    fn string_to_sign(&self, common: &CommonFields, key: &ValidatedKey<'_>) -> String {
+        let sp = self.permissions.to_sas_str();
+        let canonical = self.resource.canonicalized_resource(&common.account);
+        blob_udk_string_to_sign(&sp, common, &self.options, key, "c", &canonical, "")
+    }
+
+    fn query_parameters(
+        &self,
+        common: &CommonFields,
+        key: &ValidatedKey<'_>,
+        signature: &str,
+    ) -> String {
+        let sp = self.permissions.to_sas_str();
+        blob_udk_query_parameters(&sp, common, &self.options, key, "c", None, None, signature)
+    }
+}
+
+impl SasResource for state::DirectoryState {
+    fn string_to_sign(&self, common: &CommonFields, key: &ValidatedKey<'_>) -> String {
+        let sp = self.permissions.to_sas_str();
+        let canonical = self.resource.canonicalized_resource(&common.account);
+        blob_udk_string_to_sign(&sp, common, &self.options, key, "d", &canonical, "")
+    }
+
+    fn query_parameters(
+        &self,
+        common: &CommonFields,
+        key: &ValidatedKey<'_>,
+        signature: &str,
+    ) -> String {
+        let sp = self.permissions.to_sas_str();
+        let depth = self.resource.depth();
+        blob_udk_query_parameters(
+            &sp,
+            common,
+            &self.options,
+            key,
+            "d",
+            None,
+            Some(depth),
+            signature,
+        )
+    }
+}
+
+impl SasResource for state::QueueState {
+    fn string_to_sign(&self, common: &CommonFields, key: &ValidatedKey<'_>) -> String {
+        let sp = self.permissions.to_sas_str();
+        let canonical = self.resource.canonicalized_resource(&common.account);
+        queue_udk_string_to_sign(&sp, common, key, &canonical)
+    }
+
+    fn query_parameters(
+        &self,
+        common: &CommonFields,
+        key: &ValidatedKey<'_>,
+        signature: &str,
+    ) -> String {
+        let sp = self.permissions.to_sas_str();
+        queue_udk_query_parameters(&sp, common, key, signature)
+    }
+}
 
 /// Internal validated view of a [`UserDelegationKey`] with all required fields
 /// guaranteed to be present.
@@ -133,28 +286,18 @@ impl<'a> ValidatedKey<'a> {
     }
 }
 
-/// Internal fields shared across all builder states.
-pub(crate) struct Fields {
+/// Fields shared across every builder state, regardless of service.
+pub(crate) struct CommonFields {
     pub account: String,
     pub start: Option<OffsetDateTime>,
     pub expiry: OffsetDateTime,
     pub protocol: Option<SasProtocol>,
     pub ip_range: Option<SasIpRange>,
-    pub encryption_scope: Option<String>,
-    pub cache_control: Option<String>,
-    pub content_disposition: Option<String>,
-    pub content_encoding: Option<String>,
-    pub content_language: Option<String>,
-    pub content_type: Option<String>,
-    pub authorized_object_id: Option<String>,
-    pub unauthorized_object_id: Option<String>,
-    pub correlation_id: Option<String>,
+    /// Delegated user object ID (`sduoid`). Emitted by both blob and queue SAS.
     pub delegated_user_object_id: Option<String>,
-    pub signed_request_headers: Option<BTreeMap<String, String>>,
-    pub signed_request_query_parameters: Option<BTreeMap<String, String>>,
 }
 
-impl Fields {
+impl CommonFields {
     /// Formats an `OffsetDateTime` as an ISO 8601 UTC string for SAS.
     pub fn format_time(t: &OffsetDateTime) -> String {
         let t = t.to_offset(time::UtcOffset::UTC);
@@ -198,7 +341,29 @@ impl Fields {
             .map(|p| p.to_string())
             .unwrap_or_default()
     }
+}
 
+/// Blob-service-only SAS options, owned by each blob-service typestate.
+///
+/// Keeping these separate from [`CommonFields`] means the queue builder can
+/// never carry blob-only fields, and adding a new blob option only touches the
+/// blob signing code.
+#[derive(Default)]
+pub(crate) struct BlobSasOptions {
+    pub encryption_scope: Option<String>,
+    pub cache_control: Option<String>,
+    pub content_disposition: Option<String>,
+    pub content_encoding: Option<String>,
+    pub content_language: Option<String>,
+    pub content_type: Option<String>,
+    pub authorized_object_id: Option<String>,
+    pub unauthorized_object_id: Option<String>,
+    pub correlation_id: Option<String>,
+    pub signed_request_headers: Option<BTreeMap<String, String>>,
+    pub signed_request_query_parameters: Option<BTreeMap<String, String>>,
+}
+
+impl BlobSasOptions {
     pub fn encryption_scope_str(&self) -> String {
         self.encryption_scope.clone().unwrap_or_default()
     }
@@ -253,7 +418,7 @@ impl Fields {
 /// token.
 pub struct SasBuilder<'a, S> {
     key: ValidatedKey<'a>,
-    fields: Fields,
+    common: CommonFields,
     state: S,
 }
 
@@ -276,24 +441,13 @@ impl<'a> SasBuilder<'a, state::Untyped> {
     ) -> azure_core::Result<Self> {
         Ok(Self {
             key: ValidatedKey::from_key(key)?,
-            fields: Fields {
+            common: CommonFields {
                 account: account.into(),
                 start: None,
                 expiry,
                 protocol: None,
                 ip_range: None,
-                encryption_scope: None,
-                cache_control: None,
-                content_disposition: None,
-                content_encoding: None,
-                content_language: None,
-                content_type: None,
-                authorized_object_id: None,
-                unauthorized_object_id: None,
-                correlation_id: None,
                 delegated_user_object_id: None,
-                signed_request_headers: None,
-                signed_request_query_parameters: None,
             },
             state: state::Untyped,
         })
@@ -307,10 +461,11 @@ impl<'a> SasBuilder<'a, state::Untyped> {
     ) -> SasBuilder<'a, state::BlobState> {
         SasBuilder {
             key: self.key,
-            fields: self.fields,
+            common: self.common,
             state: state::BlobState {
                 resource,
                 permissions,
+                options: BlobSasOptions::default(),
             },
         }
     }
@@ -323,10 +478,11 @@ impl<'a> SasBuilder<'a, state::Untyped> {
     ) -> SasBuilder<'a, state::ContainerState> {
         SasBuilder {
             key: self.key,
-            fields: self.fields,
+            common: self.common,
             state: state::ContainerState {
                 resource,
                 permissions,
+                options: BlobSasOptions::default(),
             },
         }
     }
@@ -339,10 +495,11 @@ impl<'a> SasBuilder<'a, state::Untyped> {
     ) -> SasBuilder<'a, state::DirectoryState> {
         SasBuilder {
             key: self.key,
-            fields: self.fields,
+            common: self.common,
             state: state::DirectoryState {
                 resource,
                 permissions,
+                options: BlobSasOptions::default(),
             },
         }
     }
@@ -355,7 +512,7 @@ impl<'a> SasBuilder<'a, state::Untyped> {
     ) -> SasBuilder<'a, state::QueueState> {
         SasBuilder {
             key: self.key,
-            fields: self.fields,
+            common: self.common,
             state: state::QueueState {
                 resource,
                 permissions,
@@ -368,82 +525,86 @@ impl<'a> SasBuilder<'a, state::Untyped> {
 impl<S> SasBuilder<'_, S> {
     /// Sets the optional start time for the SAS.
     pub fn start(mut self, start: OffsetDateTime) -> Self {
-        self.fields.start = Some(start);
+        self.common.start = Some(start);
         self
     }
 
     /// Sets the permitted protocol (HTTPS only, or HTTPS and HTTP).
     pub fn protocol(mut self, protocol: SasProtocol) -> Self {
-        self.fields.protocol = Some(protocol);
+        self.common.protocol = Some(protocol);
         self
     }
 
     /// Restricts the SAS to requests from the given IP address or range.
     pub fn ip_range(mut self, ip: SasIpRange) -> Self {
-        self.fields.ip_range = Some(ip);
-        self
-    }
-
-    /// Sets the encryption scope for the SAS.
-    pub fn encryption_scope(mut self, scope: impl Into<String>) -> Self {
-        self.fields.encryption_scope = Some(scope.into());
+        self.common.ip_range = Some(ip);
         self
     }
 
     /// Sets the delegated user object ID (sduoid).
     pub fn delegated_user_object_id(mut self, value: impl Into<String>) -> Self {
-        self.fields.delegated_user_object_id = Some(value.into());
+        self.common.delegated_user_object_id = Some(value.into());
         self
     }
 }
 
 // Blob-service-specific setters.
-impl<S: BlobServiceState> SasBuilder<'_, S> {
+//
+// The `sealed::BlobOptions` bound grants mutable access to each blob state's
+// `BlobSasOptions` without exposing it on the public `BlobServiceState` trait.
+#[allow(private_bounds)]
+impl<S: BlobServiceState + sealed::BlobOptions> SasBuilder<'_, S> {
+    /// Sets the encryption scope for the SAS.
+    pub fn encryption_scope(mut self, scope: impl Into<String>) -> Self {
+        self.state.options_mut().encryption_scope = Some(scope.into());
+        self
+    }
+
     /// Sets the `Cache-Control` response header override.
     pub fn cache_control(mut self, value: impl Into<String>) -> Self {
-        self.fields.cache_control = Some(value.into());
+        self.state.options_mut().cache_control = Some(value.into());
         self
     }
 
     /// Sets the `Content-Disposition` response header override.
     pub fn content_disposition(mut self, value: impl Into<String>) -> Self {
-        self.fields.content_disposition = Some(value.into());
+        self.state.options_mut().content_disposition = Some(value.into());
         self
     }
 
     /// Sets the `Content-Encoding` response header override.
     pub fn content_encoding(mut self, value: impl Into<String>) -> Self {
-        self.fields.content_encoding = Some(value.into());
+        self.state.options_mut().content_encoding = Some(value.into());
         self
     }
 
     /// Sets the `Content-Language` response header override.
     pub fn content_language(mut self, value: impl Into<String>) -> Self {
-        self.fields.content_language = Some(value.into());
+        self.state.options_mut().content_language = Some(value.into());
         self
     }
 
     /// Sets the `Content-Type` response header override.
     pub fn content_type(mut self, value: impl Into<String>) -> Self {
-        self.fields.content_type = Some(value.into());
+        self.state.options_mut().content_type = Some(value.into());
         self
     }
 
     /// Sets the authorized AAD object ID (saoid).
     pub fn authorized_object_id(mut self, value: impl Into<String>) -> Self {
-        self.fields.authorized_object_id = Some(value.into());
+        self.state.options_mut().authorized_object_id = Some(value.into());
         self
     }
 
     /// Sets the unauthorized AAD object ID (suoid).
     pub fn unauthorized_object_id(mut self, value: impl Into<String>) -> Self {
-        self.fields.unauthorized_object_id = Some(value.into());
+        self.state.options_mut().unauthorized_object_id = Some(value.into());
         self
     }
 
     /// Sets the correlation ID (scid).
     pub fn correlation_id(mut self, value: impl Into<String>) -> Self {
-        self.fields.correlation_id = Some(value.into());
+        self.state.options_mut().correlation_id = Some(value.into());
         self
     }
 
@@ -457,7 +618,8 @@ impl<S: BlobServiceState> SasBuilder<'_, S> {
         key: impl Into<String>,
         value: impl Into<String>,
     ) -> Self {
-        self.fields
+        self.state
+            .options_mut()
             .signed_request_headers
             .get_or_insert_with(BTreeMap::new)
             .insert(key.into(), value.into());
@@ -475,7 +637,8 @@ impl<S: BlobServiceState> SasBuilder<'_, S> {
         key: impl Into<String>,
         value: impl Into<String>,
     ) -> Self {
-        self.fields
+        self.state
+            .options_mut()
             .signed_request_query_parameters
             .get_or_insert_with(BTreeMap::new)
             .insert(key.into(), value.into());
@@ -483,80 +646,16 @@ impl<S: BlobServiceState> SasBuilder<'_, S> {
     }
 }
 
-impl SasBuilder<'_, state::BlobState> {
+// `SasResource` is a sealed crate-internal trait; the bound is intentionally
+// more private than the public `token` method it gates.
+#[allow(private_bounds)]
+impl<S: SasResource> SasBuilder<'_, S> {
     /// Signs the SAS and returns the token.
     pub fn token(&self) -> String {
-        let sp = self.state.permissions.to_sas_str();
-        let canonical = self
-            .state
-            .resource
-            .canonicalized_resource(&self.fields.account);
-        let sr = self.state.resource.signed_resource();
-        let snapshot = self.state.resource.snapshot_time();
-        // The string-to-sign snapshot slot carries the snapshot timestamp or,
-        // for a version SAS (`sr=bv`), the version ID. The `snapshot=` query
-        // parameter remains snapshot-only; the version ID is not emitted there.
-        let sts = blob_udk_string_to_sign(
-            &sp,
-            &self.fields,
-            &self.key,
-            sr,
-            &canonical,
-            self.state.resource.snapshot_or_version_time().unwrap_or(""),
-        );
+        let sts = self.state.string_to_sign(&self.common, &self.key);
         let signature = sign(self.key.value, &sts);
-        blob_udk_query_parameters(&sp, &self.fields, &self.key, sr, snapshot, None, &signature)
-    }
-}
-
-impl SasBuilder<'_, state::ContainerState> {
-    /// Signs the SAS and returns the token.
-    pub fn token(&self) -> String {
-        let sp = self.state.permissions.to_sas_str();
-        let canonical = self
-            .state
-            .resource
-            .canonicalized_resource(&self.fields.account);
-        let sts = blob_udk_string_to_sign(&sp, &self.fields, &self.key, "c", &canonical, "");
-        let signature = sign(self.key.value, &sts);
-        blob_udk_query_parameters(&sp, &self.fields, &self.key, "c", None, None, &signature)
-    }
-}
-
-impl SasBuilder<'_, state::DirectoryState> {
-    /// Signs the SAS and returns the token.
-    pub fn token(&self) -> String {
-        let sp = self.state.permissions.to_sas_str();
-        let depth = self.state.resource.depth();
-        let canonical = self
-            .state
-            .resource
-            .canonicalized_resource(&self.fields.account);
-        let sts = blob_udk_string_to_sign(&sp, &self.fields, &self.key, "d", &canonical, "");
-        let signature = sign(self.key.value, &sts);
-        blob_udk_query_parameters(
-            &sp,
-            &self.fields,
-            &self.key,
-            "d",
-            None,
-            Some(depth),
-            &signature,
-        )
-    }
-}
-
-impl SasBuilder<'_, state::QueueState> {
-    /// Signs the SAS and returns the token.
-    pub fn token(&self) -> String {
-        let sp = self.state.permissions.to_sas_str();
-        let canonical = self
-            .state
-            .resource
-            .canonicalized_resource(&self.fields.account);
-        let sts = queue_udk_string_to_sign(&sp, &self.fields, &self.key, &canonical);
-        let signature = sign(self.key.value, &sts);
-        queue_udk_query_parameters(&sp, &self.fields, &self.key, &signature)
+        self.state
+            .query_parameters(&self.common, &self.key, &signature)
     }
 }
 
@@ -589,27 +688,16 @@ mod tests {
         }
     }
 
-    /// Builds a `Fields` with only the required values set, for testing the
-    /// internal string-to-sign helpers directly.
-    fn test_fields(expiry: OffsetDateTime) -> Fields {
-        Fields {
+    /// Builds a `CommonFields` with only the required values set, for testing
+    /// the internal string-to-sign helpers directly.
+    fn test_common(expiry: OffsetDateTime) -> CommonFields {
+        CommonFields {
             account: "acct".into(),
             start: None,
             expiry,
             protocol: None,
             ip_range: None,
-            encryption_scope: None,
-            cache_control: None,
-            content_disposition: None,
-            content_encoding: None,
-            content_language: None,
-            content_type: None,
-            authorized_object_id: None,
-            unauthorized_object_id: None,
-            correlation_id: None,
             delegated_user_object_id: None,
-            signed_request_headers: None,
-            signed_request_query_parameters: None,
         }
     }
 
@@ -789,9 +877,9 @@ mod tests {
 
         let qp = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
-            .encryption_scope("scope name")
             .delegated_user_object_id("user/oid")
             .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
+            .encryption_scope("scope name")
             .authorized_object_id("saoid/value")
             .unauthorized_object_id("suoid value")
             .correlation_id("scid id")
@@ -878,20 +966,20 @@ mod tests {
     #[test]
     fn format_time_produces_iso8601() {
         let t = datetime!(2025-01-15 09:30:45 UTC);
-        assert_eq!(Fields::format_time(&t), "2025-01-15T09:30:45Z");
+        assert_eq!(CommonFields::format_time(&t), "2025-01-15T09:30:45Z");
     }
 
     #[test]
     fn format_time_normalizes_non_utc_to_utc() {
         // 2025-01-15 14:30:45 +05:00 is the same instant as 09:30:45 UTC.
         let t = datetime!(2025-01-15 14:30:45 +5);
-        assert_eq!(Fields::format_time(&t), "2025-01-15T09:30:45Z");
+        assert_eq!(CommonFields::format_time(&t), "2025-01-15T09:30:45Z");
     }
 
     #[test]
     fn encode_percent_encodes_special_chars() {
-        assert_eq!(Fields::encode("a+b/c=d"), "a%2Bb%2Fc%3Dd");
-        assert_eq!(Fields::encode("hello"), "hello");
+        assert_eq!(CommonFields::encode("a+b/c=d"), "a%2Bb%2Fc%3Dd");
+        assert_eq!(CommonFields::encode("hello"), "hello");
     }
 
     #[test]
@@ -1053,22 +1141,26 @@ mod tests {
         let mut udk = test_udk();
         udk.signed_delegated_user_tid = Some("dut".into());
         let key = ValidatedKey::from_key(&udk).unwrap();
-        let mut fields = test_fields(datetime!(2025-06-01 12:00:00 UTC));
-        fields.start = Some(datetime!(2025-05-01 08:00:00 UTC));
-        fields.delegated_user_object_id = Some("duoid".into());
-        fields.authorized_object_id = Some("saoid".into());
-        fields.unauthorized_object_id = Some("suoid".into());
-        fields.correlation_id = Some("scid".into());
-        fields.encryption_scope = Some("ses".into());
-        fields.cache_control = Some("rscc".into());
-        fields.content_disposition = Some("rscd".into());
-        fields.content_encoding = Some("rsce".into());
-        fields.content_language = Some("rscl".into());
-        fields.content_type = Some("rsct".into());
+        let mut common = test_common(datetime!(2025-06-01 12:00:00 UTC));
+        common.start = Some(datetime!(2025-05-01 08:00:00 UTC));
+        common.delegated_user_object_id = Some("duoid".into());
+        let options = BlobSasOptions {
+            authorized_object_id: Some("saoid".into()),
+            unauthorized_object_id: Some("suoid".into()),
+            correlation_id: Some("scid".into()),
+            encryption_scope: Some("ses".into()),
+            cache_control: Some("rscc".into()),
+            content_disposition: Some("rscd".into()),
+            content_encoding: Some("rsce".into()),
+            content_language: Some("rscl".into()),
+            content_type: Some("rsct".into()),
+            ..Default::default()
+        };
 
         let sts = blob_udk_string_to_sign(
             &BlobPermissions::new().read().write().to_sas_str(),
-            &fields,
+            &common,
+            &options,
             &key,
             "b",
             "/blob/acct/c/b",
@@ -1108,10 +1200,12 @@ mod tests {
         // snapshot slot (index 19) of the string-to-sign for `sr=bv`.
         let udk = test_udk();
         let key = ValidatedKey::from_key(&udk).unwrap();
-        let fields = test_fields(datetime!(2025-06-01 12:00:00 UTC));
+        let common = test_common(datetime!(2025-06-01 12:00:00 UTC));
+        let options = BlobSasOptions::default();
         let sts = blob_udk_string_to_sign(
             &BlobPermissions::new().read().to_sas_str(),
-            &fields,
+            &common,
+            &options,
             &key,
             "bv",
             "/blob/acct/c/b",
@@ -1127,10 +1221,12 @@ mod tests {
     fn blob_snapshot_string_to_sign_places_snapshot_in_slot() {
         let udk = test_udk();
         let key = ValidatedKey::from_key(&udk).unwrap();
-        let fields = test_fields(datetime!(2025-06-01 12:00:00 UTC));
+        let common = test_common(datetime!(2025-06-01 12:00:00 UTC));
+        let options = BlobSasOptions::default();
         let sts = blob_udk_string_to_sign(
             &BlobPermissions::new().read().to_sas_str(),
-            &fields,
+            &common,
+            &options,
             &key,
             "bs",
             "/blob/acct/c/b",
@@ -1146,12 +1242,12 @@ mod tests {
         let mut udk = test_udk();
         udk.signed_delegated_user_tid = Some("q-tenant".into());
         let key = ValidatedKey::from_key(&udk).unwrap();
-        let mut fields = test_fields(datetime!(2025-06-01 12:00:00 UTC));
-        fields.delegated_user_object_id = Some("duoid".into());
+        let mut common = test_common(datetime!(2025-06-01 12:00:00 UTC));
+        common.delegated_user_object_id = Some("duoid".into());
 
         let sts = queue_udk_string_to_sign(
             &QueuePermissions::new().read().add().to_sas_str(),
-            &fields,
+            &common,
             &key,
             "/queue/acct/q",
         );
@@ -1170,10 +1266,10 @@ mod tests {
     fn queue_string_to_sign_skdutid_empty_when_key_omits() {
         let udk = test_udk(); // signed_delegated_user_tid: None
         let key = ValidatedKey::from_key(&udk).unwrap();
-        let fields = test_fields(datetime!(2025-06-01 12:00:00 UTC));
+        let common = test_common(datetime!(2025-06-01 12:00:00 UTC));
         let sts = queue_udk_string_to_sign(
             &QueuePermissions::new().read().to_sas_str(),
-            &fields,
+            &common,
             &key,
             "/queue/acct/q",
         );

@@ -56,7 +56,7 @@ pub use directory_resource::DirectoryResource;
 /// Serialization order: `racwdxyltmeopi`.
 pub use container_resource::ContainerPermissions;
 
-use crate::builder::{Fields, ValidatedKey};
+use crate::builder::{BlobSasOptions, CommonFields, ValidatedKey};
 use crate::SAS_VERSION;
 
 /// Builds the blob-service user delegation SAS string-to-sign.
@@ -65,31 +65,32 @@ use crate::SAS_VERSION;
 /// See <https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas#specify-the-signature>.
 pub(crate) fn blob_udk_string_to_sign(
     permissions: &str,
-    fields: &Fields,
+    common: &CommonFields,
+    options: &BlobSasOptions,
     key: &ValidatedKey<'_>,
     sr: &str,
     canonicalized_resource: &str,
     snapshot_time: &str,
 ) -> String {
-    let saoid = fields.authorized_object_id.as_deref().unwrap_or("");
-    let suoid = fields.unauthorized_object_id.as_deref().unwrap_or("");
-    let scid = fields.correlation_id.as_deref().unwrap_or("");
+    let saoid = options.authorized_object_id.as_deref().unwrap_or("");
+    let suoid = options.unauthorized_object_id.as_deref().unwrap_or("");
+    let scid = options.correlation_id.as_deref().unwrap_or("");
     let skdutid = key.signed_delegated_user_tid.unwrap_or("");
-    let sduoid = fields.delegated_user_object_id.as_deref().unwrap_or("");
-    let sip = fields.ip_str();
-    let spr = fields.protocol_str();
-    let ses = fields.encryption_scope_str();
-    let srh = fields.signed_request_headers_str();
-    let srq = fields.signed_request_query_parameters_str();
-    let st = fields.start_str();
-    let se = fields.expiry_str();
-    let skt = Fields::format_time(key.signed_start);
-    let ske = Fields::format_time(key.signed_expiry);
-    let rscc = fields.cache_control.as_deref().unwrap_or("");
-    let rscd = fields.content_disposition.as_deref().unwrap_or("");
-    let rsce = fields.content_encoding.as_deref().unwrap_or("");
-    let rscl = fields.content_language.as_deref().unwrap_or("");
-    let rsct = fields.content_type.as_deref().unwrap_or("");
+    let sduoid = common.delegated_user_object_id.as_deref().unwrap_or("");
+    let sip = common.ip_str();
+    let spr = common.protocol_str();
+    let ses = options.encryption_scope_str();
+    let srh = options.signed_request_headers_str();
+    let srq = options.signed_request_query_parameters_str();
+    let st = common.start_str();
+    let se = common.expiry_str();
+    let skt = CommonFields::format_time(key.signed_start);
+    let ske = CommonFields::format_time(key.signed_expiry);
+    let rscc = options.cache_control.as_deref().unwrap_or("");
+    let rscd = options.content_disposition.as_deref().unwrap_or("");
+    let rsce = options.content_encoding.as_deref().unwrap_or("");
+    let rscl = options.content_language.as_deref().unwrap_or("");
+    let rsct = options.content_type.as_deref().unwrap_or("");
 
     #[rustfmt::skip]
     let parts: Vec<&str> = vec![
@@ -126,9 +127,11 @@ pub(crate) fn blob_udk_string_to_sign(
 }
 
 /// Builds the blob-service user delegation SAS query parameters.
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn blob_udk_query_parameters(
     permissions: &str,
-    fields: &Fields,
+    common: &CommonFields,
+    options: &BlobSasOptions,
     key: &ValidatedKey<'_>,
     sr: &str,
     snapshot_time: Option<&str>,
@@ -138,54 +141,62 @@ pub(crate) fn blob_udk_query_parameters(
     let mut parts = Vec::with_capacity(26);
     parts.push(format!("sv={SAS_VERSION}"));
     parts.push(format!("sr={sr}"));
-    if let Some(ref start) = fields.start {
-        parts.push(format!("st={}", Fields::format_time(start)));
+    if let Some(ref start) = common.start {
+        parts.push(format!("st={}", CommonFields::format_time(start)));
     }
-    parts.push(format!("se={}", fields.expiry_str()));
+    parts.push(format!("se={}", common.expiry_str()));
     parts.push(format!("sp={permissions}"));
-    if let Some(ref ip) = fields.ip_range {
+    if let Some(ref ip) = common.ip_range {
         parts.push(format!("sip={ip}"));
     }
-    if let Some(ref proto) = fields.protocol {
+    if let Some(ref proto) = common.protocol {
         parts.push(format!("spr={proto}"));
     }
     parts.push(format!("skoid={}", key.signed_oid));
     parts.push(format!("sktid={}", key.signed_tid));
-    parts.push(format!("skt={}", Fields::format_time(key.signed_start)));
-    parts.push(format!("ske={}", Fields::format_time(key.signed_expiry)));
+    parts.push(format!(
+        "skt={}",
+        CommonFields::format_time(key.signed_start)
+    ));
+    parts.push(format!(
+        "ske={}",
+        CommonFields::format_time(key.signed_expiry)
+    ));
     parts.push(format!("sks={}", key.signed_service));
     parts.push(format!("skv={}", key.signed_version));
-    if let Some(ref v) = fields.authorized_object_id {
-        parts.push(format!("saoid={}", Fields::encode(v)));
+    if let Some(ref v) = options.authorized_object_id {
+        parts.push(format!("saoid={}", CommonFields::encode(v)));
     }
-    if let Some(ref v) = fields.unauthorized_object_id {
-        parts.push(format!("suoid={}", Fields::encode(v)));
+    if let Some(ref v) = options.unauthorized_object_id {
+        parts.push(format!("suoid={}", CommonFields::encode(v)));
     }
-    if let Some(ref v) = fields.correlation_id {
-        parts.push(format!("scid={}", Fields::encode(v)));
+    if let Some(ref v) = options.correlation_id {
+        parts.push(format!("scid={}", CommonFields::encode(v)));
     }
     if let Some(v) = key.signed_delegated_user_tid {
-        parts.push(format!("skdutid={}", Fields::encode(v)));
+        parts.push(format!("skdutid={}", CommonFields::encode(v)));
     }
-    if let Some(ref v) = fields.delegated_user_object_id {
-        parts.push(format!("sduoid={}", Fields::encode(v)));
+    if let Some(ref v) = common.delegated_user_object_id {
+        parts.push(format!("sduoid={}", CommonFields::encode(v)));
     }
-    if let Some(ref v) = fields.encryption_scope {
-        parts.push(format!("ses={}", Fields::encode(v)));
+    if let Some(ref v) = options.encryption_scope {
+        parts.push(format!("ses={}", CommonFields::encode(v)));
     }
     // The srh/srq query parameter values are comma-separated lists of
     // individually percent-encoded keys. Each key is encoded on its own,
     // then joined with literal commas. The commas are structural separators
     // and must NOT be percent-encoded.
-    if let Some(ref headers) = fields.signed_request_headers {
+    if let Some(ref headers) = options.signed_request_headers {
         if !headers.is_empty() {
-            let encoded_keys: Vec<String> = headers.keys().map(|k| Fields::encode(k)).collect();
+            let encoded_keys: Vec<String> =
+                headers.keys().map(|k| CommonFields::encode(k)).collect();
             parts.push(format!("srh={}", encoded_keys.join(",")));
         }
     }
-    if let Some(ref params) = fields.signed_request_query_parameters {
+    if let Some(ref params) = options.signed_request_query_parameters {
         if !params.is_empty() {
-            let encoded_keys: Vec<String> = params.keys().map(|k| Fields::encode(k)).collect();
+            let encoded_keys: Vec<String> =
+                params.keys().map(|k| CommonFields::encode(k)).collect();
             parts.push(format!("srq={}", encoded_keys.join(",")));
         }
     }
@@ -193,23 +204,23 @@ pub(crate) fn blob_udk_query_parameters(
         parts.push(format!("sdd={depth}"));
     }
     if let Some(v) = snapshot_time {
-        parts.push(format!("snapshot={}", Fields::encode(v)));
+        parts.push(format!("snapshot={}", CommonFields::encode(v)));
     }
-    if let Some(ref v) = fields.cache_control {
-        parts.push(format!("rscc={}", Fields::encode(v)));
+    if let Some(ref v) = options.cache_control {
+        parts.push(format!("rscc={}", CommonFields::encode(v)));
     }
-    if let Some(ref v) = fields.content_disposition {
-        parts.push(format!("rscd={}", Fields::encode(v)));
+    if let Some(ref v) = options.content_disposition {
+        parts.push(format!("rscd={}", CommonFields::encode(v)));
     }
-    if let Some(ref v) = fields.content_encoding {
-        parts.push(format!("rsce={}", Fields::encode(v)));
+    if let Some(ref v) = options.content_encoding {
+        parts.push(format!("rsce={}", CommonFields::encode(v)));
     }
-    if let Some(ref v) = fields.content_language {
-        parts.push(format!("rscl={}", Fields::encode(v)));
+    if let Some(ref v) = options.content_language {
+        parts.push(format!("rscl={}", CommonFields::encode(v)));
     }
-    if let Some(ref v) = fields.content_type {
-        parts.push(format!("rsct={}", Fields::encode(v)));
+    if let Some(ref v) = options.content_type {
+        parts.push(format!("rsct={}", CommonFields::encode(v)));
     }
-    parts.push(format!("sig={}", Fields::encode(signature)));
+    parts.push(format!("sig={}", CommonFields::encode(signature)));
     parts.join("&")
 }
