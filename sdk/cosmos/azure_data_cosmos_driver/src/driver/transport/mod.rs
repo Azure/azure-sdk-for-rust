@@ -360,10 +360,7 @@ pub(crate) mod tests {
 
     #[test]
     fn dataplane_transport_uses_gateway_v2_when_selected() {
-        let pool = ConnectionPoolOptionsBuilder::new()
-            .with_gateway_v2_disabled(false)
-            .build()
-            .unwrap();
+        let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
         let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http2).unwrap();
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
@@ -376,10 +373,7 @@ pub(crate) mod tests {
 
     #[test]
     fn dataplane_transport_falls_back_to_sharded_gateway_when_endpoint_is_standard() {
-        let pool = ConnectionPoolOptionsBuilder::new()
-            .with_gateway_v2_disabled(false)
-            .build()
-            .unwrap();
+        let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
         let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http2).unwrap();
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
@@ -391,19 +385,22 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn dataplane_transport_ignores_gateway_v2_when_gateway_v2_disabled() {
+    fn dataplane_transport_skips_gateway_v2_when_http2_disabled() {
+        // HTTP/2 is a hard prerequisite for Gateway 2.0. With HTTP/2 disabled the
+        // pool reports gateway_v2 unavailable, so even a GatewayV2-mode request
+        // falls back to the standard gateway transport.
         let pool = ConnectionPoolOptionsBuilder::new()
-            .with_gateway_v2_disabled(true)
+            .with_is_http2_allowed(false)
             .build()
             .unwrap();
-        let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http2).unwrap();
+        let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http11).unwrap();
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
         let ctx = transport
             .get_dataplane_transport(&endpoint, TransportMode::GatewayV2)
             .unwrap();
-        assert!(matches!(ctx, AdaptiveTransport::ShardedGateway(_)));
+        assert!(matches!(ctx, AdaptiveTransport::Gateway(_)));
     }
 
     #[test]

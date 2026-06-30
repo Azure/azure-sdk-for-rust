@@ -170,7 +170,7 @@ fn resolve_epk_bound(
                 pk_definition.kind(),
                 pk_definition.version(),
             );
-            Ok(epk.as_str().to_owned())
+            Ok(epk.to_hex())
         }
         other => Err(CosmosError::builder()
             .with_status(CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
@@ -605,8 +605,8 @@ mod tests {
             pk_def.kind(),
             pk_def.version(),
         );
-        assert_eq!(plan.query_ranges[0].min, expected.as_str());
-        assert_eq!(plan.query_ranges[0].max, expected.as_str());
+        assert_eq!(plan.query_ranges[0].min, expected.to_hex());
+        assert_eq!(plan.query_ranges[0].max, expected.to_hex());
         assert!(plan.query_ranges[0].is_min_inclusive);
         assert!(plan.query_ranges[0].is_max_inclusive);
         // Non-empty EPK string (the actual hash hex).
@@ -638,8 +638,8 @@ mod tests {
             pk_def.kind(),
             pk_def.version(),
         );
-        assert_eq!(plan.query_ranges[0].min, expected.as_str());
-        assert_eq!(plan.query_ranges[0].max, expected.as_str());
+        assert_eq!(plan.query_ranges[0].min, expected.to_hex());
+        assert_eq!(plan.query_ranges[0].max, expected.to_hex());
     }
 
     /// The resolver sorts ranges by `min` so the planner sees a stable order

@@ -19,12 +19,8 @@ use uuid::Uuid;
 use crate::{
     models::{
         cosmos_headers::{request_header_names, response_header_names},
-        effective_partition_key::{
-            effective_partition_key_multi_hash_v2_binary, effective_partition_key_v1_binary,
-            effective_partition_key_v2_binary,
-        },
-        DefaultConsistencyLevel, OperationType, PartitionKey, PartitionKeyDefinition,
-        PartitionKeyKind, PartitionKeyVersion, ResourceType,
+        effective_partition_key::EffectivePartitionKey,
+        DefaultConsistencyLevel, OperationType, ResourceType,
     },
     options::ReadConsistencyStrategy,
 };
@@ -75,10 +71,11 @@ pub(crate) struct WrapInputs<'a> {
     pub(crate) auth_context: &'a AuthorizationContext,
     pub(crate) operation_type: OperationType,
     pub(crate) resource_type: ResourceType,
-    pub(crate) partition_key: Option<&'a PartitionKey>,
-    pub(crate) partition_key_definition: Option<&'a PartitionKeyDefinition>,
+    /// Effective partition key precomputed in the operation pipeline (point or
+    /// prefix EPK). `None` for cross-partition or partition-key-less requests.
+    pub(crate) effective_partition_key: Option<&'a EffectivePartitionKey>,
     pub(crate) effective_consistency: DefaultConsistencyLevel,
-    /// When non-`Default`, emit the `ReadConsistencyStrategy` RNTBD token (`0x00F0`)
+    /// When non-`Default`, emit the `ReadConsistencyStrategy` RNTBD token (`0x00FE`)
     /// and SUPPRESS the `ConsistencyLevel` token. Callers must already have gated
     /// this to read operations.
     pub(crate) read_consistency_strategy: ReadConsistencyStrategy,
@@ -107,11 +104,12 @@ pub(crate) fn wrap_request_for_gateway_v2(
     let epk_payload = effective_partition_key_payload(inputs)?;
 
     let mut metadata = Vec::with_capacity(16);
-    // Thin-client requires this exact leading ordering for the routing tokens:
+    // Thin-client expects these routing tokens in the leading positions, in the
+    // order defined by Java's `RntbdConstants.thinClientHeadersInOrderList`:
     //   EffectivePartitionKey, StartEpkHash, EndEpkHash, GlobalDatabaseAccountName,
     //   DatabaseName, CollectionName, CollectionRid, ResourceId, PayloadPresent,
     //   DocumentName, AuthorizationToken, Date.
-    // The proxy parses these positionally; any other order produces a bare 400.
+    // We emit them first and in this sequence to match the reference client.
     let emitted_point_epk = matches!(epk_payload.as_ref(), Some(EpkPayload::Point(_)));
     if let Some(EpkPayload::Point(epk)) = epk_payload.as_ref() {
         metadata.push(Token::effective_partition_key(epk.clone()));
@@ -256,7 +254,7 @@ pub(crate) fn wrap_request_for_gateway_v2(
         metadata.push(Token::query_version(version.to_owned()));
     }
     // Rule 1+5: when RCS is non-Default on a read, emit the RNTBD
-    // ReadConsistencyStrategy token (0x00F0) and DROP the ConsistencyLevel token.
+    // ReadConsistencyStrategy token (0x00FE) and DROP the ConsistencyLevel token.
     // Otherwise, emit ConsistencyLevel as before (Default => transparent on wire
     // by virtue of carrying the resolved effective consistency).
     if inputs.read_consistency_strategy.is_non_default() {
@@ -330,8 +328,9 @@ pub(crate) fn wrap_request_for_gateway_v2(
         } else {
             None
         },
-    }
-    .serialize()?;
+    };
+    let mut frame_bytes = Vec::new();
+    frame.write(&mut frame_bytes)?;
 
     let mut headers = Headers::new();
     if let Some(user_agent) = request.headers.get_optional_str(&USER_AGENT) {
@@ -397,7 +396,7 @@ pub(crate) fn wrap_request_for_gateway_v2(
         url,
         method: Method::Post,
         headers,
-        body: Some(bytes::Bytes::from(frame)),
+        body: Some(bytes::Bytes::from(frame_bytes)),
         timeout: request.timeout,
         #[cfg(feature = "fault_injection")]
         evaluation_collector: request.evaluation_collector.clone(),
@@ -408,7 +407,7 @@ pub(crate) fn wrap_request_for_gateway_v2(
 pub(crate) fn unwrap_response_for_gateway_v2(
     response: HttpResponse,
 ) -> azure_core::Result<HttpResponse> {
-    let response = RntbdResponse::deserialize(&response.body)?;
+    let response = RntbdResponse::read(&response.body)?;
     let status = u16::from(response.status.status_code());
     if !(100..=599).contains(&status) {
         return Err(data_conversion_error(format!(
@@ -541,50 +540,24 @@ enum EpkPayload {
 fn effective_partition_key_payload(
     inputs: &WrapInputs<'_>,
 ) -> azure_core::Result<Option<EpkPayload>> {
-    let (Some(partition_key), Some(partition_key_definition)) =
-        (inputs.partition_key, inputs.partition_key_definition)
-    else {
+    let Some(effective_partition_key) = inputs.effective_partition_key else {
         return Ok(None);
     };
 
-    if partition_key.is_empty() {
+    // An empty EPK (no partition key supplied) is not a routable point key.
+    if effective_partition_key.as_bytes().is_empty() {
         return Ok(None);
     }
 
-    // Defensive check: supplying more components than the container's
-    // partition-key definition declares is a caller bug — the underlying
-    // hash routines would silently hash the extras and produce a broken EPK.
-    // Surfaced as `DataConversion` so the dispatcher returns BadRequest
-    // upstream. Matches the validation `EffectivePartitionKey::compute_range`
-    // performs.
-    if partition_key.values().len() > partition_key_definition.paths().len() {
-        return Err(data_conversion_error(
-            "Partition key supplies more components than the container's partition-key definition declares",
-        ));
-    }
-
-    // Pick the binary form
-    // matching the collection's partition-key kind/version. For partial-HPK
-    // keys this naturally yields a prefix EPK (16 * N bytes for N supplied
-    // components) which the proxy treats as a partition-key prefix scope —
-    // this token is emitted whenever a partition key
-    // is present, point or prefix.
-    let bytes = match partition_key_definition.kind() {
-        PartitionKeyKind::Hash => match partition_key_definition.version() {
-            PartitionKeyVersion::V2 => effective_partition_key_v2_binary(partition_key.values()),
-            PartitionKeyVersion::V1 => effective_partition_key_v1_binary(partition_key.values()),
-        },
-        // MultiHash: per-component hash, concatenated (16 * N bytes — N is the
-        // number of supplied components, so partial keys produce a shorter
-        // prefix EPK).
-        PartitionKeyKind::MultiHash => {
-            effective_partition_key_multi_hash_v2_binary(partition_key.values())
-        }
-        // Range: V2 single-hash, the hash-partitioning fallback for
-        // point ops.
-        PartitionKeyKind::Range => effective_partition_key_v2_binary(partition_key.values()),
-    };
-    Ok(Some(EpkPayload::Point(bytes)))
+    // The EPK was computed in the operation pipeline via the shared routing-core
+    // routine, which selects the v1/v2/multi-hash binary encoder by the
+    // collection's partition-key kind/version. For partial-HPK keys this is a
+    // prefix EPK (16 * N bytes for N supplied components) which the proxy treats
+    // as a partition-key prefix scope. Emitted whenever a partition key is
+    // present, point or prefix.
+    Ok(Some(EpkPayload::Point(
+        effective_partition_key.as_bytes().to_vec(),
+    )))
 }
 
 struct ResourceNames {
@@ -668,7 +641,13 @@ mod tests {
     use azure_core::http::headers::{ACCEPT, CONTENT_TYPE};
 
     use super::*;
+    use crate::models::effective_partition_key::{
+        effective_partition_key_multi_hash_v2_binary, effective_partition_key_v1_binary,
+        effective_partition_key_v2_binary,
+    };
     use crate::models::PartitionKeyValue;
+    use crate::models::PartitionKeyVersion;
+    use crate::models::{PartitionKey, PartitionKeyDefinition};
 
     const ACTIVITY_ID: &str = "00112233-4455-6677-8899-aabbccddeeff";
 
@@ -717,20 +696,31 @@ mod tests {
     fn wrap_inputs<'a>(
         auth_context: &'a AuthorizationContext,
         operation_type: OperationType,
-        partition_key: Option<&'a PartitionKey>,
-        partition_key_definition: Option<&'a PartitionKeyDefinition>,
+        effective_partition_key: Option<&'a EffectivePartitionKey>,
     ) -> WrapInputs<'a> {
         WrapInputs {
             auth_context,
             operation_type,
             resource_type: ResourceType::Document,
-            partition_key,
-            partition_key_definition,
+            effective_partition_key,
             effective_consistency: DefaultConsistencyLevel::Session,
             read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             account_name: Some("account"),
             collection_rid: None,
         }
+    }
+
+    /// Computes the effective partition key the way the operation pipeline does,
+    /// so dispatch tests can supply a precomputed EPK to `wrap_inputs`.
+    fn epk(
+        partition_key: &PartitionKey,
+        partition_key_definition: &PartitionKeyDefinition,
+    ) -> EffectivePartitionKey {
+        EffectivePartitionKey::compute(
+            partition_key.values(),
+            partition_key_definition.kind(),
+            partition_key_definition.version(),
+        )
     }
 
     fn parse_wrapped_request(request: &HttpRequest, _token_count: usize) -> ParsedRequest {
@@ -816,8 +806,7 @@ mod tests {
             &wrap_inputs(
                 &auth_context,
                 OperationType::Read,
-                Some(&partition_key),
-                Some(&partition_key_definition),
+                Some(&epk(&partition_key, &partition_key_definition)),
             ),
         )
         .unwrap();
@@ -890,7 +879,7 @@ mod tests {
         );
         let wrapped = wrap_request_for_gateway_v2(
             &request,
-            &wrap_inputs(&auth_context, OperationType::Read, None, None),
+            &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap();
         assert_eq!(
@@ -914,7 +903,7 @@ mod tests {
 
         let wrapped = wrap_request_for_gateway_v2(
             &request,
-            &wrap_inputs(&auth_context, OperationType::Read, None, None),
+            &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap();
         let parsed = parse_wrapped_request(&wrapped, 10);
@@ -977,7 +966,7 @@ mod tests {
 
         let wrapped = wrap_request_for_gateway_v2(
             &request,
-            &wrap_inputs(&auth_context, OperationType::Create, None, None),
+            &wrap_inputs(&auth_context, OperationType::Create, None),
         )
         .unwrap();
 
@@ -1026,7 +1015,7 @@ mod tests {
 
         let wrapped = wrap_request_for_gateway_v2(
             &request,
-            &wrap_inputs(&auth_context, OperationType::Read, None, None),
+            &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap();
         let parsed = parse_wrapped_request(&wrapped, 0);
@@ -1057,7 +1046,7 @@ mod tests {
 
         let wrapped = wrap_request_for_gateway_v2(
             &request,
-            &wrap_inputs(&auth_context, OperationType::Create, None, None),
+            &wrap_inputs(&auth_context, OperationType::Create, None),
         )
         .unwrap();
         let parsed = parse_wrapped_request(&wrapped, 0);
@@ -1086,7 +1075,7 @@ mod tests {
 
         let wrapped = wrap_request_for_gateway_v2(
             &request,
-            &wrap_inputs(&auth_context, OperationType::Read, None, None),
+            &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap();
         let parsed = parse_wrapped_request(&wrapped, 0);
@@ -1112,7 +1101,7 @@ mod tests {
             ResourceType::Document,
             "dbs/db1/colls/coll1/docs/doc1",
         );
-        let mut inputs = wrap_inputs(&auth_context, OperationType::Read, None, None);
+        let mut inputs = wrap_inputs(&auth_context, OperationType::Read, None);
         // "wT0aAOnu_xc=" -> 8 bytes containing the url-safe `_` (0x5F maps to 0xFF7F in std b64).
         let rid = "wT0aAOnu_xc=";
         inputs.collection_rid = Some(rid);
@@ -1147,7 +1136,7 @@ mod tests {
 
         let wrapped = wrap_request_for_gateway_v2(
             &request,
-            &wrap_inputs(&auth_context, OperationType::Read, None, None),
+            &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap();
         let parsed = parse_wrapped_request(&wrapped, 0);
@@ -1179,7 +1168,7 @@ mod tests {
 
         let wrapped = wrap_request_for_gateway_v2(
             &request,
-            &wrap_inputs(&auth_context, OperationType::Query, None, None),
+            &wrap_inputs(&auth_context, OperationType::Query, None),
         )
         .unwrap();
         let parsed = parse_wrapped_request(&wrapped, 0);
@@ -1205,7 +1194,7 @@ mod tests {
 
         let wrapped = wrap_request_for_gateway_v2(
             &request,
-            &wrap_inputs(&auth_context, OperationType::Read, None, None),
+            &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap();
         let parsed = parse_wrapped_request(&wrapped, 0);
@@ -1232,7 +1221,7 @@ mod tests {
 
         let wrapped = wrap_request_for_gateway_v2(
             &request,
-            &wrap_inputs(&auth_context, OperationType::Read, None, None),
+            &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap();
         let parsed = parse_wrapped_request(&wrapped, 0);
@@ -1256,7 +1245,7 @@ mod tests {
         );
         let wrapped = wrap_request_for_gateway_v2(
             &request,
-            &wrap_inputs(&auth_context, OperationType::Read, None, None),
+            &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap();
         assert!(!parse_wrapped_request(&wrapped, 0)
@@ -1270,7 +1259,7 @@ mod tests {
         );
         let wrapped_empty = wrap_request_for_gateway_v2(
             &empty,
-            &wrap_inputs(&auth_context, OperationType::Read, None, None),
+            &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap();
         assert!(!parse_wrapped_request(&wrapped_empty, 0)
@@ -1296,7 +1285,7 @@ mod tests {
         );
         let wrapped = wrap_request_for_gateway_v2(
             &request,
-            &wrap_inputs(&auth_context, OperationType::ReadFeed, None, None),
+            &wrap_inputs(&auth_context, OperationType::ReadFeed, None),
         )
         .unwrap();
         assert_eq!(
@@ -1312,7 +1301,7 @@ mod tests {
         );
         let wrapped_unbounded = wrap_request_for_gateway_v2(
             &unbounded,
-            &wrap_inputs(&auth_context, OperationType::ReadFeed, None, None),
+            &wrap_inputs(&auth_context, OperationType::ReadFeed, None),
         )
         .unwrap();
         assert_eq!(
@@ -1332,7 +1321,7 @@ mod tests {
         );
         let wrapped = wrap_request_for_gateway_v2(
             &request,
-            &wrap_inputs(&auth_context, OperationType::ReadFeed, None, None),
+            &wrap_inputs(&auth_context, OperationType::ReadFeed, None),
         )
         .unwrap();
         assert!(!parse_wrapped_request(&wrapped, 0)
@@ -1360,7 +1349,7 @@ mod tests {
         );
         let wrapped = wrap_request_for_gateway_v2(
             &request,
-            &wrap_inputs(&auth_context, OperationType::Replace, None, None),
+            &wrap_inputs(&auth_context, OperationType::Replace, None),
         )
         .unwrap();
         assert_eq!(
@@ -1390,7 +1379,7 @@ mod tests {
         );
         let wrapped = wrap_request_for_gateway_v2(
             &request,
-            &wrap_inputs(&auth_context, OperationType::Read, None, None),
+            &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap();
         assert_eq!(
@@ -1408,7 +1397,7 @@ mod tests {
 
         let wrapped = wrap_request_for_gateway_v2(
             &request,
-            &wrap_inputs(&auth_context, OperationType::Create, None, None),
+            &wrap_inputs(&auth_context, OperationType::Create, None),
         )
         .unwrap();
         let parsed = parse_wrapped_request(&wrapped, 9);
@@ -1425,7 +1414,7 @@ mod tests {
 
         let wrapped = wrap_request_for_gateway_v2(
             &request,
-            &wrap_inputs(&auth_context, OperationType::Create, None, None),
+            &wrap_inputs(&auth_context, OperationType::Create, None),
         )
         .unwrap();
         let parsed = parse_wrapped_request(&wrapped, 9);
@@ -1441,7 +1430,7 @@ mod tests {
             ResourceType::Document,
             "dbs/db1/colls/coll1/docs/doc1",
         );
-        let mut inputs = wrap_inputs(&auth_context, OperationType::Read, None, None);
+        let mut inputs = wrap_inputs(&auth_context, OperationType::Read, None);
         inputs.effective_consistency = DefaultConsistencyLevel::Eventual;
 
         let wrapped = wrap_request_for_gateway_v2(&request, &inputs).unwrap();
@@ -1451,7 +1440,7 @@ mod tests {
     }
 
     /// Rule 1+5 (RCS resolution):
-    /// non-`Default` RCS on the wrap path emits token `0x00F0` and SUPPRESSES
+    /// non-`Default` RCS on the wrap path emits token `0x00FE` and SUPPRESSES
     /// the legacy `ConsistencyLevel` token `0x0010`.
     #[test]
     fn wrap_emits_read_consistency_strategy_token_and_drops_consistency_level() {
@@ -1471,14 +1460,14 @@ mod tests {
                 ResourceType::Document,
                 "dbs/db1/colls/coll1/docs/doc1",
             );
-            let mut inputs = wrap_inputs(&auth_context, OperationType::Read, None, None);
+            let mut inputs = wrap_inputs(&auth_context, OperationType::Read, None);
             inputs.read_consistency_strategy = strategy;
 
             let wrapped = wrap_request_for_gateway_v2(&request, &inputs).unwrap();
             let parsed = parse_wrapped_request(&wrapped, 10);
 
             assert_eq!(
-                parsed.tokens[&0x00F0],
+                parsed.tokens[&0x00FE],
                 ParsedTokenValue::Byte(expected_byte),
                 "ReadConsistencyStrategy {strategy:?} should serialize to byte {expected_byte:#x}"
             );
@@ -1501,7 +1490,7 @@ mod tests {
             ResourceType::Document,
             "dbs/db1/colls/coll1/docs/doc1",
         );
-        let mut inputs = wrap_inputs(&auth_context, OperationType::Read, None, None);
+        let mut inputs = wrap_inputs(&auth_context, OperationType::Read, None);
         inputs.read_consistency_strategy = ReadConsistencyStrategy::Default;
         inputs.effective_consistency = DefaultConsistencyLevel::Session;
 
@@ -1509,7 +1498,7 @@ mod tests {
         let parsed = parse_wrapped_request(&wrapped, 10);
 
         assert_eq!(parsed.tokens[&0x0010], ParsedTokenValue::Byte(0x02));
-        assert!(!parsed.tokens.contains_key(&0x00F0));
+        assert!(!parsed.tokens.contains_key(&0x00FE));
     }
 
     #[test]
@@ -1540,8 +1529,7 @@ mod tests {
             &wrap_inputs(
                 &auth_context,
                 OperationType::Read,
-                Some(&partition_key),
-                Some(&partition_key_definition),
+                Some(&epk(&partition_key, &partition_key_definition)),
             ),
         )
         .unwrap();
@@ -1571,8 +1559,7 @@ mod tests {
             &wrap_inputs(
                 &auth_context,
                 OperationType::Read,
-                Some(&partition_key),
-                Some(&partition_key_definition),
+                Some(&epk(&partition_key, &partition_key_definition)),
             ),
         )
         .unwrap();
@@ -1607,8 +1594,7 @@ mod tests {
             &wrap_inputs(
                 &auth_context,
                 OperationType::Query,
-                Some(&partition_key),
-                Some(&partition_key_definition),
+                Some(&epk(&partition_key, &partition_key_definition)),
             ),
         )
         .unwrap();
@@ -1658,8 +1644,7 @@ mod tests {
             &wrap_inputs(
                 &auth_context,
                 OperationType::Read,
-                Some(&partition_key),
-                Some(&partition_key_definition),
+                Some(&epk(&partition_key, &partition_key_definition)),
             ),
         )
         .unwrap();
@@ -1688,37 +1673,6 @@ mod tests {
         );
     }
 
-    /// `compute_range` error cases (e.g., more PK components supplied than the
-    /// container's definition declares) must surface as a wrap error, mapped
-    /// to `BadRequest` upstream — never silently emit broken EPK metadata.
-    #[test]
-    fn wrap_rejects_partition_key_with_too_many_components() {
-        let request = signed_request(None);
-        let auth_context = AuthorizationContext::new(
-            Method::Get,
-            ResourceType::Document,
-            "dbs/db1/colls/coll1/docs/doc1",
-        );
-        let partition_key = PartitionKey::from(vec![
-            PartitionKeyValue::from("tenant1".to_string()),
-            PartitionKeyValue::from("extra".to_string()),
-        ]);
-        let partition_key_definition = PartitionKeyDefinition::from("/tenantId");
-
-        let error = wrap_request_for_gateway_v2(
-            &request,
-            &wrap_inputs(
-                &auth_context,
-                OperationType::Read,
-                Some(&partition_key),
-                Some(&partition_key_definition),
-            ),
-        )
-        .unwrap_err();
-
-        assert_eq!(error.kind(), &ErrorKind::DataConversion);
-    }
-
     #[test]
     fn wrap_propagates_continuation_token_into_rntbd_metadata() {
         let mut request = signed_request(None);
@@ -1732,8 +1686,7 @@ mod tests {
                 auth_context: &auth_context,
                 operation_type: OperationType::Query,
                 resource_type: ResourceType::Document,
-                partition_key: None,
-                partition_key_definition: None,
+                effective_partition_key: None,
                 effective_consistency: DefaultConsistencyLevel::Session,
                 read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
                 account_name: Some("account"),
@@ -1769,8 +1722,7 @@ mod tests {
                 auth_context: &auth_context,
                 operation_type: OperationType::Query,
                 resource_type: ResourceType::Document,
-                partition_key: None,
-                partition_key_definition: None,
+                effective_partition_key: None,
                 effective_consistency: DefaultConsistencyLevel::Session,
                 read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
                 account_name: Some("account"),
@@ -1802,8 +1754,7 @@ mod tests {
                 auth_context: &auth_context,
                 operation_type: OperationType::Query,
                 resource_type: ResourceType::Document,
-                partition_key: None,
-                partition_key_definition: None,
+                effective_partition_key: None,
                 effective_consistency: DefaultConsistencyLevel::Session,
                 read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
                 account_name: Some("account"),
@@ -1831,7 +1782,7 @@ mod tests {
 
         let wrapped = wrap_request_for_gateway_v2(
             &request,
-            &wrap_inputs(&auth_context, OperationType::Read, None, None),
+            &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap();
 
@@ -1861,7 +1812,7 @@ mod tests {
 
         let error = wrap_request_for_gateway_v2(
             &request,
-            &wrap_inputs(&auth_context, OperationType::Read, None, None),
+            &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap_err();
 
@@ -1880,7 +1831,7 @@ mod tests {
 
         let error = wrap_request_for_gateway_v2(
             &request,
-            &wrap_inputs(&auth_context, OperationType::Read, None, None),
+            &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap_err();
 
@@ -1899,7 +1850,7 @@ mod tests {
 
         let error = wrap_request_for_gateway_v2(
             &request,
-            &wrap_inputs(&auth_context, OperationType::Read, None, None),
+            &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap_err();
 

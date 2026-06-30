@@ -8,9 +8,11 @@
 //!
 //! ## Categories
 //!
-//! 1. **Operator override** — the operator can opt out of Gateway 2.0 even when
-//!    the account advertises a Gateway 2.0 endpoint. Verified via the public
-//!    [`ConnectionPoolOptions::with_gateway_v2_disabled`] toggle.
+//! 1. **Server-driven transport selection** — Gateway 2.0 vs. the standard
+//!    gateway is chosen by the account advertisement plus a runtime probe; it
+//!    is not customer-configurable. The only client-side prerequisite is
+//!    HTTP/2, covered by the inside-crate tests in
+//!    `driver::transport::tests::dataplane_transport_*`.
 //!
 //! 2. **Operation eligibility** — operations that Gateway 2.0 does not yet
 //!    support (e.g., stored procedure execution) must transparently fall back
@@ -50,8 +52,8 @@
 use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
-use azure_data_cosmos_driver::models::{AccountReference, CosmosOperation, DatabaseReference};
-use azure_data_cosmos_driver::options::{DriverOptions, OperationOptions};
+use azure_data_cosmos_driver::models::AccountReference;
+use azure_data_cosmos_driver::options::DriverOptions;
 use azure_data_cosmos_driver::testing::{
     ConnectionPoolOptions, HttpClientConfig, HttpClientFactory, HttpRequest, HttpResponse,
     TransportClient, TransportError,
@@ -148,16 +150,14 @@ fn live_account_from_env() -> Option<AccountReference> {
     Some(AccountReference::with_master_key(url, key))
 }
 
-/// Builds a runtime with the capturing factory and the requested
-/// gateway-20 toggle. The flag reflects the operator override exposed via
-/// `ConnectionPoolOptions` — passing `true` forces every request through the
-/// standard gateway transport.
-async fn capturing_runtime(
-    gateway_v2_disabled: bool,
-) -> (Arc<CosmosDriverRuntime>, Arc<CapturingTransport>) {
+/// Builds a runtime with the capturing factory.
+///
+/// Transport selection (Gateway 2.0 vs. standard gateway) is server-driven, so
+/// there is nothing to toggle here — the captured frames are the V1 HTTP
+/// metadata/probe requests the runtime emits during bootstrap.
+async fn capturing_runtime() -> (Arc<CosmosDriverRuntime>, Arc<CapturingTransport>) {
     let (factory, transport) = CapturingFactory::new();
     let pool = ConnectionPoolOptions::builder()
-        .with_gateway_v2_disabled(gateway_v2_disabled)
         .build()
         .expect("connection pool builds");
     let runtime = CosmosDriverRuntime::builder()
@@ -180,78 +180,13 @@ async fn probe(runtime: &Arc<CosmosDriverRuntime>) {
 }
 
 // ----------------------------------------------------------------------------
-// (a) Operator override forces standard gateway routing
+// (a) Server-driven transport selection
 // ----------------------------------------------------------------------------
-
-/// Verifies that the operator override flag (`with_gateway_v2_disabled(true)`)
-/// is honored end-to-end at the connection-pool level. When the flag is set,
-/// the runtime must not select the Gateway 2.0 transport even if account
-/// metadata advertises a Gateway 2.0 endpoint.
-///
-/// We assert the contract structurally via `ConnectionPoolOptions`: when the
-/// flag is `true`, `gateway_v2_disabled()` reports `true`, and the
-/// transport-layer dispatcher branches to the standard gateway (this branching
-/// is covered by the inside-crate tests in
-/// `driver::transport::tests::dataplane_transport_*`).
-#[tokio::test]
-async fn operator_override_disables_gateway_v2_at_pool_level() {
-    let off = ConnectionPoolOptions::builder()
-        .with_gateway_v2_disabled(true)
-        .build()
-        .expect("pool builds");
-    assert!(
-        off.gateway_v2_disabled(),
-        "operator-disabled pool must report gateway_v2_disabled = true"
-    );
-
-    let on = ConnectionPoolOptions::builder()
-        .with_gateway_v2_disabled(false)
-        .build()
-        .expect("pool builds");
-    assert!(
-        !on.gateway_v2_disabled(),
-        "operator-enabled pool must report gateway_v2_disabled = false"
-    );
-}
-
-/// Live-account companion to the above. Drives a real read against a
-/// pre-provisioned Gateway 2.0 account with the operator override turned off,
-/// then asserts (TODO once diagnostics expose `TransportKind`) that the
-/// request used the standard gateway transport.
-#[tokio::test]
-#[ignore = "Requires AZURE_COSMOS_GW_V2_ENDPOINT/_KEY to a Gateway 2.0 account"]
-async fn operator_override_routes_reads_to_standard_gateway() {
-    let Some(account) = live_account_from_env() else {
-        return;
-    };
-
-    // TODO: once diagnostics expose `TransportKind` per request,
-    // assert that every request used `TransportKind::StandardGateway`.
-    let pool = ConnectionPoolOptions::builder()
-        .with_gateway_v2_disabled(true)
-        .build()
-        .expect("pool builds");
-    let runtime = CosmosDriverRuntime::builder()
-        .with_connection_pool(pool)
-        .build()
-        .await
-        .expect("runtime builds");
-    let options = DriverOptions::builder(account).build();
-    let driver = runtime
-        .create_driver(options)
-        .await
-        .expect("driver init succeeds against the live account");
-
-    let db = read_env("AZURE_COSMOS_GW_V2_DATABASE").unwrap_or_else(|| "gw_v2-tests".to_string());
-    let db_ref = DatabaseReference::from_name(driver.account().clone(), db);
-
-    let _ = driver
-        .execute_operation(
-            CosmosOperation::read_database(db_ref),
-            OperationOptions::default(),
-        )
-        .await;
-}
+//
+// Gateway 2.0 vs. the standard gateway is selected by the server (account
+// advertisement + runtime connectivity probe), not by any client-side toggle.
+// The HTTP/2 prerequisite and the dispatcher branching are covered by the
+// inside-crate tests in `driver::transport::tests::dataplane_transport_*`.
 
 // ----------------------------------------------------------------------------
 // (b) Operation eligibility fallback (StoredProc Execute → standard gateway)
@@ -319,7 +254,7 @@ async fn v1_http_never_emits_both_consistency_headers() {
     const LEGACY: &str = "x-ms-consistency-level";
     const STRATEGY: &str = "x-ms-cosmos-read-consistency-strategy";
 
-    let (runtime, transport) = capturing_runtime(true).await;
+    let (runtime, transport) = capturing_runtime().await;
     probe(&runtime).await;
 
     let captured = transport.requests();
@@ -371,7 +306,7 @@ async fn v1_http_never_emits_both_consistency_headers() {
 /// the V2 transport boundary moves.
 #[tokio::test]
 async fn v2_rntbd_never_emits_both_consistency_tokens() {
-    let (runtime, transport) = capturing_runtime(false).await;
+    let (runtime, transport) = capturing_runtime().await;
     probe(&runtime).await;
 
     let captured = transport.requests();
@@ -421,7 +356,7 @@ async fn v2_rntbd_never_emits_both_consistency_tokens() {
 async fn capabilities_header_value_is_pinned_to_eight() {
     const CAPABILITIES: &str = "x-ms-cosmos-sdk-supportedcapabilities";
 
-    let (runtime, transport) = capturing_runtime(false).await;
+    let (runtime, transport) = capturing_runtime().await;
     probe(&runtime).await;
 
     let captured = transport.requests();

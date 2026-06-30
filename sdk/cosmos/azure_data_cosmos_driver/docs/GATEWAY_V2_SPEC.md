@@ -84,26 +84,26 @@ Gateway 2.0 moves **replica-level** routing intelligence from the SDK into the s
 
 ---
 
-## 3. Gating, Configuration & Override
+## 3. Gating & Configuration
 
 Gateway 2.0 routing is decided **once per logical operation** (a point operation, a single query-iteration page, a single batch, etc.) in the driver's `resolve_endpoint` stage. The resulting `RoutingDecision.transport_mode` is then attached to the operation context and **inherited by all retries and sub-requests** of that operation — downstream pipeline stages, retry policies, and hedged sub-requests MUST trust the attached decision and not re-derive eligibility. (Re-evaluating `gateway_v2_suppressed` mid-operation could route a retry through a different transport than the original attempt, fragmenting diagnostics and breaking session-token affinity.)
 
 ### 3.1 The `gateway_v2_suppressed` formula
 
 ```text
-gateway_v2_suppressed = options.gateway_v2_disabled
+gateway_v2_suppressed = !http2_available
                     || !account.has_gateway_v2_endpoints()
 ```
 
-When `gateway_v2_suppressed` is `false` (the default whenever the account advertises Gateway 2.0 endpoints and the operator has not flipped the override), the request routes through Gateway 2.0. When it is `true`, the request falls through to Gateway V1. The account-side check (`has_gateway_v2_endpoints()`) reads the cached account metadata. The client-side check (`gateway_v2_disabled`) is the only public toggle.
+When `gateway_v2_suppressed` is `false` — the default whenever the account advertises Gateway 2.0 endpoints, the connectivity probe has confirmed them, and HTTP/2 is available — the request routes through Gateway 2.0. When it is `true`, the request falls through to Gateway V1. Both inputs are **server- and environment-driven, not customer-configurable**: `has_gateway_v2_endpoints()` reads the cached account metadata (which only carries Gateway 2.0 endpoints after the connectivity probe succeeds for every advertised region), and `http2_available` reflects whether the transport could negotiate HTTP/2 (the one hard client-side prerequisite). There is no client API or environment variable to force Gateway 2.0 on or off.
 
-### 3.2 Operator override: `CosmosClientOptions::gateway_v2_disabled`
+### 3.2 Server-driven selection — no client toggle
 
-Default `false`. Customers and operators MAY set `gateway_v2_disabled = true` on `CosmosClientOptions` to force every request from the client to route through Gateway V1, even when the account advertises Gateway 2.0 endpoints and the operation would otherwise be eligible.
+Gateway 2.0 vs. Gateway V1 is selected entirely by the service: the account advertises thin-client (`thinClient*Locations`) endpoints, and the driver confirms each advertised region with a one-time connectivity probe before routing data-plane traffic to it. There is **no customer- or operator-facing switch** — no `CosmosClientOptions` field and no `AZURE_COSMOS_*` environment variable — to opt a client in or out. Keeping the choice abstract from customers lets the service migrate accounts between Gateway V1 and Gateway 2.0 transparently.
 
-⚠️ **Setting this flag voids the latency-SLA story Gateway 2.0 is being built to deliver. It also impacts the ability to receive 24/7 Microsoft support for performance regressions on this client. Use only when explicitly directed by Microsoft Support during incident triage.** The flag is intentionally **not** exposed via environment variable to discourage casual / fleet-wide enablement; operators who need it must opt in per-client through code.
+The only client-side prerequisite is **HTTP/2**: if the runtime cannot negotiate HTTP/2, Gateway 2.0 is suppressed for that client and all traffic stays on Gateway V1.
 
-All settings, options, and internal flags **must use a negative-term name** (`gateway_v2_disabled`, `gateway_v2_suppressed`, etc.) so that **default values mean Gateway 2.0 is enabled**. Positive-term names (`is_gateway_v2_allowed`, `gateway_v2_allowed`, `enable_gateway_v2`, etc.) are not permitted anywhere — driver, SDK, perf crate, env vars, or test wiring. `gateway_v2_disabled` is the single supported disablement mechanism; there is no `AZURE_COSMOS_*` env var that toggles Gateway 2.0.
+All internal flags **must use a negative-term name** (`gateway_v2_disabled`, `gateway_v2_suppressed`, etc.) so that **default values mean Gateway 2.0 is enabled**. Positive-term names (`is_gateway_v2_allowed`, `gateway_v2_allowed`, `enable_gateway_v2`, etc.) are not permitted anywhere — driver, SDK, perf crate, or test wiring. These flags are internal implementation details derived from HTTP/2 availability; there is no public option or `AZURE_COSMOS_*` env var that toggles Gateway 2.0.
 
 ### 3.3 EPK Range types — driver crate is canonical
 
@@ -162,7 +162,7 @@ Today the `endpoint_is_available()` check in `operation_pipeline.rs` skips a *si
 
 #### 4.3.2 Decision — fail-fast
 
-Keep the regional-retry behavior. A single attempt against an unreachable G2 endpoint fails, the endpoint is marked `TransportError`, the retry tries the next region's G2 endpoint, and the operation eventually fails with a transport error if all G2 regions are unreachable. The error and diagnostics surface a clear, actionable hint pointing the operator at `options.gateway_v2_disabled = true`. The operator must then explicitly opt out to route through G1.
+Keep the regional-retry behavior. A single attempt against an unreachable G2 endpoint fails, the endpoint is marked `TransportError`, the retry tries the next region's G2 endpoint, and the operation eventually fails with a transport error if all G2 regions are unreachable. The error and diagnostics surface a clear, actionable hint that the Gateway 2.0 endpoints are unreachable. Because transport selection is server-driven, the durable remediation is automatic: the connectivity probe gates Gateway 2.0 off for unreachable regions on the next refresh, and/or the account stops advertising thin-client endpoints — either way the client converges to G1 with no code change.
 
 Why fail-fast was chosen:
 
@@ -170,7 +170,7 @@ Why fail-fast was chosen:
 - **No silent latency surprise.** Auto-switching transport modes mid-workload would change the latency profile in ways the customer did not ask for. Customers tuning their workload around the selected transport would see a hidden regression they cannot attribute.
 - **Operational guarantees stay honest.** The guarantees published for the selected transport are tied to that transport staying selected for the duration of the workload. Auto-degrading would silently violate that contract for the affected client.
 - **No hidden state.** Firewall mis-configuration is exactly the kind of infrastructure problem that should bubble up loudly so the customer can react. A circuit breaker would mask it.
-- **Simplicity.** No new state, no concurrency contract, no probe semantics, no recovery logic. Customers behind firewalls get a single deterministic verdict and a clear remediation — either client-side (set `options.gateway_v2_disabled = true`) or server-side (once the account stops advertising thin-client endpoints and `getDatabaseAccount` no longer returns `thinClient*Locations`, the driver drops the G2 endpoints on the next metadata refresh and routes through G1 with no client change).
+- **Simplicity.** No new state, no concurrency contract, no recovery logic in the data path. Customers behind firewalls get a single deterministic verdict and an automatic, server-driven remediation: the connectivity probe gates Gateway 2.0 off for unreachable regions, and once the account stops advertising thin-client endpoints (`getDatabaseAccount` no longer returns `thinClient*Locations`) the driver drops the G2 endpoints on the next metadata refresh and routes through G1 — all with no client change.
 
 ---
 
@@ -354,9 +354,9 @@ Wire-format and resolution semantics MUST match the proxy-side contract so that 
 | Transport | Wire carrier for the resolved value | Encoding |
 | --- | --- | --- |
 | Standard Gateway (V1, HTTP) | HTTP request header `x-ms-cosmos-read-consistency-strategy` | String, exact case-sensitive values: `"Eventual"`, `"Session"`, `"LatestCommitted"`, `"GlobalStrong"`. Header is omitted entirely when the resolved RCS is `Default`. |
-| Gateway 2.0 (RNTBD) | RNTBD metadata token ID `0x00F0` | **Byte** type — `Eventual = 0x01`, `Session = 0x02`, `LatestCommitted = 0x03`, `GlobalStrong = 0x04`. The token MUST be Byte-encoded; an earlier String-typed prototype caused the proxy to hang. The token is omitted entirely when the resolved RCS is `Default`. |
+| Gateway 2.0 (RNTBD) | RNTBD metadata token ID `0x00FE` | **Byte** type — `Eventual = 0x01`, `Session = 0x02`, `LatestCommitted = 0x03`, `GlobalStrong = 0x04`. The token MUST be Byte-encoded; an earlier String-typed prototype caused the proxy to hang. The token is omitted entirely when the resolved RCS is `Default`. |
 
-The byte values are pinned against the proxy's C++ enum. The RNTBD token catalog (§5.3) carries a row for `ReadConsistencyStrategy = 0x00F0 (Byte)` enumerating the four byte values.
+The byte values are pinned against the proxy's C++ enum. The RNTBD token catalog (§5.3) carries a row for `ReadConsistencyStrategy = 0x00FE (Byte)` enumerating the four byte values.
 
 ##### Resolution precedence
 
@@ -377,7 +377,7 @@ Sources, highest precedence first:
 The compute gateway rejects requests that carry both `x-ms-consistency-level` AND `x-ms-cosmos-read-consistency-strategy`. The Rust driver MUST therefore enforce mutual exclusion on both transports:
 
 - **V1 HTTP**: when resolved RCS is non-Default, the driver sends only `x-ms-cosmos-read-consistency-strategy` and **strips** any `x-ms-consistency-level` from the outgoing header set. When resolved RCS is Default, the driver sends only `x-ms-consistency-level` (if a `ConsistencyLevel` was resolved at any level) and omits the RCS header.
-- **V2 RNTBD**: same mutual exclusion applied to the RNTBD metadata stream — emit either the `ConsistencyLevel` token or the `ReadConsistencyStrategy` token (`0x00F0`), never both. The Gateway 2.0 RNTBD serializer consumes the **already-resolved** value and decides which of the two tokens to emit; it does not re-run resolution.
+- **V2 RNTBD**: same mutual exclusion applied to the RNTBD metadata stream — emit either the `ConsistencyLevel` token or the `ReadConsistencyStrategy` token (`0x00FE`), never both. The Gateway 2.0 RNTBD serializer consumes the **already-resolved** value and decides which of the two tokens to emit; it does not re-run resolution.
 
 ##### GlobalStrong client-side validation
 
@@ -404,7 +404,7 @@ When `transport_mode == GatewayV2`:
 3. Serialize the `GlobalDatabaseAccountName` RNTBD metadata token (`0x00CE`, `String`, optional) with the account host label (e.g., `myacct`) — every request, see "Tenant identification" note above
 4. Point op or single-logical-partition query op? Set `x-ms-effective-partition-key` (EPK hash from `EffectivePartitionKey::compute()`).
    Cross-partition feed / query operation? Set `x-ms-thinclient-range-min` and `x-ms-thinclient-range-max` (from `EffectivePartitionKey::compute_range()`); do **not** emit the PK header on the feed path.
-5. Serialize the **already-reconciled** consistency value (per "Consistency header reconciliation" above) into the appropriate RNTBD metadata token: `ConsistencyLevel` token if RCS resolved to `Default`, OR the `ReadConsistencyStrategy` token (`0x00F0`, Byte) if RCS resolved to a non-Default value. Emit exactly one of the two — never both. The serializer consumes the resolved value as input; do not re-run resolution here.
+5. Serialize the **already-reconciled** consistency value (per "Consistency header reconciliation" above) into the appropriate RNTBD metadata token: `ConsistencyLevel` token if RCS resolved to `Default`, OR the `ReadConsistencyStrategy` token (`0x00FE`, Byte) if RCS resolved to a non-Default value. Emit exactly one of the two — never both. The serializer consumes the resolved value as input; do not re-run resolution here.
 6. Serialize headers + body into RNTBD binary format (§5.3)
 7. POST RNTBD body to gateway 2.0 endpoint via HTTP/2
 
@@ -438,7 +438,7 @@ After endpoint discovery resolves `thinClient{Writable,Readable}Locations` into 
 
 1. **Strict** — only `200` counts as success. A `503` (feature disabled) fails the probe; the federation has not opted in to Gateway 2.0 yet, so the data plane stays on Gateway V1.
 2. **All-or-nothing, gateway-wide** — when the probe fails, Gateway 2.0 is suppressed for **every operation, every region, every routing decision** (point reads, single-PK queries, full-container scans, HPK queries, plan fetches, the lot). It is **not** an op-by-op filter that downgrades only the operations Gateway V1 can't serve. The fact that V1 happens to satisfy most operations is incidental — they are silently downgraded along with the operations V1 would reject. The all-or-nothing gate stays in effect until a subsequent probe pass succeeds on every region.
-3. **No SDK-side opt-out** — the probe runs whenever `thinClient*Locations` are advertised. The federation flag is the operator-facing kill switch; the only customer-facing knob is `options.gateway_v2_disabled = true`, which short-circuits the entire G2 code path (probe included).
+3. **No SDK-side opt-out** — the probe runs whenever `thinClient*Locations` are advertised. The federation flag is the operator-facing kill switch; there is **no** customer-facing knob to disable Gateway 2.0 (the only client-side prerequisite is HTTP/2, which short-circuits the entire G2 code path, probe included, when it cannot be negotiated).
 
 **Lifecycle and timing.** The probe must run **on bootstrap, before any data-plane request is dispatched**, so the very first operation routes against a probe-verified snapshot — never against the optimistic "GW_V2 on" snapshot that `build_account_endpoint_state` produces from `thinClient*Locations` alone. Concretely, the bootstrap sequence is:
 
@@ -490,12 +490,12 @@ There is intentionally **no** Gateway 2.0–specific failure-fallback mechanism 
 
 ### 5.7 SDK Integration
 
-Gateway 2.0 is **on by default** when the account metadata advertises Gateway 2.0 endpoints; users opt **out** (not in) via `CosmosClientOptions::gateway_v2_disabled` if they need to. This minimizes friction for the common case.
+Gateway 2.0 is **on by default** when the account metadata advertises Gateway 2.0 endpoints and the connectivity probe confirms them; there is no user opt-in or opt-out. Transport selection is fully server-driven, which minimizes friction for the common case and lets the service migrate accounts transparently.
 
 #### SDK behavior
 
 - **Auto-detection** — When account metadata includes `thinClientReadableLocations` / `thinClientWritableLocations`, the driver automatically prefers gateway 2.0 for eligible operations (per §3.1). No user opt-in required.
-- **Operator override** — `CosmosClientOptions::gateway_v2_disabled` (default `false`) is a public, documented setting for forcing Gateway V1 routing per-client. **It carries an explicit warning that flipping it voids Gateway 2.0's latency SLA and impacts 24/7 Microsoft support eligibility for performance regressions.** Intentionally not exposed via env var. See §3.2 for the full normative wording. There is no positive-term internal flag; `gateway_v2_disabled` is the single supported disablement mechanism.
+- **No client toggle** — There is no `CosmosClientOptions` field and no `AZURE_COSMOS_*` env var to force Gateway V1 or Gateway 2.0 routing. The only client-side prerequisite is HTTP/2; see §3.2 for the full normative wording. Internal negative-term flags (e.g. `gateway_v2_disabled`) are implementation details derived from HTTP/2 availability, not public API.
 - **Diagnostics** — `CosmosDiagnostics` should report when a request used gateway 2.0 vs standard gateway (already partially done via `TransportKind::GatewayV2`).
 - **User agent** — Update SDK user agent string to indicate gateway 2.0 capability.
 - **EPK cutover** — Replace SDK-side callers of `get_hashed_partition_key_string` with calls into the driver's `EffectivePartitionKey::compute()` / `::compute_range()` (this is the cutover PR #4087 flagged). Gateway 2.0 header injection depends on this being correct for hierarchical-PK containers.
@@ -528,7 +528,7 @@ A **new dedicated CI pipeline** is required for gateway 2.0 live tests. Gateway 
 - Single-region gateway 2.0
 - Multi-region gateway 2.0 with failover
 - Gateway 2.0 + standard gateway eligibility fallback (per-request only; normal retries still apply)
-- Operator override (`CosmosClientOptions::gateway_v2_disabled = true`) — assert all eligible Document ops route through the standard gateway
+- HTTP/2 unavailable — assert all eligible Document ops route through the standard gateway (the one client-side prerequisite that suppresses Gateway 2.0)
 
 **Test Suites:**
 
@@ -561,7 +561,7 @@ A **new dedicated CI pipeline** is required for gateway 2.0 live tests. Gateway 
 | HPK + Gateway 2.0: full vs partial PK | Yes | | Yes | Hierarchical container (2- and 3-component PK paths). **Full PK** (all components specified) on a point op → emits `x-ms-effective-partition-key` carrying the single EPK from `EffectivePartitionKey::compute()`. **Partial PK** (1- or 2-component prefix) on a feed / cross-partition / delete-by-PK op → emits `x-ms-thinclient-range-min` / `x-ms-thinclient-range-max` carrying the EPK range from `EffectivePartitionKey::compute_range()`. Asserted at unit level (header presence + exact wire form, range bounds for each prefix length) and E2E (round-trip against a live HPK container). |
 | Account-name RNTBD token | Yes | | | `GlobalDatabaseAccountName` (`0x00CE`, `String`) present in the RNTBD metadata stream of every Gateway 2.0 request (point, feed, batch, bulk, change feed). Value matches the host label of the account endpoint URL. |
 | SDK-supported-capabilities header | Yes | | | `x-ms-cosmos-sdk-supportedcapabilities` value emitted is the bitmask string for `IgnoreUnknownRntbdTokens` (`"8"`), **not** `"0"`. |
-| Consistency reconciliation: token + header encoding | Yes | | | RNTBD token `0x00F0` Byte round-trip for all 4 strategies; HTTP header `x-ms-cosmos-read-consistency-strategy` exact wire-string mapping for all 4 strategies; `Default` emits neither carrier on either transport. |
+| Consistency reconciliation: token + header encoding | Yes | | | RNTBD token `0x00FE` Byte round-trip for all 4 strategies; HTTP header `x-ms-cosmos-read-consistency-strategy` exact wire-string mapping for all 4 strategies; `Default` emits neither carrier on either transport. |
 | Consistency reconciliation: dual-header rejection | Yes | | | SDK never emits both `x-ms-consistency-level` AND `x-ms-cosmos-read-consistency-strategy` on V1; never emits both `ConsistencyLevel` and `ReadConsistencyStrategy` RNTBD tokens on V2. Verified across all 16 (CL × RCS, request-level × client-level) combinations. |
 | Consistency reconciliation: 4-source precedence | Yes | | | Request-RCS > Request-CL > Client-RCS > Client-CL > account default; `Default` at any RCS layer is a pass-through. Representative subset of the full matrix. |
 | Consistency reconciliation: GlobalStrong validation | Yes | | | RCS=GlobalStrong on a non-Strong account produces a fail-fast `CosmosError` (no wire request emitted); on a Strong account the request proceeds normally. |
@@ -579,7 +579,7 @@ A **new dedicated CI pipeline** is required for gateway 2.0 live tests. Gateway 
 | Retry: 503 | | Yes | | Regional failover via existing retry policies |
 | Retry: 410 Gone | | Yes | | PKRange refresh (sub-status specific); NameCacheStale → collection cache |
 | Retry: 404 / sub-status 1002 (ReadSessionNotAvailable) | | Yes | | Retry routes to a **remote-preferred** region (assert local-region retry only when no other region is available); assert PLF region wins when PLF has pinned the PKRangeId; assert that **no PKRange cache refresh** is triggered |
-| Operator override (`gateway_v2_disabled = true`) | Yes | Yes | | All eligible Document ops (point + feed + batch + change feed) route through standard gateway; default `false` does not change behavior |
+| HTTP/2 unavailable | Yes | Yes | | All eligible Document ops (point + feed + batch + change feed) route through standard gateway when HTTP/2 cannot be negotiated; default (HTTP/2 available) does not change behavior |
 | Eligibility fallback | | Yes | | StoredProcedure Execute (and all other non-Document resource types) → standard gateway |
 | PLF precedence | | Yes | | Region without gw_v2_url + PLF override → standard gateway path |
 | Multi-region failover | | Yes | Yes | Preferred regions, failover |
@@ -594,4 +594,4 @@ A **new dedicated CI pipeline** is required for gateway 2.0 live tests. Gateway 
 - **Q1 — HTTP/2 prior knowledge vs ALPN**: _Resolved_. Gateway 2.0 always uses HTTP/2; the proxy does not accept HTTP/1.x. Rust uses HTTP/2 with prior knowledge on the Gateway 2.0 transport (no ALPN fallback to HTTP/1.x). The broader ALPN default in `TRANSPORT_PIPELINE_SPEC.md` does **not** apply to Gateway 2.0; if HTTP/2 negotiation fails, the request fails and the existing retry policies handle it.
 - **Q2 — Live test account provisioning**: Cosmos DB account configuration flags required to enable Gateway 2.0 endpoints are not part of the standard Bicep templates. _Resolution_: hardcode a dedicated, pre-provisioned Gateway 2.0 account for the gateway 2.0 live tests pipeline and reuse it across runs (rather than provisioning per-run via Bicep). Account name and credentials stored in pipeline secrets (`AZURE_COSMOS_GW_V2_ENDPOINT`, `AZURE_COSMOS_GW_V2_KEY`); pipeline reads endpoint from environment variables.
 - **Q3 — EPK range header names**: _Resolved_. The Gateway 2.0 proxy requires the header names `x-ms-thinclient-range-min` / `x-ms-thinclient-range-max`. The Gateway 2.0 path introduces new constants (`GATEWAY_V2_RANGE_MIN`, `GATEWAY_V2_RANGE_MAX`); the existing `START_EPK` / `END_EPK` (`x-ms-start-epk` / `x-ms-end-epk`) constants remain for any non-Gateway-2.0 callers but are **not** emitted on Gateway 2.0 requests.
-- **Q4 — Connectivity-failure handling (G2 → G1)**: Decision is **fail-fast**: when all G2 endpoints fail with connectivity-class errors, the operation surfaces the standard transport error without auto-fallback. Operators opt out via `options.gateway_v2_disabled = true`. See §4.3.
+- **Q4 — Connectivity-failure handling (G2 → G1)**: Decision is **fail-fast**: when all G2 endpoints fail with connectivity-class errors, the operation surfaces the standard transport error without auto-fallback. Recovery is server-driven — the connectivity probe gates Gateway 2.0 off for unreachable regions, and/or the account stops advertising thin-client endpoints — with no client-side toggle. See §4.3.

@@ -163,8 +163,8 @@ mod tests {
         let pkr = PartitionKeyRange::new("1".to_string(), "", "FF");
 
         assert_eq!(pkr.id, "1");
-        assert_eq!(pkr.min_inclusive.as_str(), "");
-        assert_eq!(pkr.max_exclusive.as_str(), "FF");
+        assert_eq!(pkr.min_inclusive.to_hex(), "");
+        assert_eq!(pkr.max_exclusive.to_hex(), "FF");
     }
 
     #[test]
@@ -172,8 +172,8 @@ mod tests {
         let pkr = PartitionKeyRange::new("1".to_string(), "00", "FF");
 
         let range = pkr.as_range();
-        assert_eq!(range.min.as_str(), "00");
-        assert_eq!(range.max.as_str(), "FF");
+        assert_eq!(range.min.to_hex(), "00");
+        assert_eq!(range.max.to_hex(), "FF");
         assert!(range.is_min_inclusive);
         assert!(!range.is_max_inclusive);
     }
@@ -217,8 +217,8 @@ mod tests {
         let pkr: PartitionKeyRange = serde_json::from_str(json).unwrap();
 
         assert_eq!(pkr.id, "1");
-        assert_eq!(pkr.min_inclusive.as_str(), "");
-        assert_eq!(pkr.max_exclusive.as_str(), "FF");
+        assert_eq!(pkr.min_inclusive.to_hex(), "");
+        assert_eq!(pkr.max_exclusive.to_hex(), "FF");
         assert_eq!(pkr.status, PartitionKeyRangeStatus::Online);
         assert_eq!(pkr.throughput_fraction, 0.5);
         assert_eq!(pkr.parents.as_deref(), Some(&["0".to_string()][..]));

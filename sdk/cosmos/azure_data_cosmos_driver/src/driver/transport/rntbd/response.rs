@@ -9,9 +9,7 @@ use crate::models::CosmosStatus;
 
 use super::{
     status::map_rntbd_status_to_cosmos_status,
-    tokens::{
-        data_conversion_error, read_u32_le, read_uuid_le, RntbdResponseToken, Token, TokenValue,
-    },
+    tokens::{data_conversion_error, read_u32_le, read_uuid_le, RntbdResponseToken, Token},
 };
 
 /// A decoded Gateway 2.0 RNTBD response frame.
@@ -51,7 +49,7 @@ pub(crate) struct RntbdResponse {
 }
 
 impl RntbdResponse {
-    /// Deserializes a Gateway 2.0 RNTBD response frame.
+    /// Reads a Gateway 2.0 RNTBD response frame.
     ///
     /// Wire layout:
     ///   * `u32` LE length — total bytes of `[u32 status + 16-byte activity id + metadata tokens]` (24 + metadata).
@@ -64,7 +62,7 @@ impl RntbdResponse {
     ///
     /// Unknown metadata token IDs are silently consumed when their token type is known.
     /// Malformed token values and unknown token type bytes return errors.
-    pub(crate) fn deserialize(bytes: &[u8]) -> azure_core::Result<Self> {
+    pub(crate) fn read(bytes: &[u8]) -> azure_core::Result<Self> {
         let mut src = bytes;
         let total_len = read_u32_le(&mut src)? as usize;
         if total_len > bytes.len() {
@@ -99,7 +97,7 @@ impl RntbdResponse {
 
         while !frame.is_empty() {
             let token = Token::read_from(&mut frame)?;
-            match RntbdResponseToken::try_from(token.id) {
+            match RntbdResponseToken::try_from(token.id.value()) {
                 Ok(RntbdResponseToken::PayloadPresent) => {
                     payload_present = expect_byte(token, "PayloadPresent")? != 0;
                 }
@@ -177,38 +175,25 @@ impl RntbdResponse {
 }
 
 fn expect_string(token: Token, name: &str) -> azure_core::Result<String> {
-    match token.value {
-        TokenValue::String(value) => Ok(value),
-        _ => Err(unexpected_token_type(name)),
-    }
+    token
+        .into_string()
+        .ok_or_else(|| unexpected_token_type(name))
 }
 
 fn expect_byte(token: Token, name: &str) -> azure_core::Result<u8> {
-    match token.value {
-        TokenValue::Byte(value) => Ok(value),
-        _ => Err(unexpected_token_type(name)),
-    }
+    token.as_byte().ok_or_else(|| unexpected_token_type(name))
 }
 
 fn expect_u32(token: Token, name: &str) -> azure_core::Result<u32> {
-    match token.value {
-        TokenValue::ULong(value) => Ok(value),
-        _ => Err(unexpected_token_type(name)),
-    }
+    token.as_u32().ok_or_else(|| unexpected_token_type(name))
 }
 
 fn expect_i64(token: Token, name: &str) -> azure_core::Result<i64> {
-    match token.value {
-        TokenValue::LongLong(value) => Ok(value),
-        _ => Err(unexpected_token_type(name)),
-    }
+    token.as_i64().ok_or_else(|| unexpected_token_type(name))
 }
 
 fn expect_f64(token: Token, name: &str) -> azure_core::Result<f64> {
-    match token.value {
-        TokenValue::Double(value) => Ok(value),
-        _ => Err(unexpected_token_type(name)),
-    }
+    token.as_f64().ok_or_else(|| unexpected_token_type(name))
 }
 
 fn unexpected_token_type(name: &str) -> azure_core::Error {
@@ -220,7 +205,7 @@ mod tests {
     use super::*;
     use azure_core::http::StatusCode;
 
-    use crate::driver::transport::rntbd::tokens::write_uuid_le;
+    use crate::driver::transport::rntbd::tokens::{write_uuid_le, TokenValue};
 
     #[test]
     fn unknown_token_id_is_silently_skipped() {
@@ -236,7 +221,7 @@ mod tests {
             .unwrap();
         patch_total_len(&mut frame);
 
-        let response = RntbdResponse::deserialize(&frame).unwrap();
+        let response = RntbdResponse::read(&frame).unwrap();
 
         assert_eq!(response.status.status_code(), StatusCode::Ok);
         assert_eq!(response.status.sub_status().unwrap().value(), 1002);
@@ -250,7 +235,7 @@ mod tests {
         let total_len = (frame.len() as u32) + 1;
         frame[0..4].copy_from_slice(&total_len.to_le_bytes());
 
-        let err = RntbdResponse::deserialize(&frame).unwrap_err();
+        let err = RntbdResponse::read(&frame).unwrap_err();
 
         assert_eq!(*err.kind(), azure_core::error::ErrorKind::DataConversion);
     }
@@ -269,7 +254,7 @@ mod tests {
         frame.extend_from_slice(&(body.len() as u32).to_le_bytes());
         frame.extend_from_slice(body);
 
-        let response = RntbdResponse::deserialize(&frame).unwrap();
+        let response = RntbdResponse::read(&frame).unwrap();
 
         assert_eq!(response.request_charge, Some(2.5));
         assert_eq!(response.body, body.to_vec());
@@ -288,7 +273,7 @@ mod tests {
         // Trailing bytes beyond total_len must not be read when payload_present is false.
         frame.extend_from_slice(&[0xDE, 0xAD]);
 
-        let response = RntbdResponse::deserialize(&frame).unwrap();
+        let response = RntbdResponse::read(&frame).unwrap();
 
         assert!(response.body.is_empty());
     }
@@ -304,7 +289,7 @@ mod tests {
         frame.extend_from_slice(&16_u32.to_le_bytes());
         frame.extend_from_slice(&[0, 1, 2, 3]);
 
-        let err = RntbdResponse::deserialize(&frame).unwrap_err();
+        let err = RntbdResponse::read(&frame).unwrap_err();
 
         assert_eq!(*err.kind(), azure_core::error::ErrorKind::DataConversion);
     }
@@ -314,7 +299,7 @@ mod tests {
         frame.extend_from_slice(&0_u32.to_le_bytes());
         frame.extend_from_slice(&u16::from(status_code).to_le_bytes());
         frame.extend_from_slice(&0_u16.to_le_bytes());
-        write_uuid_le(&mut frame, Uuid::nil());
+        write_uuid_le(&mut frame, Uuid::nil()).unwrap();
         frame
     }
 

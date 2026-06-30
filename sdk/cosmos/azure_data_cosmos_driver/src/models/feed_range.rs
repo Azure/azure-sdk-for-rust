@@ -205,8 +205,8 @@ impl FeedRange {
     fn to_json(&self) -> FeedRangeJson {
         FeedRangeJson {
             range: RangeJson {
-                min: self.min_inclusive().as_str().to_owned(),
-                max: self.max_exclusive().as_str().to_owned(),
+                min: self.min_inclusive().to_hex().to_owned(),
+                max: self.max_exclusive().to_hex().to_owned(),
                 is_min_inclusive: true,
                 is_max_inclusive: false,
             },
@@ -255,8 +255,8 @@ impl TryFrom<&PartitionKeyRange> for FeedRange {
         }
 
         Ok(Self(FeedRangeRepr::Range {
-            min_inclusive: EffectivePartitionKey::from(pkr.min_inclusive.as_str()),
-            max_exclusive: EffectivePartitionKey::from(pkr.max_exclusive.as_str()),
+            min_inclusive: pkr.min_inclusive.clone(),
+            max_exclusive: pkr.max_exclusive.clone(),
         }))
     }
 }
@@ -325,8 +325,8 @@ mod tests {
     #[test]
     fn full_range() {
         let full = FeedRange::full();
-        assert_eq!(full.min_inclusive().as_str(), "");
-        assert_eq!(full.max_exclusive().as_str(), "FF");
+        assert_eq!(full.min_inclusive().to_hex(), "");
+        assert_eq!(full.max_exclusive().to_hex(), "FF");
     }
 
     #[test]
@@ -432,8 +432,8 @@ mod tests {
         let pkr = PartitionKeyRange::new("0".to_string(), "".to_string(), "FF".to_string());
         let feed_range = FeedRange::try_from(&pkr).unwrap();
 
-        assert_eq!(feed_range.min_inclusive().as_str(), "");
-        assert_eq!(feed_range.max_exclusive().as_str(), "FF");
+        assert_eq!(feed_range.min_inclusive().to_hex(), "");
+        assert_eq!(feed_range.max_exclusive().to_hex(), "FF");
     }
 
     #[test]

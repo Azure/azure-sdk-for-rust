@@ -16,15 +16,21 @@ pub const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
 /// The ARM-provisioned account in the `Session SingleRegion GatewayV2` matrix
 /// entry does NOT advertise a Gateway 2.0 endpoint, so driver tests that
 /// inject faults gated on `TransportKind::GatewayV2` (and SDK tests in
-/// `sdk/cosmos/azure_data_cosmos/tests/emulator_tests/gateway_v2_e2e.rs`) must
+/// `sdk/cosmos/azure_data_cosmos/tests/gateway_v2_tests/gateway_v2_e2e.rs`) must
 /// point at this pre-provisioned account instead of the standard
 /// `AZURE_COSMOS_CONNECTION_STRING`.
-#[allow(dead_code)]
+#[allow(
+    dead_code,
+    reason = "Consumed only by gateway_v2 test categories; unused in other test binaries that include this shared framework module."
+)]
 pub const GATEWAY_V2_ENDPOINT_ENV_VAR: &str = "AZURE_COSMOS_GW_V2_ENDPOINT";
 
 /// Environment variable name for the pre-provisioned Gateway 2.0 account
 /// master key. See [`GATEWAY_V2_ENDPOINT_ENV_VAR`].
-#[allow(dead_code)]
+#[allow(
+    dead_code,
+    reason = "Consumed only by gateway_v2 test categories; unused in other test binaries that include this shared framework module."
+)]
 pub const GATEWAY_V2_KEY_ENV_VAR: &str = "AZURE_COSMOS_GW_V2_KEY";
 
 /// Environment variable name for the pre-provisioned **multi-region**
@@ -33,21 +39,33 @@ pub const GATEWAY_V2_KEY_ENV_VAR: &str = "AZURE_COSMOS_GW_V2_KEY";
 /// referenced by [`GATEWAY_V2_ENDPOINT_ENV_VAR`] cannot exercise
 /// regional-failover behaviors, so multi-region tests need a dedicated
 /// multi-region GW_V2 account.
-#[allow(dead_code)]
+#[allow(
+    dead_code,
+    reason = "Consumed only by gateway_v2_multi_region test categories; unused in other test binaries that include this shared framework module."
+)]
 pub const GATEWAY_V2_MULTI_REGION_ENDPOINT_ENV_VAR: &str =
     "AZURE_COSMOS_GW_V2_MULTI_REGION_ENDPOINT";
 
 /// Environment variable name for the pre-provisioned multi-region Gateway 2.0
 /// account master key. See [`GATEWAY_V2_MULTI_REGION_ENDPOINT_ENV_VAR`].
-#[allow(dead_code)]
+#[allow(
+    dead_code,
+    reason = "Consumed only by gateway_v2_multi_region test categories; unused in other test binaries that include this shared framework module."
+)]
 pub const GATEWAY_V2_MULTI_REGION_KEY_ENV_VAR: &str = "AZURE_COSMOS_GW_V2_MULTI_REGION_KEY";
 
 /// Environment variable for shared database name.
-#[allow(dead_code)]
+#[allow(
+    dead_code,
+    reason = "Part of the shared test-framework surface; unused in test binaries that include this module without referencing it."
+)]
 pub const DATABASE_NAME_ENV_VAR: &str = "DATABASE_NAME";
 
 /// Environment variable to allow invalid certificates.
-#[allow(dead_code)]
+#[allow(
+    dead_code,
+    reason = "Part of the shared test-framework surface; unused in test binaries that include this module without referencing it."
+)]
 pub const ALLOW_INVALID_CERTS_ENV_VAR: &str = "AZURE_COSMOS_ALLOW_INVALID_CERT";
 
 /// Environment variable for test mode.

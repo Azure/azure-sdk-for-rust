@@ -15,7 +15,7 @@ use crate::models::DefaultConsistencyLevel;
 ///
 /// - Gateway V1 (HTTP) sends `x-ms-cosmos-read-consistency-strategy: <Strategy>` and
 ///   omits `x-ms-consistency-level` whenever a non-`Default` strategy is in effect.
-/// - Gateway V2 (RNTBD) serializes the strategy as token `0x00F0` (Byte) and omits the
+/// - Gateway V2 (RNTBD) serializes the strategy as token `0x00FE` (Byte) and omits the
 ///   `ConsistencyLevel` token under the same conditions.
 ///
 /// `ReadConsistencyStrategy::Default` is transparent: no header / token is emitted and the
@@ -105,6 +105,20 @@ impl ReadConsistencyStrategy {
     /// existing `ConsistencyLevel` header / token continues to flow normally.
     pub(crate) fn is_non_default(&self) -> bool {
         !matches!(self, Self::Default)
+    }
+
+    /// Wire byte for the RNTBD `ReadConsistencyStrategy` token (id `0x00FE`, `Byte`).
+    ///
+    /// Returns `None` for [`Default`](Self::Default), which is transparent on the
+    /// wire and MUST never be serialized.
+    pub(crate) fn rntbd_wire_byte(self) -> Option<u8> {
+        match self {
+            Self::Default => None,
+            Self::Eventual => Some(0x01),
+            Self::Session => Some(0x02),
+            Self::LatestCommitted => Some(0x03),
+            Self::GlobalStrong => Some(0x04),
+        }
     }
 
     /// Returns `true` if session consistency is effective for this strategy

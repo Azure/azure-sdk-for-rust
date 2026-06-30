@@ -1134,7 +1134,7 @@ fn handle_read(
         // Check forced session unavailability (one-shot)
         if partition
             .session_state
-            .check_and_clear_forced_for(epk.as_str())
+            .check_and_clear_forced_for(&epk.to_hex())
         {
             return Err(error_response(
                 StatusCode::NotFound,

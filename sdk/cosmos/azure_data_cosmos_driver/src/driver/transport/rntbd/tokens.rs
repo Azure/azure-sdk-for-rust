@@ -3,6 +3,8 @@
 
 //! RNTBD metadata token codecs and wire ID mappings.
 
+use std::io::Write;
+
 use azure_core::error::ErrorKind;
 use uuid::Uuid;
 
@@ -175,23 +177,23 @@ impl TokenValue {
         }
     }
 
-    fn write_to(&self, out: &mut Vec<u8>) -> azure_core::Result<()> {
+    fn write_to(&self, out: &mut impl Write) -> azure_core::Result<()> {
         match self {
-            Self::Byte(value) => out.push(*value),
-            Self::UShort(value) => out.extend_from_slice(&value.to_le_bytes()),
-            Self::ULong(value) => out.extend_from_slice(&value.to_le_bytes()),
-            Self::Long(value) => out.extend_from_slice(&value.to_le_bytes()),
-            Self::ULongLong(value) => out.extend_from_slice(&value.to_le_bytes()),
-            Self::LongLong(value) => out.extend_from_slice(&value.to_le_bytes()),
-            Self::Guid(value) => write_uuid_le(out, *value),
+            Self::Byte(value) => out.write_all(&[*value])?,
+            Self::UShort(value) => out.write_all(&value.to_le_bytes())?,
+            Self::ULong(value) => out.write_all(&value.to_le_bytes())?,
+            Self::Long(value) => out.write_all(&value.to_le_bytes())?,
+            Self::ULongLong(value) => out.write_all(&value.to_le_bytes())?,
+            Self::LongLong(value) => out.write_all(&value.to_le_bytes())?,
+            Self::Guid(value) => write_uuid_le(out, *value)?,
             Self::SmallString(value) => write_len_prefixed_u8(out, value.as_bytes())?,
             Self::String(value) => write_len_prefixed_u16(out, value.as_bytes())?,
             Self::ULongString(value) => write_len_prefixed_u32(out, value.as_bytes())?,
             Self::SmallBytes(value) => write_len_prefixed_u8(out, value)?,
             Self::Bytes(value) => write_len_prefixed_u16(out, value)?,
             Self::ULongBytes(value) => write_len_prefixed_u32(out, value)?,
-            Self::Float(value) => out.extend_from_slice(&value.to_le_bytes()),
-            Self::Double(value) => out.extend_from_slice(&value.to_le_bytes()),
+            Self::Float(value) => out.write_all(&value.to_le_bytes())?,
+            Self::Double(value) => out.write_all(&value.to_le_bytes())?,
         }
         Ok(())
     }
@@ -242,6 +244,26 @@ impl TokenValue {
     }
 }
 
+/// Strongly-typed RNTBD metadata token identifier.
+///
+/// Wraps the raw two-byte token ID from the RNTBD header table so token IDs
+/// can't be confused with other `u16` values at call sites.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub(crate) struct TokenId(pub(crate) u16);
+
+impl TokenId {
+    /// Returns the raw wire value.
+    pub(crate) fn value(self) -> u16 {
+        self.0
+    }
+}
+
+impl From<u16> for TokenId {
+    fn from(value: u16) -> Self {
+        Self(value)
+    }
+}
+
 /// A single RNTBD metadata token.
 ///
 /// Tokens are encoded as a two-byte token ID, a one-byte [`TokenType`], and the
@@ -249,158 +271,124 @@ impl TokenValue {
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Token {
     /// Token identifier from the RNTBD header table.
-    pub(crate) id: u16,
+    pub(crate) id: TokenId,
     /// Decoded token value.
     pub(crate) value: TokenValue,
 }
 
 impl Token {
     /// Creates a metadata token from an ID and typed value.
-    pub(crate) fn new(id: u16, value: TokenValue) -> Self {
-        Self { id, value }
+    pub(crate) fn new(id: impl Into<TokenId>, value: TokenValue) -> Self {
+        Self {
+            id: id.into(),
+            value,
+        }
     }
 
     pub(crate) fn authorization_token(value: String) -> Self {
         Self::new(
-            RntbdRequestToken::AuthorizationToken.into(),
+            RntbdRequestToken::AuthorizationToken,
             TokenValue::String(value),
         )
     }
 
     pub(crate) fn payload_present(value: bool) -> Self {
         Self::new(
-            RntbdRequestToken::PayloadPresent.into(),
+            RntbdRequestToken::PayloadPresent,
             TokenValue::Byte(u8::from(value)),
         )
     }
 
     pub(crate) fn date(value: String) -> Self {
-        Self::new(
-            RntbdRequestToken::Date.into(),
-            TokenValue::SmallString(value),
-        )
+        Self::new(RntbdRequestToken::Date, TokenValue::SmallString(value))
     }
 
     /// Session token (id `0x0005`, `String`) carrying the client's per-partition
     /// LSN progress so the backend can serve session-consistent reads from a
     /// replica that is caught up. Populated from the `x-ms-session-token` header.
     pub(crate) fn session_token(value: String) -> Self {
-        Self::new(
-            RntbdRequestToken::SessionToken.into(),
-            TokenValue::String(value),
-        )
+        Self::new(RntbdRequestToken::SessionToken, TokenValue::String(value))
     }
 
     /// Page size (id `0x0004`, `ULong`) carrying the requested max item count
     /// for query/read-feed pages. Populated from the `x-ms-max-item-count`
     /// header; a negative request value (unbounded) is encoded as `0xFFFFFFFF`.
     pub(crate) fn page_size(value: u32) -> Self {
-        Self::new(RntbdRequestToken::PageSize.into(), TokenValue::ULong(value))
+        Self::new(RntbdRequestToken::PageSize, TokenValue::ULong(value))
     }
 
     /// Match condition (id `0x0008`, `String`) carrying the ETag precondition.
     /// Populated from `If-None-Match` on reads/read-feeds and from `If-Match`
     /// on all other operations.
     pub(crate) fn match_condition(value: String) -> Self {
-        Self::new(RntbdRequestToken::Match.into(), TokenValue::String(value))
+        Self::new(RntbdRequestToken::Match, TokenValue::String(value))
     }
 
     pub(crate) fn consistency_level(value: DefaultConsistencyLevel) -> Self {
-        let value = match value {
-            DefaultConsistencyLevel::Strong => 0x00,
-            DefaultConsistencyLevel::BoundedStaleness => 0x01,
-            DefaultConsistencyLevel::Session => 0x02,
-            DefaultConsistencyLevel::Eventual => 0x03,
-            DefaultConsistencyLevel::ConsistentPrefix => 0x04,
-        };
         Self::new(
-            RntbdRequestToken::ConsistencyLevel.into(),
-            TokenValue::Byte(value),
+            RntbdRequestToken::ConsistencyLevel,
+            TokenValue::Byte(value.rntbd_wire_byte()),
         )
     }
 
-    /// `ReadConsistencyStrategy` token (id `0x00F0`, `Byte`).
+    /// `ReadConsistencyStrategy` token (id `0x00FE`, `Byte`).
     ///
     /// Server requires this token in place of `ConsistencyLevel` when the caller
     /// specifies a non-`Default` read consistency strategy on a read request.
     /// `Default` MUST never be serialized (callers gate on `is_non_default`).
     pub(crate) fn read_consistency_strategy(value: ReadConsistencyStrategy) -> Self {
-        let value = match value {
-            ReadConsistencyStrategy::Eventual => 0x01,
-            ReadConsistencyStrategy::Session => 0x02,
-            ReadConsistencyStrategy::LatestCommitted => 0x03,
-            ReadConsistencyStrategy::GlobalStrong => 0x04,
+        let byte = value.rntbd_wire_byte().unwrap_or_else(|| {
             // Caller-side guard: `Default` is transparent on the wire.
-            ReadConsistencyStrategy::Default => {
-                debug_assert!(
-                    false,
-                    "Token::read_consistency_strategy must not be called with Default"
-                );
-                0x00
-            }
-        };
+            debug_assert!(
+                false,
+                "Token::read_consistency_strategy must not be called with Default"
+            );
+            0x00
+        });
         Self::new(
-            RntbdRequestToken::ReadConsistencyStrategy.into(),
-            TokenValue::Byte(value),
+            RntbdRequestToken::ReadConsistencyStrategy,
+            TokenValue::Byte(byte),
         )
     }
 
     pub(crate) fn database_name(value: String) -> Self {
-        Self::new(
-            RntbdRequestToken::DatabaseName.into(),
-            TokenValue::String(value),
-        )
+        Self::new(RntbdRequestToken::DatabaseName, TokenValue::String(value))
     }
 
     pub(crate) fn collection_name(value: String) -> Self {
-        Self::new(
-            RntbdRequestToken::CollectionName.into(),
-            TokenValue::String(value),
-        )
+        Self::new(RntbdRequestToken::CollectionName, TokenValue::String(value))
     }
 
     pub(crate) fn collection_rid(value: String) -> Self {
-        Self::new(
-            RntbdRequestToken::CollectionRid.into(),
-            TokenValue::String(value),
-        )
+        Self::new(RntbdRequestToken::CollectionRid, TokenValue::String(value))
     }
 
     /// Binary resource id (8 bytes) emitted alongside `CollectionRid`. Required by
     /// the Gateway 2.0 proxy as the document routing key (ID 0x0000, Bytes).
     pub(crate) fn resource_id(value: Vec<u8>) -> Self {
-        Self::new(
-            RntbdRequestToken::ResourceId.into(),
-            TokenValue::Bytes(value),
-        )
+        Self::new(RntbdRequestToken::ResourceId, TokenValue::Bytes(value))
     }
 
     /// String-form partition key (JSON array) emitted alongside
     /// `EffectivePartitionKey` (ID 0x002B, String).
     pub(crate) fn partition_key(value: String) -> Self {
-        Self::new(
-            RntbdRequestToken::PartitionKey.into(),
-            TokenValue::String(value),
-        )
+        Self::new(RntbdRequestToken::PartitionKey, TokenValue::String(value))
     }
 
     pub(crate) fn document_name(value: String) -> Self {
-        Self::new(
-            RntbdRequestToken::DocumentName.into(),
-            TokenValue::String(value),
-        )
+        Self::new(RntbdRequestToken::DocumentName, TokenValue::String(value))
     }
 
     pub(crate) fn effective_partition_key(value: Vec<u8>) -> Self {
         Self::new(
-            RntbdRequestToken::EffectivePartitionKey.into(),
+            RntbdRequestToken::EffectivePartitionKey,
             TokenValue::Bytes(value),
         )
     }
 
     pub(crate) fn sdk_supported_capabilities(value: u32) -> Self {
         Self::new(
-            RntbdRequestToken::SDKSupportedCapabilities.into(),
+            RntbdRequestToken::SDKSupportedCapabilities,
             TokenValue::ULong(value),
         )
     }
@@ -408,7 +396,7 @@ impl Token {
     /// `AllowTentativeWrites` (ID 0x0066, Byte). Emitted as `1` on every request.
     pub(crate) fn allow_tentative_writes(value: bool) -> Self {
         Self::new(
-            RntbdRequestToken::AllowTentativeWrites.into(),
+            RntbdRequestToken::AllowTentativeWrites,
             TokenValue::Byte(u8::from(value)),
         )
     }
@@ -416,14 +404,14 @@ impl Token {
     /// `ReturnPreference` (ID 0x0082, Byte). Emitted as `1` on every request.
     pub(crate) fn return_preference(value: bool) -> Self {
         Self::new(
-            RntbdRequestToken::ReturnPreference.into(),
+            RntbdRequestToken::ReturnPreference,
             TokenValue::Byte(u8::from(value)),
         )
     }
 
     pub(crate) fn global_database_account_name(value: String) -> Self {
         Self::new(
-            RntbdRequestToken::GlobalDatabaseAccountName.into(),
+            RntbdRequestToken::GlobalDatabaseAccountName,
             TokenValue::String(value),
         )
     }
@@ -433,7 +421,7 @@ impl Token {
     /// QueryPlan compatible with what the client supports.
     pub(crate) fn supported_query_features(value: String) -> Self {
         Self::new(
-            RntbdRequestToken::SupportedQueryFeatures.into(),
+            RntbdRequestToken::SupportedQueryFeatures,
             TokenValue::String(value),
         )
     }
@@ -442,7 +430,7 @@ impl Token {
     /// `x-ms-cosmos-query-version`.
     pub(crate) fn query_version(value: String) -> Self {
         Self::new(
-            RntbdRequestToken::QueryVersion.into(),
+            RntbdRequestToken::QueryVersion,
             TokenValue::SmallString(value),
         )
     }
@@ -451,18 +439,12 @@ impl Token {
     /// thin-client cross-partition queries. The partition's `minInclusive` hex
     /// string is converted to bytes and emitted alongside `EndEpkHash`.
     pub(crate) fn start_epk_hash(value: Vec<u8>) -> Self {
-        Self::new(
-            RntbdRequestToken::StartEpkHash.into(),
-            TokenValue::Bytes(value),
-        )
+        Self::new(RntbdRequestToken::StartEpkHash, TokenValue::Bytes(value))
     }
 
     /// `EndEpkHash` (ID 0x00D3, Bytes). See [`start_epk_hash`](Self::start_epk_hash).
     pub(crate) fn end_epk_hash(value: Vec<u8>) -> Self {
-        Self::new(
-            RntbdRequestToken::EndEpkHash.into(),
-            TokenValue::Bytes(value),
-        )
+        Self::new(RntbdRequestToken::EndEpkHash, TokenValue::Bytes(value))
     }
 
     /// `PartitionKeyRangeId` (ID 0x002C, String). Filled from the
@@ -471,7 +453,7 @@ impl Token {
     /// target physical partition.
     pub(crate) fn partition_key_range_id(value: String) -> Self {
         Self::new(
-            RntbdRequestToken::PartitionKeyRangeId.into(),
+            RntbdRequestToken::PartitionKeyRangeId,
             TokenValue::String(value),
         )
     }
@@ -481,9 +463,50 @@ impl Token {
     /// unchanged so the backend can resume from the previous offset.
     pub(crate) fn continuation_token(value: String) -> Self {
         Self::new(
-            RntbdRequestToken::ContinuationToken.into(),
+            RntbdRequestToken::ContinuationToken,
             TokenValue::String(value),
         )
+    }
+
+    /// Returns the `Byte` value, or `None` if the token holds a different type.
+    pub(crate) fn as_byte(&self) -> Option<u8> {
+        match self.value {
+            TokenValue::Byte(value) => Some(value),
+            _ => None,
+        }
+    }
+
+    /// Returns the `ULong` (`u32`) value, or `None` if the token holds a different type.
+    pub(crate) fn as_u32(&self) -> Option<u32> {
+        match self.value {
+            TokenValue::ULong(value) => Some(value),
+            _ => None,
+        }
+    }
+
+    /// Returns the `LongLong` (`i64`) value, or `None` if the token holds a different type.
+    pub(crate) fn as_i64(&self) -> Option<i64> {
+        match self.value {
+            TokenValue::LongLong(value) => Some(value),
+            _ => None,
+        }
+    }
+
+    /// Returns the `Double` (`f64`) value, or `None` if the token holds a different type.
+    pub(crate) fn as_f64(&self) -> Option<f64> {
+        match self.value {
+            TokenValue::Double(value) => Some(value),
+            _ => None,
+        }
+    }
+
+    /// Returns the owned `String` value, consuming the token, or `None` if the
+    /// token holds a different type.
+    pub(crate) fn into_string(self) -> Option<String> {
+        match self.value {
+            TokenValue::String(value) => Some(value),
+            _ => None,
+        }
     }
 
     /// Returns the number of bytes this token occupies on the wire.
@@ -491,13 +514,13 @@ impl Token {
         2 + 1 + self.value.encoded_len()
     }
 
-    /// Writes this token to the output buffer.
+    /// Writes this token to the writer.
     ///
     /// Returns an error if the token value exceeds the wire encoding's length
-    /// limits (e.g., a `SmallString` longer than 255 bytes).
-    pub(super) fn write_to(&self, out: &mut Vec<u8>) -> azure_core::Result<()> {
-        out.extend_from_slice(&self.id.to_le_bytes());
-        out.push(self.value.token_type().into());
+    /// limits (e.g., a `SmallString` longer than 255 bytes) or the writer fails.
+    pub(super) fn write_to(&self, out: &mut impl Write) -> azure_core::Result<()> {
+        out.write_all(&self.id.value().to_le_bytes())?;
+        out.write_all(&[self.value.token_type().into()])?;
         self.value.write_to(out)
     }
 
@@ -506,7 +529,10 @@ impl Token {
         let id = read_u16_le(src)?;
         let token_type = TokenType::try_from(read_u8(src)?)?;
         let value = TokenValue::read_from(token_type, src)?;
-        Ok(Self { id, value })
+        Ok(Self {
+            id: id.into(),
+            value,
+        })
     }
 }
 
@@ -567,7 +593,7 @@ impl TryFrom<u16> for RntbdRequestToken {
             0x0082 => Ok(Self::ReturnPreference),
             0x00A2 => Ok(Self::SDKSupportedCapabilities),
             0x00CE => Ok(Self::GlobalDatabaseAccountName),
-            0x00F0 => Ok(Self::ReadConsistencyStrategy),
+            0x00FE => Ok(Self::ReadConsistencyStrategy),
             0x00FF => Ok(Self::SupportedQueryFeatures),
             0x0100 => Ok(Self::QueryVersion),
             0x00D2 => Ok(Self::StartEpkHash),
@@ -601,12 +627,18 @@ impl From<RntbdRequestToken> for u16 {
             RntbdRequestToken::ReturnPreference => 0x0082,
             RntbdRequestToken::SDKSupportedCapabilities => 0x00A2,
             RntbdRequestToken::GlobalDatabaseAccountName => 0x00CE,
-            RntbdRequestToken::ReadConsistencyStrategy => 0x00F0,
+            RntbdRequestToken::ReadConsistencyStrategy => 0x00FE,
             RntbdRequestToken::SupportedQueryFeatures => 0x00FF,
             RntbdRequestToken::QueryVersion => 0x0100,
             RntbdRequestToken::StartEpkHash => 0x00D2,
             RntbdRequestToken::EndEpkHash => 0x00D3,
         }
+    }
+}
+
+impl From<RntbdRequestToken> for TokenId {
+    fn from(value: RntbdRequestToken) -> Self {
+        TokenId(u16::from(value))
     }
 }
 
@@ -816,12 +848,13 @@ pub(super) fn data_conversion_error(message: impl Into<String>) -> azure_core::E
 /// then the final 8 bytes (`Data4`) in their natural order. This is the
 /// same encoding used by the Cosmos DB RNTBD protocol for both the frame
 /// header `activityId` and `Guid`-typed token values.
-pub(super) fn write_uuid_le(out: &mut Vec<u8>, id: Uuid) {
+pub(super) fn write_uuid_le(out: &mut impl Write, id: Uuid) -> azure_core::Result<()> {
     let (data1, data2, data3, data4) = id.as_fields();
-    out.extend_from_slice(&data1.to_le_bytes());
-    out.extend_from_slice(&data2.to_le_bytes());
-    out.extend_from_slice(&data3.to_le_bytes());
-    out.extend_from_slice(data4);
+    out.write_all(&data1.to_le_bytes())?;
+    out.write_all(&data2.to_le_bytes())?;
+    out.write_all(&data3.to_le_bytes())?;
+    out.write_all(data4)?;
+    Ok(())
 }
 
 /// Reads a UUID using the Microsoft GUID wire format. See
@@ -887,39 +920,39 @@ fn read_utf8(src: &mut &[u8], len: usize) -> azure_core::Result<String> {
         .map_err(|e| azure_core::Error::new(ErrorKind::DataConversion, e))
 }
 
-fn write_len_prefixed_u8(out: &mut Vec<u8>, bytes: &[u8]) -> azure_core::Result<()> {
+fn write_len_prefixed_u8(out: &mut impl Write, bytes: &[u8]) -> azure_core::Result<()> {
     let len = u8::try_from(bytes.len()).map_err(|_| {
         data_conversion_error(format!(
             "RNTBD value length {} exceeds u8 length-prefix maximum (255)",
             bytes.len()
         ))
     })?;
-    out.push(len);
-    out.extend_from_slice(bytes);
+    out.write_all(&[len])?;
+    out.write_all(bytes)?;
     Ok(())
 }
 
-fn write_len_prefixed_u16(out: &mut Vec<u8>, bytes: &[u8]) -> azure_core::Result<()> {
+fn write_len_prefixed_u16(out: &mut impl Write, bytes: &[u8]) -> azure_core::Result<()> {
     let len = u16::try_from(bytes.len()).map_err(|_| {
         data_conversion_error(format!(
             "RNTBD value length {} exceeds u16 length-prefix maximum (65535)",
             bytes.len()
         ))
     })?;
-    out.extend_from_slice(&len.to_le_bytes());
-    out.extend_from_slice(bytes);
+    out.write_all(&len.to_le_bytes())?;
+    out.write_all(bytes)?;
     Ok(())
 }
 
-fn write_len_prefixed_u32(out: &mut Vec<u8>, bytes: &[u8]) -> azure_core::Result<()> {
+fn write_len_prefixed_u32(out: &mut impl Write, bytes: &[u8]) -> azure_core::Result<()> {
     let len = u32::try_from(bytes.len()).map_err(|_| {
         data_conversion_error(format!(
             "RNTBD value length {} exceeds u32 length-prefix maximum (4294967295)",
             bytes.len()
         ))
     })?;
-    out.extend_from_slice(&len.to_le_bytes());
-    out.extend_from_slice(bytes);
+    out.write_all(&len.to_le_bytes())?;
+    out.write_all(bytes)?;
     Ok(())
 }
 
@@ -988,10 +1021,7 @@ mod tests {
             0xF0, 0xAA,
         ];
 
-        let token = Token::new(
-            RntbdRequestToken::AuthorizationToken.into(),
-            TokenValue::Guid(id),
-        );
+        let token = Token::new(RntbdRequestToken::AuthorizationToken, TokenValue::Guid(id));
         let mut encoded = Vec::new();
         token.write_to(&mut encoded).unwrap();
 
@@ -1016,7 +1046,7 @@ mod tests {
 
     #[test]
     fn read_consistency_strategy_token_byte_mapping() {
-        // The RNTBD `ReadConsistencyStrategy` token has id `0x00F0`, `Byte`
+        // The RNTBD `ReadConsistencyStrategy` token has id `0x00FE`, `Byte`
         // type, and these exact byte values. A drift here means the SDK and
         // the gateway disagree about what consistency the caller requested.
         let cases = [
@@ -1031,7 +1061,7 @@ mod tests {
             let mut encoded = Vec::new();
             token.write_to(&mut encoded).unwrap();
             // u16 id (LE) + u8 token type + u8 byte value
-            assert_eq!(encoded[0], 0xF0);
+            assert_eq!(encoded[0], 0xFE);
             assert_eq!(encoded[1], 0x00);
             assert_eq!(
                 encoded[2], 0x00,

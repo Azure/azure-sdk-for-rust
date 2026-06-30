@@ -4,17 +4,22 @@
 #![cfg(feature = "key_auth")]
 
 use azure_core::credentials::Secret;
+use azure_core::http::{Etag, StatusCode};
 use azure_data_cosmos::diagnostics::{DiagnosticsContext, TransportKind};
 use azure_data_cosmos::models::{
     ContainerProperties, PartitionKeyDefinition, ThroughputProperties,
 };
-use azure_data_cosmos::options::{ConnectionPoolOptions, CreateContainerOptions, Region};
+use azure_data_cosmos::options::{
+    CreateContainerOptions, ItemReadOptions, ItemWriteOptions, MaxItemCountHint,
+    OperationOptionsBuilder, Precondition, QueryOptions, ReadConsistencyStrategy, Region,
+};
 use azure_data_cosmos::{
-    AccountEndpoint, AccountReference, CosmosClient, CosmosRuntime, FeedScope, Query,
-    RoutingStrategy, SubStatusCode, TransactionalBatch,
+    AccountEndpoint, AccountReference, CosmosClient, FeedScope, Query, RoutingStrategy,
+    SubStatusCode, TransactionalBatch,
 };
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};
+use std::num::NonZeroU32;
 
 fn read_env(name: &str) -> Option<String> {
     std::env::var(name).ok().filter(|v| !v.trim().is_empty())
@@ -22,19 +27,31 @@ fn read_env(name: &str) -> Option<String> {
 
 /// Asserts every request recorded in `diagnostics` used `expected` transport.
 fn assert_transport_kind(diagnostics: &DiagnosticsContext, expected: TransportKind) {
-    let kinds: Vec<TransportKind> = diagnostics
-        .requests()
-        .iter()
-        .map(|r| r.transport_kind())
-        .collect();
+    let requests = diagnostics.requests();
     assert!(
-        !kinds.is_empty(),
+        !requests.is_empty(),
         "expected at least one request in diagnostics"
     );
-    assert!(
-        kinds.iter().all(|k| *k == expected),
-        "expected all requests to use {expected:?}, got {kinds:?}"
-    );
+    for r in requests.iter() {
+        // The transport kind is stamped together with the contacted endpoint at
+        // request-start, and the status is written onto the same record when the
+        // request completes. Requiring a terminal (non-sentinel) status proves we
+        // are reading a request that actually received a response over `expected`,
+        // not a pre-flight stub.
+        assert_ne!(
+            r.status().status_code(),
+            StatusCode::from(0),
+            "expected a completed request, got an uncompleted record for {:?}",
+            r.transport_kind()
+        );
+        assert_eq!(
+            r.transport_kind(),
+            expected,
+            "expected request to {} to use {expected:?}, got {:?}",
+            r.endpoint(),
+            r.transport_kind()
+        );
+    }
 }
 
 /// Normalizes a Gateway 2.0 endpoint string so it can be parsed by
@@ -74,30 +91,31 @@ fn live_credentials() -> Option<(String, String)> {
 
 /// Build a [`CosmosClient`] against the live Gateway 2.0 account.
 ///
-/// `gateway_v2_disabled = false` opts the client in to Gateway 2.0; passing
-/// `true` exercises the operator-override path that pins the client to the
-/// standard gateway even when the account advertises a Gateway 2.0 endpoint.
+/// Whether traffic actually flows over Gateway 2.0 is decided by the server
+/// (account advertisement + the runtime connectivity probe), so the client
+/// simply targets a Gateway 2.0 account endpoint and lets the runtime select
+/// the transport.
 async fn build_client(
     endpoint: &str,
     key: &str,
-    gateway_v2_disabled: bool,
+) -> Result<CosmosClient, Box<dyn std::error::Error>> {
+    build_client_for_region(endpoint, key, Region::EAST_US).await
+}
+
+/// Like [`build_client`] but pins proximity routing to `region` so reads are
+/// served from that region's replica when the account advertises it. Used by
+/// the multi-region usability test to prove a collection is reachable over
+/// Gateway 2.0 from every advertised read region, not just the default one.
+async fn build_client_for_region(
+    endpoint: &str,
+    key: &str,
+    region: Region,
 ) -> Result<CosmosClient, Box<dyn std::error::Error>> {
     let endpoint: AccountEndpoint = normalize_gateway_v2_endpoint(endpoint).parse()?;
     let account_ref =
         AccountReference::with_authentication_key(endpoint, Secret::from(key.to_string()));
-    // Gateway 2.0 disablement is a connection-pool (runtime) concern, so it is
-    // configured on a dedicated CosmosRuntime rather than the client builder.
-    let runtime = CosmosRuntime::builder()
-        .with_connection_pool(
-            ConnectionPoolOptions::builder()
-                .with_gateway_v2_disabled(gateway_v2_disabled)
-                .build()?,
-        )
-        .build()
-        .await?;
     let client = CosmosClient::builder()
-        .with_runtime(runtime)
-        .build(account_ref, RoutingStrategy::ProximityTo(Region::EAST_US))
+        .build(account_ref, RoutingStrategy::ProximityTo(region))
         .await?;
     Ok(client)
 }
@@ -184,6 +202,53 @@ struct GwV2TestItem {
     label: String,
 }
 
+/// Point-reads `item_id` (partition `pk`) through a client whose proximity
+/// routing is pinned to `region`, retrying past the brief cross-region
+/// replication / `404 NotFound` window that can follow a write on a
+/// multi-region account. Asserts the read is served over Gateway 2.0 and
+/// returns the matching item unchanged.
+async fn assert_item_readable_from_region(
+    endpoint: &str,
+    key: &str,
+    region: Region,
+    db_name: &str,
+    container_name: &str,
+    expected: &GwV2TestItem,
+) -> Result<(), Box<dyn std::error::Error>> {
+    const MAX_ATTEMPTS: u32 = 40;
+    const POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(500);
+
+    let client = build_client_for_region(endpoint, key, region.clone()).await?;
+    let container = client
+        .database_client(db_name)
+        .container_client(container_name)
+        .await?;
+
+    for attempt in 0..MAX_ATTEMPTS {
+        match container.read_item(&expected.pk, &expected.id, None).await {
+            Ok(read_resp) => {
+                assert_transport_kind(&read_resp.diagnostics(), TransportKind::GatewayV2);
+                let read_item: GwV2TestItem = read_resp.into_model()?;
+                assert_eq!(
+                    &read_item, expected,
+                    "item read from region {region:?} must match what was written",
+                );
+                return Ok(());
+            }
+            Err(e)
+                if e.status().status_code() == StatusCode::NotFound
+                    && attempt + 1 < MAX_ATTEMPTS =>
+            {
+                tokio::time::sleep(POLL_INTERVAL).await;
+            }
+            Err(e) => {
+                return Err(format!("point read from region {region:?} failed: {e}").into());
+            }
+        }
+    }
+    unreachable!("loop above always returns on the final iteration");
+}
+
 /// Drives a point CRUD round-trip (create → read → replace → delete) against
 /// the live Gateway 2.0 account.
 #[tokio::test]
@@ -199,7 +264,7 @@ pub async fn gateway_v2_point_crud_round_trip() -> Result<(), Box<dyn std::error
         return Ok(());
     };
 
-    let client = build_client(&endpoint, &key, false).await?;
+    let client = build_client(&endpoint, &key).await?;
     let (db_name, container) = provision_database_and_container(&client).await?;
 
     let pk_value = format!("pk-{}", azure_core::Uuid::new_v4());
@@ -254,7 +319,7 @@ pub async fn gateway_v2_transactional_batch() -> Result<(), Box<dyn std::error::
         return Ok(());
     };
 
-    let client = build_client(&endpoint, &key, false).await?;
+    let client = build_client(&endpoint, &key).await?;
     let (db_name, container) = provision_database_and_container(&client).await?;
 
     let pk_value = format!("pk-{}", azure_core::Uuid::new_v4());
@@ -307,7 +372,7 @@ pub async fn gateway_v2_diagnostics_validation() -> Result<(), Box<dyn std::erro
         return Ok(());
     };
 
-    let client = build_client(&endpoint, &key, false).await?;
+    let client = build_client(&endpoint, &key).await?;
     let (db_name, container) = provision_database_and_container(&client).await?;
 
     let pk_value = format!("pk-{}", azure_core::Uuid::new_v4());
@@ -332,49 +397,6 @@ pub async fn gateway_v2_diagnostics_validation() -> Result<(), Box<dyn std::erro
         diagnostics.duration() > std::time::Duration::ZERO,
         "expected server_duration_ms to be populated for a Gateway 2.0 request"
     );
-
-    drop_database(&client, &db_name).await;
-    Ok(())
-}
-
-/// Verifies the operator override at the SDK boundary: when the client is
-/// built from a [`CosmosRuntime`] whose connection pool sets
-/// `with_gateway_v2_disabled(true)`, every request must route through the
-/// standard gateway even though the account advertises a Gateway 2.0 endpoint.
-#[tokio::test]
-#[cfg_attr(
-    not(any(
-        test_category = "gateway_v2",
-        test_category = "gateway_v2_multi_region"
-    )),
-    ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
-)]
-pub async fn gateway_v2_operator_override_at_sdk_boundary() -> Result<(), Box<dyn std::error::Error>>
-{
-    let Some((endpoint, key)) = live_credentials() else {
-        return Ok(());
-    };
-
-    let client = build_client(&endpoint, &key, true).await?;
-    let (db_name, container) = provision_database_and_container(&client).await?;
-
-    let pk_value = format!("pk-{}", azure_core::Uuid::new_v4());
-    let item = GwV2TestItem {
-        id: "override-item".into(),
-        pk: pk_value.clone(),
-        value: 7,
-        label: "override".into(),
-    };
-    container
-        .create_item(&pk_value, "override-item", &item, None)
-        .await?;
-
-    let read_resp = container
-        .read_item(&pk_value, "override-item", None)
-        .await?;
-    let diagnostics = read_resp.diagnostics();
-    assert_transport_kind(&diagnostics, TransportKind::Gateway);
-    assert!(!diagnostics.activity_id().as_str().is_empty());
 
     drop_database(&client, &db_name).await;
     Ok(())
@@ -448,7 +470,7 @@ pub async fn gateway_v2_hpk_full_and_partial_partition_key_round_trip(
         return Ok(());
     };
 
-    let client = build_client(&endpoint, &key, false).await?;
+    let client = build_client(&endpoint, &key).await?;
     let (db_name, container) = provision_database_and_hpk_container(&client).await?;
 
     let target_tenant = format!("tenant-{}", azure_core::Uuid::new_v4());
@@ -613,7 +635,7 @@ pub async fn gateway_v2_cross_partition_query_full_container(
         return Ok(());
     };
 
-    let client = build_client(&endpoint, &key, false).await?;
+    let client = build_client(&endpoint, &key).await?;
     let (db_name, container) = provision_database_and_multi_partition_container(&client).await?;
 
     // 32 distinct logical PKs gives the partition router meaningful spread
@@ -693,7 +715,7 @@ pub async fn gateway_v2_cross_partition_query_via_feed_range_full(
         return Ok(());
     };
 
-    let client = build_client(&endpoint, &key, false).await?;
+    let client = build_client(&endpoint, &key).await?;
     let (db_name, container) = provision_database_and_multi_partition_container(&client).await?;
 
     let total_items: usize = 16;
@@ -735,6 +757,325 @@ pub async fn gateway_v2_cross_partition_query_via_feed_range_full(
         "FeedScope::range(FeedRange::full()) on Gateway 2.0 must yield \
          the same complete result set as FeedScope::full_container()",
     );
+
+    drop_database(&client, &db_name).await;
+    Ok(())
+}
+
+// ----------------------------------------------------------------------------
+// Request-token coverage: PageSize / Match / ReadConsistencyStrategy
+// ----------------------------------------------------------------------------
+//
+// The three tests below close a live-coverage gap: the Gateway 2.0 wrap path
+// emits the `PageSize` (0x0004), `Match` (0x0008), and `ReadConsistencyStrategy`
+// (0x00FE) RNTBD tokens, but until now those were only asserted at unit level
+// in `gateway_v2_dispatch::tests` — which proves *we emit id X*, not that the
+// real thin-client proxy accepts id X. A wrong-on-the-wire id (the class of
+// bug that hid behind the RCS `0x00F0` → `0x00FE` correction) passes every
+// unit test yet would be caught here, because each test asserts a server-side
+// behavior that only materializes when the token is both correctly encoded and
+// honored by the gateway.
+
+/// Validates the Gateway 2.0 `PageSize` RNTBD token (0x0004) end-to-end.
+///
+/// Inserts 10 items under a **single logical partition key** (so they all land
+/// on one physical partition and page boundaries are deterministic) and runs a
+/// `SELECT *` with `max_item_count(3)`. The query must paginate into multiple
+/// pages of at most three items each. The `pages_seen >= 2` assertion is the
+/// load-bearing one: without the PageSize token on the wire the gateway would
+/// return all 10 items in a single page, so a dropped or mis-encoded token id
+/// surfaces here as one oversized page.
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
+)]
+pub async fn gateway_v2_query_honors_max_item_count_page_size(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let Some((endpoint, key)) = live_credentials() else {
+        return Ok(());
+    };
+
+    let client = build_client(&endpoint, &key).await?;
+    let (db_name, container) = provision_database_and_container(&client).await?;
+
+    // One logical PK keeps every item on a single physical partition; the
+    // single-leaf drain then surfaces one SDK page per server response, which
+    // makes the page-size assertions below exact rather than probabilistic.
+    let pk_value = format!("pk-{}", azure_core::Uuid::new_v4());
+    let total_items: usize = 10;
+    for i in 0..total_items {
+        let id = format!("page-item-{i:02}");
+        let item = GwV2TestItem {
+            id: id.clone(),
+            pk: pk_value.clone(),
+            value: i as i64,
+            label: format!("row-{i}"),
+        };
+        container.create_item(&pk_value, &id, &item, None).await?;
+    }
+
+    let page_size = NonZeroU32::new(3).expect("3 is non-zero");
+    let options = QueryOptions::default().with_max_item_count(MaxItemCountHint::Limit(page_size));
+    let mut pages = container
+        .query_items::<GwV2TestItem>(
+            Query::from("SELECT * FROM c"),
+            FeedScope::partition(pk_value.clone()),
+            Some(options),
+        )
+        .await?
+        .into_pages();
+
+    let mut pages_seen = 0_usize;
+    let mut total_seen = 0_usize;
+    let mut page_lens: Vec<usize> = Vec::new();
+    while let Some(page) = pages.next().await {
+        let page = page?;
+        pages_seen += 1;
+        assert_transport_kind(&page.diagnostics(), TransportKind::GatewayV2);
+        let len = page.items().len();
+        page_lens.push(len);
+        total_seen += len;
+        assert!(
+            len <= 3,
+            "page {pages_seen} returned {len} items, exceeding the requested \
+             max_item_count of 3 — the PageSize token was not honored",
+        );
+    }
+
+    assert_eq!(
+        total_seen, total_items,
+        "every inserted item must be returned across the paged result \
+         (page lengths: {page_lens:?})",
+    );
+    assert!(
+        pages_seen >= 2,
+        "max_item_count(3) over {total_items} items must paginate into \
+         multiple pages; got {pages_seen} page(s) with lengths {page_lens:?} \
+         — the PageSize token (0x0004) was not emitted/honored on the \
+         Gateway 2.0 wire",
+    );
+
+    drop_database(&client, &db_name).await;
+    Ok(())
+}
+
+/// Validates the Gateway 2.0 `Match` RNTBD token (0x0008) end-to-end via
+/// optimistic concurrency.
+///
+/// A replace guarded by the item's **current** ETag must succeed and roll the
+/// ETag forward; a replace guarded by the now-**stale** ETag must fail with
+/// `412 PreconditionFailed`. The 412 is the load-bearing assertion: if the
+/// Match token were dropped or mis-encoded on the wire the gateway would
+/// ignore the precondition and the stale-ETag replace would succeed (200)
+/// instead of being rejected.
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
+)]
+pub async fn gateway_v2_if_match_precondition_round_trip() -> Result<(), Box<dyn std::error::Error>>
+{
+    let Some((endpoint, key)) = live_credentials() else {
+        return Ok(());
+    };
+
+    let client = build_client(&endpoint, &key).await?;
+    let (db_name, container) = provision_database_and_container(&client).await?;
+
+    let pk_value = format!("pk-{}", azure_core::Uuid::new_v4());
+    let item_id = format!("item-{}", azure_core::Uuid::new_v4());
+    let mut item = GwV2TestItem {
+        id: item_id.clone(),
+        pk: pk_value.clone(),
+        value: 1,
+        label: "initial".into(),
+    };
+
+    let create_resp = container
+        .create_item(&pk_value, &item_id, &item, None)
+        .await?;
+    assert_transport_kind(&create_resp.diagnostics(), TransportKind::GatewayV2);
+    let etag_v1: Etag = create_resp
+        .headers()
+        .etag()
+        .expect("create response must surface an ETag")
+        .clone();
+
+    // Replace guarded by the CURRENT etag → must succeed and roll the ETag.
+    item.value = 2;
+    item.label = "updated".into();
+    let replace_resp = container
+        .replace_item(
+            &pk_value,
+            &item_id,
+            &item,
+            Some(
+                ItemWriteOptions::default()
+                    .with_precondition(Precondition::IfMatch(etag_v1.clone())),
+            ),
+        )
+        .await?;
+    assert_transport_kind(&replace_resp.diagnostics(), TransportKind::GatewayV2);
+    let etag_v2: Etag = replace_resp
+        .headers()
+        .etag()
+        .expect("replace response must surface an ETag")
+        .clone();
+    assert_ne!(
+        etag_v1.to_string(),
+        etag_v2.to_string(),
+        "a successful If-Match replace must roll the ETag forward",
+    );
+
+    // Replace guarded by the now-STALE v1 etag → must be rejected with 412.
+    item.value = 3;
+    item.label = "stale-attempt".into();
+    let stale = container
+        .replace_item(
+            &pk_value,
+            &item_id,
+            &item,
+            Some(
+                ItemWriteOptions::default()
+                    .with_precondition(Precondition::IfMatch(etag_v1.clone())),
+            ),
+        )
+        .await;
+    assert_eq!(
+        StatusCode::PreconditionFailed,
+        stale
+            .expect_err("a stale If-Match must be rejected by the server")
+            .status()
+            .status_code(),
+        "stale If-Match must return 412 PreconditionFailed; a 200 means the \
+         Match token was not honored on the Gateway 2.0 wire",
+    );
+
+    drop_database(&client, &db_name).await;
+    Ok(())
+}
+
+/// Exercises a non-default [`ReadConsistencyStrategy`] end-to-end on Gateway
+/// 2.0.
+///
+/// A point read issued with `LatestCommitted` must be accepted by the
+/// thin-client proxy and return the item over the Gateway 2.0 transport.
+/// `LatestCommitted` upgrades the read to a quorum read on Session/Eventual
+/// accounts (both live GW_V2 accounts qualify) **without changing the returned
+/// payload**, so the assertion is necessarily about wire acceptance + transport
+/// rather than an observable payload difference: it proves the proxy does not
+/// reject the RCS RNTBD token. The exact token id (`0x00FE`) is pinned by the
+/// unit test `wrap_emits_read_consistency_strategy_token_and_drops_consistency_level`
+/// in `gateway_v2_dispatch`; this test guards the wire-acceptance half that a
+/// unit test cannot reach.
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
+)]
+pub async fn gateway_v2_read_with_non_default_consistency_strategy(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let Some((endpoint, key)) = live_credentials() else {
+        return Ok(());
+    };
+
+    let client = build_client(&endpoint, &key).await?;
+    let (db_name, container) = provision_database_and_container(&client).await?;
+
+    let pk_value = format!("pk-{}", azure_core::Uuid::new_v4());
+    let item_id = format!("item-{}", azure_core::Uuid::new_v4());
+    let item = GwV2TestItem {
+        id: item_id.clone(),
+        pk: pk_value.clone(),
+        value: 42,
+        label: "rcs".into(),
+    };
+    container
+        .create_item(&pk_value, &item_id, &item, None)
+        .await?;
+
+    let read_options = ItemReadOptions::default().with_operation_options(
+        OperationOptionsBuilder::new()
+            .with_read_consistency_strategy(ReadConsistencyStrategy::LatestCommitted)
+            .build(),
+    );
+    let read_resp = container
+        .read_item(&pk_value, &item_id, Some(read_options))
+        .await?;
+    assert_transport_kind(&read_resp.diagnostics(), TransportKind::GatewayV2);
+    assert!(!read_resp.diagnostics().activity_id().as_str().is_empty());
+    let read_item: GwV2TestItem = read_resp.into_model()?;
+    assert_eq!(
+        read_item, item,
+        "a LatestCommitted read must return the item unchanged",
+    );
+
+    drop_database(&client, &db_name).await;
+    Ok(())
+}
+
+/// Proves a freshly-provisioned collection is point-readable over Gateway 2.0
+/// from *every* read region the multi-region account advertises, not just the
+/// region proximity routing happens to pick by default. This hardens the
+/// readiness guarantee from [`wait_for_container_ready`]: a collection that
+/// resolves in one region must be usable in all of them. Ignored for
+/// single-region runs, where there is only one region to read from.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "gateway_v2_multi_region"),
+    ignore = "requires the multi-region Gateway 2.0 account (test_category = \"gateway_v2_multi_region\" + AZURE_COSMOS_GW_V2_MULTI_REGION_ENDPOINT/_KEY)"
+)]
+pub async fn gateway_v2_point_read_usable_from_every_region(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let Some((endpoint, key)) = live_credentials() else {
+        return Ok(());
+    };
+
+    // Read regions advertised by the multi-region GW_V2 accounts
+    // (`thin-client-multi-writer-ci` / `thin-client-mr-eventual-ci`).
+    const REGIONS: [Region; 2] = [Region::CENTRAL_US, Region::EAST_US_2];
+
+    let client = build_client(&endpoint, &key).await?;
+
+    // Provision inline (rather than via `provision_database_and_container`) so
+    // the per-region clients can re-resolve the same container by name.
+    let unique = azure_core::Uuid::new_v4();
+    let db_name = format!("gw_v2-test-db-{unique}");
+    let container_name = format!("gw_v2-test-container-{unique}");
+    client.create_database(&db_name, None).await?;
+    let db_client = client.database_client(&db_name);
+    let pk_def: PartitionKeyDefinition = "/pk".into();
+    let properties = ContainerProperties::new(container_name.clone(), pk_def);
+    db_client.create_container(properties, None).await?;
+    let container = wait_for_container_ready(&db_client, &container_name).await?;
+
+    let pk_value = format!("pk-{}", azure_core::Uuid::new_v4());
+    let item_id = format!("item-{}", azure_core::Uuid::new_v4());
+    let item = GwV2TestItem {
+        id: item_id.clone(),
+        pk: pk_value.clone(),
+        value: 7,
+        label: "multi-region".into(),
+    };
+    let create_resp = container
+        .create_item(&pk_value, &item_id, &item, None)
+        .await?;
+    assert_transport_kind(&create_resp.diagnostics(), TransportKind::GatewayV2);
+
+    for region in REGIONS {
+        assert_item_readable_from_region(&endpoint, &key, region, &db_name, &container_name, &item)
+            .await?;
+    }
 
     drop_database(&client, &db_name).await;
     Ok(())

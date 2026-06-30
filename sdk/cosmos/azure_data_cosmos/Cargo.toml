@@ -123,6 +123,11 @@ path = "tests/split.rs"
 required-features = ["key_auth", "fault_injection"]
 
 [[test]]
+name = "gateway_v2"
+path = "tests/gateway_v2.rs"
+required-features = ["key_auth", "fault_injection"]
+
+[[test]]
 name = "in_memory_emulator"
 path = "tests/in_memory_emulator.rs"
 required-features = ["__internal_in_memory_emulator"]

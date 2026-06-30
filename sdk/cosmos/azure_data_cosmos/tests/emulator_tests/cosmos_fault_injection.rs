@@ -988,8 +988,10 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
 
 /// Gateway 2.0 ConnectionError on every region must surface a connection
 /// failure to the caller — Rust does **not** silently fall back to the
-/// standard gateway, so firewall / port-10250-blocked misconfigurations stay
-/// visible to the operator. The fault-injection rule matches every `ReadItem`
+/// standard gateway. `ConnectionError` models any failure to establish the
+/// connection (DNS, TLS, a blocked port, or network-unreachable all look the
+/// same to the client), so the failure stays visible to the operator instead
+/// of being masked. The fault-injection rule matches every `ReadItem`
 /// regardless of transport (a prior `with_transport_kind` filter caused
 /// false-negatives on some accounts), while the Gateway 2.0-specific routing
 /// behavior is asserted at the unit level in the driver's gateway_v2 pipeline
@@ -1009,11 +1011,13 @@ pub async fn gateway_v2_connection_error_fails_fast_after_all_regions_attempted(
         .with_probability(1.0)
         .build();
 
-    // No transport_kind filter: the rule must match the read regardless of
-    // which transport carries it, since account config or build flags can
-    // route a read through the standard gateway instead of Gateway 2.0. The
-    // asserted contract is that connection errors injected on every region
-    // surface a connection error rather than silently falling back.
+    // No transport_kind or region filter: the rule injects a connection error
+    // on every region (probability 1.0) to exercise the "all regions attempted,
+    // then fail fast" contract. The condition builder does support
+    // `with_region(...)` scoping, but a single-region variant would instead test
+    // failover (covered separately). The asserted contract here is that
+    // connection errors on every region surface to the caller rather than
+    // silently falling back to the standard gateway.
     let condition = FaultInjectionConditionBuilder::new()
         .with_operation_type(FaultOperationType::ReadItem)
         .build();

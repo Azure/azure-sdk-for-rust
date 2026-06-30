@@ -1009,6 +1009,15 @@ impl SubStatusCode {
     pub const TOO_MANY_TENTATIVE_WRITES_TO_SATELLITE_REGION: SubStatusCode = SubStatusCode(1339);
 
     // ----- SDK Client-side codes (10xxx, 2xxxx) -----
+    //
+    // Provenance: the `10001`-`10004` gateway codes and `CLIENT_OPERATION_TIMEOUT`
+    // (20008) match Java's `HttpConstants.SubStatusCodes` exactly. The remaining
+    // `2000x` / `20401` codes are sourced from .NET's client-side `SubStatusCodes`;
+    // Java only ported a subset of that range, so they have no Java equivalent.
+    // Note: Java models the HTTP/2-ping channel-closed case as
+    // `GATEWAY_HTTP2_PING_TIMEOUT_CHANNEL_CLOSED` (10006) — a local transport
+    // failure that skips endpoint mark-down — which is a narrower semantic than
+    // the generic `CHANNEL_CLOSED` (20006, aligned with .NET) defined below.
 
     /// Gateway endpoint unavailable (10001).
     pub const GATEWAY_ENDPOINT_UNAVAILABLE: SubStatusCode = SubStatusCode(10001);

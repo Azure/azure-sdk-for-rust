@@ -27,9 +27,9 @@ use crate::{
         transport::CosmosTransport,
     },
     models::{
-        cosmos_headers::QUERY_CONTENT_TYPE, request_header_names, AccountEndpoint, ActivityId,
-        CosmosOperation, CosmosResponse, Credential, DefaultConsistencyLevel, OperationType,
-        SessionToken, SubStatusCode,
+        cosmos_headers::QUERY_CONTENT_TYPE, effective_partition_key::EffectivePartitionKey,
+        request_header_names, AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse,
+        Credential, DefaultConsistencyLevel, OperationType, SessionToken, SubStatusCode,
     },
     options::{
         resolve_effective_consistency, HedgeThreshold, OperationOptionsView,
@@ -104,11 +104,11 @@ impl OperationOverrides {
             // and leaves these absent.
             headers.insert(
                 HeaderName::from_static(request_header_names::START_EPK),
-                HeaderValue::from(feed_range.min_inclusive().as_str().to_owned()),
+                HeaderValue::from(feed_range.min_inclusive().to_hex()),
             );
             headers.insert(
                 HeaderName::from_static(request_header_names::END_EPK),
-                HeaderValue::from(feed_range.max_exclusive().as_str().to_owned()),
+                HeaderValue::from(feed_range.max_exclusive().to_hex()),
             );
             headers.insert(
                 HeaderName::from_static(request_header_names::READ_FEED_KEY_TYPE),
@@ -122,11 +122,11 @@ impl OperationOverrides {
             // full-pkrange XPK case. Legacy gateway ignores unknown headers.
             headers.insert(
                 HeaderName::from_static(request_header_names::THINCLIENT_PKRANGE_MIN),
-                HeaderValue::from(bounds.min_inclusive().as_str().to_owned()),
+                HeaderValue::from(bounds.min_inclusive().to_hex()),
             );
             headers.insert(
                 HeaderName::from_static(request_header_names::THINCLIENT_PKRANGE_MAX),
-                HeaderValue::from(bounds.max_exclusive().as_str().to_owned()),
+                HeaderValue::from(bounds.max_exclusive().to_hex()),
             );
         }
 
@@ -1552,10 +1552,7 @@ fn build_transport_request(
         endpoint: ctx.routing.endpoint.clone(),
         transport_mode: ctx.routing.transport_mode,
         operation_type: operation.operation_type(),
-        partition_key: operation.partition_key().cloned(),
-        partition_key_definition: operation
-            .container()
-            .map(|container| container.partition_key_definition().clone()),
+        effective_partition_key: effective_partition_key_for_request(operation)?,
         effective_consistency: ctx.effective_consistency,
         read_consistency_strategy: ctx.read_consistency_strategy,
         url,
@@ -1565,6 +1562,45 @@ fn build_transport_request(
         execution_context: ctx.execution_context,
         deadline: ctx.deadline,
     })
+}
+
+/// Computes the effective partition key for an item-scoped request before the
+/// transport pipeline runs, so wire layers receive a ready-to-encode EPK rather
+/// than raw partition-key/definition values.
+///
+/// Returns `Ok(None)` when the operation has no partition key, no container
+/// context, or an empty partition key. Surfaces a `BadRequest` when the caller
+/// supplies more components than the container's partition-key definition
+/// declares (the hash routines would otherwise silently hash the extras into a
+/// broken EPK).
+fn effective_partition_key_for_request(
+    operation: &CosmosOperation,
+) -> crate::error::Result<Option<EffectivePartitionKey>> {
+    let (Some(partition_key), Some(container)) = (operation.partition_key(), operation.container())
+    else {
+        return Ok(None);
+    };
+
+    if partition_key.is_empty() {
+        return Ok(None);
+    }
+
+    let partition_key_definition = container.partition_key_definition();
+    if partition_key.values().len() > partition_key_definition.paths().len() {
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
+            .with_message(
+                "Partition key supplies more components than the container's \
+                 partition-key definition declares",
+            )
+            .build());
+    }
+
+    Ok(Some(EffectivePartitionKey::compute(
+        partition_key.values(),
+        partition_key_definition.kind(),
+        partition_key_definition.version(),
+    )))
 }
 
 /// Builds a `CosmosResponse` from a successful `TransportResult`.
@@ -3659,7 +3695,7 @@ mod tests {
             request_header_names, AccountReference, ActivityId, ContainerProperties,
             ContainerReference, CosmosOperation, DatabaseReference, DefaultConsistencyLevel,
             EffectivePartitionKey, FeedRange, ItemReference, PartitionKey, PartitionKeyDefinition,
-            SystemProperties,
+            PartitionKeyValue, SystemProperties,
         },
         options::{PriorityLevel, ResolvedThroughputControl},
     };
@@ -3692,6 +3728,43 @@ mod tests {
             "testcontainer_rid",
             &test_container_props(),
         )
+    }
+
+    /// Supplying more partition-key components than the container's single-path
+    /// definition declares must surface as a `BadRequest` from the EPK
+    /// precomputation, never silently hash the extras into a broken EPK. This
+    /// validation runs in the operation pipeline (before the transport
+    /// pipeline) so wire layers receive a ready-to-encode EPK.
+    #[test]
+    fn effective_partition_key_rejects_too_many_components() {
+        let partition_key = PartitionKey::from(vec![
+            PartitionKeyValue::from("tenant1".to_string()),
+            PartitionKeyValue::from("extra".to_string()),
+        ]);
+        let item = ItemReference::from_name(&test_container(), partition_key, "doc1");
+        let operation = CosmosOperation::create_item(item).with_body(b"{}".to_vec());
+
+        let error = super::effective_partition_key_for_request(&operation)
+            .expect_err("too many components must error");
+
+        assert_eq!(
+            error.status(),
+            crate::error::CosmosStatus::CLIENT_BAD_REQUEST
+        );
+    }
+
+    /// A single-component key matching the single-path definition yields a
+    /// point EPK (no error, `Some` value).
+    #[test]
+    fn effective_partition_key_for_matching_components() {
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::create_item(item).with_body(b"{}".to_vec());
+
+        let epk = super::effective_partition_key_for_request(&operation)
+            .expect("matching components must compute")
+            .expect("partition key present yields Some");
+
+        assert!(!epk.as_bytes().is_empty());
     }
 
     fn test_routing() -> RoutingDecision {

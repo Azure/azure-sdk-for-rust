@@ -1287,8 +1287,6 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
     let emulator = std::sync::Arc::new(InMemoryEmulatorHttpClient::new(config));
     let emulator_store = emulator.store();
 
-    // Build the runtime from the emulator factory (FI applies at the SDK
-    // client builder layer, not on the shared runtime).
     let runtime_builder = emulator.runtime_builder();
 
     // Provision resources in the emulator store.

@@ -23,8 +23,8 @@ use crate::{
         transport::{AuthorizationContext, EndpointKey},
     },
     models::{
-        CosmosResponseHeaders, CosmosStatus, DefaultConsistencyLevel, OperationType, PartitionKey,
-        PartitionKeyDefinition,
+        effective_partition_key::EffectivePartitionKey, CosmosResponseHeaders, CosmosStatus,
+        DefaultConsistencyLevel, OperationType,
     },
     options::{HedgeThreshold, ReadConsistencyStrategy, Region},
 };
@@ -430,10 +430,10 @@ pub(crate) struct TransportRequest {
     pub transport_mode: TransportMode,
     /// The operation type being dispatched.
     pub operation_type: OperationType,
-    /// Partition key for item-scoped Gateway 2.0 dispatch.
-    pub partition_key: Option<PartitionKey>,
-    /// Partition key definition for effective partition key computation.
-    pub partition_key_definition: Option<PartitionKeyDefinition>,
+    /// Effective partition key precomputed in the operation pipeline for
+    /// item-scoped Gateway 2.0 dispatch. Computing it before the transport
+    /// pipeline keeps wire layers free of partition-key/definition logic.
+    pub effective_partition_key: Option<EffectivePartitionKey>,
     /// Effective consistency resolved from account default and read options.
     pub effective_consistency: DefaultConsistencyLevel,
     /// Read consistency strategy as requested by the caller (per-request override
@@ -444,7 +444,7 @@ pub(crate) struct TransportRequest {
     /// non-`Default` on a read operation, V1 emits the
     /// `x-ms-cosmos-read-consistency-strategy` HTTP header (and strips
     /// `x-ms-consistency-level`); V2 emits the RNTBD `ReadConsistencyStrategy`
-    /// token (`0x00F0`) and drops the `ConsistencyLevel` token.
+    /// token (`0x00FE`) and drops the `ConsistencyLevel` token.
     pub read_consistency_strategy: ReadConsistencyStrategy,
     /// The fully resolved URL for this attempt.
     pub url: Url,

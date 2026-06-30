@@ -30,46 +30,47 @@ pub(crate) struct RntbdRequestFrame {
 }
 
 impl RntbdRequestFrame {
-    /// Serializes the request frame to Gateway 2.0 RNTBD bytes.
+    /// Writes the request frame as Gateway 2.0 RNTBD bytes into `out`.
     ///
-    /// The total length field is inclusive of its own four bytes. Returns
-    /// [`ErrorKind::DataConversion`] when an input exceeds an RNTBD wire
-    /// length limit (e.g., a metadata token value longer than the
-    /// `SmallString` length prefix supports, a body larger than `u32::MAX`,
-    /// or a frame whose total length exceeds `u32::MAX`).
+    /// Streaming into a caller-provided [`std::io::Write`] avoids forcing a
+    /// fresh heap allocation; callers that need an owned buffer can pass a
+    /// `&mut Vec<u8>`.
+    ///
+    /// The `LengthInBytes` header field is inclusive of its own four bytes but
+    /// covers only the request header section (the length field itself,
+    /// resource/operation type, activity ID, and metadata tokens); the body
+    /// length prefix and body bytes follow and are not counted. Returns
+    /// [`ErrorKind::DataConversion`] when an input exceeds an RNTBD wire length
+    /// limit (e.g., a metadata token value longer than the `SmallString` length
+    /// prefix supports, a body larger than `u32::MAX`, or a frame whose header
+    /// length exceeds `u32::MAX`), or [`ErrorKind::Io`] when the writer fails.
     ///
     /// [`ErrorKind::DataConversion`]: azure_core::error::ErrorKind::DataConversion
-    pub(crate) fn serialize(&self) -> azure_core::Result<Vec<u8>> {
+    /// [`ErrorKind::Io`]: azure_core::error::ErrorKind::Io
+    pub(crate) fn write(&self, out: &mut impl std::io::Write) -> azure_core::Result<()> {
         let metadata_len: usize = self.metadata.iter().map(Token::encoded_len).sum();
         let header_len = 24 + metadata_len;
-        let body_section_len = self.body.as_ref().map_or(0, |body| 4 + body.len());
-        let total_len = header_len + body_section_len;
-        // The `LengthInBytes` field on the wire covers only the request header
-        // section (the length field itself, resource/operation type, activity
-        // ID, and metadata tokens). The body length prefix and body bytes
-        // follow the header section and are NOT counted here.
         let header_len_u32 = u32::try_from(header_len).map_err(|_| {
             data_conversion_error(format!(
                 "RNTBD request header length {header_len} exceeds u32::MAX"
             ))
         })?;
 
-        let mut out = Vec::with_capacity(total_len);
-        out.extend_from_slice(&header_len_u32.to_le_bytes());
-        out.extend_from_slice(
+        out.write_all(&header_len_u32.to_le_bytes())?;
+        out.write_all(
             &RntbdResourceType::from(self.resource_type)
                 .value()
                 .to_le_bytes(),
-        );
-        out.extend_from_slice(
+        )?;
+        out.write_all(
             &RntbdOperationType::from(self.operation_type)
                 .value()
                 .to_le_bytes(),
-        );
-        write_uuid_le(&mut out, self.activity_id);
+        )?;
+        write_uuid_le(out, self.activity_id)?;
 
         for token in &self.metadata {
-            token.write_to(&mut out)?;
+            token.write_to(out)?;
         }
 
         if let Some(body) = &self.body {
@@ -79,12 +80,11 @@ impl RntbdRequestFrame {
                     body.len()
                 ))
             })?;
-            out.extend_from_slice(&body_len.to_le_bytes());
-            out.extend_from_slice(body);
+            out.write_all(&body_len.to_le_bytes())?;
+            out.write_all(body)?;
         }
 
-        debug_assert_eq!(out.len(), total_len);
-        Ok(out)
+        Ok(())
     }
 }
 
@@ -95,6 +95,13 @@ mod tests {
         data_conversion_error, read_u16_le, read_u32_le, read_uuid_le, RntbdOperationType,
         RntbdResourceType, TokenValue,
     };
+
+    /// Serializes a frame into a fresh `Vec<u8>` for assertions.
+    fn serialize(frame: &RntbdRequestFrame) -> azure_core::Result<Vec<u8>> {
+        let mut out = Vec::new();
+        frame.write(&mut out)?;
+        Ok(out)
+    }
 
     #[test]
     fn request_frames_round_trip_for_slice_one_operations() {
@@ -122,7 +129,7 @@ mod tests {
                     body,
                 };
 
-                let bytes = frame.serialize().unwrap();
+                let bytes = serialize(&frame).unwrap();
                 let parsed = parse_request_for_tests(&bytes, frame.body.is_some()).unwrap();
 
                 assert_eq!(parsed, frame);
@@ -146,7 +153,7 @@ mod tests {
             body: None,
         };
 
-        let bytes = frame.serialize().unwrap();
+        let bytes = serialize(&frame).unwrap();
         let operation_id = u16::from_le_bytes([bytes[6], bytes[7]]);
 
         assert_eq!(operation_id, 0x0042);
@@ -166,7 +173,7 @@ mod tests {
             body: None,
         };
 
-        let bytes = frame.serialize().unwrap();
+        let bytes = serialize(&frame).unwrap();
         let parsed = parse_request_for_tests(&bytes, false).unwrap();
 
         assert_eq!(parsed, frame);
@@ -190,7 +197,7 @@ mod tests {
             body: Some(body),
         };
 
-        let bytes = frame.serialize().unwrap();
+        let bytes = serialize(&frame).unwrap();
         let length_in_bytes = u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]) as usize;
 
         // Header section = LengthInBytes(4) + ResourceType(2) + OperationType(2)
@@ -222,7 +229,7 @@ mod tests {
             body: None,
         };
 
-        let bytes = frame.serialize().unwrap();
+        let bytes = serialize(&frame).unwrap();
         let length_in_bytes = u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]) as usize;
 
         assert_eq!(length_in_bytes, 24);
@@ -249,10 +256,10 @@ mod tests {
             u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]) as usize
         };
 
-        let no_body = make(None).serialize().unwrap();
-        let tiny_body = make(Some(b"{}".to_vec())).serialize().unwrap();
-        let medium_body = make(Some(vec![0u8; 1024])).serialize().unwrap();
-        let large_body = make(Some(vec![0u8; 65_536])).serialize().unwrap();
+        let no_body = serialize(&make(None)).unwrap();
+        let tiny_body = serialize(&make(Some(b"{}".to_vec()))).unwrap();
+        let medium_body = serialize(&make(Some(vec![0u8; 1024]))).unwrap();
+        let large_body = serialize(&make(Some(vec![0u8; 65_536]))).unwrap();
 
         let header_len = length_in_bytes(&no_body);
         assert_eq!(length_in_bytes(&tiny_body), header_len);
@@ -285,8 +292,8 @@ mod tests {
             ..with_empty_body.clone()
         };
 
-        let with_bytes = with_empty_body.serialize().unwrap();
-        let without_bytes = without_body.serialize().unwrap();
+        let with_bytes = serialize(&with_empty_body).unwrap();
+        let without_bytes = serialize(&without_body).unwrap();
 
         let with_len =
             u32::from_le_bytes([with_bytes[0], with_bytes[1], with_bytes[2], with_bytes[3]])
@@ -336,7 +343,7 @@ mod tests {
             body: None,
         };
 
-        let bytes = frame.serialize().unwrap();
+        let bytes = serialize(&frame).unwrap();
         assert_eq!(bytes.len(), 295);
         assert_eq!(&bytes[0..4], &[0x27, 0x01, 0x00, 0x00]);
     }
@@ -367,7 +374,7 @@ mod tests {
             body: Some(b"{}".to_vec()),
         };
 
-        let bytes = frame.serialize().unwrap();
+        let bytes = serialize(&frame).unwrap();
         let length_in_bytes = u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]) as usize;
 
         // Skip the 24-byte fixed header and consume exactly the metadata
@@ -401,7 +408,7 @@ mod tests {
             body: Some(body.clone()),
         };
 
-        let bytes = frame.serialize().unwrap();
+        let bytes = serialize(&frame).unwrap();
         let header_len = u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]) as usize;
 
         // Proxy reads body-length prefix at offset = header_len.
@@ -433,8 +440,44 @@ mod tests {
             body: None,
         };
 
-        let err = frame.serialize().unwrap_err();
+        let err = serialize(&frame).unwrap_err();
         assert_eq!(*err.kind(), azure_core::error::ErrorKind::DataConversion);
+    }
+
+    /// Wire-format snapshot guarding the exact byte layout of a known frame.
+    ///
+    /// Any change to the serialized bytes (field order, endianness, token
+    /// encoding) flips this hex string and fails the test on purpose.
+    #[test]
+    fn serialize_matches_known_good_snapshot() {
+        let frame = RntbdRequestFrame {
+            resource_type: ResourceType::Document,
+            operation_type: OperationType::Read,
+            activity_id: Uuid::from_u128(0x1234_5678_90ab_cdef_0123_4567_89ab_cdef),
+            // ULong (PageSize, id 0x0004) + Byte (PayloadPresent, id 0x0002).
+            metadata: vec![Token::page_size(256), Token::payload_present(true)],
+            body: Some(b"{}".to_vec()),
+        };
+
+        let hex = serialize(&frame)
+            .unwrap()
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect::<String>();
+
+        // Header length = 24 + ULong token (2+1+4) + Byte token (2+1+1) = 35 (0x23).
+        //   23000000          header length (u32 LE) = 35
+        //   0300              ResourceType::Document RNTBD value (u16 LE) = 0x0003
+        //   0300              OperationType::Read RNTBD value (u16 LE) = 0x0003
+        //   78563412 ab90 efcd  activity id Data1 (u32 LE), Data2/Data3 (u16 LE)
+        //   0123456789abcdef  activity id Data4 (natural order)
+        //   0400 02 00010000  PageSize token: id 0x0004, type ULong (0x02), value 256
+        //   0200 00 01        PayloadPresent token: id 0x0002, type Byte (0x00), value 1
+        //   02000000          body length (u32 LE) = 2
+        //   7b7d              body bytes ("{}")
+        let expected =
+            "230000000300030078563412ab90efcd0123456789abcdef0400020001000002000001020000007b7d";
+        assert_eq!(hex, expected);
     }
 
     fn parse_request_for_tests(

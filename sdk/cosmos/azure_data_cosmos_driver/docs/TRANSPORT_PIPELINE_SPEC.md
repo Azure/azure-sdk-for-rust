@@ -2195,8 +2195,8 @@ HTTP/2 just uses a single `Arc<dyn HttpClient>` like HTTP/1.1.
 **What works after Step 5**: HTTP/2 requests work (via a single connection). Gateway 2.0
 endpoints are detected and used. No sharding yet — stream limit may be hit under high load.
 
-> **Note on ALPN probing (§6.0):** The initial Step 5 implementation uses configuration flags
-> (`is_http2_allowed`, `gateway_v2_disabled`) and `AccountProperties` metadata
+> **Note on ALPN probing (§6.0):** The initial Step 5 implementation uses the
+> `is_http2_allowed` configuration flag and `AccountProperties` metadata
 > (`thinClient*Locations`) to determine the transport strategy, rather than runtime ALPN
 > negotiation against the gateway. This is sufficient because:
 > (1) reqwest with `http2` feature already performs ALPN automatically for `Http2Preferred`,
