@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added change feed pull support via `ContainerClient::read_change_feed()`, which takes a required `ChangeFeedStartFrom` start position (`Beginning`, `Now`, `PointInTime`) and returns a `ChangeFeedPageIterator<T>` that streams `FeedPage<T>` results. New `feed` types `ChangeFeedPageIterator`, `FeedScope`, and `ContinuationToken`, plus `options` types `ChangeFeedOptions` and `ChangeFeedMode` (`LatestVersion` default; `AllVersionsAndDeletes` is reserved for a future release and currently returns an error); supports single-partition, per-partition-key, and full-container (cross-partition fan-out) reads with continuation-token resumption that persists the original start position so never-polled partitions don't replay history on resume. ([#4621](https://github.com/Azure/azure-sdk-for-rust/pull/4621))
 - Added `TlsBackend` (re-exported) and a `tls_backend` option on `ConnectionPoolOptions` (`ConnectionPoolOptionsBuilder::with_tls_backend`), defaulting to `TlsBackend::Rustls`, available under the `rustls` feature, to pin the TLS backend used by the transport. This is additive and changes no behavior for the default (rustls) build; it only has an effect in builds that compile in multiple reqwest TLS backends, where reqwest would otherwise default to native-tls and the driver now pins rustls instead. ([#4649](https://github.com/Azure/azure-sdk-for-rust/pull/4649))
 
 ### Breaking Changes

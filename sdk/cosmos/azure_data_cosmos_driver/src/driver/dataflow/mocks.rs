@@ -114,6 +114,7 @@ pub(crate) struct MockRequestExecutor {
     pub responses: VecDeque<crate::error::Result<CosmosResponse>>,
     pub refresh_calls: Vec<PartitionRoutingRefresh>,
     pub continuation_calls: Vec<Option<String>>,
+    pub target_calls: Vec<RequestTarget>,
 }
 
 impl MockRequestExecutor {
@@ -122,6 +123,7 @@ impl MockRequestExecutor {
             responses: responses.into(),
             refresh_calls: Vec::new(),
             continuation_calls: Vec::new(),
+            target_calls: Vec::new(),
         }
     }
 }
@@ -130,12 +132,13 @@ impl RequestExecutor for MockRequestExecutor {
     fn execute_request<'a>(
         &'a mut self,
         _operation: &'a CosmosOperation,
-        _target: RequestTarget,
+        target: RequestTarget,
         partition_routing_refresh: PartitionRoutingRefresh,
         continuation: Option<String>,
     ) -> BoxFuture<'a, crate::error::Result<CosmosResponse>> {
         self.refresh_calls.push(partition_routing_refresh);
         self.continuation_calls.push(continuation);
+        self.target_calls.push(target);
         let response = self.responses.pop_front().expect("mock request response");
         Box::pin(async move { response })
     }

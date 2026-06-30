@@ -10,6 +10,7 @@
 
 #[doc(inline)]
 pub use azure_data_cosmos_driver::models::{ContinuationToken, FeedRange};
+pub use change_feed_iterator::ChangeFeedPageIterator;
 pub use iterator::{QueryItemIterator, QueryPageIterator};
 pub use page::FeedPage;
 pub use query::{FeedScope, Query};
@@ -25,6 +26,7 @@ pub(crate) use page::FeedBody;
 // Internal modules
 // =========================================================================
 
+mod change_feed_iterator;
 mod iterator;
 mod page;
 mod query;

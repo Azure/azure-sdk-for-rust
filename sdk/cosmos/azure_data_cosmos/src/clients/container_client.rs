@@ -3,21 +3,22 @@
 
 use crate::{
     clients::{offers_client, ClientContext},
-    feed::{FeedRange, FeedScope, QueryItemIterator},
+    feed::{ChangeFeedPageIterator, FeedRange, FeedScope, QueryItemIterator},
     models::TransactionalBatch,
     models::{BatchResponse, ItemResponse, ResourceResponse},
     models::{ContainerProperties, PatchInstructions, ThroughputProperties},
     options::{
-        BatchOptions, DeleteContainerOptions, ItemReadOptions, ItemWriteOptions, PatchItemOptions,
-        Precondition, QueryOptions, ReadContainerOptions, ReadFeedRangesOptions,
-        ReplaceContainerOptions, SessionToken, ThroughputOptions,
+        BatchOptions, ChangeFeedMode, ChangeFeedOptions, ChangeFeedStartFrom,
+        DeleteContainerOptions, ItemReadOptions, ItemWriteOptions, PatchItemOptions, Precondition,
+        QueryOptions, ReadContainerOptions, ReadFeedRangesOptions, ReplaceContainerOptions,
+        SessionToken, ThroughputOptions,
     },
     PartitionKey, Query,
 };
 
 use super::ThroughputPoller;
 use azure_data_cosmos_driver::models::{
-    ContainerReference, CosmosOperation, ItemReference, PartitionKeyKind,
+    ChangeFeedStartMarker, ContainerReference, CosmosOperation, ItemReference, PartitionKeyKind,
 };
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -847,6 +848,146 @@ impl ContainerClient {
             )
             .await?;
         Ok(QueryItemIterator::new(
+            self.context.driver.clone(),
+            Some(self.container_ref.clone()),
+            plan,
+            options.operation,
+        ))
+    }
+
+    /// Reads the change feed for a container, returning a stream of pages.
+    ///
+    /// The change feed provides an ordered list of changes (creates and
+    /// replaces in LatestVersion mode) made to items in the container.
+    ///
+    /// # Arguments
+    /// * `scope` - Determines which partitions to read changes from.
+    /// * `start_from` - Where to begin reading when no continuation token is
+    ///   provided. Ignored when `options` carries a continuation token, since
+    ///   the token holds its own position.
+    /// * `options` - Optional parameters controlling mode, session token, and paging.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// use azure_data_cosmos::{clients::ContainerClient, feed::FeedScope, options::ChangeFeedStartFrom};
+    /// use futures::StreamExt;
+    /// use serde::Deserialize;
+    ///
+    /// #[derive(Debug, Deserialize)]
+    /// struct MyItem { id: String }
+    ///
+    /// # async fn example(container: ContainerClient) -> Result<(), Box<dyn std::error::Error>> {
+    /// // Read all changes from the beginning
+    /// let mut pages = container
+    ///     .read_change_feed::<MyItem>(FeedScope::full_container(), ChangeFeedStartFrom::Beginning, None)
+    ///     .await?;
+    ///
+    /// while let Some(page) = pages.next().await {
+    ///     let page = page?;
+    ///     for item in page.items() {
+    ///         println!("changed: {:?}", item);
+    ///     }
+    ///     // Save checkpoint for resumption
+    ///     let _token = pages.to_continuation_token()?;
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn read_change_feed<T: DeserializeOwned + Send + 'static>(
+        &self,
+        scope: FeedScope,
+        start_from: ChangeFeedStartFrom,
+        options: Option<ChangeFeedOptions>,
+    ) -> crate::Result<ChangeFeedPageIterator<T>> {
+        let options = options.unwrap_or_default();
+
+        // AllVersionsAndDeletes is reserved for a future release. Reject it
+        // explicitly rather than silently behaving like LatestVersion.
+        //
+        // TODO: When enabling AllVersionsAndDeletes, revisit start/resume
+        // semantics — they differ from LatestVersion:
+        //   - `Beginning` is invalid under AVAD (bounded retention window);
+        //     require `Now` or a `PointInTime` within retention and reject
+        //     `Beginning` for this mode.
+        //   - `Now` is re-evaluated per request, so a range never polled before
+        //     a checkpoint resumes from resume-time and would drop the
+        //     intermediate versions/deletes between the original start and the
+        //     resume. Resolve `Now` to a concrete per-range start position (or
+        //     snapshot the start time as a `PointInTime`) so AVAD resume is
+        //     lossless.
+        //   - The continuation token does not persist the feed mode; callers
+        //     must re-pass AllVersionsAndDeletes on resume.
+        if options.mode == ChangeFeedMode::AllVersionsAndDeletes {
+            return Err(crate::DriverCosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::NotImplemented,
+                ))
+                .with_message(
+                    "AllVersionsAndDeletes change feed mode is not yet supported; \
+                     use ChangeFeedMode::LatestVersion",
+                )
+                .build()
+                .into());
+        }
+
+        let mut initial_operation = CosmosOperation::change_feed(
+            self.container_ref.clone(),
+            Some(scope.into_feed_range(self.container_ref.partition_key_definition())),
+        );
+
+        if let Some(token) = options.session_token {
+            initial_operation = initial_operation.with_session_token(token);
+        }
+        if let Some(hint) = options.feed.max_item_count {
+            initial_operation = initial_operation.with_max_item_count(hint);
+        }
+
+        // Translate the start position into a persisted start marker. The marker
+        // is recorded on the operation and serialized into the continuation
+        // token, so partitions that were never polled before a checkpoint can
+        // re-apply the original start position on resume instead of silently
+        // reading from the beginning. Partitions that have already been polled
+        // resume from their saved per-partition ETag, which takes precedence.
+        // `Beginning` needs no marker.
+        let start_marker = match &start_from {
+            ChangeFeedStartFrom::Beginning => None,
+            ChangeFeedStartFrom::Now => Some(ChangeFeedStartMarker::Now),
+            ChangeFeedStartFrom::PointInTime(ts) => {
+                // RFC 1123 date format (the IMF fixed-date production in
+                // RFC 7231) as required by Cosmos DB.
+                use time::format_description::FormatItem;
+                use time::macros::format_description;
+                const RFC1123: &[FormatItem<'_>] = format_description!(
+                    "[weekday repr:short], [day] [month repr:short] [year] [hour]:[minute]:[second] GMT"
+                );
+                let utc = ts.to_offset(time::UtcOffset::UTC);
+                let formatted = utc.format(RFC1123).map_err(|e| {
+                    crate::DriverCosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::new(
+                            azure_core::http::StatusCode::BadRequest,
+                        ))
+                        .with_message(format!("failed to format PointInTime timestamp: {e}"))
+                        .build()
+                })?;
+                Some(ChangeFeedStartMarker::PointInTime(formatted))
+            }
+        };
+        if let Some(marker) = start_marker {
+            initial_operation = initial_operation.with_change_feed_start(marker);
+        }
+
+        let plan = self
+            .context
+            .driver
+            .plan_operation(
+                initial_operation,
+                &options.operation,
+                options.feed.continuation_token.as_ref(),
+            )
+            .await?;
+
+        Ok(ChangeFeedPageIterator::new(
             self.context.driver.clone(),
             Some(self.container_ref.clone()),
             plan,

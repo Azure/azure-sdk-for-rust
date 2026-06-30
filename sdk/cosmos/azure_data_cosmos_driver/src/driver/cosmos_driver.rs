@@ -25,7 +25,7 @@ use crate::{
     models::{
         effective_partition_key::EffectivePartitionKey, AccountEndpoint, AccountReference,
         ContainerProperties, ContainerReference, ContinuationToken, CosmosOperation,
-        DatabaseReference, PartitionKey, ResolvedToken, ResourceType, UserAgent,
+        DatabaseReference, FeedRange, PartitionKey, ResolvedToken, ResourceType, UserAgent,
         UserAgentFeatureFlags,
     },
     options::{
@@ -2232,7 +2232,39 @@ impl CosmosDriver {
             return Ok(OperationPlan::new(pipeline, operation));
         }
 
-        // 2. Cross-partition query: obtain a query plan and build the fan-out
+        // 2. Change feed: resolve the target feed range against the current
+        //    topology and build an UnorderedMerge pipeline (no query plan
+        //    needed). Children are polled round-robin and never evicted on
+        //    304 so the stream is infinite.
+        if operation.is_change_feed() {
+            let container = operation.container().ok_or_else(|| {
+                crate::error::CosmosError::builder()
+                    .with_status(
+                        crate::error::CosmosStatus::CLIENT_CROSS_PARTITION_QUERY_REQUIRES_CONTAINER_REF,
+                    )
+                    .with_message("cross-partition change feed requires a container reference")
+                    .build()
+            })?;
+            let feed_range = operation.target().cloned().unwrap_or_else(FeedRange::full);
+            let container_ref = container.clone();
+            let mut topology = CachedTopologyProvider::new(
+                &self.pk_range_cache,
+                container_ref,
+                |container, continuation| {
+                    self.fetch_pk_ranges_from_service(container, continuation)
+                },
+            );
+            let pipeline = planner::build_unordered_merge(
+                &feed_range,
+                &mut topology,
+                &operation,
+                resume_state,
+            )
+            .await?;
+            return Ok(OperationPlan::new(pipeline, operation));
+        }
+
+        // 3. Cross-partition query: obtain a query plan and build the fan-out
         //    pipeline. Try the native FFI provider first (no network call),
         //    falling back to the Gateway if unavailable.
         let container = operation.container().ok_or_else(|| {

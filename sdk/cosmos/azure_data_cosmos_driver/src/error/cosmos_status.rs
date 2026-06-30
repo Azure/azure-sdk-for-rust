@@ -509,6 +509,7 @@ impl SubStatusCode {
             20209 => Some("ClientCrossPartitionQueryRequiresContainerRef"),
             20210 => Some("ClientSingletonOperationReturnedEmptyPage"),
             20211 => Some("ClientComputeRangeInvokedWithEmptyPartitionKey"),
+            20212 => Some("ClientChangeFeedPipelineUnexpectedlyDrained"),
             20213 => Some("ClientContinuationTokenSavedRangeUnhonored"),
             20300 => Some("ClientNoOverlappingFeedRangesForSessionToken"),
             20301 => Some("ClientNoThroughputOfferForResource"),
@@ -1373,6 +1374,15 @@ impl SubStatusCode {
     pub const CLIENT_COMPUTE_RANGE_INVOKED_WITH_EMPTY_PARTITION_KEY: SubStatusCode =
         SubStatusCode(20211);
 
+    /// A change feed pipeline reported that it was fully drained (20212).
+    /// The change feed is a conceptually infinite stream — "no changes" is
+    /// surfaced as an empty (304) page, never as a drained pipeline — so a
+    /// drained result indicates an internal invariant violation rather than
+    /// a clean end of stream. Surfacing it as an error keeps the failure
+    /// loud instead of silently terminating the caller's polling loop.
+    pub const CLIENT_CHANGE_FEED_PIPELINE_UNEXPECTEDLY_DRAINED: SubStatusCode =
+        SubStatusCode(20212);
+
     /// A continuation token's saved range could not be honored on resume
     /// because the topology no longer covers it (20213). Surfacing this as
     /// an error rather than silently dropping the range prevents duplicate
@@ -2175,6 +2185,13 @@ impl CosmosStatus {
     pub const CLIENT_COMPUTE_RANGE_INVOKED_WITH_EMPTY_PARTITION_KEY: CosmosStatus = CosmosStatus {
         status_code: StatusCode::InternalServerError,
         sub_status: Some(SubStatusCode::CLIENT_COMPUTE_RANGE_INVOKED_WITH_EMPTY_PARTITION_KEY),
+    };
+
+    /// 500 / 20212 — a change feed pipeline reported that it was fully
+    /// drained, which violates the infinite-stream invariant.
+    pub const CLIENT_CHANGE_FEED_PIPELINE_UNEXPECTEDLY_DRAINED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_CHANGE_FEED_PIPELINE_UNEXPECTEDLY_DRAINED),
     };
 
     /// 500 / 20213 — continuation token's saved range could not be

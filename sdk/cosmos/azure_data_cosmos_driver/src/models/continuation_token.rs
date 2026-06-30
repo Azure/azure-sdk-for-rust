@@ -60,21 +60,12 @@ impl ContinuationToken {
         operation: &CosmosOperation,
         root_state: &PipelineNodeState,
     ) -> crate::error::Result<Self> {
-        if operation.operation_type() != OperationType::Query {
-            return Err(crate::error::CosmosError::builder()
-                .with_status(
-                    crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION,
-                )
-                .with_message(
-                    "client-side continuation tokens are only supported for query operations",
-                )
-                .build());
-        }
+        let token_operation = TokenOperation::for_operation(operation)?;
         let container = operation.container().ok_or_else(|| {
-            crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)).with_message("client-side continuation tokens require a query operation targeting a container").build()
+            crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)).with_message("client-side continuation tokens require a query or change feed operation targeting a container").build()
         })?;
         let state = TokenState {
-            operation: TokenOperation::Query,
+            operation: token_operation,
             rid: container.rid().to_string(),
             root: root_state.clone(),
         };
@@ -135,9 +126,37 @@ impl ContinuationToken {
     }
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Copy)]
 pub enum TokenOperation {
     Query,
+    ChangeFeed,
+}
+
+impl TokenOperation {
+    /// Determines the [`TokenOperation`] that corresponds to the given
+    /// operation, or returns an error if the operation does not support
+    /// client-side continuation tokens.
+    ///
+    /// Only query and change feed (incremental `ReadFeed`) operations carry
+    /// SDK-issued continuation tokens. Every other operation type either has
+    /// no resumable position or relies on a server-issued opaque token.
+    fn for_operation(operation: &CosmosOperation) -> crate::error::Result<Self> {
+        if operation.operation_type() == OperationType::Query {
+            Ok(TokenOperation::Query)
+        } else if operation.is_change_feed() {
+            Ok(TokenOperation::ChangeFeed)
+        } else {
+            Err(crate::error::CosmosError::builder()
+                .with_status(
+                    crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION,
+                )
+                .with_message(
+                    "client-side continuation tokens are only supported for query and change \
+                     feed operations",
+                )
+                .build())
+        }
+    }
 }
 
 /// The decoded state of a continuation token that can be used to resume an operation.
@@ -158,28 +177,16 @@ pub struct TokenState {
 impl TokenState {
     /// Validates that this token state is compatible with the provided query
     pub fn is_valid_for_operation(&self, operation: &CosmosOperation) -> crate::error::Result<()> {
-        if operation.operation_type() != OperationType::Query {
-            return Err(crate::error::CosmosError::builder()
-                .with_status(
-                    crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION,
-                )
-                .with_message(format!(
-                    "operation type {op:?} is not compatible with client-side continuation tokens",
-                    op = self.operation
-                ))
-                .build());
-        }
-
-        if self.operation != TokenOperation::Query {
+        let expected = TokenOperation::for_operation(operation)?;
+        if self.operation != expected {
             return Err(crate::error::CosmosError::builder()
                 .with_status(crate::error::CosmosStatus::new(
                     azure_core::http::StatusCode::BadRequest,
                 ))
                 .with_message(format!(
-                    "token operation type {op:?} is not compatible with a query operation; \
-                     expected {expected_op:?}",
+                    "token operation type {op:?} is not compatible with this operation; \
+                     expected {expected:?}",
                     op = self.operation,
-                    expected_op = TokenOperation::Query,
                 ))
                 .build());
         }
@@ -282,6 +289,16 @@ mod tests {
     /// Builds a query-items operation against `test_container()` (rid `coll_rid`).
     fn query_op() -> CosmosOperation {
         CosmosOperation::query_items(test_container(), Some(FeedRange::full()))
+    }
+
+    /// Builds a single-partition change feed operation against `test_container()`
+    /// (rid `coll_rid`).
+    fn change_feed_op() -> CosmosOperation {
+        let def: PartitionKeyDefinition = serde_json::from_str(r#"{"paths":["/pk"]}"#).unwrap();
+        CosmosOperation::change_feed(
+            test_container(),
+            Some(FeedRange::for_partition(PartitionKey::from("pk1"), &def)),
+        )
     }
 
     /// Decodes the base64url-no-pad payload of a `c1.`-prefixed token into
@@ -404,6 +421,57 @@ mod tests {
         let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let read = CosmosOperation::read_item(item);
         let _err = ContinuationToken::encode_v1(&read, &PipelineNodeState::Drained).unwrap_err();
+    }
+
+    #[test]
+    fn encode_v1_change_feed_operation_round_trips() {
+        // A change feed iterator captures its position as an SDK-issued `c1.`
+        // token; the resume request restores the server ETag via If-None-Match,
+        // never `x-ms-continuation`. Guards against the regression where
+        // `to_continuation_token()` on a change feed errored with 20117.
+        let token = ContinuationToken::encode_v1(
+            &change_feed_op(),
+            &PipelineNodeState::Request {
+                server_continuation: Some("\"etag-1\"".to_string()),
+            },
+        )
+        .unwrap();
+        assert_eq!(
+            decode_v1_payload(&token),
+            r#"{"op":"ChangeFeed","rid":"coll_rid","root":{"kind":"request","server_continuation":"\"etag-1\""}}"#,
+        );
+
+        match token.resolve().unwrap() {
+            ResolvedToken::ClientV1(state) => {
+                assert_eq!(state.operation, TokenOperation::ChangeFeed);
+                state
+                    .is_valid_for_operation(&change_feed_op())
+                    .expect("change feed token resumes a change feed operation");
+            }
+            other => panic!("expected ClientV1 token, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn is_valid_for_operation_rejects_query_token_on_change_feed() {
+        let state = TokenState {
+            operation: TokenOperation::Query,
+            rid: "coll_rid".to_string(),
+            root: PipelineNodeState::Drained,
+        };
+        let err = state.is_valid_for_operation(&change_feed_op()).unwrap_err();
+        assert!(err.to_string().contains("ChangeFeed"));
+    }
+
+    #[test]
+    fn is_valid_for_operation_rejects_change_feed_token_on_query() {
+        let state = TokenState {
+            operation: TokenOperation::ChangeFeed,
+            rid: "coll_rid".to_string(),
+            root: PipelineNodeState::Drained,
+        };
+        let err = state.is_valid_for_operation(&query_op()).unwrap_err();
+        assert!(err.to_string().contains("Query"));
     }
 
     // ── Deserialization ─────────────────────────────────────────────────

@@ -25,6 +25,7 @@ pub use azure_data_cosmos_driver::options::{
 pub use batch::{
     BatchDeleteOptions, BatchOptions, BatchReadOptions, BatchReplaceOptions, BatchUpsertOptions,
 };
+pub use change_feed::{ChangeFeedMode, ChangeFeedOptions, ChangeFeedStartFrom};
 pub use client::CosmosClientOptions;
 pub use consistency::ConsistencyLevel;
 pub use container::{
@@ -45,6 +46,7 @@ pub use throughput::ThroughputOptions;
 // =========================================================================
 
 mod batch;
+mod change_feed;
 mod client;
 mod consistency;
 mod container;

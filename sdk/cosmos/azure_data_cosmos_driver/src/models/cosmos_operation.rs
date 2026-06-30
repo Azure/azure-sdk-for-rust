@@ -8,7 +8,40 @@ use crate::models::{
     DatabaseReference, FeedRange, ItemReference, OperationType, PartitionKey, Precondition,
     ResourceType,
 };
+use azure_core::http::Etag;
+use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
+
+/// The position a change feed was originally started from, in a form that can
+/// be persisted inside a continuation token.
+///
+/// On resume, partitions that were never polled before the checkpoint carry no
+/// per-partition continuation, so they must re-apply the feed's original start
+/// position instead of silently reading from the beginning. Only the two
+/// positions that need a wire header are represented:
+/// [`ChangeFeedStartFrom::Beginning`] carries no marker and is encoded as the
+/// absence of one (`None`).
+///
+/// [`ChangeFeedStartFrom::Beginning`]: https://docs.rs/azure_data_cosmos
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", content = "value", rename_all = "snake_case")]
+pub enum ChangeFeedStartMarker {
+    /// Start from the current point in time (wire header `If-None-Match: *`).
+    ///
+    /// "Now" is evaluated when the request is sent, so on resume a never-polled
+    /// partition starts from resume time rather than the original start time.
+    /// This is acceptable for LatestVersion (it still converges to the latest
+    /// state under at-least-once delivery), but AllVersionsAndDeletes must
+    /// resolve "Now" to a concrete start position before persisting so resume
+    /// does not drop intermediate versions/deletes.
+    Now,
+
+    /// Start from a specific point in time (wire header `If-Modified-Since`).
+    ///
+    /// The value is the pre-formatted RFC 1123 timestamp, persisted verbatim so
+    /// resume is exact.
+    PointInTime(String),
+}
 
 /// Represents a Cosmos DB operation with its routing and execution context.
 ///
@@ -73,6 +106,14 @@ pub struct CosmosOperation {
     /// make. Only consulted when `operation_type == OperationType::Patch`;
     /// ignored for every other op. `None` selects the handler default (5).
     patch_max_attempts: Option<std::num::NonZeroU8>,
+    /// `true` when this operation is a change feed read. Set explicitly by
+    /// [`change_feed`](Self::change_feed) rather than inferred from a header,
+    /// so future change feed modes can be added without ambiguity.
+    is_change_feed: bool,
+    /// The original change feed start position, persisted into the continuation
+    /// token so never-polled partitions can re-apply it on resume. `None` for
+    /// non-change-feed operations and for `Beginning` starts.
+    change_feed_start: Option<ChangeFeedStartMarker>,
 }
 
 impl CosmosOperation {
@@ -124,6 +165,14 @@ impl CosmosOperation {
     /// Returns the partition key for this operation, if applicable.
     pub fn partition_key(&self) -> Option<&PartitionKey> {
         self.target.as_ref().and_then(|t| t.partition_key())
+    }
+
+    /// Returns `true` if this is a change feed request.
+    ///
+    /// Set explicitly by [`change_feed`](Self::change_feed); not inferred from
+    /// request headers.
+    pub fn is_change_feed(&self) -> bool {
+        self.is_change_feed
     }
 
     /// Returns the request headers.
@@ -186,6 +235,43 @@ impl CosmosOperation {
         self
     }
 
+    /// Sets the `If-Modified-Since` header (pre-formatted RFC 1123 string).
+    ///
+    /// Used by change feed to start from a specific point in time.
+    pub fn with_if_modified_since(mut self, value: String) -> Self {
+        self.request_headers.if_modified_since = Some(value);
+        self
+    }
+
+    /// Records the change feed start position and emits its wire header.
+    ///
+    /// This is the single source of truth for translating a start marker into
+    /// the appropriate header, so both the initial request and a resume that
+    /// reconstructs the marker from a continuation token stay in sync:
+    ///
+    /// - [`ChangeFeedStartMarker::Now`] → `If-None-Match: *`
+    /// - [`ChangeFeedStartMarker::PointInTime`] → `If-Modified-Since: <value>`
+    ///
+    /// `Beginning` is represented by simply not calling this method.
+    pub fn with_change_feed_start(mut self, marker: ChangeFeedStartMarker) -> Self {
+        match &marker {
+            ChangeFeedStartMarker::Now => {
+                self.request_headers.precondition =
+                    Some(Precondition::if_none_match(Etag::from("*")));
+            }
+            ChangeFeedStartMarker::PointInTime(timestamp) => {
+                self.request_headers.if_modified_since = Some(timestamp.clone());
+            }
+        }
+        self.change_feed_start = Some(marker);
+        self
+    }
+
+    /// Returns the change feed start marker, if one was set.
+    pub fn change_feed_start(&self) -> Option<&ChangeFeedStartMarker> {
+        self.change_feed_start.as_ref()
+    }
+
     /// Returns the precondition, if set.
     pub fn precondition(&self) -> Option<&Precondition> {
         self.request_headers.precondition.as_ref()
@@ -236,6 +322,8 @@ impl CosmosOperation {
             request_headers: CosmosRequestHeaders::new(),
             body: None,
             patch_max_attempts: None,
+            is_change_feed: false,
+            change_feed_start: None,
         }
     }
 
@@ -608,6 +696,37 @@ impl CosmosOperation {
         )
     }
 
+    /// Creates a change feed read operation for a container.
+    ///
+    /// Sets the `A-IM` header to `Incremental Feed` (LatestVersion mode) and
+    /// marks the operation as a change feed read. The caller sets the start
+    /// position via [`with_change_feed_start`](Self::with_change_feed_start),
+    /// which both records the marker and emits the matching header.
+    ///
+    /// Also sets the `x-ms-cosmos-changefeed-wire-format-version` header so the
+    /// service returns the structured change feed envelope (`{ current, ... }`)
+    /// for every mode. Sending it on LatestVersion (not just
+    /// AllVersionsAndDeletes) keeps the response shape consistent across modes:
+    /// LatestVersion has no pre-image, but the envelope still carries `current`
+    /// plus any per-item metadata, so callers don't have to special-case the
+    /// payload per mode. The SDK iterator unwraps `current` back into the
+    /// caller's document type.
+    ///
+    /// `target` scopes the change feed to a specific partition or EPK range.
+    /// Pass `None` or `Some(FeedRange::full())` to read the entire container.
+    pub fn change_feed(container: ContainerReference, target: Option<FeedRange>) -> Self {
+        let resource_ref: CosmosResourceReference = CosmosResourceReference::from(container)
+            .with_resource_type(ResourceType::Document)
+            .into_feed_reference();
+        let mut headers = CosmosRequestHeaders::new();
+        headers.incremental_feed = true;
+        headers.changefeed_wire_format_version = true;
+        let mut operation =
+            Self::new(OperationType::ReadFeed, resource_ref, target).with_request_headers(headers);
+        operation.is_change_feed = true;
+        operation
+    }
+
     /// Queries items in a container.
     ///
     /// Use `with_body()` to provide the query JSON.
@@ -688,7 +807,12 @@ impl CosmosOperation {
     /// fan-out strategy.
     pub fn is_trivial(&self) -> bool {
         if self.operation_type != OperationType::Query {
-            // For now, at least, all non-query operations are trivial.
+            // Change feed is trivial only when targeting a specific logical partition key.
+            // Full-container (target=None) and EPK range targets require fan-out.
+            if self.is_change_feed() {
+                return self.target().and_then(|t| t.partition_key()).is_some();
+            }
+            // For now, at least, all other non-query operations are trivial.
             return true;
         }
 
@@ -854,6 +978,18 @@ mod tests {
 
         assert!(!op.is_read_only());
         assert!(!op.is_idempotent());
+    }
+
+    /// The change feed factory sets both the incremental-feed indicator and the
+    /// wire-format-version header so LatestVersion responses use the structured
+    /// envelope wire format consistent with AllVersionsAndDeletes.
+    #[test]
+    fn change_feed_sets_wire_format_header() {
+        let op = CosmosOperation::change_feed(test_container(), Some(FeedRange::full()));
+
+        assert!(op.is_change_feed());
+        assert!(op.request_headers().incremental_feed);
+        assert!(op.request_headers().changefeed_wire_format_version);
     }
 
     /// Creating a partitioned operation without a partition target panics in
