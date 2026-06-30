@@ -107,7 +107,7 @@ pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dy
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
+        Some(TestOptions::for_emulator().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -175,7 +175,7 @@ pub async fn fault_injection_probability_one_always_fails() -> Result<(), Box<dy
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
+        Some(TestOptions::for_emulator().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -243,7 +243,7 @@ pub async fn fault_injection_429_retry_with_hit_limit() -> Result<(), Box<dyn Er
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
+        Some(TestOptions::for_emulator().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -329,7 +329,7 @@ pub async fn fault_injection_delete_item_fault_crud_succeeds() -> Result<(), Box
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
+        Some(TestOptions::for_emulator().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -421,7 +421,7 @@ pub async fn fault_injection_container_specific() -> Result<(), Box<dyn Error>> 
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
+        Some(TestOptions::for_emulator().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -495,7 +495,7 @@ pub async fn fault_injection_multiple_rules_priority() -> Result<(), Box<dyn Err
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
+        Some(TestOptions::for_emulator().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -571,7 +571,7 @@ pub async fn fault_injection_first_rule_inactive_due_to_start_time() -> Result<(
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
+        Some(TestOptions::for_emulator().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -650,7 +650,7 @@ pub async fn fault_injection_first_rule_expired_due_to_end_time() -> Result<(), 
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
+        Some(TestOptions::for_emulator().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -732,7 +732,7 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
+        Some(TestOptions::for_emulator().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -783,7 +783,7 @@ pub async fn fault_injection_empty_rules() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
+        Some(TestOptions::for_emulator().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -891,7 +891,7 @@ pub async fn fault_injection_metadata_fault_item_ops_succeed() -> Result<(), Box
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
+        Some(TestOptions::for_emulator().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -977,7 +977,7 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
+        Some(TestOptions::for_emulator().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -1154,7 +1154,7 @@ pub async fn error_diagnostics_records_retry_history() -> Result<(), Box<dyn Err
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
+        Some(TestOptions::for_emulator().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -1265,7 +1265,7 @@ pub async fn error_diagnostics_includes_fault_injection_evaluations() -> Result<
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
+        Some(TestOptions::for_emulator().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -1350,7 +1350,7 @@ pub async fn cosmos_error_accessors_match_diagnostics_after_fault() -> Result<()
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
+        Some(TestOptions::for_emulator().with_fault_injection_rules(fault_builder)),
     )
     .await
 }

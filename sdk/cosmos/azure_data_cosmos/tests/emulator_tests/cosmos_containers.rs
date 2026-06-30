@@ -6,16 +6,17 @@ use super::framework;
 
 use std::error::Error;
 
+use azure_data_cosmos::options::CreateContainerOptions;
 use azure_data_cosmos::{
+    models::PartitionKeyKind,
     models::{
-        ContainerProperties, IndexingMode, IndexingPolicy, PartitionKeyKind, PropertyPath,
-        ThroughputProperties,
+        ContainerProperties, IndexingMode, IndexingPolicy, PropertyPath, ThroughputProperties,
     },
-    CreateContainerOptions, Query,
+    Query,
 };
 use futures::TryStreamExt;
 
-use framework::TestClient;
+use framework::{TestClient, TestOptions};
 
 #[tokio::test]
 #[cfg_attr(
@@ -140,7 +141,7 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -191,7 +192,7 @@ pub async fn container_crud_hierarchical_pk() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }

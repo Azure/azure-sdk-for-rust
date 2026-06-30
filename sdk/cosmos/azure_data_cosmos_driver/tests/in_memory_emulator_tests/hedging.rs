@@ -159,7 +159,8 @@ use azure_data_cosmos_driver::models::{
 };
 use azure_data_cosmos_driver::options::{
     AvailabilityStrategy, DriverOptions, EndToEndOperationLatencyPolicy, ExcludedRegions,
-    HedgeThreshold, HedgingStrategy, OperationOptions, OperationOptionsBuilder, Region,
+    HedgeThreshold, HedgingStrategy, OperationOptions, OperationOptionsBuilder,
+    PartitionFailoverOptions, Region,
 };
 
 use super::{create_item_request, setup_multi_region, MultiRegionTestContext};
@@ -221,10 +222,16 @@ async fn make_hedging_driver(
 
     let driver_options = DriverOptions::builder(account.clone())
         .with_preferred_regions(vec![Region::EAST_US, Region::WEST_US])
+        .with_partition_failover_options(
+            PartitionFailoverOptions::builder()
+                .with_circuit_breaker_enabled(false)
+                .build()
+                .expect("partition failover options build"),
+        )
         .build();
 
     let driver = runtime
-        .get_or_create_driver(account, Some(driver_options))
+        .create_driver(driver_options)
         .await
         .expect("driver initializes against emulator metadata");
 
@@ -639,7 +646,7 @@ async fn hedging_disabled_per_operation() {
         .with_preferred_regions(vec![Region::EAST_US, Region::WEST_US])
         .build();
     let driver = runtime
-        .get_or_create_driver(account, Some(driver_options))
+        .create_driver(driver_options)
         .await
         .expect("driver initializes against emulator metadata");
 
@@ -1008,16 +1015,17 @@ async fn hedging_with_ppcb_existing_failures() {
         "ZW11bGF0b3JrZXk=",
     );
 
-    // Enable PPCB at driver init via the layered OperationOptions resolver.
-    let driver_op_options = OperationOptionsBuilder::new()
-        .with_per_partition_circuit_breaker_enabled(true)
-        .build();
+    // Enable PPCB at driver init via the driver-level PartitionFailoverOptions.
+    let partition_failover_options = PartitionFailoverOptions::builder()
+        .with_circuit_breaker_enabled(true)
+        .build()
+        .expect("valid partition failover options");
     let driver_options = DriverOptions::builder(account.clone())
         .with_preferred_regions(vec![Region::EAST_US, Region::WEST_US])
-        .with_operation_options(driver_op_options)
+        .with_partition_failover_options(partition_failover_options)
         .build();
     let driver = runtime
-        .get_or_create_driver(account, Some(driver_options))
+        .create_driver(driver_options)
         .await
         .expect("driver initializes with PPCB enabled");
 
@@ -1107,15 +1115,16 @@ async fn hedging_alternate_wins_trip_ppcb() {
         "ZW11bGF0b3JrZXk=",
     );
 
-    let driver_op_options = OperationOptionsBuilder::new()
-        .with_per_partition_circuit_breaker_enabled(true)
-        .build();
+    let partition_failover_options = PartitionFailoverOptions::builder()
+        .with_circuit_breaker_enabled(true)
+        .build()
+        .expect("valid partition failover options");
     let driver_options = DriverOptions::builder(account.clone())
         .with_preferred_regions(vec![Region::EAST_US, Region::WEST_US])
-        .with_operation_options(driver_op_options)
+        .with_partition_failover_options(partition_failover_options)
         .build();
     let driver = runtime
-        .get_or_create_driver(account, Some(driver_options))
+        .create_driver(driver_options)
         .await
         .expect("driver initializes with PPCB enabled");
 
@@ -1336,7 +1345,7 @@ async fn hedging_exclude_regions_under_503_retry() {
         .with_preferred_regions(vec![Region::EAST_US, Region::WEST_US, Region::CENTRAL_US])
         .build();
     let driver = runtime
-        .get_or_create_driver(account, Some(driver_options))
+        .create_driver(driver_options)
         .await
         .expect("driver initializes against 3-region emulator metadata");
 

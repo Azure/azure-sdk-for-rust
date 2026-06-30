@@ -20,14 +20,14 @@
 //! individual scenarios can stay focused on the SDK operation under test.
 
 use azure_core::http::StatusCode;
-use azure_data_cosmos::clients::ContainerClient;
-use azure_data_cosmos::models::{ContainerProperties, DatabaseProperties};
-use azure_data_cosmos::regions::Region;
-use azure_data_cosmos::AccountEndpoint;
-use azure_data_cosmos::AccountReference;
 use azure_data_cosmos::{
-    ContentResponseOnWrite, CosmosClient, CosmosClientBuilder, ItemReadOptions, ItemResponse,
-    ItemWriteOptions, OperationOptions, RoutingStrategy, ThrottlingRetryOptionsBuilder,
+    models::{ContainerProperties, DatabaseProperties, ItemResponse},
+    options::{
+        ContentResponseOnWrite, ItemReadOptions, ItemWriteOptions, OperationOptions,
+        OperationOptionsBuilder, Region, ThrottlingRetryOptionsBuilder,
+    },
+    AccountEndpoint, AccountReference, ContainerClient, CosmosClient, CosmosClientBuilder,
+    CosmosRuntimeBuilder, RoutingStrategy,
 };
 use azure_data_cosmos_driver::in_memory_emulator::{
     ConsistencyLevel, ContainerConfig, InMemoryEmulatorHttpClient, VirtualAccountConfig,
@@ -36,6 +36,7 @@ use azure_data_cosmos_driver::in_memory_emulator::{
 use azure_data_cosmos_driver::models::ConnectionString;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
+use std::time::{Duration, Instant};
 use uuid::Uuid;
 
 use super::validation::{
@@ -233,7 +234,11 @@ impl SdkDualBackend {
         );
 
         let emulator_client = CosmosClientBuilder::new()
-            .with_driver_runtime_builder(emulator.runtime_builder())
+            .with_runtime(
+                CosmosRuntimeBuilder::from(emulator.runtime_builder())
+                    .build()
+                    .await?,
+            )
             .build(
                 emulator_account,
                 RoutingStrategy::ProximityTo(Region::EAST_US),
@@ -312,12 +317,7 @@ impl SdkDualBackend {
             .await?;
 
         let real = if let Some(ref client) = self.real_client {
-            Some(
-                client
-                    .database_client(db_name)
-                    .container_client(container_name)
-                    .await?,
-            )
+            Some(resolve_container_when_ready(client, db_name, container_name).await?)
         } else {
             None
         };
@@ -361,6 +361,72 @@ fn write_options_with_content() -> ItemWriteOptions {
     ItemWriteOptions::default().with_operation_options(operation)
 }
 
+/// Extracts the session token's global LSN from a write response, asserting the
+/// token is present (every write under Session consistency must return one).
+fn session_global_lsn(resp: &ItemResponse, label: &str, op: &str) -> u64 {
+    let token = resp
+        .headers()
+        .session_token()
+        .unwrap_or_else(|| panic!("[{label}] {op} response must carry a session token"))
+        .as_str();
+    super::session_token::global_lsn(token)
+}
+
+/// Drives a create → replace → delete sequence against a single backend and
+/// asserts the response session token's global LSN strictly advances on every
+/// write. This is the live counterpart to the in-memory
+/// `cache_advances_as_write_responses_arrive` test: real Cosmos bumps the
+/// partition LSN (and thus the returned session token) on every write, and the
+/// in-memory emulator must match so it stays a faithful test double.
+async fn assert_session_token_advances(container: &ContainerClient, label: &str) {
+    let pk = "pk1";
+    let id = format!("advance-{label}");
+
+    let created = container
+        .create_item(
+            pk,
+            &id,
+            &TestItem {
+                id: id.clone(),
+                pk: pk.into(),
+                value: 1,
+            },
+            Some(write_options_with_content()),
+        )
+        .await
+        .unwrap();
+    let create_lsn = session_global_lsn(&created, label, "create");
+
+    let replaced = container
+        .replace_item(
+            pk,
+            &id,
+            &TestItem {
+                id: id.clone(),
+                pk: pk.into(),
+                value: 2,
+            },
+            Some(write_options_with_content()),
+        )
+        .await
+        .unwrap();
+    let replace_lsn = session_global_lsn(&replaced, label, "replace");
+
+    let deleted = container.delete_item(pk, &id, None).await.unwrap();
+    let delete_lsn = session_global_lsn(&deleted, label, "delete");
+
+    assert!(
+        replace_lsn > create_lsn,
+        "[{label}] replace must advance the session token's global LSN: \
+         create={create_lsn} replace={replace_lsn}"
+    );
+    assert!(
+        delete_lsn > replace_lsn,
+        "[{label}] delete must advance the session token's global LSN: \
+         replace={replace_lsn} delete={delete_lsn}"
+    );
+}
+
 fn padded_test_item(id: &str, value: i64, padding_len: usize) -> PaddedTestItem {
     PaddedTestItem {
         id: id.to_string(),
@@ -390,11 +456,11 @@ async fn sdk_create_database_and_container_through_driver() {
         assert_eq!(real_create_db.status(), emu_create_db.status());
 
         let real_db: DatabaseProperties = real_create_db.into_model().unwrap();
-        assert_eq!(real_db.id, db_name);
+        assert_eq!(real_db.id.as_deref(), Some(db_name.as_str()));
     }
 
     let emu_db: DatabaseProperties = emu_create_db.into_model().unwrap();
-    assert_eq!(emu_db.id, db_name);
+    assert_eq!(emu_db.id.as_deref(), Some(db_name.as_str()));
 
     let props = ContainerProperties::new(container_name.to_string(), "/pk".into());
     let emu_db_client = backend.emulator_client.database_client(&db_name);
@@ -745,6 +811,22 @@ async fn sdk_delete_item() {
     test_category = "emulator_vnext",
     ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
 )]
+async fn sdk_session_token_advances_on_create_replace_delete() {
+    let (backend, db_name, emu_container, real_container) = setup_with_container().await;
+
+    assert_session_token_advances(&emu_container, "emulator").await;
+
+    if let Some(ref real) = real_container {
+        assert_session_token_advances(real, "real").await;
+    }
+
+    backend.cleanup_real_database(&db_name).await;
+}
+#[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
 async fn sdk_create_multiple_items_and_read_back() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -962,7 +1044,12 @@ async fn sdk_create_retries_after_429_throttling() {
         azure_core::credentials::Secret::new("dGVzdGtleQ=="),
     );
     let emulator_client = CosmosClientBuilder::new()
-        .with_driver_runtime_builder(emulator.runtime_builder())
+        .with_runtime(
+            CosmosRuntimeBuilder::from(emulator.runtime_builder())
+                .build()
+                .await
+                .unwrap(),
+        )
         .build(
             emulator_account,
             RoutingStrategy::ProximityTo(Region::EAST_US),
@@ -1017,15 +1104,15 @@ async fn sdk_create_retries_after_429_throttling() {
     assert_eq!(emu_read_doc.padding.len(), 8 * 1024);
 }
 
-/// Validates that the SDK-side `CosmosClientBuilder::with_throttling_retry_options`
-/// setter actually wires the grouped [`ThrottlingRetryOptions`] through to the
-/// driver's transport-level throttle-retry loop.
+/// Validates that disabling throttle retries via per-client default
+/// [`OperationOptions`] containing a [`ThrottlingRetryOptions`] with
+/// `max_retry_count = 0` is honored end-to-end.
 ///
 /// This is the negative counterpart to [`sdk_create_retries_after_429_throttling`]:
 /// the same throttling-enabled emulator setup is used, but the client is built
 /// with `max_retry_count = 0` (retries disabled). With retries disabled the
 /// driver must surface the first 429 to the caller instead of transparently
-/// retrying, proving the refactored grouped setter is honored end-to-end.
+/// retrying, proving the grouped setter is honored end-to-end.
 #[tokio::test]
 async fn sdk_throttling_retry_options_disables_retry() {
     let run_id = Uuid::new_v4().to_string()[..8].to_string();
@@ -1063,13 +1150,22 @@ async fn sdk_throttling_retry_options_disables_retry() {
         EMULATOR_GATEWAY_URL.parse::<AccountEndpoint>().unwrap(),
         azure_core::credentials::Secret::new("dGVzdGtleQ=="),
     );
-    // Build the client with the grouped throttling-retry options setter,
-    // disabling throttle retries (max_retry_count = 0).
+    // Build the client with the grouped throttling-retry options as the per-client
+    // default operation options, disabling throttle retries (max_retry_count = 0).
     let emulator_client = CosmosClientBuilder::new()
-        .with_driver_runtime_builder(emulator.runtime_builder())
-        .with_throttling_retry_options(
-            ThrottlingRetryOptionsBuilder::new()
-                .with_max_retry_count(0)
+        .with_runtime(
+            CosmosRuntimeBuilder::from(emulator.runtime_builder())
+                .build()
+                .await
+                .unwrap(),
+        )
+        .with_default_operation_options(
+            OperationOptionsBuilder::new()
+                .with_throttling_retry_options(
+                    ThrottlingRetryOptionsBuilder::new()
+                        .with_max_retry_count(0)
+                        .build(),
+                )
                 .build(),
         )
         .build(
@@ -1192,11 +1288,9 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
     let emulator = std::sync::Arc::new(InMemoryEmulatorHttpClient::new(config));
     let emulator_store = emulator.store();
 
-    // Build the runtime with fault injection layered on top of the emulator.
-    let runtime_builder = emulator
-        .runtime_builder()
-        .with_fault_injection_rules(vec![Arc::clone(&emu_rule)])
-        .expect("distinct fault injection rule id");
+    // Build the runtime from the emulator factory (FI applies at the SDK
+    // client builder layer, not on the shared runtime).
+    let runtime_builder = emulator.runtime_builder();
 
     // Provision resources in the emulator store.
     let db_name = format!("sdk-fi-{run_id}");
@@ -1218,7 +1312,14 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
         azure_core::credentials::Secret::new("dGVzdGtleQ=="),
     );
     let emu_client = CosmosClientBuilder::new()
-        .with_driver_runtime_builder(runtime_builder)
+        .with_runtime(
+            CosmosRuntimeBuilder::from(runtime_builder)
+                .build()
+                .await
+                .unwrap(),
+        )
+        .with_fault_injection_rules(vec![Arc::clone(&emu_rule)])
+        .unwrap()
         .build(emu_account, RoutingStrategy::ProximityTo(Region::EAST_US))
         .await
         .unwrap();
@@ -1338,15 +1439,14 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
 /// Builds a real-account `CosmosClient` with fault injection rules matching the
 /// emulator test. Returns `None` when no real account is configured.
 ///
-/// Fault injection is applied at the driver runtime level via
-/// `with_fault_injection_rules` on the runtime builder, then passed into the
-/// SDK via `CosmosClientBuilder::with_driver_runtime_builder`.
+/// Fault injection is applied at the SDK builder level via
+/// `with_fault_injection`; it is forwarded onto the per-driver options at
+/// build time.
 #[cfg(feature = "fault_injection")]
 async fn resolve_real_client_with_fault_injection(
     _condition: azure_data_cosmos_driver::fault_injection::FaultInjectionCondition,
     _result: azure_data_cosmos_driver::fault_injection::FaultInjectionResult,
 ) -> Result<Option<CosmosClient>, Box<dyn Error>> {
-    use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
     use azure_data_cosmos_driver::fault_injection::{
         FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
         FaultInjectionRuleBuilder, FaultOperationType,
@@ -1395,11 +1495,9 @@ async fn resolve_real_client_with_fault_injection(
             .build(),
     );
 
-    // Apply fault injection to the runtime builder and pass it to the SDK.
-    let runtime_builder = CosmosDriverRuntime::builder().with_fault_injection_rules(vec![rule])?;
-
+    // Apply fault injection at the SDK builder layer.
     let client = CosmosClientBuilder::new()
-        .with_driver_runtime_builder(runtime_builder)
+        .with_fault_injection_rules(vec![rule])?
         .build(account, RoutingStrategy::ProximityTo(Region::EAST_US))
         .await?;
 
@@ -1450,4 +1548,74 @@ async fn resolve_real_client() -> Result<Option<CosmosClient>, Box<dyn Error>> {
         .await?;
 
     Ok(Some(client))
+}
+
+/// Detects the transient `404 / 1013 CollectionCreateInProgress` status that a
+/// real Cosmos account returns while a freshly created container is still being
+/// provisioned in the background.
+fn collection_create_in_progress(err: &azure_data_cosmos::CosmosError) -> bool {
+    let status = err.status();
+    status.status_code() == StatusCode::NotFound
+        && status.sub_status().map(|s| s.value()) == Some(1013)
+}
+
+/// Resolves a container on a real account, tolerating asynchronous container
+/// provisioning.
+///
+/// Real accounts create containers in the background, so the first metadata
+/// resolve — and the first data-plane request — can fail with
+/// `404 / 1013 CollectionCreateInProgress` for several seconds after
+/// `create_container` returns. This polls (with exponential backoff up to a
+/// bounded deadline) until the container both resolves and serves a data-plane
+/// read, so live dual-backend tests don't flake on creation timing. The
+/// in-memory emulator provisions synchronously and never hits this path.
+async fn resolve_container_when_ready(
+    client: &CosmosClient,
+    db_name: &str,
+    container_name: &str,
+) -> Result<ContainerClient, Box<dyn Error>> {
+    const READY_TIMEOUT: Duration = Duration::from_secs(120);
+    const MAX_BACKOFF: Duration = Duration::from_secs(5);
+    let deadline = Instant::now() + READY_TIMEOUT;
+
+    // Phase 1: resolve the container's metadata (routing / PK ranges).
+    let mut backoff = Duration::from_millis(250);
+    let container = loop {
+        match client
+            .database_client(db_name)
+            .container_client(container_name)
+            .await
+        {
+            Ok(container) => break container,
+            Err(e) if collection_create_in_progress(&e) && Instant::now() < deadline => {
+                tokio::time::sleep(backoff).await;
+                backoff = (backoff * 2).min(MAX_BACKOFF);
+            }
+            Err(e) => return Err(e.into()),
+        }
+    };
+
+    // Phase 2: confirm the container serves data-plane reads. A guaranteed-
+    // missing item returns `404 / 1003 NotFound` once the container is ready,
+    // versus `404 / 1013` while it is still provisioning.
+    backoff = Duration::from_millis(250);
+    loop {
+        match container
+            .read_item("readiness-probe", "readiness-probe", None)
+            .await
+        {
+            Ok(_) => return Ok(container),
+            Err(e)
+                if e.status().status_code() == StatusCode::NotFound
+                    && !collection_create_in_progress(&e) =>
+            {
+                return Ok(container)
+            }
+            Err(e) if collection_create_in_progress(&e) && Instant::now() < deadline => {
+                tokio::time::sleep(backoff).await;
+                backoff = (backoff * 2).min(MAX_BACKOFF);
+            }
+            Err(e) => return Err(e.into()),
+        }
+    }
 }

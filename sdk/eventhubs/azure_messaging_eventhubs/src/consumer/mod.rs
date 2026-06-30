@@ -25,7 +25,7 @@ use std::{
     sync::Arc,
     time::{SystemTime, UNIX_EPOCH},
 };
-use tracing::{debug, trace};
+use tracing::{info, trace, warn};
 
 /// A client that can be used to receive events from an Event Hub.
 pub struct ConsumerClient {
@@ -44,6 +44,7 @@ struct ConsumerClientOptions {
     instance_id: Option<String>,
     retry_options: Option<RetryOptions>,
     custom_endpoint: Option<Url>,
+    cbs_token_type: Option<&'static str>,
 }
 
 impl ConsumerClient {
@@ -99,6 +100,7 @@ impl ConsumerClient {
                 options.custom_endpoint,
                 credential,
                 retry_options,
+                options.cbs_token_type,
             ),
             eventhub: eventhub_name,
             endpoint: url,
@@ -144,16 +146,27 @@ impl ConsumerClient {
     /// }
     /// ```
     pub async fn close(self) -> Result<()> {
-        trace!("Closing consumer client for {}.", self.endpoint);
+        let connection_id = self.recoverable_connection.get_connection_id().to_string();
+        trace!(
+            connection_id = %connection_id,
+            source_url = %self.endpoint,
+            "Closing consumer client."
+        );
         let recoverable_connection =
             Arc::try_unwrap(self.recoverable_connection).map_err(|_| {
+                warn!(
+                    connection_id = %connection_id,
+                    source_url = %self.endpoint,
+                    "Could not close consumer recoverable connection, multiple references exist."
+                );
                 EventHubsError::with_message(
                     "Could not close consumer recoverable connection, multiple references exist",
                 )
             })?;
         trace!(
-            "No references to connection, closing connection for {}.",
-            self.endpoint
+            connection_id = %connection_id,
+            source_url = %self.endpoint,
+            "No references to connection, closing connection."
         );
         recoverable_connection.close_connection().await?;
         Ok(())
@@ -233,6 +246,17 @@ impl ConsumerClient {
     ///     Ok(())
     /// }
     /// ```
+    #[tracing::instrument(
+        level = "debug",
+        skip_all,
+        fields(
+            connection_id = %self.recoverable_connection.get_connection_id(),
+            partition_id = %partition_id,
+            consumer_group = %self.consumer_group,
+            eventhub = %self.eventhub,
+        ),
+        err,
+    )]
     pub async fn open_receiver_on_partition(
         &self,
         partition_id: String,
@@ -247,8 +271,9 @@ impl ConsumerClient {
         let start_expression = StartPosition::start_expression(&options.start_position);
 
         trace!(
-            "Opening receiver on url {} partition {partition_id}.",
-            self.endpoint
+            partition_id = %partition_id,
+            source_url = %self.endpoint,
+            "Opening receiver on partition."
         );
 
         let source_url = format!("{}/Partitions/{}", self.endpoint, partition_id);
@@ -282,7 +307,13 @@ impl ConsumerClient {
             ..Default::default()
         };
 
-        debug!("Receiver attached on partition {partition_id}.");
+        info!(
+            partition_id = %partition_id,
+            consumer_group = %self.consumer_group,
+            eventhub = %self.eventhub,
+            source_url = %source_url,
+            "Receiver attached on partition."
+        );
         Ok(EventReceiver::new(
             self.recoverable_connection.clone(),
             receiver_options,
@@ -542,7 +573,14 @@ impl StartPosition {
 
 pub mod builders {
     use super::*;
-    use crate::Result;
+    use crate::{
+        common::{
+            connection_string::{resolve_eventhub, ConnectionString},
+            sas_credential::SasCredential,
+            SAS_TOKEN_TYPE,
+        },
+        Result,
+    };
     use std::sync::Arc;
 
     /// A builder for creating a [`ConsumerClient`].
@@ -698,6 +736,78 @@ pub mod builders {
                     instance_id: self.instance_id,
                     retry_options: self.retry_options,
                     custom_endpoint,
+                    cbs_token_type: None,
+                },
+            )?;
+            consumer.ensure_connection().await?;
+            Ok(consumer)
+        }
+
+        /// Opens a connection to the Event Hub using a connection string.
+        ///
+        /// This is an alternative to [`open`](Self::open) for development and
+        /// test scenarios that authenticate with a Shared Access Signature
+        /// instead of Microsoft Entra ID. For production, prefer
+        /// [`open`](Self::open) with a `TokenCredential`.
+        ///
+        /// When the connection string carries a `SharedAccessKeyName` /
+        /// `SharedAccessKey`, the client signs and refreshes SAS tokens itself.
+        /// When it carries a pre-formed `SharedAccessSignature`, that token is
+        /// used as-is and *cannot* be refreshed (there is no key to re-sign
+        /// with); the broker drops the link once the token's own expiry elapses.
+        ///
+        /// # Arguments
+        /// * `connection_string` - An Event Hubs connection string, e.g.
+        ///   `Endpoint=sb://<ns>.servicebus.windows.net/;SharedAccessKeyName=<policy>;SharedAccessKey=<key>`.
+        ///   It may include an `EntityPath` naming the Event Hub.
+        /// * `eventhub` - The Event Hub name. Required unless the connection
+        ///   string includes an `EntityPath`; if both are given they must agree.
+        ///
+        /// # Returns
+        /// A new instance of [`ConsumerClient`].
+        ///
+        /// # Examples
+        ///
+        /// ```no_run
+        /// use azure_messaging_eventhubs::ConsumerClient;
+        ///
+        /// #[tokio::main]
+        /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+        ///     let connection_string = std::env::var("EVENTHUBS_CONNECTION_STRING")?;
+        ///     let consumer = ConsumerClient::builder()
+        ///         .open_with_connection_string(&connection_string, Some("my_eventhub"))
+        ///         .await?;
+        ///     Ok(())
+        /// }
+        /// ```
+        pub async fn open_with_connection_string(
+            self,
+            connection_string: &str,
+            eventhub: Option<&str>,
+        ) -> Result<super::ConsumerClient> {
+            let connection_string: ConnectionString = connection_string.parse()?;
+            let eventhub = resolve_eventhub(&connection_string, eventhub)?;
+            let credential = Arc::new(SasCredential::from_connection_string(
+                &connection_string,
+                &eventhub,
+            )?);
+
+            let custom_endpoint = match self.custom_endpoint {
+                Some(endpoint) => Some(Url::parse(&endpoint).map_err(azure_core::Error::from)?),
+                None => None,
+            };
+
+            let consumer = super::ConsumerClient::new(
+                &connection_string.fully_qualified_namespace,
+                eventhub,
+                self.consumer_group,
+                credential,
+                ConsumerClientOptions {
+                    application_id: self.application_id,
+                    instance_id: self.instance_id,
+                    retry_options: self.retry_options,
+                    custom_endpoint,
+                    cbs_token_type: Some(SAS_TOKEN_TYPE),
                 },
             )?;
             consumer.ensure_connection().await?;

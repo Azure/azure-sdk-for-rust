@@ -10,8 +10,10 @@ use azure_data_cosmos::fault_injection::{
     CustomResponseBuilder, FaultInjectionConditionBuilder, FaultInjectionResultBuilder,
     FaultInjectionRuleBuilder, FaultOperationType,
 };
-use azure_data_cosmos::models::{ContainerProperties, ItemResponse};
-use azure_data_cosmos::{PatchInstructions, PatchItemOptions, PatchOperation};
+use azure_data_cosmos::models::ContainerProperties;
+use azure_data_cosmos::models::ItemResponse;
+use azure_data_cosmos::models::{PatchInstructions, PatchOperation};
+use azure_data_cosmos::options::PatchItemOptions;
 use framework::TestClient;
 use framework::TestOptions;
 use framework::TestRunContext;
@@ -125,7 +127,7 @@ pub async fn patch_item_round_trip() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -165,7 +167,7 @@ pub async fn patch_item_missing_returns_not_found() -> Result<(), Box<dyn Error>
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -220,7 +222,7 @@ pub async fn patch_item_honors_max_attempts_option() -> Result<(), Box<dyn Error
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -308,7 +310,7 @@ async fn setup_fault_injected_container(
 )]
 pub async fn patch_item_412_retry_succeeds() -> Result<(), Box<dyn Error>> {
     let rule = build_replace_412_rule("sdk-patch-412-once", Some(1));
-    let options = TestOptions::new().with_fault_injection_rules(vec![Arc::clone(&rule)]);
+    let options = TestOptions::for_emulator().with_fault_injection_rules(vec![Arc::clone(&rule)]);
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -374,7 +376,7 @@ pub async fn patch_item_412_retry_succeeds() -> Result<(), Box<dyn Error>> {
 pub async fn patch_item_412_exhaustion_surfaces_precondition_failed() -> Result<(), Box<dyn Error>>
 {
     let rule = build_replace_412_rule("sdk-patch-412-always", None);
-    let options = TestOptions::new().with_fault_injection_rules(vec![Arc::clone(&rule)]);
+    let options = TestOptions::for_emulator().with_fault_injection_rules(vec![Arc::clone(&rule)]);
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {

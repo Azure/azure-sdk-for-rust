@@ -6,11 +6,9 @@ use super::framework;
 
 use std::error::Error;
 
-use azure_data_cosmos::{
-    models::{ContainerProperties, ThroughputProperties},
-    CreateContainerOptions,
-};
-use framework::TestClient;
+use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
+use azure_data_cosmos::options::CreateContainerOptions;
+use framework::{TestClient, TestOptions};
 
 #[tokio::test]
 #[cfg_attr(
@@ -55,7 +53,7 @@ pub async fn container_throughput_crud_manual() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -96,7 +94,7 @@ pub async fn container_throughput_crud_autoscale() -> Result<(), Box<dyn Error>>
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }

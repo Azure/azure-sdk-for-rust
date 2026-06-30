@@ -9,14 +9,17 @@ use azure_core::{
     Uuid,
 };
 use azure_data_cosmos::clients::ContainerClient;
-use azure_data_cosmos::models::{ContainerProperties, ItemResponse};
-use azure_data_cosmos::{
-    ContentResponseOnWrite, ETag, ItemWriteOptions, OperationOptions, PartitionKey, Precondition,
+use azure_data_cosmos::models::ContainerProperties;
+use azure_data_cosmos::models::ItemResponse;
+use azure_data_cosmos::options::{
+    ContentResponseOnWrite, ItemWriteOptions, OperationOptions, Precondition,
 };
+use azure_data_cosmos::PartitionKey;
 use framework::get_effective_hub_endpoint;
-use framework::TestClient;
 use framework::TestRunContext;
+use framework::{TestClient, TestOptions};
 use serde::{Deserialize, Serialize};
+use serde_bytes::ByteBuf;
 use std::{borrow::Cow, error::Error};
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
@@ -31,6 +34,20 @@ struct TestItem {
     value: usize,
     nested: NestedItem,
     bool_value: bool,
+}
+
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
+struct Utf8PartitionKeyItem {
+    id: Cow<'static, str>,
+    partition_key: Cow<'static, str>,
+    message: Cow<'static, str>,
+}
+
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
+struct InvalidUtf8BodyItem {
+    id: Cow<'static, str>,
+    partition_key: Cow<'static, str>,
+    raw_payload: ByteBuf,
 }
 
 /// Helper function to assert common response properties.
@@ -239,7 +256,7 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -305,7 +322,7 @@ pub async fn item_read_system_properties() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -362,7 +379,7 @@ pub async fn item_upsert_new() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -426,7 +443,7 @@ pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -525,7 +542,7 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -574,8 +591,7 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
                 .headers()
                 .etag()
                 .expect("expected the etag to be returned")
-                .as_str()
-                .into();
+                .clone();
 
             //Replace item with correct Etag
             item.value = 24;
@@ -588,7 +604,7 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
                     &item,
                     Some(
                         ItemWriteOptions::default()
-                            .with_precondition(Precondition::IfMatch(ETag::from(etag.to_string()))),
+                            .with_precondition(Precondition::IfMatch(Etag::from(etag.to_string()))),
                     ),
                 )
                 .await?;
@@ -610,7 +626,7 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
                     &item,
                     Some(
                         ItemWriteOptions::default()
-                            .with_precondition(Precondition::IfMatch(ETag::from("incorrectEtag"))),
+                            .with_precondition(Precondition::IfMatch(Etag::from("incorrectEtag"))),
                     ),
                 )
                 .await;
@@ -625,7 +641,7 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -674,8 +690,7 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
                 .headers()
                 .etag()
                 .expect("expected the etag to be returned")
-                .as_str()
-                .into();
+                .clone();
 
             //Upsert item with correct Etag
             item.value = 24;
@@ -688,7 +703,7 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
                     &item,
                     Some(
                         ItemWriteOptions::default()
-                            .with_precondition(Precondition::IfMatch(ETag::from(etag.to_string()))),
+                            .with_precondition(Precondition::IfMatch(Etag::from(etag.to_string()))),
                     ),
                 )
                 .await?;
@@ -710,7 +725,7 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
                     &item,
                     Some(
                         ItemWriteOptions::default()
-                            .with_precondition(Precondition::IfMatch(ETag::from("incorrectEtag"))),
+                            .with_precondition(Precondition::IfMatch(Etag::from("incorrectEtag"))),
                     ),
                 )
                 .await;
@@ -725,7 +740,7 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -774,8 +789,7 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
                 .headers()
                 .etag()
                 .expect("expected the etag to be returned")
-                .as_str()
-                .into();
+                .clone();
 
             //Delete item with correct Etag
             let delete_response = container_client
@@ -784,7 +798,7 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
                     &item_id,
                     Some(
                         ItemWriteOptions::default()
-                            .with_precondition(Precondition::IfMatch(ETag::from(etag.to_string()))),
+                            .with_precondition(Precondition::IfMatch(Etag::from(etag.to_string()))),
                     ),
                 )
                 .await?;
@@ -813,7 +827,7 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
                     &item_id,
                     Some(
                         ItemWriteOptions::default()
-                            .with_precondition(Precondition::IfMatch(ETag::from("incorrectEtag"))),
+                            .with_precondition(Precondition::IfMatch(Etag::from("incorrectEtag"))),
                     ),
                 )
                 .await;
@@ -828,7 +842,7 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -997,7 +1011,7 @@ pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -1056,7 +1070,7 @@ pub async fn create_item_duplicate_returns_conflict() -> Result<(), Box<dyn Erro
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -1110,7 +1124,7 @@ pub async fn create_item_with_content_response() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -1204,7 +1218,116 @@ pub async fn create_item_response_metadata() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+pub async fn item_partition_key_non_ascii_utf8() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
+            let unique_id = Uuid::new_v4().to_string();
+
+            // cspell:disable-next-line
+            let partition_key_value = format!("分区-κλειδί-مفتاح-🙂-{}", unique_id);
+            let item_id = format!("utf8-pk-{}", unique_id);
+            let item = Utf8PartitionKeyItem {
+                id: item_id.clone().into(),
+                partition_key: partition_key_value.clone().into(),
+                message: "こんにちは Cosmos - UTF-8 ✅".into(),
+            };
+
+            let create_response = container_client
+                .create_item(&partition_key_value, &item_id, &item, None)
+                .await?;
+            assert_response(
+                &create_response,
+                StatusCode::Created,
+                &get_effective_hub_endpoint(),
+                false,
+            );
+
+            let read_response = run_context
+                .read_item(&container_client, &partition_key_value, &item_id, None)
+                .await?;
+            assert_response(
+                &read_response,
+                StatusCode::Ok,
+                &get_effective_hub_endpoint(),
+                true,
+            );
+            let read_item: Utf8PartitionKeyItem = read_response.into_model()?;
+            assert_eq!(item, read_item);
+
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+pub async fn item_body_invalid_utf8_bytes_roundtrip() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
+            let unique_id = Uuid::new_v4().to_string();
+
+            let partition_key_value = format!("raw-bytes-{}", unique_id);
+            let item_id = format!("invalid-utf8-body-{}", unique_id);
+
+            // Include bytes that are not valid UTF-8 sequences.
+            let invalid_utf8_bytes = vec![0xed, 0xa0, 0x80, 0xf0, 0x28, 0x8c, 0x28];
+            assert!(
+                std::str::from_utf8(&invalid_utf8_bytes).is_err(),
+                "test fixture should contain invalid UTF-8"
+            );
+
+            let item = InvalidUtf8BodyItem {
+                id: item_id.clone().into(),
+                partition_key: partition_key_value.clone().into(),
+                raw_payload: ByteBuf::from(invalid_utf8_bytes.clone()),
+            };
+
+            let create_response = container_client
+                .create_item(&partition_key_value, &item_id, &item, None)
+                .await?;
+            assert_response(
+                &create_response,
+                StatusCode::Created,
+                &get_effective_hub_endpoint(),
+                false,
+            );
+
+            let read_response = run_context
+                .read_item(&container_client, &partition_key_value, &item_id, None)
+                .await?;
+            assert_response(
+                &read_response,
+                StatusCode::Ok,
+                &get_effective_hub_endpoint(),
+                true,
+            );
+            let read_item: InvalidUtf8BodyItem = read_response.into_model()?;
+            assert_eq!(
+                read_item.raw_payload,
+                ByteBuf::from(invalid_utf8_bytes),
+                "invalid UTF-8 bytes should round-trip in document body"
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
     )
     .await
 }

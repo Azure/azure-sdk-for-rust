@@ -46,7 +46,7 @@ use crate::models::{
 };
 use crate::options::OperationOptions;
 use async_trait::async_trait;
-use azure_core::http::StatusCode;
+use azure_core::http::{Etag, StatusCode};
 use std::num::NonZeroU8;
 use std::sync::Arc;
 
@@ -460,7 +460,7 @@ fn session_token_from_error(err: &crate::error::CosmosError) -> Option<SessionTo
 fn synthesize_post_image_body(
     merged_bytes: Vec<u8>,
     replace_body: Vec<u8>,
-    replace_etag: Option<&crate::models::ETag>,
+    replace_etag: Option<&Etag>,
 ) -> Vec<u8> {
     if !replace_body.is_empty() {
         return replace_body;
@@ -476,7 +476,7 @@ fn synthesize_post_image_body(
     };
     map.insert(
         "_etag".to_string(),
-        serde_json::Value::String(etag.as_str().to_owned()),
+        serde_json::Value::String(etag.to_string()),
     );
     serde_json::to_vec(&value).unwrap_or(merged_bytes)
 }
@@ -501,7 +501,7 @@ fn build_read_sub_op(
 fn build_replace_sub_op(
     item_ref: crate::models::ItemReference,
     merged_bytes: Vec<u8>,
-    etag: crate::models::ETag,
+    etag: Etag,
     read_response_session_token: Option<crate::models::SessionToken>,
 ) -> CosmosOperation {
     let mut op = CosmosOperation::replace_item(item_ref)
@@ -665,8 +665,8 @@ fn path_overlaps_partition_key(op_path: &str, pk_path: &str) -> bool {
 mod tests {
     use super::*;
     use crate::models::{
-        AccountReference, ContainerProperties, ContainerReference, ETag, ItemReference,
-        OperationType, PartitionKey, PartitionKeyDefinition, SessionToken, SystemProperties,
+        AccountReference, ContainerProperties, ContainerReference, ItemReference, OperationType,
+        PartitionKey, PartitionKeyDefinition, SessionToken, SystemProperties,
     };
     use azure_core::http::Url;
     use std::borrow::Cow;
@@ -762,7 +762,7 @@ mod tests {
         // view we just read from, so the session token comes from the Read response,
         // not from the caller's options.
         let read_response_token = SessionToken(Cow::Owned("0:1#99".into()));
-        let etag = ETag::from("\"abc\"");
+        let etag = Etag::from("\"abc\"");
         let body = b"{\"id\":\"doc1\"}".to_vec();
 
         let op = build_replace_sub_op(
@@ -787,7 +787,7 @@ mod tests {
 
     #[test]
     fn replace_sub_op_omits_token_when_read_response_has_none() {
-        let etag = ETag::from("\"abc\"");
+        let etag = Etag::from("\"abc\"");
         let op = build_replace_sub_op(test_item_ref(), Vec::new(), etag, None);
 
         assert_eq!(op.operation_type(), OperationType::Replace);
@@ -1171,7 +1171,7 @@ mod tests {
                 } => {
                     let mut headers = CosmosResponseHeaders::new();
                     if let Some(tag) = etag {
-                        headers.etag = Some(ETag::from(tag));
+                        headers.etag = Some(Etag::from(tag));
                     }
                     if let Some(token) = session_token {
                         headers.session_token = Some(SessionToken(Cow::Owned(token.into())));
@@ -1528,7 +1528,7 @@ mod tests {
             test_item_ref(),
             vec![PatchOperation::set("/x", serde_json::json!(1))],
         )
-        .with_precondition(Precondition::if_match(ETag::from("\"abc\"")));
+        .with_precondition(Precondition::if_match(Etag::from("\"abc\"")));
 
         let err = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
             .await
@@ -1753,7 +1753,7 @@ mod tests {
 
         // Header carries the Replace's new etag (existing behavior).
         assert_eq!(
-            resp.headers().etag.as_ref().map(|t| t.as_str()),
+            resp.headers().etag.as_ref().map(|t| -> &str { t.as_ref() }),
             Some("\"v2\""),
             "response header etag must be the Replace's etag"
         );
@@ -1841,7 +1841,7 @@ mod tests {
                     other => panic!("unexpected sub-op {other:?}"),
                 };
                 let mut headers = CosmosResponseHeaders::new();
-                headers.etag = Some(ETag::from("\"v1\""));
+                headers.etag = Some(Etag::from("\"v1\""));
                 let diagnostics = Arc::new(
                     DiagnosticsContextBuilder::new(
                         ActivityId::new_uuid(),

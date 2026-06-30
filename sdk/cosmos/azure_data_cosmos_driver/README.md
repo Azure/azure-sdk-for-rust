@@ -4,11 +4,7 @@ Core implementation layer for Azure Cosmos DB, providing transport, routing, and
 
 ## Purpose
 
-`azure_data_cosmos_driver` is designed for:
-
-- **Cross-language SDK reuse**: Provides a common implementation that can be reused across language SDKs
-- **Advanced scenarios**: Direct use by developers who need fine-grained control over Cosmos DB operations
-- **Internal implementation**: Used internally by `azure_data_cosmos` (the primary Rust SDK)
+The Azure Cosmos DB Driver is a foundational library that implements the core transport, routing, and protocol handling for Azure Cosmos DB. It is designed to be used by language-specific SDKs (e.g., `azure_data_cosmos`) which provide type-safe, idiomatic APIs and handle serialization/deserialization of Cosmos DB resources.
 
 ## Support Model
 
@@ -17,6 +13,7 @@ even when issues are ultimately traced to the driver layer. The driver is an imp
 
 The Cosmos DB Driver is an internal component shared across several SDKs and is not intended for direct use by most developers.
 Applications which use the driver **directly** are **not covered by Microsoft Support SLAs** and receive only community support through GitHub issues and pull requests.
+Any driver APIs which are re-exported through the public SDK (e.g., `azure_data_cosmos`) are considered part of the supported public API and are covered by Microsoft Support SLAs when used through the SDK. However, direct usage of the driver APIs that are not re-exported by the SDK is not supported.
 
 ## Key Features
 
@@ -131,7 +128,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let runtime = CosmosDriverRuntime::builder().build().await?;
 
     // Get or create a driver for the account (singleton per endpoint)
-    let driver = runtime.get_or_create_driver(account, None).await?;
+    let driver = runtime.create_driver(DriverOptions::builder(account).build()).await?;
 
     // Driver operations work with raw bytes
     // let response = driver.execute_operation(operation, options).await?;

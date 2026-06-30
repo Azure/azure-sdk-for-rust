@@ -333,28 +333,6 @@ dependencies = [
 
 [[package]]
 name = "azure_core_amqp"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "15daabffc2fcce01c54333137e40b216f5be8401b3a1bdafe1a633972f7346e9"
-dependencies = [
- "async-trait",
- "azure_core 1.0.0",
- "fe2o3-amqp",
- "fe2o3-amqp-cbs",
- "fe2o3-amqp-ext",
- "fe2o3-amqp-management",
- "fe2o3-amqp-types",
- "serde",
- "serde_amqp",
- "serde_bytes",
- "tokio",
- "tracing",
- "typespec 1.0.0",
- "typespec_macros 1.0.0",
-]
-
-[[package]]
-name = "azure_core_amqp"
 version = "1.1.0-beta.1"
 dependencies = [
  "async-trait",
@@ -516,7 +494,7 @@ dependencies = [
 
 [[package]]
 name = "azure_data_cosmos"
-version = "0.36.0"
+version = "0.37.0"
 dependencies = [
  "async-lock",
  "async-trait",
@@ -530,6 +508,7 @@ dependencies = [
  "pin-project",
  "reqwest",
  "serde",
+ "serde_bytes",
  "serde_json",
  "time",
  "tokio",
@@ -553,13 +532,13 @@ dependencies = [
 
 [[package]]
 name = "azure_data_cosmos_driver"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "arc-swap",
  "async-lock",
  "async-trait",
  "azure_core 1.0.0",
- "azure_data_cosmos_macros 0.1.0",
+ "azure_data_cosmos_macros",
  "azure_identity 1.0.0",
  "backtrace",
  "base64 0.22.1",
@@ -584,18 +563,7 @@ dependencies = [
 
 [[package]]
 name = "azure_data_cosmos_macros"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d950637b4229226b5d4a41d71d777b8193ebe86abcbf57e564d5a4bb95e7562"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.117",
-]
-
-[[package]]
-name = "azure_data_cosmos_macros"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -678,16 +646,20 @@ dependencies = [
  "async-stream",
  "async-trait",
  "azure_core 1.0.0",
- "azure_core_amqp 1.0.0",
+ "azure_core_amqp",
  "azure_core_test 0.1.0",
  "azure_identity 1.0.0",
  "azure_messaging_eventhubs",
+ "base64 0.22.1",
  "criterion",
  "fe2o3-amqp",
  "futures",
+ "hmac",
+ "percent-encoding",
  "rand 0.10.1",
  "rand_chacha 0.10.0",
  "rustc_version",
+ "sha2",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -725,7 +697,7 @@ dependencies = [
  "async-stream",
  "async-trait",
  "azure_core 1.0.0",
- "azure_core_amqp 1.0.0",
+ "azure_core_amqp",
  "azure_core_test 0.1.0",
  "azure_identity 1.0.0",
  "futures",
@@ -842,6 +814,7 @@ dependencies = [
  "azure_core_test 0.1.0",
  "azure_identity 1.0.0",
  "azure_storage_blob_test",
+ "azure_storage_common",
  "bytes",
  "clap",
  "flate2",
@@ -875,6 +848,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "azure_storage_common"
+version = "0.1.0"
+dependencies = [
+ "azure_core 1.0.0",
+ "serde",
+ "serde_json",
+ "time",
+]
+
+[[package]]
 name = "azure_storage_queue"
 version = "1.1.0-beta.1"
 dependencies = [
@@ -883,6 +866,7 @@ dependencies = [
  "azure_core_opentelemetry 1.0.0",
  "azure_core_test 0.1.0",
  "azure_identity 1.0.0",
+ "azure_storage_common",
  "clap",
  "futures",
  "opentelemetry-stdout",

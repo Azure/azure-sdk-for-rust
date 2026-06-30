@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
+// cspell:ignore sastoken refreshable
+
 use crate::{common::recoverable::RecoverableConnection, error::Result};
 use async_lock::RwLock;
 use azure_core::{
@@ -12,15 +14,22 @@ use azure_core::{
 use azure_core_amqp::{AmqpClaimsBasedSecurityApis as _, AmqpError};
 use rand::{rng, RngExt};
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     sync::{Arc, Mutex as SyncMutex, OnceLock, Weak},
 };
-use tracing::{debug, trace, warn};
+use tracing::{debug, error, info, trace, warn};
 
 // The number of seconds before token expiration that we wake up to refresh the token.
 const TOKEN_REFRESH_BIAS: Duration = Duration::minutes(6); // By default, we refresh tokens 6 minutes before they expire.
 const TOKEN_REFRESH_JITTER_MIN: Duration = Duration::seconds(-5); // Minimum jitter (added from the bias, so a negative number means we refresh before the bias)
 const TOKEN_REFRESH_JITTER_MAX: Duration = Duration::seconds(5); // Maximum jitter (added to the bias)
+
+// Floor delay applied after a pass in which one or more token refreshes failed.
+// A failed refresh leaves the token's `expires_on` unchanged, so its computed
+// refresh_time stays in the past and the next pass would not sleep. Without this
+// floor a persistent failure (credential outage, CBS down) busy-spins, hammering
+// get_token / perform_authorization with no backoff. See PR #4593 review.
+const TOKEN_REFRESH_RETRY_BACKOFF: Duration = Duration::seconds(30);
 
 const EVENTHUBS_AUTHORIZATION_SCOPE: &str = "https://eventhubs.azure.net/.default";
 
@@ -47,6 +56,9 @@ pub(crate) struct Authorizer {
     /// Bias to apply to token refresh time. This determines how much time we will refresh the token before it expires.
     token_refresh_bias: SyncMutex<TokenRefreshTimes>,
     credential: Arc<dyn TokenCredential>,
+    /// The CBS token type to present. `None` (the default) means a JWT/Entra
+    /// token; `Some("servicebus.windows.net:sastoken")` for a SAS credential.
+    cbs_token_type: Option<&'static str>,
     recoverable_connection: Weak<RecoverableConnection>,
     /// This is used to disable authorization for testing purposes.
     #[cfg(test)]
@@ -57,15 +69,20 @@ unsafe impl Send for Authorizer {}
 unsafe impl Sync for Authorizer {}
 
 impl Authorizer {
+    /// Creates an authorizer. `cbs_token_type` is `None` for JWT/Entra
+    /// credentials and `Some("servicebus.windows.net:sastoken")` for SAS
+    /// (connection-string) credentials.
     pub(crate) fn new(
         recoverable_connection: Weak<RecoverableConnection>,
         credential: Arc<dyn TokenCredential>,
+        cbs_token_type: Option<&'static str>,
     ) -> Self {
         Self {
             authorization_refresher: OnceLock::new(),
             authorization_scopes: RwLock::new(HashMap::new()),
             token_refresh_bias: SyncMutex::new(TokenRefreshTimes::default()),
             credential,
+            cbs_token_type,
             recoverable_connection,
             #[cfg(test)]
             disable_authorization: SyncMutex::new(false),
@@ -90,6 +107,15 @@ impl Authorizer {
         Ok(())
     }
 
+    #[tracing::instrument(
+        level = "debug",
+        skip_all,
+        fields(
+            connection_id = %connection.get_connection_id(),
+            path = %path,
+        ),
+        err(level = "warn"),
+    )]
     pub(crate) async fn authorize_path(
         self: &Arc<Self>,
         connection: &Arc<RecoverableConnection>,
@@ -177,19 +203,32 @@ impl Authorizer {
             .get_cbs_client()
             .authorize_path(
                 url.to_string(),
-                None,
+                self.cbs_token_type.map(String::from),
                 &new_token.token,
                 new_token.expires_on,
             )
             .await
     }
 
+    #[tracing::instrument(level = "debug", skip_all)]
     async fn refresh_tokens_task(self: Arc<Self>) {
+        // The refresh loop is the only thing keeping cached tokens alive; if it
+        // ever returns, every cached token will silently expire. Per-path
+        // get_token/authorization failures are handled (logged + retried) inside
+        // refresh_tokens(), so reaching here means the loop hit a terminal
+        // condition. An Err is a genuine fault (e.g. a poisoned lock) and is
+        // surfaced at error!. An Ok(()) is the expected clean shutdown: the
+        // recoverable connection was dropped, so there is nothing left to
+        // refresh and info! is the right level.
         let result = self.refresh_tokens().await;
-        if let Err(e) = result {
-            warn!(err=?e, "Error refreshing tokens: {e}");
+        match result {
+            Err(e) => {
+                error!(err = ?e, "Token refresher task exited with error; cached tokens will no longer be refreshed: {e}");
+            }
+            Ok(()) => {
+                info!("Token refresher task stopped after the recoverable connection was dropped.");
+            }
         }
-        debug!("Token refresher task completed.");
     }
 
     /// Refresh the authorization tokens associated with this connection manager.
@@ -212,11 +251,20 @@ impl Authorizer {
     /// the Event Hubs service.
     async fn refresh_tokens(self: &Arc<Self>) -> Result<()> {
         debug!("Refreshing tokens.");
+        // Paths whose credential cannot renew their token (e.g. a pre-formed
+        // SAS supplied via a connection string): a refresh returns the same
+        // expiry it already had. Excluding them keeps the loop from busy-
+        // refreshing a token it cannot extend; the broker enforces the real
+        // `se`, and recovery re-authorizes the path if the link later drops.
+        let mut non_refreshable: HashSet<Url> = HashSet::new();
         loop {
             let mut expiration_times = vec![];
             {
                 let scopes = self.authorization_scopes.read().await;
                 for (path, token) in scopes.iter() {
+                    if non_refreshable.contains(path) {
+                        continue;
+                    }
                     debug!(
                         "Token expiration time for path {}: {}",
                         path, token.expires_on
@@ -302,6 +350,9 @@ impl Authorizer {
                 let scopes = self.authorization_scopes.read().await;
                 let mut to_refresh = Vec::new();
                 for (url, token) in scopes.iter() {
+                    if non_refreshable.contains(url) {
+                        continue;
+                    }
                     if token.expires_on >= now + (token_refresh_bias) {
                         debug!(
                             "Token not expired for {url}: ExpiresOn: {}, Now: {now}, Bias: {token_refresh_bias:?}",
@@ -314,25 +365,88 @@ impl Authorizer {
                         "Token about to be expired for {url}: ExpiresOn: {}, Now: {now}, Bias: {token_refresh_bias:?}",
                         token.expires_on
                     );
-                    to_refresh.push(url.clone());
+                    // Carry the current expiry so a refresh that does not extend
+                    // it can be detected as non-refreshable below.
+                    to_refresh.push((url.clone(), token.expires_on));
                 }
                 to_refresh
             };
 
-            // Now refresh tokens without holding the lock to avoid deadlocks
+            // Now refresh tokens without holding the lock to avoid deadlocks.
+            //
+            // A failure to refresh a single path (transient get_token failure,
+            // authorization failure, etc.) must NOT tear down the refresh task:
+            // doing so would let every other cached token silently expire. We
+            // log the failure at warn! with the path and the failing condition
+            // and continue to the next path; the unrefreshed token will be
+            // retried on the next pass.
             let mut updated_tokens = HashMap::new();
-            for url in tokens_to_refresh {
-                let new_token = self
+            // Tracks whether any path failed to refresh this pass. A failure
+            // leaves that token's `expires_on` unchanged, so refresh_time stays
+            // in the past and the next pass would not sleep; we back off below to
+            // avoid a no-delay retry storm.
+            let mut refresh_failed = false;
+            for (url, previous_expiry) in tokens_to_refresh {
+                let new_token = match self
                     .credential
                     .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE], None)
-                    .await?;
+                    .await
+                {
+                    Ok(token) => token,
+                    Err(e) => {
+                        warn!(
+                            path = %url,
+                            operation = "get_token",
+                            err = ?e,
+                            "Failed to refresh token for path; will retry on next pass: {e}"
+                        );
+                        refresh_failed = true;
+                        continue;
+                    }
+                };
+
+                // A credential that cannot renew this token (e.g. a pre-formed
+                // SAS) hands back the same expiry. Re-presenting it would not
+                // extend the link, so mark the path non-refreshable and leave
+                // the broker to enforce the real `se` rather than spinning.
+                if new_token.expires_on <= previous_expiry {
+                    warn!(
+                        "Credential cannot refresh token for {url} (expiry did not advance past {previous_expiry}); \
+                         relying on broker-side expiry. This is expected for a pre-formed SAS token."
+                    );
+                    non_refreshable.insert(url.clone());
+                    continue;
+                }
 
                 // Create an ephemeral connection to host the authentication.
-                let connection = self.recoverable_connection.upgrade().ok_or_else(|| {
-                    AmqpError::with_message("Recoverable connection has been dropped")
-                })?;
-                self.perform_authorization(&connection, &url, &new_token)
-                    .await?;
+                //
+                // A failed upgrade is terminal, not retryable: once the last
+                // strong reference to the RecoverableConnection is dropped the
+                // Weak can never upgrade again, so continuing here would loop
+                // forever with nothing left to refresh against. Stop the task.
+                let connection = match self.recoverable_connection.upgrade() {
+                    Some(connection) => connection,
+                    None => {
+                        info!(
+                            operation = "upgrade_connection",
+                            "Recoverable connection has been dropped; stopping token refresher."
+                        );
+                        return Ok(());
+                    }
+                };
+                if let Err(e) = self
+                    .perform_authorization(&connection, &url, &new_token)
+                    .await
+                {
+                    warn!(
+                        path = %url,
+                        operation = "perform_authorization",
+                        err = ?e,
+                        "Failed to authorize refreshed token for path; will retry on next pass: {e}"
+                    );
+                    refresh_failed = true;
+                    continue;
+                }
 
                 debug!(
                     "Token refreshed for {url}, new expiration time: {}",
@@ -348,6 +462,18 @@ impl Authorizer {
                     scopes.insert(url.clone(), token);
                 }
                 debug!("Updated tokens.");
+            }
+
+            // If any path failed to refresh, its refresh_time is still in the
+            // past, so the top-of-loop sleep would be skipped. Back off for a
+            // bounded interval before retrying so a persistent failure does not
+            // busy-spin on get_token / perform_authorization.
+            if refresh_failed {
+                warn!(
+                    backoff = ?TOKEN_REFRESH_RETRY_BACKOFF,
+                    "One or more token refreshes failed this pass; backing off before retrying."
+                );
+                azure_core::sleep::sleep(TOKEN_REFRESH_RETRY_BACKOFF).await;
             }
         }
     }
@@ -368,7 +494,6 @@ mod tests {
     use azure_core::{credentials::TokenRequestOptions, http::Url, time::OffsetDateTime, Result};
     use azure_core_test::{recorded, TestContext};
     use std::sync::Arc;
-    use tracing::info;
 
     // Helper struct to mock token credential
     #[derive(Debug)]
@@ -402,6 +527,19 @@ mod tests {
         fn get_token_get_count(&self) -> usize {
             *self.get_token_count.lock().unwrap()
         }
+    }
+
+    // The default authorizer presents a JWT (token type `None`); one built for
+    // a SAS credential presents the `servicebus.windows.net:sastoken` type.
+    #[test]
+    fn cbs_token_type_defaults_to_jwt_and_can_be_sas() {
+        let credential = MockTokenCredential::new(60);
+
+        let jwt = Authorizer::new(Weak::new(), credential.clone(), None);
+        assert_eq!(jwt.cbs_token_type, None);
+
+        let sas = Authorizer::new(Weak::new(), credential, Some(crate::common::SAS_TOKEN_TYPE));
+        assert_eq!(sas.cbs_token_type, Some("servicebus.windows.net:sastoken"));
     }
 
     #[async_trait::async_trait]
@@ -451,11 +589,13 @@ mod tests {
             None,
             mock_credential.clone(),
             Default::default(),
+            None,
         );
 
         let authorizer = Arc::new(Authorizer::new(
             Arc::downgrade(&connection_manager),
             mock_credential.clone(),
+            None,
         ));
 
         // Disable actual authorization for testing
@@ -515,6 +655,7 @@ mod tests {
             None,
             mock_credential.clone(),
             Default::default(),
+            None,
         );
 
         connection_manager.disable_connection().await.unwrap();
@@ -526,6 +667,7 @@ mod tests {
         let authorizer = Arc::new(Authorizer::new(
             Arc::downgrade(&connection_manager),
             mock_credential.clone(),
+            None,
         ));
 
         // Disable actual authorization for testing
@@ -553,7 +695,7 @@ mod tests {
         let current_count = mock_credential.get_token_get_count();
         assert_eq!(current_count, 1);
 
-        debug!("Sleeping for 15 seconds to allow token to expire and be refreshed. Current token count: {current_count}");
+        trace!("Sleeping for 15 seconds to allow token to expire and be refreshed. Current token count: {current_count}");
 
         // Sleep a bit to ensure we will have refreshed the token - since the token expires in 20 seconds,
         // we will refresh it between 8 and 12 seconds before the expiration time. If we wait for 13 seconds,
@@ -562,13 +704,13 @@ mod tests {
 
         // Verify that the token get count has increased, indicating a refresh was attempted
         let final_count = mock_credential.get_token_get_count();
-        debug!("After sleeping, token count: {final_count}");
+        trace!("After sleeping, token count: {final_count}");
 
         assert!(
             final_count >= 2,
             "Expected token get count to be greater or equal to 2, but got {final_count}"
         );
-        info!("Final token get count: {final_count}");
+        trace!("Final token get count: {final_count}");
         Ok(())
     }
 
@@ -583,10 +725,12 @@ mod tests {
             None,
             mock_credential.clone(),
             Default::default(),
+            None,
         ));
         let authorizer = Arc::new(Authorizer::new(
             Arc::downgrade(&recoverable_connection),
             mock_credential.clone(),
+            None,
         ));
 
         // Get initial token get count
@@ -623,7 +767,7 @@ mod tests {
         // between 14 and 16 seconds from now.
 
         // The second token expires after the first token.
-        debug!("Sleeping for 10 seconds to establish separation between token_refresh_1 and token_refresh_2.");
+        trace!("Sleeping for 10 seconds to establish separation between token_refresh_1 and token_refresh_2.");
         tokio::time::sleep(std::time::Duration::from_secs(10)).await;
 
         // Authorize the second path, which will store the token
@@ -640,18 +784,18 @@ mod tests {
 
         // Token_refresh_1 will be refreshed between 4 and 6 seconds from now.
         // Token_refresh_2 will be refreshed between 14 and 16 from now.
-        debug!("Sleeping for 7 seconds to allow token_refresh_1 to expire and be refreshed. Current token count: {current_count}");
+        trace!("Sleeping for 7 seconds to allow token_refresh_1 to expire and be refreshed. Current token count: {current_count}");
         tokio::time::sleep(std::time::Duration::from_secs(7)).await;
 
         // Verify that the token get count has increased, indicating a single refresh was attempted - we refreshed token_refresh_1 but not token_refresh_2.
         let final_count = mock_credential.get_token_get_count();
-        debug!("After sleeping the first time, token count: {final_count}");
+        trace!("After sleeping the first time, token count: {final_count}");
         assert!(
             final_count >= 2,
             "Expected first get token count to be at least 2, but got {final_count}"
         );
 
-        info!("First token expiration get count: {}", final_count);
+        trace!("First token expiration get count: {}", final_count);
         // Token_refresh_1 will be refreshed between 13 and 15 seconds from now.
         // Token_refresh_2 will be refreshed between 7 and 9 seconds from now.
 
@@ -660,14 +804,98 @@ mod tests {
 
         // Verify that the token get count has increased, indicating a single refresh was attempted - we refreshed token_refresh_2.
         let final_count = mock_credential.get_token_get_count();
-        debug!("Getting second token count: {final_count}");
+        trace!("Getting second token count: {final_count}");
         assert!(
             final_count >= 4,
             "Expected second get token count to be 4, but got {final_count}"
         );
-        info!("Second token expiration get count: {}", final_count);
+        trace!("Second token expiration get count: {}", final_count);
 
         Ok(())
+    }
+
+    // A pre-formed SAS token cannot be re-signed, so its credential returns the
+    // same expiry on every call. The refresher must detect this non-advancing
+    // expiry, attempt the refresh at most once, and then stop, rather than
+    // spinning and re-presenting a non-renewable token to the broker on a tight
+    // loop. This pins the non-refreshable handling in `refresh_tokens`.
+    #[tokio::test(flavor = "multi_thread")]
+    async fn non_refreshable_token_is_refreshed_at_most_once() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+
+        #[derive(Debug)]
+        struct FixedExpiryCredential {
+            expires_on: OffsetDateTime,
+            calls: AtomicUsize,
+        }
+
+        #[async_trait::async_trait]
+        impl TokenCredential for FixedExpiryCredential {
+            async fn get_token(
+                &self,
+                _scopes: &[&str],
+                _options: Option<TokenRequestOptions<'_>>,
+            ) -> azure_core::Result<AccessToken> {
+                self.calls.fetch_add(1, Ordering::SeqCst);
+                Ok(AccessToken::new(
+                    azure_core::credentials::Secret::new("mock_token"),
+                    self.expires_on,
+                ))
+            }
+        }
+
+        let credential = Arc::new(FixedExpiryCredential {
+            expires_on: OffsetDateTime::now_utc() + Duration::seconds(8),
+            calls: AtomicUsize::new(0),
+        });
+
+        let url = Url::parse("amqps://example.com").unwrap();
+        let connection = RecoverableConnection::new(
+            url.clone(),
+            None,
+            None,
+            credential.clone(),
+            Default::default(),
+            None,
+        );
+        connection.disable_connection().await.unwrap();
+
+        let authorizer = Arc::new(Authorizer::new(
+            Arc::downgrade(&connection),
+            credential.clone(),
+            None,
+        ));
+        authorizer.disable_authorization().unwrap();
+
+        // Refresh ~3s before the 8s expiry, so a refresh is attempted ~5s in.
+        authorizer
+            .set_token_refresh_times(TokenRefreshTimes {
+                before_expiration_refresh_time: Duration::seconds(3),
+                jitter_min: Duration::milliseconds(-500),
+                jitter_max: Duration::milliseconds(500),
+            })
+            .unwrap();
+
+        let path = Url::parse("amqps://example.com/preformed").unwrap();
+        authorizer.authorize_path(&connection, &path).await.unwrap();
+        assert_eq!(credential.calls.load(Ordering::SeqCst), 1);
+
+        // Sleep well past the refresh point. Without the non-refreshable guard
+        // the refresher would re-call `get_token` on a tight loop (many calls);
+        // with it, the path is marked non-refreshable after a single attempt.
+        tokio::time::sleep(std::time::Duration::from_secs(7)).await;
+
+        let calls = credential.calls.load(Ordering::SeqCst);
+        assert!(
+            (2..=5).contains(&calls),
+            "expected one refresh attempt then stop, but get_token was called {calls} times"
+        );
+
+        // The token stays available for the path; the broker enforces the real
+        // `se`. The cached read does not call `get_token` again.
+        let stored = authorizer.authorize_path(&connection, &path).await.unwrap();
+        assert_eq!(stored.expires_on, credential.expires_on);
+        assert_eq!(credential.calls.load(Ordering::SeqCst), calls);
     }
 
     // Regression test for the self-deadlock described in
@@ -724,11 +952,13 @@ mod tests {
             None,
             credential.clone(),
             Default::default(),
+            None,
         );
 
         let authorizer = Arc::new(Authorizer::new(
             Arc::downgrade(&connection),
             credential.clone(),
+            None,
         ));
         authorizer.disable_authorization().unwrap();
         connection.disable_connection().await.unwrap();

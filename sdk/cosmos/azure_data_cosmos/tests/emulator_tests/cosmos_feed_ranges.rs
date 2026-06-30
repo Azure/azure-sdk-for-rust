@@ -5,13 +5,11 @@ use super::framework;
 
 use std::error::Error;
 
-use azure_data_cosmos::{
-    models::{ContainerProperties, ThroughputProperties},
-    CreateContainerOptions,
-};
+use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
+use azure_data_cosmos::options::CreateContainerOptions;
 use base64::Engine;
 
-use framework::TestClient;
+use framework::{TestClient, TestOptions};
 
 #[tokio::test]
 #[cfg_attr(
@@ -79,7 +77,7 @@ pub async fn read_feed_ranges_returns_physical_partitions() -> Result<(), Box<dy
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -136,7 +134,7 @@ pub async fn feed_range_from_partition_key_maps_correctly() -> Result<(), Box<dy
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -174,7 +172,7 @@ pub async fn feed_range_from_full_hpk_returns_single_range() -> Result<(), Box<d
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -242,7 +240,7 @@ pub async fn feed_range_from_prefix_hpk_returns_ranges() -> Result<(), Box<dyn E
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
@@ -276,7 +274,7 @@ pub async fn feed_range_from_partition_key_single_hash_full_key() -> Result<(), 
 
             Ok(())
         },
-        None,
+        Some(TestOptions::for_emulator()),
     )
     .await
 }

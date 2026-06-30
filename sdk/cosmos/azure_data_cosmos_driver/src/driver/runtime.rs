@@ -5,7 +5,6 @@
 
 use azure_core::http::ClientOptions;
 use std::{
-    collections::HashMap,
     sync::{
         atomic::{AtomicUsize, Ordering},
         Arc, RwLock,
@@ -15,14 +14,10 @@ use std::{
 
 use crate::{
     diagnostics::ProxyConfiguration,
-    models::{
-        normalize_wrapping_sdk_identifier, AccountReference, ContainerReference,
-        ThroughputControlGroupName, UserAgent,
-    },
+    models::{normalize_wrapping_sdk_identifier, UserAgent, UserAgentFeatureFlags},
     options::{
         parse_duration_millis_from_env, ConnectionPoolOptions, CorrelationId, DriverOptions,
-        OperationOptions, ThroughputControlGroupOptions, ThroughputControlGroupRegistry,
-        UserAgentSuffix, WorkloadId,
+        OperationOptions, PartitionFailoverOptions, UserAgentSuffix, WorkloadId,
     },
     system::{CpuMemoryMonitor, VmMetadataService},
 };
@@ -44,8 +39,10 @@ use super::{
 ///
 /// # Thread Safety
 ///
-/// The runtime is thread-safe and can be shared across threads. Driver instances
-/// are managed as singletons per account endpoint, ensuring efficient resource usage.
+/// The runtime is thread-safe and can be shared across threads. Each call to
+/// [`create_driver`](Self::create_driver) produces a fresh [`CosmosDriver`];
+/// drivers built from the same runtime share its long-lived resources
+/// (bootstrap transport, metadata caches, CPU monitor, etc.).
 ///
 /// # Example
 ///
@@ -53,7 +50,9 @@ use super::{
 /// use azure_data_cosmos_driver::driver::{
 ///     CosmosDriverRuntime, CosmosDriverRuntimeBuilder,
 /// };
-/// use azure_data_cosmos_driver::options::{OperationOptions, OperationOptionsBuilder};
+/// use azure_data_cosmos_driver::options::{
+///     DriverOptions, OperationOptions, OperationOptionsBuilder,
+/// };
 /// use azure_data_cosmos_driver::models::AccountReference;
 /// use url::Url;
 ///
@@ -63,20 +62,22 @@ use super::{
 ///     .build();
 ///
 /// let cosmos_runtime = CosmosDriverRuntimeBuilder::new()
-///     .with_operation_options(operation_options)
+///     .with_default_operation_options(operation_options)
 ///     .build()
 ///     .await?;
 ///
-/// // Get or create a driver for an account
+/// // Create a driver for an account
 /// let account = AccountReference::with_master_key(
 ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
 ///     "my-key",
 /// );
 ///
-/// let driver = cosmos_runtime.get_or_create_driver(account, None).await?;
+/// let driver = cosmos_runtime
+///     .create_driver(DriverOptions::builder(account).build())
+///     .await?;
 ///
 /// // Later, replace runtime defaults atomically
-/// // cosmos_runtime.set_operation_options(new_options);
+/// // cosmos_runtime.set_default_operation_options(new_options);
 /// # Ok(())
 /// # }
 /// ```
@@ -108,6 +109,12 @@ pub struct CosmosDriverRuntime {
     /// Environment-level operation options, populated once from env vars at build time.
     env_operation_options: Arc<OperationOptions>,
 
+    /// Highest-priority kill-switch operation options, populated once from the
+    /// `{ENV}_OVERRIDE` variants at build time. Only `overridable` fields are
+    /// populated; this layer wins over every other layer (including
+    /// per-operation values).
+    env_override_operation_options: Arc<OperationOptions>,
+
     /// User-provided default operation options, swappable via interior mutability.
     ///
     /// Wrapped in `RwLock<Arc<...>>` so that shared references can atomically
@@ -118,7 +125,9 @@ pub struct CosmosDriverRuntime {
     ///
     /// This is automatically computed from the SDK version, platform info,
     /// and optional suffix (from user_agent_suffix, workload_id, or correlation_id).
-    user_agent: UserAgent,
+    /// Stored as an `Arc` so drivers without a per-driver UA override can clone
+    /// it cheaply and stamp requests with the same shared value.
+    user_agent: Arc<UserAgent>,
 
     /// Workload identifier for resource governance (1-50 if set).
     workload_id: Option<WorkloadId>,
@@ -144,16 +153,14 @@ pub struct CosmosDriverRuntime {
     /// driver's own identifier.
     wrapping_sdk_identifier: Option<String>,
 
-    /// Registry of throughput control groups.
+    /// Cross-SDK feature flags advertised in this runtime's base `User-Agent`.
     ///
-    /// Groups are registered during builder construction and are immutable after
-    /// runtime creation (except for mutable target values within each group).
-    throughput_control_groups: ThroughputControlGroupRegistry,
-
-    /// Registry of driver instances keyed by account endpoint.
-    ///
-    /// Ensures singleton driver per account reference.
-    driver_registry: RwLock<HashMap<String, Arc<CosmosDriver>>>,
+    /// Computed from runtime-scoped client configuration (HTTP/2 transport and
+    /// the default per-partition circuit breaker setting). Drivers built from
+    /// this runtime compare their own computed flags against this value: when
+    /// they match (the common case), they share the runtime's `Arc<UserAgent>`;
+    /// otherwise they recompute their own `User-Agent`.
+    user_agent_feature_flags: UserAgentFeatureFlags,
 
     /// Shared container metadata cache used by drivers in this runtime.
     container_cache: ContainerCache,
@@ -171,10 +178,6 @@ pub struct CosmosDriverRuntime {
     ///
     /// Kept in `Arc` because it is cloned into every diagnostics context.
     machine_id: Arc<String>,
-
-    /// Whether fault injection is enabled for this runtime.
-    #[cfg(feature = "fault_injection")]
-    fault_injection_enabled: bool,
 
     /// Proxy configuration snapshot for diagnostics.
     proxy_configuration: ProxyConfiguration,
@@ -232,12 +235,6 @@ impl CosmosDriverRuntime {
         &self.machine_id
     }
 
-    /// Returns whether fault injection is enabled for this runtime.
-    #[cfg(feature = "fault_injection")]
-    pub(crate) fn fault_injection_enabled(&self) -> bool {
-        self.fault_injection_enabled
-    }
-
     /// Returns the proxy configuration snapshot.
     ///
     /// Captures whether proxy is allowed and the proxy environment variable
@@ -251,12 +248,18 @@ impl CosmosDriverRuntime {
         &self.env_operation_options
     }
 
+    /// Returns the highest-priority kill-switch operation options (populated
+    /// from the `{ENV}_OVERRIDE` variants at build time).
+    pub fn env_override_operation_options(&self) -> &Arc<OperationOptions> {
+        &self.env_override_operation_options
+    }
+
     /// Returns a snapshot of the default operation options.
     ///
     /// The returned `Arc` is a cheap clone of the current value.
     /// In-flight readers are unaffected by concurrent calls to
-    /// [`set_operation_options`](Self::set_operation_options).
-    pub fn operation_options(&self) -> Arc<OperationOptions> {
+    /// [`set_default_operation_options`](Self::set_default_operation_options).
+    pub fn default_operation_options(&self) -> Arc<OperationOptions> {
         // Poisoning is safe to ignore: the write side is an atomic Arc swap with no
         // multi-step mutation, so the value is always in a consistent state.
         self.operation_options
@@ -268,8 +271,9 @@ impl CosmosDriverRuntime {
     /// Replaces the default operation options atomically.
     ///
     /// In-flight operations that already obtained a snapshot via
-    /// [`operation_options`](Self::operation_options) are unaffected.
-    pub fn set_operation_options(&self, options: OperationOptions) {
+    /// [`default_operation_options`](Self::default_operation_options) are
+    /// unaffected.
+    pub fn set_default_operation_options(&self, options: OperationOptions) {
         *self
             .operation_options
             .write()
@@ -281,7 +285,11 @@ impl CosmosDriverRuntime {
     /// The user agent is automatically computed with a static prefix containing
     /// SDK version and platform info, plus an optional suffix derived from
     /// `user_agent_suffix`, `workload_id`, or `correlation_id` (in priority order).
-    pub fn user_agent(&self) -> &UserAgent {
+    ///
+    /// Stored as an `Arc` so [`CosmosDriver`](super::CosmosDriver) instances
+    /// without a per-driver suffix override can clone this shared value
+    /// instead of recomputing the User-Agent.
+    pub fn user_agent(&self) -> &Arc<UserAgent> {
         &self.user_agent
     }
 
@@ -306,6 +314,32 @@ impl CosmosDriverRuntime {
         self.wrapping_sdk_identifier.as_deref()
     }
 
+    /// Returns the cross-SDK feature flags advertised in this runtime's base
+    /// `User-Agent` header.
+    pub(crate) fn user_agent_feature_flags(&self) -> UserAgentFeatureFlags {
+        self.user_agent_feature_flags
+    }
+
+    /// Recomputes a `User-Agent` from this runtime's suffix source (suffix,
+    /// workload id, or correlation id, in priority order) plus the supplied
+    /// feature flags.
+    ///
+    /// Used by a driver that overrode a feature-affecting option (e.g. disabled
+    /// PPCB) without supplying its own suffix, so it cannot share the runtime's
+    /// shared `Arc<UserAgent>`.
+    pub(crate) fn user_agent_with_feature_flags(
+        &self,
+        feature_flags: UserAgentFeatureFlags,
+    ) -> UserAgent {
+        compute_user_agent(
+            self.wrapping_sdk_identifier.as_deref(),
+            self.user_agent_suffix.as_ref(),
+            self.workload_id,
+            self.correlation_id.as_ref(),
+            feature_flags,
+        )
+    }
+
     /// Returns the effective correlation dimension.
     ///
     /// Returns `correlation_id` if set, otherwise falls back to `user_agent_suffix`.
@@ -316,44 +350,17 @@ impl CosmosDriverRuntime {
             .or_else(|| self.user_agent_suffix.as_ref().map(|s| s.as_str()))
     }
 
-    /// Returns a throughput control group by container and name.
+    /// Creates a fresh driver bound to this runtime.
     ///
-    /// This is a convenience method for looking up a specific group.
-    pub(crate) fn get_throughput_control_group(
-        &self,
-        container: &ContainerReference,
-        name: &ThroughputControlGroupName,
-    ) -> Option<&Arc<ThroughputControlGroupOptions>> {
-        self.throughput_control_groups
-            .get_by_container_and_name(container, name)
-    }
-
-    /// Returns the default throughput control group for a container.
-    ///
-    /// Returns `None` if no default group is registered for the container.
-    pub(crate) fn get_default_throughput_control_group(
-        &self,
-        container: &ContainerReference,
-    ) -> Option<&Arc<ThroughputControlGroupOptions>> {
-        self.throughput_control_groups
-            .get_default_for_container(container)
-    }
-
-    /// Gets or creates a driver for the specified account.
-    ///
-    /// This method ensures singleton behavior - only one driver instance exists
-    /// per account endpoint. Subsequent calls with the same account endpoint
-    /// return the existing driver.
+    /// Each call returns a new [`CosmosDriver`] — the runtime no longer caches
+    /// drivers by account endpoint. Callers that want a single driver per
+    /// account must hold onto the returned `Arc` themselves. Drivers built from
+    /// the same runtime share runtime-owned resources (bootstrap transport,
+    /// account-metadata cache, container cache, CPU monitor, etc.).
     ///
     /// # Parameters
     ///
-    /// - `account`: The account reference (endpoint + credentials)
-    /// - `driver_options`: Optional driver-level options. If not provided, defaults are used.
-    ///
-    /// # Note
-    ///
-    /// If a driver already exists for the account, the `driver_options` parameter is ignored.
-    /// The existing driver with its original options is returned.
+    /// - `driver_options`: Driver-level options, including the account reference.
     ///
     /// # Example
     ///
@@ -371,53 +378,27 @@ impl CosmosDriverRuntime {
     ///     "my-key",
     /// );
     ///
-    /// // First call creates the driver
-    /// let driver = runtime.get_or_create_driver(account.clone(), None).await?;
-    ///
-    /// // Subsequent calls return the same driver instance
-    /// let driver2 = runtime.get_or_create_driver(account, None).await?;
-    /// // driver and driver2 point to the same instance
+    /// let driver = runtime
+    ///     .create_driver(DriverOptions::builder(account).build())
+    ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn get_or_create_driver(
+    pub async fn create_driver(
         self: &Arc<Self>,
-        account: AccountReference,
-        driver_options: Option<DriverOptions>,
+        driver_options: DriverOptions,
     ) -> crate::error::Result<Arc<CosmosDriver>> {
-        let key = account.endpoint().to_string();
-
-        // Fast path: return an already-initialized driver.
-        {
-            let registry = self.driver_registry.read().unwrap();
-            if let Some(driver) = registry.get(&key) {
-                tracing::trace!("retrieved existing driver");
-                return Ok(driver.clone());
-            }
-        }
-
         tracing::trace!("creating new driver");
-
-        // Slow path: create and initialize the driver *before* inserting into
-        // the registry. This ensures concurrent callers never observe an
-        // uninitialized driver. If two callers race, both will probe — but the
-        // first to finish inserts; the second discovers the existing entry and
-        // drops its duplicate.
-        let options = driver_options.unwrap_or_else(|| DriverOptions::builder(account).build());
-        let driver = Arc::new(CosmosDriver::new(Arc::clone(self), options));
-
+        let driver = Arc::new(CosmosDriver::new(Arc::clone(self), driver_options)?);
         driver.initialize().await?;
-
-        let mut registry = self.driver_registry.write().unwrap();
-        let entry = registry.entry(key).or_insert_with(|| driver.clone());
-        Ok(entry.clone())
+        Ok(driver)
     }
 }
 
 /// Builder for creating [`CosmosDriverRuntime`].
 ///
 /// Use `OperationOptionsBuilder` to create operation options, then pass them
-/// to this builder via [`with_operation_options()`](Self::with_operation_options).
+/// to this builder via [`with_default_operation_options()`](Self::with_default_operation_options).
 ///
 /// # User Agent
 ///
@@ -447,10 +428,7 @@ pub struct CosmosDriverRuntimeBuilder {
     correlation_id: Option<CorrelationId>,
     user_agent_suffix: Option<UserAgentSuffix>,
     wrapping_sdk_identifier: Option<String>,
-    throughput_control_groups: ThroughputControlGroupRegistry,
     cpu_refresh_interval: Option<Duration>,
-    #[cfg(feature = "fault_injection")]
-    fault_injection_rules: Option<Vec<std::sync::Arc<crate::fault_injection::FaultInjectionRule>>>,
     #[cfg(any(
         test,
         feature = "__internal_in_memory_emulator",
@@ -477,10 +455,12 @@ impl CosmosDriverRuntimeBuilder {
         self
     }
 
-    /// Sets the operation options (defaults for operations at the runtime layer).
+    /// Sets the default operation options at the runtime layer.
     ///
+    /// These act as the lowest-priority layer in the option-resolution
+    /// hierarchy (per-op → per-driver → runtime → env → built-in default).
     /// Use `OperationOptionsBuilder` to create the operation options.
-    pub fn with_operation_options(mut self, options: OperationOptions) -> Self {
+    pub fn with_default_operation_options(mut self, options: OperationOptions) -> Self {
         self.operation_options = Some(options);
         self
     }
@@ -573,125 +553,6 @@ impl CosmosDriverRuntimeBuilder {
         self
     }
 
-    /// Registers a throughput control group.
-    ///
-    /// Groups are identified by the combination of container reference and group name.
-    /// At most one group per container can be marked as `is_default = true`.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if:
-    /// - A group with the same (container, name) key already exists
-    /// - Another group is already marked as default for the same container
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use azure_data_cosmos_driver::driver::CosmosDriverRuntimeBuilder;
-    /// use azure_data_cosmos_driver::options::{PriorityLevel, ThroughputControlGroupOptions};
-    /// use azure_data_cosmos_driver::models::AccountReference;
-    /// use url::Url;
-    ///
-    /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
-    /// let account = AccountReference::with_master_key(
-    ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
-    ///     "my-key",
-    /// );
-    ///
-    /// // Build the runtime first, then resolve the container via the driver.
-    /// let runtime = CosmosDriverRuntimeBuilder::new().build().await?;
-    /// let driver = runtime.get_or_create_driver(account, None).await?;
-    /// let container = driver.resolve_container("mydb", "mycollection").await?;
-    ///
-    /// // Register a throughput control group on a new runtime builder.
-    /// let runtime = CosmosDriverRuntimeBuilder::new()
-    ///     .register_throughput_control_group(
-    ///         ThroughputControlGroupOptions::new(
-    ///             "default-group",
-    ///             container.clone(),
-    ///             true, // is_default
-    ///         )
-    ///         .with_priority_level(PriorityLevel::High)
-    ///     )?
-    ///     .build()
-    ///     .await;
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn register_throughput_control_group(
-        mut self,
-        group: ThroughputControlGroupOptions,
-    ) -> crate::error::Result<Self> {
-        self.throughput_control_groups
-            .register(group)
-            .map_err(|e| {
-                crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::CLIENT_THROUGHPUT_CONTROL_GROUP_REGISTRATION_FAILED)
-                    .with_message(e.to_string())
-                    .build()
-            })?;
-        Ok(self)
-    }
-
-    /// Sets the fault injection rules for testing.
-    ///
-    /// When set, all HTTP clients created by the transport layer will
-    /// evaluate these rules before delegating to the real transport
-    /// (per Transport Pipeline Spec §7).
-    /// Appends the supplied rules to any rules already configured on this
-    /// builder (additive). Calling this multiple times accumulates rules in
-    /// insertion order. Mirrors the additive semantics of
-    /// [`Self::register_throughput_control_group`] so callers that compose a
-    /// runtime builder from multiple sources (e.g. the
-    /// `azure_data_cosmos::CosmosClientBuilder` adding its own rules on top of
-    /// a user-supplied builder) do not silently lose previously-configured
-    /// rules.
-    ///
-    /// # Errors
-    ///
-    /// Returns `Err` when any rule's `id` collides with another rule already
-    /// configured on this builder, or with another rule in the same call.
-    /// Rule ids identify a fault injection rule across reconfigure /
-    /// disable / re-enable operations, so silently keeping one of two rules
-    /// with the same id would surface as "my fault injection didn't fire"
-    /// long after the duplicate was introduced — and depend on insertion
-    /// order. Surfacing the collision at builder time keeps the failure
-    /// local to the misconfiguration.
-    #[cfg(feature = "fault_injection")]
-    pub fn with_fault_injection_rules(
-        mut self,
-        rules: Vec<std::sync::Arc<crate::fault_injection::FaultInjectionRule>>,
-    ) -> crate::error::Result<Self> {
-        if rules.is_empty() {
-            return Ok(self);
-        }
-
-        // Build the set of ids already present so collisions across both
-        // (existing-vs-new) and (new-vs-new) are caught in one pass.
-        let mut seen: std::collections::HashSet<String> = self
-            .fault_injection_rules
-            .as_ref()
-            .map(|existing| existing.iter().map(|r| r.id().to_string()).collect())
-            .unwrap_or_default();
-
-        for rule in &rules {
-            if !seen.insert(rule.id().to_string()) {
-                return Err(crate::error::CosmosError::builder()
-                    .with_status(
-                        crate::error::CosmosStatus::CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID,
-                    )
-                    .with_message(format!("duplicate fault injection rule id: {}", rule.id()))
-                    .build());
-            }
-        }
-
-        match &mut self.fault_injection_rules {
-            Some(existing) => existing.extend(rules),
-            None => self.fault_injection_rules = Some(rules),
-        }
-        Ok(self)
-    }
-
     /// Builds the [`CosmosDriverRuntime`].
     ///
     /// The user agent is computed from (in priority order):
@@ -706,64 +567,47 @@ impl CosmosDriverRuntimeBuilder {
     /// configuration failure).
     ///
     pub async fn build(self) -> crate::error::Result<Arc<CosmosDriverRuntime>> {
+        let connection_pool = self.connection_pool.unwrap_or_default();
+
+        // Compute the base feature flags advertised in the User-Agent from
+        // runtime-scoped client configuration. HTTP/2 comes from the connection
+        // pool; PPCB uses the driver default (its per-driver value is folded in
+        // later by `CosmosDriver::new`). PPAF is server-driven per-partition and
+        // therefore unknown here, so it is not advertised in the shared header.
+        let user_agent_feature_flags = UserAgentFeatureFlags::from_client_config(
+            connection_pool.is_http2_allowed(),
+            PartitionFailoverOptions::default().circuit_breaker_enabled(),
+        );
+
         // Compute user agent from suffix/workloadId/correlationId (in priority order),
         // optionally prepending a wrapping-SDK identifier.
-        let wrapping = self.wrapping_sdk_identifier.as_deref();
-        let user_agent = if let Some(ref suffix) = self.user_agent_suffix {
-            UserAgent::from_suffix(wrapping, suffix)
-        } else if let Some(workload_id) = self.workload_id {
-            UserAgent::from_workload_id(wrapping, workload_id)
-        } else if let Some(ref correlation_id) = self.correlation_id {
-            UserAgent::from_correlation_id(wrapping, correlation_id)
-        } else {
-            UserAgent::from_wrapping_sdk_identifier(wrapping)
-        };
+        let user_agent = Arc::new(compute_user_agent(
+            self.wrapping_sdk_identifier.as_deref(),
+            self.user_agent_suffix.as_ref(),
+            self.workload_id,
+            self.correlation_id.as_ref(),
+            user_agent_feature_flags,
+        ));
 
-        let connection_pool = self.connection_pool.unwrap_or_default();
         let proxy_configuration = ProxyConfiguration::from_env(connection_pool.proxy_allowed());
-        #[cfg(feature = "fault_injection")]
-        let fault_injection_enabled;
         let http_client_factory: Arc<dyn HttpClientFactory> = {
-            let base_factory: Arc<dyn HttpClientFactory> = {
-                #[cfg(any(
-                    test,
-                    feature = "__internal_in_memory_emulator",
-                    feature = "__internal_mocking"
-                ))]
-                {
-                    self.http_client_factory
-                        .unwrap_or_else(|| Arc::new(DefaultHttpClientFactory::new()))
-                }
-
-                #[cfg(not(any(
-                    test,
-                    feature = "__internal_in_memory_emulator",
-                    feature = "__internal_mocking"
-                )))]
-                {
-                    Arc::new(DefaultHttpClientFactory::new())
-                }
-            };
-
-            #[cfg(feature = "fault_injection")]
+            #[cfg(any(
+                test,
+                feature = "__internal_in_memory_emulator",
+                feature = "__internal_mocking"
+            ))]
             {
-                if let Some(rules) = self.fault_injection_rules {
-                    fault_injection_enabled = true;
-                    Arc::new(
-                        crate::fault_injection::FaultInjectingHttpClientFactory::new(
-                            base_factory,
-                            rules,
-                        ),
-                    )
-                } else {
-                    fault_injection_enabled = false;
-                    base_factory
-                }
+                self.http_client_factory
+                    .unwrap_or_else(|| Arc::new(DefaultHttpClientFactory::new()))
             }
 
-            #[cfg(not(feature = "fault_injection"))]
+            #[cfg(not(any(
+                test,
+                feature = "__internal_in_memory_emulator",
+                feature = "__internal_mocking"
+            )))]
             {
-                base_factory
+                Arc::new(DefaultHttpClientFactory::new())
             }
         };
 
@@ -785,12 +629,17 @@ impl CosmosDriverRuntimeBuilder {
         // Initialize system monitoring singletons.
         // CpuMemoryMonitor starts a background thread on first call;
         // VmMetadataService makes a single IMDS request (or falls back to a UUID).
+        // The CPU-refresh interval resolves `builder → env → default` (with
+        // bounds validation) through the same `parse_duration_millis_from_env`
+        // helper the driver-level option builders use (e.g.
+        // `PartitionFailoverOptions`), keeping every duration env var on one path.
         let refresh_interval = parse_duration_millis_from_env(
             self.cpu_refresh_interval,
             "AZURE_COSMOS_CPU_REFRESH_INTERVAL_MS",
             5_000,
             1_000,
             60_000,
+            &|k| std::env::var(k).ok(),
         )?;
         let cpu_monitor = CpuMemoryMonitor::get_or_init(refresh_interval);
         let vm_metadata = VmMetadataService::get_or_init().await;
@@ -817,20 +666,22 @@ impl CosmosDriverRuntimeBuilder {
                 throttling_retry_options: Some(crate::options::ThrottlingRetryOptions::from_env()),
                 ..OperationOptions::from_env()
             }),
+            // Kill-switch layer: only `overridable` fields (read from their
+            // `{ENV}_OVERRIDE` variants) are populated. No nested groups carry
+            // overridable fields today, so no explicit nested call is needed
+            // here (unlike `env_operation_options` above).
+            env_override_operation_options: Arc::new(OperationOptions::from_env_override()),
             operation_options: RwLock::new(Arc::new(self.operation_options.unwrap_or_default())),
             user_agent,
             workload_id: self.workload_id,
             correlation_id: self.correlation_id,
             user_agent_suffix: self.user_agent_suffix,
             wrapping_sdk_identifier: self.wrapping_sdk_identifier,
-            throughput_control_groups: self.throughput_control_groups,
-            driver_registry: RwLock::new(HashMap::new()),
+            user_agent_feature_flags,
             container_cache: ContainerCache::new(),
             account_metadata_cache: Arc::new(AccountMetadataCache::new()),
             cpu_monitor,
             machine_id: Arc::new(vm_metadata.machine_id().to_owned()),
-            #[cfg(feature = "fault_injection")]
-            fault_injection_enabled,
             proxy_configuration,
         }))
     }
@@ -838,32 +689,58 @@ impl CosmosDriverRuntimeBuilder {
 
 static NEXT_RUNTIME_ID: AtomicUsize = AtomicUsize::new(0);
 
+/// Builds a [`UserAgent`] from a suffix source (suffix, workload id, or
+/// correlation id, in priority order) plus the supplied feature flags.
+///
+/// Shared by [`CosmosDriverRuntimeBuilder::build`] and
+/// [`CosmosDriverRuntime::user_agent_with_feature_flags`] so the priority
+/// ordering is defined in exactly one place.
+fn compute_user_agent(
+    wrapping_sdk_identifier: Option<&str>,
+    user_agent_suffix: Option<&UserAgentSuffix>,
+    workload_id: Option<WorkloadId>,
+    correlation_id: Option<&CorrelationId>,
+    feature_flags: UserAgentFeatureFlags,
+) -> UserAgent {
+    if let Some(suffix) = user_agent_suffix {
+        UserAgent::from_suffix(wrapping_sdk_identifier, suffix, feature_flags)
+    } else if let Some(workload_id) = workload_id {
+        UserAgent::from_workload_id(wrapping_sdk_identifier, workload_id, feature_flags)
+    } else if let Some(correlation_id) = correlation_id {
+        UserAgent::from_correlation_id(wrapping_sdk_identifier, correlation_id, feature_flags)
+    } else {
+        UserAgent::from_wrapping_sdk_identifier(wrapping_sdk_identifier, feature_flags)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::AccountReference;
     use url::Url;
 
     #[tokio::test]
-    async fn get_or_create_driver_removes_failed_initialization_from_registry() {
+    async fn create_driver_propagates_initialization_failures() {
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         let account = AccountReference::with_master_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "***not-base64***",
         );
 
+        // Two attempts back-to-back — each call must surface the bad-credential
+        // failure independently; there is no driver cache, so the second call
+        // re-runs the full initialization path.
         let error = runtime
-            .get_or_create_driver(account.clone(), None)
+            .create_driver(DriverOptions::builder(account.clone()).build())
             .await
             .expect_err("invalid signing key should fail initialization");
         assert!(!error.to_string().is_empty());
-        assert!(runtime.driver_registry.read().unwrap().is_empty());
 
         let second_error = runtime
-            .get_or_create_driver(account, None)
+            .create_driver(DriverOptions::builder(account).build())
             .await
-            .expect_err("failed initialization should not poison the driver registry");
+            .expect_err("subsequent attempts must also surface the failure");
         assert!(!second_error.to_string().is_empty());
-        assert!(runtime.driver_registry.read().unwrap().is_empty());
     }
 
     /// Verifies that the user-agent suffix set on the runtime appears in the

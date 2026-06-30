@@ -6,7 +6,7 @@
 
 use azure_core::http::StatusCode;
 use azure_data_cosmos::fault_injection::{CustomResponse, CustomResponseBuilder};
-use azure_data_cosmos::regions::Region;
+use azure_data_cosmos::options::Region;
 
 /// Builds a [`CustomResponse`] containing a valid `AccountProperties` JSON payload
 /// with the specified writable and readable regions.
@@ -106,7 +106,7 @@ fn regions_to_json(account_name: &str, regions: &[Region]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use azure_data_cosmos::Region;
+    use azure_data_cosmos::options::Region;
 
     #[test]
     fn mock_account_deserializes() {

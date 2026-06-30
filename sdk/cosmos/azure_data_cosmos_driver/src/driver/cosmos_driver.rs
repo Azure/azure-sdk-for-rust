@@ -17,20 +17,20 @@ use crate::{
         },
         pipeline::operation_pipeline::OperationOverrides,
         routing::{
-            partition_endpoint_state::PartitionFailoverConfig,
             partition_key_range_id::PartitionKeyRangeId, session_manager::SessionManager,
             CosmosEndpoint, LocationStateStore,
         },
-        transport::{is_emulator_host, uses_dataplane_pipeline},
+        transport::uses_dataplane_pipeline,
     },
     models::{
         effective_partition_key::EffectivePartitionKey, AccountEndpoint, AccountReference,
         ContainerProperties, ContainerReference, ContinuationToken, CosmosOperation,
-        DatabaseReference, PartitionKey, ResolvedToken, ResourceType,
+        DatabaseReference, PartitionKey, ResolvedToken, ResourceType, UserAgent,
+        UserAgentFeatureFlags,
     },
     options::{
         ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsView,
-        ThroughputControlGroupSnapshot,
+        ResolvedThroughputControl, ThroughputControlGroupSnapshot,
     },
     ActivityId, CosmosResponse,
 };
@@ -40,6 +40,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use url::Url;
+
+#[cfg(feature = "tokio")]
+use super::routing::EndpointProbeFn;
 
 use super::{
     cache::{parse_pk_ranges_response, AccountRegion},
@@ -103,12 +106,14 @@ impl RequestExecutor for DriverRequestExecutor<'_> {
 
 /// Cosmos DB driver instance.
 ///
-/// A driver represents a connection to a specific Cosmos DB account. It is created
-/// via [`CosmosDriverRuntime::get_or_create_driver()`] and is managed as a singleton
-/// per account endpoint.
+/// A driver represents a connection to a specific Cosmos DB account. It is
+/// created via [`CosmosDriverRuntime::create_driver()`]; each call returns a
+/// fresh instance — drivers built from the same runtime share runtime-owned
+/// resources (bootstrap transport, metadata caches, CPU monitor, etc.) but the
+/// driver lifetime is owned by the caller.
 ///
-/// The driver handles executing operations against Cosmos DB, merging options from
-/// operation, driver, and runtime levels.
+/// The driver handles executing operations against Cosmos DB, merging options
+/// from operation, driver, and runtime levels.
 #[non_exhaustive]
 #[derive(Debug)]
 pub struct CosmosDriver {
@@ -131,9 +136,43 @@ pub struct CosmosDriver {
     session_manager: SessionManager,
     /// Set to `true` after [`initialize()`](Self::initialize) completes successfully.
     /// Operations check this flag to fail fast if the driver is used before
-    /// initialization. In normal usage `get_or_create_driver` awaits `initialize()`
+    /// initialization. In normal usage `create_driver` awaits `initialize()`
     /// before returning, so this guard only catches misuse.
     initialized: AtomicBool,
+    /// User-Agent string stamped on every request issued by this driver.
+    ///
+    /// When the driver's [`DriverOptions::user_agent_suffix()`] is `None`, this
+    /// is a clone of the runtime's `Arc<UserAgent>` (cheap atomic refcount bump;
+    /// drivers without an override share one `UserAgent` allocation with the
+    /// runtime). When the suffix is `Some`, this is a freshly-computed
+    /// `UserAgent` wrapped in its own `Arc`.
+    user_agent: Arc<UserAgent>,
+    /// HTTP client factory used by every per-account transport this driver
+    /// builds.
+    ///
+    /// When the driver has no fault injection rules configured, this is a
+    /// clone of the runtime's factory `Arc`. When the driver has fault
+    /// injection rules, this is a fault-injecting wrapper around the runtime's
+    /// factory; the wrapper is owned by this driver alone and never affects
+    /// other drivers built from the same runtime.
+    http_client_factory: Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
+    /// Whether this driver has fault injection rules installed.
+    ///
+    /// Mirrors `options.fault_injection_rules().is_some()`; cached at
+    /// construction time so the data-plane hot path can stamp the diagnostics
+    /// flag without re-checking the option.
+    #[cfg(feature = "fault_injection")]
+    fault_injection_enabled: bool,
+    /// Driver-level throughput-control group registry.
+    ///
+    /// Populated from `DriverOptions::throughput_control_groups()` once at
+    /// driver construction. The runtime no longer owns its own registry —
+    /// throughput-control groups are a driver-level concern.
+    throughput_control_groups: crate::options::ThroughputControlGroupRegistry,
+    /// Native FFI query plan provider. Lazily loads the native library on
+    /// first use; returns errors if unavailable.
+    #[cfg(feature = "__internal_native_query_plan")]
+    native_query_plan_provider: crate::query_plan_native::NativeQueryPlanProvider,
 }
 
 impl CosmosDriver {
@@ -210,46 +249,73 @@ impl CosmosDriver {
 
     async fn fetch_account_properties_with_version(
         runtime: &CosmosDriverRuntime,
+        http_client_factory: &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
         account: &AccountReference,
         version: TransportHttpVersion,
+        fault_injection_enabled: bool,
     ) -> crate::error::Result<(super::cache::AccountProperties, CosmosTransport)> {
         let endpoint = AccountEndpoint::from(account);
         let (transport, metadata_transport) = Self::build_metadata_transport_for_version(
             runtime.connection_pool(),
-            Arc::clone(runtime.http_client_factory()),
+            Arc::clone(http_client_factory),
             version,
             &endpoint,
         )?;
-        let user_agent = Self::user_agent_header(runtime);
+        let user_agent = Self::user_agent_header(runtime.user_agent());
         let props = Self::fetch_account_properties_with_transport(
             runtime,
             &metadata_transport,
             account,
             None,
             &user_agent,
+            fault_injection_enabled,
         )
         .await?;
         Ok((props, transport))
     }
 
-    /// Fetches account properties using the bootstrap transport.
+    /// Fetches account properties using the bootstrap transport, optionally with
+    /// a driver-specific HTTP client factory for fault injection.
     ///
     /// This is used during initialization (before the per-account transport exists).
+    /// When `override_http_client_factory` is provided (during driver initialization
+    /// with fault injection), a temporary bootstrap transport is created using that
+    /// factory, allowing fault injection rules to apply to the bootstrap probe.
+    /// Otherwise, the runtime's shared bootstrap transport is used (no fault injection).
     async fn fetch_account_properties_with_runtime(
         runtime: &CosmosDriverRuntime,
         account: &AccountReference,
+        override_http_client_factory: Option<
+            &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
+        >,
+        fault_injection_enabled: bool,
     ) -> crate::error::Result<super::cache::AccountProperties> {
         let endpoint = AccountEndpoint::from(account);
-        let transport = runtime.bootstrap_transport();
-        let metadata_transport = transport.get_metadata_transport(&endpoint)?;
-        let user_agent =
-            azure_core::http::headers::HeaderValue::from(runtime.user_agent().as_str().to_owned());
+        let user_agent = Self::user_agent_header(runtime.user_agent());
+
+        let metadata_transport = if let Some(factory) = override_http_client_factory {
+            // Bootstrap with driver-specific fault-injecting factory:
+            // Create a temporary bootstrap transport using the provided factory
+            // so fault injection rules apply to this probe.
+            let temp_bootstrap = CosmosTransport::bootstrap_metadata_only(
+                runtime.connection_pool().clone(),
+                Arc::clone(factory),
+                TransportHttpVersion::Http2,
+            )?;
+            temp_bootstrap.get_metadata_transport(&endpoint)?
+        } else {
+            // Normal bootstrap: use the runtime's shared bootstrap transport
+            let transport = runtime.bootstrap_transport();
+            transport.get_metadata_transport(&endpoint)?
+        };
+
         Self::fetch_account_properties_with_transport(
             runtime,
             &metadata_transport,
             account,
             None,
             &user_agent,
+            fault_injection_enabled,
         )
         .await
     }
@@ -267,9 +333,18 @@ impl CosmosDriver {
     /// The returned version is used to create the per-account `CosmosTransport`.
     async fn fetch_initial_account_properties(
         runtime: &CosmosDriverRuntime,
+        http_client_factory: &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
         account: &AccountReference,
+        fault_injection_enabled: bool,
     ) -> crate::error::Result<(TransportHttpVersion, super::cache::AccountProperties)> {
-        match Self::fetch_initial_account_properties_for_endpoint(runtime, account).await {
+        match Self::fetch_initial_account_properties_for_endpoint(
+            runtime,
+            http_client_factory,
+            account,
+            fault_injection_enabled,
+        )
+        .await
+        {
             Ok(result) => Ok(result),
             Err(primary_error) if !account.backup_endpoints().is_empty() => {
                 tracing::warn!(
@@ -282,7 +357,9 @@ impl CosmosDriver {
                     let backup_account = Self::with_endpoint(account, backup_url.clone());
                     match Self::fetch_initial_account_properties_for_endpoint(
                         runtime,
+                        http_client_factory,
                         &backup_account,
+                        fault_injection_enabled,
                     )
                     .await
                     {
@@ -317,21 +394,37 @@ impl CosmosDriver {
     /// Probes the HTTP version for a single endpoint.
     async fn fetch_initial_account_properties_for_endpoint(
         runtime: &CosmosDriverRuntime,
+        http_client_factory: &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
         account: &AccountReference,
+        fault_injection_enabled: bool,
     ) -> crate::error::Result<(TransportHttpVersion, super::cache::AccountProperties)> {
         if !runtime.connection_pool().is_http2_allowed() {
             // User explicitly disabled HTTP/2 — skip the probe.
             let (props, _) = Self::fetch_account_properties_with_version(
                 runtime,
+                http_client_factory,
                 account,
                 TransportHttpVersion::Http11,
+                fault_injection_enabled,
             )
             .await?;
             return Ok((TransportHttpVersion::Http11, props));
         }
 
         // Try HTTP/2-only via the bootstrap transport (which is HTTP/2-only).
-        match Self::fetch_account_properties_with_runtime(runtime, account).await {
+        // If fault injection is enabled, pass the driver's factory so FI rules apply to the probe.
+        match Self::fetch_account_properties_with_runtime(
+            runtime,
+            account,
+            if fault_injection_enabled {
+                Some(http_client_factory)
+            } else {
+                None
+            },
+            fault_injection_enabled,
+        )
+        .await
+        {
             Ok(props) => {
                 tracing::trace!(
                     endpoint = %AccountEndpoint::from(account),
@@ -354,8 +447,10 @@ impl CosmosDriver {
 
                 let (props, _) = Self::fetch_account_properties_with_version(
                     runtime,
+                    http_client_factory,
                     account,
                     TransportHttpVersion::Http11,
+                    fault_injection_enabled,
                 )
                 .await?;
                 Ok((TransportHttpVersion::Http11, props))
@@ -384,6 +479,7 @@ impl CosmosDriver {
         runtime: &CosmosDriverRuntime,
         activity_id: crate::models::ActivityId,
         endpoint: &AccountEndpoint,
+        fault_injection_enabled: bool,
     ) -> (DiagnosticsContextBuilder, TransportSecurity) {
         let mut diagnostics = DiagnosticsContextBuilder::new(
             activity_id,
@@ -392,17 +488,20 @@ impl CosmosDriver {
         diagnostics.set_cpu_monitor(runtime.cpu_monitor().clone());
         diagnostics.set_machine_id(Arc::clone(runtime.machine_id()));
         #[cfg(feature = "fault_injection")]
-        if runtime.fault_injection_enabled() {
+        if fault_injection_enabled {
             diagnostics.set_fault_injection_enabled(true);
         }
-        let transport_security =
-            if bool::from(runtime.connection_pool().emulator_server_cert_validation())
-                && is_emulator_host(endpoint)
-            {
-                TransportSecurity::EmulatorWithInsecureCertificates
-            } else {
-                TransportSecurity::Secure
-            };
+        #[cfg(not(feature = "fault_injection"))]
+        let _ = fault_injection_enabled;
+        let transport_security = if runtime
+            .connection_pool()
+            .server_certificate_validation()
+            .allows_insecure_connection(endpoint)
+        {
+            TransportSecurity::EmulatorWithInsecureCertificates
+        } else {
+            TransportSecurity::Secure
+        };
         (diagnostics, transport_security)
     }
 
@@ -416,6 +515,7 @@ impl CosmosDriver {
         account: &AccountReference,
         region: Option<&crate::options::Region>,
         user_agent: &azure_core::http::headers::HeaderValue,
+        fault_injection_enabled: bool,
     ) -> crate::error::Result<super::cache::AccountProperties> {
         let endpoint = AccountEndpoint::from(account);
         let endpoint_url = endpoint.join_path("/");
@@ -434,6 +534,7 @@ impl CosmosDriver {
             runtime,
             crate::models::ActivityId::new_uuid(),
             &endpoint,
+            fault_injection_enabled,
         );
         // NOTE: `transport.diagnostics_http_version()` reflects the *currently configured*
         // version on the adaptive transport. For the very first bootstrap call this is the
@@ -589,8 +690,8 @@ impl CosmosDriver {
         })
     }
 
-    fn user_agent_header(runtime: &CosmosDriverRuntime) -> azure_core::http::headers::HeaderValue {
-        azure_core::http::headers::HeaderValue::from(runtime.user_agent().as_str().to_owned())
+    fn user_agent_header(user_agent: &UserAgent) -> azure_core::http::headers::HeaderValue {
+        azure_core::http::headers::HeaderValue::from(user_agent.as_str().to_owned())
     }
 
     fn endpoint_for_write_region(
@@ -609,7 +710,26 @@ impl CosmosDriver {
         &self,
         account: &AccountReference,
     ) -> crate::error::Result<super::cache::AccountProperties> {
-        Self::refresh_account_properties(&self.runtime, account, &self.transport, None).await
+        let fault_injection_enabled = {
+            #[cfg(feature = "fault_injection")]
+            {
+                self.fault_injection_enabled
+            }
+            #[cfg(not(feature = "fault_injection"))]
+            {
+                false
+            }
+        };
+        Self::refresh_account_properties(
+            &self.runtime,
+            &self.http_client_factory,
+            account,
+            &self.transport,
+            &self.user_agent,
+            None,
+            fault_injection_enabled,
+        )
+        .await
     }
 
     /// Fetches account properties using the current per-account transport.
@@ -633,32 +753,38 @@ impl CosmosDriver {
     /// expected to be rare in steady-state operation.
     async fn refresh_account_properties(
         runtime: &CosmosDriverRuntime,
+        http_client_factory: &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
         account: &AccountReference,
         transport_holder: &Arc<ArcSwap<CosmosTransport>>,
+        user_agent: &Arc<UserAgent>,
         previous_props: Option<Arc<super::cache::AccountProperties>>,
+        fault_injection_enabled: bool,
     ) -> crate::error::Result<super::cache::AccountProperties> {
         let current_transport = transport_holder.load_full();
         let current_version = current_transport.negotiated_version();
         let endpoint = AccountEndpoint::from(account);
         let metadata_transport = current_transport.get_metadata_transport(&endpoint)?;
 
-        let user_agent = Self::user_agent_header(runtime);
+        let user_agent_header = Self::user_agent_header(user_agent);
         match Self::fetch_account_properties_with_transport(
             runtime,
             &metadata_transport,
             account,
             None,
-            &user_agent,
+            &user_agent_header,
+            fault_injection_enabled,
         )
         .await
         {
             Ok(props) => {
                 Self::maybe_restore_http2_after_refresh(
                     runtime,
+                    http_client_factory,
                     account,
                     transport_holder,
                     current_version,
                     &endpoint,
+                    fault_injection_enabled,
                 )
                 .await;
                 Ok(props)
@@ -666,11 +792,13 @@ impl CosmosDriver {
             Err(error) => {
                 match Self::handle_refresh_failure(
                     runtime,
+                    http_client_factory,
                     account,
                     transport_holder,
                     current_version,
                     &endpoint,
                     error,
+                    fault_injection_enabled,
                 )
                 .await
                 {
@@ -681,9 +809,11 @@ impl CosmosDriver {
                             runtime,
                             account,
                             transport_holder,
+                            user_agent,
                             &endpoint,
                             primary_error,
                             previous_props,
+                            fault_injection_enabled,
                         )
                         .await
                     }
@@ -697,13 +827,16 @@ impl CosmosDriver {
     /// Called when the primary global endpoint is unreachable. Iterates through
     /// readable regional endpoints from the previous account metadata and tries
     /// each one.
+    #[allow(clippy::too_many_arguments)]
     async fn refresh_via_regional_endpoints(
         runtime: &CosmosDriverRuntime,
         account: &AccountReference,
         transport_holder: &Arc<ArcSwap<CosmosTransport>>,
+        user_agent: &Arc<UserAgent>,
         primary_endpoint: &AccountEndpoint,
         primary_error: crate::error::CosmosError,
         previous_props: Option<Arc<super::cache::AccountProperties>>,
+        fault_injection_enabled: bool,
     ) -> crate::error::Result<super::cache::AccountProperties> {
         let Some(cached_props) = previous_props else {
             return Err(primary_error);
@@ -743,13 +876,14 @@ impl CosmosDriver {
                 continue;
             };
 
-            let user_agent = Self::user_agent_header(runtime);
+            let user_agent = Self::user_agent_header(user_agent);
             match Self::fetch_account_properties_with_transport(
                 runtime,
                 &regional_transport,
                 &regional_account,
                 Some(region),
                 &user_agent,
+                fault_injection_enabled,
             )
             .await
             {
@@ -780,10 +914,12 @@ impl CosmosDriver {
 
     async fn maybe_restore_http2_after_refresh(
         runtime: &CosmosDriverRuntime,
+        http_client_factory: &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
         account: &AccountReference,
         transport_holder: &Arc<ArcSwap<CosmosTransport>>,
         current_version: TransportHttpVersion,
         endpoint: &AccountEndpoint,
+        fault_injection_enabled: bool,
     ) {
         if !matches!(current_version, TransportHttpVersion::Http11)
             || !runtime.connection_pool().is_http2_allowed()
@@ -791,10 +927,22 @@ impl CosmosDriver {
             return;
         }
 
-        match Self::fetch_account_properties_with_runtime(runtime, account).await {
+        // Reprobe HTTP/2 using the fault-injecting factory if enabled
+        match Self::fetch_account_properties_with_runtime(
+            runtime,
+            account,
+            if fault_injection_enabled {
+                Some(http_client_factory)
+            } else {
+                None
+            },
+            fault_injection_enabled,
+        )
+        .await
+        {
             Ok(_) => match CosmosTransport::with_factory(
                 runtime.connection_pool().clone(),
-                Arc::clone(runtime.http_client_factory()),
+                Arc::clone(http_client_factory),
                 TransportHttpVersion::Http2,
             ) {
                 Ok(transport) => {
@@ -827,13 +975,16 @@ impl CosmosDriver {
     /// If the error indicates explicit HTTP/2 incompatibility, falls back to
     /// the alternate version directly. Otherwise, performs a full version probe
     /// to determine whether the gateway's protocol support has changed.
+    #[allow(clippy::too_many_arguments)]
     async fn handle_refresh_failure(
         runtime: &CosmosDriverRuntime,
+        http_client_factory: &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
         account: &AccountReference,
         transport_holder: &Arc<ArcSwap<CosmosTransport>>,
         current_version: TransportHttpVersion,
         endpoint: &AccountEndpoint,
         error: crate::error::CosmosError,
+        fault_injection_enabled: bool,
     ) -> crate::error::Result<super::cache::AccountProperties> {
         if Self::should_downgrade_http2(
             current_version,
@@ -850,9 +1001,14 @@ impl CosmosDriver {
                 "Metadata refresh failed with protocol incompatibility; falling back to alternate HTTP version"
             );
 
-            let (props, fallback_transport) =
-                Self::fetch_account_properties_with_version(runtime, account, fallback_version)
-                    .await?;
+            let (props, fallback_transport) = Self::fetch_account_properties_with_version(
+                runtime,
+                http_client_factory,
+                account,
+                fallback_version,
+                fault_injection_enabled,
+            )
+            .await?;
 
             transport_holder.store(Arc::new(fallback_transport));
 
@@ -941,11 +1097,67 @@ impl CosmosDriver {
 
     /// Creates a new driver instance.
     ///
-    /// This is internal - use [`CosmosDriverRuntime::get_or_create_driver()`] instead.
-    pub(crate) fn new(runtime: Arc<CosmosDriverRuntime>, options: DriverOptions) -> Self {
+    /// This is internal - use [`CosmosDriverRuntime::create_driver()`] instead.
+    pub(crate) fn new(
+        runtime: Arc<CosmosDriverRuntime>,
+        options: DriverOptions,
+    ) -> crate::error::Result<Self> {
         let account = options.account().clone();
         let account_endpoint = AccountEndpoint::from(&account);
         let default_endpoint = CosmosEndpoint::global(account.endpoint().clone());
+
+        // Per-driver User-Agent: compute the cross-SDK feature flags advertised
+        // in the header from this driver's effective client configuration —
+        // HTTP/2 (runtime connection pool) and PPCB (this driver's partition
+        // failover options). When the driver-level suffix override is unset and
+        // the flags match the runtime's base flags (the common case), share the
+        // runtime's `Arc<UserAgent>` (cheap atomic refcount bump). Otherwise
+        // compute a fresh `UserAgent` owned by this driver alone.
+        let feature_flags = UserAgentFeatureFlags::from_client_config(
+            runtime.connection_pool().is_http2_allowed(),
+            options
+                .partition_failover_options()
+                .circuit_breaker_enabled(),
+        );
+        let user_agent = match options.user_agent_suffix() {
+            Some(suffix) => Arc::new(UserAgent::from_suffix(
+                runtime.wrapping_sdk_identifier(),
+                suffix,
+                feature_flags,
+            )),
+            None if feature_flags == runtime.user_agent_feature_flags() => {
+                Arc::clone(runtime.user_agent())
+            }
+            None => Arc::new(runtime.user_agent_with_feature_flags(feature_flags)),
+        };
+
+        // Per-driver HTTP client factory: wrap with fault injection if rules
+        // are installed on this driver's options; otherwise share the
+        // runtime's factory `Arc`. Bootstrap transport (built at runtime
+        // construction time) is never wrapped, so rules targeting the
+        // initial account-metadata probe only take effect on post-bootstrap
+        // refreshes — matching the previous runtime-level FI semantics.
+        #[cfg(feature = "fault_injection")]
+        let fault_injection_enabled = options.fault_injection_rules().is_some();
+        let http_client_factory: Arc<dyn super::transport::http_client_factory::HttpClientFactory> = {
+            #[cfg(feature = "fault_injection")]
+            {
+                if let Some(rules) = options.fault_injection_rules() {
+                    Arc::new(
+                        crate::fault_injection::FaultInjectingHttpClientFactory::new(
+                            Arc::clone(runtime.http_client_factory()),
+                            rules.to_vec(),
+                        ),
+                    )
+                } else {
+                    Arc::clone(runtime.http_client_factory())
+                }
+            }
+            #[cfg(not(feature = "fault_injection"))]
+            {
+                Arc::clone(runtime.http_client_factory())
+            }
+        };
 
         // Shared transport holder — used by both the driver and the refresh callback.
         // ArcSwap provides lock-free reads on the hot path (every operation)
@@ -956,18 +1168,30 @@ impl CosmosDriver {
         let runtime_for_callback = Arc::clone(&runtime);
         let account_for_callback = account.clone();
         let transport_for_callback = Arc::clone(&transport);
+        let user_agent_for_callback = Arc::clone(&user_agent);
+        let factory_for_callback = Arc::clone(&http_client_factory);
+        #[cfg(feature = "fault_injection")]
+        let fault_injection_for_callback = fault_injection_enabled;
+        #[cfg(not(feature = "fault_injection"))]
+        let fault_injection_for_callback = false;
         let refresh_callback = Arc::new(
             move |previous_props: Option<Arc<super::cache::AccountProperties>>| {
                 let runtime = Arc::clone(&runtime_for_callback);
                 let account = account_for_callback.clone();
                 let transport_holder = Arc::clone(&transport_for_callback);
+                let user_agent = Arc::clone(&user_agent_for_callback);
+                let factory = Arc::clone(&factory_for_callback);
+                let fault_injection_enabled = fault_injection_for_callback;
                 let fut: BoxFuture<'static, crate::error::Result<super::cache::AccountProperties>> =
                     Box::pin(async move {
                         CosmosDriver::refresh_account_properties(
                             &runtime,
+                            &factory,
                             &account,
                             &transport_holder,
+                            &user_agent,
                             previous_props,
+                            fault_injection_enabled,
                         )
                         .await
                     });
@@ -980,7 +1204,9 @@ impl CosmosDriver {
         let endpoint_unavailability_ttl = options
             .operation_options()
             .endpoint_unavailability_ttl
-            .or(runtime.operation_options().endpoint_unavailability_ttl)
+            .or(runtime
+                .default_operation_options()
+                .endpoint_unavailability_ttl)
             .unwrap_or_else(|| {
                 std::env::var("AZURE_COSMOS_ENDPOINT_UNAVAILABLE_TTL_MS")
                     .ok()
@@ -988,18 +1214,6 @@ impl CosmosDriver {
                     .map(Duration::from_millis)
                     .unwrap_or(Duration::from_secs(60))
             });
-
-        // Build a layered view (env → runtime → account) to resolve init-time config.
-        // No per-operation overrides exist at construction time.
-        let init_view = OperationOptionsView::new(
-            Some(Arc::clone(runtime.env_operation_options())),
-            Some(runtime.operation_options()),
-            Some(options.operation_options().clone()),
-            None,
-        );
-
-        let partition_failover_config = PartitionFailoverConfig::from_options(&init_view);
-
         let location_state_store = Arc::new(LocationStateStore::new(
             runtime.account_metadata_cache().clone(),
             account_endpoint,
@@ -1007,7 +1221,7 @@ impl CosmosDriver {
             refresh_callback,
             runtime.connection_pool().is_gateway20_allowed(),
             endpoint_unavailability_ttl,
-            partition_failover_config,
+            options.partition_failover_options().clone(),
             options.preferred_regions().to_vec(),
         ));
 
@@ -1023,7 +1237,45 @@ impl CosmosDriver {
         #[cfg(feature = "tokio")]
         location_state_store.start_account_refresh_loop();
 
-        Self {
+        // Spawn the background endpoint-probe loop. This makes account-level
+        // endpoint failback probe-gated: an endpoint marked unavailable (e.g.
+        // firewall-blocked) only rejoins the routing rotation after a
+        // lightweight connectivity probe (a `GET /probe` request to that
+        // specific endpoint) confirms it is reachable. Without this, the
+        // endpoint would be failed back purely on cooldown expiry, have real
+        // traffic routed to it, time out, and be re-marked unavailable — a
+        // sustained low-throughput loop (issue #4597).
+        #[cfg(feature = "tokio")]
+        {
+            let account_for_probe = account.clone();
+            let transport_for_probe = Arc::clone(&transport);
+            let user_agent_for_probe = Arc::clone(&user_agent);
+            let probe_fn: EndpointProbeFn = Arc::new(move |url: Url| {
+                let account = account_for_probe.clone();
+                let transport_holder = Arc::clone(&transport_for_probe);
+                let user_agent = Arc::clone(&user_agent_for_probe);
+                Box::pin(async move {
+                    let probe_account = CosmosDriver::with_endpoint(&account, url);
+                    let endpoint = AccountEndpoint::from(&probe_account);
+                    let transport = transport_holder.load_full();
+                    let Ok(metadata_transport) = transport.get_metadata_transport(&endpoint) else {
+                        return false;
+                    };
+                    let user_agent = CosmosDriver::user_agent_header(&user_agent);
+                    probe_endpoint_connectivity(&metadata_transport, &probe_account, &user_agent)
+                        .await
+                }) as BoxFuture<'static, bool>
+            });
+            location_state_store.start_endpoint_probe_loop(probe_fn);
+        }
+
+        // Driver-level throughput-control registry.
+        //
+        // The runtime no longer owns one — TCGs are a driver-level concern.
+        // Clone the per-driver registry as-is for the request hot path.
+        let throughput_control_groups = options.throughput_control_groups().clone();
+
+        Ok(Self {
             runtime,
             options,
             transport,
@@ -1031,7 +1283,14 @@ impl CosmosDriver {
             pk_range_cache: PartitionKeyRangeCache::new(),
             session_manager: SessionManager::new(),
             initialized: AtomicBool::new(false),
-        }
+            user_agent,
+            http_client_factory,
+            #[cfg(feature = "fault_injection")]
+            fault_injection_enabled,
+            throughput_control_groups,
+            #[cfg(feature = "__internal_native_query_plan")]
+            native_query_plan_provider: crate::query_plan_native::NativeQueryPlanProvider::new(),
+        })
     }
 
     /// Returns the account reference.
@@ -1049,9 +1308,61 @@ impl CosmosDriver {
         &self.options
     }
 
+    /// Returns the User-Agent stamped on every request this driver issues.
+    ///
+    /// When the driver was constructed with no
+    /// [`DriverOptions::user_agent_suffix()`] override, this returns a clone of
+    /// the runtime's `Arc<UserAgent>` — drivers built from the same runtime
+    /// without an override share one `UserAgent` allocation. Otherwise this
+    /// returns the driver's freshly-computed `UserAgent`.
+    pub fn user_agent(&self) -> &Arc<UserAgent> {
+        &self.user_agent
+    }
+
+    /// Returns the per-driver HTTP client factory.
+    ///
+    /// Used by data-plane and refresh paths to build per-account transports.
+    /// Equivalent to the runtime's factory when this driver has no fault
+    /// injection rules; otherwise wraps the runtime's factory with a
+    /// fault-injecting factory carrying this driver's rules.
+    #[allow(dead_code)]
+    pub(crate) fn http_client_factory(
+        &self,
+    ) -> &Arc<dyn super::transport::http_client_factory::HttpClientFactory> {
+        &self.http_client_factory
+    }
+
+    /// Returns whether fault injection is enabled for this driver.
+    #[cfg(feature = "fault_injection")]
+    #[allow(dead_code)]
+    pub(crate) fn fault_injection_enabled(&self) -> bool {
+        self.fault_injection_enabled
+    }
+
+    /// **Internal test hook -- not part of the public API.**
+    ///
+    /// Returns the current value of the partition-level PPAF flag
+    /// (`per_partition_automatic_failover_enabled`) from the live
+    /// `PartitionEndpointState`. Used by integration tests to verify that
+    /// the driver's background account-refresh loop picks up dynamic
+    /// changes to `AccountProperties.enable_per_partition_failover_behavior`.
+    ///
+    /// **Do not call from production code.** Available only because
+    /// integration tests live outside the crate and cannot reach the
+    /// `pub(crate)` `LocationStateStore::snapshot` API directly. May be
+    /// changed or removed at any time without a semver bump.
+    #[cfg(any(test, feature = "__internal_in_memory_emulator"))]
+    #[doc(hidden)]
+    pub fn is_per_partition_automatic_failover_enabled_for_testing(&self) -> bool {
+        self.location_state_store
+            .snapshot()
+            .partitions
+            .per_partition_automatic_failover_enabled
+    }
+
     /// Returns the current per-account transport.
     ///
-    /// Lock-free via `ArcSwap::load_full()` — returns a cloned `Arc` with no
+    /// Lock-free via ArcSwap::load_full() — returns a cloned Arc with no
     /// reader-counter contention between concurrent callers.
     fn transport(&self) -> Arc<CosmosTransport> {
         self.transport.load_full()
@@ -1064,7 +1375,7 @@ impl CosmosDriver {
     /// the account properties for regional endpoint resolution.
     ///
     /// This method is called automatically by
-    /// [`CosmosDriverRuntime::get_or_create_driver`](crate::CosmosDriverRuntime::get_or_create_driver).
+    /// [`CosmosDriverRuntime::create_driver`](crate::CosmosDriverRuntime::create_driver).
     /// Callers may invoke it again to retry if the initial attempt failed
     /// (the result is idempotent).
     pub async fn initialize(&self) -> crate::error::Result<()> {
@@ -1072,8 +1383,23 @@ impl CosmosDriver {
         let account_endpoint = AccountEndpoint::from(account);
 
         // Probe HTTP version and fetch account properties in one step.
-        let (negotiated_version, properties) =
-            Self::fetch_initial_account_properties(&self.runtime, account).await?;
+        let fault_injection_enabled = {
+            #[cfg(feature = "fault_injection")]
+            {
+                self.fault_injection_enabled
+            }
+            #[cfg(not(feature = "fault_injection"))]
+            {
+                false
+            }
+        };
+        let (negotiated_version, properties) = Self::fetch_initial_account_properties(
+            &self.runtime,
+            &self.http_client_factory,
+            account,
+            fault_injection_enabled,
+        )
+        .await?;
 
         tracing::info!(
             endpoint = %account_endpoint,
@@ -1082,15 +1408,27 @@ impl CosmosDriver {
         );
 
         // Cache the properties.
-        self.runtime
+        let cached_properties = self
+            .runtime
             .account_metadata_cache()
             .get_or_fetch(account_endpoint, || async { Ok(properties) })
             .await?;
 
+        // Seed the routing snapshot with the initial account properties so
+        // server-controlled flags (PPAF/PPCB) and writable-region selection
+        // are correct before the first operation runs. Without this, the
+        // routing state would stay at defaults until either the first
+        // operation triggers `sync_account_properties` or the background
+        // refresh loop fires (after `BACKGROUND_REFRESH_INTERVAL`).
+        self.location_state_store.sync_account_properties(
+            cached_properties,
+            self.location_state_store.default_endpoint(),
+        );
+
         // Create the per-account transport with the negotiated version.
         let new_transport = Arc::new(CosmosTransport::with_factory(
             self.runtime.connection_pool().clone(),
-            Arc::clone(self.runtime.http_client_factory()),
+            Arc::clone(&self.http_client_factory),
             negotiated_version,
         )?);
 
@@ -1119,43 +1457,68 @@ impl CosmosDriver {
     /// Constructs an [`OperationOptionsView`] for resolving options across all layers.
     ///
     /// The view resolves options in priority order (highest first):
-    /// 1. `OperationOptions` - operation-specific overrides
-    /// 2. `DriverOptions` - driver-level defaults
-    /// 3. `CosmosDriverRuntime` - global runtime defaults
-    /// 4. Environment - env vars read at startup
+    /// 1. Environment `{ENV}_OVERRIDE` kill switches - fleet-wide incident override
+    /// 2. `OperationOptions` - operation-specific overrides
+    /// 3. `DriverOptions` - driver-level defaults
+    /// 4. `CosmosDriverRuntime` - global runtime defaults
+    /// 5. Environment - env vars read at startup
     pub fn operation_options_view<'a>(
         &self,
         operation_options: &'a OperationOptions,
     ) -> OperationOptionsView<'a> {
-        OperationOptionsView::new(
+        OperationOptionsView::new_with_override(
+            Some(Arc::clone(self.runtime.env_override_operation_options())),
             Some(Arc::clone(self.runtime.env_operation_options())),
-            Some(self.runtime.operation_options()),
+            Some(self.runtime.default_operation_options()),
             Some(self.options.operation_options().clone()),
             Some(operation_options),
         )
     }
 
-    /// Computes the effective throughput control group for an operation.
+    /// Computes the effective throughput-control header values for an operation.
     ///
-    /// Resolution order:
-    /// 1. Explicit group name from the resolved options — looked up in the registry
-    ///    and snapshotted.
-    /// 2. Default group for the operation's container.
+    /// Resolves the per-request `x-ms-cosmos-throughput-bucket` and
+    /// `x-ms-cosmos-priority-level` headers using the public layering
+    /// contract:
     ///
-    /// Returns `Ok(None)` if no applicable control group is found.
+    /// 1. If the layered
+    ///    [`ThroughputControlOptions`](crate::options::ThroughputControlOptions)
+    ///    sets the field directly, use it.
+    /// 2. Else, if [`group_name`](crate::options::ThroughputControlOptions::group_name)
+    ///    resolves to a group registered on this driver via
+    ///    [`DriverOptionsBuilder::register_throughput_control_group`](crate::options::DriverOptionsBuilder::register_throughput_control_group),
+    ///    use the group's value for the field.
+    /// 3. Else, omit the header.
+    ///
+    /// The two fields resolve independently — a layered
+    /// `throughput_bucket = Some(...)` does not suppress a `priority_level`
+    /// carried by the registered group, and vice versa.
     ///
     /// # Errors
     ///
-    /// Returns an error if an explicitly named group is not found in the registry.
-    pub(crate) fn effective_throughput_control_group(
+    /// Returns an error if [`group_name`](crate::options::ThroughputControlOptions::group_name)
+    /// is set to a name that does not resolve to a registered group for the
+    /// operation's container.
+    pub(crate) fn effective_throughput_control(
         &self,
         effective_options: &OperationOptionsView<'_>,
         container: &ContainerReference,
-    ) -> crate::error::Result<Option<ThroughputControlGroupSnapshot>> {
-        if let Some(name) = effective_options.throughput_control_group() {
+    ) -> crate::error::Result<ResolvedThroughputControl> {
+        let throughput_view = effective_options.throughput_control();
+        let mut bucket = throughput_view.throughput_bucket().copied();
+        let mut priority = throughput_view.priority_level().copied();
+
+        if bucket.is_some() && priority.is_some() {
+            return Ok(ResolvedThroughputControl {
+                throughput_bucket: bucket,
+                priority_level: priority,
+            });
+        }
+
+        if let Some(name) = throughput_view.group_name() {
             let group = self
-                .runtime
-                .get_throughput_control_group(container, name)
+                .throughput_control_groups
+                .get_by_container_and_name(container, name)
                 .ok_or_else(|| {
                     crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED)
                         .with_message(format!(
@@ -1165,14 +1528,19 @@ impl CosmosDriver {
                         ))
                         .build()
                 })?;
-            return Ok(Some(ThroughputControlGroupSnapshot::from(group.as_ref())));
+            let snapshot = ThroughputControlGroupSnapshot::from(group.as_ref());
+            if bucket.is_none() {
+                bucket = snapshot.throughput_bucket();
+            }
+            if priority.is_none() {
+                priority = snapshot.priority_level();
+            }
         }
 
-        // No explicit name — fall back to the default group for the container.
-        Ok(self
-            .runtime
-            .get_default_throughput_control_group(container)
-            .map(|group| ThroughputControlGroupSnapshot::from(group.as_ref())))
+        Ok(ResolvedThroughputControl {
+            throughput_bucket: bucket,
+            priority_level: priority,
+        })
     }
 
     /// Fetches partition key ranges from the service for the given container.
@@ -1306,20 +1674,36 @@ impl CosmosDriver {
 
     /// Pre-resolves the partition key range ID for a data plane operation.
     ///
-    /// When PPAF/PPCB is enabled and the operation provides both a container
-    /// reference and a partition key, uses the `PartitionKeyRangeCache` to
-    /// compute the effective partition key and look up the range ID from
-    /// the cached routing map. If the routing map is not cached, fetches it
-    /// from the service.
+    /// When PPAF/PPCB is enabled, seeds the partition key range ID before the
+    /// first attempt so partition-level failover overrides can take effect from
+    /// the very first request instead of only after a retry captures the ID
+    /// from response headers.
+    ///
+    /// Resolution is **`OperationOverrides`-aware**. The dataflow pipeline
+    /// fans a query out into per-physical-partition sub-operations and stamps
+    /// the owning `partition_key_range_id` (plus the narrowed feed range and/or
+    /// partition key) onto [`OperationOverrides`] rather than mutating the
+    /// shared [`CosmosOperation`]. The overrides therefore carry the most
+    /// specific routing information and are consulted first:
+    ///
+    /// 1. If the overrides already carry a `partition_key_range_id` (the common
+    ///    case for dataflow-planned queries), use it directly — no cache lookup
+    ///    and no risk of a multi-range collapse.
+    /// 2. Otherwise resolve a logical partition key (from the overrides, then
+    ///    the operation) through the point-lookup path.
+    /// 3. Otherwise resolve an EPK-range feed range (from the overrides, then
+    ///    the operation), seeding only when it maps to exactly one physical
+    ///    partition.
     ///
     /// Returns `None` if:
     /// - PPAF/PPCB is not enabled
     /// - The operation does not target a partitioned resource
-    /// - The operation has no container reference or partition key
+    /// - No container reference or routing target is available
     /// - The cache lookup or fetch fails
     async fn pre_resolve_partition_key_range_id(
         &self,
         operation: &CosmosOperation,
+        overrides: &OperationOverrides,
     ) -> Option<PartitionKeyRangeId> {
         // Only pre-resolve for partitioned data plane operations.
         if !operation
@@ -1339,16 +1723,56 @@ impl CosmosDriver {
             return None;
         }
 
-        // Need both a container reference and a partition key.
-        let container = operation.container()?;
-        let Some(partition_key) = operation.target().and_then(|t| t.partition_key()) else {
-            return None;
-        };
+        // The dataflow pipeline resolves each query into per-partition
+        // sub-operations and stamps the owning physical partition's range ID
+        // onto the overrides. When present it is authoritative — use it as-is,
+        // skipping any cache lookup (and the multi-range collapse that would
+        // otherwise silently drop the seed).
+        if let Some(pk_range_id) = overrides.partition_key_range_id.as_deref() {
+            return Some(PartitionKeyRangeId::from(pk_range_id.to_owned()));
+        }
 
+        // Need a container reference for any cache-backed resolution below.
+        let container = operation.container()?;
+
+        // Logical-partition-key targets resolve directly from the partition key.
+        // Prefer the override (set by the dataflow pipeline) over the operation.
+        let partition_key = overrides
+            .partition_key
+            .as_ref()
+            .or_else(|| operation.target().and_then(|t| t.partition_key()));
+        if let Some(partition_key) = partition_key {
+            return self
+                .pk_range_cache
+                .resolve_partition_key_range_id(container, partition_key, false, |c, cont| {
+                    Box::pin(self.fetch_pk_ranges_from_service(c, cont))
+                })
+                .await
+                .map(PartitionKeyRangeId::from);
+        }
+
+        // EPK-range feed ranges (e.g. `SELECT * FROM c` scoped to a single physical
+        // partition) carry no logical partition key. Resolve the owning physical
+        // partition by EPK range so PPCB/PPAF can attribute failures from the first
+        // attempt. Seed only when the range maps to exactly one physical partition:
+        // a range that fans out across multiple partitions (or matches none) has no
+        // single owner to attribute to, so the pipeline instead captures the range
+        // ID from the response headers on a later attempt. `resolve_single_overlapping_range_id`
+        // answers this without cloning every overlapping range.
+        //
+        // Prefer the override feed range (set by the dataflow pipeline) over the
+        // operation's own target.
+        let target = overrides
+            .feed_range
+            .as_ref()
+            .or_else(|| operation.target())?;
         self.pk_range_cache
-            .resolve_partition_key_range_id(container, partition_key, false, |c, cont| {
-                Box::pin(self.fetch_pk_ranges_from_service(c, cont))
-            })
+            .resolve_single_overlapping_range_id(
+                container,
+                target.min_inclusive()..target.max_exclusive(),
+                false,
+                |c, cont| Box::pin(self.fetch_pk_ranges_from_service(c, cont)),
+            )
             .await
             .map(PartitionKeyRangeId::from)
     }
@@ -1399,7 +1823,9 @@ impl CosmosDriver {
     ///     "my-key",
     /// );
     ///
-    /// let driver = runtime.get_or_create_driver(account, None).await?;
+    /// let driver = runtime
+    ///     .create_driver(azure_data_cosmos_driver::options::DriverOptions::builder(account).build())
+    ///     .await?;
     ///
     /// // Point operation: plan and execute in one call.
     /// let options = OperationOptionsBuilder::new()
@@ -1491,10 +1917,11 @@ impl CosmosDriver {
     ) -> crate::error::Result<Option<crate::models::CosmosResponse>> {
         if !self.initialized.load(Ordering::Acquire) {
             let endpoint = AccountEndpoint::from(self.options.account());
-            return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::CLIENT_DRIVER_NOT_INITIALIZED)
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_DRIVER_NOT_INITIALIZED)
                 .with_message(format!(
                     "CosmosDriver for {endpoint} has not been initialized; call initialize() or \
-                     use CosmosDriverRuntime::get_or_create_driver() which initializes automatically"
+                     use CosmosDriverRuntime::create_driver() which initializes automatically"
                 ))
                 .build());
         }
@@ -1536,12 +1963,14 @@ impl CosmosDriver {
         // Step 1: Build the single OperationOptionsView for layered resolution.
         let effective_options = self.operation_options_view(options);
 
-        // Step 2: Resolve effective throughput control group (if any).
-        let effective_control_group = match operation.container() {
-            Some(container) => {
-                self.effective_throughput_control_group(&effective_options, container)?
-            }
-            None => None,
+        // Step 2: Resolve effective throughput control headers.
+        let effective_throughput_control = if let Some(container) = operation.container() {
+            Some(self.effective_throughput_control(&effective_options, container)?)
+        } else {
+            // Throughput control doesn't apply to operations that don't target a container.
+            // But it's not an error to specify the settings, they may have been inherited from
+            // a parent context. We just disregard them.
+            None
         };
 
         // Step 3: Initialize operation activity id
@@ -1580,7 +2009,11 @@ impl CosmosDriver {
         // When partition-level failover is enabled, resolving the range ID
         // before the first attempt lets the pipeline apply partition overrides
         // from the very first request instead of only after the first retry.
-        let pre_resolved_pk_range_id = self.pre_resolve_partition_key_range_id(operation).await;
+        // Pass the overrides so dataflow-stamped routing (PK range ID, partition
+        // key, EPK range) is honored ahead of the operation's own target.
+        let pre_resolved_pk_range_id = self
+            .pre_resolve_partition_key_range_id(operation, &overrides)
+            .await;
 
         // Step 6: Select the adaptive transport context for the chosen pipeline
         let transport = self.transport();
@@ -1588,8 +2021,22 @@ impl CosmosDriver {
         let resource_type = operation.resource_type();
         let is_dataplane = uses_dataplane_pipeline(resource_type, operation_type);
         // Step 7: Initialize diagnostics (shared envelope shape with the bootstrap fetch).
-        let (diagnostics_builder, transport_security) =
-            Self::new_diagnostics_envelope(&self.runtime, activity_id.clone(), &endpoint);
+        let fault_injection_enabled = {
+            #[cfg(feature = "fault_injection")]
+            {
+                self.fault_injection_enabled
+            }
+            #[cfg(not(feature = "fault_injection"))]
+            {
+                false
+            }
+        };
+        let (diagnostics_builder, transport_security) = Self::new_diagnostics_envelope(
+            &self.runtime,
+            activity_id.clone(),
+            &endpoint,
+            fault_injection_enabled,
+        );
 
         let pipeline_type = if is_dataplane {
             PipelineType::DataPlane
@@ -1597,9 +2044,8 @@ impl CosmosDriver {
             PipelineType::Metadata
         };
 
-        let user_agent = azure_core::http::headers::HeaderValue::from(
-            self.runtime.user_agent().as_str().to_owned(),
-        );
+        let user_agent =
+            azure_core::http::headers::HeaderValue::from(self.user_agent.as_str().to_owned());
 
         // Step 8: Execute via the new operation pipeline
         super::pipeline::operation_pipeline::execute_operation_pipeline(
@@ -1620,7 +2066,7 @@ impl CosmosDriver {
             account_properties
                 .user_consistency_policy
                 .default_consistency_level,
-            effective_control_group.as_ref(),
+            effective_throughput_control,
             pre_resolved_pk_range_id,
         )
         .await
@@ -1653,7 +2099,9 @@ impl CosmosDriver {
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
     ///     "my-key",
     /// );
-    /// let driver = runtime.get_or_create_driver(account, None).await?;
+    /// let driver = runtime
+    ///     .create_driver(azure_data_cosmos_driver::options::DriverOptions::builder(account).build())
+    ///     .await?;
     ///
     /// // Resolve the container (fetched from service on each call)
     /// let container = driver.resolve_container("mydb", "mycontainer").await?;
@@ -1729,10 +2177,11 @@ impl CosmosDriver {
     ) -> crate::error::Result<OperationPlan> {
         if !self.initialized.load(Ordering::Acquire) {
             let endpoint = AccountEndpoint::from(self.options.account());
-            return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::CLIENT_DRIVER_NOT_INITIALIZED)
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_DRIVER_NOT_INITIALIZED)
                 .with_message(format!(
                     "CosmosDriver for {endpoint} has not been initialized; call initialize() or \
-                     use CosmosDriverRuntime::get_or_create_driver() which initializes automatically"
+                     use CosmosDriverRuntime::create_driver() which initializes automatically"
                 ))
                 .build());
         }
@@ -1773,13 +2222,19 @@ impl CosmosDriver {
             }
         };
 
-        // Trivial plan: anything that isn't a cross-partition query.
+        // 1. Trivial plan: anything that isn't a cross-partition query.
+        //    The internal pipeline only supports projection and filtering over
+        //    a sequential drain, with no support for ordering. Trivial
+        //    operations (targeting a single logical partition) are sent directly
+        //    to the gateway without query planning.
         if operation.is_trivial() {
             let pipeline = planner::build_trivial_pipeline(operation.clone(), resume_state)?;
             return Ok(OperationPlan::new(pipeline, operation));
         }
 
-        // Cross-partition query: fetch query plan from backend.
+        // 2. Cross-partition query: obtain a query plan and build the fan-out
+        //    pipeline. Try the native FFI provider first (no network call),
+        //    falling back to the Gateway if unavailable.
         let container = operation.container().ok_or_else(|| {
             crate::error::CosmosError::builder()
                 .with_status(
@@ -1789,7 +2244,31 @@ impl CosmosDriver {
                 .build()
         })?;
 
-        // Currently, we don't support any extra query features (like ordering, etc.)
+        let query_plan = self
+            .resolve_query_plan(container, &operation, options)
+            .await?;
+
+        // Build the fan-out pipeline using the query plan.
+        let container_ref = container.clone();
+        let mut topology = CachedTopologyProvider::new(
+            &self.pk_range_cache,
+            container_ref,
+            |container, continuation| self.fetch_pk_ranges_from_service(container, continuation),
+        );
+
+        let pipeline =
+            planner::build_sequential_drain(&query_plan, &mut topology, &operation, resume_state)
+                .await?;
+        Ok(OperationPlan::new(pipeline, operation))
+    }
+
+    /// Fetches a query plan from the Gateway backend.
+    async fn gateway_query_plan(
+        &self,
+        container: &ContainerReference,
+        operation: &CosmosOperation,
+        options: &OperationOptions,
+    ) -> crate::error::Result<QueryPlan> {
         let query_plan_operation = CosmosOperation::query_plan(container.clone(), "".into())
             .with_body(operation.body().unwrap_or_default().to_vec());
 
@@ -1818,19 +2297,86 @@ impl CosmosDriver {
                 .with_source(e)
                 .build()
         })?;
+        Ok(query_plan)
+    }
 
-        // Build the fan-out pipeline using the query plan.
-        let container_ref = container.clone();
-        let mut topology = CachedTopologyProvider::new(
-            &self.pk_range_cache,
-            container_ref,
-            |container, continuation| self.fetch_pk_ranges_from_service(container, continuation),
-        );
+    /// Resolves a query plan, trying the native FFI provider first and
+    /// falling back to the Gateway if unavailable or if generation fails.
+    #[cfg(feature = "__internal_native_query_plan")]
+    async fn resolve_query_plan(
+        &self,
+        container: &ContainerReference,
+        operation: &CosmosOperation,
+        options: &OperationOptions,
+    ) -> crate::error::Result<QueryPlan> {
+        // Fetch the query engine configuration from the account metadata cache.
+        let account = operation.resource_reference().account();
+        let account_endpoint = AccountEndpoint::from(account);
+        let query_engine_config = self
+            .runtime
+            .account_metadata_cache()
+            .get(&account_endpoint)
+            .await
+            .map(|props| props.query_engine_configuration.clone())
+            .unwrap_or_default();
 
-        let pipeline =
-            planner::build_sequential_drain(&query_plan, &mut topology, &operation, resume_state)
-                .await?;
-        Ok(OperationPlan::new(pipeline, operation))
+        let native_result = operation
+            .body()
+            .and_then(|b| std::str::from_utf8(b).ok())
+            .map(|json| self.try_native_query_plan(json, container, &query_engine_config));
+
+        match native_result {
+            Some(Ok(plan)) => {
+                tracing::debug!("using native FFI query plan");
+                Ok(plan)
+            }
+            Some(Err(crate::query_plan_native::error::QueryPlanError::LibraryNotAvailable {
+                ..
+            })) => {
+                tracing::debug!("native query plan library not available, falling back to gateway");
+                self.gateway_query_plan(container, operation, options).await
+            }
+            Some(Err(e)) => {
+                tracing::warn!(error = %e, "native query plan generation failed, falling back to gateway");
+                self.gateway_query_plan(container, operation, options).await
+            }
+            None => {
+                tracing::debug!("using gateway query plan");
+                self.gateway_query_plan(container, operation, options).await
+            }
+        }
+    }
+
+    /// Resolves a query plan from the Gateway backend.
+    #[cfg(not(feature = "__internal_native_query_plan"))]
+    async fn resolve_query_plan(
+        &self,
+        container: &ContainerReference,
+        operation: &CosmosOperation,
+        options: &OperationOptions,
+    ) -> crate::error::Result<QueryPlan> {
+        self.gateway_query_plan(container, operation, options).await
+    }
+
+    /// Attempts to generate a query plan using the native FFI provider.
+    /// Returns `Err` if the native library is not available or if plan
+    /// generation fails for any reason. The caller should fall through
+    /// to the Gateway path on error.
+    #[cfg(feature = "__internal_native_query_plan")]
+    fn try_native_query_plan(
+        &self,
+        query_spec_json: &str,
+        container: &ContainerReference,
+        query_engine_config: &str,
+    ) -> Result<QueryPlan, crate::query_plan_native::error::QueryPlanError> {
+        let pk_def = container.partition_key_definition();
+        let pk_paths: Vec<&str> = pk_def.paths().iter().map(|p| p.as_ref()).collect();
+        self.native_query_plan_provider.get_query_plan(
+            query_spec_json,
+            &pk_paths,
+            pk_def.kind(),
+            query_engine_config,
+        )
     }
 
     /// Returns all partition key ranges for a container, ordered by min EPK.
@@ -1917,6 +2463,42 @@ impl CosmosDriver {
     }
 }
 
+/// Sends a lightweight `GET /probe` connectivity check to a single endpoint
+/// and reports whether the endpoint is reachable.
+///
+/// Account-level failback is gated on *network reachability*, not on a full
+/// database-account read succeeding. Any wire response — even a non-2xx
+/// envelope (401/403/429/503/5xx) — proves the endpoint accepted the
+/// connection and is reachable. Only a transport error with no response
+/// (firewall block, DNS failure, connection refused, or connection timeout)
+/// means the endpoint is unreachable and must stay out of rotation.
+///
+/// Hitting the dedicated `/probe` path (rather than re-reading the database
+/// account) keeps the probe off the metadata code path and minimizes the
+/// load it places on the service. See issue #4597.
+async fn probe_endpoint_connectivity(
+    transport: &super::transport::adaptive_transport::AdaptiveTransport,
+    account: &AccountReference,
+    user_agent: &azure_core::http::headers::HeaderValue,
+) -> bool {
+    let endpoint = AccountEndpoint::from(account);
+    let mut request = HttpRequest {
+        url: endpoint.join_path("/probe"),
+        method: azure_core::http::Method::Get,
+        headers: azure_core::http::headers::Headers::new(),
+        body: None,
+        timeout: None,
+        #[cfg(feature = "fault_injection")]
+        evaluation_collector: None,
+    };
+    cosmos_headers::apply_cosmos_headers(&mut request, user_agent);
+
+    // Any wire response (including a non-2xx envelope) proves reachability;
+    // only a transport error with no response means the endpoint could not
+    // be reached.
+    transport.send(&request).await.is_ok()
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::VecDeque;
@@ -1931,8 +2513,8 @@ mod tests {
         driver::CosmosDriverRuntimeBuilder,
         models::AccountReference,
         options::{
-            ContentResponseOnWrite, CorrelationId, OperationOptionsBuilder, UserAgentSuffix,
-            WorkloadId,
+            ContentResponseOnWrite, CorrelationId, DriverOptionsBuilder, OperationOptionsBuilder,
+            UserAgentSuffix, WorkloadId,
         },
     };
 
@@ -2072,11 +2654,11 @@ mod tests {
     async fn default_operation_options() {
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         assert!(runtime
-            .operation_options()
-            .throughput_control_group
+            .default_operation_options()
+            .throughput_control
             .is_none());
         assert!(runtime
-            .operation_options()
+            .default_operation_options()
             .max_failover_retry_count
             .is_none());
         // user_agent is always available with base prefix
@@ -2097,13 +2679,13 @@ mod tests {
             .build();
 
         let runtime = CosmosDriverRuntimeBuilder::new()
-            .with_operation_options(opts)
+            .with_default_operation_options(opts)
             .build()
             .await
             .unwrap();
 
         assert_eq!(
-            runtime.operation_options().max_failover_retry_count,
+            runtime.default_operation_options().max_failover_retry_count,
             Some(7)
         );
     }
@@ -2243,7 +2825,7 @@ mod tests {
 
         // Initially none
         assert!(runtime
-            .operation_options()
+            .default_operation_options()
             .max_failover_retry_count
             .is_none());
 
@@ -2251,11 +2833,11 @@ mod tests {
         let new_opts = OperationOptionsBuilder::new()
             .with_max_failover_retry_count(5)
             .build();
-        runtime.set_operation_options(new_opts);
+        runtime.set_default_operation_options(new_opts);
 
         // Now set
         assert_eq!(
-            runtime.operation_options().max_failover_retry_count,
+            runtime.default_operation_options().max_failover_retry_count,
             Some(5)
         );
     }
@@ -2268,7 +2850,8 @@ mod tests {
         // Driver has no operation options override either
         let driver_options = DriverOptions::builder(test_account()).build();
 
-        let driver = CosmosDriver::new(cosmos_runtime, driver_options);
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
 
         // Operation has DISABLED - should get DISABLED from operation options view
         let op_options = OperationOptionsBuilder::new()
@@ -2299,7 +2882,8 @@ mod tests {
         // Driver has no override
         let driver_options = DriverOptions::builder(test_account()).build();
 
-        let driver = CosmosDriver::new(cosmos_runtime, driver_options);
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
 
         // Operation sets ENABLED - should get ENABLED from operation options view
         let op_options = OperationOptionsBuilder::new()
@@ -2496,8 +3080,8 @@ mod tests {
     #[test]
     fn build_metadata_transport_for_version_uses_emulator_transport_selection() {
         let connection_pool = ConnectionPoolOptions::builder()
-            .with_emulator_server_cert_validation(
-                crate::options::EmulatorServerCertValidation::DangerousDisabled,
+            .with_server_certificate_validation(
+                crate::options::ServerCertificateValidation::RequiredUnlessEmulator,
             )
             .build()
             .unwrap();
@@ -2539,8 +3123,8 @@ mod tests {
         let runtime = CosmosDriverRuntimeBuilder::new()
             .with_connection_pool(
                 ConnectionPoolOptions::builder()
-                    .with_emulator_server_cert_validation(
-                        crate::options::EmulatorServerCertValidation::DangerousDisabled,
+                    .with_server_certificate_validation(
+                        crate::options::ServerCertificateValidation::RequiredUnlessEmulator,
                     )
                     .build()
                     .unwrap(),
@@ -2551,10 +3135,14 @@ mod tests {
             .unwrap();
         let account = signed_test_account("https://localhost:8081/");
 
-        let (version, properties) =
-            CosmosDriver::fetch_initial_account_properties(&runtime, &account)
-                .await
-                .unwrap();
+        let (version, properties) = CosmosDriver::fetch_initial_account_properties(
+            &runtime,
+            runtime.http_client_factory(),
+            &account,
+            false,
+        )
+        .await
+        .unwrap();
 
         assert_eq!(version, TransportHttpVersion::Http11);
         assert_eq!(properties.write_region().unwrap().as_str(), "westus2");
@@ -2583,10 +3171,17 @@ mod tests {
         );
         let transport_holder = Arc::new(ArcSwap::from(current_transport));
 
-        let properties =
-            CosmosDriver::refresh_account_properties(&runtime, &account, &transport_holder, None)
-                .await
-                .unwrap();
+        let properties = CosmosDriver::refresh_account_properties(
+            &runtime,
+            runtime.http_client_factory(),
+            &account,
+            &transport_holder,
+            runtime.user_agent(),
+            None,
+            false,
+        )
+        .await
+        .unwrap();
 
         assert_eq!(properties.write_region().unwrap().as_str(), "westus2");
         assert_eq!(
@@ -2619,10 +3214,17 @@ mod tests {
         );
         let transport_holder = Arc::new(ArcSwap::from(current_transport));
 
-        let properties =
-            CosmosDriver::refresh_account_properties(&runtime, &account, &transport_holder, None)
-                .await
-                .unwrap();
+        let properties = CosmosDriver::refresh_account_properties(
+            &runtime,
+            runtime.http_client_factory(),
+            &account,
+            &transport_holder,
+            runtime.user_agent(),
+            None,
+            false,
+        )
+        .await
+        .unwrap();
 
         assert_eq!(properties.write_region().unwrap().as_str(), "westus2");
         assert_eq!(
@@ -2656,10 +3258,17 @@ mod tests {
         );
         let transport_holder = Arc::new(ArcSwap::from(current_transport));
 
-        let properties =
-            CosmosDriver::refresh_account_properties(&runtime, &account, &transport_holder, None)
-                .await
-                .unwrap();
+        let properties = CosmosDriver::refresh_account_properties(
+            &runtime,
+            runtime.http_client_factory(),
+            &account,
+            &transport_holder,
+            runtime.user_agent(),
+            None,
+            false,
+        )
+        .await
+        .unwrap();
 
         assert_eq!(properties.write_region().unwrap().as_str(), "westus2");
         assert_eq!(
@@ -2780,9 +3389,12 @@ mod tests {
 
         let result = CosmosDriver::refresh_account_properties(
             &runtime,
+            runtime.http_client_factory(),
             &account,
             &transport_holder,
+            runtime.user_agent(),
             Some(multi_region_previous_props()),
+            false,
         )
         .await;
 
@@ -2819,9 +3431,12 @@ mod tests {
 
         let result = CosmosDriver::refresh_account_properties(
             &runtime,
+            runtime.http_client_factory(),
             &account,
             &transport_holder,
+            runtime.user_agent(),
             Some(multi_region_previous_props()),
+            false,
         )
         .await;
 
@@ -2851,9 +3466,16 @@ mod tests {
         );
         let transport_holder = Arc::new(ArcSwap::from(current_transport));
 
-        let result =
-            CosmosDriver::refresh_account_properties(&runtime, &account, &transport_holder, None)
-                .await;
+        let result = CosmosDriver::refresh_account_properties(
+            &runtime,
+            runtime.http_client_factory(),
+            &account,
+            &transport_holder,
+            runtime.user_agent(),
+            None,
+            false,
+        )
+        .await;
 
         assert!(result.is_err(), "should fail without previous props");
     }
@@ -2878,6 +3500,7 @@ mod tests {
             &account,
             None,
             &user_agent,
+            false,
         )
         .await
         .expect_err(
@@ -2975,8 +3598,81 @@ mod tests {
             &account,
             None,
             &user_agent,
+            false,
         )
         .await
+    }
+
+    /// `TransportClient` whose `send` always fails at the connection level
+    /// (no wire response), modeling a firewall-blocked / unreachable endpoint.
+    #[derive(Debug)]
+    struct UnreachableClient;
+
+    #[async_trait]
+    impl TransportClient for UnreachableClient {
+        async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
+            Err(TransportError::new(
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
+                    .with_message("injected connection failure")
+                    .build(),
+                RequestSentStatus::NotSent,
+            ))
+        }
+    }
+
+    async fn drive_probe_with(status: u16) -> bool {
+        let client: Arc<dyn TransportClient> = Arc::new(RawResponseClient {
+            status,
+            body: Vec::new(),
+        });
+        let transport =
+            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+
+        let account = signed_test_account("https://test.documents.azure.com:443/");
+        let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
+
+        probe_endpoint_connectivity(&transport, &account, &user_agent).await
+    }
+
+    async fn drive_probe_unreachable() -> bool {
+        let client: Arc<dyn TransportClient> = Arc::new(UnreachableClient);
+        let transport =
+            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+
+        let account = signed_test_account("https://test.documents.azure.com:443/");
+        let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
+
+        probe_endpoint_connectivity(&transport, &account, &user_agent).await
+    }
+
+    /// The endpoint probe gates failback on *connectivity*, not on the account
+    /// read succeeding. Any wire response — including a non-2xx envelope
+    /// (401/403/429/503) — proves the endpoint is reachable and should fail
+    /// back, while a connection-level failure with no response keeps it out of
+    /// rotation. Regression guard for issue #4597.
+    #[tokio::test]
+    async fn probe_treats_wire_response_as_reachable_and_transport_error_as_unreachable() {
+        // Happy path: a 2xx `/probe` response is reachable.
+        assert!(
+            drive_probe_with(200).await,
+            "a 2xx /probe response must classify as reachable"
+        );
+
+        // Non-2xx wire responses still prove connectivity → reachable.
+        for status in [401u16, 403, 429, 503] {
+            assert!(
+                drive_probe_with(status).await,
+                "HTTP {status} is a wire response and must classify as reachable \
+                 (failback), not unreachable"
+            );
+        }
+
+        // A connection-level failure (no wire response) → unreachable.
+        assert!(
+            !drive_probe_unreachable().await,
+            "a transport error with no wire response must classify as unreachable"
+        );
     }
 
     /// AAD 401 envelope on GET / (RBAC race / token expiry / IMDS hiccup) must surface
@@ -3250,6 +3946,7 @@ mod tests {
             &account,
             None,
             &user_agent,
+            false,
         )
         .await
         .expect_err("transport-layer failure must surface as an error");
@@ -3321,6 +4018,7 @@ mod tests {
             &account,
             None,
             &user_agent,
+            false,
         )
         .await
         .expect_err("sign_request failure must surface as an error");
@@ -3456,6 +4154,7 @@ mod tests {
             &account,
             None,
             &user_agent,
+            false,
         )
         .await;
 
@@ -3475,6 +4174,295 @@ mod tests {
         assert_eq!(
             final_count, 2,
             "transport must have made exactly 2 wire requests (initial + one redirect follow). Got: {final_count}"
+        );
+    }
+
+    #[tokio::test]
+    async fn drivers_without_user_agent_suffix_share_runtime_arc() {
+        // Two drivers built from the same runtime with no per-driver
+        // suffix override must share the runtime's `Arc<UserAgent>`
+        // (no per-driver allocation, just an atomic refcount bump).
+        let factory = Arc::new(ScriptedFactory::new(std::iter::repeat_n(
+            ResponsePlan::Success,
+            10,
+        )));
+        let runtime = Arc::new(
+            CosmosDriverRuntimeBuilder::new()
+                .with_http_client_factory(factory)
+                .build()
+                .await
+                .unwrap(),
+        );
+
+        let driver_a = CosmosDriver::new(
+            Arc::clone(&runtime),
+            DriverOptionsBuilder::new(signed_test_account(
+                "https://account-a.documents.azure.com:443/",
+            ))
+            .build(),
+        )
+        .expect("CosmosDriver::new should succeed in tests");
+        let driver_b = CosmosDriver::new(
+            Arc::clone(&runtime),
+            DriverOptionsBuilder::new(signed_test_account(
+                "https://account-b.documents.azure.com:443/",
+            ))
+            .build(),
+        )
+        .expect("CosmosDriver::new should succeed in tests");
+
+        assert!(
+            Arc::ptr_eq(driver_a.user_agent(), runtime.user_agent()),
+            "driver A must share the runtime's User-Agent Arc"
+        );
+        assert!(
+            Arc::ptr_eq(driver_b.user_agent(), runtime.user_agent()),
+            "driver B must share the runtime's User-Agent Arc"
+        );
+        assert!(
+            Arc::ptr_eq(driver_a.user_agent(), driver_b.user_agent()),
+            "drivers A and B must share the same User-Agent Arc"
+        );
+    }
+
+    #[tokio::test]
+    async fn driver_user_agent_suffix_override_owns_distinct_arc() {
+        // A driver built with a per-driver suffix must compute its own
+        // `UserAgent` (distinct allocation; suffix actually appears).
+        let factory = Arc::new(ScriptedFactory::new(std::iter::repeat_n(
+            ResponsePlan::Success,
+            4,
+        )));
+        let runtime = Arc::new(
+            CosmosDriverRuntimeBuilder::new()
+                .with_http_client_factory(factory)
+                .with_user_agent_suffix(UserAgentSuffix::new("runtime-default"))
+                .build()
+                .await
+                .unwrap(),
+        );
+
+        let driver = CosmosDriver::new(
+            Arc::clone(&runtime),
+            DriverOptionsBuilder::new(signed_test_account(
+                "https://account.documents.azure.com:443/",
+            ))
+            .with_user_agent_suffix(UserAgentSuffix::new("driver-override"))
+            .build(),
+        )
+        .expect("CosmosDriver::new should succeed in tests");
+
+        assert!(
+            !Arc::ptr_eq(driver.user_agent(), runtime.user_agent()),
+            "driver with override must NOT share the runtime's User-Agent Arc"
+        );
+        assert!(driver.user_agent().as_str().contains("driver-override"));
+        assert!(runtime.user_agent().as_str().contains("runtime-default"));
+        assert!(!driver.user_agent().as_str().contains("runtime-default"));
+    }
+
+    #[tokio::test]
+    async fn driver_disabling_ppcb_recomputes_user_agent_without_ppcb_bit() {
+        // A driver that disables PPCB (with no per-driver suffix override) must
+        // NOT share the runtime's base `Arc<UserAgent>`: its feature flags
+        // differ from the runtime's, so it recomputes its own `UserAgent` whose
+        // cross-SDK feature token drops the PPCB bit (0x2) while retaining
+        // HTTP/2 (0x10) -> `|F10`. This exercises the `None => recompute` branch
+        // in `CosmosDriver::new` and proves the emitted token tracks per-driver
+        // client configuration rather than a hardcoded value.
+        let factory = Arc::new(ScriptedFactory::new(std::iter::repeat_n(
+            ResponsePlan::Success,
+            10,
+        )));
+        let runtime = Arc::new(
+            CosmosDriverRuntimeBuilder::new()
+                .with_http_client_factory(factory)
+                .build()
+                .await
+                .unwrap(),
+        );
+
+        // The runtime's base header advertises HTTP/2 + PPCB by default (|F12).
+        assert_eq!(
+            runtime.user_agent_feature_flags(),
+            UserAgentFeatureFlags::HTTP2 | UserAgentFeatureFlags::PER_PARTITION_CIRCUIT_BREAKER,
+        );
+        assert!(
+            runtime.user_agent().as_str().ends_with("|F12"),
+            "unexpected runtime User-Agent: {}",
+            runtime.user_agent().as_str()
+        );
+
+        let driver = CosmosDriver::new(
+            Arc::clone(&runtime),
+            DriverOptionsBuilder::new(signed_test_account(
+                "https://account.documents.azure.com:443/",
+            ))
+            .with_partition_failover_options(
+                crate::options::PartitionFailoverOptions::builder()
+                    .with_circuit_breaker_enabled(false)
+                    .build()
+                    .unwrap(),
+            )
+            .build(),
+        )
+        .expect("CosmosDriver::new should succeed in tests");
+
+        // Distinct allocation (the recompute branch), not the shared runtime Arc.
+        assert!(
+            !Arc::ptr_eq(driver.user_agent(), runtime.user_agent()),
+            "driver disabling PPCB must own a distinct User-Agent Arc"
+        );
+        // PPCB bit (0x2) dropped, HTTP/2 (0x10) retained -> |F10.
+        assert!(
+            driver.user_agent().as_str().ends_with("|F10"),
+            "expected driver User-Agent to drop the PPCB bit (|F10): {}",
+            driver.user_agent().as_str()
+        );
+    }
+
+    // =========================================================================
+    // pre_resolve_partition_key_range_id — EPK-range seeding (#4611 fix)
+    //
+    // The single→Some / multi→(warn + debug_assert, then None) classification
+    // lives in `ContainerRoutingMap::single_overlapping_range_id` (unit-tested
+    // there). These cache-backed tests drive the *real*
+    // `PartitionKeyRangeCache::resolve_single_overlapping_range_id` (mocked
+    // fetch, per the existing `resolve_overlapping_ranges_*` tests), exercising
+    // the exact path `pre_resolve_partition_key_range_id` takes.
+    // =========================================================================
+
+    /// Builds a `ContainerReference` from a partition-key-definition JSON blob.
+    fn epk_test_container(pk_json: &str) -> ContainerReference {
+        let container_props = crate::models::ContainerProperties {
+            id: "testcontainer".into(),
+            partition_key: serde_json::from_str(pk_json).unwrap(),
+            system_properties: Default::default(),
+        };
+        ContainerReference::new(
+            signed_test_account("https://test.documents.azure.com:443/"),
+            "testdb",
+            "testdb_rid",
+            "testcontainer",
+            "testcontainer_rid",
+            &container_props,
+        )
+    }
+
+    /// Single-page fetch returning one range that owns the whole EPK space.
+    async fn whole_space_single_range_fetch(
+        _container: ContainerReference,
+        continuation: Option<String>,
+    ) -> Option<crate::driver::cache::PkRangeFetchResult> {
+        use crate::models::partition_key_range::PartitionKeyRange as PkRange;
+        if continuation.is_some() {
+            Some(crate::driver::cache::PkRangeFetchResult {
+                ranges: vec![],
+                continuation,
+                not_modified: true,
+            })
+        } else {
+            Some(crate::driver::cache::PkRangeFetchResult {
+                ranges: vec![PkRange::new("0".into(), "", "FF")],
+                continuation: Some("etag".to_string()),
+                not_modified: false,
+            })
+        }
+    }
+
+    /// Single-page fetch returning two ranges split at "80".
+    async fn whole_space_two_range_fetch(
+        _container: ContainerReference,
+        continuation: Option<String>,
+    ) -> Option<crate::driver::cache::PkRangeFetchResult> {
+        use crate::models::partition_key_range::PartitionKeyRange as PkRange;
+        if continuation.is_some() {
+            Some(crate::driver::cache::PkRangeFetchResult {
+                ranges: vec![],
+                continuation,
+                not_modified: true,
+            })
+        } else {
+            Some(crate::driver::cache::PkRangeFetchResult {
+                ranges: vec![
+                    PkRange::new("0".into(), "", "80"),
+                    PkRange::new("1".into(), "80", "FF"),
+                ],
+                continuation: Some("etag".to_string()),
+                not_modified: false,
+            })
+        }
+    }
+
+    #[tokio::test]
+    async fn epk_range_owned_by_single_partition_resolves_to_that_range() {
+        use crate::driver::cache::PartitionKeyRangeCache;
+        use crate::models::effective_partition_key::EffectivePartitionKey;
+
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        let cache = PartitionKeyRangeCache::new();
+
+        // An EPK-range feed range spanning the whole space, resolved against a
+        // container with a single physical partition, is owned by exactly one
+        // range — so pre-resolution seeds that range's ID (single → Some).
+        let resolved = cache
+            .resolve_single_overlapping_range_id(
+                &container,
+                &EffectivePartitionKey::MIN..&EffectivePartitionKey::MAX,
+                false,
+                whole_space_single_range_fetch,
+            )
+            .await
+            .map(PartitionKeyRangeId::from);
+
+        assert_eq!(resolved.as_ref().map(|id| id.as_str()), Some("0"));
+    }
+
+    #[tokio::test]
+    #[should_panic(expected = "physical partitions")]
+    async fn epk_range_spanning_multiple_partitions_panics_in_debug() {
+        use crate::driver::cache::PartitionKeyRangeCache;
+        use crate::models::effective_partition_key::EffectivePartitionKey;
+
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        let cache = PartitionKeyRangeCache::new();
+
+        // A whole-space feed range overlapping both physical partitions is an
+        // invariant violation at this layer (the dataflow pipeline should have
+        // split it first), so single-owner resolution trips the `debug_assert!`.
+        // In release builds it returns `None` and the caller degrades gracefully.
+        let _ = cache
+            .resolve_single_overlapping_range_id(
+                &container,
+                &EffectivePartitionKey::MIN..&EffectivePartitionKey::MAX,
+                false,
+                whole_space_two_range_fetch,
+            )
+            .await;
+    }
+
+    #[tokio::test]
+    async fn logical_partition_key_resolves_to_owning_range_unchanged() {
+        use crate::driver::cache::PartitionKeyRangeCache;
+
+        // The logical-partition-key path is unchanged by the EPK-range fix: a
+        // concrete partition key still resolves through the point-lookup path to
+        // exactly its owning physical partition's ID (mapped to a
+        // `PartitionKeyRangeId`, as `pre_resolve_partition_key_range_id` does).
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        let cache = PartitionKeyRangeCache::new();
+        let pk = PartitionKey::from("hello");
+
+        let resolved = cache
+            .resolve_partition_key_range_id(&container, &pk, false, whole_space_two_range_fetch)
+            .await
+            .map(PartitionKeyRangeId::from);
+
+        // "hello" hashes into one of the two ranges — exactly one, never both.
+        let id = resolved.expect("logical PK resolves to its owning range");
+        assert!(
+            id.as_str() == "0" || id.as_str() == "1",
+            "logical PK must resolve to a single owning range, got {id}",
         );
     }
 }

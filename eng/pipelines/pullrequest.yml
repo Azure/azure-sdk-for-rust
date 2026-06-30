@@ -1,3 +1,8 @@
+parameters:
+- name: SkipPrValidation
+  type: boolean
+  default: false
+
 trigger: none
 
 pr:
@@ -7,6 +12,9 @@ pr:
       - feature/*
       - hotfix/*
       - release/*
+  paths:
+    exclude:
+      - .github/skills/azsdk-common-*/**
 
 extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
@@ -14,6 +22,7 @@ extends:
     ServiceDirectory: auto
     IncludeRelease: false
     RunLiveTests: false
+    SkipPrValidation: ${{ parameters.SkipPrValidation }}
     MatrixConfigs:
       - Name: rust_pr_test_base
         Path: eng/pipelines/templates/stages/pr-platform-matrix.json

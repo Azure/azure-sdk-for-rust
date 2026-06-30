@@ -346,6 +346,7 @@ use types::{BoxedCallback, BoxedFuture, BoxedStream};
 /// let certificate = poller.await?.into_model()?;
 /// # Ok(()) }
 /// ```
+#[must_use = "streams do nothing unless you `.await` or poll them"]
 #[pin_project::pin_project]
 pub struct Poller<M, F = JsonFormat>
 where
@@ -1951,5 +1952,88 @@ mod tests {
         assert_eq!(raw_body.as_ref(), final_json);
 
         assert_eq!(*call_count.lock().unwrap(), 2);
+    }
+
+    #[tokio::test]
+    #[deny(unfulfilled_lint_expectations)]
+    async fn must_use_poller() {
+        fn create() -> crate::Result<Poller<TestStatus>> {
+            let call_count = Arc::new(Mutex::new(0));
+
+            let mock_client = {
+                let call_count = call_count.clone();
+                Arc::new(MockHttpClient::new(move |_| {
+                    let call_count = call_count.clone();
+                    async move {
+                        let mut count = call_count.lock().unwrap();
+                        *count += 1;
+
+                        if *count == 1 {
+                            // First call returns 201 Created with InProgress status
+                            Ok(AsyncRawResponse::from_bytes(
+                                StatusCode::Created,
+                                Headers::new(),
+                                br#"{"status":"InProgress"}"#.to_vec(),
+                            ))
+                        } else {
+                            // Second call returns 200 OK with Succeeded status
+                            Ok(AsyncRawResponse::from_bytes(
+                                StatusCode::Ok,
+                                Headers::new(),
+                                br#"{"status":"Succeeded"}"#.to_vec(),
+                            ))
+                        }
+                    }
+                    .boxed()
+                }))
+            };
+
+            let poller = Poller::new(
+                move |_, _| {
+                    let client = mock_client.clone();
+                    Box::pin(async move {
+                        let req = Request::new("https://example.com".parse().unwrap(), Method::Get);
+                        let raw_response = client.execute_request(&req).await?;
+                        let (status, headers, body) = raw_response.deconstruct();
+                        let bytes = body.collect().await?;
+
+                        let test_status: TestStatus = crate::json::from_json(&bytes)?;
+                        let response: Response<TestStatus> =
+                            RawResponse::from_bytes(status, headers, bytes).into();
+
+                        match test_status.status() {
+                            PollerStatus::InProgress => Ok(PollerResult::InProgress {
+                                response,
+                                retry_after: Duration::ZERO,
+                                continuation: PollerContinuation::Links {
+                                    next_link: req.url().clone(),
+                                    final_link: None,
+                                },
+                            }),
+                            _ => Ok(PollerResult::Done { response }),
+                        }
+                    })
+                },
+                None,
+            );
+
+            Ok(poller)
+        }
+
+        #[expect(unused_must_use)]
+        create();
+
+        #[expect(unused_must_use)]
+        create().unwrap();
+
+        // We cannot use #[must_use] to force a stream to be polled.
+        #[deny(unused_must_use)]
+        let _poller = create().unwrap();
+
+        #[deny(unused_must_use)]
+        let mut poller = create().unwrap();
+        assert!(poller.next().await.is_some());
+        assert!(poller.next().await.is_some());
+        assert!(poller.next().await.is_none());
     }
 }

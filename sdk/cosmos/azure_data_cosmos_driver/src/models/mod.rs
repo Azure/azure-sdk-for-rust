@@ -18,10 +18,10 @@ pub(crate) mod cosmos_headers;
 mod cosmos_operation;
 mod cosmos_resource_reference;
 mod cosmos_response;
-mod etag;
 mod finite_f64;
 pub(crate) mod partition_key;
 mod patch;
+mod precondition;
 mod request_charge;
 pub(crate) mod resource_id;
 mod resource_reference;
@@ -62,10 +62,10 @@ pub(crate) use cosmos_response::CosmosResponsePayload;
 // internals.
 pub use crate::error::cosmos_status::{CosmosStatus, SubStatusCode};
 pub use effective_partition_key::EffectivePartitionKey;
-pub use etag::{ETag, Precondition};
 pub use feed_range::FeedRange;
 pub use partition_key::{PartitionKey, PartitionKeyValue};
 pub use patch::{CosmosNumber, PatchInstructions, PatchOperation};
+pub use precondition::Precondition;
 pub use request_charge::RequestCharge;
 pub use resource_reference::ContainerReference;
 pub use resource_reference::{DatabaseReference, ItemReference};
@@ -74,8 +74,8 @@ pub use resource_reference::{
 };
 pub use response_body::ResponseBody;
 pub use session_token_segment::SessionTokenSegment;
-pub(crate) use user_agent::normalize_wrapping_sdk_identifier;
 pub use user_agent::UserAgent;
+pub(crate) use user_agent::{normalize_wrapping_sdk_identifier, UserAgentFeatureFlags};
 
 pub(crate) use account_reference::AccountEndpoint;
 

@@ -7,7 +7,7 @@ use super::framework;
 use std::error::Error;
 
 use azure_data_cosmos::Query;
-use framework::TestClient;
+use framework::{TestClient, TestOptions};
 use futures::TryStreamExt;
 
 #[tokio::test]
@@ -16,47 +16,50 @@ use futures::TryStreamExt;
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn database_crud() -> Result<(), Box<dyn Error>> {
-    TestClient::run(async |run_context| {
-        let cosmos_client = run_context.client();
+    TestClient::run_with_options(
+        async |run_context| {
+            let cosmos_client = run_context.client();
 
-        let test_db_id = run_context.db_name();
+            let test_db_id = run_context.db_name();
 
-        // Create a database
-        let properties = cosmos_client
-            .create_database(&test_db_id, None)
-            .await?
-            .into_model()?;
+            // Create a database
+            let properties = cosmos_client
+                .create_database(&test_db_id, None)
+                .await?
+                .into_model()?;
 
-        assert_eq!(&test_db_id, &properties.id);
+            assert_eq!(Some(test_db_id.as_str()), properties.id.as_deref());
 
-        let db_client = cosmos_client.database_client(&test_db_id);
-        let read_properties = db_client.read(None).await?.into_model()?;
+            let db_client = cosmos_client.database_client(&test_db_id);
+            let read_properties = db_client.read(None).await?.into_model()?;
 
-        assert_eq!(&test_db_id, &read_properties.id);
+            assert_eq!(Some(test_db_id.as_str()), read_properties.id.as_deref());
 
-        let query = Query::from("SELECT * FROM root r WHERE r.id = @id")
-            .with_parameter("@id", &test_db_id)?;
-        let mut pager = cosmos_client.query_databases(query.clone(), None).await?;
-        let mut ids = Vec::new();
-        while let Some(db) = pager.try_next().await? {
-            ids.push(db.id);
-        }
-        assert_eq!(vec![test_db_id.clone()], ids);
+            let query = Query::from("SELECT * FROM root r WHERE r.id = @id")
+                .with_parameter("@id", &test_db_id)?;
+            let mut pager = cosmos_client.query_databases(query.clone(), None).await?;
+            let mut ids = Vec::new();
+            while let Some(db) = pager.try_next().await? {
+                ids.push(db.id);
+            }
+            assert_eq!(vec![Some(test_db_id.clone())], ids);
 
-        let current_throughput = db_client.read_throughput(None).await?;
-        assert!(current_throughput.is_none());
+            let current_throughput = db_client.read_throughput(None).await?;
+            assert!(current_throughput.is_none());
 
-        // We're testing delete, so we want to manually delete the DB rather than letting the clean-up process do it.
-        db_client.delete(None).await?;
+            // We're testing delete, so we want to manually delete the DB rather than letting the clean-up process do it.
+            db_client.delete(None).await?;
 
-        let mut pager = cosmos_client.query_databases(query, None).await?;
-        let mut ids = Vec::new();
-        while let Some(db) = pager.try_next().await? {
-            ids.push(db.id);
-        }
-        assert!(ids.is_empty());
+            let mut pager = cosmos_client.query_databases(query, None).await?;
+            let mut ids = Vec::new();
+            while let Some(db) = pager.try_next().await? {
+                ids.push(db.id);
+            }
+            assert!(ids.is_empty());
 
-        Ok(())
-    })
+            Ok(())
+        },
+        TestOptions::for_emulator(),
+    )
     .await
 }

@@ -4,15 +4,16 @@
 // cspell:ignore: TEAMPROJECTID
 
 use azure_core::{http::StatusCode, Uuid};
-use azure_data_cosmos::clients::ContainerClient;
-use azure_data_cosmos::fault_injection::FaultInjectionRule;
-use azure_data_cosmos::models::{ItemResponse, ThroughputProperties};
-use azure_data_cosmos::options::ItemReadOptions;
-use azure_data_cosmos::query::FeedScope;
-use azure_data_cosmos::Region;
 use azure_data_cosmos::{
-    clients::DatabaseClient, CosmosClient, CreateContainerOptions, PartitionKey, Query,
-    RoutingStrategy,
+    clients::{ContainerClient, DatabaseClient},
+    fault_injection::FaultInjectionRule,
+    feed::FeedScope,
+    models::{ItemResponse, ThroughputProperties},
+    options::{
+        ConnectionPoolOptions, CreateContainerOptions, ItemReadOptions, Region,
+        ServerCertificateValidation,
+    },
+    CosmosClient, CosmosRuntime, PartitionKey, Query, RoutingStrategy,
 };
 use azure_data_cosmos_driver::models::ConnectionString;
 use futures::TryStreamExt;
@@ -48,7 +49,7 @@ pub const EMULATOR_HOST: &str = "127.0.0.1";
 /// successfully retry on the original. Used for failover scenarios where
 /// either landing is valid.
 pub fn assert_region_contacted_with_retry(
-    diagnostics: &azure_data_cosmos::DiagnosticsContext,
+    diagnostics: &azure_data_cosmos::diagnostics::DiagnosticsContext,
     expected_region: &Region,
 ) {
     assert!(
@@ -72,7 +73,7 @@ pub fn assert_region_contacted_with_retry(
 /// stay on `expected_region` (the driver may still fail over to an alternate
 /// region after exhausting its local retry budget).
 pub fn assert_local_retry_attempted_on_region(
-    diagnostics: &azure_data_cosmos::DiagnosticsContext,
+    diagnostics: &azure_data_cosmos::diagnostics::DiagnosticsContext,
     expected_region: &Region,
 ) {
     let requests = diagnostics.requests();
@@ -84,6 +85,26 @@ pub fn assert_local_retry_attempted_on_region(
         on_region >= 1,
         "expected at least one tracked request on region {:?}, but none did (regions contacted: {:?})",
         expected_region,
+        diagnostics.regions_contacted()
+    );
+}
+
+/// Asserts an operation never contacted `excluded_region`, even while other regions fail.
+pub fn assert_region_not_contacted(
+    diagnostics: &azure_data_cosmos::diagnostics::DiagnosticsContext,
+    excluded_region: &Region,
+) {
+    let requests = diagnostics.requests();
+    let on_region = requests
+        .iter()
+        .filter(|r| r.region() == Some(excluded_region))
+        .count();
+    assert_eq!(
+        on_region, 0,
+        "expected zero tracked requests on excluded region {:?}, but {} of {} requests landed there (regions contacted: {:?})",
+        excluded_region,
+        on_region,
+        diagnostics.request_count(),
         diagnostics.regions_contacted()
     );
 }
@@ -110,12 +131,31 @@ pub struct TestOptions {
     pub fault_client_application_region: Option<Region>,
     /// Timeout for the test. If None, uses DEFAULT_TEST_TIMEOUT.
     pub timeout: Option<Duration>,
+    /// When `true`, builds the underlying [`CosmosClient`]s with a
+    /// [`CosmosRuntime`] configured for
+    /// [`ServerCertificateValidation::RequiredUnlessEmulator`], so that
+    /// requests against the Cosmos DB emulator (which presents a
+    /// self-signed certificate) succeed without TLS validation errors.
+    ///
+    /// This is the signal that an emulator-only test should opt into the
+    /// relaxed runtime; tests targeting live accounts must leave it
+    /// `false` so that the default `ServerCertificateValidation::Required`
+    /// applies.
+    pub allow_invalid_certificates: bool,
 }
 
 impl TestOptions {
     /// Creates a new TestOptions with default values.
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Creates a [`TestOptions`] preconfigured for the Cosmos DB emulator:
+    /// the underlying [`CosmosClient`] will be built on a [`CosmosRuntime`]
+    /// that accepts the emulator's self-signed certificate
+    /// (via [`ServerCertificateValidation::RequiredUnlessEmulator`]).
+    pub fn for_emulator() -> Self {
+        Self::default().with_allow_invalid_certificates(true)
     }
 
     /// Sets the application region for the normal (non-fault) client.
@@ -148,6 +188,17 @@ impl TestOptions {
     /// Sets the timeout for the test.
     pub fn with_timeout(mut self, timeout: Duration) -> Self {
         self.timeout = Some(timeout);
+        self
+    }
+
+    /// Opts the underlying [`CosmosClient`]s into a [`CosmosRuntime`] that
+    /// accepts the emulator's self-signed certificate
+    /// (via [`ServerCertificateValidation::RequiredUnlessEmulator`]).
+    ///
+    /// Set this to `true` for emulator-only integration tests; leave it
+    /// `false` (the default) for tests targeting a live Cosmos DB account.
+    pub fn with_allow_invalid_certificates(mut self, allow: bool) -> Self {
+        self.allow_invalid_certificates = allow;
         self
     }
 }
@@ -255,21 +306,42 @@ fn is_azure_pipelines() -> bool {
 impl TestClient {
     pub async fn from_env_with_fault_options(
         fault_client_application_region: Option<Region>,
+        allow_invalid_certificates: bool,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        Self::from_env_inner(None, Vec::new(), fault_client_application_region).await
+        Self::from_env_inner(
+            None,
+            Vec::new(),
+            fault_client_application_region,
+            allow_invalid_certificates,
+        )
+        .await
     }
 
     pub async fn from_env(
         application_region: Option<Region>,
+        allow_invalid_certificates: bool,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        Self::from_env_inner(application_region, Vec::new(), None).await
+        Self::from_env_inner(
+            application_region,
+            Vec::new(),
+            None,
+            allow_invalid_certificates,
+        )
+        .await
     }
 
     pub async fn from_env_with_fault_rules(
         fault_rules: Vec<std::sync::Arc<FaultInjectionRule>>,
         application_region: Option<Region>,
+        allow_invalid_certificates: bool,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        Self::from_env_inner(None, fault_rules, application_region).await
+        Self::from_env_inner(
+            None,
+            fault_rules,
+            application_region,
+            allow_invalid_certificates,
+        )
+        .await
     }
 
     /// Creates a new [`TestClient`] from local environment variables.
@@ -281,6 +353,7 @@ impl TestClient {
         application_region: Option<Region>,
         fault_rules: Vec<std::sync::Arc<FaultInjectionRule>>,
         fault_client_application_region: Option<Region>,
+        allow_invalid_certificates: bool,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let Ok(env_var) = std::env::var(CONNECTION_STRING_ENV_VAR) else {
             // No connection string provided, so we'll skip tests that require it.
@@ -311,7 +384,7 @@ impl TestClient {
                 Self::from_connection_string(
                     &env_var,
                     application_region,
-                    false,
+                    allow_invalid_certificates,
                     fault_rules,
                     fault_client_application_region,
                 )
@@ -347,23 +420,23 @@ impl TestClient {
             .unwrap_or(HUB_REGION);
         let strategy = RoutingStrategy::ProximityTo(region);
 
-        // Configure invalid certificate acceptance (e.g., for emulator)
-        #[cfg(feature = "allow_invalid_certificates")]
         if allow_invalid_certificates {
-            builder = builder.with_allow_emulator_invalid_certificates(true);
-        }
-        #[cfg(not(feature = "allow_invalid_certificates"))]
-        if allow_invalid_certificates {
-            return Err(
-                "The 'allow_invalid_certificates' feature must be enabled to accept invalid certificates. \
-                 Add `allow_invalid_certificates` to the features list."
-                    .into(),
-            );
+            let runtime = CosmosRuntime::builder()
+                .with_connection_pool(
+                    ConnectionPoolOptions::builder()
+                        .with_server_certificate_validation(
+                            ServerCertificateValidation::RequiredUnlessEmulator,
+                        )
+                        .build()?,
+                )
+                .build()
+                .await?;
+            builder = builder.with_runtime(runtime);
         }
 
         // Configure fault injection if rules provided
         if !fault_rules.is_empty() {
-            builder = builder.with_fault_injection(fault_rules);
+            builder = builder.with_fault_injection_rules(fault_rules)?;
         }
 
         let endpoint: azure_data_cosmos::AccountEndpoint =
@@ -436,7 +509,11 @@ impl TestClient {
             )
             .try_init();
 
-        let test_client = Self::from_env(options.client_application_region.clone()).await?;
+        let test_client = Self::from_env(
+            options.client_application_region.clone(),
+            options.allow_invalid_certificates,
+        )
+        .await?;
 
         // Create fault injection client if rules or application region were provided.
         // Rules should be passed in for emulator tests to ensure the FaultClient
@@ -450,11 +527,18 @@ impl TestClient {
                 Self::from_env_with_fault_rules(
                     rules,
                     options.fault_client_application_region.clone(),
+                    options.allow_invalid_certificates,
                 )
                 .await?,
             )
         } else if options.fault_client_application_region.is_some() {
-            Some(Self::from_env_with_fault_options(options.fault_client_application_region).await?)
+            Some(
+                Self::from_env_with_fault_options(
+                    options.fault_client_application_region,
+                    options.allow_invalid_certificates,
+                )
+                .await?,
+            )
         } else {
             None
         };
@@ -651,7 +735,11 @@ impl TestRunContext {
 
         let props = response.into_model()?;
 
-        let db_client = self.client().database_client(&props.id);
+        let id = props
+            .id
+            .as_deref()
+            .expect("Cosmos DB should always return a database id on create");
+        let db_client = self.client().database_client(id);
         Ok(db_client)
     }
 
@@ -755,7 +843,7 @@ impl TestRunContext {
         &self,
         db_client: &DatabaseClient,
         properties: azure_data_cosmos::models::ContainerProperties,
-        options: Option<azure_data_cosmos::CreateContainerOptions>,
+        options: Option<azure_data_cosmos::options::CreateContainerOptions>,
     ) -> azure_data_cosmos::Result<ContainerClient> {
         let mut backoff = Duration::from_millis(100);
         const MAX_BACKOFF: Duration = Duration::from_secs(10);
@@ -896,12 +984,18 @@ impl TestRunContext {
         let parsed: ConnectionString = connection_string.parse()?;
 
         let endpoint: azure_data_cosmos::AccountEndpoint = parsed.account_endpoint().parse()?;
-        let mut builder = CosmosClient::builder();
-
-        #[cfg(feature = "allow_invalid_certificates")]
-        if env_var == "emulator" {
-            builder = builder.with_allow_emulator_invalid_certificates(true);
-        }
+        let builder = CosmosClient::builder().with_runtime(
+            CosmosRuntime::builder()
+                .with_connection_pool(
+                    ConnectionPoolOptions::builder()
+                        .with_server_certificate_validation(
+                            ServerCertificateValidation::RequiredUnlessEmulator,
+                        )
+                        .build()?,
+                )
+                .build()
+                .await?,
+        );
 
         builder
             .build(
@@ -942,7 +1036,9 @@ impl TestRunContext {
         let mut pager = self.client().query_databases(query, None).await?;
         let mut ids = Vec::new();
         while let Some(db) = pager.try_next().await? {
-            ids.push(db.id);
+            if let Some(id) = db.id {
+                ids.push(id);
+            }
         }
 
         // Now that we have a list of databases created by this test, we delete them.

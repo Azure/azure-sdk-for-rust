@@ -1008,6 +1008,51 @@ pub struct BlobContainerClientGetPropertiesOptions<'a> {
     pub timeout: Option<i32>,
 }
 
+/// Options to be passed to `BlobContainerClient::list_blobs_hierarchical()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct BlobContainerClientListBlobsHierarchicalOptions<'a> {
+    /// Specify to include additional, optional information.
+    pub include: Option<Vec<ListBlobsIncludeItem>>,
+
+    /// An opaque string value that identifies the portion of the result set to return with this operation.
+    pub marker: Option<String>,
+
+    /// Specifies the maximum number of resources to return. If the request does not specify maxresults, or specifies a value
+    /// greater than 5000, the server will return up to 5000 items.
+    pub maxresults: Option<i32>,
+
+    /// Allows customization of the method call.
+    pub method_options: PagerOptions<'a>,
+
+    /// Filters the results to return only resources whose name begins with the specified prefix.
+    pub prefix: Option<String>,
+
+    /// Specifies the relative path to list paths from. For non-recursive list, only one entity level is supported; for recursive
+    /// list, multiple entity levels are supported. (Inclusive)
+    pub start_from: Option<String>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
+    pub timeout: Option<i32>,
+}
+
+impl BlobContainerClientListBlobsHierarchicalOptions<'_> {
+    /// Transforms this [`BlobContainerClientListBlobsHierarchicalOptions`] into a new `BlobContainerClientListBlobsHierarchicalOptions` that owns the underlying data, cloning it if necessary.
+    pub fn into_owned(self) -> BlobContainerClientListBlobsHierarchicalOptions<'static> {
+        BlobContainerClientListBlobsHierarchicalOptions {
+            include: self.include,
+            marker: self.marker,
+            maxresults: self.maxresults,
+            method_options: PagerOptions {
+                context: self.method_options.context.into_owned(),
+                ..self.method_options
+            },
+            prefix: self.prefix,
+            start_from: self.start_from,
+            timeout: self.timeout,
+        }
+    }
+}
+
 /// Options to be passed to `BlobContainerClient::list_blobs()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobContainerClientListBlobsOptions<'a> {
@@ -1182,6 +1227,16 @@ pub struct BlobServiceClientGetPropertiesOptions<'a> {
 /// Options to be passed to `BlobServiceClient::get_statistics()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobServiceClientGetStatisticsOptions<'a> {
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
+    pub timeout: Option<i32>,
+}
+
+/// Options to be passed to `BlobServiceClient::get_user_delegation_key()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct BlobServiceClientGetUserDelegationKeyOptions<'a> {
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
 
@@ -1760,6 +1815,70 @@ pub struct PageBlobClientCreateOptions<'a> {
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
+}
+
+/// Options to be passed to `PageBlobClient::list_page_ranges()`
+#[derive(Clone, Default, SafeDebug)]
+pub struct PageBlobClientListPageRangesOptions<'a> {
+    /// Specify this value to operate only on a blob with a matching Etag value.
+    pub if_match: Option<Etag>,
+
+    /// Specify this value to operate only on a blob if it has been modified since the specified date-time.
+    pub if_modified_since: Option<OffsetDateTime>,
+
+    /// Specify this value to operate only on a blob with a non-matching Etag value.
+    pub if_none_match: Option<Etag>,
+
+    /// Specifies a SQL-like where clause on blob tags to operate only on a blob with matching tags.
+    pub if_tags: Option<String>,
+
+    /// Specify this value to operate only on a blob if it has not been modified since the specified date-time.
+    pub if_unmodified_since: Option<OffsetDateTime>,
+
+    /// If specified, the operation only succeeds if the resource's lease is active and matches this ID.
+    pub lease_id: Option<String>,
+
+    /// An opaque string value that identifies the portion of the result set to return with this operation.
+    pub marker: Option<String>,
+
+    /// Specifies the maximum number of resources to return. If the request does not specify maxresults, or specifies a value
+    /// greater than 5000, the server will return up to 5000 items.
+    pub maxresults: Option<i32>,
+
+    /// Allows customization of the method call.
+    pub method_options: PagerOptions<'a>,
+
+    /// Specifies the range of the blob to operate on.
+    pub range: Option<HttpRange>,
+
+    /// Specifies the snapshot of the blob.
+    pub snapshot: Option<String>,
+
+    /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
+    pub timeout: Option<i32>,
+}
+
+impl PageBlobClientListPageRangesOptions<'_> {
+    /// Transforms this [`PageBlobClientListPageRangesOptions`] into a new `PageBlobClientListPageRangesOptions` that owns the underlying data, cloning it if necessary.
+    pub fn into_owned(self) -> PageBlobClientListPageRangesOptions<'static> {
+        PageBlobClientListPageRangesOptions {
+            if_match: self.if_match,
+            if_modified_since: self.if_modified_since,
+            if_none_match: self.if_none_match,
+            if_tags: self.if_tags,
+            if_unmodified_since: self.if_unmodified_since,
+            lease_id: self.lease_id,
+            marker: self.marker,
+            maxresults: self.maxresults,
+            method_options: PagerOptions {
+                context: self.method_options.context.into_owned(),
+                ..self.method_options
+            },
+            range: self.range,
+            snapshot: self.snapshot,
+            timeout: self.timeout,
+        }
+    }
 }
 
 /// Options to be passed to `PageBlobClient::resize()`

@@ -69,7 +69,7 @@ impl Pipeline {
     }
 
     /// Snapshots the pipeline's current state for continuation-token serialization.
-    pub(crate) fn snapshot_state(&self) -> PipelineNodeState {
+    pub(crate) fn snapshot_state(&self) -> crate::error::Result<PipelineNodeState> {
         self.root.snapshot_state()
     }
 }
@@ -98,7 +98,15 @@ impl OperationPlan {
     /// each node's progress. The result can be passed back to
     /// [`CosmosDriver::plan_operation`](crate::driver::CosmosDriver::plan_operation)
     /// (with the same operation) to resume where this plan left off.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if a live pipeline node violates a snapshot-time
+    /// invariant — for example, a child inside a `SequentialDrain` whose
+    /// `feed_range` cannot be determined. These errors indicate an internal
+    /// pipeline bug rather than user input, and surface as a Cosmos client
+    /// error rather than silently producing a lossy continuation token.
     pub fn to_continuation_token(&self) -> crate::error::Result<ContinuationToken> {
-        ContinuationToken::encode_v1(&self.operation, &self.pipeline.snapshot_state())
+        ContinuationToken::encode_v1(&self.operation, &self.pipeline.snapshot_state()?)
     }
 }

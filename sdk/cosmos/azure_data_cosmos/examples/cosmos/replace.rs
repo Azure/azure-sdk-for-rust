@@ -3,9 +3,8 @@
 
 use std::error::Error;
 
-use azure_data_cosmos::{
-    ContentResponseOnWrite, CosmosClient, ItemWriteOptions, OperationOptions, PartitionKey,
-};
+use azure_data_cosmos::options::{ContentResponseOnWrite, ItemWriteOptions, OperationOptions};
+use azure_data_cosmos::{CosmosClient, PartitionKey};
 use clap::{Args, Subcommand};
 
 use crate::utils::ThroughputOptions;

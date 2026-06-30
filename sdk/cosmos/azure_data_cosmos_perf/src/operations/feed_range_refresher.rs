@@ -19,7 +19,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use azure_data_cosmos::clients::ContainerClient;
-use azure_data_cosmos::FeedRange;
+use azure_data_cosmos::feed::FeedRange;
 
 use crate::operations::feed_range_query::FeedRangeCache;
 use crate::stats::Stats;
