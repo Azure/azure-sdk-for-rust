@@ -187,7 +187,7 @@ impl From<&str> for EffectivePartitionKey {
     /// Parses an upper- or lower-hex EPK string into raw bytes.
     ///
     /// EPK strings always originate as even-length hex (service pkrange/query
-    /// plan bounds, [`compute`](Self::compute) output, and the `"…FF"` prefix
+    /// plan bounds, `compute` output, and the `"…FF"` prefix
     /// sentinel), so a malformed value is a caller bug; `hex_to_bytes` stops at
     /// the first byte that fails to parse rather than panicking on the wire path.
     fn from(s: &str) -> Self {
