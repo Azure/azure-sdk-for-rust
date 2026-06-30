@@ -105,14 +105,14 @@ if ($IsWindows) {
     } else {
         LogGroupStart "Installing Cosmos DB Emulator"
         & "$PSScriptRoot\..\..\..\..\eng\common\scripts\Cosmos-Emulator.ps1" `
-            -StartParameters "/noexplorer /noui /enablepreview /EnableSqlComputeEndpoint /SqlComputePort=9999 /disableratelimiting /partitioncount=50 /consistency=Strong" `
+            -StartParameters "/noexplorer /noui /enablepreview /EnableSqlComputeEndpoint /SqlComputePort=9999 /disableratelimiting /partitioncount=50 /consistency=Strong /enableaadauthentication" `
             -Stage "Install"
         LogGroupEnd
     }
 
     LogGroupStart "Launching Cosmos DB Emulator"
     & "$PSScriptRoot\..\..\..\..\eng\common\scripts\Cosmos-Emulator.ps1" `
-        -StartParameters "/noexplorer /noui /enablepreview /EnableSqlComputeEndpoint /SqlComputePort=9999 /disableratelimiting /partitioncount=50 /consistency=Strong" `
+        -StartParameters "/noexplorer /noui /enablepreview /EnableSqlComputeEndpoint /SqlComputePort=9999 /disableratelimiting /partitioncount=50 /consistency=Strong /enableaadauthentication" `
         -Emulator:$EmulatorPath `
         -Stage "Launch"
     LogGroupEnd
