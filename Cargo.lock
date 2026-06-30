@@ -811,7 +811,7 @@ dependencies = [
  "async-stream",
  "async-trait",
  "azure_core 1.1.0-beta.1",
- "azure_core_opentelemetry 1.0.0",
+ "azure_core_opentelemetry 1.1.0-beta.1",
  "azure_core_test 0.2.0",
  "azure_identity 1.1.0-beta.1",
  "azure_storage_blob_test",
