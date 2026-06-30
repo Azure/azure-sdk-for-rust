@@ -638,6 +638,12 @@ impl KeyClient {
         &self,
         options: Option<KeyClientListDeletedKeyPropertiesOptions<'_>>,
     ) -> Result<Pager<ListDeletedKeyPropertiesResult>> {
+        #[derive(serde::Deserialize)]
+        struct KeyClientListDeletedKeyPropertiesResponse<'a> {
+            #[serde(borrow, rename = "nextLink")]
+            next_link: Option<std::borrow::Cow<'a, str>>,
+        }
+
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
@@ -680,9 +686,11 @@ impl KeyClient {
                             )
                             .await?;
                         let (status, headers, body) = rsp.deconstruct();
-                        let res: ListDeletedKeyPropertiesResult = json::from_json(&body)?;
+                        let res: KeyClientListDeletedKeyPropertiesResponse<'_> =
+                            json::from_json_ref(&body)?;
+                        let next_link = res.next_link.map(std::borrow::Cow::into_owned);
                         let rsp = RawResponse::from_bytes(status, headers, body).into();
-                        Ok(match res.next_link {
+                        Ok(match next_link {
                             Some(next_link) if !next_link.is_empty() => PagerResult::More {
                                 response: rsp,
                                 continuation: PagerContinuation::Link(
@@ -712,6 +720,12 @@ impl KeyClient {
         &self,
         options: Option<KeyClientListKeyPropertiesOptions<'_>>,
     ) -> Result<Pager<ListKeyPropertiesResult>> {
+        #[derive(serde::Deserialize)]
+        struct KeyClientListKeyPropertiesResponse<'a> {
+            #[serde(borrow, rename = "nextLink")]
+            next_link: Option<std::borrow::Cow<'a, str>>,
+        }
+
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
@@ -754,9 +768,11 @@ impl KeyClient {
                             )
                             .await?;
                         let (status, headers, body) = rsp.deconstruct();
-                        let res: ListKeyPropertiesResult = json::from_json(&body)?;
+                        let res: KeyClientListKeyPropertiesResponse<'_> =
+                            json::from_json_ref(&body)?;
+                        let next_link = res.next_link.map(std::borrow::Cow::into_owned);
                         let rsp = RawResponse::from_bytes(status, headers, body).into();
-                        Ok(match res.next_link {
+                        Ok(match next_link {
                             Some(next_link) if !next_link.is_empty() => PagerResult::More {
                                 response: rsp,
                                 continuation: PagerContinuation::Link(
@@ -786,6 +802,12 @@ impl KeyClient {
         key_name: &str,
         options: Option<KeyClientListKeyPropertiesVersionsOptions<'_>>,
     ) -> Result<Pager<ListKeyPropertiesResult>> {
+        #[derive(serde::Deserialize)]
+        struct KeyClientListKeyPropertiesVersionsResponse<'a> {
+            #[serde(borrow, rename = "nextLink")]
+            next_link: Option<std::borrow::Cow<'a, str>>,
+        }
+
         if key_name.is_empty() {
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
@@ -836,9 +858,11 @@ impl KeyClient {
                             )
                             .await?;
                         let (status, headers, body) = rsp.deconstruct();
-                        let res: ListKeyPropertiesResult = json::from_json(&body)?;
+                        let res: KeyClientListKeyPropertiesVersionsResponse<'_> =
+                            json::from_json_ref(&body)?;
+                        let next_link = res.next_link.map(std::borrow::Cow::into_owned);
                         let rsp = RawResponse::from_bytes(status, headers, body).into();
-                        Ok(match res.next_link {
+                        Ok(match next_link {
                             Some(next_link) if !next_link.is_empty() => PagerResult::More {
                                 response: rsp,
                                 continuation: PagerContinuation::Link(
