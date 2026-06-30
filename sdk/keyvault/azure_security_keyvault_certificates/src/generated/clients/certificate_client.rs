@@ -628,6 +628,12 @@ impl CertificateClient {
         &self,
         options: Option<CertificateClientListCertificatePropertiesOptions<'_>>,
     ) -> Result<Pager<ListCertificatePropertiesResult>> {
+        #[derive(serde::Deserialize)]
+        struct CertificateClientListCertificatePropertiesResponse {
+            #[serde(rename = "nextLink")]
+            next_link: Option<String>,
+        }
+
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
@@ -673,9 +679,11 @@ impl CertificateClient {
                             )
                             .await?;
                         let (status, headers, body) = rsp.deconstruct();
-                        let res: ListCertificatePropertiesResult = json::from_json(&body)?;
+                        let res: CertificateClientListCertificatePropertiesResponse =
+                            json::from_json(&body)?;
+                        let next_link = res.next_link;
                         let rsp = RawResponse::from_bytes(status, headers, body).into();
-                        Ok(match res.next_link {
+                        Ok(match next_link {
                             Some(next_link) if !next_link.is_empty() => PagerResult::More {
                                 response: rsp,
                                 continuation: PagerContinuation::Link(
@@ -706,6 +714,12 @@ impl CertificateClient {
         certificate_name: &str,
         options: Option<CertificateClientListCertificatePropertiesVersionsOptions<'_>>,
     ) -> Result<Pager<ListCertificatePropertiesResult>> {
+        #[derive(serde::Deserialize)]
+        struct CertificateClientListCertificatePropertiesVersionsResponse {
+            #[serde(rename = "nextLink")]
+            next_link: Option<String>,
+        }
+
         if certificate_name.is_empty() {
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
@@ -756,9 +770,11 @@ impl CertificateClient {
                             )
                             .await?;
                         let (status, headers, body) = rsp.deconstruct();
-                        let res: ListCertificatePropertiesResult = json::from_json(&body)?;
+                        let res: CertificateClientListCertificatePropertiesVersionsResponse =
+                            json::from_json(&body)?;
+                        let next_link = res.next_link;
                         let rsp = RawResponse::from_bytes(status, headers, body).into();
-                        Ok(match res.next_link {
+                        Ok(match next_link {
                             Some(next_link) if !next_link.is_empty() => PagerResult::More {
                                 response: rsp,
                                 continuation: PagerContinuation::Link(
@@ -788,6 +804,12 @@ impl CertificateClient {
         &self,
         options: Option<CertificateClientListDeletedCertificatePropertiesOptions<'_>>,
     ) -> Result<Pager<ListDeletedCertificatePropertiesResult>> {
+        #[derive(serde::Deserialize)]
+        struct CertificateClientListDeletedCertificatePropertiesResponse {
+            #[serde(rename = "nextLink")]
+            next_link: Option<String>,
+        }
+
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
@@ -833,9 +855,11 @@ impl CertificateClient {
                             )
                             .await?;
                         let (status, headers, body) = rsp.deconstruct();
-                        let res: ListDeletedCertificatePropertiesResult = json::from_json(&body)?;
+                        let res: CertificateClientListDeletedCertificatePropertiesResponse =
+                            json::from_json(&body)?;
+                        let next_link = res.next_link;
                         let rsp = RawResponse::from_bytes(status, headers, body).into();
-                        Ok(match res.next_link {
+                        Ok(match next_link {
                             Some(next_link) if !next_link.is_empty() => PagerResult::More {
                                 response: rsp,
                                 continuation: PagerContinuation::Link(
@@ -864,6 +888,12 @@ impl CertificateClient {
         &self,
         options: Option<CertificateClientListIssuerPropertiesOptions<'_>>,
     ) -> Result<Pager<ListIssuerPropertiesResult>> {
+        #[derive(serde::Deserialize)]
+        struct CertificateClientListIssuerPropertiesResponse {
+            #[serde(rename = "nextLink")]
+            next_link: Option<String>,
+        }
+
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
@@ -906,9 +936,11 @@ impl CertificateClient {
                             )
                             .await?;
                         let (status, headers, body) = rsp.deconstruct();
-                        let res: ListIssuerPropertiesResult = json::from_json(&body)?;
+                        let res: CertificateClientListIssuerPropertiesResponse =
+                            json::from_json(&body)?;
+                        let next_link = res.next_link;
                         let rsp = RawResponse::from_bytes(status, headers, body).into();
-                        Ok(match res.next_link {
+                        Ok(match next_link {
                             Some(next_link) if !next_link.is_empty() => PagerResult::More {
                                 response: rsp,
                                 continuation: PagerContinuation::Link(
