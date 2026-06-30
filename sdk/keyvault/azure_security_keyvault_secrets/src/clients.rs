@@ -91,6 +91,7 @@ mod tests {
     use azure_core_test::{credentials::MockCredential, http::MockHttpClient};
     use futures::{FutureExt as _, TryStreamExt as _};
 
+    // cspell:ignore skiptoken
     const LIST_SECRET_PROPERTIES_RESPONSE: &[u8] =
         br#"{"nextLink":"/secrets?api-version=2025-07-01&skiptoken=page-2","value":[]}"#;
 

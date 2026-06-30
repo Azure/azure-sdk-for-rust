@@ -713,9 +713,9 @@ impl BlobContainerClient {
     ) -> Result<Pager<ListBlobsResponse, XmlFormat>> {
         #[derive(serde::Deserialize)]
         #[serde(rename = "EnumerationResults")]
-        struct BlobContainerClientListBlobsResponse<'a> {
-            #[serde(borrow, rename = "NextMarker")]
-            next_marker: Option<std::borrow::Cow<'a, str>>,
+        struct BlobContainerClientListBlobsResponse {
+            #[serde(rename = "NextMarker")]
+            next_marker: Option<String>,
         }
 
         let options = options.unwrap_or_default().into_owned();
@@ -778,11 +778,10 @@ impl BlobContainerClient {
                         )
                         .await?;
                     let (status, headers, body) = rsp.deconstruct();
-                    let metadata: BlobContainerClientListBlobsResponse<'_> =
-                        xml::from_xml_ref(&body)?;
-                    let continuation_token = metadata.next_marker.and_then(|marker_cow| {
-                        (!marker_cow.is_empty()).then(|| marker_cow.into_owned())
-                    });
+                    let metadata: BlobContainerClientListBlobsResponse = xml::from_xml(&body)?;
+                    let continuation_token = metadata
+                        .next_marker
+                        .and_then(|next_marker| (!next_marker.is_empty()).then_some(next_marker));
                     let rsp = RawResponse::from_bytes(status, headers, body).into();
                     Ok(match continuation_token {
                         Some(next_marker) => PagerResult::More {
