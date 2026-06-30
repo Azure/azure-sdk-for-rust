@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 /// A directory resource (ADLS Gen2) for user delegation SAS.
-pub struct DirectoryResource {
+pub(crate) struct DirectoryResource {
     container: String,
     directory: String,
 }
@@ -12,7 +12,7 @@ impl DirectoryResource {
     ///
     /// The directory depth (`sdd`) is computed automatically from the path
     /// by counting `/`-separated segments (e.g., `"dir1/dir2"` → depth 2).
-    pub fn new(container: impl Into<String>, directory: impl Into<String>) -> Self {
+    pub(crate) fn new(container: impl Into<String>, directory: impl Into<String>) -> Self {
         Self {
             container: container.into(),
             directory: directory.into(),

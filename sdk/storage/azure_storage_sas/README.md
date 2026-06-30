@@ -31,10 +31,7 @@ Produce the signed SAS token and set it as the query on a blob URL. Use the resu
 
 ```rust no_run
 use azure_core::http::Url;
-use azure_storage_sas::{
-    resource::blob::{BlobPermissions, BlobResource},
-    SasBuilder, UserDelegationKey,
-};
+use azure_storage_sas::{SasBuilder, UserDelegationKey};
 use time::OffsetDateTime;
 
 # fn example(udk: UserDelegationKey) -> azure_core::Result<()> {
@@ -47,10 +44,8 @@ let token = SasBuilder::new(
         &udk,
         OffsetDateTime::now_utc() + time::Duration::hours(1),
     )?
-    .blob(
-        BlobResource::new(container_name, blob_name),
-        BlobPermissions::new().read(),
-    )
+    .blob(container_name, blob_name)
+    .read()
     .content_type("image/jpeg")
     .build();
 
@@ -67,10 +62,7 @@ sas_url.set_query(Some(&token));
 Layer optional restrictions onto a container-level SAS: limit the caller to HTTPS only, pin them to a corporate egress range, and grant just enough permissions to list and read:
 
 ```rust no_run
-use azure_storage_sas::{
-    resource::blob::{ContainerPermissions, ContainerResource},
-    SasBuilder, SasIpRange, SasProtocol, UserDelegationKey,
-};
+use azure_storage_sas::{SasBuilder, SasIpRange, SasProtocol, UserDelegationKey};
 use std::net::Ipv4Addr;
 use time::OffsetDateTime;
 
@@ -80,10 +72,9 @@ let sas = SasBuilder::new(
         &udk,
         OffsetDateTime::now_utc() + time::Duration::hours(4),
     )?
-    .container(
-        ContainerResource::new("logs"),
-        ContainerPermissions::new().read().list(),
-    )
+    .container("logs")
+    .read()
+    .list()
     .protocol(SasProtocol::Https)
     .ip_range(SasIpRange::InclusiveRange {
         start: Ipv4Addr::new(10, 0, 0, 1),

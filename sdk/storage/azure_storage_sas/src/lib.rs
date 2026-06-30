@@ -5,10 +5,13 @@
 //!
 //! # Supported resource types
 //!
-//! - [`BlobResource`](resource::blob::BlobResource) — blob-level user delegation SAS (also covers snapshots and versions)
-//! - [`ContainerResource`](resource::blob::ContainerResource) — container-level user delegation SAS
-//! - [`DirectoryResource`](resource::blob::DirectoryResource) — directory-level (ADLS Gen2) user delegation SAS
-//! - [`QueueResource`](resource::queue::QueueResource) — queue-level user delegation SAS
+//! Select a resource by calling the matching method on [`SasBuilder`], then
+//! chain the permission setters available in that state:
+//!
+//! - [`SasBuilder::blob`] — blob-level user delegation SAS (also covers snapshots and versions)
+//! - [`SasBuilder::container`] — container-level user delegation SAS
+//! - [`SasBuilder::directory`] — directory-level (ADLS Gen2) user delegation SAS
+//! - [`SasBuilder::queue`] — queue-level user delegation SAS
 
 mod builder;
 mod ip_range;

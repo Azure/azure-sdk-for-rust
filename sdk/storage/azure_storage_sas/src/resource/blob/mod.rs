@@ -8,13 +8,14 @@
 //! ## Blob user delegation SAS
 //!
 //! ```rust no_run
-//! use azure_storage_sas::{SasBuilder, UserDelegationKey, resource::blob::{BlobResource, BlobPermissions}};
+//! use azure_storage_sas::{SasBuilder, UserDelegationKey};
 //! use time::OffsetDateTime;
 //!
 //! # fn example(udk: UserDelegationKey) -> azure_core::Result<()> {
 //! let token = SasBuilder::new("myaccount", &udk,
 //!         OffsetDateTime::now_utc() + time::Duration::hours(1))?
-//!     .blob(BlobResource::new("images", "photo.jpg"), BlobPermissions::new().read())
+//!     .blob("images", "photo.jpg")
+//!     .read()
 //!     .content_type("image/jpeg")
 //!     .build();
 //! # Ok(())
@@ -24,13 +25,15 @@
 //! ## Container SAS
 //!
 //! ```rust no_run
-//! use azure_storage_sas::{SasBuilder, UserDelegationKey, resource::blob::{ContainerResource, ContainerPermissions}};
+//! use azure_storage_sas::{SasBuilder, UserDelegationKey};
 //! use time::OffsetDateTime;
 //!
 //! # fn example(udk: UserDelegationKey) -> azure_core::Result<()> {
 //! let token = SasBuilder::new("myaccount", &udk,
 //!         OffsetDateTime::now_utc() + time::Duration::hours(4))?
-//!     .container(ContainerResource::new("logs"), ContainerPermissions::new().read().list())
+//!     .container("logs")
+//!     .read()
+//!     .list()
 //!     .build();
 //! # Ok(())
 //! # }
@@ -47,14 +50,10 @@ mod blob_resource;
 mod container_resource;
 mod directory_resource;
 
-pub use blob_resource::{BlobPermissions, BlobResource};
-pub use container_resource::ContainerResource;
-pub use directory_resource::DirectoryResource;
-
-/// Permissions shared by container and directory resources.
-///
-/// Serialization order: `racwdxyltmeopi`.
-pub use container_resource::ContainerPermissions;
+pub(crate) use blob_resource::{BlobPermissions, BlobResource};
+pub(crate) use container_resource::ContainerPermissions;
+pub(crate) use container_resource::ContainerResource;
+pub(crate) use directory_resource::DirectoryResource;
 
 use crate::builder::SasBuilder;
 use crate::signing::sealed::Sealed;
@@ -287,6 +286,222 @@ impl<S: BlobServiceState + BlobOptions> SasBuilder<'_, S> {
             .signed_request_query_parameters
             .get_or_insert_with(BTreeMap::new)
             .insert(key.into(), value.into());
+        self
+    }
+}
+
+/// Permission and target setters for a blob SAS, gated on [`BlobState`].
+impl SasBuilder<'_, BlobState> {
+    /// Enables read permission.
+    pub fn read(mut self) -> Self {
+        self.state.permissions.read = true;
+        self
+    }
+
+    /// Enables add permission.
+    pub fn add(mut self) -> Self {
+        self.state.permissions.add = true;
+        self
+    }
+
+    /// Enables create permission.
+    pub fn create(mut self) -> Self {
+        self.state.permissions.create = true;
+        self
+    }
+
+    /// Enables write permission.
+    pub fn write(mut self) -> Self {
+        self.state.permissions.write = true;
+        self
+    }
+
+    /// Enables delete permission.
+    pub fn delete(mut self) -> Self {
+        self.state.permissions.delete = true;
+        self
+    }
+
+    /// Enables delete version permission.
+    pub fn delete_version(mut self) -> Self {
+        self.state.permissions.delete_version = true;
+        self
+    }
+
+    /// Enables permanent delete permission.
+    pub fn permanent_delete(mut self) -> Self {
+        self.state.permissions.permanent_delete = true;
+        self
+    }
+
+    /// Enables tags permission.
+    pub fn tags(mut self) -> Self {
+        self.state.permissions.tags = true;
+        self
+    }
+
+    /// Enables move blob permission.
+    pub fn move_blob(mut self) -> Self {
+        self.state.permissions.move_blob = true;
+        self
+    }
+
+    /// Enables execute permission.
+    pub fn execute(mut self) -> Self {
+        self.state.permissions.execute = true;
+        self
+    }
+
+    /// Enables ownership permission.
+    pub fn ownership(mut self) -> Self {
+        self.state.permissions.ownership = true;
+        self
+    }
+
+    /// Enables permissions permission.
+    pub fn permissions(mut self) -> Self {
+        self.state.permissions.permissions = true;
+        self
+    }
+
+    /// Enables set immutability policy permission.
+    pub fn set_immutability_policy(mut self) -> Self {
+        self.state.permissions.set_immutability_policy = true;
+        self
+    }
+
+    /// Targets a specific snapshot of the blob (`sr=bs`).
+    ///
+    /// `snapshot` is the snapshot timestamp (e.g.,
+    /// `"2025-01-15T12:00:00.0000000Z"`). It is emitted as the `snapshot=`
+    /// query parameter of the token.
+    pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
+        self.state.resource.snapshot = Some(snapshot.into());
+        self
+    }
+
+    /// Targets a specific version of the blob (`sr=bv`).
+    ///
+    /// The version ID is not included in the SAS token; it must travel on the
+    /// request URL as a `versionid=` query parameter. Append the token to a URL
+    /// that already carries `versionid=`.
+    pub fn version(mut self, version_id: impl Into<String>) -> Self {
+        self.state.resource.version_id = Some(version_id.into());
+        self
+    }
+}
+
+/// Sealed accessor granting the shared container/directory permission setters
+/// mutable access to each state's [`ContainerPermissions`] without exposing the
+/// field publicly.
+mod permissions_access {
+    #![allow(private_interfaces)]
+    use super::{ContainerPermissions, ContainerState, DirectoryState};
+
+    pub(crate) trait ContainerPermsAccess {
+        fn permissions_mut(&mut self) -> &mut ContainerPermissions;
+    }
+    impl ContainerPermsAccess for ContainerState {
+        fn permissions_mut(&mut self) -> &mut ContainerPermissions {
+            &mut self.permissions
+        }
+    }
+    impl ContainerPermsAccess for DirectoryState {
+        fn permissions_mut(&mut self) -> &mut ContainerPermissions {
+            &mut self.permissions
+        }
+    }
+}
+use permissions_access::ContainerPermsAccess;
+
+/// Permission setters shared by container and directory SAS.
+///
+/// The `ContainerPermsAccess` bound grants mutable access to each state's
+/// container permission set without exposing it publicly. `BlobState` does not
+/// implement the bound, so its own `read`/`write`/... setters do not conflict.
+#[allow(private_bounds)]
+impl<S: ContainerPermsAccess> SasBuilder<'_, S> {
+    /// Enables read permission.
+    pub fn read(mut self) -> Self {
+        self.state.permissions_mut().read = true;
+        self
+    }
+
+    /// Enables add permission.
+    pub fn add(mut self) -> Self {
+        self.state.permissions_mut().add = true;
+        self
+    }
+
+    /// Enables create permission.
+    pub fn create(mut self) -> Self {
+        self.state.permissions_mut().create = true;
+        self
+    }
+
+    /// Enables write permission.
+    pub fn write(mut self) -> Self {
+        self.state.permissions_mut().write = true;
+        self
+    }
+
+    /// Enables delete permission.
+    pub fn delete(mut self) -> Self {
+        self.state.permissions_mut().delete = true;
+        self
+    }
+
+    /// Enables delete version permission.
+    pub fn delete_version(mut self) -> Self {
+        self.state.permissions_mut().delete_version = true;
+        self
+    }
+
+    /// Enables permanent delete permission.
+    pub fn permanent_delete(mut self) -> Self {
+        self.state.permissions_mut().permanent_delete = true;
+        self
+    }
+
+    /// Enables list permission.
+    pub fn list(mut self) -> Self {
+        self.state.permissions_mut().list = true;
+        self
+    }
+
+    /// Enables tags permission.
+    pub fn tags(mut self) -> Self {
+        self.state.permissions_mut().tags = true;
+        self
+    }
+
+    /// Enables move blob permission.
+    pub fn move_blob(mut self) -> Self {
+        self.state.permissions_mut().move_blob = true;
+        self
+    }
+
+    /// Enables execute permission.
+    pub fn execute(mut self) -> Self {
+        self.state.permissions_mut().execute = true;
+        self
+    }
+
+    /// Enables ownership permission.
+    pub fn ownership(mut self) -> Self {
+        self.state.permissions_mut().ownership = true;
+        self
+    }
+
+    /// Enables permissions permission.
+    pub fn permissions(mut self) -> Self {
+        self.state.permissions_mut().permissions = true;
+        self
+    }
+
+    /// Enables set immutability policy permission.
+    pub fn set_immutability_policy(mut self) -> Self {
+        self.state.permissions_mut().set_immutability_policy = true;
         self
     }
 }
@@ -574,15 +789,7 @@ mod tests {
             ..Default::default()
         };
 
-        let sts = blob_udk_string_to_sign(
-            &BlobPermissions::new().read().write().to_sas_str(),
-            &common,
-            &options,
-            &key,
-            "b",
-            "/blob/acct/c/b",
-            "",
-        );
+        let sts = blob_udk_string_to_sign("rw", &common, &options, &key, "b", "/blob/acct/c/b", "");
         let lines: Vec<&str> = sts.split('\n').collect();
         assert_eq!(lines.len(), 28, "blob STS must have exactly 28 fields");
         assert_eq!(lines[0], "rw"); // sp
@@ -620,7 +827,7 @@ mod tests {
         let common = test_common(datetime!(2025-06-01 12:00:00 UTC));
         let options = BlobSasOptions::default();
         let sts = blob_udk_string_to_sign(
-            &BlobPermissions::new().read().to_sas_str(),
+            "r",
             &common,
             &options,
             &key,
@@ -641,7 +848,7 @@ mod tests {
         let common = test_common(datetime!(2025-06-01 12:00:00 UTC));
         let options = BlobSasOptions::default();
         let sts = blob_udk_string_to_sign(
-            &BlobPermissions::new().read().to_sas_str(),
+            "r",
             &common,
             &options,
             &key,

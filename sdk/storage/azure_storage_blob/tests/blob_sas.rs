@@ -19,10 +19,7 @@ use azure_storage_blob::{BlobClient, BlobServiceClient};
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_blob_service_client, get_container_client, StorageAccount,
 };
-use azure_storage_sas::{
-    resource::blob::{BlobPermissions, BlobResource, ContainerPermissions, ContainerResource},
-    SasBuilder, UserDelegationKey,
-};
+use azure_storage_sas::{SasBuilder, UserDelegationKey};
 use std::error::Error;
 use time::Duration;
 
@@ -80,10 +77,8 @@ async fn test_blob_user_delegation_sas_read(ctx: TestContext) -> Result<(), Box<
         &udk,
         OffsetDateTime::now_utc() + Duration::hours(1),
     )?
-    .blob(
-        BlobResource::new(&container_name, &blob_name),
-        BlobPermissions::new().read(),
-    )
+    .blob(&container_name, &blob_name)
+    .read()
     .build();
     let mut sas_url = blob_client.url().clone();
     sas_url.set_query(Some(&token));
@@ -119,10 +114,10 @@ async fn test_blob_user_delegation_sas_write(ctx: TestContext) -> Result<(), Box
         &udk,
         OffsetDateTime::now_utc() + Duration::hours(1),
     )?
-    .blob(
-        BlobResource::new(&container_name, &blob_name),
-        BlobPermissions::new().read().write().create(),
-    )
+    .blob(&container_name, &blob_name)
+    .read()
+    .write()
+    .create()
     .build();
     let mut sas_url = blob_client.url().clone();
     sas_url.set_query(Some(&token));
@@ -187,10 +182,9 @@ async fn test_blob_version_user_delegation_sas(ctx: TestContext) -> Result<(), B
         &udk,
         OffsetDateTime::now_utc() + Duration::hours(1),
     )?
-    .blob(
-        BlobResource::new(&container_name, &blob_name).version(&version_1),
-        BlobPermissions::new().read(),
-    )
+    .blob(&container_name, &blob_name)
+    .version(&version_1)
+    .read()
     .build();
     let mut sas_url = version_1_client.url().clone();
     // Preserve the existing `versionid=` query parameter.
@@ -260,10 +254,9 @@ async fn test_blob_snapshot_user_delegation_sas(ctx: TestContext) -> Result<(), 
         &udk,
         OffsetDateTime::now_utc() + Duration::hours(1),
     )?
-    .blob(
-        BlobResource::new(&container_name, &blob_name).snapshot(&snapshot),
-        BlobPermissions::new().read(),
-    )
+    .blob(&container_name, &blob_name)
+    .snapshot(&snapshot)
+    .read()
     .build();
     let mut sas_url = blob_client.url().clone();
     sas_url.set_query(Some(&token));
@@ -308,10 +301,9 @@ async fn test_container_user_delegation_sas(ctx: TestContext) -> Result<(), Box<
         &udk,
         OffsetDateTime::now_utc() + Duration::hours(1),
     )?
-    .container(
-        ContainerResource::new(&container_name),
-        ContainerPermissions::new().read().list(),
-    )
+    .container(&container_name)
+    .read()
+    .list()
     .build();
 
     // Build the blob URL within the container, then append the container SAS.

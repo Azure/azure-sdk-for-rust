@@ -6,31 +6,34 @@
 //! # Example
 //!
 //! ```rust no_run
-//! use azure_storage_sas::{SasBuilder, SasProtocol, UserDelegationKey, resource::queue::{QueueResource, QueuePermissions}};
+//! use azure_storage_sas::{SasBuilder, SasProtocol, UserDelegationKey};
 //! use time::OffsetDateTime;
 //!
 //! # fn example(udk: UserDelegationKey) -> azure_core::Result<()> {
 //! let token = SasBuilder::new("myaccount", &udk,
 //!         OffsetDateTime::now_utc() + time::Duration::hours(8))?
+//!     .queue("work-items")
+//!     .read()
+//!     .process()
 //!     .protocol(SasProtocol::Https)
-//!     .queue(QueueResource::new("work-items"), QueuePermissions::new().read().process())
 //!     .build();
 //! # Ok(())
 //! # }
 //! ```
 
+use crate::builder::SasBuilder;
 use crate::signing::sealed::Sealed;
 use crate::signing::{CommonFields, SasResource, ValidatedKey};
 use crate::SAS_VERSION;
 
 /// A queue resource for user delegation SAS.
-pub struct QueueResource {
+pub(crate) struct QueueResource {
     queue: String,
 }
 
 impl QueueResource {
     /// Creates a new queue resource.
-    pub fn new(queue: impl Into<String>) -> Self {
+    pub(crate) fn new(queue: impl Into<String>) -> Self {
         Self {
             queue: queue.into(),
         }
@@ -43,45 +46,17 @@ impl QueueResource {
 
 /// Permissions for a queue SAS.
 ///
-/// Serialization order: `raup`.
+/// Serialization order: `raup`. Flags are set through the permission setters on
+/// [`SasBuilder<QueueState>`](crate::SasBuilder).
 #[derive(Clone, Copy, Default)]
-pub struct QueuePermissions {
-    read: bool,
-    add: bool,
-    update: bool,
-    process: bool,
+pub(crate) struct QueuePermissions {
+    pub(crate) read: bool,
+    pub(crate) add: bool,
+    pub(crate) update: bool,
+    pub(crate) process: bool,
 }
 
 impl QueuePermissions {
-    /// Creates a new permissions set with all permissions disabled.
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    /// Enables read permission.
-    pub fn read(mut self) -> Self {
-        self.read = true;
-        self
-    }
-
-    /// Enables add permission.
-    pub fn add(mut self) -> Self {
-        self.add = true;
-        self
-    }
-
-    /// Enables update permission.
-    pub fn update(mut self) -> Self {
-        self.update = true;
-        self
-    }
-
-    /// Enables process permission.
-    pub fn process(mut self) -> Self {
-        self.process = true;
-        self
-    }
-
     /// Serializes the enabled permissions to the SAS token format.
     pub(crate) fn to_sas_str(&self) -> String {
         let mut s = String::with_capacity(4);
@@ -108,6 +83,33 @@ pub struct QueueState {
 }
 
 impl Sealed for QueueState {}
+
+/// Permission setters for a queue SAS, gated on [`QueueState`].
+impl SasBuilder<'_, QueueState> {
+    /// Enables read permission.
+    pub fn read(mut self) -> Self {
+        self.state.permissions.read = true;
+        self
+    }
+
+    /// Enables add permission.
+    pub fn add(mut self) -> Self {
+        self.state.permissions.add = true;
+        self
+    }
+
+    /// Enables update permission.
+    pub fn update(mut self) -> Self {
+        self.state.permissions.update = true;
+        self
+    }
+
+    /// Enables process permission.
+    pub fn process(mut self) -> Self {
+        self.state.permissions.process = true;
+        self
+    }
+}
 
 impl SasResource for QueueState {
     fn string_to_sign(&self, common: &CommonFields, key: &ValidatedKey<'_>) -> String {
@@ -222,12 +224,7 @@ mod tests {
         let mut common = test_common(datetime!(2025-06-01 12:00:00 UTC));
         common.delegated_user_object_id = Some("duoid".into());
 
-        let sts = queue_udk_string_to_sign(
-            &QueuePermissions::new().read().add().to_sas_str(),
-            &common,
-            &key,
-            "/queue/acct/q",
-        );
+        let sts = queue_udk_string_to_sign("ra", &common, &key, "/queue/acct/q");
         let lines: Vec<&str> = sts.split('\n').collect();
         assert_eq!(lines.len(), 15, "queue STS must have exactly 15 fields");
         assert_eq!(lines[0], "ra"); // sp
@@ -244,12 +241,7 @@ mod tests {
         let udk = test_udk(); // signed_delegated_user_tid: None
         let key = ValidatedKey::from_key(&udk).unwrap();
         let common = test_common(datetime!(2025-06-01 12:00:00 UTC));
-        let sts = queue_udk_string_to_sign(
-            &QueuePermissions::new().read().to_sas_str(),
-            &common,
-            &key,
-            "/queue/acct/q",
-        );
+        let sts = queue_udk_string_to_sign("r", &common, &key, "/queue/acct/q");
         let lines: Vec<&str> = sts.split('\n').collect();
         assert_eq!(lines[10], ""); // skdutid empty
     }

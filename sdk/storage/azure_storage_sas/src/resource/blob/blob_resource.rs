@@ -3,46 +3,25 @@
 
 /// A blob resource for user delegation SAS.
 ///
-/// By default targets a base blob (`sr=b`). Use [`BlobResource::snapshot`] or
-/// [`BlobResource::version`] to target a snapshot (`sr=bs`) or version (`sr=bv`).
-pub struct BlobResource {
+/// By default targets a base blob (`sr=b`). A snapshot timestamp or version ID
+/// is set through the [`snapshot`](crate::SasBuilder::snapshot) or
+/// [`version`](crate::SasBuilder::version) builder setters.
+pub(crate) struct BlobResource {
     container: String,
     blob: String,
-    snapshot: Option<String>,
-    version_id: Option<String>,
+    pub(crate) snapshot: Option<String>,
+    pub(crate) version_id: Option<String>,
 }
 
 impl BlobResource {
     /// Creates a new blob resource targeting the base blob.
-    pub fn new(container: impl Into<String>, blob: impl Into<String>) -> Self {
+    pub(crate) fn new(container: impl Into<String>, blob: impl Into<String>) -> Self {
         Self {
             container: container.into(),
             blob: blob.into(),
             snapshot: None,
             version_id: None,
         }
-    }
-
-    /// Targets a specific snapshot of the blob (`sr=bs`).
-    ///
-    /// `snapshot` is the snapshot timestamp (e.g., `"2025-01-15T12:00:00.0000000Z"`).
-    ///
-    /// The snapshot timestamp is emitted as the `snapshot=` query parameter of
-    /// the token.
-    pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
-        self.snapshot = Some(snapshot.into());
-        self
-    }
-
-    /// Targets a specific version of the blob (`sr=bv`).
-    ///
-    /// The version ID is not included in the SAS token; it must travel on the
-    /// request URL as a `versionid=` query parameter. Append the token to a URL
-    /// that already carries `versionid=` (for example
-    /// `BlobClient::with_version(...).url()`).
-    pub fn version(mut self, version_id: impl Into<String>) -> Self {
-        self.version_id = Some(version_id.into());
-        self
     }
 
     pub(crate) fn signed_resource(&self) -> &'static str {
@@ -73,108 +52,26 @@ impl BlobResource {
 
 /// Permissions for a blob SAS.
 ///
-/// Serialization order: `racwdxytmeopi`.
+/// Serialization order: `racwdxytmeopi`. Flags are set through the permission
+/// setters on [`SasBuilder<BlobState>`](crate::SasBuilder).
 #[derive(Clone, Copy, Default)]
-pub struct BlobPermissions {
-    read: bool,
-    add: bool,
-    create: bool,
-    write: bool,
-    delete: bool,
-    delete_version: bool,
-    permanent_delete: bool,
-    tags: bool,
-    move_blob: bool,
-    execute: bool,
-    ownership: bool,
-    permissions: bool,
-    set_immutability_policy: bool,
+pub(crate) struct BlobPermissions {
+    pub(crate) read: bool,
+    pub(crate) add: bool,
+    pub(crate) create: bool,
+    pub(crate) write: bool,
+    pub(crate) delete: bool,
+    pub(crate) delete_version: bool,
+    pub(crate) permanent_delete: bool,
+    pub(crate) tags: bool,
+    pub(crate) move_blob: bool,
+    pub(crate) execute: bool,
+    pub(crate) ownership: bool,
+    pub(crate) permissions: bool,
+    pub(crate) set_immutability_policy: bool,
 }
 
 impl BlobPermissions {
-    /// Creates a new permissions set with all permissions disabled.
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    /// Enables read permission.
-    pub fn read(mut self) -> Self {
-        self.read = true;
-        self
-    }
-
-    /// Enables add permission.
-    pub fn add(mut self) -> Self {
-        self.add = true;
-        self
-    }
-
-    /// Enables create permission.
-    pub fn create(mut self) -> Self {
-        self.create = true;
-        self
-    }
-
-    /// Enables write permission.
-    pub fn write(mut self) -> Self {
-        self.write = true;
-        self
-    }
-
-    /// Enables delete permission.
-    pub fn delete(mut self) -> Self {
-        self.delete = true;
-        self
-    }
-
-    /// Enables delete version permission.
-    pub fn delete_version(mut self) -> Self {
-        self.delete_version = true;
-        self
-    }
-
-    /// Enables permanent delete permission.
-    pub fn permanent_delete(mut self) -> Self {
-        self.permanent_delete = true;
-        self
-    }
-
-    /// Enables tags permission.
-    pub fn tags(mut self) -> Self {
-        self.tags = true;
-        self
-    }
-
-    /// Enables move blob permission.
-    pub fn move_blob(mut self) -> Self {
-        self.move_blob = true;
-        self
-    }
-
-    /// Enables execute permission.
-    pub fn execute(mut self) -> Self {
-        self.execute = true;
-        self
-    }
-
-    /// Enables ownership permission.
-    pub fn ownership(mut self) -> Self {
-        self.ownership = true;
-        self
-    }
-
-    /// Enables permissions permission.
-    pub fn permissions(mut self) -> Self {
-        self.permissions = true;
-        self
-    }
-
-    /// Enables set immutability policy permission.
-    pub fn set_immutability_policy(mut self) -> Self {
-        self.set_immutability_policy = true;
-        self
-    }
-
     /// Serializes the enabled permissions to the SAS token format.
     pub(crate) fn to_sas_str(&self) -> String {
         let mut s = String::with_capacity(13);

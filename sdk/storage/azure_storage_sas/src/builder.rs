@@ -11,7 +11,6 @@ use crate::resource::queue::{QueuePermissions, QueueResource, QueueState};
 use crate::signing::{sign, CommonFields, SasResource, ValidatedKey};
 use azure_storage_common::models::UserDelegationKey;
 use time::OffsetDateTime;
-
 /// Initial state before a resource type has been selected.
 pub struct Untyped;
 
@@ -60,34 +59,34 @@ impl<'a> SasBuilder<'a, Untyped> {
     }
 
     /// Selects a blob resource and transitions the builder to blob state.
+    ///
+    /// Permissions, an optional snapshot/version target, and response header
+    /// overrides are then set with the fluent setters available on the
+    /// resulting [`SasBuilder<BlobState>`].
     pub fn blob(
         self,
-        resource: BlobResource,
-        permissions: BlobPermissions,
+        container: impl Into<String>,
+        blob: impl Into<String>,
     ) -> SasBuilder<'a, BlobState> {
         SasBuilder {
             key: self.key,
             common: self.common,
             state: BlobState {
-                resource,
-                permissions,
+                resource: BlobResource::new(container, blob),
+                permissions: BlobPermissions::default(),
                 options: BlobSasOptions::default(),
             },
         }
     }
 
     /// Selects a container resource and transitions the builder to container state.
-    pub fn container(
-        self,
-        resource: ContainerResource,
-        permissions: ContainerPermissions,
-    ) -> SasBuilder<'a, ContainerState> {
+    pub fn container(self, container: impl Into<String>) -> SasBuilder<'a, ContainerState> {
         SasBuilder {
             key: self.key,
             common: self.common,
             state: ContainerState {
-                resource,
-                permissions,
+                resource: ContainerResource::new(container),
+                permissions: ContainerPermissions::default(),
                 options: BlobSasOptions::default(),
             },
         }
@@ -96,32 +95,28 @@ impl<'a> SasBuilder<'a, Untyped> {
     /// Selects a directory resource and transitions the builder to directory state.
     pub fn directory(
         self,
-        resource: DirectoryResource,
-        permissions: ContainerPermissions,
+        container: impl Into<String>,
+        directory: impl Into<String>,
     ) -> SasBuilder<'a, DirectoryState> {
         SasBuilder {
             key: self.key,
             common: self.common,
             state: DirectoryState {
-                resource,
-                permissions,
+                resource: DirectoryResource::new(container, directory),
+                permissions: ContainerPermissions::default(),
                 options: BlobSasOptions::default(),
             },
         }
     }
 
     /// Selects a queue resource and transitions the builder to queue state.
-    pub fn queue(
-        self,
-        resource: QueueResource,
-        permissions: QueuePermissions,
-    ) -> SasBuilder<'a, QueueState> {
+    pub fn queue(self, queue: impl Into<String>) -> SasBuilder<'a, QueueState> {
         SasBuilder {
             key: self.key,
             common: self.common,
             state: QueueState {
-                resource,
-                permissions,
+                resource: QueueResource::new(queue),
+                permissions: QueuePermissions::default(),
             },
         }
     }
@@ -170,10 +165,6 @@ impl<S: SasResource> SasBuilder<'_, S> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::resource::blob::{
-        BlobPermissions, BlobResource, ContainerPermissions, ContainerResource,
-    };
-    use crate::resource::queue::{QueuePermissions, QueueResource};
     use crate::signing::test_support::test_udk;
     use time::macros::datetime;
 
@@ -186,10 +177,9 @@ mod tests {
             .unwrap()
             .start(datetime!(2025-01-15 00:00:00 UTC))
             .protocol(SasProtocol::HttpsAndHttp)
-            .blob(
-                BlobResource::new("mycontainer", "myblob.txt"),
-                BlobPermissions::new().read().write(),
-            )
+            .blob("mycontainer", "myblob.txt")
+            .read()
+            .write()
             .build();
 
         assert!(qp.contains("sp=rw"));
@@ -206,10 +196,8 @@ mod tests {
 
         let qp = SasBuilder::new("myaccount", &udk, expiry)
             .unwrap()
-            .blob(
-                BlobResource::new("mycontainer", "myblob.txt"),
-                BlobPermissions::new().read(),
-            )
+            .blob("mycontainer", "myblob.txt")
+            .read()
             .cache_control("no-cache")
             .build();
 
@@ -227,10 +215,9 @@ mod tests {
 
         let qp = SasBuilder::new("myaccount", &udk, expiry)
             .unwrap()
-            .container(
-                ContainerResource::new("mycontainer"),
-                ContainerPermissions::new().read().list(),
-            )
+            .container("mycontainer")
+            .read()
+            .list()
             .build();
 
         assert!(qp.starts_with("sv=2026-04-06&sr=c&"));
@@ -245,10 +232,9 @@ mod tests {
 
         let qp = SasBuilder::new("myaccount", &udk, expiry)
             .unwrap()
-            .queue(
-                QueueResource::new("myqueue"),
-                QueuePermissions::new().read().add(),
-            )
+            .queue("myqueue")
+            .read()
+            .add()
             .build();
 
         assert!(qp.starts_with("sv=2026-04-06&"));
@@ -269,7 +255,8 @@ mod tests {
         let qp = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
             .delegated_user_object_id("user/oid")
-            .queue(QueueResource::new("q"), QueuePermissions::new().read())
+            .queue("q")
+            .read()
             .build();
 
         assert!(qp.contains("skdutid=tenant%20id"), "got: {qp}");
@@ -285,7 +272,8 @@ mod tests {
         let qp = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
             .delegated_user_object_id("duoid")
-            .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
+            .blob("c", "b")
+            .read()
             .cache_control("no-cache")
             .content_disposition("inline")
             .content_encoding("gzip")
@@ -312,10 +300,9 @@ mod tests {
 
         let qp = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
-            .blob(
-                BlobResource::new("c", "b").snapshot("2025-01-15T12:00:00.0000000Z"),
-                BlobPermissions::new().read(),
-            )
+            .blob("c", "b")
+            .snapshot("2025-01-15T12:00:00.0000000Z")
+            .read()
             .build();
 
         assert!(qp.contains("sr=bs"));
@@ -331,7 +318,8 @@ mod tests {
 
         let qp = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
-            .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
+            .blob("c", "b")
+            .read()
             .content_type("image/jpeg")
             .content_disposition("attachment; filename=\"my file.txt\"")
             .build();
@@ -354,7 +342,8 @@ mod tests {
         let qp = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
             .delegated_user_object_id("user/oid")
-            .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
+            .blob("c", "b")
+            .read()
             .encryption_scope("scope name")
             .authorized_object_id("saoid/value")
             .unauthorized_object_id("suoid value")
@@ -376,10 +365,9 @@ mod tests {
 
         let qp = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
-            .blob(
-                BlobResource::new("c", "b").version("2025-01-15T12:00:00.0000000Z"),
-                BlobPermissions::new().read(),
-            )
+            .blob("c", "b")
+            .version("2025-01-15T12:00:00.0000000Z")
+            .read()
             .build();
 
         assert!(qp.contains("sr=bv"));
@@ -393,10 +381,9 @@ mod tests {
         let sig = |version: &str| {
             let qp = SasBuilder::new("acct", &udk, expiry)
                 .unwrap()
-                .blob(
-                    BlobResource::new("c", "b").version(version),
-                    BlobPermissions::new().read(),
-                )
+                .blob("c", "b")
+                .version(version)
+                .read()
                 .build();
             qp.split("sig=").nth(1).unwrap().to_string()
         };
@@ -419,7 +406,8 @@ mod tests {
 
         let qp = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
-            .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
+            .blob("c", "b")
+            .read()
             .build();
 
         assert!(qp.contains("skdutid=delegated-tenant"), "got: {qp}");
@@ -433,7 +421,8 @@ mod tests {
 
         let qp = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
-            .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
+            .blob("c", "b")
+            .read()
             .build();
 
         assert!(!qp.contains("skdutid="), "got: {qp}");
@@ -465,7 +454,8 @@ mod tests {
 
         let builder = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
-            .blob(BlobResource::new("c", "b"), BlobPermissions::new().read());
+            .blob("c", "b")
+            .read();
 
         let first = builder.build();
         let second = builder.build();
@@ -481,7 +471,8 @@ mod tests {
         let qp = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
             .protocol(SasProtocol::Https)
-            .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
+            .blob("c", "b")
+            .read()
             .start(datetime!(2025-01-15 00:00:00 UTC))
             .build();
 
@@ -509,7 +500,8 @@ mod tests {
 
         let qp = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
-            .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
+            .blob("c", "b")
+            .read()
             .signed_request_header("x-ms-blob-content-type", "application/json")
             .build();
 
@@ -524,7 +516,8 @@ mod tests {
 
         let qp = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
-            .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
+            .blob("c", "b")
+            .read()
             .signed_request_query_parameter("comp", "list")
             .build();
 
@@ -539,7 +532,8 @@ mod tests {
 
         let qp = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
-            .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
+            .blob("c", "b")
+            .read()
             .signed_request_header("x-ms-blob-type", "BlockBlob")
             .signed_request_header("x-ms-blob-content-type", "text/plain")
             .build();
@@ -560,12 +554,14 @@ mod tests {
 
         let without = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
-            .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
+            .blob("c", "b")
+            .read()
             .build();
 
         let with_headers = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
-            .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
+            .blob("c", "b")
+            .read()
             .signed_request_header("x-ms-blob-content-type", "application/json")
             .build();
 
@@ -582,10 +578,9 @@ mod tests {
 
         let qp = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
-            .container(
-                ContainerResource::new("c"),
-                ContainerPermissions::new().read().list(),
-            )
+            .container("c")
+            .read()
+            .list()
             .signed_request_header("x-ms-blob-content-type", "text/plain")
             .build();
 
@@ -599,7 +594,8 @@ mod tests {
 
         let qp = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
-            .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
+            .blob("c", "b")
+            .read()
             .build();
 
         assert!(!qp.contains("srh="), "got: {qp}");
@@ -612,10 +608,9 @@ mod tests {
         let expiry = datetime!(2025-06-01 12:00:00 UTC);
         let qp = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
-            .blob(
-                BlobResource::new("c", "b").version("2025-01-15T12:00:00.0000000Z"),
-                BlobPermissions::new().read(),
-            )
+            .blob("c", "b")
+            .version("2025-01-15T12:00:00.0000000Z")
+            .read()
             .build();
         assert!(qp.contains("sr=bv"));
         assert!(
@@ -630,10 +625,9 @@ mod tests {
         let expiry = datetime!(2025-06-01 12:00:00 UTC);
         let qp = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
-            .blob(
-                BlobResource::new("c", "b").snapshot("2025-01-15T12:00:00.0000000Z"),
-                BlobPermissions::new().read(),
-            )
+            .blob("c", "b")
+            .snapshot("2025-01-15T12:00:00.0000000Z")
+            .read()
             .build();
         assert!(qp.contains("sr=bs"));
         assert!(qp.contains("snapshot=2025-01-15T12%3A00%3A00.0000000Z"));
@@ -646,10 +640,8 @@ mod tests {
         let expiry = datetime!(2025-06-01 12:00:00 UTC);
         let qp = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
-            .directory(
-                DirectoryResource::new("fs", "a/b/c"),
-                ContainerPermissions::new().read(),
-            )
+            .directory("fs", "a/b/c")
+            .read()
             .build();
         assert!(qp.contains("sr=d"), "got: {qp}");
         assert!(qp.contains("sdd=3"), "got: {qp}");
@@ -661,10 +653,8 @@ mod tests {
         let expiry = datetime!(2025-06-01 12:00:00 UTC);
         let qp = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
-            .directory(
-                DirectoryResource::new("fs", ""),
-                ContainerPermissions::new().read(),
-            )
+            .directory("fs", "")
+            .read()
             .build();
         assert!(qp.contains("sdd=0"), "got: {qp}");
     }
@@ -677,7 +667,8 @@ mod tests {
         let qp = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
             .ip_range(SasIpRange::Address(Ipv4Addr::new(1, 2, 3, 4)))
-            .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
+            .blob("c", "b")
+            .read()
             .build();
         assert!(qp.contains("sip=1.2.3.4"), "got: {qp}");
     }
@@ -693,7 +684,8 @@ mod tests {
                 start: Ipv4Addr::new(10, 0, 0, 1),
                 end: Ipv4Addr::new(10, 0, 0, 255),
             })
-            .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
+            .blob("c", "b")
+            .read()
             .build();
         // The `-` between addresses must not be percent-encoded.
         assert!(qp.contains("sip=10.0.0.1-10.0.0.255"), "got: {qp}");
@@ -706,7 +698,8 @@ mod tests {
         let qp = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
             .protocol(SasProtocol::Https)
-            .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
+            .blob("c", "b")
+            .read()
             .build();
         assert!(qp.contains("spr=https"), "got: {qp}");
         assert!(!qp.contains("spr=https,"), "got: {qp}");
@@ -718,7 +711,8 @@ mod tests {
         let expiry = datetime!(2025-06-01 12:00:00 UTC);
         let qp = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
-            .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
+            .blob("c", "b")
+            .read()
             .build();
         for absent in [
             "st=",
@@ -747,7 +741,11 @@ mod tests {
         // Pins the documented serialization order `racwdxytmeopi`. The setters
         // are intentionally applied out of order to prove the order is fixed by
         // the type, not by call order.
-        let perms = BlobPermissions::new()
+        let udk = test_udk();
+        let expiry = datetime!(2025-06-01 12:00:00 UTC);
+        let qp = SasBuilder::new("acct", &udk, expiry)
+            .unwrap()
+            .blob("c", "b")
             .set_immutability_policy()
             .permissions()
             .ownership()
@@ -760,8 +758,9 @@ mod tests {
             .write()
             .create()
             .add()
-            .read();
-        assert_eq!(perms.to_sas_str(), "racwdxytmeopi");
+            .read()
+            .build();
+        assert!(qp.contains("sp=racwdxytmeopi"), "got: {qp}");
     }
 
     #[test]
@@ -770,7 +769,8 @@ mod tests {
         let expiry = datetime!(2025-06-01 12:00:00 UTC);
         let qp = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
-            .queue(QueueResource::new("q"), QueuePermissions::new().read())
+            .queue("q")
+            .read()
             .build();
         for absent in ["sr=", "snapshot=", "sdd=", "rscc=", "ses="] {
             assert!(!qp.contains(absent), "unexpected `{absent}` in: {qp}");
@@ -784,7 +784,8 @@ mod tests {
         let qp = SasBuilder::new("acct", &udk, expiry)
             .unwrap()
             .start(datetime!(2025-05-01 08:00:00 UTC))
-            .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
+            .blob("c", "b")
+            .read()
             .build();
         assert!(qp.contains("st=2025-05-01T08:00:00Z"), "got: {qp}");
     }
@@ -798,14 +799,16 @@ mod tests {
         let udk_none = test_udk();
         let sig_none = SasBuilder::new("acct", &udk_none, expiry)
             .unwrap()
-            .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
+            .blob("c", "b")
+            .read()
             .build();
 
         let mut udk_some = test_udk();
         udk_some.signed_delegated_user_tid = Some("tenant".into());
         let sig_some = SasBuilder::new("acct", &udk_some, expiry)
             .unwrap()
-            .blob(BlobResource::new("c", "b"), BlobPermissions::new().read())
+            .blob("c", "b")
+            .read()
             .build();
 
         let a = sig_none.split("sig=").nth(1).unwrap();

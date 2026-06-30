@@ -138,10 +138,7 @@ use azure_core::{
     time::OffsetDateTime,
 };
 use azure_storage_blob::{models::KeyInfo, BlobServiceClient};
-use azure_storage_sas::{
-    resource::blob::{BlobPermissions, BlobResource},
-    SasBuilder,
-};
+use azure_storage_sas::SasBuilder;
 use azure_identity::DeveloperToolsCredential;
 use time::Duration;
 
@@ -173,10 +170,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Build a read-only SAS token for a single blob, then set it on the blob URL.
     let token = SasBuilder::new(storage_account_name, &udk, now + Duration::hours(1))?
-        .blob(
-            BlobResource::new(container_name, blob_name),
-            BlobPermissions::new().read(),
-        )
+        .blob(container_name, blob_name)
+        .read()
         .build();
     let mut sas_url = Url::parse(&format!(
         "https://{storage_account_name}.blob.core.windows.net/{container_name}/{blob_name}"

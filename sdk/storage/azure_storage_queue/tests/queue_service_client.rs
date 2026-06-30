@@ -728,7 +728,6 @@ pub async fn get_queue_service_client_secondary(
 async fn test_queue_user_delegation_sas(ctx: TestContext) -> Result<()> {
     use azure_storage_queue::models::QueueMessage;
     use azure_storage_queue::QueueClient;
-    use azure_storage_sas::resource::queue::{QueuePermissions, QueueResource};
     use azure_storage_sas::SasBuilder;
 
     let recording = ctx.recording();
@@ -755,10 +754,10 @@ async fn test_queue_user_delegation_sas(ctx: TestContext) -> Result<()> {
 
     // Generate a SAS token for the queue and set it on the queue URL.
     let token = SasBuilder::new(account_name.as_str(), &udk, now + Duration::hours(1))?
-        .queue(
-            QueueResource::new(&queue_name),
-            QueuePermissions::new().read().add().process(),
-        )
+        .queue(&queue_name)
+        .read()
+        .add()
+        .process()
         .build();
     let mut sas_url = queue_client.url().clone();
     sas_url.set_query(Some(&token));
@@ -797,7 +796,6 @@ async fn test_queue_user_delegation_sas(ctx: TestContext) -> Result<()> {
 async fn test_queue_user_delegation_sas_message_lifecycle(ctx: TestContext) -> Result<()> {
     use azure_storage_queue::models::{QueueClientUpdateMessageOptions, QueueMessage};
     use azure_storage_queue::QueueClient;
-    use azure_storage_sas::resource::queue::{QueuePermissions, QueueResource};
     use azure_storage_sas::SasBuilder;
 
     let recording = ctx.recording();
@@ -822,10 +820,11 @@ async fn test_queue_user_delegation_sas_message_lifecycle(ctx: TestContext) -> R
 
     // Grant read, add, update, and process so the SAS can do the whole lifecycle.
     let token = SasBuilder::new(account_name.as_str(), &udk, now + Duration::hours(1))?
-        .queue(
-            QueueResource::new(&queue_name),
-            QueuePermissions::new().read().add().update().process(),
-        )
+        .queue(&queue_name)
+        .read()
+        .add()
+        .update()
+        .process()
         .build();
     let mut sas_url = queue_client.url().clone();
     sas_url.set_query(Some(&token));

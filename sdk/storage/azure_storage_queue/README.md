@@ -127,10 +127,7 @@ use azure_core::{
     time::OffsetDateTime,
 };
 use azure_storage_queue::{models::KeyInfo, QueueServiceClient};
-use azure_storage_sas::{
-    resource::queue::{QueuePermissions, QueueResource},
-    SasBuilder,
-};
+use azure_storage_sas::SasBuilder;
 use azure_identity::DeveloperToolsCredential;
 use time::Duration;
 
@@ -161,10 +158,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Build a SAS token for a queue, then set it on the queue URL.
     let token = SasBuilder::new(storage_account_name, &udk, now + Duration::hours(1))?
-        .queue(
-            QueueResource::new(queue_name),
-            QueuePermissions::new().read().add().process(),
-        )
+        .queue(queue_name)
+        .read()
+        .add()
+        .process()
         .build();
     let mut sas_url = Url::parse(&format!(
         "https://{storage_account_name}.queue.core.windows.net/{queue_name}"
