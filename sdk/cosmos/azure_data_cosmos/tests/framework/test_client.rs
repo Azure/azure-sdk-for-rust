@@ -1103,23 +1103,26 @@ pub async fn build_aad_client_from_env(
         std::sync::Arc<dyn azure_core::credentials::TokenCredential>,
         Option<super::CredentialRecorder>,
     ) = if is_emulator {
-        #[cfg(not(feature = "allow_invalid_certificates"))]
-        return Err(
-            "The 'allow_invalid_certificates' feature must be enabled to run AAD tests \
-             against the emulator. Add `allow_invalid_certificates` to the features list."
-                .into(),
-        );
+        // The emulator serves a self-signed certificate, so route the client
+        // through a runtime that skips certificate validation for emulator
+        // hosts (mirroring the key-auth emulator client setup).
+        let runtime = CosmosRuntime::builder()
+            .with_connection_pool(
+                ConnectionPoolOptions::builder()
+                    .with_server_certificate_validation(
+                        ServerCertificateValidation::RequiredUnlessEmulator,
+                    )
+                    .build()?,
+            )
+            .build()
+            .await?;
+        builder = builder.with_runtime(runtime);
 
-        #[cfg(feature = "allow_invalid_certificates")]
-        {
-            builder = builder.with_allow_emulator_invalid_certificates(true);
-            // Sign the fake JWT with the same master key the emulator validates against.
-            let master_key = parsed.account_key().secret().to_string();
-            let credential =
-                std::sync::Arc::new(CosmosEmulatorCredential::with_master_key(master_key));
-            let recorder = credential.recorder();
-            (credential, Some(recorder))
-        }
+        // Sign the fake JWT with the same master key the emulator validates against.
+        let master_key = parsed.account_key().secret().to_string();
+        let credential = std::sync::Arc::new(CosmosEmulatorCredential::with_master_key(master_key));
+        let recorder = credential.recorder();
+        (credential, Some(recorder))
     } else {
         (azure_core_test::credentials::from_env(None)?, None)
     };

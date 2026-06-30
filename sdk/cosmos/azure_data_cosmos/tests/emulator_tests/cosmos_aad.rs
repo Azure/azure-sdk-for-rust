@@ -20,8 +20,8 @@ use super::framework;
 
 use azure_core::http::StatusCode;
 use azure_core::Uuid;
+use azure_data_cosmos::feed::FeedScope;
 use azure_data_cosmos::models::ContainerProperties;
-use azure_data_cosmos::query::FeedScope;
 use azure_data_cosmos::{PartitionKey, Query};
 use framework::{TestClient, TestRunContext};
 use futures::TryStreamExt;
