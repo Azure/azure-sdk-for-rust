@@ -8,6 +8,8 @@
 
 ### Breaking Changes
 
+- Resource-reference accessors now return `Option` to account for RID-addressed references that have no name. `DatabaseReference::name_based_path`, `ContainerReference::database_name`, and `ContainerReference::name_based_path` return `None` when the reference is addressed by RID (previously they returned `&str`/`String` and assumed a name was always present). Use the new `ContainerReference::base_path` to obtain the addressing-appropriate path (RID-based or name-based) when building request URLs. ([#4640](https://github.com/Azure/azure-sdk-for-rust/pull/4640))
+
 ### Bugs Fixed
 
 - Fixed `AZURE_COSMOS_PPCB_*` environment variables (including the `AZURE_COSMOS_PPCB_ENABLED` master switch and the `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` kill switch) being silently ignored when a caller built `DriverOptions` without calling `DriverOptionsBuilder::with_partition_failover_options`. The environment is read only by `PartitionFailoverOptionsBuilder::build`, but the omitted-options path used a bare `PartitionFailoverOptions::default()` (which hard-codes PPCB enabled and reads no environment), so PPCB stayed on even with `AZURE_COSMOS_PPCB_ENABLED=false`. `DriverOptionsBuilder::build` now resolves the partition-failover options from the environment when the caller does not supply them (falling back to defaults, fail-soft, if an environment value is out of bounds). An explicitly supplied `PartitionFailoverOptions` continues to take precedence. ([#4655](https://github.com/Azure/azure-sdk-for-rust/pull/4655))

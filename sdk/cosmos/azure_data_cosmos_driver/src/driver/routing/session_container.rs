@@ -33,11 +33,15 @@ struct SessionContainerInner {
     name_to_rid: HashMap<String, ResourceId>,
 }
 
-/// Returns the `dbs/{db}/colls/{coll}` name path from a [`ContainerReference`],
-/// reusing the pre-computed `name_based_path` by skipping the leading `/`.
-fn name_path(container: &ContainerReference) -> &str {
-    // name_based_path() returns "/dbs/{db}/colls/{coll}"; skip the leading '/'.
-    &container.name_based_path()[1..]
+/// Returns the container path used as the session-token index key, reusing the
+/// pre-computed path by skipping the leading `/`.
+///
+/// For name-addressed containers this is `dbs/{db}/colls/{coll}`; for RID-addressed
+/// containers it is the RID-based path. Either way it is stable per container and
+/// consistent between `set` and `resolve`, which is all the name→RID fallback needs.
+fn index_path(container: &ContainerReference) -> &str {
+    // base_path() returns "/dbs/.../colls/..."; skip the leading '/'.
+    &container.base_path()[1..]
 }
 
 impl SessionContainer {
@@ -84,7 +88,7 @@ impl SessionContainer {
         }
 
         // Fall back to name → RID → token
-        let np = name_path(container);
+        let np = index_path(container);
         if let Some(resolved_rid) = guard.name_to_rid.get(np) {
             return Self::build_composite_token(&guard, resolved_rid.as_str());
         }
@@ -106,7 +110,7 @@ impl SessionContainer {
         session_token_value: &str,
     ) {
         let collection_rid = container.rid();
-        let np = name_path(container);
+        let np = index_path(container);
         let mut guard = self.inner.write().unwrap_or_else(|e| e.into_inner());
 
         let rid = ResourceId::new(collection_rid.to_owned());
