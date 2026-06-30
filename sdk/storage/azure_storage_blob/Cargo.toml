@@ -20,7 +20,7 @@ tokio = ["dep:tokio", "azure_core/tokio"]
 [dependencies]
 async-stream.workspace = true
 async-trait.workspace = true
-azure_core = { path = "../../core/azure_core", features = ["xml"] }
+azure_core = { path = "../../core/azure_core", version = "1.1.0-beta.1", features = ["xml"] }
 azure_storage_common = { path = "../azure_storage_common", version = "0.1.0" }
 bytes.workspace = true
 futures.workspace = true
