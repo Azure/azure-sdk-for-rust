@@ -12,8 +12,7 @@
 //!
 //! ## Contract
 //!
-//! See `Product/Cosmos/CLUB/Docs/Photon/Router/ProxyConnectivityProbeDesign.md`
-//! and ADO PR 2107592. The wire contract is:
+//! The wire contract is:
 //!
 //! * **Path**: `POST /connectivity-probe`
 //! * **Body**: empty on request, empty on response
