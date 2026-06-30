@@ -19,7 +19,6 @@ use azure_core::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
         poller::{
             get_retry_after, Poller, PollerContinuation, PollerResult, PollerState, PollerStatus,
-            StatusMonitor as _,
         },
         Body, ClientOptions, Method, Pipeline, RawResponse, Request, RequestContent, Url,
     },
@@ -152,6 +151,15 @@ impl CertificateClient {
         parameters: RequestContent<CreateCertificateParameters>,
         options: Option<CertificateClientCreateCertificateOptions<'_>>,
     ) -> Result<Poller<CertificateOperation>> {
+        #[derive(serde::Deserialize)]
+        struct CertificateClientBeginCreateCertificateResponse<'a> {
+            #[serde(borrow)]
+            status: Option<std::borrow::Cow<'a, str>>,
+            error: Option<serde::de::IgnoredAny>,
+            #[serde(borrow)]
+            target: Option<std::borrow::Cow<'a, str>>,
+        }
+
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
 
@@ -217,10 +225,18 @@ impl CertificateClient {
                         &[RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS, RETRY_AFTER],
                         &poller_options,
                     );
-                    let res: CertificateOperation = json::from_json(&body)?;
+                    let res: CertificateClientBeginCreateCertificateResponse<'_> =
+                        json::from_json_ref(&body)?;
+                    let poller_status = match res.status.as_deref() {
+                        Some("completed") => PollerStatus::Succeeded,
+                        Some("cancelled") => PollerStatus::Canceled,
+                        Some(_) if res.error.is_some() => PollerStatus::Failed,
+                        _ => PollerStatus::InProgress,
+                    };
+                    let target = res.target.map(|target| target.into_owned());
                     let rsp = RawResponse::from_bytes(status, headers, body).into();
 
-                    Ok(match res.status() {
+                    Ok(match poller_status {
                         PollerStatus::InProgress => PollerResult::InProgress {
                             response: rsp,
                             retry_after,
@@ -233,9 +249,9 @@ impl CertificateClient {
                             PollerResult::Succeeded {
                                 response: rsp,
                                 target: Box::new(move || {
+                                    let target = target.clone();
                                     Box::pin(async move {
-                                        let final_link: Url = res
-                                            .target
+                                        let final_link: Url = target
                                             .ok_or_else(|| {
                                                 azure_core::Error::new(
                                                     ErrorKind::Other,
@@ -272,5 +288,63 @@ impl CertificateClient {
             },
             Some(options.method_options),
         ))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use azure_core::{
+        http::{headers::Headers, AsyncRawResponse, ClientOptions, StatusCode, Transport},
+        Bytes,
+    };
+    use azure_core_test::{credentials::MockCredential, http::MockHttpClient};
+    use futures::{FutureExt as _, StreamExt as _};
+
+    const BEGIN_CREATE_CERTIFICATE_OPERATION: &[u8] =
+        br#"{"status":"completed","target":"https://example.vault.azure.net/certificates/test/123"}"#;
+
+    #[tokio::test]
+    async fn begin_create_certificate_keeps_status_body_for_into_model() -> Result<()> {
+        let mock_client = std::sync::Arc::new(MockHttpClient::new(|req| {
+            assert_eq!(req.method(), Method::Post);
+            assert_eq!(req.url().path(), "/certificates/test/create");
+            async move {
+                Ok(AsyncRawResponse::from_bytes(
+                    StatusCode::Ok,
+                    Headers::new(),
+                    Bytes::from_static(BEGIN_CREATE_CERTIFICATE_OPERATION),
+                ))
+            }
+            .boxed()
+        }));
+        let credential = MockCredential::new()?;
+        let client = CertificateClient::new(
+            "https://example.vault.azure.net",
+            credential,
+            Some(CertificateClientOptions {
+                client_options: ClientOptions {
+                    transport: Some(Transport::new(mock_client)),
+                    ..Default::default()
+                },
+                ..Default::default()
+            }),
+        )?;
+
+        let mut poller = client.begin_create_certificate(
+            "test",
+            CreateCertificateParameters::default().try_into()?,
+            None,
+        )?;
+        let response = poller.next().await.expect("expected status page")?;
+        let operation = response.into_model()?;
+
+        assert_eq!(operation.status.as_deref(), Some("completed"));
+        assert_eq!(
+            operation.target.as_deref(),
+            Some("https://example.vault.azure.net/certificates/test/123")
+        );
+
+        Ok(())
     }
 }
