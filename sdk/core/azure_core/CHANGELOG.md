@@ -4,8 +4,8 @@
 
 ### Features Added
 
+- Added `json::from_json_ref()` and `xml::from_xml_ref()` to deserialize borrowed values from buffered response bodies.
 - `Error` now captures a `std::backtrace::Backtrace` at construction time and includes it in `Debug` output (e.g., `{:?}`) when `RUST_BACKTRACE=1` is set.
-- Re-exported `json::from_json_ref()` and `xml::from_xml_ref()` for borrowed deserialization from buffered response bodies.
 
 ### Breaking Changes
 
