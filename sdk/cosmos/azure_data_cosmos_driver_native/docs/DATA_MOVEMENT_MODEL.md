@@ -1,10 +1,11 @@
 # Phase 0 — Data-movement model for `azure_data_cosmos_driver_native`
 
-> **Status:** Proposed — for alignment before further FFI work
-> **Driver of this note:** @analogrelay review feedback on PR #4515
-> (2026-06-22 "too chatty / opaque pointers + `as` casts" and 2026-06-29
-> `CHANGES_REQUESTED` "still have some concerns about how we're moving data
-> around … maybe we should have a sync-up meeting").
+> **Status:** **Direction agreed** from @analogrelay's review (commit
+> `d714527`, 2026-06-30). He answered the open questions inline, so this is no
+> longer "proposed for a meeting" — see **§10** for the resolutions and the
+> phased implementation plan. §1–§9 are retained for context on how we got here;
+> where they conflict with §10, **§10 wins**.
+> **Driver of this note:** @analogrelay review feedback on PR #4515.
 
 ## 1. Purpose
 
@@ -133,33 +134,20 @@ Question 2.
   errors), mirroring the existing `error.rs` tests.
 - `fmt` / `clippy` / `doc -D warnings` / `cspell` clean; existing tests pass.
 
-## 7. Open questions for the sync-up
+## 7. Open questions for the sync-up — **now resolved (see §10)**
 
-0. **Invert the completion structure? (biggest call — see §8.)** Make
-   `cosmos_completion_t` a `Box`-backed **`#[repr(C)]`** struct that carries the
-   data (headers, body, user-data, diagnostics handle) inline, copied once into
-   SDK memory, then freed by a single `cosmos_cq_free_completion` — instead of
-   the current opaque completion + `cosmos_completion_view` + a separate
-   `cosmos_response_t` handle. This **supersedes** the `*_view` snapshot pattern
-   for the completion/response path, so resolve it before investing further in
-   that pattern.
-0b. **Handle ownership: `Arc` → `Box`? (see §9.)** Replace the `Arc`-everywhere
-   handle model (and the `*_clone` FFI) with `Box` single-ownership handed to the
-   SDK, which manages any sharing and calls `cosmos_*_free` when done. Breaking
-   ownership-contract change; interacts with the submit pipeline's hold across
-   `.await`.
-1. **Predicates → bitmask?** Fold the 16 `is_*` predicates into a `flags` field
-   on `CosmosErrorView`, or keep them as separate calls?
-2. **Retire the individual getters?** Once `*_view` exists for response + error,
-   do we deprecate/remove the per-field accessors, or keep both indefinitely for
-   host ergonomics?
-3. **"In" builder flattening order.** ~~partition-key vs. runtime/driver-options
-   first for Phase 2?~~ **Resolved** — both `cosmos_runtime_build` and
-   `cosmos_driver_options_build` landed in Phase 2; partition-key was already
-   flat.
-4. **Diagnostics.** The richer `DiagnosticsContext` surface is still a follow-up
-   — flat snapshot, opaque handle, or deferred entirely? (Tied to §8: the
-   inverted completion would carry diagnostics as a handle fetched later.)
+0. **Invert the completion structure? (§8)** ✅ **Yes** — adopt it (§10 Phase 4).
+0b. **Handle ownership: `Arc` → `Box`? (§9)** ✅ **Yes for refs**; the driver
+   *may* stay `Arc`. Remove every `*_clone` FFI (§10 Phase 2).
+1. ~~**Predicates → bitmask?**~~ ✅ **Neither.** No predicates, no flags bitmask;
+   SDKs switch on status/sub-status, and a future **codegen** step generates the
+   mapping tables from an authoritative Rust dataset (§10 Phase 3).
+2. ~~**Retire the individual getters / builders?**~~ ✅ **Yes, remove them.**
+   *"There is no back-compat to be preserved here."* The additive framing in
+   §4/§5/§5a is superseded (§10 Phase 5).
+3. ~~**"In" builder flattening order.**~~ ✅ Resolved in Phase 2 (already shipped).
+4. **Diagnostics.** ✅ Direction: a **handle**, fetched later via an API; not
+   inlined into the completion now (§10 Phase 4, deferred sub-item).
 
 ## 8. Open design decision — invert the completion structure
 
@@ -303,3 +291,78 @@ ownership-contract change (removes `*_clone`, changes who guarantees liveness
 across the submit `.await`), so it must be agreed before implementation — and it
 partly revises the "handles stay handles" row of the §4 compliance table (the
 handles stay handles, but their *backing* and *clone* contract change).
+
+## 10. Review resolutions & phased implementation plan
+
+@analogrelay reviewed commit `d714527` and answered the open questions inline.
+This section is the **authoritative agreed direction**; where §1–§9 differ,
+this wins.
+
+### 10.1 Resolutions (verbatim intent)
+
+1. **Owned, not "views".** Values handed to the SDK are **owned `#[repr(C)]`
+   structs with all data owned in Rust** (`Box::into_raw`). Drop the `_view`
+   concept and suffix — *"a 'View' to me is a non-owning type… so why is it a
+   view?"* The SDK becomes the **sole owner**, reads/copies fields, then calls a
+   single `*_free` that reclaims the `Box` and drops all inner data
+   (`String`s, `Vec<u8>` body, headers, diagnostics).
+2. **Invert the completion.** `cosmos_cq_wait` returns a
+   `Box<CosmosCompletion>` as a `#[repr(C)]` struct holding **headers, body,
+   user-data, status/outcome** inline; diagnostics may be a **handle** fetched
+   later. `cosmos_cq_free_completion` reclaims it and frees all associated
+   memory. No separate `cosmos_response_t` + `take_response` + `_view`.
+3. **One wait op, always an array.** *"We should just have one wait operation:
+   `cosmos_cq_wait(...)`. It should ALWAYS return an array of completions."* The
+   wrapper may yield one at a time internally; a future option can tune the
+   batch size.
+4. **Headers as a flat list on the completion.** A `cosmos_header_kv_t`
+   (`<name, value>`) array — the same shape already used for request
+   `custom_headers` — carried directly on the completion and handed to the SDK.
+5. **No status predicates, no flags bitmask.** *"SDKs can use the
+   status/substatus code… let's use codegen to solve it."* The Rust crate owns
+   an authoritative status/sub-status dataset; mapping code for each SDK is
+   **generated**, not exposed as FFI predicate functions.
+6. **`cosmos_error_t`, plainly.** The FFI error is just `CosmosError` exposing
+   `cosmos_error_t` — owned, fields read directly. No `CosmosErrorView`.
+7. **Ownership = `Box`, not `Arc`, for refs.** Account / database / container
+   refs, feed ranges, and partition keys are handed over as **owned `Box`**; the
+   SDK owns and frees them. The **driver may stay `Arc`** (a fair argument given
+   the submit pipeline holds it across `.await`).
+8. **Remove the `*_clone` FFI entirely.** *"An SDK shouldn't be cloning its copy
+   of the `Arc`… it just passes in `cosmos_container_ref_t *` and then the Rust
+   side clones it before returning."* Cloning, when needed, happens on the Rust
+   side from a borrowed pointer — never exposed to the SDK.
+9. **No back-compat.** *"There is no back-compat to be preserved here."* Remove
+   the superseded incremental builders and per-field getters rather than keeping
+   them additively.
+10. **Export hygiene.** `cosmos_` prefix on **all** exported functions/types
+    (dynamic-library symbol collisions break the linker); **consider `cosmos_v1_`
+    for functions** to allow API iteration. Remove the agent-session
+    explanatory blobs from doc comments (they propagate into the C header).
+
+### 10.2 Phases
+
+Sequenced foundational → high-risk, each independently buildable + validated
+(`fmt` / `clippy` / `cargo test` / header regeneration / `cspell`). The
+driver-stays-`Arc` concession (10.1 #7) keeps Phase 2 tractable.
+
+| Phase | Scope | Risk | Touches |
+|---|---|---|---|
+| **P1 — Doc hygiene** | Strip the "real Rust struct, not `#[repr(C)]`… cbindgen emits opaque…" agent blobs from every handle doc comment; keep a one-line purpose. No ABI change. | low | all `src/*.rs` handle docs |
+| **P2 — Refs → `Box`, drop `*_clone`** | Convert `account_ref` / `database_ref` / `container_ref` / `feed_range` / `partition_key` from `Arc` to `Box` single-ownership; delete the 5 `*_clone` fns; clone driver-side from a borrowed `*const` where a build/submit path needs to retain. Driver stays `Arc`. | med | the 5 ref modules, `op_request.rs`, `driver_options.rs`, header, C tests |
+| **P3 — Error simplification** | Remove the 16 `cosmos_error_is_*` predicates and the `CosmosErrorView` snapshot + `cosmos_error_view`; `cosmos_error_t` keeps status/sub-status/message/etc. (mappings move to codegen, out of this crate's API). | med | `error.rs`, `build.rs`, header, C tests |
+| **P4 — Completion inversion** (the big one) | `cosmos_completion_t` → `Box`-backed `#[repr(C)]` with inline `outcome`, `status`, `sub_status`, `user_data`, headers (`cosmos_header_kv_t[]`), body (`ptr,len`), error (inline/owned), diagnostics handle (deferred). `cosmos_cq_wait` returns an **array**; `cosmos_cq_free_completion` frees box + inner allocations. Delete `cosmos_completion_view`, the whole `response.rs` (`cosmos_response_t` + accessors + `_view` + `take_response`). | **high** | `completion.rs`, `response.rs` (removed), `submit.rs`, `op_request.rs`, header, C tests, docs |
+| **P5 — Remove redundant builders** | Delete `cosmos_runtime_builder_*`, `cosmos_driver_options_builder_*`, `cosmos_partition_key_builder_*` now that flat constructors / inline arrays exist (no back-compat). | med | `runtime_builder.rs`, `driver_options.rs`, `partition_key.rs`, header, C tests |
+| **P6 — Export prefix/versioning** | Audit every export for the `cosmos_` prefix; **decide `cosmos_v1_` for functions** (needs explicit sign-off before the rename churn). Regenerate header. | low–med (but **needs sign-off**) | every `#[no_mangle]`, `build.rs`, header, C tests |
+
+**Notes**
+
+- **P1 first** — mechanical, zero ABI risk, clears the doc noise before the
+  structural phases.
+- **P4 is the keystone** and the largest; P2/P3 de-risk it by settling
+  ownership and the error shape first.
+- **P6 (`cosmos_v1_`)** is the one item still needing an explicit decision; it is
+  sequenced last and flagged so the rename isn't done speculatively.
+- The **driver `Arc`-vs-`Box`** final call (10.1 #7 leaves the driver on `Arc`)
+  can be revisited, but the agreed default is: driver `Arc`, everything else
+  `Box`.
