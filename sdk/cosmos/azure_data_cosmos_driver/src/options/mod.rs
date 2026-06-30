@@ -45,7 +45,7 @@ pub use operation_options::{
 pub use partition_failover::{PartitionFailoverOptions, PartitionFailoverOptionsBuilder};
 pub use policies::{
     ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions,
-    ServerCertificateValidation,
+    ServerCertificateValidation, TlsBackend,
 };
 pub use priority::PriorityLevel;
 pub use read_consistency::ReadConsistencyStrategy;

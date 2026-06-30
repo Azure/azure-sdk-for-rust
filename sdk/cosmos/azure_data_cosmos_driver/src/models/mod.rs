@@ -74,8 +74,8 @@ pub use resource_reference::{
 };
 pub use response_body::ResponseBody;
 pub use session_token_segment::SessionTokenSegment;
-pub(crate) use user_agent::normalize_wrapping_sdk_identifier;
 pub use user_agent::UserAgent;
+pub(crate) use user_agent::{normalize_wrapping_sdk_identifier, UserAgentFeatureFlags};
 
 pub(crate) use account_reference::AccountEndpoint;
 

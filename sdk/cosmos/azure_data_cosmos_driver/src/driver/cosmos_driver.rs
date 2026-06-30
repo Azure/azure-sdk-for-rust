@@ -26,6 +26,7 @@ use crate::{
         effective_partition_key::EffectivePartitionKey, AccountEndpoint, AccountReference,
         ContainerProperties, ContainerReference, ContinuationToken, CosmosOperation,
         DatabaseReference, PartitionKey, ResolvedToken, ResourceType, UserAgent,
+        UserAgentFeatureFlags,
     },
     options::{
         ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsView,
@@ -1105,16 +1106,29 @@ impl CosmosDriver {
         let account_endpoint = AccountEndpoint::from(&account);
         let default_endpoint = CosmosEndpoint::global(account.endpoint().clone());
 
-        // Per-driver User-Agent: when the driver-level suffix override is unset,
-        // share the runtime's `Arc<UserAgent>` (cheap atomic refcount bump);
-        // when set, compute a fresh `UserAgent` from the runtime's wrapping-SDK
-        // identifier and the driver's suffix, owned by this driver alone.
+        // Per-driver User-Agent: compute the cross-SDK feature flags advertised
+        // in the header from this driver's effective client configuration —
+        // HTTP/2 (runtime connection pool) and PPCB (this driver's partition
+        // failover options). When the driver-level suffix override is unset and
+        // the flags match the runtime's base flags (the common case), share the
+        // runtime's `Arc<UserAgent>` (cheap atomic refcount bump). Otherwise
+        // compute a fresh `UserAgent` owned by this driver alone.
+        let feature_flags = UserAgentFeatureFlags::from_client_config(
+            runtime.connection_pool().is_http2_allowed(),
+            options
+                .partition_failover_options()
+                .circuit_breaker_enabled(),
+        );
         let user_agent = match options.user_agent_suffix() {
             Some(suffix) => Arc::new(UserAgent::from_suffix(
                 runtime.wrapping_sdk_identifier(),
                 suffix,
+                feature_flags,
             )),
-            None => Arc::clone(runtime.user_agent()),
+            None if feature_flags == runtime.user_agent_feature_flags() => {
+                Arc::clone(runtime.user_agent())
+            }
+            None => Arc::new(runtime.user_agent_with_feature_flags(feature_flags)),
         };
 
         // Per-driver HTTP client factory: wrap with fault injection if rules
@@ -4279,6 +4293,66 @@ mod tests {
         assert!(driver.user_agent().as_str().contains("driver-override"));
         assert!(runtime.user_agent().as_str().contains("runtime-default"));
         assert!(!driver.user_agent().as_str().contains("runtime-default"));
+    }
+
+    #[tokio::test]
+    async fn driver_disabling_ppcb_recomputes_user_agent_without_ppcb_bit() {
+        // A driver that disables PPCB (with no per-driver suffix override) must
+        // NOT share the runtime's base `Arc<UserAgent>`: its feature flags
+        // differ from the runtime's, so it recomputes its own `UserAgent` whose
+        // cross-SDK feature token drops the PPCB bit (0x2) while retaining
+        // HTTP/2 (0x10) -> `|F10`. This exercises the `None => recompute` branch
+        // in `CosmosDriver::new` and proves the emitted token tracks per-driver
+        // client configuration rather than a hardcoded value.
+        let factory = Arc::new(ScriptedFactory::new(std::iter::repeat_n(
+            ResponsePlan::Success,
+            10,
+        )));
+        let runtime = Arc::new(
+            CosmosDriverRuntimeBuilder::new()
+                .with_http_client_factory(factory)
+                .build()
+                .await
+                .unwrap(),
+        );
+
+        // The runtime's base header advertises HTTP/2 + PPCB by default (|F12).
+        assert_eq!(
+            runtime.user_agent_feature_flags(),
+            UserAgentFeatureFlags::HTTP2 | UserAgentFeatureFlags::PER_PARTITION_CIRCUIT_BREAKER,
+        );
+        assert!(
+            runtime.user_agent().as_str().ends_with("|F12"),
+            "unexpected runtime User-Agent: {}",
+            runtime.user_agent().as_str()
+        );
+
+        let driver = CosmosDriver::new(
+            Arc::clone(&runtime),
+            DriverOptionsBuilder::new(signed_test_account(
+                "https://account.documents.azure.com:443/",
+            ))
+            .with_partition_failover_options(
+                crate::options::PartitionFailoverOptions::builder()
+                    .with_circuit_breaker_enabled(false)
+                    .build()
+                    .unwrap(),
+            )
+            .build(),
+        )
+        .expect("CosmosDriver::new should succeed in tests");
+
+        // Distinct allocation (the recompute branch), not the shared runtime Arc.
+        assert!(
+            !Arc::ptr_eq(driver.user_agent(), runtime.user_agent()),
+            "driver disabling PPCB must own a distinct User-Agent Arc"
+        );
+        // PPCB bit (0x2) dropped, HTTP/2 (0x10) retained -> |F10.
+        assert!(
+            driver.user_agent().as_str().ends_with("|F10"),
+            "expected driver User-Agent to drop the PPCB bit (|F10): {}",
+            driver.user_agent().as_str()
+        );
     }
 
     // =========================================================================
