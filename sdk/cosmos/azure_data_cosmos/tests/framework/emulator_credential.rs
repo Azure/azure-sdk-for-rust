@@ -49,11 +49,20 @@ impl CredentialRecorder {
 }
 
 /// A [`TokenCredential`] that produces the emulator's fake AAD token.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct CosmosEmulatorCredential {
     master_key: String,
     call_count: Arc<AtomicUsize>,
     scopes: Arc<Mutex<Vec<String>>>,
+}
+
+impl std::fmt::Debug for CosmosEmulatorCredential {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // Redact `master_key`: it is signing-key material and must never land in
+        // a `{:?}` test log, even though today it is the emulator's well-known key.
+        f.debug_struct("CosmosEmulatorCredential")
+            .finish_non_exhaustive()
+    }
 }
 
 impl std::fmt::Debug for CredentialRecorder {
