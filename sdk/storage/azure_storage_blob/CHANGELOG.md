@@ -7,6 +7,7 @@
 - Added support for `get_user_delegation_key` to `BlobServiceClient`.
 - Added support for `list_blobs_hierarchical` to `BlobContainerClient`.
 - Added support for `list_page_ranges` to `PageBlobClient`.
+- Added an opt-in `sas_builder` feature that re-exports the `azure_storage_sas` builder for constructing user delegation SAS tokens via `azure_storage_blob::models::sas`, and a `user_delegation_sas` convenience method on `BlobClient` and `BlobContainerClient`.
 
 ### Breaking Changes
 

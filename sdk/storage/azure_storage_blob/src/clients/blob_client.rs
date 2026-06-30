@@ -299,6 +299,259 @@ impl BlobClient {
             Err(e) => Err(e),
         }
     }
+
+    /// Begins building a user delegation SAS URL for this blob.
+    ///
+    /// Returns a [`BlobSasBuilder`](crate::models::sas::BlobSasBuilder) pre-initialized with
+    /// this blob's resource info and the requested permissions. Chain optional
+    /// setters (e.g. [`protocol`](crate::models::sas::BlobSasBuilder::protocol),
+    /// [`ip_range`](crate::models::sas::BlobSasBuilder::ip_range), or response header
+    /// overrides), then call [`url()`](crate::models::sas::BlobSasBuilder::url) to produce
+    /// the signed URL.
+    ///
+    /// The returned URL can be passed directly to [`BlobClient::new`] with
+    /// `None` for the credential to construct a SAS-authenticated client.
+    ///
+    /// If this client was built with [`BlobClient::with_snapshot`] or
+    /// [`BlobClient::with_version`], the snapshot timestamp or version ID is
+    /// forwarded automatically and the SAS is scoped accordingly
+    /// (`sr=bs` for snapshots, `sr=bv` for versions).
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if `key` is missing any required field, or if both
+    /// `snapshot=` and `versionid=` are present in the endpoint query.
+    ///
+    /// # Examples
+    ///
+    /// Generate a read-only SAS URL with default settings:
+    ///
+    /// ```no_run
+    /// # use azure_storage_blob::BlobClient;
+    /// # use azure_storage_blob::models::sas::{BlobPermissions, UserDelegationKey};
+    /// # use time::OffsetDateTime;
+    /// # fn example(client: &BlobClient, udk: UserDelegationKey) -> azure_core::Result<()> {
+    /// let url = client
+    ///     .user_delegation_sas(
+    ///         "myaccount",
+    ///         &udk,
+    ///         BlobPermissions::new().read(),
+    ///         OffsetDateTime::now_utc() + time::Duration::hours(1),
+    ///     )?
+    ///     .url();
+    /// # Ok(()) }
+    /// ```
+    ///
+    /// Restrict to HTTPS and limit access by IP:
+    ///
+    /// ```no_run
+    /// # use azure_storage_blob::BlobClient;
+    /// # use azure_storage_blob::models::sas::{BlobPermissions, UserDelegationKey};
+    /// # use azure_storage_sas::{SasIpRange, SasProtocol};
+    /// # use std::net::Ipv4Addr;
+    /// # use time::OffsetDateTime;
+    /// # fn example(client: &BlobClient, udk: UserDelegationKey) -> azure_core::Result<()> {
+    /// let url = client
+    ///     .user_delegation_sas(
+    ///         "myaccount",
+    ///         &udk,
+    ///         BlobPermissions::new().read().write(),
+    ///         OffsetDateTime::now_utc() + time::Duration::hours(4),
+    ///     )?
+    ///     .protocol(SasProtocol::Https)
+    ///     .ip_range(SasIpRange::InclusiveRange {
+    ///         start: Ipv4Addr::new(10, 0, 0, 1),
+    ///         end: Ipv4Addr::new(10, 0, 0, 255),
+    ///     })
+    ///     .content_type("application/octet-stream")
+    ///     .url();
+    /// # Ok(()) }
+    /// ```
+    #[cfg(feature = "sas_builder")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "sas_builder")))]
+    pub fn user_delegation_sas<'a>(
+        &self,
+        account_name: &str,
+        key: &'a azure_storage_common::models::UserDelegationKey,
+        permissions: azure_storage_sas::resource::blob::BlobPermissions,
+        expiry: time::OffsetDateTime,
+    ) -> Result<crate::sas::BlobSasBuilder<'a>> {
+        let segments = crate::sas::helpers::resource_path_segments(&self.endpoint, account_name);
+
+        if segments.len() < 2 {
+            return Err(azure_core::Error::with_message(
+                ErrorKind::Other,
+                "blob endpoint URL must include container and blob name",
+            ));
+        }
+
+        let container = &segments[0];
+        let blob_name = segments[1..].join("/");
+
+        let (snapshot, version_id) = crate::sas::helpers::extract_blob_qualifiers(&self.endpoint)?;
+        let mut resource =
+            azure_storage_sas::resource::blob::BlobResource::new(container, blob_name);
+        if let Some(s) = snapshot {
+            resource = resource.snapshot(s);
+        }
+        if let Some(v) = version_id {
+            resource = resource.version(v);
+        }
+
+        let inner = azure_storage_sas::SasBuilder::new(account_name, key, expiry)?
+            .blob(resource, permissions);
+        Ok(crate::sas::BlobSasBuilder::new(
+            self.endpoint.clone(),
+            inner,
+        ))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[cfg(feature = "sas_builder")]
+    #[test]
+    fn user_delegation_sas_attaches_sas_query() {
+        use crate::models::sas::{BlobPermissions, UserDelegationKey};
+        use time::macros::datetime;
+
+        let url = Url::parse("https://acct.blob.core.windows.net/c1/b1").unwrap();
+        let client = BlobClient::new(url, None, None).unwrap();
+        let udk = UserDelegationKey {
+            signed_delegated_user_tid: None,
+            signed_oid: Some("oid".into()),
+            signed_tid: Some("tid".into()),
+            signed_start: Some(datetime!(2025-01-15 00:00:00 UTC)),
+            signed_expiry: Some(datetime!(2025-01-16 00:00:00 UTC)),
+            signed_service: Some("b".into()),
+            signed_version: Some("2025-11-05".into()),
+            value: Some(b"testkey".to_vec()),
+        };
+
+        let sas_url = client
+            .user_delegation_sas(
+                "acct",
+                &udk,
+                BlobPermissions::new().read(),
+                datetime!(2025-06-01 12:00:00 UTC),
+            )
+            .unwrap()
+            .url();
+
+        assert_eq!(sas_url.path(), "/c1/b1");
+        let query = sas_url.query().unwrap();
+        assert!(query.contains("sr=b"), "got: {query}");
+        assert!(query.contains("sig="), "got: {query}");
+    }
+
+    #[cfg(feature = "sas_builder")]
+    #[test]
+    fn sas_url_path_prefix_endpoint_strips_account_segment() {
+        use crate::models::sas::{BlobPermissions, UserDelegationKey};
+        use time::macros::datetime;
+
+        // Azurite-style: account name is the first path segment.
+        let url = Url::parse("http://127.0.0.1:10000/devstoreaccount1/mycontainer/myblob").unwrap();
+        let client = BlobClient::new(url, None, None).unwrap();
+        let udk = UserDelegationKey {
+            signed_delegated_user_tid: None,
+            signed_oid: Some("oid".into()),
+            signed_tid: Some("tid".into()),
+            signed_start: Some(datetime!(2025-01-15 00:00:00 UTC)),
+            signed_expiry: Some(datetime!(2025-01-16 00:00:00 UTC)),
+            signed_service: Some("b".into()),
+            signed_version: Some("2025-11-05".into()),
+            value: Some(b"testkey".to_vec()),
+        };
+
+        let sas_url = client
+            .user_delegation_sas(
+                "devstoreaccount1",
+                &udk,
+                BlobPermissions::new().read(),
+                datetime!(2025-06-01 12:00:00 UTC),
+            )
+            .unwrap()
+            .url();
+
+        // The path should be preserved (including the account prefix).
+        assert_eq!(sas_url.path(), "/devstoreaccount1/mycontainer/myblob");
+        let query = sas_url.query().unwrap();
+        assert!(query.contains("sr=b"), "got: {query}");
+    }
+
+    #[cfg(feature = "sas_builder")]
+    #[test]
+    fn sas_url_container_named_same_as_account_no_false_skip() {
+        use crate::models::sas::{BlobPermissions, UserDelegationKey};
+        use time::macros::datetime;
+
+        // Container has the same name as the account — must NOT be skipped.
+        let url = Url::parse("https://acct.blob.core.windows.net/acct/myblob").unwrap();
+        let client = BlobClient::new(url, None, None).unwrap();
+        let udk = UserDelegationKey {
+            signed_delegated_user_tid: None,
+            signed_oid: Some("oid".into()),
+            signed_tid: Some("tid".into()),
+            signed_start: Some(datetime!(2025-01-15 00:00:00 UTC)),
+            signed_expiry: Some(datetime!(2025-01-16 00:00:00 UTC)),
+            signed_service: Some("b".into()),
+            signed_version: Some("2025-11-05".into()),
+            value: Some(b"testkey".to_vec()),
+        };
+
+        let sas_url = client
+            .user_delegation_sas(
+                "acct",
+                &udk,
+                BlobPermissions::new().read(),
+                datetime!(2025-06-01 12:00:00 UTC),
+            )
+            .unwrap()
+            .url();
+
+        // "acct" is the container, not the account path prefix.
+        assert_eq!(sas_url.path(), "/acct/myblob");
+        let query = sas_url.query().unwrap();
+        assert!(query.contains("sr=b"), "got: {query}");
+    }
+
+    #[cfg(feature = "sas_builder")]
+    #[test]
+    fn sas_url_custom_domain_does_not_skip() {
+        use crate::models::sas::{BlobPermissions, UserDelegationKey};
+        use time::macros::datetime;
+
+        // Custom domain (CDN / Front Door) — account name not in host.
+        let url = Url::parse("https://cdn.contoso.com/pictures/photo.jpg").unwrap();
+        let client = BlobClient::new(url, None, None).unwrap();
+        let udk = UserDelegationKey {
+            signed_delegated_user_tid: None,
+            signed_oid: Some("oid".into()),
+            signed_tid: Some("tid".into()),
+            signed_start: Some(datetime!(2025-01-15 00:00:00 UTC)),
+            signed_expiry: Some(datetime!(2025-01-16 00:00:00 UTC)),
+            signed_service: Some("b".into()),
+            signed_version: Some("2025-11-05".into()),
+            value: Some(b"testkey".to_vec()),
+        };
+
+        let sas_url = client
+            .user_delegation_sas(
+                "myaccount",
+                &udk,
+                BlobPermissions::new().read(),
+                datetime!(2025-06-01 12:00:00 UTC),
+            )
+            .unwrap()
+            .url();
+
+        assert_eq!(sas_url.path(), "/pictures/photo.jpg");
+        let query = sas_url.query().unwrap();
+        assert!(query.contains("sr=b"), "got: {query}");
+    }
 }
 
 struct BlobClientDownloadBehavior<'a> {

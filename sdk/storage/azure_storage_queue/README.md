@@ -115,6 +115,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
+## Remarks
+
+### Generating SAS URLs
+
+Enable the `sas_builder` Cargo feature to get the `user_delegation_sas` method on `QueueClient`, plus the lower-level builder re-exported under `azure_storage_queue::models::sas`.
+
 ## Next steps
 
 ### Provide feedback
