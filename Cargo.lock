@@ -326,8 +326,8 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "typespec 1.1.0-beta.1",
- "typespec_client_core 1.1.0-beta.1",
+ "typespec 1.0.0",
+ "typespec_client_core 1.0.0",
  "ureq",
 ]
 
@@ -405,10 +405,10 @@ dependencies = [
 name = "azure_core_opentelemetry"
 version = "1.1.0-beta.1"
 dependencies = [
- "azure_core 1.1.0-beta.1",
- "azure_core_test 0.2.0",
+ "azure_core 1.0.0",
+ "azure_core_test 0.1.0",
  "azure_core_test_macros 0.1.0",
- "azure_identity 1.1.0-beta.1",
+ "azure_identity 1.0.0",
  "opentelemetry",
  "opentelemetry_sdk",
  "tokio",
@@ -717,9 +717,9 @@ version = "1.1.0-beta.2"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 1.1.0-beta.1",
- "azure_core_test 0.2.0",
- "azure_identity 1.1.0-beta.1",
+ "azure_core 1.0.0",
+ "azure_core_test 0.1.0",
+ "azure_identity 1.0.0",
  "azure_security_keyvault_keys",
  "azure_security_keyvault_test",
  "futures",
@@ -739,9 +739,9 @@ version = "1.1.0-beta.1"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 1.1.0-beta.1",
- "azure_core_test 0.2.0",
- "azure_identity 1.1.0-beta.1",
+ "azure_core 1.0.0",
+ "azure_core_test 0.1.0",
+ "azure_identity 1.0.0",
  "azure_security_keyvault_test",
  "criterion",
  "futures",
@@ -762,9 +762,9 @@ version = "1.1.0-beta.1"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 1.1.0-beta.1",
- "azure_core_test 0.2.0",
- "azure_identity 1.1.0-beta.1",
+ "azure_core 1.0.0",
+ "azure_core_test 0.1.0",
+ "azure_identity 1.0.0",
  "azure_security_keyvault_test",
  "futures",
  "include-file",
@@ -809,10 +809,10 @@ version = "1.1.0-beta.1"
 dependencies = [
  "async-stream",
  "async-trait",
- "azure_core 1.1.0-beta.1",
- "azure_core_opentelemetry 1.1.0-beta.1",
- "azure_core_test 0.2.0",
- "azure_identity 1.1.0-beta.1",
+ "azure_core 1.0.0",
+ "azure_core_opentelemetry 1.0.0",
+ "azure_core_test 0.1.0",
+ "azure_identity 1.0.0",
  "azure_storage_blob_test",
  "azure_storage_common",
  "bytes",
@@ -838,9 +838,9 @@ name = "azure_storage_blob_test"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "azure_core 1.1.0-beta.1",
- "azure_core_test 0.2.0",
- "azure_identity 1.1.0-beta.1",
+ "azure_core 1.0.0",
+ "azure_core_test 0.1.0",
+ "azure_identity 1.0.0",
  "azure_storage_blob 1.1.0-beta.1",
  "bytes",
  "futures",
@@ -851,7 +851,7 @@ dependencies = [
 name = "azure_storage_common"
 version = "0.1.0"
 dependencies = [
- "azure_core 1.1.0-beta.1",
+ "azure_core 1.0.0",
  "serde",
  "serde_json",
  "time",
@@ -862,10 +862,10 @@ name = "azure_storage_queue"
 version = "1.1.0-beta.1"
 dependencies = [
  "async-trait",
- "azure_core 1.1.0-beta.1",
- "azure_core_opentelemetry 1.1.0-beta.1",
- "azure_core_test 0.2.0",
- "azure_identity 1.1.0-beta.1",
+ "azure_core 1.0.0",
+ "azure_core_opentelemetry 1.0.0",
+ "azure_core_test 0.1.0",
+ "azure_identity 1.0.0",
  "azure_storage_common",
  "clap",
  "futures",
@@ -4132,6 +4132,7 @@ dependencies = [
  "pin-project",
  "rand 0.10.1",
  "reqwest",
+ "rust_decimal",
  "serde",
  "serde_json",
  "time",
@@ -4163,7 +4164,7 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "typespec 1.1.0-beta.1",
+ "typespec 1.0.0",
  "typespec_macros 1.0.0",
  "url",
  "uuid",

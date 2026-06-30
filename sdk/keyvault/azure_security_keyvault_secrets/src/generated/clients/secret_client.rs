@@ -250,9 +250,9 @@ impl SecretClient {
         options: Option<SecretClientListDeletedSecretPropertiesOptions<'_>>,
     ) -> Result<Pager<ListDeletedSecretPropertiesResult>> {
         #[derive(serde::Deserialize)]
-        struct SecretClientListDeletedSecretPropertiesResponse<'a> {
-            #[serde(borrow, rename = "nextLink")]
-            next_link: Option<std::borrow::Cow<'a, str>>,
+        struct SecretClientListDeletedSecretPropertiesResponse {
+            #[serde(rename = "nextLink")]
+            next_link: Option<String>,
         }
 
         let options = options.unwrap_or_default().into_owned();
@@ -297,9 +297,9 @@ impl SecretClient {
                             )
                             .await?;
                         let (status, headers, body) = rsp.deconstruct();
-                        let res: SecretClientListDeletedSecretPropertiesResponse<'_> =
-                            json::from_json_ref(&body)?;
-                        let next_link = res.next_link.map(std::borrow::Cow::into_owned);
+                        let res: SecretClientListDeletedSecretPropertiesResponse =
+                            json::from_json(&body)?;
+                        let next_link = res.next_link;
                         let rsp = RawResponse::from_bytes(status, headers, body).into();
                         Ok(match next_link {
                             Some(next_link) if !next_link.is_empty() => PagerResult::More {
@@ -332,9 +332,9 @@ impl SecretClient {
         options: Option<SecretClientListSecretPropertiesOptions<'_>>,
     ) -> Result<Pager<ListSecretPropertiesResult>> {
         #[derive(serde::Deserialize)]
-        struct SecretClientListSecretPropertiesResponse<'a> {
-            #[serde(borrow, rename = "nextLink")]
-            next_link: Option<std::borrow::Cow<'a, str>>,
+        struct SecretClientListSecretPropertiesResponse {
+            #[serde(rename = "nextLink")]
+            next_link: Option<String>,
         }
 
         let options = options.unwrap_or_default().into_owned();
@@ -379,9 +379,8 @@ impl SecretClient {
                             )
                             .await?;
                         let (status, headers, body) = rsp.deconstruct();
-                        let res: SecretClientListSecretPropertiesResponse<'_> =
-                            json::from_json_ref(&body)?;
-                        let next_link = res.next_link.map(std::borrow::Cow::into_owned);
+                        let res: SecretClientListSecretPropertiesResponse = json::from_json(&body)?;
+                        let next_link = res.next_link;
                         let rsp = RawResponse::from_bytes(status, headers, body).into();
                         Ok(match next_link {
                             Some(next_link) if !next_link.is_empty() => PagerResult::More {
@@ -415,9 +414,9 @@ impl SecretClient {
         options: Option<SecretClientListSecretPropertiesVersionsOptions<'_>>,
     ) -> Result<Pager<ListSecretPropertiesResult>> {
         #[derive(serde::Deserialize)]
-        struct SecretClientListSecretPropertiesVersionsResponse<'a> {
-            #[serde(borrow, rename = "nextLink")]
-            next_link: Option<std::borrow::Cow<'a, str>>,
+        struct SecretClientListSecretPropertiesVersionsResponse {
+            #[serde(rename = "nextLink")]
+            next_link: Option<String>,
         }
 
         if secret_name.is_empty() {
@@ -470,9 +469,9 @@ impl SecretClient {
                             )
                             .await?;
                         let (status, headers, body) = rsp.deconstruct();
-                        let res: SecretClientListSecretPropertiesVersionsResponse<'_> =
-                            json::from_json_ref(&body)?;
-                        let next_link = res.next_link.map(std::borrow::Cow::into_owned);
+                        let res: SecretClientListSecretPropertiesVersionsResponse =
+                            json::from_json(&body)?;
+                        let next_link = res.next_link;
                         let rsp = RawResponse::from_bytes(status, headers, body).into();
                         Ok(match next_link {
                             Some(next_link) if !next_link.is_empty() => PagerResult::More {

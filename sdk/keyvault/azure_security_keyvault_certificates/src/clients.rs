@@ -152,12 +152,10 @@ impl CertificateClient {
         options: Option<CertificateClientCreateCertificateOptions<'_>>,
     ) -> Result<Poller<CertificateOperation>> {
         #[derive(serde::Deserialize)]
-        struct CertificateClientBeginCreateCertificateResponse<'a> {
-            #[serde(borrow)]
-            status: Option<std::borrow::Cow<'a, str>>,
+        struct CertificateClientBeginCreateCertificateResponse {
+            status: Option<String>,
             error: Option<serde::de::IgnoredAny>,
-            #[serde(borrow)]
-            target: Option<std::borrow::Cow<'a, str>>,
+            target: Option<String>,
         }
 
         let options = options.unwrap_or_default().into_owned();
@@ -225,15 +223,15 @@ impl CertificateClient {
                         &[RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS, RETRY_AFTER],
                         &poller_options,
                     );
-                    let res: CertificateClientBeginCreateCertificateResponse<'_> =
-                        json::from_json_ref(&body)?;
+                    let res: CertificateClientBeginCreateCertificateResponse =
+                        json::from_json(&body)?;
                     let poller_status = match res.status.as_deref() {
                         Some("completed") => PollerStatus::Succeeded,
                         Some("cancelled") => PollerStatus::Canceled,
                         Some(_) if res.error.is_some() => PollerStatus::Failed,
                         _ => PollerStatus::InProgress,
                     };
-                    let target = res.target.map(|target| target.into_owned());
+                    let target = res.target;
                     let rsp = RawResponse::from_bytes(status, headers, body).into();
 
                     Ok(match poller_status {
