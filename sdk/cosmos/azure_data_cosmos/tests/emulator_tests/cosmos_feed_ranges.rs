@@ -5,8 +5,11 @@ use super::framework;
 
 use std::error::Error;
 
-use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
+use azure_data_cosmos::models::{
+    ContainerProperties, CosmosStatus, PartitionKeyValue, ThroughputProperties,
+};
 use azure_data_cosmos::options::CreateContainerOptions;
+use azure_data_cosmos::PartitionKey;
 use base64::Engine;
 
 use framework::{TestClient, TestOptions};
@@ -270,6 +273,117 @@ pub async fn feed_range_from_partition_key_single_hash_full_key() -> Result<(), 
                 ranges.len(),
                 1,
                 "full key should return exactly one feed range"
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+// ─── Group C — HPK feed-range negative validation ────────────────────────────
+//
+// `feed_range_from_partition_key` validates the partition key client-side before
+// issuing any request. These tests lock in the exact `CosmosStatus` returned for
+// each malformed input.
+
+/// C1: an empty partition key is rejected with `CLIENT_PARTITION_KEY_EMPTY`.
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+pub async fn feed_range_from_empty_partition_key_fails() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let properties = ContainerProperties::new(
+                "FeedRangeHPKEmpty",
+                ("/country", "/state", "/city").into(),
+            );
+            let container_client = run_context
+                .create_container(db_client, properties, None)
+                .await?;
+
+            let empty = PartitionKey::from(Vec::<PartitionKeyValue>::new());
+            let err = container_client
+                .feed_range_from_partition_key(empty, None)
+                .await
+                .expect_err("an empty partition key should be rejected");
+            assert_eq!(err.status(), CosmosStatus::CLIENT_PARTITION_KEY_EMPTY);
+
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+/// C2: more components than the container has paths is rejected with
+/// `CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS`.
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+pub async fn feed_range_too_many_components_fails() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            // Two-level container, three-component key.
+            let properties =
+                ContainerProperties::new("FeedRangeHPKTooMany", ("/tenant", "/user").into());
+            let container_client = run_context
+                .create_container(db_client, properties, None)
+                .await?;
+
+            let too_many = PartitionKey::from(("tenantA", "user1", "extra"));
+            let err = container_client
+                .feed_range_from_partition_key(too_many, None)
+                .await
+                .expect_err("a too-many-component key should be rejected");
+            assert_eq!(
+                err.status(),
+                CosmosStatus::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+/// C3: a multi-component key on a single-hash container is rejected with
+/// `CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS`.
+///
+/// This documents that the `CLIENT_PREFIX_PARTITION_KEY_REQUIRES_MULTIHASH`
+/// branch in `feed_range_from_partition_key` is effectively unreachable for a
+/// single-path container: any `values.len() > 1` is caught by the
+/// too-many-components guard first, and `values.len() == 0` by the empty guard,
+/// so the only remaining case (`values.len() == 1`) is a valid full key. The
+/// `REQUIRES_MULTIHASH` status therefore cannot be produced for a 1-path
+/// container and that branch is dead for this shape.
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+pub async fn feed_range_multi_component_on_single_hash_fails() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let properties = ContainerProperties::new("FeedRangeSingleHashNeg", "/pk".into());
+            let container_client = run_context
+                .create_container(db_client, properties, None)
+                .await?;
+
+            let two_components = PartitionKey::from(("a", "b"));
+            let err = container_client
+                .feed_range_from_partition_key(two_components, None)
+                .await
+                .expect_err("a 2-component key on a single-hash container should be rejected");
+            assert_eq!(
+                err.status(),
+                CosmosStatus::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS
             );
 
             Ok(())
