@@ -40,11 +40,8 @@ use crate::error::CosmosErrorCode;
 // Built options handle
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// The C ABI handle for a built [`DriverOptions`] value.
-///
-/// A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
-/// opaque type (`cosmos_driver_options_t`) because C cannot see its fields. The
-/// handle is reference-counted via `Arc`.
+/// The C ABI handle for a built [`DriverOptions`] value
+/// (`cosmos_driver_options_t`).
 pub struct DriverOptionsHandle {
     pub(crate) inner: DriverOptions,
 }
@@ -95,13 +92,12 @@ pub extern "C" fn cosmos_driver_options_free(options: *mut DriverOptionsHandle) 
 // Builder handle
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// The C ABI handle for a `DriverOptionsBuilder`.
+/// The C ABI handle for a `DriverOptionsBuilder`
+/// (`cosmos_driver_options_builder_t`).
 ///
-/// A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
-/// opaque type (`cosmos_driver_options_builder_t`) because C cannot see its
-/// fields. Single-owner and `Box`-managed (not `Arc`): setters mutate in place
-/// (the underlying `with_*` consume `self`, so each setter does a
-/// `Option::take` / call / store dance — mirrors `cosmos_runtime_builder_t`).
+/// Single-owner and `Box`-managed: setters mutate in place (the underlying
+/// `with_*` consume `self`, so each setter does an `Option::take` / call /
+/// store dance).
 pub struct DriverOptionsBuilderHandle {
     /// Wrapped in `Option` so each setter can `.take()` the builder,
     /// invoke a consuming `with_*` setter, and put the new value back.

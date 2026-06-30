@@ -22,11 +22,9 @@ use tokio::runtime::Runtime;
 
 use crate::runtime_builder::RuntimeBuildError;
 
-/// The C ABI handle for the async runtime.
+/// The C ABI handle for the async runtime (`cosmos_runtime_t`).
 ///
-/// A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
-/// opaque type (`cosmos_runtime_t`) because C cannot see its fields. The handle
-/// is reference-counted via `Arc` so completion queues can keep the runtime
+/// Reference-counted via `Arc` so completion queues can keep the runtime
 /// alive for the duration of in-flight operations independently of the C
 /// handle's lifetime. Construction always goes through
 /// `RuntimeContext::new_default` (test path) or

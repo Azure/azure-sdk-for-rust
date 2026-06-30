@@ -160,11 +160,10 @@ pub(crate) unsafe fn partition_key_from_components(
 // PartitionKeyBuilderHandle
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// The C ABI handle for an incrementally-populated partition-key builder.
+/// The C ABI handle for an incrementally-populated partition-key builder
+/// (`cosmos_partition_key_builder_t`).
 ///
-/// A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
-/// opaque type (`cosmos_partition_key_builder_t`) because C cannot see its
-/// fields. Single-owner and `Box`-managed.
+/// Single-owner and `Box`-managed.
 pub struct PartitionKeyBuilderHandle {
     pub(crate) components: Vec<PartitionKeyValue>,
 }
@@ -212,10 +211,8 @@ impl PartitionKeyBuilderHandle {
 // PartitionKeyHandle
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// The C ABI handle for an immutable partition key.
+/// The C ABI handle for an immutable partition key (`cosmos_partition_key_t`).
 ///
-/// A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
-/// opaque type (`cosmos_partition_key_t`) because C cannot see its fields.
 /// Reference-counted via `Arc`; cloning is a cheap atomic refcount bump.
 pub struct PartitionKeyHandle {
     /// Consumed by the operation factories that take a partition key. Tests

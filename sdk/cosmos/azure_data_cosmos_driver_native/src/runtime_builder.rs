@@ -44,10 +44,8 @@ const CPU_REFRESH_INTERVAL_MAX_MS: u64 = 60_000;
 // RuntimeBuilderHandle
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// The C ABI handle for a runtime builder.
+/// The C ABI handle for a runtime builder (`cosmos_runtime_builder_t`).
 ///
-/// A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
-/// opaque type (`cosmos_runtime_builder_t`) because C cannot see its fields.
 /// Single-owner and `Box`-managed.
 ///
 /// We carry the driver's `CosmosDriverRuntimeBuilder` directly. Setters

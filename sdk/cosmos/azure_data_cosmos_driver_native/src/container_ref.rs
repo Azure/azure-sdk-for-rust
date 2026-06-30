@@ -38,13 +38,10 @@ use crate::driver::DriverHandle;
 use crate::error::{CosmosErrorCode, CosmosErrorHandle};
 use crate::runtime::RuntimeContext;
 
-/// The C ABI handle for a container reference.
+/// The C ABI handle for a container reference (`cosmos_container_ref_t`).
 ///
-/// A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
-/// opaque type (`cosmos_container_ref_t`) because C cannot see its fields. The
-/// handle is reference-counted via `Arc` so a degenerate response can stash a
-/// sibling reference and `cosmos_container_ref_clone` can mint another with
-/// only an atomic bump.
+/// Wraps the driver's container reference; the C side holds it as an opaque
+/// handle and releases it with `cosmos_container_ref_free`.
 pub struct ContainerRefHandle {
     pub(crate) inner: DriverContainerReference,
 }

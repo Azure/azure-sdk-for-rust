@@ -29,14 +29,10 @@ use url::Url;
 
 use crate::error::{CosmosErrorCode, CosmosErrorHandle};
 
-/// The C ABI handle for an account reference.
+/// The C ABI handle for an account reference (`cosmos_account_ref_t`).
 ///
-/// This is a real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as
-/// an opaque type (`cosmos_account_ref_t`) because C cannot see its fields. The
-/// handle is reference-counted via `Arc` so `cosmos_account_ref_clone` can mint
-/// a sibling handle sharing the same state with only an atomic bump. The
-/// driver's `AccountReference` is itself cheap to clone (its inner state is
-/// `Arc`-shared on the driver side too).
+/// Wraps the driver's account reference; the C side holds it as an opaque
+/// handle and releases it with `cosmos_account_ref_free`.
 pub struct AccountRefHandle {
     pub(crate) inner: DriverAccountReference,
 }

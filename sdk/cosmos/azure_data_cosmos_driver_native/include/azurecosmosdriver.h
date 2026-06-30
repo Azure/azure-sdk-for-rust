@@ -556,14 +556,10 @@ typedef int32_t cosmos_partition_key_component_kind_t;
 #endif // __cplusplus
 
 /**
- * The C ABI handle for an account reference.
+ * The C ABI handle for an account reference (`cosmos_account_ref_t`).
  *
- * This is a real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as
- * an opaque type (`cosmos_account_ref_t`) because C cannot see its fields. The
- * handle is reference-counted via `Arc` so `cosmos_account_ref_clone` can mint
- * a sibling handle sharing the same state with only an atomic bump. The
- * driver's `AccountReference` is itself cheap to clone (its inner state is
- * `Arc`-shared on the driver side too).
+ * Wraps the driver's account reference; the C side holds it as an opaque
+ * handle and releases it with `cosmos_account_ref_free`.
  */
 typedef struct cosmos_account_ref_t cosmos_account_ref_t;
 
@@ -577,122 +573,97 @@ typedef struct cosmos_account_ref_t cosmos_account_ref_t;
 typedef struct cosmos_completion_t cosmos_completion_t;
 
 /**
- * The C ABI handle for a completion queue.
+ * The C ABI handle for a completion queue (`cosmos_cq_t`).
  *
- * A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
- * opaque type (`cosmos_cq_t`) because C cannot see its fields. The
- * `CompletionQueueInner` state behind it is `Arc`-shared so the submit
+ * The `CompletionQueueInner` state behind it is `Arc`-shared so the submit
  * pipeline's spawned tasks survive a concurrent `cosmos_cq_free` from the
  * producer side.
  */
 typedef struct cosmos_cq_t cosmos_cq_t;
 
 /**
- * The C ABI handle for a container reference.
+ * The C ABI handle for a container reference (`cosmos_container_ref_t`).
  *
- * A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
- * opaque type (`cosmos_container_ref_t`) because C cannot see its fields. The
- * handle is reference-counted via `Arc` so a degenerate response can stash a
- * sibling reference and `cosmos_container_ref_clone` can mint another with
- * only an atomic bump.
+ * Wraps the driver's container reference; the C side holds it as an opaque
+ * handle and releases it with `cosmos_container_ref_free`.
  */
 typedef struct cosmos_container_ref_t cosmos_container_ref_t;
 
 /**
  * The C ABI handle for a rich error (`cosmos_error_t`).
  *
- * A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
- * opaque type because C cannot see its fields. Reference-counted via `Arc` so
- * `Completion`'s borrow accessor and the take-ownership accessor can share the
- * same allocation cheaply. Lazy-caches the rendered backtrace and the four
- * header-derived convenience strings as `CString`s so the FFI accessors can
- * hand out borrowed pointers with a stable lifetime.
+ * Reference-counted via `Arc` so the completion's borrow accessor and the
+ * take-ownership accessor can share the same allocation cheaply. Lazy-caches
+ * the rendered backtrace and the four header-derived convenience strings as
+ * `CString`s so the FFI accessors can hand out borrowed pointers with a
+ * stable lifetime.
  */
 typedef struct cosmos_error_t cosmos_error_t;
 
 /**
- * The C ABI handle for a database reference.
+ * The C ABI handle for a database reference (`cosmos_database_ref_t`).
  *
- * A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
- * opaque type (`cosmos_database_ref_t`) because C cannot see its fields. The
- * handle is reference-counted via `Arc` so a sibling handle can share the same
- * state with only an atomic bump.
+ * Wraps the driver's database reference; the C side holds it as an opaque
+ * handle and releases it with `cosmos_database_ref_free`.
  */
 typedef struct cosmos_database_ref_t cosmos_database_ref_t;
 
 /**
- * The C ABI handle for a [`CosmosDriver`].
+ * The C ABI handle for a [`CosmosDriver`] (`cosmos_driver_t`).
  *
- * A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
- * opaque type (`cosmos_driver_t`) because C cannot see its fields. The handle
- * is reference-counted via `Arc` so the submit pipeline and a degenerate
+ * Reference-counted via `Arc` so the submit pipeline and a degenerate
  * response's stashed side payload can share it with only an atomic bump.
  */
 typedef struct cosmos_driver_t cosmos_driver_t;
 
 /**
- * The C ABI handle for a `DriverOptionsBuilder`.
+ * The C ABI handle for a `DriverOptionsBuilder`
+ * (`cosmos_driver_options_builder_t`).
  *
- * A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
- * opaque type (`cosmos_driver_options_builder_t`) because C cannot see its
- * fields. Single-owner and `Box`-managed (not `Arc`): setters mutate in place
- * (the underlying `with_*` consume `self`, so each setter does a
- * `Option::take` / call / store dance — mirrors `cosmos_runtime_builder_t`).
+ * Single-owner and `Box`-managed: setters mutate in place (the underlying
+ * `with_*` consume `self`, so each setter does an `Option::take` / call /
+ * store dance).
  */
 typedef struct cosmos_driver_options_builder_t cosmos_driver_options_builder_t;
 
 /**
- * The C ABI handle for a built [`DriverOptions`] value.
- *
- * A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
- * opaque type (`cosmos_driver_options_t`) because C cannot see its fields. The
- * handle is reference-counted via `Arc`.
+ * The C ABI handle for a built [`DriverOptions`] value
+ * (`cosmos_driver_options_t`).
  */
 typedef struct cosmos_driver_options_t cosmos_driver_options_t;
 
 /**
- * The C ABI handle for a feed range.
- *
- * A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
- * opaque type (`cosmos_feed_range_t`) because C cannot see its fields. The
- * handle is reference-counted via `Arc`.
+ * The C ABI handle for a feed range (`cosmos_feed_range_t`).
  */
 typedef struct cosmos_feed_range_t cosmos_feed_range_t;
 
 /**
- * The C ABI handle for an in-flight (or just-completed) operation.
+ * The C ABI handle for an in-flight (or just-completed) operation
+ * (`cosmos_operation_handle_t`).
  *
- * A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
- * opaque type (`cosmos_operation_handle_t`) because C cannot see its fields.
- * Each handle is its own `Box`, but the `OperationInner` state behind it is
- * `Arc`-shared with the published `Completion` (and with any sibling handle
- * minted by `clone_arc`).
+ * Each handle is its own `Box`; the `OperationInner` state behind it is
+ * `Arc`-shared with the published completion.
  */
 typedef struct cosmos_operation_handle_t cosmos_operation_handle_t;
 
 /**
- * The C ABI handle for an incrementally-populated partition-key builder.
+ * The C ABI handle for an incrementally-populated partition-key builder
+ * (`cosmos_partition_key_builder_t`).
  *
- * A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
- * opaque type (`cosmos_partition_key_builder_t`) because C cannot see its
- * fields. Single-owner and `Box`-managed.
+ * Single-owner and `Box`-managed.
  */
 typedef struct cosmos_partition_key_builder_t cosmos_partition_key_builder_t;
 
 /**
- * The C ABI handle for an immutable partition key.
+ * The C ABI handle for an immutable partition key (`cosmos_partition_key_t`).
  *
- * A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
- * opaque type (`cosmos_partition_key_t`) because C cannot see its fields.
  * Reference-counted via `Arc`; cloning is a cheap atomic refcount bump.
  */
 typedef struct cosmos_partition_key_t cosmos_partition_key_t;
 
 /**
- * The C ABI handle for a [`CosmosResponse`].
+ * The C ABI handle for a [`CosmosResponse`] (`cosmos_response_t`).
  *
- * A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
- * opaque type (`cosmos_response_t`) because C cannot see its fields.
  * Single-owner and `Box`-managed (responses are never cloned).
  *
  * The handle also carries optional "side payloads" populated only on
@@ -703,10 +674,8 @@ typedef struct cosmos_partition_key_t cosmos_partition_key_t;
 typedef struct cosmos_response_t cosmos_response_t;
 
 /**
- * The C ABI handle for a runtime builder.
+ * The C ABI handle for a runtime builder (`cosmos_runtime_builder_t`).
  *
- * A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
- * opaque type (`cosmos_runtime_builder_t`) because C cannot see its fields.
  * Single-owner and `Box`-managed.
  *
  * We carry the driver's `CosmosDriverRuntimeBuilder` directly. Setters
@@ -718,11 +687,9 @@ typedef struct cosmos_response_t cosmos_response_t;
 typedef struct cosmos_runtime_builder_t cosmos_runtime_builder_t;
 
 /**
- * The C ABI handle for the async runtime.
+ * The C ABI handle for the async runtime (`cosmos_runtime_t`).
  *
- * A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
- * opaque type (`cosmos_runtime_t`) because C cannot see its fields. The handle
- * is reference-counted via `Arc` so completion queues can keep the runtime
+ * Reference-counted via `Arc` so completion queues can keep the runtime
  * alive for the duration of in-flight operations independently of the C
  * handle's lifetime. Construction always goes through
  * `RuntimeContext::new_default` (test path) or

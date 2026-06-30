@@ -24,11 +24,7 @@ use crate::container_ref::ContainerRefHandle;
 use crate::error::CosmosErrorCode;
 use crate::partition_key::PartitionKeyHandle;
 
-/// The C ABI handle for a feed range.
-///
-/// A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
-/// opaque type (`cosmos_feed_range_t`) because C cannot see its fields. The
-/// handle is reference-counted via `Arc`.
+/// The C ABI handle for a feed range (`cosmos_feed_range_t`).
 pub struct FeedRangeHandle {
     /// Consumed by the `query_items` request path.
     #[allow(dead_code, reason = "consumed by the query_items request path")]

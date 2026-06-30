@@ -228,12 +228,11 @@ impl CosmosErrorCode {
 
 /// The C ABI handle for a rich error (`cosmos_error_t`).
 ///
-/// A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
-/// opaque type because C cannot see its fields. Reference-counted via `Arc` so
-/// `Completion`'s borrow accessor and the take-ownership accessor can share the
-/// same allocation cheaply. Lazy-caches the rendered backtrace and the four
-/// header-derived convenience strings as `CString`s so the FFI accessors can
-/// hand out borrowed pointers with a stable lifetime.
+/// Reference-counted via `Arc` so the completion's borrow accessor and the
+/// take-ownership accessor can share the same allocation cheaply. Lazy-caches
+/// the rendered backtrace and the four header-derived convenience strings as
+/// `CString`s so the FFI accessors can hand out borrowed pointers with a
+/// stable lifetime.
 pub struct CosmosErrorHandle {
     pub(crate) err: DriverCosmosError,
     // Cached null-terminated copies of the strings the FFI returns by

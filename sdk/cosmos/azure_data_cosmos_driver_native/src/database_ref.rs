@@ -28,12 +28,10 @@ use azure_data_cosmos_driver::models::DatabaseReference as DriverDatabaseReferen
 use crate::account_ref::AccountRefHandle;
 use crate::error::CosmosErrorCode;
 
-/// The C ABI handle for a database reference.
+/// The C ABI handle for a database reference (`cosmos_database_ref_t`).
 ///
-/// A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
-/// opaque type (`cosmos_database_ref_t`) because C cannot see its fields. The
-/// handle is reference-counted via `Arc` so a sibling handle can share the same
-/// state with only an atomic bump.
+/// Wraps the driver's database reference; the C side holds it as an opaque
+/// handle and releases it with `cosmos_database_ref_free`.
 pub struct DatabaseRefHandle {
     /// Consumed by the operation request builder when it takes a database
     /// reference. Tests read it directly via `DatabaseRefHandle::inner_arc`

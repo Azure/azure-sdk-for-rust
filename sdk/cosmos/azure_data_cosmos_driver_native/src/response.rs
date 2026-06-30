@@ -41,10 +41,8 @@ use crate::driver::DriverHandle;
 use crate::error::CosmosErrorCode;
 use crate::safety::MutexExt;
 
-/// The C ABI handle for a [`CosmosResponse`].
+/// The C ABI handle for a [`CosmosResponse`] (`cosmos_response_t`).
 ///
-/// A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
-/// opaque type (`cosmos_response_t`) because C cannot see its fields.
 /// Single-owner and `Box`-managed (responses are never cloned).
 ///
 /// The handle also carries optional "side payloads" populated only on

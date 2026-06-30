@@ -37,11 +37,9 @@ use crate::driver_options::DriverOptionsHandle;
 use crate::error::{CosmosErrorCode, CosmosErrorHandle};
 use crate::runtime::RuntimeContext;
 
-/// The C ABI handle for a [`CosmosDriver`].
+/// The C ABI handle for a [`CosmosDriver`] (`cosmos_driver_t`).
 ///
-/// A real Rust struct, not a `#[repr(C)]` layout: cbindgen emits it as an
-/// opaque type (`cosmos_driver_t`) because C cannot see its fields. The handle
-/// is reference-counted via `Arc` so the submit pipeline and a degenerate
+/// Reference-counted via `Arc` so the submit pipeline and a degenerate
 /// response's stashed side payload can share it with only an atomic bump.
 pub struct DriverHandle {
     /// Consumed by the submit pipeline (`cosmos_driver_*_submit`,
