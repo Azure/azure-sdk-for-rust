@@ -96,13 +96,7 @@ static int test_feed_range_full_roundtrip(void)
     ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS, "full (rc=%d)", rc);
     REQUIRE(fr != NULL, "full produced non-NULL");
 
-    cosmos_feed_range_t *cloned = NULL;
-    rc = cosmos_feed_range_clone(fr, &cloned);
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS, "clone (rc=%d)", rc);
-    ASSERT(cloned != NULL, "clone produced non-NULL");
-
 cleanup:
-    cosmos_feed_range_free(cloned);
     cosmos_feed_range_free(fr);
     return result;
 }
@@ -131,14 +125,6 @@ static int test_feed_range_for_pk_rejects_nulls(void)
 // Section 4 — container ref / resolve preflight
 // ─────────────────────────────────────────────────────────────────────
 
-static int test_container_ref_clone_rejects_null(void)
-{
-    int result = TEST_PASS;
-    cosmos_container_ref_t *out = NULL;
-    int32_t rc = cosmos_container_ref_clone(NULL, &out);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT, "clone(NULL,...) rejected (rc=%d)", rc);
-    return result;
-}
 
 static int test_resolve_container_blocking_rejects_nulls(void)
 {
@@ -233,7 +219,6 @@ TEST_REGISTER(completion_view_rejects_null)
 TEST_REGISTER(feed_range_full_roundtrip)
 TEST_REGISTER(feed_range_full_rejects_null_out)
 TEST_REGISTER(feed_range_for_pk_rejects_nulls)
-TEST_REGISTER(container_ref_clone_rejects_null)
 TEST_REGISTER(resolve_container_blocking_rejects_nulls)
 TEST_REGISTER(execute_operation_submit_rejects_null_driver)
 TEST_REGISTER(execute_singleton_operation_submit_rejects_null_driver)

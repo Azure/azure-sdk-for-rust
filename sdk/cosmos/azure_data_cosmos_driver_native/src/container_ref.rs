@@ -48,24 +48,18 @@ pub struct ContainerRefHandle {
 
 impl ContainerRefHandle {
     pub(crate) fn into_raw(inner: DriverContainerReference) -> *mut Self {
-        Arc::into_raw(Arc::new(ContainerRefHandle { inner })) as *mut Self
+        Box::into_raw(Box::new(ContainerRefHandle { inner }))
     }
 
-    pub(crate) fn from_arc_into_raw(this: Arc<ContainerRefHandle>) -> *mut Self {
-        Arc::into_raw(this) as *mut Self
-    }
-
-    pub(crate) fn inner_arc(p: *const ContainerRefHandle) -> Option<Arc<ContainerRefHandle>> {
+    /// Borrows the handle for the duration of an FFI call without taking
+    /// ownership. Returns `None` for a NULL pointer.
+    pub(crate) fn from_ptr<'a>(p: *const ContainerRefHandle) -> Option<&'a ContainerRefHandle> {
         if p.is_null() {
             return None;
         }
-        // SAFETY: caller guarantees `p` was obtained from `into_raw` and has
-        // not been freed. Bumping the strong count before reconstructing the
-        // `Arc` leaves the caller's reference intact.
-        unsafe {
-            Arc::increment_strong_count(p);
-            Some(Arc::from_raw(p))
-        }
+        // SAFETY: caller guarantees `p` was obtained from `into_raw` and is
+        // not freed for the duration of the borrow.
+        Some(unsafe { &*p })
     }
 
     fn drop_raw(p: *mut ContainerRefHandle) {
@@ -75,7 +69,7 @@ impl ContainerRefHandle {
         // SAFETY: caller guarantees `p` was obtained from `into_raw` and has
         // not already been freed.
         unsafe {
-            drop(Arc::from_raw(p as *const ContainerRefHandle));
+            drop(Box::from_raw(p));
         }
     }
 }
@@ -93,28 +87,6 @@ fn try_cstr_to_str<'a>(p: *const c_char) -> Result<&'a str, CosmosErrorCode> {
 // ─────────────────────────────────────────────────────────────────────────────
 // FFI: lifecycle
 // ─────────────────────────────────────────────────────────────────────────────
-
-/// Clones an existing container-reference handle into a fresh FFI
-/// handle that shares the underlying state.
-#[no_mangle]
-pub extern "C" fn cosmos_container_ref_clone(
-    container: *const ContainerRefHandle,
-    out_clone: *mut *mut ContainerRefHandle,
-) -> i32 {
-    if out_clone.is_null() {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
-    }
-    let Some(arc) = ContainerRefHandle::inner_arc(container) else {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
-    };
-    let cloned = ContainerRefHandle::from_arc_into_raw(arc);
-    // SAFETY: caller guarantees `out_clone` is writable for one
-    // `*mut ContainerRefHandle`.
-    unsafe {
-        *out_clone = cloned;
-    }
-    CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
-}
 
 /// Frees a container-reference handle. NULL is a no-op.
 #[no_mangle]
@@ -235,14 +207,5 @@ mod tests {
         );
         assert!(out.is_null());
         assert!(err.is_null());
-    }
-
-    #[test]
-    fn clone_rejects_null_arguments() {
-        let mut out: *mut ContainerRefHandle = ptr::null_mut();
-        assert_eq!(
-            cosmos_container_ref_clone(ptr::null(), &mut out),
-            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
-        );
     }
 }

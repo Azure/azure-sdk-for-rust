@@ -9,9 +9,8 @@
 //   1. Lifecycle & NULL-safety on every `_free`.
 //   2. Validation paths on `cosmos_account_ref_with_master_key` (NULL
 //      args + invalid endpoint URL).
-//   3. `cosmos_account_ref_clone` round-trip.
-//   4. `cosmos_database_ref_create` happy path + NULL-arg rejection.
-//   5. `cosmos_driver_options_builder_*` happy path + preferred-regions
+//   3. `cosmos_database_ref_create` happy path + NULL-arg rejection.
+//   4. `cosmos_driver_options_builder_*` happy path + preferred-regions
 //      round-trip + NULL-arg rejection + build idempotence.
 //
 // `cosmos_driver_get_or_create_blocking` is not exercised here because
@@ -89,33 +88,6 @@ static int test_account_ref_rejects_invalid_endpoint(void) {
     ASSERT(account == NULL, "no handle on failure");
     ASSERT(err != NULL, "rich error populated on parse failure");
     cosmos_error_free(err);
-    return result;
-}
-
-static int test_account_ref_clone_roundtrip(void) {
-    int result = TEST_PASS;
-    cosmos_account_ref_t *account = NULL;
-    cosmos_error_t *err = NULL;
-    int32_t rc = cosmos_account_ref_with_master_key(
-        "https://x.documents.azure.com:443/", "k", &account, &err);
-    REQUIRE(rc == COSMOS_ERROR_CODE_SUCCESS, "account allocated");
-
-    cosmos_account_ref_t *clone = NULL;
-    rc = cosmos_account_ref_clone(account, &clone);
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS,
-           "clone returned SUCCESS (rc=%d)", rc);
-    ASSERT(clone != NULL, "clone produced a non-NULL handle");
-
-    rc = cosmos_account_ref_clone(NULL, &clone);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
-           "clone rejects NULL source (rc=%d)", rc);
-    rc = cosmos_account_ref_clone(account, NULL);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
-           "clone rejects NULL out_clone (rc=%d)", rc);
-
-cleanup:
-    cosmos_account_ref_free(clone);
-    cosmos_account_ref_free(account);
     return result;
 }
 
@@ -273,7 +245,6 @@ TEST_REGISTER(lifecycle_null_safe)
 TEST_REGISTER(account_ref_master_key_happy_path)
 TEST_REGISTER(account_ref_rejects_null_arguments)
 TEST_REGISTER(account_ref_rejects_invalid_endpoint)
-TEST_REGISTER(account_ref_clone_roundtrip)
 TEST_REGISTER(database_ref_create_happy_path)
 TEST_REGISTER(database_ref_rejects_null_arguments)
 TEST_REGISTER(driver_options_builder_happy_path)

@@ -34,7 +34,6 @@ use crate::completion::{
     Completion, CompletionQueue, CompletionQueueInner, CosmosCompletionOutcome, OperationHandle,
     OperationInner,
 };
-use crate::container_ref::ContainerRefHandle;
 use crate::driver::DriverHandle;
 use crate::driver_options::DriverOptionsHandle;
 use crate::error::{CosmosErrorCode, CosmosErrorHandle};
@@ -476,7 +475,7 @@ pub extern "C" fn cosmos_driver_get_or_create_submit(
         write_err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
         return std::ptr::null_mut();
     };
-    let Some(account_inner) = AccountRefHandle::inner_arc(account) else {
+    let Some(account_inner) = AccountRefHandle::from_ptr(account) else {
         write_err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
         return std::ptr::null_mut();
     };
@@ -590,10 +589,7 @@ pub extern "C" fn cosmos_driver_resolve_container_submit(
                 .await
         },
         |container_ref: azure_data_cosmos_driver::models::ContainerReference| {
-            let container_inner = Arc::new(ContainerRefHandle {
-                inner: container_ref,
-            });
-            ResponseHandle::into_raw_with_container(container_inner)
+            ResponseHandle::into_raw_with_container(container_ref)
         },
     );
     op_handle

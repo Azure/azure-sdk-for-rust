@@ -160,7 +160,7 @@ impl DriverOptionsBuilderHandle {
 pub extern "C" fn cosmos_driver_options_builder_new(
     account: *const AccountRefHandle,
 ) -> *mut DriverOptionsBuilderHandle {
-    let Some(account_inner) = AccountRefHandle::inner_arc(account) else {
+    let Some(account_inner) = AccountRefHandle::from_ptr(account) else {
         return std::ptr::null_mut();
     };
     DriverOptionsBuilderHandle::new_raw(account_inner.inner.clone())
@@ -431,7 +431,7 @@ pub extern "C" fn cosmos_driver_options_build(
     if out_options.is_null() {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
     }
-    let Some(account_inner) = AccountRefHandle::inner_arc(account) else {
+    let Some(account_inner) = AccountRefHandle::from_ptr(account) else {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
     };
 

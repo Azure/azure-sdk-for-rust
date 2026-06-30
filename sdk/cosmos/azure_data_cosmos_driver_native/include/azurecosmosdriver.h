@@ -657,7 +657,8 @@ typedef struct cosmos_partition_key_builder_t cosmos_partition_key_builder_t;
 /**
  * The C ABI handle for an immutable partition key (`cosmos_partition_key_t`).
  *
- * Reference-counted via `Arc`; cloning is a cheap atomic refcount bump.
+ * Owned by the SDK via `Box` single-ownership; freed with
+ * `cosmos_partition_key_free`.
  */
 typedef struct cosmos_partition_key_t cosmos_partition_key_t;
 
@@ -1254,16 +1255,6 @@ int32_t cosmos_account_ref_with_master_key(const char *endpoint,
                                            struct cosmos_error_t **out_error);
 
 /**
- * Clones an existing account reference into a fresh FFI handle that
- * shares the underlying state.
- *
- * Cheap — an atomic refcount bump on a single `Arc`. Never touches the
- * network.
- */
-int32_t cosmos_account_ref_clone(const struct cosmos_account_ref_t *account,
-                                 struct cosmos_account_ref_t **out_clone);
-
-/**
  * Frees an account-reference handle. NULL is a no-op.
  */
 void cosmos_account_ref_free(struct cosmos_account_ref_t *account);
@@ -1452,13 +1443,6 @@ cosmos_operation_handle_state_t cosmos_operation_handle_state(const struct cosmo
 void cosmos_operation_handle_free(struct cosmos_operation_handle_t *op);
 
 /**
- * Clones an existing container-reference handle into a fresh FFI
- * handle that shares the underlying state.
- */
-int32_t cosmos_container_ref_clone(const struct cosmos_container_ref_t *container,
-                                   struct cosmos_container_ref_t **out_clone);
-
-/**
  * Frees a container-reference handle. NULL is a no-op.
  */
 void cosmos_container_ref_free(struct cosmos_container_ref_t *container);
@@ -1518,15 +1502,6 @@ int32_t cosmos_driver_resolve_container_blocking(const struct cosmos_runtime_t *
 int32_t cosmos_database_ref_create(const struct cosmos_account_ref_t *account,
                                    const char *database_id,
                                    struct cosmos_database_ref_t **out_database);
-
-/**
- * Clones an existing database reference into a fresh FFI handle that
- * shares the underlying state.
- *
- * Cheap — an atomic refcount bump on a single `Arc`.
- */
-int32_t cosmos_database_ref_clone(const struct cosmos_database_ref_t *database,
-                                  struct cosmos_database_ref_t **out_clone);
 
 /**
  * Frees a database-reference handle. NULL is a no-op.
@@ -1795,12 +1770,6 @@ int32_t cosmos_feed_range_for_partition_key(const struct cosmos_container_ref_t 
                                             struct cosmos_feed_range_t **out_fr);
 
 /**
- * Clones an existing feed-range handle. Cheap atomic refcount bump.
- */
-int32_t cosmos_feed_range_clone(const struct cosmos_feed_range_t *fr,
-                                struct cosmos_feed_range_t **out_clone);
-
-/**
  * Frees a feed-range handle. NULL is a no-op.
  */
 void cosmos_feed_range_free(struct cosmos_feed_range_t *fr);
@@ -1893,13 +1862,6 @@ int32_t cosmos_partition_key_builder_build(struct cosmos_partition_key_builder_t
  * accidental misuse.
  */
 struct cosmos_partition_key_t *cosmos_partition_key_empty(void);
-
-/**
- * Clones an existing partition-key handle. Cheap — an atomic refcount
- * bump on a single `Arc`.
- */
-int32_t cosmos_partition_key_clone(const struct cosmos_partition_key_t *pk,
-                                   struct cosmos_partition_key_t **out_clone);
 
 /**
  * Frees a partition-key handle. NULL is a no-op.

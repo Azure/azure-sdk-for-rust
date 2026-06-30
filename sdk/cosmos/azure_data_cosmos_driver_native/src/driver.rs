@@ -163,7 +163,7 @@ pub extern "C" fn cosmos_driver_get_or_create_blocking(
     let Some(runtime_inner) = RuntimeContext::inner_arc(runtime) else {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
     };
-    let Some(account_inner) = AccountRefHandle::inner_arc(account) else {
+    let Some(account_inner) = AccountRefHandle::from_ptr(account) else {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
     };
     // Options is optional — NULL → None.

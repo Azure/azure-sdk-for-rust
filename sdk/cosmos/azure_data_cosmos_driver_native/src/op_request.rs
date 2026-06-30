@@ -774,7 +774,7 @@ unsafe fn build_operation(
                 None
             } else {
                 Some(
-                    FeedRangeHandle::inner_arc(req.feed_range)
+                    FeedRangeHandle::from_ptr(req.feed_range)
                         .ok_or(CosmosErrorCode::CosmosErrorCodeInvalidArgument)?
                         .inner
                         .clone(),
@@ -888,7 +888,7 @@ unsafe fn apply_inline_mutators(
 fn require_account(
     req: &CosmosOperationRequest,
 ) -> Result<azure_data_cosmos_driver::models::AccountReference, CosmosErrorCode> {
-    let inner = AccountRefHandle::inner_arc(req.account)
+    let inner = AccountRefHandle::from_ptr(req.account)
         .ok_or(CosmosErrorCode::CosmosErrorCodeInvalidArgument)?;
     Ok(inner.inner.clone())
 }
@@ -896,13 +896,13 @@ fn require_account(
 fn require_database(
     req: &CosmosOperationRequest,
 ) -> Result<azure_data_cosmos_driver::models::DatabaseReference, CosmosErrorCode> {
-    let inner = DatabaseRefHandle::inner_arc(req.database)
+    let inner = DatabaseRefHandle::from_ptr(req.database)
         .ok_or(CosmosErrorCode::CosmosErrorCodeInvalidArgument)?;
     Ok(inner.inner.clone())
 }
 
 fn require_container(req: &CosmosOperationRequest) -> Result<ContainerReference, CosmosErrorCode> {
-    let inner = ContainerRefHandle::inner_arc(req.container)
+    let inner = ContainerRefHandle::from_ptr(req.container)
         .ok_or(CosmosErrorCode::CosmosErrorCodeInvalidArgument)?;
     Ok(inner.inner.clone())
 }
@@ -923,7 +923,7 @@ fn require_partition_key(req: &CosmosOperationRequest) -> Result<PartitionKey, C
         };
     }
     // Fallback: a pre-built `cosmos_partition_key_t` handle.
-    let inner = PartitionKeyHandle::inner_arc(req.partition_key)
+    let inner = PartitionKeyHandle::from_ptr(req.partition_key)
         .ok_or(CosmosErrorCode::CosmosErrorCodeInvalidArgument)?;
     Ok(inner.inner.clone())
 }

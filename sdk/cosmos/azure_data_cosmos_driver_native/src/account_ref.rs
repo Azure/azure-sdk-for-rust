@@ -21,7 +21,6 @@
 //! [`docs/NATIVE_WRAPPER_SPEC.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md
 
 use std::ffi::{c_char, CStr};
-use std::sync::Arc;
 
 use azure_core::credentials::Secret;
 use azure_data_cosmos_driver::models::AccountReference as DriverAccountReference;
@@ -39,33 +38,24 @@ pub struct AccountRefHandle {
 
 impl AccountRefHandle {
     /// Allocates a fresh FFI handle wrapping the supplied driver reference,
-    /// returning an opaque pointer the C side holds and hands back to
+    /// returning an owned pointer the C side holds and hands back to
     /// [`cosmos_account_ref_free`].
     fn into_raw(inner: DriverAccountReference) -> *mut Self {
-        Arc::into_raw(Arc::new(AccountRefHandle { inner })) as *mut Self
+        Box::into_raw(Box::new(AccountRefHandle { inner }))
     }
 
-    /// Consumes an owned `Arc` into a raw opaque pointer.
-    fn from_arc_into_raw(this: Arc<AccountRefHandle>) -> *mut Self {
-        Arc::into_raw(this) as *mut Self
-    }
-
-    /// Clones the `Arc` for the duration of an FFI call without consuming the
-    /// caller's pointer. Returns `None` for a NULL pointer.
-    pub(crate) fn inner_arc(p: *const AccountRefHandle) -> Option<Arc<AccountRefHandle>> {
+    /// Borrows the handle for the duration of an FFI call without taking
+    /// ownership. Returns `None` for a NULL pointer.
+    pub(crate) fn from_ptr<'a>(p: *const AccountRefHandle) -> Option<&'a AccountRefHandle> {
         if p.is_null() {
             return None;
         }
-        // SAFETY: caller guarantees `p` was obtained from `into_raw` and has
-        // not been freed. Bumping the strong count before reconstructing the
-        // `Arc` leaves the caller's reference intact.
-        unsafe {
-            Arc::increment_strong_count(p);
-            Some(Arc::from_raw(p))
-        }
+        // SAFETY: caller guarantees `p` was obtained from `into_raw` and is
+        // not freed for the duration of the borrow.
+        Some(unsafe { &*p })
     }
 
-    /// Drops one strong reference held by a raw opaque pointer.
+    /// Drops the handle owned by a raw pointer.
     fn drop_raw(p: *mut AccountRefHandle) {
         if p.is_null() {
             return;
@@ -73,7 +63,7 @@ impl AccountRefHandle {
         // SAFETY: caller guarantees `p` was obtained from `into_raw` and has
         // not already been freed.
         unsafe {
-            drop(Arc::from_raw(p as *const AccountRefHandle));
+            drop(Box::from_raw(p));
         }
     }
 }
@@ -198,31 +188,6 @@ pub extern "C" fn cosmos_account_ref_with_master_key(
     CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
 }
 
-/// Clones an existing account reference into a fresh FFI handle that
-/// shares the underlying state.
-///
-/// Cheap — an atomic refcount bump on a single `Arc`. Never touches the
-/// network.
-#[no_mangle]
-pub extern "C" fn cosmos_account_ref_clone(
-    account: *const AccountRefHandle,
-    out_clone: *mut *mut AccountRefHandle,
-) -> i32 {
-    if out_clone.is_null() {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
-    }
-    let Some(arc) = AccountRefHandle::inner_arc(account) else {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
-    };
-    let cloned = AccountRefHandle::from_arc_into_raw(arc);
-    // SAFETY: caller guarantees `out_clone` is writable for one
-    // `*mut AccountRefHandle`.
-    unsafe {
-        *out_clone = cloned;
-    }
-    CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
-}
-
 /// Frees an account-reference handle. NULL is a no-op.
 #[no_mangle]
 pub extern "C" fn cosmos_account_ref_free(account: *mut AccountRefHandle) {
@@ -324,41 +289,5 @@ pub(crate) mod tests {
             CosmosErrorCode::CosmosErrorCodeInvalidAccountReference.as_i32()
         );
         assert!(out.is_null());
-    }
-
-    #[test]
-    fn clone_rejects_null_arguments() {
-        let h = make_master_key_handle("https://x.documents.azure.com:443/", "k");
-        let mut out: *mut AccountRefHandle = ptr::null_mut();
-        assert_eq!(
-            cosmos_account_ref_clone(ptr::null(), &mut out),
-            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
-        );
-        assert_eq!(
-            cosmos_account_ref_clone(h, ptr::null_mut()),
-            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
-        );
-        cosmos_account_ref_free(h);
-    }
-
-    #[test]
-    fn clone_shares_inner_arc() {
-        let h = make_master_key_handle("https://x.documents.azure.com:443/", "k");
-        let mut h2: *mut AccountRefHandle = ptr::null_mut();
-        assert_eq!(
-            cosmos_account_ref_clone(h, &mut h2),
-            CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
-        );
-        assert!(!h2.is_null());
-
-        // Both handles see the same underlying Arc (strong count >= 2).
-        let arc1 = AccountRefHandle::inner_arc(h).unwrap();
-        let arc2 = AccountRefHandle::inner_arc(h2).unwrap();
-        assert!(Arc::ptr_eq(&arc1, &arc2), "clone shares underlying Arc");
-        drop(arc1);
-        drop(arc2);
-
-        cosmos_account_ref_free(h);
-        cosmos_account_ref_free(h2);
     }
 }

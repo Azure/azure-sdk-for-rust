@@ -255,40 +255,6 @@ cleanup:
     return result;
 }
 
-static int test_clone_roundtrip(void)
-{
-    int result = TEST_PASS;
-    cosmos_partition_key_builder_t *b = cosmos_partition_key_builder_new();
-    REQUIRE(b != NULL, "builder allocated");
-    int32_t rc = cosmos_partition_key_builder_add_string(b, "x");
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS, "add ok");
-
-    cosmos_partition_key_t *pk = NULL;
-    rc = cosmos_partition_key_builder_build(b, &pk);
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS, "build ok");
-
-    cosmos_partition_key_t *clone = NULL;
-    rc = cosmos_partition_key_clone(pk, &clone);
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS, "clone ok (rc=%d)", rc);
-    REQUIRE(clone != NULL, "clone non-NULL");
-    ASSERT(cosmos_partition_key_component_count(clone) == 1,
-           "clone has same component count");
-
-    /* NULL safety on clone. */
-    cosmos_partition_key_t *unused = NULL;
-    rc = cosmos_partition_key_clone(NULL, &unused);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
-           "clone(NULL,...) rejected");
-    rc = cosmos_partition_key_clone(pk, NULL);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
-           "clone(pk, NULL) rejected");
-
-cleanup:
-    cosmos_partition_key_free(clone);
-    cosmos_partition_key_free(pk);
-    return result;
-}
-
 static int test_build_rejects_null_arguments(void)
 {
     int result = TEST_PASS;
@@ -323,6 +289,5 @@ TEST_REGISTER(fourth_component_rejected)
 TEST_REGISTER(number_rejects_non_finite)
 TEST_REGISTER(setters_reject_null_builder)
 TEST_REGISTER(add_string_rejects_null_value)
-TEST_REGISTER(clone_roundtrip)
 TEST_REGISTER(build_rejects_null_arguments)
 TEST_SUITE_END("Partition Key Builder")

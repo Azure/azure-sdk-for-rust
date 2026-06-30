@@ -21,7 +21,6 @@
 //! [`docs/NATIVE_WRAPPER_SPEC.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md
 
 use std::ffi::{c_char, CStr};
-use std::sync::Arc;
 
 use azure_data_cosmos_driver::models::DatabaseReference as DriverDatabaseReference;
 
@@ -34,39 +33,25 @@ use crate::error::CosmosErrorCode;
 /// handle and releases it with `cosmos_database_ref_free`.
 pub struct DatabaseRefHandle {
     /// Consumed by the operation request builder when it takes a database
-    /// reference. Tests read it directly via `DatabaseRefHandle::inner_arc`
+    /// reference. Tests read it directly via `DatabaseRefHandle::from_ptr`
     /// to assert the wire shape.
-    #[allow(
-        dead_code,
-        reason = "first non-test caller is the operation request builder"
-    )]
     pub(crate) inner: DriverDatabaseReference,
 }
 
 impl DatabaseRefHandle {
     fn into_raw(inner: DriverDatabaseReference) -> *mut Self {
-        Arc::into_raw(Arc::new(DatabaseRefHandle { inner })) as *mut Self
+        Box::into_raw(Box::new(DatabaseRefHandle { inner }))
     }
 
-    fn from_arc_into_raw(this: Arc<DatabaseRefHandle>) -> *mut Self {
-        Arc::into_raw(this) as *mut Self
-    }
-
-    #[allow(
-        dead_code,
-        reason = "first non-test caller is the operation request builder"
-    )]
-    pub(crate) fn inner_arc(p: *const DatabaseRefHandle) -> Option<Arc<DatabaseRefHandle>> {
+    /// Borrows the handle for the duration of an FFI call without taking
+    /// ownership. Returns `None` for a NULL pointer.
+    pub(crate) fn from_ptr<'a>(p: *const DatabaseRefHandle) -> Option<&'a DatabaseRefHandle> {
         if p.is_null() {
             return None;
         }
-        // SAFETY: caller guarantees `p` was obtained from `into_raw` and has
-        // not been freed. Bumping the strong count before reconstructing the
-        // `Arc` leaves the caller's reference intact.
-        unsafe {
-            Arc::increment_strong_count(p);
-            Some(Arc::from_raw(p))
-        }
+        // SAFETY: caller guarantees `p` was obtained from `into_raw` and is
+        // not freed for the duration of the borrow.
+        Some(unsafe { &*p })
     }
 
     fn drop_raw(p: *mut DatabaseRefHandle) {
@@ -76,7 +61,7 @@ impl DatabaseRefHandle {
         // SAFETY: caller guarantees `p` was obtained from `into_raw` and has
         // not already been freed.
         unsafe {
-            drop(Arc::from_raw(p as *const DatabaseRefHandle));
+            drop(Box::from_raw(p));
         }
     }
 }
@@ -121,7 +106,7 @@ pub extern "C" fn cosmos_database_ref_create(
     if out_database.is_null() {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
     }
-    let Some(account_inner) = AccountRefHandle::inner_arc(account) else {
+    let Some(account_inner) = AccountRefHandle::from_ptr(account) else {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
     };
     let name = match try_cstr_to_str(database_id) {
@@ -139,30 +124,6 @@ pub extern "C" fn cosmos_database_ref_create(
     // `*mut DatabaseRefHandle`.
     unsafe {
         *out_database = handle;
-    }
-    CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
-}
-
-/// Clones an existing database reference into a fresh FFI handle that
-/// shares the underlying state.
-///
-/// Cheap — an atomic refcount bump on a single `Arc`.
-#[no_mangle]
-pub extern "C" fn cosmos_database_ref_clone(
-    database: *const DatabaseRefHandle,
-    out_clone: *mut *mut DatabaseRefHandle,
-) -> i32 {
-    if out_clone.is_null() {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
-    }
-    let Some(arc) = DatabaseRefHandle::inner_arc(database) else {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
-    };
-    let cloned = DatabaseRefHandle::from_arc_into_raw(arc);
-    // SAFETY: caller guarantees `out_clone` is writable for one
-    // `*mut DatabaseRefHandle`.
-    unsafe {
-        *out_clone = cloned;
     }
     CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
 }
@@ -209,9 +170,8 @@ mod tests {
         assert!(!out.is_null());
 
         // Inner reference has the expected name.
-        let inner = DatabaseRefHandle::inner_arc(out).unwrap();
+        let inner = DatabaseRefHandle::from_ptr(out).unwrap();
         assert_eq!(inner.inner.name(), Some("mydb"));
-        drop(inner);
 
         cosmos_database_ref_free(out);
         cosmos_account_ref_free_for_tests(account);
@@ -234,28 +194,6 @@ mod tests {
             cosmos_database_ref_create(account, db_id.as_ptr(), ptr::null_mut()),
             CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
         );
-        cosmos_account_ref_free_for_tests(account);
-    }
-
-    #[test]
-    fn clone_shares_inner_arc() {
-        let account = make_account();
-        let db_id = ok_cstr("mydb");
-        let mut h: *mut DatabaseRefHandle = ptr::null_mut();
-        cosmos_database_ref_create(account, db_id.as_ptr(), &mut h);
-
-        let mut h2: *mut DatabaseRefHandle = ptr::null_mut();
-        assert_eq!(
-            cosmos_database_ref_clone(h, &mut h2),
-            CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
-        );
-        let a = DatabaseRefHandle::inner_arc(h).unwrap();
-        let b = DatabaseRefHandle::inner_arc(h2).unwrap();
-        assert!(Arc::ptr_eq(&a, &b));
-        drop((a, b));
-
-        cosmos_database_ref_free(h);
-        cosmos_database_ref_free(h2);
         cosmos_account_ref_free_for_tests(account);
     }
 

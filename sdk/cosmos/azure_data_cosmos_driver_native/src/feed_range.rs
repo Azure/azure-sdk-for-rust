@@ -16,8 +16,6 @@
 //! deferred (driver does not expose strongly-typed public constructors
 //! for either yet — see spec section 4.6.4 deferred-list).
 
-use std::sync::Arc;
-
 use azure_data_cosmos_driver::models::FeedRange as DriverFeedRange;
 
 use crate::container_ref::ContainerRefHandle;
@@ -33,24 +31,18 @@ pub struct FeedRangeHandle {
 
 impl FeedRangeHandle {
     fn into_raw(inner: DriverFeedRange) -> *mut Self {
-        Arc::into_raw(Arc::new(FeedRangeHandle { inner })) as *mut Self
+        Box::into_raw(Box::new(FeedRangeHandle { inner }))
     }
 
-    fn from_arc_into_raw(this: Arc<FeedRangeHandle>) -> *mut Self {
-        Arc::into_raw(this) as *mut Self
-    }
-
-    pub(crate) fn inner_arc(p: *const FeedRangeHandle) -> Option<Arc<FeedRangeHandle>> {
+    /// Borrows the handle for the duration of an FFI call without taking
+    /// ownership. Returns `None` for a NULL pointer.
+    pub(crate) fn from_ptr<'a>(p: *const FeedRangeHandle) -> Option<&'a FeedRangeHandle> {
         if p.is_null() {
             return None;
         }
-        // SAFETY: caller guarantees `p` was obtained from `into_raw` and has
-        // not been freed. Bumping the strong count before reconstructing the
-        // `Arc` leaves the caller's reference intact.
-        unsafe {
-            Arc::increment_strong_count(p);
-            Some(Arc::from_raw(p))
-        }
+        // SAFETY: caller guarantees `p` was obtained from `into_raw` and is
+        // not freed for the duration of the borrow.
+        Some(unsafe { &*p })
     }
 
     fn drop_raw(p: *mut FeedRangeHandle) {
@@ -60,7 +52,7 @@ impl FeedRangeHandle {
         // SAFETY: caller guarantees `p` was obtained from `into_raw` and has
         // not already been freed.
         unsafe {
-            drop(Arc::from_raw(p as *const FeedRangeHandle));
+            drop(Box::from_raw(p));
         }
     }
 }
@@ -104,10 +96,10 @@ pub extern "C" fn cosmos_feed_range_for_partition_key(
     if out_fr.is_null() {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
     }
-    let Some(container_inner) = ContainerRefHandle::inner_arc(container) else {
+    let Some(container_inner) = ContainerRefHandle::from_ptr(container) else {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
     };
-    let Some(pk_inner) = PartitionKeyHandle::inner_arc(pk) else {
+    let Some(pk_inner) = PartitionKeyHandle::from_ptr(pk) else {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
     };
     let fr = DriverFeedRange::for_partition(
@@ -118,26 +110,6 @@ pub extern "C" fn cosmos_feed_range_for_partition_key(
     // SAFETY: caller guarantees `out_fr` is writable.
     unsafe {
         *out_fr = handle;
-    }
-    CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
-}
-
-/// Clones an existing feed-range handle. Cheap atomic refcount bump.
-#[no_mangle]
-pub extern "C" fn cosmos_feed_range_clone(
-    fr: *const FeedRangeHandle,
-    out_clone: *mut *mut FeedRangeHandle,
-) -> i32 {
-    if out_clone.is_null() {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
-    }
-    let Some(arc) = FeedRangeHandle::inner_arc(fr) else {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
-    };
-    let cloned = FeedRangeHandle::from_arc_into_raw(arc);
-    // SAFETY: caller guarantees `out_clone` is writable.
-    unsafe {
-        *out_clone = cloned;
     }
     CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
 }
@@ -179,26 +151,6 @@ mod tests {
             cosmos_feed_range_full(ptr::null_mut()),
             CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
         );
-    }
-
-    #[test]
-    fn clone_full_round_trip() {
-        let mut fr: *mut FeedRangeHandle = ptr::null_mut();
-        cosmos_feed_range_full(&mut fr);
-        let mut cloned: *mut FeedRangeHandle = ptr::null_mut();
-        assert_eq!(
-            cosmos_feed_range_clone(fr, &mut cloned),
-            CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
-        );
-        assert!(!cloned.is_null());
-
-        let a = FeedRangeHandle::inner_arc(fr).unwrap();
-        let b = FeedRangeHandle::inner_arc(cloned).unwrap();
-        assert!(Arc::ptr_eq(&a, &b));
-        drop((a, b));
-
-        cosmos_feed_range_free(fr);
-        cosmos_feed_range_free(cloned);
     }
 
     #[test]

@@ -28,7 +28,6 @@
 //! [`docs/NATIVE_WRAPPER_SPEC.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md
 
 use std::ffi::{c_char, CStr};
-use std::sync::Arc;
 
 use azure_data_cosmos_driver::models::{PartitionKey as DriverPartitionKey, PartitionKeyValue};
 
@@ -213,38 +212,29 @@ impl PartitionKeyBuilderHandle {
 
 /// The C ABI handle for an immutable partition key (`cosmos_partition_key_t`).
 ///
-/// Reference-counted via `Arc`; cloning is a cheap atomic refcount bump.
+/// Owned by the SDK via `Box` single-ownership; freed with
+/// `cosmos_partition_key_free`.
 pub struct PartitionKeyHandle {
     /// Consumed by the operation factories that take a partition key. Tests
-    /// read it directly via `PartitionKeyHandle::inner_arc` to assert the
+    /// read it directly via `PartitionKeyHandle::from_ptr` to assert the
     /// wire shape.
-    #[allow(
-        dead_code,
-        reason = "first non-test caller is the operation request builder"
-    )]
     pub(crate) inner: DriverPartitionKey,
 }
 
 impl PartitionKeyHandle {
     fn into_raw(pk: DriverPartitionKey) -> *mut Self {
-        Arc::into_raw(Arc::new(PartitionKeyHandle { inner: pk })) as *mut Self
+        Box::into_raw(Box::new(PartitionKeyHandle { inner: pk }))
     }
 
-    fn from_arc_into_raw(this: Arc<PartitionKeyHandle>) -> *mut Self {
-        Arc::into_raw(this) as *mut Self
-    }
-
-    pub(crate) fn inner_arc(p: *const PartitionKeyHandle) -> Option<Arc<PartitionKeyHandle>> {
+    /// Borrows the handle for the duration of an FFI call without taking
+    /// ownership. Returns `None` for a NULL pointer.
+    pub(crate) fn from_ptr<'a>(p: *const PartitionKeyHandle) -> Option<&'a PartitionKeyHandle> {
         if p.is_null() {
             return None;
         }
-        // SAFETY: caller guarantees `p` was obtained from `into_raw` and has
-        // not been freed. Bumping the strong count before reconstructing the
-        // `Arc` leaves the caller's reference intact.
-        unsafe {
-            Arc::increment_strong_count(p);
-            Some(Arc::from_raw(p))
-        }
+        // SAFETY: caller guarantees `p` was obtained from `into_raw` and is
+        // not freed for the duration of the borrow.
+        Some(unsafe { &*p })
     }
 
     fn drop_raw(p: *mut PartitionKeyHandle) {
@@ -254,7 +244,7 @@ impl PartitionKeyHandle {
         // SAFETY: caller guarantees `p` was obtained from `into_raw` and has
         // not already been freed.
         unsafe {
-            drop(Arc::from_raw(p as *const PartitionKeyHandle));
+            drop(Box::from_raw(p));
         }
     }
 }
@@ -479,28 +469,6 @@ pub extern "C" fn cosmos_partition_key_empty() -> *mut PartitionKeyHandle {
     PartitionKeyHandle::into_raw(DriverPartitionKey::from(Vec::<PartitionKeyValue>::new()))
 }
 
-/// Clones an existing partition-key handle. Cheap — an atomic refcount
-/// bump on a single `Arc`.
-#[no_mangle]
-pub extern "C" fn cosmos_partition_key_clone(
-    pk: *const PartitionKeyHandle,
-    out_clone: *mut *mut PartitionKeyHandle,
-) -> i32 {
-    if out_clone.is_null() {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
-    }
-    let Some(arc) = PartitionKeyHandle::inner_arc(pk) else {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
-    };
-    let cloned = PartitionKeyHandle::from_arc_into_raw(arc);
-    // SAFETY: caller guarantees `out_clone` is writable for one
-    // `*mut PartitionKeyHandle`.
-    unsafe {
-        *out_clone = cloned;
-    }
-    CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
-}
-
 /// Frees a partition-key handle. NULL is a no-op.
 #[no_mangle]
 pub extern "C" fn cosmos_partition_key_free(pk: *mut PartitionKeyHandle) {
@@ -519,8 +487,8 @@ pub extern "C" fn cosmos_partition_key_free(pk: *mut PartitionKeyHandle) {
 /// checking for NULL up-front).
 #[no_mangle]
 pub extern "C" fn cosmos_partition_key_component_count(pk: *const PartitionKeyHandle) -> usize {
-    PartitionKeyHandle::inner_arc(pk)
-        .map(|arc| arc.inner.len())
+    PartitionKeyHandle::from_ptr(pk)
+        .map(|h| h.inner.len())
         .unwrap_or(0)
 }
 
@@ -531,8 +499,8 @@ pub extern "C" fn cosmos_partition_key_component_count(pk: *const PartitionKeyHa
 /// returning `0`).
 #[no_mangle]
 pub extern "C" fn cosmos_partition_key_is_empty(pk: *const PartitionKeyHandle) -> bool {
-    PartitionKeyHandle::inner_arc(pk)
-        .map(|arc| arc.inner.is_empty())
+    PartitionKeyHandle::from_ptr(pk)
+        .map(|h| h.inner.is_empty())
         .unwrap_or(true)
 }
 
@@ -593,7 +561,7 @@ mod tests {
 
         // Compare against a driver-side equivalent.
         let driver_built = DriverPartitionKey::from("tenant-42");
-        let our_built = PartitionKeyHandle::inner_arc(out).unwrap();
+        let our_built = PartitionKeyHandle::from_ptr(out).unwrap();
         assert_eq!(our_built.inner, driver_built);
 
         cosmos_partition_key_free(out);
@@ -624,7 +592,7 @@ mod tests {
 
         // Equivalent driver-side construction.
         let driver_built = DriverPartitionKey::from(("region-1", 42, true));
-        let our_built = PartitionKeyHandle::inner_arc(out).unwrap();
+        let our_built = PartitionKeyHandle::from_ptr(out).unwrap();
         assert_eq!(our_built.inner, driver_built);
 
         cosmos_partition_key_free(out);
@@ -685,7 +653,7 @@ mod tests {
         );
         let mut out: *mut PartitionKeyHandle = ptr::null_mut();
         cosmos_partition_key_builder_build(b, &mut out);
-        let our_built = PartitionKeyHandle::inner_arc(out).unwrap();
+        let our_built = PartitionKeyHandle::from_ptr(out).unwrap();
         // The driver's `PartitionKey::EMPTY` is _not_ the same as a
         // 2-component (null, undefined) key — assert wire shape directly.
         assert_eq!(our_built.inner.len(), 2);
@@ -756,43 +724,6 @@ mod tests {
     }
 
     #[test]
-    fn clone_shares_inner_arc() {
-        let b = cosmos_partition_key_builder_new();
-        let s = ok_cstr("x");
-        cosmos_partition_key_builder_add_string(b, s.as_ptr());
-        let mut pk: *mut PartitionKeyHandle = ptr::null_mut();
-        cosmos_partition_key_builder_build(b, &mut pk);
-
-        let mut clone: *mut PartitionKeyHandle = ptr::null_mut();
-        assert_eq!(
-            cosmos_partition_key_clone(pk, &mut clone),
-            CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
-        );
-        let a = PartitionKeyHandle::inner_arc(pk).unwrap();
-        let bp = PartitionKeyHandle::inner_arc(clone).unwrap();
-        assert!(Arc::ptr_eq(&a, &bp));
-        drop((a, bp));
-
-        cosmos_partition_key_free(pk);
-        cosmos_partition_key_free(clone);
-    }
-
-    #[test]
-    fn clone_rejects_null_arguments() {
-        let mut out: *mut PartitionKeyHandle = ptr::null_mut();
-        assert_eq!(
-            cosmos_partition_key_clone(ptr::null(), &mut out),
-            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
-        );
-        let pk = cosmos_partition_key_empty();
-        assert_eq!(
-            cosmos_partition_key_clone(pk, ptr::null_mut()),
-            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
-        );
-        cosmos_partition_key_free(pk);
-    }
-
-    #[test]
     fn accessors_handle_null() {
         assert_eq!(cosmos_partition_key_component_count(ptr::null()), 0);
         assert!(cosmos_partition_key_is_empty(ptr::null()));
@@ -828,7 +759,7 @@ mod tests {
         );
         let mut out: *mut PartitionKeyHandle = ptr::null_mut();
         cosmos_partition_key_builder_build(b, &mut out);
-        let our_built = PartitionKeyHandle::inner_arc(out).unwrap();
+        let our_built = PartitionKeyHandle::from_ptr(out).unwrap();
         // Driver normalizes to +0.0; ours does the same via the same
         // code path.
         assert_eq!(our_built.inner, DriverPartitionKey::from(0.0));

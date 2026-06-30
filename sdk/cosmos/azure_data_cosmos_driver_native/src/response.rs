@@ -34,7 +34,9 @@
 use std::ffi::{c_char, CString};
 use std::sync::{Arc, Mutex, OnceLock};
 
-use azure_data_cosmos_driver::models::{CosmosResponse, ResponseBody};
+use azure_data_cosmos_driver::models::{
+    ContainerReference as DriverContainerReference, CosmosResponse, ResponseBody,
+};
 
 use crate::container_ref::ContainerRefHandle;
 use crate::driver::DriverHandle;
@@ -67,7 +69,7 @@ pub struct ResponseHandle {
     // Side payloads — `Mutex<Option<...>>` so the take accessors can
     // detach ownership in place. NULL on every "real" CRUD completion.
     driver_payload: Mutex<Option<Arc<crate::driver::DriverHandle>>>,
-    container_payload: Mutex<Option<Arc<crate::container_ref::ContainerRefHandle>>>,
+    container_payload: Mutex<Option<DriverContainerReference>>,
     // Plan-derived next-page continuation token, captured by the feed
     // submit path from `OperationPlan::to_continuation_token()`. This is
     // distinct from the *response header* continuation (which only carries
@@ -88,9 +90,7 @@ impl ResponseHandle {
         Self::into_raw_with_payloads(None, Some(driver), None, None)
     }
 
-    pub(crate) fn into_raw_with_container(
-        container: Arc<crate::container_ref::ContainerRefHandle>,
-    ) -> *mut Self {
+    pub(crate) fn into_raw_with_container(container: DriverContainerReference) -> *mut Self {
         Self::into_raw_with_payloads(None, None, Some(container), None)
     }
 
@@ -110,7 +110,7 @@ impl ResponseHandle {
     fn into_raw_with_payloads(
         response: Option<CosmosResponse>,
         driver: Option<Arc<crate::driver::DriverHandle>>,
-        container: Option<Arc<crate::container_ref::ContainerRefHandle>>,
+        container: Option<DriverContainerReference>,
         next_continuation: Option<CString>,
     ) -> *mut Self {
         Box::into_raw(Box::new(ResponseHandle {
@@ -472,7 +472,7 @@ pub extern "C" fn cosmos_response_take_container(
     };
     let mut slot = handle.container_payload.lock_recover();
     match slot.take() {
-        Some(arc) => crate::container_ref::ContainerRefHandle::from_arc_into_raw(arc),
+        Some(container) => crate::container_ref::ContainerRefHandle::into_raw(container),
         None => std::ptr::null_mut(),
     }
 }
