@@ -221,7 +221,7 @@ enum cosmos_error_code_t
    */
   COSMOS_ERROR_CODE_INVALID_OPTION_VALUE = 4014,
   /**
-   * `cosmos_runtime_builder_build` could not construct the underlying
+   * `cosmos_runtime_build` could not construct the underlying
    * `CosmosDriverRuntime`.
    */
   COSMOS_ERROR_CODE_RUNTIME_BUILD_FAILED = 4015,
@@ -728,16 +728,6 @@ typedef struct cosmos_database_ref_t cosmos_database_ref_t;
 typedef struct cosmos_driver_t cosmos_driver_t;
 
 /**
- * The C ABI handle for a `DriverOptionsBuilder`
- * (`cosmos_driver_options_builder_t`).
- *
- * Single-owner and `Box`-managed: setters mutate in place (the underlying
- * `with_*` consume `self`, so each setter does an `Option::take` / call /
- * store dance).
- */
-typedef struct cosmos_driver_options_builder_t cosmos_driver_options_builder_t;
-
-/**
  * The C ABI handle for a built [`DriverOptions`] value
  * (`cosmos_driver_options_t`).
  */
@@ -758,33 +748,12 @@ typedef struct cosmos_feed_range_t cosmos_feed_range_t;
 typedef struct cosmos_operation_handle_t cosmos_operation_handle_t;
 
 /**
- * The C ABI handle for an incrementally-populated partition-key builder
- * (`cosmos_partition_key_builder_t`).
- *
- * Single-owner and `Box`-managed.
- */
-typedef struct cosmos_partition_key_builder_t cosmos_partition_key_builder_t;
-
-/**
  * The C ABI handle for an immutable partition key (`cosmos_partition_key_t`).
  *
  * Owned by the SDK via `Box` single-ownership; freed with
  * `cosmos_partition_key_free`.
  */
 typedef struct cosmos_partition_key_t cosmos_partition_key_t;
-
-/**
- * The C ABI handle for a runtime builder (`cosmos_runtime_builder_t`).
- *
- * Single-owner and `Box`-managed.
- *
- * We carry the driver's `CosmosDriverRuntimeBuilder` directly. Setters
- * take `&mut`, but `with_*` on the driver builder consume `self` by value,
- * so each setter does a `mem::take(&mut handle.builder)` → call → store
- * dance. `Default` on the builder is cheap (`Self::default()`), so the
- * take/replace is just two moves.
- */
-typedef struct cosmos_runtime_builder_t cosmos_runtime_builder_t;
 
 /**
  * The C ABI handle for the async runtime (`cosmos_runtime_t`).
@@ -794,7 +763,7 @@ typedef struct cosmos_runtime_builder_t cosmos_runtime_builder_t;
  * handle's lifetime. Construction always goes through
  * `RuntimeContext::new_default` (test path) or
  * `RuntimeContext::new_with_builder` (production path called from the public
- * `cosmos_runtime_builder_build`).
+ * `cosmos_runtime_build`).
  *
  * - `tokio` — the wrapper-side multi-threaded Tokio runtime. Used to
  *   `block_on(...)` driver builder construction at FFI-call time and to
@@ -1112,8 +1081,8 @@ typedef struct cosmos_driver_options_config_t {
  * (a C-style tagged union: a `kind` tag plus all possible value fields).
  *
  * This lets a calling SDK assemble a whole partition key in a single array
- * and drop it straight into [`CosmosOperationRequest`](crate::op_request::CosmosOperationRequest),
- * avoiding the per-component builder FFI round-trips. Only the field selected
+ * and drop it straight into [`CosmosOperationRequest`](crate::op_request::CosmosOperationRequest)
+ * or [`cosmos_partition_key_create`]. Only the field selected
  * by `kind` is read; the others are ignored.
  */
 typedef struct cosmos_partition_key_component_t {
@@ -1241,7 +1210,7 @@ typedef struct cosmos_operation_request_t {
   const struct cosmos_partition_key_t *partition_key;
   /**
    * Inline partition-key components, assembled by the host in one array so
-   * no `cosmos_partition_key_builder_*` round-trips are needed. When
+   * no separate partition-key construction call is needed. When
    * `partition_key_components` is non-NULL and `partition_key_len > 0` this
    * takes precedence over the `partition_key` handle. Each element is a
    * [`CosmosPartitionKeyComponent`].
@@ -1617,58 +1586,6 @@ int32_t cosmos_driver_get_or_create_blocking(const struct cosmos_runtime_t *runt
 void cosmos_driver_options_free(struct cosmos_driver_options_t *options);
 
 /**
- * Allocates a new builder bound to the supplied account reference.
- *
- * The account is cloned into the builder, so freeing `account` after
- * this call does not invalidate the builder. Returns NULL if `account`
- * is NULL.
- */
-struct cosmos_driver_options_builder_t *cosmos_driver_options_builder_new(const struct cosmos_account_ref_t *account);
-
-/**
- * Frees a builder that was never consumed by `_build`. NULL is a no-op.
- */
-void cosmos_driver_options_builder_free(struct cosmos_driver_options_builder_t *builder);
-
-int32_t cosmos_driver_options_builder_with_preferred_regions(struct cosmos_driver_options_builder_t *builder,
-                                                             const char *const *regions,
-                                                             uintptr_t regions_len);
-
-/**
- * Sets the per-driver default operation options.
- *
- * Mirrors [`DriverOptionsBuilder::with_operation_options`]. The supplied
- * flat `cosmos_operation_options_t` (see
- * [`crate::op_request::CosmosOperationOptions`]) is converted and **cloned**
- * into the builder; the caller retains ownership of the source struct. NULL
- * `options` is rejected with `INVALID_ARGUMENT` — pass a struct from
- * [`crate::op_request::cosmos_operation_options_default`] (mutated as
- * needed) or don't call this setter at all to inherit the driver defaults.
- * An out-of-range option value is rejected with `INVALID_OPTION_VALUE`.
- */
-int32_t cosmos_driver_options_builder_with_operation_options(struct cosmos_driver_options_builder_t *builder,
-                                                             const struct cosmos_operation_options_t *options);
-
-/**
- * Consumes the builder and returns a fresh `cosmos_driver_options_t *`.
- *
- * # Lifetime
- *
- * `_build` consumes the builder regardless of success or failure.
- * Callers must NOT call [`cosmos_driver_options_builder_free`] on the
- * same pointer afterwards.
- *
- * # Returns
- *
- * - `SUCCESS` (0) with `*out_options` populated.
- * - `INVALID_ARGUMENT` (1) when `builder` or `out_options` is NULL. In
- *   the NULL-`out_options` case the builder is still consumed to avoid
- *   leaking the inner allocation.
- */
-int32_t cosmos_driver_options_builder_build(struct cosmos_driver_options_builder_t *builder,
-                                            struct cosmos_driver_options_t **out_options);
-
-/**
  * Returns an all-unset [`CosmosDriverOptionsConfig`] by value. The host
  * mutates the fields it cares about and leaves the rest at their default
  * sentinels.
@@ -1677,9 +1594,7 @@ struct cosmos_driver_options_config_t cosmos_driver_options_config_default(void)
 
 /**
  * Builds a `cosmos_driver_options_t *` from an account reference and a flat
- * [`CosmosDriverOptionsConfig`] in a single call — the single-call
- * alternative to `cosmos_driver_options_builder_new` + the per-field setters +
- * `cosmos_driver_options_builder_build`.
+ * [`CosmosDriverOptionsConfig`] in a single call.
  *
  * # Parameters
  *
@@ -1815,77 +1730,6 @@ void cosmos_feed_range_free(struct cosmos_feed_range_t *fr);
 struct cosmos_operation_options_t cosmos_operation_options_default(void);
 
 /**
- * Allocates a new partition-key builder. Always succeeds; the returned
- * handle holds an empty component list.
- */
-struct cosmos_partition_key_builder_t *cosmos_partition_key_builder_new(void);
-
-/**
- * Frees a builder that was never consumed by [`cosmos_partition_key_builder_build`].
- * NULL is a no-op.
- */
-void cosmos_partition_key_builder_free(struct cosmos_partition_key_builder_t *builder);
-
-/**
- * Appends a string component to the partition key.
- */
-int32_t cosmos_partition_key_builder_add_string(struct cosmos_partition_key_builder_t *builder,
-                                                const char *value);
-
-/**
- * Appends a numeric component to the partition key. Rejects NaN and
- * ±∞ with `INVALID_OPTION_VALUE`.
- */
-int32_t cosmos_partition_key_builder_add_number(struct cosmos_partition_key_builder_t *builder,
-                                                double value);
-
-/**
- * Appends a boolean component to the partition key.
- *
- * `value` is a C boolean (`0` = false, non-zero = true). It is taken as a
- * `u8` rather than a Rust `bool` so an arbitrary host-supplied byte cannot
- * produce an invalid `bool` (which would be undefined behavior).
- */
-int32_t cosmos_partition_key_builder_add_bool(struct cosmos_partition_key_builder_t *builder,
-                                              uint8_t value);
-
-/**
- * Appends an explicit `null` component to the partition key.
- */
-int32_t cosmos_partition_key_builder_add_null(struct cosmos_partition_key_builder_t *builder);
-
-/**
- * Appends an `undefined` (missing-value) component to the partition
- * key.
- */
-int32_t cosmos_partition_key_builder_add_undefined(struct cosmos_partition_key_builder_t *builder);
-
-/**
- * Consumes the builder and returns an immutable
- * `cosmos_partition_key_t *`.
- *
- * # Lifetime
- *
- * `_build` consumes the builder regardless of success or failure.
- * Callers must NOT call [`cosmos_partition_key_builder_free`] on the
- * same pointer afterwards.
- *
- * # Returns
- *
- * - `SUCCESS` (0) with `*out_pk` populated.
- * - `INVALID_ARGUMENT` (1) when `builder` or `out_pk` is NULL. In
- *   the NULL-`out_pk` case the builder is still consumed to avoid
- *   leaking the inner allocation.
- * - `INVALID_PARTITION_KEY` (4004) when no components were added.
- *   The driver's `EMPTY` partition key has a specific meaning
- *   (cross-partition fan-out) and host SDKs cannot construct it via
- *   the builder by accident; if you need it explicitly, use
- *   `cosmos_partition_key_empty`.
- */
-int32_t cosmos_partition_key_builder_build(struct cosmos_partition_key_builder_t *builder,
-                                           struct cosmos_partition_key_t **out_pk);
-
-/**
  * Creates an immutable partition key from an inline component array in a
  * single call — the flat, standalone counterpart to the
  * `partition_key_components` array carried on
@@ -1978,113 +1822,6 @@ const char *cosmos_header_name(cosmos_header_id_t id);
 void cosmos_runtime_free(struct cosmos_runtime_t *runtime);
 
 /**
- * Lifecycle: allocate a new `cosmos_runtime_builder_t`.
- *
- * The returned handle must be freed via [`cosmos_runtime_builder_free`] if
- * `cosmos_runtime_builder_build` is never called on it. Successful
- * `_build` consumes the handle.
- */
-struct cosmos_runtime_builder_t *cosmos_runtime_builder_new(void);
-
-/**
- * Lifecycle: free a `cosmos_runtime_builder_t *` that was never consumed
- * by [`cosmos_runtime_builder_build`].
- *
- * Calling `_free` on a builder after a successful `_build` is undefined
- * behavior. NULL is a no-op.
- */
-void cosmos_runtime_builder_free(struct cosmos_runtime_builder_t *builder);
-
-/**
- * Sets the workload identifier.
- *
- * Valid range: 1–50. Out-of-range values return `INVALID_OPTION_VALUE`
- * with no mutation to the builder.
- */
-int32_t cosmos_runtime_builder_with_workload_id(struct cosmos_runtime_builder_t *builder,
-                                                uint8_t workload_id);
-
-/**
- * Sets the correlation ID for client-side metrics.
- *
- * Constraints: ≤50 characters, HTTP-header-safe (alphanumeric, hyphen,
- * underscore, dot, tilde). Strings outside this contract return
- * `INVALID_OPTION_VALUE` with no mutation.
- */
-int32_t cosmos_runtime_builder_with_correlation_id(struct cosmos_runtime_builder_t *builder,
-                                                   const char *correlation_id);
-
-/**
- * Sets the user-agent suffix.
- *
- * Constraints: ≤25 characters, HTTP-header-safe (alphanumeric, hyphen,
- * underscore, dot, tilde). Strings outside this contract return
- * `INVALID_OPTION_VALUE` with no mutation.
- */
-int32_t cosmos_runtime_builder_with_user_agent_suffix(struct cosmos_runtime_builder_t *builder,
-                                                      const char *suffix);
-
-/**
- * Sets a wrapping-SDK identifier prepended to the User-Agent header.
- *
- * Per the driver contract, the value is sanitized server-side (non-ASCII
- * stripped, whitespace trimmed); empty / whitespace-only is treated as
- * "unset". The FFI does not pre-validate the contents — any UTF-8 string
- * is accepted and forwarded to the driver's normalizer.
- */
-int32_t cosmos_runtime_builder_with_wrapping_sdk_identifier(struct cosmos_runtime_builder_t *builder,
-                                                            const char *identifier);
-
-/**
- * Sets the CPU/memory monitoring refresh interval (milliseconds).
- *
- * Valid range: 1000–60000 ms (1–60 seconds). Out-of-range values return
- * `INVALID_OPTION_VALUE` with no mutation.
- *
- * The FFI rejects values outside the documented range up-front — even
- * though the merged driver does not itself validate, surfacing the
- * constraint here gives external language SDKs an early deterministic
- * error rather than opaque behavior at the first sampling tick.
- */
-int32_t cosmos_runtime_builder_with_cpu_refresh_interval_ms(struct cosmos_runtime_builder_t *builder,
-                                                            uint64_t interval_ms);
-
-/**
- * Consumes the builder, constructs the underlying
- * [`azure_data_cosmos_driver::driver::CosmosDriverRuntime`], and returns it
- * as a fresh `cosmos_runtime_t *`.
- *
- * # Lifetime
- *
- * `cosmos_runtime_builder_build` **consumes** the builder regardless of
- * success or failure. Callers must NOT call
- * [`cosmos_runtime_builder_free`] on the same pointer afterwards.
- *
- * # Parameters
- *
- * - `builder` — the builder to consume. Must be non-NULL.
- * - `out_runtime` — on success, receives the new runtime handle. Must be
- *   non-NULL.
- * - `out_error` — optional. On `RUNTIME_BUILD_FAILED`, receives a rich
- *   `cosmos_error_t *` describing the driver-side failure. If NULL the
- *   rich error is dropped. The slot is never populated on success.
- *
- * # Returns
- *
- * - `SUCCESS` (0) with `*out_runtime` populated.
- * - `INVALID_ARGUMENT` (1) when `builder` or `out_runtime` is NULL. In
- *   the `builder == NULL` case nothing is freed; in the `out_runtime ==
- *   NULL` case the builder is still consumed (the driver-side builder
- *   has been moved out and a fresh runtime would otherwise leak).
- * - `RUNTIME_BUILD_FAILED` (4015) when the underlying
- *   `CosmosDriverRuntimeBuilder::build()` returned an error. `*out_error`
- *   is populated when non-NULL.
- */
-int32_t cosmos_runtime_builder_build(struct cosmos_runtime_builder_t *builder,
-                                     struct cosmos_runtime_t **out_runtime,
-                                     struct cosmos_error_t **out_error);
-
-/**
  * Returns an all-unset [`CosmosRuntimeOptions`] by value. The host mutates the
  * fields it cares about and leaves the rest at their default sentinels.
  */
@@ -2092,8 +1829,7 @@ struct cosmos_runtime_options_t cosmos_runtime_options_default(void);
 
 /**
  * Builds a `cosmos_runtime_t *` from a flat [`CosmosRuntimeOptions`] in a
- * single call — the single-call alternative to `cosmos_runtime_builder_new` +
- * the per-field setters + `cosmos_runtime_builder_build`.
+ * single call.
  *
  * # Parameters
  *

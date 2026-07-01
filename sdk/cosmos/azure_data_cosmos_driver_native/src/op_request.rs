@@ -590,7 +590,7 @@ pub struct CosmosOperationRequest {
     /// instead); otherwise NULL.
     pub partition_key: *const PartitionKeyHandle,
     /// Inline partition-key components, assembled by the host in one array so
-    /// no `cosmos_partition_key_builder_*` round-trips are needed. When
+    /// no separate partition-key construction call is needed. When
     /// `partition_key_components` is non-NULL and `partition_key_len > 0` this
     /// takes precedence over the `partition_key` handle. Each element is a
     /// [`CosmosPartitionKeyComponent`].

@@ -1,179 +1,144 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// Runtime builder & lifecycle.
+// Runtime construction & lifecycle.
 //
-// Validates the C surface of `cosmos_runtime_builder_*` end-to-end:
+// Validates the C surface of the flat `cosmos_runtime_build` path end-to-end:
 //
-//   1. NULL-safety on `_free` and on every setter that takes a builder
-//      pointer.
-//   2. Range / charset validation on the typed setters (workload id,
-//      correlation id, user-agent suffix, cpu refresh interval).
-//   3. The happy path — build a runtime via the builder, then prove the
-//      resulting `cosmos_runtime_t *` is usable by handing it to
+//   1. NULL-safety / argument validation on `cosmos_runtime_build`.
+//   2. Range / charset validation on the flat `cosmos_runtime_options_t`
+//      fields (workload id, correlation id, user-agent suffix, cpu refresh
+//      interval) — surfaced at build time.
+//   3. The happy path — build a runtime from a flat options struct, then prove
+//      the resulting `cosmos_runtime_t *` is usable by handing it to
 //      `cosmos_completion_queue_create` / `cosmos_completion_queue_free` /
 //      `cosmos_runtime_free`.
 //
-// The multi-producer / single-consumer scenario lives in the Rust-side
-// completion_t tests (which already exercise it via the internal
-// `__test_only_enqueue_completion` helper). The lifecycle path validated
-// here is the contract the submit path builds on top of.
+// The per-field incremental builder was removed in P5; construction is now a
+// single `cosmos_runtime_build(&opts, ...)` call. Validation happens at build
+// time, so each field test sets exactly one invalid field (leaving the rest at
+// their unset sentinels) and asserts the build fails with the runtime slot
+// left NULL.
 
 #include "test_common.h"
 
-static int test_builder_lifecycle_null_safe(void)
+static int test_options_default_all_unset(void)
 {
     int result = TEST_PASS;
-    cosmos_runtime_builder_free(NULL);
-    ASSERT(1, "cosmos_runtime_builder_free(NULL) returned without crashing");
+    cosmos_runtime_options_t opts = cosmos_runtime_options_default();
+    ASSERT(opts.workload_id == 0, "workload_id defaults to 0 (unset)");
+    ASSERT(opts.correlation_id == NULL, "correlation_id defaults to NULL");
+    ASSERT(opts.user_agent_suffix == NULL, "user_agent_suffix defaults to NULL");
+    ASSERT(opts.wrapping_sdk_identifier == NULL,
+           "wrapping_sdk_identifier defaults to NULL");
+    ASSERT(opts.cpu_refresh_interval_ms == 0,
+           "cpu_refresh_interval_ms defaults to 0 (unset)");
     return result;
 }
 
-static int test_builder_setters_reject_null(void)
+static int test_build_rejects_null_out_runtime(void)
 {
     int result = TEST_PASS;
-
-    int32_t rc;
-    rc = cosmos_runtime_builder_with_workload_id(NULL, 1);
+    cosmos_runtime_options_t opts = cosmos_runtime_options_default();
+    cosmos_error_t *err = NULL;
+    int32_t rc = cosmos_runtime_build(&opts, NULL, &err);
     ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
-           "with_workload_id rejects NULL builder (rc=%d)", rc);
-
-    rc = cosmos_runtime_builder_with_correlation_id(NULL, "x");
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
-           "with_correlation_id rejects NULL builder (rc=%d)", rc);
-
-    rc = cosmos_runtime_builder_with_user_agent_suffix(NULL, "x");
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
-           "with_user_agent_suffix rejects NULL builder (rc=%d)", rc);
-
-    rc = cosmos_runtime_builder_with_wrapping_sdk_identifier(NULL, "x");
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
-           "with_wrapping_sdk_identifier rejects NULL builder (rc=%d)", rc);
-
-    rc = cosmos_runtime_builder_with_cpu_refresh_interval_ms(NULL, 5000);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
-           "with_cpu_refresh_interval_ms rejects NULL builder (rc=%d)", rc);
-
+           "NULL out_runtime rejected (rc=%d)", rc);
+    ASSERT(err == NULL, "out_error untouched when out_runtime is NULL");
     return result;
 }
 
 static int test_workload_id_range_validation(void)
 {
     int result = TEST_PASS;
-    cosmos_runtime_builder_t *b = cosmos_runtime_builder_new();
-    REQUIRE(b != NULL, "builder allocated");
+    cosmos_runtime_t *runtime = NULL;
+    cosmos_error_t *err = NULL;
 
-    int32_t rc = cosmos_runtime_builder_with_workload_id(b, 1);
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS, "workload_id=1 accepted (rc=%d)", rc);
-
-    rc = cosmos_runtime_builder_with_workload_id(b, 50);
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS, "workload_id=50 accepted (rc=%d)", rc);
-
-    rc = cosmos_runtime_builder_with_workload_id(b, 0);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_OPTION_VALUE,
-           "workload_id=0 rejected (rc=%d)", rc);
-
-    rc = cosmos_runtime_builder_with_workload_id(b, 51);
+    // 51 is one over the 1..=50 cap; 0 is the "unset" sentinel (not an error).
+    cosmos_runtime_options_t opts = cosmos_runtime_options_default();
+    opts.workload_id = 51;
+    int32_t rc = cosmos_runtime_build(&opts, &runtime, &err);
     ASSERT(rc == COSMOS_ERROR_CODE_INVALID_OPTION_VALUE,
            "workload_id=51 rejected (rc=%d)", rc);
-
-cleanup:
-    cosmos_runtime_builder_free(b);
+    ASSERT(runtime == NULL, "out_runtime untouched on invalid workload_id");
     return result;
 }
 
-static int test_string_setters_validation(void)
+static int test_string_field_validation(void)
 {
     int result = TEST_PASS;
-    cosmos_runtime_builder_t *b = cosmos_runtime_builder_new();
-    REQUIRE(b != NULL, "builder allocated");
+    cosmos_runtime_t *runtime = NULL;
+    cosmos_error_t *err = NULL;
 
-    int32_t rc;
-
-    rc = cosmos_runtime_builder_with_correlation_id(b, "aks-prod-eastus-001");
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS, "correlation_id accepted (rc=%d)", rc);
-
-    // 51 characters — one over the cap.
-    rc = cosmos_runtime_builder_with_correlation_id(
-        b, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+    // Correlation id: 51 chars — one over the cap.
+    cosmos_runtime_options_t opts = cosmos_runtime_options_default();
+    opts.correlation_id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+    int32_t rc = cosmos_runtime_build(&opts, &runtime, &err);
     ASSERT(rc == COSMOS_ERROR_CODE_INVALID_OPTION_VALUE,
            "correlation_id too-long rejected (rc=%d)", rc);
+    ASSERT(runtime == NULL, "out_runtime untouched on invalid correlation_id");
 
-    rc = cosmos_runtime_builder_with_correlation_id(b, "has space");
+    // Correlation id: invalid charset (space).
+    opts = cosmos_runtime_options_default();
+    opts.correlation_id = "has space";
+    rc = cosmos_runtime_build(&opts, &runtime, &err);
     ASSERT(rc == COSMOS_ERROR_CODE_INVALID_OPTION_VALUE,
            "correlation_id invalid charset rejected (rc=%d)", rc);
+    ASSERT(runtime == NULL, "out_runtime untouched on bad-charset correlation_id");
 
-    rc = cosmos_runtime_builder_with_correlation_id(b, NULL);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
-           "correlation_id NULL string rejected (rc=%d)", rc);
-
-    rc = cosmos_runtime_builder_with_user_agent_suffix(b, "myapp-westus2");
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS, "user_agent_suffix accepted (rc=%d)", rc);
-
-    // 26 characters — one over the cap.
-    rc = cosmos_runtime_builder_with_user_agent_suffix(b, "xxxxxxxxxxxxxxxxxxxxxxxxxx");
+    // User-agent suffix: 26 chars — one over the cap.
+    opts = cosmos_runtime_options_default();
+    opts.user_agent_suffix = "xxxxxxxxxxxxxxxxxxxxxxxxxx";
+    rc = cosmos_runtime_build(&opts, &runtime, &err);
     ASSERT(rc == COSMOS_ERROR_CODE_INVALID_OPTION_VALUE,
            "user_agent_suffix too-long rejected (rc=%d)", rc);
+    ASSERT(runtime == NULL, "out_runtime untouched on invalid user_agent_suffix");
 
-    rc = cosmos_runtime_builder_with_wrapping_sdk_identifier(b, "azsdk-rust-cosmos/0.34.0");
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS,
-           "wrapping_sdk_identifier accepted (rc=%d)", rc);
-
-cleanup:
-    cosmos_runtime_builder_free(b);
     return result;
 }
 
 static int test_cpu_refresh_interval_range(void)
 {
     int result = TEST_PASS;
-    cosmos_runtime_builder_t *b = cosmos_runtime_builder_new();
-    REQUIRE(b != NULL, "builder allocated");
+    cosmos_runtime_t *runtime = NULL;
+    cosmos_error_t *err = NULL;
 
-    int32_t rc;
-
-    rc = cosmos_runtime_builder_with_cpu_refresh_interval_ms(b, 1000);
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS, "1000 ms accepted (rc=%d)", rc);
-
-    rc = cosmos_runtime_builder_with_cpu_refresh_interval_ms(b, 60000);
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS, "60000 ms accepted (rc=%d)", rc);
-
-    rc = cosmos_runtime_builder_with_cpu_refresh_interval_ms(b, 999);
+    // 999 ms — one under the 1000..=60000 range.
+    cosmos_runtime_options_t opts = cosmos_runtime_options_default();
+    opts.cpu_refresh_interval_ms = 999;
+    int32_t rc = cosmos_runtime_build(&opts, &runtime, &err);
     ASSERT(rc == COSMOS_ERROR_CODE_INVALID_OPTION_VALUE,
            "999 ms rejected (rc=%d)", rc);
+    ASSERT(runtime == NULL, "out_runtime untouched on too-small interval");
 
-    rc = cosmos_runtime_builder_with_cpu_refresh_interval_ms(b, 60001);
+    // 60001 ms — one over the range.
+    opts = cosmos_runtime_options_default();
+    opts.cpu_refresh_interval_ms = 60001;
+    rc = cosmos_runtime_build(&opts, &runtime, &err);
     ASSERT(rc == COSMOS_ERROR_CODE_INVALID_OPTION_VALUE,
            "60001 ms rejected (rc=%d)", rc);
+    ASSERT(runtime == NULL, "out_runtime untouched on too-large interval");
 
-    rc = cosmos_runtime_builder_with_cpu_refresh_interval_ms(b, 0);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_OPTION_VALUE,
-           "0 ms rejected (rc=%d)", rc);
-
-cleanup:
-    cosmos_runtime_builder_free(b);
     return result;
 }
 
 static int test_build_happy_path(void)
 {
     int result = TEST_PASS;
-    cosmos_runtime_builder_t *b = cosmos_runtime_builder_new();
-    REQUIRE(b != NULL, "builder allocated");
-
-    int32_t rc = cosmos_runtime_builder_with_user_agent_suffix(b, "c-tests");
-    REQUIRE(rc == COSMOS_ERROR_CODE_SUCCESS,
-            "with_user_agent_suffix returned SUCCESS (rc=%d)", rc);
-
     cosmos_runtime_t *runtime = NULL;
     cosmos_error_t *err = NULL;
-    rc = cosmos_runtime_builder_build(b, &runtime, &err);
+
+    // Configure a couple of valid fields and build.
+    cosmos_runtime_options_t opts = cosmos_runtime_options_default();
+    opts.workload_id = 7;
+    opts.user_agent_suffix = "c-tests";
+    opts.cpu_refresh_interval_ms = 5000;
+
+    int32_t rc = cosmos_runtime_build(&opts, &runtime, &err);
     REQUIRE(rc == COSMOS_ERROR_CODE_SUCCESS,
-            "cosmos_runtime_builder_build returned SUCCESS (rc=%d)", rc);
+            "cosmos_runtime_build returned SUCCESS (rc=%d)", rc);
     REQUIRE(runtime != NULL, "build produced a non-NULL runtime");
     ASSERT(err == NULL, "no rich error returned on success");
-
-    // The builder is consumed by `_build`; do NOT free it.
 
     cosmos_completion_queue_t *cq = cosmos_completion_queue_create(runtime, NULL);
     REQUIRE(cq != NULL, "completion_queue_create(runtime) returned non-NULL");
@@ -183,48 +148,36 @@ static int test_build_happy_path(void)
            "queue starts in RUNNING state");
 
     cosmos_completion_queue_free(cq);
-    cosmos_runtime_free(runtime);
-    return result;
 
 cleanup:
-    /* `b` is only freed when `_build` was never called successfully. */
-    cosmos_runtime_builder_free(b);
+    cosmos_runtime_free(runtime);
     return result;
 }
 
-static int test_build_rejects_null_arguments(void)
+static int test_build_null_options_uses_defaults(void)
 {
     int result = TEST_PASS;
     cosmos_runtime_t *runtime = NULL;
     cosmos_error_t *err = NULL;
 
-    /* NULL builder is rejected without writing the out-slots. */
-    int32_t rc = cosmos_runtime_builder_build(NULL, &runtime, &err);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
-           "NULL builder rejected (rc=%d)", rc);
-    ASSERT(runtime == NULL, "out_runtime untouched on NULL-builder failure");
-    ASSERT(err == NULL, "out_error untouched on NULL-builder failure");
-
-    /* NULL out_runtime is rejected (the builder is consumed regardless). */
-    cosmos_runtime_builder_t *b = cosmos_runtime_builder_new();
-    REQUIRE(b != NULL, "builder allocated");
-    rc = cosmos_runtime_builder_build(b, NULL, &err);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
-           "NULL out_runtime rejected (rc=%d)", rc);
-    ASSERT(err == NULL, "out_error untouched when out_runtime is NULL");
-    /* Do NOT free `b` — it has been consumed. */
-    return result;
+    // A NULL options pointer means "all driver defaults".
+    int32_t rc = cosmos_runtime_build(NULL, &runtime, &err);
+    REQUIRE(rc == COSMOS_ERROR_CODE_SUCCESS,
+            "build(NULL options) returned SUCCESS (rc=%d)", rc);
+    REQUIRE(runtime != NULL, "build produced a non-NULL runtime");
+    ASSERT(err == NULL, "no rich error returned on success");
 
 cleanup:
+    cosmos_runtime_free(runtime);
     return result;
 }
 
-TEST_SUITE_BEGIN("Runtime Builder Lifecycle")
-TEST_REGISTER(builder_lifecycle_null_safe)
-TEST_REGISTER(builder_setters_reject_null)
+TEST_SUITE_BEGIN("Runtime Construction & Lifecycle")
+TEST_REGISTER(options_default_all_unset)
+TEST_REGISTER(build_rejects_null_out_runtime)
 TEST_REGISTER(workload_id_range_validation)
-TEST_REGISTER(string_setters_validation)
+TEST_REGISTER(string_field_validation)
 TEST_REGISTER(cpu_refresh_interval_range)
 TEST_REGISTER(build_happy_path)
-TEST_REGISTER(build_rejects_null_arguments)
-TEST_SUITE_END("Runtime Builder Lifecycle")
+TEST_REGISTER(build_null_options_uses_defaults)
+TEST_SUITE_END("Runtime Construction & Lifecycle")

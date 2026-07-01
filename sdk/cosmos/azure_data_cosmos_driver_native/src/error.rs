@@ -167,7 +167,7 @@ pub enum CosmosErrorCode {
     /// A builder setter was passed a value outside the documented range.
     CosmosErrorCodeInvalidOptionValue = 4014,
 
-    /// `cosmos_runtime_builder_build` could not construct the underlying
+    /// `cosmos_runtime_build` could not construct the underlying
     /// `CosmosDriverRuntime`.
     CosmosErrorCodeRuntimeBuildFailed = 4015,
 

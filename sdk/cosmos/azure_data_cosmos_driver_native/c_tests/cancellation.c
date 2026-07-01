@@ -91,19 +91,15 @@ static int make_runtime_and_cq(cosmos_runtime_t **out_runtime,
     *out_runtime = NULL;
     *out_cq = NULL;
 
-    cosmos_runtime_builder_t *b = cosmos_runtime_builder_new();
-    if (b == NULL) {
-        return 1;
-    }
     // Best-effort identifier; failure here is non-fatal to the test intent.
-    (void)cosmos_runtime_builder_with_user_agent_suffix(b, "cancel-c-tests");
+    cosmos_runtime_options_t opts = cosmos_runtime_options_default();
+    opts.user_agent_suffix = "cancel-c-tests";
 
     cosmos_runtime_t *runtime = NULL;
     cosmos_error_t *err = NULL;
-    int32_t rc = cosmos_runtime_builder_build(b, &runtime, &err);
+    int32_t rc = cosmos_runtime_build(&opts, &runtime, &err);
     if (rc != COSMOS_ERROR_CODE_SUCCESS || runtime == NULL) {
         cosmos_error_free(err);
-        // The builder is consumed by `_build` regardless of outcome.
         return 1;
     }
 

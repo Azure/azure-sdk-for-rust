@@ -1,30 +1,43 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// Partition-key builder & accessors.
+// Partition-key construction & accessors.
 //
 // Covers the C surface of every partition-key entry point:
 //
-//   1. Lifecycle & NULL-safety on every `_free`.
-//   2. Each value kind (`_add_string`, `_add_number`, `_add_bool`,
-//      `_add_null`, `_add_undefined`) accepted in a hierarchical
-//      (3-component) build.
+//   1. Lifecycle & NULL-safety on `_free`.
+//   2. Each value kind (string, number, bool, null, undefined) assembled in a
+//      flat `cosmos_partition_key_component_t[]` array and built in one call
+//      via `cosmos_partition_key_create`.
 //   3. Single-component build and `_component_count` round-trip.
-//   4. Empty-build rejection (`INVALID_PARTITION_KEY`).
-//   5. 4th-component rejection (`INVALID_OPTION_VALUE`).
-//   6. `_add_number` rejects NaN / ±Infinity.
-//   7. `cosmos_partition_key_empty` reports `is_empty == true` and
+//   4. Empty-array rejection (`INVALID_PARTITION_KEY`).
+//   5. Over-cap (4-component) rejection (`INVALID_PARTITION_KEY`).
+//   6. Non-finite number rejection (`INVALID_OPTION_VALUE`).
+//   7. NULL string-value rejection (`INVALID_ARGUMENT`).
+//   8. NULL `out_pk` rejection (`INVALID_ARGUMENT`).
+//   9. `cosmos_partition_key_empty` reports `is_empty == true` and
 //      `component_count == 0`.
-//   8. Clone round-trip + NULL handling.
+//
+// The per-component incremental builder was removed in P5; construction is now
+// a single `cosmos_partition_key_create(components, len, &out)` call using the
+// same tagged-union component array the operation request accepts inline.
 
 #include <math.h>
 
 #include "test_common.h"
 
+// Convenience: a component of a given kind with default value fields.
+static cosmos_partition_key_component_t pk_component(
+    cosmos_partition_key_component_kind_t kind)
+{
+    cosmos_partition_key_component_t c = {0};
+    c.kind = kind;
+    return c;
+}
+
 static int test_lifecycle_null_safe(void)
 {
     int result = TEST_PASS;
-    cosmos_partition_key_builder_free(NULL);
     cosmos_partition_key_free(NULL);
     ASSERT(1, "_free entry points NULL-safe");
     return result;
@@ -58,19 +71,15 @@ static int test_accessors_handle_null(void)
 static int test_single_string_component(void)
 {
     int result = TEST_PASS;
-    cosmos_partition_key_builder_t *b = cosmos_partition_key_builder_new();
-    REQUIRE(b != NULL, "builder allocated");
-
-    int32_t rc = cosmos_partition_key_builder_add_string(b, "tenant-42");
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS,
-           "add_string accepted (rc=%d)", rc);
+    cosmos_partition_key_component_t comps[1];
+    comps[0] = pk_component(COSMOS_PARTITION_KEY_COMPONENT_KIND_STRING);
+    comps[0].string_value = "tenant-42";
 
     cosmos_partition_key_t *pk = NULL;
-    rc = cosmos_partition_key_builder_build(b, &pk);
-    /* Builder is consumed regardless. */
+    int32_t rc = cosmos_partition_key_create(comps, 1, &pk);
     ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS,
-           "build returned SUCCESS (rc=%d)", rc);
-    REQUIRE(pk != NULL, "build produced a non-NULL handle");
+           "create returned SUCCESS (rc=%d)", rc);
+    REQUIRE(pk != NULL, "create produced a non-NULL handle");
     ASSERT(cosmos_partition_key_component_count(pk) == 1,
            "pk has 1 component");
     ASSERT(!cosmos_partition_key_is_empty(pk),
@@ -84,19 +93,17 @@ cleanup:
 static int test_hierarchical_all_value_kinds(void)
 {
     int result = TEST_PASS;
-    cosmos_partition_key_builder_t *b = cosmos_partition_key_builder_new();
-    REQUIRE(b != NULL, "builder allocated");
-
-    int32_t rc = cosmos_partition_key_builder_add_string(b, "region-1");
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS, "add_string ok (rc=%d)", rc);
-    rc = cosmos_partition_key_builder_add_number(b, 42.0);
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS, "add_number ok (rc=%d)", rc);
-    rc = cosmos_partition_key_builder_add_bool(b, true);
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS, "add_bool ok (rc=%d)", rc);
+    cosmos_partition_key_component_t comps[3];
+    comps[0] = pk_component(COSMOS_PARTITION_KEY_COMPONENT_KIND_STRING);
+    comps[0].string_value = "region-1";
+    comps[1] = pk_component(COSMOS_PARTITION_KEY_COMPONENT_KIND_NUMBER);
+    comps[1].number_value = 42.0;
+    comps[2] = pk_component(COSMOS_PARTITION_KEY_COMPONENT_KIND_BOOL);
+    comps[2].bool_value = 1;
 
     cosmos_partition_key_t *pk = NULL;
-    rc = cosmos_partition_key_builder_build(b, &pk);
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS, "build ok (rc=%d)", rc);
+    int32_t rc = cosmos_partition_key_create(comps, 3, &pk);
+    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS, "create ok (rc=%d)", rc);
     ASSERT(cosmos_partition_key_component_count(pk) == 3,
            "3-component hierarchical key");
 
@@ -108,18 +115,13 @@ cleanup:
 static int test_null_and_undefined_components(void)
 {
     int result = TEST_PASS;
-    cosmos_partition_key_builder_t *b = cosmos_partition_key_builder_new();
-    REQUIRE(b != NULL, "builder allocated");
-
-    int32_t rc = cosmos_partition_key_builder_add_null(b);
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS, "add_null ok (rc=%d)", rc);
-    rc = cosmos_partition_key_builder_add_undefined(b);
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS,
-           "add_undefined ok (rc=%d)", rc);
+    cosmos_partition_key_component_t comps[2];
+    comps[0] = pk_component(COSMOS_PARTITION_KEY_COMPONENT_KIND_NULL);
+    comps[1] = pk_component(COSMOS_PARTITION_KEY_COMPONENT_KIND_UNDEFINED);
 
     cosmos_partition_key_t *pk = NULL;
-    rc = cosmos_partition_key_builder_build(b, &pk);
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS, "build ok (rc=%d)", rc);
+    int32_t rc = cosmos_partition_key_create(comps, 2, &pk);
+    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS, "create ok (rc=%d)", rc);
     ASSERT(cosmos_partition_key_component_count(pk) == 2,
            "(null, undefined) is a 2-component key, not EMPTY");
 
@@ -128,166 +130,95 @@ cleanup:
     return result;
 }
 
-static int test_empty_build_rejected(void)
+static int test_empty_create_rejected(void)
 {
     int result = TEST_PASS;
-    cosmos_partition_key_builder_t *b = cosmos_partition_key_builder_new();
-    REQUIRE(b != NULL, "builder allocated");
-
     cosmos_partition_key_t *pk = NULL;
-    int32_t rc = cosmos_partition_key_builder_build(b, &pk);
-    /* Builder is consumed regardless of success. */
+    // NULL array / zero length is rejected (use cosmos_partition_key_empty
+    // for the deliberate cross-partition key).
+    int32_t rc = cosmos_partition_key_create(NULL, 0, &pk);
     ASSERT(rc == COSMOS_ERROR_CODE_INVALID_PARTITION_KEY,
-           "empty build rejected (rc=%d)", rc);
-    ASSERT(pk == NULL, "no handle on empty-build failure");
-
-cleanup:
+           "empty create rejected (rc=%d)", rc);
+    ASSERT(pk == NULL, "no handle on empty-create failure");
     return result;
 }
 
-static int test_fourth_component_rejected(void)
+static int test_over_cap_rejected(void)
 {
     int result = TEST_PASS;
-    cosmos_partition_key_builder_t *b = cosmos_partition_key_builder_new();
-    REQUIRE(b != NULL, "builder allocated");
-
-    int32_t rc;
-    rc = cosmos_partition_key_builder_add_string(b, "a");
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS, "1st component ok");
-    rc = cosmos_partition_key_builder_add_string(b, "b");
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS, "2nd component ok");
-    rc = cosmos_partition_key_builder_add_string(b, "c");
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS, "3rd component ok");
-
-    /* All five kinds must reject the 4th append. */
-    rc = cosmos_partition_key_builder_add_string(b, "d");
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_OPTION_VALUE,
-           "4th string rejected (rc=%d)", rc);
-    rc = cosmos_partition_key_builder_add_number(b, 1.0);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_OPTION_VALUE,
-           "4th number rejected (rc=%d)", rc);
-    rc = cosmos_partition_key_builder_add_bool(b, true);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_OPTION_VALUE,
-           "4th bool rejected (rc=%d)", rc);
-    rc = cosmos_partition_key_builder_add_null(b);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_OPTION_VALUE,
-           "4th null rejected (rc=%d)", rc);
-    rc = cosmos_partition_key_builder_add_undefined(b);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_OPTION_VALUE,
-           "4th undefined rejected (rc=%d)", rc);
-
-    /* Build still works with the 3 accepted components. */
+    // Four components exceed the 3-level hierarchical cap.
+    cosmos_partition_key_component_t comps[4];
+    for (int i = 0; i < 4; i++) {
+        comps[i] = pk_component(COSMOS_PARTITION_KEY_COMPONENT_KIND_NULL);
+    }
     cosmos_partition_key_t *pk = NULL;
-    rc = cosmos_partition_key_builder_build(b, &pk);
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS, "build ok");
-    ASSERT(cosmos_partition_key_component_count(pk) == 3,
-           "3 components preserved after rejected appends");
-
-cleanup:
-    cosmos_partition_key_free(pk);
+    int32_t rc = cosmos_partition_key_create(comps, 4, &pk);
+    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_PARTITION_KEY,
+           "4-component create rejected (rc=%d)", rc);
+    ASSERT(pk == NULL, "no handle on over-cap failure");
     return result;
 }
 
 static int test_number_rejects_non_finite(void)
 {
     int result = TEST_PASS;
-    cosmos_partition_key_builder_t *b = cosmos_partition_key_builder_new();
-    REQUIRE(b != NULL, "builder allocated");
-
-    int32_t rc = cosmos_partition_key_builder_add_number(b, NAN);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_OPTION_VALUE,
-           "NaN rejected (rc=%d)", rc);
-    rc = cosmos_partition_key_builder_add_number(b, INFINITY);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_OPTION_VALUE,
-           "+Inf rejected (rc=%d)", rc);
-    rc = cosmos_partition_key_builder_add_number(b, -INFINITY);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_OPTION_VALUE,
-           "-Inf rejected (rc=%d)", rc);
-
-    /* Builder is unmodified — build with no successful appends is
-     * rejected as empty. */
     cosmos_partition_key_t *pk = NULL;
-    rc = cosmos_partition_key_builder_build(b, &pk);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_PARTITION_KEY,
-           "builder still empty after rejected non-finite appends");
 
-cleanup:
+    cosmos_partition_key_component_t comps[1];
+    comps[0] = pk_component(COSMOS_PARTITION_KEY_COMPONENT_KIND_NUMBER);
+
+    comps[0].number_value = NAN;
+    int32_t rc = cosmos_partition_key_create(comps, 1, &pk);
+    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_OPTION_VALUE, "NaN rejected (rc=%d)", rc);
+    ASSERT(pk == NULL, "no handle on NaN");
+
+    comps[0].number_value = INFINITY;
+    rc = cosmos_partition_key_create(comps, 1, &pk);
+    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_OPTION_VALUE, "+Inf rejected (rc=%d)", rc);
+
+    comps[0].number_value = -INFINITY;
+    rc = cosmos_partition_key_create(comps, 1, &pk);
+    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_OPTION_VALUE, "-Inf rejected (rc=%d)", rc);
+
     return result;
 }
 
-static int test_setters_reject_null_builder(void)
+static int test_string_null_value_rejected(void)
 {
     int result = TEST_PASS;
-    int32_t rc;
-    rc = cosmos_partition_key_builder_add_string(NULL, "x");
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
-           "add_string(NULL,...) rejected");
-    rc = cosmos_partition_key_builder_add_number(NULL, 1.0);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
-           "add_number(NULL,...) rejected");
-    rc = cosmos_partition_key_builder_add_bool(NULL, true);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
-           "add_bool(NULL,...) rejected");
-    rc = cosmos_partition_key_builder_add_null(NULL);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
-           "add_null(NULL) rejected");
-    rc = cosmos_partition_key_builder_add_undefined(NULL);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
-           "add_undefined(NULL) rejected");
-    return result;
-}
+    cosmos_partition_key_component_t comps[1];
+    comps[0] = pk_component(COSMOS_PARTITION_KEY_COMPONENT_KIND_STRING);
+    comps[0].string_value = NULL;
 
-static int test_add_string_rejects_null_value(void)
-{
-    int result = TEST_PASS;
-    cosmos_partition_key_builder_t *b = cosmos_partition_key_builder_new();
-    REQUIRE(b != NULL, "builder allocated");
-
-    int32_t rc = cosmos_partition_key_builder_add_string(b, NULL);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
-           "add_string(b, NULL) rejected (rc=%d)", rc);
-
-    cosmos_partition_key_builder_free(b);
-    return result;
-
-cleanup:
-    cosmos_partition_key_builder_free(b);
-    return result;
-}
-
-static int test_build_rejects_null_arguments(void)
-{
-    int result = TEST_PASS;
     cosmos_partition_key_t *pk = NULL;
-    int32_t rc = cosmos_partition_key_builder_build(NULL, &pk);
+    int32_t rc = cosmos_partition_key_create(comps, 1, &pk);
     ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
-           "build(NULL, ...) rejected (rc=%d)", rc);
-    ASSERT(pk == NULL, "out_pk untouched");
-
-    cosmos_partition_key_builder_t *b = cosmos_partition_key_builder_new();
-    REQUIRE(b != NULL, "builder allocated");
-    rc = cosmos_partition_key_builder_add_string(b, "x");
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS, "add ok");
-    rc = cosmos_partition_key_builder_build(b, NULL);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
-           "build(b, NULL) rejected (rc=%d)", rc);
-    /* `b` has been consumed; do NOT free. */
-
-cleanup:
+           "string component with NULL value rejected (rc=%d)", rc);
+    ASSERT(pk == NULL, "no handle on NULL string value");
     return result;
 }
 
-TEST_SUITE_BEGIN("Partition Key Builder")
+static int test_create_rejects_null_out(void)
+{
+    int result = TEST_PASS;
+    cosmos_partition_key_component_t comps[1];
+    comps[0] = pk_component(COSMOS_PARTITION_KEY_COMPONENT_KIND_NULL);
+    int32_t rc = cosmos_partition_key_create(comps, 1, NULL);
+    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
+           "create(comps, 1, NULL) rejected (rc=%d)", rc);
+    return result;
+}
+
+TEST_SUITE_BEGIN("Partition Key Construction")
 TEST_REGISTER(lifecycle_null_safe)
 TEST_REGISTER(empty_pk_accessor_roundtrip)
 TEST_REGISTER(accessors_handle_null)
 TEST_REGISTER(single_string_component)
 TEST_REGISTER(hierarchical_all_value_kinds)
 TEST_REGISTER(null_and_undefined_components)
-TEST_REGISTER(empty_build_rejected)
-TEST_REGISTER(fourth_component_rejected)
+TEST_REGISTER(empty_create_rejected)
+TEST_REGISTER(over_cap_rejected)
 TEST_REGISTER(number_rejects_non_finite)
-TEST_REGISTER(setters_reject_null_builder)
-TEST_REGISTER(add_string_rejects_null_value)
-TEST_REGISTER(build_rejects_null_arguments)
-TEST_SUITE_END("Partition Key Builder")
+TEST_REGISTER(string_null_value_rejected)
+TEST_REGISTER(create_rejects_null_out)
+TEST_SUITE_END("Partition Key Construction")

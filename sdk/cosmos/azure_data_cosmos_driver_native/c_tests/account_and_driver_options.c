@@ -10,8 +10,8 @@
 //   2. Validation paths on `cosmos_account_ref_with_master_key` (NULL
 //      args + invalid endpoint URL).
 //   3. `cosmos_database_ref_create` happy path + NULL-arg rejection.
-//   4. `cosmos_driver_options_builder_*` happy path + preferred-regions
-//      round-trip + NULL-arg rejection + build idempotence.
+//   4. `cosmos_driver_options_build` (flat) happy path + preferred-regions
+//      round-trip + NULL-arg rejection.
 //
 // `cosmos_driver_get_or_create_blocking` is not exercised here because
 // it touches the network. The emulator-backed scenario (stand up a driver,
@@ -27,7 +27,6 @@ static int test_lifecycle_null_safe(void) {
     int result = TEST_PASS;
     cosmos_account_ref_free(NULL);
     cosmos_database_ref_free(NULL);
-    cosmos_driver_options_builder_free(NULL);
     cosmos_driver_options_free(NULL);
     cosmos_driver_free(NULL);
     ASSERT(1, "all _free entry points NULL-safe");
@@ -141,7 +140,7 @@ cleanup:
     return result;
 }
 
-static int test_driver_options_builder_happy_path(void) {
+static int test_driver_options_build_happy_path(void) {
     int result = TEST_PASS;
     cosmos_account_ref_t *account = NULL;
     cosmos_error_t *err = NULL;
@@ -149,94 +148,76 @@ static int test_driver_options_builder_happy_path(void) {
         "https://x.documents.azure.com:443/", "k", &account, &err);
     REQUIRE(account != NULL, "account allocated");
 
-    cosmos_driver_options_builder_t *b = cosmos_driver_options_builder_new(account);
-    REQUIRE(b != NULL, "builder allocated");
-
     const char *regions[] = {"East US", "West US 3"};
-    int32_t rc = cosmos_driver_options_builder_with_preferred_regions(b, regions, 2);
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS,
-           "with_preferred_regions accepted (rc=%d)", rc);
+    cosmos_driver_options_config_t cfg = cosmos_driver_options_config_default();
+    cfg.preferred_regions = regions;
+    cfg.preferred_regions_len = 2;
 
     cosmos_driver_options_t *opts = NULL;
-    rc = cosmos_driver_options_builder_build(b, &opts);
+    int32_t rc = cosmos_driver_options_build(account, &cfg, &opts);
     ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS,
            "build returned SUCCESS (rc=%d)", rc);
     ASSERT(opts != NULL, "build produced a non-NULL handle");
 
-    // Builder is consumed; do NOT free.
     cosmos_driver_options_free(opts);
-    cosmos_account_ref_free(account);
-    return result;
-
 cleanup:
-    cosmos_driver_options_builder_free(b);
     cosmos_account_ref_free(account);
     return result;
 }
 
-static int test_driver_options_builder_zero_regions(void) {
+static int test_driver_options_build_null_config(void) {
     int result = TEST_PASS;
     cosmos_account_ref_t *account = NULL;
     cosmos_error_t *err = NULL;
     cosmos_account_ref_with_master_key(
         "https://x.documents.azure.com:443/", "k", &account, &err);
+    REQUIRE(account != NULL, "account allocated");
 
-    cosmos_driver_options_builder_t *b = cosmos_driver_options_builder_new(account);
-
-    // NULL ptr with len=0 is accepted (clears the list).
-    int32_t rc = cosmos_driver_options_builder_with_preferred_regions(b, NULL, 0);
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS,
-           "len=0 with NULL ptr accepted (rc=%d)", rc);
-
+    // A NULL config means "no preferred regions, default operation options".
     cosmos_driver_options_t *opts = NULL;
-    rc = cosmos_driver_options_builder_build(b, &opts);
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS, "build still works");
+    int32_t rc = cosmos_driver_options_build(account, NULL, &opts);
+    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS, "build(NULL config) works (rc=%d)", rc);
+    ASSERT(opts != NULL, "build produced a non-NULL handle");
 
     cosmos_driver_options_free(opts);
+cleanup:
     cosmos_account_ref_free(account);
     return result;
 }
 
-static int test_driver_options_builder_rejects_nulls(void) {
+static int test_driver_options_build_rejects_nulls(void) {
     int result = TEST_PASS;
     cosmos_account_ref_t *account = NULL;
     cosmos_error_t *err = NULL;
     cosmos_account_ref_with_master_key(
         "https://x.documents.azure.com:443/", "k", &account, &err);
+    REQUIRE(account != NULL, "account allocated");
 
-    cosmos_driver_options_builder_t *b = cosmos_driver_options_builder_new(account);
-    REQUIRE(b != NULL, "builder allocated");
+    cosmos_driver_options_config_t cfg = cosmos_driver_options_config_default();
+    cosmos_driver_options_t *opts = NULL;
 
-    // NULL builder.
-    int32_t rc = cosmos_driver_options_builder_with_preferred_regions(NULL, NULL, 0);
+    // NULL account.
+    int32_t rc = cosmos_driver_options_build(NULL, &cfg, &opts);
     ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
-           "NULL builder rejected (rc=%d)", rc);
+           "NULL account rejected (rc=%d)", rc);
+    ASSERT(opts == NULL, "out_options untouched on NULL account");
 
-    // NULL ptr with non-zero len.
-    rc = cosmos_driver_options_builder_with_preferred_regions(b, NULL, 1);
+    // NULL out_options.
+    rc = cosmos_driver_options_build(account, &cfg, NULL);
     ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
-           "NULL ptr with len=1 rejected (rc=%d)", rc);
+           "NULL out_options rejected (rc=%d)", rc);
 
-    // NULL entry within the array.
+    // NULL entry within the regions array.
     const char *bad_regions[] = {NULL};
-    rc = cosmos_driver_options_builder_with_preferred_regions(b, bad_regions, 1);
+    cfg.preferred_regions = bad_regions;
+    cfg.preferred_regions_len = 1;
+    rc = cosmos_driver_options_build(account, &cfg, &opts);
     ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
-           "NULL entry rejected (rc=%d)", rc);
-
-    cosmos_driver_options_builder_free(b);
-    cosmos_account_ref_free(account);
-    return result;
+           "NULL region entry rejected (rc=%d)", rc);
+    ASSERT(opts == NULL, "out_options untouched on NULL region entry");
 
 cleanup:
-    cosmos_driver_options_builder_free(b);
     cosmos_account_ref_free(account);
-    return result;
-}
-
-static int test_driver_options_builder_new_rejects_null_account(void) {
-    int result = TEST_PASS;
-    cosmos_driver_options_builder_t *b = cosmos_driver_options_builder_new(NULL);
-    ASSERT(b == NULL, "builder_new(NULL) returns NULL");
     return result;
 }
 
@@ -247,8 +228,7 @@ TEST_REGISTER(account_ref_rejects_null_arguments)
 TEST_REGISTER(account_ref_rejects_invalid_endpoint)
 TEST_REGISTER(database_ref_create_happy_path)
 TEST_REGISTER(database_ref_rejects_null_arguments)
-TEST_REGISTER(driver_options_builder_happy_path)
-TEST_REGISTER(driver_options_builder_zero_regions)
-TEST_REGISTER(driver_options_builder_rejects_nulls)
-TEST_REGISTER(driver_options_builder_new_rejects_null_account)
+TEST_REGISTER(driver_options_build_happy_path)
+TEST_REGISTER(driver_options_build_null_config)
+TEST_REGISTER(driver_options_build_rejects_nulls)
 TEST_SUITE_END("Account / Database / Driver Options Lifecycle")

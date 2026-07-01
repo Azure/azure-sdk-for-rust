@@ -9,7 +9,7 @@
 //! account-metadata cache stay alive for the lifetime of the handle).
 //!
 //! The runtime pairs the wrapper-side Tokio runtime with the driver runtime
-//! and exposes the public `cosmos_runtime_builder_*` surface (see
+//! and is built through the public `cosmos_runtime_build` surface (see
 //! [`crate::runtime_builder`]).
 //!
 //! The runtime is **opaque** at the FFI boundary — consumers get a
@@ -29,7 +29,7 @@ use crate::runtime_builder::RuntimeBuildError;
 /// handle's lifetime. Construction always goes through
 /// `RuntimeContext::new_default` (test path) or
 /// `RuntimeContext::new_with_builder` (production path called from the public
-/// `cosmos_runtime_builder_build`).
+/// `cosmos_runtime_build`).
 ///
 /// - `tokio` — the wrapper-side multi-threaded Tokio runtime. Used to
 ///   `block_on(...)` driver builder construction at FFI-call time and to
@@ -65,7 +65,7 @@ impl RuntimeContext {
     ///
     /// Used by the internal tests via
     /// [`__test_only_create_default_runtime`]; production callers go
-    /// through `cosmos_runtime_builder_build`.
+    /// through `cosmos_runtime_build`.
     pub(crate) fn new_default() -> Result<*mut Self, RuntimeBuildError> {
         Self::new_with_builder(CosmosDriverRuntimeBuilder::new())
     }
@@ -174,7 +174,7 @@ pub extern "C" fn cosmos_runtime_free(runtime: *mut RuntimeContext) {
 /// Test-only: construct a default `cosmos_runtime_t` and return a raw pointer.
 ///
 /// Visible only to the workspace's own tests; not exported as `#[no_mangle]`.
-/// Production callers should prefer the public `cosmos_runtime_builder_*`
+/// Production callers should prefer the public `cosmos_runtime_build`
 /// surface; this helper exists so the receive-loop tests do not
 /// have to thread a builder through every test setup.
 #[doc(hidden)]
