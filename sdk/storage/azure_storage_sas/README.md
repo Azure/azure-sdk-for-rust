@@ -30,9 +30,11 @@ Use `SasBuilder` to construct a user delegation SAS token, then set it as the qu
 Produce the signed SAS token and set it as the query on a blob URL. Use the resulting URL with an unauthenticated `BlobClient::new` to grant a caller time-bound read access:
 
 ```rust ignore read_blob_sas
-use azure_core::http::Url;
+use azure_core::{
+    http::Url,
+    time::{Duration, OffsetDateTime},
+};
 use azure_storage_sas::SasBuilder;
-use time::OffsetDateTime;
 
 let storage_account_name = "myaccount";
 let container_name = "images";
@@ -41,17 +43,19 @@ let blob_name = "photo.jpg";
 let token = SasBuilder::new(
         storage_account_name,
         &udk,
-        OffsetDateTime::now_utc() + time::Duration::hours(1),
+        OffsetDateTime::now_utc() + Duration::hours(1),
     )?
     .blob(container_name, blob_name)
     .read()
     .content_type("image/jpeg")
     .build();
 
-// For a blob URL that already has a query (e.g. version/snapshot), use `&{token}` instead.
-let sas_url = Url::parse(&format!(
-    "https://{storage_account_name}.blob.core.windows.net/{container_name}/{blob_name}?{token}"
+// `set_query` overwrites any existing query; if the URL already has one
+// (e.g. version/snapshot), the token must be appended instead.
+let mut sas_url = Url::parse(&format!(
+    "https://{storage_account_name}.blob.core.windows.net/{container_name}/{blob_name}"
 ))?;
+sas_url.set_query(Some(&token));
 ```
 
 ### Scope a container SAS to HTTPS and a single IP range
