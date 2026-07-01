@@ -93,16 +93,21 @@ fn generate_c_header() {
             "OperationOptionsBuilderHandle".into(),
             "operation_options_builder_t".into(),
         ),
-        ("CosmosResponse".into(), "response_t".into()),
-        ("ResponseHandle".into(), "response_t".into()),
         ("FeedRange".into(), "feed_range_t".into()),
         ("FeedRangeHandle".into(), "feed_range_t".into()),
         ("DiagnosticsContext".into(), "diagnostics_t".into()),
-        ("CompletionQueue".into(), "cq_t".into()),
-        ("CompletionQueueInner".into(), "cq_inner_t".into()),
+        ("CompletionQueue".into(), "completion_queue_t".into()),
+        (
+            "CompletionQueueInner".into(),
+            "completion_queue_inner_t".into(),
+        ),
         ("OperationHandle".into(), "operation_handle_t".into()),
         ("OperationInner".into(), "operation_inner_t".into()),
-        ("Completion".into(), "completion_t".into()),
+        ("CosmosCompletion".into(), "completion_t".into()),
+        (
+            "CosmosCompletionBacking".into(),
+            "completion_backing_t".into(),
+        ),
         ("CosmosError".into(), "error_t".into()),
         ("CosmosErrorHandle".into(), "error_t".into()),
         // Wrapper-defined types whose Rust names don't follow the spec's C name.
@@ -117,8 +122,6 @@ fn generate_c_header() {
             "CosmosPartitionKeyComponentKind".into(),
             "partition_key_component_kind_t".into(),
         ),
-        ("CosmosResponseView".into(), "response_view_t".into()),
-        ("CosmosCompletionView".into(), "completion_view_t".into()),
         ("CosmosResponseHeader".into(), "response_header_t".into()),
         (
             "CosmosOperationOptions".into(),
@@ -134,11 +137,17 @@ fn generate_c_header() {
             "driver_options_config_t".into(),
         ),
         // Enums / option structs. Variant prefixes are baked into
-        // the Rust variant names (e.g. `CqStateRunning`,
+        // the Rust variant names (e.g. `CompletionQueueStateRunning`,
         // `CompletionOutcomeOk`) so the `ScreamingSnakeCase` enum rule
-        // produces the spec-mandated `COSMOS_CQ_STATE_RUNNING` etc.
-        ("CosmosCqState".into(), "cq_state_t".into()),
-        ("CosmosCqOptions".into(), "cq_options_t".into()),
+        // produces the spec-mandated `COSMOS_COMPLETION_QUEUE_STATE_RUNNING` etc.
+        (
+            "CosmosCompletionQueueState".into(),
+            "completion_queue_state_t".into(),
+        ),
+        (
+            "CosmosCompletionQueueOptions".into(),
+            "completion_queue_options_t".into(),
+        ),
         (
             "CosmosCompletionOutcome".into(),
             "completion_outcome_t".into(),

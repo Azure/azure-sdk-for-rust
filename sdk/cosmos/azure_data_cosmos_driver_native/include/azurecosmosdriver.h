@@ -14,37 +14,6 @@
 #define AZURECOSMOSDRIVER_H_VERSION "0.1.0"
 
 /**
- * Per spec section 3.1.3, the three queue-lifecycle states.
- */
-enum cosmos_cq_state_t
-#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
-  : int32_t
-#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
- {
-  /**
-   * Submits and waits both succeed.
-   */
-  COSMOS_CQ_STATE_RUNNING = 0,
-  /**
-   * `cosmos_cq_shutdown` has been called; submits fail pre-flight; pending
-   * completions can still be drained via `_wait` until empty.
-   */
-  COSMOS_CQ_STATE_SHUTDOWN = 1,
-  /**
-   * Shutdown + queue empty + no in-flight ops. Safe to `_free` without
-   * blocking.
-   */
-  COSMOS_CQ_STATE_DRAINED = 2,
-};
-#ifndef __cplusplus
-#if __STDC_VERSION__ >= 202311L
-typedef enum cosmos_cq_state_t cosmos_cq_state_t;
-#else
-typedef int32_t cosmos_cq_state_t;
-#endif // __STDC_VERSION__ >= 202311L
-#endif // __cplusplus
-
-/**
  * Per spec section 3.6.1, every completion has exactly one of these outcomes.
  *
  * `CosmosCompletionOutcomeUnknown` is a forward-compat sentinel — older C clients
@@ -57,18 +26,19 @@ enum cosmos_completion_outcome_t
 #endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   /**
-   * The operation completed successfully; `cosmos_completion_take_response`
-   * returns the populated `cosmos_response_t`.
+   * The operation completed successfully; the completion's response fields
+   * (status, headers, body, …) are populated.
    */
   COSMOS_COMPLETION_OUTCOME_OK = 0,
   /**
-   * The operation failed; `cosmos_completion_take_error` returns the rich
-   * `cosmos_error_t` (when `include_error_details` is on for the queue).
+   * The operation failed; the completion's inline error fields (status,
+   * message, …) are populated (message/detail only when the queue opted in
+   * via `include_error_details`).
    */
   COSMOS_COMPLETION_OUTCOME_ERROR = 1,
   /**
    * The operation was cancelled via [`cosmos_operation_handle_cancel`] or
-   * [`cosmos_cq_shutdown`].
+   * [`cosmos_completion_queue_shutdown`].
    */
   COSMOS_COMPLETION_OUTCOME_CANCELLED = 2,
   /**
@@ -207,7 +177,9 @@ enum cosmos_error_code_t
    */
   COSMOS_ERROR_CODE_OPERATION_CONSUMED = 4005,
   /**
-   * `cosmos_response_into_*` called twice on the same response.
+   * Reserved. Formerly signalled a response handle consumed twice; the
+   * response is now delivered inline on the completion, so this code is no
+   * longer produced but its numeric slot is retained for ABI stability.
    */
   COSMOS_ERROR_CODE_RESPONSE_CONSUMED = 4006,
   /**
@@ -228,18 +200,19 @@ enum cosmos_error_code_t
    */
   COSMOS_ERROR_CODE_INVALID_HEADER = 4010,
   /**
-   * A submit targeted a `cosmos_cq_t` that had already been shut down via
-   * `cosmos_cq_shutdown`. Pre-flight rejection — no completion is posted.
+   * A submit targeted a `cosmos_completion_queue_t` that had already been
+   * shut down via
+   * `cosmos_completion_queue_shutdown`. Pre-flight rejection — no completion is posted.
    */
   COSMOS_ERROR_CODE_QUEUE_SHUTDOWN = 4011,
   /**
-   * Surfaced via `cosmos_completion_status` on a completion whose outcome
+   * Surfaced via the completion's `status` field when its outcome
    * is `CANCELLED`. Triggered by `cosmos_operation_handle_cancel` or by
-   * `cosmos_cq_shutdown`.
+   * `cosmos_completion_queue_shutdown`.
    */
   COSMOS_ERROR_CODE_OPERATION_CANCELLED = 4012,
   /**
-   * A submit targeted a `cosmos_cq_t` whose hard capacity is already
+   * A submit targeted a `cosmos_completion_queue_t` whose hard capacity is already
    * reached. Pre-flight rejection — no completion is posted.
    */
   COSMOS_ERROR_CODE_QUEUE_FULL = 4013,
@@ -264,39 +237,6 @@ enum cosmos_error_code_t
 typedef enum cosmos_error_code_t cosmos_error_code_t;
 #else
 typedef int32_t cosmos_error_code_t;
-#endif // __STDC_VERSION__ >= 202311L
-#endif // __cplusplus
-
-/**
- * Per spec section 3.6.2, the four lifecycle states an operation handle observes.
- */
-enum cosmos_operation_handle_state_t
-#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
-  : int32_t
-#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
- {
-  /**
-   * Submission succeeded; no completion has been posted yet.
-   */
-  COSMOS_OPERATION_HANDLE_STATE_IN_FLIGHT = 0,
-  /**
-   * Completion was posted with `outcome == CosmosCompletionOutcomeOk`.
-   */
-  COSMOS_OPERATION_HANDLE_STATE_COMPLETED = 1,
-  /**
-   * Completion was posted with `outcome == CosmosCompletionOutcomeError`.
-   */
-  COSMOS_OPERATION_HANDLE_STATE_FAILED = 2,
-  /**
-   * Completion was posted with `outcome == CosmosCompletionOutcomeCancelled`.
-   */
-  COSMOS_OPERATION_HANDLE_STATE_CANCELLED = 3,
-};
-#ifndef __cplusplus
-#if __STDC_VERSION__ >= 202311L
-typedef enum cosmos_operation_handle_state_t cosmos_operation_handle_state_t;
-#else
-typedef int32_t cosmos_operation_handle_state_t;
 #endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
@@ -401,6 +341,71 @@ enum cosmos_header_id_t
 typedef enum cosmos_header_id_t cosmos_header_id_t;
 #else
 typedef int32_t cosmos_header_id_t;
+#endif // __STDC_VERSION__ >= 202311L
+#endif // __cplusplus
+
+/**
+ * Per spec section 3.1.3, the three queue-lifecycle states.
+ */
+enum cosmos_completion_queue_state_t
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+  : int32_t
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+ {
+  /**
+   * Submits and waits both succeed.
+   */
+  COSMOS_COMPLETION_QUEUE_STATE_RUNNING = 0,
+  /**
+   * `cosmos_completion_queue_shutdown` has been called; submits fail
+   * pre-flight; pending
+   * completions can still be drained via `_wait` until empty.
+   */
+  COSMOS_COMPLETION_QUEUE_STATE_SHUTDOWN = 1,
+  /**
+   * Shutdown + queue empty + no in-flight ops. Safe to `_free` without
+   * blocking.
+   */
+  COSMOS_COMPLETION_QUEUE_STATE_DRAINED = 2,
+};
+#ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum cosmos_completion_queue_state_t cosmos_completion_queue_state_t;
+#else
+typedef int32_t cosmos_completion_queue_state_t;
+#endif // __STDC_VERSION__ >= 202311L
+#endif // __cplusplus
+
+/**
+ * Per spec section 3.6.2, the four lifecycle states an operation handle observes.
+ */
+enum cosmos_operation_handle_state_t
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+  : int32_t
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+ {
+  /**
+   * Submission succeeded; no completion has been posted yet.
+   */
+  COSMOS_OPERATION_HANDLE_STATE_IN_FLIGHT = 0,
+  /**
+   * Completion was posted with `outcome == CosmosCompletionOutcomeOk`.
+   */
+  COSMOS_OPERATION_HANDLE_STATE_COMPLETED = 1,
+  /**
+   * Completion was posted with `outcome == CosmosCompletionOutcomeError`.
+   */
+  COSMOS_OPERATION_HANDLE_STATE_FAILED = 2,
+  /**
+   * Completion was posted with `outcome == CosmosCompletionOutcomeCancelled`.
+   */
+  COSMOS_OPERATION_HANDLE_STATE_CANCELLED = 3,
+};
+#ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum cosmos_operation_handle_state_t cosmos_operation_handle_state_t;
+#else
+typedef int32_t cosmos_operation_handle_state_t;
 #endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
@@ -668,22 +673,13 @@ typedef int32_t cosmos_partition_key_component_kind_t;
 typedef struct cosmos_account_ref_t cosmos_account_ref_t;
 
 /**
- * Internal storage of a `cosmos_completion_t`.
- *
- * The optional `response` slot (which `cosmos_completion_take_response`
- * detaches from) is `None` on every error / cancelled completion and on
- * every test-synthesized completion.
- */
-typedef struct cosmos_completion_t cosmos_completion_t;
-
-/**
- * The C ABI handle for a completion queue (`cosmos_cq_t`).
+ * The C ABI handle for a completion queue (`cosmos_completion_queue_t`).
  *
  * The `CompletionQueueInner` state behind it is `Arc`-shared so the submit
- * pipeline's spawned tasks survive a concurrent `cosmos_cq_free` from the
+ * pipeline's spawned tasks survive a concurrent `cosmos_completion_queue_free` from the
  * producer side.
  */
-typedef struct cosmos_cq_t cosmos_cq_t;
+typedef struct cosmos_completion_queue_t cosmos_completion_queue_t;
 
 /**
  * The C ABI handle for a container reference (`cosmos_container_ref_t`).
@@ -692,6 +688,17 @@ typedef struct cosmos_cq_t cosmos_cq_t;
  * handle and releases it with `cosmos_container_ref_free`.
  */
 typedef struct cosmos_container_ref_t cosmos_container_ref_t;
+
+/**
+ * Opaque owner of a completion's heap allocations.
+ *
+ * Holds the driver response (and thus the body bytes), the synthesized header
+ * list, and the `CString` copies the completion's borrowed string pointers
+ * reference, keeping them valid until the completion is freed. cbindgen emits
+ * it as an opaque forward-declared struct the C side only ever holds by
+ * pointer.
+ */
+typedef struct cosmos_completion_backing_t cosmos_completion_backing_t;
 
 /**
  * The C ABI handle for a rich error (`cosmos_error_t`).
@@ -767,18 +774,6 @@ typedef struct cosmos_partition_key_builder_t cosmos_partition_key_builder_t;
 typedef struct cosmos_partition_key_t cosmos_partition_key_t;
 
 /**
- * The C ABI handle for a [`CosmosResponse`] (`cosmos_response_t`).
- *
- * Single-owner and `Box`-managed (responses are never cloned).
- *
- * The handle also carries optional "side payloads" populated only on
- * degenerate responses delivered by the driver-creation / container-resolve
- * submit paths. `_take_driver` / `_take_container` move these payloads out;
- * once taken, both accessors return NULL.
- */
-typedef struct cosmos_response_t cosmos_response_t;
-
-/**
  * The C ABI handle for a runtime builder (`cosmos_runtime_builder_t`).
  *
  * Single-owner and `Box`-managed.
@@ -831,11 +826,11 @@ typedef struct cosmos_bytes_t {
 } cosmos_bytes_t;
 
 /**
- * Layout of the `cosmos_cq_options_t` struct as it appears at the C ABI
+ * Layout of the `cosmos_completion_queue_options_t` struct as it appears at the C ABI
  * boundary. Caller-owned, pass-by-value (per section 3.1.2 the layout is published
  * for inputs).
  */
-typedef struct cosmos_cq_options_t {
+typedef struct cosmos_completion_queue_options_t {
   uint32_t capacity_hint;
   uint32_t max_capacity;
   /**
@@ -845,19 +840,44 @@ typedef struct cosmos_cq_options_t {
    * would be undefined behavior).
    */
   uint8_t include_error_details;
-} cosmos_cq_options_t;
+} cosmos_completion_queue_options_t;
 
 /**
- * A flat snapshot of a completion's scalar fields, read in one FFI call.
+ * A single response header as an `(id, value)` pair.
  *
- * Lets a host pull the common scalars (outcome, status, user-data, cancel
- * flag) in a single `cosmos_completion_view` call instead of four separate
- * accessor round-trips. The detachable payloads (response, error) and the
- * borrowed operation handle are intentionally **not** included — those carry
- * ownership semantics and stay on their dedicated
- * `cosmos_completion_take_response` / `_take_error` / `_op_handle` accessors.
+ * The `value` pointer is a borrowed NUL-terminated UTF-8 string valid for the
+ * lifetime of the owning completion (until it is freed). Use
+ * [`cosmos_header_name`] to resolve `id` to its canonical wire name.
  */
-typedef struct cosmos_completion_view_t {
+typedef struct cosmos_response_header_t {
+  /**
+   * Stable numeric identifier for the header (see [`CosmosHeaderId`]).
+   */
+  cosmos_header_id_t id;
+  /**
+   * Borrowed header value (NUL-terminated UTF-8).
+   */
+  const char *value;
+} cosmos_response_header_t;
+
+/**
+ * Owned, `#[repr(C)]` completion handed to the host by
+ * [`cosmos_completion_queue_wait`].
+ *
+ * The host **owns** each completion between the wait that produced it and the
+ * matching [`cosmos_completion_queue_free_completions`] call. It reads the
+ * inline scalar fields directly and treats every pointer field as
+ * **borrowed** — valid only until the free. To retain any string / body past
+ * the free, the host must copy it into its own memory first.
+ *
+ * Error detail is **inline** (`http_status_code` / `sub_status` / `message` /
+ * …) rather than a separate error handle. The degenerate driver-creation and
+ * container-resolution completions carry their result in the owned `driver` /
+ * `container` fields, which the host may detach with
+ * [`cosmos_completion_take_driver`] / [`cosmos_completion_take_container`]
+ * (otherwise the free reclaims them).
+ */
+typedef struct cosmos_completion_t {
   /**
    * The completion outcome (`Ok` / `Error` / `Cancelled` / `Unknown`).
    */
@@ -867,14 +887,103 @@ typedef struct cosmos_completion_view_t {
    */
   cosmos_error_code_t status;
   /**
-   * The host's opaque `intptr_t` cookie, round-tripped verbatim.
+   * The host's opaque pointer-sized cookie, round-tripped verbatim from
+   * submit; the wrapper never dereferences it.
    */
   intptr_t user_data;
   /**
-   * `true` iff cancellation was observed before the completion posted.
+   * `1` iff cancellation was observed before the completion posted.
    */
-  bool was_cancel_requested;
-} cosmos_completion_view_t;
+  uint8_t was_cancel_requested;
+  /**
+   * Wire HTTP status code, or `0` when there is no wire response.
+   */
+  uint16_t http_status_code;
+  /**
+   * Cosmos sub-status code, or `-1` when absent.
+   */
+  int32_t sub_status;
+  /**
+   * Request charge in Request Units, or `0.0` when absent.
+   */
+  double request_charge;
+  /**
+   * Retry-after hint in milliseconds, or `-1` when absent.
+   */
+  int64_t retry_after_ms;
+  /**
+   * `1` iff an error completion originated from a service wire response.
+   */
+  uint8_t is_from_wire;
+  /**
+   * Borrowed error message (NUL-terminated UTF-8), or NULL on a non-error
+   * completion / when error details are suppressed.
+   */
+  const char *message;
+  /**
+   * Borrowed activity id, or NULL when absent.
+   */
+  const char *activity_id;
+  /**
+   * Borrowed session token, or NULL when absent.
+   */
+  const char *session_token;
+  /**
+   * Borrowed ETag, or NULL when absent.
+   */
+  const char *etag;
+  /**
+   * Borrowed server-header continuation token, or NULL when absent.
+   */
+  const char *continuation;
+  /**
+   * Borrowed planner-derived next-page continuation token, or NULL when this
+   * was the last page / not a feed response.
+   */
+  const char *next_continuation;
+  /**
+   * Borrowed error backtrace, or NULL when none was captured.
+   */
+  const char *backtrace;
+  /**
+   * Borrowed `(id, value)` response-header list; NULL when empty. Resolve
+   * each id to its wire name with
+   * [`cosmos_header_name`](crate::response_header::cosmos_header_name).
+   */
+  const struct cosmos_response_header_t *headers;
+  /**
+   * Number of entries addressable from `headers`.
+   */
+  uintptr_t headers_len;
+  /**
+   * Borrowed response body bytes, or NULL when the body is empty.
+   */
+  const uint8_t *body;
+  /**
+   * Number of bytes addressable from `body`.
+   */
+  uintptr_t body_len;
+  /**
+   * Reserved for a future diagnostics handle; always NULL for now.
+   */
+  void *diagnostics;
+  /**
+   * Owned driver handle for a `get_or_create` completion, else NULL. Detach
+   * with [`cosmos_completion_take_driver`] or let the free reclaim it.
+   */
+  struct cosmos_driver_t *driver;
+  /**
+   * Owned container reference for a `resolve_container` completion, else
+   * NULL. Detach with [`cosmos_completion_take_container`] or let the free
+   * reclaim it.
+   */
+  struct cosmos_container_ref_t *container;
+  /**
+   * Opaque owner of the borrowed allocations. The host never touches this;
+   * [`cosmos_completion_queue_free_completions`] reclaims it.
+   */
+  struct cosmos_completion_backing_t *backing;
+} cosmos_completion_t;
 
 /**
  * A single custom request/operation header. Both pointers are
@@ -997,58 +1106,6 @@ typedef struct cosmos_driver_options_config_t {
    */
   const struct cosmos_operation_options_t *operation_options;
 } cosmos_driver_options_config_t;
-
-/**
- * A flat snapshot of a response's scalar + borrowed-string fields, read in
- * one FFI call.
- *
- * Lets a host pull the common response fields (status, RU charge, the four
- * typed header strings, both continuation tokens, and the body view) in a
- * single `cosmos_response_view` call instead of up to eight separate accessor
- * round-trips. All string pointers and `body_data` are **borrowed** — valid
- * until the response is freed — exactly like the individual accessors. The
- * detachable side payloads (`_take_driver` / `_take_container`) are not
- * included; they carry ownership and stay on their own accessors.
- */
-typedef struct cosmos_response_view_t {
-  /**
-   * HTTP status code (`0` for a degenerate response).
-   */
-  uint16_t status_code;
-  /**
-   * Request charge in RU (`0.0` when absent).
-   */
-  double request_charge;
-  /**
-   * Borrowed activity id, or NULL when absent.
-   */
-  const char *activity_id;
-  /**
-   * Borrowed session token, or NULL when absent.
-   */
-  const char *session_token;
-  /**
-   * Borrowed ETag, or NULL when absent.
-   */
-  const char *etag;
-  /**
-   * Borrowed server header continuation token, or NULL when absent.
-   */
-  const char *continuation_token;
-  /**
-   * Borrowed planner-derived next-page continuation token, or NULL when
-   * this was the last page / not a feed response.
-   */
-  const char *next_continuation;
-  /**
-   * Borrowed pointer to the body bytes, or NULL when the body is empty.
-   */
-  const uint8_t *body_data;
-  /**
-   * Number of bytes addressable from `body_data`.
-   */
-  uintptr_t body_len;
-} cosmos_response_view_t;
 
 /**
  * Flat C ABI options for building a `cosmos_runtime_t` in a single call.
@@ -1322,148 +1379,87 @@ void cosmos_bytes_free(struct cosmos_bytes_t bytes);
  * Create a completion queue bound to `runtime`. Returns NULL if `runtime`
  * is NULL.
  */
-struct cosmos_cq_t *cosmos_cq_create(const struct cosmos_runtime_t *runtime,
-                                     const struct cosmos_cq_options_t *options);
+struct cosmos_completion_queue_t *cosmos_completion_queue_create(const struct cosmos_runtime_t *runtime,
+                                                                 const struct cosmos_completion_queue_options_t *options);
 
 /**
  * Free a completion queue. NULL is a no-op.
  *
  * The "blocks until in-flight ops drain" contract from spec section 3.1.2 is
  * observable here: if anyone enqueued completions but never drained, this
- * drops them (and thus their `Box`-allocated `Completion`s).
+ * drops them (and thus their pending allocations).
  */
-void cosmos_cq_free(struct cosmos_cq_t *queue);
+void cosmos_completion_queue_free(struct cosmos_completion_queue_t *queue);
 
 /**
- * Block until a completion is available or `timeout_ms` elapses.
+ * Wait for and drain up to `max` completions in a single call.
  *
- * - `timeout_ms == 0` → poll once and return immediately, NULL if empty.
- * - `timeout_ms == UINT32_MAX` → wait without a timeout. Returns NULL only
- *   on shutdown / drained / spurious wake.
- * - otherwise → wait up to that many milliseconds.
+ * Blocks until at least one completion is available or `timeout_ms` elapses
+ * (see `wait_one` for the timeout semantics), then drains additional
+ * already-queued completions without blocking again. Writes each into
+ * `out[0..max]` and returns the count written.
  *
- * The returned `cosmos_completion_t *` must be freed via
- * [`cosmos_completion_free`].
+ * This is the sole wait entry point. Every completion written **must** be
+ * released with [`cosmos_completion_queue_free_completions`] (the whole
+ * `out` run at once, or element-by-element). Returns `0` (writing nothing)
+ * on NULL `out`, `max == 0`, NULL queue, or shutdown / drained / timeout.
  */
-struct cosmos_completion_t *cosmos_cq_wait(struct cosmos_cq_t *queue, uint32_t timeout_ms);
+uintptr_t cosmos_completion_queue_wait(struct cosmos_completion_queue_t *queue,
+                                       struct cosmos_completion_t *out,
+                                       uintptr_t max,
+                                       uint32_t timeout_ms);
 
 /**
- * Drains up to `max_count` completions in a single call. Blocks until at
- * least one completion is available or `timeout_ms` elapses, then drains
- * additional already-queued completions without blocking again.
+ * Free a run of `count` completions produced by
+ * [`cosmos_completion_queue_wait`], reclaiming each one's backing allocation
+ * (body bytes, header list, cached strings) and any owned side-payload handle
+ * (`driver` / `container`) the host did not detach. NULL / `count == 0` is a
+ * no-op.
  *
- * Returns the number of completions written into
- * `out_completions[0..max_count]`. The caller MUST free each one via
- * [`cosmos_completion_free`].
+ * After this call every borrowed pointer the completions handed out is
+ * invalid. The `out` array memory itself is caller-owned and is not freed.
  */
-uint32_t cosmos_cq_wait_batch(struct cosmos_cq_t *queue,
-                              struct cosmos_completion_t **out_completions,
-                              uint32_t max_count,
-                              uint32_t timeout_ms);
+void cosmos_completion_queue_free_completions(struct cosmos_completion_t *completions,
+                                              uintptr_t count);
+
+/**
+ * Detaches and returns the owned driver handle from a `get_or_create`
+ * completion, transferring ownership to the caller (a subsequent
+ * [`cosmos_completion_queue_free_completions`] no longer reclaims it). Returns
+ * NULL when `c` is NULL, the completion carries no driver, or it was already
+ * taken. The caller frees the returned handle with `cosmos_driver_free`.
+ */
+struct cosmos_driver_t *cosmos_completion_take_driver(struct cosmos_completion_t *c);
+
+/**
+ * Detaches and returns the owned container reference from a
+ * `resolve_container` completion. Same ownership-transfer semantics as
+ * [`cosmos_completion_take_driver`]; free the returned handle with
+ * `cosmos_container_ref_free`.
+ */
+struct cosmos_container_ref_t *cosmos_completion_take_container(struct cosmos_completion_t *c);
 
 /**
  * Block until the queue has room for at least one more pending completion,
  * or `timeout_ms` elapses.
  */
-bool cosmos_cq_wait_writable(struct cosmos_cq_t *queue, uint32_t timeout_ms);
+bool cosmos_completion_queue_wait_writable(struct cosmos_completion_queue_t *queue,
+                                           uint32_t timeout_ms);
 
 /**
  * Signal shutdown: marks the queue as shutting down so no *new* submissions
  * are accepted, and wakes any thread blocked in
- * `cosmos_cq_wait` / `_wait_writable` / `_wait_batch`. Operations already
- * in flight are left to run to completion — their completions are still
- * accepted and can be drained — and the queue advances to `DRAINED` once the
- * last in-flight op has been drained. Idempotent.
+ * `cosmos_completion_queue_wait` / `_wait_writable`. Operations already in
+ * flight are left to run to completion — their completions are still accepted
+ * and can be drained — and the queue advances to `DRAINED` once the last
+ * in-flight op has been drained. Idempotent.
  */
-void cosmos_cq_shutdown(struct cosmos_cq_t *queue);
+void cosmos_completion_queue_shutdown(struct cosmos_completion_queue_t *queue);
 
 /**
  * Returns the queue's current lifecycle state.
  */
-cosmos_cq_state_t cosmos_cq_state(const struct cosmos_cq_t *queue);
-
-/**
- * Returns the completion's outcome. Returns `Unknown` if `c` is NULL.
- */
-cosmos_completion_outcome_t cosmos_completion_outcome(const struct cosmos_completion_t *c);
-
-/**
- * Returns the `user_data` cookie the caller supplied at submit time,
- * preserved verbatim. Returns `0` when `c` is NULL.
- *
- * The value is an opaque, pointer-sized integer (`intptr_t`); the library
- * never dereferences it. Hosts use it for `GCHandle` integers (.NET), slab
- * indices (Go), JNI global-ref handles, etc.
- */
-intptr_t cosmos_completion_user_data(const struct cosmos_completion_t *c);
-
-/**
- * Returns a borrowed pointer to the operation handle that produced this
- * completion. Lifetime = until [`cosmos_completion_free`].
- */
-const struct cosmos_operation_handle_t *cosmos_completion_op_handle(const struct cosmos_completion_t *c);
-
-/**
- * Coarse status code (always populated even when rich detail is suppressed).
- */
-cosmos_error_code_t cosmos_completion_status(const struct cosmos_completion_t *c);
-
-/**
- * True iff `cosmos_operation_handle_cancel` was observed on the producing
- * handle before the completion was posted.
- */
-bool cosmos_completion_was_cancel_requested(const struct cosmos_completion_t *c);
-
-/**
- * Fills `out_view` with a snapshot of the completion's scalar fields and
- * returns `SUCCESS`. Returns `INVALID_ARGUMENT` (leaving `*out_view`
- * untouched) when `c` or `out_view` is NULL.
- *
- * This is the single-call alternative to `cosmos_completion_outcome` +
- * `_status` + `_user_data` + `_was_cancel_requested`.
- */
-cosmos_error_code_t cosmos_completion_view(const struct cosmos_completion_t *c,
-                                           struct cosmos_completion_view_t *out_view);
-
-/**
- * Takes ownership of the response delivered by an `Ok` completion.
- * Returns NULL on `Error` / `Cancelled` completions, on NULL input,
- * and on every subsequent call after the first successful take.
- *
- * Caller must free the returned handle via `cosmos_response_free`.
- */
-struct cosmos_response_t *cosmos_completion_take_response(struct cosmos_completion_t *c);
-
-/**
- * Borrowed access to the response payload. Returns NULL when the
- * completion outcome is not `Ok`, when no response was attached, or
- * after `_take_response` already moved ownership out.
- *
- * Lifetime: until the next `_take_response` call or until the
- * completion itself is freed.
- */
-const struct cosmos_response_t *cosmos_completion_response(const struct cosmos_completion_t *c);
-
-/**
- * Take ownership of the rich error payload. Returns NULL when
- * `outcome != Error`, when the queue was created with
- * `include_error_details = false`, or after a previous `_take_error` call.
- */
-struct cosmos_error_t *cosmos_completion_take_error(struct cosmos_completion_t *c);
-
-/**
- * Borrowed access to the rich error payload. NULL on `Ok` / `Cancelled`,
- * when details are suppressed, or after a previous `_take_error` call.
- */
-const struct cosmos_error_t *cosmos_completion_error(const struct cosmos_completion_t *c);
-
-/**
- * Free a completion record. Any pointer obtained via
- * [`cosmos_completion_error`] (borrowed) becomes invalid; ownership obtained
- * via [`cosmos_completion_take_error`] remains valid until that handle's
- * own `_free` call.
- */
-void cosmos_completion_free(struct cosmos_completion_t *c);
+cosmos_completion_queue_state_t cosmos_completion_queue_state(const struct cosmos_completion_queue_t *queue);
 
 /**
  * Request cooperative cancellation. Idempotent and non-blocking.
@@ -1925,106 +1921,6 @@ uintptr_t cosmos_partition_key_component_count(const struct cosmos_partition_key
 bool cosmos_partition_key_is_empty(const struct cosmos_partition_key_t *pk);
 
 /**
- * Frees a response handle. NULL is a no-op.
- */
-void cosmos_response_free(struct cosmos_response_t *response);
-
-/**
- * Returns the HTTP status code from the response (e.g. 200, 201,
- * 204). Returns `0` for NULL / degenerate responses.
- */
-uint16_t cosmos_response_status_code(const struct cosmos_response_t *response);
-
-/**
- * Returns the request charge in Request Units, or `0.0` when the
- * header is absent / response is NULL / response is degenerate.
- */
-double cosmos_response_request_charge(const struct cosmos_response_t *response);
-
-/**
- * Borrowed pointer to the activity id, or NULL when absent / response
- * is NULL.
- */
-const char *cosmos_response_activity_id(const struct cosmos_response_t *response);
-
-/**
- * Borrowed pointer to the session token, or NULL when absent.
- */
-const char *cosmos_response_session_token(const struct cosmos_response_t *response);
-
-/**
- * Borrowed pointer to the ETag, or NULL when absent.
- */
-const char *cosmos_response_etag(const struct cosmos_response_t *response);
-
-/**
- * Borrowed pointer to the continuation token, or NULL when absent.
- */
-const char *cosmos_response_continuation_token(const struct cosmos_response_t *response);
-
-/**
- * Borrowed pointer to the **next-page** continuation token for a feed
- * page produced by [`crate::submit::cosmos_submit_operation`],
- * or NULL when this was the last page / the response did not come from a
- * feed submit.
- *
- * This is the planner-derived token (from
- * `OperationPlan::to_continuation_token()`) and is the correct token to
- * pass back as `CosmosOperationRequest::continuation_token` to fetch the
- * following page — including for cross-partition queries. It differs from
- * [`cosmos_response_continuation_token`], which surfaces the raw server
- * header continuation (valid only for trivial single-partition reads).
- *
- * The returned pointer is valid until [`cosmos_response_free`] is called
- * on this response handle.
- */
-const char *cosmos_response_next_continuation(const struct cosmos_response_t *response);
-
-/**
- * Zero-copy borrowed view of the response body bytes. NULL pointer +
- * 0 length when the body is empty / response is NULL.
- *
- * For multi-part feed bodies (driver's `ResponseBody::Items`) this
- * returns the **first** part only; full multi-part iteration is a
- * follow-up alongside the feed pagination surface.
- *
- * The returned pointer is valid until [`cosmos_response_free`] is
- * called on this response handle.
- */
-int32_t cosmos_response_body(const struct cosmos_response_t *response,
-                             const uint8_t **out_data,
-                             uintptr_t *out_len);
-
-/**
- * Fills `out_view` with a snapshot of the response's scalar and
- * borrowed-string fields and returns `SUCCESS`. Returns `INVALID_ARGUMENT`
- * (leaving `*out_view` untouched) when `response` or `out_view` is NULL.
- *
- * This is the single-call alternative to `cosmos_response_status_code` +
- * `_request_charge` + `_activity_id` + `_session_token` + `_etag` +
- * `_continuation_token` + `_next_continuation` + `_body`. Every borrowed
- * pointer it returns is valid until [`cosmos_response_free`].
- */
-int32_t cosmos_response_view(const struct cosmos_response_t *response,
-                             struct cosmos_response_view_t *out_view);
-
-/**
- * Takes ownership of the driver handle stashed inside a degenerate
- * response produced by `cosmos_driver_get_or_create_submit`. Returns
- * NULL on any other response, on NULL input, or after a previous
- * `_take_driver`.
- */
-struct cosmos_driver_t *cosmos_response_take_driver(struct cosmos_response_t *response);
-
-/**
- * Takes ownership of the container reference stashed inside a
- * degenerate response produced by
- * `cosmos_driver_resolve_container_submit`. Same semantics as
- * `_take_driver`.
- */
-struct cosmos_container_ref_t *cosmos_response_take_container(struct cosmos_response_t *response);
-
-/**
  * Returns the canonical wire header name (NUL-terminated UTF-8) for a header
  * id, or NULL for [`CosmosHeaderId::CosmosHeaderIdUnknown`] / an unrecognized
  * id.
@@ -2197,7 +2093,8 @@ int32_t cosmos_runtime_build(const struct cosmos_runtime_options_t *options,
  * runs `plan_operation` + `execute_plan` internally so it can both
  * **resume** from an inbound continuation token
  * ([`CosmosOperationRequest::continuation_token`]) and **surface** the
- * next-page token via [`crate::response::cosmos_response_next_continuation`].
+ * next-page token via the completion's `next_continuation` field
+ * ([`crate::completion::CosmosCompletion`]).
  *
  * Use this for any operation that can return multiple pages — queries,
  * read-all-items, change feed — and drive pagination by re-submitting with
@@ -2237,7 +2134,7 @@ int32_t cosmos_runtime_build(const struct cosmos_runtime_options_t *options,
  */
 struct cosmos_operation_handle_t *cosmos_submit_operation(const struct cosmos_driver_t *driver,
                                                           const struct cosmos_operation_request_t *request,
-                                                          struct cosmos_cq_t *queue,
+                                                          struct cosmos_completion_queue_t *queue,
                                                           intptr_t user_data,
                                                           cosmos_error_code_t *out_pre_error);
 
@@ -2264,7 +2161,7 @@ struct cosmos_operation_handle_t *cosmos_submit_operation(const struct cosmos_dr
  */
 struct cosmos_operation_handle_t *cosmos_submit_singleton_operation(const struct cosmos_driver_t *driver,
                                                                     const struct cosmos_operation_request_t *request,
-                                                                    struct cosmos_cq_t *queue,
+                                                                    struct cosmos_completion_queue_t *queue,
                                                                     intptr_t user_data,
                                                                     cosmos_error_code_t *out_pre_error);
 
@@ -2272,15 +2169,14 @@ struct cosmos_operation_handle_t *cosmos_submit_singleton_operation(const struct
  * Asynchronous variant of [`crate::driver::cosmos_driver_get_or_create_blocking`].
  *
  * Bridges `CosmosDriverRuntime::get_or_create_driver` through the
- * submit pipeline; the completion delivers a degenerate
- * `cosmos_response_t` from which
- * [`crate::response::cosmos_response_take_driver`] extracts the new
- * driver handle.
+ * submit pipeline; the completion carries the new driver in its owned
+ * `driver` field, which
+ * [`crate::completion::cosmos_completion_take_driver`] detaches.
  */
 struct cosmos_operation_handle_t *cosmos_driver_get_or_create_submit(const struct cosmos_runtime_t *runtime,
                                                                      const struct cosmos_account_ref_t *account,
                                                                      const struct cosmos_driver_options_t *options,
-                                                                     struct cosmos_cq_t *queue,
+                                                                     struct cosmos_completion_queue_t *queue,
                                                                      intptr_t user_data,
                                                                      cosmos_error_code_t *out_pre_error);
 
@@ -2288,15 +2184,14 @@ struct cosmos_operation_handle_t *cosmos_driver_get_or_create_submit(const struc
  * Asynchronous variant of
  * [`crate::container_ref::cosmos_driver_resolve_container_blocking`].
  *
- * Same shape as the get-or-create variant — the completion delivers a
- * degenerate response from which
- * [`crate::response::cosmos_response_take_container`] extracts the
- * resolved container handle.
+ * Same shape as the get-or-create variant — the completion carries the
+ * resolved container in its owned `container` field, which
+ * [`crate::completion::cosmos_completion_take_container`] detaches.
  */
 struct cosmos_operation_handle_t *cosmos_driver_resolve_container_submit(const struct cosmos_driver_t *driver,
                                                                          const char *database_id,
                                                                          const char *container_id,
-                                                                         struct cosmos_cq_t *queue,
+                                                                         struct cosmos_completion_queue_t *queue,
                                                                          intptr_t user_data,
                                                                          cosmos_error_code_t *out_pre_error);
 

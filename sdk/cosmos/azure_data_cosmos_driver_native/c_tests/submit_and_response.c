@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// Submit pipeline, response surface, container refs, feed ranges,
+// Submit pipeline, completion queue, container refs, feed ranges,
 // container/item factories.
 //
 // The full emulator-backed CRUD test requires a running Cosmos emulator
@@ -19,7 +19,8 @@
 static int test_lifecycle_null_safe(void)
 {
     int result = TEST_PASS;
-    cosmos_response_free(NULL);
+    cosmos_completion_queue_free(NULL);
+    cosmos_completion_queue_free_completions(NULL, 0);
     cosmos_container_ref_free(NULL);
     cosmos_feed_range_free(NULL);
     ASSERT(1, "_free entry points NULL-safe");
@@ -27,60 +28,41 @@ static int test_lifecycle_null_safe(void)
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// Section 2 — response accessors handle NULL
+// Section 2 — completion queue NULL-safety + header-id mapping
 // ─────────────────────────────────────────────────────────────────────
 
-static int test_response_accessors_handle_null(void)
+static int test_completion_queue_wait_handles_null(void)
 {
     int result = TEST_PASS;
-    ASSERT(cosmos_response_status_code(NULL) == 0,
-           "status_code(NULL) returns 0");
-    ASSERT(cosmos_response_request_charge(NULL) == 0.0,
-           "request_charge(NULL) returns 0.0");
-    ASSERT(cosmos_response_activity_id(NULL) == NULL,
-           "activity_id(NULL) returns NULL");
-    ASSERT(cosmos_response_session_token(NULL) == NULL,
-           "session_token(NULL) returns NULL");
-    ASSERT(cosmos_response_etag(NULL) == NULL, "etag(NULL) returns NULL");
-    ASSERT(cosmos_response_continuation_token(NULL) == NULL,
-           "continuation_token(NULL) returns NULL");
-
-    const uint8_t *data = (const uint8_t *)0xDEADBEEF;
-    size_t len = 999;
-    int32_t rc = cosmos_response_body(NULL, &data, &len);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
-           "body(NULL,...) rejected (rc=%d)", rc);
-
-    ASSERT(cosmos_response_take_driver(NULL) == NULL,
-           "take_driver(NULL) returns NULL");
-    ASSERT(cosmos_response_take_container(NULL) == NULL,
-           "take_container(NULL) returns NULL");
+    cosmos_completion_t out;
+    // NULL queue drains nothing.
+    ASSERT(cosmos_completion_queue_wait(NULL, &out, 1, 0) == 0,
+           "wait(NULL queue) drains 0");
+    // NULL out slot / zero max drain nothing (no queue needed).
+    ASSERT(cosmos_completion_queue_wait(NULL, NULL, 0, 0) == 0,
+           "wait(NULL out, max 0) drains 0");
+    // create(NULL runtime) returns NULL.
+    ASSERT(cosmos_completion_queue_create(NULL, NULL) == NULL,
+           "create(NULL runtime) returns NULL");
     return result;
 }
 
-static int test_response_view_rejects_null(void)
+static int test_header_name_mapping(void)
 {
     int result = TEST_PASS;
-    cosmos_response_view_t view;
-    int32_t rc = cosmos_response_view(NULL, &view);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
-           "response_view(NULL, &view) rejected (rc=%d)", rc);
-    rc = cosmos_response_view(NULL, NULL);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
-           "response_view(NULL, NULL) rejected (rc=%d)", rc);
-    return result;
-}
-
-static int test_completion_view_rejects_null(void)
-{
-    int result = TEST_PASS;
-    cosmos_completion_view_t view;
-    cosmos_error_code_t rc = cosmos_completion_view(NULL, &view);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
-           "completion_view(NULL, &view) rejected (rc=%d)", rc);
-    rc = cosmos_completion_view(NULL, NULL);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
-           "completion_view(NULL, NULL) rejected (rc=%d)", rc);
+    // The forward-compat sentinel has no wire name.
+    ASSERT(cosmos_header_name(COSMOS_HEADER_ID_UNKNOWN) == NULL,
+           "header_name(UNKNOWN) == NULL");
+    // A known id maps to its canonical wire name.
+    const char *activity = cosmos_header_name(COSMOS_HEADER_ID_ACTIVITY_ID);
+    REQUIRE(activity != NULL, "header_name(ACTIVITY_ID) non-NULL");
+    ASSERT(strcmp(activity, "x-ms-activity-id") == 0,
+           "header_name(ACTIVITY_ID) == x-ms-activity-id (got %s)", activity);
+    const char *etag = cosmos_header_name(COSMOS_HEADER_ID_ETAG);
+    REQUIRE(etag != NULL, "header_name(ETAG) non-NULL");
+    ASSERT(strcmp(etag, "etag") == 0,
+           "header_name(ETAG) == etag (got %s)", etag);
+cleanup:
     return result;
 }
 
@@ -211,11 +193,10 @@ static int test_singleton_submit_with_request_rejects_null_driver(void)
     return result;
 }
 
-TEST_SUITE_BEGIN("Submit + Response + Container + Feed Range")
+TEST_SUITE_BEGIN("Submit + Completion Queue + Container + Feed Range")
 TEST_REGISTER(lifecycle_null_safe)
-TEST_REGISTER(response_accessors_handle_null)
-TEST_REGISTER(response_view_rejects_null)
-TEST_REGISTER(completion_view_rejects_null)
+TEST_REGISTER(completion_queue_wait_handles_null)
+TEST_REGISTER(header_name_mapping)
 TEST_REGISTER(feed_range_full_roundtrip)
 TEST_REGISTER(feed_range_full_rejects_null_out)
 TEST_REGISTER(feed_range_for_pk_rejects_nulls)
@@ -225,4 +206,4 @@ TEST_REGISTER(execute_singleton_operation_submit_rejects_null_driver)
 TEST_REGISTER(get_or_create_submit_rejects_null_runtime)
 TEST_REGISTER(resolve_container_submit_rejects_null_driver)
 TEST_REGISTER(singleton_submit_with_request_rejects_null_driver)
-TEST_SUITE_END("Submit + Response + Container + Feed Range")
+TEST_SUITE_END("Submit + Completion Queue + Container + Feed Range")

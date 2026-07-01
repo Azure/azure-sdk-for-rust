@@ -132,7 +132,9 @@ pub enum CosmosErrorCode {
     /// already consumed by an earlier successful submit.
     CosmosErrorCodeOperationConsumed = 4005,
 
-    /// `cosmos_response_into_*` called twice on the same response.
+    /// Reserved. Formerly signalled a response handle consumed twice; the
+    /// response is now delivered inline on the completion, so this code is no
+    /// longer produced but its numeric slot is retained for ABI stability.
     CosmosErrorCodeResponseConsumed = 4006,
 
     /// Single-shot submit yielded `Ok(None)` from a feed-style operation.
@@ -148,16 +150,17 @@ pub enum CosmosErrorCode {
     /// request had a non-ASCII / control-character name or value.
     CosmosErrorCodeInvalidHeader = 4010,
 
-    /// A submit targeted a `cosmos_cq_t` that had already been shut down via
-    /// `cosmos_cq_shutdown`. Pre-flight rejection — no completion is posted.
+    /// A submit targeted a `cosmos_completion_queue_t` that had already been
+    /// shut down via
+    /// `cosmos_completion_queue_shutdown`. Pre-flight rejection — no completion is posted.
     CosmosErrorCodeQueueShutdown = 4011,
 
-    /// Surfaced via `cosmos_completion_status` on a completion whose outcome
+    /// Surfaced via the completion's `status` field when its outcome
     /// is `CANCELLED`. Triggered by `cosmos_operation_handle_cancel` or by
-    /// `cosmos_cq_shutdown`.
+    /// `cosmos_completion_queue_shutdown`.
     CosmosErrorCodeOperationCancelled = 4012,
 
-    /// A submit targeted a `cosmos_cq_t` whose hard capacity is already
+    /// A submit targeted a `cosmos_completion_queue_t` whose hard capacity is already
     /// reached. Pre-flight rejection — no completion is posted.
     CosmosErrorCodeQueueFull = 4013,
 
@@ -312,25 +315,14 @@ impl CosmosErrorHandle {
 
 /// Opaque heap-allocated handle around an error payload.
 ///
-/// The FFI hands out `*mut CosmosErrorHandle` as `cosmos_error_t *`. Cloning
-/// the underlying `Arc` is cheap and is how the `Completion` borrow accessor
-/// shares the payload with the `take_error` ownership accessor.
+/// The FFI hands out `*mut CosmosErrorHandle` as `cosmos_error_t *` from the
+/// synchronous `out_error` slots (driver-create blocking, account-reference
+/// parsing). The completion path carries error detail inline, not as a handle.
 impl CosmosErrorHandle {
     /// Wraps a driver error into a heap-allocated FFI handle. Returns a raw
     /// pointer suitable for handing across the C boundary.
-    #[allow(
-        dead_code,
-        reason = "first non-test caller is the driver submit failure path"
-    )]
     pub(crate) fn into_raw(err: DriverCosmosError) -> *mut Self {
         Arc::into_raw(Arc::new(CosmosErrorHandle::new(err))) as *mut Self
-    }
-
-    /// Like [`into_raw`](Self::into_raw) but for an existing `Arc` (used by
-    /// `cosmos_completion_take_error` to detach the completion's strong
-    /// reference into a caller-owned handle).
-    pub(crate) fn from_arc_into_raw(this: Arc<CosmosErrorHandle>) -> *mut Self {
-        Arc::into_raw(this) as *mut Self
     }
 
     /// Borrows the handle from a raw pointer for the duration of an FFI call.

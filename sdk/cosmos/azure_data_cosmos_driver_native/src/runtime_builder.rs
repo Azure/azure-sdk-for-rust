@@ -782,12 +782,12 @@ mod tests {
         assert!(err.is_null());
 
         // Verify the runtime is usable by creating a queue against it.
-        let cq = crate::completion::cosmos_cq_create(runtime, std::ptr::null());
+        let cq = crate::completion::cosmos_completion_queue_create(runtime, std::ptr::null());
         assert!(
             !cq.is_null(),
-            "cq_create must accept a builder-built runtime"
+            "completion_queue_create must accept a builder-built runtime"
         );
-        crate::completion::cosmos_cq_free(cq);
+        crate::completion::cosmos_completion_queue_free(cq);
 
         crate::runtime::cosmos_runtime_free(runtime);
     }
@@ -883,9 +883,12 @@ mod tests {
         assert!(!runtime.is_null());
         assert!(err.is_null());
 
-        let cq = crate::completion::cosmos_cq_create(runtime, std::ptr::null());
-        assert!(!cq.is_null(), "cq_create must accept a flat-built runtime");
-        crate::completion::cosmos_cq_free(cq);
+        let cq = crate::completion::cosmos_completion_queue_create(runtime, std::ptr::null());
+        assert!(
+            !cq.is_null(),
+            "completion_queue_create must accept a flat-built runtime"
+        );
+        crate::completion::cosmos_completion_queue_free(cq);
 
         crate::runtime::cosmos_runtime_free(runtime);
     }

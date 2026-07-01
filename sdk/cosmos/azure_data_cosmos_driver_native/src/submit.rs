@@ -26,19 +26,17 @@ use std::future::Future;
 use std::sync::Arc;
 
 use azure_data_cosmos_driver::driver::CosmosDriver;
-use azure_data_cosmos_driver::models::{AccountReference, CosmosResponse};
+use azure_data_cosmos_driver::models::{AccountReference, ContainerReference, CosmosResponse};
 use azure_data_cosmos_driver::options::DriverOptions;
 
 use crate::account_ref::AccountRefHandle;
 use crate::completion::{
-    Completion, CompletionQueue, CompletionQueueInner, CosmosCompletionOutcome, OperationHandle,
-    OperationInner,
+    CompletionQueue, CompletionQueueInner, OperationHandle, OperationInner, PendingCompletion,
 };
 use crate::driver::DriverHandle;
 use crate::driver_options::DriverOptionsHandle;
-use crate::error::{CosmosErrorCode, CosmosErrorHandle};
+use crate::error::CosmosErrorCode;
 use crate::op_request::{build_request, CosmosOperationRequest};
-use crate::response::ResponseHandle;
 use crate::runtime::RuntimeContext;
 
 /// Send-safe encoding of the opaque `user_data` cookie round-tripped
@@ -61,7 +59,7 @@ impl UserData {
 /// Resources captured into every spawned submit task.
 ///
 /// Holding `Arc<CompletionQueueInner>` and `Arc<OperationInner>`
-/// directly lets the spawned task survive a concurrent `cosmos_cq_free`
+/// directly lets the spawned task survive a concurrent `cosmos_completion_queue_free`
 /// or `cosmos_operation_handle_free` from the producer side — the
 /// queue's deque drops back-pressured completions cleanly, and the
 /// operation-handle state stays consistent through the existing
@@ -75,6 +73,23 @@ struct SpawnContext {
 
 // SAFETY: `UserData` is `isize`-backed, the other fields are `Arc`s.
 unsafe impl Send for SpawnContext {}
+
+/// The success payload a submit task produces, mapped into a completion.
+enum SuccessKind {
+    /// A CRUD / feed response page (or a degenerate end-of-feed shell when
+    /// `response` is `None`) plus an optional planner next-page token. The
+    /// response is boxed to keep this enum small (it is otherwise dominated by
+    /// the ~700-byte `CosmosResponse`).
+    Response {
+        response: Option<Box<CosmosResponse>>,
+        next_continuation: Option<String>,
+    },
+    /// A freshly-created driver from `get_or_create`.
+    Driver(Arc<DriverHandle>),
+    /// A resolved container from `resolve_container`. Boxed to keep this enum
+    /// small (the driver `ContainerReference` is otherwise the largest variant).
+    Container(Box<ContainerReference>),
+}
 
 /// Pre-flight: builds a [`SpawnContext`] + a fresh producer-side
 /// `cosmos_operation_handle_t *`. Returns `Err(coarse_code)` on
@@ -122,16 +137,16 @@ fn pre_flight_spawn(
 }
 
 /// Routes one driver-side `Future<Output = Result<R, CosmosError>>`
-/// through the standard submit-and-publish pipeline. `to_response`
-/// converts the success value into the `(response, side_payloads)` the
-/// completion delivers; on `Err`, the rich `CosmosError` is converted
-/// to the FFI's coarse code + optional rich-error payload per the
-/// queue's `include_error_details` option.
+/// through the standard submit-and-publish pipeline. `to_success`
+/// converts the success value into the [`SuccessKind`] the completion
+/// delivers; on `Err`, the rich `CosmosError` is flattened inline into the
+/// completion (subject to the queue's `include_error_details` option) plus
+/// the coarse code.
 fn spawn_oneshot<Fut, R>(
     ctx: SpawnContext,
     runtime: Arc<crate::runtime::RuntimeContext>,
     fut: Fut,
-    to_response: impl FnOnce(R) -> *mut ResponseHandle + Send + 'static,
+    to_success: impl FnOnce(R) -> SuccessKind + Send + 'static,
 ) where
     Fut: Future<Output = azure_data_cosmos_driver::error::Result<R>> + Send + 'static,
     R: Send + 'static,
@@ -139,13 +154,13 @@ fn spawn_oneshot<Fut, R>(
     use futures::future::FutureExt;
 
     runtime.tokio.spawn(async move {
-        // Run the driver work (and the success-path response conversion)
-        // behind a panic firewall. Tokio would otherwise isolate a panic at
-        // the task boundary, so `enqueue_into_inner` below would never run and
-        // the operation handle would stay `IN_FLIGHT` forever — the host
-        // continuation hangs and leaks. Catching the panic here lets us still
-        // publish exactly one completion, honoring the spec section 3.6 invariant.
-        let work = std::panic::AssertUnwindSafe(async move { fut.await.map(to_response) });
+        // Run the driver work (and the success-path conversion) behind a panic
+        // firewall. Tokio would otherwise isolate a panic at the task boundary,
+        // so `enqueue_into_inner` below would never run and the operation handle
+        // would stay `IN_FLIGHT` forever — the host continuation hangs and
+        // leaks. Catching the panic here lets us still publish exactly one
+        // completion, honoring the spec section 3.6 invariant.
+        let work = std::panic::AssertUnwindSafe(async move { fut.await.map(to_success) });
         let work = work.catch_unwind();
         tokio::pin!(work);
 
@@ -162,61 +177,55 @@ fn spawn_oneshot<Fut, R>(
             done = &mut work => Some(done),
         };
 
+        let user_data = ctx.user_data.as_isize();
         let completion = match outcome {
             // Cancelled: drop the driver future and synthesize a CANCELLED
             // completion so the host's continuation is released.
-            None => Completion::new_for_publish(
-                CosmosCompletionOutcome::CosmosCompletionOutcomeCancelled,
-                CosmosErrorCode::CosmosErrorCodeOperationCancelled,
-                ctx.user_data.as_isize(),
-                ctx.op_inner.clone(),
-                None,
-                None,
-            ),
-            Some(Ok(Ok(response))) => Completion::new_for_publish(
-                CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
-                CosmosErrorCode::CosmosErrorCodeSuccess,
-                ctx.user_data.as_isize(),
-                ctx.op_inner.clone(),
-                None,
-                Some(response),
-            ),
+            None => PendingCompletion::cancelled(user_data, ctx.op_inner.clone()),
+            Some(Ok(Ok(success))) => match success {
+                SuccessKind::Response {
+                    response,
+                    next_continuation,
+                } => PendingCompletion::ok_response(
+                    user_data,
+                    ctx.op_inner.clone(),
+                    response.map(|b| *b),
+                    next_continuation,
+                ),
+                SuccessKind::Driver(driver) => {
+                    PendingCompletion::ok_driver(user_data, ctx.op_inner.clone(), driver)
+                }
+                SuccessKind::Container(container) => {
+                    PendingCompletion::ok_container(user_data, ctx.op_inner.clone(), *container)
+                }
+            },
             Some(Ok(Err(err))) => {
                 let coarse = CosmosErrorCode::from_driver_error(&err);
-                let stored_error = if ctx.include_error_details {
-                    Some(Arc::new(CosmosErrorHandle::new(err)))
-                } else {
-                    None
-                };
-                Completion::new_for_publish(
-                    CosmosCompletionOutcome::CosmosCompletionOutcomeError,
-                    coarse,
-                    ctx.user_data.as_isize(),
+                PendingCompletion::error(
+                    user_data,
                     ctx.op_inner.clone(),
-                    stored_error,
-                    None,
+                    err,
+                    coarse,
+                    ctx.include_error_details,
                 )
             }
             Some(Err(_panic)) => {
-                // The driver future (or response conversion) panicked. Surface
-                // it as a coarse client-side error so the host's continuation
-                // is released with a definitive failure instead of hanging.
+                // The driver future (or success conversion) panicked. Surface it
+                // as a coarse client-side error so the host's continuation is
+                // released with a definitive failure instead of hanging.
                 tracing::error!("submit: driver future panicked; synthesizing ERROR completion",);
-                Completion::new_for_publish(
-                    CosmosCompletionOutcome::CosmosCompletionOutcomeError,
-                    CosmosErrorCode::CosmosErrorCodeClientError,
-                    ctx.user_data.as_isize(),
+                PendingCompletion::error_coarse(
+                    user_data,
                     ctx.op_inner.clone(),
-                    None,
-                    None,
+                    CosmosErrorCode::CosmosErrorCodeClientError,
                 )
             }
         };
         let rc = CompletionQueue::enqueue_into_inner(&ctx.queue, completion);
         if rc != CosmosErrorCode::CosmosErrorCodeSuccess {
             // The queue rejected the completion (shutdown / full). The
-            // completion is dropped — its side payloads (if any) are
-            // freed by `Completion::drop`.
+            // completion is dropped — its owned payloads (if any) are freed by
+            // its `Drop`.
             tracing::warn!(
                 rc = ?rc,
                 "submit: completion dropped (queue shutdown or full)",
@@ -242,7 +251,8 @@ fn spawn_oneshot<Fut, R>(
 /// runs `plan_operation` + `execute_plan` internally so it can both
 /// **resume** from an inbound continuation token
 /// ([`CosmosOperationRequest::continuation_token`]) and **surface** the
-/// next-page token via [`crate::response::cosmos_response_next_continuation`].
+/// next-page token via the completion's `next_continuation` field
+/// ([`crate::completion::CosmosCompletion`]).
 ///
 /// Use this for any operation that can return multiple pages — queries,
 /// read-all-items, change feed — and drive pagination by re-submitting with
@@ -357,8 +367,9 @@ pub extern "C" fn cosmos_submit_operation(
             };
             Ok((page, next))
         },
-        |(page, next): (Option<CosmosResponse>, Option<String>)| {
-            ResponseHandle::into_raw_with_next_continuation(page, next)
+        |(page, next): (Option<CosmosResponse>, Option<String>)| SuccessKind::Response {
+            response: page.map(Box::new),
+            next_continuation: next,
         },
     );
     op_handle
@@ -438,7 +449,10 @@ pub extern "C" fn cosmos_submit_singleton_operation(
                 .execute_singleton_operation(operation, options)
                 .await
         },
-        |response: CosmosResponse| ResponseHandle::into_raw(response),
+        |response: CosmosResponse| SuccessKind::Response {
+            response: Some(Box::new(response)),
+            next_continuation: None,
+        },
     );
     op_handle
 }
@@ -449,10 +463,9 @@ pub extern "C" fn cosmos_submit_singleton_operation(
 /// Asynchronous variant of [`crate::driver::cosmos_driver_get_or_create_blocking`].
 ///
 /// Bridges `CosmosDriverRuntime::get_or_create_driver` through the
-/// submit pipeline; the completion delivers a degenerate
-/// `cosmos_response_t` from which
-/// [`crate::response::cosmos_response_take_driver`] extracts the new
-/// driver handle.
+/// submit pipeline; the completion carries the new driver in its owned
+/// `driver` field, which
+/// [`crate::completion::cosmos_completion_take_driver`] detaches.
 #[no_mangle]
 pub extern "C" fn cosmos_driver_get_or_create_submit(
     runtime: *const RuntimeContext,
@@ -510,12 +523,11 @@ pub extern "C" fn cosmos_driver_get_or_create_submit(
             driver_runtime.create_driver(driver_options).await
         },
         |driver_arc: Arc<CosmosDriver>| {
-            // The submit's "response" is a degenerate shell; the real
-            // payload is the driver Arc carried in the side-payload
-            // slot. `_take_driver` extracts it; the scalar / header
-            // accessors return defaults.
+            // The submit's success payload is the freshly-created driver, which
+            // the completion carries in its owned `driver` field for the host
+            // to detach via `cosmos_completion_take_driver`.
             let driver_inner = Arc::new(DriverHandle { inner: driver_arc });
-            ResponseHandle::into_raw_with_driver(driver_inner)
+            SuccessKind::Driver(driver_inner)
         },
     );
     op_handle
@@ -528,10 +540,9 @@ pub extern "C" fn cosmos_driver_get_or_create_submit(
 /// Asynchronous variant of
 /// [`crate::container_ref::cosmos_driver_resolve_container_blocking`].
 ///
-/// Same shape as the get-or-create variant — the completion delivers a
-/// degenerate response from which
-/// [`crate::response::cosmos_response_take_container`] extracts the
-/// resolved container handle.
+/// Same shape as the get-or-create variant — the completion carries the
+/// resolved container in its owned `container` field, which
+/// [`crate::completion::cosmos_completion_take_container`] detaches.
 #[no_mangle]
 pub extern "C" fn cosmos_driver_resolve_container_submit(
     driver: *const DriverHandle,
@@ -589,7 +600,7 @@ pub extern "C" fn cosmos_driver_resolve_container_submit(
                 .await
         },
         |container_ref: azure_data_cosmos_driver::models::ContainerReference| {
-            ResponseHandle::into_raw_with_container(container_ref)
+            SuccessKind::Container(Box::new(container_ref))
         },
     );
     op_handle
@@ -670,49 +681,51 @@ mod tests {
     #[test]
     fn pre_flight_spawn_rejects_shutdown_queue() {
         use crate::completion::{
-            cosmos_cq_create, cosmos_cq_free, cosmos_cq_shutdown, CosmosCqOptions,
+            cosmos_completion_queue_create, cosmos_completion_queue_free,
+            cosmos_completion_queue_shutdown, CosmosCompletionQueueOptions,
         };
         use crate::runtime::{__test_only_create_default_runtime, cosmos_runtime_free};
 
         let rt = __test_only_create_default_runtime();
-        let opts = CosmosCqOptions {
+        let opts = CosmosCompletionQueueOptions {
             capacity_hint: 0,
             max_capacity: 0,
             include_error_details: 1,
         };
-        let queue = cosmos_cq_create(rt, &opts as *const _);
+        let queue = cosmos_completion_queue_create(rt, &opts as *const _);
         assert!(!queue.is_null());
 
         // Shut the queue down, then attempt a submit pre-flight. It must be
         // rejected synchronously with QUEUE_SHUTDOWN — no task is spawned.
-        cosmos_cq_shutdown(queue);
+        cosmos_completion_queue_shutdown(queue);
         let result = pre_flight_spawn(queue, 0);
         assert!(matches!(
             result,
             Err(CosmosErrorCode::CosmosErrorCodeQueueShutdown)
         ));
 
-        cosmos_cq_free(queue);
+        cosmos_completion_queue_free(queue);
         cosmos_runtime_free(rt);
     }
 
     #[test]
     fn spawn_oneshot_cancellation_yields_cancelled_completion() {
         use crate::completion::{
-            cosmos_completion_free, cosmos_completion_outcome,
-            cosmos_completion_was_cancel_requested, cosmos_cq_create, cosmos_cq_free,
-            cosmos_cq_wait, cosmos_operation_handle_cancel, cosmos_operation_handle_free,
-            CosmosCompletionOutcome, CosmosCqOptions,
+            cosmos_completion_queue_create, cosmos_completion_queue_free,
+            cosmos_completion_queue_free_completions, cosmos_completion_queue_wait,
+            cosmos_operation_handle_cancel, cosmos_operation_handle_free, CosmosCompletion,
+            CosmosCompletionOutcome, CosmosCompletionQueueOptions,
         };
         use crate::runtime::{__test_only_create_default_runtime, cosmos_runtime_free};
+        use std::mem::MaybeUninit;
 
         let rt = __test_only_create_default_runtime();
-        let opts = CosmosCqOptions {
+        let opts = CosmosCompletionQueueOptions {
             capacity_hint: 0,
             max_capacity: 0,
             include_error_details: 1,
         };
-        let queue = cosmos_cq_create(rt, &opts as *const _);
+        let queue = cosmos_completion_queue_create(rt, &opts as *const _);
         assert!(!queue.is_null());
 
         let (ctx, op_handle) = pre_flight_spawn(queue, 0).expect("pre-flight ok");
@@ -724,24 +737,30 @@ mod tests {
             ctx,
             runtime,
             futures::future::pending::<azure_data_cosmos_driver::error::Result<CosmosResponse>>(),
-            |r: CosmosResponse| ResponseHandle::into_raw(r),
+            |r: CosmosResponse| SuccessKind::Response {
+                response: Some(Box::new(r)),
+                next_continuation: None,
+            },
         );
 
         // Request cancellation; the spawned task's select must observe it and
         // post a CANCELLED completion instead of hanging forever.
         cosmos_operation_handle_cancel(op_handle);
 
-        let c = cosmos_cq_wait(queue, u32::MAX);
-        assert!(!c.is_null());
+        let mut slot = MaybeUninit::<CosmosCompletion>::uninit();
+        let n = cosmos_completion_queue_wait(queue, slot.as_mut_ptr(), 1, u32::MAX);
+        assert_eq!(n, 1);
+        // SAFETY: `n == 1` means one completion was written into `slot`.
+        let mut c = unsafe { slot.assume_init() };
         assert_eq!(
-            cosmos_completion_outcome(c),
+            c.outcome,
             CosmosCompletionOutcome::CosmosCompletionOutcomeCancelled
         );
-        assert!(cosmos_completion_was_cancel_requested(c));
+        assert_eq!(c.was_cancel_requested, 1);
 
-        cosmos_completion_free(c);
+        cosmos_completion_queue_free_completions(&mut c as *mut CosmosCompletion, 1);
         cosmos_operation_handle_free(op_handle);
-        cosmos_cq_free(queue);
+        cosmos_completion_queue_free(queue);
         cosmos_runtime_free(rt);
     }
 }

@@ -55,8 +55,8 @@ impl DriverHandle {
 
     /// Allocates a fresh FFI handle that shares an existing
     /// [`DriverHandle`] `Arc`. Used by
-    /// [`crate::response::cosmos_response_take_driver`] to mint a
-    /// public `cosmos_driver_t *` from a degenerate response's stashed
+    /// [`crate::completion::cosmos_completion_take_driver`] to mint a
+    /// public `cosmos_driver_t *` from a degenerate completion's stashed
     /// side payload.
     pub(crate) fn from_arc_into_raw(this: Arc<DriverHandle>) -> *mut Self {
         Arc::into_raw(this) as *mut Self

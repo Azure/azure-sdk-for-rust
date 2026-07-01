@@ -15,9 +15,9 @@
 //     cooperative cancellation) and posts exactly one `CANCELLED`
 //     completion, so the host continuation is always released — never
 //     left `IN_FLIGHT`.
-//   * `cosmos_completion_was_cancel_requested` lets the host distinguish
-//     "cancel won the race" from "cancel lost" (the op completed first
-//     but a cancel was also requested).
+//   * The completion's `was_cancel_requested` field lets the host
+//     distinguish "cancel won the race" from "cancel lost" (the op
+//     completed first but a cancel was also requested).
 //
 // This harness covers the deterministic contracts a binding must rely on:
 //
@@ -73,10 +73,8 @@ static int test_cancel_and_state_null_safe(void)
                COSMOS_OPERATION_HANDLE_STATE_IN_FLIGHT,
            "state(NULL) == IN_FLIGHT");
 
-    // Completion accessors tolerate NULL.
-    ASSERT(cosmos_completion_was_cancel_requested(NULL) == false,
-           "was_cancel_requested(NULL) == false");
-    cosmos_completion_free(NULL);
+    // Freeing a zero-length / NULL completion run is a no-op.
+    cosmos_completion_queue_free_completions(NULL, 0);
     return result;
 }
 
@@ -88,7 +86,7 @@ static int test_cancel_and_state_null_safe(void)
 // fills the out-params; on failure returns non-zero and the out-params are
 // left NULL (caller skips the test).
 static int make_runtime_and_cq(cosmos_runtime_t **out_runtime,
-                               cosmos_cq_t **out_cq)
+                               cosmos_completion_queue_t **out_cq)
 {
     *out_runtime = NULL;
     *out_cq = NULL;
@@ -109,7 +107,7 @@ static int make_runtime_and_cq(cosmos_runtime_t **out_runtime,
         return 1;
     }
 
-    cosmos_cq_t *cq = cosmos_cq_create(runtime, NULL);
+    cosmos_completion_queue_t *cq = cosmos_completion_queue_create(runtime, NULL);
     if (cq == NULL) {
         cosmos_runtime_free(runtime);
         return 1;
@@ -124,10 +122,11 @@ static int test_cancel_before_drain_yields_cancelled_completion(void)
 {
     int result = TEST_PASS;
     cosmos_runtime_t *runtime = NULL;
-    cosmos_cq_t *cq = NULL;
+    cosmos_completion_queue_t *cq = NULL;
     cosmos_account_ref_t *account = NULL;
     cosmos_operation_handle_t *handle = NULL;
-    cosmos_completion_t *completion = NULL;
+    cosmos_completion_t completion;
+    size_t drained = 0;
 
     if (make_runtime_and_cq(&runtime, &cq) != 0) {
         printf("    SKIP: could not build runtime/cq in this environment\n");
@@ -156,26 +155,22 @@ static int test_cancel_before_drain_yields_cancelled_completion(void)
 
     // Drain exactly one completion. The biased cancel branch wins, so this
     // resolves promptly (the dropped connect future does not block).
-    completion = cosmos_cq_wait(cq, 10000 /* ms */);
-    REQUIRE(completion != NULL,
+    drained = cosmos_completion_queue_wait(cq, &completion, 1, 10000 /* ms */);
+    REQUIRE(drained == 1,
             "a completion was delivered after cancel (no hang/leak)");
 
     // The contract: cancel won the race.
-    ASSERT(cosmos_completion_outcome(completion) ==
-               COSMOS_COMPLETION_OUTCOME_CANCELLED,
-           "completion outcome == CANCELLED (=%d)",
-           cosmos_completion_outcome(completion));
-    ASSERT(cosmos_completion_status(completion) ==
-               COSMOS_ERROR_CODE_OPERATION_CANCELLED,
-           "completion status == OPERATION_CANCELLED (=%d)",
-           cosmos_completion_status(completion));
-    ASSERT(cosmos_completion_was_cancel_requested(completion) == true,
+    ASSERT(completion.outcome == COSMOS_COMPLETION_OUTCOME_CANCELLED,
+           "completion outcome == CANCELLED (=%d)", completion.outcome);
+    ASSERT(completion.status == COSMOS_ERROR_CODE_OPERATION_CANCELLED,
+           "completion status == OPERATION_CANCELLED (=%d)", completion.status);
+    ASSERT(completion.was_cancel_requested == 1,
            "was_cancel_requested == true");
 
     // The opaque cookie round-trips verbatim (intptr_t contract).
-    ASSERT(cosmos_completion_user_data(completion) == kUserDataCookie,
+    ASSERT(completion.user_data == kUserDataCookie,
            "user_data cookie round-trips (got 0x%llx)",
-           (unsigned long long)cosmos_completion_user_data(completion));
+           (unsigned long long)completion.user_data);
 
     // The producing handle is in a terminal CANCELLED state — never left
     // IN_FLIGHT.
@@ -185,15 +180,16 @@ static int test_cancel_before_drain_yields_cancelled_completion(void)
            cosmos_operation_handle_state(handle));
 
     // Exactly one completion: a second non-blocking drain finds nothing.
-    cosmos_completion_t *extra = cosmos_cq_wait(cq, 0);
-    ASSERT(extra == NULL, "exactly one completion delivered for the submit");
-    cosmos_completion_free(extra);
+    cosmos_completion_t extra;
+    size_t extra_n = cosmos_completion_queue_wait(cq, &extra, 1, 0);
+    ASSERT(extra_n == 0, "exactly one completion delivered for the submit");
+    cosmos_completion_queue_free_completions(&extra, extra_n);
 
 cleanup:
-    cosmos_completion_free(completion);
+    cosmos_completion_queue_free_completions(&completion, drained);
     cosmos_operation_handle_free(handle);
     cosmos_account_ref_free(account);
-    cosmos_cq_free(cq);
+    cosmos_completion_queue_free(cq);
     cosmos_runtime_free(runtime);
     return result;
 }

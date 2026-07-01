@@ -149,13 +149,14 @@ pub struct CosmosResponseHeader {
 /// [`CosmosResponseHeader`] list synthesized from a driver
 /// [`CosmosResponseHeaders`]. Kept alive by the owning completion so the
 /// `value` pointers stay valid until the completion is freed.
-#[allow(
-    dead_code,
-    reason = "the list/storage accessors are consumed by the P4b completion inversion"
-)]
 pub(crate) struct OwnedResponseHeaders {
     /// `CString` heap buffers the `list` entries' `value` pointers reference.
-    /// Never read directly; kept solely to own the value bytes.
+    /// Never read directly; kept solely to own the value bytes so the borrowed
+    /// `value` pointers stay valid until this owner is dropped.
+    #[allow(
+        dead_code,
+        reason = "storage-only: owns the CString bytes the list's value pointers borrow"
+    )]
     values: Vec<CString>,
     /// The `#[repr(C)]` entries handed across the ABI as `(ptr, len)`.
     list: Vec<CosmosResponseHeader>,
@@ -168,11 +169,16 @@ pub(crate) struct OwnedResponseHeaders {
 unsafe impl Send for OwnedResponseHeaders {}
 unsafe impl Sync for OwnedResponseHeaders {}
 
-#[allow(
-    dead_code,
-    reason = "consumed by the P4b completion inversion (synthesize + as_ptr_len)"
-)]
 impl OwnedResponseHeaders {
+    /// An empty header list (no allocations). Used for completions that carry
+    /// no response (errors, cancellations, degenerate side-payload shells).
+    pub(crate) fn empty() -> Self {
+        Self {
+            values: Vec::new(),
+            list: Vec::new(),
+        }
+    }
+
     /// Borrowed `(ptr, len)` view of the header list, normalizing an empty list
     /// to `(NULL, 0)`. Valid until this value is dropped.
     pub(crate) fn as_ptr_len(&self) -> (*const CosmosResponseHeader, usize) {
@@ -191,10 +197,6 @@ impl OwnedResponseHeaders {
 /// Only the commonly-needed headers are covered today; exhaustive coverage (or
 /// a driver-side raw header map) is a follow-up. A header whose rendered value
 /// would contain an interior NUL byte is skipped rather than truncated.
-#[allow(
-    dead_code,
-    reason = "first non-test caller is the P4b completion inversion"
-)]
 pub(crate) fn synthesize_response_headers(headers: &CosmosResponseHeaders) -> OwnedResponseHeaders {
     // (id, rendered-value) pairs collected in declaration order.
     let mut pairs: Vec<(CosmosHeaderId, String)> = Vec::new();

@@ -11,7 +11,8 @@
 //      correlation id, user-agent suffix, cpu refresh interval).
 //   3. The happy path — build a runtime via the builder, then prove the
 //      resulting `cosmos_runtime_t *` is usable by handing it to
-//      `cosmos_cq_create` / `cosmos_cq_free` / `cosmos_runtime_free`.
+//      `cosmos_completion_queue_create` / `cosmos_completion_queue_free` /
+//      `cosmos_runtime_free`.
 //
 // The multi-producer / single-consumer scenario lives in the Rust-side
 // completion_t tests (which already exercise it via the internal
@@ -174,14 +175,14 @@ static int test_build_happy_path(void)
 
     // The builder is consumed by `_build`; do NOT free it.
 
-    cosmos_cq_t *cq = cosmos_cq_create(runtime, NULL);
-    REQUIRE(cq != NULL, "cq_create(runtime) returned non-NULL");
+    cosmos_completion_queue_t *cq = cosmos_completion_queue_create(runtime, NULL);
+    REQUIRE(cq != NULL, "completion_queue_create(runtime) returned non-NULL");
 
     // Sanity: queue state is RUNNING.
-    ASSERT(cosmos_cq_state(cq) == COSMOS_CQ_STATE_RUNNING,
+    ASSERT(cosmos_completion_queue_state(cq) == COSMOS_COMPLETION_QUEUE_STATE_RUNNING,
            "queue starts in RUNNING state");
 
-    cosmos_cq_free(cq);
+    cosmos_completion_queue_free(cq);
     cosmos_runtime_free(runtime);
     return result;
 
