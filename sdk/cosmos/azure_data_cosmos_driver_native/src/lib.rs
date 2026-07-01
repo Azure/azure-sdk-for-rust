@@ -40,11 +40,13 @@ pub mod submit;
 
 // We want this value to be present as a string in the compiled binary so that
 // build provenance can be recovered from a stripped library. Exposing it as a
-// non-mangled static prevents the compiler from optimizing it away.
+// non-mangled static prevents the compiler from optimizing it away. The symbol
+// carries the `COSMOS_` prefix like every other export so it cannot collide
+// with a host's own symbols when this crate is linked as a static library.
 //
 // cbindgen:ignore
 #[no_mangle]
-pub static BUILD_IDENTIFIER: &CStr = c_str!(env!("BUILD_IDENTIFIER"));
+pub static COSMOS_BUILD_IDENTIFIER: &CStr = c_str!(env!("BUILD_IDENTIFIER"));
 
 const VERSION: &CStr = c_str!(env!("CARGO_PKG_VERSION"));
 
