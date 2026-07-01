@@ -119,6 +119,7 @@ fn generate_c_header() {
         ),
         ("CosmosResponseView".into(), "response_view_t".into()),
         ("CosmosCompletionView".into(), "completion_view_t".into()),
+        ("CosmosResponseHeader".into(), "response_header_t".into()),
         (
             "CosmosOperationOptions".into(),
             "operation_options_t".into(),
@@ -147,6 +148,7 @@ fn generate_c_header() {
             "operation_handle_state_t".into(),
         ),
         ("CosmosErrorCode".into(), "error_code_t".into()),
+        ("CosmosHeaderId".into(), "header_id_t".into()),
         ("CosmosReadConsistency".into(), "read_consistency_t".into()),
         (
             "CosmosContentResponseOnWrite".into(),

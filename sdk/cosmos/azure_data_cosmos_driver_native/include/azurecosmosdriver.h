@@ -301,6 +301,110 @@ typedef int32_t cosmos_operation_handle_state_t;
 #endif // __cplusplus
 
 /**
+ * Stable numeric identifier for a known Cosmos response header.
+ *
+ * The id namespace is **append-only**: new headers get new ids and existing
+ * ids never change value, so a generated SDK mapping table stays valid across
+ * wrapper versions. [`CosmosHeaderIdUnknown`](Self::CosmosHeaderIdUnknown)
+ * (`0`) is a forward-compat sentinel — an older SDK that does not recognize a
+ * newer id routes it through its default branch, and
+ * [`cosmos_header_name`] returns NULL for it.
+ */
+enum cosmos_header_id_t
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+  : int32_t
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+ {
+  /**
+   * Unknown / unmapped header (forward-compat sentinel).
+   */
+  COSMOS_HEADER_ID_UNKNOWN = 0,
+  /**
+   * `x-ms-activity-id`.
+   */
+  COSMOS_HEADER_ID_ACTIVITY_ID = 1,
+  /**
+   * `x-ms-request-charge`.
+   */
+  COSMOS_HEADER_ID_REQUEST_CHARGE = 2,
+  /**
+   * `x-ms-session-token`.
+   */
+  COSMOS_HEADER_ID_SESSION_TOKEN = 3,
+  /**
+   * `etag`.
+   */
+  COSMOS_HEADER_ID_ETAG = 4,
+  /**
+   * `x-ms-continuation`.
+   */
+  COSMOS_HEADER_ID_CONTINUATION = 5,
+  /**
+   * `x-ms-item-count`.
+   */
+  COSMOS_HEADER_ID_ITEM_COUNT = 6,
+  /**
+   * `x-ms-substatus`.
+   */
+  COSMOS_HEADER_ID_SUB_STATUS = 7,
+  /**
+   * `x-ms-cosmos-index-utilization`.
+   */
+  COSMOS_HEADER_ID_INDEX_METRICS = 8,
+  /**
+   * `x-ms-documentdb-query-metrics`.
+   */
+  COSMOS_HEADER_ID_QUERY_METRICS = 9,
+  /**
+   * `x-ms-request-duration-ms`.
+   */
+  COSMOS_HEADER_ID_SERVER_DURATION_MS = 10,
+  /**
+   * `lsn`.
+   */
+  COSMOS_HEADER_ID_LSN = 11,
+  /**
+   * `x-ms-item-lsn`.
+   */
+  COSMOS_HEADER_ID_ITEM_LSN = 12,
+  /**
+   * `x-ms-offer-replace-pending`.
+   */
+  COSMOS_HEADER_ID_OFFER_REPLACE_PENDING = 13,
+  /**
+   * `x-ms-retry-after-ms`.
+   */
+  COSMOS_HEADER_ID_RETRY_AFTER_MS = 14,
+  /**
+   * `x-ms-cosmos-correlated-activityid`.
+   */
+  COSMOS_HEADER_ID_CORRELATED_ACTIVITY_ID = 15,
+  /**
+   * `x-ms-global-committed-lsn`.
+   */
+  COSMOS_HEADER_ID_GLOBAL_COMMITTED_LSN = 16,
+  /**
+   * `x-ms-number-of-read-regions`.
+   */
+  COSMOS_HEADER_ID_NUMBER_OF_READ_REGIONS = 17,
+  /**
+   * `x-ms-gatewayversion`.
+   */
+  COSMOS_HEADER_ID_GATEWAY_VERSION = 18,
+  /**
+   * `x-ms-serviceversion`.
+   */
+  COSMOS_HEADER_ID_SERVICE_VERSION = 19,
+};
+#ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum cosmos_header_id_t cosmos_header_id_t;
+#else
+typedef int32_t cosmos_header_id_t;
+#endif // __STDC_VERSION__ >= 202311L
+#endif // __cplusplus
+
+/**
  * Discriminates which driver `CosmosOperation` factory a
  * [`CosmosOperationRequest`] maps to. Append-only: new kinds get new
  * trailing discriminants so the ABI stays stable.
@@ -1919,6 +2023,18 @@ struct cosmos_driver_t *cosmos_response_take_driver(struct cosmos_response_t *re
  * `_take_driver`.
  */
 struct cosmos_container_ref_t *cosmos_response_take_container(struct cosmos_response_t *response);
+
+/**
+ * Returns the canonical wire header name (NUL-terminated UTF-8) for a header
+ * id, or NULL for [`CosmosHeaderId::CosmosHeaderIdUnknown`] / an unrecognized
+ * id.
+ *
+ * The returned pointer is **statically allocated** and lives for the lifetime
+ * of the process; callers must **not** free it. This is the id → name mapping
+ * an SDK uses to render or match headers by their well-known names without
+ * hardcoding the table itself.
+ */
+const char *cosmos_header_name(cosmos_header_id_t id);
 
 /**
  * Lifecycle: free a `cosmos_runtime_t *` previously returned by the runtime

@@ -4,6 +4,7 @@
   ],
   "ignoreWords": [
     "accountname",
+    "activityid",
     "ALPN",
     "apacsoutheast",
     "Appleby's",
@@ -117,6 +118,7 @@
     "Geospatial",
     "fshort",
     "funct",
+    "gatewayversion",
     "germanycentral",
     "germanynorth",
     "germanynortheast",
@@ -241,6 +243,7 @@
     "rwcache",
     "sbyte",
     "serviceunavailable",
+    "serviceversion",
     "sess",
     "southafricanorth",
     "southafricawest",

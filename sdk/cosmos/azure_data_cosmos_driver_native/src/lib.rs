@@ -33,6 +33,7 @@ pub mod feed_range;
 pub mod op_request;
 pub mod partition_key;
 pub mod response;
+pub mod response_header;
 pub mod runtime;
 pub mod runtime_builder;
 pub(crate) mod safety;
