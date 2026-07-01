@@ -422,13 +422,15 @@ reference so they stay valid until free:
 ```rust
 struct CosmosCompletionBacking {
     response: Option<CosmosResponse>,      // owns the body bytes
-    header_storage: Vec<CString>,          // backs `headers` name/value ptrs
-    headers: Vec<CosmosHeaderKv>,          // the array `headers` points at
-    activity_id: Option<CString>,          // backs the typed-string ptrs
+    header_values: Vec<CString>,           // backs each CosmosResponseHeader.value
+    headers: Vec<CosmosResponseHeader>,    // the array `headers` points at
+    message: Option<CString>,              // backs the error-string ptrs
+    activity_id: Option<CString>,
     session_token: Option<CString>,
     etag: Option<CString>,
     continuation: Option<CString>,
     next_continuation: Option<CString>,
+    backtrace: Option<CString>,
     op_inner: Arc<OperationInner>,         // for op-handle state after the fact
 }
 ```
@@ -437,7 +439,7 @@ struct CosmosCompletionBacking {
 
 ```rust
 // Frees an array of `count` completions and every inner allocation
-// (backing box, owned error/driver/container handles NOT taken by the SDK).
+// (backing box, owned driver/container handles NOT detached by the SDK).
 pub extern "C" fn cosmos_completion_queue_free_completions(
     completions: *mut CosmosCompletion,
     count: usize,
@@ -446,11 +448,11 @@ pub extern "C" fn cosmos_completion_queue_free_completions(
 
 - The host reads the fields, **copies** what it needs into SDK memory, then
   calls the free. All borrowed pointers die at free.
-- Owned payloads (`error` / `driver` / `container`): the SDK either (a) reads
-  them in place and lets the free drop them, or (b) detaches ownership by
-  zeroing the field first (a `cosmos_completion_take_*` helper sets the field
-  to NULL and returns the pointer, so the free skips it). Default: the free
-  reclaims any non-NULL owned handle.
+- Owned payloads (`driver` / `container`): the SDK either (a) reads them in
+  place and lets the free drop them, or (b) detaches ownership by zeroing the
+  field first (a `cosmos_completion_take_*` helper sets the field to NULL and
+  returns the pointer, so the free skips it). Default: the free reclaims any
+  non-NULL owned handle.
 
 #### The wait
 
@@ -474,28 +476,51 @@ into one array-returning call.
 
 - `cosmos_completion_view` + `CosmosCompletionView`.
 - `cosmos_completion_take_response` / `cosmos_completion_response`.
+- `cosmos_completion_take_error` / `cosmos_completion_error` (error is now
+  inline scalar fields).
 - The entire `response.rs`: `cosmos_response_t` + all `cosmos_response_*`
   accessors + `CosmosResponseView` + `cosmos_response_view` +
   `cosmos_response_take_driver` / `_take_container` + `cosmos_response_free`.
   The degenerate side-payloads (`driver` / `container`) move onto the
   completion as owned fields.
-- `cosmos_cq_wait` (single) + `cosmos_cq_wait_batch` → the one array wait.
+- `cosmos_cq_wait` (single) + `cosmos_cq_wait_batch` → the one array wait; the
+  remaining `cosmos_cq_*` functions are renamed to `cosmos_completion_queue_*`.
 
-#### Open sub-question — the header list source
+#### Header list — header-id model (confirmed)
 
-The driver keeps **typed** response headers (`CosmosResponseHeaders`), not a
-raw key/value map, and its header-name constants are `pub(crate)`. So a
-*generic* `cosmos_header_kv_t[]` must be **synthesized** in the wrapper from
-the typed fields with **hardcoded** canonical wire names. Options:
+The driver keeps **typed** response headers (`CosmosResponseHeaders`), not a raw
+key/value map, and its header-name constants are `pub(crate)`. Rather than a
+string-named list, the completion carries a **header-id** list (RNTBD-token /
+codegen style):
 
-- **(A) Curated typed subset now** — synthesize the ~15 commonly-needed headers
-  (activity id, RU charge, session token, etag, continuation, item count,
-  substatus, retry-after, lsn family, query/index metrics, …) with hardcoded
-  `x-ms-*` names; document "exhaustive/raw list is a follow-up".
-- **(B) Defer the generic list** — keep only the typed-string fields on the
-  completion for now; add the `headers`/`headers_len` fields but leave them
-  `NULL/0` until the driver grows a raw header map (or we decide to hardcode
-  the full table).
+```rust
+#[repr(i32)]
+pub enum CosmosHeaderId {
+    CosmosHeaderIdUnknown = 0,
+    CosmosHeaderIdActivityId = 1,
+    CosmosHeaderIdRequestCharge = 2,
+    // … one stable id per known response header
+}
 
-Recommended: **(A)** — it delivers the generic-list shape @analogrelay asked
-for while the exhaustive table / driver raw-map is a separate follow-up.
+#[repr(C)]
+pub struct CosmosResponseHeader {
+    pub id: CosmosHeaderId,               // stable numeric id
+    pub value: *const c_char,             // borrowed value string
+}
+
+// Exposes the id → canonical wire-name mapping to the SDK.
+pub extern "C" fn cosmos_header_name(id: CosmosHeaderId) -> *const c_char;
+```
+
+The wrapper **synthesizes** the list from the typed `CosmosResponseHeaders`,
+assigning each populated field its stable id and rendering its value as a
+string; the
+`cosmos_header_name` accessor (hardcoded canonical `x-ms-*` names) gives the SDK
+the id→name mapping. This is the codegen-friendly shape @analogrelay described
+(SDKs map ids, not string-compare names). Exhaustive coverage / a driver-side
+raw header map is a follow-up; the first cut covers the commonly-needed headers.
+
+**Sub-phasing.** *P4a* builds this header-id model in isolation (new module,
+`CosmosHeaderId` + `CosmosResponseHeader` + `cosmos_header_name` + a synthesis
+fn from `CosmosResponseHeaders`), unit-tested and additive — no completion
+changes, tree stays green. *P4b* does the completion inversion consuming it.
