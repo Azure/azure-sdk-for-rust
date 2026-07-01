@@ -24,8 +24,10 @@ async fn main() -> azure_core::Result<()> {
 
 #[derive(Subcommand, Debug, Clone)]
 enum Tests {
+    #[command(name = "mock_json")]
     Json(MockJsonTestArgs),
     #[cfg(feature = "xml")]
+    #[command(name = "mock_xml")]
     Xml(MockXmlTestArgs),
 }
 
