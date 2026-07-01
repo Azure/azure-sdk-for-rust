@@ -137,6 +137,11 @@ path = "tests/multi_region_failover.rs"
 required-features = ["fault_injection"]
 
 [[test]]
+name = "live_storm_diagnostics"
+path = "tests/live_storm_diagnostics.rs"
+required-features = ["fault_injection"]
+
+[[test]]
 name = "gateway_query_plan_comparison"
 path = "tests/gateway_query_plan_comparison.rs"
 required-features = ["__internal_testing"]

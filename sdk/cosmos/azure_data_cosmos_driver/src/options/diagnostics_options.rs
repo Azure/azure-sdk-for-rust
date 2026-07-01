@@ -11,6 +11,13 @@ const DEFAULT_MAX_SUMMARY_SIZE_BYTES: usize = 8 * 1024;
 /// Minimum allowed size for diagnostic summary output (4 KB).
 const MIN_MAX_SUMMARY_SIZE_BYTES: usize = 4 * 1024;
 
+/// Default cap on the number of per-attempt request records retained in a
+/// single operation's diagnostics before run-length compaction applies.
+const DEFAULT_MAX_REQUEST_DIAGNOSTICS: usize = 512;
+
+/// Minimum allowed value for `max_request_diagnostics`.
+const MIN_MAX_REQUEST_DIAGNOSTICS: usize = 16;
+
 /// Controls the verbosity level of diagnostic output.
 ///
 /// Diagnostics can be output in different levels of detail depending on
@@ -140,6 +147,17 @@ pub struct DiagnosticsOptions {
     ///
     /// Used when `to_json_string` is called with `None` for verbosity.
     pub(crate) default_verbosity: DiagnosticsVerbosity,
+
+    /// Maximum number of per-attempt request records retained in a single
+    /// operation's diagnostics.
+    ///
+    /// When an operation accumulates more attempts than this (for example a
+    /// 4xx/5xx retry storm), runs of near-identical retries (same
+    /// region/endpoint/status/sub-status/execution-context) are run-length
+    /// compacted into first + last + a count, so the retained size stays
+    /// bounded. Default is 512; minimum is 16. Values at or above the number of
+    /// attempts a normal operation makes leave output byte-identical.
+    pub(crate) max_request_diagnostics: usize,
 }
 
 impl Default for DiagnosticsOptions {
@@ -165,6 +183,12 @@ impl DiagnosticsOptions {
     pub fn default_verbosity(&self) -> DiagnosticsVerbosity {
         self.default_verbosity
     }
+
+    /// Returns the maximum number of per-attempt request records retained in a
+    /// single operation's diagnostics before run-length compaction applies.
+    pub fn max_request_diagnostics(&self) -> usize {
+        self.max_request_diagnostics
+    }
 }
 
 /// Builder for [`DiagnosticsOptions`].
@@ -178,6 +202,9 @@ impl DiagnosticsOptions {
 ///   summary mode output (default: `8192`, min: `4096`)
 /// - `AZURE_COSMOS_DIAGNOSTICS_DEFAULT_VERBOSITY`: Default verbosity level.
 ///   Valid values: `default`, `summary`, `detailed` (default: `detailed`)
+/// - `AZURE_COSMOS_DIAGNOSTICS_MAX_REQUESTS`: Maximum per-attempt request
+///   records retained per operation before run-length compaction applies
+///   (default: `512`, min: `16`)
 ///
 /// # Example
 ///
@@ -195,6 +222,7 @@ impl DiagnosticsOptions {
 pub struct DiagnosticsOptionsBuilder {
     max_summary_size_bytes: Option<usize>,
     default_verbosity: Option<DiagnosticsVerbosity>,
+    max_request_diagnostics: Option<usize>,
 }
 
 impl DiagnosticsOptionsBuilder {
@@ -217,6 +245,15 @@ impl DiagnosticsOptionsBuilder {
     /// Default: `DiagnosticsVerbosity::Detailed`.
     pub fn with_default_verbosity(mut self, verbosity: DiagnosticsVerbosity) -> Self {
         self.default_verbosity = Some(verbosity);
+        self
+    }
+
+    /// Sets the maximum number of per-attempt request records retained in a
+    /// single operation's diagnostics before run-length compaction applies.
+    ///
+    /// Must be at least 16. Default: 512.
+    pub fn with_max_request_diagnostics(mut self, max: usize) -> Self {
+        self.max_request_diagnostics = Some(max);
         self
     }
 
@@ -254,9 +291,17 @@ impl DiagnosticsOptionsBuilder {
             },
         };
 
+        let max_request_diagnostics = parse_from_env(
+            self.max_request_diagnostics,
+            "AZURE_COSMOS_DIAGNOSTICS_MAX_REQUESTS",
+            DEFAULT_MAX_REQUEST_DIAGNOSTICS,
+            ValidationBounds::min(MIN_MAX_REQUEST_DIAGNOSTICS),
+        )?;
+
         Ok(DiagnosticsOptions {
             max_summary_size_bytes,
             default_verbosity,
+            max_request_diagnostics,
         })
     }
 }
@@ -270,6 +315,28 @@ mod tests {
         let options = DiagnosticsOptions::default();
         assert_eq!(options.max_summary_size_bytes, 8 * 1024);
         assert_eq!(options.default_verbosity, DiagnosticsVerbosity::Detailed);
+        assert_eq!(options.max_request_diagnostics, 512);
+    }
+
+    #[test]
+    fn custom_max_request_diagnostics() {
+        let options = DiagnosticsOptionsBuilder::new()
+            .with_max_request_diagnostics(64)
+            .build()
+            .unwrap();
+        assert_eq!(options.max_request_diagnostics, 64);
+    }
+
+    #[test]
+    fn max_request_diagnostics_too_small() {
+        let result = DiagnosticsOptionsBuilder::new()
+            .with_max_request_diagnostics(4)
+            .build();
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("must be at least 16"));
     }
 
     #[test]

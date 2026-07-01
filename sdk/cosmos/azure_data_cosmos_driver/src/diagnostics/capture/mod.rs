@@ -107,6 +107,7 @@ pub use recorder::{AttemptRecord, DiagnosticsRecorder, HedgeOutcome};
 // `crate::diagnostics` so the public boundary (`diagnostics::DiagnosticsContext`, consumed by the
 // `azure_data_cosmos` SDK) is unchanged.
 pub(crate) use model::DiagnosticsContextBuilder;
+pub use model::{CompactedRun, CompactionInfo};
 pub use model::{
     DiagnosticsContext, DiagnosticsSummary, ExecutionContext, FailedTransportShardDiagnostics,
     PipelineType, RequestDiagnostics, RequestEvent, RequestEventType, RequestHandle,

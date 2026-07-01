@@ -1334,6 +1334,10 @@ struct DiagnosticsOutput<'a> {
     system_usage: Option<SystemUsageSnapshot>,
     #[serde(skip_serializing_if = "Option::is_none")]
     machine_id: Option<&'a str>,
+    /// Present only when the per-attempt list was compacted under a retry storm;
+    /// absent (and thus byte-identical to prior output) otherwise.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    compaction: Option<&'a CompactionInfo>,
     #[serde(flatten)]
     payload: DiagnosticsPayload<'a>,
 }
@@ -1865,19 +1869,49 @@ impl DiagnosticsContextBuilder {
         let duration = self.started_at.elapsed();
         let start_time = self.start_time;
         let end_time = OffsetDateTime::now_utc();
-        // The aggregatable summary is computed lazily on first access (see `DiagnosticsContext::
-        // summary`), not here — a fast-success caller that never reads the summary or serializes the
-        // context pays nothing for it. The reduction inputs (requests, status, timing, user agent)
-        // are all retained on the context.
+
+        let cap = self.options.max_request_diagnostics();
+        let original_count = self.requests.len();
+
+        // Common path (attempts <= cap): the summary stays lazy (computed on first access, see
+        // `DiagnosticsContext::summary`) and the per-attempt list is retained verbatim, so a
+        // fast-success caller pays nothing and the serialized output is byte-identical to before.
+        //
+        // Storm path (attempts > cap): compute the summary eagerly from the FULL list first — so the
+        // status/sub-status histogram, retry/throttle counts, total RU and regions stay exact — then
+        // run-length compact the retained list and record a `CompactionInfo` marker. Compaction runs
+        // here at finalization, never mid-operation, so outstanding `RequestHandle` indices are never
+        // invalidated.
+        let (requests, summary, compaction) = if original_count > cap {
+            let summary = DiagnosticsSummary::compute(
+                &self.requests,
+                self.status,
+                duration,
+                start_time,
+                end_time,
+                self.user_agent.as_deref().map(str::to_string),
+            );
+            let compacted = compact_requests(self.requests, cap);
+            let info = CompactionInfo {
+                original_request_count: original_count,
+                retained_request_count: compacted.retained.len(),
+                collapsed_runs: compacted.collapsed_runs,
+                runs: compacted.runs,
+            };
+            (compacted.retained, OnceLock::from(summary), Some(info))
+        } else {
+            (self.requests, OnceLock::new(), None)
+        };
+
         DiagnosticsContext {
             activity_id: self.activity_id,
             duration,
             start_time,
             end_time,
-            requests: Arc::new(self.requests),
+            requests: Arc::new(requests),
             status: self.status,
             user_agent: self.user_agent,
-            summary: OnceLock::new(),
+            summary,
             options: self.options,
             cpu_monitor: self.cpu_monitor,
             machine_id: self.machine_id,
@@ -1886,6 +1920,7 @@ impl DiagnosticsContextBuilder {
             #[cfg(not(feature = "fault_injection"))]
             fault_injection_enabled: false,
             hedge_diagnostics: self.hedge_diagnostics,
+            compaction,
             #[cfg(test)]
             test_system_usage: self.test_system_usage,
             cached_json_detailed: OnceLock::new(),
@@ -1982,6 +2017,12 @@ pub struct DiagnosticsContext {
     /// `Disabled`, eligibility check failed, etc.).
     hedge_diagnostics: Option<HedgeDiagnostics>,
 
+    /// Set only when a retry storm exceeded the configured
+    /// `max_request_diagnostics` cap and the per-attempt list was compacted.
+    /// `None` for normal operations, in which case the serialized output is
+    /// byte-identical to the pre-compaction behavior.
+    compaction: Option<CompactionInfo>,
+
     /// Test-only override for system usage snapshot, bypassing the CPU monitor.
     #[cfg(test)]
     test_system_usage: Option<SystemUsageSnapshot>,
@@ -2064,6 +2105,7 @@ impl DiagnosticsContext {
             machine_id: last.machine_id.clone(),
             fault_injection_enabled: sources.iter().any(|c| c.fault_injection_enabled),
             hedge_diagnostics: None,
+            compaction: None,
             #[cfg(test)]
             test_system_usage: last.test_system_usage.clone(),
             cached_json_detailed: OnceLock::new(),
@@ -2150,17 +2192,60 @@ impl DiagnosticsContext {
     }
 
     /// Returns the total request charge (RU) across all requests.
+    ///
+    /// Under a compacted retry storm this is sourced from the (eagerly computed)
+    /// summary so it reflects the true total across all attempts, not just the
+    /// retained ones.
     pub fn total_request_charge(&self) -> RequestCharge {
-        self.requests.iter().map(|r| r.request_charge).sum()
+        if self.compaction.is_some() {
+            self.summary().total_request_charge()
+        } else {
+            self.requests.iter().map(|r| r.request_charge).sum()
+        }
     }
 
     /// Returns the number of requests made during this operation.
+    ///
+    /// This is always the **true** total number of attempts, even when the
+    /// per-attempt list was compacted under a retry storm. Use
+    /// [`retained_request_count`](Self::retained_request_count) for the number
+    /// of records actually retained in [`requests`](Self::requests).
     pub fn request_count(&self) -> usize {
+        self.compaction
+            .as_ref()
+            .map(|c| c.original_request_count)
+            .unwrap_or(self.requests.len())
+    }
+
+    /// Returns the number of per-attempt records retained after compaction.
+    ///
+    /// Equal to [`request_count`](Self::request_count) for normal operations;
+    /// bounded by the configured `max_request_diagnostics` cap under a storm.
+    pub fn retained_request_count(&self) -> usize {
         self.requests.len()
+    }
+
+    /// Returns compaction metadata when a retry storm exceeded the configured
+    /// `max_request_diagnostics` cap and the per-attempt list was compacted.
+    ///
+    /// `None` for normal operations, where the retained list is the full,
+    /// unmodified set of attempts.
+    pub fn compaction(&self) -> Option<&CompactionInfo> {
+        self.compaction.as_ref()
     }
 
     /// Returns all regions contacted during this operation.
     pub fn regions_contacted(&self) -> Vec<Region> {
+        if self.compaction.is_some() {
+            // Source from the eager summary so every region is reported even
+            // though only first/last of each run are retained.
+            return self
+                .summary()
+                .regions_contacted()
+                .iter()
+                .map(|name| Region::new(name.clone()))
+                .collect();
+        }
         let mut regions: Vec<Region> = self
             .requests
             .iter()
@@ -2262,10 +2347,11 @@ impl DiagnosticsContext {
             start_time: self.start_time,
             end_time: self.end_time,
             total_duration_ms,
-            total_request_charge: self.requests.iter().map(|r| r.request_charge).sum(),
-            request_count: self.requests.len(),
+            total_request_charge: self.total_request_charge(),
+            request_count: self.request_count(),
             system_usage,
             machine_id: self.machine_id.as_ref().map(|s| s.as_str()),
+            compaction: self.compaction.as_ref(),
             payload: DiagnosticsPayload::Requests {
                 requests: &self.requests,
             },
@@ -2301,10 +2387,11 @@ impl DiagnosticsContext {
             start_time: self.start_time,
             end_time: self.end_time,
             total_duration_ms,
-            total_request_charge: self.requests.iter().map(|r| r.request_charge).sum(),
-            request_count: self.requests.len(),
+            total_request_charge: self.total_request_charge(),
+            request_count: self.request_count(),
             system_usage: self.resolve_system_usage(),
             machine_id: self.machine_id.as_ref().map(|s| s.as_str()),
+            compaction: self.compaction.as_ref(),
             payload: DiagnosticsPayload::Summary {
                 regions: region_summaries,
             },
@@ -2324,7 +2411,7 @@ impl DiagnosticsContext {
                 start_time: self.start_time,
                 end_time: self.end_time,
                 total_duration_ms,
-                request_count: self.requests.len(),
+                request_count: self.request_count(),
                 truncated: true,
                 message:
                     "Output truncated to fit size limit. Use Detailed verbosity for full diagnostics.",
@@ -2358,6 +2445,7 @@ impl Clone for DiagnosticsContext {
             machine_id: self.machine_id.clone(),
             fault_injection_enabled: self.fault_injection_enabled,
             hedge_diagnostics: self.hedge_diagnostics.clone(),
+            compaction: self.compaction.clone(),
             #[cfg(test)]
             test_system_usage: self.test_system_usage.clone(),
             // OnceLock does not implement Clone, so we propagate any cached
@@ -2508,6 +2596,213 @@ fn percentile_sorted(values: &[u64], p: u8) -> u64 {
     }
     let index = ((p as f64 / 100.0) * (values.len() - 1) as f64).round() as usize;
     values[index.min(values.len() - 1)]
+}
+
+/// Metadata describing how an operation's per-attempt diagnostics were compacted
+/// under a retry storm.
+///
+/// Present on a [`DiagnosticsContext`] only when the number of attempts exceeded
+/// the configured `max_request_diagnostics` cap. It records the true attempt
+/// count, how many records were retained, and a per-run rollup so the storm's
+/// shape (which region/endpoint/status repeated, and how many times) is
+/// preserved even though the middle of each run was dropped.
+#[non_exhaustive]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct CompactionInfo {
+    /// True total number of attempts before compaction.
+    pub original_request_count: usize,
+    /// Number of per-attempt records retained after compaction.
+    pub retained_request_count: usize,
+    /// Number of runs whose middle records were dropped (run length > 2).
+    pub collapsed_runs: usize,
+    /// Per-run rollup, in operation order (or first-seen order under the
+    /// global-bucket fallback).
+    pub runs: Vec<CompactedRun>,
+}
+
+/// A single collapsed run of near-identical retries.
+///
+/// Groups attempts that share the same region, endpoint, status (including
+/// sub-status) and execution context. The first and last attempt of each run
+/// are retained in full in [`DiagnosticsContext::requests`]; this rollup carries
+/// the count and duration/charge statistics for the run so the elided middle is
+/// still accounted for.
+#[non_exhaustive]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct CompactedRun {
+    /// Normalized region name for the run, if the attempts carried one.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub region: Option<String>,
+    /// Endpoint the run targeted.
+    pub endpoint: String,
+    /// HTTP status and Cosmos sub-status shared by the run.
+    #[serde(flatten)]
+    pub status: CosmosStatus,
+    /// Execution context shared by the run.
+    pub execution_context: ExecutionContext,
+    /// Number of attempts in the run.
+    pub count: usize,
+    /// Total request charge (RU) across the run.
+    pub total_request_charge: RequestCharge,
+    /// Minimum per-attempt duration in the run, in milliseconds.
+    pub min_duration_ms: u64,
+    /// Maximum per-attempt duration in the run, in milliseconds.
+    pub max_duration_ms: u64,
+    /// Median (P50) per-attempt duration in the run, in milliseconds.
+    pub p50_duration_ms: u64,
+}
+
+/// The key that defines a "near-identical" run: same region, endpoint, status
+/// (incl. sub-status) and execution context.
+#[derive(Clone, PartialEq, Eq, Hash)]
+struct CompactionKey {
+    region: Option<Region>,
+    endpoint: String,
+    status: CosmosStatus,
+    execution_context: ExecutionContext,
+}
+
+impl CompactionKey {
+    fn of(req: &RequestDiagnostics) -> Self {
+        Self {
+            region: req.region.clone(),
+            endpoint: req.endpoint.clone(),
+            status: req.status,
+            execution_context: req.execution_context,
+        }
+    }
+}
+
+/// The retained per-attempt records plus the per-run rollup produced by
+/// compaction.
+struct CompactionResult {
+    retained: Vec<RequestDiagnostics>,
+    runs: Vec<CompactedRun>,
+    collapsed_runs: usize,
+}
+
+/// Builds a [`CompactedRun`] rollup from a run/bucket of attempts.
+fn compacted_run(reqs: &[&RequestDiagnostics]) -> CompactedRun {
+    let count = reqs.len();
+    let mut durations: Vec<u64> = reqs.iter().map(|r| r.duration_ms).collect();
+    durations.sort_unstable();
+    let total_request_charge: RequestCharge = reqs.iter().map(|r| r.request_charge).sum();
+    let first = reqs[0];
+    CompactedRun {
+        region: first.region.as_ref().map(|r| r.as_str().to_string()),
+        endpoint: first.endpoint.clone(),
+        status: first.status,
+        execution_context: first.execution_context,
+        count,
+        total_request_charge,
+        min_duration_ms: durations.first().copied().unwrap_or(0),
+        max_duration_ms: durations.last().copied().unwrap_or(0),
+        p50_duration_ms: percentile_sorted(&durations, 50),
+    }
+}
+
+/// Pushes the first and (when the run has more than one attempt) last record of
+/// a run into `retained`.
+fn push_first_last(retained: &mut Vec<RequestDiagnostics>, run: &[&RequestDiagnostics]) {
+    if let Some(first) = run.first() {
+        retained.push((*first).clone());
+    }
+    if run.len() > 1 {
+        if let Some(last) = run.last() {
+            retained.push((*last).clone());
+        }
+    }
+}
+
+/// Bounds an operation's per-attempt diagnostics to at most `cap` records.
+///
+/// Phase 1 collapses runs of **consecutive** near-identical retries in order
+/// (the common same-region storm). If that alone does not fit within `cap`
+/// (e.g. a region ping-pong `A->B->A->B` where every consecutive run is length
+/// one), Phase 2 falls back to a global key-bucket collapse that groups all
+/// attempts by key regardless of order, bounding the result to at most two
+/// records per distinct key. A final defensive truncation guarantees
+/// `retained.len() <= cap` even with more than `cap / 2` distinct keys.
+fn compact_requests(requests: Vec<RequestDiagnostics>, cap: usize) -> CompactionResult {
+    let run_length = run_length_compact(&requests);
+    if run_length.retained.len() <= cap {
+        return run_length;
+    }
+    global_bucket_compact(&requests, cap)
+}
+
+/// Phase 1: order-preserving run-length collapse of consecutive equal-key runs.
+fn run_length_compact(requests: &[RequestDiagnostics]) -> CompactionResult {
+    let mut retained = Vec::new();
+    let mut runs = Vec::new();
+    let mut collapsed_runs = 0usize;
+
+    let mut i = 0;
+    while i < requests.len() {
+        let key = CompactionKey::of(&requests[i]);
+        let mut j = i + 1;
+        while j < requests.len() && CompactionKey::of(&requests[j]) == key {
+            j += 1;
+        }
+        let run: Vec<&RequestDiagnostics> = requests[i..j].iter().collect();
+        runs.push(compacted_run(&run));
+        push_first_last(&mut retained, &run);
+        if run.len() > 2 {
+            collapsed_runs += 1;
+        }
+        i = j;
+    }
+
+    CompactionResult {
+        retained,
+        runs,
+        collapsed_runs,
+    }
+}
+
+/// Phase 2: order-robust global key-bucket collapse.
+///
+/// Groups every attempt by [`CompactionKey`] preserving first-seen order, keeps
+/// first + last of each bucket, and defensively truncates to `cap` if there are
+/// somehow more than `cap / 2` distinct keys.
+fn global_bucket_compact(requests: &[RequestDiagnostics], cap: usize) -> CompactionResult {
+    let mut order: Vec<CompactionKey> = Vec::new();
+    let mut groups: HashMap<CompactionKey, Vec<&RequestDiagnostics>> = HashMap::new();
+    for req in requests {
+        let key = CompactionKey::of(req);
+        match groups.get_mut(&key) {
+            Some(bucket) => bucket.push(req),
+            None => {
+                order.push(key.clone());
+                groups.insert(key, vec![req]);
+            }
+        }
+    }
+
+    let mut retained = Vec::new();
+    let mut runs = Vec::new();
+    let mut collapsed_runs = 0usize;
+    for key in &order {
+        let bucket = &groups[key];
+        runs.push(compacted_run(bucket));
+        push_first_last(&mut retained, bucket);
+        if bucket.len() > 2 {
+            collapsed_runs += 1;
+        }
+    }
+
+    // Defensive: with more distinct keys than cap/2, first+last per bucket could
+    // still exceed cap. Truncating keeps the earliest buckets' records; the true
+    // totals remain exact on the summary and `CompactionInfo`.
+    if retained.len() > cap {
+        retained.truncate(cap);
+    }
+
+    CompactionResult {
+        retained,
+        runs,
+        collapsed_runs,
+    }
 }
 
 #[cfg(test)]
@@ -3927,5 +4222,288 @@ mod tests {
         let builder = DiagnosticsContextBuilder::new(ActivityId::new_uuid(), make_options());
         let ctx = builder.complete();
         assert_eq!(ctx.machine_id(), None);
+    }
+
+    // ---- Compaction (retry-storm bounding) ------------------------------------------------
+
+    fn options_with_cap(cap: usize) -> Arc<DiagnosticsOptions> {
+        Arc::new(
+            DiagnosticsOptions::builder()
+                .with_max_request_diagnostics(cap)
+                .build()
+                .expect("valid cap"),
+        )
+    }
+
+    /// Records `count` identical attempts (same region/endpoint/status/exec-ctx).
+    fn record_run(
+        builder: &mut DiagnosticsContextBuilder,
+        exec: ExecutionContext,
+        region: &str,
+        endpoint: &str,
+        status: StatusCode,
+        count: usize,
+    ) {
+        for _ in 0..count {
+            let h =
+                builder.start_test_request(exec, Some(Region::new(region.to_string())), endpoint);
+            builder.complete_request(h, status, None);
+        }
+    }
+
+    #[test]
+    fn retry_storm_is_bounded_and_lossless() {
+        let cap = 16;
+        let mut b = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("storm".to_string()),
+            options_with_cap(cap),
+        );
+        record_run(
+            &mut b,
+            ExecutionContext::Retry,
+            "East US",
+            "https://east/",
+            StatusCode::TooManyRequests,
+            1000,
+        );
+        b.set_operation_status(StatusCode::TooManyRequests, None);
+        let ctx = b.complete();
+
+        // True total is preserved; retained records are bounded by the cap.
+        assert_eq!(ctx.request_count(), 1000);
+        assert!(
+            ctx.retained_request_count() <= cap,
+            "retained {} exceeds cap {cap}",
+            ctx.retained_request_count()
+        );
+        let info = ctx.compaction().expect("a storm past the cap must compact");
+        assert_eq!(info.original_request_count, 1000);
+        assert_eq!(info.retained_request_count, ctx.retained_request_count());
+        assert_eq!(info.runs.len(), 1);
+        assert_eq!(info.runs[0].count, 1000);
+
+        // Aggregate signal stays exact (summary computed from the full list before compaction).
+        let s = ctx.summary();
+        assert_eq!(s.request_count(), 1000);
+        assert_eq!(s.retry_count(), 1000);
+
+        // Detailed output is bounded and carries the additive marker.
+        let json = ctx.to_json_string(Some(DiagnosticsVerbosity::Detailed));
+        assert!(json.contains("\"compaction\""));
+        assert!(
+            json.len() < 16 * 1024,
+            "detailed json {} bytes is not bounded",
+            json.len()
+        );
+
+        // First and last of the run are retained in full.
+        let requests = ctx.requests();
+        assert_eq!(
+            u16::from(requests.first().unwrap().status().status_code()),
+            429
+        );
+        assert_eq!(
+            u16::from(requests.last().unwrap().status().status_code()),
+            429
+        );
+    }
+
+    #[test]
+    fn mixed_runs_preserve_order_and_boundaries() {
+        let cap = 16;
+        let mut b = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("mixed".to_string()),
+            options_with_cap(cap),
+        );
+        record_run(
+            &mut b,
+            ExecutionContext::Retry,
+            "East US",
+            "https://east/",
+            StatusCode::TooManyRequests,
+            100,
+        );
+        record_run(
+            &mut b,
+            ExecutionContext::Retry,
+            "East US",
+            "https://east/",
+            StatusCode::ServiceUnavailable,
+            50,
+        );
+        record_run(
+            &mut b,
+            ExecutionContext::Retry,
+            "West US",
+            "https://west/",
+            StatusCode::Ok,
+            1,
+        );
+        b.set_operation_status(StatusCode::Ok, None);
+        let ctx = b.complete();
+
+        assert_eq!(ctx.request_count(), 151);
+        assert!(ctx.retained_request_count() <= cap);
+        let info = ctx.compaction().expect("compacted");
+        assert_eq!(info.runs.len(), 3);
+        assert_eq!(info.runs[0].count, 100);
+        assert_eq!(info.runs[1].count, 50);
+        assert_eq!(info.runs[2].count, 1);
+
+        // Onset (429) and terminal (200) boundaries retained; order preserved.
+        let requests = ctx.requests();
+        assert_eq!(
+            u16::from(requests.first().unwrap().status().status_code()),
+            429
+        );
+        assert_eq!(
+            u16::from(requests.last().unwrap().status().status_code()),
+            200
+        );
+    }
+
+    #[test]
+    fn region_ping_pong_is_bounded_via_global_fallback() {
+        let cap = 16;
+        let mut b = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("pingpong".to_string()),
+            options_with_cap(cap),
+        );
+        // Alternating regions: every consecutive run is length 1, defeating run-length collapse
+        // and forcing the global key-bucket fallback.
+        for _ in 0..200 {
+            let he = b.start_test_request(
+                ExecutionContext::Retry,
+                Some(Region::new("East US")),
+                "https://east/",
+            );
+            b.complete_request(he, StatusCode::ServiceUnavailable, None);
+            let hw = b.start_test_request(
+                ExecutionContext::Retry,
+                Some(Region::new("West US")),
+                "https://west/",
+            );
+            b.complete_request(hw, StatusCode::ServiceUnavailable, None);
+        }
+        b.set_operation_status(StatusCode::ServiceUnavailable, None);
+        let ctx = b.complete();
+
+        assert_eq!(ctx.request_count(), 400);
+        assert!(
+            ctx.retained_request_count() <= cap,
+            "retained {} exceeds cap",
+            ctx.retained_request_count()
+        );
+        let info = ctx.compaction().expect("compacted");
+        // Two distinct keys -> two runs, each covering 200 attempts.
+        assert_eq!(info.runs.len(), 2);
+        assert!(info.runs.iter().all(|r| r.count == 200));
+
+        // Regions are sourced from the summary, so both are still reported.
+        let mut regions: Vec<String> = ctx
+            .regions_contacted()
+            .iter()
+            .map(|r| r.as_str().to_string())
+            .collect();
+        regions.sort();
+        assert_eq!(regions, ["eastus".to_string(), "westus".to_string()]);
+    }
+
+    #[test]
+    fn under_cap_is_not_compacted_and_output_has_no_marker() {
+        // Default cap (512) is far above a normal operation's attempts.
+        let ctx = make_context_with(ActivityId::from_string("normal".to_string()), |b| {
+            for _ in 0..3 {
+                let h = b.start_test_request(
+                    ExecutionContext::Retry,
+                    Some(Region::new("East US")),
+                    "https://east/",
+                );
+                b.complete_request(h, StatusCode::TooManyRequests, None);
+            }
+            b.set_operation_status(StatusCode::Ok, None);
+        });
+        assert!(ctx.compaction().is_none());
+        assert_eq!(ctx.request_count(), 3);
+        assert_eq!(ctx.retained_request_count(), 3);
+        let json = ctx.to_json_string(Some(DiagnosticsVerbosity::Detailed));
+        assert!(
+            !json.contains("\"compaction\""),
+            "no compaction marker expected under the cap"
+        );
+    }
+
+    /// Deterministic companion measurement for the storm-validation deliverable.
+    ///
+    /// Quantifies the incremental materialization cost (struct build vs. building
+    /// + serializing detailed JSON) and the size bound that compaction provides,
+    /// comparing compaction ON (bounded cap) against OFF (cap above the attempt
+    /// count). `#[ignore]`d so it never runs in CI/playback; run manually with:
+    /// `cargo test -p azure_data_cosmos_driver --all-features --lib -- --ignored
+    /// --nocapture storm_materialization_cost_and_size`.
+    #[test]
+    #[ignore = "manual measurement; run with --ignored --nocapture"]
+    fn storm_materialization_cost_and_size() {
+        use std::time::Instant;
+        const N: usize = 100_000;
+
+        fn build_storm(cap: usize, n: usize) -> DiagnosticsContextBuilder {
+            let mut b = DiagnosticsContextBuilder::new(
+                ActivityId::from_string("bench".to_string()),
+                options_with_cap(cap),
+            );
+            record_run(
+                &mut b,
+                ExecutionContext::Retry,
+                "East US",
+                "https://east/",
+                StatusCode::TooManyRequests,
+                n,
+            );
+            b.set_operation_status(StatusCode::TooManyRequests, None);
+            b
+        }
+
+        // Compaction ON (bounded cap).
+        let b_on = build_storm(512, N);
+        let t0 = Instant::now();
+        let ctx_on = b_on.complete();
+        let build_on = t0.elapsed();
+        let t1 = Instant::now();
+        let json_on = ctx_on
+            .to_json_string(Some(DiagnosticsVerbosity::Detailed))
+            .len();
+        let json_on_t = t1.elapsed();
+
+        // Compaction OFF (cap above N, so nothing is collapsed).
+        let b_off = build_storm(N * 2, N);
+        let t2 = Instant::now();
+        let ctx_off = b_off.complete();
+        let build_off = t2.elapsed();
+        let t3 = Instant::now();
+        let json_off = ctx_off
+            .to_json_string(Some(DiagnosticsVerbosity::Detailed))
+            .len();
+        let json_off_t = t3.elapsed();
+
+        eprintln!("--- storm materialization (N={N} identical 429 retries) ---");
+        eprintln!(
+            "compaction ON : build={build_on:?} json_build={json_on_t:?} detailed_json_bytes={json_on} retained={}",
+            ctx_on.retained_request_count()
+        );
+        eprintln!(
+            "compaction OFF: build={build_off:?} json_build={json_off_t:?} detailed_json_bytes={json_off} retained={}",
+            ctx_off.retained_request_count()
+        );
+        eprintln!(
+            "size reduction: {:.1}x",
+            json_off as f64 / json_on.max(1) as f64
+        );
+
+        assert!(ctx_on.retained_request_count() <= 512);
+        assert!(
+            json_on < json_off / 10,
+            "compacted detailed json ({json_on} B) should be far smaller than uncompacted ({json_off} B)"
+        );
     }
 }

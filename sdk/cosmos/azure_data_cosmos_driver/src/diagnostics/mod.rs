@@ -32,6 +32,7 @@ mod proxy_configuration;
 pub mod capture;
 
 pub(crate) use capture::DiagnosticsContextBuilder;
+pub use capture::{CompactedRun, CompactionInfo};
 pub use capture::{
     DiagnosticsContext, DiagnosticsSummary, ExecutionContext, FailedTransportShardDiagnostics,
     PipelineType, RequestDiagnostics, RequestEvent, RequestEventType, RequestHandle,
