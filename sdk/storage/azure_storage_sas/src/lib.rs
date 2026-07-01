@@ -14,9 +14,9 @@
 //! - [`SasBuilder::queue`] — queue-level user delegation SAS
 
 mod builder;
+mod common;
 mod ip_range;
 mod protocol;
-mod signing;
 
 pub mod resource {
     pub mod blob;

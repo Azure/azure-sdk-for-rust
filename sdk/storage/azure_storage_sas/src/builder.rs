@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::common::{sign, CommonFields, SasResource, ValidatedKey};
 use crate::ip_range::SasIpRange;
 use crate::protocol::SasProtocol;
 use crate::resource::blob::{
@@ -8,7 +9,6 @@ use crate::resource::blob::{
     ContainerResource, ContainerState, DirectoryResource, DirectoryState,
 };
 use crate::resource::queue::{QueuePermissions, QueueResource, QueueState};
-use crate::signing::{sign, CommonFields, SasResource, ValidatedKey};
 use azure_storage_common::models::UserDelegationKey;
 use time::OffsetDateTime;
 /// Initial state before a resource type has been selected.
@@ -165,7 +165,7 @@ impl<S: SasResource> SasBuilder<'_, S> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::signing::test_support::test_udk;
+    use crate::common::test_support::test_udk;
     use time::macros::datetime;
 
     #[test]

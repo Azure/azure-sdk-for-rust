@@ -49,10 +49,10 @@ let token = SasBuilder::new(
     .content_type("image/jpeg")
     .build();
 
-let mut sas_url = Url::parse(&format!(
-    "https://{storage_account_name}.blob.core.windows.net/{container_name}/{blob_name}"
+// For a blob URL that already has a query (e.g. version/snapshot), use `&{token}` instead.
+let sas_url = Url::parse(&format!(
+    "https://{storage_account_name}.blob.core.windows.net/{container_name}/{blob_name}?{token}"
 ))?;
-sas_url.set_query(Some(&token));
 # let _ = sas_url;
 # Ok(()) }
 ```

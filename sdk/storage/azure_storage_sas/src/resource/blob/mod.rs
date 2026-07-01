@@ -56,8 +56,8 @@ pub(crate) use container_resource::ContainerResource;
 pub(crate) use directory_resource::DirectoryResource;
 
 use crate::builder::SasBuilder;
-use crate::signing::sealed::Sealed;
-use crate::signing::{CommonFields, SasResource, ValidatedKey};
+use crate::common::sealed::Sealed;
+use crate::common::{CommonFields, SasResource, ValidatedKey};
 use crate::SAS_VERSION;
 use options_access::BlobOptions;
 use std::collections::BTreeMap;
@@ -759,7 +759,7 @@ fn blob_udk_query_parameters(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::signing::test_support::{test_common, test_udk};
+    use crate::common::test_support::{test_common, test_udk};
     use time::macros::datetime;
 
     // ---- String-to-sign layout tests ----
