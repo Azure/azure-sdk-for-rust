@@ -1108,6 +1108,37 @@ typedef struct cosmos_driver_options_config_t {
 } cosmos_driver_options_config_t;
 
 /**
+ * One component of a hierarchical partition key, assembled inline by the host
+ * (a C-style tagged union: a `kind` tag plus all possible value fields).
+ *
+ * This lets a calling SDK assemble a whole partition key in a single array
+ * and drop it straight into [`CosmosOperationRequest`](crate::op_request::CosmosOperationRequest),
+ * avoiding the per-component builder FFI round-trips. Only the field selected
+ * by `kind` is read; the others are ignored.
+ */
+typedef struct cosmos_partition_key_component_t {
+  /**
+   * Which value field to read, as a [`CosmosPartitionKeyComponentKind`]
+   * discriminant.
+   */
+  int32_t kind;
+  /**
+   * String payload (NUL-terminated UTF-8). Read iff `kind` is `String`.
+   */
+  const char *string_value;
+  /**
+   * Numeric payload. Read iff `kind` is `Number`. Must be finite.
+   */
+  double number_value;
+  /**
+   * Boolean payload (`0` = false, non-zero = true). Read iff `kind` is
+   * `Bool`. Taken as `u8` so an arbitrary host byte cannot form an invalid
+   * `bool` (which would be undefined behavior).
+   */
+  uint8_t bool_value;
+} cosmos_partition_key_component_t;
+
+/**
  * Flat C ABI options for building a `cosmos_runtime_t` in a single call.
  *
  * Every field is sentinel-encoded so a zeroed struct (or a NULL pointer
@@ -1148,37 +1179,6 @@ typedef struct cosmos_runtime_options_t {
    */
   uint64_t cpu_refresh_interval_ms;
 } cosmos_runtime_options_t;
-
-/**
- * One component of a hierarchical partition key, assembled inline by the host
- * (a C-style tagged union: a `kind` tag plus all possible value fields).
- *
- * This lets a calling SDK assemble a whole partition key in a single array
- * and drop it straight into [`CosmosOperationRequest`](crate::op_request::CosmosOperationRequest),
- * avoiding the per-component builder FFI round-trips. Only the field selected
- * by `kind` is read; the others are ignored.
- */
-typedef struct cosmos_partition_key_component_t {
-  /**
-   * Which value field to read, as a [`CosmosPartitionKeyComponentKind`]
-   * discriminant.
-   */
-  int32_t kind;
-  /**
-   * String payload (NUL-terminated UTF-8). Read iff `kind` is `String`.
-   */
-  const char *string_value;
-  /**
-   * Numeric payload. Read iff `kind` is `Number`. Must be finite.
-   */
-  double number_value;
-  /**
-   * Boolean payload (`0` = false, non-zero = true). Read iff `kind` is
-   * `Bool`. Taken as `u8` so an arbitrary host byte cannot form an invalid
-   * `bool` (which would be undefined behavior).
-   */
-  uint8_t bool_value;
-} cosmos_partition_key_component_t;
 
 /**
  * Borrowed view of a request body. `data` may be NULL iff `len` is `0`.
@@ -1886,13 +1886,47 @@ int32_t cosmos_partition_key_builder_build(struct cosmos_partition_key_builder_t
                                            struct cosmos_partition_key_t **out_pk);
 
 /**
+ * Creates an immutable partition key from an inline component array in a
+ * single call — the flat, standalone counterpart to the
+ * `partition_key_components` array carried on
+ * [`CosmosOperationRequest`](crate::op_request::CosmosOperationRequest).
+ *
+ * Applies the same validation as the operation-request path: at most 3
+ * components, finite numbers, and valid UTF-8 strings.
+ * For the special cross-partition / "empty" key use
+ * [`cosmos_partition_key_empty`] instead — an empty array here is rejected so
+ * the empty key is never constructed by accident.
+ *
+ * # Parameters
+ *
+ * - `components` — array of `len` [`CosmosPartitionKeyComponent`] values.
+ *   Each `String` component's `string_value` must be valid NUL-terminated
+ *   UTF-8 for the duration of the call; the wrapper copies what it needs.
+ * - `len` — number of components (`1..=3`).
+ * - `out_pk` — receives the new handle on success. Must be non-NULL.
+ *
+ * # Returns
+ *
+ * - `SUCCESS` (0) with `*out_pk` populated.
+ * - `INVALID_ARGUMENT` (1) when `out_pk` is NULL.
+ * - `INVALID_PARTITION_KEY` (4004) when `components` is NULL, `len` is `0`,
+ *   or `len` exceeds 3.
+ * - `INVALID_OPTION_VALUE` (4014) when a numeric component is non-finite or a
+ *   component `kind` is out of range.
+ * - `INVALID_UTF8` (2) when a `String` component is not valid UTF-8.
+ */
+int32_t cosmos_partition_key_create(const struct cosmos_partition_key_component_t *components,
+                                    uintptr_t len,
+                                    struct cosmos_partition_key_t **out_pk);
+
+/**
  * Returns a fresh handle for the special cross-partition / "empty"
  * partition key (driver constant
  * `azure_data_cosmos_driver::models::PartitionKey::EMPTY`).
  *
- * This is the only way to obtain an empty key through the FFI — the
- * builder rejects empty-build with `INVALID_PARTITION_KEY` to catch
- * accidental misuse.
+ * This is the only way to obtain an empty key through the FFI —
+ * [`cosmos_partition_key_create`] rejects an empty array with
+ * `INVALID_PARTITION_KEY` to catch accidental misuse.
  */
 struct cosmos_partition_key_t *cosmos_partition_key_empty(void);
 

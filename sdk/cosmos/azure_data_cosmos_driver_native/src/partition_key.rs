@@ -457,13 +457,66 @@ pub extern "C" fn cosmos_partition_key_builder_build(
 // FFI: PartitionKey lifecycle + accessors
 // ─────────────────────────────────────────────────────────────────────────────
 
+/// Creates an immutable partition key from an inline component array in a
+/// single call — the flat, standalone counterpart to the
+/// `partition_key_components` array carried on
+/// [`CosmosOperationRequest`](crate::op_request::CosmosOperationRequest).
+///
+/// Applies the same validation as the operation-request path: at most 3
+/// components, finite numbers, and valid UTF-8 strings.
+/// For the special cross-partition / "empty" key use
+/// [`cosmos_partition_key_empty`] instead — an empty array here is rejected so
+/// the empty key is never constructed by accident.
+///
+/// # Parameters
+///
+/// - `components` — array of `len` [`CosmosPartitionKeyComponent`] values.
+///   Each `String` component's `string_value` must be valid NUL-terminated
+///   UTF-8 for the duration of the call; the wrapper copies what it needs.
+/// - `len` — number of components (`1..=3`).
+/// - `out_pk` — receives the new handle on success. Must be non-NULL.
+///
+/// # Returns
+///
+/// - `SUCCESS` (0) with `*out_pk` populated.
+/// - `INVALID_ARGUMENT` (1) when `out_pk` is NULL.
+/// - `INVALID_PARTITION_KEY` (4004) when `components` is NULL, `len` is `0`,
+///   or `len` exceeds 3.
+/// - `INVALID_OPTION_VALUE` (4014) when a numeric component is non-finite or a
+///   component `kind` is out of range.
+/// - `INVALID_UTF8` (2) when a `String` component is not valid UTF-8.
+#[no_mangle]
+pub extern "C" fn cosmos_partition_key_create(
+    components: *const CosmosPartitionKeyComponent,
+    len: usize,
+    out_pk: *mut *mut PartitionKeyHandle,
+) -> i32 {
+    if out_pk.is_null() {
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+    }
+    // SAFETY: caller guarantees `components` points at `len` initialized
+    // components whose string payloads are valid NUL-terminated UTF-8 for the
+    // duration of the call (documented contract above).
+    let pk = match unsafe { partition_key_from_components(components, len) } {
+        Ok(pk) => pk,
+        Err(code) => return code.as_i32(),
+    };
+    let handle = PartitionKeyHandle::into_raw(pk);
+    // SAFETY: caller guarantees `out_pk` is writable for one
+    // `*mut PartitionKeyHandle`.
+    unsafe {
+        *out_pk = handle;
+    }
+    CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
+}
+
 /// Returns a fresh handle for the special cross-partition / "empty"
 /// partition key (driver constant
 /// `azure_data_cosmos_driver::models::PartitionKey::EMPTY`).
 ///
-/// This is the only way to obtain an empty key through the FFI — the
-/// builder rejects empty-build with `INVALID_PARTITION_KEY` to catch
-/// accidental misuse.
+/// This is the only way to obtain an empty key through the FFI —
+/// [`cosmos_partition_key_create`] rejects an empty array with
+/// `INVALID_PARTITION_KEY` to catch accidental misuse.
 #[no_mangle]
 pub extern "C" fn cosmos_partition_key_empty() -> *mut PartitionKeyHandle {
     PartitionKeyHandle::into_raw(DriverPartitionKey::from(Vec::<PartitionKeyValue>::new()))
@@ -874,5 +927,73 @@ mod tests {
         // SAFETY: live array.
         let rc = unsafe { partition_key_from_components(comps.as_ptr(), comps.len()) };
         assert_eq!(rc, Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue));
+    }
+
+    // ── Flat FFI constructor (cosmos_partition_key_create) ───────────────
+
+    #[test]
+    fn create_produces_handle_matching_driver() {
+        let s = ok_cstr("tenant-42");
+        let comps = [
+            CosmosPartitionKeyComponent {
+                kind: CosmosPartitionKeyComponentKind::CosmosPartitionKeyComponentKindString as i32,
+                string_value: s.as_ptr(),
+                number_value: 0.0,
+                bool_value: 0,
+            },
+            CosmosPartitionKeyComponent {
+                kind: CosmosPartitionKeyComponentKind::CosmosPartitionKeyComponentKindNumber as i32,
+                string_value: ptr::null(),
+                number_value: 7.0,
+                bool_value: 0,
+            },
+        ];
+        let mut out: *mut PartitionKeyHandle = ptr::null_mut();
+        assert_eq!(
+            cosmos_partition_key_create(comps.as_ptr(), comps.len(), &mut out),
+            CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
+        );
+        assert!(!out.is_null());
+        assert_eq!(cosmos_partition_key_component_count(out), 2);
+        assert!(!cosmos_partition_key_is_empty(out));
+
+        let built = PartitionKeyHandle::from_ptr(out).unwrap();
+        assert_eq!(built.inner, DriverPartitionKey::from(("tenant-42", 7.0)));
+        cosmos_partition_key_free(out);
+    }
+
+    #[test]
+    fn create_rejects_null_out() {
+        let comps = [component(
+            CosmosPartitionKeyComponentKind::CosmosPartitionKeyComponentKindNull,
+        )];
+        assert_eq!(
+            cosmos_partition_key_create(comps.as_ptr(), comps.len(), ptr::null_mut()),
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
+        );
+    }
+
+    #[test]
+    fn create_rejects_empty_and_over_cap() {
+        let mut out: *mut PartitionKeyHandle = ptr::null_mut();
+        // Empty (NULL / zero length) → INVALID_PARTITION_KEY, out untouched.
+        assert_eq!(
+            cosmos_partition_key_create(ptr::null(), 0, &mut out),
+            CosmosErrorCode::CosmosErrorCodeInvalidPartitionKey.as_i32()
+        );
+        assert!(out.is_null());
+
+        // Four components exceed the 3-level cap.
+        let comps = [
+            component(CosmosPartitionKeyComponentKind::CosmosPartitionKeyComponentKindNull),
+            component(CosmosPartitionKeyComponentKind::CosmosPartitionKeyComponentKindNull),
+            component(CosmosPartitionKeyComponentKind::CosmosPartitionKeyComponentKindNull),
+            component(CosmosPartitionKeyComponentKind::CosmosPartitionKeyComponentKindNull),
+        ];
+        assert_eq!(
+            cosmos_partition_key_create(comps.as_ptr(), comps.len(), &mut out),
+            CosmosErrorCode::CosmosErrorCodeInvalidPartitionKey.as_i32()
+        );
+        assert!(out.is_null());
     }
 }
