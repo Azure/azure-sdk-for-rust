@@ -73,8 +73,12 @@ struct OperationResult {
 
 #[derive(Parser, Debug, Clone)]
 struct PerfRunnerOptions<T: PerfTestFactory> {
+    // Satisfies the cargo bench command.
+    #[arg(long, global = true, default_value_t = true)]
+    bench: bool,
+
     // Disable test cleanup.
-    #[arg(long)]
+    #[arg(long, global = true)]
     no_cleanup: bool,
 
     // The number of iterations to run each test.
@@ -82,15 +86,15 @@ struct PerfRunnerOptions<T: PerfTestFactory> {
     iterations: u32,
 
     // The number of concurrent tasks to use when running each test.
-    #[arg(short, long, default_value_t = 1, value_name = "COUNT")]
+    #[arg(short, long, default_value_t = 1, global = true, value_name = "COUNT")]
     parallel: u32,
 
     // The duration of each test in seconds.
-    #[arg(short, long, default_value = "30", value_parser = duration_seconds, value_name = "SECONDS")]
+    #[arg(short, long, default_value = "30", global = true, value_parser = duration_seconds, value_name = "SECONDS")]
     duration: Duration,
 
     // The duration of the warmup period in seconds.
-    #[arg(long, default_value = "5", value_parser = duration_seconds, value_name = "SECONDS")]
+    #[arg(long, default_value = "5", global = true, value_parser = duration_seconds, value_name = "SECONDS")]
     warmup: Duration,
 
     // Disable progress reporting.
@@ -98,7 +102,7 @@ struct PerfRunnerOptions<T: PerfTestFactory> {
     disable_progress: bool,
 
     // Track and print per-operation latency statistics.
-    #[arg(short, long)]
+    #[arg(short, long, global = true)]
     latency: bool,
 
     // The file to write test results to.
@@ -110,15 +114,15 @@ struct PerfRunnerOptions<T: PerfTestFactory> {
     test_results_filename: String,
 
     // File path to store per-operation latency results (requires --latency)
-    #[arg(long, default_value = "", value_name = "FILE")]
+    #[arg(long, default_value = "", global = true, value_name = "FILE")]
     results_file: String,
 
     // Run synchronous tests (ignored).
-    #[arg(long)]
+    #[arg(long, global = true)]
     sync: bool,
 
     // URL of test-proxy (ignored).
-    #[arg(long, value_parser = url, value_name = "URL")]
+    #[arg(long, global = true, value_parser = url, value_name = "URL")]
     test_proxy: Option<Url>,
 
     #[command(subcommand)]
