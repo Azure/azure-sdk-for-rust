@@ -895,60 +895,6 @@ typedef struct cosmos_driver_options_config_t {
 } cosmos_driver_options_config_t;
 
 /**
- * A flat snapshot of an error's scalar + borrowed-string fields, read in one
- * FFI call.
- *
- * Lets a host pull the common error fields (status, sub-status, wire flag,
- * message, the three wire-header strings, retry-after, and backtrace) in a
- * single [`cosmos_error_view`] call instead of nine separate accessor
- * round-trips. All string pointers are **borrowed** — valid until the error is
- * freed — exactly like the individual accessors.
- *
- * The boolean *status predicates* (`cosmos_error_is_*`) are intentionally
- * **not** included: they are status classifications rather than field reads,
- * and stay on their own accessors. See
- * [`docs/DATA_MOVEMENT_MODEL.md`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver_native/docs/DATA_MOVEMENT_MODEL.md).
- */
-typedef struct cosmos_error_view_t {
-  /**
-   * HTTP status code (always populated, including for synthetic errors).
-   */
-  uint16_t status_code;
-  /**
-   * Sub-status code, or `-1` when absent.
-   */
-  int32_t sub_status;
-  /**
-   * `true` iff the error originated from a service wire response.
-   */
-  bool is_from_wire;
-  /**
-   * Borrowed message string (NULL only when the handle is NULL).
-   */
-  const char *message;
-  /**
-   * Borrowed wire-header activity id, or NULL when absent.
-   */
-  const char *activity_id;
-  /**
-   * Borrowed wire-header session token, or NULL when absent.
-   */
-  const char *session_token;
-  /**
-   * Borrowed wire-header ETag, or NULL when absent.
-   */
-  const char *etag;
-  /**
-   * Retry-after duration in milliseconds, or `-1` when absent.
-   */
-  int64_t retry_after_ms;
-  /**
-   * Borrowed backtrace string, or NULL when none was captured.
-   */
-  const char *backtrace;
-} cosmos_error_view_t;
-
-/**
  * A flat snapshot of a response's scalar + borrowed-string fields, read in
  * one FFI call.
  *
@@ -1710,19 +1656,6 @@ int64_t cosmos_error_retry_after_ms(const struct cosmos_error_t *e);
  * Returns NULL when no backtrace was captured.
  */
 const char *cosmos_error_backtrace(const struct cosmos_error_t *e);
-
-/**
- * Fills `out_view` with a snapshot of the error's scalar and borrowed-string
- * fields and returns `SUCCESS`. Returns `INVALID_ARGUMENT` (leaving
- * `*out_view` untouched) when `e` or `out_view` is NULL.
- *
- * This is the single-call alternative to `cosmos_error_status_code` +
- * `_sub_status` + `_is_from_wire` + `_message` + `_activity_id` +
- * `_session_token` + `_etag` + `_retry_after_ms` + `_backtrace`. Every borrowed
- * pointer it returns is valid until [`cosmos_error_free`].
- */
-cosmos_error_code_t cosmos_error_view(const struct cosmos_error_t *e,
-                                      struct cosmos_error_view_t *out_view);
 
 /**
  * Free a `cosmos_error_t *` obtained via `cosmos_completion_take_error` or

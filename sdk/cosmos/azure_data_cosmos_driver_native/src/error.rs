@@ -464,149 +464,6 @@ pub extern "C" fn cosmos_error_backtrace(e: *const CosmosErrorHandle) -> *const 
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FFI: flat snapshot (cosmos_error_view)
-// ─────────────────────────────────────────────────────────────────────────────
-
-/// A flat snapshot of an error's scalar + borrowed-string fields, read in one
-/// FFI call.
-///
-/// Lets a host pull the common error fields (status, sub-status, wire flag,
-/// message, the three wire-header strings, retry-after, and backtrace) in a
-/// single [`cosmos_error_view`] call instead of nine separate accessor
-/// round-trips. All string pointers are **borrowed** — valid until the error is
-/// freed — exactly like the individual accessors.
-///
-/// The boolean *status predicates* (`cosmos_error_is_*`) are intentionally
-/// **not** included: they are status classifications rather than field reads,
-/// and stay on their own accessors. See
-/// [`docs/DATA_MOVEMENT_MODEL.md`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver_native/docs/DATA_MOVEMENT_MODEL.md).
-#[repr(C)]
-pub struct CosmosErrorView {
-    /// HTTP status code (always populated, including for synthetic errors).
-    pub status_code: u16,
-    /// Sub-status code, or `-1` when absent.
-    pub sub_status: i32,
-    /// `true` iff the error originated from a service wire response.
-    pub is_from_wire: bool,
-    /// Borrowed message string (NULL only when the handle is NULL).
-    pub message: *const c_char,
-    /// Borrowed wire-header activity id, or NULL when absent.
-    pub activity_id: *const c_char,
-    /// Borrowed wire-header session token, or NULL when absent.
-    pub session_token: *const c_char,
-    /// Borrowed wire-header ETag, or NULL when absent.
-    pub etag: *const c_char,
-    /// Retry-after duration in milliseconds, or `-1` when absent.
-    pub retry_after_ms: i64,
-    /// Borrowed backtrace string, or NULL when none was captured.
-    pub backtrace: *const c_char,
-}
-
-/// Fills `out_view` with a snapshot of the error's scalar and borrowed-string
-/// fields and returns `SUCCESS`. Returns `INVALID_ARGUMENT` (leaving
-/// `*out_view` untouched) when `e` or `out_view` is NULL.
-///
-/// This is the single-call alternative to `cosmos_error_status_code` +
-/// `_sub_status` + `_is_from_wire` + `_message` + `_activity_id` +
-/// `_session_token` + `_etag` + `_retry_after_ms` + `_backtrace`. Every borrowed
-/// pointer it returns is valid until [`cosmos_error_free`].
-#[no_mangle]
-pub extern "C" fn cosmos_error_view(
-    e: *const CosmosErrorHandle,
-    out_view: *mut CosmosErrorView,
-) -> CosmosErrorCode {
-    if out_view.is_null() {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument;
-    }
-    if CosmosErrorHandle::inner_from_ptr(e).is_none() {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument;
-    }
-    // Reuse the individual accessors: each lazily populates its cached
-    // `CString` and returns a pointer stable until the error is freed.
-    let view = CosmosErrorView {
-        status_code: cosmos_error_status_code(e),
-        sub_status: cosmos_error_sub_status(e),
-        is_from_wire: cosmos_error_is_from_wire(e),
-        message: cosmos_error_message(e),
-        activity_id: cosmos_error_activity_id(e),
-        session_token: cosmos_error_session_token(e),
-        etag: cosmos_error_etag(e),
-        retry_after_ms: cosmos_error_retry_after_ms(e),
-        backtrace: cosmos_error_backtrace(e),
-    };
-    // SAFETY: `out_view` is non-NULL and the caller guarantees it is writable
-    // for one `CosmosErrorView`.
-    unsafe {
-        *out_view = view;
-    }
-    CosmosErrorCode::CosmosErrorCodeSuccess
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Predicates — each forwards to the equivalent CosmosStatus::is_* method.
-// ─────────────────────────────────────────────────────────────────────────────
-
-macro_rules! status_predicate {
-    ($(#[$meta:meta])* $fn_name:ident, $method:ident) => {
-        $(#[$meta])*
-        #[no_mangle]
-        pub extern "C" fn $fn_name(e: *const CosmosErrorHandle) -> bool {
-            CosmosErrorHandle::inner_from_ptr(e).is_some_and(|inner| inner.err.status().$method())
-        }
-    };
-}
-
-status_predicate!(
-    /// True iff status code is in the 2xx range.
-    cosmos_error_is_success, is_success);
-status_predicate!(
-    /// True iff status code is 429 (Too Many Requests).
-    cosmos_error_is_throttled, is_throttled);
-status_predicate!(
-    /// True iff status code is 404 (Not Found).
-    cosmos_error_is_not_found, is_not_found);
-status_predicate!(
-    /// True iff status code is 409 (Conflict).
-    cosmos_error_is_conflict, is_conflict);
-status_predicate!(
-    /// True iff status code is 412 (Precondition Failed).
-    cosmos_error_is_precondition_failed, is_precondition_failed);
-status_predicate!(
-    /// True iff status code is 408 or the CLIENT_OPERATION_TIMEOUT substatus.
-    cosmos_error_is_timeout, is_timeout);
-status_predicate!(
-    /// True iff status code is 410 (Gone).
-    cosmos_error_is_gone, is_gone);
-status_predicate!(
-    /// True iff status code is 400 (Bad Request).
-    cosmos_error_is_bad_request, is_bad_request);
-status_predicate!(
-    /// True iff status code is 401 (Unauthorized).
-    cosmos_error_is_unauthorized, is_unauthorized);
-status_predicate!(
-    /// True iff status code is 403 (Forbidden).
-    cosmos_error_is_forbidden, is_forbidden);
-status_predicate!(
-    /// True iff status code is 503 (Service Unavailable), excluding
-    /// transport-synthesized 503s.
-    cosmos_error_is_service_unavailable, is_service_unavailable);
-status_predicate!(
-    /// True iff status is in the transient family (408 / 429 / 503).
-    cosmos_error_is_transient, is_transient);
-status_predicate!(
-    /// True iff status is a write forbidden by routing topology.
-    cosmos_error_is_write_forbidden, is_write_forbidden);
-status_predicate!(
-    /// True iff status is 404 with READ_SESSION_NOT_AVAILABLE substatus.
-    cosmos_error_is_read_session_not_available, is_read_session_not_available);
-status_predicate!(
-    /// True iff status is 410 with PARTITION_KEY_RANGE_GONE substatus.
-    cosmos_error_is_partition_key_range_gone, is_partition_key_range_gone);
-status_predicate!(
-    /// True iff status is the transport-synthesized 503 / TRANSPORT_GENERATED_503.
-    cosmos_error_is_transport_generated_503, is_transport_generated_503);
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Lifecycle
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -684,22 +541,16 @@ mod tests {
         assert!(cosmos_error_etag(std::ptr::null()).is_null());
         assert!(cosmos_error_backtrace(std::ptr::null()).is_null());
         assert_eq!(cosmos_error_retry_after_ms(std::ptr::null()), -1);
-        assert!(!cosmos_error_is_throttled(std::ptr::null()));
-        assert!(!cosmos_error_is_not_found(std::ptr::null()));
-        assert!(!cosmos_error_is_timeout(std::ptr::null()));
         // Freeing NULL is a no-op.
         cosmos_error_free(std::ptr::null_mut());
     }
 
     #[test]
-    fn synthetic_client_timeout_predicates() {
+    fn synthetic_client_timeout_fields() {
         let raw = synth_client_timeout();
         assert_eq!(cosmos_error_status_code(raw), 408);
         assert_eq!(cosmos_error_sub_status(raw), 20008);
         assert!(!cosmos_error_is_from_wire(raw));
-        assert!(cosmos_error_is_timeout(raw));
-        assert!(cosmos_error_is_transient(raw));
-        assert!(!cosmos_error_is_not_found(raw));
         // Message is non-null and matches.
         let msg = unsafe { std::ffi::CStr::from_ptr(cosmos_error_message(raw)) }
             .to_string_lossy()
@@ -779,71 +630,5 @@ mod tests {
         assert!((4001..=4999).contains(&CosmosErrorCode::CosmosErrorCodeQueueFull.as_i32()));
         assert!((5001..=5999)
             .contains(&CosmosErrorCode::CosmosErrorCodeOptionsIgnoredOnCacheHit.as_i32()));
-    }
-
-    #[test]
-    fn view_rejects_null_args() {
-        let mut view = CosmosErrorView {
-            status_code: 0,
-            sub_status: 0,
-            is_from_wire: false,
-            message: std::ptr::null(),
-            activity_id: std::ptr::null(),
-            session_token: std::ptr::null(),
-            etag: std::ptr::null(),
-            retry_after_ms: 0,
-            backtrace: std::ptr::null(),
-        };
-        // NULL handle is rejected.
-        assert_eq!(
-            cosmos_error_view(std::ptr::null(), &mut view),
-            CosmosErrorCode::CosmosErrorCodeInvalidArgument
-        );
-        // NULL out_view is rejected too.
-        let raw = synth_client_timeout();
-        assert_eq!(
-            cosmos_error_view(raw, std::ptr::null_mut()),
-            CosmosErrorCode::CosmosErrorCodeInvalidArgument
-        );
-        cosmos_error_free(raw);
-    }
-
-    #[test]
-    fn view_snapshot_matches_individual_accessors() {
-        let raw = synth_client_timeout();
-        let mut view = CosmosErrorView {
-            status_code: 0,
-            sub_status: 0,
-            is_from_wire: true,
-            message: std::ptr::null(),
-            activity_id: std::ptr::null(),
-            session_token: std::ptr::null(),
-            etag: std::ptr::null(),
-            retry_after_ms: 0,
-            backtrace: std::ptr::null(),
-        };
-        assert_eq!(
-            cosmos_error_view(raw, &mut view),
-            CosmosErrorCode::CosmosErrorCodeSuccess
-        );
-        // Every snapshot field equals the matching individual accessor.
-        assert_eq!(view.status_code, cosmos_error_status_code(raw));
-        assert_eq!(view.status_code, 408);
-        assert_eq!(view.sub_status, cosmos_error_sub_status(raw));
-        assert_eq!(view.sub_status, 20008);
-        assert_eq!(view.is_from_wire, cosmos_error_is_from_wire(raw));
-        assert!(!view.is_from_wire);
-        assert_eq!(view.retry_after_ms, cosmos_error_retry_after_ms(raw));
-        // The synthetic error carries no wire headers.
-        assert!(view.activity_id.is_null());
-        assert!(view.session_token.is_null());
-        assert!(view.etag.is_null());
-        // Message pointer is non-null and renders the same text.
-        assert!(!view.message.is_null());
-        let msg = unsafe { std::ffi::CStr::from_ptr(view.message) }
-            .to_string_lossy()
-            .to_string();
-        assert!(msg.contains("operation timeout"), "got: {msg}");
-        cosmos_error_free(raw);
     }
 }
