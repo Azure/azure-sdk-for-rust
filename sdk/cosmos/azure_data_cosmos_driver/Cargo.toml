@@ -28,6 +28,8 @@ bytes.workspace = true
 crossbeam-epoch = { workspace = true, features = ["std"] }
 futures.workspace = true
 h2 = { workspace = true, optional = true }
+opentelemetry = { workspace = true, optional = true }
+opentelemetry_sdk = { workspace = true, optional = true, features = ["testing"] }
 percent-encoding = { workspace = true, optional = true }
 rand = { workspace = true, optional = true }
 reqwest = { workspace = true, optional = true }
@@ -77,6 +79,13 @@ reqwest = [
 rustls = ["reqwest", "reqwest/rustls", "__tls"]
 native_tls = ["reqwest", "reqwest/native-tls", "__tls"]
 fault_injection = ["dep:rand"]
+# `otel_spans_spike` gates a THROWAWAY, in-crate `#[cfg(test)]` feasibility spike
+# (`diagnostics::otel_span_spike`) that reconstructs a completed `DiagnosticsContext`
+# into a BACKDATED OpenTelemetry span tree using the raw `opentelemetry` `SpanBuilder`
+# (`with_start_time`/`with_end_time`). It exists only to prove the OTel mapping in
+# DIAGNOSTICS-CONTRACT.md is feasible; it is NOT production tracing wiring and is OFF by
+# default. It pulls `opentelemetry` + `opentelemetry_sdk` (in-memory exporter) only.
+otel_spans_spike = ["dep:opentelemetry", "dep:opentelemetry_sdk"]
 # `__internal_in_memory_emulator` exposes the in-memory query evaluator
 # (`crate::query::eval`, `crate::query::value`) used by the in-memory Cosmos DB
 # emulator. The evaluator intentionally trades full Cosmos parity for emulator
