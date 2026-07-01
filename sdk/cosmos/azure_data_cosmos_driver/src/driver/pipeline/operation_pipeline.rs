@@ -607,8 +607,7 @@ pub(crate) async fn execute_operation_pipeline(
                 // region that produced this 2xx is — by definition — the
                 // partition's current hub. Cache it so subsequent operations
                 // that latch the header skip the 403/3 discovery chain.
-                if let Some(pk_range_id) =
-                    hub_region_cache_populate_target(&retry_state, operation)
+                if let Some(pk_range_id) = hub_region_cache_populate_target(&retry_state, operation)
                 {
                     // Skip the apply when it would not change state: PPAF off
                     // (the cache effect is a no-op) or the entry already points
@@ -954,9 +953,8 @@ fn is_effect_already_applied(effect: &LocationEffect, snapshot: &LocationSnapsho
         // attempt). Never treat them as already-applied — letting them
         // run is idempotent at the routing-systems level (cache_hub_region
         // does an upsert, advance_hub_region_discovery rotates the entry).
-        LocationEffect::CacheHubRegion { .. } | LocationEffect::AdvanceHubRegionDiscovery { .. } => {
-            false
-        }
+        LocationEffect::CacheHubRegion { .. }
+        | LocationEffect::AdvanceHubRegionDiscovery { .. } => false,
     }
 }
 
@@ -4207,10 +4205,8 @@ mod tests {
         );
         let (location, _eastus, _westus) = hub_cache_location_snapshot(pk_range, &hub);
 
-        let operation = CosmosOperation::read_database(DatabaseReference::from_name(
-            test_account(),
-            "mydb",
-        ));
+        let operation =
+            CosmosOperation::read_database(DatabaseReference::from_name(test_account(), "mydb"));
         let retry_state = read_state_with_hub_latch(pk_range);
 
         let routing = super::resolve_endpoint(
@@ -4236,10 +4232,8 @@ mod tests {
         );
         let (location, eastus, _westus) = hub_cache_location_snapshot(pk_range, &hub);
 
-        let operation = CosmosOperation::read_database(DatabaseReference::from_name(
-            test_account(),
-            "mydb",
-        ));
+        let operation =
+            CosmosOperation::read_database(DatabaseReference::from_name(test_account(), "mydb"));
         let mut retry_state = read_state_with_hub_latch(pk_range);
         retry_state.hub_region_processing_only = false; // latch off
         retry_state.session_retry_routing =
@@ -4269,10 +4263,8 @@ mod tests {
         );
         let (location, _eastus, _westus) = hub_cache_location_snapshot(pk_range, &hub);
 
-        let operation = CosmosOperation::read_database(DatabaseReference::from_name(
-            test_account(),
-            "mydb",
-        ));
+        let operation =
+            CosmosOperation::read_database(DatabaseReference::from_name(test_account(), "mydb"));
         let mut retry_state = read_state_with_hub_latch(pk_range);
         // PK range ID not yet captured from a response header.
         retry_state.partition_key_range_id = None;
@@ -4342,10 +4334,8 @@ mod tests {
 
         let location = LocationSnapshot::for_tests_with_partitions(account, Arc::new(partitions));
 
-        let operation = CosmosOperation::read_database(DatabaseReference::from_name(
-            test_account(),
-            "mydb",
-        ));
+        let operation =
+            CosmosOperation::read_database(DatabaseReference::from_name(test_account(), "mydb"));
         let retry_state = read_state_with_hub_latch(pk_range);
 
         let routing = super::resolve_endpoint(
@@ -4376,10 +4366,8 @@ mod tests {
         );
         let (location, eastus, _westus) = hub_cache_location_snapshot(pk_range, &hub);
 
-        let operation = CosmosOperation::read_database(DatabaseReference::from_name(
-            test_account(),
-            "mydb",
-        ));
+        let operation =
+            CosmosOperation::read_database(DatabaseReference::from_name(test_account(), "mydb"));
         let mut retry_state = read_state_with_hub_latch(pk_range);
         // Caller pins reads away from the cached hub region.
         retry_state.excluded_regions = vec![crate::options::Region::from("westus")];
@@ -4456,13 +4444,10 @@ mod tests {
                 failback_jitter: Duration::ZERO,
             },
         );
-        let location =
-            LocationSnapshot::for_tests_with_partitions(account, Arc::new(partitions));
+        let location = LocationSnapshot::for_tests_with_partitions(account, Arc::new(partitions));
 
-        let operation = CosmosOperation::read_database(DatabaseReference::from_name(
-            test_account(),
-            "mydb",
-        ));
+        let operation =
+            CosmosOperation::read_database(DatabaseReference::from_name(test_account(), "mydb"));
         let retry_state = read_state_with_hub_latch(pk_range);
 
         let routing = super::resolve_endpoint(

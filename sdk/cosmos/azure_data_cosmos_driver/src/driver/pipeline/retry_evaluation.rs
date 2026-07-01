@@ -2679,7 +2679,10 @@ mod tests {
             "hub-region 403/3 must abort once the failover budget is exhausted, got {action:?}",
         );
         // No routing-state mutations on the terminal abort.
-        assert!(effects.is_empty(), "aborted hub-region 403/3 must emit no effects");
+        assert!(
+            effects.is_empty(),
+            "aborted hub-region 403/3 must emit no effects"
+        );
     }
 
     // ── Shared hub-region latch (Part 5) ──────────────────────────

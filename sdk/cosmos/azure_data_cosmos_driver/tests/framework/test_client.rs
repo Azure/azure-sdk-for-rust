@@ -3,15 +3,14 @@
 
 //! Driver test client for emulator-based E2E tests.
 
+use azure_core::http::StatusCode;
 #[cfg(feature = "fault_injection")]
 use azure_data_cosmos_driver::fault_injection::FaultInjectionRule;
 #[cfg(feature = "__internal_testing")]
 use azure_data_cosmos_driver::CosmosDriver;
-use azure_core::http::StatusCode;
 use azure_data_cosmos_driver::{
     diagnostics::{DiagnosticsContext, PipelineType, TransportSecurity},
     driver::CosmosDriverRuntime,
-    SubStatusCode,
     models::{
         AccountReference, ConnectionString, ContainerReference, CosmosOperation, CosmosResponse,
         DatabaseReference, ItemReference, PartitionKey,
@@ -20,6 +19,7 @@ use azure_data_cosmos_driver::{
         ConnectionPoolOptions, DriverOptions, OperationOptions, PartitionFailoverOptions, Region,
         ServerCertificateValidation,
     },
+    SubStatusCode,
 };
 use std::{error::Error, future::Future, sync::Arc};
 use tracing_subscriber::EnvFilter;
@@ -602,7 +602,8 @@ impl DriverTestRunContext {
                     // than substring-scanning the error message.
                     let status = e.status();
                     let create_in_progress = status.status_code() == StatusCode::NotFound
-                        && status.sub_status() == Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS);
+                        && status.sub_status()
+                            == Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS);
                     if create_in_progress {
                         tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
                         delay_ms = (delay_ms * 2).min(5000);

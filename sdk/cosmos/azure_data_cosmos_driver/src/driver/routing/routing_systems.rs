@@ -1986,7 +1986,7 @@ mod tests {
         let result = advance_hub_region_discovery(&ps, &account, &pk("0"), &westus);
         // Both endpoints have failed — entry is removed so default selection
         // applies on the next attempt.
-        assert!(result.failover_overrides.get(&pk("0")).is_none());
+        assert!(!result.failover_overrides.contains_key(&pk("0")));
     }
 
     /// Hub-region caching is a PPAF-only feature. On accounts without PPAF,

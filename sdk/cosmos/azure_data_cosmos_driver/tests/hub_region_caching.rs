@@ -220,13 +220,13 @@ pub async fn read_hub_region_caching_cold_then_warm() -> Result<(), Box<dyn Erro
             );
             let r1_regions = r1_diag.regions_contacted();
             assert!(
-                r1_regions.iter().any(|r| *r == PREFERRED_READ_REGION),
+                r1_regions.contains(&PREFERRED_READ_REGION),
                 "R1: regions_contacted should include {:?}, got {:?}",
                 PREFERRED_READ_REGION,
                 r1_regions
             );
             assert!(
-                r1_regions.iter().any(|r| *r == HUB_REGION),
+                r1_regions.contains(&HUB_REGION),
                 "R1: regions_contacted should include hub {:?}, got {:?}",
                 HUB_REGION,
                 r1_regions
@@ -249,7 +249,9 @@ pub async fn read_hub_region_caching_cold_then_warm() -> Result<(), Box<dyn Erro
                 "R1: cached pk_range_id should not be empty"
             );
             assert!(
-                endpoint_url.to_lowercase().contains(HUB_REGION_HOST_FRAGMENT),
+                endpoint_url
+                    .to_lowercase()
+                    .contains(HUB_REGION_HOST_FRAGMENT),
                 "R1: cached endpoint URL {endpoint_url:?} should point at the hub region \
                  (host fragment {HUB_REGION_HOST_FRAGMENT:?})"
             );
@@ -297,13 +299,13 @@ pub async fn read_hub_region_caching_cold_then_warm() -> Result<(), Box<dyn Erro
             );
             let r2_regions = r2_diag.regions_contacted();
             assert!(
-                r2_regions.iter().any(|r| *r == PREFERRED_READ_REGION),
+                r2_regions.contains(&PREFERRED_READ_REGION),
                 "R2: regions_contacted should include {:?}, got {:?}",
                 PREFERRED_READ_REGION,
                 r2_regions
             );
             assert!(
-                r2_regions.iter().any(|r| *r == HUB_REGION),
+                r2_regions.contains(&HUB_REGION),
                 "R2: regions_contacted should include hub {:?}, got {:?}",
                 HUB_REGION,
                 r2_regions

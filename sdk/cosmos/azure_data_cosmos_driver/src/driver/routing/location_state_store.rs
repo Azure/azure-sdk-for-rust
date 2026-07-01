@@ -26,9 +26,9 @@ use crate::{
 use super::{
     advance_hub_region_discovery, build_account_endpoint_state, cache_hub_region,
     expire_partition_overrides, mark_endpoint_unavailable, mark_partition_unavailable,
-    partition_endpoint_state::PartitionEndpointState,
-    partition_key_range_id::PartitionKeyRangeId, record_hedge_alternate_win,
-    record_hedge_primary_win, AccountEndpointState, CosmosEndpoint, LocationEffect,
+    partition_endpoint_state::PartitionEndpointState, partition_key_range_id::PartitionKeyRangeId,
+    record_hedge_alternate_win, record_hedge_primary_win, AccountEndpointState, CosmosEndpoint,
+    LocationEffect,
 };
 
 /// Immutable location snapshot consumed by one operation-loop iteration.
@@ -1513,7 +1513,7 @@ mod tests {
     /// Integration test for the apply pipeline + hub-region cache effects:
     /// exercises CacheHubRegion → AdvanceHubRegionDiscovery → CacheHubRegion
     /// in sequence and verifies the SetCurrent-only update semantics
-    /// preserve `failed_endpoints` 
+    /// preserve `failed_endpoints`
     #[tokio::test]
     async fn apply_cache_hub_region_then_advance_then_cache_again() {
         let store = build_store_with_two_regions();
