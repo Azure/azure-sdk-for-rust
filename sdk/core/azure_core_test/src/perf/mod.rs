@@ -74,7 +74,7 @@ struct OperationResult {
 #[derive(Parser, Debug, Clone)]
 struct PerfRunnerOptions<T: PerfTestFactory> {
     // Satisfies the cargo bench command.
-    #[arg(long, global = true, default_value_t = true)]
+    #[arg(long, global = true, default_value_t = true, hide = true)]
     bench: bool,
 
     // Disable test cleanup.
