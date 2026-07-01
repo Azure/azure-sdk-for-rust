@@ -366,3 +366,136 @@ driver-stays-`Arc` concession (10.1 #7) keeps Phase 2 tractable.
 - The **driver `Arc`-vs-`Box`** final call (10.1 #7 leaves the driver on `Arc`)
   can be revisited, but the agreed default is: driver `Arc`, everything else
   `Box`.
+
+### 10.3 Phase 4 concrete design — inverted `cosmos_completion_t`
+
+The keystone change. `cosmos_cq_wait` stops returning an opaque completion the
+host then unpacks through `cosmos_completion_view` + `cosmos_completion_take_response`
++ a separate `cosmos_response_t`; instead it returns an **array of owned
+`#[repr(C)]` completions** whose data is already inline.
+
+#### The struct
+
+```rust
+#[repr(C)]
+pub struct CosmosCompletion {
+    // ── Always valid ─────────────────────────────────────────────
+    outcome: CosmosCompletionOutcome,     // i32: Ok / Error / Cancelled / Unknown
+    status: CosmosErrorCode,              // i32: coarse code (always populated)
+    user_data: isize,                     // opaque pointer-sized cookie, verbatim
+    was_cancel_requested: u8,             // 0/1 (u8, not bool, to avoid UB)
+
+    // ── Response scalars (0 / default on non-OK / degenerate) ────
+    http_status_code: u16,                // wire HTTP status (0 when none)
+    request_charge: f64,                  // RU (0.0 when absent)
+
+    // ── Borrowed strings — valid until cosmos_cq_free_completions ─
+    activity_id: *const c_char,           // NULL when absent
+    session_token: *const c_char,
+    etag: *const c_char,
+    continuation: *const c_char,          // server header continuation
+    next_continuation: *const c_char,     // planner-derived next-page token
+
+    // ── Borrowed header list (net-new) ───────────────────────────
+    headers: *const CosmosHeaderKv,       // NULL/0 when none
+    headers_len: usize,
+
+    // ── Borrowed body — NULL/0 when empty ────────────────────────
+    body: *const u8,
+    body_len: usize,
+
+    // ── Owned payloads the SDK takes / the free reclaims ─────────
+    error: *mut CosmosErrorHandle,        // owned; non-NULL only on Error (+ details on)
+    diagnostics: *mut c_void,             // deferred — always NULL for now
+    driver: *mut DriverHandle,            // owned; degenerate get_or_create completion
+    container: *mut ContainerRefHandle,   // owned; degenerate resolve_container completion
+
+    // ── Opaque owner (cbindgen: opaque ptr the C side never touches) ─
+    backing: *mut CosmosCompletionBacking,
+}
+```
+
+`CosmosCompletionBacking` is **not** `#[repr(C)]`; cbindgen emits it as an
+opaque forward-declared pointer. It owns everything the borrowed pointers
+reference so they stay valid until free:
+
+```rust
+struct CosmosCompletionBacking {
+    response: Option<CosmosResponse>,      // owns the body bytes
+    header_storage: Vec<CString>,          // backs `headers` name/value ptrs
+    headers: Vec<CosmosHeaderKv>,          // the array `headers` points at
+    activity_id: Option<CString>,          // backs the typed-string ptrs
+    session_token: Option<CString>,
+    etag: Option<CString>,
+    continuation: Option<CString>,
+    next_continuation: Option<CString>,
+    op_inner: Arc<OperationInner>,         // for op-handle state after the fact
+}
+```
+
+#### The free contract
+
+```rust
+// Frees an array of `count` completions and every inner allocation
+// (backing box, owned error/driver/container handles NOT taken by the SDK).
+pub extern "C" fn cosmos_completion_queue_free_completions(
+    completions: *mut CosmosCompletion,
+    count: usize,
+);
+```
+
+- The host reads the fields, **copies** what it needs into SDK memory, then
+  calls the free. All borrowed pointers die at free.
+- Owned payloads (`error` / `driver` / `container`): the SDK either (a) reads
+  them in place and lets the free drop them, or (b) detaches ownership by
+  zeroing the field first (a `cosmos_completion_take_*` helper sets the field
+  to NULL and returns the pointer, so the free skips it). Default: the free
+  reclaims any non-NULL owned handle.
+
+#### The wait
+
+```rust
+// The ONLY wait. Blocks until ≥1 completion or timeout, then drains up to
+// `max` already-queued completions without blocking again. Writes into the
+// caller's `out[0..max]`, returns the count. Each element is freed by
+// cosmos_completion_queue_free_completions.
+pub extern "C" fn cosmos_completion_queue_wait(
+    queue: *mut CompletionQueue,
+    out: *mut CosmosCompletion,
+    max: usize,
+    timeout_ms: u32,
+) -> usize;
+```
+
+Collapses today's `cosmos_cq_wait` (single) + `cosmos_cq_wait_batch` (array)
+into one array-returning call.
+
+#### Removed by this phase
+
+- `cosmos_completion_view` + `CosmosCompletionView`.
+- `cosmos_completion_take_response` / `cosmos_completion_response`.
+- The entire `response.rs`: `cosmos_response_t` + all `cosmos_response_*`
+  accessors + `CosmosResponseView` + `cosmos_response_view` +
+  `cosmos_response_take_driver` / `_take_container` + `cosmos_response_free`.
+  The degenerate side-payloads (`driver` / `container`) move onto the
+  completion as owned fields.
+- `cosmos_cq_wait` (single) + `cosmos_cq_wait_batch` → the one array wait.
+
+#### Open sub-question — the header list source
+
+The driver keeps **typed** response headers (`CosmosResponseHeaders`), not a
+raw key/value map, and its header-name constants are `pub(crate)`. So a
+*generic* `cosmos_header_kv_t[]` must be **synthesized** in the wrapper from
+the typed fields with **hardcoded** canonical wire names. Options:
+
+- **(A) Curated typed subset now** — synthesize the ~15 commonly-needed headers
+  (activity id, RU charge, session token, etag, continuation, item count,
+  substatus, retry-after, lsn family, query/index metrics, …) with hardcoded
+  `x-ms-*` names; document "exhaustive/raw list is a follow-up".
+- **(B) Defer the generic list** — keep only the typed-string fields on the
+  completion for now; add the `headers`/`headers_len` fields but leave them
+  `NULL/0` until the driver grows a raw header map (or we decide to hardcode
+  the full table).
+
+Recommended: **(A)** — it delivers the generic-list shape @analogrelay asked
+for while the exhaustive table / driver raw-map is a separate follow-up.
