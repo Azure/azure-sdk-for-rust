@@ -34,7 +34,7 @@ pub struct DownloadBlobTestOptions {
     #[arg(long, default_value_t = 5)]
     count: usize,
 
-    #[arg(long)]
+    #[arg(long, default_value_t = CollectOptions::Stream, value_enum)]
     collect: CollectOptions,
 
     // Number of concurrent network transfers.
