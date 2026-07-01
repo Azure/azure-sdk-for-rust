@@ -50,7 +50,11 @@ function Get-PackagesToBuild() {
     $toProcess = $toProcess -ne $package
 
     foreach ($dependency in $package.UnreleasedDependencies) {
-      if (!$packagesToBuild.Contains($dependency) -and !$toProcess.Contains($dependency)) {
+      if (
+        $dependency.Publishable -and
+        !$packagesToBuild.Contains($dependency) -and
+        !$toProcess.Contains($dependency)
+      ) {
         $packagesToBuild += $dependency
         $toProcess += $dependency
       }
@@ -81,13 +85,19 @@ function Get-OutputPackageNames($packages) {
 
     default {
       LogDebug "Packing all packages in workspace"
-      return $packages.name
+      return $packages.Where({ $_.Publishable }).name
     }
   }
 
   foreach ($name in $names) {
-    if (-not $packages.name.Contains($name)) {
-      Write-Error "Package '$name' is not in the workspace or does not publish"
+    $package = $packages | Where-Object -Property name -EQ -Value $name | Select-Object -First 1
+    if (-not $package) {
+      LogError "Package '$name' is not in the workspace"
+      exit 1
+    }
+
+    if (-not $package.Publishable) {
+      LogError "Package '$name' has publish = false and cannot be packed for publishing"
       exit 1
     }
   }

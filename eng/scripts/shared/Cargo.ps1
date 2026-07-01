@@ -1,4 +1,13 @@
 
+function Test-CargoPackageIsPublishable($package) {
+  # cargo metadata returns:
+  # - $null when `publish` is not specified
+  # - an empty array when `publish = false`
+  # - one or more registry names when publish is restricted to specific registries
+  $publish = $package.publish
+  return $null -eq $publish -or $publish.Count -gt 0
+}
+
 function Get-CargoMetadata() {
   cargo metadata --no-deps --format-version 1 --manifest-path "$RepoRoot/Cargo.toml" | ConvertFrom-Json -Depth 100 -AsHashtable
 }
@@ -9,6 +18,7 @@ function Get-CargoPackages() {
   # Path based dependencies are assumed to be unreleased package versions. In
   # non-release builds these should be packed as well.
   foreach ($package in $metadata.packages) {
+    $package.Publishable = Test-CargoPackageIsPublishable $package
     $package.UnreleasedDependencies = @()
     foreach ($dependency in $package.dependencies) {
       if ($dependency['path'] -and $dependency['kind'] -ne 'dev') {

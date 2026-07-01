@@ -119,6 +119,29 @@ impl BlobContainerClient {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use azure_core::{
+        http::{
+            headers::Headers, pager::PagerContinuation, AsyncRawResponse, ClientOptions,
+            StatusCode, Transport,
+        },
+        Bytes,
+    };
+    use azure_core_test::http::MockHttpClient;
+    use futures::{FutureExt as _, TryStreamExt as _};
+    use std::sync::Arc;
+
+    const LIST_BLOBS_PAGE: &[u8] = br#"<?xml version="1.0" encoding="utf-8"?>
+<EnumerationResults ServiceEndpoint="https://example.blob.core.windows.net/" ContainerName="container">
+  <Blobs>
+    <Blob>
+      <Name>blob1</Name>
+      <Properties>
+        <BlobType>BlockBlob</BlobType>
+      </Properties>
+    </Blob>
+  </Blobs>
+  <NextMarker>page-2</NextMarker>
+</EnumerationResults>"#;
 
     #[test]
     fn from_url_rejects_cannot_be_a_base_url() {
@@ -141,5 +164,50 @@ mod tests {
         // CDN / Front Door / private endpoint hostnames are still https URLs.
         let url = Url::parse("https://cdn.contoso.com/container").unwrap();
         assert!(BlobContainerClient::new(url, None, None).is_ok());
+    }
+
+    #[tokio::test]
+    async fn list_blobs_page_keeps_body_for_into_model() -> Result<()> {
+        let mock_client = Arc::new(MockHttpClient::new(|req| {
+            assert_eq!(req.url().path(), "/container");
+            assert!(req
+                .url()
+                .query()
+                .is_some_and(|query| query.contains("comp=list")));
+            async move {
+                Ok(AsyncRawResponse::from_bytes(
+                    StatusCode::Ok,
+                    Headers::new(),
+                    Bytes::from_static(LIST_BLOBS_PAGE),
+                ))
+            }
+            .boxed()
+        }));
+        let client = BlobContainerClient::new(
+            Url::parse("https://example.blob.core.windows.net/container").unwrap(),
+            None,
+            Some(BlobContainerClientOptions {
+                client_options: ClientOptions {
+                    transport: Some(Transport::new(mock_client)),
+                    ..Default::default()
+                },
+                ..Default::default()
+            }),
+        )?;
+
+        let mut pages = client.list_blobs(None)?.into_pages();
+        let page = pages.try_next().await?.expect("expected a page");
+
+        assert!(matches!(
+            pages.continuation(),
+            Some(PagerContinuation::Token(token)) if token == "page-2"
+        ));
+
+        let page = page.into_model()?;
+        assert_eq!(page.next_marker.as_deref(), Some("page-2"));
+        assert_eq!(page.blob_items.len(), 1);
+        assert_eq!(page.blob_items[0].name.as_deref(), Some("blob1"));
+
+        Ok(())
     }
 }

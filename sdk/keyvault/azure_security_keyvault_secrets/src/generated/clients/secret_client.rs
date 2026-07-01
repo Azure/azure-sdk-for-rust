@@ -249,6 +249,12 @@ impl SecretClient {
         &self,
         options: Option<SecretClientListDeletedSecretPropertiesOptions<'_>>,
     ) -> Result<Pager<ListDeletedSecretPropertiesResult>> {
+        #[derive(serde::Deserialize)]
+        struct SecretClientListDeletedSecretPropertiesResponse {
+            #[serde(rename = "nextLink")]
+            next_link: Option<String>,
+        }
+
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
@@ -291,9 +297,11 @@ impl SecretClient {
                             )
                             .await?;
                         let (status, headers, body) = rsp.deconstruct();
-                        let res: ListDeletedSecretPropertiesResult = json::from_json(&body)?;
+                        let res: SecretClientListDeletedSecretPropertiesResponse =
+                            json::from_json(&body)?;
+                        let next_link = res.next_link;
                         let rsp = RawResponse::from_bytes(status, headers, body).into();
-                        Ok(match res.next_link {
+                        Ok(match next_link {
                             Some(next_link) if !next_link.is_empty() => PagerResult::More {
                                 response: rsp,
                                 continuation: PagerContinuation::Link(
@@ -323,6 +331,12 @@ impl SecretClient {
         &self,
         options: Option<SecretClientListSecretPropertiesOptions<'_>>,
     ) -> Result<Pager<ListSecretPropertiesResult>> {
+        #[derive(serde::Deserialize)]
+        struct SecretClientListSecretPropertiesResponse {
+            #[serde(rename = "nextLink")]
+            next_link: Option<String>,
+        }
+
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
@@ -365,9 +379,10 @@ impl SecretClient {
                             )
                             .await?;
                         let (status, headers, body) = rsp.deconstruct();
-                        let res: ListSecretPropertiesResult = json::from_json(&body)?;
+                        let res: SecretClientListSecretPropertiesResponse = json::from_json(&body)?;
+                        let next_link = res.next_link;
                         let rsp = RawResponse::from_bytes(status, headers, body).into();
-                        Ok(match res.next_link {
+                        Ok(match next_link {
                             Some(next_link) if !next_link.is_empty() => PagerResult::More {
                                 response: rsp,
                                 continuation: PagerContinuation::Link(
@@ -398,6 +413,12 @@ impl SecretClient {
         secret_name: &str,
         options: Option<SecretClientListSecretPropertiesVersionsOptions<'_>>,
     ) -> Result<Pager<ListSecretPropertiesResult>> {
+        #[derive(serde::Deserialize)]
+        struct SecretClientListSecretPropertiesVersionsResponse {
+            #[serde(rename = "nextLink")]
+            next_link: Option<String>,
+        }
+
         if secret_name.is_empty() {
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
@@ -448,9 +469,11 @@ impl SecretClient {
                             )
                             .await?;
                         let (status, headers, body) = rsp.deconstruct();
-                        let res: ListSecretPropertiesResult = json::from_json(&body)?;
+                        let res: SecretClientListSecretPropertiesVersionsResponse =
+                            json::from_json(&body)?;
+                        let next_link = res.next_link;
                         let rsp = RawResponse::from_bytes(status, headers, body).into();
-                        Ok(match res.next_link {
+                        Ok(match next_link {
                             Some(next_link) if !next_link.is_empty() => PagerResult::More {
                                 response: rsp,
                                 continuation: PagerContinuation::Link(

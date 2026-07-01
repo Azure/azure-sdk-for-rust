@@ -10,6 +10,8 @@
 
 ### Other Changes
 
+- Avoided double-deserializing pager responses by using borrowed `nextLink` parsing in Key Vault secrets list operations.
+
 ## 1.0.0 (2026-05-12)
 
 ### Features Added
