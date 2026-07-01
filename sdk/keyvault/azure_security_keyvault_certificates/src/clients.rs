@@ -19,6 +19,7 @@ use azure_core::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
         poller::{
             get_retry_after, Poller, PollerContinuation, PollerResult, PollerState, PollerStatus,
+            StatusMonitor as _,
         },
         Body, ClientOptions, Method, Pipeline, RawResponse, Request, RequestContent, Url,
     },
@@ -151,13 +152,6 @@ impl CertificateClient {
         parameters: RequestContent<CreateCertificateParameters>,
         options: Option<CertificateClientCreateCertificateOptions<'_>>,
     ) -> Result<Poller<CertificateOperation>> {
-        #[derive(serde::Deserialize)]
-        struct CertificateClientBeginCreateCertificateResponse {
-            status: Option<String>,
-            error: Option<serde::de::IgnoredAny>,
-            target: Option<String>,
-        }
-
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
 
@@ -223,18 +217,10 @@ impl CertificateClient {
                         &[RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS, RETRY_AFTER],
                         &poller_options,
                     );
-                    let res: CertificateClientBeginCreateCertificateResponse =
-                        json::from_json(&body)?;
-                    let poller_status = match res.status.as_deref() {
-                        Some("completed") => PollerStatus::Succeeded,
-                        Some("cancelled") => PollerStatus::Canceled,
-                        Some(_) if res.error.is_some() => PollerStatus::Failed,
-                        _ => PollerStatus::InProgress,
-                    };
-                    let target = res.target;
+                    let res: CertificateOperation = json::from_json(&body)?;
                     let rsp = RawResponse::from_bytes(status, headers, body).into();
 
-                    Ok(match poller_status {
+                    Ok(match res.status() {
                         PollerStatus::InProgress => PollerResult::InProgress {
                             response: rsp,
                             retry_after,
@@ -247,9 +233,9 @@ impl CertificateClient {
                             PollerResult::Succeeded {
                                 response: rsp,
                                 target: Box::new(move || {
-                                    let target = target.clone();
                                     Box::pin(async move {
-                                        let final_link: Url = target
+                                        let final_link: Url = res
+                                            .target
                                             .ok_or_else(|| {
                                                 azure_core::Error::new(
                                                     ErrorKind::Other,

@@ -10,7 +10,7 @@
 
 ### Other Changes
 
-- Avoided double-deserializing pager and poller responses by using borrowed `nextLink` parsing in Key Vault certificates operations.
+- Avoided double-deserializing pager responses by using borrowed `nextLink` parsing in Key Vault certificates list operations.
 
 ## 1.1.0-beta.1 (2026-06-08)
 
