@@ -899,6 +899,7 @@ dependencies = [
  "azure_storage_common",
  "base64 0.22.1",
  "hmac",
+ "include-file",
  "percent-encoding",
  "sha2",
  "time",

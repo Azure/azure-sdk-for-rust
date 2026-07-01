@@ -29,12 +29,11 @@ Use `SasBuilder` to construct a user delegation SAS token, then set it as the qu
 
 Produce the signed SAS token and set it as the query on a blob URL. Use the resulting URL with an unauthenticated `BlobClient::new` to grant a caller time-bound read access:
 
-```rust no_run
+```rust ignore read_blob_sas
 use azure_core::http::Url;
-use azure_storage_sas::{SasBuilder, UserDelegationKey};
+use azure_storage_sas::SasBuilder;
 use time::OffsetDateTime;
 
-# fn example(udk: UserDelegationKey) -> azure_core::Result<()> {
 let storage_account_name = "myaccount";
 let container_name = "images";
 let blob_name = "photo.jpg";
@@ -53,20 +52,17 @@ let token = SasBuilder::new(
 let sas_url = Url::parse(&format!(
     "https://{storage_account_name}.blob.core.windows.net/{container_name}/{blob_name}?{token}"
 ))?;
-# let _ = sas_url;
-# Ok(()) }
 ```
 
 ### Scope a container SAS to HTTPS and a single IP range
 
 Layer optional restrictions onto a container-level SAS: limit the caller to HTTPS only, pin them to a corporate egress range, and grant just enough permissions to list and read:
 
-```rust no_run
-use azure_storage_sas::{SasBuilder, SasIpRange, SasProtocol, UserDelegationKey};
+```rust ignore container_ip_range_sas
+use azure_storage_sas::{SasBuilder, SasIpRange, SasProtocol};
 use std::net::Ipv4Addr;
 use time::OffsetDateTime;
 
-# fn example(udk: UserDelegationKey) -> azure_core::Result<()> {
 let sas = SasBuilder::new(
         "myaccount",
         &udk,
@@ -81,8 +77,6 @@ let sas = SasBuilder::new(
         end: Ipv4Addr::new(10, 0, 0, 255),
     })
     .build();
-# let _ = sas;
-# Ok(()) }
 ```
 
 ## Next steps

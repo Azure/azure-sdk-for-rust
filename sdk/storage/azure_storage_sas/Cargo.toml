@@ -22,5 +22,8 @@ percent-encoding = { workspace = true }
 sha2 = { workspace = true }
 time = { workspace = true }
 
+[dev-dependencies]
+include-file.workspace = true
+
 [lints]
 workspace = true

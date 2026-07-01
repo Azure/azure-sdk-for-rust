@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 /// A directory resource (ADLS Gen2) for user delegation SAS.
+#[derive(Debug)]
 pub(crate) struct DirectoryResource {
     container: String,
     directory: String,

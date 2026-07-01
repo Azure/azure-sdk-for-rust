@@ -6,6 +6,7 @@
 /// By default targets a base blob (`sr=b`). A snapshot timestamp or version ID
 /// is set through the [`snapshot`](crate::SasBuilder::snapshot) or
 /// [`version`](crate::SasBuilder::version) builder setters.
+#[derive(Debug)]
 pub(crate) struct BlobResource {
     container: String,
     blob: String,

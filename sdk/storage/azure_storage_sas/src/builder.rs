@@ -1,14 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::common::{sign, CommonFields, SasResource, ValidatedKey};
-use crate::ip_range::SasIpRange;
-use crate::protocol::SasProtocol;
-use crate::resource::blob::{
+use crate::blob::{
     BlobPermissions, BlobResource, BlobSasOptions, BlobState, ContainerPermissions,
     ContainerResource, ContainerState, DirectoryResource, DirectoryState,
 };
-use crate::resource::queue::{QueuePermissions, QueueResource, QueueState};
+use crate::common::{sign, CommonFields, SasResource, ValidatedKey};
+use crate::ip_range::SasIpRange;
+use crate::protocol::SasProtocol;
+use crate::queue::{QueuePermissions, QueueResource, QueueState};
 use azure_storage_common::models::UserDelegationKey;
 use time::OffsetDateTime;
 /// Initial state before a resource type has been selected.
@@ -21,7 +21,7 @@ pub struct Untyped;
 /// [`.blob()`](SasBuilder::blob)) to transition from the initial untyped
 /// state to a typed state, then call `.build()` to produce the signed SAS
 /// token.
-pub struct SasBuilder<'a, S> {
+pub struct SasBuilder<'a, S = Untyped> {
     pub(crate) key: ValidatedKey<'a>,
     pub(crate) common: CommonFields,
     pub(crate) state: S,

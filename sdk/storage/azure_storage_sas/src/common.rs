@@ -30,7 +30,7 @@ const ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
 
 pub(crate) mod sealed {
     /// Seals [`SasResource`](super::SasResource) and
-    /// [`BlobServiceState`](crate::resource::blob::BlobServiceState) so they
+    /// [`BlobServiceState`](crate::blob::BlobServiceState) so they
     /// can only be implemented for the typestate markers defined in this crate.
     pub trait Sealed {}
 }
@@ -80,7 +80,7 @@ impl CommonFields {
     pub fn ip_str(&self) -> String {
         self.ip_range
             .as_ref()
-            .map(|ip| ip.to_string())
+            .map(|ip| ip.sip_value())
             .unwrap_or_default()
     }
 

@@ -27,6 +27,7 @@ use crate::common::{CommonFields, SasResource, ValidatedKey};
 use crate::SAS_VERSION;
 
 /// A queue resource for user delegation SAS.
+#[derive(Debug)]
 pub(crate) struct QueueResource {
     queue: String,
 }
@@ -183,7 +184,7 @@ fn queue_udk_query_parameters(
     parts.push(format!("se={}", common.expiry_str()));
     parts.push(format!("sp={permissions}"));
     if let Some(ref ip) = common.ip_range {
-        parts.push(format!("sip={ip}"));
+        parts.push(format!("sip={}", ip.sip_value()));
     }
     if let Some(ref proto) = common.protocol {
         parts.push(format!("spr={proto}"));

@@ -678,7 +678,7 @@ fn blob_udk_query_parameters(
     parts.push(format!("se={}", common.expiry_str()));
     parts.push(format!("sp={permissions}"));
     if let Some(ref ip) = common.ip_range {
-        parts.push(format!("sip={ip}"));
+        parts.push(format!("sip={}", ip.sip_value()));
     }
     if let Some(ref proto) = common.protocol {
         parts.push(format!("spr={proto}"));

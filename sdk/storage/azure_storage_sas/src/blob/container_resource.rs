@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 /// A container resource for user delegation SAS.
+#[derive(Debug)]
 pub(crate) struct ContainerResource {
     container: String,
 }
