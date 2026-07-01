@@ -24,10 +24,11 @@ use crate::{
 };
 
 use super::{
-    build_account_endpoint_state, expire_partition_overrides, mark_endpoint_unavailable,
-    mark_partition_unavailable, partition_endpoint_state::PartitionEndpointState,
-    partition_key_range_id::PartitionKeyRangeId, record_hedge_alternate_win,
-    record_hedge_primary_win, AccountEndpointState, CosmosEndpoint, LocationEffect,
+    advance_hub_region_discovery, build_account_endpoint_state, cache_hub_region,
+    expire_partition_overrides, mark_endpoint_unavailable, mark_partition_unavailable,
+    partition_endpoint_state::PartitionEndpointState, partition_key_range_id::PartitionKeyRangeId,
+    record_hedge_alternate_win, record_hedge_primary_win, AccountEndpointState, CosmosEndpoint,
+    LocationEffect,
 };
 
 /// Immutable location snapshot consumed by one operation-loop iteration.
@@ -296,6 +297,32 @@ impl LocationStateStore {
                 }
                 LocationEffect::RefreshAccountProperties => {
                     self.refresh_account_properties_if_due().await;
+                }
+                LocationEffect::CacheHubRegion {
+                    partition_key_range_id,
+                    hub_endpoint,
+                } => {
+                    let pk_range_id = partition_key_range_id.clone();
+                    let hub_endpoint = hub_endpoint.clone();
+                    self.apply_partition(|current_partitions| {
+                        cache_hub_region(current_partitions, &pk_range_id, &hub_endpoint)
+                    });
+                }
+                LocationEffect::AdvanceHubRegionDiscovery {
+                    partition_key_range_id,
+                    failed_endpoint,
+                } => {
+                    let pk_range_id = partition_key_range_id.clone();
+                    let failed_endpoint = failed_endpoint.clone();
+                    self.apply_partition(|current_partitions| {
+                        let account = self.account_snapshot();
+                        advance_hub_region_discovery(
+                            current_partitions,
+                            &account,
+                            &pk_range_id,
+                            &failed_endpoint,
+                        )
+                    });
                 }
             }
         }
@@ -1425,6 +1452,106 @@ mod tests {
         assert!(
             weak.upgrade().is_none(),
             "PartitionEndpointState was leaked: not dropped after LocationStateStore drop"
+        );
+    }
+
+    // ── Hub region cache apply tests ──────────────────────────────────
+
+    fn test_multi_region_refresh_payload() -> AccountProperties {
+        serde_json::from_value(serde_json::json!({
+            "_self": "",
+            "id": "test",
+            "_rid": "test.documents.azure.com",
+            "_etag": "etag-multi",
+            "media": "//media/",
+            "addresses": "//addresses/",
+            "_dbs": "//dbs/",
+            "writableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com:443/" }],
+            "readableLocations": [
+                { "name": "eastus", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com:443/" },
+                { "name": "westus", "databaseAccountEndpoint": "https://test-westus.documents.azure.com:443/" }
+            ],
+            "enableMultipleWriteLocations": false,
+            // Hub-region caching is PPAF-gated, so the apply-tests below
+            // need an account that opts into PPAF.
+            "enablePerPartitionFailoverBehavior": true,
+            "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
+            "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
+            "queryEngineConfiguration": "{}"
+        }))
+        .unwrap()
+    }
+
+    fn build_store_with_two_regions() -> LocationStateStore {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
+            let payload = test_multi_region_refresh_payload();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move { Ok(payload) });
+            fut
+        });
+
+        let store = LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint.clone(),
+            refresh,
+            false,
+            Duration::from_secs(60),
+            PartitionFailoverOptions::default(),
+            Vec::new(),
+        );
+
+        let properties = Arc::new(test_multi_region_refresh_payload());
+        store.sync_account_properties(properties, &default_endpoint);
+
+        store
+    }
+
+    /// Integration test for the apply pipeline + hub-region cache effects:
+    /// exercises CacheHubRegion → AdvanceHubRegionDiscovery → CacheHubRegion
+    /// in sequence and verifies the SetCurrent-only update semantics
+    /// preserve `failed_endpoints`
+    #[tokio::test]
+    async fn apply_cache_hub_region_then_advance_then_cache_again() {
+        let store = build_store_with_two_regions();
+        let eastus = CosmosEndpoint::regional(
+            "eastus".into(),
+            url::Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let westus = CosmosEndpoint::regional(
+            "westus".into(),
+            url::Url::parse("https://test-westus.documents.azure.com:443/").unwrap(),
+        );
+
+        store
+            .apply(&[LocationEffect::CacheHubRegion {
+                partition_key_range_id: "0".parse().unwrap(),
+                hub_endpoint: eastus.clone(),
+            }])
+            .await;
+        store
+            .apply(&[LocationEffect::AdvanceHubRegionDiscovery {
+                partition_key_range_id: "0".parse().unwrap(),
+                failed_endpoint: eastus.clone(),
+            }])
+            .await;
+        store
+            .apply(&[LocationEffect::CacheHubRegion {
+                partition_key_range_id: "0".parse().unwrap(),
+                hub_endpoint: westus.clone(),
+            }])
+            .await;
+
+        let snapshot = store.snapshot();
+        let entry = snapshot.partitions.failover_overrides.get("0").unwrap();
+        assert_eq!(entry.current_endpoint, westus);
+        assert!(
+            entry.failed_endpoints.contains(&eastus),
+            "re-caching on success must preserve failed_endpoints so a future 403/3 rotation does not re-try eastus, got failed_endpoints={:?}",
+            entry.failed_endpoints,
         );
     }
 

@@ -1368,6 +1368,40 @@ impl CosmosDriver {
         self.transport.load_full()
     }
 
+    /// Test-only API. Returns a snapshot of the per-partition hub-region cache as
+    /// `(pk_range_id, current_endpoint_url)` pairs.
+    ///
+    /// Reads `PartitionEndpointState::failover_overrides`, which on a
+    /// PPAF-enabled single-master account doubles as the hub-region cache
+    /// for reads (populated by the `hub_region_cache_populate_target`
+    /// pipeline hook when a hub-region-only retry succeeds).
+    #[cfg(any(test, feature = "__internal_testing"))]
+    pub fn __test_only_hub_region_cache_snapshot(&self) -> Vec<(String, String)> {
+        let snapshot = self.location_state_store.snapshot();
+        snapshot
+            .partitions
+            .failover_overrides
+            .iter()
+            .map(|(pk_range_id, entry)| {
+                (
+                    pk_range_id.as_str().to_owned(),
+                    entry.current_endpoint.url().to_string(),
+                )
+            })
+            .collect()
+    }
+
+    /// Test-only API. Forces `per_partition_automatic_failover_enabled = true`
+    /// on the driver's partition state.
+    #[cfg(any(test, feature = "__internal_testing"))]
+    pub fn __test_only_force_ppaf_enabled(&self) {
+        self.location_state_store.apply_partition(|current| {
+            let mut next = current.clone();
+            next.per_partition_automatic_failover_enabled = true;
+            next
+        });
+    }
+
     /// Eagerly primes the account metadata cache and creates the per-account transport.
     ///
     /// Performs an HTTP/2 probe to detect protocol support, then creates the

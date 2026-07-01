@@ -391,6 +391,19 @@ fn evaluate_http_outcome(
 /// effects to (a) refresh account properties so the new write region is
 /// learned, (b) mark this endpoint unavailable, and (c) mark this partition
 /// unavailable in the current (read) region for write traffic.
+///
+/// **Hub-region discovery branch.** When the
+/// `hub_region_processing_only` latch is active on a read with a known
+/// partition key range ID, the 403/3 instead means "this region is not the
+/// current hub for this partition". The handler emits an
+/// [`LocationEffect::AdvanceHubRegionDiscovery`] that rotates the cached
+/// hub endpoint to the next preferred-read endpoint and consumes a
+/// failover-budget attempt. Once that budget is exhausted the branch returns
+/// `None`, which aborts the operation rather than retrying indefinitely. It
+/// does NOT emit
+/// [`LocationEffect::MarkEndpointUnavailable`] or
+/// [`LocationEffect::RefreshAccountProperties`] — the endpoint is healthy
+/// for non-hub reads of other partitions, and the topology is unchanged.
 fn try_handle_write_forbidden(
     operation: &CosmosOperation,
     endpoint: &CosmosEndpoint,
@@ -399,6 +412,55 @@ fn try_handle_write_forbidden(
 ) -> Option<(OperationAction, Vec<LocationEffect>)> {
     if !status.is_write_forbidden() {
         return None;
+    }
+
+    // Hub-region discovery on the read path: rotate the per-partition cache
+    // entry to the next preferred-read endpoint and retry without polluting
+    // account-level state. The latch is only set on single-master data-plane
+    // reads.
+    //
+    // **No fall-through to standard write-forbidden effects.** A 403/3 on a
+    // read with the hub-region header carries a *partition-scoped* meaning
+    // ("this region is not the hub for this partition"), not a region- or
+    // endpoint-level health signal. Falling back to
+    // `RefreshAccountProperties` / `MarkEndpointUnavailable` /
+    // `MarkPartitionUnavailable` would poison routing state for unrelated
+    // partitions. When the partition key range ID is known, emit
+    // `AdvanceHubRegionDiscovery` to rotate the cache; when missing, retry
+    // failover with no location effects.
+    if retry_state.hub_region_processing_only && operation.is_read_only() {
+        // Enforce the failover budget here — the outer pipeline does not cap
+        // failover attempts on its own, so returning `None` (which aborts) is
+        // the only thing that terminates a persistent 403/3 read.
+        if !retry_state.can_retry_failover() {
+            return None;
+        }
+
+        let effects = if let Some(pk_range_id) = retry_state.partition_key_range_id.clone() {
+            vec![LocationEffect::AdvanceHubRegionDiscovery {
+                partition_key_range_id: pk_range_id,
+                failed_endpoint: endpoint.clone(),
+            }]
+        } else {
+            // No partition key range ID available for this hub-region read
+            // (e.g. a read that did not go through PK-range pre-resolution).
+            // Without it we cannot rotate a per-partition cache entry, so fall
+            // back to a plain failover retry with no location effects.
+            tracing::warn!(
+                endpoint = %endpoint.url(),
+                failover_retries = retry_state.failover_retry_count,
+                "hub-region 403/3 retry has no partition_key_range_id; \
+                 skipping AdvanceHubRegionDiscovery and falling back to plain failover retry",
+            );
+            Vec::new()
+        };
+        return Some((
+            OperationAction::FailoverRetry {
+                new_state: retry_state.clone().advance_failover(),
+                delay: None,
+            },
+            effects,
+        ));
     }
 
     // Multi-write 403/3 gets the larger backend-failover budget; single-write uses the generic budget.
@@ -525,15 +587,13 @@ fn try_handle_read_session_not_available(
 /// 4. `!hub_region_processing_only` — defense-in-depth idempotency;
 ///    structurally already guaranteed by latch-once semantics.
 ///
-/// **Hedging coordination (future).** When
-/// `OperationRetryState` gains a `shared_hub_region_latch:
-/// Option<Arc<AtomicBool>>` (populated by `execute_with_hedging()`),
-/// this function MUST also CAS-set the shared latch with
-/// `Release` ordering when it latches the per-state flag. That is the
-/// Rust counterpart of .NET v3's `CrossRegionAvailabilityContext` flag
-/// from azure-cosmos-dotnet-v3#5815 and is what propagates the
-/// discovery from one hedge to its siblings without each hedge
-/// independently re-running the 404/1002 cycle.
+/// **Hedging coordination.** When this operation is running inside
+/// `execute_hedged`, `OperationRetryState` carries a
+/// `shared_hub_region_latch: Option<Arc<AtomicBool>>`. This function
+/// CAS-sets that shared latch with `Release` ordering when it latches
+/// the per-state flag, propagating the discovery from one hedge to its
+/// siblings without each hedge independently re-running the 404/1002
+/// cycle.
 fn build_session_retry_state(retry_state: &OperationRetryState) -> OperationRetryState {
     let mut new_state = retry_state.clone().advance_session_retry();
     if retry_state.is_dataplane
@@ -2462,6 +2522,169 @@ mod tests {
         }
     }
 
+    // ── Hub region caching ────────────────────────────────────────────
+
+    /// Helper: builds an OperationRetryState configured as if the
+    /// hub-region-processing-only latch is currently set for a single-master
+    /// data-plane read with a known partition key range ID.
+    fn state_with_hub_latch(pk_range_id: &str) -> OperationRetryState {
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        state.is_dataplane = true;
+        state.hub_region_processing_only = true;
+        state.partition_key_range_id = Some(pk_range_id.parse().unwrap());
+        state
+    }
+
+    /// Hub-region branch in `try_handle_write_forbidden`: when the latch is
+    /// set, the request is read-only, and a partition key range ID is known,
+    /// the 403/3 emits an `AdvanceHubRegionDiscovery` effect (and only that
+    /// effect) — no `MarkEndpointUnavailable` or
+    /// `RefreshAccountProperties`, since the endpoint is healthy for non-hub
+    /// reads of other partitions and the topology is unchanged.
+    #[test]
+    fn read_403_3_with_hub_latch_emits_advance_effect() {
+        let op = make_read_operation();
+        let state = state_with_hub_latch("0");
+        let endpoint = test_endpoint();
+        let (action, effects) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            make_http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            &state,
+        );
+
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert_eq!(effects.len(), 1, "exactly one effect: advance discovery");
+        assert!(matches!(
+            effects[0],
+            LocationEffect::AdvanceHubRegionDiscovery { .. }
+        ));
+        // Defense-in-depth: confirm the standard 403/3 effects are NOT present.
+        assert!(!effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+        assert!(!effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::RefreshAccountProperties)));
+        assert!(!effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
+    }
+
+    /// Regression: 403/3 for a write operation must keep emitting the existing
+    /// write-forbidden effects (`RefreshAccountProperties`,
+    /// `MarkEndpointUnavailable`, `MarkPartitionUnavailable`), even if the
+    /// retry state happens to carry the hub-region latch (which it wouldn't
+    /// in production for a write — defense in depth).
+    #[test]
+    fn write_403_3_with_hub_latch_keeps_existing_behavior() {
+        let op = make_create_operation();
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        state.is_dataplane = true;
+        state.hub_region_processing_only = true; // defense in depth
+        state.partition_key_range_id = Some("0".parse().unwrap());
+        let endpoint = test_endpoint();
+
+        let (action, effects) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            make_http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            &state,
+        );
+
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::RefreshAccountProperties)));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+        assert!(!effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::AdvanceHubRegionDiscovery { .. })));
+    }
+
+    /// Regression: 403/3 for a read without the hub latch must keep emitting
+    /// the existing effects unchanged.
+    #[test]
+    fn read_403_3_without_hub_latch_keeps_existing_behavior() {
+        let op = make_read_operation();
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        let endpoint = test_endpoint();
+
+        let (action, effects) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            make_http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            &state,
+        );
+
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::RefreshAccountProperties)));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+        assert!(!effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::AdvanceHubRegionDiscovery { .. })));
+    }
+
+    /// Hub-region read with the latch active but no partition key range ID
+    /// falls back to a plain failover retry with no location effects, and
+    /// never panics. (Validates #618.)
+    #[test]
+    fn read_403_3_with_hub_latch_no_pk_range_id_falls_back_gracefully() {
+        let op = make_read_operation();
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        state.is_dataplane = true;
+        state.hub_region_processing_only = true;
+        // partition_key_range_id intentionally left as None.
+
+        let endpoint = test_endpoint();
+        let (action, effects) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            make_http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            &state,
+        );
+
+        // Graceful fallback: failover retry with no effects (no panic).
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert!(
+            effects.is_empty(),
+            "missing pk_range_id must not emit any location effects, got {effects:?}",
+        );
+    }
+
+    /// Hub-region 403/3 read aborts once the failover budget is exhausted
+    /// rather than retrying indefinitely. (Validates #579.)
+    #[test]
+    fn read_403_3_with_hub_latch_aborts_when_failover_budget_exhausted() {
+        let op = make_read_operation();
+        let mut state = state_with_hub_latch("0");
+        state.failover_retry_count = state.max_failover_retries;
+        let endpoint = test_endpoint();
+
+        let (action, effects) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            make_http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            &state,
+        );
+
+        assert!(
+            matches!(action, OperationAction::Abort { .. }),
+            "hub-region 403/3 must abort once the failover budget is exhausted, got {action:?}",
+        );
+        // No routing-state mutations on the terminal abort.
+        assert!(
+            effects.is_empty(),
+            "aborted hub-region 403/3 must emit no effects"
+        );
+    }
+
     // ── Shared hub-region latch (Part 5) ──────────────────────────
 
     use std::sync::{
@@ -2471,8 +2694,7 @@ mod tests {
 
     /// T-S1 — When the per-state latch fires and a shared latch is
     /// attached, the shared `Arc<AtomicBool>` is `Release`-stored as
-    /// `true`. Counterpart of .NET PR #5815's `CrossRegionAvailabilityContext`
-    /// propagation test.
+    /// `true`, verifying cross-hedge propagation of the first 1002.
     #[test]
     fn shared_hub_region_latch_propagates_first_1002_across_hedges() {
         let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);

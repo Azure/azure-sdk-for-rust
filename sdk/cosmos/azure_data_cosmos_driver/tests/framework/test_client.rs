@@ -3,8 +3,11 @@
 
 //! Driver test client for emulator-based E2E tests.
 
+use azure_core::http::StatusCode;
 #[cfg(feature = "fault_injection")]
 use azure_data_cosmos_driver::fault_injection::FaultInjectionRule;
+#[cfg(feature = "__internal_testing")]
+use azure_data_cosmos_driver::CosmosDriver;
 use azure_data_cosmos_driver::{
     diagnostics::{DiagnosticsContext, PipelineType, TransportSecurity},
     driver::CosmosDriverRuntime,
@@ -16,6 +19,7 @@ use azure_data_cosmos_driver::{
         ConnectionPoolOptions, DriverOptions, OperationOptions, PartitionFailoverOptions, Region,
         ServerCertificateValidation,
     },
+    SubStatusCode,
 };
 use std::{error::Error, future::Future, sync::Arc};
 use tracing_subscriber::EnvFilter;
@@ -577,10 +581,44 @@ impl DriverTestRunContext {
         let db_name = database
             .name()
             .ok_or_else(|| "database reference must be name-based".to_string())?;
-        let container = driver
-            .resolve_container_by_name(db_name, container_name)
-            .await?;
-        Ok(container)
+        // After a successful container CREATE the just-created collection
+        // can be briefly unreadable on individual regional gateways with
+        // 404/1013 (`CollectionCreateInProgress`) — the create returns
+        // 201 from the write region before all regional gateways finish
+        // propagating the new collection metadata. Retry with backoff
+        // while that race settles. This is a no-op on accounts where the
+        // resolve already succeeds on the first call (notably the
+        // emulator and most production single-region accounts).
+        let mut delay_ms = 500u64;
+        let mut last_err_msg: Option<String> = None;
+        for _ in 0..12 {
+            match driver
+                .resolve_container_by_name(db_name, container_name)
+                .await
+            {
+                Ok(c) => return Ok(c),
+                Err(e) => {
+                    // Match on the typed status/sub-status (404/1013) rather
+                    // than substring-scanning the error message.
+                    let status = e.status();
+                    let create_in_progress = status.status_code() == StatusCode::NotFound
+                        && status.sub_status()
+                            == Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS);
+                    if create_in_progress {
+                        tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
+                        delay_ms = (delay_ms * 2).min(5000);
+                        last_err_msg = Some(format!("{e}"));
+                        continue;
+                    }
+                    return Err(e.into());
+                }
+            }
+        }
+        Err(format!(
+            "resolve_container_by_name failed after 12 retries: {}",
+            last_err_msg.unwrap_or_else(|| "<no error captured>".into())
+        )
+        .into())
     }
 
     /// Creates an item using the driver.
@@ -716,6 +754,63 @@ impl DriverTestRunContext {
         Ok(driver
             .resolve_all_partition_key_ranges(container, force_refresh)
             .await)
+    }
+
+    /// Creates a single long-lived driver that the caller holds for the
+    /// duration of a test.
+    ///
+    /// Unlike the per-operation helpers — each of which builds a throwaway
+    /// driver — every operation issued through this driver shares its
+    /// in-memory routing and hub-region cache state. This is required for
+    /// tests that assert on cross-operation cache behavior, where state
+    /// populated by one read must be observed by a later read.
+    #[cfg(feature = "__internal_testing")]
+    pub async fn create_persistent_driver(&self) -> Result<Arc<CosmosDriver>, Box<dyn Error>> {
+        Ok(self
+            .client
+            .runtime
+            .create_driver(self.driver_options()?)
+            .await?)
+    }
+
+    /// Reads an item on a caller-provided persistent driver so the driver's
+    /// in-memory cache state persists across reads. Mirrors
+    /// [`read_item`](Self::read_item) but reuses the given driver instead of
+    /// creating a fresh one per call.
+    #[cfg(feature = "__internal_testing")]
+    pub async fn read_item_on(
+        &self,
+        driver: &Arc<CosmosDriver>,
+        container: &ContainerReference,
+        item_id: &str,
+        partition_key: impl Into<PartitionKey>,
+    ) -> Result<CosmosResponse, Box<dyn Error>> {
+        let pk = partition_key.into();
+        let item_ref = ItemReference::from_name(container, pk, item_id.to_owned());
+        let operation = CosmosOperation::read_item(item_ref);
+        let result = driver
+            .execute_singleton_operation(operation, OperationOptions::default())
+            .await?;
+        Ok(result)
+    }
+
+    /// Returns a snapshot of the per-partition hub-region cache for the given
+    /// persistent driver.
+    #[cfg(feature = "__internal_testing")]
+    pub fn hub_region_cache_snapshot(&self, driver: &Arc<CosmosDriver>) -> Vec<(String, String)> {
+        driver.__test_only_hub_region_cache_snapshot()
+    }
+
+    /// Forces `per_partition_automatic_failover_enabled = true` on the given
+    /// driver's in-memory partition state. Required for live tests that
+    /// exercise the hub-region caching path when the test account does not
+    /// advertise the PPAF account property
+    /// (`enable_per_partition_failover_behavior`). Without this override, the
+    /// hub-region latch in `build_session_retry_state` never arms and the
+    /// cache stays empty regardless of the wire flow.
+    #[cfg(feature = "__internal_testing")]
+    pub fn force_ppaf_enabled(&self, driver: &Arc<CosmosDriver>) {
+        driver.__test_only_force_ppaf_enabled();
     }
 
     /// Validates diagnostics for a successful data plane operation.

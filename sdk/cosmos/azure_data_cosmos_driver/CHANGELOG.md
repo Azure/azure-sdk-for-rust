@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added per-partition hub region caching for read operations on PPAF-enabled single-master accounts. When the `x-ms-cosmos-hub-region-processing-only` latch is set on a retry and a partition key range ID has been resolved, the driver now consults the per-partition failover cache (`PartitionEndpointState::failover_overrides` — the same map already used by per-partition automatic failover for writes) and routes directly to the cached hub endpoint, skipping the `403/3 (WriteForbidden)` discovery chain on subsequent operations for the same partition. ([#4555](https://github.com/Azure/azure-sdk-for-rust/pull/4555))
 - Added `TlsBackend` (currently `TlsBackend::Rustls`, the default) and a `tls_backend` option on `ConnectionPoolOptions` (`ConnectionPoolOptionsBuilder::with_tls_backend` / `ConnectionPoolOptions::tls_backend`), available under the `rustls` feature. The driver asserts the selected backend on the `reqwest` transport, giving a supported way to pin the TLS backend without direct transport access. This is additive and changes no behavior for the default (rustls-only) build, where reqwest already negotiates rustls; it only has an effect in builds that compile in multiple reqwest TLS backends (e.g. `rustls` plus `native_tls`, absent reqwest's `http3` feature), where reqwest would otherwise default to native-tls and the driver now pins rustls instead. ([#4649](https://github.com/Azure/azure-sdk-for-rust/pull/4649))
 
 ### Breaking Changes
