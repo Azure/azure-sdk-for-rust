@@ -42,6 +42,10 @@ pub(crate) mod request_header_names {
     pub const IS_QUERY: &str = "x-ms-documentdb-isquery";
     pub const IS_QUERY_PLAN_REQUEST: &str = "x-ms-cosmos-is-query-plan-request";
     pub const SUPPORTED_QUERY_FEATURES: &str = "x-ms-cosmos-supported-query-features";
+    /// Advertises which serialization formats the client accepts in responses
+    /// (e.g. `JsonText,CosmosBinary`). The service uses it to decide whether to
+    /// reply with Cosmos binary JSON instead of text.
+    pub const SUPPORTED_SERIALIZATION_FORMATS: &str = "x-ms-cosmos-supported-serialization-formats";
     pub const IS_UPSERT: &str = "x-ms-documentdb-is-upsert";
     pub const MAX_ITEM_COUNT: &str = "x-ms-max-item-count";
     /// Change-feed indicator ("Incremental feed"). HTTP standard name `a-im`.
@@ -196,6 +200,15 @@ pub struct CosmosRequestHeaders {
     /// Sent on query plan requests to indicate which query capabilities the
     /// client supports. The backend uses this to shape its response.
     pub supported_query_features: Option<Cow<'static, str>>,
+
+    /// Serialization formats the client accepts in responses
+    /// (`x-ms-cosmos-supported-serialization-formats`).
+    ///
+    /// When set (e.g. `JsonText,CosmosBinary`), the service may reply with
+    /// Cosmos binary JSON, which the SDK auto-detects and decodes. `None` omits
+    /// the header, so the service replies with text JSON as before. The driver
+    /// is a passthrough here — the SDK decides the value per its enablement.
+    pub supported_serialization_formats: Option<Cow<'static, str>>,
 }
 
 impl CosmosRequestHeaders {
@@ -282,6 +295,15 @@ impl CosmosRequestHeaders {
             headers.insert(
                 request_header_names::SUPPORTED_QUERY_FEATURES,
                 match features {
+                    Cow::Borrowed(s) => HeaderValue::from(*s),
+                    Cow::Owned(s) => HeaderValue::from(s.clone()),
+                },
+            );
+        }
+        if let Some(formats) = self.supported_serialization_formats.as_ref() {
+            headers.insert(
+                request_header_names::SUPPORTED_SERIALIZATION_FORMATS,
+                match formats {
                     Cow::Borrowed(s) => HeaderValue::from(*s),
                     Cow::Owned(s) => HeaderValue::from(s.clone()),
                 },
@@ -1238,6 +1260,35 @@ mod tests {
         cosmos_headers.write_to_headers(&mut headers);
         assert_eq!(
             headers.get_optional_str(&HeaderName::from_static("x-ms-max-item-count")),
+            None
+        );
+    }
+
+    #[test]
+    fn write_to_headers_emits_supported_serialization_formats() {
+        let cosmos_headers = CosmosRequestHeaders {
+            supported_serialization_formats: Some("JsonText,CosmosBinary".into()),
+            ..Default::default()
+        };
+        let mut headers = Headers::new();
+        cosmos_headers.write_to_headers(&mut headers);
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static(
+                "x-ms-cosmos-supported-serialization-formats"
+            )),
+            Some("JsonText,CosmosBinary")
+        );
+    }
+
+    #[test]
+    fn write_to_headers_omits_supported_serialization_formats_when_none() {
+        let cosmos_headers = CosmosRequestHeaders::default();
+        let mut headers = Headers::new();
+        cosmos_headers.write_to_headers(&mut headers);
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static(
+                "x-ms-cosmos-supported-serialization-formats"
+            )),
             None
         );
     }

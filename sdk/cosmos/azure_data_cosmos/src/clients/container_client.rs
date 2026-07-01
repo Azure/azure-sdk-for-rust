@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::{
-    clients::{offers_client, ClientContext},
+    clients::{offers_client, BinaryEncoding, ClientContext},
     feed::{FeedRange, FeedScope, QueryItemIterator},
     models::TransactionalBatch,
     models::{BatchResponse, ItemResponse, ResourceResponse},
@@ -301,7 +301,7 @@ impl ContainerClient {
         options: Option<ItemWriteOptions>,
     ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
-        let body = serde_json::to_vec(&item)?;
+        let body = serialize_item_body(&item, self.context.binary_encoding.enabled())?;
 
         // Build the driver's item reference from our stored container metadata.
         let item_ref = ItemReference::from_name(
@@ -312,6 +312,7 @@ impl ContainerClient {
 
         // Create the driver operation and apply ItemWriteOptions fields.
         let operation = CosmosOperation::create_item(item_ref).with_body(body);
+        let operation = apply_binary_negotiation(operation, self.context.binary_encoding);
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
         // Execute through the driver.
@@ -399,7 +400,7 @@ impl ContainerClient {
         options: Option<ItemWriteOptions>,
     ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
-        let body = serde_json::to_vec(&item)?;
+        let body = serialize_item_body(&item, self.context.binary_encoding.enabled())?;
 
         // Build the driver's item reference from our stored container metadata.
         let item_ref = ItemReference::from_name(
@@ -410,6 +411,7 @@ impl ContainerClient {
 
         // Create the driver operation and apply ItemWriteOptions fields.
         let operation = CosmosOperation::replace_item(item_ref).with_body(body);
+        let operation = apply_binary_negotiation(operation, self.context.binary_encoding);
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
         // Execute through the driver.
@@ -607,7 +609,7 @@ impl ContainerClient {
         options: Option<ItemWriteOptions>,
     ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
-        let body = serde_json::to_vec(&item)?;
+        let body = serialize_item_body(&item, self.context.binary_encoding.enabled())?;
 
         // Build the driver's item reference from our stored container metadata.
         let item_ref = ItemReference::from_name(
@@ -618,6 +620,7 @@ impl ContainerClient {
 
         // Create the driver operation and apply ItemWriteOptions fields.
         let operation = CosmosOperation::upsert_item(item_ref).with_body(body);
+        let operation = apply_binary_negotiation(operation, self.context.binary_encoding);
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
         // Execute through the driver.
@@ -678,6 +681,7 @@ impl ContainerClient {
 
         // Create the driver operation.
         let operation = CosmosOperation::read_item(item_ref);
+        let operation = apply_binary_negotiation(operation, self.context.binary_encoding);
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
         // Execute through the driver.
@@ -1151,6 +1155,46 @@ fn apply_item_options(
     operation
 }
 
+/// Serializes an item write body as either Cosmos binary JSON (`binary`) or
+/// UTF-8 text JSON.
+///
+/// The binary path is `T` → [`serde_json::Value`] →
+/// [`binary_json::encode`](azure_data_cosmos_driver::binary_json::encode); the
+/// text path is the original [`serde_json::to_vec`]. Both produce a body the
+/// service accepts — the binary form begins with the `0x80` preamble, which the
+/// service detects from the first byte, so the request `Content-Type` stays
+/// `application/json`.
+fn serialize_item_body<T: Serialize>(item: &T, binary: bool) -> crate::Result<Vec<u8>> {
+    if binary {
+        let value = serde_json::to_value(item)?;
+        Ok(azure_data_cosmos_driver::binary_json::encode(&value))
+    } else {
+        Ok(serde_json::to_vec(item)?)
+    }
+}
+
+/// The serialization formats advertised when binary encoding is enabled.
+///
+/// Matches the .NET SDK's default (`string.Join(",", JsonText, CosmosBinary)`):
+/// the client accepts either text or Cosmos binary JSON, letting the service
+/// choose. The comma-separated value has no space, mirroring the reference.
+const SUPPORTED_SERIALIZATION_FORMATS: &str = "JsonText,CosmosBinary";
+
+/// Advertises binary-capable response negotiation on an item operation when
+/// `binary_encoding` is enabled, by setting the
+/// `x-ms-cosmos-supported-serialization-formats` header. A no-op otherwise, so
+/// the request is byte-for-byte unchanged when binary is disabled.
+fn apply_binary_negotiation(
+    operation: CosmosOperation,
+    binary_encoding: BinaryEncoding,
+) -> CosmosOperation {
+    if binary_encoding.enabled() {
+        operation.with_supported_serialization_formats(SUPPORTED_SERIALIZATION_FORMATS)
+    } else {
+        operation
+    }
+}
+
 /// Applies [`BatchOptions`] fields to a [`CosmosOperation`].
 ///
 /// [`BatchOptions`] carries a session token but no precondition (ETag-based
@@ -1178,4 +1222,76 @@ fn _assert_futures_are_send() {
     let patch: PatchInstructions = todo!();
     let options: Option<PatchItemOptions> = todo!();
     assert_send(client.patch_item(partition_key, item_id, patch, options));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn serialize_item_body_text_matches_serde_to_vec() {
+        // The text path is byte-for-byte the original `serde_json::to_vec`.
+        let item = json!({ "id": "1", "count": 7, "tags": ["a", "b"] });
+        let body = serialize_item_body(&item, false).unwrap();
+        assert_eq!(body, serde_json::to_vec(&item).unwrap());
+    }
+
+    #[test]
+    fn serialize_item_body_binary_round_trips() {
+        // The binary path begins with the `0x80` preamble and decodes back to
+        // the same value the text path would have serialized.
+        let item = json!({ "id": "doc-1", "count": 42, "nested": { "ok": true } });
+        let body = serialize_item_body(&item, true).unwrap();
+        assert_eq!(body.first(), Some(&0x80));
+        let decoded: serde_json::Value =
+            azure_data_cosmos_driver::binary_json::decode(&body).unwrap();
+        assert_eq!(decoded, item);
+    }
+
+    #[test]
+    fn serialize_item_body_binary_differs_from_text() {
+        // Sanity check that the two paths actually produce different bytes.
+        let item = json!({ "id": "x" });
+        let text = serialize_item_body(&item, false).unwrap();
+        let binary = serialize_item_body(&item, true).unwrap();
+        assert_ne!(text, binary);
+        assert_ne!(text.first(), Some(&0x80));
+    }
+
+    /// Builds a publicly-constructible operation for exercising
+    /// [`apply_binary_negotiation`]. The operation type does not matter — the
+    /// helper only conditionally sets the negotiation header — so a read-offer
+    /// operation (which needs only an account) keeps the test self-contained.
+    fn negotiation_test_operation() -> CosmosOperation {
+        let account = azure_data_cosmos_driver::models::AccountReference::with_master_key(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            "test-key",
+        );
+        CosmosOperation::read_offer(account, "offer-1")
+    }
+
+    #[test]
+    fn apply_binary_negotiation_sets_header_when_enabled() {
+        let op =
+            apply_binary_negotiation(negotiation_test_operation(), BinaryEncoding::for_test(true));
+        assert_eq!(
+            op.request_headers()
+                .supported_serialization_formats
+                .as_deref(),
+            Some("JsonText,CosmosBinary"),
+        );
+    }
+
+    #[test]
+    fn apply_binary_negotiation_omits_header_when_disabled() {
+        let op = apply_binary_negotiation(
+            negotiation_test_operation(),
+            BinaryEncoding::for_test(false),
+        );
+        assert!(op
+            .request_headers()
+            .supported_serialization_formats
+            .is_none());
+    }
 }

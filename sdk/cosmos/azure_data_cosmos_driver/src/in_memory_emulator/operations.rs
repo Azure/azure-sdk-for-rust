@@ -20,7 +20,9 @@ use super::response::headers::{
     QUORUM_ACKED_LOCAL_LSN, QUORUM_ACKED_LSN, RESOURCE_QUOTA, RESOURCE_USAGE, SERVICE_VERSION,
     TRANSPORT_REQUEST_ID,
 };
-use super::response::{error_response, success_response, ResponseBuilder};
+use super::response::{
+    error_response, success_response, success_response_with_format, ResponseBuilder,
+};
 use super::ru_model::RuChargingModel;
 use super::session::SessionToken;
 use super::store::{
@@ -872,6 +874,21 @@ fn check_throttle(
     None
 }
 
+/// Parses a request body as either Cosmos binary JSON (when it begins with the
+/// `0x80` preamble) or UTF-8 text JSON.
+///
+/// This mirrors the SDK's response-side auto-detection so the emulator accepts
+/// binary-encoded item writes when the client negotiated binary, letting the
+/// full encode → store → decode loop be validated locally. Returns `Err(())` on
+/// a malformed body; callers turn that into a `400 BadRequest`.
+fn decode_request_body(request_body: &[u8]) -> Result<serde_json::Value, ()> {
+    if crate::binary_json::is_binary(request_body) {
+        crate::binary_json::decode(request_body).map_err(|_| ())
+    } else {
+        serde_json::from_slice(request_body).map_err(|_| ())
+    }
+}
+
 async fn handle_create(
     store: &Arc<EmulatorStore>,
     region_name: &str,
@@ -886,7 +903,7 @@ async fn handle_create(
         return resp;
     }
 
-    let mut body: serde_json::Value = match serde_json::from_slice(request_body) {
+    let mut body: serde_json::Value = match decode_request_body(request_body) {
         Ok(v) => v,
         Err(_) => {
             return error_response(
@@ -1063,9 +1080,16 @@ async fn handle_create(
             store.replicate(region_name, db_id, coll_id, &doc, false);
 
             let builder = if parsed.content_response_on_write {
-                success_response(StatusCode::Created, &response_body, charge, &token, start)
-                    .with_etag(&doc.etag)
-                    .with_lsn(doc.lsn)
+                success_response_with_format(
+                    StatusCode::Created,
+                    &response_body,
+                    parsed.binary_response,
+                    charge,
+                    &token,
+                    start,
+                )
+                .with_etag(&doc.etag)
+                .with_lsn(doc.lsn)
             } else {
                 ResponseBuilder::new(StatusCode::Created, start)
                     .with_request_charge(charge)
@@ -1287,9 +1311,16 @@ fn handle_read(
 
     match result {
         Some(Ok((body, etag, token, charge, lsn, headers))) => {
-            let builder = success_response(StatusCode::Ok, &body, charge, &token, start)
-                .with_etag(&etag)
-                .with_lsn(lsn);
+            let builder = success_response_with_format(
+                StatusCode::Ok,
+                &body,
+                parsed.binary_response,
+                charge,
+                &token,
+                start,
+            )
+            .with_etag(&etag)
+            .with_lsn(lsn);
             decorate_point_response(builder, headers, Some(lsn)).build()
         }
         Some(Err(response)) => response,
@@ -1312,7 +1343,7 @@ async fn handle_replace(
         return resp;
     }
 
-    let mut body: serde_json::Value = match serde_json::from_slice(request_body) {
+    let mut body: serde_json::Value = match decode_request_body(request_body) {
         Ok(v) => v,
         Err(_) => {
             return error_response(
@@ -1602,9 +1633,16 @@ async fn handle_replace(
             store.replicate(region_name, db_id, coll_id, &doc, false);
 
             let builder = if parsed.content_response_on_write {
-                success_response(StatusCode::Ok, &response_body, charge, &token, start)
-                    .with_etag(&doc.etag)
-                    .with_lsn(doc.lsn)
+                success_response_with_format(
+                    StatusCode::Ok,
+                    &response_body,
+                    parsed.binary_response,
+                    charge,
+                    &token,
+                    start,
+                )
+                .with_etag(&doc.etag)
+                .with_lsn(doc.lsn)
             } else {
                 ResponseBuilder::new(StatusCode::Ok, start)
                     .with_request_charge(charge)
@@ -1634,7 +1672,7 @@ async fn handle_upsert(
         return resp;
     }
 
-    let mut body: serde_json::Value = match serde_json::from_slice(request_body) {
+    let mut body: serde_json::Value = match decode_request_body(request_body) {
         Ok(v) => v,
         Err(_) => {
             return error_response(
@@ -1796,9 +1834,16 @@ async fn handle_upsert(
             store.replicate(region_name, db_id, coll_id, &doc, false);
 
             let builder = if parsed.content_response_on_write {
-                success_response(status, &response_body, charge, &token, start)
-                    .with_etag(&doc.etag)
-                    .with_lsn(doc.lsn)
+                success_response_with_format(
+                    status,
+                    &response_body,
+                    parsed.binary_response,
+                    charge,
+                    &token,
+                    start,
+                )
+                .with_etag(&doc.etag)
+                .with_lsn(doc.lsn)
             } else {
                 ResponseBuilder::new(status, start)
                     .with_request_charge(charge)

@@ -171,6 +171,20 @@ impl CosmosOperation {
         self
     }
 
+    /// Advertises which serialization formats the client accepts in the response
+    /// (the `x-ms-cosmos-supported-serialization-formats` request header), e.g.
+    /// `JsonText,CosmosBinary`.
+    ///
+    /// When set, the service may reply with Cosmos binary JSON, which the SDK
+    /// auto-detects and decodes; when unset, the response stays text JSON.
+    pub fn with_supported_serialization_formats(
+        mut self,
+        formats: impl Into<Cow<'static, str>>,
+    ) -> Self {
+        self.request_headers.supported_serialization_formats = Some(formats.into());
+        self
+    }
+
     /// Sets the maximum number of items the server should return per page
     /// (the `x-ms-max-item-count` request header).
     ///
@@ -865,5 +879,19 @@ mod tests {
             ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let resource_ref: CosmosResourceReference = item_ref.into();
         let _op = CosmosOperation::new(OperationType::Create, resource_ref, None);
+    }
+
+    #[test]
+    fn with_supported_serialization_formats_sets_header_field() {
+        let item_ref =
+            ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let op = CosmosOperation::create_item(item_ref)
+            .with_supported_serialization_formats("JsonText,CosmosBinary");
+        assert_eq!(
+            op.request_headers()
+                .supported_serialization_formats
+                .as_deref(),
+            Some("JsonText,CosmosBinary"),
+        );
     }
 }

@@ -50,6 +50,11 @@ pub(crate) struct ParsedRequest {
     /// throughput instead of silently falling back to `ContainerConfig::default()`
     /// (which has no provisioned RU/s and disables throttling for the container).
     pub offer_throughput: Option<u32>,
+    /// Whether the client advertised that it accepts Cosmos binary JSON in the
+    /// response, via `x-ms-cosmos-supported-serialization-formats` containing
+    /// `CosmosBinary`. When set, item read/write responses encode their body as
+    /// binary so the full encode → store → decode loop can be exercised locally.
+    pub binary_response: bool,
     #[allow(dead_code)]
     pub is_upsert: bool, // used during dispatch resolution
 }
@@ -66,6 +71,8 @@ static CONTENT_RESPONSE: HeaderName =
 static PREFER: HeaderName = HeaderName::from_static("prefer");
 static IS_QUERY: HeaderName = HeaderName::from_static("x-ms-documentdb-query");
 static OFFER_THROUGHPUT: HeaderName = HeaderName::from_static("x-ms-offer-throughput");
+static SUPPORTED_SERIALIZATION_FORMATS: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-supported-serialization-formats");
 
 /// Parses an HTTP request into a `ParsedRequest`.
 pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
@@ -114,6 +121,19 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
         .get_optional_str(&OFFER_THROUGHPUT)
         .and_then(|s| s.trim().parse::<u32>().ok());
 
+    // The client advertises binary-response support via
+    // `x-ms-cosmos-supported-serialization-formats: JsonText,CosmosBinary`.
+    // Matching the .NET flag enum, the presence of a `CosmosBinary` token (case-
+    // insensitive, comma-separated) means the client can decode a binary
+    // response.
+    let binary_response = headers
+        .get_optional_str(&SUPPORTED_SERIALIZATION_FORMATS)
+        .map(|v| {
+            v.split(',')
+                .any(|fmt| fmt.trim().eq_ignore_ascii_case("CosmosBinary"))
+        })
+        .unwrap_or(false);
+
     let path = url.path();
     // Reject trailing slashes after the leading `/`. `/dbs/mydb/colls/mycoll/docs/`
     // would otherwise parse to depth=5 and misroute to Create. Only the root
@@ -152,6 +172,7 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
         activity_id,
         content_response_on_write,
         offer_throughput,
+        binary_response,
         is_upsert,
     }
 }

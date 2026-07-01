@@ -7,7 +7,7 @@
 use std::sync::Arc;
 
 use crate::{
-    clients::ClientContext,
+    clients::{BinaryEncoding, ClientContext},
     options::{
         CosmosClientOptions, OperationOptions, PartitionFailoverOptions,
         ThroughputControlGroupOptions, UserAgentSuffix,
@@ -289,7 +289,10 @@ impl CosmosClientBuilder {
         let driver = runtime.into_inner().create_driver(driver_options).await?;
 
         Ok(CosmosClient {
-            context: ClientContext { driver },
+            context: ClientContext {
+                driver,
+                binary_encoding: BinaryEncoding::from_env(),
+            },
         })
     }
 }
