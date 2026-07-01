@@ -21,6 +21,12 @@
 mod diagnostics_context;
 mod proxy_configuration;
 
+/// THROWAWAY OpenTelemetry retroactive-span feasibility spike. In-crate `#[cfg(test)]`
+/// so it can build a real `DiagnosticsContext` via the `pub(crate)`
+/// `DiagnosticsContextBuilder`. Gated behind the off-by-default `otel_spans_spike` feature.
+#[cfg(all(test, feature = "otel_spans_spike"))]
+mod otel_span_spike;
+
 pub(crate) use diagnostics_context::DiagnosticsContextBuilder;
 pub use diagnostics_context::{
     DiagnosticsContext, ExecutionContext, FailedTransportShardDiagnostics, PipelineType,
