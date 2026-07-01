@@ -35,8 +35,11 @@ use std::{
 pub enum ExecutionContext {
     /// Initial request attempt (first try).
     Initial,
-    /// Retry due to transient error (e.g., 429, 503).
-    Retry,
+    /// An operation-level retry decided by the SDK's client-retry policy.
+    ///
+    /// Distinguishes user-visible operation retries from transport-layer
+    /// retries ([`ExecutionContext::TransportRetry`]).
+    OperationRetry,
     /// Transport-level shard retry within the same region.
     ///
     /// The initial attempt failed with a connectivity error and the transport
@@ -56,7 +59,7 @@ impl ExecutionContext {
     pub fn as_str(&self) -> &'static str {
         match self {
             ExecutionContext::Initial => "initial",
-            ExecutionContext::Retry => "retry",
+            ExecutionContext::OperationRetry => "operation_retry",
             ExecutionContext::TransportRetry => "transport_retry",
             ExecutionContext::Hedging => "hedging",
             ExecutionContext::RegionFailover => "region_failover",
@@ -2288,7 +2291,7 @@ mod tests {
             builder.update_request(h1, |req| req.request_charge = RequestCharge::new(3.0));
 
             let h2 = builder.start_test_request(
-                ExecutionContext::Retry,
+                ExecutionContext::OperationRetry,
                 Some(Region::WEST_US_2),
                 "https://test.documents.azure.com",
             );
@@ -2307,7 +2310,7 @@ mod tests {
                 "https://test.westus2.documents.azure.com",
             );
             builder.start_test_request(
-                ExecutionContext::Retry,
+                ExecutionContext::OperationRetry,
                 Some(Region::WEST_US_2),
                 "https://test.westus2.documents.azure.com",
             );
@@ -2532,7 +2535,7 @@ mod tests {
             // Add several requests to trigger deduplication
             for i in 0..5 {
                 let handle = builder.start_test_request(
-                    ExecutionContext::Retry,
+                    ExecutionContext::OperationRetry,
                     Some(Region::WEST_US_2),
                     "https://test.documents.azure.com",
                 );
@@ -2559,7 +2562,7 @@ mod tests {
                 "request_count": 5,
                 "total_request_charge": 10.0,
                 "first": {
-                    "execution_context": "retry",
+                    "execution_context": "operation_retry",
                     "endpoint": "https://test.documents.azure.com/",
                     "status": "429/3200 (RUBudgetExceeded)",
                     "request_charge": 0.0,
@@ -2567,7 +2570,7 @@ mod tests {
                     "timed_out": false
                 },
                 "last": {
-                    "execution_context": "retry",
+                    "execution_context": "operation_retry",
                     "endpoint": "https://test.documents.azure.com/",
                     "status": "429/3200 (RUBudgetExceeded)",
                     "request_charge": 4.0,
@@ -2577,8 +2580,7 @@ mod tests {
                 "deduplicated_groups": [{
                     "endpoint": "https://test.documents.azure.com/",
                     "status": "429/3200 (RUBudgetExceeded)",
-                    "execution_context": "retry",
-
+                    "execution_context": "operation_retry",
                     "count": 3,
                     "total_request_charge": 6.0,
                     "min_duration_ms": 0,
@@ -2854,7 +2856,10 @@ mod tests {
     #[test]
     fn execution_context_display() {
         assert_eq!(ExecutionContext::Initial.to_string(), "initial");
-        assert_eq!(ExecutionContext::Retry.to_string(), "retry");
+        assert_eq!(
+            ExecutionContext::OperationRetry.to_string(),
+            "operation_retry"
+        );
         assert_eq!(
             ExecutionContext::TransportRetry.to_string(),
             "transport_retry"

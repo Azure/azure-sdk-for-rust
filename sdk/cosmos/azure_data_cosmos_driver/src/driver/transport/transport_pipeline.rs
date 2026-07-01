@@ -205,7 +205,7 @@ pub(crate) async fn execute_transport_pipeline(
         } else if throttle_state.attempt_count == 0 {
             request.execution_context
         } else {
-            ExecutionContext::Retry
+            ExecutionContext::OperationRetry
         };
 
         let request_handle = diagnostics.start_request(

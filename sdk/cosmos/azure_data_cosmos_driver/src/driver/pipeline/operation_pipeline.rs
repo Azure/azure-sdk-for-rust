@@ -1491,7 +1491,7 @@ fn compute_execution_context(retry_state: &OperationRetryState) -> ExecutionCont
     if retry_state.failover_retry_count == 0 && retry_state.session_token_retry_count == 0 {
         ExecutionContext::Initial
     } else if retry_state.session_token_retry_count > 0 {
-        ExecutionContext::Retry
+        ExecutionContext::OperationRetry
     } else {
         ExecutionContext::RegionFailover
     }
@@ -3680,7 +3680,7 @@ mod tests {
         let ctx = TransportRequestContext {
             routing: &routing,
             activity_id: &activity_id,
-            execution_context: ExecutionContext::Retry,
+            execution_context: ExecutionContext::OperationRetry,
             deadline: Some(std::time::Instant::now() + Duration::from_secs(5)),
             resolved_session_token: None,
             throughput_control: None,
@@ -6555,13 +6555,13 @@ mod tests {
         let state = retry_state_with_counts(1, 1);
         assert!(matches!(
             super::compute_execution_context(&state),
-            ExecutionContext::Retry
+            ExecutionContext::OperationRetry
         ));
 
         let state = retry_state_with_counts(0, 1);
         assert!(matches!(
             super::compute_execution_context(&state),
-            ExecutionContext::Retry
+            ExecutionContext::OperationRetry
         ));
     }
 
