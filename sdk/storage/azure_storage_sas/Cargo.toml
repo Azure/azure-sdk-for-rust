@@ -1,0 +1,29 @@
+[package]
+name = "azure_storage_sas"
+version = "0.1.0"
+description = "User delegation Shared Access Signature (SAS) builder for Microsoft Azure Storage services"
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_storage_sas"
+keywords = ["sdk", "cloud"]
+categories = ["api-bindings"]
+
+[dependencies]
+azure_core = { workspace = true }
+azure_storage_common = { path = "../azure_storage_common", version = "0.1.0" }
+base64 = { workspace = true }
+hmac = { workspace = true }
+percent-encoding = { workspace = true }
+sha2 = { workspace = true }
+time = { workspace = true }
+
+[dev-dependencies]
+include-file.workspace = true
+
+[lints]
+workspace = true

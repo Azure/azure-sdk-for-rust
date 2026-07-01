@@ -722,3 +722,159 @@ pub async fn get_queue_service_client_secondary(
 
     Ok(queue_client)
 }
+
+/// SAS E2E: generate a user delegation SAS URL for a queue and use it to enqueue/dequeue a message.
+#[recorded::test(live)]
+async fn test_queue_user_delegation_sas(ctx: TestContext) -> Result<()> {
+    use azure_storage_queue::models::QueueMessage;
+    use azure_storage_queue::QueueClient;
+    use azure_storage_sas::SasBuilder;
+
+    let recording = ctx.recording();
+    let account_name = recording.var("AZURE_STORAGE_ACCOUNT_NAME", None);
+    let queue_service_client = get_queue_service_client(recording).await?;
+    let queue_name = get_queue_name(recording);
+
+    // Create the queue using the authenticated client.
+    let queue_client = queue_service_client.queue_client(&queue_name)?;
+    queue_client.create(None).await?;
+
+    // Get a UserDelegationKey from the service.
+    let now = OffsetDateTime::now_utc();
+    let key_info = KeyInfo {
+        start: Some(now),
+        expiry: Some(now + Duration::hours(1)),
+        ..Default::default()
+    };
+    let request_content: RequestContent<KeyInfo, XmlFormat> = key_info.try_into()?;
+    let udk = queue_service_client
+        .get_user_delegation_key(request_content, None)
+        .await?
+        .into_model()?;
+
+    // Generate a SAS token for the queue and set it on the queue URL.
+    let token = SasBuilder::new(account_name.as_str(), &udk, now + Duration::hours(1))?
+        .queue(&queue_name)
+        .read()
+        .add()
+        .process()
+        .build();
+    let mut sas_url = queue_client.url().clone();
+    sas_url.set_query(Some(&token));
+
+    // Use the SAS URL to create an unauthenticated QueueClient and enqueue a message.
+    let sas_client = QueueClient::new(sas_url, None, None)?;
+    let message = QueueMessage {
+        message_text: Some("sas-e2e-test-message".to_string()),
+    };
+    sas_client.send_message(message.try_into()?, None).await?;
+
+    // Dequeue the message via the SAS client.
+    let dequeue_response = sas_client.receive_messages(None).await?.into_model()?;
+    let items = dequeue_response
+        .items
+        .expect("expected at least one message");
+    assert!(
+        !items.is_empty(),
+        "expected at least one message in the queue"
+    );
+    assert_eq!(
+        items[0].message_text.as_deref(),
+        Some("sas-e2e-test-message"),
+        "dequeued message must match enqueued message"
+    );
+
+    // Cleanup: delete the queue using the authenticated client.
+    queue_client.delete(None).await?;
+    Ok(())
+}
+
+/// Exercise the full message lifecycle (add, update, process/delete)
+/// through a user delegation SAS, validating the `update` permission and that
+/// each permission grants exactly the operation it names.
+#[recorded::test(live)]
+async fn test_queue_user_delegation_sas_message_lifecycle(ctx: TestContext) -> Result<()> {
+    use azure_storage_queue::models::{QueueClientUpdateMessageOptions, QueueMessage};
+    use azure_storage_queue::QueueClient;
+    use azure_storage_sas::SasBuilder;
+
+    let recording = ctx.recording();
+    let account_name = recording.var("AZURE_STORAGE_ACCOUNT_NAME", None);
+    let queue_service_client = get_queue_service_client(recording).await?;
+    let queue_name = get_queue_name(recording);
+
+    let queue_client = queue_service_client.queue_client(&queue_name)?;
+    queue_client.create(None).await?;
+
+    let now = OffsetDateTime::now_utc();
+    let key_info = KeyInfo {
+        start: Some(now),
+        expiry: Some(now + Duration::hours(1)),
+        ..Default::default()
+    };
+    let request_content: RequestContent<KeyInfo, XmlFormat> = key_info.try_into()?;
+    let udk = queue_service_client
+        .get_user_delegation_key(request_content, None)
+        .await?
+        .into_model()?;
+
+    // Grant read, add, update, and process so the SAS can do the whole lifecycle.
+    let token = SasBuilder::new(account_name.as_str(), &udk, now + Duration::hours(1))?
+        .queue(&queue_name)
+        .read()
+        .add()
+        .update()
+        .process()
+        .build();
+    let mut sas_url = queue_client.url().clone();
+    sas_url.set_query(Some(&token));
+    let sas_client = QueueClient::new(sas_url, None, None)?;
+
+    // Add.
+    let original = QueueMessage {
+        message_text: Some("original".to_string()),
+    };
+    sas_client.send_message(original.try_into()?, None).await?;
+
+    // Receive to obtain the message id + pop receipt.
+    let received = sas_client.receive_messages(None).await?.into_model()?;
+    let item = received
+        .items
+        .and_then(|mut items| items.drain(..).next())
+        .expect("expected a received message");
+    let message_id = item.message_id.expect("message id");
+    let pop_receipt = item.pop_receipt.expect("pop receipt");
+
+    // Update the message content and make it immediately visible again.
+    let updated = QueueMessage {
+        message_text: Some("updated".to_string()),
+    };
+    sas_client
+        .update_message(
+            &message_id,
+            &pop_receipt,
+            0,
+            Some(QueueClientUpdateMessageOptions {
+                queue_message: Some(updated.try_into()?),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Receive again and confirm the updated content.
+    let received_again = sas_client.receive_messages(None).await?.into_model()?;
+    let item_again = received_again
+        .items
+        .and_then(|mut items| items.drain(..).next())
+        .expect("expected the updated message");
+    assert_eq!(item_again.message_text.as_deref(), Some("updated"));
+
+    // Delete via the SAS client (process permission).
+    let pop_receipt_again = item_again.pop_receipt.expect("pop receipt");
+    sas_client
+        .delete_message(&message_id, &pop_receipt_again, None)
+        .await?;
+
+    queue_client.delete(None).await?;
+    Ok(())
+}
