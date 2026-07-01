@@ -69,7 +69,7 @@ fn create_fibonacci1_test(args: Fibonacci1Args) -> CreatePerfTestReturn {
     }
 
     // Return a pinned future that creates the test.
-    async move { Ok(Box::new(Fibonacci1Test { args: args }) as Box<dyn PerfTest>) }.boxed()
+    async move { Ok(Box::new(Fibonacci1Test { args }) as Box<dyn PerfTest>) }.boxed()
 }
 
 #[tokio::test]
