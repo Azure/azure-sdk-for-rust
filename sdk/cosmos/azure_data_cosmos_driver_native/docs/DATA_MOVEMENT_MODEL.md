@@ -524,3 +524,59 @@ raw header map is a follow-up; the first cut covers the commonly-needed headers.
 `CosmosHeaderId` + `CosmosResponseHeader` + `cosmos_header_name` + a synthesis
 fn from `CosmosResponseHeaders`), unit-tested and additive — no completion
 changes, tree stays green. *P4b* does the completion inversion consuming it.
+
+## 11. Before / after — the three data-movement points (implemented)
+
+> **Status:** All three shipped. Point 1 = P4a (`b54f61f05`), point 2 = P4b
+> (`64c7f3b0e`), point 3 = P2 (`13f43cb31`). This appendix records the concrete
+> before/after so the shape of the change is legible without diffing.
+
+### 11.0 At a glance
+
+| # | Review point | Previous (opaque-handle model) | Current (owned `#[repr(C)]` model) | Phase |
+|---|---|---|---|---|
+| 1 | Header-id list on the completion | No response-header list existed; only 4 typed header strings via per-field accessor calls on a separate `cosmos_response_t` | `cosmos_response_header_t { id, value }` array carried **inline** on the completion; `id`→name via `cosmos_header_name()` | P4a |
+| 2 | Raw response in the completion | `cq_wait` → opaque completion → *view* → *take_response* → separate `cosmos_response_t` → *response_view/body* → 2 frees (**6 FFI calls**) | `cosmos_completion_queue_wait` returns an array of owned completions with body + headers **inline**; **1 read + 1 bulk free** | P4b |
+| 3 | Call-in / copy, not `Arc` | Partition key was an `Arc`-backed `cosmos_partition_key_t` handle, cloned/shared; all refs `Arc` | Partition key passed as a raw `cosmos_partition_key_component_t[]` on the request, **copied** in place; refs are `Box` single-owner | P2 |
+
+### 11.1 Point 1 — header struct `<id: value>` (RNTBD / codegen style)
+
+| Aspect | Previous | Current |
+|---|---|---|
+| Header list | **none** — no generic header list existed | `cosmos_response_header_t[]` inline on the completion (`headers`, `headers_len`) |
+| Representation | 4 hardcoded typed strings (activity id, session token, etag, continuation) via separate accessor calls | `struct { cosmos_header_id_t id; const char* value; }` — an `(id, value)` pair |
+| Name model | string-named accessors baked into the ABI | numeric **`cosmos_header_id_t`** enum (append-only, `0 = UNKNOWN` sentinel, 19 known ids) |
+| Id → name mapping | n/a | `cosmos_header_name(id)` returns the canonical `x-ms-*` wire name (statically allocated) |
+| SDK usage | string-compare header names | **switch on numeric ids** (codegen-friendly, RNTBD-token style) |
+| Source | — | synthesized from the driver's typed `CosmosResponseHeaders`; `CString` storage owned by the completion's backing box |
+| Coverage | 4 headers | 19 headers; append-only, exhaustive/raw-map is a follow-up |
+
+### 11.2 Point 2 — raw response in the completion (avoid query → response → destroy)
+
+| Aspect | Previous | Current |
+|---|---|---|
+| Wait ops | `cosmos_cq_wait` (single) + `cosmos_cq_wait_batch` (array) | **one** `cosmos_completion_queue_wait(queue, out[], max, timeout)` → array |
+| Completion type | **opaque** handle (`cosmos_completion_t*`, no `#[repr(C)]`) | owned **`#[repr(C)]` value** the SDK reads directly |
+| Reading scalars | `cosmos_completion_view()` snapshot call | inline fields (`outcome`, `status`, `user_data`, `http_status_code`, `sub_status`, `request_charge`, `retry_after_ms`, …) |
+| Getting the response | `cosmos_completion_take_response()` → separate `cosmos_response_t*` handle | **body inline** on the completion (`body`, `body_len`) |
+| Reading the body | `cosmos_response_view()` / `cosmos_response_body()` on that handle | direct `body` / `body_len` fields |
+| Error detail | detachable `cosmos_error_t*` via `take_error` | **inline scalar fields** (`message`, `backtrace`, `is_from_wire`, …) — no handle |
+| Degenerate payloads (driver / container) | stashed on the response, `cosmos_response_take_driver/_container` | owned `driver` / `container` fields on the completion, optional `take_*` |
+| Freeing | `cosmos_response_free` **+** `cosmos_completion_free` (two) | **one** `cosmos_completion_queue_free_completions(out[], count)` |
+| **FFI round-trips (happy path)** | **6**: `cq_wait` → `completion_view` → `take_response` → `response_view/body` → `response_free` → `completion_free` | **2**: `queue_wait` (data inline) → `free_completions` |
+| `response.rs` | entire module (`cosmos_response_t` + accessors + view + takes + free) | **deleted** — folded onto the completion |
+
+### 11.3 Point 3 — `Arc` vs `Box`; call-in (copy) for the partition key
+
+| Aspect | Previous | Current |
+|---|---|---|
+| Partition key on an operation | `Arc`-backed `cosmos_partition_key_t*` handle, built + cloned + shared into the request | raw **`cosmos_partition_key_component_t[]`** (`partition_key_components` + `partition_key_len`) passed **inline** on `cosmos_operation_request_t` |
+| Ownership at the boundary | `Arc::clone` / atomic refcount bump | **caller owns** the array (stack / SDK memory); the wrapper **copies** what it needs (`partition_key_from_components`) — the **call-in** pattern |
+| Handle path | primary | retained only as a **fallback**; the inline components path takes precedence |
+| Ref handles (account / db / container / feed-range / partition-key) | all **`Arc`**-backed with `*_clone` FFI | all **`Box`** single-owner; **5 `*_clone` FFI removed** |
+| Who clones | SDK bumps the `Arc` via `*_clone` | Rust side clones from a borrowed `*const` when a build/submit path must retain; never exposed to the SDK |
+| Driver handle | `Arc` | **stays `Arc`** (submit pipeline holds it across `.await`) — the sole intentional exception |
+
+**Net effect:** the SDK now does **one wait → read inline fields / body /
+header-ids → one free**, owns everything it is handed (`Box`, not `Arc`), and
+passes partition keys by **copy-in** rather than shared refcounted handles.
