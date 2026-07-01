@@ -606,9 +606,17 @@ fn finalize_http_attempt(
             }
 
             let envelope_status_u16 = u16::from(status_code);
-            let (status_code, headers, body) = if should_unwrap_gateway_v2
-                && (200..300).contains(&envelope_status_u16)
-            {
+            // Thin-client (Gateway 2.0) proxies return both success and error responses
+            // as an RNTBD frame in the HTTP body, with errors arriving as HTTP-error
+            // envelopes (e.g. a 404 envelope wrapping a 404/1002 RNTBD frame). Unwrap
+            // regardless of envelope status so the real Cosmos status, sub-status,
+            // activity id, and session token are recovered rather than discarded.
+            let (status_code, headers, body) = if should_unwrap_gateway_v2 {
+                let envelope_was_success = (200..300).contains(&envelope_status_u16);
+                // Preserve the originals only for the rare non-2xx fallback where the
+                // body is a proxy-level error rather than an RNTBD frame.
+                let fallback =
+                    (!envelope_was_success).then(|| (status_code, headers.clone(), body.clone()));
                 match unwrap_response_for_gateway_v2(super::cosmos_transport_client::HttpResponse {
                     status: envelope_status_u16,
                     headers,
@@ -619,22 +627,31 @@ fn finalize_http_attempt(
                         response.headers,
                         response.body,
                     ),
-                    Err(error) => {
-                        let cosmos_err = crate::error::CosmosError::builder()
-                            .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
-                            .with_message(format!("Gateway 2.0 response unwrap failed: {error}"))
-                            .with_source(error)
-                            .build();
-                        return ExecutedTransportAttempt {
-                            result: gateway_v2_unwrap_error_result(
-                                cosmos_err,
-                                request_handle,
-                                diagnostics,
-                            ),
-                            shard_id,
-                            shard_diagnostics,
-                        };
-                    }
+                    Err(error) => match fallback {
+                        // Non-2xx envelope whose body is not an RNTBD frame: a genuine
+                        // proxy-level error. Surface the envelope status unchanged.
+                        Some(original) => original,
+                        // A 2xx envelope must carry a valid RNTBD frame, so a parse
+                        // failure here is a real protocol error.
+                        None => {
+                            let cosmos_err = crate::error::CosmosError::builder()
+                                .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
+                                .with_message(format!(
+                                    "Gateway 2.0 response unwrap failed: {error}"
+                                ))
+                                .with_source(error)
+                                .build();
+                            return ExecutedTransportAttempt {
+                                result: gateway_v2_unwrap_error_result(
+                                    cosmos_err,
+                                    request_handle,
+                                    diagnostics,
+                                ),
+                                shard_id,
+                                shard_diagnostics,
+                            };
+                        }
+                    },
                 }
             } else {
                 (status_code, headers, body)
@@ -1549,6 +1566,103 @@ mod tests {
             ),
             execution_context: ExecutionContext::Initial,
             deadline,
+        }
+    }
+
+    /// Builds a minimal RNTBD response frame carrying `http_status` and a
+    /// `SubStatus` token, used to emulate a thin-client error envelope body.
+    fn gateway_v2_error_frame(http_status: u32, sub_status: u32) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(&0_u32.to_le_bytes()); // total_len placeholder
+        bytes.extend_from_slice(&http_status.to_le_bytes());
+        bytes.extend_from_slice(&[0_u8; 16]); // nil activity id
+        bytes.extend_from_slice(&0x001C_u16.to_le_bytes()); // SubStatus token id
+        bytes.push(0x02); // ULong token type
+        bytes.extend_from_slice(&sub_status.to_le_bytes());
+        let total_len = u32::try_from(bytes.len()).unwrap();
+        bytes[0..4].copy_from_slice(&total_len.to_le_bytes());
+        bytes
+    }
+
+    fn finalize_gateway_v2_response(
+        status: azure_core::http::StatusCode,
+        body: Vec<u8>,
+    ) -> ExecutedTransportAttempt {
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+        let mut diagnostics = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("gw2-finalize".to_owned()),
+            Arc::new(DiagnosticsOptions::default()),
+        );
+        let request_handle = diagnostics.start_request(
+            ExecutionContext::Initial,
+            PipelineType::DataPlane,
+            TransportSecurity::Secure,
+            crate::diagnostics::TransportKind::GatewayV2,
+            crate::diagnostics::TransportHttpVersion::Http2,
+            &endpoint,
+        );
+        finalize_http_attempt(
+            HttpAttemptResult::Response {
+                status_code: status,
+                headers: azure_core::http::headers::Headers::new(),
+                body,
+                shard_id: None,
+                shard_diagnostics: None,
+            },
+            request_handle,
+            &mut diagnostics,
+            true,
+        )
+    }
+
+    /// Regression: a Gateway 2.0 error response arrives as an HTTP-error
+    /// envelope (404) wrapping an RNTBD `404/1002` frame. The pipeline must
+    /// unwrap the body and surface the real sub-status rather than a bare 404.
+    #[test]
+    fn finalize_unwraps_gateway_v2_error_envelope() {
+        let executed = finalize_gateway_v2_response(
+            azure_core::http::StatusCode::NotFound,
+            gateway_v2_error_frame(404, 1002),
+        );
+
+        match executed.result.outcome {
+            TransportOutcome::HttpError { status, .. } => {
+                assert_eq!(
+                    status.status_code(),
+                    azure_core::http::StatusCode::NotFound,
+                    "expected the unwrapped 404 status, got {status:?}"
+                );
+                assert_eq!(
+                    status.sub_status().map(|s| s.value()),
+                    Some(1002),
+                    "expected sub-status 1002 recovered from the RNTBD body, got {status:?}"
+                );
+            }
+            other => panic!("expected HttpError(404/1002), got {other:?}"),
+        }
+    }
+
+    /// A non-2xx thin-client envelope whose body is *not* an RNTBD frame (a
+    /// genuine proxy-level error) must fall back to the bare envelope status
+    /// instead of being masked as a transport failure.
+    #[test]
+    fn finalize_falls_back_on_non_rntbd_gateway_v2_error_envelope() {
+        let executed = finalize_gateway_v2_response(
+            azure_core::http::StatusCode::Unauthorized,
+            b"unauthorized".to_vec(),
+        );
+
+        match executed.result.outcome {
+            TransportOutcome::HttpError { status, .. } => {
+                assert_eq!(
+                    status.status_code(),
+                    azure_core::http::StatusCode::Unauthorized,
+                    "expected the bare envelope 401 to be preserved, got {status:?}"
+                );
+            }
+            other => panic!("expected HttpError(401), got {other:?}"),
         }
     }
 

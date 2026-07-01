@@ -32,6 +32,9 @@ extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
   parameters:
     ServiceDirectory: cosmos
+    # macOS/Windows live-test legs need ~63-65 min; raise from the 60-min default
+    # so they finish instead of being cancelled at the agent cap.
+    TestTimeoutInMinutes: 90
     RunLiveTests: ${{ or(parameters.RunLiveTests, eq(variables['Build.Reason'], 'Schedule'), endsWith(variables['Build.DefinitionName'], '- weekly')) }}
     Artifacts:
     - name: azure_data_cosmos_macros

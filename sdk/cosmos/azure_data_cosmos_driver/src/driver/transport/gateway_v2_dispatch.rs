@@ -424,7 +424,15 @@ pub(crate) fn unwrap_response_for_gateway_v2(
         headers.insert(response_header_names::REQUEST_CHARGE, charge.to_string());
     }
     if let Some(token) = response.session_token {
-        headers.insert(response_header_names::SESSION_TOKEN, token);
+        // GW2 surfaces only the vector portion of the session token, with the
+        // partition key range id carried separately. Classic gateway emits
+        // `<pkRangeId>:<vector>`, and the backend rejects a bare vector with a
+        // terminal 400 on re-supply, so re-compose the composite form here.
+        let composite = match &response.partition_key_range_id {
+            Some(pk_range_id) if !token.contains(':') => format!("{pk_range_id}:{token}"),
+            _ => token,
+        };
+        headers.insert(response_header_names::SESSION_TOKEN, composite);
     }
     if let Some(etag) = response.etag {
         headers.insert(response_header_names::ETAG, etag);
@@ -1937,6 +1945,59 @@ mod tests {
                 .headers
                 .get_optional_str(&X_MS_GLOBAL_COMMITTED_LSN),
             Some("44")
+        );
+    }
+
+    #[test]
+    fn unwrap_prefixes_session_token_with_partition_key_range_id() {
+        let response = HttpResponse {
+            status: 200,
+            headers: Headers::new(),
+            body: response_frame(
+                200,
+                Uuid::parse_str(ACTIVITY_ID).unwrap(),
+                |tokens| {
+                    // GW2 surfaces the bare vector token and the pk range id separately.
+                    write_string_token(tokens, 0x0021, "0");
+                    write_string_token(tokens, 0x003E, "0#2#2=-1");
+                },
+                b"",
+            ),
+        };
+
+        let unwrapped = unwrap_response_for_gateway_v2(response).unwrap();
+
+        assert_eq!(
+            unwrapped
+                .headers
+                .get_optional_str(&HeaderName::from_static("x-ms-session-token")),
+            Some("0:0#2#2=-1")
+        );
+    }
+
+    #[test]
+    fn unwrap_keeps_session_token_when_already_prefixed() {
+        let response = HttpResponse {
+            status: 200,
+            headers: Headers::new(),
+            body: response_frame(
+                200,
+                Uuid::parse_str(ACTIVITY_ID).unwrap(),
+                |tokens| {
+                    write_string_token(tokens, 0x0021, "0");
+                    write_string_token(tokens, 0x003E, "0:0#2#2=-1");
+                },
+                b"",
+            ),
+        };
+
+        let unwrapped = unwrap_response_for_gateway_v2(response).unwrap();
+
+        assert_eq!(
+            unwrapped
+                .headers
+                .get_optional_str(&HeaderName::from_static("x-ms-session-token")),
+            Some("0:0#2#2=-1")
         );
     }
 

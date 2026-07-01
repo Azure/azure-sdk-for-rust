@@ -76,16 +76,19 @@ impl HeaderValidationSpec {
     /// emulator response. The relaxations below fall into three categories:
     ///
     /// - **`Exists` / `NonNegative`** — value is request-scoped or wall-clock
-    ///   dependent and will legitimately differ. Examples: `activity_id`
+    ///   dependent and will legitimately differ, OR the header is one the
+    ///   Gateway 2.0 thin-client response path does not surface even though
+    ///   the emulator always pre-seeds it. Examples: `activity_id`
     ///   (per-request UUID), `request_charge` (RU model approximations),
     ///   `session_token` / `etag` / `lsn` (depend on real-account history),
-    ///   `server_duration_ms`.
+    ///   `server_duration_ms`; and the replica-internal headers the thin
+    ///   client strips but the emulator always emits — `transport_request_id`,
+    ///   `global_committed_lsn`, `local_lsn`, `number_of_read_regions`,
+    ///   `last_state_change_utc`, `gateway_version`, `service_version`.
     /// - **`Symmetric`** — header presence must match (both present or both
     ///   absent), values are allowed to differ. Used for headers whose value
     ///   depends on real-replica internals the emulator cannot meaningfully
-    ///   reproduce: `transport_request_id`, `global_committed_lsn`,
-    ///   `local_lsn`, `number_of_read_regions`, `last_state_change_utc`,
-    ///   `gateway_version`, `service_version`, indexing/transformation
+    ///   reproduce: indexing/transformation
     ///   progress, `correlated_activity_id` (client-set), `retry_after_ms`,
     ///   `offer_replace_pending`, `has_tentative_writes`, query/continuation
     ///   metrics (no-op on point ops).
@@ -110,16 +113,16 @@ impl HeaderValidationSpec {
             .with_rule("offer_replace_pending", HeaderMatch::Symmetric)
             .with_rule("retry_after_ms", HeaderMatch::Symmetric)
             .with_rule("correlated_activity_id", HeaderMatch::Symmetric)
-            .with_rule("transport_request_id", HeaderMatch::Symmetric)
-            .with_rule("global_committed_lsn", HeaderMatch::Symmetric)
+            .with_rule("transport_request_id", HeaderMatch::Exists)
+            .with_rule("global_committed_lsn", HeaderMatch::Exists)
             .with_rule("quorum_acked_lsn", HeaderMatch::Ignore)
             .with_rule("quorum_acked_local_lsn", HeaderMatch::Ignore)
-            .with_rule("local_lsn", HeaderMatch::Symmetric)
+            .with_rule("local_lsn", HeaderMatch::Exists)
             .with_rule("item_local_lsn", HeaderMatch::Ignore)
-            .with_rule("number_of_read_regions", HeaderMatch::Symmetric)
-            .with_rule("last_state_change_utc", HeaderMatch::Symmetric)
-            .with_rule("gateway_version", HeaderMatch::Symmetric)
-            .with_rule("service_version", HeaderMatch::Symmetric)
+            .with_rule("number_of_read_regions", HeaderMatch::Exists)
+            .with_rule("last_state_change_utc", HeaderMatch::Exists)
+            .with_rule("gateway_version", HeaderMatch::Exists)
+            .with_rule("service_version", HeaderMatch::Exists)
             .with_rule("resource_quota", HeaderMatch::Ignore)
             .with_rule("resource_usage", HeaderMatch::Ignore)
             .with_rule("has_tentative_writes", HeaderMatch::Symmetric)
@@ -150,16 +153,16 @@ impl HeaderValidationSpec {
             .with_rule("offer_replace_pending", HeaderMatch::Symmetric)
             .with_rule("retry_after_ms", HeaderMatch::Symmetric)
             .with_rule("correlated_activity_id", HeaderMatch::Symmetric)
-            .with_rule("transport_request_id", HeaderMatch::Symmetric)
-            .with_rule("global_committed_lsn", HeaderMatch::Symmetric)
+            .with_rule("transport_request_id", HeaderMatch::Exists)
+            .with_rule("global_committed_lsn", HeaderMatch::Exists)
             .with_rule("quorum_acked_lsn", HeaderMatch::Ignore)
             .with_rule("quorum_acked_local_lsn", HeaderMatch::Ignore)
-            .with_rule("local_lsn", HeaderMatch::Symmetric)
+            .with_rule("local_lsn", HeaderMatch::Exists)
             .with_rule("item_local_lsn", HeaderMatch::Ignore)
-            .with_rule("number_of_read_regions", HeaderMatch::Symmetric)
-            .with_rule("last_state_change_utc", HeaderMatch::Symmetric)
-            .with_rule("gateway_version", HeaderMatch::Symmetric)
-            .with_rule("service_version", HeaderMatch::Symmetric)
+            .with_rule("number_of_read_regions", HeaderMatch::Exists)
+            .with_rule("last_state_change_utc", HeaderMatch::Exists)
+            .with_rule("gateway_version", HeaderMatch::Exists)
+            .with_rule("service_version", HeaderMatch::Exists)
             .with_rule("resource_quota", HeaderMatch::Ignore)
             .with_rule("resource_usage", HeaderMatch::Ignore)
             .with_rule("has_tentative_writes", HeaderMatch::Symmetric)
@@ -190,15 +193,15 @@ impl HeaderValidationSpec {
             .with_rule("retry_after_ms", HeaderMatch::Symmetric)
             .with_rule("correlated_activity_id", HeaderMatch::Symmetric)
             .with_rule("transport_request_id", HeaderMatch::Exists)
-            .with_rule("global_committed_lsn", HeaderMatch::Symmetric)
+            .with_rule("global_committed_lsn", HeaderMatch::Exists)
             .with_rule("quorum_acked_lsn", HeaderMatch::Ignore)
             .with_rule("quorum_acked_local_lsn", HeaderMatch::Ignore)
-            .with_rule("local_lsn", HeaderMatch::Symmetric)
+            .with_rule("local_lsn", HeaderMatch::Exists)
             .with_rule("item_local_lsn", HeaderMatch::Ignore)
-            .with_rule("number_of_read_regions", HeaderMatch::Symmetric)
-            .with_rule("last_state_change_utc", HeaderMatch::Symmetric)
-            .with_rule("gateway_version", HeaderMatch::Symmetric)
-            .with_rule("service_version", HeaderMatch::Symmetric)
+            .with_rule("number_of_read_regions", HeaderMatch::Exists)
+            .with_rule("last_state_change_utc", HeaderMatch::Exists)
+            .with_rule("gateway_version", HeaderMatch::Exists)
+            .with_rule("service_version", HeaderMatch::Exists)
             .with_rule("resource_quota", HeaderMatch::Ignore)
             .with_rule("resource_usage", HeaderMatch::Ignore)
             .with_rule("has_tentative_writes", HeaderMatch::Symmetric)
