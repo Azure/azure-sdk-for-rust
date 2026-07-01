@@ -39,19 +39,18 @@ impl<T> OnceLockExt for std::sync::OnceLock<T> {
 }
 
 pub trait RecordingExt {
-    fn get_container_client(&self, endpoint: Option<String>) -> Result<BlobContainerClient>;
+    fn get_container_client(&self, endpoint: Option<Url>) -> Result<BlobContainerClient>;
 }
 
 impl RecordingExt for Recording {
-    fn get_container_client(&self, endpoint: Option<String>) -> Result<BlobContainerClient> {
-        let endpoint = endpoint.unwrap_or_else(|| {
-            format!(
+    fn get_container_client(&self, endpoint: Option<Url>) -> Result<BlobContainerClient> {
+        let mut container_url = match endpoint {
+            Some(url) => url,
+            None => Url::parse(&format!(
                 "https://{}.blob.core.windows.net",
                 self.var("AZURE_STORAGE_ACCOUNT_NAME", None)
-            )
-        });
-        println!("Using endpoint: {}", endpoint);
-        let mut container_url = Url::parse(&endpoint)?;
+            ))?,
+        };
         container_url
             .path_segments_mut()
             .expect("endpoint must be a valid base URL")

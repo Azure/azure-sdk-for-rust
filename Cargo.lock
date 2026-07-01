@@ -309,6 +309,7 @@ dependencies = [
  "azure_core_macros 1.0.0",
  "azure_core_test 0.2.0",
  "bytes",
+ "clap",
  "criterion",
  "futures",
  "hmac",
@@ -809,10 +810,10 @@ version = "1.1.0-beta.1"
 dependencies = [
  "async-stream",
  "async-trait",
- "azure_core 1.0.0",
- "azure_core_opentelemetry 1.0.0",
- "azure_core_test 0.1.0",
- "azure_identity 1.0.0",
+ "azure_core 1.1.0-beta.1",
+ "azure_core_opentelemetry 1.1.0-beta.1",
+ "azure_core_test 0.2.0",
+ "azure_identity 1.1.0-beta.1",
  "azure_storage_blob_test",
  "azure_storage_common",
  "bytes",
@@ -838,9 +839,9 @@ name = "azure_storage_blob_test"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "azure_core 1.0.0",
- "azure_core_test 0.1.0",
- "azure_identity 1.0.0",
+ "azure_core 1.1.0-beta.1",
+ "azure_core_test 0.2.0",
+ "azure_identity 1.1.0-beta.1",
  "azure_storage_blob 1.1.0-beta.1",
  "bytes",
  "futures",
@@ -851,7 +852,7 @@ dependencies = [
 name = "azure_storage_common"
 version = "0.1.0"
 dependencies = [
- "azure_core 1.0.0",
+ "azure_core 1.1.0-beta.1",
  "serde",
  "serde_json",
  "time",
@@ -862,10 +863,10 @@ name = "azure_storage_queue"
 version = "1.1.0-beta.1"
 dependencies = [
  "async-trait",
- "azure_core 1.0.0",
- "azure_core_opentelemetry 1.0.0",
- "azure_core_test 0.1.0",
- "azure_identity 1.0.0",
+ "azure_core 1.1.0-beta.1",
+ "azure_core_opentelemetry 1.1.0-beta.1",
+ "azure_core_test 0.2.0",
+ "azure_identity 1.1.0-beta.1",
  "azure_storage_common",
  "clap",
  "futures",
