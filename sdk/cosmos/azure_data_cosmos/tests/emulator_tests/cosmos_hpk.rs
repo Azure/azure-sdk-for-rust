@@ -6,9 +6,9 @@
 //! These tests exercise the public `azure_data_cosmos` surface against
 //! MultiHash (hierarchical) containers: point CRUD with full keys, partial-key
 //! and too-many-component rejection, full-key and prefix queries, cross-partition
-//! queries, component value edge cases (null / numeric / bool / empty string),
-//! and transactional batch. Single-hash feed-range negatives live alongside the
-//! positive feed-range tests in `cosmos_feed_ranges.rs`.
+//! queries, component value edge cases (numeric / bool / empty string),
+//! and transactional batch. HPK feed-range negative validation lives alongside
+//! the positive feed-range tests in `cosmos_feed_ranges.rs`.
 
 // Use the shared test framework declared in `tests/emulator/mod.rs`.
 use super::framework;
@@ -133,9 +133,11 @@ async fn create_two_level(
 
 /// Drains a query to completion via its page iterator, returning every item.
 ///
-/// All emulator query tests in this suite use the page iterator (`into_pages`)
-/// rather than the item-level `TryStream`, because cross-partition fan-out is
-/// only driven correctly through the paged interface.
+/// The cross-partition fan-out cases require the page iterator (`into_pages`),
+/// because item-level `TryStream` draining currently 400s on a `full_container`
+/// scope over an HPK container (see `hpk_query_cross_partition_full_container`).
+/// Single-partition query tests may use either interface; this helper uses the
+/// paged one uniformly so every query test shares one drain path.
 async fn collect_query<T>(
     container: &ContainerClient,
     query: impl Into<Query>,
@@ -158,15 +160,17 @@ where
 /// Runs `SELECT * FROM c` scoped to a (possibly partial) hierarchical key and
 /// returns the matching items.
 ///
-/// Prefix (partial-key) HPK queries are issued through
-/// [`FeedScope::partition`] with fewer components than the container has paths.
-/// Despite its doc comment recommending a full key, `FeedScope::partition`
-/// builds a logical-partition feed range whose effective partition key is
-/// computed from the supplied prefix, which the gateway expands to the matching
-/// sub-range. Resolving the prefix through
-/// [`ContainerClient::feed_range_from_partition_key`] instead would return the
-/// *physical* partition range (the whole partition) and therefore would not
-/// filter by the prefix.
+/// Prefix (partial-key) HPK queries are issued through [`FeedScope::partition`]
+/// with fewer components than the container has paths. NOTE: this does **not**
+/// filter by the prefix today. `FeedScope::partition` lowers to
+/// `FeedRange::for_partition`, which computes a single-*point* effective
+/// partition key (`EffectivePartitionKey::compute`, not `compute_range`), so the
+/// query routes to one physical partition and scans it in full, returning every
+/// item in that partition regardless of the prefix. The
+/// [`ContainerClient::feed_range_from_partition_key`] route is no better — it
+/// resolves the *physical* partition range (the whole partition). There is no
+/// supported filtered-prefix query path yet; see the `#[ignore]`d prefix tests
+/// below and issue #4680.
 async fn query_geo_prefix(
     container: &ContainerClient,
     prefix: PartitionKey,
@@ -472,11 +476,11 @@ pub async fn hpk_query_full_key_scope() -> Result<(), Box<dyn Error>> {
 }
 
 /// B2: a level-1 prefix query returns every item under that prefix.
+///
+/// Unconditionally ignored: this asserts behavior the SDK does not yet have, so
+/// it must stay ignored even in the emulator pipeline. When re-enabling, restore
+/// the `#[cfg_attr(not(any(test_category = "emulator", ...)), ignore)]` gate.
 #[tokio::test]
-#[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
-)]
 #[ignore = "GAP (#4680): HPK prefix queries are not filtered server-side. FeedScope::partition(prefix) \
             builds a single-point EPK via EffectivePartitionKey::compute (not compute_range), so a \
             partial key scans the entire physical partition and returns every item. Re-enable once \
@@ -499,10 +503,6 @@ pub async fn hpk_query_prefix_level1() -> Result<(), Box<dyn Error>> {
 
 /// B3: a level-2 prefix query returns every item under that prefix.
 #[tokio::test]
-#[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
-)]
 #[ignore = "GAP (#4680): HPK prefix queries are not filtered server-side (see hpk_query_prefix_level1)."]
 pub async fn hpk_query_prefix_level2() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -522,10 +522,6 @@ pub async fn hpk_query_prefix_level2() -> Result<(), Box<dyn Error>> {
 
 /// B4: a prefix that matches no items returns an empty result without error.
 #[tokio::test]
-#[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
-)]
 #[ignore = "GAP (#4680): HPK prefix queries are not filtered server-side (see hpk_query_prefix_level1)."]
 pub async fn hpk_query_prefix_no_match_returns_empty() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -546,10 +542,6 @@ pub async fn hpk_query_prefix_no_match_returns_empty() -> Result<(), Box<dyn Err
 /// — an explicit anti-leak guard (cf. the .NET prefix-iterator test that is
 /// currently `[Ignore]`d).
 #[tokio::test]
-#[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
-)]
 #[ignore = "GAP (#4680): HPK prefix queries are not filtered server-side (see hpk_query_prefix_level1)."]
 pub async fn hpk_query_prefix_correctness_guard() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -583,11 +575,10 @@ pub async fn hpk_query_prefix_correctness_guard() -> Result<(), Box<dyn Error>> 
 /// ("One of the input values is invalid", empty PartitionKeyRangeId). The same
 /// query shape succeeds on single-hash containers, so the cross-partition fan-out
 /// path does not build a valid partition target for hierarchical containers.
+///
+/// Unconditionally ignored (see `hpk_query_prefix_level1` for the rationale and
+/// how to re-enable).
 #[tokio::test]
-#[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
-)]
 #[ignore = "GAP (#4681): cross-partition (full_container) queries over hierarchical containers are \
             rejected with 400 BadRequest ('One of the input values is invalid'). The same query \
             works on single-hash containers. Re-enable once cross-partition fan-out targets HPK \
