@@ -815,6 +815,7 @@ dependencies = [
  "azure_identity 1.0.0",
  "azure_storage_blob_test",
  "azure_storage_common",
+ "azure_storage_sas",
  "bytes",
  "clap",
  "flate2",
@@ -867,6 +868,7 @@ dependencies = [
  "azure_core_test 0.1.0",
  "azure_identity 1.0.0",
  "azure_storage_common",
+ "azure_storage_sas",
  "clap",
  "futures",
  "opentelemetry-stdout",
@@ -876,6 +878,20 @@ dependencies = [
  "time",
  "tokio",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "azure_storage_sas"
+version = "0.1.0"
+dependencies = [
+ "azure_core 1.0.0",
+ "azure_storage_common",
+ "base64 0.22.1",
+ "hmac",
+ "include-file",
+ "percent-encoding",
+ "sha2",
+ "time",
 ]
 
 [[package]]
