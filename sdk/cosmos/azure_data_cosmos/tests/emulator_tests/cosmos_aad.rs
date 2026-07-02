@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cspell:ignore enableaadauthentication
+
 //! Integration tests exercising Entra ID (AAD) authentication against Azure
 //! Cosmos DB.
 //!

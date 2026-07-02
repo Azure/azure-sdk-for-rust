@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cspell:ignore enableaadauthentication appidacr
+
 //! A [`TokenCredential`] that mints the fake JWT the Azure Cosmos DB emulator
 //! accepts when started with `/enableaadauthentication`.
 //!
