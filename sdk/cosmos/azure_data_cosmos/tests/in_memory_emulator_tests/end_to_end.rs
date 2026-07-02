@@ -1579,6 +1579,14 @@ fn collection_create_in_progress(err: &azure_data_cosmos::CosmosError) -> bool {
         && status.sub_status().map(|s| s.value()) == Some(1013)
 }
 
+/// Transient `401 Unauthorized` a freshly deployed account can briefly return
+/// before its master key has propagated to every regional gateway (observed on
+/// the multi-region Gateway 2.0 leg). Retriable only within the bounded setup
+/// readiness window below; the SDK itself treats 401 as definitive.
+fn transient_deployment_unauthorized(err: &azure_data_cosmos::CosmosError) -> bool {
+    err.status().status_code() == StatusCode::Unauthorized
+}
+
 /// Resolves a container on a real account, tolerating asynchronous container
 /// provisioning.
 ///
@@ -1607,7 +1615,13 @@ async fn resolve_container_when_ready(
             .await
         {
             Ok(container) => break container,
-            Err(e) if collection_create_in_progress(&e) && Instant::now() < deadline => {
+            Err(e)
+                if (collection_create_in_progress(&e) || transient_deployment_unauthorized(&e))
+                    && Instant::now() < deadline =>
+            {
+                if transient_deployment_unauthorized(&e) {
+                    eprintln!("resolve_container_when_ready: retrying transient 401 during metadata resolve for {db_name}/{container_name}");
+                }
                 tokio::time::sleep(backoff).await;
                 backoff = (backoff * 2).min(MAX_BACKOFF);
             }
@@ -1632,6 +1646,11 @@ async fn resolve_container_when_ready(
                 return Ok(container)
             }
             Err(e) if collection_create_in_progress(&e) && Instant::now() < deadline => {
+                tokio::time::sleep(backoff).await;
+                backoff = (backoff * 2).min(MAX_BACKOFF);
+            }
+            Err(e) if transient_deployment_unauthorized(&e) && Instant::now() < deadline => {
+                eprintln!("resolve_container_when_ready: retrying transient 401 during readiness probe for {db_name}/{container_name}");
                 tokio::time::sleep(backoff).await;
                 backoff = (backoff * 2).min(MAX_BACKOFF);
             }

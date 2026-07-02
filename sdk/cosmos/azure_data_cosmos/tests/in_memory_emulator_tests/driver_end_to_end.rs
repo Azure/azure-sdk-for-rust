@@ -639,19 +639,25 @@ async fn read_with_stale_session_token_returns_404_1002() {
             .await;
 
         let real_err = real_err.expect_err("Real should return an error for stale session read");
-        // The seed-derived token carries the correct pkrange id prefix, so the
-        // bumped LSN trips the soft 404 / sub-status 1002 (ReadSessionNotAvailable)
-        // path on both classic gateway and the Gateway 2.0 thin-client path.
+        // The read targets a nonexistent item, so it returns HTTP 404 on every
+        // consistency level. Under Session the seed-derived token's bumped LSN
+        // additionally trips the soft 404 / sub-status 1002 (ReadSessionNotAvailable)
+        // path (asserted below); Eventual/Strong ignore the token entirely.
         assert_eq!(
             real_err.status().status_code(),
             azure_core::http::StatusCode::NotFound,
             "Real stale session read should return HTTP 404",
         );
-        assert_eq!(
-            real_err.status().sub_status().map(|s| s.value()),
-            Some(1002),
-            "Real 404 stale session read should surface substatus 1002",
-        );
+        // Substatus 1002 is only produced under Session consistency; on
+        // Eventual/Strong accounts the stale token is ignored and the missing
+        // item surfaces as a plain 404/0. Only assert 1002 on Session accounts.
+        if DualBackend::real_account_uses_session_consistency() {
+            assert_eq!(
+                real_err.status().sub_status().map(|s| s.value()),
+                Some(1002),
+                "Real 404 stale session read should surface substatus 1002",
+            );
+        }
     }
 
     // Cleanup

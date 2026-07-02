@@ -188,6 +188,18 @@ mod tests {
     }
 
     #[test]
+    fn set_and_get_token_with_negative_region_lsn() {
+        // Regression: a `-1` region LSN must not cause the token to be dropped
+        // (previously parsed as u64, which silently stored nothing and broke
+        // read-your-writes).
+        let sc = SessionContainer::new();
+        let c = test_container("db1", "c1", "rid1");
+        sc.set_session_token(&c, "0:0#2#2=-1");
+        let token = sc.resolve_session_token(&c).unwrap();
+        assert_eq!(token.as_str(), "0:0#2#2=-1");
+    }
+
+    #[test]
     fn merge_updates_existing() {
         let sc = SessionContainer::new();
         let c = test_container("db1", "c1", "rid1");

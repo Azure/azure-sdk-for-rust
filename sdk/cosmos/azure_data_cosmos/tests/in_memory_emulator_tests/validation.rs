@@ -88,15 +88,18 @@ impl HeaderValidationSpec {
     /// - **`Symmetric`** — header presence must match (both present or both
     ///   absent), values are allowed to differ. Used for headers whose value
     ///   depends on real-replica internals the emulator cannot meaningfully
-    ///   reproduce: indexing/transformation
-    ///   progress, `correlated_activity_id` (client-set), `retry_after_ms`,
+    ///   reproduce: `correlated_activity_id` (client-set), `retry_after_ms`,
     ///   `offer_replace_pending`, `has_tentative_writes`, query/continuation
     ///   metrics (no-op on point ops).
     /// - **`Ignore`** — emulator does not (and intentionally will not)
     ///   produce these headers, or they encode internal pkrange state that
     ///   has no public meaning: `item_lsn`, `item_local_lsn`,
     ///   `quorum_acked_lsn`, `quorum_acked_local_lsn`, `resource_quota`,
-    ///   `resource_usage`, `partition_key_range_id`, `internal_partition_id`.
+    ///   `resource_usage`, `partition_key_range_id`, `internal_partition_id`,
+    ///   and the index-build progress headers a real backend emits but the
+    ///   in-memory emulator has no indexing engine to reproduce —
+    ///   `collection_index_transformation_progress`,
+    ///   `collection_lazy_indexing_progress`.
     pub fn for_point_operation() -> Self {
         Self::new()
             .with_rule("activity_id", HeaderMatch::Exists)
@@ -131,9 +134,9 @@ impl HeaderValidationSpec {
             .with_rule("log_results", HeaderMatch::Symmetric)
             .with_rule(
                 "collection_index_transformation_progress",
-                HeaderMatch::Symmetric,
+                HeaderMatch::Ignore,
             )
-            .with_rule("collection_lazy_indexing_progress", HeaderMatch::Symmetric)
+            .with_rule("collection_lazy_indexing_progress", HeaderMatch::Ignore)
     }
 
     /// Spec for a delete operation (no etag in response typically).
@@ -171,9 +174,9 @@ impl HeaderValidationSpec {
             .with_rule("log_results", HeaderMatch::Symmetric)
             .with_rule(
                 "collection_index_transformation_progress",
-                HeaderMatch::Symmetric,
+                HeaderMatch::Ignore,
             )
-            .with_rule("collection_lazy_indexing_progress", HeaderMatch::Symmetric)
+            .with_rule("collection_lazy_indexing_progress", HeaderMatch::Ignore)
     }
 
     /// Spec for a control-plane operation (create database/container).
@@ -210,9 +213,9 @@ impl HeaderValidationSpec {
             .with_rule("log_results", HeaderMatch::Symmetric)
             .with_rule(
                 "collection_index_transformation_progress",
-                HeaderMatch::Symmetric,
+                HeaderMatch::Ignore,
             )
-            .with_rule("collection_lazy_indexing_progress", HeaderMatch::Symmetric)
+            .with_rule("collection_lazy_indexing_progress", HeaderMatch::Ignore)
             .with_rule("lsn", HeaderMatch::Ignore)
     }
 }

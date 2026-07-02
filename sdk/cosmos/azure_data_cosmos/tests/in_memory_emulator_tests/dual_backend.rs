@@ -43,6 +43,12 @@ const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
 /// Environment variable controlling test mode.
 const TEST_MODE_ENV_VAR: &str = "AZURE_COSMOS_TEST_MODE";
 
+/// Environment variable exposing the real account's configured default
+/// consistency level (emitted by the test-resources deployment). Substatus
+/// `1002` (ReadSessionNotAvailable) is only produced under Session
+/// consistency, so consistency-sensitive assertions consult this.
+const DEFAULT_CONSISTENCY_ENV_VAR: &str = "AZURE_COSMOS_DEFAULT_CONSISTENCY";
+
 /// Gateway URL used by the in-memory emulator.
 const EMULATOR_GATEWAY_URL: &str = "https://eastus.emulator.local";
 
@@ -50,7 +56,7 @@ const EMULATOR_GATEWAY_URL: &str = "https://eastus.emulator.local";
 /// (`thin-client-mr-session-ci`: Central US write + East US 2 read).
 ///
 /// Region-sensitive tests use [`DualBackend::wait_for_sentinel_readable_from_all_regions`]
-/// to confirm a freshly provisioned container is replicated and serveable from
+/// to confirm a freshly provisioned container is replicated and servable from
 /// every one of these regions before asserting per-region behavior — a region
 /// that has not yet caught up returns a plain resource 404 (no sub-status)
 /// rather than the region-specific status under test. Regions not present on
@@ -132,6 +138,19 @@ impl DualBackend {
     /// Returns `true` when a real Cosmos DB account is available for comparison.
     pub fn has_real_backend(&self) -> bool {
         self.real_driver.is_some()
+    }
+
+    /// Whether the configured real account uses Session default consistency.
+    ///
+    /// Substatus `1002` (ReadSessionNotAvailable) is only produced under Session
+    /// consistency; Eventual/Strong reads never emit it. Reads
+    /// [`DEFAULT_CONSISTENCY_ENV_VAR`], defaulting to `true` when unset (local
+    /// dev accounts and the Session CI legs are Session; the Eventual/Strong
+    /// legs set it explicitly).
+    pub fn real_account_uses_session_consistency() -> bool {
+        std::env::var(DEFAULT_CONSISTENCY_ENV_VAR)
+            .map(|v| v.eq_ignore_ascii_case("Session"))
+            .unwrap_or(true)
     }
 
     /// Generates a unique database name scoped to this run.
@@ -254,7 +273,7 @@ impl DualBackend {
 
     /// Waits until an existing sentinel item is point-readable from every region
     /// in [`MULTI_REGION_READ_REGIONS`] that the configured account actually
-    /// advertises, proving the container is replicated and serveable account-wide.
+    /// advertises, proving the container is replicated and servable account-wide.
     /// No-op when the real backend is not configured.
     ///
     /// The caller must have already created `(pk, item_id)`. For each region this

@@ -19,7 +19,7 @@ use azure_core::fmt::SafeDebug;
 pub(crate) struct VectorSessionToken {
     version: u64,
     global_lsn: u64,
-    region_progress: HashMap<u64, u64>,
+    region_progress: HashMap<u64, i64>,
 }
 
 impl VectorSessionToken {
@@ -95,7 +95,10 @@ impl VectorSessionToken {
                     ))
                     .build()
             })?;
-            let lsn: u64 = lsn_str.parse().map_err(|_| {
+            // Per-region local LSN is signed: the server emits `-1` when a
+            // region has no recorded local progress yet. Parsing as unsigned
+            // would drop the whole token and silently break read-your-writes.
+            let lsn: i64 = lsn_str.parse().map_err(|_| {
                 crate::error::CosmosError::builder()
                     .with_status(crate::error::CosmosStatus::new(
                         azure_core::http::StatusCode::BadRequest,
@@ -172,10 +175,17 @@ impl VectorSessionToken {
                 changed = true;
             }
             for (&region, &other_lsn) in &other.region_progress {
-                let entry = self.region_progress.entry(region).or_insert(0);
-                if other_lsn > *entry {
-                    *entry = other_lsn;
-                    changed = true;
+                match self.region_progress.get_mut(&region) {
+                    Some(existing) => {
+                        if other_lsn > *existing {
+                            *existing = other_lsn;
+                            changed = true;
+                        }
+                    }
+                    None => {
+                        self.region_progress.insert(region, other_lsn);
+                        changed = true;
+                    }
                 }
             }
             changed
@@ -330,7 +340,7 @@ mod tests {
     use super::*;
 
     /// Helper to build a `VectorSessionToken` for assertions without parsing.
-    fn make_token(version: u64, global_lsn: u64, regions: &[(u64, u64)]) -> VectorSessionToken {
+    fn make_token(version: u64, global_lsn: u64, regions: &[(u64, i64)]) -> VectorSessionToken {
         VectorSessionToken {
             version,
             global_lsn,
@@ -369,6 +379,29 @@ mod tests {
     fn parse_produces_expected_structure() {
         let t = VectorSessionToken::parse("1#100#1=20#2=5").unwrap();
         assert_eq!(t, make_token(1, 100, &[(1, 20), (2, 5)]));
+    }
+
+    #[test]
+    fn parse_negative_region_lsn() {
+        // The server emits `-1` for a region with no recorded local progress.
+        let t = VectorSessionToken::parse("0#2#2=-1").unwrap();
+        assert_eq!(t, make_token(0, 2, &[(2, -1)]));
+    }
+
+    #[test]
+    fn negative_region_lsn_round_trips() {
+        let t = VectorSessionToken::parse("0#2#2=-1").unwrap();
+        assert_eq!(t.to_string(), "0#2#2=-1");
+    }
+
+    #[test]
+    fn merge_preserves_negative_region_only_in_other() {
+        // Same version, region only present in `other` with a `-1` LSN: it must
+        // be inserted as `-1`, not clamped to 0.
+        let mut a = VectorSessionToken::parse("0#2#1=5").unwrap();
+        let b = VectorSessionToken::parse("0#2#2=-1").unwrap();
+        assert!(a.merge(&b));
+        assert_eq!(a, make_token(0, 2, &[(1, 5), (2, -1)]));
     }
 
     #[test]
