@@ -416,8 +416,10 @@ fn try_handle_write_forbidden(
 
     // Hub-region discovery on the read path: rotate the per-partition cache
     // entry to the next preferred-read endpoint and retry without polluting
-    // account-level state. The latch is only set on single-master data-plane
-    // reads.
+    // account-level state. The latch is single-master-only (enforced at both
+    // setters); the `!can_use_multiple_write_locations` guard below is
+    // defense-in-depth so a stray multi-master latch can never route a read
+    // into this single-master branch instead of the multi-write budget.
     //
     // **No fall-through to standard write-forbidden effects.** A 403/3 on a
     // read with the hub-region header carries a *partition-scoped* meaning
@@ -428,7 +430,10 @@ fn try_handle_write_forbidden(
     // partitions. When the partition key range ID is known, emit
     // `AdvanceHubRegionDiscovery` to rotate the cache; when missing, retry
     // failover with no location effects.
-    if retry_state.hub_region_processing_only && operation.is_read_only() {
+    if retry_state.hub_region_processing_only
+        && operation.is_read_only()
+        && !retry_state.can_use_multiple_write_locations
+    {
         // Enforce the failover budget here — the outer pipeline does not cap
         // failover attempts on its own, so returning `None` (which aborts) is
         // the only thing that terminates a persistent 403/3 read.
@@ -2682,6 +2687,43 @@ mod tests {
         assert!(
             effects.is_empty(),
             "aborted hub-region 403/3 must emit no effects"
+        );
+    }
+
+    /// Defense-in-depth (multi-master invariant): even if the hub-region
+    /// latch is somehow set on a multi-master account, a 403/3 read must NOT
+    /// enter the single-master hub-region branch. It falls through to the
+    /// multi-write budget, emitting the standard write-forbidden effects
+    /// (`RefreshAccountProperties`) rather than `AdvanceHubRegionDiscovery`.
+    #[test]
+    fn read_403_3_with_hub_latch_on_multi_master_skips_hub_branch() {
+        let op = make_read_operation();
+        // Multi-master account: can_use_multiple_write_locations = true.
+        let mut state = OperationRetryState::initial(0, true, Vec::new(), 3, 3);
+        state.is_dataplane = true;
+        state.hub_region_processing_only = true; // stray latch, must be ignored
+        state.partition_key_range_id = Some("0".parse().unwrap());
+        let endpoint = test_endpoint();
+
+        let (action, effects) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            make_http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            &state,
+        );
+
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert!(
+            !effects
+                .iter()
+                .any(|e| matches!(e, LocationEffect::AdvanceHubRegionDiscovery { .. })),
+            "multi-master 403/3 must not take the hub-region branch",
+        );
+        assert!(
+            effects
+                .iter()
+                .any(|e| matches!(e, LocationEffect::RefreshAccountProperties)),
+            "multi-master 403/3 must take the standard write-forbidden path",
         );
     }
 

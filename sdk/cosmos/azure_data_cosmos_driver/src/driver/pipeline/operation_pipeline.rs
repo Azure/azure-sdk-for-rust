@@ -3540,7 +3540,13 @@ fn propagate_hedge_session_unavailable(
         retry_state.session_token_retry_count =
             retry_state.session_token_retry_count.saturating_add(1);
     }
-    if retry_state.hub_region_processing_only {
+    // The `hub_region_processing_only` latch is a single-master-only concept:
+    // multi-master accounts never emit the hub-region header and must not enter
+    // the hub-region 403/3 or cache paths. Mirror `build_session_retry_state`'s
+    // `!can_use_multiple_write_locations` gate so the hedge-fallback setter
+    // cannot latch it on a multi-master account. (The session-retry counter is
+    // advanced above regardless, since that cap applies to every account type.)
+    if retry_state.can_use_multiple_write_locations || retry_state.hub_region_processing_only {
         return;
     }
     retry_state.hub_region_processing_only = true;
@@ -7122,6 +7128,46 @@ mod tests {
             value.is_none(),
             "hub-region header must not be present when latch is unset, got {value:?}",
         );
+    }
+
+    /// Multi-master invariant: the hedge-fallback setter must NOT latch
+    /// `hub_region_processing_only` on a multi-master account (mirrors
+    /// `build_session_retry_state`'s topology gate), so the header never
+    /// leaks and the hub-region paths stay single-master-only. The
+    /// session-retry counter is still advanced — that cap applies to all
+    /// account types.
+    #[test]
+    fn propagate_hedge_session_unavailable_does_not_latch_on_multi_master() {
+        let mut state = super::OperationRetryState::initial(0, true, Vec::new(), 3, 3);
+        state.is_dataplane = true;
+
+        super::propagate_hedge_session_unavailable(&mut state, true);
+
+        assert!(
+            !state.hub_region_processing_only,
+            "multi-master must not latch hub_region_processing_only",
+        );
+        assert_eq!(
+            state.session_token_retry_count, 1,
+            "session-retry counter must still advance on multi-master",
+        );
+    }
+
+    /// Single-master: the hedge-fallback setter latches
+    /// `hub_region_processing_only` (and advances the session-retry counter),
+    /// matching the non-hedged `build_session_retry_state` path.
+    #[test]
+    fn propagate_hedge_session_unavailable_latches_on_single_master() {
+        let mut state = super::OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        state.is_dataplane = true;
+
+        super::propagate_hedge_session_unavailable(&mut state, true);
+
+        assert!(
+            state.hub_region_processing_only,
+            "single-master must latch hub_region_processing_only",
+        );
+        assert_eq!(state.session_token_retry_count, 1);
     }
 
     // ── apply_tentative_writes_header ────────────────────────────────
