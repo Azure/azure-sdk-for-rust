@@ -183,10 +183,6 @@ internal static class Cosmos
     public const int KIND_READ_ITEM   = 20;
     public const int KIND_DELETE_ITEM = 23;
 
-    // Inline body view (mirrors `cosmos_CosmosBytesView`).
-    [StructLayout(LayoutKind.Sequential)]
-    public struct BytesView { public IntPtr data; public UIntPtr len; }
-
     // Flat, self-describing request (mirrors `cosmos_CosmosOperationRequest`).
     // Fill only the fields the `kind` needs; leave the rest NULL / sentinel.
     [StructLayout(LayoutKind.Sequential)]
@@ -200,7 +196,8 @@ internal static class Cosmos
         public IntPtr    resource_link;       // char*
         public IntPtr    partition_key;
         public IntPtr    feed_range;
-        public BytesView body;
+        public IntPtr    body;                // const uint8_t* — NULL iff body_len == 0
+        public UIntPtr   body_len;            // 0 = no body
         public IntPtr    session_token;       // char*
         public IntPtr    activity_id;         // char*
         public IntPtr    continuation_token;  // char*
@@ -272,7 +269,8 @@ internal static class Program
                 kind           = Cosmos.KIND_CREATE_ITEM,
                 container      = coll,
                 partition_key  = pk,
-                body           = new Cosmos.BytesView { data = bodyPin.AddrOfPinnedObject(), len = (UIntPtr)body.Length },
+                body           = bodyPin.AddrOfPinnedObject(),
+                body_len       = (UIntPtr)body.Length,
                 max_item_count = -1,
             };
             var comp = SubmitAndWait(drv, ref req, q);
@@ -393,7 +391,7 @@ public final class CosmosSample {
         ADDRESS.withName("resource_link"),
         ADDRESS.withName("partition_key"),
         ADDRESS.withName("feed_range"),
-        ADDRESS.withName("body_data"),
+        ADDRESS.withName("body"),
         JAVA_LONG.withName("body_len"),
         ADDRESS.withName("session_token"),
         ADDRESS.withName("activity_id"),
@@ -453,7 +451,7 @@ public final class CosmosSample {
             req.set(ADDRESS, REQUEST.byteOffset(MemoryLayout.PathElement.groupElement("container")), coll);
             req.set(ADDRESS, REQUEST.byteOffset(MemoryLayout.PathElement.groupElement("partition_key")), pk);
             req.set(ADDRESS, REQUEST.byteOffset(MemoryLayout.PathElement.groupElement("item_id")), cstr(arena, "doc1"));
-            req.set(ADDRESS, REQUEST.byteOffset(MemoryLayout.PathElement.groupElement("body_data")), bodySeg);
+            req.set(ADDRESS, REQUEST.byteOffset(MemoryLayout.PathElement.groupElement("body")), bodySeg);
             req.set(JAVA_LONG, REQUEST.byteOffset(MemoryLayout.PathElement.groupElement("body_len")), (long) body.length);
             req.set(JAVA_INT, REQUEST.byteOffset(MemoryLayout.PathElement.groupElement("max_item_count")), -1);
 
@@ -576,10 +574,8 @@ func itemRequest(kind C.int32_t, container *C.cosmos_container_ref_t, pk *C.cosm
         precondition_kind: 0,
     }
     if len(body) > 0 {
-        req.body = C.cosmos_bytes_view_t{
-            data: (*C.uint8_t)(unsafe.Pointer(&body[0])),
-            len:  C.uintptr_t(len(body)),
-        }
+        req.body = (*C.uint8_t)(unsafe.Pointer(&body[0]))
+        req.body_len = C.uintptr_t(len(body))
     }
     return req
 }
@@ -718,9 +714,6 @@ ERROR_CODE_SUCCESS = 0
 
 # Flat #[repr(C)] request struct. Only the fields used by item operations are
 # populated; everything else stays NULL / sentinel.
-class CosmosBytesView(ctypes.Structure):
-    _fields_ = [("data", u8_p), ("len", size_t)]
-
 class CosmosOperationRequest(ctypes.Structure):
     _fields_ = [
         ("kind", ctypes.c_int32),
@@ -731,7 +724,8 @@ class CosmosOperationRequest(ctypes.Structure):
         ("resource_link", c_char_p),
         ("partition_key", void_p),
         ("feed_range", void_p),
-        ("body", CosmosBytesView),
+        ("body", u8_p),
+        ("body_len", size_t),
         ("session_token", c_char_p),
         ("activity_id", c_char_p),
         ("continuation_token", c_char_p),
@@ -826,7 +820,8 @@ def item_request(kind, container, pk, item_id, body=b""):
     req.max_item_count = -1
     if body:
         buf = (ctypes.c_uint8 * len(body)).from_buffer_copy(body)
-        req.body = CosmosBytesView(ctypes.cast(buf, u8_p), len(body))
+        req.body = ctypes.cast(buf, u8_p)
+        req.body_len = len(body)
         req._body_buf = buf  # keep the backing buffer alive for the call
     return req
 
@@ -956,7 +951,7 @@ if __name__ == "__main__":
 5. **Schema-agnostic data plane.** The wrapper never serializes user
    payloads — host SDKs build JSON (or any other body format the service
    accepts) themselves and hand the bytes to the request via
-   `cosmos_CosmosOperationRequest.body` (a `cosmos_CosmosBytesView`).
+   `cosmos_operation_request_t.body` / `.body_len`.
    Bytes are **copied** before the submit call returns; callers may release
    their source buffer immediately.
 6. **Diagnostics-on-error** is currently only available via the rich

@@ -3,11 +3,12 @@
 
 //! Byte buffer marshalling helpers for the C ABI boundary.
 //!
-//! The wrapper distinguishes two byte-buffer shapes (spec section 3.3):
+//! The wrapper distinguishes two byte-buffer shapes:
 //!
-//! - **`cosmos_bytes_view_t`** — a caller-owned by-value view. Used as
-//!   **input** to the library. Defined in spec section 3.3; not yet
-//!   implemented because no entry point consumes one yet.
+//! - **Request-body input** — a borrowed `{ ptr, len }` pair passed inline as
+//!   the `body` / `body_len` fields of `cosmos_operation_request_t`. The
+//!   wrapper copies the bytes into a driver-owned `Vec<u8>` before returning,
+//!   so the host may free the buffer immediately after submit.
 //! - **`cosmos_bytes_t`** — a library-owned buffer returned **by value** as a
 //!   `{ ptr, len }` pair the caller reads directly (no accessor calls). The
 //!   caller hands the struct back to [`cosmos_bytes_free`] to release the

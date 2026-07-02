@@ -103,7 +103,6 @@ fn generate_c_header() {
         ("CosmosErrorHandle".into(), "error_t".into()),
         // Wrapper-defined types whose Rust names don't follow the spec's C name.
         ("CosmosBytes".into(), "bytes_t".into()),
-        ("CosmosBytesView".into(), "bytes_view_t".into()),
         ("CosmosHeaderKv".into(), "header_kv_t".into()),
         (
             "CosmosPartitionKeyComponent".into(),

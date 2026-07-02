@@ -539,22 +539,6 @@ impl CosmosPreconditionKind {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// cosmos_bytes_view_t
-// ─────────────────────────────────────────────────────────────────────────────
-
-/// Borrowed view of a request body. `data` may be NULL iff `len` is `0`.
-/// The wrapper copies the bytes into a driver-owned `Vec<u8>` before
-/// returning, so the host may free the buffer immediately after submit.
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct CosmosBytesView {
-    /// Pointer to the first byte, or NULL when `len == 0`.
-    pub data: *const u8,
-    /// Number of bytes.
-    pub len: usize,
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // cosmos_operation_request_t
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -601,8 +585,14 @@ pub struct CosmosOperationRequest {
     /// Feed range handle. Optional for `query_items`; otherwise NULL.
     pub feed_range: *const FeedRangeHandle,
 
-    /// Request body. `data == NULL && len == 0` means "no body".
-    pub body: CosmosBytesView,
+    /// Pointer to the first byte of the request body, borrowed for the
+    /// duration of the submit call. NULL iff `body_len == 0` ("no body"). The
+    /// wrapper copies the bytes into a driver-owned `Vec<u8>` before returning,
+    /// so the host may free the buffer immediately after submit. Mirrors the
+    /// completion's `body` / `body_len` output fields.
+    pub body: *const u8,
+    /// Number of bytes addressable from `body`. `0` = no body.
+    pub body_len: usize,
 
     /// Session token override (NUL-terminated UTF-8). NULL = unset.
     pub session_token: *const c_char,
@@ -817,12 +807,12 @@ unsafe fn apply_inline_mutators(
     req: &CosmosOperationRequest,
 ) -> Result<CosmosOperation, CosmosErrorCode> {
     // Body.
-    if req.body.len > 0 {
-        if req.body.data.is_null() {
+    if req.body_len > 0 {
+        if req.body.is_null() {
             return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
         }
-        // SAFETY: data non-NULL and len valid per caller contract.
-        let bytes = unsafe { std::slice::from_raw_parts(req.body.data, req.body.len) };
+        // SAFETY: body non-NULL and body_len valid per caller contract.
+        let bytes = unsafe { std::slice::from_raw_parts(req.body, req.body_len) };
         op = op.with_body(bytes.to_vec());
     }
 

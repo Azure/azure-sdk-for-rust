@@ -1150,22 +1150,6 @@ typedef struct cosmos_runtime_options_t {
 } cosmos_runtime_options_t;
 
 /**
- * Borrowed view of a request body. `data` may be NULL iff `len` is `0`.
- * The wrapper copies the bytes into a driver-owned `Vec<u8>` before
- * returning, so the host may free the buffer immediately after submit.
- */
-typedef struct cosmos_bytes_view_t {
-  /**
-   * Pointer to the first byte, or NULL when `len == 0`.
-   */
-  const uint8_t *data;
-  /**
-   * Number of bytes.
-   */
-  uintptr_t len;
-} cosmos_bytes_view_t;
-
-/**
  * Self-describing request passed to the two submit entry points. The host
  * fills out the fields relevant to `kind`; irrelevant fields must be left
  * NULL / sentinel (strict validation rejects mismatches with
@@ -1226,9 +1210,17 @@ typedef struct cosmos_operation_request_t {
    */
   const struct cosmos_feed_range_t *feed_range;
   /**
-   * Request body. `data == NULL && len == 0` means "no body".
+   * Pointer to the first byte of the request body, borrowed for the
+   * duration of the submit call. NULL iff `body_len == 0` ("no body"). The
+   * wrapper copies the bytes into a driver-owned `Vec<u8>` before returning,
+   * so the host may free the buffer immediately after submit. Mirrors the
+   * completion's `body` / `body_len` output fields.
    */
-  struct cosmos_bytes_view_t body;
+  const uint8_t *body;
+  /**
+   * Number of bytes addressable from `body`. `0` = no body.
+   */
+  uintptr_t body_len;
   /**
    * Session token override (NUL-terminated UTF-8). NULL = unset.
    */
