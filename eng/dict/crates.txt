@@ -19,6 +19,7 @@ azure_core_test_macros
 azure_data_cosmos
 azure_data_cosmos_benchmarks
 azure_data_cosmos_driver
+azure_data_cosmos_driver_native
 azure_data_cosmos_macros
 azure_data_cosmos_perf
 azure_identity

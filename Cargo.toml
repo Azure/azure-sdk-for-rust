@@ -16,6 +16,7 @@ members = [
   "sdk/cosmos/azure_data_cosmos",
   "sdk/cosmos/azure_data_cosmos_benchmarks",
   "sdk/cosmos/azure_data_cosmos_driver",
+  "sdk/cosmos/azure_data_cosmos_driver_native",
   "sdk/cosmos/azure_data_cosmos_macros",
   "sdk/cosmos/azure_data_cosmos_perf",
   "sdk/identity/azure_identity",
