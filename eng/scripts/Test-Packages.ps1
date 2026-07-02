@@ -37,7 +37,7 @@ function Invoke-CargoTest (
     LogGroupEnd
   }
   else {
-    Invoke-LoggedCommand $command -GroupOutput -DoNotExitOnFailedExitCode | Out-Null
+    Invoke-LoggedCommand $command -GroupOutput -DoNotExitOnFailedExitCode
   }
 
   if ($LASTEXITCODE) {
