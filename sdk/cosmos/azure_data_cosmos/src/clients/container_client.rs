@@ -12,7 +12,7 @@ use crate::{
         Precondition, QueryOptions, ReadContainerOptions, ReadFeedRangesOptions,
         ReplaceContainerOptions, SessionToken, ThroughputOptions,
     },
-    PartitionKey, Query,
+    PartitionKey, Query, ResourceIdentity,
 };
 
 use super::ThroughputPoller;
@@ -33,21 +33,72 @@ pub struct ContainerClient {
 impl ContainerClient {
     pub(crate) async fn new(
         context: ClientContext,
-        container_id: &str,
-        database_id: &str,
+        database: &ResourceIdentity,
+        container: ResourceIdentity,
     ) -> crate::Result<Self> {
-        // Eagerly resolve immutable container metadata from the driver.
-        let container_ref = context
-            .driver
-            .resolve_container(database_id, container_id)
-            .await
-            .map_err(|e| {
-                azure_data_cosmos_driver::error::CosmosErrorBuilder::from_error(e)
-                    .with_context(format!(
-                        "failed to resolve container metadata for '{database_id}/{container_id}'"
-                    ))
+        // The container's addressing mode must match the database's: name-with-name
+        // or RID-with-RID. Mixing the two is not supported by the service routing.
+        let container_ref = match (database, &container) {
+            (ResourceIdentity::Name(db_name), ResourceIdentity::Name(container_name)) => context
+                .driver
+                .resolve_container(db_name, container_name)
+                .await
+                .map_err(|e| {
+                    azure_data_cosmos_driver::error::CosmosErrorBuilder::from_error(e)
+                        .with_context(format!(
+                            "failed to resolve container metadata for '{db_name}/{container_name}'"
+                        ))
+                        .build()
+                })?,
+            (ResourceIdentity::Rid(db_rid), ResourceIdentity::Rid(container_rid)) => {
+                let resolved = context
+                    .driver
+                    .resolve_container_by_rid(container_rid.as_str())
+                    .await
+                    .map_err(|e| {
+                        azure_data_cosmos_driver::error::CosmosErrorBuilder::from_error(e)
+                            .with_context(format!(
+                                "failed to resolve container metadata for RID '{}'",
+                                container_rid.as_str()
+                            ))
+                            .build()
+                    })?;
+
+                // The parent database RID is derived from the container RID, not
+                // taken from this `DatabaseClient`. Reject a container whose parent
+                // database does not match the addressed database so callers can't
+                // accidentally reach into a different database.
+                if resolved.database_rid() != db_rid.as_str() {
+                    return Err(azure_data_cosmos_driver::error::CosmosError::builder()
+                        .with_status(
+                            azure_data_cosmos_driver::error::CosmosStatus::CLIENT_INVALID_RESOURCE_ID,
+                        )
+                        .with_message(format!(
+                            "container RID '{}' belongs to database '{}', not the addressed database '{}'",
+                            container_rid.as_str(),
+                            resolved.database_rid(),
+                            db_rid.as_str()
+                        ))
+                        .build()
+                        .into());
+                }
+
+                resolved
+            }
+            (ResourceIdentity::Name(_), ResourceIdentity::Rid(_))
+            | (ResourceIdentity::Rid(_), ResourceIdentity::Name(_)) => {
+                return Err(azure_data_cosmos_driver::error::CosmosError::builder()
+                    .with_status(
+                        azure_data_cosmos_driver::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING,
+                    )
+                    .with_message(
+                        "database and container must use the same addressing mode: \
+                         address both by name or both by RID",
+                    )
                     .build()
-            })?;
+                    .into());
+            }
+        };
 
         Ok(Self {
             container_ref,

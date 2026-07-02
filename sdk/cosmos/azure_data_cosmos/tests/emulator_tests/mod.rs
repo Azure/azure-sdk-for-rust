@@ -12,6 +12,7 @@ mod cosmos_patch;
 mod cosmos_proxy;
 mod cosmos_query;
 mod cosmos_response_metadata;
+mod cosmos_rid_addressing;
 
 #[path = "../framework/mod.rs"]
 mod framework;

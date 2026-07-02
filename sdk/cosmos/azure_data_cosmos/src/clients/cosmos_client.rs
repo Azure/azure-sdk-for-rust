@@ -7,7 +7,7 @@ use crate::{
     models::DatabaseProperties,
     models::ResourceResponse,
     options::{CreateDatabaseOptions, QueryDatabasesOptions},
-    Query,
+    Query, ResourceIdentity,
 };
 use azure_core::http::Url;
 use azure_data_cosmos_driver::models::CosmosOperation;
@@ -95,12 +95,29 @@ impl CosmosClient {
         CosmosClientBuilder::new()
     }
 
-    /// Gets a [`DatabaseClient`] that can be used to access the database with the specified ID.
+    /// Gets a [`DatabaseClient`] that can be used to access the database with the
+    /// specified identity.
+    ///
+    /// The database may be addressed either by name or by [`ResourceId`](crate::ResourceId)
+    /// (RID). Anything that converts into a [`ResourceIdentity`](crate::ResourceIdentity)
+    /// is accepted — a `&str`/`String` selects name addressing, a `ResourceId`
+    /// selects RID addressing.
     ///
     /// # Arguments
-    /// * `id` - The ID of the database.
-    pub fn database_client(&self, id: &str) -> DatabaseClient {
-        DatabaseClient::new(self.context.clone(), id)
+    /// * `database` - The name or RID of the database.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// # use azure_data_cosmos::{CosmosClient, ResourceId};
+    /// # let client: CosmosClient = panic!("this is a non-running example");
+    /// // By name:
+    /// let db = client.database_client("my-database");
+    /// // By RID:
+    /// let db = client.database_client(ResourceId::from("abc123=="));
+    /// ```
+    pub fn database_client(&self, database: impl Into<ResourceIdentity>) -> DatabaseClient {
+        DatabaseClient::new(self.context.clone(), database.into())
     }
 
     /// Gets the endpoint of the database account this client is connected to.
