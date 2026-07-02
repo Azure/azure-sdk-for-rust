@@ -4,7 +4,16 @@
 
 ### Features Added
 
+- Added `ResourceId` and `ResourceIdentity` for addressing Cosmos databases and containers by user-provided name or by RID. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))
+- `CosmosClient::database_client` and `DatabaseClient::container_client` now accept `impl Into<ResourceIdentity>`, so a `&str`/`String` selects name addressing and a `ResourceId` selects RID addressing. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))
+- Added `DatabaseClient::name()` and `DatabaseClient::rid()` to inspect how a database client was addressed. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))
+- RID-addressed databases skip the extra database read when resolving throughput offers, reusing the addressed RID directly. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))
+- Reading and querying items by RID now works end-to-end, including a parent-database cross-check that rejects a container RID belonging to a different database. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))
+
 ### Breaking Changes
+
+- `CosmosClient::database_client` and `DatabaseClient::container_client` now take `impl Into<ResourceIdentity>` instead of `&str`; call sites passing a deref-able string (for example a `Cow<str>` field) need `&*value` or `.as_ref()`. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))
+- `DatabaseClient::id()` now returns `&ResourceIdentity` instead of `&str`. ([#4687](https://github.com/Azure/azure-sdk-for-rust/pull/4687))
 
 ### Bugs Fixed
 
