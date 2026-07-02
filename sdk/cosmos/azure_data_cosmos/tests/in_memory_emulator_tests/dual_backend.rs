@@ -22,14 +22,15 @@ use azure_data_cosmos_driver::{
     },
     models::{
         AccountReference, ConnectionString, ContainerReference, CosmosOperation, CosmosResponse,
-        DatabaseReference,
+        DatabaseReference, ItemReference, PartitionKey,
     },
     options::{
-        ConnectionPoolOptions, DriverOptions, OperationOptions, ServerCertificateValidation,
+        AvailabilityStrategy, ConnectionPoolOptions, DriverOptions, OperationOptions,
+        OperationOptionsBuilder, Region, ServerCertificateValidation,
     },
     CosmosDriver,
 };
-use std::{error::Error, sync::Arc};
+use std::{error::Error, sync::Arc, time::Duration};
 use uuid::Uuid;
 
 use super::validation::{
@@ -42,8 +43,25 @@ const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
 /// Environment variable controlling test mode.
 const TEST_MODE_ENV_VAR: &str = "AZURE_COSMOS_TEST_MODE";
 
+/// Environment variable exposing the real account's configured default
+/// consistency level (emitted by the test-resources deployment). Substatus
+/// `1002` (ReadSessionNotAvailable) is only produced under Session
+/// consistency, so consistency-sensitive assertions consult this.
+const DEFAULT_CONSISTENCY_ENV_VAR: &str = "AZURE_COSMOS_DEFAULT_CONSISTENCY";
+
 /// Gateway URL used by the in-memory emulator.
 const EMULATOR_GATEWAY_URL: &str = "https://eastus.emulator.local";
+
+/// Read regions advertised by the multi-region Gateway 2.0 CI account
+/// (`thin-client-mr-session-ci`: Central US write + East US 2 read).
+///
+/// Region-sensitive tests use [`DualBackend::wait_for_sentinel_readable_from_all_regions`]
+/// to confirm a freshly provisioned container is replicated and servable from
+/// every one of these regions before asserting per-region behavior — a region
+/// that has not yet caught up returns a plain resource 404 (no sub-status)
+/// rather than the region-specific status under test. Regions not present on
+/// the configured account are silently skipped by the driver.
+const MULTI_REGION_READ_REGIONS: &[Region] = &[Region::CENTRAL_US, Region::EAST_US_2];
 
 /// Holds drivers for both backends (emulator is always present, real is optional).
 pub struct DualBackend {
@@ -120,6 +138,19 @@ impl DualBackend {
     /// Returns `true` when a real Cosmos DB account is available for comparison.
     pub fn has_real_backend(&self) -> bool {
         self.real_driver.is_some()
+    }
+
+    /// Whether the configured real account uses Session default consistency.
+    ///
+    /// Substatus `1002` (ReadSessionNotAvailable) is only produced under Session
+    /// consistency; Eventual/Strong reads never emit it. Reads
+    /// [`DEFAULT_CONSISTENCY_ENV_VAR`], defaulting to `true` when unset (local
+    /// dev accounts and the Session CI legs are Session; the Eventual/Strong
+    /// legs set it explicitly).
+    pub fn real_account_uses_session_consistency() -> bool {
+        std::env::var(DEFAULT_CONSISTENCY_ENV_VAR)
+            .map(|v| v.eq_ignore_ascii_case("Session"))
+            .unwrap_or(true)
     }
 
     /// Generates a unique database name scoped to this run.
@@ -238,6 +269,90 @@ impl DualBackend {
                 )
                 .await;
         }
+    }
+
+    /// Waits until an existing sentinel item is point-readable from every region
+    /// in [`MULTI_REGION_READ_REGIONS`] that the configured account actually
+    /// advertises, proving the container is replicated and servable account-wide.
+    /// No-op when the real backend is not configured.
+    ///
+    /// The caller must have already created `(pk, item_id)`. For each region this
+    /// builds a region-pinned driver with cross-region failover and hedging
+    /// disabled and point-reads the sentinel, then confirms via the response
+    /// diagnostics that the *targeted* region served the read — so a healthy
+    /// region can neither mask a lagging one nor produce a false pass. A region
+    /// the account does not advertise is served by a different region and is
+    /// silently skipped. Panics if an advertised region never catches up within
+    /// the bounded poll window.
+    pub async fn wait_for_sentinel_readable_from_all_regions(
+        &self,
+        db: &str,
+        container: &str,
+        pk: &str,
+        item_id: &str,
+    ) -> Result<(), Box<dyn Error>> {
+        let Some(account) = self.real_account.clone() else {
+            return Ok(());
+        };
+
+        // Pin reads to a single region and forbid failover/hedging so a success
+        // served by the targeted region is unambiguous.
+        let opts = OperationOptionsBuilder::new()
+            .with_max_failover_retry_count(0)
+            .with_availability_strategy(AvailabilityStrategy::Disabled)
+            .build();
+
+        for region in MULTI_REGION_READ_REGIONS {
+            let runtime = CosmosDriverRuntime::builder().build().await?;
+            let driver = runtime
+                .create_driver(
+                    DriverOptions::builder(account.clone())
+                        .with_preferred_regions(vec![region.clone()])
+                        .build(),
+                )
+                .await?;
+            let region_container = driver.resolve_container(db, container).await?;
+
+            let mut proven = false; // targeted region itself served the sentinel
+            let mut absent = false; // a substitute region served it → not in this account
+            for _ in 0..40 {
+                let probe = driver
+                    .execute_singleton_operation(
+                        CosmosOperation::read_item(ItemReference::from_name(
+                            &region_container,
+                            PartitionKey::from(pk.to_string()),
+                            item_id.to_string(),
+                        )),
+                        opts.clone(),
+                    )
+                    .await;
+                if let Ok(response) = probe {
+                    if response.status().is_success() {
+                        // `with_preferred_regions` only reorders; a region the
+                        // account lacks is dropped and the read is served by a
+                        // different region. Success is proof only when the
+                        // targeted region served it.
+                        if response
+                            .diagnostics_ref()
+                            .regions_contacted()
+                            .contains(region)
+                        {
+                            proven = true;
+                        } else {
+                            absent = true;
+                        }
+                        break;
+                    }
+                }
+                tokio::time::sleep(Duration::from_millis(500)).await;
+            }
+            // An advertised region must catch up; one the account lacks is skipped.
+            assert!(
+                proven || absent,
+                "Sentinel item '{item_id}' never became readable from advertised region {region:?}",
+            );
+        }
+        Ok(())
     }
 
     /// Executes an operation against both backends and compares results.

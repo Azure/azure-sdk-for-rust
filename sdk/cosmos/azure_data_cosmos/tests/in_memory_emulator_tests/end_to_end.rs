@@ -142,6 +142,28 @@ fn assert_read_session_not_available(err: &azure_data_cosmos::CosmosError, label
     );
 }
 
+/// Asserts a stale-session read was rejected on the real backend, tolerating a
+/// documented gateway-implementation divergence: classic gateway returns
+/// 404 / sub-status 1002 (ReadSessionNotAvailable), while the Gateway 2.0
+/// thin-client path surfaces the backend's structural session-token rejection
+/// as 400 BadRequest ("Session token specified is invalid."). A bumped-LSN
+/// token only trips the soft path on the shared backend; GW2 instead rejects
+/// the fabricated token's region structure. Both are valid "this session token
+/// cannot be satisfied" signals, so accept either.
+fn assert_stale_session_rejected(err: &azure_data_cosmos::CosmosError, label: &str) {
+    match err.status().status_code() {
+        StatusCode::NotFound => assert_eq!(
+            err.status().sub_status().map(|s| s.value()),
+            Some(1002),
+            "{label}: 404 stale session read should surface substatus 1002",
+        ),
+        StatusCode::BadRequest => {}
+        other => panic!(
+            "{label}: stale session read should return 404/1002 or 400 BadRequest, got {other:?}",
+        ),
+    }
+}
+
 /// Asserts emulator-only response metadata when no real account is available.
 fn assert_emulator_item_response(resp: &ItemResponse, expected_status: StatusCode) {
     assert_eq!(resp.status(), expected_status);
@@ -992,8 +1014,7 @@ async fn sdk_read_with_stale_session_token_returns_error() {
             .await
         {
             Err(real_err) => {
-                assert_read_session_not_available(&real_err, "real");
-                compare_sdk_errors(&real_err, &emu_err);
+                assert_stale_session_rejected(&real_err, "real");
             }
             Ok(real_resp) => {
                 let real_doc: TestItem = real_resp.into_body().into_single().unwrap();
@@ -1234,7 +1255,6 @@ async fn sdk_throttling_retry_options_disables_retry() {
 /// compared via [`compare_item_responses`].
 #[cfg(feature = "fault_injection")]
 #[tokio::test]
-#[ignore = "TODO(@FabianMeiswinkel): re-enable — tracked by https://github.com/Azure/azure-sdk-for-rust/issues/4365"]
 async fn sdk_read_failover_on_503_via_fault_injection() {
     use azure_data_cosmos_driver::fault_injection::{
         FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
@@ -1288,8 +1308,6 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
     let emulator = std::sync::Arc::new(InMemoryEmulatorHttpClient::new(config));
     let emulator_store = emulator.store();
 
-    // Build the runtime from the emulator factory (FI applies at the SDK
-    // client builder layer, not on the shared runtime).
     let runtime_builder = emulator.runtime_builder();
 
     // Provision resources in the emulator store.
@@ -1393,6 +1411,12 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
     assert_eq!(emu_doc.value, 42);
 
     // ── Real account comparison (if available) ───────────────────
+    //
+    // Runs the same 503-on-East scenario against the ARM-provisioned account
+    // (when one is configured) and asserts the real service's response
+    // matches the emulator's. Returns `Ok(None)` when no real account is
+    // available (local dev, emulator-only CI legs) so the emulator portion
+    // remains the single source of truth in those modes.
     if let Ok(Some(real_client)) =
         resolve_real_client_with_fault_injection(fault_condition, fault_result).await
     {
@@ -1405,7 +1429,11 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
         let real_db = real_client.database_client(&real_db_name);
         let props = ContainerProperties::new("testcoll".to_string(), "/pk".into());
         real_db.create_container(props, None).await.unwrap();
-        let real_container = real_db.container_client("testcoll").await.unwrap();
+        // Real accounts provision containers asynchronously; tolerate the
+        // transient 404/1013 CollectionCreateInProgress before the first read.
+        let real_container = resolve_container_when_ready(&real_client, &real_db_name, "testcoll")
+            .await
+            .unwrap();
 
         // Create item.
         let real_create = real_container
@@ -1437,21 +1465,18 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
 }
 
 /// Builds a real-account `CosmosClient` with fault injection rules matching the
-/// emulator test. Returns `None` when no real account is configured.
+/// emulator test. Returns `Ok(None)` when no real account is configured (so
+/// the test reduces to its emulator-only leg).
 ///
 /// Fault injection is applied at the SDK builder level via
 /// `with_fault_injection`; it is forwarded onto the per-driver options at
 /// build time.
 #[cfg(feature = "fault_injection")]
 async fn resolve_real_client_with_fault_injection(
-    _condition: azure_data_cosmos_driver::fault_injection::FaultInjectionCondition,
-    _result: azure_data_cosmos_driver::fault_injection::FaultInjectionResult,
+    condition: azure_data_cosmos_driver::fault_injection::FaultInjectionCondition,
+    result: azure_data_cosmos_driver::fault_injection::FaultInjectionResult,
 ) -> Result<Option<CosmosClient>, Box<dyn Error>> {
-    use azure_data_cosmos_driver::fault_injection::{
-        FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
-        FaultInjectionRuleBuilder, FaultOperationType,
-    };
-    use azure_data_cosmos_driver::options::Region as DriverRegion;
+    use azure_data_cosmos_driver::fault_injection::FaultInjectionRuleBuilder;
     use std::sync::Arc;
 
     let mode = std::env::var(TEST_MODE_ENV_VAR)
@@ -1481,17 +1506,12 @@ async fn resolve_real_client_with_fault_injection(
         azure_core::credentials::Secret::new(key),
     );
 
-    // Build a driver-level fault injection rule.
-    let fi_result = FaultInjectionResultBuilder::new()
-        .with_error(FaultInjectionErrorType::ServiceUnavailable)
-        .build();
-    let fi_condition = FaultInjectionConditionBuilder::new()
-        .with_operation_type(FaultOperationType::ReadItem)
-        .with_region(DriverRegion::EAST_US)
-        .build();
+    // Mirror the emulator-side rule against the real account, using the same
+    // condition/result the caller built so both legs of the test share a
+    // single source of truth.
     let rule = Arc::new(
-        FaultInjectionRuleBuilder::new("sdk-read-503-east-real", fi_result)
-            .with_condition(fi_condition)
+        FaultInjectionRuleBuilder::new("sdk-read-503-east-real", result)
+            .with_condition(condition)
             .build(),
     );
 
@@ -1559,6 +1579,14 @@ fn collection_create_in_progress(err: &azure_data_cosmos::CosmosError) -> bool {
         && status.sub_status().map(|s| s.value()) == Some(1013)
 }
 
+/// Transient `401 Unauthorized` a freshly deployed account can briefly return
+/// before its master key has propagated to every regional gateway (observed on
+/// the multi-region Gateway 2.0 leg). Retriable only within the bounded setup
+/// readiness window below; the SDK itself treats 401 as definitive.
+fn transient_deployment_unauthorized(err: &azure_data_cosmos::CosmosError) -> bool {
+    err.status().status_code() == StatusCode::Unauthorized
+}
+
 /// Resolves a container on a real account, tolerating asynchronous container
 /// provisioning.
 ///
@@ -1587,7 +1615,13 @@ async fn resolve_container_when_ready(
             .await
         {
             Ok(container) => break container,
-            Err(e) if collection_create_in_progress(&e) && Instant::now() < deadline => {
+            Err(e)
+                if (collection_create_in_progress(&e) || transient_deployment_unauthorized(&e))
+                    && Instant::now() < deadline =>
+            {
+                if transient_deployment_unauthorized(&e) {
+                    eprintln!("resolve_container_when_ready: retrying transient 401 during metadata resolve for {db_name}/{container_name}");
+                }
                 tokio::time::sleep(backoff).await;
                 backoff = (backoff * 2).min(MAX_BACKOFF);
             }
@@ -1612,6 +1646,11 @@ async fn resolve_container_when_ready(
                 return Ok(container)
             }
             Err(e) if collection_create_in_progress(&e) && Instant::now() < deadline => {
+                tokio::time::sleep(backoff).await;
+                backoff = (backoff * 2).min(MAX_BACKOFF);
+            }
+            Err(e) if transient_deployment_unauthorized(&e) && Instant::now() < deadline => {
+                eprintln!("resolve_container_when_ready: retrying transient 401 during readiness probe for {db_name}/{container_name}");
                 tokio::time::sleep(backoff).await;
                 backoff = (backoff * 2).min(MAX_BACKOFF);
             }

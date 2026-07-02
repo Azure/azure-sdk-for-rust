@@ -4,8 +4,9 @@
 //! Unified lock-free location state store.
 
 use std::{
+    collections::HashSet,
     sync::{
-        atomic::{AtomicU64, Ordering},
+        atomic::{AtomicBool, AtomicU64, Ordering},
         Arc, Weak,
     },
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
@@ -18,7 +19,10 @@ use url::Url;
 #[cfg(feature = "tokio")]
 use crate::driver::transport::background_task_manager::BackgroundTaskManager;
 use crate::{
-    driver::cache::{AccountMetadataCache, AccountProperties},
+    driver::{
+        cache::{AccountMetadataCache, AccountProperties},
+        transport::connectivity_probe::{ConnectivityProbe, ProbeOutcome, ProbeRole},
+    },
     models::AccountEndpoint,
     options::{PartitionFailoverOptions, Region},
 };
@@ -97,7 +101,21 @@ pub(crate) struct LocationStateStore {
     account_refresh_fn: AccountRefreshFn,
     default_endpoint: CosmosEndpoint,
     preferred_regions: Vec<Region>,
-    gateway20_enabled: bool,
+    gateway_v2_enabled: bool,
+    /// Probe used to validate Gateway 2.0 (thin-client) proxy endpoints
+    /// after every account-metadata refresh. When `None`, Gateway 2.0 is
+    /// gated only by `gateway_v2_enabled` and the presence of advertised
+    /// thin-client endpoints (today's behavior). When `Some`, a failing
+    /// probe flips `gateway_v2_runtime_blocked` and suppresses Gateway 2.0
+    /// from the routing snapshot until a subsequent probe succeeds.
+    connectivity_probe: Option<Arc<dyn ConnectivityProbe>>,
+    /// Runtime gate set by `run_connectivity_probe`. When `true`, the
+    /// rebuilt snapshot drops Gateway 2.0 URLs even though
+    /// `gateway_v2_enabled` is on and the service advertises thin-client
+    /// endpoints. Defaults to `false` (fail-open) so behavior is unchanged
+    /// when no probe is wired.
+    gateway_v2_runtime_blocked: AtomicBool,
+    probe_succeeded_regions: std::sync::Mutex<HashSet<Region>>,
     endpoint_unavailability_ttl: Duration,
     refresh_interval: Duration,
     last_refresh_epoch_ms: AtomicU64,
@@ -164,10 +182,11 @@ impl LocationStateStore {
         account_endpoint: AccountEndpoint,
         default_endpoint: CosmosEndpoint,
         account_refresh_fn: AccountRefreshFn,
-        gateway20_enabled: bool,
+        gateway_v2_enabled: bool,
         endpoint_unavailability_ttl: Duration,
         partition_failover_options: PartitionFailoverOptions,
         preferred_regions: Vec<Region>,
+        connectivity_probe: Option<Arc<dyn ConnectivityProbe>>,
     ) -> Self {
         let account_state = AccountEndpointState::single(default_endpoint.clone());
         let partition_state = PartitionEndpointState::new(partition_failover_options);
@@ -185,7 +204,10 @@ impl LocationStateStore {
             account_refresh_fn,
             default_endpoint,
             preferred_regions,
-            gateway20_enabled,
+            gateway_v2_enabled,
+            connectivity_probe,
+            gateway_v2_runtime_blocked: AtomicBool::new(false),
+            probe_succeeded_regions: std::sync::Mutex::new(HashSet::new()),
             endpoint_unavailability_ttl,
             // Rate limit for event-driven refreshes emitted by
             // `LocationEffect::RefreshAccountProperties` (e.g. retry policies
@@ -206,6 +228,25 @@ impl LocationStateStore {
     /// Returns the default endpoint.
     pub fn default_endpoint(&self) -> &CosmosEndpoint {
         &self.default_endpoint
+    }
+
+    /// Returns the global database account name for Gateway 2.0's
+    /// `GlobalDatabaseAccountName` RNTBD token.
+    ///
+    /// Prefers the account metadata `id` — matching the Java SDK, whose
+    /// thin-client path uses `getLatestDatabaseAccount().getId()` — and falls
+    /// back to parsing the customer-provided global endpoint hostname when
+    /// metadata has not been synced yet or carries no id. The DNS fallback is
+    /// brittle for custom-domain/sovereign hosts, so the metadata id is always
+    /// preferred when available.
+    pub fn global_database_account_name(&self) -> Option<String> {
+        if let Some(props) = self.last_synced_properties.lock().unwrap().as_ref() {
+            let id = props.id.trim();
+            if !id.is_empty() {
+                return Some(id.to_owned());
+            }
+        }
+        AccountEndpoint::new(self.default_endpoint.url().clone()).global_database_account_name()
     }
 
     /// Returns a snapshot of account and partition state.
@@ -466,8 +507,173 @@ impl LocationStateStore {
         self.last_refresh_epoch_ms
             .store(epoch_millis(), Ordering::Release);
 
+        // Probe Gateway 2.0 proxy endpoints BEFORE syncing into the routing
+        // snapshot, so the subsequent rebuild reflects the probe outcome
+        // (via `effective_gateway_v2_enabled`). A transition in the probe
+        // gate clears `last_synced_etag` inside the helper so the same-etag
+        // fast path in `sync_account_properties` does not skip the rebuild.
+        self.run_connectivity_probe(&properties).await;
+
         let default_endpoint = self.default_endpoint.clone();
         self.sync_account_properties(properties, &default_endpoint);
+    }
+
+    /// Runs the Gateway 2.0 connectivity probe, then syncs the routing
+    /// snapshot from `properties`. Used on bootstrap so the first operation
+    /// routes against a probe-verified snapshot rather than the optimistic
+    /// "Gateway 2.0 on" snapshot that `build_account_endpoint_state` derives
+    /// from `thinClient*Locations` alone.
+    pub async fn sync_account_properties_with_probe(
+        &self,
+        properties: Arc<AccountProperties>,
+        default_endpoint: &CosmosEndpoint,
+    ) {
+        self.run_connectivity_probe(&properties).await;
+        self.sync_account_properties(properties, default_endpoint);
+    }
+
+    /// Returns `gateway_v2_enabled && !gateway_v2_runtime_blocked`. The
+    /// snapshot builder uses this in place of the static configured flag so
+    /// a failed connectivity probe transparently disables Gateway 2.0
+    /// routing without changing the operator-facing toggle.
+    fn effective_gateway_v2_enabled(&self) -> bool {
+        self.gateway_v2_enabled && !self.gateway_v2_runtime_blocked.load(Ordering::Acquire)
+    }
+
+    /// Runs the wired connectivity probe against the Gateway 2.0 endpoints
+    /// advertised in `properties` and updates `gateway_v2_runtime_blocked`.
+    ///
+    /// The probe is *sticky*: once a region's proxy endpoint returns `200`
+    /// it is recorded in `probe_succeeded_regions` permanently and is never
+    /// re-probed. Each cycle only probes the *delta* — currently-advertised
+    /// regions not yet proven — so a transient failure in one region cannot
+    /// flip a region that already succeeded.
+    ///
+    /// No-ops when:
+    /// * no probe is wired (constructor passed `None`),
+    /// * `gateway_v2_enabled` is false (operator-disabled), or
+    /// * the account metadata contains no thin-client endpoints (then
+    ///   `effective_gateway_v2_enabled` is moot — the snapshot rebuild
+    ///   cannot pick up Gateway 2.0 URLs that were never returned).
+    ///
+    /// On a probe state transition (blocked ↔ unblocked) the
+    /// `last_synced_etag` is cleared so the immediately-following
+    /// `sync_account_properties` call rebuilds the snapshot even when the
+    /// server returned an unchanged etag.
+    async fn run_connectivity_probe(&self, properties: &AccountProperties) {
+        let Some(probe) = self.connectivity_probe.as_ref() else {
+            return;
+        };
+        if !self.gateway_v2_enabled {
+            return;
+        }
+
+        let mut endpoints: Vec<(Region, ProbeRole, Url)> = Vec::with_capacity(
+            properties.thin_client_writable_locations.len()
+                + properties.thin_client_readable_locations.len(),
+        );
+        for loc in &properties.thin_client_writable_locations {
+            endpoints.push((
+                loc.name.clone(),
+                ProbeRole::Write,
+                loc.database_account_endpoint.url().clone(),
+            ));
+        }
+        for loc in &properties.thin_client_readable_locations {
+            endpoints.push((
+                loc.name.clone(),
+                ProbeRole::Read,
+                loc.database_account_endpoint.url().clone(),
+            ));
+        }
+
+        if endpoints.is_empty() {
+            // No advertised Gateway 2.0 endpoints. Reset the gate so a
+            // future iteration that DOES advertise endpoints starts from
+            // unblocked, and the snapshot naturally falls back to Gateway
+            // V1 because `build_account_endpoint_state` has no thin-client
+            // URLs to pick up. The success cache is intentionally left
+            // intact — proven regions stay proven if they reappear.
+            let was_blocked = self
+                .gateway_v2_runtime_blocked
+                .swap(false, Ordering::AcqRel);
+            if was_blocked {
+                self.last_synced_etag.lock().unwrap().clear();
+            }
+            return;
+        }
+
+        let known_regions: HashSet<Region> = endpoints
+            .iter()
+            .map(|(region, _, _)| region.clone())
+            .collect();
+
+        // Probe only the delta: advertised regions not yet proven. A region
+        // already in the success cache is never re-probed.
+        let delta: Vec<(Region, ProbeRole, Url)> = {
+            let cache = self.probe_succeeded_regions.lock().unwrap();
+            endpoints
+                .into_iter()
+                .filter(|(region, _, _)| !cache.contains(region))
+                .collect()
+        };
+
+        // Recompute the gate against the permanent cache (no probe needed when
+        // the delta is empty — every advertised region is already proven).
+        let now_blocked = if delta.is_empty() {
+            let cache = self.probe_succeeded_regions.lock().unwrap();
+            !known_regions.iter().all(|region| cache.contains(region))
+        } else {
+            let outcome = probe.probe_endpoints(delta.clone()).await;
+
+            let failing_regions: HashSet<&Region> = match &outcome {
+                ProbeOutcome::AllHealthy => HashSet::new(),
+                ProbeOutcome::Failed { failures } => {
+                    failures.iter().map(|(region, _)| region).collect()
+                }
+            };
+
+            // Every probed region that did not fail succeeded — record it
+            // permanently so it is excluded from future probe cycles.
+            {
+                let mut cache = self.probe_succeeded_regions.lock().unwrap();
+                for (region, _, _) in &delta {
+                    if !failing_regions.contains(region) {
+                        cache.insert(region.clone());
+                    }
+                }
+            }
+
+            if let ProbeOutcome::Failed { failures } = &outcome {
+                for (region, failure) in failures {
+                    tracing::warn!(
+                        endpoint = %self.account_endpoint,
+                        region = %region,
+                        failure = %failure,
+                        "Gateway 2.0 connectivity probe failed",
+                    );
+                }
+            }
+
+            let cache = self.probe_succeeded_regions.lock().unwrap();
+            !known_regions.iter().all(|region| cache.contains(region))
+        };
+
+        let was_blocked = self
+            .gateway_v2_runtime_blocked
+            .swap(now_blocked, Ordering::AcqRel);
+
+        if was_blocked != now_blocked {
+            // Clear the etag so the same-etag fast path in
+            // `sync_account_properties` does not skip the rebuild that has
+            // to flip Gateway 2.0 routing on or off.
+            self.last_synced_etag.lock().unwrap().clear();
+            tracing::info!(
+                endpoint = %self.account_endpoint,
+                gateway_v2_runtime_blocked = now_blocked,
+                "LocationStateStore: Gateway 2.0 connectivity probe state changed",
+            );
+        }
     }
 
     /// Updates account state from properties using a CAS loop that preserves
@@ -504,7 +710,7 @@ impl LocationStateStore {
                 &properties,
                 default_endpoint.clone(),
                 Some(current.generation),
-                self.gateway20_enabled,
+                self.effective_gateway_v2_enabled(),
                 &self.preferred_regions,
             );
             // Carry forward all unavailability marks from the current state.
@@ -951,6 +1157,7 @@ mod tests {
             Duration::from_secs(60),
             PartitionFailoverOptions::default(),
             Vec::new(),
+            None,
         );
 
         store
@@ -962,6 +1169,59 @@ mod tests {
 
         let snapshot = store.snapshot();
         assert_eq!(snapshot.account.unavailable_endpoints.len(), 1);
+    }
+
+    #[test]
+    fn global_database_account_name_prefers_metadata_id() {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
+            let payload = test_refresh_payload();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move { Ok(payload) });
+            fut
+        });
+
+        let store = LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint.clone(),
+            refresh,
+            false,
+            Duration::from_secs(60),
+            PartitionFailoverOptions::default(),
+            Vec::new(),
+            None,
+        );
+
+        // Before any sync, falls back to parsing the global endpoint host
+        // (`test.documents.azure.com` -> `test`).
+        assert_eq!(
+            store.global_database_account_name().as_deref(),
+            Some("test")
+        );
+
+        // After sync, the metadata `id` wins even when it differs from the
+        // DNS-derived label.
+        let properties = Arc::new(AccountProperties {
+            id: "global-account-name".into(),
+            ..default_account_properties()
+        });
+        store.sync_account_properties(properties, &default_endpoint);
+        assert_eq!(
+            store.global_database_account_name().as_deref(),
+            Some("global-account-name")
+        );
+
+        // An empty metadata `id` falls back to the DNS-derived label.
+        let blank_id = Arc::new(AccountProperties {
+            id: String::new(),
+            ..default_account_properties()
+        });
+        store.sync_account_properties(blank_id, &default_endpoint);
+        assert_eq!(
+            store.global_database_account_name().as_deref(),
+            Some("test")
+        );
     }
 
     #[cfg(feature = "tokio")]
@@ -985,6 +1245,7 @@ mod tests {
             Duration::ZERO,
             PartitionFailoverOptions::default(),
             Vec::new(),
+            None,
         );
 
         store
@@ -1043,6 +1304,7 @@ mod tests {
                 Duration::from_secs(60),
                 PartitionFailoverOptions::default(),
                 Vec::new(),
+                None,
             )
         };
 
@@ -1118,6 +1380,7 @@ mod tests {
             Duration::from_secs(60),
             PartitionFailoverOptions::default(),
             Vec::new(),
+            None,
         );
 
         let properties = Arc::new(test_refresh_payload());
@@ -1179,6 +1442,7 @@ mod tests {
             Duration::from_secs(60),
             PartitionFailoverOptions::default(),
             Vec::new(),
+            None,
         );
 
         store
@@ -1235,6 +1499,7 @@ mod tests {
             Duration::from_secs(60),
             PartitionFailoverOptions::default(),
             Vec::new(),
+            None,
         );
 
         // First refresh: fails. Should NOT advance last_refresh_epoch_ms,
@@ -1296,6 +1561,7 @@ mod tests {
             Duration::from_secs(60),
             PartitionFailoverOptions::default(),
             Vec::new(),
+            None,
         );
 
         // Bootstrap: succeeds, seeds the cache.
@@ -1326,6 +1592,281 @@ mod tests {
         assert!(
             Arc::ptr_eq(&after_bootstrap, &after_failed_refresh),
             "failed refresh must leave the exact same Arc in the cache",
+        );
+    }
+
+    /// End-to-end coverage for the "service stops advertising Gateway 2.0"
+    /// fallback. The store is initialized with `gateway_v2_enabled=true`,
+    /// then fed two successive `AccountProperties` payloads via
+    /// `sync_account_properties` (the same path exercised by both the
+    /// event-driven refresh and the background 5-minute refresh loop):
+    ///
+    /// 1. First payload includes `thinClient*Locations`. The rebuilt
+    ///    snapshot must carry `gateway_v2_url` on every preferred endpoint
+    ///    and `uses_gateway_v2(true)` must report `true`.
+    /// 2. Second payload omits `thinClient*Locations` entirely, simulating
+    ///    the database-account call no longer returning thin-client
+    ///    endpoints. The rebuilt snapshot must drop the `gateway_v2_url`,
+    ///    causing subsequent operations to route through the standard
+    ///    compute gateway even though the operator-level toggle is still
+    ///    on.
+    ///
+    /// This test mocks the refresh function (no live infra required) and
+    /// verifies the dynamic transport switch end-to-end through the same
+    /// state machine that runs in production.
+    #[test]
+    fn sync_account_properties_drops_gateway_v2_when_thin_client_locations_disappear() {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        // The refresh fn is unused in this test — sync_account_properties
+        // is called directly with explicit payloads.
+        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
+            let payload = test_refresh_payload();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move { Ok(payload) });
+            fut
+        });
+
+        let store = LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint.clone(),
+            refresh,
+            // gateway_v2_enabled — operator has Gateway 2.0 on.
+            true,
+            Duration::from_secs(60),
+            PartitionFailoverOptions::default(),
+            Vec::new(),
+            None,
+        );
+
+        // ── First refresh: service advertises Gateway 2.0 endpoints. ─────
+        let with_g2: AccountProperties = serde_json::from_value(serde_json::json!({
+            "_self": "",
+            "id": "test",
+            "_rid": "test.documents.azure.com",
+            "_etag": "etag-with-g2",
+            "media": "//media/",
+            "addresses": "//addresses/",
+            "_dbs": "//dbs/",
+            "writableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com:443/" }],
+            "readableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com:443/" }],
+            "thinClientWritableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus-thin.documents.azure.com:444/" }],
+            "thinClientReadableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus-thin.documents.azure.com:444/" }],
+            "enableMultipleWriteLocations": false,
+            "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
+            "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
+            "queryEngineConfiguration": "{}"
+        })).unwrap();
+        store.sync_account_properties(Arc::new(with_g2), &default_endpoint);
+
+        let snap_g2 = store.snapshot();
+        assert!(
+            snap_g2.account.preferred_read_endpoints[0]
+                .gateway_v2_url()
+                .is_some(),
+            "after first refresh the read endpoint must carry a Gateway 2.0 URL"
+        );
+        assert!(
+            snap_g2.account.preferred_write_endpoints[0]
+                .gateway_v2_url()
+                .is_some(),
+            "after first refresh the write endpoint must carry a Gateway 2.0 URL"
+        );
+        assert!(
+            snap_g2.account.preferred_read_endpoints[0].uses_gateway_v2(true),
+            "request pipeline must route reads via Gateway 2.0 while the service advertises thin-client endpoints"
+        );
+        assert!(
+            snap_g2.account.preferred_write_endpoints[0].uses_gateway_v2(true),
+            "request pipeline must route writes via Gateway 2.0 while the service advertises thin-client endpoints"
+        );
+
+        // ── Second refresh: service stops advertising Gateway 2.0. ───────
+        // Same standard locations + a different etag (otherwise the
+        // etag-equality fast path would skip the rebuild). No
+        // `thinClient*Locations`.
+        let without_g2: AccountProperties = serde_json::from_value(serde_json::json!({
+            "_self": "",
+            "id": "test",
+            "_rid": "test.documents.azure.com",
+            "_etag": "etag-without-g2",
+            "media": "//media/",
+            "addresses": "//addresses/",
+            "_dbs": "//dbs/",
+            "writableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com:443/" }],
+            "readableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com:443/" }],
+            "enableMultipleWriteLocations": false,
+            "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
+            "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
+            "queryEngineConfiguration": "{}"
+        })).unwrap();
+        store.sync_account_properties(Arc::new(without_g2), &default_endpoint);
+
+        let snap_fallback = store.snapshot();
+        assert!(
+            snap_fallback.account.generation > snap_g2.account.generation,
+            "second sync must bump generation so callers re-resolve endpoints"
+        );
+        assert!(
+            snap_fallback.account.preferred_read_endpoints[0]
+                .gateway_v2_url()
+                .is_none(),
+            "read endpoint must lose its Gateway 2.0 URL after the service stops advertising thinClientReadableLocations"
+        );
+        assert!(
+            snap_fallback.account.preferred_write_endpoints[0]
+                .gateway_v2_url()
+                .is_none(),
+            "write endpoint must lose its Gateway 2.0 URL after the service stops advertising thinClientWritableLocations"
+        );
+        assert!(
+            !snap_fallback.account.preferred_read_endpoints[0].uses_gateway_v2(true),
+            "request pipeline must fall back to the compute gateway for reads even though the operator toggle is still on"
+        );
+        assert!(
+            !snap_fallback.account.preferred_write_endpoints[0].uses_gateway_v2(true),
+            "request pipeline must fall back to the compute gateway for writes even though the operator toggle is still on"
+        );
+        // The compute gateway URL itself must be unchanged — only the
+        // Gateway 2.0 overlay is removed.
+        assert_eq!(
+            snap_fallback.account.preferred_read_endpoints[0]
+                .selected_url(true)
+                .as_str(),
+            "https://test-eastus.documents.azure.com/",
+            "fallback URL must be the standard compute-gateway URL from writable/readableLocations"
+        );
+    }
+
+    /// End-to-end coverage for the "service starts advertising Gateway 2.0"
+    /// adoption. The store is initialized with `gateway_v2_enabled=true`,
+    /// then fed two successive `AccountProperties` payloads via
+    /// `sync_account_properties`:
+    ///
+    /// 1. First payload omits `thinClient*Locations`, simulating a client
+    ///    that bootstraps against an account still on the standard gateway.
+    ///    The rebuilt snapshot must have no `gateway_v2_url` and
+    ///    `uses_gateway_v2(true)` must report `false`.
+    /// 2. Second payload adds `thinClient*Locations`, simulating the
+    ///    database-account call beginning to return thin-client endpoints.
+    ///    The rebuilt snapshot must adopt `gateway_v2_url` on every preferred
+    ///    endpoint, bump the generation, and flip `uses_gateway_v2(true)` to
+    ///    `true` so subsequent operations route through Gateway 2.0.
+    #[test]
+    fn sync_account_properties_adopts_gateway_v2_when_thin_client_locations_appear() {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
+            let payload = test_refresh_payload();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move { Ok(payload) });
+            fut
+        });
+
+        let store = LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint.clone(),
+            refresh,
+            // gateway_v2_enabled — operator has Gateway 2.0 on.
+            true,
+            Duration::from_secs(60),
+            PartitionFailoverOptions::default(),
+            Vec::new(),
+            None,
+        );
+
+        // ── First refresh: service advertises only standard locations. ───
+        let without_g2: AccountProperties = serde_json::from_value(serde_json::json!({
+            "_self": "",
+            "id": "test",
+            "_rid": "test.documents.azure.com",
+            "_etag": "etag-without-g2",
+            "media": "//media/",
+            "addresses": "//addresses/",
+            "_dbs": "//dbs/",
+            "writableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com:443/" }],
+            "readableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com:443/" }],
+            "enableMultipleWriteLocations": false,
+            "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
+            "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
+            "queryEngineConfiguration": "{}"
+        })).unwrap();
+        store.sync_account_properties(Arc::new(without_g2), &default_endpoint);
+
+        let snap_g1 = store.snapshot();
+        assert!(
+            snap_g1.account.preferred_read_endpoints[0]
+                .gateway_v2_url()
+                .is_none(),
+            "before the service advertises thin-client endpoints the read endpoint must carry no Gateway 2.0 URL"
+        );
+        assert!(
+            snap_g1.account.preferred_write_endpoints[0]
+                .gateway_v2_url()
+                .is_none(),
+            "before the service advertises thin-client endpoints the write endpoint must carry no Gateway 2.0 URL"
+        );
+        assert!(
+            !snap_g1.account.preferred_read_endpoints[0].uses_gateway_v2(true),
+            "request pipeline must route reads via the standard gateway while no thin-client endpoints are advertised"
+        );
+        assert!(
+            !snap_g1.account.preferred_write_endpoints[0].uses_gateway_v2(true),
+            "request pipeline must route writes via the standard gateway while no thin-client endpoints are advertised"
+        );
+
+        // ── Second refresh: service starts advertising Gateway 2.0. ──────
+        let with_g2: AccountProperties = serde_json::from_value(serde_json::json!({
+            "_self": "",
+            "id": "test",
+            "_rid": "test.documents.azure.com",
+            "_etag": "etag-with-g2",
+            "media": "//media/",
+            "addresses": "//addresses/",
+            "_dbs": "//dbs/",
+            "writableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com:443/" }],
+            "readableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com:443/" }],
+            "thinClientWritableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus-thin.documents.azure.com:444/" }],
+            "thinClientReadableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus-thin.documents.azure.com:444/" }],
+            "enableMultipleWriteLocations": false,
+            "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
+            "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
+            "queryEngineConfiguration": "{}"
+        })).unwrap();
+        store.sync_account_properties(Arc::new(with_g2), &default_endpoint);
+
+        let snap_g2 = store.snapshot();
+        assert!(
+            snap_g2.account.generation > snap_g1.account.generation,
+            "adopting Gateway 2.0 must bump generation so callers re-resolve endpoints"
+        );
+        assert!(
+            snap_g2.account.preferred_read_endpoints[0]
+                .gateway_v2_url()
+                .is_some(),
+            "read endpoint must gain a Gateway 2.0 URL once the service advertises thinClientReadableLocations"
+        );
+        assert!(
+            snap_g2.account.preferred_write_endpoints[0]
+                .gateway_v2_url()
+                .is_some(),
+            "write endpoint must gain a Gateway 2.0 URL once the service advertises thinClientWritableLocations"
+        );
+        assert!(
+            snap_g2.account.preferred_read_endpoints[0].uses_gateway_v2(true),
+            "request pipeline must route reads via Gateway 2.0 once thin-client endpoints are advertised"
+        );
+        assert!(
+            snap_g2.account.preferred_write_endpoints[0].uses_gateway_v2(true),
+            "request pipeline must route writes via Gateway 2.0 once thin-client endpoints are advertised"
         );
     }
 
@@ -1362,6 +1903,7 @@ mod tests {
             Duration::from_secs(60),
             PartitionFailoverOptions::default(),
             Vec::new(),
+            None,
         );
 
         let canary = Arc::new(());
@@ -1428,6 +1970,233 @@ mod tests {
         );
     }
 
+    /// Mock probe used by the runtime-gating tests below. Returns a canned
+    /// [`ProbeOutcome`] on every call and tracks how many times it was
+    /// invoked so the tests can assert refresh-driven probing.
+    #[derive(Debug)]
+    struct MockProbe {
+        outcome: std::sync::Mutex<ProbeOutcome>,
+        calls: AtomicUsize,
+    }
+
+    impl MockProbe {
+        fn new(outcome: ProbeOutcome) -> Self {
+            Self {
+                outcome: std::sync::Mutex::new(outcome),
+                calls: AtomicUsize::new(0),
+            }
+        }
+
+        fn set_outcome(&self, outcome: ProbeOutcome) {
+            *self.outcome.lock().unwrap() = outcome;
+        }
+    }
+
+    #[async_trait::async_trait]
+    impl ConnectivityProbe for MockProbe {
+        async fn probe_endpoints(&self, _: Vec<(Region, ProbeRole, Url)>) -> ProbeOutcome {
+            self.calls.fetch_add(1, Ordering::SeqCst);
+            self.outcome.lock().unwrap().clone()
+        }
+    }
+
+    fn refresh_payload_with_g2() -> AccountProperties {
+        serde_json::from_value(serde_json::json!({
+            "_self": "",
+            "id": "test",
+            "_rid": "test.documents.azure.com",
+            "_etag": "etag-with-g2",
+            "media": "//media/",
+            "addresses": "//addresses/",
+            "_dbs": "//dbs/",
+            "writableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com:443/" }],
+            "readableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com:443/" }],
+            "thinClientWritableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus-thin.documents.azure.com:10250/" }],
+            "thinClientReadableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus-thin.documents.azure.com:10250/" }],
+            "enableMultipleWriteLocations": false,
+            "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
+            "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
+            "queryEngineConfiguration": "{}"
+        }))
+        .unwrap()
+    }
+
+    /// A failing connectivity probe must suppress Gateway 2.0 from the
+    /// rebuilt routing snapshot even though `gateway_v2_enabled = true` and
+    /// the account metadata still advertises thin-client endpoints. After
+    /// a subsequent successful probe (with the SAME etag — exercises the
+    /// transition-clears-etag path), the next refresh must restore
+    /// Gateway 2.0 routing without a server-side metadata change.
+    #[cfg(feature = "tokio")]
+    #[tokio::test]
+    async fn connectivity_probe_failure_suppresses_gateway_v2_then_recovers() {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+
+        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
+            let payload = refresh_payload_with_g2();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move { Ok(payload) });
+            fut
+        });
+
+        let probe = Arc::new(MockProbe::new(ProbeOutcome::Failed {
+            failures: vec![(
+                "eastus".into(),
+                crate::driver::transport::connectivity_probe::ProbeFailure::Status(503),
+            )],
+        }));
+
+        let store = Arc::new(LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint.clone(),
+            refresh,
+            true,
+            Duration::from_secs(60),
+            PartitionFailoverOptions::default(),
+            Vec::new(),
+            Some(probe.clone() as Arc<dyn ConnectivityProbe>),
+        ));
+
+        // First refresh: probe fails — snapshot must NOT carry Gateway 2.0 URLs.
+        store.force_refresh_account_properties().await;
+        assert_eq!(probe.calls.load(Ordering::SeqCst), 1);
+        let snap_failed = store.snapshot();
+        assert!(
+            snap_failed.account.preferred_read_endpoints[0]
+                .gateway_v2_url()
+                .is_none(),
+            "failed probe must suppress Gateway 2.0 read URL even when advertised"
+        );
+        assert!(
+            snap_failed.account.preferred_write_endpoints[0]
+                .gateway_v2_url()
+                .is_none(),
+            "failed probe must suppress Gateway 2.0 write URL even when advertised"
+        );
+
+        // Flip the probe to healthy. Server-side metadata (and etag) are
+        // unchanged — the transition path in `run_connectivity_probe` must
+        // clear the etag so the rebuild happens despite the fast-path skip.
+        probe.set_outcome(ProbeOutcome::AllHealthy);
+        store.force_refresh_account_properties().await;
+        assert_eq!(probe.calls.load(Ordering::SeqCst), 2);
+        let snap_recovered = store.snapshot();
+        assert!(
+            snap_recovered.account.preferred_read_endpoints[0]
+                .gateway_v2_url()
+                .is_some(),
+            "successful probe must restore Gateway 2.0 read URL without a metadata change"
+        );
+        assert!(
+            snap_recovered.account.preferred_write_endpoints[0]
+                .gateway_v2_url()
+                .is_some(),
+            "successful probe must restore Gateway 2.0 write URL without a metadata change"
+        );
+    }
+
+    /// Once a region's probe succeeds it is cached permanently: a later
+    /// failing outcome for the same region must NOT re-probe it (the delta
+    /// is empty) and must NOT flip Gateway 2.0 back off. This mirrors the
+    /// Java/.NET thin-client probe clients, which never re-probe a proven
+    /// endpoint for the lifetime of the client.
+    #[cfg(feature = "tokio")]
+    #[tokio::test]
+    async fn connectivity_probe_success_is_sticky_and_not_reprobed() {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+
+        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
+            let payload = refresh_payload_with_g2();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move { Ok(payload) });
+            fut
+        });
+
+        let probe = Arc::new(MockProbe::new(ProbeOutcome::AllHealthy));
+
+        let store = Arc::new(LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint.clone(),
+            refresh,
+            true,
+            Duration::from_secs(60),
+            PartitionFailoverOptions::default(),
+            Vec::new(),
+            Some(probe.clone() as Arc<dyn ConnectivityProbe>),
+        ));
+
+        // First refresh: healthy probe caches `eastus` and enables Gateway 2.0.
+        store.force_refresh_account_properties().await;
+        assert_eq!(probe.calls.load(Ordering::SeqCst), 1);
+        assert!(store.snapshot().account.preferred_read_endpoints[0]
+            .gateway_v2_url()
+            .is_some());
+
+        // Flip the probe to a failing outcome. Because `eastus` is already
+        // proven, the next refresh must skip probing entirely (delta empty)
+        // and keep Gateway 2.0 enabled.
+        probe.set_outcome(ProbeOutcome::Failed {
+            failures: vec![(
+                "eastus".into(),
+                crate::driver::transport::connectivity_probe::ProbeFailure::Status(503),
+            )],
+        });
+        store.force_refresh_account_properties().await;
+        assert_eq!(
+            probe.calls.load(Ordering::SeqCst),
+            1,
+            "a proven region must never be re-probed"
+        );
+        assert!(
+            store.snapshot().account.preferred_read_endpoints[0]
+                .gateway_v2_url()
+                .is_some(),
+            "a transient failure must not flip a region that already succeeded"
+        );
+    }
+
+    /// When no probe is wired the constructor stays fail-open, matching
+    /// today's behavior: `effective_gateway_v2_enabled` equals
+    /// `gateway_v2_enabled` and Gateway 2.0 routing is governed purely by
+    /// whether the account metadata advertises thin-client endpoints.
+    #[test]
+    fn no_probe_wired_preserves_existing_gateway_v2_behavior() {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+
+        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
+            let payload = refresh_payload_with_g2();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move { Ok(payload) });
+            fut
+        });
+
+        let store = LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint.clone(),
+            refresh,
+            true,
+            Duration::from_secs(60),
+            PartitionFailoverOptions::default(),
+            Vec::new(),
+            None,
+        );
+
+        assert!(store.effective_gateway_v2_enabled());
+        store.sync_account_properties(Arc::new(refresh_payload_with_g2()), &default_endpoint);
+        let snap = store.snapshot();
+        assert!(
+            snap.account.preferred_read_endpoints[0]
+                .gateway_v2_url()
+                .is_some(),
+            "with no probe wired the snapshot must keep Gateway 2.0 routing as before"
+        );
+    }
+
     // -- PPAF dynamic enablement (issue #4325) ----------------------------
     //
     // The driver consumes `AccountProperties.enable_per_partition_failover_behavior`
@@ -1456,6 +2225,7 @@ mod tests {
             Duration::from_secs(60),
             PartitionFailoverOptions::default(),
             Vec::new(),
+            None,
         )
     }
 

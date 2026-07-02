@@ -34,6 +34,33 @@ impl AccountEndpoint {
         self.0.host_str().unwrap_or("")
     }
 
+    /// Returns the global database account name parsed from the endpoint hostname's first label.
+    ///
+    /// Returns `None` for emulator, IP literal, and custom-domain hosts. The parsed value is used
+    /// as the RNTBD `GlobalDatabaseAccountName` metadata token on Gateway 2.0 requests; when it
+    /// cannot be parsed, Gateway 2.0 requests fall back to standard Gateway for that account.
+    pub(crate) fn global_database_account_name(&self) -> Option<String> {
+        let host = self.host();
+        if host.is_empty() {
+            return None;
+        }
+
+        if host.starts_with(|c: char| c.is_ascii_digit()) || host.contains(':') {
+            return None;
+        }
+
+        let (label, suffix) = host.split_once('.')?;
+        if label.is_empty() || suffix.is_empty() {
+            return None;
+        }
+
+        if !suffix.starts_with("documents.") {
+            return None;
+        }
+
+        Some(label.to_owned())
+    }
+
     /// Joins a resource path to this endpoint to create a full request URL.
     ///
     /// The path should be the resource path (e.g., "/dbs/mydb/colls/mycoll").
@@ -370,6 +397,33 @@ mod tests {
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
         assert_eq!(endpoint.host(), "myaccount.documents.azure.com");
+    }
+
+    #[test]
+    fn global_database_account_name_extracts_only_cosmos_hosts() {
+        let cases = [
+            ("https://myaccount.documents.azure.com/", Some("myaccount")),
+            (
+                "https://my-account-123.documents.azure.com/",
+                Some("my-account-123"),
+            ),
+            ("https://myacct.documents.azure.us/", Some("myacct")),
+            ("https://myacct.documents.azure.cn:443/", Some("myacct")),
+            ("https://localhost:8081/", None),
+            ("https://127.0.0.1:8081/", None),
+            ("https://[::1]:8081/", None),
+            ("https://my.custom.domain/", None),
+            ("https://example.com/", None),
+        ];
+
+        for (url, expected) in cases {
+            let endpoint = AccountEndpoint::try_from(url).unwrap();
+            assert_eq!(
+                endpoint.global_database_account_name().as_deref(),
+                expected,
+                "unexpected account name for {url}"
+            );
+        }
     }
 
     #[test]

@@ -84,6 +84,14 @@ pub enum FaultInjectionErrorType {
     InternalServerError,
     /// 429 from server.
     TooManyRequests,
+    /// 449 RetryWith from server.
+    ///
+    /// Simulates the transient concurrency-conflict signal that triggers
+    /// the client-side RetryWith policy
+    /// (`retry_evaluation::try_handle_retry_with`). The driver retries the
+    /// request in the same region with exponential backoff until the
+    /// cumulative-wait budget is exhausted.
+    RetryWith,
     /// 404-1002 from server.
     ReadSessionNotAvailable,
     /// 408 from server.
@@ -238,6 +246,7 @@ impl fmt::Display for FaultInjectionErrorType {
         match self {
             Self::InternalServerError => write!(f, "InternalServerError"),
             Self::TooManyRequests => write!(f, "TooManyRequests"),
+            Self::RetryWith => write!(f, "RetryWith"),
             Self::ReadSessionNotAvailable => write!(f, "ReadSessionNotAvailable"),
             Self::Timeout => write!(f, "Timeout"),
             Self::ServiceUnavailable => write!(f, "ServiceUnavailable"),
@@ -257,6 +266,7 @@ impl FromStr for FaultInjectionErrorType {
         match s {
             "InternalServerError" => Ok(Self::InternalServerError),
             "TooManyRequests" => Ok(Self::TooManyRequests),
+            "RetryWith" => Ok(Self::RetryWith),
             "ReadSessionNotAvailable" => Ok(Self::ReadSessionNotAvailable),
             "Timeout" => Ok(Self::Timeout),
             "ServiceUnavailable" => Ok(Self::ServiceUnavailable),

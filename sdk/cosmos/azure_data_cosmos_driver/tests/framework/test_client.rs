@@ -23,7 +23,8 @@ use uuid::Uuid;
 
 use super::env::{
     get_test_mode, is_azure_pipelines, CosmosTestMode, CONNECTION_STRING_ENV_VAR,
-    EMULATOR_CONNECTION_STRING,
+    EMULATOR_CONNECTION_STRING, GATEWAY_V2_ENDPOINT_ENV_VAR, GATEWAY_V2_KEY_ENV_VAR,
+    GATEWAY_V2_MULTI_REGION_ENDPOINT_ENV_VAR, GATEWAY_V2_MULTI_REGION_KEY_ENV_VAR,
 };
 
 /// A test client that provides access to a Cosmos DB driver for testing.
@@ -77,6 +78,25 @@ pub fn resolve_test_env() -> Result<Option<TestEnv>, Box<dyn Error>> {
         return Ok(None);
     }
 
+    // For `test_category = "gateway_v2"` and `"gateway_v2_multi_region"` builds,
+    // the ARM-provisioned `AZURE_COSMOS_CONNECTION_STRING` account does NOT
+    // advertise a Gateway 2.0 endpoint. Fault-injection rules scoped to
+    // `TransportKind::GatewayV2` will therefore never fire against it. Use the
+    // pre-provisioned Gateway 2.0 account whose credentials are surfaced in
+    // `AZURE_COSMOS_GW_V2_ENDPOINT` / `AZURE_COSMOS_GW_V2_KEY` by
+    // `sdk/cosmos/ci.yml`. We deliberately do NOT fall back to the standard
+    // connection string here — running gateway_v2 tests against a non-Gateway-2.0
+    // account would silently produce confusing failures (transport-kind-gated
+    // fault rules would never match).
+    #[cfg(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    ))]
+    {
+        return resolve_gateway_v2_env(test_mode);
+    }
+
+    #[allow(unreachable_code)]
     let connection_string = match std::env::var(CONNECTION_STRING_ENV_VAR) {
         Ok(val) if val.to_lowercase() == "emulator" => EMULATOR_CONNECTION_STRING.to_string(),
         Ok(val) => val,
@@ -108,6 +128,111 @@ pub fn resolve_test_env() -> Result<Option<TestEnv>, Box<dyn Error>> {
         account,
         connection_pool,
     }))
+}
+
+/// Builds a [`TestEnv`] from the pre-provisioned Gateway 2.0 account
+/// credentials.
+///
+/// Picks the endpoint/key pair based on the active `test_category`:
+///
+/// * `test_category = "gateway_v2_multi_region"` →
+///   `AZURE_COSMOS_GW_V2_MULTI_REGION_ENDPOINT` /
+///   `AZURE_COSMOS_GW_V2_MULTI_REGION_KEY` (a multi-region GW_V2 account).
+/// * `test_category = "gateway_v2"` →
+///   `AZURE_COSMOS_GW_V2_ENDPOINT` / `AZURE_COSMOS_GW_V2_KEY` (a single-region
+///   GW_V2 account).
+///
+/// Returns `Ok(None)` when both env vars are missing or empty in local-dev
+/// mode (the caller's `cfg` block returns `Ok(None)` directly). Panics on
+/// Azure Pipelines or `Required` test mode when only one of the two vars is
+/// set — that's a misconfigured pipeline rather than an intentional skip.
+#[cfg(any(
+    test_category = "gateway_v2",
+    test_category = "gateway_v2_multi_region"
+))]
+fn resolve_gateway_v2_env(test_mode: CosmosTestMode) -> Result<Option<TestEnv>, Box<dyn Error>> {
+    fn read(name: &str) -> Option<String> {
+        std::env::var(name).ok().filter(|v| !v.trim().is_empty())
+    }
+
+    // Multi-region tests need a multi-region GW_V2 account; single-region
+    // tests use the single-region account. Both fall back to "no GW_V2
+    // env vars set" rather than crossing wires between pools.
+    #[cfg(test_category = "gateway_v2_multi_region")]
+    let (endpoint_var, key_var) = (
+        GATEWAY_V2_MULTI_REGION_ENDPOINT_ENV_VAR,
+        GATEWAY_V2_MULTI_REGION_KEY_ENV_VAR,
+    );
+    #[cfg(all(
+        test_category = "gateway_v2",
+        not(test_category = "gateway_v2_multi_region")
+    ))]
+    let (endpoint_var, key_var) = (GATEWAY_V2_ENDPOINT_ENV_VAR, GATEWAY_V2_KEY_ENV_VAR);
+
+    let endpoint = read(endpoint_var);
+    let key = read(key_var);
+
+    match (endpoint, key) {
+        (Some(endpoint), Some(key)) => {
+            let normalized = normalize_gateway_v2_endpoint(&endpoint);
+            let endpoint = normalized
+                .parse()
+                .map_err(|e: url::ParseError| -> Box<dyn Error> {
+                    format!(
+                        "{} value {:?} (normalized to {:?}) is not a valid URL: {}",
+                        endpoint_var, endpoint, normalized, e,
+                    )
+                    .into()
+                })?;
+            let account = AccountReference::with_master_key(endpoint, key);
+            let connection_pool = ConnectionPoolOptions::builder().build()?;
+            Ok(Some(TestEnv {
+                account,
+                connection_pool,
+            }))
+        }
+        (None, None) => {
+            if test_mode == CosmosTestMode::Required || is_azure_pipelines() {
+                panic!(
+                    "{} / {} are not set but test_category=\"gateway_v2\" requires a \
+                     pre-provisioned Gateway 2.0 account",
+                    endpoint_var, key_var,
+                );
+            }
+            Ok(None)
+        }
+        (endpoint, key) => panic!(
+            "exactly one of {} / {} is set ({}={}, {}={}); both must be present \
+             for test_category=\"gateway_v2\"",
+            endpoint_var,
+            key_var,
+            endpoint_var,
+            if endpoint.is_some() { "set" } else { "unset" },
+            key_var,
+            if key.is_some() { "set" } else { "unset" },
+        ),
+    }
+}
+
+/// Normalizes a Gateway 2.0 endpoint string so it can be parsed by `Url::parse`:
+/// trims whitespace, prepends `https://` when no scheme is present, and appends a
+/// trailing `/` to match Cosmos's canonical `https://<host>/` form.
+#[cfg(any(
+    test_category = "gateway_v2",
+    test_category = "gateway_v2_multi_region"
+))]
+fn normalize_gateway_v2_endpoint(raw: &str) -> String {
+    let trimmed = raw.trim();
+    let with_scheme = if trimmed.contains("://") {
+        trimmed.to_owned()
+    } else {
+        format!("https://{trimmed}")
+    };
+    if with_scheme.ends_with('/') {
+        with_scheme
+    } else {
+        format!("{with_scheme}/")
+    }
 }
 
 impl DriverTestClient {

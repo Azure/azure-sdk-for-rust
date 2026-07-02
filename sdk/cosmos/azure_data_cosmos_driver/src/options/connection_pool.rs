@@ -67,7 +67,10 @@ pub struct ConnectionPoolOptions {
 
     is_http2_allowed: bool,
 
-    is_gateway20_allowed: bool,
+    /// Internal, HTTP/2-derived gate: `true` only when HTTP/2 is disallowed, in
+    /// which case the standard gateway is used. Not customer-configurable;
+    /// v1/v2 selection is otherwise server-driven.
+    gateway_v2_disabled: bool,
 
     server_certificate_validation: ServerCertificateValidation,
 
@@ -213,13 +216,15 @@ impl ConnectionPoolOptions {
         self.is_http2_allowed
     }
 
-    /// Returns whether Gateway 2.0 feature is allowed.
+    /// Returns whether the Gateway 2.0 transport is unavailable for this pool.
     ///
-    /// If `true`, the driver will use Gateway 2.0 features when communicating
-    /// with the Cosmos DB service (if the account supports it). Gateway 2.0
-    /// requires HTTP/2, so this returns `false` if HTTP/2 is disabled.
-    pub fn is_gateway20_allowed(&self) -> bool {
-        self.is_gateway20_allowed
+    /// Gateway 2.0 vs. the standard gateway is a server-driven choice (the
+    /// account advertises a Gateway 2.0 endpoint, confirmed by a runtime probe)
+    /// and is not customer-configurable. The single prerequisite the pool
+    /// enforces is HTTP/2: when HTTP/2 is disabled this returns `true` and the
+    /// driver routes every request through the standard gateway transport.
+    pub(crate) fn gateway_v2_disabled(&self) -> bool {
+        self.gateway_v2_disabled
     }
 
     /// Returns the server certificate validation setting.
@@ -272,8 +277,7 @@ impl ConnectionPoolOptions {
 /// - `AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_INTERVAL_MS`: TCP keepalive probe interval in milliseconds (default: `1_000`, min: `1_000` when set)
 /// - `AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_RETRIES`: TCP keepalive retry count (default: none, min: `1`, max: `255`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_IS_HTTP2_ALLOWED`: Whether HTTP/2 is allowed for gateway mode connections (default: `true`)
-/// - `AZURE_COSMOS_CONNECTION_POOL_IS_GATEWAY20_ALLOWED`: Whether Gateway 2.0 feature is allowed (default: `false`)
-/// - `AZURE_COSMOS_EMULATOR_SERVER_CERT_VALIDATION_DISABLED`: Whether server certificate validation is disabled for emulator; `true` maps to [`ServerCertificateValidation::RequiredUnlessEmulator`], `false` to [`ServerCertificateValidation::Required`] (default: `false`)
+/// - `AZURE_COSMOS_EMULATOR_SERVER_CERT_VALIDATION_DISABLED`: Whether server certificate validation is relaxed for emulator connections; `true` maps to [`ServerCertificateValidation::RequiredUnlessEmulator`], `false` to [`ServerCertificateValidation::Required`] (default: `false`)
 /// - `AZURE_COSMOS_LOCAL_ADDRESS`: Local IP address to bind to (default: none)
 ///
 /// # Example
@@ -398,8 +402,6 @@ pub struct ConnectionPoolOptionsBuilder {
     tcp_keepalive_retries: Option<u32>,
     #[option(env = "AZURE_COSMOS_CONNECTION_POOL_IS_HTTP2_ALLOWED")]
     is_http2_allowed: Option<bool>,
-    #[option(env = "AZURE_COSMOS_CONNECTION_POOL_IS_GATEWAY20_ALLOWED")]
-    is_gateway20_allowed: Option<bool>,
     #[option(
         env = "AZURE_COSMOS_EMULATOR_SERVER_CERT_VALIDATION_DISABLED",
         parser = parse_env_server_cert_validation
@@ -600,12 +602,6 @@ impl ConnectionPoolOptionsBuilder {
         self
     }
 
-    /// Sets whether Gateway 2.0 feature is allowed.
-    pub fn with_is_gateway20_allowed(mut self, value: bool) -> Self {
-        self.is_gateway20_allowed = Some(value);
-        self
-    }
-
     /// Sets the server certificate validation behavior.
     pub fn with_server_certificate_validation(
         mut self,
@@ -661,12 +657,11 @@ impl ConnectionPoolOptionsBuilder {
             ValidationBounds::none(),
         )?;
 
-        let effective_is_gateway20_allowed =
-            match self.is_gateway20_allowed.or(env.is_gateway20_allowed) {
-                // Gateway 2.0 also requires HTTP/2; gate on the resolved flag.
-                Some(gateway20) => gateway20 && effective_is_http2_allowed,
-                None => false, // TODO: Change to true before GA
-            };
+        // Gateway 2.0 vs. the standard gateway is selected by the server (the
+        // account advertises a Gateway 2.0 endpoint) and probed at runtime — it
+        // is intentionally not customer-configurable. HTTP/2 is the one hard
+        // prerequisite, so when HTTP/2 is off the pool is gateway_v2-disabled.
+        let effective_gateway_v2_disabled = !effective_is_http2_allowed;
 
         let max_connection_pool_size_default = if effective_is_http2_allowed {
             1_000
@@ -908,10 +903,7 @@ impl ConnectionPoolOptionsBuilder {
             tcp_keepalive_interval,
             tcp_keepalive_retries,
             is_http2_allowed: effective_is_http2_allowed,
-            is_gateway20_allowed: effective_is_gateway20_allowed,
-            // Builder value wins; otherwise the env-derived mode (the
-            // `*_DISABLED` boolean parsed into a validation mode by
-            // `parse_env_server_cert_validation`); otherwise the secure default.
+            gateway_v2_disabled: effective_gateway_v2_disabled,
             server_certificate_validation: self
                 .server_certificate_validation
                 .or(env.server_certificate_validation)
@@ -1005,7 +997,8 @@ mod tests {
             Duration::from_millis(65_000)
         );
         assert!(options.is_http2_allowed());
-        assert!(!options.is_gateway20_allowed());
+        // Gateway 2.0 is enabled by default whenever HTTP/2 is allowed.
+        assert!(!options.gateway_v2_disabled());
         assert_eq!(
             options.server_certificate_validation(),
             ServerCertificateValidation::Required
@@ -1062,7 +1055,6 @@ mod tests {
             .with_tcp_keepalive_interval(Duration::from_millis(5_000))
             .with_tcp_keepalive_retries(4)
             .with_is_http2_allowed(false)
-            .with_is_gateway20_allowed(true)
             .with_server_certificate_validation(ServerCertificateValidation::RequiredUnlessEmulator)
             .build()
             .unwrap();
@@ -1125,8 +1117,8 @@ mod tests {
         );
         assert_eq!(options.tcp_keepalive_retries(), Some(4));
         assert!(!options.is_http2_allowed());
-        // gateway20 is set to true but HTTP/2 is false, so it should be false
-        assert!(!options.is_gateway20_allowed());
+        // HTTP/2 is off, so the build forces gateway_v2_disabled = true.
+        assert!(options.gateway_v2_disabled());
         assert_eq!(
             options.server_certificate_validation(),
             ServerCertificateValidation::RequiredUnlessEmulator
@@ -1410,15 +1402,15 @@ mod tests {
     }
 
     #[test]
-    fn gateway20_requires_http2() {
+    fn gateway_v2_requires_http2() {
         let options = ConnectionPoolOptionsBuilder::new()
             .with_is_http2_allowed(false)
-            .with_is_gateway20_allowed(true)
             .build()
             .unwrap();
 
-        // Gateway 2.0 should be disabled if HTTP/2 is not allowed
-        assert!(!options.is_gateway20_allowed());
+        // Gateway 2.0 must be reported as disabled when HTTP/2 is not allowed,
+        // since HTTP/2 is a hard prerequisite for the transport.
+        assert!(options.gateway_v2_disabled());
     }
 
     #[test]

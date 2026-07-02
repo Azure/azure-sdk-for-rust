@@ -16,26 +16,40 @@ use std::borrow::Cow;
 use std::fmt;
 use std::fmt::Write;
 
-/// A newtype wrapping the hex-encoded effective partition key string.
+/// A newtype wrapping the raw effective partition key bytes.
 ///
 /// An `EffectivePartitionKey` is the result of hashing a [`PartitionKey`](crate::models::PartitionKey)
-/// into a hex string that determines which partition key range owns a given item.
-/// Using a newtype ensures callers cannot accidentally pass an arbitrary string
-/// where an EPK is expected.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(transparent)]
-pub struct EffectivePartitionKey(Cow<'static, str>);
+/// into the binary EPK that determines which partition key range owns a given
+/// item. These are the same bytes sent in the RNTBD `EffectivePartitionKey`
+/// token (0x005A); the uppercase-hex encoding ([`to_hex`](Self::to_hex)) is the
+/// canonical routing string and `x-ms-*-epk` HTTP header value. Using a newtype
+/// ensures callers cannot accidentally pass an arbitrary value where an EPK is
+/// expected.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct EffectivePartitionKey(Cow<'static, [u8]>);
 
 impl EffectivePartitionKey {
-    /// The minimum EPK (empty string), representing the start of the EPK space.
-    pub const MIN: Self = Self(Cow::Borrowed(""));
+    /// The minimum EPK (empty), representing the start of the EPK space.
+    pub const MIN: Self = Self(Cow::Borrowed(&[]));
 
-    /// The maximum exclusive EPK (`"FF"`), representing the upper bound of the EPK space.
-    pub const MAX: Self = Self(Cow::Borrowed("FF"));
+    /// The maximum exclusive EPK (`0xFF`), representing the upper bound of the EPK space.
+    pub const MAX: Self = Self(Cow::Borrowed(&[0xFF]));
 
-    /// Returns a reference to the inner string.
-    pub fn as_str(&self) -> &str {
+    /// Returns the raw EPK bytes (the binary form sent in the RNTBD
+    /// `EffectivePartitionKey` token, 0x005A).
+    pub(crate) fn as_bytes(&self) -> &[u8] {
         &self.0
+    }
+
+    /// Returns the uppercase-hex encoding of the EPK — the canonical routing
+    /// string and `x-ms-start-epk`/`x-ms-end-epk` HTTP header value.
+    pub fn to_hex(&self) -> String {
+        bytes_to_hex_upper(&self.0)
+    }
+
+    /// Constructs an EPK from its raw bytes.
+    pub(crate) fn from_bytes(bytes: impl Into<Cow<'static, [u8]>>) -> Self {
+        Self(bytes.into())
     }
 
     /// Computes the effective partition key from partition key values.
@@ -54,10 +68,10 @@ impl EffectivePartitionKey {
             return Self::MAX;
         }
 
-        let hex = match kind {
+        let bytes = match kind {
             PartitionKeyKind::Hash => match version {
-                PartitionKeyVersion::V1 => effective_partition_key_hash_v1(pk_values),
-                PartitionKeyVersion::V2 => effective_partition_key_hash_v2(pk_values),
+                PartitionKeyVersion::V1 => effective_partition_key_v1_binary(pk_values),
+                PartitionKeyVersion::V2 => effective_partition_key_v2_binary(pk_values),
             },
             PartitionKeyKind::MultiHash => {
                 // MultiHash is only supported with V2. All MultiHash container definitions
@@ -67,12 +81,12 @@ impl EffectivePartitionKey {
                     "MultiHash requires V2, got {:?}",
                     version
                 );
-                effective_partition_key_multi_hash_v2(pk_values)
+                effective_partition_key_multi_hash_v2_binary(pk_values)
             }
             // Range partitioning is legacy; fall through to V2 as a reasonable default.
-            _ => effective_partition_key_hash_v2(pk_values),
+            _ => effective_partition_key_v2_binary(pk_values),
         };
-        Self::from(hex)
+        Self::from_bytes(bytes)
     }
 
     /// Computes an EPK range for the given partition key values and definition.
@@ -130,11 +144,13 @@ impl EffectivePartitionKey {
         }
 
         if is_prefix {
-            // "FF" is safe as an upper-bound sentinel because hash_v2_to_epk masks
-            // hash_bytes[0] with 0x3F, so every EPK component's first hex digit
-            // is in [0-3]. "FF" is lexicographically greater than any valid suffix.
-            let max_str = format!("{}FF", epk.as_str());
-            let max = Self::from(max_str);
+            // A trailing `0xFF` byte is a safe upper-bound sentinel because
+            // `hash_v2_raw_bytes` masks byte 0 with 0x3F, so every EPK
+            // component's first byte is in `[0x00, 0x3F]`. `0xFF` is greater
+            // than any valid suffix byte.
+            let mut max_bytes = epk.as_bytes().to_vec();
+            max_bytes.push(0xFF);
+            let max = Self::from_bytes(max_bytes);
             Ok(epk..max)
         } else {
             Ok(epk.clone()..epk)
@@ -144,62 +160,86 @@ impl EffectivePartitionKey {
 
 impl fmt::Display for EffectivePartitionKey {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.0)
+        f.write_str(&self.to_hex())
     }
 }
 
 impl PartialEq<str> for EffectivePartitionKey {
     fn eq(&self, other: &str) -> bool {
-        self.0 == other
+        self.to_hex() == other
     }
 }
 
 impl PartialEq<&str> for EffectivePartitionKey {
     fn eq(&self, other: &&str) -> bool {
-        self.0 == *other
+        self.to_hex() == *other
     }
 }
 
 impl From<String> for EffectivePartitionKey {
+    /// Parses an upper- or lower-hex EPK string into raw bytes.
     fn from(s: String) -> Self {
-        Self(Cow::Owned(s))
+        Self::from(s.as_str())
     }
 }
 
 impl From<&str> for EffectivePartitionKey {
+    /// Parses an upper- or lower-hex EPK string into raw bytes.
+    ///
+    /// EPK strings always originate as even-length hex (service pkrange/query
+    /// plan bounds, `compute` output, and the `"…FF"` prefix
+    /// sentinel), so a malformed value is a caller bug; `hex_to_bytes` stops at
+    /// the first byte that fails to parse rather than panicking on the wire path.
     fn from(s: &str) -> Self {
-        Self(Cow::Owned(s.to_owned()))
+        Self(Cow::Owned(hex_to_bytes(s)))
     }
 }
 
-impl AsRef<str> for EffectivePartitionKey {
-    fn as_ref(&self) -> &str {
-        &self.0
+impl Serialize for EffectivePartitionKey {
+    /// Serializes as the canonical uppercase-hex string for wire compatibility
+    /// (e.g. `PartitionKeyRange` `minInclusive`/`maxExclusive`).
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(&self.to_hex())
+    }
+}
+
+impl<'de> Deserialize<'de> for EffectivePartitionKey {
+    /// Deserializes from a hex string (the form the service emits for routing
+    /// boundaries).
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        Ok(Self::from(s))
     }
 }
 
 /// Length-aware ordering for effective partition keys.
 ///
 /// For hierarchical partition key (HPK) containers, the backend may return
-/// partition key ranges with mixed-length boundaries: a partial EPK (32 chars,
-/// one hash component) and a fully specified EPK (64 chars, two hash components
-/// zero-padded). For example:
+/// partition key ranges with mixed-length boundaries: a partial EPK (16 bytes,
+/// one hash component) and a fully specified EPK (32 bytes, two hash components
+/// zero-padded). For example, as hex:
 ///
 ///   - Partial:   `06AB34CFE4E482236BCACBBF50E234AB`
 ///   - Full:      `06AB34CFE4E482236BCACBBF50E234AB00000000000000000000000000000000`
 ///
 /// These represent the same partition boundary. Plain lexicographic comparison
-/// treats the shorter string as "less than" the longer one when it is a prefix,
+/// treats the shorter value as "less than" the longer one when it is a prefix,
 /// causing incorrect overlap detection in routing maps.
 ///
-/// This implementation treats two EPKs as equal when one is a prefix of the other
-/// and the remainder consists entirely of `'0'` characters.
+/// This implementation treats two EPKs as equal when one is a prefix of the
+/// other and the remaining bytes are all zero.
 ///
 /// See: <https://github.com/Azure/azure-cosmos-dotnet-v3/pull/5260>
 impl Ord for EffectivePartitionKey {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        let a: &str = &self.0;
-        let b: &str = &other.0;
+        let a = self.as_bytes();
+        let b = other.as_bytes();
         let common = a.len().min(b.len());
         match a[..common].cmp(&b[..common]) {
             std::cmp::Ordering::Equal => {
@@ -208,7 +248,7 @@ impl Ord for EffectivePartitionKey {
                 } else {
                     &b[common..]
                 };
-                if tail.bytes().all(|b| b == b'0') {
+                if tail.iter().all(|&byte| byte == 0) {
                     std::cmp::Ordering::Equal
                 } else if a.len() > b.len() {
                     std::cmp::Ordering::Greater
@@ -227,44 +267,53 @@ impl PartialOrd for EffectivePartitionKey {
     }
 }
 
-/// V2: MurmurHash3-128, then reverse bytes and clear top 2 bits.
-fn effective_partition_key_hash_v2(pk_values: &[PartitionKeyValue]) -> String {
-    let mut buf: Vec<u8> = Vec::new();
-    for v in pk_values {
-        v.write_for_hashing_v2(&mut buf);
-    }
-    hash_v2_to_epk(&buf)
-}
-
-/// MultiHash V2: per-component MurmurHash3-128, concatenated.
+/// V2 EPK raw bytes (16 bytes): MurmurHash3-128, reversed, top 2 bits of byte 0 cleared.
 ///
-/// Each component is independently encoded, hashed, and hex-encoded.
-/// The results are concatenated to produce an EPK of N×32 hex characters
-/// where N is the number of partition key components.
-fn effective_partition_key_multi_hash_v2(pk_values: &[PartitionKeyValue]) -> String {
-    let mut result = String::with_capacity(pk_values.len() * 32);
-    let mut buf = Vec::new();
-    for v in pk_values {
-        buf.clear();
-        v.write_for_hashing_v2(&mut buf);
-        result.push_str(&hash_v2_to_epk(&buf));
-    }
-    result
-}
-
-/// Shared V2 hash-to-EPK conversion: MurmurHash3-128, reverse bytes, mask top 2 bits, hex-encode.
-///
-/// Returns a 32-character uppercase hexadecimal string.
-fn hash_v2_to_epk(data: &[u8]) -> String {
+/// This is the binary form sent in the RNTBD `EffectivePartitionKey`
+/// token (0x005A) for V2 hash-partitioned collections.
+pub(crate) fn hash_v2_raw_bytes(data: &[u8]) -> [u8; 16] {
     let hash_128 = murmurhash3_128(data, 0);
     let mut hash_bytes = hash_128.to_le_bytes();
     hash_bytes.reverse();
     hash_bytes[0] &= 0x3F;
-    bytes_to_hex_upper(&hash_bytes)
+    hash_bytes
 }
 
-/// V1: MurmurHash3-32, cast to f64, then binary-encode [hash, ...truncated values].
-fn effective_partition_key_hash_v1(pk_values: &[PartitionKeyValue]) -> String {
+/// V2 EPK raw bytes for hash-partitioned collections.
+pub(crate) fn effective_partition_key_v2_binary(pk_values: &[PartitionKeyValue]) -> Vec<u8> {
+    let mut buf: Vec<u8> = Vec::new();
+    for v in pk_values {
+        v.write_for_hashing_v2(&mut buf);
+    }
+    hash_v2_raw_bytes(&buf).to_vec()
+}
+
+/// MultiHash V2 EPK raw bytes: per-component MurmurHash3-128, concatenated.
+///
+/// Each component is independently encoded and hashed, and the 16-byte hashes
+/// are concatenated to produce `16 * N` bytes for `N` components. This is the
+/// binary form the proxy expects for `MultiHash` containers in the RNTBD
+/// `EffectivePartitionKey` token (0x005A).
+pub(crate) fn effective_partition_key_multi_hash_v2_binary(
+    pk_values: &[PartitionKeyValue],
+) -> Vec<u8> {
+    let mut out: Vec<u8> = Vec::with_capacity(pk_values.len() * 16);
+    let mut buf: Vec<u8> = Vec::new();
+    for v in pk_values {
+        buf.clear();
+        v.write_for_hashing_v2(&mut buf);
+        out.extend_from_slice(&hash_v2_raw_bytes(&buf));
+    }
+    out
+}
+
+/// Builds the V1-binary-encoded effective partition key bytes for hash partitions.
+///
+/// This is the raw byte form sent in the RNTBD `EffectivePartitionKey`
+/// token (0x005A). It's the binary tuple `Number(hash) + truncated_components`,
+/// not the hex-encoded routing string. Empty-component and infinity cases are
+/// handled by the caller (see [`EffectivePartitionKey::compute`]).
+pub(crate) fn effective_partition_key_v1_binary(pk_values: &[PartitionKeyValue]) -> Vec<u8> {
     let mut hashing_bytes: Vec<u8> = Vec::new();
     for v in pk_values {
         v.write_for_hashing_v1(&mut hashing_bytes);
@@ -272,27 +321,17 @@ fn effective_partition_key_hash_v1(pk_values: &[PartitionKeyValue]) -> String {
 
     let hash32 = murmurhash3_32(&hashing_bytes, 0u32);
 
-    // Build the binary-encoded EPK: hash value as Number + truncated original components.
     let mut buffer: Vec<u8> = Vec::new();
+    write_number_v1_binary(hash32 as f64, &mut buffer);
 
-    // Write the hash as a Number component using V1 binary encoding.
-    // We need to encode f64(hash32) using the V1 number encoding.
-    let hash_f64 = hash32 as f64;
-    write_number_v1_binary(hash_f64, &mut buffer);
-
-    // Truncate string components to MAX_STRING_BYTES_TO_APPEND before binary encoding,
-    // matching the truncation applied during hashing.
-    let truncated: Vec<PartitionKeyValue> = pk_values
-        .iter()
-        .map(|v| v.truncated_for_v1_encoding())
-        .collect();
-
-    // Append the truncated original components.
-    for v in &truncated {
-        v.write_for_binary_encoding_v1(&mut buffer);
+    // Truncate string components to MAX_STRING_BYTES_TO_APPEND, matching the
+    // truncation applied during hashing.
+    for v in pk_values {
+        v.truncated_for_v1_encoding()
+            .write_for_binary_encoding_v1(&mut buffer);
     }
 
-    bytes_to_hex_upper(&buffer)
+    buffer
 }
 
 fn bytes_to_hex_upper(bytes: &[u8]) -> String {
@@ -301,6 +340,32 @@ fn bytes_to_hex_upper(bytes: &[u8]) -> String {
         write!(&mut s, "{:02X}", b).unwrap();
     }
     s
+}
+
+/// Decodes an even-length hex string (upper or lower case) into bytes.
+///
+/// Returns the bytes decoded so far if the input is malformed. EPK strings are
+/// always well-formed, even-length hex in practice, so this lenient handling
+/// only guards against caller bugs without panicking on the wire path.
+fn hex_to_bytes(s: &str) -> Vec<u8> {
+    let bytes = s.as_bytes();
+    let mut out = Vec::with_capacity(bytes.len() / 2);
+    for pair in bytes.chunks_exact(2) {
+        match (hex_nibble(pair[0]), hex_nibble(pair[1])) {
+            (Some(hi), Some(lo)) => out.push((hi << 4) | lo),
+            _ => break,
+        }
+    }
+    out
+}
+
+fn hex_nibble(c: u8) -> Option<u8> {
+    match c {
+        b'0'..=b'9' => Some(c - b'0'),
+        b'a'..=b'f' => Some(c - b'a' + 10),
+        b'A'..=b'F' => Some(c - b'A' + 10),
+        _ => None,
+    }
 }
 
 #[cfg(test)]
@@ -322,7 +387,7 @@ mod tests {
         assert_eq!(result, EffectivePartitionKey::MAX.clone());
     }
 
-    /// V2 test cases ported from Java SDK tests via the Rust SDK's hash.rs.
+    /// V2 hash test cases.
     #[test]
     fn effective_partition_key_hash_v2() {
         let thousand_a = "a".repeat(1024);
@@ -405,7 +470,7 @@ mod tests {
                 PartitionKeyVersion::V2,
             );
             assert_eq!(
-                actual.as_str(),
+                actual.to_hex(),
                 *expected,
                 "V2 mismatch for {:?}",
                 component
@@ -429,10 +494,10 @@ mod tests {
             PartitionKeyKind::Hash,
             PartitionKeyVersion::V2,
         );
-        assert_eq!(actual.as_str(), expected);
+        assert_eq!(actual.to_hex(), expected);
     }
 
-    /// V1 test cases ported from Java SDK tests via the Rust SDK's hash.rs.
+    /// V1 hash test cases.
     #[test]
     fn effective_partition_key_hash_v1() {
         let thousand_a = "a".repeat(1024);
@@ -503,7 +568,7 @@ mod tests {
                 PartitionKeyVersion::V1,
             );
             assert_eq!(
-                actual.as_str(),
+                actual.to_hex(),
                 *expected,
                 "V1 mismatch for {:?}",
                 component
@@ -523,7 +588,7 @@ mod tests {
         );
         let single =
             EffectivePartitionKey::compute(&pk, PartitionKeyKind::Hash, PartitionKeyVersion::V2);
-        assert_eq!(multi.as_str(), single.as_str());
+        assert_eq!(multi.to_hex(), single.to_hex());
     }
 
     /// Two-component MultiHash EPK should be 64 hex chars (2 × 32).
@@ -540,14 +605,14 @@ mod tests {
             PartitionKeyKind::MultiHash,
             PartitionKeyVersion::V2,
         );
-        assert_eq!(multi.as_str().len(), 64);
+        assert_eq!(multi.to_hex().len(), 64);
 
         // Expected values from the effective_partition_key_hash_v2 test cases above,
-        // verified against cross-SDK baselines (.NET, Go, Java).
+        // verified against cross-SDK baselines.
         // First 32 chars should match the single-component hash of "redmond"
-        assert_eq!(&multi.as_str()[..32], "22E342F38A486A088463DFF7838A5963");
+        assert_eq!(&multi.to_hex()[..32], "22E342F38A486A088463DFF7838A5963");
         // Second 32 chars should match the single-component hash of 5.0
-        assert_eq!(&multi.as_str()[32..], "19C08621B135968252FB34B4CF66F811");
+        assert_eq!(&multi.to_hex()[32..], "19C08621B135968252FB34B4CF66F811");
     }
 
     /// Three-component MultiHash EPK should be 96 hex chars (3 × 32).
@@ -563,13 +628,13 @@ mod tests {
             PartitionKeyKind::MultiHash,
             PartitionKeyVersion::V2,
         );
-        assert_eq!(multi.as_str().len(), 96);
+        assert_eq!(multi.to_hex().len(), 96);
 
         // Expected values from the effective_partition_key_hash_v2 test cases above,
-        // verified against cross-SDK baselines (.NET, Go, Java).
-        assert_eq!(&multi.as_str()[..32], "22E342F38A486A088463DFF7838A5963");
-        assert_eq!(&multi.as_str()[32..64], "0E711127C5B5A8E4726AC6DD306A3E59");
-        assert_eq!(&multi.as_str()[64..], "378867E4430E67857ACE5C908374FE16");
+        // verified against cross-SDK baselines.
+        assert_eq!(&multi.to_hex()[..32], "22E342F38A486A088463DFF7838A5963");
+        assert_eq!(&multi.to_hex()[32..64], "0E711127C5B5A8E4726AC6DD306A3E59");
+        assert_eq!(&multi.to_hex()[64..], "378867E4430E67857ACE5C908374FE16");
     }
 
     /// MultiHash with an Undefined component (used for partial HPK).
@@ -584,7 +649,7 @@ mod tests {
             PartitionKeyKind::MultiHash,
             PartitionKeyVersion::V2,
         );
-        assert_eq!(multi.as_str().len(), 64);
+        assert_eq!(multi.to_hex().len(), 64);
 
         // First segment: hash of "tenant1"
         let single_tenant = EffectivePartitionKey::compute(
@@ -592,7 +657,7 @@ mod tests {
             PartitionKeyKind::Hash,
             PartitionKeyVersion::V2,
         );
-        assert_eq!(&multi.as_str()[..32], single_tenant.as_str());
+        assert_eq!(&multi.to_hex()[..32], single_tenant.to_hex());
 
         // Second segment: hash of Undefined (0x00 byte)
         let single_undef = EffectivePartitionKey::compute(
@@ -600,7 +665,7 @@ mod tests {
             PartitionKeyKind::Hash,
             PartitionKeyVersion::V2,
         );
-        assert_eq!(&multi.as_str()[32..], single_undef.as_str());
+        assert_eq!(&multi.to_hex()[32..], single_undef.to_hex());
     }
 
     /// MultiHash should NOT produce the same result as single-hash V2 for
@@ -621,9 +686,9 @@ mod tests {
         let single =
             EffectivePartitionKey::compute(&pk, PartitionKeyKind::Hash, PartitionKeyVersion::V2);
         // Single hash produces 32 chars, multi hash produces 128 chars (4 × 32)
-        assert_eq!(single.as_str().len(), 32);
-        assert_eq!(multi.as_str().len(), 128);
-        assert_ne!(multi.as_str(), single.as_str());
+        assert_eq!(single.to_hex().len(), 32);
+        assert_eq!(multi.to_hex().len(), 128);
+        assert_ne!(multi.to_hex(), single.to_hex());
     }
 
     /// compute_range returns a point range for a full MultiHash key.
@@ -641,7 +706,7 @@ mod tests {
             range.start, range.end,
             "Full key should produce a point range"
         );
-        assert_eq!(range.start.as_str().len(), 96);
+        assert_eq!(range.start.to_hex().len(), 96);
     }
 
     /// compute_range returns an EPK range for a prefix (2 of 3 components).
@@ -656,11 +721,11 @@ mod tests {
 
         assert_ne!(range.start, range.end, "Prefix key should produce a range");
         // min EPK = hash(tenant1) + hash(user1) = 64 chars
-        assert_eq!(range.start.as_str().len(), 64);
+        assert_eq!(range.start.to_hex().len(), 64);
         // max EPK = min + "FF" = 66 chars
-        assert_eq!(range.end.as_str().len(), 66);
-        assert!(range.end.as_str().ends_with("FF"));
-        assert!(range.end.as_str().starts_with(range.start.as_str()));
+        assert_eq!(range.end.to_hex().len(), 66);
+        assert!(range.end.to_hex().ends_with("FF"));
+        assert!(range.end.to_hex().starts_with(&range.start.to_hex()));
     }
 
     /// compute_range returns an EPK range for a prefix (1 of 3 components).
@@ -671,9 +736,9 @@ mod tests {
         let range = EffectivePartitionKey::compute_range(&pk, &pk_def).unwrap();
 
         assert_ne!(range.start, range.end);
-        assert_eq!(range.start.as_str().len(), 32);
-        assert_eq!(range.end.as_str().len(), 34);
-        assert!(range.end.as_str().ends_with("FF"));
+        assert_eq!(range.start.to_hex().len(), 32);
+        assert_eq!(range.end.to_hex().len(), 34);
+        assert!(range.end.to_hex().ends_with("FF"));
     }
 
     /// compute_range returns a point for single-hash (non-MultiHash) keys
@@ -1024,7 +1089,7 @@ mod baseline_tests {
                     );
                     let expected_v2 = apply_v2_masking_per_component(&tc.v2_hash);
                     assert_eq!(
-                        v2_epk.as_str(),
+                        v2_epk.to_hex(),
                         expected_v2,
                         "V2 MultiHash full pipeline mismatch for {} (value: {})",
                         tc.description,
@@ -1040,7 +1105,7 @@ mod baseline_tests {
                     );
                     let expected_v2 = apply_v2_masking(&tc.v2_hash);
                     assert_eq!(
-                        v2_epk.as_str(),
+                        v2_epk.to_hex(),
                         expected_v2,
                         "V2 full pipeline mismatch for {} (value: {})",
                         tc.description,
@@ -1057,7 +1122,7 @@ mod baseline_tests {
                         PartitionKeyVersion::V1,
                     );
                     assert!(
-                        !v1_epk.as_str().is_empty(),
+                        !v1_epk.to_hex().is_empty(),
                         "V1 full pipeline produced empty EPK for {} (value: {})",
                         tc.description,
                         tc.partition_key_value,
@@ -1068,7 +1133,7 @@ mod baseline_tests {
             // --- Cross-SDK raw hash baseline ---
             //
             // Verifies byte encoding + MurmurHash correctness against the same
-            // baselines used by Go, .NET, Java, and Python SDKs.  Uses canonical
+            // cross-SDK baselines. Uses canonical
             // encoding (no V1 truncation, no V2 masking) so raw hashes match.
             let actual_v1 = compute_v1_baseline(&values);
             assert_eq!(

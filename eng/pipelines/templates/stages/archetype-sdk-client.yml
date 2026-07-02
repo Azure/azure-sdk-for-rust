@@ -79,6 +79,9 @@ parameters:
 - name: EnvVars
   type: object
   default: {}
+- name: VariableGroups
+  type: object
+  default: []
 
 extends:
   template: /eng/pipelines/templates/stages/1es-redirect.yml
@@ -134,6 +137,8 @@ extends:
               - template: /eng/pipelines/templates/variables/globals.yml
               - template: /eng/pipelines/templates/variables/image.yml
               - template: /eng/pipelines/templates/variables/rust.yml
+              - ${{ each group in parameters.VariableGroups }}:
+                - group: ${{ group }}
               dependsOn: []
               jobs:
               - template: /eng/common/pipelines/templates/jobs/generate-job-matrix.yml

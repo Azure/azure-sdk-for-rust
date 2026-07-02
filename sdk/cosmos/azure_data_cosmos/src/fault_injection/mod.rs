@@ -106,3 +106,8 @@ pub use azure_data_cosmos_driver::fault_injection::{
     FaultInjectionErrorType, FaultInjectionResult, FaultInjectionResultBuilder, FaultInjectionRule,
     FaultInjectionRuleBuilder, FaultOperationType,
 };
+
+/// Re-export of the driver's [`TransportKind`] enum so SDK consumers can
+/// scope fault-injection rules to a specific transport (Gateway 1.x vs
+/// Gateway 2.0) without depending on the driver crate directly.
+pub use azure_data_cosmos_driver::diagnostics::TransportKind;

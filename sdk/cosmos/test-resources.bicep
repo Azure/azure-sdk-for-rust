@@ -123,3 +123,4 @@ output RUST_TEST_THREADS string = '1'
 output DATABASE_NAME string = databaseName
 output AZURE_COSMOS_CONNECTION_STRING string = 'AccountEndpoint=${reference(resourceId, apiVersion).documentEndpoint};AccountKey=${listKeys(resourceId, apiVersion).primaryMasterKey};'
 output ACCOUNT_HOST string = reference(resourceId, apiVersion).documentEndpoint
+output AZURE_COSMOS_DEFAULT_CONSISTENCY string = defaultConsistencyLevel

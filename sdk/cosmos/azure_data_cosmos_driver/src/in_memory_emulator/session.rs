@@ -126,7 +126,7 @@ impl SessionToken {
     /// of the request being served). Entries are merged into the output by
     /// taking `max(prior, local)` per region so the session token a driver
     /// accumulates against the emulator does not lose multi-region progress
-    /// on every roundtrip — matching the behaviour of the real gateway.
+    /// on every roundtrip — matching the behavior of the real gateway.
     ///
     /// `region` and `local_lsn` are wrapped in newtypes (`RegionId`,
     /// `LocalLsn`) to make swapped-argument bugs a compile error: in the wire

@@ -199,8 +199,6 @@ impl CosmosClientBuilder {
         Ok(self)
     }
 
-    /// Registers a per-client [`ThroughputControlGroupOptions`].
-    ///
     /// Throughput-control groups are scoped to this client's driver — the
     /// per-runtime registry has been removed, so every client owns its own
     /// set of groups. Duplicate group names supplied to the same builder are

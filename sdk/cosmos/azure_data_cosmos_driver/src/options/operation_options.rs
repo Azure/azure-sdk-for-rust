@@ -358,6 +358,32 @@ mod tests {
         assert!(view.max_session_retry_count().is_none());
     }
 
+    /// Rule 2 + Rule 3 (RCS resolution):
+    /// An explicit per-request `Default` overrides a client-level non-`Default`,
+    /// resulting in no RCS being emitted on the wire.
+    #[test]
+    fn view_request_level_default_overrides_client_level_non_default() {
+        use std::sync::Arc;
+
+        let client = Arc::new(OperationOptions {
+            read_consistency_strategy: Some(ReadConsistencyStrategy::LatestCommitted),
+            ..Default::default()
+        });
+
+        let operation = OperationOptions {
+            read_consistency_strategy: Some(ReadConsistencyStrategy::Default),
+            ..Default::default()
+        };
+
+        let view = OperationOptionsView::new(None, Some(client), None, Some(&operation));
+
+        assert_eq!(
+            view.read_consistency_strategy(),
+            Some(&ReadConsistencyStrategy::Default),
+            "explicit request-level Default must override client-level non-Default"
+        );
+    }
+
     #[test]
     fn from_env_vars_parses_known_vars() {
         let options = OperationOptions::from_env_vars(|key| match key {

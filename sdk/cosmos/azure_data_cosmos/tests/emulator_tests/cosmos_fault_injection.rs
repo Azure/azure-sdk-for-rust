@@ -9,7 +9,7 @@ use super::framework;
 use azure_core::{http::StatusCode, Uuid};
 use azure_data_cosmos::fault_injection::{
     FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
-    FaultInjectionRule, FaultInjectionRuleBuilder, FaultOperationType,
+    FaultInjectionRule, FaultInjectionRuleBuilder, FaultOperationType, TransportKind,
 };
 use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
 use framework::{TestClient, TestOptions};
@@ -982,6 +982,105 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
     .await
 }
 
+// ----------------------------------------------------------------------------
+// Gateway 2.0 fault injection coverage
+// ----------------------------------------------------------------------------
+
+/// Gateway 2.0 ConnectionError on every region must surface a connection
+/// failure to the caller — Rust does **not** silently fall back to the
+/// standard gateway. `ConnectionError` models any failure to establish the
+/// connection (DNS, TLS, a blocked port, or network-unreachable all look the
+/// same to the client), so the failure stays visible to the operator instead
+/// of being masked. The fault-injection rule matches every `ReadItem`
+/// regardless of transport (a prior `with_transport_kind` filter caused
+/// false-negatives on some accounts), while the Gateway 2.0-specific routing
+/// behavior is asserted at the unit level in the driver's gateway_v2 pipeline
+/// tests.
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires test_category 'gateway_v2'"
+)]
+pub async fn gateway_v2_connection_error_fails_fast_after_all_regions_attempted(
+) -> Result<(), Box<dyn Error>> {
+    let server_error = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::ConnectionError)
+        .with_probability(1.0)
+        .build();
+
+    // No transport_kind or region filter: the rule injects a connection error
+    // on every region (probability 1.0) to exercise the "all regions attempted,
+    // then fail fast" contract. The condition builder does support
+    // `with_region(...)` scoping, but a single-region variant would instead test
+    // failover (covered separately). The asserted contract here is that
+    // connection errors on every region surface to the caller rather than
+    // silently falling back to the standard gateway.
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReadItem)
+        .build();
+
+    let rule = FaultInjectionRuleBuilder::new("gateway_v2-conn-error-fail-fast", server_error)
+        .with_condition(condition)
+        .build();
+
+    let fault_builder = vec![Arc::new(rule)];
+
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container_id = format!("Container-{}", Uuid::new_v4());
+            let container_client = run_context
+                .create_container_with_throughput(
+                    db_client,
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
+                    ThroughputProperties::manual(400),
+                )
+                .await?;
+
+            let unique_id = Uuid::new_v4().to_string();
+            let item = create_test_item(&unique_id);
+            let pk = format!("Partition-{}", unique_id);
+            let item_id = format!("Item-{}", unique_id);
+
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
+
+            let fault_client = run_context
+                .fault_client()
+                .expect("fault client should be available");
+            let fault_db_client = fault_client.database_client(db_client.id());
+            let fault_container_client = fault_db_client.container_client(&container_id).await?;
+
+            // The rule fires on every Gateway 2.0 attempt across every
+            // region. With fail-fast semantics, the read must surface the
+            // connection error rather than silently retry on the standard
+            // gateway.
+            let result = fault_container_client.read_item(&pk, &item_id, None).await;
+            let err = result.expect_err(
+                "read must fail fast after Gateway 2.0 connection errors on every region",
+            );
+            let status = err.status();
+            assert!(
+                status.sub_status()
+                    == Some(azure_data_cosmos_driver::SubStatusCode::TRANSPORT_IO_FAILED)
+                    || status.sub_status()
+                        == Some(
+                            azure_data_cosmos_driver::SubStatusCode::TRANSPORT_CONNECTION_FAILED
+                        )
+                    || err.to_string().to_lowercase().contains("connection"),
+                "expected a connection-failure error, got: {err:?}"
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
+    )
+    .await
+}
+
 // =========================================================================
 // Diagnostics-on-error-path coverage
 // =========================================================================
@@ -1159,6 +1258,83 @@ pub async fn error_diagnostics_records_retry_history() -> Result<(), Box<dyn Err
     .await
 }
 
+// ── 449 RetryWith policy — live SDK coverage ─────────────────────────────────
+//
+// 449 RetryWith signals a transient same-region concurrency conflict that the
+// driver retries internally (in `try_handle_retry_with`). These tests exercise
+// the policy from the SDK surface (`ContainerClient::read_item`) so a regression
+// that disables the driver-side retry surfaces as a user-visible 449.
+
+/// Test that 449 RetryWith faults are transparently retried by the driver, so
+/// the SDK caller sees `Ok` once the rule's hit-limit is exhausted. Mirrors
+/// `fault_injection_429_retry_with_hit_limit`, differing only in the error type
+/// since both 429 and 449 trigger a driver-side retry without reaching the
+/// caller.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+pub async fn fault_injection_449_retry_with_hit_limit() -> Result<(), Box<dyn Error>> {
+    let server_error = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::RetryWith)
+        .build();
+
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReadItem)
+        .build();
+
+    let rule = FaultInjectionRuleBuilder::new("449-retry-with-limit", server_error)
+        .with_condition(condition)
+        .with_hit_limit(2)
+        .build();
+
+    let fault_builder = vec![Arc::new(rule)];
+
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container_id = format!("Container-{}", Uuid::new_v4());
+            let container_client = run_context
+                .create_container_with_throughput(
+                    db_client,
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
+                    ThroughputProperties::manual(400),
+                )
+                .await?;
+
+            let unique_id = Uuid::new_v4().to_string();
+            let item = create_test_item(&unique_id);
+            let pk = format!("Partition-{}", unique_id);
+            let item_id = format!("Item-{}", unique_id);
+
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
+
+            let fault_client = run_context
+                .fault_client()
+                .expect("fault client should be available");
+            let fault_db_client = fault_client.database_client(db_client.id());
+            let fault_container_client = fault_db_client.container_client(&container_id).await?;
+
+            // The driver retries 449 in-region; with hit_limit=2 the rule
+            // fires twice and the third attempt succeeds because the rule
+            // is then disabled.
+            let result = fault_container_client.read_item(&pk, &item_id, None).await;
+            assert!(
+                result.is_ok(),
+                "read_item should succeed after the 449 hit_limit is exhausted; got error: {:?}",
+                result.err()
+            );
+            assert_eq!(result.unwrap().status(), StatusCode::Ok);
+
+            Ok(())
+        },
+        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
+    )
+    .await
+}
+
 /// Validates that fault-injection metadata propagates into the error-path
 /// diagnostics: `fault_injection_enabled()` is true on the operation
 /// context, and at least one attempt's `fault_injection_evaluations()`
@@ -1266,6 +1442,77 @@ pub async fn error_diagnostics_includes_fault_injection_evaluations() -> Result<
             Ok(())
         },
         Some(TestOptions::for_emulator().with_fault_injection_rules(fault_builder)),
+    )
+    .await
+}
+
+/// Gateway 2.0 449 RetryWith — like `fault_injection_449_retry_with_hit_limit`,
+/// but scoped to the Gateway 2.0 transport.
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires test_category 'gateway_v2'"
+)]
+pub async fn gateway_v2_449_retry_with_hit_limit() -> Result<(), Box<dyn Error>> {
+    let server_error = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::RetryWith)
+        .build();
+
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReadItem)
+        .with_transport_kind(TransportKind::GatewayV2)
+        .build();
+
+    let rule = FaultInjectionRuleBuilder::new("gateway_v2-449-retry-with-limit", server_error)
+        .with_condition(condition)
+        .with_hit_limit(2)
+        .build();
+
+    let fault_builder = vec![Arc::new(rule)];
+
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container_id = format!("Container-{}", Uuid::new_v4());
+            let container_client = run_context
+                .create_container_with_throughput(
+                    db_client,
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
+                    ThroughputProperties::manual(400),
+                )
+                .await?;
+
+            let unique_id = Uuid::new_v4().to_string();
+            let item = create_test_item(&unique_id);
+            let pk = format!("Partition-{}", unique_id);
+            let item_id = format!("Item-{}", unique_id);
+
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
+
+            let fault_client = run_context
+                .fault_client()
+                .expect("fault client should be available");
+            let fault_db_client = fault_client.database_client(db_client.id());
+            let fault_container_client = fault_db_client.container_client(&container_id).await?;
+
+            // The driver retries 449 in-region; with hit_limit=2 the rule
+            // fires twice on Gateway 2.0 traffic and the third attempt
+            // succeeds because the rule is then disabled.
+            let result = fault_container_client.read_item(&pk, &item_id, None).await;
+            assert!(
+                result.is_ok(),
+                "read_item should succeed after Gateway 2.0 449 hit_limit is exhausted; got error: {:?}",
+                result.err()
+            );
+            assert_eq!(result.unwrap().status(), StatusCode::Ok);
+
+            Ok(())
+        },
+        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
     )
     .await
 }

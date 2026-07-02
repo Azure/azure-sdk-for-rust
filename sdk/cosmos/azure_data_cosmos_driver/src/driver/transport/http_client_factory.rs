@@ -7,7 +7,7 @@ use std::{fmt, sync::Arc};
 
 use super::cosmos_transport_client::TransportClient;
 
-use crate::diagnostics::TransportHttpVersion;
+use crate::diagnostics::{TransportHttpVersion, TransportKind};
 use crate::options::ConnectionPoolOptions;
 
 /// HTTP protocol policy required by a transport.
@@ -26,6 +26,18 @@ pub struct HttpClientConfig {
     pub(crate) request_timeout: std::time::Duration,
     pub(crate) allow_invalid_cert: bool,
     pub(crate) http2_keep_alive_while_idle: bool,
+    /// The transport kind this HTTP client serves, when it is bound to a
+    /// dataplane transport. Metadata clients (account discovery, etc.) leave
+    /// this `None` because they are not gateway/Gateway-2.0-specific.
+    ///
+    /// This is consumed by the fault-injection layer so rules can scope
+    /// themselves to a specific transport (`with_transport_kind`). The field
+    /// has no readers when the `fault_injection` feature is disabled, so the
+    /// dead-code warning is silenced only for that build configuration —
+    /// when the feature is on, the field is read in
+    /// `fault_injection::fault_injecting_factory::FaultInjectingHttpClientFactory::build`.
+    #[cfg_attr(not(feature = "fault_injection"), allow(dead_code))]
+    pub(crate) transport_kind: Option<TransportKind>,
 }
 
 impl HttpClientConfig {
@@ -42,6 +54,7 @@ impl HttpClientConfig {
             request_timeout: connection_pool.max_metadata_request_timeout(),
             allow_invalid_cert: false,
             http2_keep_alive_while_idle: negotiated_version.is_http2(),
+            transport_kind: None,
         }
     }
 
@@ -58,16 +71,18 @@ impl HttpClientConfig {
             request_timeout: connection_pool.max_dataplane_request_timeout(),
             allow_invalid_cert: false,
             http2_keep_alive_while_idle: negotiated_version.is_http2(),
+            transport_kind: Some(TransportKind::Gateway),
         }
     }
 
     /// Config for Gateway 2.0 requests (always HTTP/2).
-    pub(crate) fn dataplane_gateway20(connection_pool: &ConnectionPoolOptions) -> Self {
+    pub(crate) fn dataplane_gateway_v2(connection_pool: &ConnectionPoolOptions) -> Self {
         Self {
             version_policy: HttpVersionPolicy::Http2Only,
             request_timeout: connection_pool.max_dataplane_request_timeout(),
             allow_invalid_cert: false,
             http2_keep_alive_while_idle: true,
+            transport_kind: Some(TransportKind::GatewayV2),
         }
     }
 
@@ -119,10 +134,10 @@ mod tests {
     }
 
     #[test]
-    fn dataplane_gateway20_always_uses_http2_only() {
+    fn dataplane_gateway_v2_always_uses_http2_only() {
         let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
         assert_eq!(
-            HttpClientConfig::dataplane_gateway20(&pool).version_policy,
+            HttpClientConfig::dataplane_gateway_v2(&pool).version_policy,
             HttpVersionPolicy::Http2Only
         );
     }

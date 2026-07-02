@@ -27,13 +27,13 @@ use crate::{
         transport::CosmosTransport,
     },
     models::{
-        cosmos_headers::QUERY_CONTENT_TYPE, request_header_names, AccountEndpoint, ActivityId,
-        CosmosOperation, CosmosResponse, Credential, DefaultConsistencyLevel,
-        EffectivePartitionKey, OperationType, SessionToken, SubStatusCode,
+        cosmos_headers::QUERY_CONTENT_TYPE, effective_partition_key::EffectivePartitionKey,
+        request_header_names, AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse,
+        Credential, DefaultConsistencyLevel, OperationType, SessionToken, SubStatusCode,
     },
     options::{
-        HedgeThreshold, OperationOptionsView, ReadConsistencyStrategy, Region,
-        ResolvedThroughputControl,
+        resolve_effective_consistency, HedgeThreshold, OperationOptionsView,
+        ReadConsistencyStrategy, Region, ResolvedThroughputControl,
     },
 };
 
@@ -52,8 +52,9 @@ use super::{
 };
 
 use crate::driver::transport::{
+    is_operation_supported_by_gateway_v2,
     transport_pipeline::{execute_transport_pipeline, TransportPipelineContext},
-    AuthorizationContext,
+    AuthorizationContext, EndpointKey,
 };
 
 /// Per-request overrides that take precedence over values from [`CosmosOperation`].
@@ -66,6 +67,13 @@ use crate::driver::transport::{
 pub(crate) struct OperationOverrides {
     /// Feed range to constrain the request to (emits `x-ms-start-epk` / `x-ms-end-epk`).
     pub feed_range: Option<crate::models::FeedRange>,
+
+    /// Physical pkrange bounds (full EPK span of the resolved partition). Carried
+    /// to the GW_V2 dispatcher via internal `x-ms-thinclient-pkrange-min`/`-max`
+    /// headers so it can derive `StartEpkHash`/`EndEpkHash` RNTBD tokens for the
+    /// full-pkrange XPK case without emitting the public EPK headers (which the
+    /// legacy gateway rejects when paired with `partitionkeyrangeid`).
+    pub pkrange_bounds: Option<crate::models::FeedRange>,
 
     /// Physical partition key range ID (emits `x-ms-documentdb-partitionkeyrangeid`).
     pub partition_key_range_id: Option<String>,
@@ -87,21 +95,38 @@ impl OperationOverrides {
         headers: &mut azure_core::http::headers::Headers,
     ) -> crate::error::Result<()> {
         if let Some(feed_range) = &self.feed_range {
-            if feed_range.min_inclusive() != &EffectivePartitionKey::MIN {
-                headers.insert(
-                    HeaderName::from_static(request_header_names::START_EPK),
-                    HeaderValue::from(feed_range.min_inclusive().as_str().to_owned()),
-                );
-            }
-            if feed_range.max_exclusive() != &EffectivePartitionKey::MAX {
-                headers.insert(
-                    HeaderName::from_static(request_header_names::END_EPK),
-                    HeaderValue::from(feed_range.max_exclusive().as_str().to_owned()),
-                );
-            }
+            // Narrowed-range XPK case (range < pkrange) AND scoped reads via
+            // `FeedRange`. These public EPK headers are honored by Gateway 2.0;
+            // the standard gateway rejects them when paired with
+            // `partitionkeyrangeid` (HTTP 400, regardless of the min bound —
+            // verified against live accounts), so the full-pkrange XPK fan-out
+            // path uses the internal `pkrange_bounds` headers (below) instead
+            // and leaves these absent.
+            headers.insert(
+                HeaderName::from_static(request_header_names::START_EPK),
+                HeaderValue::from(feed_range.min_inclusive().to_hex()),
+            );
+            headers.insert(
+                HeaderName::from_static(request_header_names::END_EPK),
+                HeaderValue::from(feed_range.max_exclusive().to_hex()),
+            );
             headers.insert(
                 HeaderName::from_static(request_header_names::READ_FEED_KEY_TYPE),
                 HeaderValue::from_static("EffectivePartitionKey"),
+            );
+        }
+
+        if let Some(bounds) = &self.pkrange_bounds {
+            // Internal-only headers consumed by the GW_V2 dispatcher to
+            // synthesize `StartEpkHash`/`EndEpkHash` RNTBD tokens for the
+            // full-pkrange XPK case. Legacy gateway ignores unknown headers.
+            headers.insert(
+                HeaderName::from_static(request_header_names::THINCLIENT_PKRANGE_MIN),
+                HeaderValue::from(bounds.min_inclusive().to_hex()),
+            );
+            headers.insert(
+                HeaderName::from_static(request_header_names::THINCLIENT_PKRANGE_MAX),
+                HeaderValue::from(bounds.max_exclusive().to_hex()),
             );
         }
 
@@ -195,8 +220,30 @@ pub(crate) async fn execute_operation_pipeline(
         .read_consistency_strategy()
         .copied()
         .unwrap_or(ReadConsistencyStrategy::Default);
+    let effective_consistency =
+        resolve_effective_consistency(read_consistency_strategy, account_default_consistency);
     let session_consistency_active = !session_capturing_disabled
         && read_consistency_strategy.is_session_effective(account_default_consistency);
+
+    // Rule 4 (RCS validation): GlobalStrong is
+    // valid only on reads against accounts whose default consistency is Strong.
+    // For writes or non-Strong accounts, server-side semantics would not be
+    // applied — fail fast client-side with BadRequest before incurring a round
+    // trip.
+    if matches!(
+        read_consistency_strategy,
+        ReadConsistencyStrategy::GlobalStrong
+    ) && operation.is_read_only()
+        && account_default_consistency != DefaultConsistencyLevel::Strong
+    {
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
+            .with_message(
+                "ReadConsistencyStrategy::GlobalStrong is only valid against accounts whose \
+                 default consistency level is Strong",
+            )
+            .build());
+    }
     let max_session_retries = options
         .max_session_retry_count()
         .copied()
@@ -276,11 +323,17 @@ pub(crate) async fn execute_operation_pipeline(
         let location = location_state_store.snapshot();
 
         // ── STAGE 2: Resolve endpoint ──────────────────────────────────
+        // The Gateway 2.0 RNTBD `GlobalDatabaseAccountName` token must carry
+        // the global account label. Prefer the account metadata `id` (Java
+        // parity), falling back to parsing the customer-provided global
+        // endpoint hostname when metadata has not synced yet.
+        let account_name = location_state_store.global_database_account_name();
         let routing = resolve_endpoint(
             operation,
             &retry_state,
             &location,
             pipeline_type.is_data_plane(),
+            account_name.is_some(),
             location_state_store.endpoint_unavailability_ttl(),
         );
 
@@ -333,6 +386,9 @@ pub(crate) async fn execute_operation_pipeline(
                     activity_id,
                     pipeline_type,
                     transport_security,
+                    account_name: account_name.clone(),
+                    effective_consistency,
+                    read_consistency_strategy,
                     session_manager,
                     session_consistency_active,
                     options,
@@ -439,6 +495,12 @@ pub(crate) async fn execute_operation_pipeline(
             activity_id,
             execution_context,
             deadline,
+            effective_consistency,
+            read_consistency_strategy: if operation.is_read_only() {
+                read_consistency_strategy
+            } else {
+                ReadConsistencyStrategy::Default
+            },
             resolved_session_token: session_consistency_active
                 .then(|| {
                     session_manager.resolve_session_token(
@@ -491,7 +553,9 @@ pub(crate) async fn execute_operation_pipeline(
                 user_agent,
                 pipeline_type,
                 transport_security,
-                endpoint_key: routing.endpoint.endpoint_key(),
+                endpoint_key: routing.endpoint_key.clone(),
+                account_name: account_name.clone(),
+                collection_rid: operation.container().map(|c| c.rid().to_owned()),
                 max_throttle_attempts,
                 max_throttle_wait_time,
             },
@@ -620,6 +684,27 @@ pub(crate) async fn execute_operation_pipeline(
                 );
                 diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;
             }
+            OperationAction::InRegionRetry { new_state, delay } => {
+                // Same-region retry path used by `try_handle_retry_with`
+                // (449 RetryWith). Deliberately does NOT call
+                // `advance_to_next_attempt` — we want the next attempt to
+                // hit the same endpoint/region. Deferred write-path effects
+                // also stay buffered: we haven't proven any region was
+                // healthy, so polluting routing state would be premature.
+                tracing::debug!(
+                    activity_id = %activity_id,
+                    retry_with_attempts = new_state
+                        .retry_with_state
+                        .as_ref()
+                        .map(|s| s.attempt_count)
+                        .unwrap_or(0),
+                    delay = ?delay,
+                    "in-region retry triggered",
+                );
+                apply_failover_delay(Some(delay)).await;
+                retry_state = new_state;
+                diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;
+            }
             OperationAction::SessionRetry { new_state } => {
                 // Retry to a different region — the 404/1002 is likely a
                 // transient replica lag. Session tokens are intentionally
@@ -716,6 +801,7 @@ pub(crate) async fn execute_operation_pipeline(
                     &retry_state,
                     &location,
                     pipeline_type.is_data_plane(),
+                    account_name.is_some(),
                     location_state_store.endpoint_unavailability_ttl(),
                 );
                 // Re-evaluate hedge eligibility against the *post-advance*
@@ -754,6 +840,9 @@ pub(crate) async fn execute_operation_pipeline(
                     activity_id,
                     pipeline_type,
                     transport_security,
+                    account_name: account_name.clone(),
+                    effective_consistency,
+                    read_consistency_strategy,
                     session_manager,
                     session_consistency_active,
                     options,
@@ -932,7 +1021,8 @@ fn resolve_endpoint(
     operation: &CosmosOperation,
     retry_state: &OperationRetryState,
     location: &LocationSnapshot,
-    prefer_gateway20: bool,
+    prefer_gateway_v2: bool,
+    account_name_present: bool,
     endpoint_unavailability_ttl: Duration,
 ) -> RoutingDecision {
     let account = location.account.as_ref();
@@ -1038,11 +1128,22 @@ fn resolve_endpoint(
          this should never happen — only account-topology fetches \
          (which bypass this routing path) may use the global endpoint"
     );
-    let use_gateway20 = selected.uses_gateway20(prefer_gateway20);
-    let transport_mode = if use_gateway20 {
-        TransportMode::Gateway20
+    let use_gateway_v2 = selected.uses_gateway_v2(prefer_gateway_v2)
+        && account_name_present
+        && is_operation_supported_by_gateway_v2(
+            operation.resource_type(),
+            operation.operation_type(),
+        );
+    let transport_mode = if use_gateway_v2 {
+        TransportMode::GatewayV2
     } else {
         TransportMode::Gateway
+    };
+    let selected_url = selected.selected_url(use_gateway_v2).clone();
+    let endpoint_key = if use_gateway_v2 {
+        EndpointKey::try_from(&selected_url).expect("selected URL must have a valid host and port")
+    } else {
+        selected.endpoint_key()
     };
 
     // Check for partition-level override (PPAF/PPCB).
@@ -1055,14 +1156,27 @@ fn resolve_endpoint(
 
         // Helper: build a RoutingDecision from a partition override endpoint.
         let make_partition_routing = |ep: CosmosEndpoint| -> RoutingDecision {
-            let ep_use_gw20 = ep.uses_gateway20(prefer_gateway20);
+            let ep_use_gw_v2 = ep.uses_gateway_v2(prefer_gateway_v2)
+                && account_name_present
+                && is_operation_supported_by_gateway_v2(
+                    operation.resource_type(),
+                    operation.operation_type(),
+                );
+            let ep_url = ep.selected_url(ep_use_gw_v2).clone();
+            let ep_endpoint_key = if ep_use_gw_v2 {
+                EndpointKey::try_from(&ep_url)
+                    .expect("selected URL must have a valid host and port")
+            } else {
+                ep.endpoint_key()
+            };
             RoutingDecision {
-                selected_url: ep.selected_url(ep_use_gw20).clone(),
-                transport_mode: if ep_use_gw20 {
-                    TransportMode::Gateway20
+                selected_url: ep_url,
+                transport_mode: if ep_use_gw_v2 {
+                    TransportMode::GatewayV2
                 } else {
                     TransportMode::Gateway
                 },
+                endpoint_key: ep_endpoint_key,
                 endpoint: ep,
             }
         };
@@ -1130,8 +1244,9 @@ fn resolve_endpoint(
     }
 
     RoutingDecision {
-        selected_url: selected.selected_url(use_gateway20).clone(),
+        selected_url,
         endpoint: selected,
+        endpoint_key,
         transport_mode,
     }
 }
@@ -1243,6 +1358,10 @@ struct TransportRequestContext<'a> {
     activity_id: &'a ActivityId,
     execution_context: ExecutionContext,
     deadline: Option<Instant>,
+    effective_consistency: DefaultConsistencyLevel,
+    /// Raw (uncollapsed) RCS to be emitted on the wire for read operations.
+    /// `Default` for non-reads or when caller did not specify an RCS.
+    read_consistency_strategy: ReadConsistencyStrategy,
     resolved_session_token: Option<SessionToken>,
     throughput_control: Option<ResolvedThroughputControl>,
 }
@@ -1330,6 +1449,21 @@ fn build_transport_request(
                 azure_core::http::headers::CONTENT_TYPE,
                 HeaderValue::from_static(QUERY_CONTENT_TYPE),
             );
+            let supported_features_header =
+                HeaderName::from_static(request_header_names::SUPPORTED_QUERY_FEATURES);
+            if headers
+                .get_optional_str(&supported_features_header)
+                .is_none()
+            {
+                headers.insert(
+                    supported_features_header,
+                    HeaderValue::from_static(crate::query::SUPPORTED_QUERY_FEATURES),
+                );
+            }
+            let query_version_header = HeaderName::from_static(request_header_names::QUERY_VERSION);
+            if headers.get_optional_str(&query_version_header).is_none() {
+                headers.insert(query_version_header, HeaderValue::from_static("1.0"));
+            }
         }
         OperationType::QueryPlan => {
             headers.insert(
@@ -1344,6 +1478,26 @@ fn build_transport_request(
                 HeaderName::from_static(request_header_names::IS_QUERY_PLAN_REQUEST),
                 HeaderValue::from_static("True"),
             );
+            // These two headers must always be set on QueryPlan
+            // requests. The thin-client proxy reads them out of the RNTBD body
+            // (mirrored from these HTTP headers in gateway_v2_dispatch) and rejects
+            // requests where they're missing entirely. Default them here when the
+            // caller hasn't already set explicit values.
+            let supported_features_header =
+                HeaderName::from_static(request_header_names::SUPPORTED_QUERY_FEATURES);
+            if headers
+                .get_optional_str(&supported_features_header)
+                .is_none()
+            {
+                headers.insert(
+                    supported_features_header,
+                    HeaderValue::from_static(crate::query::SUPPORTED_QUERY_FEATURES),
+                );
+            }
+            let query_version_header = HeaderName::from_static(request_header_names::QUERY_VERSION);
+            if headers.get_optional_str(&query_version_header).is_none() {
+                headers.insert(query_version_header, HeaderValue::from_static("1.0"));
+            }
         }
         _ => {}
     }
@@ -1396,6 +1550,11 @@ fn build_transport_request(
     Ok(TransportRequest {
         method,
         endpoint: ctx.routing.endpoint.clone(),
+        transport_mode: ctx.routing.transport_mode,
+        operation_type: operation.operation_type(),
+        effective_partition_key: effective_partition_key_for_request(operation)?,
+        effective_consistency: ctx.effective_consistency,
+        read_consistency_strategy: ctx.read_consistency_strategy,
         url,
         headers,
         body: operation.body().map(azure_core::Bytes::copy_from_slice),
@@ -1403,6 +1562,45 @@ fn build_transport_request(
         execution_context: ctx.execution_context,
         deadline: ctx.deadline,
     })
+}
+
+/// Computes the effective partition key for an item-scoped request before the
+/// transport pipeline runs, so wire layers receive a ready-to-encode EPK rather
+/// than raw partition-key/definition values.
+///
+/// Returns `Ok(None)` when the operation has no partition key, no container
+/// context, or an empty partition key. Surfaces a `BadRequest` when the caller
+/// supplies more components than the container's partition-key definition
+/// declares (the hash routines would otherwise silently hash the extras into a
+/// broken EPK).
+fn effective_partition_key_for_request(
+    operation: &CosmosOperation,
+) -> crate::error::Result<Option<EffectivePartitionKey>> {
+    let (Some(partition_key), Some(container)) = (operation.partition_key(), operation.container())
+    else {
+        return Ok(None);
+    };
+
+    if partition_key.is_empty() {
+        return Ok(None);
+    }
+
+    let partition_key_definition = container.partition_key_definition();
+    if partition_key.values().len() > partition_key_definition.paths().len() {
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
+            .with_message(
+                "Partition key supplies more components than the container's \
+                 partition-key definition declares",
+            )
+            .build());
+    }
+
+    Ok(Some(EffectivePartitionKey::compute(
+        partition_key.values(),
+        partition_key_definition.kind(),
+        partition_key_definition.version(),
+    )))
 }
 
 /// Builds a `CosmosResponse` from a successful `TransportResult`.
@@ -1839,6 +2037,16 @@ struct AttemptContext<'a> {
     activity_id: &'a ActivityId,
     pipeline_type: PipelineType,
     transport_security: TransportSecurity,
+    /// Global database account name parsed from `account_endpoint`. Used by
+    /// Gateway 2.0 request wrapping when an attempt routes to a G2 endpoint.
+    account_name: Option<String>,
+    /// Effective `DefaultConsistencyLevel` resolved for this operation
+    /// (read-strategy + account default). Threaded through hedge legs so they
+    /// build the request identically to the non-hedged path.
+    effective_consistency: DefaultConsistencyLevel,
+    /// Configured `ReadConsistencyStrategy` for this operation. Same threading
+    /// rationale as `effective_consistency`.
+    read_consistency_strategy: ReadConsistencyStrategy,
     session_manager: &'a SessionManager,
     /// Whether session consistency is in effect for this operation
     /// (drives session-token resolve/capture inside the attempt).
@@ -2176,6 +2384,8 @@ async fn perform_single_attempt(
         deadline: ctx.deadline,
         resolved_session_token,
         throughput_control: ctx.throughput_control,
+        effective_consistency: ctx.effective_consistency,
+        read_consistency_strategy: ctx.read_consistency_strategy,
     };
 
     let mut transport_request = build_transport_request(
@@ -2225,7 +2435,9 @@ async fn perform_single_attempt(
             user_agent: ctx.user_agent,
             pipeline_type: ctx.pipeline_type,
             transport_security: ctx.transport_security,
-            endpoint_key: routing.endpoint.endpoint_key(),
+            endpoint_key: routing.endpoint_key.clone(),
+            account_name: ctx.account_name.clone(),
+            collection_rid: ctx.operation.container().map(|c| c.rid().to_owned()),
             max_throttle_attempts,
             max_throttle_wait_time,
         },
@@ -3477,11 +3689,13 @@ mod tests {
                 AccountEndpointState, CosmosEndpoint, LocationEffect, LocationIndex,
                 LocationSnapshot,
             },
+            transport::EndpointKey,
         },
         models::{
             request_header_names, AccountReference, ActivityId, ContainerProperties,
-            ContainerReference, CosmosOperation, DatabaseReference, EffectivePartitionKey,
-            FeedRange, ItemReference, PartitionKey, PartitionKeyDefinition, SystemProperties,
+            ContainerReference, CosmosOperation, DatabaseReference, DefaultConsistencyLevel,
+            EffectivePartitionKey, FeedRange, ItemReference, PartitionKey, PartitionKeyDefinition,
+            PartitionKeyValue, SystemProperties,
         },
         options::{PriorityLevel, ResolvedThroughputControl},
     };
@@ -3516,11 +3730,49 @@ mod tests {
         )
     }
 
+    /// Supplying more partition-key components than the container's single-path
+    /// definition declares must surface as a `BadRequest` from the EPK
+    /// precomputation, never silently hash the extras into a broken EPK. This
+    /// validation runs in the operation pipeline (before the transport
+    /// pipeline) so wire layers receive a ready-to-encode EPK.
+    #[test]
+    fn effective_partition_key_rejects_too_many_components() {
+        let partition_key = PartitionKey::from(vec![
+            PartitionKeyValue::from("tenant1".to_string()),
+            PartitionKeyValue::from("extra".to_string()),
+        ]);
+        let item = ItemReference::from_name(&test_container(), partition_key, "doc1");
+        let operation = CosmosOperation::create_item(item).with_body(b"{}".to_vec());
+
+        let error = super::effective_partition_key_for_request(&operation)
+            .expect_err("too many components must error");
+
+        assert_eq!(
+            error.status(),
+            crate::error::CosmosStatus::CLIENT_BAD_REQUEST
+        );
+    }
+
+    /// A single-component key matching the single-path definition yields a
+    /// point EPK (no error, `Some` value).
+    #[test]
+    fn effective_partition_key_for_matching_components() {
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::create_item(item).with_body(b"{}".to_vec());
+
+        let epk = super::effective_partition_key_for_request(&operation)
+            .expect("matching components must compute")
+            .expect("partition key present yields Some");
+
+        assert!(!epk.as_bytes().is_empty());
+    }
+
     fn test_routing() -> RoutingDecision {
         let endpoint =
             CosmosEndpoint::global(Url::parse("https://test.documents.azure.com:443/").unwrap());
         RoutingDecision {
             selected_url: endpoint.url().clone(),
+            endpoint_key: endpoint.endpoint_key(),
             endpoint,
             transport_mode: TransportMode::Gateway,
         }
@@ -3611,6 +3863,8 @@ mod tests {
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
             deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             resolved_session_token: None,
             throughput_control: None,
         };
@@ -3633,6 +3887,8 @@ mod tests {
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
             deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             resolved_session_token: None,
             throughput_control: None,
         };
@@ -3655,6 +3911,8 @@ mod tests {
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
             deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             resolved_session_token: None,
             throughput_control: None,
         };
@@ -3682,6 +3940,8 @@ mod tests {
             activity_id: &activity_id,
             execution_context: ExecutionContext::Retry,
             deadline: Some(std::time::Instant::now() + Duration::from_secs(5)),
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             resolved_session_token: None,
             throughput_control: None,
         };
@@ -3703,14 +3963,17 @@ mod tests {
     fn build_transport_request_uses_routed_endpoint_url_directly() {
         let operation =
             CosmosOperation::read_database(DatabaseReference::from_name(test_account(), "mydb"));
+        let selected_url =
+            Url::parse("https://test-westus2-thin.documents.azure.com:444/").unwrap();
         let routing = RoutingDecision {
-            endpoint: CosmosEndpoint::regional_with_gateway20(
+            endpoint: CosmosEndpoint::regional_with_gateway_v2(
                 "westus2".into(),
                 Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
-                Url::parse("https://test-westus2-thin.documents.azure.com:444/").unwrap(),
+                selected_url.clone(),
             ),
-            selected_url: Url::parse("https://test-westus2-thin.documents.azure.com:444/").unwrap(),
-            transport_mode: TransportMode::Gateway20,
+            endpoint_key: EndpointKey::try_from(&selected_url).unwrap(),
+            selected_url,
+            transport_mode: TransportMode::GatewayV2,
         };
 
         let activity_id = ActivityId::from_string("default-activity".to_string());
@@ -3719,6 +3982,8 @@ mod tests {
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
             deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             resolved_session_token: None,
             throughput_control: None,
         };
@@ -3736,11 +4001,12 @@ mod tests {
     fn build_transport_request_uses_default_url_for_global_endpoint() {
         let operation =
             CosmosOperation::read_database(DatabaseReference::from_name(test_account(), "mydb"));
+        let endpoint =
+            CosmosEndpoint::global(Url::parse("https://test.documents.azure.com:443/").unwrap());
         let routing = RoutingDecision {
-            endpoint: CosmosEndpoint::global(
-                Url::parse("https://test.documents.azure.com:443/").unwrap(),
-            ),
-            selected_url: Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            selected_url: endpoint.url().clone(),
+            endpoint_key: endpoint.endpoint_key(),
+            endpoint,
             transport_mode: TransportMode::Gateway,
         };
 
@@ -3750,6 +4016,8 @@ mod tests {
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
             deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             resolved_session_token: None,
             throughput_control: None,
         };
@@ -3788,6 +4056,7 @@ mod tests {
             location: LocationIndex::initial(0),
             failover_retry_count: 0,
             session_token_retry_count: 1,
+            retry_with_state: None,
             backend_failover_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
@@ -3811,6 +4080,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            true,
             Duration::from_secs(60),
         );
         assert_eq!(routing.endpoint, write_endpoint);
@@ -3848,6 +4118,7 @@ mod tests {
             location: LocationIndex::initial(0),
             failover_retry_count: 0,
             session_token_retry_count: 0,
+            retry_with_state: None,
             backend_failover_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
@@ -3871,6 +4142,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            true,
             Duration::from_secs(60),
         );
         // Unavailable regional endpoint is de-prioritized but still preferred
@@ -3908,6 +4180,7 @@ mod tests {
             location: LocationIndex::initial(0),
             failover_retry_count: 0,
             session_token_retry_count: 0,
+            retry_with_state: None,
             backend_failover_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
@@ -3931,6 +4204,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            true,
             Duration::from_secs(60),
         );
         assert_eq!(routing.endpoint, read_endpoint);
@@ -3975,6 +4249,7 @@ mod tests {
             location: LocationIndex::initial(0).next(3),
             failover_retry_count: 0,
             session_token_retry_count: 0,
+            retry_with_state: None,
             backend_failover_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
@@ -3998,6 +4273,7 @@ mod tests {
             &stale_retry_state,
             &location,
             false,
+            true,
             Duration::from_secs(60),
         );
         assert_eq!(first_routing.endpoint, endpoint_a);
@@ -4011,6 +4287,7 @@ mod tests {
             &advanced_state,
             &location,
             false,
+            true,
             Duration::from_secs(60),
         );
         assert_eq!(second_routing.endpoint, endpoint_b);
@@ -4119,13 +4396,13 @@ mod tests {
     }
 
     #[test]
-    fn resolve_endpoint_prefers_gateway20_for_dataplane_reads() {
+    fn resolve_endpoint_prefers_gateway_v2_for_dataplane_reads() {
         let operation = CosmosOperation::read_item(ItemReference::from_name(
             &test_container(),
             PartitionKey::from("pk1"),
             "doc1",
         ));
-        let endpoint = CosmosEndpoint::regional_with_gateway20(
+        let endpoint = CosmosEndpoint::regional_with_gateway_v2(
             "westus2".into(),
             Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
             Url::parse("https://test-westus2-thin.documents.azure.com:444/").unwrap(),
@@ -4153,10 +4430,11 @@ mod tests {
             &retry_state,
             &location,
             true,
+            true,
             Duration::from_secs(60),
         );
         assert_eq!(routing.endpoint, endpoint);
-        assert_eq!(routing.transport_mode, TransportMode::Gateway20);
+        assert_eq!(routing.transport_mode, TransportMode::GatewayV2);
         assert_eq!(
             routing.selected_url.as_str(),
             "https://test-westus2-thin.documents.azure.com:444/"
@@ -4164,13 +4442,146 @@ mod tests {
     }
 
     #[test]
-    fn resolve_endpoint_skips_unavailable_region_when_gateway20_is_present() {
+    fn resolve_endpoint_falls_back_to_gateway_when_op_ineligible_for_gateway_v2() {
+        let operation = CosmosOperation::read_all_databases(test_account());
+        let endpoint = CosmosEndpoint::regional_with_gateway_v2(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+            Url::parse("https://test-westus2-thin.documents.azure.com:444/").unwrap(),
+        );
+
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![endpoint.clone()].into(),
+            preferred_write_endpoints: vec![endpoint.clone()].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: endpoint.clone(),
+        }));
+
+        let retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            false,
+            Vec::new(),
+            3,
+            2,
+        );
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            true,
+            true,
+            Duration::from_secs(60),
+        );
+
+        assert_eq!(routing.transport_mode, TransportMode::Gateway);
+        assert_eq!(routing.selected_url, *endpoint.url());
+    }
+
+    #[test]
+    fn resolve_endpoint_falls_back_to_gateway_when_account_name_unparseable() {
         let operation = CosmosOperation::read_item(ItemReference::from_name(
             &test_container(),
             PartitionKey::from("pk1"),
             "doc1",
         ));
-        let endpoint = CosmosEndpoint::regional_with_gateway20(
+        let endpoint = CosmosEndpoint::regional_with_gateway_v2(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+            Url::parse("https://test-westus2-thin.documents.azure.com:444/").unwrap(),
+        );
+
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![endpoint.clone()].into(),
+            preferred_write_endpoints: vec![endpoint.clone()].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: endpoint.clone(),
+        }));
+
+        let retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            false,
+            Vec::new(),
+            3,
+            2,
+        );
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            true,
+            false,
+            Duration::from_secs(60),
+        );
+
+        assert_eq!(routing.transport_mode, TransportMode::Gateway);
+        assert_eq!(routing.selected_url, *endpoint.url());
+    }
+
+    #[test]
+    fn resolve_endpoint_uses_gateway_v2_authority_for_endpoint_key() {
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+        let gateway_v2_url = Url::parse("https://central.gateway_v2.azure.com:444/").unwrap();
+        let endpoint = CosmosEndpoint::regional_with_gateway_v2(
+            "centralus".into(),
+            Url::parse("https://central.documents.azure.com:443/").unwrap(),
+            gateway_v2_url.clone(),
+        );
+
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![endpoint.clone()].into(),
+            preferred_write_endpoints: vec![endpoint.clone()].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: endpoint,
+        }));
+
+        let retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            false,
+            Vec::new(),
+            3,
+            2,
+        );
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            true,
+            true,
+            Duration::from_secs(60),
+        );
+
+        assert_eq!(routing.transport_mode, TransportMode::GatewayV2);
+        assert_eq!(
+            routing.selected_url.host_str(),
+            Some("central.gateway_v2.azure.com")
+        );
+        assert_eq!(
+            routing.endpoint_key,
+            EndpointKey::try_from(&gateway_v2_url).unwrap()
+        );
+    }
+
+    #[test]
+    fn resolve_endpoint_skips_unavailable_region_when_gateway_v2_is_present() {
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+        let endpoint = CosmosEndpoint::regional_with_gateway_v2(
             "westus2".into(),
             Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
             Url::parse("https://test-westus2-thin.documents.azure.com:444/").unwrap(),
@@ -4211,6 +4622,7 @@ mod tests {
             &retry_state,
             &location,
             true,
+            true,
             Duration::from_secs(60),
         );
         assert_eq!(routing.endpoint, fallback_endpoint);
@@ -4248,6 +4660,7 @@ mod tests {
             location: LocationIndex::initial(0),
             failover_retry_count: 0,
             session_token_retry_count: 0,
+            retry_with_state: None,
             backend_failover_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
@@ -4270,6 +4683,7 @@ mod tests {
             &operation,
             &retry_state,
             &location,
+            false,
             false,
             Duration::from_secs(60),
         );
@@ -4324,6 +4738,7 @@ mod tests {
             ppcb_active: false,
             pending_write_effects: Vec::new(),
             hedge_already_fired: false,
+            retry_with_state: None,
         };
         retry_state.is_dataplane = true;
 
@@ -4332,6 +4747,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            true,
             Duration::from_secs(60),
         );
         assert_eq!(routing.endpoint, hub_endpoint);
@@ -4386,6 +4802,7 @@ mod tests {
             ppcb_active: false,
             pending_write_effects: Vec::new(),
             hedge_already_fired: false,
+            retry_with_state: None,
         };
         retry_state.is_dataplane = true;
 
@@ -4394,6 +4811,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            true,
             Duration::from_secs(60),
         );
         // Even with all regions excluded, the hub write region is used as
@@ -4461,6 +4879,7 @@ mod tests {
             ppcb_active: false,
             pending_write_effects: Vec::new(),
             hedge_already_fired: false,
+            retry_with_state: None,
         };
         retry_state.is_dataplane = true;
 
@@ -4469,6 +4888,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            true,
             Duration::from_secs(60),
         );
         // Excluded + unavailable: data-plane op must get the hub write
@@ -4549,6 +4969,7 @@ mod tests {
             ppcb_active: false,
             pending_write_effects: Vec::new(),
             hedge_already_fired: false,
+            retry_with_state: None,
         };
         retry_state.is_dataplane = true;
 
@@ -4557,6 +4978,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            true,
             Duration::from_secs(60),
         );
 
@@ -4634,6 +5056,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            true,
             Duration::from_secs(60),
         );
         assert_eq!(
@@ -4719,6 +5142,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            true,
             Duration::from_secs(60),
         );
         assert_eq!(
@@ -4792,6 +5216,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            true,
             Duration::from_secs(60),
         );
         assert_eq!(
@@ -4854,6 +5279,7 @@ mod tests {
             &operation,
             &retry_state,
             &location,
+            false,
             false,
             Duration::from_secs(60),
         );
@@ -4920,6 +5346,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            false,
             Duration::from_secs(60),
         );
         assert_eq!(
@@ -4965,6 +5392,7 @@ mod tests {
             &operation,
             &retry_state,
             &location,
+            false,
             false,
             Duration::from_secs(60),
         );
@@ -5019,6 +5447,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            false,
             Duration::from_secs(60),
         );
         assert_eq!(
@@ -5069,6 +5498,7 @@ mod tests {
             &operation,
             &retry_state,
             &location,
+            false,
             false,
             Duration::from_secs(60),
         );
@@ -5160,6 +5590,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            false,
             Duration::from_secs(60),
         );
         assert_eq!(
@@ -5235,6 +5666,7 @@ mod tests {
             &operation,
             &retry_state,
             &location,
+            false,
             false,
             Duration::from_secs(60),
         );
@@ -5318,6 +5750,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            false,
             Duration::from_secs(60),
         );
         assert_eq!(
@@ -5371,6 +5804,7 @@ mod tests {
             &operation,
             &retry_state,
             &location,
+            false,
             false,
             Duration::from_secs(60),
         );
@@ -5435,6 +5869,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            false,
             Duration::from_secs(60),
         );
         assert_eq!(
@@ -5488,6 +5923,7 @@ mod tests {
             &operation,
             &retry_state,
             &location,
+            false,
             false,
             Duration::from_secs(60),
         );
@@ -5561,6 +5997,7 @@ mod tests {
             &operation,
             &retry_state,
             &location,
+            false,
             false,
             Duration::from_secs(60),
         );
@@ -5643,6 +6080,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            false,
             Duration::from_secs(60),
         );
         assert_eq!(
@@ -5718,6 +6156,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            false,
             Duration::from_secs(60),
         );
         assert_ne!(
@@ -5789,6 +6228,7 @@ mod tests {
             &operation,
             &retry_state,
             &location,
+            false,
             false,
             Duration::from_secs(60),
         );
@@ -5873,6 +6313,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            false,
             Duration::from_secs(60),
         );
         assert_ne!(
@@ -5942,6 +6383,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            false,
             Duration::from_secs(60),
         );
         assert_eq!(
@@ -5991,6 +6433,7 @@ mod tests {
             &operation,
             &retry_state,
             &location,
+            false,
             false,
             Duration::from_secs(60),
         );
@@ -6216,6 +6659,8 @@ mod tests {
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
             deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             resolved_session_token: None,
             throughput_control: None,
         };
@@ -6249,6 +6694,8 @@ mod tests {
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
             deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             resolved_session_token: None,
             throughput_control: None,
         };
@@ -6286,6 +6733,8 @@ mod tests {
             deadline: None,
             resolved_session_token: None,
             throughput_control: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
         };
         let request =
             build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
@@ -6333,6 +6782,8 @@ mod tests {
             deadline: None,
             resolved_session_token: None,
             throughput_control: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
         };
         let request =
             build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
@@ -6368,6 +6819,8 @@ mod tests {
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
             deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             resolved_session_token: None,
             throughput_control,
         };
@@ -6411,6 +6864,8 @@ mod tests {
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
             deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             resolved_session_token: None,
             throughput_control,
         };
@@ -6454,6 +6909,8 @@ mod tests {
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
             deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             resolved_session_token: None,
             throughput_control,
         };
@@ -6508,6 +6965,8 @@ mod tests {
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
             deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             resolved_session_token: None,
             throughput_control: None,
         };
@@ -6589,6 +7048,8 @@ mod tests {
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
             deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             resolved_session_token: None,
             throughput_control: None,
         };
@@ -6652,6 +7113,8 @@ mod tests {
             deadline: None,
             resolved_session_token: None,
             throughput_control: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
         };
         build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
             .expect("request should build")
@@ -7339,6 +7802,7 @@ mod tests {
             ppcb_active: false,
             pending_write_effects: Vec::new(),
             hedge_already_fired: false,
+            retry_with_state: None,
         }
     }
 

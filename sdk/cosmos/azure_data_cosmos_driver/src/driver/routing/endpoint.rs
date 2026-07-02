@@ -13,7 +13,7 @@ use url::Url;
 struct CosmosEndpointData {
     region: Option<Region>,
     gateway_url: Url,
-    gateway20_url: Option<Url>,
+    gateway_v2_url: Option<Url>,
     /// Pre-computed `host:port` key for the gateway URL.
     ///
     /// Stored as `Arc<str>` so cloning the [`EndpointKey`] (once per transport
@@ -50,7 +50,7 @@ impl CosmosEndpoint {
         Self(Arc::new(CosmosEndpointData {
             region: None,
             gateway_url: url,
-            gateway20_url: None,
+            gateway_v2_url: None,
             endpoint_key,
         }))
     }
@@ -62,19 +62,19 @@ impl CosmosEndpoint {
         Self(Arc::new(CosmosEndpointData {
             region: Some(region),
             gateway_url: url,
-            gateway20_url: None,
+            gateway_v2_url: None,
             endpoint_key,
         }))
     }
 
     /// Creates a regional endpoint with an optional Gateway 2.0 URL.
-    pub fn regional_with_gateway20(region: Region, gateway_url: Url, gateway20_url: Url) -> Self {
+    pub fn regional_with_gateway_v2(region: Region, gateway_url: Url, gateway_v2_url: Url) -> Self {
         let endpoint_key = EndpointKey::try_from(&gateway_url)
             .expect("CosmosEndpoint URL must have a valid host and port");
         Self(Arc::new(CosmosEndpointData {
             region: Some(region),
             gateway_url,
-            gateway20_url: Some(gateway20_url),
+            gateway_v2_url: Some(gateway_v2_url),
             endpoint_key,
         }))
     }
@@ -103,19 +103,19 @@ impl CosmosEndpoint {
 
     /// Returns the Gateway 2.0 URL for this endpoint, if available.
     #[cfg(test)]
-    pub fn gateway20_url(&self) -> Option<&Url> {
-        self.0.gateway20_url.as_ref()
+    pub fn gateway_v2_url(&self) -> Option<&Url> {
+        self.0.gateway_v2_url.as_ref()
     }
 
     /// Returns `true` when Gateway 2.0 should be used for this attempt.
-    pub(crate) fn uses_gateway20(&self, prefer_gateway20: bool) -> bool {
-        prefer_gateway20 && self.0.gateway20_url.is_some()
+    pub(crate) fn uses_gateway_v2(&self, prefer_gateway_v2: bool) -> bool {
+        prefer_gateway_v2 && self.0.gateway_v2_url.is_some()
     }
 
     /// Returns the concrete URL selected for this attempt.
-    pub(crate) fn selected_url(&self, prefer_gateway20: bool) -> &Url {
-        if prefer_gateway20 {
-            if let Some(url) = &self.0.gateway20_url {
+    pub(crate) fn selected_url(&self, prefer_gateway_v2: bool) -> &Url {
+        if prefer_gateway_v2 {
+            if let Some(url) = &self.0.gateway_v2_url {
                 return url;
             }
         }

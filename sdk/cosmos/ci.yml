@@ -32,6 +32,9 @@ extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
   parameters:
     ServiceDirectory: cosmos
+    # macOS/Windows live-test legs need ~63-65 min; raise from the 60-min default
+    # so they finish instead of being cancelled at the agent cap.
+    TestTimeoutInMinutes: 90
     RunLiveTests: ${{ or(parameters.RunLiveTests, eq(variables['Build.Reason'], 'Schedule'), endsWith(variables['Build.DefinitionName'], '- weekly')) }}
     Artifacts:
     - name: azure_data_cosmos_macros
@@ -43,6 +46,13 @@ extends:
     CloudConfig:
       Public:
         ServiceConnection: azure-sdk-tests-cosmos
+    EnvVars:
+      AZURE_COSMOS_GW_V2_ENDPOINT: $(thinclient-test-endpoint)
+      AZURE_COSMOS_GW_V2_KEY: $(thinclient-test-key)
+      AZURE_COSMOS_GW_V2_MULTI_REGION_ENDPOINT: $(thin-client-canary-multi-region-session-endpoint)
+      AZURE_COSMOS_GW_V2_MULTI_REGION_KEY: $(thin-client-canary-multi-region-session-key)
+    VariableGroups:
+    - 'Test Secrets for Cosmos Live Tests - user administered'
     MatrixConfigs:
       - Name: Cosmos_release
         Path: sdk/cosmos/release-platform-matrix.json
