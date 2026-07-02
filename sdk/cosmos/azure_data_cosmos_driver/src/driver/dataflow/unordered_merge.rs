@@ -14,7 +14,7 @@ use std::collections::VecDeque;
 use async_trait::async_trait;
 
 use super::{PageResult, PipelineContext, PipelineNode, PipelineNodeState, RangedToken};
-use crate::models::ChangeFeedStartMarker;
+use crate::models::ChangeFeedStartFrom;
 
 /// Maximum number of consecutive split retries before giving up.
 const MAX_SPLIT_RETRIES: usize = 10;
@@ -33,8 +33,8 @@ pub(crate) struct UnorderedMerge {
     /// The feed's original start position, carried so it can be re-persisted in
     /// the continuation token on every checkpoint. Partitions that were never
     /// polled re-apply it on resume instead of reading from the beginning.
-    /// `None` means the feed started from the beginning.
-    start_marker: Option<ChangeFeedStartMarker>,
+    /// `None` means no start position was recorded.
+    start_marker: Option<ChangeFeedStartFrom>,
 }
 
 impl UnorderedMerge {
@@ -48,7 +48,7 @@ impl UnorderedMerge {
     }
 
     /// Sets the change feed start marker carried in snapshots of this node.
-    pub(crate) fn with_start_marker(mut self, start_marker: Option<ChangeFeedStartMarker>) -> Self {
+    pub(crate) fn with_start_marker(mut self, start_marker: Option<ChangeFeedStartFrom>) -> Self {
         self.start_marker = start_marker;
         self
     }

@@ -16,7 +16,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::models::ChangeFeedStartMarker;
+use crate::models::ChangeFeedStartFrom;
 
 /// Serializable snapshot of a [`PipelineNode`](super::PipelineNode) subtree.
 ///
@@ -70,12 +70,13 @@ pub(crate) enum PipelineNodeState {
     /// `start_from` records the feed's original start position so partitions
     /// that were never polled before the checkpoint (and thus have no entry in
     /// `active_tokens`) re-apply it on resume instead of reading from the
-    /// beginning. `None` means the feed started from the beginning.
+    /// beginning. `None` means no start position was recorded (e.g. the node
+    /// was not built from a change feed operation).
     UnorderedMerge {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         active_tokens: Vec<RangedToken>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
-        start_from: Option<ChangeFeedStartMarker>,
+        start_from: Option<ChangeFeedStartFrom>,
     },
 }
 
@@ -357,7 +358,7 @@ mod tests {
     fn unordered_merge_round_trips_with_start_from() {
         let now = PipelineNodeState::UnorderedMerge {
             active_tokens: vec![],
-            start_from: Some(ChangeFeedStartMarker::Now),
+            start_from: Some(ChangeFeedStartFrom::Now),
         };
         let json = serde_json::to_string(&now).unwrap();
         assert_eq!(
@@ -371,9 +372,9 @@ mod tests {
 
         let point_in_time = PipelineNodeState::UnorderedMerge {
             active_tokens: vec![token("00", "FF", "t1")],
-            start_from: Some(ChangeFeedStartMarker::PointInTime(
-                "Wed, 21 Oct 2015 07:28:00 GMT".to_string(),
-            )),
+            start_from: Some(ChangeFeedStartFrom::PointInTime(time::macros::datetime!(
+                2015-10-21 07:28:00 UTC
+            ))),
         };
         let json = serde_json::to_string(&point_in_time).unwrap();
         assert_eq!(

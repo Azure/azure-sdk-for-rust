@@ -37,7 +37,7 @@ use crate::{
     diagnostics::DiagnosticsContextBuilder,
     models::{
         effective_partition_key::EffectivePartitionKey, AccountReference, ActivityId,
-        ChangeFeedStartMarker, ContainerProperties, ContainerReference, ContinuationToken,
+        ChangeFeedStartFrom, ContainerProperties, ContainerReference, ContinuationToken,
         CosmosOperation, CosmosResponse, CosmosResponseHeaders, CosmosStatus, FeedRange,
         ResolvedToken, SystemProperties,
     },
@@ -75,7 +75,7 @@ fn test_container() -> ContainerReference {
 
 /// Builds a change feed operation over the whole container, optionally
 /// carrying an explicit start position. `None` means "from the beginning".
-fn change_feed_operation(start_from: Option<ChangeFeedStartMarker>) -> Arc<CosmosOperation> {
+fn change_feed_operation(start_from: Option<ChangeFeedStartFrom>) -> Arc<CosmosOperation> {
     let mut op = CosmosOperation::change_feed(test_container(), Some(FeedRange::full()));
     if let Some(marker) = start_from {
         op = op.with_change_feed_start(marker);
@@ -164,7 +164,7 @@ fn round_trip_state(state: PipelineNodeState, op: &CosmosOperation) -> PipelineN
 /// marker both survive serialize -> resume — before the merge scenario.
 #[tokio::test]
 async fn single_partition_change_feed_resume_roundtrips() {
-    let op = change_feed_operation(Some(ChangeFeedStartMarker::Now));
+    let op = change_feed_operation(Some(ChangeFeedStartFrom::Now));
 
     // Session 1: one partition spans the full range. Poll once; the page
     // carries the next continuation in its ETag ("lsn-1").
@@ -197,7 +197,7 @@ async fn single_partition_change_feed_resume_roundtrips() {
             assert_eq!(active_tokens[0].min_epk, "");
             assert_eq!(active_tokens[0].max_epk, "FF");
             assert_eq!(active_tokens[0].server_continuation, "lsn-1");
-            assert_eq!(*start_from, Some(ChangeFeedStartMarker::Now));
+            assert_eq!(*start_from, Some(ChangeFeedStartFrom::Now));
         }
         other => panic!("expected UnorderedMerge snapshot, got {other:?}"),
     }

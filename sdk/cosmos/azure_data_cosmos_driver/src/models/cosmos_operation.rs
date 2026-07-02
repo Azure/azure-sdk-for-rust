@@ -11,21 +11,29 @@ use crate::models::{
 use azure_core::http::Etag;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
+use time::OffsetDateTime;
 
-/// The position a change feed was originally started from, in a form that can
-/// be persisted inside a continuation token.
+/// The position a change feed is started from.
 ///
-/// On resume, partitions that were never polled before the checkpoint carry no
-/// per-partition continuation, so they must re-apply the feed's original start
-/// position instead of silently reading from the beginning. Only the two
-/// positions that need a wire header are represented:
-/// [`ChangeFeedStartFrom::Beginning`] carries no marker and is encoded as the
-/// absence of one (`None`).
+/// Passed explicitly when starting a change feed read and persisted inside the
+/// continuation token, so that on resume partitions that were never polled
+/// before the checkpoint re-apply the feed's original start position instead of
+/// silently reading from the beginning. Partitions that already have a saved
+/// per-partition continuation resume from it and ignore this value.
 ///
-/// [`ChangeFeedStartFrom::Beginning`]: https://docs.rs/azure_data_cosmos
+/// This enum owns the mapping from a start position to its wire header (see
+/// [`CosmosOperation::with_change_feed_start`]), so both the initial request
+/// and a resume reconstructed from a continuation token stay in sync.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "kind", content = "value", rename_all = "snake_case")]
-pub enum ChangeFeedStartMarker {
+#[non_exhaustive]
+pub enum ChangeFeedStartFrom {
+    /// Start from the beginning of the change feed (all retained changes).
+    ///
+    /// No start header is sent; the server treats the absence of a start header
+    /// as "from the beginning".
+    Beginning,
+
     /// Start from the current point in time (wire header `If-None-Match: *`).
     ///
     /// "Now" is evaluated when the request is sent, so on resume a never-polled
@@ -38,9 +46,23 @@ pub enum ChangeFeedStartMarker {
 
     /// Start from a specific point in time (wire header `If-Modified-Since`).
     ///
-    /// The value is the pre-formatted RFC 1123 timestamp, persisted verbatim so
-    /// resume is exact.
-    PointInTime(String),
+    /// The timestamp is persisted in the continuation token as RFC 3339 so
+    /// resume is exact, and formatted as RFC 1123 for the wire header.
+    PointInTime(#[serde(with = "time::serde::rfc3339")] OffsetDateTime),
+}
+
+/// Formats an [`OffsetDateTime`] as an RFC 1123 timestamp (the IMF fixed-date
+/// production in RFC 7231) for the `If-Modified-Since` change feed header.
+fn format_rfc1123(timestamp: &OffsetDateTime) -> String {
+    use time::format_description::FormatItem;
+    use time::macros::format_description;
+    const RFC1123: &[FormatItem<'_>] = format_description!(
+        "[weekday repr:short], [day] [month repr:short] [year] [hour]:[minute]:[second] GMT"
+    );
+    timestamp
+        .to_offset(time::UtcOffset::UTC)
+        .format(RFC1123)
+        .expect("RFC 1123 formatting of a valid OffsetDateTime cannot fail")
 }
 
 /// Represents a Cosmos DB operation with its routing and execution context.
@@ -112,8 +134,8 @@ pub struct CosmosOperation {
     is_change_feed: bool,
     /// The original change feed start position, persisted into the continuation
     /// token so never-polled partitions can re-apply it on resume. `None` for
-    /// non-change-feed operations and for `Beginning` starts.
-    change_feed_start: Option<ChangeFeedStartMarker>,
+    /// non-change-feed operations.
+    change_feed_start: Option<ChangeFeedStartFrom>,
 }
 
 impl CosmosOperation {
@@ -245,30 +267,30 @@ impl CosmosOperation {
 
     /// Records the change feed start position and emits its wire header.
     ///
-    /// This is the single source of truth for translating a start marker into
+    /// This is the single source of truth for translating a start position into
     /// the appropriate header, so both the initial request and a resume that
-    /// reconstructs the marker from a continuation token stay in sync:
+    /// reconstructs the position from a continuation token stay in sync:
     ///
-    /// - [`ChangeFeedStartMarker::Now`] → `If-None-Match: *`
-    /// - [`ChangeFeedStartMarker::PointInTime`] → `If-Modified-Since: <value>`
-    ///
-    /// `Beginning` is represented by simply not calling this method.
-    pub fn with_change_feed_start(mut self, marker: ChangeFeedStartMarker) -> Self {
-        match &marker {
-            ChangeFeedStartMarker::Now => {
+    /// - [`ChangeFeedStartFrom::Beginning`] → no header
+    /// - [`ChangeFeedStartFrom::Now`] → `If-None-Match: *`
+    /// - [`ChangeFeedStartFrom::PointInTime`] → `If-Modified-Since: <RFC 1123>`
+    pub fn with_change_feed_start(mut self, start_from: ChangeFeedStartFrom) -> Self {
+        match &start_from {
+            ChangeFeedStartFrom::Beginning => {}
+            ChangeFeedStartFrom::Now => {
                 self.request_headers.precondition =
                     Some(Precondition::if_none_match(Etag::from("*")));
             }
-            ChangeFeedStartMarker::PointInTime(timestamp) => {
-                self.request_headers.if_modified_since = Some(timestamp.clone());
+            ChangeFeedStartFrom::PointInTime(timestamp) => {
+                self.request_headers.if_modified_since = Some(format_rfc1123(timestamp));
             }
         }
-        self.change_feed_start = Some(marker);
+        self.change_feed_start = Some(start_from);
         self
     }
 
-    /// Returns the change feed start marker, if one was set.
-    pub fn change_feed_start(&self) -> Option<&ChangeFeedStartMarker> {
+    /// Returns the change feed start position, if one was set.
+    pub fn change_feed_start(&self) -> Option<&ChangeFeedStartFrom> {
         self.change_feed_start.as_ref()
     }
 

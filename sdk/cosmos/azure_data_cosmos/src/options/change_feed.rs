@@ -5,7 +5,6 @@
 
 use azure_data_cosmos_driver::models::{MaxItemCountHint, SessionToken};
 use azure_data_cosmos_driver::options::OperationOptions;
-use time::OffsetDateTime;
 
 use crate::feed::ContinuationToken;
 use crate::options::FeedOptions;
@@ -17,24 +16,10 @@ use crate::options::FeedOptions;
 /// It is only consulted when no continuation token is provided. If a
 /// continuation token is set, it carries its own position and this value is
 /// ignored.
-#[derive(Clone, Debug)]
-#[non_exhaustive]
-pub enum ChangeFeedStartFrom {
-    /// Start from the beginning of the change feed (all available changes).
-    ///
-    /// No additional headers are sent.
-    Beginning,
-
-    /// Start from the current point in time (only changes after the request).
-    ///
-    /// Wire header: `If-None-Match: *`.
-    Now,
-
-    /// Start from a specific point in time.
-    ///
-    /// Wire header: `If-Modified-Since: <RFC 1123 timestamp>`.
-    PointInTime(OffsetDateTime),
-}
+///
+/// Re-exported from the driver, which owns the mapping from each start position
+/// to its wire header and persists the position in the continuation token.
+pub use azure_data_cosmos_driver::models::ChangeFeedStartFrom;
 
 /// Selects which change feed mode to read.
 ///

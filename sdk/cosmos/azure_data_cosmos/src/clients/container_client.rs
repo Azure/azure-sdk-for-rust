@@ -18,7 +18,7 @@ use crate::{
 
 use super::ThroughputPoller;
 use azure_data_cosmos_driver::models::{
-    ChangeFeedStartMarker, ContainerReference, CosmosOperation, ItemReference, PartitionKeyKind,
+    ContainerReference, CosmosOperation, ItemReference, PartitionKeyKind,
 };
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -943,39 +943,13 @@ impl ContainerClient {
             initial_operation = initial_operation.with_max_item_count(hint);
         }
 
-        // Translate the start position into a persisted start marker. The marker
-        // is recorded on the operation and serialized into the continuation
-        // token, so partitions that were never polled before a checkpoint can
-        // re-apply the original start position on resume instead of silently
-        // reading from the beginning. Partitions that have already been polled
-        // resume from their saved per-partition ETag, which takes precedence.
-        // `Beginning` needs no marker.
-        let start_marker = match &start_from {
-            ChangeFeedStartFrom::Beginning => None,
-            ChangeFeedStartFrom::Now => Some(ChangeFeedStartMarker::Now),
-            ChangeFeedStartFrom::PointInTime(ts) => {
-                // RFC 1123 date format (the IMF fixed-date production in
-                // RFC 7231) as required by Cosmos DB.
-                use time::format_description::FormatItem;
-                use time::macros::format_description;
-                const RFC1123: &[FormatItem<'_>] = format_description!(
-                    "[weekday repr:short], [day] [month repr:short] [year] [hour]:[minute]:[second] GMT"
-                );
-                let utc = ts.to_offset(time::UtcOffset::UTC);
-                let formatted = utc.format(RFC1123).map_err(|e| {
-                    crate::DriverCosmosError::builder()
-                        .with_status(crate::error::CosmosStatus::new(
-                            azure_core::http::StatusCode::BadRequest,
-                        ))
-                        .with_message(format!("failed to format PointInTime timestamp: {e}"))
-                        .build()
-                })?;
-                Some(ChangeFeedStartMarker::PointInTime(formatted))
-            }
-        };
-        if let Some(marker) = start_marker {
-            initial_operation = initial_operation.with_change_feed_start(marker);
-        }
+        // Record the start position on the operation. It is serialized into the
+        // continuation token, so partitions that were never polled before a
+        // checkpoint can re-apply the original start position on resume instead
+        // of silently reading from the beginning. Partitions that have already
+        // been polled resume from their saved per-partition ETag, which takes
+        // precedence. The driver owns the mapping to wire headers.
+        initial_operation = initial_operation.with_change_feed_start(start_from);
 
         let plan = self
             .context
