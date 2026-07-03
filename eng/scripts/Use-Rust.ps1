@@ -42,12 +42,22 @@ $toolchainArg = if ($Toolchain -eq 'active') {
 } else {
   Get-ResolvedRustToolchain -Toolchain $Toolchain
 }
+$installToolchainArg = if ($toolchainArg) { $toolchainArg } else { Get-ResolvedRustToolchain -Toolchain $Toolchain }
 
 $attempts = 0
 while ($true) {
   $attempts++
 
-  Invoke-LoggedCommand "rustup install --no-self-update $toolchainArg" -GroupOutput -DoNotExitOnFailedExitCode
+  $installArgs = @('--no-self-update')
+  if ($SetDefault) {
+    # Use a directory override because it takes precedence over rust-toolchain.toml:
+    # https://rust-lang.github.io/rustup/overrides.html#directory-overrides
+    # This is easier to carry through pipelines than relying on an environment
+    # variable that would need to be propagated across subsequent jobs.
+    $installArgs += '--override'
+  }
+  $installArgs += $installToolchainArg
+  Invoke-LoggedCommand "rustup install $($installArgs -join ' ')" -GroupOutput -DoNotExitOnFailedExitCode
 
   if ($LASTEXITCODE -eq 0) { break }
 
@@ -61,18 +71,6 @@ while ($true) {
   # Failures to update are usually caused by file locks on Windows.
   # Sleep for a few seconds to give the blocking process a chance to release the lock.
   Start-Sleep -Seconds 3
-}
-
-if ($SetDefault) {
-  if ($Toolchain -eq 'active') {
-    $toolchainArg = Get-ResolvedRustToolchain -Toolchain $Toolchain
-  }
-
-  # Use a directory override because it takes precedence over rust-toolchain.toml:
-  # https://rust-lang.github.io/rustup/overrides.html#directory-overrides
-  # This is easier to carry through pipelines than relying on an environment
-  # variable that would need to be propagated across subsequent jobs.
-  Invoke-LoggedCommand "rustup override set $toolchainArg" -GroupOutput
 }
 
 Invoke-LoggedCommand "rustup show" -GroupOutput
