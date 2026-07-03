@@ -48,7 +48,7 @@ $attempts = 0
 while ($true) {
   $attempts++
 
-  $installArgs = @('--no-self-update')
+  $installArgs = @('--no-self-update', '--profile', 'default')
   if ($SetDefault) {
     # Use a directory override because it takes precedence over rust-toolchain.toml:
     # https://rust-lang.github.io/rustup/overrides.html#directory-overrides
