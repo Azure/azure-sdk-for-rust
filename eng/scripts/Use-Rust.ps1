@@ -6,7 +6,8 @@
 #Requires -Version 7.0
 param(
   # Toolchain to install: 'stable', 'nightly', 'msrv' resolve to pinned versions via [Channels];
-  # 'active' uses the toolchain from rust-toolchain.toml in the working directory;
+  # 'active' uses the current toolchain for the working directory, whether that comes
+  # from a rustup directory override, rust-toolchain.toml, or the rustup default.
   # any other value is passed through as a literal toolchain string.
   [string] $Toolchain = 'active',
   [int] $MaxAttempts = 3,
@@ -20,6 +21,7 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
 
 . ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
+. ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'Cargo.ps1'))
 
 $toolchainArg = if ($Toolchain -eq 'active') {
   # Depending on the version of rustup currently installed, simply calling `rustup --version` will
@@ -38,7 +40,7 @@ $toolchainArg = if ($Toolchain -eq 'active') {
 
   ''
 } else {
-  [Channels]::Resolve($Toolchain)
+  Get-ResolvedRustToolchain -Toolchain $Toolchain
 }
 
 $attempts = 0
@@ -63,10 +65,14 @@ while ($true) {
 
 if ($SetDefault) {
   if ($Toolchain -eq 'active') {
-    $toolchainArg = rustup show active-toolchain -v | Select-Object -First 1
+    $toolchainArg = Get-ResolvedRustToolchain -Toolchain $Toolchain
   }
 
-  Invoke-LoggedCommand "rustup default $toolchainArg" -GroupOutput
+  # Use a directory override because it takes precedence over rust-toolchain.toml:
+  # https://rust-lang.github.io/rustup/overrides.html#directory-overrides
+  # This is easier to carry through pipelines than relying on an environment
+  # variable that would need to be propagated across subsequent jobs.
+  Invoke-LoggedCommand "rustup override set $toolchainArg" -GroupOutput
 }
 
 Invoke-LoggedCommand "rustup show" -GroupOutput

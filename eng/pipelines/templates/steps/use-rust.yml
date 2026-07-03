@@ -4,8 +4,8 @@ parameters:
     default: active
     # Expected values: 'stable', 'nightly', 'msrv', 'active' or a specific toolchain version
     # 'msrv' will read the MSRV from azure_core
-    # 'active' will use the active toolchain for the working directory, which will be from rust-toolchain.toml, from a
-    #   folder override or the rustup default toolchain
+    # 'active' will use the active toolchain for the working directory, which may come from
+    #   a rustup directory override, rust-toolchain.toml, or the rustup default toolchain
   - name: MaxAttempts
     type: number
     default: 3
@@ -15,6 +15,7 @@ parameters:
   - name: SetDefault
     type: boolean
     default: true
+    # When true, Use-Rust.ps1 sets a rustup directory override for WorkingDirectory.
 
 steps:
 - task: PowerShell@2

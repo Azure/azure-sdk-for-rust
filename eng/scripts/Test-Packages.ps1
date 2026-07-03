@@ -11,9 +11,10 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
 . ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
+. ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'Cargo.ps1'))
 
-$activeToolchain = (Invoke-LoggedCommand "rustup show active-toolchain" | Select-Object -First 1).Trim()
-$usesJsonTestOutput = $activeToolchain -match '^nightly(?:$|[-\s])'
+$activeToolchain = Get-ResolvedRustToolchain
+$usesJsonTestOutput = Test-IsNightlyRustToolchain
 
 # Helper function to run cargo test, capturing JSON output only when the active
 # toolchain supports `--format json -Z unstable-options`.
