@@ -19,6 +19,11 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
 
+# BUGBUG: Force-disable cargo deny to unblock pipelines while an issue outside this
+# repo is breaking all runs. Override whatever value is passed for -Deny.
+# See https://github.com/Azure/azure-sdk-for-rust/issues/4689
+$Deny = $false
+
 . ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
 . ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'Cargo.ps1'))
 
