@@ -85,6 +85,14 @@ fault_injection = ["dep:rand"]
 # (`with_start_time`/`with_end_time`). It exists only to prove the OTel mapping in
 # DIAGNOSTICS-CONTRACT.md is feasible; it is NOT production tracing wiring and is OFF by
 # default. It pulls `opentelemetry` + `opentelemetry_sdk` (in-memory exporter) only.
+#
+# Scoping caveat (throwaway): the feature enables `dep:opentelemetry` +
+# `dep:opentelemetry_sdk` unconditionally, but the ONLY consumer is the
+# `#[cfg(all(test, feature = "otel_spans_spike"))]` module above. So a *non-test*
+# `--all-features` build (e.g. `cargo build --all-features`) compiles both crates
+# (and `opentelemetry_sdk`'s `testing` feature) into the graph with no user. That is
+# harmless for a throwaway spike, but if this ever graduates to real tracing wiring the
+# deps should move behind a non-test consumer (or the exporter behind a `dev-dependency`).
 otel_spans_spike = ["dep:opentelemetry", "dep:opentelemetry_sdk"]
 # `__internal_in_memory_emulator` exposes the in-memory query evaluator
 # (`crate::query::eval`, `crate::query::value`) used by the in-memory Cosmos DB

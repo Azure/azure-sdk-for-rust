@@ -94,6 +94,16 @@ fn reconstructs_completed_diagnostics_into_backdated_span_tree() {
     let op_start = UNIX_EPOCH + Duration::from_secs(OP_START_UNIX_SECS);
 
     // Lay the recorded attempts out sequentially on the backdated timeline (injected durations).
+    //
+    // Spans are built off `ctx.requests()` — the *retained* attempt list — and every span-count
+    // assertion below is made against `requests.len()`, NOT `ctx.request_count()`. On `main` the two
+    // are equal, but once the retry-storm compaction (PR #4683) lands they diverge:
+    // `request_count()` reports the true pre-compaction attempt total while `requests()` is the
+    // bounded list that keeps only first+last of each collapsed run. A faithful emitter must
+    // count/iterate off the same list it emits from; it can NOT produce `request_count()` spans,
+    // because a compacted run maps to a single span + a repeat count (DIAGNOSTICS-CONTRACT.md §7.3),
+    // not one span per elided attempt. Keeping this test anchored on `requests()` means it stays
+    // correct — and stays honest about the mapping — after compaction lands.
     let requests = ctx.requests();
     let mut cursor = op_start;
     let mut windows: Vec<(SystemTime, SystemTime)> = Vec::with_capacity(requests.len());
@@ -154,8 +164,8 @@ fn reconstructs_completed_diagnostics_into_backdated_span_tree() {
         .expect("in-memory exporter returns spans");
     assert_eq!(
         spans.len(),
-        ctx.request_count() + 1,
-        "one operation root span + one span per attempt"
+        requests.len() + 1,
+        "one operation root span + one span per retained attempt"
     );
 
     let root_data = spans
@@ -179,7 +189,7 @@ fn reconstructs_completed_diagnostics_into_backdated_span_tree() {
         .iter()
         .filter(|s| s.parent_span_id != SpanId::INVALID)
         .collect();
-    assert_eq!(children.len(), ctx.request_count());
+    assert_eq!(children.len(), requests.len());
     for child in &children {
         assert_eq!(
             child.parent_span_id, root_span_id,
