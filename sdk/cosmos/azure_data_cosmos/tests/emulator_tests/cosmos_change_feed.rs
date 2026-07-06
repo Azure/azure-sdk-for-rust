@@ -366,10 +366,19 @@ pub async fn change_feed_continuation_token_resume() -> Result<(), Box<dyn Error
 /// (non-resumed) request, so on resume the partitions that had no saved token
 /// were rebuilt as fresh reads and silently dumped their entire history from
 /// the beginning.
+///
+/// Gated on `test_category = "emulator"` only — intentionally not run against
+/// `test_category = "emulator_vnext"`. The precondition below requires the first
+/// `StartFrom::Now` poll of a multi-partition, full-container feed to return an
+/// empty page (baseline excluded), which the vnext (Linux) emulator does not
+/// model reliably: its coarse commit-timestamp/LSN granularity can surface a
+/// just-written baseline item as the tip of `If-None-Match: *`. The assertion is
+/// non-deterministic there — in one weekly run it passed on one vnext agent and
+/// failed on another — while it passes reliably on live accounts.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator' (the vnext emulator does not reliably model multi-partition StartFrom::Now)"
 )]
 pub async fn change_feed_now_resume_does_not_replay_history() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
