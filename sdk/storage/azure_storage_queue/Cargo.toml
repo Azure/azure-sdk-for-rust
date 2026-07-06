@@ -30,6 +30,7 @@ workspace = true
 azure_core_opentelemetry.workspace = true
 azure_core_test = { workspace = true, features = ["tracing"] }
 azure_identity.workspace = true
+azure_storage_sas = { path = "../azure_storage_sas", version = "0.1.0" }
 clap.workspace = true
 futures.workspace = true
 opentelemetry-stdout.workspace = true
@@ -37,3 +38,6 @@ opentelemetry_sdk.workspace = true
 rand.workspace = true
 tokio = { workspace = true, features = ["macros"] }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
+
+[package.metadata.docs.rs]
+all-features = true
