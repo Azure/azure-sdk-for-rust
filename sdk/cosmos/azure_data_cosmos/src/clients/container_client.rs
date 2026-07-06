@@ -31,6 +31,12 @@ pub struct ContainerClient {
 }
 
 impl ContainerClient {
+    /// Returns the resolved container reference used by the driver.
+    #[cfg(feature = "preview_dtx")]
+    pub fn container_reference(&self) -> &ContainerReference {
+        &self.container_ref
+    }
+
     pub(crate) async fn new(
         context: ClientContext,
         container_id: &str,

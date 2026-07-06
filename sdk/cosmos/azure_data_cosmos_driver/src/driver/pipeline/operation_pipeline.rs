@@ -635,6 +635,19 @@ pub(crate) async fn execute_operation_pipeline(
                 );
                 diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;
             }
+            #[cfg(feature = "preview_dtx")]
+            OperationAction::DtxRetry { new_state, delay } => {
+                tracing::debug!(
+                    activity_id = %activity_id,
+                    delay = ?delay,
+                    dtx_coordinator_retries = new_state.dtx_coordinator_retry_count,
+                    dtx_infra_retries = new_state.dtx_infra_retry_count,
+                    "dtx bodyless retry triggered",
+                );
+                apply_failover_delay(Some(delay)).await;
+                retry_state = new_state;
+                diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;
+            }
             OperationAction::Abort { error } => {
                 // Flush deferred write-path effects if the abort status
                 // confirms the region processed the request (e.g., 409
@@ -3789,6 +3802,10 @@ mod tests {
             failover_retry_count: 0,
             session_token_retry_count: 1,
             backend_failover_retry_count: 0,
+            #[cfg(feature = "preview_dtx")]
+            dtx_coordinator_retry_count: 0,
+            #[cfg(feature = "preview_dtx")]
+            dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
             max_session_retries: 2,
@@ -3849,6 +3866,10 @@ mod tests {
             failover_retry_count: 0,
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
+            #[cfg(feature = "preview_dtx")]
+            dtx_coordinator_retry_count: 0,
+            #[cfg(feature = "preview_dtx")]
+            dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
             max_session_retries: 2,
@@ -3909,6 +3930,10 @@ mod tests {
             failover_retry_count: 0,
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
+            #[cfg(feature = "preview_dtx")]
+            dtx_coordinator_retry_count: 0,
+            #[cfg(feature = "preview_dtx")]
+            dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
             max_session_retries: 2,
@@ -3976,6 +4001,10 @@ mod tests {
             failover_retry_count: 0,
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
+            #[cfg(feature = "preview_dtx")]
+            dtx_coordinator_retry_count: 0,
+            #[cfg(feature = "preview_dtx")]
+            dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
             max_session_retries: 3,
@@ -4249,6 +4278,10 @@ mod tests {
             failover_retry_count: 0,
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
+            #[cfg(feature = "preview_dtx")]
+            dtx_coordinator_retry_count: 0,
+            #[cfg(feature = "preview_dtx")]
+            dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
             max_session_retries: 2,
@@ -4309,6 +4342,10 @@ mod tests {
             failover_retry_count: 0,
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
+            #[cfg(feature = "preview_dtx")]
+            dtx_coordinator_retry_count: 0,
+            #[cfg(feature = "preview_dtx")]
+            dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
             max_session_retries: 2,
@@ -4371,6 +4408,10 @@ mod tests {
             failover_retry_count: 0,
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
+            #[cfg(feature = "preview_dtx")]
+            dtx_coordinator_retry_count: 0,
+            #[cfg(feature = "preview_dtx")]
+            dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
             max_session_retries: 2,
@@ -4446,6 +4487,10 @@ mod tests {
             failover_retry_count: 0,
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
+            #[cfg(feature = "preview_dtx")]
+            dtx_coordinator_retry_count: 0,
+            #[cfg(feature = "preview_dtx")]
+            dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
             max_session_retries: 2,
@@ -4532,6 +4577,10 @@ mod tests {
             failover_retry_count: 0,
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
+            #[cfg(feature = "preview_dtx")]
+            dtx_coordinator_retry_count: 0,
+            #[cfg(feature = "preview_dtx")]
+            dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
             max_session_retries: 2,
@@ -7324,6 +7373,10 @@ mod tests {
             failover_retry_count: 0,
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
+            #[cfg(feature = "preview_dtx")]
+            dtx_coordinator_retry_count: 0,
+            #[cfg(feature = "preview_dtx")]
+            dtx_infra_retry_count: 0,
             max_failover_retries: 10,
             max_backend_failover_retries: 120,
             max_session_retries: 2,

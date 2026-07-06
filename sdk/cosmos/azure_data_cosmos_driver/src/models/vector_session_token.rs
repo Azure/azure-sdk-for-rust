@@ -19,7 +19,7 @@ use azure_core::fmt::SafeDebug;
 pub(crate) struct VectorSessionToken {
     version: u64,
     global_lsn: u64,
-    region_progress: HashMap<u64, u64>,
+    region_progress: HashMap<u64, i64>,
 }
 
 impl VectorSessionToken {
@@ -95,7 +95,7 @@ impl VectorSessionToken {
                     ))
                     .build()
             })?;
-            let lsn: u64 = lsn_str.parse().map_err(|_| {
+            let lsn: i64 = lsn_str.parse().map_err(|_| {
                 crate::error::CosmosError::builder()
                     .with_status(crate::error::CosmosStatus::new(
                         azure_core::http::StatusCode::BadRequest,
@@ -330,7 +330,7 @@ mod tests {
     use super::*;
 
     /// Helper to build a `VectorSessionToken` for assertions without parsing.
-    fn make_token(version: u64, global_lsn: u64, regions: &[(u64, u64)]) -> VectorSessionToken {
+    fn make_token(version: u64, global_lsn: u64, regions: &[(u64, i64)]) -> VectorSessionToken {
         VectorSessionToken {
             version,
             global_lsn,
@@ -342,6 +342,13 @@ mod tests {
     fn parse_simple_token() {
         let t = VectorSessionToken::parse("1#100#1=20#2=5#3=30").unwrap();
         assert_eq!(t, make_token(1, 100, &[(1, 20), (2, 5), (3, 30)]));
+    }
+
+    #[test]
+    fn parse_negative_region_lsn() {
+        let t = VectorSessionToken::parse("0#3#12=-1").unwrap();
+        assert_eq!(t, make_token(0, 3, &[(12, -1)]));
+        assert_eq!(t.to_string(), "0#3#12=-1");
     }
 
     #[test]

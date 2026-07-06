@@ -326,6 +326,7 @@ impl SubStatusCode {
             // 449: Retry With
             5350 => Some("RbacAadGroupUnavailable"),
             5351 => Some("AzureRbacAccessDecisionUnavailable"),
+            5352 => Some("DtcCoordinatorRaceConflict"),
 
             // 500: Internal Server Error
             3001 => Some("ConfigurationNameNotEmpty"),
@@ -337,6 +338,10 @@ impl SubStatusCode {
             3042 => Some("OperationCancelledWithNoRollback"),
             3043 => Some("SplitTimedOut"),
             5360 => Some("RbacDisabledDueToArmPath"),
+            5411 => Some("DtcLedgerFailure"),
+            5412 => Some("DtcAccountConfigFailure"),
+            5413 => Some("DtcDispatchFailure"),
+            5415 => Some("DtcOperationRolledBack"),
 
             // 503: Service Unavailable
             1337 => Some("GoneException"),
@@ -835,6 +840,26 @@ impl SubStatusCode {
 
     /// RU budget exceeded (3200).
     pub const RU_BUDGET_EXCEEDED: SubStatusCode = SubStatusCode(3200);
+
+    /// DTX coordinator race conflict (5352).
+    #[cfg(feature = "preview_dtx")]
+    pub const DTC_COORDINATOR_RACE_CONFLICT: SubStatusCode = SubStatusCode(5352);
+
+    /// DTX ledger failure (5411).
+    #[cfg(feature = "preview_dtx")]
+    pub const DTC_LEDGER_FAILURE: SubStatusCode = SubStatusCode(5411);
+
+    /// DTX account configuration failure (5412).
+    #[cfg(feature = "preview_dtx")]
+    pub const DTC_ACCOUNT_CONFIG_FAILURE: SubStatusCode = SubStatusCode(5412);
+
+    /// DTX backend dispatch infrastructure failure (5413).
+    #[cfg(feature = "preview_dtx")]
+    pub const DTC_DISPATCH_FAILURE: SubStatusCode = SubStatusCode(5413);
+
+    /// DTX prepared operation rolled back on abort (5415, DtcOperationRolledBack).
+    #[cfg(feature = "preview_dtx")]
+    pub const DTC_OPERATION_ROLLED_BACK: SubStatusCode = SubStatusCode(5415);
 
     /// Gateway throttled (3201).
     pub const GATEWAY_THROTTLED: SubStatusCode = SubStatusCode(3201);

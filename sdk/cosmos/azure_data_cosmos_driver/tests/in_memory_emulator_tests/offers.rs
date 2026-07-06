@@ -38,7 +38,7 @@ async fn offer_query_read_and_replace_round_trip() {
     let mut req = Request::new(Url::parse(&url).unwrap(), Method::Post);
     req.set_body(
         serde_json::to_vec(&serde_json::json!({
-            "id": "throughputcoll",
+            "id": "throughput_collection",
             "partitionKey": {
                 "paths": ["/pk"],
                 "kind": "Hash",

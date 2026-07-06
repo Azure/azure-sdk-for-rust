@@ -9,6 +9,8 @@
 use crate::models::{
     CosmosOperation, CosmosResponseHeaders, OperationType, ResourceType, SessionToken,
 };
+#[cfg(feature = "preview_dtx")]
+use std::borrow::Cow;
 
 use super::session_container::SessionContainer;
 
@@ -117,6 +119,93 @@ impl SessionManager {
 
         self.container.set_session_token(container, session_token);
     }
+
+    /// Merges per-operation DTX session tokens into the shared session cache.
+    #[cfg(feature = "preview_dtx")]
+    pub(crate) fn merge_distributed_transaction_session_tokens(
+        &self,
+        response: &crate::models::DistributedTransactionResponse,
+        operations: &[crate::models::DistributedTransactionOperation],
+        is_session_consistency: bool,
+    ) -> crate::error::Result<()> {
+        let throw_on_malformed = response.is_success_status_code() && is_session_consistency;
+
+        for result in &response.operation_results {
+            let Some(operation) = operations.get(result.index) else {
+                continue;
+            };
+            if !result.is_success_status_code() {
+                continue;
+            }
+            let Some(session_token) = result.session_token.as_ref() else {
+                continue;
+            };
+            let token = session_token.as_str();
+            if token.trim().is_empty() {
+                continue;
+            }
+
+            let token = match token.find(':') {
+                Some(index) if index > 0 && index < token.len() - 1 => Cow::Borrowed(token),
+                _ => match result.partition_key_range_id.as_deref() {
+                    Some(partition_key_range_id) if !partition_key_range_id.is_empty() => {
+                        Cow::Owned(format!("{partition_key_range_id}:{token}"))
+                    }
+                    _ => continue,
+                },
+            };
+
+            if let Err(error) = self
+                .container
+                .set_session_token_checked(&operation.target.container, token.as_ref())
+            {
+                if throw_on_malformed {
+                    return Err(dtx_malformed_session_token_error(format!(
+                        "distributed transaction committed but session token for operation {} was rejected: {}",
+                        result.index, error
+                    )));
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Stamps a resolved session token onto every distributed-transaction
+    /// operation that does not already carry an explicit token, so the
+    /// coordinator can honor read-your-own-writes under Session consistency.
+    ///
+    /// Mirrors .NET's `DistributedTransactionCommitterUtils.ResolvePartitionLocalToken`
+    /// fallback to the collection-level token. Per-partition-key-range
+    /// resolution (`GetSessionTokenForPartitionKeyRange`) additionally requires a
+    /// PK-range cache, which this path does not yet consult.
+    #[cfg(feature = "preview_dtx")]
+    pub(crate) fn resolve_distributed_transaction_session_tokens(
+        &self,
+        operations: &mut [crate::models::DistributedTransactionOperation],
+    ) {
+        for operation in operations.iter_mut() {
+            if operation.session_token.is_some() {
+                continue;
+            }
+            if let Some(token) = self
+                .container
+                .resolve_session_token(&operation.target.container)
+            {
+                operation.session_token = Some(token);
+            }
+        }
+    }
+}
+
+#[cfg(feature = "preview_dtx")]
+fn dtx_malformed_session_token_error(message: String) -> crate::error::CosmosError {
+    crate::error::CosmosError::builder()
+        .with_status(crate::error::CosmosStatus::new(
+            azure_core::http::StatusCode::InternalServerError,
+        ))
+        .with_message(message)
+        .build()
 }
 
 #[cfg(test)]
@@ -322,6 +411,279 @@ mod tests {
         // not the owner_id header value.
         let token = mgr.resolve_session_token(&op, None).unwrap();
         assert_eq!(token.as_str(), "0:1#100");
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn dtx_merge_valid_token_updates_session_cache() {
+        use crate::models::{
+            DistributedTransactionOperation, DistributedTransactionOperationKind,
+            DistributedTransactionOperationResult, DistributedTransactionResponse,
+            DistributedTransactionResultBody, DistributedTransactionTarget,
+        };
+
+        let mgr = SessionManager::new();
+        let container = test_container();
+        let operation = DistributedTransactionOperation::new(
+            DistributedTransactionOperationKind::Create,
+            DistributedTransactionTarget::new(container.clone(), PartitionKey::from("pk1"), "doc1"),
+        );
+        let response = DistributedTransactionResponse {
+            status_code: azure_core::http::StatusCode::Ok,
+            sub_status_code: None,
+            operation_results: vec![DistributedTransactionOperationResult {
+                index: 0,
+                status_code: azure_core::http::StatusCode::Created,
+                sub_status_code: None,
+                etag: None,
+                session_token: Some(SessionToken::new("0:1#100#1=10")),
+                partition_key_range_id: None,
+                request_charge: None,
+                resource_body: DistributedTransactionResultBody::None,
+            }],
+            idempotency_token: uuid::Uuid::nil(),
+            activity_id: None,
+            request_charge: None,
+            retry_after_ms: None,
+            diagnostics: None,
+            is_retriable: false,
+            diagnostic_string: None,
+            error_message: None,
+        };
+
+        mgr.merge_distributed_transaction_session_tokens(&response, &[operation], true)
+            .unwrap();
+
+        let read_op = CosmosOperation::read_item(ItemReference::from_name(
+            &container,
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+        let token = mgr.resolve_session_token(&read_op, None).unwrap();
+        assert_eq!(token.as_str(), "0:1#100#1=10");
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn dtx_merge_split_session_token_updates_session_cache() {
+        use crate::models::{
+            DistributedTransactionOperation, DistributedTransactionOperationKind,
+            DistributedTransactionOperationResult, DistributedTransactionResponse,
+            DistributedTransactionResultBody, DistributedTransactionTarget,
+        };
+
+        let mgr = SessionManager::new();
+        let container = test_container();
+        let operation = DistributedTransactionOperation::new(
+            DistributedTransactionOperationKind::Create,
+            DistributedTransactionTarget::new(container.clone(), PartitionKey::from("pk1"), "doc1"),
+        );
+        let response = DistributedTransactionResponse {
+            status_code: azure_core::http::StatusCode::Ok,
+            sub_status_code: None,
+            operation_results: vec![DistributedTransactionOperationResult {
+                index: 0,
+                status_code: azure_core::http::StatusCode::Created,
+                sub_status_code: None,
+                etag: None,
+                session_token: Some(SessionToken::new("0#3#12=-1")),
+                partition_key_range_id: Some("0".to_owned()),
+                request_charge: None,
+                resource_body: DistributedTransactionResultBody::None,
+            }],
+            idempotency_token: uuid::Uuid::nil(),
+            activity_id: None,
+            request_charge: None,
+            retry_after_ms: None,
+            diagnostics: None,
+            is_retriable: false,
+            diagnostic_string: None,
+            error_message: None,
+        };
+
+        mgr.merge_distributed_transaction_session_tokens(&response, &[operation], true)
+            .unwrap();
+
+        let read_op = CosmosOperation::read_item(ItemReference::from_name(
+            &container,
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+        let token = mgr.resolve_session_token(&read_op, None).unwrap();
+        assert_eq!(token.as_str(), "0:0#3#12=-1");
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn dtx_malformed_success_token_errors_under_session_consistency() {
+        use crate::models::{
+            DistributedTransactionOperation, DistributedTransactionOperationKind,
+            DistributedTransactionOperationResult, DistributedTransactionResponse,
+            DistributedTransactionResultBody, DistributedTransactionTarget,
+        };
+
+        let mgr = SessionManager::new();
+        let container = test_container();
+        let operations = vec![DistributedTransactionOperation::new(
+            DistributedTransactionOperationKind::Create,
+            DistributedTransactionTarget::new(container, PartitionKey::from("pk1"), "doc1"),
+        )];
+        let response = DistributedTransactionResponse {
+            status_code: azure_core::http::StatusCode::Ok,
+            sub_status_code: None,
+            operation_results: vec![DistributedTransactionOperationResult {
+                index: 0,
+                status_code: azure_core::http::StatusCode::Created,
+                sub_status_code: None,
+                etag: None,
+                session_token: Some(SessionToken::new("0:not-a-token")),
+                partition_key_range_id: None,
+                request_charge: None,
+                resource_body: DistributedTransactionResultBody::None,
+            }],
+            idempotency_token: uuid::Uuid::nil(),
+            activity_id: None,
+            request_charge: None,
+            retry_after_ms: None,
+            diagnostics: None,
+            is_retriable: false,
+            diagnostic_string: None,
+            error_message: None,
+        };
+
+        let error = mgr
+            .merge_distributed_transaction_session_tokens(&response, &operations, true)
+            .unwrap_err();
+        assert_eq!(
+            error.status().status_code(),
+            azure_core::http::StatusCode::InternalServerError
+        );
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn dtx_malformed_success_token_is_lenient_without_session_consistency() {
+        use crate::models::{
+            DistributedTransactionOperation, DistributedTransactionOperationKind,
+            DistributedTransactionOperationResult, DistributedTransactionResponse,
+            DistributedTransactionResultBody, DistributedTransactionTarget,
+        };
+
+        let mgr = SessionManager::new();
+        let container = test_container();
+        let operations = vec![DistributedTransactionOperation::new(
+            DistributedTransactionOperationKind::Create,
+            DistributedTransactionTarget::new(container, PartitionKey::from("pk1"), "doc1"),
+        )];
+        let response = DistributedTransactionResponse {
+            status_code: azure_core::http::StatusCode::Ok,
+            sub_status_code: None,
+            operation_results: vec![DistributedTransactionOperationResult {
+                index: 0,
+                status_code: azure_core::http::StatusCode::Created,
+                sub_status_code: None,
+                etag: None,
+                session_token: Some(SessionToken::new("0:not-a-token")),
+                partition_key_range_id: None,
+                request_charge: None,
+                resource_body: DistributedTransactionResultBody::None,
+            }],
+            idempotency_token: uuid::Uuid::nil(),
+            activity_id: None,
+            request_charge: None,
+            retry_after_ms: None,
+            diagnostics: None,
+            is_retriable: false,
+            diagnostic_string: None,
+            error_message: None,
+        };
+
+        // Outside Session consistency a malformed token is skipped best-effort,
+        // never surfaced as an error.
+        mgr.merge_distributed_transaction_session_tokens(&response, &operations, false)
+            .unwrap();
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn dtx_resolve_stamps_cached_token_and_preserves_user_token() {
+        use crate::models::{
+            DistributedTransactionOperation, DistributedTransactionOperationKind,
+            DistributedTransactionOperationResult, DistributedTransactionResponse,
+            DistributedTransactionResultBody, DistributedTransactionTarget,
+        };
+
+        let mgr = SessionManager::new();
+        let container = test_container();
+
+        // Prime the cache with a committed token for this container.
+        let prime = DistributedTransactionResponse {
+            status_code: azure_core::http::StatusCode::Ok,
+            sub_status_code: None,
+            operation_results: vec![DistributedTransactionOperationResult {
+                index: 0,
+                status_code: azure_core::http::StatusCode::Created,
+                sub_status_code: None,
+                etag: None,
+                session_token: Some(SessionToken::new("0:1#100#1=10")),
+                partition_key_range_id: None,
+                request_charge: None,
+                resource_body: DistributedTransactionResultBody::None,
+            }],
+            idempotency_token: uuid::Uuid::nil(),
+            activity_id: None,
+            request_charge: None,
+            retry_after_ms: None,
+            diagnostics: None,
+            is_retriable: false,
+            diagnostic_string: None,
+            error_message: None,
+        };
+        let prime_op = DistributedTransactionOperation::new(
+            DistributedTransactionOperationKind::Create,
+            DistributedTransactionTarget::new(container.clone(), PartitionKey::from("pk1"), "doc1"),
+        );
+        mgr.merge_distributed_transaction_session_tokens(&prime, &[prime_op], true)
+            .unwrap();
+
+        // op0 has no token (should be stamped from the cache); op1 has a
+        // user-supplied token (must be preserved verbatim).
+        let mut operations = vec![
+            DistributedTransactionOperation::new(
+                DistributedTransactionOperationKind::Read,
+                DistributedTransactionTarget::new(
+                    container.clone(),
+                    PartitionKey::from("pk1"),
+                    "doc1",
+                ),
+            ),
+            DistributedTransactionOperation::new(
+                DistributedTransactionOperationKind::Read,
+                DistributedTransactionTarget::new(
+                    container.clone(),
+                    PartitionKey::from("pk1"),
+                    "doc2",
+                ),
+            )
+            .with_session_token(SessionToken::new("9:9#9")),
+        ];
+
+        mgr.resolve_distributed_transaction_session_tokens(&mut operations);
+
+        assert_eq!(
+            operations[0]
+                .session_token
+                .as_ref()
+                .map(|t| t.as_str().to_owned()),
+            Some("0:1#100#1=10".to_owned())
+        );
+        assert_eq!(
+            operations[1]
+                .session_token
+                .as_ref()
+                .map(|t| t.as_str().to_owned()),
+            Some("9:9#9".to_owned())
+        );
     }
 
     #[test]

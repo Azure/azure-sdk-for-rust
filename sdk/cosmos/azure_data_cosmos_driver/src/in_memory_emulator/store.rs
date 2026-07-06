@@ -1363,6 +1363,20 @@ impl PhysicalPartition {
     pub fn is_locked(&self) -> bool {
         self.locked.load(Ordering::SeqCst)
     }
+
+    /// Restores the partition's LSN counters to previously captured values.
+    ///
+    /// Used by the in-memory DTX handler to roll back a partially-applied
+    /// distributed transaction: applied point operations advance the LSN, so an
+    /// abort must reset the counters (in addition to the document map) to leave
+    /// no trace of the rolled-back writes.
+    #[cfg(feature = "preview_dtx")]
+    pub fn restore_counters(&self, lsn: u64, local_lsn: u64, vector_clock_version: u64) {
+        self.lsn.store(lsn, Ordering::SeqCst);
+        self.local_lsn.store(local_lsn, Ordering::SeqCst);
+        self.vector_clock_version
+            .store(vector_clock_version, Ordering::SeqCst);
+    }
 }
 
 /// A stored document with system properties.

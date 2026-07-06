@@ -28,6 +28,11 @@ use super::components::{
     OperationAction, OperationRetryState, TransportOutcome, TransportResult,
     BACKEND_FAILOVER_RETRY_INTERVAL,
 };
+#[cfg(feature = "preview_dtx")]
+use super::components::{
+    DTX_COORDINATOR_RETRY_INTERVAL, DTX_INFRA_BASE_BACKOFF, DTX_INFRA_MAX_BACKOFF,
+    DTX_INFRA_MAX_EXPONENT,
+};
 
 /// Whether the current request is handled by the PPCB threshold mechanism.
 ///
@@ -350,6 +355,11 @@ fn evaluate_http_outcome(
     body: Vec<u8>,
     request_sent: RequestSentStatus,
 ) -> (OperationAction, Vec<LocationEffect>) {
+    #[cfg(feature = "preview_dtx")]
+    if operation.resource_type() == crate::models::ResourceType::DistributedTransactionBatch {
+        return evaluate_dtx_http_outcome(status, cosmos_headers, body, retry_state);
+    }
+
     if let Some(result) = try_handle_write_forbidden(operation, endpoint, retry_state, &status) {
         return result;
     }
@@ -382,6 +392,88 @@ fn evaluate_http_outcome(
         },
         Vec::new(),
     )
+}
+
+#[cfg(feature = "preview_dtx")]
+fn evaluate_dtx_http_outcome(
+    status: CosmosStatus,
+    cosmos_headers: CosmosResponseHeaders,
+    body: Vec<u8>,
+    retry_state: &OperationRetryState,
+) -> (OperationAction, Vec<LocationEffect>) {
+    if body.is_empty() {
+        if let Some((new_state, delay)) =
+            try_dtx_bodyless_retry(&status, &cosmos_headers, retry_state)
+        {
+            return (OperationAction::DtxRetry { new_state, delay }, Vec::new());
+        }
+    }
+
+    (
+        OperationAction::Complete(Box::new(TransportResult {
+            outcome: TransportOutcome::Success {
+                status,
+                cosmos_headers,
+                body,
+            },
+        })),
+        Vec::new(),
+    )
+}
+
+#[cfg(feature = "preview_dtx")]
+fn try_dtx_bodyless_retry(
+    status: &CosmosStatus,
+    cosmos_headers: &CosmosResponseHeaders,
+    retry_state: &OperationRetryState,
+) -> Option<(OperationRetryState, std::time::Duration)> {
+    if is_dtx_bodyless_coordinator_retriable(status) {
+        if !retry_state.can_retry_dtx_coordinator() {
+            return None;
+        }
+
+        let delay = cosmos_headers
+            .retry_after_ms
+            .map(std::time::Duration::from_millis)
+            .unwrap_or(DTX_COORDINATOR_RETRY_INTERVAL);
+        return Some((retry_state.clone().advance_dtx_coordinator_retry(), delay));
+    }
+
+    if is_dtx_bodyless_infra_retriable(status) {
+        if !retry_state.can_retry_dtx_infra() {
+            return None;
+        }
+
+        let delay = dtx_infra_retry_delay(retry_state.dtx_infra_retry_count);
+        return Some((retry_state.clone().advance_dtx_infra_retry(), delay));
+    }
+
+    None
+}
+
+#[cfg(feature = "preview_dtx")]
+fn is_dtx_bodyless_coordinator_retriable(status: &CosmosStatus) -> bool {
+    status.status_code() == azure_core::http::StatusCode::RequestTimeout
+        || (u16::from(status.status_code()) == 449
+            && status.sub_status() == Some(SubStatusCode::DTC_COORDINATOR_RACE_CONFLICT))
+}
+
+#[cfg(feature = "preview_dtx")]
+fn is_dtx_bodyless_infra_retriable(status: &CosmosStatus) -> bool {
+    status.status_code() == azure_core::http::StatusCode::InternalServerError
+        && matches!(
+            status.sub_status(),
+            Some(SubStatusCode::DTC_LEDGER_FAILURE)
+                | Some(SubStatusCode::DTC_ACCOUNT_CONFIG_FAILURE)
+                | Some(SubStatusCode::DTC_DISPATCH_FAILURE)
+        )
+}
+
+#[cfg(feature = "preview_dtx")]
+fn dtx_infra_retry_delay(attempt: u32) -> std::time::Duration {
+    let exponent = attempt.min(DTX_INFRA_MAX_EXPONENT);
+    let delay = DTX_INFRA_BASE_BACKOFF.mul_f64(2_f64.powi(exponent as i32));
+    delay.min(DTX_INFRA_MAX_BACKOFF)
 }
 
 /// Handles 403/3 WriteForbidden — the gateway has identified that this region
@@ -875,6 +967,9 @@ mod tests {
     };
     use azure_core::http::StatusCode;
 
+    #[cfg(feature = "preview_dtx")]
+    use super::super::components::{MAX_DTX_COORDINATOR_RETRIES, MAX_DTX_INFRA_RETRIES};
+
     fn make_create_item_operation() -> CosmosOperation {
         let account = AccountReference::with_master_key(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
@@ -914,6 +1009,18 @@ mod tests {
             "dGVzdA==",
         );
         CosmosOperation::create_database(account)
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    fn make_dtx_operation() -> CosmosOperation {
+        let account = AccountReference::with_master_key(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            "dGVzdA==",
+        );
+        CosmosOperation::distributed_transaction(
+            account,
+            crate::models::DistributedTransactionType::Write,
+        )
     }
 
     fn make_success_result() -> TransportResult {
@@ -959,6 +1066,154 @@ mod tests {
                 request_sent: RequestSentStatus::Sent,
             },
         }
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    fn make_dtx_http_error(
+        status: CosmosStatus,
+        body: Vec<u8>,
+        retry_after_ms: Option<u64>,
+    ) -> TransportResult {
+        let cosmos_headers = CosmosResponseHeaders {
+            retry_after_ms,
+            ..Default::default()
+        };
+        TransportResult {
+            outcome: TransportOutcome::HttpError {
+                status,
+                cosmos_headers,
+                body,
+                request_sent: RequestSentStatus::Sent,
+            },
+        }
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn dtx_bodyless_449_5352_uses_coordinator_retry_budget() {
+        let op = make_dtx_operation();
+        let result = make_dtx_http_error(
+            CosmosStatus::from_parts(
+                StatusCode::from(449_u16),
+                Some(SubStatusCode::DTC_COORDINATOR_RACE_CONFLICT),
+            ),
+            Vec::new(),
+            Some(250),
+        );
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+
+        assert!(effects.is_empty());
+        match action {
+            OperationAction::DtxRetry { new_state, delay } => {
+                assert_eq!(new_state.dtx_coordinator_retry_count, 1);
+                assert_eq!(new_state.dtx_infra_retry_count, 0);
+                assert_eq!(delay, std::time::Duration::from_millis(250));
+            }
+            other => panic!("expected DtxRetry, got {other:?}"),
+        }
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn dtx_bodyless_500_5411_uses_infra_retry_budget() {
+        let op = make_dtx_operation();
+        let result = make_dtx_http_error(
+            CosmosStatus::from_parts(
+                StatusCode::InternalServerError,
+                Some(SubStatusCode::DTC_LEDGER_FAILURE),
+            ),
+            Vec::new(),
+            None,
+        );
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+
+        assert!(effects.is_empty());
+        match action {
+            OperationAction::DtxRetry { new_state, delay } => {
+                assert_eq!(new_state.dtx_coordinator_retry_count, 0);
+                assert_eq!(new_state.dtx_infra_retry_count, 1);
+                assert_eq!(delay, std::time::Duration::from_millis(100));
+            }
+            other => panic!("expected DtxRetry, got {other:?}"),
+        }
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn dtx_bodyless_retry_budget_exhaustion_completes_response() {
+        let op = make_dtx_operation();
+        let result = make_dtx_http_error(
+            CosmosStatus::from_parts(
+                StatusCode::from(449_u16),
+                Some(SubStatusCode::DTC_COORDINATOR_RACE_CONFLICT),
+            ),
+            Vec::new(),
+            None,
+        );
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        state.dtx_coordinator_retry_count = MAX_DTX_COORDINATOR_RETRIES;
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+
+        assert!(effects.is_empty());
+        assert!(matches!(action, OperationAction::Complete(_)));
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn dtx_bodyless_infra_retry_budget_exhaustion_completes_response() {
+        let op = make_dtx_operation();
+        let result = make_dtx_http_error(
+            CosmosStatus::from_parts(
+                StatusCode::InternalServerError,
+                Some(SubStatusCode::DTC_LEDGER_FAILURE),
+            ),
+            Vec::new(),
+            None,
+        );
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        state.dtx_infra_retry_count = MAX_DTX_INFRA_RETRIES;
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+
+        assert!(effects.is_empty());
+        assert!(matches!(action, OperationAction::Complete(_)));
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn dtx_body_bearing_449_completes_for_outer_loop() {
+        let op = make_dtx_operation();
+        let result = make_dtx_http_error(
+            CosmosStatus::from_parts(StatusCode::from(449_u16), Some(SubStatusCode::UNKNOWN)),
+            br#"{"isRetriable":true}"#.to_vec(),
+            None,
+        );
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+
+        assert!(effects.is_empty());
+        assert!(matches!(action, OperationAction::Complete(_)));
     }
 
     #[test]
@@ -1109,6 +1364,10 @@ mod tests {
             failover_retry_count: 1,
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
+            #[cfg(feature = "preview_dtx")]
+            dtx_coordinator_retry_count: 0,
+            #[cfg(feature = "preview_dtx")]
+            dtx_infra_retry_count: 0,
             max_failover_retries: 1,
             max_backend_failover_retries: 120,
             max_session_retries: 1,
@@ -1912,6 +2171,10 @@ mod tests {
             failover_retry_count: 1,
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
+            #[cfg(feature = "preview_dtx")]
+            dtx_coordinator_retry_count: 0,
+            #[cfg(feature = "preview_dtx")]
+            dtx_infra_retry_count: 0,
             max_failover_retries: 1,
             max_backend_failover_retries: 120,
             max_session_retries: 1,

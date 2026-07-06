@@ -41,6 +41,18 @@ use std::sync::Arc;
 use std::time::Duration;
 use url::Url;
 
+#[cfg(feature = "preview_dtx")]
+const DTX_OUTER_MAX_RETRIES: u32 = 10;
+// Matches .NET DistributedTransactionCommitter.MaxCumulativeRetryDelay (30 s).
+#[cfg(feature = "preview_dtx")]
+const DTX_OUTER_MAX_CUMULATIVE_DELAY: Duration = Duration::from_secs(30);
+#[cfg(feature = "preview_dtx")]
+const DTX_OUTER_BASE_DELAY: Duration = Duration::from_secs(1);
+#[cfg(feature = "preview_dtx")]
+const DTX_OUTER_MAX_EXPONENT: u32 = 5;
+#[cfg(feature = "preview_dtx")]
+const DTX_OUTER_JITTER_RATIO: f64 = 0.25;
+
 #[cfg(feature = "tokio")]
 use super::routing::EndpointProbeFn;
 
@@ -1903,6 +1915,130 @@ impl CosmosDriver {
         }
     }
 
+    /// Executes a preview distributed transaction through the Gateway coordinator.
+    #[cfg(feature = "preview_dtx")]
+    pub async fn execute_distributed_transaction(
+        &self,
+        mut request: crate::models::DistributedTransactionRequest,
+        mut options: OperationOptions,
+    ) -> crate::error::Result<crate::models::DistributedTransactionResponse> {
+        if request.operations.is_empty() {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message("cannot execute a distributed transaction with zero operations")
+                .build());
+        }
+
+        let operation_count = request.operations.len();
+        let is_session_consistency = {
+            let effective_options = self.operation_options_view(&options);
+            let session_capturing_disabled = effective_options
+                .session_capturing_disabled()
+                .copied()
+                .unwrap_or(false);
+            let read_consistency_strategy = effective_options
+                .read_consistency_strategy()
+                .copied()
+                .unwrap_or(crate::options::ReadConsistencyStrategy::Default);
+            let account_endpoint = AccountEndpoint::from(self.options.account());
+            let account_properties = self
+                .runtime
+                .account_metadata_cache()
+                .get_or_fetch(account_endpoint, || {
+                    self.fetch_account_properties(self.options.account())
+                })
+                .await?;
+            !session_capturing_disabled
+                && read_consistency_strategy.is_session_effective(
+                    account_properties
+                        .user_consistency_policy
+                        .default_consistency_level,
+                )
+        };
+        // Under Session consistency, stamp each operation that lacks an explicit
+        // token with the resolved session token *before* serialization so the
+        // coordinator honors read-your-own-writes (mirrors .NET
+        // ResolvePartitionLocalToken).
+        if is_session_consistency {
+            self.session_manager
+                .resolve_distributed_transaction_session_tokens(&mut request.operations);
+        }
+        let body = request.serialize_body()?;
+        let operation = CosmosOperation::distributed_transaction(
+            self.options.account().clone(),
+            request.transaction_type,
+        )
+        .with_body(body);
+
+        let custom_headers = options.custom_headers.get_or_insert_with(Default::default);
+        custom_headers.insert(
+            azure_core::http::headers::HeaderName::from_static("x-ms-cosmos-idempotency-token"),
+            azure_core::http::headers::HeaderValue::from(request.idempotency_token.to_string()),
+        );
+        custom_headers.insert(
+            azure_core::http::headers::HeaderName::from_static("x-ms-cosmos-operation-type"),
+            azure_core::http::headers::HeaderValue::from(match request.transaction_type {
+                crate::models::DistributedTransactionType::Write => "CommitDistributedTransaction",
+                crate::models::DistributedTransactionType::Read => "Read",
+            }),
+        );
+        custom_headers.insert(
+            azure_core::http::headers::HeaderName::from_static("x-ms-cosmos-resource-type"),
+            azure_core::http::headers::HeaderValue::from_static("DistributedTransactionBatch"),
+        );
+
+        let mut retry_count = 0_u32;
+        let mut cumulative_delay = Duration::ZERO;
+
+        loop {
+            let response = self
+                .execute_singleton_operation(operation.clone(), options.clone())
+                .await?;
+            let status = response.status();
+            let headers = response.headers().clone();
+            let diagnostics = response.diagnostics();
+            let retry_after_ms = headers.retry_after_ms;
+            let body = response.into_body().single()?;
+
+            let response = crate::models::DistributedTransactionResponse::from_body(
+                status.status_code(),
+                status.sub_status(),
+                body.as_ref(),
+                operation_count,
+                request.idempotency_token,
+            )
+            .with_response_headers(&headers)
+            .with_diagnostics(diagnostics);
+
+            let retry_delay = distributed_transaction_outer_retry_delay(
+                &response,
+                retry_after_ms,
+                retry_count,
+                cumulative_delay,
+            );
+            let Some(retry_delay) = retry_delay else {
+                self.session_manager
+                    .merge_distributed_transaction_session_tokens(
+                        &response,
+                        &request.operations,
+                        is_session_consistency,
+                    )?;
+
+                return Ok(response);
+            };
+
+            retry_count += 1;
+            cumulative_delay = cumulative_delay.saturating_add(retry_delay);
+            azure_core::sleep(
+                azure_core::time::Duration::try_from(retry_delay)
+                    .unwrap_or(azure_core::time::Duration::ZERO),
+            )
+            .await;
+        }
+    }
+
     /// Executes a single page of a pre-planned operation using the given plan and options.
     ///
     /// This function mutates the plan in place to account for any changes that occur during execution
@@ -2463,6 +2599,44 @@ impl CosmosDriver {
     }
 }
 
+#[cfg(feature = "preview_dtx")]
+fn distributed_transaction_outer_retry_delay(
+    response: &crate::models::DistributedTransactionResponse,
+    retry_after_ms: Option<u64>,
+    retry_count: u32,
+    cumulative_delay: Duration,
+) -> Option<Duration> {
+    if response.is_success_status_code() || !response.is_retriable {
+        return None;
+    }
+
+    if retry_count >= DTX_OUTER_MAX_RETRIES {
+        return None;
+    }
+
+    let computed_delay = distributed_transaction_outer_computed_delay(retry_count);
+    let server_delay = retry_after_ms
+        .map(Duration::from_millis)
+        .unwrap_or(Duration::ZERO);
+    let delay = computed_delay.max(server_delay);
+    let next_cumulative = cumulative_delay.checked_add(delay)?;
+    if next_cumulative > DTX_OUTER_MAX_CUMULATIVE_DELAY {
+        return None;
+    }
+
+    Some(delay)
+}
+
+#[cfg(feature = "preview_dtx")]
+fn distributed_transaction_outer_computed_delay(retry_count: u32) -> Duration {
+    let exponent = retry_count.min(DTX_OUTER_MAX_EXPONENT);
+    let delay_seconds = DTX_OUTER_BASE_DELAY.as_secs_f64() * 2_f64.powi(exponent as i32);
+    Duration::from_secs_f64(crate::driver::jitter::with_jitter(
+        delay_seconds,
+        DTX_OUTER_JITTER_RATIO,
+    ))
+}
+
 /// Sends a lightweight `GET /probe` connectivity check to a single endpoint
 /// and reports whether the endpoint is reachable.
 ///
@@ -2602,6 +2776,11 @@ mod tests {
         }
     }
 
+    fn scripted_client(plan: ResponsePlan) -> Arc<dyn TransportClient> {
+        let client: Box<dyn TransportClient> = Box::new(ScriptedClient { plan });
+        Arc::from(client)
+    }
+
     #[derive(Debug)]
     struct ScriptedFactory {
         configs: Mutex<Vec<HttpClientConfig>>,
@@ -2639,7 +2818,7 @@ mod tests {
                 .pop_front()
                 .unwrap_or(ResponsePlan::Success);
 
-            Ok(Arc::new(ScriptedClient { plan }))
+            Ok(scripted_client(plan))
         }
     }
 
@@ -2648,6 +2827,79 @@ mod tests {
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "test-key",
         )
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    fn dtx_response(
+        status_code: azure_core::http::StatusCode,
+        is_retriable: bool,
+    ) -> crate::models::DistributedTransactionResponse {
+        crate::models::DistributedTransactionResponse {
+            status_code,
+            sub_status_code: None,
+            operation_results: Vec::new(),
+            idempotency_token: uuid::Uuid::nil(),
+            activity_id: None,
+            request_charge: None,
+            retry_after_ms: None,
+            diagnostics: None,
+            is_retriable,
+            diagnostic_string: None,
+            error_message: None,
+        }
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn dtx_outer_retry_delay_stops_on_success_or_non_retriable() {
+        assert!(distributed_transaction_outer_retry_delay(
+            &dtx_response(azure_core::http::StatusCode::Ok, true),
+            None,
+            0,
+            Duration::ZERO,
+        )
+        .is_none());
+        assert!(distributed_transaction_outer_retry_delay(
+            &dtx_response(azure_core::http::StatusCode::from(449_u16), false),
+            None,
+            0,
+            Duration::ZERO,
+        )
+        .is_none());
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn dtx_outer_retry_delay_uses_larger_retry_after() {
+        let delay = distributed_transaction_outer_retry_delay(
+            &dtx_response(azure_core::http::StatusCode::from(449_u16), true),
+            Some(5_000),
+            0,
+            Duration::ZERO,
+        )
+        .unwrap();
+
+        assert_eq!(delay, Duration::from_secs(5));
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn dtx_outer_retry_delay_stops_at_retry_cap_and_cumulative_budget() {
+        let response = dtx_response(azure_core::http::StatusCode::from(449_u16), true);
+        assert!(distributed_transaction_outer_retry_delay(
+            &response,
+            None,
+            DTX_OUTER_MAX_RETRIES,
+            Duration::ZERO,
+        )
+        .is_none());
+        assert!(distributed_transaction_outer_retry_delay(
+            &response,
+            Some(1_000),
+            0,
+            DTX_OUTER_MAX_CUMULATIVE_DELAY,
+        )
+        .is_none());
     }
 
     #[tokio::test]
@@ -3484,9 +3736,7 @@ mod tests {
     /// not relabeled as `SERIALIZATION_RESPONSE_BODY_INVALID` ("missing field `_self`").
     #[tokio::test]
     async fn fetch_account_properties_surfaces_5xx_body_as_status_error() {
-        let client: Arc<dyn TransportClient> = Arc::new(ScriptedClient {
-            plan: ResponsePlan::ServiceUnavailable503,
-        });
+        let client = scripted_client(ResponsePlan::ServiceUnavailable503);
         let transport =
             crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
@@ -3579,12 +3829,17 @@ mod tests {
         }
     }
 
+    fn raw_response_client(status: u16, body: Vec<u8>) -> Arc<dyn TransportClient> {
+        let client: Box<dyn TransportClient> = Box::new(RawResponseClient { status, body });
+        Arc::from(client)
+    }
+
     async fn drive_fetch_with(
         status: u16,
         body: Vec<u8>,
     ) -> std::result::Result<crate::driver::cache::AccountProperties, crate::error::CosmosError>
     {
-        let client: Arc<dyn TransportClient> = Arc::new(RawResponseClient { status, body });
+        let client = raw_response_client(status, body);
         let transport =
             crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
@@ -3621,11 +3876,13 @@ mod tests {
         }
     }
 
+    fn unreachable_client() -> Arc<dyn TransportClient> {
+        let client: Box<dyn TransportClient> = Box::new(UnreachableClient);
+        Arc::from(client)
+    }
+
     async fn drive_probe_with(status: u16) -> bool {
-        let client: Arc<dyn TransportClient> = Arc::new(RawResponseClient {
-            status,
-            body: Vec::new(),
-        });
+        let client = raw_response_client(status, Vec::new());
         let transport =
             crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
@@ -3636,7 +3893,7 @@ mod tests {
     }
 
     async fn drive_probe_unreachable() -> bool {
-        let client: Arc<dyn TransportClient> = Arc::new(UnreachableClient);
+        let client = unreachable_client();
         let transport =
             crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
@@ -3932,7 +4189,8 @@ mod tests {
             }
         }
 
-        let client: Arc<dyn TransportClient> = Arc::new(FailingTransportClient);
+        let client: Box<dyn TransportClient> = Box::new(FailingTransportClient);
+        let client = Arc::from(client);
         let transport =
             crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
@@ -3999,16 +4257,15 @@ mod tests {
 
         // Use a transport that would succeed if we ever got there, so a failed assertion
         // produces an obviously-wrong shape rather than a confused network-error message.
-        let client: Arc<dyn TransportClient> = Arc::new(ScriptedClient {
-            plan: ResponsePlan::Success,
-        });
+        let client = scripted_client(ResponsePlan::Success);
         let transport =
             crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let credential: Box<dyn TokenCredential> = Box::new(BrokenCredential);
         let account = AccountReference::with_credential(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
-            Arc::new(BrokenCredential),
+            Arc::from(credential),
         );
         let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
 

@@ -47,7 +47,7 @@ async fn control_plane_write_forbidden_403_3_on_read_region() {
         (Method::Delete, format!("{west}/dbs/testdb")),
         (Method::Post, format!("{west}/dbs/testdb/colls")),
         (Method::Delete, format!("{west}/dbs/testdb/colls/testcoll")),
-        (Method::Put, format!("{west}/offers/someoffer")),
+        (Method::Put, format!("{west}/offers/some_offer")),
     ];
 
     for (method, url) in cases {

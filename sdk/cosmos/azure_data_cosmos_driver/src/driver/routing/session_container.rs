@@ -105,6 +105,49 @@ impl SessionContainer {
         container: &ContainerReference,
         session_token_value: &str,
     ) {
+        let _ = self.set_session_token_inner(container, session_token_value, false);
+    }
+
+    /// Stores or merges a session token and returns an error if any segment is malformed.
+    #[cfg(feature = "preview_dtx")]
+    pub(crate) fn set_session_token_checked(
+        &self,
+        container: &ContainerReference,
+        session_token_value: &str,
+    ) -> crate::error::Result<()> {
+        self.set_session_token_inner(container, session_token_value, true)
+    }
+
+    fn set_session_token_inner(
+        &self,
+        container: &ContainerReference,
+        session_token_value: &str,
+        strict: bool,
+    ) -> crate::error::Result<()> {
+        let mut parsed = Vec::new();
+        for segment in session_token_value.split(',') {
+            let segment = segment.trim();
+            if segment.is_empty() {
+                continue;
+            }
+            match segment.split_once(':') {
+                Some((pk_range_id, token_str)) => match SessionTokenValue::parse(token_str) {
+                    Ok(token) => parsed.push((pk_range_id.to_owned(), token)),
+                    Err(error) if strict => return Err(error),
+                    Err(_) => continue,
+                },
+                None if strict => {
+                    return Err(crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::new(
+                            azure_core::http::StatusCode::BadRequest,
+                        ))
+                        .with_message("invalid session token segment: missing ':'")
+                        .build())
+                }
+                None => continue,
+            }
+        }
+
         let collection_rid = container.rid();
         let np = name_path(container);
         let mut guard = self.inner.write().unwrap_or_else(|e| e.into_inner());
@@ -122,22 +165,16 @@ impl SessionContainer {
 
         let pk_map = guard.tokens.entry(rid).or_default();
 
-        for segment in session_token_value.split(',') {
-            let segment = segment.trim();
-            if segment.is_empty() {
-                continue;
-            }
-            if let Some((pk_range_id, token_str)) = segment.split_once(':') {
-                if let Ok(new_token) = SessionTokenValue::parse(token_str) {
-                    pk_map
-                        .entry(pk_range_id.to_owned())
-                        .and_modify(|existing| {
-                            existing.merge(&new_token);
-                        })
-                        .or_insert(new_token);
-                }
-            }
+        for (pk_range_id, new_token) in parsed {
+            pk_map
+                .entry(pk_range_id)
+                .and_modify(|existing| {
+                    existing.merge(&new_token);
+                })
+                .or_insert(new_token);
         }
+
+        Ok(())
     }
 }
 
