@@ -22,7 +22,8 @@ Set-StrictMode -Version 2.0
 . ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
 . ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'Cargo.ps1'))
 
-$resolvedToolchain = [Channels]::Resolve($Toolchain)
+$resolvedToolchain = Get-ResolvedRustToolchain -Toolchain $Toolchain
+$isNightlyToolchain = Test-IsNightlyRustToolchain -Toolchain $Toolchain
 
 Write-Host @"
 Analyzing code with
@@ -85,7 +86,7 @@ if (!$SkipPackageAnalysis) {
   }
 
   # Ideally would want to install this with the others, but not replicate the conditions in which the tool is run.
-  if ($Toolchain -eq 'nightly') {
+  if ($isNightlyToolchain) {
     $cargoDocsRsVersionParams = Get-VersionParamsFromCgManifest cargo-docs-rs
     Invoke-LoggedCommand "cargo install cargo-docs-rs --locked $($cargoDocsRsVersionParams -join ' ')" -GroupOutput
   }
@@ -148,7 +149,7 @@ if (!$SkipPackageAnalysis) {
     Invoke-LoggedCommand "&$verifyDependenciesScript $packageManifestPath" -GroupOutput
     Invoke-LoggedCommand "&$verifyKeywordsScript $packageManifestPath" -GroupOutput
 
-    if ($Toolchain -eq 'nightly') {
+    if ($isNightlyToolchain) {
       Invoke-LoggedCommand "cargo +$resolvedToolchain docs-rs --manifest-path $packageManifestPath" -GroupOutput
     }
 
