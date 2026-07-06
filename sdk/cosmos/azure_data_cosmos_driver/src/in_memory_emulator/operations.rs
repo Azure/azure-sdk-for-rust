@@ -108,6 +108,9 @@ pub(crate) async fn handle_operation(
     let response = match &parsed.operation {
         OperationType::ReadAccount => handle_read_account(store, start),
         OperationType::CreateDatabase => {
+            if !store.config().is_write_region(region_name) {
+                return write_forbidden_response(start);
+            }
             handle_create_database(store, region_name, parsed, request_body, start).await
         }
         OperationType::ReadDatabase => handle_read_database(
@@ -116,13 +119,21 @@ pub(crate) async fn handle_operation(
             parsed.db_id.as_deref().unwrap_or(""),
             start,
         ),
-        OperationType::DeleteDatabase => handle_delete_database(
-            store,
-            region_name,
-            parsed.db_id.as_deref().unwrap_or(""),
-            start,
-        ),
+        OperationType::DeleteDatabase => {
+            if !store.config().is_write_region(region_name) {
+                return write_forbidden_response(start);
+            }
+            handle_delete_database(
+                store,
+                region_name,
+                parsed.db_id.as_deref().unwrap_or(""),
+                start,
+            )
+        }
         OperationType::CreateContainer => {
+            if !store.config().is_write_region(region_name) {
+                return write_forbidden_response(start);
+            }
             handle_create_container(
                 store,
                 region_name,
@@ -140,13 +151,18 @@ pub(crate) async fn handle_operation(
             parsed.coll_id.as_deref().unwrap_or(""),
             start,
         ),
-        OperationType::DeleteContainer => handle_delete_container(
-            store,
-            region_name,
-            parsed.db_id.as_deref().unwrap_or(""),
-            parsed.coll_id.as_deref().unwrap_or(""),
-            start,
-        ),
+        OperationType::DeleteContainer => {
+            if !store.config().is_write_region(region_name) {
+                return write_forbidden_response(start);
+            }
+            handle_delete_container(
+                store,
+                region_name,
+                parsed.db_id.as_deref().unwrap_or(""),
+                parsed.coll_id.as_deref().unwrap_or(""),
+                start,
+            )
+        }
         OperationType::ReadPKRanges => handle_read_pkranges(
             store,
             region_name,
@@ -211,6 +227,9 @@ pub(crate) async fn handle_operation(
         }
         OperationType::ReadOffer => handle_read_offer(store, region_name, parsed, start),
         OperationType::ReplaceOffer => {
+            if !store.config().is_write_region(region_name) {
+                return write_forbidden_response(start);
+            }
             handle_replace_offer(store, region_name, parsed, request_body, start)
         }
         OperationType::BadRequestPath(desc) => bad_request_path_response(desc, start),
@@ -1882,8 +1901,21 @@ async fn handle_batch(
             for (doc, is_delete) in changes {
                 store.replicate(region_name, db_id, coll_id, &doc, is_delete);
             }
+            // A real Cosmos DB account returns 207 MultiStatus when any
+            // individual operation in the batch failed (statusCode >= 300),
+            // and 200 OK only when every operation succeeded.
+            let has_failure = results.iter().any(|r| {
+                r.get("statusCode")
+                    .and_then(|v| v.as_u64())
+                    .is_some_and(|s| s >= 300)
+            });
+            let status = if has_failure {
+                StatusCode::MultiStatus
+            } else {
+                StatusCode::Ok
+            };
             let body = serde_json::Value::Array(results);
-            let mut builder = success_response(StatusCode::Ok, &body, charge, &token, start);
+            let mut builder = success_response(status, &body, charge, &token, start);
             if let Some(lsn) = lsn {
                 builder = builder.with_lsn(lsn);
             }
