@@ -12,7 +12,7 @@ use crate::options::FeedOptions;
 /// Determines where the change feed starts reading from.
 ///
 /// There is no default: callers pass this explicitly to
-/// [`ContainerClient::read_change_feed()`](crate::clients::ContainerClient::read_change_feed).
+/// [`ContainerClient::query_change_feed()`](crate::clients::ContainerClient::query_change_feed).
 /// It is only consulted when no continuation token is provided. If a
 /// continuation token is set, it carries its own position and this value is
 /// ignored.
@@ -26,7 +26,7 @@ pub use azure_data_cosmos_driver::models::ChangeFeedStartFrom;
 /// Only [`LatestVersion`](Self::LatestVersion) is supported today;
 /// [`AllVersionsAndDeletes`](Self::AllVersionsAndDeletes) is reserved for a
 /// future release and currently rejected by
-/// [`ContainerClient::read_change_feed()`](crate::clients::ContainerClient::read_change_feed).
+/// [`ContainerClient::query_change_feed()`](crate::clients::ContainerClient::query_change_feed).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum ChangeFeedMode {
@@ -42,7 +42,7 @@ pub enum ChangeFeedMode {
 
 /// Options for change feed operations.
 ///
-/// Used by [`ContainerClient::read_change_feed()`](crate::clients::ContainerClient::read_change_feed).
+/// Used by [`ContainerClient::query_change_feed()`](crate::clients::ContainerClient::query_change_feed).
 ///
 /// General-purpose settings such as custom headers and excluded regions are
 /// configured via [`with_operation_options`](Self::with_operation_options).
@@ -56,7 +56,7 @@ pub enum ChangeFeedMode {
 ///
 /// The start position is **not** part of these options: it is a required
 /// argument of
-/// [`ContainerClient::read_change_feed()`](crate::clients::ContainerClient::read_change_feed).
+/// [`ContainerClient::query_change_feed()`](crate::clients::ContainerClient::query_change_feed).
 /// When a continuation token is set, that start position is ignored because the
 /// token carries its own.
 #[derive(Clone, Default)]
@@ -114,7 +114,7 @@ impl ChangeFeedOptions {
     /// Sets a continuation token to resume the change feed at a previous position.
     ///
     /// When continuation is set, the `start_from` argument to
-    /// [`read_change_feed`](crate::clients::ContainerClient::read_change_feed)
+    /// [`query_change_feed`](crate::clients::ContainerClient::query_change_feed)
     /// is ignored because the token carries its own position.
     pub fn with_continuation_token(mut self, token: ContinuationToken) -> Self {
         self.feed = self.feed.with_continuation_token(token);

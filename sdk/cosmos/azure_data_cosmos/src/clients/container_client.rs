@@ -855,7 +855,7 @@ impl ContainerClient {
         ))
     }
 
-    /// Reads the change feed for a container, returning a stream of pages.
+    /// Queries the change feed for a container, returning a stream of pages.
     ///
     /// The change feed provides an ordered list of changes (creates and
     /// replaces in LatestVersion mode) made to items in the container.
@@ -880,7 +880,7 @@ impl ContainerClient {
     /// # async fn example(container: ContainerClient) -> Result<(), Box<dyn std::error::Error>> {
     /// // Read all changes from the beginning
     /// let mut pages = container
-    ///     .read_change_feed::<MyItem>(FeedScope::full_container(), ChangeFeedStartFrom::Beginning, None)
+    ///     .query_change_feed::<MyItem>(FeedScope::full_container(), ChangeFeedStartFrom::Beginning, None)
     ///     .await?;
     ///
     /// while let Some(page) = pages.next().await {
@@ -894,7 +894,7 @@ impl ContainerClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn read_change_feed<T: DeserializeOwned + Send + 'static>(
+    pub async fn query_change_feed<T: DeserializeOwned + Send + 'static>(
         &self,
         scope: FeedScope,
         start_from: ChangeFeedStartFrom,

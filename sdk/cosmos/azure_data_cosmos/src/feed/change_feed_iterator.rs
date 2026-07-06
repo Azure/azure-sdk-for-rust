@@ -226,7 +226,7 @@ fn unwrap_change_feed_item(item: serde_json::Value) -> serde_json::Value {
 ///
 /// # async fn example(container: ContainerClient) -> Result<(), Box<dyn std::error::Error>> {
 /// let mut pages = container
-///     .read_change_feed::<MyItem>(FeedScope::full_container(), ChangeFeedStartFrom::Beginning, None)
+///     .query_change_feed::<MyItem>(FeedScope::full_container(), ChangeFeedStartFrom::Beginning, None)
 ///     .await?;
 ///
 /// while let Some(page) = pages.next().await {
@@ -272,7 +272,7 @@ impl<T: Send + DeserializeOwned + 'static> ChangeFeedPageIterator<T> {
     /// Captures the current iterator position as a [`ContinuationToken`].
     ///
     /// Pass the returned token to a subsequent
-    /// [`ContainerClient::read_change_feed`](crate::clients::ContainerClient::read_change_feed)
+    /// [`ContainerClient::query_change_feed`](crate::clients::ContainerClient::query_change_feed)
     /// call (via [`ChangeFeedOptions::with_continuation_token`](crate::options::ChangeFeedOptions::with_continuation_token))
     /// to resume the change feed at the same position.
     ///
