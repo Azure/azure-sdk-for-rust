@@ -172,8 +172,10 @@ object, span tree, or string.
   [`DiagnosticsOptions::max_summary_size_bytes`][opts] (default 8 KB, min 4 KB).
 - **Contract [contract] (resolved: configurable per-representation caps with documented
   defaults).**
-  - **Shipped today (PR #4683, structured object).** The per-attempt record list is bounded by
-    [`DiagnosticsOptions::max_request_diagnostics`][opts] (default **512**, min 16), keyed on
+  - **Proposed in PR #4683 (not yet on `main`, structured object).** The per-attempt record list
+    *will be* bounded by a new `DiagnosticsOptions::max_request_diagnostics` knob (default **512**,
+    min 16) that PR #4683 adds — it is **not** on `main` today, where [`DiagnosticsOptions`][opts]
+    exposes only `max_summary_size_bytes` and `default_verbosity`. Keyed on
     `(region, endpoint, status, sub_status, execution_context)` — not region alone. Consecutive
     near-identical retries collapse to **first + last of each run + a count**; an order-robust
     global key-bucket fallback holds the bound under a region ping-pong (`A→B→A→B`); and the
@@ -183,7 +185,7 @@ object, span tree, or string.
     in the span tree (target 128) and max bytes in the string (target 8 KB — realized today for
     the `Summary` string by [`DiagnosticsOptions::max_summary_size_bytes`][opts]), each
     overridable via `DiagnosticsOptions`. The earlier "64 attempt records" figure is
-    **superseded** by the shipped `max_request_diagnostics` default of **512**; FFI buffer
+    **superseded** by the proposed `max_request_diagnostics` default of **512** (PR #4683); FFI buffer
     sizing (§4 rule 5) must read the configured cap, not a hardcoded 64.
     - **The caps are per-representation and independent** — the 512 structured-object record cap
       does *not* bound the span tree, and the two are reconciled by construction, not by equality.
@@ -299,7 +301,7 @@ emitted spans:
 | **Q1** | Collection vs a disable mode | **Always collect** full per-attempt records; a `DiagnosticsLevel`/gate governs materialization + exposure only. If/when the [#4619] gate lands, its `Mode::Off` must not become a *collection* switch (and removing an `Off` variant would be a public break — the prototype `Mode` is not `#[non_exhaustive]`, so deprecate rather than remove). A counters-only cheap tier is a possible later optimization. |
 | **Q2** | FFI handle lifetime | **Opaque handle + explicit `free`** as the primitive; scoped-callback convenience may wrap it later. |
 | **Q3** | Transport-tier gating knob | **New `DiagnosticsLevel { Minimal, Standard, Full }`**, mapping onto [`DiagnosticsVerbosity`][opts] internally. |
-| **Q4** | Bounded-size caps | **Configurable per-representation caps.** Shipped today (PR #4683): per-attempt records bounded by [`max_request_diagnostics`][opts] (default **512**, min 16), keyed on `(region, endpoint, status, sub_status, execution_context)`; first+last-per-run + exact aggregates + a **bounded** per-run rollup always retained; truncation marked explicitly (not silent). Target defaults for the other/deferred representations: 8 KB string / 128 spans — the earlier "64 attempt records" figure is **superseded** by the 512 default. |
+| **Q4** | Bounded-size caps | **Configurable per-representation caps.** Proposed in PR #4683 (not yet on `main`, where [`DiagnosticsOptions`][opts] exposes only `max_summary_size_bytes` + `default_verbosity`): per-attempt records bounded by a new `max_request_diagnostics` knob (default **512**, min 16), keyed on `(region, endpoint, status, sub_status, execution_context)`; first+last-per-run + exact aggregates + a **bounded** per-run rollup always retained; truncation marked explicitly (not silent). Target defaults for the other/deferred representations: 8 KB string / 128 spans — the earlier "64 attempt records" figure is **superseded** by the 512 default. |
 | **Q5** | `azure_core` constants | Constants are private + `az.service_request.id` uses a dot: **centralize identical literals in a Cosmos-local module now**, file an `azure_core` issue to expose public constants + fix naming, then switch. |
 | **Q6** | SDK-vs-driver emission | **Hybrid, default SDK-side emission**; driver offers an opt-in exporter. |
 | **Q9** | Aggregated span-tree shape | **Single synthetic operation root** with each run's attempts as children. |
@@ -316,8 +318,8 @@ emitted spans:
 - **No `azure_core` / `typespec_client_core` change** is made by this contract; any new public
   constant there is a proposal (Q5).
 
-[diag]: ./src/models/cosmos_response.rs
-[ctx]: ./src/diagnostics/mod.rs
-[ctxsrc]: ./src/diagnostics/diagnostics_context.rs
-[opts]: ./src/options/diagnostics_options.rs
-[azcore]: ../../core/azure_core/src/http/policies/instrumentation/mod.rs
+[diag]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/src/models/cosmos_response.rs
+[ctx]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/src/diagnostics/mod.rs
+[ctxsrc]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/src/diagnostics/diagnostics_context.rs
+[opts]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/src/options/diagnostics_options.rs
+[azcore]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core/azure_core/src/http/policies/instrumentation/mod.rs
