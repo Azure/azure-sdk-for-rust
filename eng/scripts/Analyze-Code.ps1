@@ -19,13 +19,6 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
 
-# BUGBUG: cargo-deny is temporarily disabled while we reevaluate if/when to run it.
-# Force $Deny to $false here to override whatever the caller (or pipeline) passes,
-# so both the `cargo install cargo-deny` and `cargo deny check` steps are skipped.
-# Tracked by https://github.com/Azure/azure-sdk-for-rust/issues/4689 - remove this
-# override once that issue is resolved.
-$Deny = $false
-
 . ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
 . ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'Cargo.ps1'))
 

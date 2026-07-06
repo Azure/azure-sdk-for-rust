@@ -74,25 +74,19 @@ path = "sdk/core/azure_core_opentelemetry"
 version = "1.1.0-beta.1"
 
 [workspace.dependencies.azure_core_test]
-# azure_core_test should only ever be in dev-dependencies herein.
-# Path-only (no version): `cargo package` strips this path-only dev-dep from
-# published manifests. A version pin (0.2.0) is unpublished on crates.io and
-# breaks packing of any crate that dev-deps it.
+# azure_core_test should only ever be in dev-dependencies herein
 path = "sdk/core/azure_core_test"
+version = "0.2.0"
 
 [workspace.dependencies.azure_core_test_macros]
-# azure_core_test_macros should only ever be in dev-dependencies herein.
-# Path-only (no version) so `cargo package` strips it from published manifests;
-# see azure_core_test above.
+# azure_core_test_macros should only ever be in dev-dependencies herein
 path = "sdk/core/azure_core_test_macros"
+version = "0.2.0"
 
 [workspace.dependencies.azure_identity]
-# azure_identity should only ever be in dev-dependencies herein.
-# Path-only (no version): dev-deps use the local prerelease member so azure_core
-# stays consistent when building/testing, and `cargo package` strips this
-# path-only dev-dep from published manifests (a version pin would force it in
-# and break packing while azure_core is a prerelease not on crates.io).
+# azure_identity should only ever be in dev-dependencies herein
 path = "sdk/identity/azure_identity"
+version = "1.1.0-beta.1"
 
 [workspace.dependencies.azure_storage_blob]
 path = "sdk/storage/azure_storage_blob"
