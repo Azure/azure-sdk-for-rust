@@ -3767,6 +3767,16 @@ mod tests {
                 .is_none(),
             "change feed must not send x-ms-continuation"
         );
+        assert_eq!(
+            request
+                .headers
+                .get_optional_str(&HeaderName::from_static(
+                    request_header_names::CHANGEFEED_WIRE_FORMAT_VERSION
+                ))
+                .map(|s| s.to_string()),
+            Some(request_header_names::CHANGEFEED_WIRE_FORMAT_VERSION_2021_09_15.to_string()),
+            "change feed must send the wire-format-version header"
+        );
     }
 
     #[test]
