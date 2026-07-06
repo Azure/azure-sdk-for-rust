@@ -626,11 +626,30 @@ impl EmulatorStore {
             // Then remove databases + cascade containers.
             let removed_db = region.databases.write().unwrap().remove(db_id).is_some();
             if removed_db {
+                // Collect offer IDs for all containers in this database before
+                // removing them so we can purge the associated offer entries.
+                let offer_ids: Vec<String> = region
+                    .containers
+                    .read()
+                    .unwrap()
+                    .iter()
+                    .filter(|((db, _), _)| db == db_id)
+                    .map(|(_, state)| {
+                        format!(
+                            "offer_{}_{}",
+                            state.metadata.numeric_db_id, state.metadata.numeric_coll_id
+                        )
+                    })
+                    .collect();
                 region
                     .containers
                     .write()
                     .unwrap()
                     .retain(|(db, _), _| db != db_id);
+                let mut offers = region.offers.write().unwrap();
+                for offer_id in offer_ids {
+                    offers.remove(&offer_id);
+                }
             }
         }
         if let Some(id) = numeric_db_id {
@@ -651,13 +670,17 @@ impl EmulatorStore {
             let mut buf = region.replication_buffer.write().unwrap();
             buf.retain(|e| !(e.db_id == db_id && e.coll_id == coll_id));
             drop(buf);
-            if region
+            let removed = region
                 .containers
                 .write()
                 .unwrap()
-                .remove(&(db_id.to_string(), coll_id.to_string()))
-                .is_some()
-            {
+                .remove(&(db_id.to_string(), coll_id.to_string()));
+            if let Some(state) = removed {
+                let offer_id = format!(
+                    "offer_{}_{}",
+                    state.metadata.numeric_db_id, state.metadata.numeric_coll_id
+                );
+                region.offers.write().unwrap().remove(&offer_id);
                 existed = true;
             }
         }
