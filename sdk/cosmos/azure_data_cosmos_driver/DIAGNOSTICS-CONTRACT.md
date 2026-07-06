@@ -185,6 +185,13 @@ object, span tree, or string.
     overridable via `DiagnosticsOptions`. The earlier "64 attempt records" figure is
     **superseded** by the shipped `max_request_diagnostics` default of **512**; FFI buffer
     sizing (§4 rule 5) must read the configured cap, not a hardcoded 64.
+    - **The caps are per-representation and independent** — the 512 structured-object record cap
+      does *not* bound the span tree, and the two are reconciled by construction, not by equality.
+      A span emitter does **not** emit one span per retained record (which could reach 512);
+      following §7.3 it collapses each run to a single span carrying a repeat `count`, so the
+      span count tracks the number of *runs* (already bounded by the same cap) and applies its own
+      128-span target on top. So 512 retained records map to ≤ 128 spans without the two caps
+      needing to agree.
   - Compaction is lossy only in the *middle* of a run; the head/tail extremes and the
     aggregates (counts, histogram, min/max/P50) are always exact.
   - **Truncation is marked, never silent** — the structured object carries explicit compaction
@@ -236,8 +243,11 @@ in practice; putting them on metric attributes explodes time-series cardinality,
 > **one span per retained attempt, plus a single span carrying a repeat `count` for each
 > collapsed run** — never one span per pre-compaction attempt. Emitters must therefore build the
 > span tree from the retained attempt list (`requests()`), not from `request_count()` (which
-> reports the true pre-compaction total). The `otel_spans_spike` feasibility test is written this
-> way so it stays faithful once compaction lands.
+> reports the true pre-compaction total). PR #4683 guarantees the retained attempts and the
+> per-run rollup (`CompactionInfo::runs`) are drawn from the **same** cap-bounded set, so every
+> retained attempt has a matching run entry (with its repeat `count`) to fold its span into — an
+> emitter never encounters a retained attempt whose run was omitted. The `otel_spans_spike`
+> feasibility test is written this way so it stays faithful once compaction lands.
 
 ### 7.4 Attribute alignment with `azure_core`
 
