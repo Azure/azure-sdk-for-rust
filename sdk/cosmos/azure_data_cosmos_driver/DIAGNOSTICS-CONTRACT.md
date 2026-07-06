@@ -34,6 +34,16 @@ To keep the design honest, references below are tagged:
   `Always` gate), `DiagnosticsSummary`, `DiagnosticsEncoding`/`encode()`, and the per-op /
   per-attempt wall-clock `start_time`/`end_time` fields.
 
+> **Contract vs. compaction impl (read this before §1/§6/Q1).** This contract document is
+> **standalone on `main`** — it depends on neither [#4619] nor any follow-up, changes no code,
+> and adds no public API. The retry-storm **compaction implementation** (PR #4683, "Bound Cosmos
+> diagnostics under retry storms") is a *separate* PR that **does** depend on [#4619]: it reuses
+> [#4619]'s `DiagnosticsSummary` (computed from the full attempt list *before* compaction, so the
+> histogram/counts stay exact) and therefore must merge **after** [#4619]. So wherever this doc
+> says [#4619] is "deferred / OFF / not on `main`" (§1, Q1), that describes the append-only
+> *capture engine*, **not** the #4683 compaction impl that realizes §6's bound. The two
+> statements are consistent: the contract has no [#4619] dependency; the compaction impl does.
+
 ## 1. Why a contract first
 
 The driver already produces rich per-operation diagnostics and hands them back through a
@@ -162,11 +172,24 @@ object, span tree, or string.
   [`DiagnosticsOptions::max_summary_size_bytes`][opts] (default 8 KB, min 4 KB).
 - **Contract [contract] (resolved: configurable per-representation caps with documented
   defaults).**
-  - max attempts rendered in the object (default 64), max spans in the tree (default 128),
-    max bytes in the string (default 8 KB) — each overridable via `DiagnosticsOptions`.
+  - **Shipped today (PR #4683, structured object).** The per-attempt record list is bounded by
+    [`DiagnosticsOptions::max_request_diagnostics`][opts] (default **512**, min 16), keyed on
+    `(region, endpoint, status, sub_status, execution_context)` — not region alone. Consecutive
+    near-identical retries collapse to **first + last of each run + a count**; an order-robust
+    global key-bucket fallback holds the bound under a region ping-pong (`A→B→A→B`); and the
+    per-run rollup is itself bounded so a high-cardinality `410` fan-out across many endpoints
+    cannot grow the artifact by topology.
+  - **Target defaults for the not-yet-implemented representations / deferred engine.** max spans
+    in the span tree (target 128) and max bytes in the string (target 8 KB — realized today for
+    the `Summary` string by [`DiagnosticsOptions::max_summary_size_bytes`][opts]), each
+    overridable via `DiagnosticsOptions`. The earlier "64 attempt records" figure is
+    **superseded** by the shipped `max_request_diagnostics` default of **512**; FFI buffer
+    sizing (§4 rule 5) must read the configured cap, not a hardcoded 64.
   - Compaction is lossy only in the *middle* of a run; the head/tail extremes and the
     aggregates (counts, histogram, min/max/P50) are always exact.
-  - Truncation is marked, never silent.
+  - **Truncation is marked, never silent** — the structured object carries explicit compaction
+    metadata (true vs retained count, per-run rollup, and a truncation marker when a cap is hit),
+    so a dropped middle is always visible in the output.
 
 This document defines the guarantee; the append-only compaction engine that realizes it
 cheaply is the deferred optimization [#4619].
@@ -206,6 +229,15 @@ in practice; putting them on metric attributes explodes time-series cardinality,
 | request-event timeline | timed span **events** on the attempt span |
 | hedging | a hedge span with terminal state + regions |
 | **aggregated multi-run op** (`aggregate_sub_operations`) | **a single synthetic operation root** spanning the first run's start to the last run's end, with each run's attempts as children (resolved: [§9](#9-resolved-decisions) Q9) |
+
+> **Compaction & the per-attempt row.** The "each `RequestDiagnostics` → one child span" mapping
+> above describes the **uncompacted** view. Under the bounded-size guarantee (§6), as realized by
+> PR #4683, a collapsed run retains only its first + last attempt, so a faithful emitter produces
+> **one span per retained attempt, plus a single span carrying a repeat `count` for each
+> collapsed run** — never one span per pre-compaction attempt. Emitters must therefore build the
+> span tree from the retained attempt list (`requests()`), not from `request_count()` (which
+> reports the true pre-compaction total). The `otel_spans_spike` feasibility test is written this
+> way so it stays faithful once compaction lands.
 
 ### 7.4 Attribute alignment with `azure_core`
 
@@ -257,7 +289,7 @@ emitted spans:
 | **Q1** | Collection vs a disable mode | **Always collect** full per-attempt records; a `DiagnosticsLevel`/gate governs materialization + exposure only. If/when the [#4619] gate lands, its `Mode::Off` must not become a *collection* switch (and removing an `Off` variant would be a public break — the prototype `Mode` is not `#[non_exhaustive]`, so deprecate rather than remove). A counters-only cheap tier is a possible later optimization. |
 | **Q2** | FFI handle lifetime | **Opaque handle + explicit `free`** as the primitive; scoped-callback convenience may wrap it later. |
 | **Q3** | Transport-tier gating knob | **New `DiagnosticsLevel { Minimal, Standard, Full }`**, mapping onto [`DiagnosticsVerbosity`][opts] internally. |
-| **Q4** | Bounded-size caps | **Configurable per-representation caps** with documented defaults (8 KB string / 128 spans / 64 attempt records); first+last-per-region + exact aggregates always retained. |
+| **Q4** | Bounded-size caps | **Configurable per-representation caps.** Shipped today (PR #4683): per-attempt records bounded by [`max_request_diagnostics`][opts] (default **512**, min 16), keyed on `(region, endpoint, status, sub_status, execution_context)`; first+last-per-run + exact aggregates + a **bounded** per-run rollup always retained; truncation marked explicitly (not silent). Target defaults for the other/deferred representations: 8 KB string / 128 spans — the earlier "64 attempt records" figure is **superseded** by the 512 default. |
 | **Q5** | `azure_core` constants | Constants are private + `az.service_request.id` uses a dot: **centralize identical literals in a Cosmos-local module now**, file an `azure_core` issue to expose public constants + fix naming, then switch. |
 | **Q6** | SDK-vs-driver emission | **Hybrid, default SDK-side emission**; driver offers an opt-in exporter. |
 | **Q9** | Aggregated span-tree shape | **Single synthetic operation root** with each run's attempts as children. |
