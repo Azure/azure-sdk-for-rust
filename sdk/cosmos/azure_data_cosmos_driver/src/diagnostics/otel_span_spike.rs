@@ -11,11 +11,12 @@
 //! It proves the OpenTelemetry mapping in `DIAGNOSTICS-CONTRACT.md` is feasible: a *completed*
 //! `DiagnosticsContext` can be reconstructed into a **backdated** OTel span tree using the raw
 //! `opentelemetry` [`SpanBuilder`](opentelemetry::trace::SpanBuilder) with
-//! [`with_start_time`](opentelemetry::trace::SpanBuilder::with_start_time) /
-//! [`with_end_time`](opentelemetry::trace::SpanBuilder::with_end_time) — timestamps the
-//! `azure_core::tracing` abstraction does not expose (it builds spans at "now"). The recorded
-//! attempts are laid onto an explicit, clearly-backdated timeline (injected durations) and the
-//! operation → attempt parent/child relationships are reconstructed, then asserted.
+//! [`with_start_time`](opentelemetry::trace::SpanBuilder::with_start_time) for the backdated start
+//! and [`end_with_timestamp`](opentelemetry::trace::Span::end_with_timestamp) for the backdated
+//! end — timestamps the `azure_core::tracing` abstraction does not expose (it builds spans at
+//! "now"). The recorded attempts are laid onto an explicit, clearly-backdated timeline (injected
+//! durations) and the operation → attempt parent/child relationships are reconstructed, then
+//! asserted.
 
 use super::{DiagnosticsContext, DiagnosticsContextBuilder, ExecutionContext};
 use crate::driver::routing::CosmosEndpoint;
@@ -120,7 +121,6 @@ fn reconstructs_completed_diagnostics_into_backdated_span_tree() {
         SpanBuilder::from_name("Cosmos read_item")
             .with_kind(SpanKind::Client)
             .with_start_time(op_start)
-            .with_end_time(op_end)
             .with_attributes(vec![
                 KeyValue::new(
                     "az.client_request_id",
@@ -149,7 +149,6 @@ fn reconstructs_completed_diagnostics_into_backdated_span_tree() {
             SpanBuilder::from_name("read_item attempt")
                 .with_kind(SpanKind::Client)
                 .with_start_time(start)
-                .with_end_time(end)
                 .with_attributes(attrs),
             &root_cx,
         );
