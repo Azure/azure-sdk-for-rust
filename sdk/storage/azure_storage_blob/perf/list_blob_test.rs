@@ -12,7 +12,7 @@ use azure_core_test::{
 use super::options;
 use azure_storage_blob::BlobContainerClient;
 use azure_storage_blob_test::get_test_credential;
-use futures::{FutureExt, TryStreamExt};
+use futures::{FutureExt, StreamExt, TryStreamExt};
 
 pub struct ListBlobTest {
     count: u32,
@@ -76,15 +76,18 @@ impl PerfTest for ListBlobTest {
         let container_client = self.client.get().unwrap();
         let _result = container_client.create(None).await?;
 
-        // Create the blobs for the test.
-        for i in 0..self.count {
-            let blob_name = format!("blob-{}", i);
-            let blob_client = container_client.blob_client(&blob_name);
-            let body = vec![0u8; 1024 * 1024]; // 1 MB blob
-            let body_bytes = Bytes::from(body);
+        let body_bytes = Bytes::from(vec![0u8; 10 * 1024]); // 10 KiB blob
 
-            let _result = blob_client.upload(body_bytes.into(), None).await?;
-        }
+        // Create the blobs for the test, running up to 16 uploads concurrently.
+        futures::stream::iter(0..self.count)
+            .map(|i| {
+                let blob_client = container_client.blob_client(&format!("blob-{}", i));
+                let body_bytes = body_bytes.clone();
+                async move { blob_client.upload(body_bytes.into(), None).await }
+            })
+            .buffer_unordered(16)
+            .try_for_each(|_| async { Ok(()) })
+            .await?;
 
         Ok(())
     }
@@ -92,12 +95,9 @@ impl PerfTest for ListBlobTest {
     async fn run(&self, _context: Arc<TestContext>) -> azure_core::Result<()> {
         // The actual performance test code
 
-        let mut iterator = self.client.get().unwrap().list_blobs(None)?.into_pages();
-        while let Some(blob_segment) = iterator.try_next().await? {
-            let body = blob_segment.into_model()?;
-            for blob in body.blob_items.iter() {
-                std::hint::black_box(blob);
-            }
+        let mut pager = self.client.get().unwrap().list_blobs(None)?;
+        while let Some(blob) = pager.try_next().await? {
+            std::hint::black_box(&blob);
         }
 
         Ok(())
@@ -105,6 +105,9 @@ impl PerfTest for ListBlobTest {
 
     async fn cleanup(&self, _context: Arc<TestContext>) -> azure_core::Result<()> {
         // Cleanup code after running the test
+        if let Some(container_client) = self.client.get() {
+            container_client.delete(None).await?;
+        }
         Ok(())
     }
 }
