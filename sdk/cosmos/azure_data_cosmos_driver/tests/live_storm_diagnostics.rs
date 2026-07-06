@@ -124,6 +124,10 @@ struct BatchStats {
     compacted_ops: usize,
     total_json_materialization: Duration,
     json_samples: usize,
+    /// Distinct regions contacted across the batch, in first-seen order. Used to
+    /// derive the account's actual region(s) rather than hardcoding one, so the
+    /// fault rules target a region the driver really uses.
+    regions_seen: Vec<Region>,
 }
 
 impl BatchStats {
@@ -163,6 +167,11 @@ async fn run_batch(driver: &CosmosDriver, account: &AccountReference, label: &st
         if let Some(diag) = diagnostics_of(&result) {
             stats.max_request_count = stats.max_request_count.max(diag.request_count());
             stats.max_retained = stats.max_retained.max(diag.retained_request_count());
+            for region in diag.regions_contacted() {
+                if !stats.regions_seen.contains(&region) {
+                    stats.regions_seen.push(region);
+                }
+            }
             if diag.compaction().is_some() {
                 stats.compacted_ops += 1;
             }
@@ -184,8 +193,14 @@ async fn live_storm_diagnostics_or_env_gated() {
         return;
     };
 
-    // Best-effort: a small retained cap makes a storm's bounded output observable. Picked up when
-    // the driver builds its DiagnosticsOptions from the environment.
+    // Best-effort: a small retained cap makes a storm's bounded output observable. The driver
+    // resolves this cap per operation from the environment (`DiagnosticsOptions::default()` reads
+    // `AZURE_COSMOS_DIAGNOSTICS_MAX_REQUESTS`), and there is no per-driver builder override for it
+    // today, so the environment is the only channel. `set_var` is process-global (and unsound under
+    // concurrent env access), but this is safe here: the `live_storm` binary contains exactly one
+    // `#[tokio::test]`, so nothing else in the process reads or writes the environment concurrently
+    // — the write is effectively serialized. (If a per-driver `max_request_diagnostics` builder
+    // knob is added later, prefer it over this env write.)
     std::env::set_var("AZURE_COSMOS_DIAGNOSTICS_MAX_REQUESTS", STORM_CAP);
 
     let runtime = match CosmosDriverRuntime::builder().build().await {
@@ -219,27 +234,42 @@ async fn live_storm_diagnostics_or_env_gated() {
         return;
     }
 
+    // Derive the target region from what the baseline probe actually contacted, rather than
+    // hardcoding one: a hardcoded region that doesn't match this account's write region would make
+    // the error rules never fire, so no storm is induced and the test passes green without ever
+    // exercising the compaction it exists to validate. If the baseline reached the service but
+    // reported no region, skip gracefully (the rules would target nothing).
+    let Some(target_region) = baseline.regions_seen.first().cloned() else {
+        eprintln!(
+            "live_storm env-gated: baseline reached the service but reported no region; skipping storm"
+        );
+        return;
+    };
+    eprintln!(
+        "live_storm: injecting faults against region {:?} (derived from baseline probe)",
+        target_region.as_str()
+    );
+
     // Storm batch: per-request latency (trips the gate for a large fraction) plus 429/503/410
-    // faults scoped to the write region (to induce retries/failover).
-    let write_region = Region::new("West US 2");
+    // faults scoped to the region the baseline probe actually used (to induce retries/failover).
     let rules = vec![
         latency_rule("storm-latency", STORM_LATENCY),
         error_rule(
             "storm-429",
             FaultInjectionErrorType::TooManyRequests,
-            write_region.clone(),
+            target_region.clone(),
             32,
         ),
         error_rule(
             "storm-503",
             FaultInjectionErrorType::ServiceUnavailable,
-            write_region.clone(),
+            target_region.clone(),
             32,
         ),
         error_rule(
             "storm-410",
             FaultInjectionErrorType::PartitionIsGone,
-            write_region,
+            target_region,
             32,
         ),
     ];

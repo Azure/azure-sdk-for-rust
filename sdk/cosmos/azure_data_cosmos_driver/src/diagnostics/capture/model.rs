@@ -1879,9 +1879,20 @@ impl DiagnosticsContextBuilder {
         //
         // Storm path (attempts > cap): compute the summary eagerly from the FULL list first — so the
         // status/sub-status histogram, retry/throttle counts, total RU and regions stay exact — then
-        // run-length compact the retained list and record a `CompactionInfo` marker. Compaction runs
-        // here at finalization, never mid-operation, so outstanding `RequestHandle` indices are never
-        // invalidated.
+        // run-length compact the retained list and record a `CompactionInfo` marker.
+        //
+        // Why the storm-path summary is *necessarily eager* (not a regression to fix): compaction is
+        // lossy, so once the middle of each run is dropped the full attempt list no longer exists and
+        // there is no lazy reduction that could recover the exact aggregate. The choice is "compute
+        // the bounded exact aggregate now" vs. "retain the full unbounded list to stay lazy" — and
+        // the latter defeats the bounded-size guarantee. So under a storm we pay one O(n) reduction
+        // at finalization; the fast-success (<= cap) path stays fully lazy.
+        //
+        // Scope of the guarantee: the bound is on the *finalized serialized artifact* (retained
+        // records + bounded per-run rollup) — NOT on live, mid-operation memory. `self.requests`
+        // still grows one entry per attempt while the operation is in flight; only this finalization
+        // step bounds what is retained and serialized. Compaction runs here at finalization, never
+        // mid-operation, so outstanding `RequestHandle` indices are never invalidated.
         let (requests, summary, compaction) = if original_count > cap {
             let summary = DiagnosticsSummary::compute(
                 &self.requests,
@@ -1892,11 +1903,21 @@ impl DiagnosticsContextBuilder {
                 self.user_agent.as_deref().map(str::to_string),
             );
             let compacted = compact_requests(self.requests, cap);
+            let total_runs = compacted.runs.len();
+            // Bound the per-run rollup too: its length is otherwise O(distinct keys), which a
+            // high-cardinality `410` fan-out inflates independently of `cap`. Keep the largest runs
+            // by attempt count and roll the remainder into an explicit `omitted_*` marker so the
+            // serialized artifact size stays bounded by `cap`, not by topology.
+            let (runs, omitted_runs, omitted_request_count) = bound_runs(compacted.runs, cap);
             let info = CompactionInfo {
                 original_request_count: original_count,
                 retained_request_count: compacted.retained.len(),
                 collapsed_runs: compacted.collapsed_runs,
-                runs: compacted.runs,
+                total_runs,
+                retained_truncated: compacted.retained_truncated,
+                omitted_runs,
+                omitted_request_count,
+                runs,
             };
             (compacted.retained, OnceLock::from(summary), Some(info))
         } else {
@@ -2615,8 +2636,32 @@ pub struct CompactionInfo {
     pub retained_request_count: usize,
     /// Number of runs whose middle records were dropped (run length > 2).
     pub collapsed_runs: usize,
+    /// Total number of distinct runs detected. Equal to `runs.len()` unless the
+    /// per-run rollup was itself bounded under a high-cardinality storm, in
+    /// which case `runs` holds only the largest ones and `omitted_runs` the rest.
+    pub total_runs: usize,
+    /// `true` when the retained per-attempt list hit the configured cap and
+    /// later records were dropped (the global-bucket fallback under an
+    /// order-ping-pong storm with more than `cap / 2` distinct keys). The
+    /// dropped attempts are still counted in `original_request_count` and the
+    /// aggregate summary; this flag makes that truncation **explicit**, never
+    /// silent.
+    #[serde(default, skip_serializing_if = "bool_is_false")]
+    pub retained_truncated: bool,
+    /// Number of runs omitted from `runs` because the per-run rollup was bounded
+    /// to keep the serialized artifact size independent of storm *cardinality*
+    /// (e.g. a `410` fan-out across thousands of physical-partition endpoints).
+    /// `0` when every run is present.
+    #[serde(default, skip_serializing_if = "usize_is_zero")]
+    pub omitted_runs: usize,
+    /// Total attempt count represented by the omitted runs (see `omitted_runs`).
+    /// These attempts remain reflected in `original_request_count` and the
+    /// aggregate summary; only their per-run rollup rows were elided.
+    #[serde(default, skip_serializing_if = "usize_is_zero")]
+    pub omitted_request_count: usize,
     /// Per-run rollup, in operation order (or first-seen order under the
-    /// global-bucket fallback).
+    /// global-bucket fallback). Bounded to the largest runs by attempt count
+    /// under a high-cardinality storm; see `omitted_runs` for the remainder.
     pub runs: Vec<CompactedRun>,
 }
 
@@ -2679,6 +2724,52 @@ struct CompactionResult {
     retained: Vec<RequestDiagnostics>,
     runs: Vec<CompactedRun>,
     collapsed_runs: usize,
+    /// `true` when `retained` was truncated to the cap (records dropped beyond
+    /// the first+last-per-run set); surfaced on `CompactionInfo::retained_truncated`.
+    retained_truncated: bool,
+}
+
+/// `skip_serializing_if` helper: a `0` count is omitted from compaction output.
+fn usize_is_zero(n: &usize) -> bool {
+    *n == 0
+}
+
+/// `skip_serializing_if` helper: a `false` flag is omitted from compaction output.
+fn bool_is_false(b: &bool) -> bool {
+    !*b
+}
+
+/// Bounds the per-run rollup to at most `cap` entries so the serialized
+/// `CompactionInfo` size stays independent of storm *cardinality*.
+///
+/// Keeps the `cap` runs with the highest attempt `count` (ties broken by
+/// first-seen order for deterministic output) and re-emits them in original
+/// order; the remaining runs are rolled into an `(omitted_runs,
+/// omitted_request_count)` marker so nothing is silently dropped. Returns the
+/// kept runs plus those two counts.
+fn bound_runs(runs: Vec<CompactedRun>, cap: usize) -> (Vec<CompactedRun>, usize, usize) {
+    if runs.len() <= cap {
+        return (runs, 0, 0);
+    }
+    // Rank by attempt count desc, tie-break by original index asc, keep the top `cap`.
+    let mut ranked: Vec<usize> = (0..runs.len()).collect();
+    ranked.sort_by(|&a, &b| runs[b].count.cmp(&runs[a].count).then(a.cmp(&b)));
+    let mut keep = vec![false; runs.len()];
+    for &idx in ranked.iter().take(cap) {
+        keep[idx] = true;
+    }
+    let mut kept = Vec::with_capacity(cap);
+    let mut omitted_runs = 0usize;
+    let mut omitted_request_count = 0usize;
+    for (idx, run) in runs.into_iter().enumerate() {
+        if keep[idx] {
+            kept.push(run);
+        } else {
+            omitted_runs += 1;
+            omitted_request_count += run.count;
+        }
+    }
+    (kept, omitted_runs, omitted_request_count)
 }
 
 /// Builds a [`CompactedRun`] rollup from a run/bucket of attempts.
@@ -2757,6 +2848,7 @@ fn run_length_compact(requests: &[RequestDiagnostics]) -> CompactionResult {
         retained,
         runs,
         collapsed_runs,
+        retained_truncated: false,
     }
 }
 
@@ -2793,8 +2885,10 @@ fn global_bucket_compact(requests: &[RequestDiagnostics], cap: usize) -> Compact
 
     // Defensive: with more distinct keys than cap/2, first+last per bucket could
     // still exceed cap. Truncating keeps the earliest buckets' records; the true
-    // totals remain exact on the summary and `CompactionInfo`.
-    if retained.len() > cap {
+    // totals remain exact on the summary and `CompactionInfo`, and the drop is
+    // surfaced via `retained_truncated` (never silent).
+    let retained_truncated = retained.len() > cap;
+    if retained_truncated {
         retained.truncate(cap);
     }
 
@@ -2802,6 +2896,7 @@ fn global_bucket_compact(requests: &[RequestDiagnostics], cap: usize) -> Compact
         retained,
         runs,
         collapsed_runs,
+        retained_truncated,
     }
 }
 
@@ -4410,6 +4505,79 @@ mod tests {
     }
 
     #[test]
+    fn distinct_key_fanout_runs_and_json_are_bounded() {
+        // A `410`/Gone fan-out across many physical-partition endpoints is high-cardinality
+        // exactly when the storm is worst: every attempt is a distinct `CompactionKey`, so both
+        // compaction phases would emit one run per endpoint. Without bounding `runs`, the detailed
+        // JSON grows O(distinct endpoints) — bounded by topology, not by the cap. Assert both the
+        // retained records AND the per-run rollup stay bounded by the cap, the omission is explicit,
+        // and the exact aggregate is preserved.
+        let cap = 16;
+        let distinct = 5000usize;
+        let mut b = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("fanout".to_string()),
+            options_with_cap(cap),
+        );
+        for i in 0..distinct {
+            // Unique endpoint per attempt -> unique CompactionKey -> unique run.
+            let endpoint = format!("https://pkrange-{i}/");
+            record_run(
+                &mut b,
+                ExecutionContext::Retry,
+                "East US",
+                &endpoint,
+                StatusCode::TooManyRequests,
+                1,
+            );
+        }
+        b.set_operation_status(StatusCode::TooManyRequests, None);
+        let ctx = b.complete();
+
+        // True total preserved.
+        assert_eq!(ctx.request_count(), distinct);
+        let info = ctx
+            .compaction()
+            .expect("a high-cardinality storm must compact");
+        assert_eq!(info.original_request_count, distinct);
+        assert_eq!(info.total_runs, distinct);
+
+        // Both the retained records and the per-run rollup are bounded by the cap...
+        assert!(
+            ctx.retained_request_count() <= cap,
+            "retained {} exceeds cap {cap}",
+            ctx.retained_request_count()
+        );
+        assert!(
+            info.runs.len() <= cap,
+            "runs {} not bounded by cap {cap}",
+            info.runs.len()
+        );
+
+        // ...and every drop is surfaced explicitly, never silent.
+        assert!(
+            info.retained_truncated,
+            "retained truncation must be marked"
+        );
+        assert!(info.omitted_runs > 0, "run omission must be marked");
+        assert_eq!(info.omitted_runs, info.total_runs - info.runs.len());
+        // Omitted runs still account for their attempts (exact, lossless total).
+        let retained_run_attempts: usize = info.runs.iter().map(|r| r.count).sum();
+        assert_eq!(retained_run_attempts + info.omitted_request_count, distinct);
+
+        // The detailed JSON size is bounded by the cap, independent of the 5000-endpoint topology.
+        let json = ctx.to_json_string(Some(DiagnosticsVerbosity::Detailed));
+        assert!(
+            json.len() < 32 * 1024,
+            "detailed json {} bytes grows with topology (distinct={distinct}); must be cap-bounded",
+            json.len()
+        );
+
+        // The summary histogram/counts stay exact despite the bounded rollup.
+        assert_eq!(ctx.summary().request_count(), distinct);
+        assert_eq!(ctx.summary().retry_count(), distinct);
+    }
+
+    #[test]
     fn under_cap_is_not_compacted_and_output_has_no_marker() {
         // Default cap (512) is far above a normal operation's attempts.
         let ctx = make_context_with(ActivityId::from_string("normal".to_string()), |b| {
@@ -4498,6 +4666,32 @@ mod tests {
         eprintln!(
             "size reduction: {:.1}x",
             json_off as f64 / json_on.max(1) as f64
+        );
+
+        // Never-inspected case (addresses the eager-summary concern): the storm path computes the
+        // summary eagerly inside `complete()` because compaction drops the source records, so the
+        // exact aggregate cannot be recovered lazily afterwards. Measure the finalization cost paid
+        // even when diagnostics are NEVER materialized — build, `complete()`, drop — touching
+        // neither the JSON nor the summary. Compare ON (eager summary, cap=512) vs OFF (lazy summary,
+        // cap>N): the delta approximates the eager reduction the storm path pays up front.
+        let never_on = {
+            let b = build_storm(512, N);
+            let t = Instant::now();
+            let ctx = b.complete();
+            let e = t.elapsed();
+            drop(ctx);
+            e
+        };
+        let never_off = {
+            let b = build_storm(N * 2, N);
+            let t = Instant::now();
+            let ctx = b.complete();
+            let e = t.elapsed();
+            drop(ctx);
+            e
+        };
+        eprintln!(
+            "never-inspected complete(): ON(eager summary)={never_on:?} OFF(lazy summary)={never_off:?}"
         );
 
         assert!(ctx_on.retained_request_count() <= 512);

@@ -101,10 +101,10 @@ pub fn assert_region_not_contacted(
         .count();
     assert_eq!(
         on_region, 0,
-        "expected zero tracked requests on excluded region {:?}, but {} of {} requests landed there (regions contacted: {:?})",
+        "expected zero tracked requests on excluded region {:?}, but {} of {} retained requests landed there (regions contacted: {:?})",
         excluded_region,
         on_region,
-        diagnostics.request_count(),
+        requests.len(),
         diagnostics.regions_contacted()
     );
 }
