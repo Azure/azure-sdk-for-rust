@@ -321,9 +321,24 @@ async fn live_storm_diagnostics_or_env_gated() {
     // Soft invariants (only assert when the storm batch actually reached the service, so the test
     // stays green when the account is unreachable).
     if storm.reached > 0 {
+        // Fault injection must be active. The latency rule is region-agnostic and trips the gate on
+        // every reached op, so a zero here means the injected faults never took effect at all.
         assert!(
-            storm.max_request_count >= 1,
-            "reached-service operations must carry diagnostics with at least one attempt"
+            storm.gate_fired > 0,
+            "storm reached the service but the diagnostics gate never fired — injected faults were not applied"
+        );
+        // The storm must actually induce retries. We only reach this point after deriving
+        // `target_region` from a region the baseline probe really contacted, so the region-scoped
+        // 429/503/410 rules apply to this operation and must produce strictly more attempts than the
+        // fault-free baseline. If this fails, the region-scoped faults silently did not match (e.g. a
+        // region-name normalization mismatch between `regions_contacted()` and the endpoint URL the
+        // matcher tests), and the test would otherwise pass green WITHOUT exercising the retry-storm
+        // compaction it exists to validate — the exact silent no-op this guard prevents.
+        assert!(
+            storm.max_request_count > baseline.max_request_count,
+            "storm did not induce retries (storm max_requests={}, baseline max_requests={}); the region-scoped faults did not take effect, so compaction was never exercised",
+            storm.max_request_count,
+            baseline.max_request_count
         );
         // Whenever compaction fired, the retained per-attempt count is strictly below the true
         // total — the bounded-size guarantee holding under a live storm.

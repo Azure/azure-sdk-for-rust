@@ -1902,22 +1902,21 @@ impl DiagnosticsContextBuilder {
                 end_time,
                 self.user_agent.as_deref().map(str::to_string),
             );
+            // Compaction bounds BOTH the retained records and the per-run rollup to `cap`, and
+            // draws them from ONE ranking (the largest runs by attempt count) so they stay
+            // coherent: every retained record's run is also present in the rollup, and a
+            // high-cardinality `410` fan-out cannot inflate the serialized artifact past `cap`.
+            // See `global_bucket_compact`.
             let compacted = compact_requests(self.requests, cap);
-            let total_runs = compacted.runs.len();
-            // Bound the per-run rollup too: its length is otherwise O(distinct keys), which a
-            // high-cardinality `410` fan-out inflates independently of `cap`. Keep the largest runs
-            // by attempt count and roll the remainder into an explicit `omitted_*` marker so the
-            // serialized artifact size stays bounded by `cap`, not by topology.
-            let (runs, omitted_runs, omitted_request_count) = bound_runs(compacted.runs, cap);
             let info = CompactionInfo {
                 original_request_count: original_count,
                 retained_request_count: compacted.retained.len(),
                 collapsed_runs: compacted.collapsed_runs,
-                total_runs,
+                total_runs: compacted.total_runs,
                 retained_truncated: compacted.retained_truncated,
-                omitted_runs,
-                omitted_request_count,
-                runs,
+                omitted_runs: compacted.omitted_runs,
+                omitted_request_count: compacted.omitted_request_count,
+                runs: compacted.runs,
             };
             (compacted.retained, OnceLock::from(summary), Some(info))
         } else {
@@ -2727,6 +2726,15 @@ struct CompactionResult {
     /// `true` when `retained` was truncated to the cap (records dropped beyond
     /// the first+last-per-run set); surfaced on `CompactionInfo::retained_truncated`.
     retained_truncated: bool,
+    /// Total number of distinct runs detected, before the per-run rollup was
+    /// bounded; surfaced on `CompactionInfo::total_runs`.
+    total_runs: usize,
+    /// Number of runs dropped from `runs` because the rollup was bounded to the
+    /// cap; surfaced on `CompactionInfo::omitted_runs`.
+    omitted_runs: usize,
+    /// Total attempt count represented by the omitted runs; surfaced on
+    /// `CompactionInfo::omitted_request_count`.
+    omitted_request_count: usize,
 }
 
 /// `skip_serializing_if` helper: a `0` count is omitted from compaction output.
@@ -2737,39 +2745,6 @@ fn usize_is_zero(n: &usize) -> bool {
 /// `skip_serializing_if` helper: a `false` flag is omitted from compaction output.
 fn bool_is_false(b: &bool) -> bool {
     !*b
-}
-
-/// Bounds the per-run rollup to at most `cap` entries so the serialized
-/// `CompactionInfo` size stays independent of storm *cardinality*.
-///
-/// Keeps the `cap` runs with the highest attempt `count` (ties broken by
-/// first-seen order for deterministic output) and re-emits them in original
-/// order; the remaining runs are rolled into an `(omitted_runs,
-/// omitted_request_count)` marker so nothing is silently dropped. Returns the
-/// kept runs plus those two counts.
-fn bound_runs(runs: Vec<CompactedRun>, cap: usize) -> (Vec<CompactedRun>, usize, usize) {
-    if runs.len() <= cap {
-        return (runs, 0, 0);
-    }
-    // Rank by attempt count desc, tie-break by original index asc, keep the top `cap`.
-    let mut ranked: Vec<usize> = (0..runs.len()).collect();
-    ranked.sort_by(|&a, &b| runs[b].count.cmp(&runs[a].count).then(a.cmp(&b)));
-    let mut keep = vec![false; runs.len()];
-    for &idx in ranked.iter().take(cap) {
-        keep[idx] = true;
-    }
-    let mut kept = Vec::with_capacity(cap);
-    let mut omitted_runs = 0usize;
-    let mut omitted_request_count = 0usize;
-    for (idx, run) in runs.into_iter().enumerate() {
-        if keep[idx] {
-            kept.push(run);
-        } else {
-            omitted_runs += 1;
-            omitted_request_count += run.count;
-        }
-    }
-    (kept, omitted_runs, omitted_request_count)
 }
 
 /// Builds a [`CompactedRun`] rollup from a run/bucket of attempts.
@@ -2811,9 +2786,11 @@ fn push_first_last(retained: &mut Vec<RequestDiagnostics>, run: &[&RequestDiagno
 /// (the common same-region storm). If that alone does not fit within `cap`
 /// (e.g. a region ping-pong `A->B->A->B` where every consecutive run is length
 /// one), Phase 2 falls back to a global key-bucket collapse that groups all
-/// attempts by key regardless of order, bounding the result to at most two
-/// records per distinct key. A final defensive truncation guarantees
-/// `retained.len() <= cap` even with more than `cap / 2` distinct keys.
+/// attempts by key regardless of order and keeps only the `cap` largest buckets
+/// (by attempt count) for BOTH the retained records and the per-run rollup, so
+/// the two stay coherent and the serialized artifact is bounded by `cap` rather
+/// than by storm cardinality. Every drop is surfaced explicitly
+/// (`retained_truncated`, `omitted_runs`, `omitted_request_count`), never silent.
 fn compact_requests(requests: Vec<RequestDiagnostics>, cap: usize) -> CompactionResult {
     let run_length = run_length_compact(&requests);
     if run_length.retained.len() <= cap {
@@ -2844,19 +2821,32 @@ fn run_length_compact(requests: &[RequestDiagnostics]) -> CompactionResult {
         i = j;
     }
 
+    let total_runs = runs.len();
     CompactionResult {
         retained,
         runs,
         collapsed_runs,
         retained_truncated: false,
+        total_runs,
+        omitted_runs: 0,
+        omitted_request_count: 0,
     }
 }
 
-/// Phase 2: order-robust global key-bucket collapse.
+/// Phase 2: order-robust global key-bucket collapse, bounded by `cap`.
 ///
-/// Groups every attempt by [`CompactionKey`] preserving first-seen order, keeps
-/// first + last of each bucket, and defensively truncates to `cap` if there are
-/// somehow more than `cap / 2` distinct keys.
+/// Groups every attempt by [`CompactionKey`] (first-seen order preserved for
+/// output), then bounds BOTH the retained records and the per-run rollup with a
+/// single ranking so they stay coherent. When there are more than `cap` distinct
+/// keys (a high-cardinality `410` fan-out across physical-partition endpoints),
+/// only the `cap` buckets with the highest attempt count are kept (tie-break
+/// first-seen order); the rest are rolled into an explicit
+/// `(omitted_runs, omitted_request_count)` marker. Both the per-run rollup and
+/// the retained first+last records are drawn from that SAME kept set, so every
+/// retained record has a matching run in the rollup — a downstream span emitter
+/// never sees an attempt whose run was omitted. A final truncation keeps
+/// `retained.len() <= cap` (marked via `retained_truncated`, never silent) when
+/// the kept buckets' first+last records still exceed the cap.
 fn global_bucket_compact(requests: &[RequestDiagnostics], cap: usize) -> CompactionResult {
     let mut order: Vec<CompactionKey> = Vec::new();
     let mut groups: HashMap<CompactionKey, Vec<&RequestDiagnostics>> = HashMap::new();
@@ -2871,22 +2861,55 @@ fn global_bucket_compact(requests: &[RequestDiagnostics], cap: usize) -> Compact
         }
     }
 
-    let mut retained = Vec::new();
-    let mut runs = Vec::new();
-    let mut collapsed_runs = 0usize;
-    for key in &order {
-        let bucket = &groups[key];
-        runs.push(compacted_run(bucket));
-        push_first_last(&mut retained, bucket);
-        if bucket.len() > 2 {
-            collapsed_runs += 1;
+    let total_runs = order.len();
+    let counts: Vec<usize> = order.iter().map(|key| groups[key].len()).collect();
+
+    // `collapsed_runs` counts every run whose middle was dropped (length > 2),
+    // whether or not it survives the rollup bound.
+    let collapsed_runs = counts.iter().filter(|&&c| c > 2).count();
+
+    // One ranking drives BOTH the kept records and the kept rollup so they stay
+    // coherent. Keep the `cap` buckets with the highest attempt count (tie-break
+    // first-seen index); `keep[i]` marks whether `order[i]` survives.
+    let keep: Vec<bool> = if total_runs > cap {
+        let mut ranked: Vec<usize> = (0..total_runs).collect();
+        ranked.sort_by(|&a, &b| counts[b].cmp(&counts[a]).then(a.cmp(&b)));
+        let mut kept = vec![false; total_runs];
+        for &i in ranked.iter().take(cap) {
+            kept[i] = true;
+        }
+        kept
+    } else {
+        vec![true; total_runs]
+    };
+
+    let mut omitted_runs = 0usize;
+    let mut omitted_request_count = 0usize;
+    for (i, &count) in counts.iter().enumerate() {
+        if !keep[i] {
+            omitted_runs += 1;
+            omitted_request_count += count;
         }
     }
 
-    // Defensive: with more distinct keys than cap/2, first+last per bucket could
-    // still exceed cap. Truncating keeps the earliest buckets' records; the true
-    // totals remain exact on the summary and `CompactionInfo`, and the drop is
-    // surfaced via `retained_truncated` (never silent).
+    // Emit the kept runs and their first+last exemplars in first-seen order.
+    // Because `retained` is built only from kept buckets, its keys are a subset
+    // of the rollup's keys (coherent by construction).
+    let mut retained = Vec::new();
+    let mut runs = Vec::new();
+    for (i, key) in order.iter().enumerate() {
+        if !keep[i] {
+            continue;
+        }
+        let bucket = &groups[key];
+        runs.push(compacted_run(bucket));
+        push_first_last(&mut retained, bucket);
+    }
+
+    // Even limited to kept buckets, first+last (up to 2 per run) can exceed the
+    // record cap. Truncate to `cap`, keeping the earliest kept buckets' records;
+    // the drop is surfaced via `retained_truncated` and the omitted attempts stay
+    // exact in the summary and `CompactionInfo`.
     let retained_truncated = retained.len() > cap;
     if retained_truncated {
         retained.truncate(cap);
@@ -2897,6 +2920,9 @@ fn global_bucket_compact(requests: &[RequestDiagnostics], cap: usize) -> Compact
         runs,
         collapsed_runs,
         retained_truncated,
+        total_runs,
+        omitted_runs,
+        omitted_request_count,
     }
 }
 
@@ -4553,11 +4579,10 @@ mod tests {
             info.runs.len()
         );
 
-        // ...and every drop is surfaced explicitly, never silent.
-        assert!(
-            info.retained_truncated,
-            "retained truncation must be marked"
-        );
+        // ...and every drop is surfaced explicitly, never silent. With all runs of
+        // equal (unit) length, the cap keeps the first `cap` runs whose single
+        // records fit exactly, so the drop is carried by the run-omission marker
+        // rather than record truncation.
         assert!(info.omitted_runs > 0, "run omission must be marked");
         assert_eq!(info.omitted_runs, info.total_runs - info.runs.len());
         // Omitted runs still account for their attempts (exact, lossless total).
@@ -4575,6 +4600,116 @@ mod tests {
         // The summary histogram/counts stay exact despite the bounded rollup.
         assert_eq!(ctx.summary().request_count(), distinct);
         assert_eq!(ctx.summary().retry_count(), distinct);
+    }
+
+    #[test]
+    fn phase2_heterogeneous_runs_keep_largest_and_stay_coherent() {
+        // Phase 2 (global-bucket fallback) with HETEROGENEOUS run counts is where a naive design
+        // diverges: if the retained records are chosen by first-seen order but the per-run rollup
+        // is bounded by attempt count, a retained record can belong to a run that was omitted from
+        // the rollup — so a span emitter following the diagnostics contract (build spans from
+        // `requests()`, one repeat-count span per collapsed run) would see an attempt with no
+        // matching run. Here a few "hot" keys (introduced LAST in first-seen order) each retry many
+        // times, interleaved with many "cold" single-attempt keys (introduced FIRST). Assert the
+        // rollup keeps the largest runs, the retained records are drawn from the SAME kept set
+        // (every retained record has a matching run), and the totals stay exact.
+        let cap = 16;
+        let cold = 40usize;
+        let hot = 3usize;
+        let hot_retries = 100usize;
+        let mut b = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("heterogeneous".to_string()),
+            options_with_cap(cap),
+        );
+
+        // Introduce all cold keys first (each once), so the hot keys land LAST in first-seen order.
+        // A first-seen retained selection would then keep cold records while a by-count rollup keeps
+        // hot runs — exposing any incoherence between the two.
+        for i in 0..cold {
+            let h = b.start_test_request(
+                ExecutionContext::Retry,
+                Some(Region::new("East US")),
+                &format!("https://cold-{i}/"),
+            );
+            b.complete_request(h, StatusCode::TooManyRequests, None);
+        }
+        // Hot keys, interleaved so no two consecutive attempts share a key (defeats the Phase 1
+        // run-length collapse and forces the Phase 2 global-bucket fallback).
+        for _round in 0..hot_retries {
+            for j in 0..hot {
+                let h = b.start_test_request(
+                    ExecutionContext::Retry,
+                    Some(Region::new("West US")),
+                    &format!("https://hot-{j}/"),
+                );
+                b.complete_request(h, StatusCode::ServiceUnavailable, None);
+            }
+        }
+        b.set_operation_status(StatusCode::ServiceUnavailable, None);
+        let ctx = b.complete();
+
+        let total = cold + hot * hot_retries;
+        assert_eq!(ctx.request_count(), total);
+        let info = ctx
+            .compaction()
+            .expect("a heterogeneous storm must compact");
+        assert_eq!(info.total_runs, cold + hot);
+
+        // Both collections are bounded by the cap.
+        assert!(
+            info.runs.len() <= cap,
+            "runs {} exceed cap {cap}",
+            info.runs.len()
+        );
+        assert!(
+            ctx.retained_request_count() <= cap,
+            "retained {} exceed cap {cap}",
+            ctx.retained_request_count()
+        );
+
+        // The largest (hot) runs are the ones kept in the rollup.
+        let kept_hot = info.runs.iter().filter(|r| r.count == hot_retries).count();
+        assert_eq!(
+            kept_hot, hot,
+            "all hot runs must survive the by-count rollup"
+        );
+
+        // Coherence: every retained record's key is represented by a run in the rollup.
+        let run_keys: std::collections::HashSet<(
+            Option<String>,
+            String,
+            CosmosStatus,
+            ExecutionContext,
+        )> = info
+            .runs
+            .iter()
+            .map(|r| {
+                (
+                    r.region.clone(),
+                    r.endpoint.clone(),
+                    r.status,
+                    r.execution_context,
+                )
+            })
+            .collect();
+        for rec in ctx.requests().iter() {
+            let id = (
+                rec.region.as_ref().map(|r| r.as_str().to_string()),
+                rec.endpoint.clone(),
+                rec.status,
+                rec.execution_context,
+            );
+            assert!(
+                run_keys.contains(&id),
+                "retained record {id:?} has no matching run in the bounded rollup"
+            );
+        }
+
+        // Exact, lossless totals despite the bounded rollup + retained list.
+        let kept_run_attempts: usize = info.runs.iter().map(|r| r.count).sum();
+        assert_eq!(kept_run_attempts + info.omitted_request_count, total);
+        assert_eq!(info.omitted_runs, info.total_runs - info.runs.len());
+        assert_eq!(ctx.summary().request_count(), total);
     }
 
     #[test]
