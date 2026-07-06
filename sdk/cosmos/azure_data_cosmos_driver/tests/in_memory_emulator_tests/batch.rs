@@ -118,7 +118,7 @@ async fn batch_rolls_back_when_operation_fails() {
     let req = batch_request(&ctx.gateway_url, operations, r#"["pk1"]"#);
     let response = ctx.emulator.execute_request(&req).await.unwrap();
     let (status, _, body) = collect_response(response).await;
-    assert_eq!(status, StatusCode::Ok);
+    assert_eq!(status, StatusCode::MultiStatus);
     let results = body.as_array().unwrap();
     let status_codes: Vec<u64> = results
         .iter()

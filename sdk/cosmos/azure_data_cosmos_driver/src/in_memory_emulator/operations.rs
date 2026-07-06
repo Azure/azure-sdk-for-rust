@@ -1882,8 +1882,21 @@ async fn handle_batch(
             for (doc, is_delete) in changes {
                 store.replicate(region_name, db_id, coll_id, &doc, is_delete);
             }
+            // A real Cosmos DB account returns 207 MultiStatus when any
+            // individual operation in the batch failed (statusCode >= 300),
+            // and 200 OK only when every operation succeeded.
+            let has_failure = results.iter().any(|r| {
+                r.get("statusCode")
+                    .and_then(|v| v.as_u64())
+                    .is_some_and(|s| s >= 300)
+            });
+            let status = if has_failure {
+                StatusCode::MultiStatus
+            } else {
+                StatusCode::Ok
+            };
             let body = serde_json::Value::Array(results);
-            let mut builder = success_response(StatusCode::Ok, &body, charge, &token, start);
+            let mut builder = success_response(status, &body, charge, &token, start);
             if let Some(lsn) = lsn {
                 builder = builder.with_lsn(lsn);
             }
