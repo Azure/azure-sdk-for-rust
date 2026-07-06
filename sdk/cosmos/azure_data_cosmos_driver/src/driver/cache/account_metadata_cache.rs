@@ -32,6 +32,11 @@ pub(crate) struct AccountRegion {
 }
 
 /// Describes replica set sizing characteristics for user/system replication policies.
+///
+/// The service may omit this object entirely (e.g. the vnext emulator does not
+/// send `userReplicationPolicy`) or omit individual fields. To match the
+/// defensive behavior of the .NET and Java SDKs, missing values fall back to the
+/// standard defaults (`min = 3`, `max = 4`).
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 // cSpell:disable
 #[serde(rename_all = "camelCase")]
@@ -40,14 +45,42 @@ pub(crate) struct AccountRegion {
 // are kept intentionally even when not yet consumed by driver logic.
 #[allow(dead_code)]
 pub(crate) struct ReplicationPolicy {
+    #[serde(default = "ReplicationPolicy::default_min_replica_set_size")]
     pub min_replica_set_size: i32,
 
     // Note: service returns key `maxReplicasetSize` (lowercase 's' in 'set')
-    #[serde(rename = "maxReplicasetSize")]
+    #[serde(
+        rename = "maxReplicasetSize",
+        default = "ReplicationPolicy::default_max_replica_set_size"
+    )]
     pub max_replica_set_size: i32,
 }
 
+impl ReplicationPolicy {
+    /// Default minimum replica set size used when the service omits the value.
+    fn default_min_replica_set_size() -> i32 {
+        3
+    }
+
+    /// Default maximum replica set size used when the service omits the value.
+    fn default_max_replica_set_size() -> i32 {
+        4
+    }
+}
+
+impl Default for ReplicationPolicy {
+    fn default() -> Self {
+        Self {
+            min_replica_set_size: Self::default_min_replica_set_size(),
+            max_replica_set_size: Self::default_max_replica_set_size(),
+        }
+    }
+}
+
 /// User-configured default consistency level for the account.
+///
+/// Defaults to [`DefaultConsistencyLevel::Session`] when the service omits the
+/// policy, matching the account creation default.
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
@@ -55,19 +88,39 @@ pub(crate) struct ReplicationPolicy {
 // are kept intentionally even when not yet consumed by driver logic.
 #[allow(dead_code)]
 pub(crate) struct ConsistencyPolicy {
+    #[serde(default = "ConsistencyPolicy::default_consistency_level")]
     pub default_consistency_level: DefaultConsistencyLevel,
 }
 
+impl ConsistencyPolicy {
+    /// Default consistency level used when the service omits the value.
+    fn default_consistency_level() -> DefaultConsistencyLevel {
+        DefaultConsistencyLevel::Session
+    }
+}
+
+impl Default for ConsistencyPolicy {
+    fn default() -> Self {
+        Self {
+            default_consistency_level: Self::default_consistency_level(),
+        }
+    }
+}
+
 /// Read preference coefficients used by the service when selecting regions.
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+///
+/// Defaults to zeroed coefficients when the service omits the policy.
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
 // All fields reflect the JSON contract of the account properties response and
 // are kept intentionally even when not yet consumed by driver logic.
 #[allow(dead_code)]
 pub(crate) struct ReadPolicy {
+    #[serde(default)]
     pub primary_read_coefficient: i32,
 
+    #[serde(default)]
     pub secondary_read_coefficient: i32,
 }
 
@@ -99,22 +152,27 @@ pub(crate) struct AccountProperties {
     pub rid: String,
 
     /// The media type of the respective account.
+    #[serde(default)]
     pub media: String,
 
     /// Root relative path for the addresses endpoint.
+    #[serde(default)]
     pub addresses: String,
 
     /// Root relative path for the databases feed.
-    #[serde(rename = "_dbs")]
+    #[serde(rename = "_dbs", default)]
     pub dbs: String,
 
     /// Regions currently accepting writes for the account.
+    #[serde(default)]
     pub writable_locations: Vec<AccountRegion>,
 
     /// Regions from which the account can be read.
+    #[serde(default)]
     pub readable_locations: Vec<AccountRegion>,
 
     /// True when multi-master writes are enabled.
+    #[serde(default)]
     pub enable_multiple_write_locations: bool,
 
     /// Indicates if continuous backup (PITR) is enabled.
@@ -130,18 +188,23 @@ pub(crate) struct AccountProperties {
     pub enable_per_partition_failover_behavior: bool,
 
     /// User replication settings (min/max replica set sizes).
+    #[serde(default)]
     pub user_replication_policy: ReplicationPolicy,
 
     /// Default consistency level configured by the user.
+    #[serde(default)]
     pub user_consistency_policy: ConsistencyPolicy,
 
     /// System-managed replication sizing policy.
+    #[serde(default)]
     pub system_replication_policy: ReplicationPolicy,
 
     /// Coefficients guiding regional read preference selection.
+    #[serde(default)]
     pub read_policy: ReadPolicy,
 
     /// Raw JSON string containing query engine feature/configuration flags.
+    #[serde(default)]
     pub query_engine_configuration: String,
 
     /// Regional Gateway 2.0 endpoints accepting writes (thin client mode).
@@ -506,6 +569,61 @@ mod tests {
 
         assert!(props.write_region().is_none());
         assert!(props.readable_regions().is_empty());
+    }
+
+    #[test]
+    fn replication_policy_defaults_when_missing() {
+        // The vnext emulator omits `userReplicationPolicy` (and may omit other
+        // policy objects). Deserialization must succeed and fall back to the
+        // standard defaults (min = 3, max = 4), matching the .NET and Java SDKs.
+        let json = r#"{
+            "_self": "",
+            "id": "emulator",
+            "_rid": "emulator.documents.azure.com",
+            "writableLocations": [
+                { "name": "South Central US", "databaseAccountEndpoint": "https://localhost:8081/" }
+            ],
+            "readableLocations": [
+                { "name": "South Central US", "databaseAccountEndpoint": "https://localhost:8081/" }
+            ]
+        }"#;
+
+        let props: AccountProperties = serde_json::from_str(json).expect("deserialize");
+
+        // Missing replication policies fall back to the standard defaults.
+        assert_eq!(props.user_replication_policy, ReplicationPolicy::default());
+        assert_eq!(props.user_replication_policy.min_replica_set_size, 3);
+        assert_eq!(props.user_replication_policy.max_replica_set_size, 4);
+        assert_eq!(
+            props.system_replication_policy,
+            ReplicationPolicy::default()
+        );
+
+        // Other omitted fields fall back to their defaults.
+        assert_eq!(
+            props.user_consistency_policy.default_consistency_level,
+            DefaultConsistencyLevel::Session
+        );
+        assert_eq!(props.read_policy, ReadPolicy::default());
+        assert!(props.media.is_empty());
+        assert!(props.query_engine_configuration.is_empty());
+        assert!(!props.enable_multiple_write_locations);
+
+        // Present fields are still honored.
+        assert_eq!(props.write_region().unwrap().as_str(), "southcentralus");
+    }
+
+    #[test]
+    fn replication_policy_defaults_individual_fields() {
+        // A partial replication policy object should default the missing field
+        // rather than failing to deserialize.
+        let policy: ReplicationPolicy =
+            serde_json::from_str(r#"{ "minReplicaSetSize": 1 }"#).expect("deserialize");
+        assert_eq!(policy.min_replica_set_size, 1);
+        assert_eq!(policy.max_replica_set_size, 4);
+
+        let policy: ReplicationPolicy = serde_json::from_str("{}").expect("deserialize");
+        assert_eq!(policy, ReplicationPolicy::default());
     }
 
     #[test]

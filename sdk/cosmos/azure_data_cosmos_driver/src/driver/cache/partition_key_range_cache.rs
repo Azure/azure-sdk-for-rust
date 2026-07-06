@@ -177,6 +177,33 @@ impl PartitionKeyRangeCache {
         )
     }
 
+    /// Resolves the ID of the single partition key range that owns the given
+    /// EPK range, or `None` when the range maps to zero or more than one
+    /// physical partition (or the routing map cannot be resolved).
+    ///
+    /// Unlike [`resolve_overlapping_ranges`](Self::resolve_overlapping_ranges),
+    /// this clones at most a single range ID rather than every overlapping
+    /// range, making it the cheaper choice for callers that only need
+    /// single-owner attribution (e.g. PPCB/PPAF first-attempt seeding).
+    /// When `force_refresh` is true, the cached routing map is refreshed before lookup.
+    pub async fn resolve_single_overlapping_range_id<F, Fut>(
+        &self,
+        container: &ContainerReference,
+        epk_range: std::ops::Range<&EffectivePartitionKey>,
+        force_refresh: bool,
+        fetch_pk_ranges: F,
+    ) -> Option<String>
+    where
+        F: Fn(ContainerReference, Option<String>) -> Fut,
+        Fut: std::future::Future<Output = Option<PkRangeFetchResult>>,
+    {
+        let routing_map = self
+            .try_lookup(container, force_refresh, fetch_pk_ranges)
+            .await?;
+
+        routing_map.single_overlapping_range_id(epk_range)
+    }
+
     /// Resolves a partition key range by its ID.
     ///
     /// Returns `None` if the routing map cannot be resolved or the ID is not found.

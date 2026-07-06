@@ -7,7 +7,7 @@ use azure_core::{
 };
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use tracing::{trace, warn};
+use tracing::{error, trace, warn};
 
 /// An in-memory checkpoint store for Event Hubs.
 /// This store is used to manage checkpoints and ownerships in memory.
@@ -63,13 +63,25 @@ impl InMemoryCheckpointStore {
         )?;
         trace!("Update ownership for key {}", key);
         if store.contains_key(&key) {
-            if ownership.etag != store.get(&key).unwrap().etag {
-                warn!("ETag mismatch {}", key);
+            let actual_etag = store.get(&key).unwrap().etag.clone();
+            if ownership.etag != actual_etag {
+                warn!(
+                    partition_id = %ownership.partition_id,
+                    expected_etag = ?ownership.etag,
+                    actual_etag = ?actual_etag,
+                    "ETag mismatch claiming ownership for key {}",
+                    key
+                );
                 return Err(Error::with_message(
                     AzureErrorKind::Other,
                     format!("ETag mismatch for partition {key}"),
                 ));
             }
+            // NOTE: this renewal path stores the caller's record verbatim instead
+            // of rotating the ETag and refreshing `last_modified_time` the way the
+            // new-ownership branch below (and the blob store) do. The load-balancer
+            // test helpers currently depend on that to seed expired ownership, so
+            // changing it is not a one-liner. Tracked in #4594.
             store.insert(key.clone(), ownership.clone());
             trace!("Updated ownership for key {}", key);
             Ok(ownership.clone())
@@ -149,6 +161,11 @@ impl CheckpointStore for InMemoryCheckpointStore {
             checkpoint.partition_id
         );
         let mut checkpoints = self.checkpoints.lock().map_err(|e| {
+            error!(
+                partition_id = %checkpoint.partition_id,
+                error = %e,
+                "Checkpoint store lock is poisoned; cannot update checkpoint"
+            );
             Error::with_message(
                 AzureErrorKind::Other,
                 format!("Failed to lock checkpoint store: {}", e),

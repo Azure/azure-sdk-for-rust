@@ -14,10 +14,10 @@ use std::{
 
 use crate::{
     diagnostics::ProxyConfiguration,
-    models::{normalize_wrapping_sdk_identifier, UserAgent},
+    models::{normalize_wrapping_sdk_identifier, UserAgent, UserAgentFeatureFlags},
     options::{
         parse_duration_millis_from_env, ConnectionPoolOptions, CorrelationId, DriverOptions,
-        OperationOptions, UserAgentSuffix, WorkloadId,
+        OperationOptions, PartitionFailoverOptions, UserAgentSuffix, WorkloadId,
     },
     system::{CpuMemoryMonitor, VmMetadataService},
 };
@@ -109,6 +109,12 @@ pub struct CosmosDriverRuntime {
     /// Environment-level operation options, populated once from env vars at build time.
     env_operation_options: Arc<OperationOptions>,
 
+    /// Highest-priority kill-switch operation options, populated once from the
+    /// `{ENV}_OVERRIDE` variants at build time. Only `overridable` fields are
+    /// populated; this layer wins over every other layer (including
+    /// per-operation values).
+    env_override_operation_options: Arc<OperationOptions>,
+
     /// User-provided default operation options, swappable via interior mutability.
     ///
     /// Wrapped in `RwLock<Arc<...>>` so that shared references can atomically
@@ -146,6 +152,15 @@ pub struct CosmosDriverRuntime {
     /// `azsdk-rust-cosmos/0.34.0`. When unset, the User-Agent starts with the
     /// driver's own identifier.
     wrapping_sdk_identifier: Option<String>,
+
+    /// Cross-SDK feature flags advertised in this runtime's base `User-Agent`.
+    ///
+    /// Computed from runtime-scoped client configuration (HTTP/2 transport and
+    /// the default per-partition circuit breaker setting). Drivers built from
+    /// this runtime compare their own computed flags against this value: when
+    /// they match (the common case), they share the runtime's `Arc<UserAgent>`;
+    /// otherwise they recompute their own `User-Agent`.
+    user_agent_feature_flags: UserAgentFeatureFlags,
 
     /// Shared container metadata cache used by drivers in this runtime.
     container_cache: ContainerCache,
@@ -233,6 +248,12 @@ impl CosmosDriverRuntime {
         &self.env_operation_options
     }
 
+    /// Returns the highest-priority kill-switch operation options (populated
+    /// from the `{ENV}_OVERRIDE` variants at build time).
+    pub fn env_override_operation_options(&self) -> &Arc<OperationOptions> {
+        &self.env_override_operation_options
+    }
+
     /// Returns a snapshot of the default operation options.
     ///
     /// The returned `Arc` is a cheap clone of the current value.
@@ -291,6 +312,32 @@ impl CosmosDriverRuntime {
     /// [`CosmosDriverRuntimeBuilder::with_wrapping_sdk_identifier`].
     pub fn wrapping_sdk_identifier(&self) -> Option<&str> {
         self.wrapping_sdk_identifier.as_deref()
+    }
+
+    /// Returns the cross-SDK feature flags advertised in this runtime's base
+    /// `User-Agent` header.
+    pub(crate) fn user_agent_feature_flags(&self) -> UserAgentFeatureFlags {
+        self.user_agent_feature_flags
+    }
+
+    /// Recomputes a `User-Agent` from this runtime's suffix source (suffix,
+    /// workload id, or correlation id, in priority order) plus the supplied
+    /// feature flags.
+    ///
+    /// Used by a driver that overrode a feature-affecting option (e.g. disabled
+    /// PPCB) without supplying its own suffix, so it cannot share the runtime's
+    /// shared `Arc<UserAgent>`.
+    pub(crate) fn user_agent_with_feature_flags(
+        &self,
+        feature_flags: UserAgentFeatureFlags,
+    ) -> UserAgent {
+        compute_user_agent(
+            self.wrapping_sdk_identifier.as_deref(),
+            self.user_agent_suffix.as_ref(),
+            self.workload_id,
+            self.correlation_id.as_ref(),
+            feature_flags,
+        )
     }
 
     /// Returns the effective correlation dimension.
@@ -520,20 +567,28 @@ impl CosmosDriverRuntimeBuilder {
     /// configuration failure).
     ///
     pub async fn build(self) -> crate::error::Result<Arc<CosmosDriverRuntime>> {
+        let connection_pool = self.connection_pool.unwrap_or_default();
+
+        // Compute the base feature flags advertised in the User-Agent from
+        // runtime-scoped client configuration. HTTP/2 comes from the connection
+        // pool; PPCB uses the driver default (its per-driver value is folded in
+        // later by `CosmosDriver::new`). PPAF is server-driven per-partition and
+        // therefore unknown here, so it is not advertised in the shared header.
+        let user_agent_feature_flags = UserAgentFeatureFlags::from_client_config(
+            connection_pool.is_http2_allowed(),
+            PartitionFailoverOptions::default().circuit_breaker_enabled(),
+        );
+
         // Compute user agent from suffix/workloadId/correlationId (in priority order),
         // optionally prepending a wrapping-SDK identifier.
-        let wrapping = self.wrapping_sdk_identifier.as_deref();
-        let user_agent = Arc::new(if let Some(ref suffix) = self.user_agent_suffix {
-            UserAgent::from_suffix(wrapping, suffix)
-        } else if let Some(workload_id) = self.workload_id {
-            UserAgent::from_workload_id(wrapping, workload_id)
-        } else if let Some(ref correlation_id) = self.correlation_id {
-            UserAgent::from_correlation_id(wrapping, correlation_id)
-        } else {
-            UserAgent::from_wrapping_sdk_identifier(wrapping)
-        });
+        let user_agent = Arc::new(compute_user_agent(
+            self.wrapping_sdk_identifier.as_deref(),
+            self.user_agent_suffix.as_ref(),
+            self.workload_id,
+            self.correlation_id.as_ref(),
+            user_agent_feature_flags,
+        ));
 
-        let connection_pool = self.connection_pool.unwrap_or_default();
         let proxy_configuration = ProxyConfiguration::from_env(connection_pool.proxy_allowed());
         let http_client_factory: Arc<dyn HttpClientFactory> = {
             #[cfg(any(
@@ -574,12 +629,17 @@ impl CosmosDriverRuntimeBuilder {
         // Initialize system monitoring singletons.
         // CpuMemoryMonitor starts a background thread on first call;
         // VmMetadataService makes a single IMDS request (or falls back to a UUID).
+        // The CPU-refresh interval resolves `builder → env → default` (with
+        // bounds validation) through the same `parse_duration_millis_from_env`
+        // helper the driver-level option builders use (e.g.
+        // `PartitionFailoverOptions`), keeping every duration env var on one path.
         let refresh_interval = parse_duration_millis_from_env(
             self.cpu_refresh_interval,
             "AZURE_COSMOS_CPU_REFRESH_INTERVAL_MS",
             5_000,
             1_000,
             60_000,
+            &|k| std::env::var(k).ok(),
         )?;
         let cpu_monitor = CpuMemoryMonitor::get_or_init(refresh_interval);
         let vm_metadata = VmMetadataService::get_or_init().await;
@@ -606,12 +666,18 @@ impl CosmosDriverRuntimeBuilder {
                 throttling_retry_options: Some(crate::options::ThrottlingRetryOptions::from_env()),
                 ..OperationOptions::from_env()
             }),
+            // Kill-switch layer: only `overridable` fields (read from their
+            // `{ENV}_OVERRIDE` variants) are populated. No nested groups carry
+            // overridable fields today, so no explicit nested call is needed
+            // here (unlike `env_operation_options` above).
+            env_override_operation_options: Arc::new(OperationOptions::from_env_override()),
             operation_options: RwLock::new(Arc::new(self.operation_options.unwrap_or_default())),
             user_agent,
             workload_id: self.workload_id,
             correlation_id: self.correlation_id,
             user_agent_suffix: self.user_agent_suffix,
             wrapping_sdk_identifier: self.wrapping_sdk_identifier,
+            user_agent_feature_flags,
             container_cache: ContainerCache::new(),
             account_metadata_cache: Arc::new(AccountMetadataCache::new()),
             cpu_monitor,
@@ -622,6 +688,30 @@ impl CosmosDriverRuntimeBuilder {
 }
 
 static NEXT_RUNTIME_ID: AtomicUsize = AtomicUsize::new(0);
+
+/// Builds a [`UserAgent`] from a suffix source (suffix, workload id, or
+/// correlation id, in priority order) plus the supplied feature flags.
+///
+/// Shared by [`CosmosDriverRuntimeBuilder::build`] and
+/// [`CosmosDriverRuntime::user_agent_with_feature_flags`] so the priority
+/// ordering is defined in exactly one place.
+fn compute_user_agent(
+    wrapping_sdk_identifier: Option<&str>,
+    user_agent_suffix: Option<&UserAgentSuffix>,
+    workload_id: Option<WorkloadId>,
+    correlation_id: Option<&CorrelationId>,
+    feature_flags: UserAgentFeatureFlags,
+) -> UserAgent {
+    if let Some(suffix) = user_agent_suffix {
+        UserAgent::from_suffix(wrapping_sdk_identifier, suffix, feature_flags)
+    } else if let Some(workload_id) = workload_id {
+        UserAgent::from_workload_id(wrapping_sdk_identifier, workload_id, feature_flags)
+    } else if let Some(correlation_id) = correlation_id {
+        UserAgent::from_correlation_id(wrapping_sdk_identifier, correlation_id, feature_flags)
+    } else {
+        UserAgent::from_wrapping_sdk_identifier(wrapping_sdk_identifier, feature_flags)
+    }
+}
 
 #[cfg(test)]
 mod tests {

@@ -7,6 +7,9 @@ parameters:
 - name: IncludeRelease
   type: boolean
   default: true
+- name: SkipPrValidation
+  type: boolean
+  default: false
 - name: RunLiveTests
   type: boolean
   default: false
@@ -82,7 +85,25 @@ extends:
   parameters:
     AutoBaseline: ${{ and(eq(variables['Build.DefinitionName'], 'rust - core'), eq(replace(variables['Build.SourceBranchName'], 'refs/heads/', ''), 'main'), eq(variables['System.TeamProject'], 'internal')) }}
     stages:
+    - ${{ if and(eq(parameters.SkipPrValidation, true), eq(variables['Build.Reason'], 'Manual')) }}:
+      - stage: NoOp
+        displayName: No-op
+        variables:
+        - template: /eng/pipelines/templates/variables/image.yml
+        jobs:
+        - job: NoOp
+          displayName: No-op
+          pool:
+            name: $(LINUXPOOL)
+            image: $(LINUXVMIMAGE)
+            os: linux
+          steps:
+          - checkout: none
+          - pwsh: Write-Host "PR validation skipped because SkipPrValidation was set to true for a manual run."
+            displayName: Skip PR validation
+
     - stage: Build
+      condition: not(and(eq(${{ parameters.SkipPrValidation }}, true), eq(variables['Build.Reason'], 'Manual')))
       variables:
       - template: /eng/pipelines/templates/variables/image.yml
       - template: /eng/pipelines/templates/variables/rust.yml
@@ -102,7 +123,7 @@ extends:
           MatrixReplace: ${{ parameters.MatrixReplace }}
 
     # Run live tests for internal only, not public CI builds. This can be triggered manually via an `/azp run` comment.
-    - ${{ if and(eq(variables['System.TeamProject'], 'internal'), eq(parameters.RunLiveTests, 'true')) }}:
+    - ${{ if and(not(and(eq(parameters.SkipPrValidation, true), eq(variables['Build.Reason'], 'Manual'))), eq(variables['System.TeamProject'], 'internal'), eq(parameters.RunLiveTests, 'true')) }}:
       - ${{ each cloud in parameters.CloudConfig }}:
         # Run all clouds by default for weekly test pipeline, except for clouds specifically unsupported by the calling pipeline
         - ${{ if or(contains(parameters.Clouds, cloud.key), and(contains(variables['Build.DefinitionName'], 'weekly'), contains(parameters.SupportedClouds, cloud.key))) }}:
@@ -149,7 +170,7 @@ extends:
     # 1. Internal trigger, not Pull Request trigger
     # 2. Not weekly build
     # 3. Manual trigger or force IncludeRelease
-    - ${{ if and(not(startsWith(variables['Build.SourceBranchName'], 'refs/pull/')), eq(variables['System.TeamProject'], 'internal')) }}:
+    - ${{ if and(not(and(eq(parameters.SkipPrValidation, true), eq(variables['Build.Reason'], 'Manual'))), not(startsWith(variables['Build.SourceBranchName'], 'refs/pull/')), eq(variables['System.TeamProject'], 'internal')) }}:
       - ${{ if not(contains(variables['Build.DefinitionName'], 'weekly')) }}:
         - ${{ if or(in(variables['Build.Reason'], 'Manual', ''), eq(parameters.IncludeRelease, true)) }}:
           - template: archetype-rust-release.yml
