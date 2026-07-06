@@ -138,6 +138,10 @@ try {
 
   Write-Host "Finished packing crates"
   if ($LASTEXITCODE) {
+    if ($packResult -match 'cannot update the lock file') {
+      LogWarning "cargo package could not update the lock file. Rebase on the main branch and try again."
+    }
+
     Write-Host "cargo publish failed with exit code $LASTEXITCODE"
     exit $LASTEXITCODE
   }
