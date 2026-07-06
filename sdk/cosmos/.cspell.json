@@ -139,6 +139,7 @@
     "OTel",
     "OUTOFMEMORY",
     "othercoll",
+    "parseable",
     "partitionkey",
     "partitionkeyrangeid",
     "perfcontainer",

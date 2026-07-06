@@ -45,6 +45,7 @@ azure_core_test = { workspace = true, features = [
 ] }
 azure_identity.workspace = true
 azure_storage_blob_test.path = "../azure_storage_blob_test"
+azure_storage_sas = { path = "../azure_storage_sas", version = "0.1.0" }
 clap = { workspace = true, features = ["env"] }
 flate2.workspace = true
 futures.workspace = true
