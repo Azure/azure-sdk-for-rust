@@ -6,4 +6,5 @@ components = [
   "rust-docs",
   "rust-std",
   "rustc-dev",
+  "rustfmt",
 ]
