@@ -582,13 +582,15 @@ impl EmulatorStore {
         throughput: u32,
     ) -> Option<OfferMetadata> {
         let regions = self.regions.read().unwrap();
+        let ts = current_timestamp();
+        let etag = new_etag();
         let mut updated = None;
         for region in regions.values() {
             let mut offers = region.offers.write().unwrap();
             if let Some(offer) = offers.get_mut(offer_id) {
                 offer.throughput = throughput;
-                offer.ts = current_timestamp();
-                offer.etag = new_etag();
+                offer.ts = ts;
+                offer.etag = etag.clone();
                 updated = Some(offer.clone());
             }
         }
