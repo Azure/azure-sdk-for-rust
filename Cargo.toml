@@ -46,18 +46,21 @@ rust-version = "1.88"
 
 [workspace.dependencies.typespec]
 default-features = false
-version = "1.0.0"
+path = "sdk/core/typespec"
+version = "1.1.0-beta.1"
 
 [workspace.dependencies.typespec_client_core]
 default-features = false
-version = "1.0.0"
+path = "sdk/core/typespec_client_core"
+version = "1.1.0-beta.1"
 
 [workspace.dependencies.typespec_macros]
 version = "1.0.0"
 
 [workspace.dependencies.azure_core]
 default-features = false
-version = "1.0.0"
+path = "sdk/core/azure_core"
+version = "1.1.0-beta.1"
 
 [workspace.dependencies.azure_core_macros]
 version = "1.0.0"
@@ -67,22 +70,27 @@ version = "1.0.0"
 
 [workspace.dependencies.azure_core_opentelemetry]
 # azure_core_opentelemetry should only ever be in dev-dependencies herein
-version = "1.0.0"
+path = "sdk/core/azure_core_opentelemetry"
+version = "1.1.0-beta.1"
 
 [workspace.dependencies.azure_core_test]
 # azure_core_test should only ever be in dev-dependencies herein
-version = "0.1.0"
+path = "sdk/core/azure_core_test"
+version = "0.2.0"
 
 [workspace.dependencies.azure_core_test_macros]
 # azure_core_test_macros should only ever be in dev-dependencies herein
-version = "0.1.0"
+path = "sdk/core/azure_core_test_macros"
+version = "0.2.0"
 
 [workspace.dependencies.azure_identity]
 # azure_identity should only ever be in dev-dependencies herein
-version = "1.0.0"
+path = "sdk/identity/azure_identity"
+version = "1.1.0-beta.1"
 
 [workspace.dependencies.azure_storage_blob]
-version = "1.0.0"
+path = "sdk/storage/azure_storage_blob"
+version = "1.1.0-beta.1"
 
 [workspace.dependencies]
 async-lock = "3.4"
@@ -114,14 +122,14 @@ hostname = "0.4"
 hmac = { version = "0.12" }
 include-file = { version = "1.0.0", default-features = false }
 openssl = { version = "0.10.79" }
-opentelemetry = { version = "0.31", features = ["trace"] }
-opentelemetry-appender-tracing = { version = "0.31" }
-opentelemetry-stdout = { version = "0.31" }
-opentelemetry_sdk = "0.31"
+opentelemetry = { version = "0.32", features = ["trace"] }
+opentelemetry-appender-tracing = { version = "0.32" }
+opentelemetry-stdout = { version = "0.32" }
+opentelemetry_sdk = "0.32.1"
 percent-encoding = "2.3"
 pin-project = "1.1"
 proc-macro2 = "1.0.106"
-quick-xml = { version = "0.39.0", features = ["serialize", "serde-types"] }
+quick-xml = { version = "0.41.0", features = ["serialize", "serde-types"] }
 quote = "1.0.44"
 rand = { version = "0.10.1", features = ["sys_rng"] }
 rand_chacha = "0.10"
