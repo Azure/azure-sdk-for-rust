@@ -11,8 +11,6 @@ use crate::models::partition_key_range::PartitionKeyRange;
 use crate::models::{
     CosmosOperation, CosmosResponseHeaders, OperationType, ResourceType, SessionToken,
 };
-#[cfg(feature = "preview_dtx")]
-use std::borrow::Cow;
 
 use super::session_container::SessionContainer;
 
@@ -131,20 +129,16 @@ impl SessionManager {
         is_session_consistency: bool,
     ) -> crate::error::Result<()> {
         // Only a 2xx-success committed response under Session consistency turns a
-        // malformed per-op token into a hard error. Matches .NET #5958
-        // (`throwOnMalformed = response.IsSuccessStatusCode && isSessionConsistency`):
-        // a `304 NotModified` (or any non-success) envelope must not fail an
-        // otherwise-completed transaction on token bookkeeping.
+        // malformed per-operation token into a hard error. A `304 NotModified`
+        // or any non-success envelope must not fail on token bookkeeping.
         let throw_on_malformed = response.is_success_status_code() && is_session_consistency;
 
         for result in &response.operation_results {
             let Some(operation) = operations.get(result.index) else {
                 continue;
             };
-            // Skip non-success sub-ops (including `304 NotModified` reads): a
-            // failed/unmodified op may carry a stale or malformed token that must
-            // not be merged or trigger the throw. Matches .NET #5958's
-            // `if (!result.IsSuccessStatusCode) continue;`.
+            // Skip non-success sub-operations. They may carry stale or malformed
+            // tokens that must not be merged or trigger the throw.
             if !result.is_success_status_code() {
                 continue;
             }
@@ -156,34 +150,14 @@ impl SessionManager {
                 continue;
             }
 
-            // Normalize to the canonical `{pkRangeId}:{lsn}` shape.
-            //
-            // A colon at a valid interior position means the coordinator already
-            // sent a pkRangeId-prefixed token (the common case) — use it as-is
-            // and let `set_session_token_checked` validate the value. This
-            // mirrors .NET's shape pre-check (`colonIndex <= 0 || == len - 1`);
-            // a non-canonical shape flows through to strict validation, which
-            // rejects it (and, under Session consistency, throws) exactly like
-            // .NET. A bare `{lsn}` value (no colon) is prefixed with the
-            // coordinator-supplied partition key range id. If none is available
-            // the token is non-canonical and cannot be routed to a partition, so
-            // it is handed to strict validation as-is: under Session consistency
-            // on a committed response that fails closed (matching .NET #5958)
-            // instead of silently dropping the token and weakening
-            // read-your-own-writes.
-            let token = match token.find(':') {
-                Some(index) if index > 0 && index < token.len() - 1 => Cow::Borrowed(token),
-                _ => match result.partition_key_range_id.as_deref() {
-                    Some(partition_key_range_id) if !partition_key_range_id.is_empty() => {
-                        Cow::Owned(format!("{partition_key_range_id}:{token}"))
-                    }
-                    _ => Cow::Borrowed(token),
-                },
-            };
+            // The coordinator must send a complete `<pkRangeId>:<token>` segment.
+            // The SDK validates and merges that value as-is; it does not construct
+            // missing partition key range prefixes from side-channel fields.
+            let token = token.trim();
 
             if let Err(error) = self
                 .container
-                .set_session_token_checked(&operation.target.container, token.as_ref())
+                .set_session_token_checked(&operation.target.container, token)
             {
                 if throw_on_malformed {
                     return Err(dtx_malformed_session_token_error(format!(
@@ -498,7 +472,7 @@ mod tests {
 
     #[cfg(feature = "preview_dtx")]
     #[test]
-    fn dtx_merge_split_session_token_updates_session_cache() {
+    fn dtx_split_session_token_without_pk_range_prefix_errors_under_session_consistency() {
         use crate::models::{
             DistributedTransactionOperation, DistributedTransactionOperationKind,
             DistributedTransactionOperationResult, DistributedTransactionResponse,
@@ -536,16 +510,13 @@ mod tests {
             error_message: None,
         };
 
-        mgr.merge_distributed_transaction_session_tokens(&response, &[operation], true)
-            .unwrap();
-
-        let read_op = CosmosOperation::read_item(ItemReference::from_name(
-            &container,
-            PartitionKey::from("pk1"),
-            "doc1",
-        ));
-        let token = mgr.resolve_session_token(&read_op, None).unwrap();
-        assert_eq!(token.as_str(), "0:0#3#12=-1");
+        let error = mgr
+            .merge_distributed_transaction_session_tokens(&response, &[operation], true)
+            .unwrap_err();
+        assert_eq!(
+            error.status().status_code(),
+            azure_core::http::StatusCode::InternalServerError
+        );
     }
 
     #[cfg(feature = "preview_dtx")]
@@ -645,7 +616,7 @@ mod tests {
 
     #[cfg(feature = "preview_dtx")]
     #[test]
-    fn dtx_token_without_colon_or_pk_range_errors_under_session_consistency() {
+    fn dtx_token_without_colon_errors_even_with_pk_range_under_session_consistency() {
         use crate::models::{
             DistributedTransactionOperation, DistributedTransactionOperationKind,
             DistributedTransactionOperationResult, DistributedTransactionResponse,
@@ -658,10 +629,9 @@ mod tests {
             DistributedTransactionOperationKind::Create,
             DistributedTransactionTarget::new(container, PartitionKey::from("pk1"), "doc1"),
         )];
-        // A bare LSN token with no interior colon and no partition key range id
-        // cannot be routed to a partition. Under Session consistency on a
-        // committed response it must fail closed (matching .NET #5958), not be
-        // silently dropped.
+        // A bare token with no interior colon is not a complete pkRange-prefixed
+        // session token segment. The SDK must reject it rather than constructing
+        // a token from the side-channel partition_key_range_id field.
         let response = DistributedTransactionResponse {
             status_code: azure_core::http::StatusCode::Ok,
             sub_status_code: None,
@@ -672,7 +642,7 @@ mod tests {
                 sub_status_code: None,
                 etag: None,
                 session_token: Some(SessionToken::new("1#100#1=10")),
-                partition_key_range_id: None,
+                partition_key_range_id: Some("0".to_owned()),
                 request_charge: None,
                 resource_body: DistributedTransactionResultBody::None,
             }],
