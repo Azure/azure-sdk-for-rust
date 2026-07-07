@@ -794,6 +794,25 @@ mod tests {
         }
     }
 
+    fn make_throttled_result_with_substatus_and_retry_after(
+        sub_status: SubStatusCode,
+        ms: u64,
+    ) -> TransportResult {
+        let mut cosmos_headers = CosmosResponseHeaders::default();
+        cosmos_headers.retry_after_ms = Some(ms);
+        TransportResult {
+            outcome: TransportOutcome::HttpError {
+                status: CosmosStatus::from_parts(
+                    azure_core::http::StatusCode::TooManyRequests,
+                    Some(sub_status),
+                ),
+                cosmos_headers,
+                body: vec![],
+                request_sent: RequestSentStatus::Sent,
+            },
+        }
+    }
+
     fn make_success_result() -> TransportResult {
         TransportResult {
             outcome: TransportOutcome::Success {
@@ -963,6 +982,22 @@ mod tests {
             evaluate_transport_retry(&result, &state, true),
             ThrottleAction::Retry { .. }
         ));
+    }
+
+    #[test]
+    fn evaluate_transport_retry_dtx_bodyless_429_ru_budget_uses_shared_throttle() {
+        let result = make_throttled_result_with_substatus_and_retry_after(
+            SubStatusCode::RU_BUDGET_EXCEEDED,
+            42,
+        );
+        let state = ThrottleRetryState::new();
+
+        match evaluate_transport_retry(&result, &state, true) {
+            ThrottleAction::Retry { delay, .. } => {
+                assert_eq!(delay, Duration::from_millis(42));
+            }
+            other => panic!("expected shared throttle retry, got {other:?}"),
+        }
     }
 
     #[test]

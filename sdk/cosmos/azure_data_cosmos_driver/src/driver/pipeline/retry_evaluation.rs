@@ -1306,10 +1306,12 @@ mod tests {
         // which is unsafe for writes (see PR #4432). This pins that guard except
         // for 403/3 WriteForbidden and 403/1008 DatabaseAccountNotFound, which
         // must refresh topology first (both are handled before the DTX
-        // short-circuit). Every other coordinator HTTP outcome must resolve to `DtxRetry` (bodyless
-        // coordinator/infra retry) or `Complete` (body handed to the outer
-        // coordinator loop) — never `FailoverRetry`, `SessionRetry`, or `Hedge`,
-        // and never a location effect.
+        // short-circuit). By the time a DTX `429` reaches this classifier, the
+        // transport-level throttle retry path has already propagated it (for
+        // example, after exhausting throttle budget). Every other coordinator HTTP
+        // outcome must resolve to `DtxRetry` (bodyless coordinator/infra retry) or
+        // `Complete` (body handed to the outer coordinator loop) — never
+        // `FailoverRetry`, `SessionRetry`, or `Hedge`, and never a location effect.
         let op = make_dtx_operation();
         let endpoint = CosmosEndpoint::global(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
