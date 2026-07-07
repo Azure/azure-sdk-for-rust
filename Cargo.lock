@@ -770,6 +770,7 @@ dependencies = [
  "azure_core_test",
  "azure_identity",
  "azure_storage_common",
+ "azure_storage_sas",
  "clap",
  "futures",
  "opentelemetry-stdout",
