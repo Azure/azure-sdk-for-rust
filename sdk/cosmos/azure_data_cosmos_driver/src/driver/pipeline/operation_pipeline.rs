@@ -1447,6 +1447,7 @@ fn build_transport_request(
         endpoint: ctx.routing.endpoint.clone(),
         url,
         headers,
+        #[cfg(feature = "preview_dtx")]
         resource_type,
         body: operation.body().map(azure_core::Bytes::copy_from_slice),
         auth_context,

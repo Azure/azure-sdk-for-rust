@@ -27,4 +27,4 @@ guarantees and pushes ambiguity onto every caller.
 
 ## References
 
-- [Distributed Transactions spec](../spec.md)
+- Distributed Transactions spec: ../spec.md

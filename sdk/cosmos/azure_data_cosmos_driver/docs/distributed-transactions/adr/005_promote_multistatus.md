@@ -30,5 +30,5 @@ out-of-order responses.
 
 ## References
 
-- [Distributed Transactions spec](../spec.md)
+- Distributed Transactions spec: ../spec.md
 - [.NET response reordering / fail-closed handling](https://github.com/Azure/azure-cosmos-dotnet-v3/pull/5974)

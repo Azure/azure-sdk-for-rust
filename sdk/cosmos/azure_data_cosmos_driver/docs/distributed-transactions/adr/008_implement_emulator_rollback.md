@@ -28,4 +28,4 @@ the atomic-abort or snapshot-failure contracts.
 
 ## References
 
-- [Distributed Transactions spec](../spec.md)
+- Distributed Transactions spec: ../spec.md

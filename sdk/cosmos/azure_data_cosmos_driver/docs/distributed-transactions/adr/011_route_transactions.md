@@ -45,4 +45,4 @@ read preferences.
 
 ## References
 
-- [Distributed Transactions spec](../spec.md)
+- Distributed Transactions spec: ../spec.md

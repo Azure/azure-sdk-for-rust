@@ -18,13 +18,15 @@ use std::time::{Duration, Instant};
 use futures::{future::Either, pin_mut};
 use tracing::trace;
 
+#[cfg(feature = "preview_dtx")]
+use crate::models::ResourceType;
 use crate::{
     diagnostics::{
         DiagnosticsContextBuilder, ExecutionContext, FailedTransportShardDiagnostics, PipelineType,
         RequestEvent, RequestEventType, RequestHandle, RequestSentStatus, TransportSecurity,
         TransportShardDiagnostics,
     },
-    models::{CosmosResponseHeaders, CosmosStatus, Credential, ResourceType, SubStatusCode},
+    models::{CosmosResponseHeaders, CosmosStatus, Credential, SubStatusCode},
 };
 
 use super::{
@@ -1079,6 +1081,7 @@ mod tests {
             endpoint: endpoint.clone(),
             url: endpoint.url().clone(),
             headers: azure_core::http::headers::Headers::new(),
+            #[cfg(feature = "preview_dtx")]
             resource_type: ResourceType::Database,
             body: None,
             auth_context: super::super::AuthorizationContext::new(
@@ -1445,6 +1448,7 @@ mod tests {
             endpoint: endpoint.clone(),
             url: endpoint.url().clone(),
             headers: azure_core::http::headers::Headers::new(),
+            #[cfg(feature = "preview_dtx")]
             resource_type: ResourceType::Database,
             body: None,
             auth_context: super::super::AuthorizationContext::new(

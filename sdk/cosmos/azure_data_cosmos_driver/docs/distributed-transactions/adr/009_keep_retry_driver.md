@@ -28,4 +28,4 @@ effect model and complicates token reuse.
 
 ## References
 
-- [Distributed Transactions spec](../spec.md)
+- Distributed Transactions spec: ../spec.md

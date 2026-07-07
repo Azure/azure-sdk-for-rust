@@ -26,4 +26,4 @@ A runtime flag was rejected because it would still ship preview types in the sta
 
 ## References
 
-- [Distributed Transactions spec](../spec.md)
+- Distributed Transactions spec: ../spec.md

@@ -27,5 +27,5 @@ the strongest consistency where correctness matters most.
 
 ## References
 
-- [Distributed Transactions spec](../spec.md)
+- Distributed Transactions spec: ../spec.md
 - [.NET malformed DTX session-token handling](https://github.com/Azure/azure-cosmos-dotnet-v3/pull/5958)

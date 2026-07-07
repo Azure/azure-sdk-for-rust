@@ -29,4 +29,4 @@ reached the coordinator" from "coordinator says retriable".
 
 ## References
 
-- [Distributed Transactions spec](../spec.md)
+- Distributed Transactions spec: ../spec.md

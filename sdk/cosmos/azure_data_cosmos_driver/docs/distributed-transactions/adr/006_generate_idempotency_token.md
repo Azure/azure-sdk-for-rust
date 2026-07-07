@@ -28,5 +28,5 @@ question in the .NET API review.
 
 ## References
 
-- [Distributed Transactions spec](../spec.md)
+- Distributed Transactions spec: ../spec.md
 - [.NET DTX API review](https://github.com/Azure/azure-cosmos-dotnet-v3/pull/5877)

@@ -11,6 +11,8 @@ use std::time::{Duration, Instant};
 use azure_core::http::{headers::Headers, Method};
 use url::Url;
 
+#[cfg(feature = "preview_dtx")]
+use crate::models::ResourceType;
 use crate::{
     diagnostics::{ExecutionContext, RequestSentStatus},
     driver::{
@@ -22,7 +24,7 @@ use crate::{
         },
         transport::AuthorizationContext,
     },
-    models::{CosmosResponseHeaders, CosmosStatus, ResourceType},
+    models::{CosmosResponseHeaders, CosmosStatus},
     options::{HedgeThreshold, Region},
 };
 
@@ -345,6 +347,7 @@ pub(crate) struct TransportRequest {
     /// Headers to send (includes operation-specific and attempt-specific headers).
     pub headers: Headers,
     /// Type of resource targeted by the operation.
+    #[cfg(feature = "preview_dtx")]
     pub resource_type: ResourceType,
     /// Request body bytes (schema-agnostic).
     pub body: Option<azure_core::Bytes>,

@@ -26,5 +26,5 @@ with no benefit and creates a permanent drift risk.
 
 ## References
 
-- [Distributed Transactions spec](../spec.md)
+- Distributed Transactions spec: ../spec.md
 - [.NET DTX REST wire contract](https://github.com/Azure/azure-cosmos-dotnet-v3/pull/6002)
