@@ -5,6 +5,7 @@
 ### Features Added
 
 - Added `TlsBackend` (re-exported) and a `tls_backend` option on `ConnectionPoolOptions` (`ConnectionPoolOptionsBuilder::with_tls_backend`), defaulting to `TlsBackend::Rustls`, available under the `rustls` feature, to pin the TLS backend used by the transport. This is additive and changes no behavior for the default (rustls) build; it only has an effect in builds that compile in multiple reqwest TLS backends, where reqwest would otherwise default to native-tls and the driver now pins rustls instead. ([#4649](https://github.com/Azure/azure-sdk-for-rust/pull/4649))
+- Cross-region read hedging now also covers the Collection Read metadata call (resolving container properties), in addition to data-plane point reads. When hedging is enabled (the default for multi-region accounts), the container-properties read is speculatively dispatched to a second preferred region after the threshold, reducing tail latency on the first operation against a container and on cache refreshes. No API change; enable or disable it via the existing `AvailabilityStrategy` / `AZURE_COSMOS_HEDGING_ENABLED` controls. ([#4710](https://github.com/Azure/azure-sdk-for-rust/pull/4710))
 
 ### Breaking Changes
 
