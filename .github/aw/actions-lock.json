@@ -25,25 +25,15 @@
       "version": "v9.0.0",
       "sha": "3a2844b7e9c422d3c10d287c895573f7108da1b3"
     },
-    "actions/upload-artifact@v7.0.0": {
-      "repo": "actions/upload-artifact",
-      "version": "v7.0.0",
-      "sha": "bbbca2ddaa5d8feaa63e36b76fdaad77386f024f"
-    },
     "actions/upload-artifact@v7.0.1": {
       "repo": "actions/upload-artifact",
       "version": "v7.0.1",
       "sha": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
     },
-    "github/gh-aw-actions/setup@v0.74.4": {
+    "github/gh-aw-actions/setup@v0.81.6": {
       "repo": "github/gh-aw-actions/setup",
-      "version": "v0.74.4",
-      "sha": "d3abfe96a194bce3a523ed2093ddedd5704cdf62"
-    },
-    "github/gh-aw/actions/setup@v0.64.1": {
-      "repo": "github/gh-aw/actions/setup",
-      "version": "v0.64.1",
-      "sha": "06c8e7ea94502ecbd1646c53db09c7478f7b0a08"
+      "version": "v0.81.6",
+      "sha": "ba6380cc6e5be5d21677bebe04d52fb48e3abec7"
     }
   }
 }
