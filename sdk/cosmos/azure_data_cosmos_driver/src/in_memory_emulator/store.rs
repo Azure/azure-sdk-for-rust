@@ -159,6 +159,14 @@ pub struct EmulatorStore {
     /// per-id locks is preferable to a remove-on-drop dance that races
     /// fresh acquisitions.
     control_plane_locks: std::sync::Mutex<HashMap<String, Arc<async_lock::Mutex<()>>>>,
+    /// Serializes emulator document writes while preview distributed
+    /// transactions are enabled.
+    ///
+    /// DTX rollback restores preimages. Without a transaction-wide write
+    /// guard, a concurrent point write can commit between preimage capture and
+    /// rollback, then be overwritten by the restore path.
+    #[cfg(feature = "preview_dtx")]
+    document_write_lock: Arc<async_lock::Mutex<()>>,
     /// Tracks spawned replication tasks so tests can drain them.
     replication_tasks: std::sync::Mutex<tokio::task::JoinSet<()>>,
     /// Tracks spawned split/merge tasks separately from replication so a
@@ -215,6 +223,8 @@ impl EmulatorStore {
 
             split_merge_locks: std::sync::Mutex::new(HashMap::new()),
             control_plane_locks: std::sync::Mutex::new(HashMap::new()),
+            #[cfg(feature = "preview_dtx")]
+            document_write_lock: Arc::new(async_lock::Mutex::new(())),
             replication_tasks: std::sync::Mutex::new(tokio::task::JoinSet::new()),
             control_plane_tasks: std::sync::Mutex::new(Vec::new()),
             transport_request_counter: AtomicU32::new(0),
@@ -388,6 +398,19 @@ impl EmulatorStore {
         coll: &str,
     ) -> Arc<async_lock::Mutex<()>> {
         self.control_plane_lock(&format!("{}::{}", db, coll))
+    }
+
+    /// Returns the preview-DTX document write lock.
+    #[cfg(feature = "preview_dtx")]
+    pub(crate) fn document_write_lock(&self) -> Arc<async_lock::Mutex<()>> {
+        self.document_write_lock.clone()
+    }
+
+    /// Returns the preview-DTX document write lock for internal emulator tests.
+    #[cfg(feature = "preview_dtx")]
+    #[doc(hidden)]
+    pub fn document_write_lock_for_tests(&self) -> Arc<async_lock::Mutex<()>> {
+        self.document_write_lock.clone()
     }
 
     /// Awaits all pending in-flight replication tasks and surfaces any

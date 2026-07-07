@@ -643,16 +643,16 @@ pub(crate) async fn handle_operation(
 
         match operation_type {
             OperationType::Create => {
-                handle_create(store, region_name, &parsed, &point_body, start).await
+                handle_create_locked(store, region_name, &parsed, &point_body, start).await
             }
             OperationType::Read => handle_read(store, region_name, &parsed, start),
             OperationType::Replace => {
-                handle_replace(store, region_name, &parsed, &point_body, start).await
+                handle_replace_locked(store, region_name, &parsed, &point_body, start).await
             }
             OperationType::Upsert => {
-                handle_upsert(store, region_name, &parsed, &point_body, start).await
+                handle_upsert_locked(store, region_name, &parsed, &point_body, start).await
             }
-            OperationType::Delete => handle_delete(store, region_name, &parsed, start).await,
+            OperationType::Delete => handle_delete_locked(store, region_name, &parsed, start).await,
             _ => unreachable!(),
         }
     }
@@ -943,6 +943,18 @@ pub(crate) async fn handle_operation(
     /// concurrent writers mutating the same partition mid-transaction.
     #[cfg(feature = "preview_dtx")]
     async fn handle_dtx_write_transaction(
+        store: &Arc<EmulatorStore>,
+        region_name: &str,
+        operations: &[DtxOperation],
+        start: Instant,
+    ) -> AsyncRawResponse {
+        let write_lock = store.document_write_lock();
+        let _write_guard = write_lock.lock().await;
+        handle_dtx_write_transaction_locked(store, region_name, operations, start).await
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    async fn handle_dtx_write_transaction_locked(
         store: &Arc<EmulatorStore>,
         region_name: &str,
         operations: &[DtxOperation],
@@ -2924,6 +2936,11 @@ async fn handle_batch(
     request_body: &[u8],
     start: Instant,
 ) -> AsyncRawResponse {
+    #[cfg(feature = "preview_dtx")]
+    let write_lock = store.document_write_lock();
+    #[cfg(feature = "preview_dtx")]
+    let _write_guard = write_lock.lock().await;
+
     const MAX_BATCH_OPERATIONS: usize = 100;
     const MAX_BATCH_PAYLOAD_BYTES: usize = 2 * 1024 * 1024;
 
@@ -3542,6 +3559,21 @@ async fn handle_create(
     request_body: &[u8],
     start: Instant,
 ) -> AsyncRawResponse {
+    #[cfg(feature = "preview_dtx")]
+    let write_lock = store.document_write_lock();
+    #[cfg(feature = "preview_dtx")]
+    let _write_guard = write_lock.lock().await;
+
+    handle_create_locked(store, region_name, parsed, request_body, start).await
+}
+
+async fn handle_create_locked(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    request_body: &[u8],
+    start: Instant,
+) -> AsyncRawResponse {
     let db_id = parsed.db_id.as_deref().unwrap_or("");
     let coll_id = parsed.coll_id.as_deref().unwrap_or("");
 
@@ -3976,6 +4008,21 @@ async fn handle_replace(
     request_body: &[u8],
     start: Instant,
 ) -> AsyncRawResponse {
+    #[cfg(feature = "preview_dtx")]
+    let write_lock = store.document_write_lock();
+    #[cfg(feature = "preview_dtx")]
+    let _write_guard = write_lock.lock().await;
+
+    handle_replace_locked(store, region_name, parsed, request_body, start).await
+}
+
+async fn handle_replace_locked(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    request_body: &[u8],
+    start: Instant,
+) -> AsyncRawResponse {
     let db_id = parsed.db_id.as_deref().unwrap_or("");
     let coll_id = parsed.coll_id.as_deref().unwrap_or("");
     let doc_id = parsed.doc_id.as_deref().unwrap_or("");
@@ -4299,6 +4346,21 @@ async fn handle_upsert(
     request_body: &[u8],
     start: Instant,
 ) -> AsyncRawResponse {
+    #[cfg(feature = "preview_dtx")]
+    let write_lock = store.document_write_lock();
+    #[cfg(feature = "preview_dtx")]
+    let _write_guard = write_lock.lock().await;
+
+    handle_upsert_locked(store, region_name, parsed, request_body, start).await
+}
+
+async fn handle_upsert_locked(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    request_body: &[u8],
+    start: Instant,
+) -> AsyncRawResponse {
     let db_id = parsed.db_id.as_deref().unwrap_or("");
     let coll_id = parsed.coll_id.as_deref().unwrap_or("");
 
@@ -4487,6 +4549,20 @@ async fn handle_upsert(
 }
 
 async fn handle_delete(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    start: Instant,
+) -> AsyncRawResponse {
+    #[cfg(feature = "preview_dtx")]
+    let write_lock = store.document_write_lock();
+    #[cfg(feature = "preview_dtx")]
+    let _write_guard = write_lock.lock().await;
+
+    handle_delete_locked(store, region_name, parsed, start).await
+}
+
+async fn handle_delete_locked(
     store: &Arc<EmulatorStore>,
     region_name: &str,
     parsed: &ParsedRequest,

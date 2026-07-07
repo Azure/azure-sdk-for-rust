@@ -16,6 +16,14 @@ use azure_data_cosmos::{
 use azure_data_cosmos_driver::in_memory_emulator::{
     InMemoryEmulatorHttpClient, VirtualAccountConfig, VirtualRegion,
 };
+use azure_data_cosmos_driver::{
+    models::{
+        AccountReference as DriverAccountReference, CosmosOperation, ItemReference, PartitionKey,
+    },
+    options::DriverOptions,
+};
+use serde_json::json;
+use tokio::time::{timeout, Duration};
 use uuid::Uuid;
 
 static DTX_IDEMPOTENCY_TOKEN: HeaderName = HeaderName::from_static("x-ms-cosmos-idempotency-token");
@@ -223,5 +231,64 @@ async fn emulator_dtx_echoes_request_operation_index() -> Result<(), Box<dyn Err
 
     assert_eq!(raw.status(), StatusCode::NotFound);
     assert_eq!(body["operationResponses"][0]["index"], 0);
+    Ok(())
+}
+
+#[tokio::test]
+async fn emulator_point_writes_wait_for_dtx_write_guard() -> Result<(), Box<dyn Error>> {
+    let endpoint = "https://wire-d.emulator.local";
+    let (_, emulator) = emulator_client(endpoint).await?;
+    emulator.store().create_database("db");
+    emulator.store().create_container(
+        "db",
+        "coll",
+        serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"],
+            "kind": "Hash",
+            "version": 2
+        }))?,
+    );
+    let guard_lock = emulator.store().document_write_lock_for_tests();
+    let guard = guard_lock.lock().await;
+
+    let runtime = emulator.runtime_builder().build().await?;
+    let driver = runtime
+        .create_driver(
+            DriverOptions::builder(DriverAccountReference::with_master_key(
+                Url::parse(endpoint)?,
+                "dGVzdGtleQ==",
+            ))
+            .build(),
+        )
+        .await?;
+    let container = driver.resolve_container("db", "coll").await?;
+    let mut write_task = tokio::spawn(async move {
+        let body = serde_json::to_vec(&json!({
+            "id": "blocked-item",
+            "pk": "pk"
+        }))
+        .expect("test item body should serialize");
+        driver
+            .execute_singleton_operation(
+                CosmosOperation::create_item(ItemReference::from_name(
+                    &container,
+                    PartitionKey::from("pk"),
+                    "blocked-item",
+                ))
+                .with_body(body),
+                Default::default(),
+            )
+            .await
+    });
+
+    assert!(
+        timeout(Duration::from_millis(25), &mut Box::pin(&mut write_task))
+            .await
+            .is_err(),
+        "point write should wait while DTX write guard is held"
+    );
+    drop(guard);
+
+    write_task.await??;
     Ok(())
 }
