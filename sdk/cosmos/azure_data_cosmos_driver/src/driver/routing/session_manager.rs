@@ -641,7 +641,7 @@ mod tests {
 
     #[cfg(feature = "preview_dtx")]
     #[test]
-    fn dtx_not_modified_suboperation_skipped_under_session_consistency() {
+    fn dtx_not_modified_sub_operation_skipped_under_session_consistency() {
         use crate::models::{
             DistributedTransactionOperation, DistributedTransactionOperationKind,
             DistributedTransactionOperationResult, DistributedTransactionResponse,
@@ -698,7 +698,7 @@ mod tests {
 
     #[cfg(feature = "preview_dtx")]
     #[test]
-    fn dtx_merges_successful_suboperation_token_on_non_success_response() {
+    fn dtx_merges_successful_sub_operation_token_on_non_success_response() {
         use crate::models::{
             DistributedTransactionOperation, DistributedTransactionOperationKind,
             DistributedTransactionOperationResult, DistributedTransactionResponse,
