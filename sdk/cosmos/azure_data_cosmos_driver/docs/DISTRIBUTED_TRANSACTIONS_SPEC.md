@@ -31,12 +31,22 @@
 ### Problem statement
 
 `TransactionalBatch` provides ACID semantics for up to 100 operations sharing a
-single partition key inside a single container. It cannot span partition keys or
-containers. The **Distributed Transaction (DTX)** API extends Cosmos DB atomicity
-beyond that single-partition boundary: a `DistributedWriteTransaction` or
-`DistributedReadTransaction` executes **multi-partition, multi-container** atomic
-operations within the same account, coordinated server-side by the **Distributed
-Transactions Coordinator (DTC)**.
+single partition key inside a single container. Within that boundary, reads and
+queries observe the batch atomically: callers do not see a partially committed
+batch state. The limitation is scope. `TransactionalBatch` cannot span partition
+keys or containers.
+
+The **Distributed Transaction (DTX)** API extends Cosmos DB write atomicity beyond
+that single-partition boundary: a `DistributedWriteTransaction` commits or aborts
+**multi-partition, multi-container** writes within the same account, coordinated
+server-side by the **Distributed Transactions Coordinator (DTC)**. Cross-partition
+snapshot reads are a separate DTX operation shape: callers must use
+`DistributedReadTransaction`, which supports transactional **point reads** only.
+Ordinary reads and queries outside `DistributedReadTransaction` are not part of
+the DTC snapshot protocol; in particular, queries can observe an intermediate view
+while a distributed write transaction is still committing across participants.
+Applications that need a transactionally consistent cross-partition read must use
+DTX transactional point reads and cannot rely on query isolation for that purpose.
 
 This document specifies how the Rust driver and SDK implement the client half of
 that contract: request construction, the `POST /operations/dtc` wire shape,
@@ -50,8 +60,10 @@ offline testing.
   .NET v3 SDK's DTC wire contract (PR #6002). The request/response JSON shape,
   header names, status-code promotion, and retry budgets all match .NET so a
   single backend coordinator serves both clients identically.
-- **Atomic or nothing.** A write transaction either commits every operation or
-  aborts every operation. There is no partial-commit observable state.
+- **Atomic writes, explicit snapshot reads.** A write transaction either commits
+  every operation or aborts every operation. Snapshot isolation for cross-partition
+  reads is provided only by `DistributedReadTransaction` point reads, not by
+  ordinary queries.
 - **Fail closed.** An ambiguous or malformed coordinator response is never surfaced
   as success. When in doubt, the client synthesizes a `500` so callers retry or
   reconcile rather than trust partial data.
