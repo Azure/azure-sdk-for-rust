@@ -101,13 +101,14 @@ impl DistributedWriteTransaction {
     ) -> crate::Result<Self> {
         let body = serde_json::to_vec(&item)?;
         self.operations.push(operation_with_options(
+            &self.context,
             driver_models::DistributedTransactionOperationKind::Create,
             container,
             partition_key,
             item_id,
             Some(Bytes::from(body)),
             options,
-        ));
+        )?);
         Ok(self)
     }
 
@@ -122,13 +123,14 @@ impl DistributedWriteTransaction {
     ) -> crate::Result<Self> {
         let body = serde_json::to_vec(&item)?;
         self.operations.push(operation_with_options(
+            &self.context,
             driver_models::DistributedTransactionOperationKind::Replace,
             container,
             partition_key,
             item_id,
             Some(Bytes::from(body)),
             options,
-        ));
+        )?);
         Ok(self)
     }
 
@@ -143,13 +145,14 @@ impl DistributedWriteTransaction {
     ) -> crate::Result<Self> {
         let body = serde_json::to_vec(&item)?;
         self.operations.push(operation_with_options(
+            &self.context,
             driver_models::DistributedTransactionOperationKind::Upsert,
             container,
             partition_key,
             item_id,
             Some(Bytes::from(body)),
             options,
-        ));
+        )?);
         Ok(self)
     }
 
@@ -160,16 +163,17 @@ impl DistributedWriteTransaction {
         partition_key: impl Into<PartitionKey>,
         item_id: impl Into<std::borrow::Cow<'static, str>>,
         options: Option<DistributedTransactionOperationOptions>,
-    ) -> Self {
+    ) -> crate::Result<Self> {
         self.operations.push(operation_with_options(
+            &self.context,
             driver_models::DistributedTransactionOperationKind::Delete,
             container,
             partition_key,
             item_id,
             None,
             options,
-        ));
-        self
+        )?);
+        Ok(self)
     }
 
     /// Adds a patch item operation.
@@ -183,12 +187,13 @@ impl DistributedWriteTransaction {
     ) -> crate::Result<Self> {
         let body = serde_json::to_vec(&patch)?;
         self.operations.push(patch_operation_with_options(
+            &self.context,
             container,
             partition_key,
             item_id,
             Bytes::from(body),
             options,
-        ));
+        )?);
         Ok(self)
     }
 
@@ -228,16 +233,17 @@ impl DistributedReadTransaction {
         partition_key: impl Into<PartitionKey>,
         item_id: impl Into<std::borrow::Cow<'static, str>>,
         options: Option<DistributedTransactionOperationOptions>,
-    ) -> Self {
+    ) -> crate::Result<Self> {
         self.operations.push(operation_with_options(
+            &self.context,
             driver_models::DistributedTransactionOperationKind::Read,
             container,
             partition_key,
             item_id,
             None,
             options,
-        ));
-        self
+        )?);
+        Ok(self)
     }
 
     /// Executes the read transaction. This consumes the builder, making it single-use.
@@ -256,13 +262,15 @@ impl DistributedReadTransaction {
 }
 
 fn operation_with_options(
+    context: &ClientContext,
     kind: driver_models::DistributedTransactionOperationKind,
     container: &ContainerClient,
     partition_key: impl Into<PartitionKey>,
     item_id: impl Into<std::borrow::Cow<'static, str>>,
     body: Option<Bytes>,
     options: Option<DistributedTransactionOperationOptions>,
-) -> driver_models::DistributedTransactionOperation {
+) -> crate::Result<driver_models::DistributedTransactionOperation> {
+    validate_container_account(context, container)?;
     let mut operation = driver_models::DistributedTransactionOperation::new(
         kind,
         driver_models::DistributedTransactionTarget::new(
@@ -282,16 +290,18 @@ fn operation_with_options(
             operation = operation.with_precondition(precondition);
         }
     }
-    operation
+    Ok(operation)
 }
 
 fn patch_operation_with_options(
+    context: &ClientContext,
     container: &ContainerClient,
     partition_key: impl Into<PartitionKey>,
     item_id: impl Into<std::borrow::Cow<'static, str>>,
     body: Bytes,
     options: Option<DistributedTransactionPatchOperationOptions>,
-) -> driver_models::DistributedTransactionOperation {
+) -> crate::Result<driver_models::DistributedTransactionOperation> {
+    validate_container_account(context, container)?;
     let mut operation = driver_models::DistributedTransactionOperation::new(
         driver_models::DistributedTransactionOperationKind::Patch,
         driver_models::DistributedTransactionTarget::new(
@@ -314,7 +324,26 @@ fn patch_operation_with_options(
         }
     }
 
-    operation
+    Ok(operation)
+}
+
+fn validate_container_account(
+    context: &ClientContext,
+    container: &ContainerClient,
+) -> crate::Result<()> {
+    if container.container_reference().account() == context.driver.account() {
+        return Ok(());
+    }
+
+    Err(crate::DriverCosmosError::builder()
+        .with_status(crate::CosmosStatus::new(
+            azure_core::http::StatusCode::BadRequest,
+        ))
+        .with_message(
+            "distributed transaction operations must target containers from the same Cosmos account as the transaction client",
+        )
+        .build()
+        .into())
 }
 
 /// Response from a distributed transaction.
