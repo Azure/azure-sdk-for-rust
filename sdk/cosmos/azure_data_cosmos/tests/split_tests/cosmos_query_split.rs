@@ -39,7 +39,7 @@ const SPLIT_POLL_INTERVAL: Duration = Duration::from_secs(15);
 ///
 /// Returns [`InconclusiveError::SplitNotCompleted`] if a strictly larger
 /// topology has not appeared within [`SPLIT_POLL_TIMEOUT`].
-async fn force_split_and_wait(
+pub(crate) async fn force_split_and_wait(
     container_client: &ContainerClient,
     starting_partitions: usize,
 ) -> Result<usize, Box<dyn Error>> {

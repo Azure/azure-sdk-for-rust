@@ -33,7 +33,7 @@ rand = { workspace = true, optional = true }
 reqwest = { workspace = true, optional = true }
 serde.workspace = true
 serde_json.workspace = true
-time = { workspace = true, optional = true }
+time.workspace = true
 tokio = { workspace = true, optional = true, features = ["rt", "time"] }
 tracing.workspace = true
 url.workspace = true
@@ -86,7 +86,6 @@ preview_dtx = [] # Enables preview Distributed Transaction APIs. Disabled by def
 # covered by SemVer and may change or disappear at any time.
 __internal_in_memory_emulator = [
   "dep:tokio",
-  "dep:time",
   "dep:percent-encoding",
 ]
 __internal_mocking = []
