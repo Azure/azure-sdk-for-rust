@@ -49,6 +49,12 @@
 //!   injected. Diagnostics show `was_hedge=true`,
 //!   `total_requests_launched=2`, `response_region=WEST_US` — the spec's
 //!   canonical "tail-latency cut" outcome.
+//! * [`hedging_container_read_primary_slow`] — the metadata analogue of the
+//!   slow case: 800 ms delay on East US `MetadataReadContainer` (the Collection
+//!   Read, `DocumentCollection` + `Read`), threshold 100 ms. The alternate wins
+//!   against West US, proving the `HEDGEABLE_RESOURCE_TYPES` widen hedges the
+//!   container-properties read end-to-end, not just at the `should_hedge` unit
+//!   level.
 //! * [`hedging_read_primary_503`] — 500 ms delay + 503 injected on East US
 //!   `ReadItem`, threshold 100 ms. Same primary-vs-alternate race shape as
 //!   the slow case, but the primary's eventual result is a transient
@@ -155,7 +161,7 @@ use azure_data_cosmos_driver::fault_injection::{
 };
 use azure_data_cosmos_driver::in_memory_emulator::WriteMode;
 use azure_data_cosmos_driver::models::{
-    AccountReference, CosmosOperation, ItemReference, PartitionKey,
+    AccountReference, CosmosOperation, DatabaseReference, ItemReference, PartitionKey,
 };
 use azure_data_cosmos_driver::options::{
     AvailabilityStrategy, DriverOptions, EndToEndOperationLatencyPolicy, ExcludedRegions,
@@ -306,6 +312,29 @@ async fn read_item_result(
         .map(|maybe| maybe.expect("read_item returns a response body"))
 }
 
+/// Issues a Collection Read (`read_container_by_name` — `DocumentCollection` +
+/// `Read`) against `driver` with the supplied `OperationOptions` and returns
+/// the response's optional `HedgeDiagnostics`. This is the container-properties
+/// metadata point read that this phase makes hedgeable. Unlike
+/// [`read_item_hedge_diagnostics`], it issues the operation directly through
+/// `execute_operation` (bypassing the container cache) so the hedge race on the
+/// metadata read itself is observable via the returned diagnostics.
+async fn read_container_hedge_diagnostics(
+    driver: &Arc<CosmosDriver>,
+    op_options: OperationOptions,
+) -> Option<HedgeDiagnostics> {
+    let db_ref = DatabaseReference::from_name(driver.account().clone(), DB_NAME);
+    let operation = CosmosOperation::read_container_by_name(db_ref, COLL_NAME);
+
+    let response = driver
+        .execute_operation(operation, op_options)
+        .await
+        .expect("read_container succeeds")
+        .expect("read_container returns a response body");
+
+    response.diagnostics().hedge_diagnostics().cloned()
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Tests
 // ─────────────────────────────────────────────────────────────────────────────
@@ -443,7 +472,76 @@ async fn hedging_read_primary_slow() {
     );
 }
 
-/// Spec §15.2 row 3 — *primary returns 503 (delayed), alternate wins*.
+/// Collection Read hedging — *primary slow, alternate wins*.
+///
+/// 800 ms delay (no error) on East US `MetadataReadContainer`, threshold
+/// 100 ms. The container-properties read this phase makes hedgeable
+/// (`DocumentCollection` + `Read`) is the metadata analogue of
+/// [`hedging_read_primary_slow`]: the primary attempt is still in flight when
+/// the threshold elapses, `execute_hedged` spawns the alternate against West
+/// US, and the alternate wins by virtue of having no delay injected. This is
+/// the end-to-end proof that widening `HEDGEABLE_RESOURCE_TYPES` to include
+/// `DocumentCollection` actually hedges the metadata read through the pipeline —
+/// not just that `should_hedge` returns `true` at the unit level.
+#[tokio::test]
+async fn hedging_container_read_primary_slow() {
+    let ctx = setup_multi_region(WriteMode::Single).await;
+
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::MetadataReadContainer)
+        .with_region(Region::EAST_US)
+        .build();
+    // Delay only — no error. The primary Collection Read eventually succeeds,
+    // but only after the alternate has long since won the race.
+    let result = FaultInjectionResultBuilder::new()
+        .with_delay(Duration::from_millis(800))
+        .with_probability(1.0)
+        .build();
+    let rule = Arc::new(
+        FaultInjectionRuleBuilder::new("hedging-east-us-container-delay", result)
+            .with_condition(condition)
+            .build(),
+    );
+    let rules = vec![Arc::clone(&rule)];
+
+    let (driver, op_options) = make_hedging_driver(&ctx, Duration::from_millis(100), rules).await;
+
+    let hedge_diag = read_container_hedge_diagnostics(&driver, op_options)
+        .await
+        .expect(
+            "slow primary Collection Read should cause the threshold to elapse \
+             and `execute_hedged` to spawn the alternate — `HedgeDiagnostics` \
+             must be attached (spec §10.1)",
+        );
+
+    assert_eq!(
+        hedge_diag.terminal_state(),
+        HedgeTerminalState::AlternateWon,
+        "alternate must win when the primary Collection Read is slow past \
+         threshold → terminal state must classify as AlternateWon (spec \
+         §10.1.1); diag={hedge_diag:?}",
+    );
+    assert_eq!(
+        hedge_diag.alternate_region(),
+        Some(&Region::WEST_US),
+        "primary + alternate should both have been launched; diag={hedge_diag:?}",
+    );
+    assert_eq!(
+        hedge_diag.response_region(),
+        Some(&Region::WEST_US),
+        "alternate (West US) should be the winning region; diag={hedge_diag:?}",
+    );
+    assert_eq!(
+        hedge_diag.primary_region(),
+        &Region::EAST_US,
+        "primary_region must record East US (the losing region); \
+         diag={hedge_diag:?}",
+    );
+    assert!(
+        rule.hit_count() >= 1,
+        "the East US container-read delay rule should have been applied at least once",
+    );
+}
 ///
 /// 500 ms delay + 503 injected on East US `ReadItem`, threshold 100 ms.
 /// The delay is load-bearing: an instant 503 would win the primary side

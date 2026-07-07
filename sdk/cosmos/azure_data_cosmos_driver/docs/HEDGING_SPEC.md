@@ -94,7 +94,8 @@ design review.
 | Queries (`QueryItems`) — page-level | ❌ | ✅ | ✅ |
 | `ReadMany` — page-level | ❌ | ✅ | ✅ |
 | Change feed — page-level | ❌ | ✅ | ✅ |
-| Metadata operations (Database / Container / Offer / Throughput) | ❌ | ✅ | ✅ |
+| Container Read (properties) — point read (`DocumentCollection` + `Read`) | ✅ | ✅ | ✅ |
+| Other metadata reads (Database / Offer / Throughput / PartitionKeyRange) | ❌ | ✅ | ✅ |
 | Document writes (Create/Replace/Upsert/Delete/Patch) — any topology | ❌ | ❌ | ❌ |
 | Stored procedure execution (`ExecuteJavaScript`) | ❌ | ❌ | 🟡 candidate |
 
@@ -104,13 +105,18 @@ design review.
 > procedure execution is a standalone server-side execution and
 > deferred to Future.
 
-Phase 1 ships document point reads only — the smallest correct surface
-that exercises `execute_hedged()`, region pinning, cancellation, and the
-PPCB feedback loop end-to-end. Phase 2 widens to feed-style operations
-(Query / ReadMany / ChangeFeed), each hedged **per page**, plus
-metadata operations. The exact integration with the `FeedRange`
-abstraction is being co-designed with the feed-operation spec (see
-§16). Writes are not in scope for any phase.
+Phase 1 ships document point reads plus the Collection Read metadata
+call (`DocumentCollection` + `Read`, i.e. resolving container
+properties) — the smallest correct read surface that exercises
+`execute_hedged()`, region pinning, cancellation, and the PPCB feedback
+loop end-to-end. The Collection Read is a point read that rides the same
+`(OperationType = Read)` gate, so it needs no per-page machinery; the
+remaining metadata reads (Database / Offer / Throughput /
+PartitionKeyRange) stay in Phase 2. Phase 2 widens to feed-style
+operations (Query / ReadMany / ChangeFeed), each hedged **per page**,
+plus those remaining metadata reads. The exact integration with the
+`FeedRange` abstraction is being co-designed with the feed-operation
+spec (see §16). Writes are not in scope for any phase.
 
 ---
 
@@ -605,8 +611,8 @@ skip hedging even on a multi-region account.
 >
 > | Phase | Allowed `ResourceType` set |
 > |---|---|
-> | 1 (MVP)  | `{Document}` for point reads only — enforced by an additional `OperationType` guard inside the predicate (reads only, no writes). |
-> | 2        | Phase 1 set ∪ feed-style operations (Query / ReadMany / ChangeFeed — still `ResourceType.Document` but `OperationType` differs) ∪ `{Database, Container, Offer, Throughput}` (metadata reads). |
+> | 1 (MVP)  | `{Document, DocumentCollection}` for point reads only — the data-plane point read plus the Collection Read that resolves container properties. Enforced by an additional `OperationType` guard inside the predicate (reads only, no writes), so only `(Document, Read)` and `(DocumentCollection, Read)` are eligible. |
+> | 2        | Phase 1 set ∪ feed-style operations (Query / ReadMany / ChangeFeed — still `ResourceType.Document` but `OperationType` differs) ∪ `{Database, Offer, Throughput, PartitionKeyRange}` (the remaining metadata reads). |
 > | Future   | Phase 2 set ∪ `{StoredProcedure}` (sprocs only — triggers / UDFs are not standalone operations). |
 >
 > Phase 1 implementations should hard-code the allowed `OperationType`
@@ -2393,7 +2399,12 @@ also transient, §14.1 applies.
 | `should_hedge_excluded_to_one_region` | Reads NOT eligible when `ExcludeRegions` leaves < 2 applicable read endpoints |
 | `should_hedge_no_preferred_regions` | NOT eligible when application-preferred-region list is empty |
 | `should_hedge_write_never` | Writes (Create / Replace / Upsert / Delete / Patch) NEVER hedged regardless of topology |
-| `should_hedge_non_document` | Non-Document `ResourceType`s excluded in Phase 1 |
+| `should_hedge_non_document` | Non-hedgeable `ResourceType`s (e.g. `Database`) excluded |
+| `should_hedge_container_read_multi_region` | Collection Read (`DocumentCollection` + `Read`) eligible on a multi-region account — the metadata point read this phase adds |
+| `should_hedge_container_read_single_region` | Collection Read NOT eligible on a single-region account |
+| `should_hedge_container_feed_not_hedged` | `read_all_containers` (`DocumentCollection` + `ReadFeed`) NOT hedged — `ReadFeed` is not an allowed `OperationType` |
+| `should_hedge_container_query_not_hedged` | `query_containers` (`DocumentCollection` + `Query`) NOT hedged |
+| `should_hedge_document_readfeed_not_hedged` | Over-broadening guard: a user change-feed read (`Document` + `ReadFeed`) stays non-hedgeable even though `Document` is hedgeable |
 | `should_hedge_disabled_override` | Per-operation `AvailabilityStrategy::Disabled` overrides client-level hedging |
 | `is_final_result_success` | 200 → final |
 | `is_final_result_conflict` | 409 → final |
@@ -2453,7 +2464,7 @@ against the §1 Goals.
 
 | §1 Goal | Phase that closes it |
 |---|---|
-| **G1. Reduce tail latency** (p99/p99.9 bounded by `threshold + RTT`) | Phase 1 (point reads). Phase 2 widens to feed-style operations + metadata. |
+| **G1. Reduce tail latency** (p99/p99.9 bounded by `threshold + RTT`) | Phase 1 (point reads: data-plane `GetItem` + the Collection Read metadata call). Phase 2 widens to feed-style operations + the remaining metadata reads. |
 | **G2. Transparent to application** (single `CosmosResponse`; opt-in diagnostics) | Phase 1 (`HedgeDiagnostics`, `DiagnosticsContext` integration). |
 | **G3. Configurable** (single `threshold` knob at client and per-operation levels; explicit opt-out) | Phase 1. |
 | **G4. Complementary to failover** (composes with PPAF/PPCB; feeds PPCB) | Phase 1 (lock-free `LocationStateStore` interaction §9.1 + PPCB feedback callsite §9.5). |
@@ -2468,9 +2479,14 @@ remain out of scope for every phase below.
 
 **Operation rows from §1 covered (Phase 1 column):**
 - Document point reads (`GetItem`).
+- Collection Read (`DocumentCollection` + `Read`) — the metadata point
+  read that resolves container properties. It rides the same
+  `(OperationType = Read)` gate as `GetItem`, so it hedges with no
+  per-page machinery.
 
 Writes are excluded by spec rule (§1 Non-Goals, §5.1 row 4). Feed-style
-operations (Query / ReadMany / ChangeFeed) and metadata operations are
+operations (Query / ReadMany / ChangeFeed) and the remaining metadata
+operations (Database / Offer / Throughput / PartitionKeyRange) are
 deferred to Phase 2 because they require additional coordination — see
 that section.
 
@@ -2478,7 +2494,8 @@ that section.
 
 - `HedgeThreshold`, `HedgingStrategy`, `AvailabilityStrategy` types (§4).
 - `should_hedge()` covering point reads (§5.1; phase-allowed
-  `ResourceType` = `{Document}` with `OperationType = Read`).
+  `ResourceType` = `{Document, DocumentCollection}` with
+  `OperationType = Read`).
 - `is_final_result()` (§7.1).
 - `execute_hedged()` (§6.4) extending the `OperationAction::Hedge`
   arm of `operation_pipeline.rs` STAGE 7, with:
@@ -2524,11 +2541,13 @@ that section.
   test.
 
 **§1 Goals closed at end of Phase 1:** G2, G3, G4, G5, G6 in full;
-G1 for point reads only.
+G1 for point reads only (data-plane point reads + the Collection Read
+metadata call).
 
 **Out of scope this phase (deferred to Phase 2 / Future per §1 table):**
-Feed-style operations (Query / ReadMany / ChangeFeed), metadata
-operations, stored procedure execution, adaptive threshold tuning.
+Feed-style operations (Query / ReadMany / ChangeFeed), the remaining
+metadata reads (Database / Offer / Throughput / PartitionKeyRange),
+stored procedure execution, adaptive threshold tuning.
 
 **Deliverables:**
 
@@ -2549,8 +2568,8 @@ operations, stored procedure execution, adaptive threshold tuning.
 - `QueryItems` — hedged **per page**.
 - `ReadMany` — hedged **per page**.
 - Change feed (`ReadFeed`) — hedged **per page**.
-- Metadata operations: Database / Container / Offer / Throughput
-  **reads only**.
+- Metadata operations: Database / Offer / Throughput / PartitionKeyRange
+  **reads only** (the Container Read landed early in Phase 1 — see §5.1).
 
 **Scope (deferred — design pass required before scheduling):**
 
@@ -2565,7 +2584,13 @@ operations, stored procedure execution, adaptive threshold tuning.
 - **Metadata cache invalidation.** Hedged metadata reads must not
   produce stale-cache races when one region returns an older view
   than another; decide whether to prefer the latest `_etag` /
-  resource id or the fastest response.
+  resource id or the fastest response. The Phase 1 Collection Read is
+  exempt from this open question: the driver only consumes the
+  container `_rid` and partition-key definition from that payload, both
+  immutable for the container's lifetime, so fastest-response-wins
+  cannot surface a stale value that changes routing. The remaining
+  metadata reads (Offer / Throughput, mutable settings) still need this
+  decision before they are made hedgeable.
 - **Diagnostics caveat for multi-stage operations.** Query / ReadMany /
   ChangeFeed contact regions *before* the hedge dispatch starts
   (query plan fetches, partition-key-range cache loads,
