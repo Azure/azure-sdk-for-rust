@@ -21,21 +21,23 @@
 
 use azure_core::http::StatusCode;
 use azure_data_cosmos::{
-    models::{ContainerProperties, DatabaseProperties, ItemResponse},
+    models::{ContainerProperties, DatabaseProperties, ItemResponse, ThroughputProperties},
     options::{
-        ContentResponseOnWrite, ItemReadOptions, ItemWriteOptions, OperationOptions,
-        OperationOptionsBuilder, Region, ThrottlingRetryOptionsBuilder,
+        ContentResponseOnWrite, CreateContainerOptions, ItemReadOptions, ItemWriteOptions,
+        OperationOptions, OperationOptionsBuilder, Region, ThrottlingRetryOptionsBuilder,
     },
     AccountEndpoint, AccountReference, ContainerClient, CosmosClient, CosmosClientBuilder,
-    CosmosRuntimeBuilder, RoutingStrategy,
+    CosmosRuntimeBuilder, FeedScope, Query, RoutingStrategy, TransactionalBatch,
 };
 use azure_data_cosmos_driver::in_memory_emulator::{
     ConsistencyLevel, ContainerConfig, InMemoryEmulatorHttpClient, VirtualAccountConfig,
     VirtualRegion,
 };
 use azure_data_cosmos_driver::models::ConnectionString;
+use futures::TryStreamExt;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
+use std::time::{Duration, Instant};
 use uuid::Uuid;
 
 use super::validation::{
@@ -49,6 +51,13 @@ struct TestItem {
     id: String,
     pk: String,
     value: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+struct QueryTestItem {
+    id: String,
+    pk: String,
+    score: i64,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
@@ -164,6 +173,7 @@ fn assert_emulator_item_response(resp: &ItemResponse, expected_status: StatusCod
 /// occasionally be exhausted on the failing region under CI contention before
 /// the routing layer marks the endpoint unavailable. Logs every attempt so we
 /// can see in CI which retry succeeded (or whether 503s are still occurring).
+#[cfg(feature = "fault_injection")]
 async fn read_item_with_503_retry(
     container: &ContainerClient,
     pk: &'static str,
@@ -316,12 +326,7 @@ impl SdkDualBackend {
             .await?;
 
         let real = if let Some(ref client) = self.real_client {
-            Some(
-                client
-                    .database_client(db_name)
-                    .container_client(container_name)
-                    .await?,
-            )
+            Some(resolve_container_when_ready(client, db_name, container_name).await?)
         } else {
             None
         };
@@ -363,6 +368,72 @@ fn write_options_with_content() -> ItemWriteOptions {
     let mut operation = OperationOptions::default();
     operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
     ItemWriteOptions::default().with_operation_options(operation)
+}
+
+/// Extracts the session token's global LSN from a write response, asserting the
+/// token is present (every write under Session consistency must return one).
+fn session_global_lsn(resp: &ItemResponse, label: &str, op: &str) -> u64 {
+    let token = resp
+        .headers()
+        .session_token()
+        .unwrap_or_else(|| panic!("[{label}] {op} response must carry a session token"))
+        .as_str();
+    super::session_token::global_lsn(token)
+}
+
+/// Drives a create → replace → delete sequence against a single backend and
+/// asserts the response session token's global LSN strictly advances on every
+/// write. This is the live counterpart to the in-memory
+/// `cache_advances_as_write_responses_arrive` test: real Cosmos bumps the
+/// partition LSN (and thus the returned session token) on every write, and the
+/// in-memory emulator must match so it stays a faithful test double.
+async fn assert_session_token_advances(container: &ContainerClient, label: &str) {
+    let pk = "pk1";
+    let id = format!("advance-{label}");
+
+    let created = container
+        .create_item(
+            pk,
+            &id,
+            &TestItem {
+                id: id.clone(),
+                pk: pk.into(),
+                value: 1,
+            },
+            Some(write_options_with_content()),
+        )
+        .await
+        .unwrap();
+    let create_lsn = session_global_lsn(&created, label, "create");
+
+    let replaced = container
+        .replace_item(
+            pk,
+            &id,
+            &TestItem {
+                id: id.clone(),
+                pk: pk.into(),
+                value: 2,
+            },
+            Some(write_options_with_content()),
+        )
+        .await
+        .unwrap();
+    let replace_lsn = session_global_lsn(&replaced, label, "replace");
+
+    let deleted = container.delete_item(pk, &id, None).await.unwrap();
+    let delete_lsn = session_global_lsn(&deleted, label, "delete");
+
+    assert!(
+        replace_lsn > create_lsn,
+        "[{label}] replace must advance the session token's global LSN: \
+         create={create_lsn} replace={replace_lsn}"
+    );
+    assert!(
+        delete_lsn > replace_lsn,
+        "[{label}] delete must advance the session token's global LSN: \
+         replace={replace_lsn} delete={delete_lsn}"
+    );
 }
 
 fn padded_test_item(id: &str, value: i64, padding_len: usize) -> PaddedTestItem {
@@ -433,6 +504,150 @@ async fn sdk_create_database_and_container_through_driver() {
 
     backend.cleanup_real_database(&db_name).await;
 }
+
+#[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
+async fn sdk_query_metadata_databases_and_containers() {
+    let (backend, db_name, _emu_container, _real_container) = setup_with_container().await;
+
+    let db_query = Query::from("SELECT * FROM c WHERE c.id = @id")
+        .with_parameter("@id", db_name.as_str())
+        .unwrap();
+    let emu_databases: Vec<DatabaseProperties> = backend
+        .emulator_client
+        .query_databases(db_query.clone(), None)
+        .await
+        .unwrap()
+        .try_collect()
+        .await
+        .unwrap();
+    assert_eq!(emu_databases.len(), 1);
+    assert_eq!(emu_databases[0].id.as_deref(), Some(db_name.as_str()));
+
+    if let Some(ref real_client) = backend.real_client {
+        let real_databases: Vec<DatabaseProperties> = real_client
+            .query_databases(db_query, None)
+            .await
+            .unwrap()
+            .try_collect()
+            .await
+            .unwrap();
+        assert_eq!(real_databases.len(), emu_databases.len());
+        assert_eq!(real_databases[0].id, emu_databases[0].id);
+    }
+
+    let container_query = Query::from("SELECT * FROM c WHERE c.id = @id")
+        .with_parameter("@id", "testcoll")
+        .unwrap();
+    let emu_containers: Vec<ContainerProperties> = backend
+        .emulator_client
+        .database_client(&db_name)
+        .query_containers(container_query.clone(), None)
+        .await
+        .unwrap()
+        .try_collect()
+        .await
+        .unwrap();
+    assert_eq!(emu_containers.len(), 1);
+    assert_eq!(emu_containers[0].id, "testcoll");
+
+    if let Some(ref real_client) = backend.real_client {
+        let real_containers: Vec<ContainerProperties> = real_client
+            .database_client(&db_name)
+            .query_containers(container_query, None)
+            .await
+            .unwrap()
+            .try_collect()
+            .await
+            .unwrap();
+        assert_eq!(real_containers.len(), emu_containers.len());
+        assert_eq!(real_containers[0].id, emu_containers[0].id);
+    }
+
+    backend.cleanup_real_database(&db_name).await;
+}
+
+#[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
+async fn sdk_container_throughput_read_and_replace() {
+    let backend = SdkDualBackend::setup().await.unwrap();
+    let db_name = backend.unique_db_name();
+    let container_name = "sdk_offer";
+    let props = ContainerProperties::new(container_name.to_string(), "/pk".into());
+    let options =
+        CreateContainerOptions::default().with_throughput(ThroughputProperties::manual(400));
+
+    backend
+        .emulator_client
+        .create_database(&db_name, None)
+        .await
+        .unwrap();
+    backend
+        .emulator_client
+        .database_client(&db_name)
+        .create_container(props.clone(), Some(options.clone()))
+        .await
+        .unwrap();
+
+    if let Some(ref real_client) = backend.real_client {
+        real_client.create_database(&db_name, None).await.unwrap();
+        real_client
+            .database_client(&db_name)
+            .create_container(props.clone(), Some(options))
+            .await
+            .unwrap();
+    }
+
+    let emu_container = backend
+        .emulator_client
+        .database_client(&db_name)
+        .container_client(container_name)
+        .await
+        .unwrap();
+    let emu_throughput = emu_container.read_throughput(None).await.unwrap().unwrap();
+    assert_eq!(emu_throughput.throughput(), Some(400));
+
+    let emu_replaced = emu_container
+        .begin_replace_throughput(ThroughputProperties::manual(500), None)
+        .await
+        .unwrap()
+        .await
+        .unwrap()
+        .into_model()
+        .unwrap();
+    assert_eq!(emu_replaced.throughput(), Some(500));
+    let emu_throughput = emu_container.read_throughput(None).await.unwrap().unwrap();
+    assert_eq!(emu_throughput.throughput(), Some(500));
+
+    if let Some(ref real_client) = backend.real_client {
+        let real_container = real_client
+            .database_client(&db_name)
+            .container_client(container_name)
+            .await
+            .unwrap();
+        let real_throughput = real_container.read_throughput(None).await.unwrap().unwrap();
+        assert_eq!(real_throughput.throughput(), Some(400));
+
+        let real_replaced = real_container
+            .begin_replace_throughput(ThroughputProperties::manual(500), None)
+            .await
+            .unwrap()
+            .await
+            .unwrap()
+            .into_model()
+            .unwrap();
+        assert_eq!(real_replaced.throughput(), emu_replaced.throughput());
+    }
+
+    backend.cleanup_real_database(&db_name).await;
+}
+
 #[tokio::test]
 #[cfg_attr(
     test_category = "emulator_vnext",
@@ -749,6 +964,22 @@ async fn sdk_delete_item() {
     test_category = "emulator_vnext",
     ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
 )]
+async fn sdk_session_token_advances_on_create_replace_delete() {
+    let (backend, db_name, emu_container, real_container) = setup_with_container().await;
+
+    assert_session_token_advances(&emu_container, "emulator").await;
+
+    if let Some(ref real) = real_container {
+        assert_session_token_advances(real, "real").await;
+    }
+
+    backend.cleanup_real_database(&db_name).await;
+}
+#[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
 async fn sdk_create_multiple_items_and_read_back() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -786,6 +1017,178 @@ async fn sdk_create_multiple_items_and_read_back() {
             let real_doc: TestItem = real_read.into_body().into_single().unwrap();
             assert_eq!(real_doc.value, i);
         }
+    }
+
+    backend.cleanup_real_database(&db_name).await;
+}
+
+#[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
+async fn sdk_query_items_with_filter_and_projection() {
+    let (backend, db_name, emu_container, real_container) = setup_with_container().await;
+
+    for i in 0..3 {
+        let item = QueryTestItem {
+            id: format!("query-{i}"),
+            pk: "pk1".into(),
+            score: i,
+        };
+        emu_container
+            .create_item("pk1", &item.id, &item, None)
+            .await
+            .unwrap();
+        if let Some(ref real) = real_container {
+            real.create_item("pk1", &item.id, &item, None)
+                .await
+                .unwrap();
+        }
+    }
+
+    fn query() -> Query {
+        Query::from("SELECT * FROM c WHERE c.pk = @pk AND c.score >= @min")
+            .with_parameter("@pk", "pk1")
+            .unwrap()
+            .with_parameter("@min", 1)
+            .unwrap()
+    }
+
+    let emu_items: Vec<QueryTestItem> = emu_container
+        .query_items(query(), FeedScope::partition("pk1"), None)
+        .await
+        .unwrap()
+        .try_collect()
+        .await
+        .unwrap();
+    assert_eq!(emu_items.len(), 2);
+    assert_eq!(emu_items[0].id, "query-1");
+    assert_eq!(emu_items[1].id, "query-2");
+
+    if let Some(ref real) = real_container {
+        let real_items: Vec<QueryTestItem> = real
+            .query_items(query(), FeedScope::partition("pk1"), None)
+            .await
+            .unwrap()
+            .try_collect()
+            .await
+            .unwrap();
+        assert_eq!(real_items.len(), emu_items.len());
+        assert_eq!(
+            real_items.iter().map(|i| &i.id).collect::<Vec<_>>(),
+            emu_items.iter().map(|i| &i.id).collect::<Vec<_>>()
+        );
+    }
+
+    backend.cleanup_real_database(&db_name).await;
+}
+
+#[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
+async fn sdk_transactional_batch_create_read_and_rollback() {
+    let (backend, db_name, emu_container, real_container) = setup_with_container().await;
+
+    let emu_batch = TransactionalBatch::new("pk1")
+        .create_item(TestItem {
+            id: "batch-1".into(),
+            pk: "pk1".into(),
+            value: 1,
+        })
+        .unwrap()
+        .read_item("batch-1", None);
+    let emu_response = emu_container
+        .execute_transactional_batch(emu_batch, None)
+        .await
+        .unwrap();
+    assert_eq!(emu_response.status(), StatusCode::Ok);
+    let emu_model = emu_response.into_model().unwrap();
+    assert_eq!(
+        emu_model
+            .results()
+            .iter()
+            .map(|r| r.status_code())
+            .collect::<Vec<_>>(),
+        vec![201, 200]
+    );
+
+    if let Some(ref real) = real_container {
+        let real_batch = TransactionalBatch::new("pk1")
+            .create_item(TestItem {
+                id: "batch-1".into(),
+                pk: "pk1".into(),
+                value: 1,
+            })
+            .unwrap()
+            .read_item("batch-1", None);
+        let real_response = real
+            .execute_transactional_batch(real_batch, None)
+            .await
+            .unwrap();
+        assert_eq!(real_response.status(), StatusCode::Ok);
+        let real_model = real_response.into_model().unwrap();
+        assert_eq!(
+            real_model
+                .results()
+                .iter()
+                .map(|r| r.status_code())
+                .collect::<Vec<_>>(),
+            vec![201, 200]
+        );
+    }
+
+    let failing_batch = TransactionalBatch::new("pk1")
+        .create_item(TestItem {
+            id: "batch-rollback".into(),
+            pk: "pk1".into(),
+            value: 9,
+        })
+        .unwrap()
+        .delete_item("missing", None);
+    let emu_response = emu_container
+        .execute_transactional_batch(failing_batch, None)
+        .await
+        .unwrap();
+    let emu_model = emu_response.into_model().unwrap();
+    assert_eq!(
+        emu_model
+            .results()
+            .iter()
+            .map(|r| r.status_code())
+            .collect::<Vec<_>>(),
+        vec![424, 404]
+    );
+    let emu_err = emu_container
+        .read_item("pk1", "batch-rollback", None)
+        .await
+        .expect_err("rolled-back batch item must not exist in emulator");
+    assert_eq!(emu_err.status().status_code(), StatusCode::NotFound);
+
+    if let Some(ref real) = real_container {
+        let failing_batch = TransactionalBatch::new("pk1")
+            .create_item(TestItem {
+                id: "batch-rollback".into(),
+                pk: "pk1".into(),
+                value: 9,
+            })
+            .unwrap()
+            .delete_item("missing", None);
+        let real_response = real
+            .execute_transactional_batch(failing_batch, None)
+            .await
+            .unwrap();
+        let real_model = real_response.into_model().unwrap();
+        assert_eq!(
+            real_model
+                .results()
+                .iter()
+                .map(|r| r.status_code())
+                .collect::<Vec<_>>(),
+            vec![424, 404]
+        );
     }
 
     backend.cleanup_real_database(&db_name).await;
@@ -1470,4 +1873,74 @@ async fn resolve_real_client() -> Result<Option<CosmosClient>, Box<dyn Error>> {
         .await?;
 
     Ok(Some(client))
+}
+
+/// Detects the transient `404 / 1013 CollectionCreateInProgress` status that a
+/// real Cosmos account returns while a freshly created container is still being
+/// provisioned in the background.
+fn collection_create_in_progress(err: &azure_data_cosmos::CosmosError) -> bool {
+    let status = err.status();
+    status.status_code() == StatusCode::NotFound
+        && status.sub_status().map(|s| s.value()) == Some(1013)
+}
+
+/// Resolves a container on a real account, tolerating asynchronous container
+/// provisioning.
+///
+/// Real accounts create containers in the background, so the first metadata
+/// resolve — and the first data-plane request — can fail with
+/// `404 / 1013 CollectionCreateInProgress` for several seconds after
+/// `create_container` returns. This polls (with exponential backoff up to a
+/// bounded deadline) until the container both resolves and serves a data-plane
+/// read, so live dual-backend tests don't flake on creation timing. The
+/// in-memory emulator provisions synchronously and never hits this path.
+async fn resolve_container_when_ready(
+    client: &CosmosClient,
+    db_name: &str,
+    container_name: &str,
+) -> Result<ContainerClient, Box<dyn Error>> {
+    const READY_TIMEOUT: Duration = Duration::from_secs(120);
+    const MAX_BACKOFF: Duration = Duration::from_secs(5);
+    let deadline = Instant::now() + READY_TIMEOUT;
+
+    // Phase 1: resolve the container's metadata (routing / PK ranges).
+    let mut backoff = Duration::from_millis(250);
+    let container = loop {
+        match client
+            .database_client(db_name)
+            .container_client(container_name)
+            .await
+        {
+            Ok(container) => break container,
+            Err(e) if collection_create_in_progress(&e) && Instant::now() < deadline => {
+                tokio::time::sleep(backoff).await;
+                backoff = (backoff * 2).min(MAX_BACKOFF);
+            }
+            Err(e) => return Err(e.into()),
+        }
+    };
+
+    // Phase 2: confirm the container serves data-plane reads. A guaranteed-
+    // missing item returns `404 / 1003 NotFound` once the container is ready,
+    // versus `404 / 1013` while it is still provisioning.
+    backoff = Duration::from_millis(250);
+    loop {
+        match container
+            .read_item("readiness-probe", "readiness-probe", None)
+            .await
+        {
+            Ok(_) => return Ok(container),
+            Err(e)
+                if e.status().status_code() == StatusCode::NotFound
+                    && !collection_create_in_progress(&e) =>
+            {
+                return Ok(container)
+            }
+            Err(e) if collection_create_in_progress(&e) && Instant::now() < deadline => {
+                tokio::time::sleep(backoff).await;
+                backoff = (backoff * 2).min(MAX_BACKOFF);
+            }
+            Err(e) => return Err(e.into()),
+        }
+    }
 }

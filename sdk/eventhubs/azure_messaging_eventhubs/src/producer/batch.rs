@@ -6,7 +6,7 @@ use crate::{error::Result, models::EventData, EventHubsError};
 use azure_core::{http::Url, Error, Uuid};
 use azure_core_amqp::{AmqpMessage, AmqpSenderApis, AmqpSymbol};
 use std::sync::Mutex;
-use tracing::debug;
+use tracing::{debug, warn};
 
 /// Represents the options that can be set when adding event data to an [`EventDataBatch`].
 pub struct AddEventDataOptions {}
@@ -73,12 +73,25 @@ impl<'a> EventDataBatch<'a> {
         }
     }
 
+    #[tracing::instrument(
+        level = "debug",
+        skip_all,
+        fields(
+            partition_id = self.partition_id.as_deref().unwrap_or("<auto>"),
+        ),
+        err,
+    )]
     pub(crate) async fn attach(&mut self) -> Result<()> {
-        let sender = self.producer.ensure_sender(self.get_batch_path()?).await?;
+        let path = self.get_batch_path()?;
+        let sender = self.producer.ensure_sender(path.clone()).await?;
         self.max_size_in_bytes = sender.max_message_size().await?.ok_or_else(|| {
+            warn!(
+                path = %path,
+                "The sender link did not report a maximum message size; cannot size the batch."
+            );
             Error::with_message(
                 azure_core::error::ErrorKind::Other,
-                "No message size available.",
+                "No maximum message size available from the sender link.",
             )
         })?;
         Ok(())
@@ -267,10 +280,10 @@ impl<'a> EventDataBatch<'a> {
     pub(crate) fn get_messages(&self) -> AmqpMessage {
         let mut batch_state = self.batch_state.lock().unwrap();
 
-        let mut batch_envelope = batch_state
-            .batch_envelope
-            .clone()
-            .expect("Batch envelope should have been created when getting messages.");
+        let mut batch_envelope = batch_state.batch_envelope.clone().expect(
+            "Batch envelope is missing when getting messages; \
+             send_batch was called on an empty batch (add at least one event before sending).",
+        );
 
         // Move the messages out of the batch state into a local variable so we
         // can subsequently move it to the message body.
