@@ -26,14 +26,10 @@ serde.workspace = true
 serde_json = { workspace = true, features = ["raw_value"] }
 tracing.workspace = true
 url.workspace = true
-uuid = { workspace = true, features = ["v4", "fast-rng"] }
 
 # NOTE: Cargo does not support feature-gating dev-dependencies. The `serde` and
 # `tokio test-util` entries below merge into existing features and add no
-# compile-time cost. `uuid` is only required by the
-# `__internal_in_memory_emulator`-gated dual-backend tests; if its compile
-# footprint becomes a concern, move those tests to a dedicated crate gated on
-# the same feature instead of trying to gate the dev-dep here.
+# compile-time cost.
 [dev-dependencies]
 azure_core_test = { workspace = true, features = ["tracing"] }
 # Re-declare the driver here with the internal test-only diagnostics-construction feature.
@@ -65,6 +61,7 @@ tokio = { workspace = true, features = [
   "test-util",
 ] }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
+uuid = { workspace = true, features = ["v4", "fast-rng"] }
 
 [lints]
 workspace = true

@@ -561,13 +561,13 @@ impl DistributedTransactionResponse {
         diagnostic_string = get_property(&root, "diagnosticString")
             .and_then(|v| v.as_str())
             .map(ToOwned::to_owned);
+        // `get_property` already matches keys case-insensitively, so a single
+        // lookup per name covers both `message`/`Message` and `code`/`Code`.
         let service_error_message = get_property(&root, "message")
-            .or_else(|| get_property(&root, "Message"))
             .and_then(|v| v.as_str())
             .map(ToOwned::to_owned)
             .or_else(|| {
                 get_property(&root, "code")
-                    .or_else(|| get_property(&root, "Code"))
                     .and_then(|v| v.as_str())
                     .map(ToOwned::to_owned)
             });
@@ -829,7 +829,6 @@ fn parse_operation_result(
         .and_then(|v| u16::try_from(v).ok())
         .map(crate::models::SubStatusCode::new);
     let etag = get_property(value, "etag")
-        .or_else(|| get_property(value, "Etag"))
         .and_then(|v| v.as_str())
         .map(|s| azure_core::http::Etag::from(s.to_owned()));
     let session_token = get_property(value, "sessionToken")

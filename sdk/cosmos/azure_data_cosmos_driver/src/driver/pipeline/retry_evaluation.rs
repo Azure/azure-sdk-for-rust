@@ -359,15 +359,22 @@ fn evaluate_http_outcome(
         return result;
     }
 
-    #[cfg(feature = "preview_dtx")]
-    if operation.resource_type() == crate::models::ResourceType::DistributedTransactionBatch {
-        return evaluate_dtx_http_outcome(status, cosmos_headers, body, retry_state);
-    }
-
+    // 403/1008 DatabaseAccountNotFound is a topology-divergence signal that
+    // applies to every operation type, including writes (PR #4590): the region
+    // no longer owns the account, so the request must refresh account
+    // properties and fail over rather than surface a stale-topology error.
+    // Run it *before* the DTX short-circuit (mirroring 403/3 WriteForbidden
+    // above) so a distributed transaction still recovers topology instead of
+    // completing the raw 403 up to the coordinator loop.
     if let Some(result) =
         try_handle_database_account_not_found(operation, endpoint, retry_state, &status)
     {
         return result;
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    if operation.resource_type() == crate::models::ResourceType::DistributedTransactionBatch {
+        return evaluate_dtx_http_outcome(status, cosmos_headers, body, retry_state);
     }
 
     if let Some(result) =
@@ -1248,13 +1255,40 @@ mod tests {
 
     #[cfg(feature = "preview_dtx")]
     #[test]
+    fn dtx_bodyless_database_account_not_found_refreshes_topology_before_dtx_classification() {
+        // 403/1008 DatabaseAccountNotFound applies to every op type, including
+        // DTX writes (PR #4590): it must refresh account properties and fail
+        // over rather than being swallowed by the DTX classification into a
+        // stale-topology `Complete`.
+        let op = make_dtx_operation();
+        let result = make_dtx_http_error(
+            CosmosStatus::from_parts(StatusCode::Forbidden, Some(SubStatusCode::new(1008))),
+            Vec::new(),
+            None,
+        );
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert!(effects
+            .iter()
+            .any(|effect| matches!(effect, LocationEffect::RefreshAccountProperties)));
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
     fn dtx_http_outcomes_never_failover_session_or_hedge() {
         // DTX is a write-bearing resource routed through the shared pipeline.
         // The DTX classification in `evaluate_http_outcome` keeps DTX responses
         // out of the cross-region failover / session-retry / hedging machinery,
         // which is unsafe for writes (see PR #4432). This pins that guard except
-        // for 403/3 WriteForbidden, which must refresh write-region topology
-        // first. Every other coordinator HTTP outcome must resolve to `DtxRetry` (bodyless
+        // for 403/3 WriteForbidden and 403/1008 DatabaseAccountNotFound, which
+        // must refresh topology first (both are handled before the DTX
+        // short-circuit). Every other coordinator HTTP outcome must resolve to `DtxRetry` (bodyless
         // coordinator/infra retry) or `Complete` (body handed to the outer
         // coordinator loop) — never `FailoverRetry`, `SessionRetry`, or `Hedge`,
         // and never a location effect.

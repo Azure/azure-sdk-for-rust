@@ -381,6 +381,35 @@ outer loop — the inner tier deliberately does not swallow it.
   `retry-after` govern.
 - **Bodyless** DTX `429` uses the shared throttle path like any other request.
 
+> **Interaction with the user-configured throttle cap.** Because a body-bearing
+> DTX `429` is routed to the outer coordinator loop rather than the shared
+> throttle path, the user-configurable throttle cap
+> (`ThrottlingRetryOptions::max_retry_count` / `max_retry_wait_time`) does **not**
+> bound it — including a `max_retry_count = 0` "fail fast" setting. Body-bearing
+> DTX `429`s are instead bounded by the DTX outer-loop budget
+> (`DTX_OUTER_MAX_RETRIES` / `DTX_OUTER_MAX_CUMULATIVE_DELAY`) and the operation's
+> end-to-end deadline. Only **bodyless** DTX `429`s honor the shared throttle cap.
+
+### 7.4 Cross-cutting recovery handlers
+
+A DTX response flows through the shared pipeline classifier
+(`evaluate_http_outcome`) before reaching the DTX-specific tiers, so a subset of
+the normal recovery handlers still applies:
+
+- **`403/3` WriteForbidden** and **`403/1008` DatabaseAccountNotFound** run
+  *before* the DTX classification. Both are topology-divergence signals that
+  refresh account properties and fail over, and they apply to every operation
+  type including writes (PR #4590). A DTX request therefore still recovers from a
+  stale write-region / account-topology view instead of surfacing the raw `403`.
+- **`404/1002` ReadSessionNotAvailable**, the generic retry-trigger group
+  (`503` / `410` Gone / bodyless `408`), and the `5xx`-read handler are
+  intentionally **bypassed** for DTX. Blindly failing a write over to another
+  region is unsafe (PR #4432), and the coordinator mediates routing and
+  read-snapshot consistency itself. As a consequence a DTX **read** does not get
+  the session-lag retry / region-advance a normal read would on `404/1002`; it
+  surfaces the coordinator's status to the caller (who reconciles). This is an
+  intentional asymmetry from the normal point-operation path.
+
 ---
 
 ## 8. Session-Token Handling
@@ -404,8 +433,10 @@ spans partitions, tokens are **per operation**, keyed by the operation's
   where `None` is the wire "no-progress" sentinel (`-1`) and `Some(lsn)` a
   recorded region LSN, so tokens such as `0#3#12=-1` parse and round-trip
   correctly (`None` sorts below any `Some` in recency/merge comparisons).
-- Under **Session** consistency, malformed tokens are **rejected strictly** so a
-  corrupt token cannot silently weaken read-your-own-writes. Outside Session
+- Under **Session** consistency, a non-canonical token — a corrupt value, **or**
+  a bare `{lsn}` that has no interior colon and no `partitionKeyRangeId` to route
+  it to a partition — is **rejected strictly** (the committed response fails
+  closed) so it cannot silently weaken read-your-own-writes. Outside Session
   consistency the bookkeeping is best-effort.
 
 Session merge runs **only on terminal success**. Outside Session consistency,

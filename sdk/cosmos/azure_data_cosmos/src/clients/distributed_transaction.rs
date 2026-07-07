@@ -422,9 +422,9 @@ impl DistributedTransactionResponse {
         self.inner.diagnostic_string.as_deref()
     }
 
-    /// Returns the idempotency token for the transaction.
-    pub fn idempotency_token(&self) -> uuid::Uuid {
-        self.inner.idempotency_token
+    /// Returns the idempotency token for the transaction as a string.
+    pub fn idempotency_token(&self) -> String {
+        self.inner.idempotency_token.to_string()
     }
 
     /// Returns whether the coordinator marked this response as retryable.
@@ -443,13 +443,13 @@ impl DistributedTransactionResponse {
     }
 
     /// Returns the activity ID from the response headers, when present.
-    pub fn activity_id(&self) -> Option<&driver_models::ActivityId> {
-        self.inner.activity_id.as_ref()
+    pub fn activity_id(&self) -> Option<&str> {
+        self.inner.activity_id.as_ref().map(|id| id.as_str())
     }
 
     /// Returns the total request charge from the response headers, when present.
-    pub fn request_charge(&self) -> Option<driver_models::RequestCharge> {
-        self.inner.request_charge
+    pub fn request_charge(&self) -> Option<f64> {
+        self.inner.request_charge.map(|charge| charge.value())
     }
 
     /// Returns the retry-after hint in milliseconds, when present.
@@ -510,8 +510,8 @@ impl DistributedTransactionOperationResult<'_> {
     }
 
     /// Returns the request charge for this operation, when present.
-    pub fn request_charge(&self) -> Option<driver_models::RequestCharge> {
-        self.inner.request_charge
+    pub fn request_charge(&self) -> Option<f64> {
+        self.inner.request_charge.map(|charge| charge.value())
     }
 
     /// Deserializes the operation resource body, when present.

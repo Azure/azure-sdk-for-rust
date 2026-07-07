@@ -375,6 +375,14 @@ pub(crate) async fn handle_operation(
                     )
                     .build();
                 }
+                // A write transaction can only commit in the account's write
+                // region. Normal writes enforce this in the dispatch layer
+                // (`handle_operation`), which the DTX path bypasses by calling
+                // the `_locked` point handlers directly, so re-check it here to
+                // match real-account (and normal emulator) behavior.
+                if !store.config().is_write_region(region_name) {
+                    return write_forbidden_response(start);
+                }
                 handle_dtx_write_transaction(store, region_name, &request.operations, start).await
             }
             DtxTransactionKind::Read => {
@@ -971,6 +979,12 @@ pub(crate) async fn handle_operation(
             return dtx_write_abort_response(operations, &votes, start);
         }
 
+        // Buffer replication for the duration of the commit so a rollback can
+        // discard replicas that were never durably committed. The buffer is
+        // replayed on success and dropped on abort (below), and is safe because
+        // this path holds `document_write_lock` for the whole transaction.
+        store.begin_dtx_replication_capture();
+
         // Phase 2 (commit): apply each operation, capturing a pre-image first so a
         // runtime failure (e.g. throttling) can roll back every mutation that was
         // already applied, preserving all-or-nothing semantics.
@@ -1011,6 +1025,9 @@ pub(crate) async fn handle_operation(
             for (index, preimage) in applied.iter().rev() {
                 restore_dtx_preimage(store, region_name, &operations[*index], preimage);
             }
+            // Drop the buffered replicas: the transaction aborted, so the
+            // rolled-back writes must never reach secondary regions.
+            store.abort_dtx_replication_capture();
             let failed = &outcomes[failed_index];
             return dtx_write_runtime_abort_response(
                 operations,
@@ -1022,6 +1039,9 @@ pub(crate) async fn handle_operation(
             );
         }
 
+        // The transaction committed; release the buffered replicas to
+        // secondary regions.
+        store.commit_dtx_replication_capture();
         dtx_commit_response(&outcomes, start)
     }
 

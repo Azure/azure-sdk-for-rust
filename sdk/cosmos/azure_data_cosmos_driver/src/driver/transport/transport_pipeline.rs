@@ -132,6 +132,16 @@ pub(crate) fn evaluate_transport_retry(
     }
 }
 
+/// Whether a throttled (`429`) transport result is eligible for the shared
+/// transport throttle-retry path.
+///
+/// A **body-bearing** distributed-transaction `429` is intentionally excluded:
+/// it carries a coordinator transaction result, so it is routed to the DTX outer
+/// loop (governed by the coordinator's `isRetriable` + `retry-after`) instead of
+/// the shared throttle path. As a result the user-configured throttle cap
+/// (`ThrottlingRetryOptions`) does not bound a body-bearing DTX `429`; the DTX
+/// outer-loop budget and the operation deadline do. A **bodyless** DTX `429`
+/// (and every non-DTX `429`) uses the shared path and honors that cap.
 fn is_transport_throttle_retry_eligible(
     result: &TransportResult,
     is_distributed_transaction_request: bool,

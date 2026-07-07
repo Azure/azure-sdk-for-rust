@@ -8,6 +8,35 @@ use super::*;
 fn dtx_request(gateway_url: &str, operations: serde_json::Value) -> Request {
     let url = format!("{gateway_url}/operations/dtc");
     let mut request = Request::new(Url::parse(&url).unwrap(), Method::Post);
+    // The emulator requires the same DTX request headers as the live coordinator
+    // (idempotency token, resource-type, operation-type). Derive the
+    // operation-type from the payload so the declared transaction type matches
+    // the operations: any non-`Read` operation makes it a write commit.
+    let is_write = operations["operations"].as_array().is_some_and(|ops| {
+        ops.iter().any(|op| {
+            !op["operationType"]
+                .as_str()
+                .unwrap_or("")
+                .eq_ignore_ascii_case("Read")
+        })
+    });
+    let operation_type = if is_write {
+        "CommitDistributedTransaction"
+    } else {
+        "Read"
+    };
+    request.headers_mut().insert(
+        HeaderName::from_static("x-ms-cosmos-idempotency-token"),
+        HeaderValue::from_static("3f2504e0-4f89-41d3-9a0c-0305e82c3301"),
+    );
+    request.headers_mut().insert(
+        HeaderName::from_static("x-ms-cosmos-resource-type"),
+        HeaderValue::from_static("DistributedTransactionBatch"),
+    );
+    request.headers_mut().insert(
+        HeaderName::from_static("x-ms-cosmos-operation-type"),
+        HeaderValue::from_static(operation_type),
+    );
     request.set_body(serde_json::to_vec(&operations).unwrap());
     request
 }

@@ -165,15 +165,19 @@ impl SessionManager {
             // a non-canonical shape flows through to strict validation, which
             // rejects it (and, under Session consistency, throws) exactly like
             // .NET. A bare `{lsn}` value (no colon) is prefixed with the
-            // coordinator-supplied partition key range id; if none is available
-            // the token cannot be routed and is skipped best-effort.
+            // coordinator-supplied partition key range id. If none is available
+            // the token is non-canonical and cannot be routed to a partition, so
+            // it is handed to strict validation as-is: under Session consistency
+            // on a committed response that fails closed (matching .NET #5958)
+            // instead of silently dropping the token and weakening
+            // read-your-own-writes.
             let token = match token.find(':') {
                 Some(index) if index > 0 && index < token.len() - 1 => Cow::Borrowed(token),
                 _ => match result.partition_key_range_id.as_deref() {
                     Some(partition_key_range_id) if !partition_key_range_id.is_empty() => {
                         Cow::Owned(format!("{partition_key_range_id}:{token}"))
                     }
-                    _ => continue,
+                    _ => Cow::Borrowed(token),
                 },
             };
 
@@ -635,6 +639,64 @@ mod tests {
 
         // Outside Session consistency a malformed token is skipped best-effort,
         // never surfaced as an error.
+        mgr.merge_distributed_transaction_session_tokens(&response, &operations, false)
+            .unwrap();
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn dtx_token_without_colon_or_pk_range_errors_under_session_consistency() {
+        use crate::models::{
+            DistributedTransactionOperation, DistributedTransactionOperationKind,
+            DistributedTransactionOperationResult, DistributedTransactionResponse,
+            DistributedTransactionResultBody, DistributedTransactionTarget,
+        };
+
+        let mgr = SessionManager::new();
+        let container = test_container();
+        let operations = vec![DistributedTransactionOperation::new(
+            DistributedTransactionOperationKind::Create,
+            DistributedTransactionTarget::new(container, PartitionKey::from("pk1"), "doc1"),
+        )];
+        // A bare LSN token with no interior colon and no partition key range id
+        // cannot be routed to a partition. Under Session consistency on a
+        // committed response it must fail closed (matching .NET #5958), not be
+        // silently dropped.
+        let response = DistributedTransactionResponse {
+            status_code: azure_core::http::StatusCode::Ok,
+            sub_status_code: None,
+            operation_results: vec![DistributedTransactionOperationResult {
+                raw_response: Default::default(),
+                index: 0,
+                status_code: azure_core::http::StatusCode::Created,
+                sub_status_code: None,
+                etag: None,
+                session_token: Some(SessionToken::new("1#100#1=10")),
+                partition_key_range_id: None,
+                request_charge: None,
+                resource_body: DistributedTransactionResultBody::None,
+            }],
+            idempotency_token: uuid::Uuid::nil(),
+            headers: Default::default(),
+            activity_id: None,
+            request_charge: None,
+            retry_after_ms: None,
+            diagnostics: None,
+            is_retriable: false,
+            diagnostic_string: None,
+            error_message: None,
+        };
+
+        let error = mgr
+            .merge_distributed_transaction_session_tokens(&response, &operations, true)
+            .unwrap_err();
+        assert_eq!(
+            error.status().status_code(),
+            azure_core::http::StatusCode::InternalServerError
+        );
+
+        // Outside Session consistency the same unroutable token is skipped
+        // best-effort rather than surfaced as an error.
         mgr.merge_distributed_transaction_session_tokens(&response, &operations, false)
             .unwrap();
     }
