@@ -241,8 +241,23 @@ impl DistributedTransactionRequest {
                 }
                 (DistributedTransactionType::Write, _) => {}
             }
+            if operation.kind.requires_resource_body() && operation.resource_body.is_none() {
+                return Err(invalid_dtx_request(format!(
+                    "distributed transaction {} operations require resourceBody",
+                    operation.kind.as_wire_str()
+                )));
+            }
         }
         Ok(())
+    }
+}
+
+impl DistributedTransactionOperationKind {
+    fn requires_resource_body(self) -> bool {
+        matches!(
+            self,
+            Self::Create | Self::Replace | Self::Upsert | Self::Patch
+        )
     }
 }
 
@@ -1250,6 +1265,32 @@ mod tests {
             assert_eq!(
                 request.serialize_body().unwrap_err().status().status_code(),
                 azure_core::http::StatusCode::BadRequest
+            );
+        }
+    }
+
+    #[test]
+    fn serialize_rejects_missing_resource_body_for_body_required_write_operations() {
+        for kind in [
+            DistributedTransactionOperationKind::Create,
+            DistributedTransactionOperationKind::Replace,
+            DistributedTransactionOperationKind::Upsert,
+            DistributedTransactionOperationKind::Patch,
+        ] {
+            let operation = DistributedTransactionOperation::new(kind, target("item1"));
+            let request = DistributedTransactionRequest::new(
+                DistributedTransactionType::Write,
+                vec![operation],
+            );
+            let error = request.serialize_body().unwrap_err();
+            assert_eq!(
+                error.status().status_code(),
+                azure_core::http::StatusCode::BadRequest,
+                "{kind:?} should reject missing resourceBody"
+            );
+            assert!(
+                error.to_string().contains("require resourceBody"),
+                "{kind:?} produced unexpected error: {error}"
             );
         }
     }

@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Instant;
 
-use azure_core::http::headers::{HeaderName, HeaderValue};
+use azure_core::http::headers::{HeaderName, HeaderValue, Headers};
 use azure_core::http::{AsyncRawResponse, StatusCode};
 use serde::Deserialize;
 
@@ -42,6 +42,13 @@ use crate::models::PartitionKeyDefinition;
 use crate::models::PatchInstructions;
 
 static OFFER_REPLACE_PENDING: HeaderName = HeaderName::from_static("x-ms-offer-replace-pending");
+
+#[cfg(feature = "preview_dtx")]
+static DTX_IDEMPOTENCY_TOKEN: HeaderName = HeaderName::from_static("x-ms-cosmos-idempotency-token");
+#[cfg(feature = "preview_dtx")]
+static DTX_OPERATION_TYPE: HeaderName = HeaderName::from_static("x-ms-cosmos-operation-type");
+#[cfg(feature = "preview_dtx")]
+static DTX_RESOURCE_TYPE: HeaderName = HeaderName::from_static("x-ms-cosmos-resource-type");
 
 /// Sub-status paired with `410 Gone` when a physical partition is locked because
 /// a split or merge is in progress.
@@ -125,6 +132,7 @@ pub(crate) async fn handle_operation(
     store: &Arc<EmulatorStore>,
     region_name: &str,
     parsed: &ParsedRequest,
+    request_headers: &Headers,
     request_body: &[u8],
 ) -> AsyncRawResponse {
     let start = Instant::now();
@@ -257,7 +265,8 @@ pub(crate) async fn handle_operation(
         }
         #[cfg(feature = "preview_dtx")]
         OperationType::DistributedTransaction => {
-            handle_distributed_transaction(store, region_name, request_body, start).await
+            handle_distributed_transaction(store, region_name, request_headers, request_body, start)
+                .await
         }
         OperationType::BadRequestPath(desc) => bad_request_path_response(desc, start),
         OperationType::Unsupported(desc) => unsupported_response(desc, start),
@@ -274,6 +283,7 @@ pub(crate) async fn handle_operation(
     #[derive(Deserialize)]
     #[serde(rename_all = "camelCase")]
     struct DtxOperation {
+        index: usize,
         database_name: String,
         collection_name: String,
         id: String,
@@ -293,9 +303,22 @@ pub(crate) async fn handle_operation(
     async fn handle_distributed_transaction(
         store: &Arc<EmulatorStore>,
         region_name: &str,
+        request_headers: &Headers,
         request_body: &[u8],
         start: Instant,
     ) -> AsyncRawResponse {
+        let Some(transaction_type) = validate_dtx_headers(request_headers) else {
+            return error_response(
+                StatusCode::BadRequest,
+                None,
+                "BadRequest",
+                "Distributed transaction request is missing required DTX headers",
+                0.0,
+                "",
+                start,
+            )
+            .build();
+        };
         let request: DtxRequestBody = match serde_json::from_slice(request_body) {
             Ok(request) => request,
             Err(error) => {
@@ -325,11 +348,103 @@ pub(crate) async fn handle_operation(
             .build();
         }
 
-        if is_dtx_write_transaction(&request.operations) {
-            handle_dtx_write_transaction(store, region_name, &request.operations, start).await
-        } else {
-            handle_dtx_read_transaction(store, region_name, &request.operations, start).await
+        if let Err(message) = validate_dtx_operation_indexes(&request.operations) {
+            return error_response(
+                StatusCode::BadRequest,
+                None,
+                "BadRequest",
+                &message,
+                0.0,
+                "",
+                start,
+            )
+            .build();
         }
+
+        match transaction_type {
+            DtxTransactionKind::Write => {
+                if !is_dtx_write_transaction(&request.operations) {
+                    return error_response(
+                        StatusCode::BadRequest,
+                        None,
+                        "BadRequest",
+                        "Distributed transaction CommitDistributedTransaction header requires at least one write operation",
+                        0.0,
+                        "",
+                        start,
+                    )
+                    .build();
+                }
+                handle_dtx_write_transaction(store, region_name, &request.operations, start).await
+            }
+            DtxTransactionKind::Read => {
+                if is_dtx_write_transaction(&request.operations) {
+                    return error_response(
+                        StatusCode::BadRequest,
+                        None,
+                        "BadRequest",
+                        "Distributed transaction Read header cannot contain write operations",
+                        0.0,
+                        "",
+                        start,
+                    )
+                    .build();
+                }
+                handle_dtx_read_transaction(store, region_name, &request.operations, start).await
+            }
+        }
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    enum DtxTransactionKind {
+        Write,
+        Read,
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    fn validate_dtx_headers(headers: &Headers) -> Option<DtxTransactionKind> {
+        let token = headers.get_optional_str(&DTX_IDEMPOTENCY_TOKEN)?;
+        if token.trim().is_empty() || uuid::Uuid::parse_str(token).is_err() {
+            return None;
+        }
+        let resource_type = headers.get_optional_str(&DTX_RESOURCE_TYPE)?;
+        if !resource_type.eq_ignore_ascii_case("DistributedTransactionBatch") {
+            return None;
+        }
+        match headers.get_optional_str(&DTX_OPERATION_TYPE)? {
+            value if value.eq_ignore_ascii_case("CommitDistributedTransaction") => {
+                Some(DtxTransactionKind::Write)
+            }
+            value if value.eq_ignore_ascii_case("Read") => Some(DtxTransactionKind::Read),
+            _ => None,
+        }
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    fn validate_dtx_operation_indexes(operations: &[DtxOperation]) -> Result<(), String> {
+        let mut seen = vec![false; operations.len()];
+        for (position, operation) in operations.iter().enumerate() {
+            if operation.index >= operations.len() {
+                return Err(format!(
+                    "Distributed transaction operation index {} is out of range for {} operations",
+                    operation.index,
+                    operations.len()
+                ));
+            }
+            if operation.index != position {
+                return Err(format!(
+                    "Distributed transaction operation index {} does not match request position {}",
+                    operation.index, position
+                ));
+            }
+            if std::mem::replace(&mut seen[operation.index], true) {
+                return Err(format!(
+                    "Distributed transaction operation index {} is duplicated",
+                    operation.index
+                ));
+            }
+        }
+        Ok(())
     }
 
     /// Per-operation outcome captured from a nested point-operation response.
@@ -841,7 +956,7 @@ pub(crate) async fn handle_operation(
             .map(|operation| preflight_dtx_write_operation(store, region_name, operation).err())
             .collect();
         if votes.iter().any(Option::is_some) {
-            return dtx_write_abort_response(&votes, start);
+            return dtx_write_abort_response(operations, &votes, start);
         }
 
         // Phase 2 (commit): apply each operation, capturing a pre-image first so a
@@ -886,6 +1001,7 @@ pub(crate) async fn handle_operation(
             }
             let failed = &outcomes[failed_index];
             return dtx_write_runtime_abort_response(
+                operations,
                 operations.len(),
                 failed_index,
                 failed.status,
@@ -935,7 +1051,7 @@ pub(crate) async fn handle_operation(
         }
 
         let envelope = promote_dtx_read_envelope(&outcomes);
-        dtx_read_response(envelope, &outcomes, start)
+        dtx_read_response(operations, envelope, &outcomes, start)
     }
 
     /// Snapshot of a document (and its partition LSN counters) before a write op
@@ -1343,6 +1459,7 @@ pub(crate) async fn handle_operation(
     /// surfaces as 453 (sub-status 5415, DtcOperationRolledBack).
     #[cfg(feature = "preview_dtx")]
     fn dtx_write_abort_response(
+        operations: &[DtxOperation],
         votes: &[Option<DtxPreflightFailure>],
         start: Instant,
     ) -> AsyncRawResponse {
@@ -1356,7 +1473,7 @@ pub(crate) async fn handle_operation(
                         diagnostic = Some(failure.message.clone());
                     }
                     dtx_op_json(
-                        index,
+                        operations[index].index,
                         failure.status,
                         failure.sub_status.map(u32::from),
                         None,
@@ -1368,7 +1485,7 @@ pub(crate) async fn handle_operation(
                     )
                 }
                 None => dtx_op_json(
-                    index,
+                    operations[index].index,
                     StatusCode::from(DTX_ROLLED_BACK_STATUS),
                     Some(DTX_ROLLED_BACK_SUBSTATUS),
                     None,
@@ -1397,6 +1514,7 @@ pub(crate) async fn handle_operation(
     /// code; all others were rolled back and surface as 453 / 5415.
     #[cfg(feature = "preview_dtx")]
     fn dtx_write_runtime_abort_response(
+        operations: &[DtxOperation],
         operation_count: usize,
         failed_index: usize,
         failed_status: StatusCode,
@@ -1407,7 +1525,7 @@ pub(crate) async fn handle_operation(
             .map(|index| {
                 if index == failed_index {
                     dtx_op_json(
-                        index,
+                        operations[index].index,
                         failed_status,
                         failed_sub_status,
                         None,
@@ -1419,7 +1537,7 @@ pub(crate) async fn handle_operation(
                     )
                 } else {
                     dtx_op_json(
-                        index,
+                        operations[index].index,
                         StatusCode::from(DTX_ROLLED_BACK_STATUS),
                         Some(DTX_ROLLED_BACK_SUBSTATUS),
                         None,
@@ -1448,6 +1566,7 @@ pub(crate) async fn handle_operation(
     /// rewritten) per-operation outcomes.
     #[cfg(feature = "preview_dtx")]
     fn dtx_read_response(
+        operations: &[DtxOperation],
         envelope: StatusCode,
         outcomes: &[DtxOpOutcome],
         start: Instant,
@@ -1459,7 +1578,7 @@ pub(crate) async fn handle_operation(
             .map(|(index, outcome)| {
                 total_charge += outcome.request_charge;
                 dtx_op_json(
-                    index,
+                    operations[index].index,
                     outcome.status,
                     outcome.sub_status,
                     outcome.etag.as_deref(),
