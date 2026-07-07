@@ -1304,6 +1304,7 @@ mod tests {
             CosmosStatus::new(StatusCode::from(503_u16)),
             CosmosStatus::from_parts(StatusCode::from(429_u16), Some(SubStatusCode::new(3092))),
             CosmosStatus::from_parts(StatusCode::from(404_u16), Some(SubStatusCode::new(1002))),
+            CosmosStatus::from_parts(StatusCode::from(449_u16), Some(SubStatusCode::UNKNOWN)),
             CosmosStatus::new(StatusCode::from(408_u16)),
             CosmosStatus::new(StatusCode::from(410_u16)),
             CosmosStatus::new(StatusCode::from(500_u16)),
