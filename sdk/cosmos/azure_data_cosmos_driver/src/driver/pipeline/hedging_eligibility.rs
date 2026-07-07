@@ -30,16 +30,40 @@ use crate::{
 /// this constant is the upper bound.
 const DEFAULT_THRESHOLD_CAP: Duration = Duration::from_millis(1000);
 
-/// Resource types eligible for cross-region hedging in the current phase.
+/// Resource types eligible for cross-region hedging.
 ///
-/// Subsequent phases widen this single constant — no other change to
-/// [`should_hedge`] is required.
-const HEDGEABLE_RESOURCE_TYPES: &[ResourceType] = &[ResourceType::Document];
+/// - [`ResourceType::Document`] — data-plane point reads.
+/// - [`ResourceType::DocumentCollection`] — the Collection Read that resolves
+///   container properties. This metadata read sits on the critical path of
+///   nearly every operation (cold-start cache population and steady-state
+///   refresh), so hedging it trims the long tail when the primary region is
+///   briefly slow.
+///
+/// This pairs with [`HEDGEABLE_OPERATION_TYPES`] = `[Read]`: the only eligible
+/// `(resource, operation)` tuples are therefore `(Document, Read)` and
+/// `(DocumentCollection, Read)`. Container **writes** (`Create` / `Delete`) are
+/// excluded by the `is_read_only()` guard, and the container **feed** reads
+/// (`read_all_containers` → `ReadFeed`, `query_containers` → `Query`) are
+/// excluded because their operation types are not in [`HEDGEABLE_OPERATION_TYPES`].
+///
+/// The other critical-path metadata read — the PartitionKeyRange `ReadFeed`
+/// that builds the routing map — is intentionally **not** hedged here: making
+/// it eligible would require adding `ReadFeed` to [`HEDGEABLE_OPERATION_TYPES`],
+/// which (because `Document` is already hedgeable) would also make user
+/// change-feed / cross-partition feed reads (`Document` + `ReadFeed`) eligible.
+/// Scoping that correctly needs `(resource, operation)` tuple gating plus a
+/// first-page-only / winning-region continuation-pinning story, and is left to
+/// a follow-up.
+const HEDGEABLE_RESOURCE_TYPES: &[ResourceType] =
+    &[ResourceType::Document, ResourceType::DocumentCollection];
 
-/// Operation types eligible for cross-region hedging in the current phase.
+/// Operation types eligible for cross-region hedging.
 ///
-/// Future phases will append feed-style operations
-/// (`Query` / `ReadFeed` / `QueryPlan`) and metadata reads.
+/// Restricted to `Read` (point reads) so that only the point-read metadata and
+/// data-plane paths hedge. Feed-style operations (`ReadFeed` / `Query` /
+/// `QueryPlan`) are handled in a future phase — see the note on
+/// [`HEDGEABLE_RESOURCE_TYPES`] about why widening this to `ReadFeed` requires
+/// tuple gating to avoid unintentionally hedging user feed reads.
 const HEDGEABLE_OPERATION_TYPES: &[OperationType] = &[OperationType::Read];
 
 /// Returns `true` when the operation is eligible for cross-region hedging.
@@ -356,6 +380,39 @@ mod tests {
         CosmosOperation::read_database(db)
     }
 
+    fn db_reference() -> DatabaseReference {
+        let account = AccountReference::with_master_key(
+            Url::parse("https://acct.documents.azure.com/").unwrap(),
+            "k",
+        );
+        DatabaseReference::from_name(account, "db")
+    }
+
+    /// Collection Read (`DocumentCollection` + `Read`) — the metadata read this
+    /// phase makes hedgeable.
+    fn read_container_operation() -> CosmosOperation {
+        CosmosOperation::read_container_by_name(db_reference(), "c")
+    }
+
+    /// `read_all_containers` (`DocumentCollection` + `ReadFeed`) — a container
+    /// *feed* read that must NOT be hedged.
+    fn read_all_containers_operation() -> CosmosOperation {
+        CosmosOperation::read_all_containers(db_reference())
+    }
+
+    /// `query_containers` (`DocumentCollection` + `Query`) — must NOT be hedged.
+    fn query_containers_operation() -> CosmosOperation {
+        CosmosOperation::query_containers(db_reference())
+    }
+
+    /// User change-feed read (`Document` + `ReadFeed`) — must NOT be hedged.
+    /// This guards against the over-broadening trap: widening resource types to
+    /// include `DocumentCollection` must not make any `ReadFeed` eligible.
+    fn read_all_items_operation() -> CosmosOperation {
+        let container = fake_container_reference();
+        CosmosOperation::read_all_items(container, PartitionKey::from("pk"))
+    }
+
     fn enabled_strategy() -> HedgingStrategy {
         HedgingStrategy::new(HedgeThreshold::new(Duration::from_millis(500)).unwrap())
     }
@@ -413,9 +470,52 @@ mod tests {
 
     #[test]
     fn should_hedge_non_document() {
-        // Reads against non-Document resource types are excluded in Phase 1.
+        // Reads against non-hedgeable resource types (e.g. Database) are excluded.
         let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
         let op = read_database_operation();
+        assert!(!should_hedge(Some(&enabled_strategy()), &op, &state, &[],));
+    }
+
+    #[test]
+    fn should_hedge_container_read_multi_region() {
+        // Collection Read (DocumentCollection + Read) is hedgeable: it is a
+        // point read of container properties on the metadata critical path.
+        let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
+        let op = read_container_operation();
+        assert!(should_hedge(Some(&enabled_strategy()), &op, &state, &[],));
+    }
+
+    #[test]
+    fn should_hedge_container_read_single_region() {
+        let state = account_state_with_regions(&[Region::EAST_US]);
+        let op = read_container_operation();
+        assert!(!should_hedge(Some(&enabled_strategy()), &op, &state, &[],));
+    }
+
+    #[test]
+    fn should_hedge_container_feed_not_hedged() {
+        // read_all_containers is DocumentCollection + ReadFeed — a feed read,
+        // NOT eligible (ReadFeed is not in HEDGEABLE_OPERATION_TYPES).
+        let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
+        let op = read_all_containers_operation();
+        assert!(!should_hedge(Some(&enabled_strategy()), &op, &state, &[],));
+    }
+
+    #[test]
+    fn should_hedge_container_query_not_hedged() {
+        // query_containers is DocumentCollection + Query — NOT eligible.
+        let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
+        let op = query_containers_operation();
+        assert!(!should_hedge(Some(&enabled_strategy()), &op, &state, &[],));
+    }
+
+    #[test]
+    fn should_hedge_document_readfeed_not_hedged() {
+        // Over-broadening guard: a user change-feed read (Document + ReadFeed)
+        // must remain non-hedgeable even though Document is a hedgeable resource
+        // type — because ReadFeed is not in HEDGEABLE_OPERATION_TYPES.
+        let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
+        let op = read_all_items_operation();
         assert!(!should_hedge(Some(&enabled_strategy()), &op, &state, &[],));
     }
 
