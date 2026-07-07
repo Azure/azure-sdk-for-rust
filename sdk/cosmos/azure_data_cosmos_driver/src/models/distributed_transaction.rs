@@ -189,6 +189,8 @@ impl DistributedTransactionRequest {
 
     /// Serializes the request body expected by the current .NET-compatible DTX endpoint.
     pub fn serialize_body(&self) -> crate::error::Result<Vec<u8>> {
+        self.validate()?;
+
         let operations = self
             .operations
             .iter()
@@ -204,6 +206,36 @@ impl DistributedTransactionRequest {
                 .build()
         })
     }
+
+    fn validate(&self) -> crate::error::Result<()> {
+        for operation in &self.operations {
+            match (self.transaction_type, operation.kind) {
+                (DistributedTransactionType::Read, DistributedTransactionOperationKind::Read) => {}
+                (DistributedTransactionType::Read, other) => {
+                    return Err(invalid_dtx_request(format!(
+                        "distributed read transaction cannot contain {} operations",
+                        other.as_wire_str()
+                    )));
+                }
+                (DistributedTransactionType::Write, DistributedTransactionOperationKind::Read) => {
+                    return Err(invalid_dtx_request(
+                        "distributed write transaction cannot contain Read operations",
+                    ));
+                }
+                (DistributedTransactionType::Write, _) => {}
+            }
+        }
+        Ok(())
+    }
+}
+
+fn invalid_dtx_request(message: impl Into<String>) -> crate::error::CosmosError {
+    crate::error::CosmosError::builder()
+        .with_status(crate::error::CosmosStatus::new(
+            azure_core::http::StatusCode::BadRequest,
+        ))
+        .with_message(message.into())
+        .build()
 }
 
 fn serialize_operation(
@@ -266,6 +298,7 @@ fn serialize_operation(
                 }
             }
         }
+        validate_resource_body_id(operation, &resource_body)?;
         object.insert("resourceBody".to_owned(), resource_body);
     }
 
@@ -305,6 +338,31 @@ fn serialize_operation(
     );
 
     Ok(serde_json::Value::Object(object))
+}
+
+fn validate_resource_body_id(
+    operation: &DistributedTransactionOperation,
+    resource_body: &serde_json::Value,
+) -> crate::error::Result<()> {
+    if !matches!(
+        operation.kind,
+        DistributedTransactionOperationKind::Create
+            | DistributedTransactionOperationKind::Replace
+            | DistributedTransactionOperationKind::Upsert
+    ) {
+        return Ok(());
+    }
+
+    match resource_body.get("id").and_then(|value| value.as_str()) {
+        Some(body_id) if body_id == operation.target.id.as_ref() => Ok(()),
+        Some(body_id) => Err(invalid_dtx_request(format!(
+            "distributed transaction operation resourceBody.id ('{body_id}') must match operation id ('{}')",
+            operation.target.id
+        ))),
+        None => Err(invalid_dtx_request(
+            "distributed transaction create, replace, and upsert operations require resourceBody.id",
+        )),
+    }
 }
 
 fn partition_key_json(
@@ -375,6 +433,14 @@ impl DistributedTransactionOperationResult {
     pub fn is_success_status_code(&self) -> bool {
         self.status_code.is_success()
     }
+
+    /// Returns `true` when the operation is a completed DTX success outcome.
+    ///
+    /// Read transactions treat `304 NotModified` as a completed success code
+    /// (no body), even though it is not in the HTTP 2xx success range.
+    pub fn is_completed_status_code(&self) -> bool {
+        is_dtx_completed_status_code(self.status_code)
+    }
 }
 
 /// Response returned by the distributed transaction coordinator.
@@ -414,7 +480,7 @@ impl DistributedTransactionResponse {
         operation_count: usize,
         idempotency_token: Uuid,
     ) -> Self {
-        let is_success_envelope = status_code.is_success();
+        let is_success_envelope = is_dtx_completed_status_code(status_code);
         let mut is_retriable = false;
         let mut diagnostic_string = None;
 
@@ -606,6 +672,15 @@ impl DistributedTransactionResponse {
         self.status_code.is_success()
     }
 
+    /// Returns `true` when the overall transaction completed successfully.
+    ///
+    /// This differs from [`Self::is_success_status_code`] for read transactions:
+    /// an all-`304 NotModified` snapshot is complete and terminal, but `304` is
+    /// not an HTTP 2xx success status.
+    pub fn is_completed_status_code(&self) -> bool {
+        is_dtx_completed_status_code(self.status_code)
+    }
+
     /// Number of operation results.
     pub fn len(&self) -> usize {
         self.operation_results.len()
@@ -692,6 +767,10 @@ fn get_property<'a>(value: &'a serde_json::Value, name: &str) -> Option<&'a serd
             None
         }
     })
+}
+
+fn is_dtx_completed_status_code(status_code: azure_core::http::StatusCode) -> bool {
+    status_code.is_success() || status_code == azure_core::http::StatusCode::NotModified
 }
 
 fn parse_operation_result(
@@ -1039,6 +1118,75 @@ mod tests {
             error.status().status_code(),
             azure_core::http::StatusCode::BadRequest
         );
+    }
+
+    #[test]
+    fn serialize_rejects_invalid_transaction_type_operation_kind_combinations() {
+        let write_in_read = DistributedTransactionOperation::new(
+            DistributedTransactionOperationKind::Create,
+            target("item1"),
+        )
+        .with_resource_body(Bytes::from_static(br#"{"id":"item1","pk":"pk1"}"#));
+        let request = DistributedTransactionRequest::new(
+            DistributedTransactionType::Read,
+            vec![write_in_read],
+        );
+        assert_eq!(
+            request.serialize_body().unwrap_err().status().status_code(),
+            azure_core::http::StatusCode::BadRequest
+        );
+
+        let read_in_write = DistributedTransactionOperation::new(
+            DistributedTransactionOperationKind::Read,
+            target("item1"),
+        );
+        let request = DistributedTransactionRequest::new(
+            DistributedTransactionType::Write,
+            vec![read_in_write],
+        );
+        assert_eq!(
+            request.serialize_body().unwrap_err().status().status_code(),
+            azure_core::http::StatusCode::BadRequest
+        );
+    }
+
+    #[test]
+    fn serialize_rejects_create_replace_upsert_body_id_mismatch() {
+        for kind in [
+            DistributedTransactionOperationKind::Create,
+            DistributedTransactionOperationKind::Replace,
+            DistributedTransactionOperationKind::Upsert,
+        ] {
+            let operation = DistributedTransactionOperation::new(kind, target("item1"))
+                .with_resource_body(Bytes::from_static(br#"{"id":"other","pk":"pk1"}"#));
+            let request = DistributedTransactionRequest::new(
+                DistributedTransactionType::Write,
+                vec![operation],
+            );
+            assert_eq!(
+                request.serialize_body().unwrap_err().status().status_code(),
+                azure_core::http::StatusCode::BadRequest
+            );
+        }
+    }
+
+    #[test]
+    fn parse_all_not_modified_read_transaction_is_completed() {
+        let body = br#"{"operationResponses":[{"index":0,"statusCode":304},{"index":1,"statusCode":304}]}"#;
+        let response = DistributedTransactionResponse::from_body(
+            azure_core::http::StatusCode::NotModified,
+            None,
+            body,
+            2,
+            Uuid::nil(),
+        );
+
+        assert!(!response.is_success_status_code());
+        assert!(response.is_completed_status_code());
+        assert!(response
+            .operation_results
+            .iter()
+            .all(DistributedTransactionOperationResult::is_completed_status_code));
     }
 
     #[test]

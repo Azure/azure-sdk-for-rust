@@ -35,7 +35,11 @@ use super::system_properties::{
     account_properties_to_json, container_to_json, database_to_json, feed_to_json,
     inject_system_properties, offer_to_json, pkranges_to_json,
 };
+#[cfg(feature = "preview_dtx")]
+use crate::driver::pipeline::patch_eval::apply_patch_ops;
 use crate::models::PartitionKeyDefinition;
+#[cfg(feature = "preview_dtx")]
+use crate::models::PatchInstructions;
 
 static OFFER_REPLACE_PENDING: HeaderName = HeaderName::from_static("x-ms-offer-replace-pending");
 
@@ -438,6 +442,10 @@ pub(crate) async fn handle_operation(
         operation: &DtxOperation,
         start: Instant,
     ) -> AsyncRawResponse {
+        if operation.operation_type.eq_ignore_ascii_case("Patch") {
+            return handle_dtx_patch_operation(store, region_name, operation, start).await;
+        }
+
         let operation_type = match operation.operation_type.as_str() {
             "Create" => OperationType::Create,
             "Read" => OperationType::Read,
@@ -503,6 +511,273 @@ pub(crate) async fn handle_operation(
             OperationType::Delete => handle_delete(store, region_name, &parsed, start).await,
             _ => unreachable!(),
         }
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    async fn handle_dtx_patch_operation(
+        store: &Arc<EmulatorStore>,
+        region_name: &str,
+        operation: &DtxOperation,
+        start: Instant,
+    ) -> AsyncRawResponse {
+        let Some(resource_body) = operation.resource_body.as_ref() else {
+            return error_response(
+                StatusCode::BadRequest,
+                None,
+                "BadRequest",
+                "DTX Patch operation requires a resourceBody",
+                0.0,
+                "",
+                start,
+            )
+            .build();
+        };
+        let (patch, condition) = match parse_dtx_patch_body(resource_body) {
+            Ok(parsed) => parsed,
+            Err(message) => {
+                return error_response(
+                    StatusCode::BadRequest,
+                    None,
+                    "BadRequest",
+                    &message,
+                    0.0,
+                    "",
+                    start,
+                )
+                .build()
+            }
+        };
+
+        let db_id = &operation.database_name;
+        let coll_id = &operation.collection_name;
+        let region_ref = match store.region(region_name) {
+            Some(region_ref) => region_ref,
+            None => return not_found_region(start),
+        };
+        if !region_ref.database_exists(db_id) {
+            return error_response(
+                StatusCode::NotFound,
+                None,
+                "NotFound",
+                &format!("Database '{}' does not exist", operation.database_name),
+                0.0,
+                "",
+                start,
+            )
+            .build();
+        }
+
+        let parsed = dtx_operation_as_parsed_request(operation);
+        let result = region_ref.with_container(db_id, coll_id, |state| {
+            let empty_body = serde_json::Value::Null;
+            let (_, epk) = match resolve_partition_key(&parsed, &empty_body, &state.metadata) {
+                Ok(value) => value,
+                Err(error) => return Err(bad_partition_key_response(error, start)),
+            };
+            let partition = match state.find_partition(&epk) {
+                Some(partition) => partition,
+                None => {
+                    return Err(error_response(
+                        StatusCode::InternalServerError,
+                        None,
+                        "InternalError",
+                        "No partition found for EPK",
+                        1.0,
+                        "",
+                        start,
+                    )
+                    .build())
+                }
+            };
+            if let Some(response) = check_partition_lock(partition, start) {
+                return Err(response);
+            }
+
+            let charge = 1.0;
+            let region_id = store.config().region_id_for(region_name);
+            let new_doc = {
+                let mut docs = partition.documents.write().unwrap();
+                let logical = docs.entry(epk.clone()).or_default();
+                let Some(current) = logical.get(&operation.id).cloned() else {
+                    let token = session_token_for(
+                        partition,
+                        region_id,
+                        incoming_session_for(&parsed, partition.id).as_ref(),
+                    );
+                    return Err(error_response(
+                        StatusCode::NotFound,
+                        None,
+                        "NotFound",
+                        &format!(
+                            "Entity with the specified id does not exist in the system. ResourceId: {}",
+                            operation.id
+                        ),
+                        1.0,
+                        &token,
+                        start,
+                    )
+                    .build());
+                };
+
+                if operation
+                    .if_match
+                    .as_ref()
+                    .is_some_and(|etag| etag != &current.etag)
+                {
+                    let token = session_token_for(
+                        partition,
+                        region_id,
+                        incoming_session_for(&parsed, partition.id).as_ref(),
+                    );
+                    return Err(error_response(
+                        StatusCode::PreconditionFailed,
+                        None,
+                        "PreconditionFailed",
+                        "One of the specified pre-condition is not met.",
+                        1.0,
+                        &token,
+                        start,
+                    )
+                    .build());
+                }
+
+                match dtx_patch_condition_matches(condition.as_deref(), &current.body) {
+                    Ok(true) => {}
+                    Ok(false) => {
+                        let token = session_token_for(
+                            partition,
+                            region_id,
+                            incoming_session_for(&parsed, partition.id).as_ref(),
+                        );
+                        return Err(error_response(
+                            StatusCode::PreconditionFailed,
+                            Some(1110),
+                            "PreconditionFailed",
+                            "Patch condition was not met.",
+                            1.0,
+                            &token,
+                            start,
+                        )
+                        .build());
+                    }
+                    Err(message) => {
+                        return Err(error_response(
+                            StatusCode::BadRequest,
+                            None,
+                            "BadRequest",
+                            &message,
+                            1.0,
+                            "",
+                            start,
+                        )
+                        .build())
+                    }
+                }
+
+                if let Some(response) =
+                    check_throttle(partition, charge, store.config().throttling_enabled(), start)
+                {
+                    return Err(response);
+                }
+
+                let mut patched_body = current.body.clone();
+                if let Err(error) = apply_patch_ops(&mut patched_body, &patch.operations) {
+                    return Err(error_response(
+                        StatusCode::BadRequest,
+                        None,
+                        "BadRequest",
+                        &error.to_string(),
+                        1.0,
+                        "",
+                        start,
+                    )
+                    .build());
+                }
+
+                let lsn = partition.advance_lsn();
+                partition.advance_local_lsn();
+                let ts = current_timestamp();
+                let etag = new_etag();
+                inject_system_properties(&current.rid, &current.self_link, &etag, ts, &mut patched_body);
+                let body_size_bytes = serde_json::to_vec(&patched_body).map_or(0, |bytes| bytes.len());
+                let new_doc = StoredDocument {
+                    body: patched_body.clone(),
+                    id: operation.id.clone(),
+                    rid: current.rid,
+                    etag: etag.clone(),
+                    ts,
+                    self_link: current.self_link,
+                    lsn,
+                    epk: epk.clone(),
+                    body_size_bytes,
+                    source_region: region_name.to_string(),
+                };
+                logical.insert(operation.id.clone(), new_doc.clone());
+                new_doc
+            };
+
+            let token = session_token_for(
+                partition,
+                region_id,
+                incoming_session_for(&parsed, partition.id).as_ref(),
+            );
+            let headers = Some(PointResponseHeaders::from_partition(
+                partition,
+                store.next_transport_request_id(),
+            ));
+            Ok((new_doc, token, charge, headers))
+        });
+
+        match result {
+            Some(Ok((doc, token, charge, headers))) => {
+                store.replicate(region_name, db_id, coll_id, &doc, false);
+                let builder = success_response(StatusCode::Ok, &doc.body, charge, &token, start);
+                decorate_point_response(builder, headers, Some(doc.lsn)).build()
+            }
+            Some(Err(response)) => response,
+            None => container_not_found(db_id, coll_id, start),
+        }
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    fn parse_dtx_patch_body(
+        resource_body: &serde_json::Value,
+    ) -> Result<(PatchInstructions, Option<String>), String> {
+        let mut body = resource_body.clone();
+        let condition = match body.as_object_mut().and_then(|map| map.remove("condition")) {
+            Some(serde_json::Value::String(condition)) if !condition.trim().is_empty() => {
+                Some(condition)
+            }
+            Some(serde_json::Value::String(_)) => None,
+            Some(_) => return Err("DTX patch condition must be a string".to_owned()),
+            None => None,
+        };
+        let patch = serde_json::from_value::<PatchInstructions>(body)
+            .map_err(|error| format!("invalid DTX patch resourceBody: {error}"))?;
+        Ok((patch, condition))
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    fn dtx_patch_condition_matches(
+        condition: Option<&str>,
+        document: &serde_json::Value,
+    ) -> Result<bool, String> {
+        let Some(condition) = condition else {
+            return Ok(true);
+        };
+        let sql = if condition
+            .trim_start()
+            .to_ascii_lowercase()
+            .starts_with("from ")
+        {
+            format!("SELECT * {condition}")
+        } else {
+            condition.to_owned()
+        };
+        let program = crate::query::parse(&sql)
+            .map_err(|error| format!("invalid DTX patch condition: {error}"))?;
+        crate::query::eval::matches_query(document, &program.query, &[])
+            .map_err(|error| format!("failed to evaluate DTX patch condition: {error}"))
     }
 
     #[cfg(feature = "preview_dtx")]
@@ -783,17 +1058,9 @@ pub(crate) async fn handle_operation(
             return Ok(());
         }
 
-        if operation.operation_type.eq_ignore_ascii_case("Patch") {
-            return Err(preflight_failure(
-                StatusCode::BadRequest,
-                None,
-                "DTX patch operations are not implemented by the in-memory emulator",
-            ));
-        }
-
         if matches!(
             operation.operation_type.as_str(),
-            "Create" | "Replace" | "Upsert"
+            "Create" | "Replace" | "Upsert" | "Patch"
         ) && operation.resource_body.is_none()
         {
             return Err(preflight_failure(
@@ -827,6 +1094,31 @@ pub(crate) async fn handle_operation(
                     .as_ref()
                     .cloned()
                     .unwrap_or(serde_json::Value::Null);
+                if matches!(
+                    operation.operation_type.as_str(),
+                    "Create" | "Replace" | "Upsert"
+                ) {
+                    match body.get("id").and_then(|value| value.as_str()) {
+                        Some(body_id) if body_id == operation.id => {}
+                        Some(body_id) => {
+                            return Err(preflight_failure(
+                                StatusCode::BadRequest,
+                                None,
+                                format!(
+                                    "Document id in request body ('{body_id}') must match the DTX operation id ('{}')",
+                                    operation.id
+                                ),
+                            ));
+                        }
+                        None => {
+                            return Err(preflight_failure(
+                                StatusCode::BadRequest,
+                                None,
+                                "DTX create, replace, and upsert operations require resourceBody.id",
+                            ));
+                        }
+                    }
+                }
                 let (_, epk) = resolve_partition_key(&parsed, &body, &state.metadata).map_err(
                     |error| {
                         preflight_failure(
@@ -887,6 +1179,49 @@ pub(crate) async fn handle_operation(
                                 None,
                                 "One of the specified pre-condition is not met.",
                             ));
+                        }
+                    }
+                    "Patch" => {
+                        let Some(existing) = existing else {
+                            return Err(preflight_failure(
+                                StatusCode::NotFound,
+                                None,
+                                format!(
+                                    "Entity with the specified id does not exist in the system. ResourceId: {}",
+                                    operation.id
+                                ),
+                            ));
+                        };
+                        if operation
+                            .if_match
+                            .as_ref()
+                            .is_some_and(|etag| etag != &existing.etag)
+                        {
+                            return Err(preflight_failure(
+                                StatusCode::PreconditionFailed,
+                                None,
+                                "One of the specified pre-condition is not met.",
+                            ));
+                        }
+                        let (_, condition) = parse_dtx_patch_body(&body).map_err(|message| {
+                            preflight_failure(StatusCode::BadRequest, None, message)
+                        })?;
+                        match dtx_patch_condition_matches(condition.as_deref(), &existing.body) {
+                            Ok(true) => {}
+                            Ok(false) => {
+                                return Err(preflight_failure(
+                                    StatusCode::PreconditionFailed,
+                                    Some(1110),
+                                    "Patch condition was not met.",
+                                ));
+                            }
+                            Err(message) => {
+                                return Err(preflight_failure(
+                                    StatusCode::BadRequest,
+                                    None,
+                                    message,
+                                ));
+                            }
                         }
                     }
                     "Upsert" => {}
@@ -3428,6 +3763,15 @@ fn handle_read(
                     partition,
                     store.next_transport_request_id(),
                 ));
+                if parsed.if_none_match.as_deref() == Some(etag.as_str())
+                    || parsed.if_none_match.as_deref() == Some("*")
+                {
+                    let builder = ResponseBuilder::new(StatusCode::NotModified, start)
+                        .with_request_charge(charge)
+                        .with_session_token(&token)
+                        .with_etag(&etag);
+                    return Err(decorate_point_response(builder, headers, Some(lsn)).build());
+                }
                 return Ok((body, etag, token, charge, lsn, headers));
             }
         }

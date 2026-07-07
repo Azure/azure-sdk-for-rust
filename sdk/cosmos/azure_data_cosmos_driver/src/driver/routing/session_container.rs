@@ -92,6 +92,49 @@ impl SessionContainer {
         None
     }
 
+    /// Resolves the session token for a specific partition key range.
+    ///
+    /// If the target range has no token, parent ranges are merged and emitted
+    /// using the target range ID. This mirrors the gateway's parent walk for
+    /// freshly split children.
+    #[cfg(feature = "preview_dtx")]
+    pub(crate) fn resolve_session_token_for_partition_key_range(
+        &self,
+        container: &ContainerReference,
+        partition_key_range_id: &str,
+        parents: &[String],
+    ) -> Option<SessionToken> {
+        let guard = self.inner.read().unwrap_or_else(|e| e.into_inner());
+        let pk_map = guard.tokens.get(container.rid()).or_else(|| {
+            let np = name_path(container);
+            guard
+                .name_to_rid
+                .get(np)
+                .and_then(|resolved_rid| guard.tokens.get(resolved_rid))
+        })?;
+
+        if let Some(token) = pk_map.get(partition_key_range_id) {
+            return Some(SessionToken::new(format!(
+                "{partition_key_range_id}:{token}"
+            )));
+        }
+
+        let mut merged: Option<SessionTokenValue> = None;
+        for parent in parents {
+            let Some(parent_token) = pk_map.get(parent) else {
+                continue;
+            };
+            match &mut merged {
+                Some(current) => {
+                    current.merge(parent_token);
+                }
+                None => merged = Some(parent_token.clone()),
+            }
+        }
+
+        merged.map(|token| SessionToken::new(format!("{partition_key_range_id}:{token}")))
+    }
+
     /// Stores (or merges) a session token for a given container.
     ///
     /// The `session_token_value` is the raw `x-ms-session-token` header value
@@ -242,6 +285,38 @@ mod tests {
         let token = sc.resolve_session_token(&c).unwrap();
         let s = token.as_str();
         assert!(s.contains("0:") && s.contains("1:"));
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn resolves_specific_partition_key_range_token() {
+        let sc = SessionContainer::new();
+        let c = test_container("db1", "c1", "rid1");
+        sc.set_session_token(&c, "0:1#100#1=10,1:1#200#1=20");
+
+        let token = sc
+            .resolve_session_token_for_partition_key_range(&c, "1", &[])
+            .unwrap();
+
+        assert_eq!(token.as_str(), "1:1#200#1=20");
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn resolves_child_partition_key_range_from_parent_tokens() {
+        let sc = SessionContainer::new();
+        let c = test_container("db1", "c1", "rid1");
+        sc.set_session_token(&c, "parent_a:1#100#1=10,parent_b:1#200#1=20");
+
+        let token = sc
+            .resolve_session_token_for_partition_key_range(
+                &c,
+                "child",
+                &["parent_a".to_owned(), "parent_b".to_owned()],
+            )
+            .unwrap();
+
+        assert_eq!(token.as_str(), "child:1#200#1=20");
     }
 
     #[test]

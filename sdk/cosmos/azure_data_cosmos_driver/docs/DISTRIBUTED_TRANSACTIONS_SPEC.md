@@ -366,6 +366,14 @@ outer loop — the inner tier deliberately does not swallow it.
 
 ## 8. Session-Token Handling
 
+Before serialization, when Session consistency is effective, each operation that
+does not already carry a caller-supplied session token is stamped from the session
+container. The driver resolves the operation's partition key range through the
+PKRange cache, prefers an exact range token, walks parent range tokens for freshly
+split children, and falls back to the compound collection-level token when the
+range cannot be resolved. This mirrors .NET PR #5958's best-effort
+`ResolvePartitionLocalToken` behavior.
+
 After a **terminal success** (the outer loop returning `Ok`), the driver calls
 `merge_distributed_transaction_session_tokens`. Because a distributed transaction
 spans partitions, tokens are **per operation**, keyed by the operation's
@@ -381,8 +389,11 @@ spans partitions, tokens are **per operation**, keyed by the operation's
   corrupt token cannot silently weaken read-your-own-writes. Outside Session
   consistency the bookkeeping is best-effort.
 
-Session merge runs **only on terminal success** so a server-committed transaction is
-never surfaced as a client error because of token bookkeeping.
+Session merge runs **only on terminal success**. Outside Session consistency,
+token bookkeeping is best-effort and does not fail the response. Under Session
+consistency, a malformed per-operation token on a committed response is surfaced
+as an error (matching .NET PR #5958) so read-your-own-writes is not silently
+weakened.
 
 ---
 

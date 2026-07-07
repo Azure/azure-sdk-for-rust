@@ -6,6 +6,8 @@
 //! [`SessionManager`] wraps [`SessionContainer`] and provides consistency-gated
 //! resolve / capture operations that the pipeline calls directly.
 
+#[cfg(feature = "preview_dtx")]
+use crate::models::partition_key_range::PartitionKeyRange;
 use crate::models::{
     CosmosOperation, CosmosResponseHeaders, OperationType, ResourceType, SessionToken,
 };
@@ -128,13 +130,13 @@ impl SessionManager {
         operations: &[crate::models::DistributedTransactionOperation],
         is_session_consistency: bool,
     ) -> crate::error::Result<()> {
-        let throw_on_malformed = response.is_success_status_code() && is_session_consistency;
+        let throw_on_malformed = response.is_completed_status_code() && is_session_consistency;
 
         for result in &response.operation_results {
             let Some(operation) = operations.get(result.index) else {
                 continue;
             };
-            if !result.is_success_status_code() {
+            if !result.is_completed_status_code() {
                 continue;
             }
             let Some(session_token) = result.session_token.as_ref() else {
@@ -171,30 +173,35 @@ impl SessionManager {
         Ok(())
     }
 
-    /// Stamps a resolved session token onto every distributed-transaction
-    /// operation that does not already carry an explicit token, so the
-    /// coordinator can honor read-your-own-writes under Session consistency.
+    /// Resolves the session token for one distributed-transaction operation.
     ///
-    /// Mirrors .NET's `DistributedTransactionCommitterUtils.ResolvePartitionLocalToken`
-    /// fallback to the collection-level token. Per-partition-key-range
-    /// resolution (`GetSessionTokenForPartitionKeyRange`) additionally requires a
-    /// PK-range cache, which this path does not yet consult.
+    /// If a resolved partition key range is supplied, this first tries the
+    /// exact range token and then parent tokens (for fresh split children). If
+    /// that cannot produce a token, it falls back to the compound
+    /// collection-level token so the coordinator can select the relevant
+    /// segment.
     #[cfg(feature = "preview_dtx")]
-    pub(crate) fn resolve_distributed_transaction_session_tokens(
+    pub(crate) fn resolve_distributed_transaction_session_token(
         &self,
-        operations: &mut [crate::models::DistributedTransactionOperation],
-    ) {
-        for operation in operations.iter_mut() {
-            if operation.session_token.is_some() {
-                continue;
-            }
+        operation: &crate::models::DistributedTransactionOperation,
+        partition_key_range: Option<&PartitionKeyRange>,
+    ) -> Option<SessionToken> {
+        if let Some(range) = partition_key_range {
+            let parents = range.parents.as_deref().unwrap_or(&[]);
             if let Some(token) = self
                 .container
-                .resolve_session_token(&operation.target.container)
+                .resolve_session_token_for_partition_key_range(
+                    &operation.target.container,
+                    &range.id,
+                    parents,
+                )
             {
-                operation.session_token = Some(token);
+                return Some(token);
             }
         }
+
+        self.container
+            .resolve_session_token(&operation.target.container)
     }
 }
 
@@ -648,7 +655,7 @@ mod tests {
 
         // op0 has no token (should be stamped from the cache); op1 has a
         // user-supplied token (must be preserved verbatim).
-        let mut operations = vec![
+        let mut operations = [
             DistributedTransactionOperation::new(
                 DistributedTransactionOperationKind::Read,
                 DistributedTransactionTarget::new(
@@ -668,7 +675,14 @@ mod tests {
             .with_session_token(SessionToken::new("9:9#9")),
         ];
 
-        mgr.resolve_distributed_transaction_session_tokens(&mut operations);
+        if let Some(token) = mgr.resolve_distributed_transaction_session_token(&operations[0], None)
+        {
+            operations[0].session_token = Some(token);
+        }
+        if operations[1].session_token.is_none() {
+            operations[1].session_token =
+                mgr.resolve_distributed_transaction_session_token(&operations[1], None);
+        }
 
         assert_eq!(
             operations[0]

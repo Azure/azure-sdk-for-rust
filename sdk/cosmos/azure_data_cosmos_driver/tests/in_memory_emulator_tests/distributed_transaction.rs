@@ -182,3 +182,198 @@ async fn dtx_read_snapshot_failure_rewrites_successful_reads() {
     assert!(results[0].get("resourceBody").is_none());
     assert_eq!(results[1]["statusCode"], 404);
 }
+
+#[tokio::test]
+async fn dtx_patch_with_filter_predicate_updates_item() {
+    let ctx = setup_single_region().await;
+
+    let create = create_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        &serde_json::json!({"id": "patch-target", "pk": "pk1", "status": "pending"}),
+        r#"["pk1"]"#,
+        false,
+    );
+    let response = ctx.emulator.execute_request(&create).await.unwrap();
+    let (status, _, _) = collect_response(response).await;
+    assert_eq!(status, StatusCode::Created);
+
+    let patch_body = serde_json::json!({
+        "operations": [{
+            "databaseName": "testdb",
+            "collectionName": "testcoll",
+            "id": "patch-target",
+            "partitionKey": ["pk1"],
+            "index": 0,
+            "operationType": "Patch",
+            "resourceType": "Document",
+            "resourceBody": {
+                "condition": "from c where c.status = 'pending'",
+                "operations": [{"op": "set", "path": "/status", "value": "done"}]
+            }
+        }]
+    });
+
+    let response = ctx
+        .emulator
+        .execute_request(&dtx_request(&ctx.gateway_url, patch_body))
+        .await
+        .unwrap();
+    let (status, _, body) = collect_response(response).await;
+    assert_eq!(status, StatusCode::Ok);
+    let result = &body["operationResponses"][0];
+    assert_eq!(result["statusCode"], 200);
+    assert_eq!(result["resourceBody"]["status"], "done");
+}
+
+#[tokio::test]
+async fn dtx_patch_filter_failure_rolls_back_siblings() {
+    let ctx = setup_single_region().await;
+
+    let create = create_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        &serde_json::json!({"id": "patch-target", "pk": "pk1", "status": "done"}),
+        r#"["pk1"]"#,
+        false,
+    );
+    let response = ctx.emulator.execute_request(&create).await.unwrap();
+    let (status, _, _) = collect_response(response).await;
+    assert_eq!(status, StatusCode::Created);
+
+    let body = serde_json::json!({
+        "operations": [
+            {
+                "databaseName": "testdb",
+                "collectionName": "testcoll",
+                "id": "rolled-back-create",
+                "partitionKey": ["pk1"],
+                "index": 0,
+                "resourceBody": {"id": "rolled-back-create", "pk": "pk1", "value": 1},
+                "operationType": "Create",
+                "resourceType": "Document"
+            },
+            {
+                "databaseName": "testdb",
+                "collectionName": "testcoll",
+                "id": "patch-target",
+                "partitionKey": ["pk1"],
+                "index": 1,
+                "operationType": "Patch",
+                "resourceType": "Document",
+                "resourceBody": {
+                    "condition": "from c where c.status = 'pending'",
+                    "operations": [{"op": "set", "path": "/status", "value": "patched"}]
+                }
+            }
+        ]
+    });
+
+    let response = ctx
+        .emulator
+        .execute_request(&dtx_request(&ctx.gateway_url, body))
+        .await
+        .unwrap();
+    let (status, _, body) = collect_response(response).await;
+    assert_eq!(status, StatusCode::from(452_u16));
+    let results = body["operationResponses"].as_array().unwrap();
+    assert_eq!(results[0]["statusCode"], 453);
+    assert_eq!(results[0]["subStatusCode"], 5415);
+    assert_eq!(results[1]["statusCode"], 412);
+    assert_eq!(results[1]["subStatusCode"], 1110);
+
+    let response = ctx
+        .emulator
+        .execute_request(&read_item_request(
+            &ctx.gateway_url,
+            "testdb",
+            "testcoll",
+            "rolled-back-create",
+            r#"["pk1"]"#,
+        ))
+        .await
+        .unwrap();
+    let (status, _, _) = collect_response(response).await;
+    assert_eq!(status, StatusCode::NotFound);
+}
+
+#[tokio::test]
+async fn dtx_create_body_id_mismatch_aborts_without_commit() {
+    let ctx = setup_single_region().await;
+    let body = serde_json::json!({
+        "operations": [{
+            "databaseName": "testdb",
+            "collectionName": "testcoll",
+            "id": "outer-id",
+            "partitionKey": ["pk1"],
+            "index": 0,
+            "resourceBody": {"id": "inner-id", "pk": "pk1", "value": 1},
+            "operationType": "Create",
+            "resourceType": "Document"
+        }]
+    });
+
+    let response = ctx
+        .emulator
+        .execute_request(&dtx_request(&ctx.gateway_url, body))
+        .await
+        .unwrap();
+    let (status, _, body) = collect_response(response).await;
+    assert_eq!(status, StatusCode::from(452_u16));
+    assert_eq!(body["operationResponses"][0]["statusCode"], 400);
+
+    let response = ctx
+        .emulator
+        .execute_request(&read_item_request(
+            &ctx.gateway_url,
+            "testdb",
+            "testcoll",
+            "inner-id",
+            r#"["pk1"]"#,
+        ))
+        .await
+        .unwrap();
+    let (status, _, _) = collect_response(response).await;
+    assert_eq!(status, StatusCode::NotFound);
+}
+
+#[tokio::test]
+async fn dtx_all_not_modified_read_is_completed() {
+    let ctx = setup_single_region().await;
+    let create = create_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        &serde_json::json!({"id": "etagged", "pk": "pk1", "value": 1}),
+        r#"["pk1"]"#,
+        true,
+    );
+    let response = ctx.emulator.execute_request(&create).await.unwrap();
+    let (status, headers, _) = collect_response(response).await;
+    assert_eq!(status, StatusCode::Created);
+    let etag = headers.get_optional_str(&ETAG).unwrap();
+
+    let read_body = serde_json::json!({
+        "operations": [{
+            "databaseName": "testdb",
+            "collectionName": "testcoll",
+            "id": "etagged",
+            "partitionKey": ["pk1"],
+            "index": 0,
+            "operationType": "Read",
+            "resourceType": "Document",
+            "ifNoneMatch": etag
+        }]
+    });
+
+    let response = ctx
+        .emulator
+        .execute_request(&dtx_request(&ctx.gateway_url, read_body))
+        .await
+        .unwrap();
+    let (status, _, body) = collect_response(response).await;
+    assert_eq!(status, StatusCode::NotModified);
+    assert_eq!(body["operationResponses"][0]["statusCode"], 304);
+}

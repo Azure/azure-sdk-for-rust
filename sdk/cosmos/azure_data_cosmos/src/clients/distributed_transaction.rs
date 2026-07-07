@@ -76,7 +76,6 @@ impl DistributedTransactionPatchOperationOptions {
 }
 
 /// Preview distributed write transaction builder.
-#[derive(Clone)]
 pub struct DistributedWriteTransaction {
     context: ClientContext,
     operations: Vec<driver_models::DistributedTransactionOperation>,
@@ -208,7 +207,6 @@ impl DistributedWriteTransaction {
 }
 
 /// Preview distributed read transaction builder.
-#[derive(Clone)]
 pub struct DistributedReadTransaction {
     context: ClientContext,
     operations: Vec<driver_models::DistributedTransactionOperation>,
@@ -331,6 +329,14 @@ impl DistributedTransactionResponse {
         self.inner.is_success_status_code()
     }
 
+    /// Returns true when the overall transaction completed successfully.
+    ///
+    /// For read transactions this also treats `304 NotModified` as completed,
+    /// even though `304` is not an HTTP 2xx status.
+    pub fn is_completed_status_code(&self) -> bool {
+        self.inner.is_completed_status_code()
+    }
+
     /// Returns the number of operation results.
     pub fn len(&self) -> usize {
         self.inner.len()
@@ -418,6 +424,14 @@ impl DistributedTransactionOperationResult<'_> {
     /// Returns true when the operation status is successful.
     pub fn is_success_status_code(&self) -> bool {
         self.inner.is_success_status_code()
+    }
+
+    /// Returns true when the operation is a completed DTX success outcome.
+    ///
+    /// For read transactions this also treats `304 NotModified` as completed,
+    /// even though `304` is not an HTTP 2xx status.
+    pub fn is_completed_status_code(&self) -> bool {
+        self.inner.is_completed_status_code()
     }
 
     /// Returns the ETag, when present.

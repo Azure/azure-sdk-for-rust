@@ -1962,8 +1962,8 @@ impl CosmosDriver {
         // coordinator honors read-your-own-writes (mirrors .NET
         // ResolvePartitionLocalToken).
         if is_session_consistency {
-            self.session_manager
-                .resolve_distributed_transaction_session_tokens(&mut request.operations);
+            self.resolve_distributed_transaction_session_tokens(&mut request.operations)
+                .await;
         }
         let body = request.serialize_body()?;
         let operation = CosmosOperation::distributed_transaction(
@@ -2036,6 +2036,37 @@ impl CosmosDriver {
                     .unwrap_or(azure_core::time::Duration::ZERO),
             )
             .await;
+        }
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    async fn resolve_distributed_transaction_session_tokens(
+        &self,
+        operations: &mut [crate::models::DistributedTransactionOperation],
+    ) {
+        for operation in operations.iter_mut() {
+            if operation.session_token.is_some() {
+                continue;
+            }
+
+            let ranges = self
+                .resolve_partition_key_ranges_for_key(
+                    &operation.target.container,
+                    &operation.target.partition_key,
+                    false,
+                )
+                .await;
+            let range = ranges.as_deref().and_then(|ranges| match ranges {
+                [single] => Some(single),
+                _ => None,
+            });
+
+            if let Some(token) = self
+                .session_manager
+                .resolve_distributed_transaction_session_token(operation, range)
+            {
+                operation.session_token = Some(token);
+            }
         }
     }
 
@@ -2606,7 +2637,7 @@ fn distributed_transaction_outer_retry_delay(
     retry_count: u32,
     cumulative_delay: Duration,
 ) -> Option<Duration> {
-    if response.is_success_status_code() || !response.is_retriable {
+    if response.is_completed_status_code() || !response.is_retriable {
         return None;
     }
 
