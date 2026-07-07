@@ -190,6 +190,45 @@ impl TopologyProvider for MockTopologyProvider {
     }
 }
 
+/// A range-aware topology provider backed by a fixed physical partition layout.
+///
+/// Unlike [`MockTopologyProvider`] (which ignores the requested range and
+/// replays a queue), this resolves *against* the requested range:
+/// `resolve_ranges(range)` returns exactly the configured physical partitions
+/// whose EPK span overlaps `range`, mirroring real routing. This lets fan-out
+/// tests observe when the planner resolves partitions outside the requested
+/// scope — a plain replay mock cannot, because it returns the same partitions
+/// regardless of the range it is asked about.
+pub(crate) struct PhysicalTopologyProvider {
+    partitions: Vec<ResolvedRange>,
+}
+
+impl PhysicalTopologyProvider {
+    pub fn new(partitions: Vec<ResolvedRange>) -> Self {
+        Self { partitions }
+    }
+}
+
+impl TopologyProvider for PhysicalTopologyProvider {
+    fn resolve_ranges<'a>(
+        &'a mut self,
+        range: &'a FeedRange,
+        _refresh: PartitionRoutingRefresh,
+    ) -> BoxFuture<'a, crate::error::Result<Vec<ResolvedRange>>> {
+        let resolved: Vec<ResolvedRange> = self
+            .partitions
+            .iter()
+            .filter(|p| {
+                // Half-open overlap: [a, b) intersects [c, d) iff a < d && c < b.
+                p.range.min_inclusive() < range.max_exclusive()
+                    && range.min_inclusive() < p.range.max_exclusive()
+            })
+            .cloned()
+            .collect();
+        Box::pin(async move { Ok(resolved) })
+    }
+}
+
 // ── Test helpers ────────────────────────────────────────────────────────────
 
 /// Extracts the `CosmosResponse` from a `PageResult::Page`, panicking otherwise.

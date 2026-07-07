@@ -1008,11 +1008,15 @@ mod tests {
         // The reported bug: query plan spans the whole space `[, FF)` but the
         // caller scoped the query to `[00, 80)` via `FeedScope::range`. Only
         // the requested slice must be queried, not the neighbouring `[80, FF)`
-        // partition.
+        // partition. The physical topology actually contains both partitions,
+        // so a planner that ignores the target would resolve and emit a leaf
+        // for `[80, FF)` as well.
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = query_operation_with_target("00", "80");
-        let mut topology =
-            MockTopologyProvider::new(vec![Ok(vec![rr("00", "80", "pkrange-left")])]);
+        let mut topology = PhysicalTopologyProvider::new(vec![
+            rr("00", "80", "pkrange-left"),
+            rr("80", "FF", "pkrange-right"),
+        ]);
 
         let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
@@ -1060,14 +1064,65 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn drops_query_range_touching_target_boundary() {
+        // A query-plan range that only *touches* the target's exclusive upper
+        // bound (target `[, 40)`, range `[40, FF)`) shares no EPKs with the
+        // target and must be dropped, not queried. Exercises the exact
+        // boundary case where `intersect_feed_ranges` collapses to empty.
+        let plan = plan_with_ranges(vec![qr("", "40"), qr("40", "FF")]);
+        let op = query_operation_with_target("", "40");
+        let mut topology = PhysicalTopologyProvider::new(vec![
+            rr("", "40", "pkrange-A"),
+            rr("40", "FF", "pkrange-B"),
+        ]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+            .await
+            .unwrap();
+        assert_drain_requests(pipeline, &[("", "40", "pkrange-A")]);
+    }
+
+    #[tokio::test]
+    async fn logical_partition_target_is_not_clipped() {
+        // A logical-partition (prefix) target must NOT be clipped: its
+        // `[min, max)` bounds collapse to a single EPK, so intersecting the
+        // query-plan ranges against it would drop everything. The guard in
+        // `clip_to_target` leaves such ranges untouched, letting the query
+        // fan out across the resolved topology. This also documents that
+        // prefix-scoped over-scan is handled elsewhere (see follow-up).
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let target =
+            FeedRange::for_partition(PartitionKey::from("pk1"), &test_partition_key_definition());
+        assert!(target.is_logical_partition());
+        let op = CosmosOperation::query_items(test_container(), Some(target))
+            .with_body(br#"{"query":"SELECT * FROM c"}"#.to_vec());
+        let mut topology = PhysicalTopologyProvider::new(vec![
+            rr("00", "80", "pkrange-left"),
+            rr("80", "FF", "pkrange-right"),
+        ]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+            .await
+            .unwrap();
+        assert_drain_requests(
+            pipeline,
+            &[("00", "80", "pkrange-left"), ("80", "FF", "pkrange-right")],
+        );
+    }
+
+    #[tokio::test]
     async fn resume_restricts_fanout_to_target_range() {
         // Resuming a target-scoped query must also honour the target: the
         // `[80, FF)` partition lies outside `[00, 80)` and must not be queried
-        // even though the query plan spans `[, FF)`.
+        // even though the query plan spans `[, FF)` and that partition exists
+        // in the physical topology. An unclipped resume would emit a second,
+        // fresh-start leaf for `[80, FF)`.
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = query_operation_with_target("00", "80");
-        let mut topology =
-            MockTopologyProvider::new(vec![Ok(vec![rr("00", "80", "pkrange-left")])]);
+        let mut topology = PhysicalTopologyProvider::new(vec![
+            rr("00", "80", "pkrange-left"),
+            rr("80", "FF", "pkrange-right"),
+        ]);
 
         let resume = saved_drain(vec![("00", "80", saved_request(Some("server-token-xyz")))]);
 
