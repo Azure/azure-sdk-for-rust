@@ -2,6 +2,10 @@
 
 ## 0.32.0 (Unreleased)
 
+### Features Added
+
+- Added opt-in cross-region hedging for the two hot-path metadata reads (Collection Read and the first `PartitionKeyRange` ReadFeed page). When enabled and the account has at least two applicable regions, a slow or regionally-failing primary metadata read triggers a single hedged request to another region after a ~1.5s threshold; the primary always remains authoritative (a hedge can only make the read faster, never change its outcome). Enable via `CosmosClientBuilder::with_metadata_hedging_enabled` or the `AZURE_COSMOS_METADATA_HEDGING_ENABLED` environment variable (`true` force-enables, `false` is a hard kill-switch). Disabled by default. Ported from the .NET SDK ([Azure/azure-cosmos-dotnet-v3#5999](https://github.com/Azure/azure-cosmos-dotnet-v3/pull/5999)).
+
 ### Breaking Changes
 
 - Added `tokio` feature to `default` features.

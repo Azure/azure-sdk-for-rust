@@ -6,6 +6,7 @@ use crate::cosmos_request::CosmosRequest;
 use crate::operation_context::OperationType;
 use crate::pipeline::GatewayPipeline;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
+use crate::routing::metadata_hedging::MetadataHedgingStrategy;
 use crate::{
     models::ContainerProperties, resource_context::ResourceLink, CosmosResponse,
     ReadContainerOptions,
@@ -27,6 +28,7 @@ pub(crate) struct ContainerCache {
     container_link: ResourceLink,
     global_endpoint_manager: Arc<GlobalEndpointManager>,
     container_properties_cache: AsyncCache<String, ContainerProperties>,
+    hedging: Option<Arc<MetadataHedgingStrategy>>,
 }
 
 impl ContainerCache {
@@ -48,6 +50,19 @@ impl ContainerCache {
         container_link: ResourceLink,
         global_endpoint_manager: Arc<GlobalEndpointManager>,
     ) -> Self {
+        Self::new_with_hedging(pipeline, container_link, global_endpoint_manager, None)
+    }
+
+    /// Creates a `ContainerCache`, optionally wired with a shared metadata hedging
+    /// strategy. When `hedging` is `Some`, Collection Reads are routed through the
+    /// strategy (cross-region hedging on a slow/regionally-failing primary); when `None`,
+    /// they take the unchanged single-endpoint path.
+    pub(crate) fn new_with_hedging(
+        pipeline: Arc<GatewayPipeline>,
+        container_link: ResourceLink,
+        global_endpoint_manager: Arc<GlobalEndpointManager>,
+        hedging: Option<Arc<MetadataHedgingStrategy>>,
+    ) -> Self {
         // No TTL-based expiry is needed.
         let container_properties_cache = AsyncCache::new(None);
 
@@ -56,6 +71,7 @@ impl ContainerCache {
             container_link,
             global_endpoint_manager,
             container_properties_cache,
+            hedging,
         }
     }
 
@@ -139,19 +155,42 @@ impl ContainerCache {
         container_link: ResourceLink,
         _options: Option<ReadContainerOptions>,
     ) -> azure_core::Result<CosmosResponse<ContainerProperties>> {
-        let mut cosmos_request =
+        let cosmos_request =
             CosmosRequest::builder(OperationType::Read, container_link.clone()).build()?;
-
-        let location_endpoint = self
-            .global_endpoint_manager
-            .resolve_service_endpoint(&cosmos_request);
-        cosmos_request
-            .request_context
-            .route_to_location_endpoint(cosmos_request.resource_link.url(&location_endpoint));
 
         let ctx_owned = Context::default().with_value(container_link);
 
-        self.pipeline.send(cosmos_request, ctx_owned).await
+        match &self.hedging {
+            // Hedged path: the strategy resolves the primary endpoint, races a single
+            // cross-region hedge, and returns the authoritative winner.
+            Some(strategy) => {
+                let hedged = Box::pin(strategy.execute::<ContainerProperties>(
+                    cosmos_request,
+                    ctx_owned,
+                    &self.pipeline,
+                    &self.global_endpoint_manager,
+                ))
+                .await?;
+                tracing::debug!(
+                    hedge_fired = hedged.hedge_fired,
+                    hedge_won = hedged.hedge_won,
+                    winning_region = %hedged.winning_endpoint,
+                    "metadata hedging: collection read"
+                );
+                Ok(hedged.response)
+            }
+            // Unchanged single-endpoint path.
+            None => {
+                let mut cosmos_request = cosmos_request;
+                let location_endpoint = self
+                    .global_endpoint_manager
+                    .resolve_service_endpoint(&cosmos_request);
+                cosmos_request.request_context.route_to_location_endpoint(
+                    cosmos_request.resource_link.url(&location_endpoint),
+                );
+                self.pipeline.send(cosmos_request, ctx_owned).await
+            }
+        }
     }
 }
 

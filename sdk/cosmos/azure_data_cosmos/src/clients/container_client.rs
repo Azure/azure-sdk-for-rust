@@ -19,6 +19,7 @@ use crate::operation_context::OperationType;
 use crate::routing::container_cache::ContainerCache;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
+use crate::routing::metadata_hedging::MetadataHedgingStrategy;
 use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
 use azure_core::http::headers::AsHeaders;
 use azure_core::http::Context;
@@ -49,16 +50,26 @@ impl ContainerClient {
             .item(container_id);
         let items_link = link.feed(ResourceType::Documents);
 
-        let container_cache = Arc::from(ContainerCache::new(
+        // A single hedging strategy is shared by both metadata caches for this client.
+        // Constructed only when the client-wide opt-in (with env override) is enabled.
+        let hedging = if pipeline.metadata_hedging_enabled() {
+            Some(Arc::new(MetadataHedgingStrategy::new()))
+        } else {
+            None
+        };
+
+        let container_cache = Arc::from(ContainerCache::new_with_hedging(
             pipeline.clone(),
             link.clone(),
             global_endpoint_manager.clone(),
+            hedging.clone(),
         ));
-        let partition_key_range_cache = Arc::from(PartitionKeyRangeCache::new(
+        let partition_key_range_cache = Arc::from(PartitionKeyRangeCache::new_with_hedging(
             pipeline.clone(),
             database_link.clone(),
             container_cache.clone(),
             global_endpoint_manager.clone(),
+            hedging.clone(),
         ));
         let container_connection = Arc::from(ContainerConnection::new(
             pipeline.clone(),

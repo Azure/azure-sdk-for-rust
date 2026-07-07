@@ -11,6 +11,7 @@ use crate::routing::async_cache::AsyncCache;
 use crate::routing::collection_routing_map::CollectionRoutingMap;
 use crate::routing::container_cache::ContainerCache;
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
+use crate::routing::metadata_hedging::MetadataHedgingStrategy;
 use crate::routing::partition_key_range::PartitionKeyRange;
 use crate::routing::range::Range;
 use crate::routing::service_identity::ServiceIdentity;
@@ -21,6 +22,7 @@ use azure_core::Error;
 use serde::Deserialize;
 use std::sync::Arc;
 use tracing::info;
+use url::Url;
 
 const PAGE_SIZE_STRING: &str = "-1";
 
@@ -31,6 +33,7 @@ pub(crate) struct PartitionKeyRangeCache {
     container_cache: Arc<ContainerCache>,
     endpoint_manager: Arc<GlobalEndpointManager>,
     database_link: ResourceLink,
+    hedging: Option<Arc<MetadataHedgingStrategy>>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -46,6 +49,26 @@ impl PartitionKeyRangeCache {
         container_cache: Arc<ContainerCache>,
         endpoint_manager: Arc<GlobalEndpointManager>,
     ) -> Self {
+        Self::new_with_hedging(
+            pipeline,
+            database_link,
+            container_cache,
+            endpoint_manager,
+            None,
+        )
+    }
+
+    /// Creates a `PartitionKeyRangeCache`, optionally wired with a shared metadata
+    /// hedging strategy. When `hedging` is `Some`, only the FIRST PartitionKeyRange
+    /// ReadFeed page is hedged; if the hedge wins page 1, later pages are pinned to the
+    /// winning region to keep the change-feed continuation consistent.
+    pub fn new_with_hedging(
+        pipeline: Arc<GatewayPipeline>,
+        database_link: ResourceLink,
+        container_cache: Arc<ContainerCache>,
+        endpoint_manager: Arc<GlobalEndpointManager>,
+        hedging: Option<Arc<MetadataHedgingStrategy>>,
+    ) -> Self {
         // No TTL-based expiry is needed.
         let routing_map_cache = AsyncCache::new(None);
         Self {
@@ -54,6 +77,7 @@ impl PartitionKeyRangeCache {
             container_cache,
             endpoint_manager,
             database_link,
+            hedging,
         }
     }
 
@@ -176,6 +200,9 @@ impl PartitionKeyRangeCache {
         let mut change_feed_next_if_none_match = previous_routing_map
             .as_ref()
             .and_then(|m| m.change_feed_next_if_none_match.clone());
+        // When the hedge wins page 1, later pages are pinned to the winning region so the
+        // change-feed continuation (ETag) stays consistent.
+        let mut pinned_endpoint: Option<Url> = None;
 
         loop {
             iteration_count += 1;
@@ -195,13 +222,50 @@ impl PartitionKeyRangeCache {
                 .feed(ResourceType::Containers)
                 .item(collection_rid)
                 .feed(ResourceType::PartitionKeyRanges);
-            let response = self
-                .execute_partition_key_range_read_change_feed(
-                    collection_rid,
-                    pk_range_link,
-                    change_feed_next_if_none_match,
-                )
-                .await?;
+            let request = self.build_partition_key_range_request(
+                collection_rid,
+                pk_range_link.clone(),
+                change_feed_next_if_none_match.clone(),
+            )?;
+
+            let response = if iteration_count == 1 {
+                match &self.hedging {
+                    // Hedge the FIRST page only. If the hedge wins, pin later pages to it.
+                    Some(strategy) => {
+                        let ctx = Context::default().with_value(pk_range_link.clone());
+                        let hedged = Box::pin(strategy.execute::<()>(
+                            request,
+                            ctx,
+                            &self.pipeline,
+                            &self.endpoint_manager,
+                        ))
+                        .await?;
+                        tracing::debug!(
+                            hedge_fired = hedged.hedge_fired,
+                            hedge_won = hedged.hedge_won,
+                            winning_region = %hedged.winning_endpoint,
+                            "metadata hedging: partition key range first page"
+                        );
+                        if hedged.hedge_won {
+                            pinned_endpoint = Some(hedged.winning_endpoint);
+                        }
+                        hedged.response
+                    }
+                    None => {
+                        let endpoint = self.endpoint_manager.resolve_service_endpoint(&request);
+                        self.send_partition_key_range_request(request, pk_range_link, endpoint)
+                            .await?
+                    }
+                }
+            } else {
+                // Pages 2..N: pin to the winning region when a hedge won page 1, otherwise
+                // take the normal per-page resolution (free to fail over).
+                let endpoint = pinned_endpoint
+                    .clone()
+                    .unwrap_or_else(|| self.endpoint_manager.resolve_service_endpoint(&request));
+                self.send_partition_key_range_request(request, pk_range_link, endpoint)
+                    .await?
+            };
 
             let last_status_code = response.status();
             change_feed_next_if_none_match = response
@@ -251,13 +315,16 @@ impl PartitionKeyRangeCache {
         Ok(routing_map)
     }
 
-    pub async fn execute_partition_key_range_read_change_feed(
+    /// Builds a PartitionKeyRange ReadFeed request (incremental change feed) WITHOUT
+    /// resolving or routing an endpoint. Routing is applied by the caller or by the
+    /// hedging strategy.
+    fn build_partition_key_range_request(
         &self,
         collection_rid: &str,
         resource_link: ResourceLink,
         if_none_match: Option<String>,
-    ) -> azure_core::Result<CosmosResponse<()>> {
-        let builder = CosmosRequest::builder(OperationType::ReadFeed, resource_link.clone());
+    ) -> azure_core::Result<CosmosRequest> {
+        let builder = CosmosRequest::builder(OperationType::ReadFeed, resource_link);
         let mut cosmos_request = builder
             .resource_id(collection_rid.to_string())
             .header(
@@ -273,16 +340,36 @@ impl PartitionKeyRangeCache {
                 .insert(IF_NONE_MATCH.as_str().to_string(), value)
         }
 
-        let endpoint = self
-            .endpoint_manager
-            .resolve_service_endpoint(&cosmos_request);
+        Ok(cosmos_request)
+    }
 
+    /// Routes an already-built request to `endpoint` and sends it through the pipeline.
+    async fn send_partition_key_range_request(
+        &self,
+        mut request: CosmosRequest,
+        resource_link: ResourceLink,
+        endpoint: Url,
+    ) -> azure_core::Result<CosmosResponse<()>> {
         let pk_endpoint = resource_link.url(&endpoint);
-
-        cosmos_request.request_context.location_endpoint_to_route = Some(pk_endpoint);
+        request.request_context.location_endpoint_to_route = Some(pk_endpoint);
         let ctx_owned = Context::default().with_value(resource_link);
+        self.pipeline.send(request, ctx_owned).await
+    }
 
-        self.pipeline.send(cosmos_request, ctx_owned).await
+    pub async fn execute_partition_key_range_read_change_feed(
+        &self,
+        collection_rid: &str,
+        resource_link: ResourceLink,
+        if_none_match: Option<String>,
+    ) -> azure_core::Result<CosmosResponse<()>> {
+        let request = self.build_partition_key_range_request(
+            collection_rid,
+            resource_link.clone(),
+            if_none_match,
+        )?;
+        let endpoint = self.endpoint_manager.resolve_service_endpoint(&request);
+        self.send_partition_key_range_request(request, resource_link, endpoint)
+            .await
     }
 }
 

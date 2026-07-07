@@ -72,6 +72,12 @@ impl GatewayPipeline {
         link.url(&self.endpoint)
     }
 
+    /// Whether cross-region metadata hedging is enabled for this client (after
+    /// environment-variable resolution during client construction).
+    pub(crate) fn metadata_hedging_enabled(&self) -> bool {
+        self.options.metadata_hedging_enabled
+    }
+
     pub async fn send<T>(
         &self,
         mut cosmos_request: CosmosRequest,

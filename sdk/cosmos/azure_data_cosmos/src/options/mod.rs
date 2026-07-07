@@ -38,6 +38,10 @@ pub struct CosmosClientOptions {
     pub(crate) user_agent_suffix: Option<String>,
     pub(crate) application_region: Option<RegionName>,
     pub(crate) custom_headers: HashMap<HeaderName, HeaderValue>,
+    /// Whether cross-region hedging is enabled for metadata reads (Collection Read and
+    /// the first PartitionKeyRange ReadFeed page). Resolved during client construction:
+    /// the `AZURE_COSMOS_METADATA_HEDGING_ENABLED` environment variable overrides this.
+    pub(crate) metadata_hedging_enabled: bool,
 }
 
 impl CosmosClientOptions {
@@ -55,6 +59,20 @@ impl CosmosClientOptions {
         self.custom_headers = custom_headers;
         self
     }
+
+    /// Enables cross-region hedging for metadata reads (Collection Read and the first
+    /// PartitionKeyRange ReadFeed page).
+    ///
+    /// When enabled and the account has at least two applicable regions, a slow or
+    /// regionally-failing primary metadata read triggers a single hedged request to
+    /// another region after a fixed latency threshold. The primary always remains
+    /// authoritative. Overridden by the `AZURE_COSMOS_METADATA_HEDGING_ENABLED`
+    /// environment variable (`true` force-enables, `false` is a hard kill-switch).
+    pub fn with_metadata_hedging_enabled(mut self, enabled: bool) -> Self {
+        self.metadata_hedging_enabled = enabled;
+        self
+    }
+
     pub(crate) fn apply_headers(&self, headers: &mut Headers) {
         for (header_name, header_value) in &self.custom_headers {
             // Only insert if not already set — request-level headers take priority.

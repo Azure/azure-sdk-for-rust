@@ -115,6 +115,22 @@ impl CosmosClientBuilder {
         self
     }
 
+    /// Enables cross-region hedging for metadata reads (Collection Read and the first
+    /// PartitionKeyRange ReadFeed page).
+    ///
+    /// When enabled and the account has at least two applicable regions, a slow or
+    /// regionally-failing primary metadata read triggers a single hedged request to
+    /// another region after a fixed latency threshold (~1.5s). The primary always
+    /// remains authoritative — a hedge can only make the read faster, never change its
+    /// outcome.
+    ///
+    /// The `AZURE_COSMOS_METADATA_HEDGING_ENABLED` environment variable overrides this
+    /// value at client construction (`true` force-enables, `false` is a hard kill-switch).
+    pub fn with_metadata_hedging_enabled(mut self, enabled: bool) -> Self {
+        self.options.metadata_hedging_enabled = enabled;
+        self
+    }
+
     /// Configures fault injection for testing.
     ///
     /// Pass a [`FaultInjectionClientBuilder`](crate::fault_injection::FaultInjectionClientBuilder)
@@ -164,11 +180,21 @@ impl CosmosClientBuilder {
     ///
     /// Returns an error if the client cannot be constructed.
     pub async fn build(
-        self,
+        mut self,
         account: impl Into<CosmosAccountReference>,
     ) -> azure_core::Result<CosmosClient> {
         let (account_endpoint, credential) = account.into().into_parts();
         let endpoint = account_endpoint.into_url();
+
+        // Resolve the metadata-hedging opt-in: the AZURE_COSMOS_METADATA_HEDGING_ENABLED
+        // environment variable overrides the builder value (`true` force-enables, any
+        // other set value is a hard kill-switch).
+        if let Ok(raw) = std::env::var("AZURE_COSMOS_METADATA_HEDGING_ENABLED") {
+            self.options.metadata_hedging_enabled = matches!(
+                raw.trim().to_ascii_lowercase().as_str(),
+                "true" | "1" | "yes" | "on"
+            );
+        }
 
         // Derive fault_injection_enabled from builder state
         #[cfg(feature = "fault_injection")]
