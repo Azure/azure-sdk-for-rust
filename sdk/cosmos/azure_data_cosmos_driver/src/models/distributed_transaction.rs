@@ -427,6 +427,8 @@ pub enum DistributedTransactionResultBody {
 #[derive(Clone, Debug)]
 #[non_exhaustive]
 pub struct DistributedTransactionOperationResult {
+    /// Raw operation response object returned by the coordinator.
+    pub raw_response: serde_json::Map<String, serde_json::Value>,
     /// Zero-based request operation index.
     pub index: usize,
     /// HTTP status code for this operation.
@@ -472,6 +474,8 @@ pub struct DistributedTransactionResponse {
     pub operation_results: Vec<DistributedTransactionOperationResult>,
     /// Idempotency token used for write retries.
     pub idempotency_token: Uuid,
+    /// Parsed Cosmos response headers returned by the coordinator.
+    pub headers: CosmosResponseHeaders,
     /// Activity ID returned by the service, when present.
     pub activity_id: Option<ActivityId>,
     /// Total request charge returned by the service, when present.
@@ -626,6 +630,7 @@ impl DistributedTransactionResponse {
             sub_status_code,
             operation_results: std::mem::take(&mut ordered),
             idempotency_token,
+            headers: CosmosResponseHeaders::default(),
             activity_id: None,
             request_charge: None,
             retry_after_ms: None,
@@ -661,6 +666,7 @@ impl DistributedTransactionResponse {
     }
 
     pub(crate) fn with_response_headers(mut self, headers: &CosmosResponseHeaders) -> Self {
+        self.headers = headers.clone();
         self.activity_id = headers.activity_id.clone();
         self.request_charge = headers.request_charge;
         self.retry_after_ms = headers.retry_after_ms;
@@ -740,6 +746,7 @@ impl DistributedTransactionResponse {
     ) -> Self {
         let operation_results = (0..operation_count)
             .map(|index| DistributedTransactionOperationResult {
+                raw_response: raw_operation_response(index, status_code, sub_status_code),
                 index,
                 status_code,
                 sub_status_code,
@@ -756,6 +763,7 @@ impl DistributedTransactionResponse {
             sub_status_code,
             operation_results,
             idempotency_token,
+            headers: CosmosResponseHeaders::default(),
             activity_id: None,
             request_charge: None,
             retry_after_ms: None,
@@ -784,6 +792,7 @@ fn is_dtx_completed_status_code(status_code: azure_core::http::StatusCode) -> bo
 fn parse_operation_result(
     value: &serde_json::Value,
 ) -> Result<DistributedTransactionOperationResult, ()> {
+    let raw_response = value.as_object().cloned().ok_or(())?;
     let index = get_property(value, "index")
         .and_then(|v| v.as_u64())
         .and_then(|v| usize::try_from(v).ok())
@@ -822,6 +831,7 @@ fn parse_operation_result(
     };
 
     Ok(DistributedTransactionOperationResult {
+        raw_response,
         index,
         status_code,
         sub_status_code,
@@ -831,6 +841,26 @@ fn parse_operation_result(
         request_charge,
         resource_body,
     })
+}
+
+fn raw_operation_response(
+    index: usize,
+    status_code: azure_core::http::StatusCode,
+    sub_status_code: Option<crate::models::SubStatusCode>,
+) -> serde_json::Map<String, serde_json::Value> {
+    let mut raw_response = serde_json::Map::new();
+    raw_response.insert("index".to_owned(), serde_json::json!(index));
+    raw_response.insert(
+        "statusCode".to_owned(),
+        serde_json::json!(u16::from(status_code)),
+    );
+    if let Some(sub_status_code) = sub_status_code {
+        raw_response.insert(
+            "subStatusCode".to_owned(),
+            serde_json::json!(sub_status_code.value()),
+        );
+    }
+    raw_response
 }
 
 fn reorder_results(

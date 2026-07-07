@@ -270,10 +270,12 @@ turns a coordinator response into the client model. The order of operations is:
    (when the envelope was a success) or **pads** each operation with the envelope
    status (when the envelope was already a failure). This guarantees a success
    envelope is never returned with unparseable per-operation data.
-2. **Per-operation parse.** Each entry parses `index`, `statusCode`,
-   `subStatusCode`, `etag`, `sessionToken`, `partitionKeyRangeId`, `requestCharge`,
-   and `resourceBody`. Any parse error or a count mismatch triggers the same
-   fail-closed / padded fallback.
+2. **Per-operation parse.** Each entry is retained as a raw JSON object and also
+  parsed into typed accessors for `index`, `statusCode`, `subStatusCode`, `etag`,
+  `sessionToken`, `partitionKeyRangeId`, `requestCharge`, and `resourceBody`.
+  Successful write transaction operation responses do not carry `resourceBody`;
+  successful read transaction operation responses carry the read item body. Any
+  parse error or a count mismatch triggers the same fail-closed / padded fallback.
 3. **Reorder by `index`.** Results are placed into request order. A duplicate or
    out-of-range index is treated as malformed (fail-closed / padded).
 4. **`207` promotion (request order).** If the envelope is `207 MultiStatus`, the
@@ -281,8 +283,9 @@ turns a coordinator response into the client model. The order of operations is:
    in **request order** (i.e. after reordering), matching .NET (PR #5974). `424
    FailedDependency` is neutral and never promoted.
 
-The parsed response also carries `is_retriable`, `diagnostic_string`, and (attached
-by the driver) `activity_id`, `request_charge`, `retry_after_ms`, and `diagnostics`.
+The parsed response also carries the raw parsed response headers, `is_retriable`,
+`diagnostic_string`, and (attached by the driver) `activity_id`, `request_charge`,
+`retry_after_ms`, and `diagnostics`.
 
 ### 6.1 Aggregate status model (read transactions)
 

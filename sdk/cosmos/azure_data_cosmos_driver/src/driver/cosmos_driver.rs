@@ -2895,6 +2895,7 @@ mod tests {
             sub_status_code: None,
             operation_results: Vec::new(),
             idempotency_token: uuid::Uuid::nil(),
+            headers: Default::default(),
             activity_id: None,
             request_charge: None,
             retry_after_ms: None,

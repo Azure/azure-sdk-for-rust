@@ -9,40 +9,42 @@ use azure_core::http::StatusCode;
 use azure_core::Bytes;
 use azure_data_cosmos_driver::{
     models::{
-        ContainerReference, DistributedTransactionOperation, DistributedTransactionOperationKind,
-        DistributedTransactionRequest, DistributedTransactionResponse,
-        DistributedTransactionResultBody, DistributedTransactionTarget, DistributedTransactionType,
-        PartitionKey,
+        ContainerReference, CosmosResponseHeaders, DistributedTransactionOperation,
+        DistributedTransactionOperationKind, DistributedTransactionRequest,
+        DistributedTransactionResponse, DistributedTransactionResultBody,
+        DistributedTransactionTarget, DistributedTransactionType, PartitionKey,
     },
     options::OperationOptions,
     CosmosDriver,
 };
-use serde_json::json;
+use serde_json::{json, Value};
 use tokio::time::sleep;
 
 use super::dual_backend::DualBackend;
+use super::validation::{compare_headers, HeaderValidationSpec};
 
-#[derive(Debug, PartialEq, Eq)]
 struct DtxSnapshot {
     write_status: StatusCode,
     write_op_status: StatusCode,
+    write_headers: CosmosResponseHeaders,
+    write_op_responses: Vec<Value>,
     read_status: StatusCode,
     read_op_status: StatusCode,
-    read_id: String,
-    read_value: i64,
-    write_has_session_token: bool,
-    read_has_session_token: bool,
+    read_headers: CosmosResponseHeaders,
+    read_op_responses: Vec<Value>,
+    read_payload: Value,
 }
 
-#[derive(Debug, PartialEq, Eq)]
 struct MultiContainerDtxSnapshot {
     write_status: StatusCode,
     write_op_statuses: Vec<StatusCode>,
+    write_headers: CosmosResponseHeaders,
+    write_op_responses: Vec<Value>,
     read_status: StatusCode,
     read_op_statuses: Vec<StatusCode>,
-    read_values: Vec<i64>,
-    write_has_session_tokens: Vec<bool>,
-    read_has_session_tokens: Vec<bool>,
+    read_headers: CosmosResponseHeaders,
+    read_op_responses: Vec<Value>,
+    read_payloads: Vec<Value>,
 }
 
 struct DtxReadTarget<'a> {
@@ -152,10 +154,10 @@ async fn run_multi_container_create_read_dtx(
     validate_resolved_container(first_container, label)?;
     validate_resolved_container(second_container, label)?;
 
-    let first_id = format!("dtx-multi-a-{label}");
-    let first_pk = format!("dtx-multi-pk-a-{label}");
-    let second_id = format!("dtx-multi-b-{label}");
-    let second_pk = format!("dtx-multi-pk-b-{label}");
+    let first_id = "dtx-multi-a".to_owned();
+    let first_pk = "dtx-multi-pk-a".to_owned();
+    let second_id = "dtx-multi-b".to_owned();
+    let second_pk = "dtx-multi-pk-b".to_owned();
     let first_value = 101_i64;
     let second_value = 202_i64;
 
@@ -207,32 +209,28 @@ async fn run_multi_container_create_read_dtx(
             .iter()
             .map(|result| result.status_code)
             .collect(),
+        write_headers: write_response.headers.clone(),
+        write_op_responses: operation_response_snapshots(
+            &write_response,
+            label,
+            "multi-container write",
+        )?,
         read_status: read_response.status_code,
         read_op_statuses: read_response
             .operation_results
             .iter()
             .map(|result| result.status_code)
             .collect(),
-        read_values: vec![
-            operation_resource_body_as_json(&read_response, label, 0)?
-                .get("value")
-                .and_then(|value| value.as_i64())
-                .unwrap_or_default(),
-            operation_resource_body_as_json(&read_response, label, 1)?
-                .get("value")
-                .and_then(|value| value.as_i64())
-                .unwrap_or_default(),
+        read_headers: read_response.headers.clone(),
+        read_op_responses: operation_response_snapshots(
+            &read_response,
+            label,
+            "multi-container read",
+        )?,
+        read_payloads: vec![
+            operation_resource_payload(&read_response, label, 0, "multi-container read")?,
+            operation_resource_payload(&read_response, label, 1, "multi-container read")?,
         ],
-        write_has_session_tokens: write_response
-            .operation_results
-            .iter()
-            .map(|result| result.session_token.is_some())
-            .collect(),
-        read_has_session_tokens: read_response
-            .operation_results
-            .iter()
-            .map(|result| result.session_token.is_some())
-            .collect(),
     })
 }
 
@@ -333,8 +331,8 @@ async fn run_create_read_dtx(
 ) -> Result<DtxSnapshot, Box<dyn Error>> {
     validate_resolved_container(container, label)?;
 
-    let id = format!("dtx-item-{label}");
-    let pk = format!("dtx-pk-{label}");
+    let id = "dtx-item".to_owned();
+    let pk = "dtx-pk".to_owned();
     let value = 42_i64;
     let item = json!({"id": id, "pk": pk, "value": value});
 
@@ -375,24 +373,18 @@ async fn run_create_read_dtx(
         .operation_results
         .first()
         .ok_or("read DTX response did not contain an operation result")?;
-    let resource = resource_body_as_json(&read_response, label)?;
+    let resource = resource_body_as_json(&read_response, label, "read")?;
 
     Ok(DtxSnapshot {
         write_status: write_response.status_code,
         write_op_status: write_op.status_code,
+        write_headers: write_response.headers.clone(),
+        write_op_responses: operation_response_snapshots(&write_response, label, "write")?,
         read_status: read_response.status_code,
         read_op_status: read_op.status_code,
-        read_id: resource
-            .get("id")
-            .and_then(|value| value.as_str())
-            .unwrap_or_default()
-            .to_owned(),
-        read_value: resource
-            .get("value")
-            .and_then(|value| value.as_i64())
-            .unwrap_or_default(),
-        write_has_session_token: write_op.session_token.is_some(),
-        read_has_session_token: read_op.session_token.is_some(),
+        read_headers: read_response.headers.clone(),
+        read_op_responses: operation_response_snapshots(&read_response, label, "read")?,
+        read_payload: user_payload(&resource, label, "read", 0)?,
     })
 }
 
@@ -427,43 +419,198 @@ fn ensure_dtx_success(
 fn resource_body_as_json(
     response: &DistributedTransactionResponse,
     label: &str,
+    operation: &str,
 ) -> Result<serde_json::Value, Box<dyn Error>> {
-    let read_op = response
+    let operation_result = response
         .operation_results
         .first()
         .ok_or("response did not contain an operation result")?;
-    operation_resource_body(read_op, response, label)
+    operation_resource_body(operation_result, response, label, operation)
 }
 
 fn operation_resource_body_as_json(
     response: &DistributedTransactionResponse,
     label: &str,
     index: usize,
+    operation: &str,
 ) -> Result<serde_json::Value, Box<dyn Error>> {
-    let read_op = response
+    let operation_result = response
         .operation_results
         .get(index)
         .ok_or("response did not contain the requested operation result")?;
-    operation_resource_body(read_op, response, label)
+    operation_resource_body(operation_result, response, label, operation)
+}
+
+fn operation_response_snapshots(
+    response: &DistributedTransactionResponse,
+    label: &str,
+    operation: &str,
+) -> Result<Vec<Value>, Box<dyn Error>> {
+    response
+        .operation_results
+        .iter()
+        .enumerate()
+        .map(|(index, result)| operation_response_snapshot(result, label, operation, index))
+        .collect()
+}
+
+fn operation_response_snapshot(
+    result: &azure_data_cosmos_driver::models::DistributedTransactionOperationResult,
+    label: &str,
+    operation: &str,
+    index: usize,
+) -> Result<Value, Box<dyn Error>> {
+    let mut object = result.raw_response.clone();
+
+    normalize_optional_string_field(&mut object, "Etag", label, operation, index)?;
+    normalize_optional_string_field(&mut object, "etag", label, operation, index)?;
+    normalize_optional_string_field(&mut object, "eTag", label, operation, index)?;
+    normalize_optional_string_field(&mut object, "sessionToken", label, operation, index)?;
+    normalize_optional_string_field(&mut object, "partitionKeyRangeId", label, operation, index)?;
+    normalize_optional_non_negative_number(&mut object, "requestCharge", label, operation, index)?;
+    normalize_optional_non_negative_number(&mut object, "localLsn", label, operation, index)?;
+
+    if let Some(resource_body) = object.get("resourceBody") {
+        let payload = user_payload(resource_body, label, operation, index)?;
+        object.insert("resourceBody".to_owned(), payload);
+    }
+
+    Ok(Value::Object(object))
+}
+
+fn normalize_optional_string_field(
+    object: &mut serde_json::Map<String, Value>,
+    field: &str,
+    label: &str,
+    operation: &str,
+    index: usize,
+) -> Result<(), Box<dyn Error>> {
+    let Some(value) = object.get(field) else {
+        return Ok(());
+    };
+    if !value.is_string() {
+        return Err(format!(
+            "{label} {operation} DTX operation {index} field '{field}' was not a string: {value}"
+        )
+        .into());
+    }
+    object.insert(field.to_owned(), Value::String("<present>".to_owned()));
+    Ok(())
+}
+
+fn normalize_optional_non_negative_number(
+    object: &mut serde_json::Map<String, Value>,
+    field: &str,
+    label: &str,
+    operation: &str,
+    index: usize,
+) -> Result<(), Box<dyn Error>> {
+    let Some(value) = object.get(field) else {
+        return Ok(());
+    };
+    let Some(number) = value.as_f64() else {
+        return Err(format!(
+            "{label} {operation} DTX operation {index} field '{field}' was not a number: {value}"
+        )
+        .into());
+    };
+    if number < 0.0 {
+        return Err(format!(
+            "{label} {operation} DTX operation {index} field '{field}' was negative: {value}"
+        )
+        .into());
+    }
+    object.insert(field.to_owned(), Value::String("<non-negative>".to_owned()));
+    Ok(())
+}
+
+fn operation_resource_payload(
+    response: &DistributedTransactionResponse,
+    label: &str,
+    index: usize,
+    operation: &str,
+) -> Result<Value, Box<dyn Error>> {
+    let body = operation_resource_body_as_json(response, label, index, operation)?;
+    user_payload(&body, label, operation, index)
 }
 
 fn operation_resource_body(
-    read_op: &azure_data_cosmos_driver::models::DistributedTransactionOperationResult,
+    operation_result: &azure_data_cosmos_driver::models::DistributedTransactionOperationResult,
     response: &DistributedTransactionResponse,
     label: &str,
+    operation: &str,
 ) -> Result<serde_json::Value, Box<dyn Error>> {
-    match &read_op.resource_body {
+    match &operation_result.resource_body {
         DistributedTransactionResultBody::Bytes(bytes) => Ok(serde_json::from_slice(bytes)?),
         DistributedTransactionResultBody::None => Err(format!(
-            "{label} read DTX response did not contain a resource body: envelope={} op={} diagnostic={:?} error={:?}",
-            response.status_code, read_op.status_code, response.diagnostic_string, response.error_message
+            "{label} {operation} DTX response did not contain a resource body: envelope={} op={} diagnostic={:?} error={:?}",
+            response.status_code, operation_result.status_code, response.diagnostic_string, response.error_message
         )
         .into()),
         _ => Err(format!(
-            "{label} read DTX response used an unsupported resource body variant"
+            "{label} {operation} DTX response used an unsupported resource body variant"
         )
         .into()),
     }
+}
+
+fn user_payload(
+    body: &Value,
+    label: &str,
+    operation: &str,
+    index: usize,
+) -> Result<Value, Box<dyn Error>> {
+    let object = body.as_object().ok_or_else(|| {
+        format!(
+            "{label} {operation} DTX operation {index} response body was not a JSON object: {body}"
+        )
+    })?;
+
+    let user_fields = object
+        .iter()
+        .filter(|(key, _)| !is_system_property(key))
+        .map(|(key, value)| (key.clone(), value.clone()))
+        .collect();
+    Ok(Value::Object(user_fields))
+}
+
+fn is_system_property(key: &str) -> bool {
+    matches!(key, "_rid" | "_self" | "_etag" | "_attachments" | "_ts")
+}
+
+fn compare_dtx_envelope_headers(
+    _context: &str,
+    real: &CosmosResponseHeaders,
+    emulator: &CosmosResponseHeaders,
+) -> Result<(), Box<dyn Error>> {
+    compare_headers(real, emulator, &HeaderValidationSpec::for_point_operation());
+    Ok(())
+}
+
+fn compare_dtx_operation_responses(
+    context: &str,
+    real: &[Value],
+    emulator: &[Value],
+) -> Result<(), Box<dyn Error>> {
+    if real.len() != emulator.len() {
+        return Err(format!(
+            "{context} operation response count mismatch: real={} emulator={}",
+            real.len(),
+            emulator.len()
+        )
+        .into());
+    }
+
+    for (index, (real, emulator)) in real.iter().zip(emulator).enumerate() {
+        if real != emulator {
+            return Err(format!(
+                "{context} operation {index} response mismatch: real={real:?} emulator={emulator:?}"
+            )
+            .into());
+        }
+    }
+
+    Ok(())
 }
 
 fn compare_multi_container_snapshots(
@@ -484,6 +631,16 @@ fn compare_multi_container_snapshots(
         )
         .into());
     }
+    compare_dtx_envelope_headers(
+        "multi-container write",
+        &real.write_headers,
+        &emulator.write_headers,
+    )?;
+    compare_dtx_operation_responses(
+        "multi-container write",
+        &real.write_op_responses,
+        &emulator.write_op_responses,
+    )?;
     if real.read_status != emulator.read_status {
         return Err(format!(
             "multi-container read envelope status mismatch: real={} emulator={}",
@@ -498,24 +655,20 @@ fn compare_multi_container_snapshots(
         )
         .into());
     }
-    if real.read_values != emulator.read_values {
+    compare_dtx_envelope_headers(
+        "multi-container read",
+        &real.read_headers,
+        &emulator.read_headers,
+    )?;
+    compare_dtx_operation_responses(
+        "multi-container read",
+        &real.read_op_responses,
+        &emulator.read_op_responses,
+    )?;
+    if real.read_payloads != emulator.read_payloads {
         return Err(format!(
-            "multi-container read values mismatch: real={:?} emulator={:?}",
-            real.read_values, emulator.read_values
-        )
-        .into());
-    }
-    if real.write_has_session_tokens != emulator.write_has_session_tokens {
-        return Err(format!(
-            "multi-container write session-token mismatch: real={:?} emulator={:?}",
-            real.write_has_session_tokens, emulator.write_has_session_tokens
-        )
-        .into());
-    }
-    if real.read_has_session_tokens != emulator.read_has_session_tokens {
-        return Err(format!(
-            "multi-container read session-token mismatch: real={:?} emulator={:?}",
-            real.read_has_session_tokens, emulator.read_has_session_tokens
+            "multi-container read payload mismatch: real={:?} emulator={:?}",
+            real.read_payloads, emulator.read_payloads
         )
         .into());
     }
@@ -537,6 +690,12 @@ fn compare_snapshots(real: &DtxSnapshot, emulator: &DtxSnapshot) -> Result<(), B
         )
         .into());
     }
+    compare_dtx_envelope_headers("write", &real.write_headers, &emulator.write_headers)?;
+    compare_dtx_operation_responses(
+        "write",
+        &real.write_op_responses,
+        &emulator.write_op_responses,
+    )?;
     if real.read_status != emulator.read_status {
         return Err(format!(
             "read envelope status mismatch: real={} emulator={}",
@@ -551,22 +710,14 @@ fn compare_snapshots(real: &DtxSnapshot, emulator: &DtxSnapshot) -> Result<(), B
         )
         .into());
     }
-    if real.read_value != emulator.read_value {
+    compare_dtx_envelope_headers("read", &real.read_headers, &emulator.read_headers)?;
+    compare_dtx_operation_responses("read", &real.read_op_responses, &emulator.read_op_responses)?;
+    if real.read_payload != emulator.read_payload {
         return Err(format!(
-            "read value mismatch: real={} emulator={}",
-            real.read_value, emulator.read_value
+            "read payload mismatch: real={:?} emulator={:?}",
+            real.read_payload, emulator.read_payload
         )
         .into());
-    }
-    if !real.write_has_session_token || !emulator.write_has_session_token {
-        return Err(
-            "write DTX response must include per-operation session token on both backends".into(),
-        );
-    }
-    if !real.read_has_session_token || !emulator.read_has_session_token {
-        return Err(
-            "read DTX response must include per-operation session token on both backends".into(),
-        );
     }
     Ok(())
 }

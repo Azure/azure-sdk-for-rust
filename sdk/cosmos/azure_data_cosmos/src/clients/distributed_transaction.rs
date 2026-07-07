@@ -16,7 +16,7 @@ use serde::{de::DeserializeOwned, Serialize};
 
 use crate::clients::{ClientContext, ContainerClient};
 use crate::diagnostics::DiagnosticsContext;
-use crate::models::{PartitionKey, PatchInstructions};
+use crate::models::{PartitionKey, PatchInstructions, ResponseHeaders};
 use crate::options::{Precondition, SessionToken};
 
 /// Options for a single operation inside a distributed transaction.
@@ -202,7 +202,7 @@ impl DistributedWriteTransaction {
             .driver
             .execute_distributed_transaction(request, Default::default())
             .await?;
-        Ok(DistributedTransactionResponse { inner: response })
+        Ok(DistributedTransactionResponse::from_driver(response))
     }
 }
 
@@ -250,7 +250,7 @@ impl DistributedReadTransaction {
             .driver
             .execute_distributed_transaction(request, Default::default())
             .await?;
-        Ok(DistributedTransactionResponse { inner: response })
+        Ok(DistributedTransactionResponse::from_driver(response))
     }
 }
 
@@ -320,9 +320,15 @@ fn patch_operation_with_options(
 #[derive(Clone, Debug)]
 pub struct DistributedTransactionResponse {
     inner: driver_models::DistributedTransactionResponse,
+    headers: ResponseHeaders,
 }
 
 impl DistributedTransactionResponse {
+    fn from_driver(inner: driver_models::DistributedTransactionResponse) -> Self {
+        let headers = inner.headers.clone().into();
+        Self { inner, headers }
+    }
+
     /// Returns the overall transaction status.
     ///
     /// Unlike a transactional batch — which surfaces a raw `207 MultiStatus` and
@@ -373,6 +379,11 @@ impl DistributedTransactionResponse {
             .operation_results
             .get(index)
             .map(|inner| DistributedTransactionOperationResult { inner })
+    }
+
+    /// Returns the response headers.
+    pub fn headers(&self) -> &ResponseHeaders {
+        &self.headers
     }
 
     /// Returns the coordinator diagnostic string, when present.

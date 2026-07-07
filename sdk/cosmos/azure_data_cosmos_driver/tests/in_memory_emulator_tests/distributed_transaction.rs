@@ -40,6 +40,7 @@ async fn dtx_create_then_read() {
     assert_eq!(results[0]["index"], 0);
     assert_eq!(results[0]["statusCode"], 201);
     assert!(results[0]["sessionToken"].as_str().is_some());
+    assert!(results[0].get("resourceBody").is_none());
 
     let read_body = serde_json::json!({
         "operations": [{
@@ -224,7 +225,22 @@ async fn dtx_patch_with_filter_predicate_updates_item() {
     assert_eq!(status, StatusCode::Ok);
     let result = &body["operationResponses"][0];
     assert_eq!(result["statusCode"], 200);
-    assert_eq!(result["resourceBody"]["status"], "done");
+    assert!(result.get("resourceBody").is_none());
+
+    let response = ctx
+        .emulator
+        .execute_request(&read_item_request(
+            &ctx.gateway_url,
+            "testdb",
+            "testcoll",
+            "patch-target",
+            r#"["pk1"]"#,
+        ))
+        .await
+        .unwrap();
+    let (status, _, body) = collect_response(response).await;
+    assert_eq!(status, StatusCode::Ok);
+    assert_eq!(body["status"], "done");
 }
 
 #[tokio::test]

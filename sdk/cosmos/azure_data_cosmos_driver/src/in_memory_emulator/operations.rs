@@ -340,6 +340,7 @@ pub(crate) async fn handle_operation(
         etag: Option<String>,
         session_token: Option<String>,
         pk_range_id: Option<String>,
+        local_lsn: Option<u64>,
         request_charge: f64,
         resource_body: Option<serde_json::Value>,
     }
@@ -358,6 +359,7 @@ pub(crate) async fn handle_operation(
                     etag: None,
                     session_token: None,
                     pk_range_id: None,
+                    local_lsn: None,
                     request_charge: 1.0,
                     resource_body: None,
                 }
@@ -374,6 +376,9 @@ pub(crate) async fn handle_operation(
         let pk_range_id = headers
             .get_optional_str(&PARTITION_KEY_RANGE_ID)
             .map(str::to_owned);
+        let local_lsn = headers
+            .get_optional_str(&LOCAL_LSN)
+            .and_then(|value| value.parse::<u64>().ok());
         let request_charge = headers
             .get_optional_str(&REQUEST_CHARGE)
             .and_then(|value| value.parse::<f64>().ok())
@@ -393,6 +398,7 @@ pub(crate) async fn handle_operation(
             etag,
             session_token,
             pk_range_id,
+            local_lsn,
             request_charge,
             resource_body,
         }
@@ -409,6 +415,7 @@ pub(crate) async fn handle_operation(
         etag: Option<&str>,
         session_token: Option<&str>,
         pk_range_id: Option<&str>,
+        local_lsn: Option<u64>,
         request_charge: f64,
         resource_body: Option<&serde_json::Value>,
     ) -> serde_json::Value {
@@ -418,11 +425,13 @@ pub(crate) async fn handle_operation(
             "statusCode".to_owned(),
             serde_json::json!(u16::from(status)),
         );
-        if let Some(sub_status) = sub_status {
-            result.insert("subStatusCode".to_owned(), serde_json::json!(sub_status));
-        }
+        result.insert(
+            "subStatusCode".to_owned(),
+            serde_json::json!(sub_status.unwrap_or_default()),
+        );
+        result.insert("isRetriable".to_owned(), serde_json::json!(false));
         if let Some(etag) = etag {
-            result.insert("Etag".to_owned(), serde_json::json!(etag));
+            result.insert("eTag".to_owned(), serde_json::json!(etag));
         }
         if let Some(session_token) = session_token {
             result.insert("sessionToken".to_owned(), serde_json::json!(session_token));
@@ -432,6 +441,9 @@ pub(crate) async fn handle_operation(
                 "partitionKeyRangeId".to_owned(),
                 serde_json::json!(pk_range_id),
             );
+        }
+        if let Some(local_lsn) = local_lsn {
+            result.insert("localLsn".to_owned(), serde_json::json!(local_lsn));
         }
         result.insert(
             "requestCharge".to_owned(),
@@ -1294,8 +1306,7 @@ pub(crate) async fn handle_operation(
         }
     }
 
-    /// Builds the 200 envelope for a fully-committed write transaction. Every
-    /// operation succeeded, so per-operation results are returned verbatim.
+    /// Builds the 200 envelope for a fully-committed write transaction.
     #[cfg(feature = "preview_dtx")]
     fn dtx_commit_response(outcomes: &[DtxOpOutcome], start: Instant) -> AsyncRawResponse {
         let mut total_charge = 0.0;
@@ -1311,15 +1322,16 @@ pub(crate) async fn handle_operation(
                     outcome.etag.as_deref(),
                     outcome.session_token.as_deref(),
                     outcome.pk_range_id.as_deref(),
+                    outcome.local_lsn,
                     outcome.request_charge,
-                    outcome.resource_body.as_ref(),
+                    None,
                 )
             })
             .collect();
         let response_body = serde_json::json!({
             "operationResponses": operation_responses,
         });
-        ResponseBuilder::new(StatusCode::Ok, start)
+        dtx_response_builder(StatusCode::Ok, start)
             .with_request_charge(total_charge)
             .with_json_body(&response_body)
             .build()
@@ -1350,6 +1362,7 @@ pub(crate) async fn handle_operation(
                         None,
                         None,
                         None,
+                        None,
                         1.0,
                         None,
                     )
@@ -1358,6 +1371,7 @@ pub(crate) async fn handle_operation(
                     index,
                     StatusCode::from(DTX_ROLLED_BACK_STATUS),
                     Some(DTX_ROLLED_BACK_SUBSTATUS),
+                    None,
                     None,
                     None,
                     None,
@@ -1372,7 +1386,7 @@ pub(crate) async fn handle_operation(
                 .unwrap_or_else(|| "distributed transaction aborted".to_owned()),
             "operationResponses": operation_responses,
         });
-        ResponseBuilder::new(StatusCode::from(452_u16), start)
+        dtx_response_builder(StatusCode::from(452_u16), start)
             .with_request_charge(1.0)
             .with_json_body(&response_body)
             .build()
@@ -1399,6 +1413,7 @@ pub(crate) async fn handle_operation(
                         None,
                         None,
                         None,
+                        None,
                         1.0,
                         None,
                     )
@@ -1407,6 +1422,7 @@ pub(crate) async fn handle_operation(
                         index,
                         StatusCode::from(DTX_ROLLED_BACK_STATUS),
                         Some(DTX_ROLLED_BACK_SUBSTATUS),
+                        None,
                         None,
                         None,
                         None,
@@ -1422,7 +1438,7 @@ pub(crate) async fn handle_operation(
                 "distributed transaction rolled back after a participant failed to commit",
             "operationResponses": operation_responses,
         });
-        ResponseBuilder::new(StatusCode::from(452_u16), start)
+        dtx_response_builder(StatusCode::from(452_u16), start)
             .with_request_charge(1.0)
             .with_json_body(&response_body)
             .build()
@@ -1449,6 +1465,7 @@ pub(crate) async fn handle_operation(
                     outcome.etag.as_deref(),
                     outcome.session_token.as_deref(),
                     outcome.pk_range_id.as_deref(),
+                    None,
                     outcome.request_charge,
                     outcome.resource_body.as_ref(),
                 )
@@ -1458,10 +1475,23 @@ pub(crate) async fn handle_operation(
             "isRetriable": u16::from(envelope) == 449,
             "operationResponses": operation_responses,
         });
-        ResponseBuilder::new(envelope, start)
+        dtx_response_builder(envelope, start)
             .with_request_charge(total_charge)
             .with_json_body(&response_body)
             .build()
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    fn dtx_response_builder(status: StatusCode, start: Instant) -> ResponseBuilder {
+        ResponseBuilder::new(status, start)
+            .without_header(GLOBAL_COMMITTED_LSN.clone())
+            .without_header(QUORUM_ACKED_LSN.clone())
+            .without_header(QUORUM_ACKED_LOCAL_LSN.clone())
+            .without_header(LOCAL_LSN.clone())
+            .without_header(NUMBER_OF_READ_REGIONS.clone())
+            .without_header(LAST_STATE_CHANGE_UTC.clone())
+            .without_header(RESOURCE_QUOTA.clone())
+            .without_header(RESOURCE_USAGE.clone())
     }
     finalize_response(store, response, parsed.activity_id.as_deref()).await
 }
