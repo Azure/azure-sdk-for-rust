@@ -33,12 +33,29 @@ pub enum DistributedTransactionType {
 }
 
 impl DistributedTransactionType {
-    /// Returns the coordinator wire string for this transaction type.
+    /// Returns the string representation of this transaction type.
+    ///
+    /// This is a diagnostic/display label that mirrors the variant name. It is
+    /// **not** the coordinator wire value: the `x-ms-cosmos-operation-type`
+    /// header sends `CommitDistributedTransaction` for [`Self::Write`] and
+    /// `Read` for [`Self::Read`] (built in `execute_distributed_transaction`).
     pub fn as_str(self) -> &'static str {
         match self {
             Self::Write => "Write",
             Self::Read => "Read",
         }
+    }
+}
+
+impl std::fmt::Display for DistributedTransactionType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl AsRef<str> for DistributedTransactionType {
+    fn as_ref(&self) -> &str {
+        self.as_str()
     }
 }
 
@@ -485,16 +502,24 @@ impl DistributedTransactionResponse {
         let mut diagnostic_string = None;
 
         if body.is_empty() {
-            return if is_success_envelope {
-                Self::fail_closed(
-                    operation_count,
-                    idempotency_token,
-                    is_retriable,
-                    diagnostic_string,
-                    "server response deserialization failure",
-                )
-            } else {
-                Self::padded(
+            return Self::fallback(
+                is_success_envelope,
+                status_code,
+                sub_status_code,
+                operation_count,
+                idempotency_token,
+                is_retriable,
+                diagnostic_string,
+                None,
+                "server response deserialization failure",
+            );
+        }
+
+        let root: serde_json::Value = match serde_json::from_slice(body) {
+            Ok(root) => root,
+            Err(_) => {
+                return Self::fallback(
+                    is_success_envelope,
                     status_code,
                     sub_status_code,
                     operation_count,
@@ -502,32 +527,8 @@ impl DistributedTransactionResponse {
                     is_retriable,
                     diagnostic_string,
                     None,
-                )
-            };
-        }
-
-        let root: serde_json::Value = match serde_json::from_slice(body) {
-            Ok(root) => root,
-            Err(_) => {
-                return if is_success_envelope {
-                    Self::fail_closed(
-                        operation_count,
-                        idempotency_token,
-                        is_retriable,
-                        diagnostic_string,
-                        "server response deserialization failure",
-                    )
-                } else {
-                    Self::padded(
-                        status_code,
-                        sub_status_code,
-                        operation_count,
-                        idempotency_token,
-                        is_retriable,
-                        diagnostic_string,
-                        None,
-                    )
-                };
+                    "server response deserialization failure",
+                );
             }
         };
 
@@ -551,25 +552,17 @@ impl DistributedTransactionResponse {
         let operation_responses =
             get_property(&root, "operationResponses").and_then(|v| v.as_array());
         let Some(operation_responses) = operation_responses else {
-            return if is_success_envelope {
-                Self::fail_closed(
-                    operation_count,
-                    idempotency_token,
-                    is_retriable,
-                    diagnostic_string,
-                    "invalid server response",
-                )
-            } else {
-                Self::padded(
-                    status_code,
-                    sub_status_code,
-                    operation_count,
-                    idempotency_token,
-                    is_retriable,
-                    diagnostic_string,
-                    service_error_message,
-                )
-            };
+            return Self::fallback(
+                is_success_envelope,
+                status_code,
+                sub_status_code,
+                operation_count,
+                idempotency_token,
+                is_retriable,
+                diagnostic_string,
+                service_error_message,
+                "invalid server response",
+            );
         };
 
         let mut parsed_results = Vec::with_capacity(operation_responses.len());
@@ -577,71 +570,47 @@ impl DistributedTransactionResponse {
             match parse_operation_result(value) {
                 Ok(result) => parsed_results.push(result),
                 Err(()) => {
-                    return if is_success_envelope {
-                        Self::fail_closed(
-                            operation_count,
-                            idempotency_token,
-                            is_retriable,
-                            diagnostic_string,
-                            "server response deserialization failure",
-                        )
-                    } else {
-                        Self::padded(
-                            status_code,
-                            sub_status_code,
-                            operation_count,
-                            idempotency_token,
-                            is_retriable,
-                            diagnostic_string,
-                            service_error_message,
-                        )
-                    };
+                    return Self::fallback(
+                        is_success_envelope,
+                        status_code,
+                        sub_status_code,
+                        operation_count,
+                        idempotency_token,
+                        is_retriable,
+                        diagnostic_string,
+                        service_error_message,
+                        "server response deserialization failure",
+                    );
                 }
             }
         }
 
         if parsed_results.len() != operation_count {
-            return if is_success_envelope {
-                Self::fail_closed(
-                    operation_count,
-                    idempotency_token,
-                    is_retriable,
-                    diagnostic_string,
-                    "invalid server response",
-                )
-            } else {
-                Self::padded(
-                    status_code,
-                    sub_status_code,
-                    operation_count,
-                    idempotency_token,
-                    is_retriable,
-                    diagnostic_string,
-                    service_error_message,
-                )
-            };
+            return Self::fallback(
+                is_success_envelope,
+                status_code,
+                sub_status_code,
+                operation_count,
+                idempotency_token,
+                is_retriable,
+                diagnostic_string,
+                service_error_message,
+                "invalid server response",
+            );
         }
 
         let Some(mut ordered) = reorder_results(parsed_results, operation_count) else {
-            return if is_success_envelope {
-                Self::fail_closed(
-                    operation_count,
-                    idempotency_token,
-                    is_retriable,
-                    diagnostic_string,
-                    "server response deserialization failure",
-                )
-            } else {
-                Self::padded(
-                    status_code,
-                    sub_status_code,
-                    operation_count,
-                    idempotency_token,
-                    is_retriable,
-                    diagnostic_string,
-                    service_error_message,
-                )
-            };
+            return Self::fallback(
+                is_success_envelope,
+                status_code,
+                sub_status_code,
+                operation_count,
+                idempotency_token,
+                is_retriable,
+                diagnostic_string,
+                service_error_message,
+                "server response deserialization failure",
+            );
         };
 
         // Promote the MultiStatus envelope AFTER reordering so the promoted
@@ -701,6 +670,45 @@ impl DistributedTransactionResponse {
     pub(crate) fn with_diagnostics(mut self, diagnostics: Arc<DiagnosticsContext>) -> Self {
         self.diagnostics = Some(diagnostics);
         self
+    }
+
+    /// Builds a fail-closed / padded response for an uninterpretable coordinator body.
+    ///
+    /// On a completed-status envelope (`is_success_envelope`) an unparseable body
+    /// is treated as a hard failure and synthesized as `500 InternalServerError`
+    /// (`fail_closed`); on a non-success envelope the results are padded with the
+    /// envelope status so the caller still sees one result per operation.
+    #[allow(clippy::too_many_arguments)]
+    fn fallback(
+        is_success_envelope: bool,
+        status_code: azure_core::http::StatusCode,
+        sub_status_code: Option<crate::models::SubStatusCode>,
+        operation_count: usize,
+        idempotency_token: Uuid,
+        is_retriable: bool,
+        diagnostic_string: Option<String>,
+        service_error_message: Option<String>,
+        reason: &'static str,
+    ) -> Self {
+        if is_success_envelope {
+            Self::fail_closed(
+                operation_count,
+                idempotency_token,
+                is_retriable,
+                diagnostic_string,
+                reason,
+            )
+        } else {
+            Self::padded(
+                status_code,
+                sub_status_code,
+                operation_count,
+                idempotency_token,
+                is_retriable,
+                diagnostic_string,
+                service_error_message,
+            )
+        }
     }
 
     fn fail_closed(
@@ -1027,6 +1035,48 @@ mod tests {
             .operation_results
             .iter()
             .all(|result| result.status_code == azure_core::http::StatusCode::Conflict));
+    }
+
+    #[test]
+    fn parse_fewer_results_error_pads_with_envelope_status() {
+        // The coordinator returned fewer per-op results than operations on a
+        // non-success envelope: the payload is uninterpretable, so it is padded
+        // to one result per operation, each carrying the envelope status.
+        let body = br#"{"operationResponses":[{"index":0,"statusCode":201},{"index":1,"statusCode":201}]}"#;
+        let response = DistributedTransactionResponse::from_body(
+            azure_core::http::StatusCode::Conflict,
+            None,
+            body,
+            3,
+            Uuid::nil(),
+        );
+
+        assert_eq!(response.status_code, azure_core::http::StatusCode::Conflict);
+        assert_eq!(response.len(), 3);
+        assert!(response
+            .operation_results
+            .iter()
+            .all(|result| result.status_code == azure_core::http::StatusCode::Conflict));
+    }
+
+    #[test]
+    fn parse_fewer_results_success_fails_closed() {
+        // The same short payload on a success envelope must fail closed to `500`
+        // rather than return a success with unverifiable per-operation data.
+        let body = br#"{"operationResponses":[{"index":0,"statusCode":201},{"index":1,"statusCode":201}]}"#;
+        let response = DistributedTransactionResponse::from_body(
+            azure_core::http::StatusCode::Ok,
+            None,
+            body,
+            3,
+            Uuid::nil(),
+        );
+
+        assert_eq!(
+            response.status_code,
+            azure_core::http::StatusCode::InternalServerError
+        );
+        assert_eq!(response.len(), 3);
     }
 
     #[test]

@@ -179,10 +179,23 @@ impl VectorSessionToken {
                 changed = true;
             }
             for (&region, &other_lsn) in &other.region_progress {
-                let entry = self.region_progress.entry(region).or_insert(None);
-                if other_lsn > *entry {
-                    *entry = other_lsn;
-                    changed = true;
+                match self.region_progress.get_mut(&region) {
+                    Some(entry) => {
+                        if other_lsn > *entry {
+                            *entry = other_lsn;
+                            changed = true;
+                        }
+                    }
+                    None => {
+                        // A region present in `other` but not `self` is new
+                        // progress information, even when its LSN is `None`
+                        // (no-progress). Inserting it mutates the map, so the
+                        // merge must report `changed = true` — otherwise callers
+                        // that only persist on a `true` return would silently
+                        // drop the newly-tracked region.
+                        self.region_progress.insert(region, other_lsn);
+                        changed = true;
+                    }
                 }
             }
             changed
@@ -437,7 +450,9 @@ mod tests {
         // `or_insert(0)` floor over-stated progress as LSN 0).
         let mut a = VectorSessionToken::parse("1#100").unwrap();
         let b = VectorSessionToken::parse("1#100#7=-1").unwrap();
-        a.merge(&b);
+        // Adding a brand-new region (even a no-progress `None`) mutates the map,
+        // so `merge` must report `true`.
+        assert!(a.merge(&b));
         assert_eq!(a, make_token(1, 100, &[(7, -1)]));
         assert_eq!(a.to_string(), "1#100#7=-1");
     }

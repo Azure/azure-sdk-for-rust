@@ -39,6 +39,8 @@ use futures::future::BoxFuture;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
+#[cfg(feature = "preview_dtx")]
+use std::time::Instant;
 use url::Url;
 
 #[cfg(feature = "preview_dtx")]
@@ -1989,6 +1991,18 @@ impl CosmosDriver {
             azure_core::http::headers::HeaderValue::from_static("DistributedTransactionBatch"),
         );
 
+        // Bound the outer retry loop by the caller's end-to-end latency budget.
+        // Each iteration re-enters the pipeline with a *fresh* per-attempt
+        // deadline (computed as `now + timeout` inside the pipeline), so without
+        // an absolute ceiling here the caller's total timeout would not
+        // constrain the retry loop — only the retry-count and cumulative-delay
+        // caps would. Captured once, before the first attempt, from the same
+        // `end_to_end_latency_policy` the pipeline uses.
+        let outer_deadline = self
+            .operation_options_view(&options)
+            .end_to_end_latency_policy()
+            .map(|policy| Instant::now() + policy.timeout());
+
         let mut retry_count = 0_u32;
         let mut cumulative_delay = Duration::ZERO;
 
@@ -2017,6 +2031,7 @@ impl CosmosDriver {
                 retry_after_ms,
                 retry_count,
                 cumulative_delay,
+                outer_deadline,
             );
             let Some(retry_delay) = retry_delay else {
                 self.session_manager
@@ -2636,6 +2651,7 @@ fn distributed_transaction_outer_retry_delay(
     retry_after_ms: Option<u64>,
     retry_count: u32,
     cumulative_delay: Duration,
+    deadline: Option<Instant>,
 ) -> Option<Duration> {
     if response.is_completed_status_code() || !response.is_retriable {
         return None;
@@ -2653,6 +2669,15 @@ fn distributed_transaction_outer_retry_delay(
     let next_cumulative = cumulative_delay.checked_add(delay)?;
     if next_cumulative > DTX_OUTER_MAX_CUMULATIVE_DELAY {
         return None;
+    }
+
+    // Never sleep past the caller's end-to-end deadline: if the next attempt
+    // could not start until at or after the deadline, stop and surface the
+    // current response instead of retrying.
+    if let Some(deadline) = deadline {
+        if Instant::now() + delay >= deadline {
+            return None;
+        }
     }
 
     Some(delay)
@@ -2888,6 +2913,7 @@ mod tests {
             None,
             0,
             Duration::ZERO,
+            None,
         )
         .is_none());
         assert!(distributed_transaction_outer_retry_delay(
@@ -2895,6 +2921,7 @@ mod tests {
             None,
             0,
             Duration::ZERO,
+            None,
         )
         .is_none());
     }
@@ -2907,6 +2934,7 @@ mod tests {
             Some(5_000),
             0,
             Duration::ZERO,
+            None,
         )
         .unwrap();
 
@@ -2922,6 +2950,7 @@ mod tests {
             None,
             DTX_OUTER_MAX_RETRIES,
             Duration::ZERO,
+            None,
         )
         .is_none());
         assert!(distributed_transaction_outer_retry_delay(
@@ -2929,8 +2958,86 @@ mod tests {
             Some(1_000),
             0,
             DTX_OUTER_MAX_CUMULATIVE_DELAY,
+            None,
         )
         .is_none());
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn dtx_outer_retry_delay_stops_at_caller_deadline() {
+        let response = dtx_response(azure_core::http::StatusCode::from(449_u16), true);
+
+        // A deadline already in the past stops the outer loop even though the
+        // retry-count and cumulative-delay budgets still allow a retry.
+        assert!(distributed_transaction_outer_retry_delay(
+            &response,
+            None,
+            0,
+            Duration::ZERO,
+            Some(Instant::now() - Duration::from_secs(1)),
+        )
+        .is_none());
+
+        // A generous deadline leaves the normal retry behavior intact.
+        assert!(distributed_transaction_outer_retry_delay(
+            &response,
+            None,
+            0,
+            Duration::ZERO,
+            Some(Instant::now() + Duration::from_secs(3600)),
+        )
+        .is_some());
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn dtx_bodyless_infra_envelope_stops_outer_loop() {
+        // Two-tier retry composition: after the inner bodyless classifier
+        // exhausts its infra budget it surfaces the body-less 500/5411 envelope
+        // as a completed transport result. `from_body` must parse that empty
+        // body as non-retriable (`isRetriable` defaults to false), so the outer
+        // coordinator loop stops instead of retrying a body-less envelope.
+        let response = crate::models::DistributedTransactionResponse::from_body(
+            azure_core::http::StatusCode::InternalServerError,
+            Some(crate::models::SubStatusCode::DTC_LEDGER_FAILURE),
+            &[],
+            1,
+            uuid::Uuid::nil(),
+        );
+        assert!(!response.is_retriable);
+        assert!(distributed_transaction_outer_retry_delay(
+            &response,
+            None,
+            0,
+            Duration::ZERO,
+            None,
+        )
+        .is_none());
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn dtx_body_bearing_retriable_envelope_drives_outer_loop() {
+        // The complement: a body-bearing coordinator envelope that declares
+        // `isRetriable` keeps the outer loop retrying (within budget). This is
+        // the hand-off the inner classifier defers to for body-bearing results.
+        let response = crate::models::DistributedTransactionResponse::from_body(
+            azure_core::http::StatusCode::from(449_u16),
+            Some(crate::models::SubStatusCode::DTC_COORDINATOR_RACE_CONFLICT),
+            br#"{"isRetriable":true}"#,
+            1,
+            uuid::Uuid::nil(),
+        );
+        assert!(response.is_retriable);
+        assert!(distributed_transaction_outer_retry_delay(
+            &response,
+            None,
+            0,
+            Duration::ZERO,
+            None,
+        )
+        .is_some());
     }
 
     #[tokio::test]

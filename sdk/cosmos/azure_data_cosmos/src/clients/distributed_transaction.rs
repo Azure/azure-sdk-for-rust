@@ -315,7 +315,16 @@ pub struct DistributedTransactionResponse {
 }
 
 impl DistributedTransactionResponse {
-    /// Returns the overall status.
+    /// Returns the overall transaction status.
+    ///
+    /// Unlike a transactional batch — which surfaces a raw `207 MultiStatus` and
+    /// leaves per-operation inspection to the caller — a distributed transaction
+    /// **promotes** a `207` to the status of the first failing operation in
+    /// request order (excluding `424 FailedDependency`). A fully successful
+    /// transaction reports its success status directly (for example `200`/`201`,
+    /// or `304 NotModified` for an all-unchanged read snapshot). Use
+    /// [`operation_result`](Self::operation_result) to inspect each operation's
+    /// individual status.
     pub fn status(&self) -> crate::CosmosStatus {
         let status = crate::CosmosStatus::new(self.inner.status_code);
         match self.inner.sub_status_code {

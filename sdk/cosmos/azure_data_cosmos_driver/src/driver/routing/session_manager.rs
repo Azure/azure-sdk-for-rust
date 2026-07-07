@@ -130,13 +130,22 @@ impl SessionManager {
         operations: &[crate::models::DistributedTransactionOperation],
         is_session_consistency: bool,
     ) -> crate::error::Result<()> {
-        let throw_on_malformed = response.is_completed_status_code() && is_session_consistency;
+        // Only a 2xx-success committed response under Session consistency turns a
+        // malformed per-op token into a hard error. Matches .NET #5958
+        // (`throwOnMalformed = response.IsSuccessStatusCode && isSessionConsistency`):
+        // a `304 NotModified` (or any non-success) envelope must not fail an
+        // otherwise-completed transaction on token bookkeeping.
+        let throw_on_malformed = response.is_success_status_code() && is_session_consistency;
 
         for result in &response.operation_results {
             let Some(operation) = operations.get(result.index) else {
                 continue;
             };
-            if !result.is_completed_status_code() {
+            // Skip non-success sub-ops (including `304 NotModified` reads): a
+            // failed/unmodified op may carry a stale or malformed token that must
+            // not be merged or trigger the throw. Matches .NET #5958's
+            // `if (!result.IsSuccessStatusCode) continue;`.
+            if !result.is_success_status_code() {
                 continue;
             }
             let Some(session_token) = result.session_token.as_ref() else {
@@ -147,6 +156,17 @@ impl SessionManager {
                 continue;
             }
 
+            // Normalize to the canonical `{pkRangeId}:{lsn}` shape.
+            //
+            // A colon at a valid interior position means the coordinator already
+            // sent a pkRangeId-prefixed token (the common case) — use it as-is
+            // and let `set_session_token_checked` validate the value. This
+            // mirrors .NET's shape pre-check (`colonIndex <= 0 || == len - 1`);
+            // a non-canonical shape flows through to strict validation, which
+            // rejects it (and, under Session consistency, throws) exactly like
+            // .NET. A bare `{lsn}` value (no colon) is prefixed with the
+            // coordinator-supplied partition key range id; if none is available
+            // the token cannot be routed and is skipped best-effort.
             let token = match token.find(':') {
                 Some(index) if index > 0 && index < token.len() - 1 => Cow::Borrowed(token),
                 _ => match result.partition_key_range_id.as_deref() {
@@ -609,6 +629,114 @@ mod tests {
         // never surfaced as an error.
         mgr.merge_distributed_transaction_session_tokens(&response, &operations, false)
             .unwrap();
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn dtx_not_modified_suboperation_skipped_under_session_consistency() {
+        use crate::models::{
+            DistributedTransactionOperation, DistributedTransactionOperationKind,
+            DistributedTransactionOperationResult, DistributedTransactionResponse,
+            DistributedTransactionResultBody, DistributedTransactionTarget,
+        };
+
+        let mgr = SessionManager::new();
+        let container = test_container();
+        let operations = vec![DistributedTransactionOperation::new(
+            DistributedTransactionOperationKind::Read,
+            DistributedTransactionTarget::new(container.clone(), PartitionKey::from("pk1"), "doc1"),
+        )];
+        // An all-`304 NotModified` read snapshot whose 304 sub-op carries a
+        // malformed token must NOT fail the completed read under Session
+        // consistency. The 304 sub-op is non-success, so it is skipped (no merge,
+        // no throw) exactly like .NET #5958.
+        let response = DistributedTransactionResponse {
+            status_code: azure_core::http::StatusCode::NotModified,
+            sub_status_code: None,
+            operation_results: vec![DistributedTransactionOperationResult {
+                index: 0,
+                status_code: azure_core::http::StatusCode::NotModified,
+                sub_status_code: None,
+                etag: None,
+                session_token: Some(SessionToken::new("0:not-a-token")),
+                partition_key_range_id: None,
+                request_charge: None,
+                resource_body: DistributedTransactionResultBody::None,
+            }],
+            idempotency_token: uuid::Uuid::nil(),
+            activity_id: None,
+            request_charge: None,
+            retry_after_ms: None,
+            diagnostics: None,
+            is_retriable: false,
+            diagnostic_string: None,
+            error_message: None,
+        };
+
+        // No error despite the malformed token on the 304 sub-op.
+        mgr.merge_distributed_transaction_session_tokens(&response, &operations, true)
+            .unwrap();
+
+        // And nothing was merged for the skipped 304 sub-op.
+        let read_op = CosmosOperation::read_item(ItemReference::from_name(
+            &container,
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+        assert!(mgr.resolve_session_token(&read_op, None).is_none());
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn dtx_merges_successful_suboperation_token_on_non_success_response() {
+        use crate::models::{
+            DistributedTransactionOperation, DistributedTransactionOperationKind,
+            DistributedTransactionOperationResult, DistributedTransactionResponse,
+            DistributedTransactionResultBody, DistributedTransactionTarget,
+        };
+
+        let mgr = SessionManager::new();
+        let container = test_container();
+        let operations = vec![DistributedTransactionOperation::new(
+            DistributedTransactionOperationKind::Read,
+            DistributedTransactionTarget::new(container.clone(), PartitionKey::from("pk1"), "doc1"),
+        )];
+        // A non-2xx overall status (e.g. a `409` promoted from a MultiStatus
+        // partial failure) never throws on token bookkeeping, but a valid token
+        // on a 2xx sub-op is still merged best-effort.
+        let response = DistributedTransactionResponse {
+            status_code: azure_core::http::StatusCode::Conflict,
+            sub_status_code: None,
+            operation_results: vec![DistributedTransactionOperationResult {
+                index: 0,
+                status_code: azure_core::http::StatusCode::Ok,
+                sub_status_code: None,
+                etag: None,
+                session_token: Some(SessionToken::new("0:1#100#1=10")),
+                partition_key_range_id: None,
+                request_charge: None,
+                resource_body: DistributedTransactionResultBody::None,
+            }],
+            idempotency_token: uuid::Uuid::nil(),
+            activity_id: None,
+            request_charge: None,
+            retry_after_ms: None,
+            diagnostics: None,
+            is_retriable: false,
+            diagnostic_string: None,
+            error_message: None,
+        };
+
+        mgr.merge_distributed_transaction_session_tokens(&response, &operations, true)
+            .unwrap();
+
+        let read_op = CosmosOperation::read_item(ItemReference::from_name(
+            &container,
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+        let token = mgr.resolve_session_token(&read_op, None).unwrap();
+        assert_eq!(token.as_str(), "0:1#100#1=10");
     }
 
     #[cfg(feature = "preview_dtx")]

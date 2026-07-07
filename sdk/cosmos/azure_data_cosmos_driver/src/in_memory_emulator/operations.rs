@@ -43,6 +43,10 @@ use crate::models::PatchInstructions;
 
 static OFFER_REPLACE_PENDING: HeaderName = HeaderName::from_static("x-ms-offer-replace-pending");
 
+/// Sub-status paired with `410 Gone` when a physical partition is locked because
+/// a split or merge is in progress.
+const PARTITION_SPLIT_OR_MERGE_SUBSTATUS: u16 = 1007;
+
 /// HTTP status a prepared-then-rolled-back write operation reports in an aborted
 /// distributed transaction, paired with sub-status 5415 (DtcOperationRolledBack).
 /// Mirrors the driver's `SubStatusCode::DTC_OPERATION_ROLLED_BACK`.
@@ -51,6 +55,10 @@ const DTX_ROLLED_BACK_STATUS: u16 = 453;
 /// Sub-status accompanying [`DTX_ROLLED_BACK_STATUS`] (DtcOperationRolledBack).
 #[cfg(feature = "preview_dtx")]
 const DTX_ROLLED_BACK_SUBSTATUS: u32 = 5415;
+/// Sub-status paired with `412 PreconditionFailed` when a distributed
+/// transaction patch operation's `condition` (filter predicate) is not met.
+#[cfg(feature = "preview_dtx")]
+const DTX_PATCH_CONDITION_NOT_MET_SUBSTATUS: u16 = 1110;
 
 /// If any non-source target region's replication queue is saturated, returns
 /// a 429/3075 error response so callers can short-circuit before committing.
@@ -466,13 +474,22 @@ pub(crate) async fn handle_operation(
             }
         };
 
-        let point_body = operation
-            .resource_body
-            .as_ref()
-            .map(serde_json::to_vec)
-            .transpose()
-            .unwrap_or_default()
-            .unwrap_or_default();
+        let point_body = match operation.resource_body.as_ref().map(serde_json::to_vec) {
+            None => Vec::new(),
+            Some(Ok(body)) => body,
+            Some(Err(error)) => {
+                return error_response(
+                    StatusCode::BadRequest,
+                    None,
+                    "BadRequest",
+                    &format!("Failed to serialize DTX operation resource body: {error}"),
+                    0.0,
+                    "",
+                    start,
+                )
+                .build()
+            }
+        };
         let parsed = ParsedRequest {
             operation: operation_type.clone(),
             db_id: Some(operation.database_name.clone()),
@@ -651,7 +668,7 @@ pub(crate) async fn handle_operation(
                         );
                         return Err(error_response(
                             StatusCode::PreconditionFailed,
-                            Some(1110),
+                            Some(DTX_PATCH_CONDITION_NOT_MET_SUBSTATUS.into()),
                             "PreconditionFailed",
                             "Patch condition was not met.",
                             1.0,
@@ -1138,7 +1155,7 @@ pub(crate) async fn handle_operation(
                 if partition.is_locked() {
                     return Err(preflight_failure(
                         StatusCode::Gone,
-                        Some(1007),
+                        Some(PARTITION_SPLIT_OR_MERGE_SUBSTATUS),
                         "Partition is being split or merged.",
                     ));
                 }
@@ -1211,7 +1228,7 @@ pub(crate) async fn handle_operation(
                             Ok(false) => {
                                 return Err(preflight_failure(
                                     StatusCode::PreconditionFailed,
-                                    Some(1110),
+                                    Some(DTX_PATCH_CONDITION_NOT_MET_SUBSTATUS),
                                     "Patch condition was not met.",
                                 ));
                             }
@@ -3325,7 +3342,7 @@ fn check_partition_lock(partition: &PhysicalPartition, start: Instant) -> Option
         Some(
             error_response(
                 StatusCode::Gone,
-                Some(1007),
+                Some(PARTITION_SPLIT_OR_MERGE_SUBSTATUS.into()),
                 "Gone",
                 "Partition is being split or merged.",
                 0.0,

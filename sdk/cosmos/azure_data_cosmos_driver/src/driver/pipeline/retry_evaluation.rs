@@ -409,6 +409,11 @@ fn evaluate_dtx_http_outcome(
         }
     }
 
+    // A DTX coordinator response that is not retried here is handed to the outer
+    // loop as a transport-level *delivery* success: the body reached us intact.
+    // This is NOT a DTX success — the real per-operation outcome (including
+    // `452`/`500`/etc.) is (re)derived by `DistributedTransactionResponse::from_body`
+    // downstream. Wrapping it as `Success` here just means "deliver the body up".
     (
         OperationAction::Complete(Box::new(TransportResult {
             outcome: TransportOutcome::Success {
@@ -1214,6 +1219,57 @@ mod tests {
 
         assert!(effects.is_empty());
         assert!(matches!(action, OperationAction::Complete(_)));
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn dtx_http_outcomes_never_failover_session_or_hedge() {
+        // DTX is a write-bearing resource routed through the shared pipeline.
+        // The early return for `DistributedTransactionBatch` in
+        // `evaluate_http_outcome` is the single guard that keeps DTX responses
+        // out of the cross-region failover / session-retry / hedging machinery,
+        // which is unsafe for writes (see PR #4432). This pins that guard: every
+        // coordinator HTTP outcome must resolve to `DtxRetry` (bodyless
+        // coordinator/infra retry) or `Complete` (body handed to the outer
+        // coordinator loop) — never `FailoverRetry`, `SessionRetry`, or `Hedge`,
+        // and never a location effect.
+        let op = make_dtx_operation();
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+
+        // Statuses/sub-statuses that drive failover / session-retry / abort for a
+        // normal (non-DTX) operation.
+        let statuses = [
+            CosmosStatus::new(StatusCode::from(503_u16)),
+            CosmosStatus::from_parts(StatusCode::from(429_u16), Some(SubStatusCode::new(3092))),
+            CosmosStatus::from_parts(StatusCode::from(404_u16), Some(SubStatusCode::new(1002))),
+            CosmosStatus::from_parts(StatusCode::from(403_u16), Some(SubStatusCode::new(3))),
+            CosmosStatus::new(StatusCode::from(408_u16)),
+            CosmosStatus::new(StatusCode::from(410_u16)),
+            CosmosStatus::new(StatusCode::from(500_u16)),
+        ];
+
+        for status in statuses {
+            let code = u16::from(status.status_code());
+            for body in [Vec::new(), b"{}".to_vec()] {
+                let body_len = body.len();
+                let result = make_dtx_http_error(status, body, None);
+                let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+                assert!(
+                    effects.is_empty(),
+                    "DTX status {code} (body_len={body_len}) emitted location effects",
+                );
+                assert!(
+                    matches!(
+                        action,
+                        OperationAction::DtxRetry { .. } | OperationAction::Complete(_)
+                    ),
+                    "DTX status {code} (body_len={body_len}) produced {action:?}",
+                );
+            }
+        }
     }
 
     #[test]
