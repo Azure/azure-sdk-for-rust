@@ -34,6 +34,10 @@ if ($ManifestDir) {
   [string[]] $script:manifestPath = Join-Path $ManifestDir 'Cargo.toml' -Resolve
 }
 
+function Test-IsPublishable($package) {
+  return $null -eq $package.publish
+}
+
 function Get-PackagesToBuild() {
   $packages = Get-CargoPackages
   [string[]] $outputPackageNames = Get-OutputPackageNames $packages
@@ -51,7 +55,7 @@ function Get-PackagesToBuild() {
 
     foreach ($dependency in $package.UnreleasedDependencies) {
       if (
-        $dependency.Publishable -and
+        (Test-IsPublishable $dependency) -and
         !$packagesToBuild.Contains($dependency) -and
         !$toProcess.Contains($dependency)
       ) {
@@ -85,7 +89,7 @@ function Get-OutputPackageNames($packages) {
 
     default {
       LogDebug "Packing all packages in workspace"
-      return $packages.Where({ $_.Publishable }).name
+      return $packages.Where({ Test-IsPublishable $_ }).name
     }
   }
 
@@ -96,7 +100,7 @@ function Get-OutputPackageNames($packages) {
       exit 1
     }
 
-    if (-not $package.Publishable) {
+    if (-not (Test-IsPublishable $package)) {
       LogError "Package '$name' has publish = false and cannot be packed for publishing"
       exit 1
     }
