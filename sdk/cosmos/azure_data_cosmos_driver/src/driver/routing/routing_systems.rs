@@ -47,6 +47,7 @@ pub(crate) fn build_account_endpoint_state(
         &properties.thin_client_writable_locations,
         gateway20_enabled,
     );
+    let mut account_write_endpoints = preferred_write_endpoints.clone();
 
     if !preferred_regions.is_empty() {
         preferred_read_endpoints =
@@ -61,11 +62,15 @@ pub(crate) fn build_account_endpoint_state(
     if preferred_write_endpoints.is_empty() {
         preferred_write_endpoints.push(default_endpoint.clone());
     }
+    if account_write_endpoints.is_empty() {
+        account_write_endpoints.push(default_endpoint.clone());
+    }
 
     AccountEndpointState {
         generation,
         preferred_read_endpoints: preferred_read_endpoints.into(),
         preferred_write_endpoints: preferred_write_endpoints.into(),
+        account_write_endpoints: account_write_endpoints.into(),
         unavailable_endpoints: Default::default(),
         multiple_write_locations_enabled: properties.enable_multiple_write_locations,
         default_endpoint,
@@ -183,6 +188,7 @@ pub(crate) fn mark_endpoint_unavailable(
         generation: state.generation,
         preferred_read_endpoints: Arc::clone(&state.preferred_read_endpoints),
         preferred_write_endpoints: Arc::clone(&state.preferred_write_endpoints),
+        account_write_endpoints: Arc::clone(&state.account_write_endpoints),
         unavailable_endpoints: unavailable,
         multiple_write_locations_enabled: state.multiple_write_locations_enabled,
         default_endpoint: state.default_endpoint.clone(),
@@ -208,6 +214,7 @@ pub(crate) fn expire_unavailable_endpoints(
         generation: state.generation,
         preferred_read_endpoints: Arc::clone(&state.preferred_read_endpoints),
         preferred_write_endpoints: Arc::clone(&state.preferred_write_endpoints),
+        account_write_endpoints: Arc::clone(&state.account_write_endpoints),
         unavailable_endpoints: unavailable,
         multiple_write_locations_enabled: state.multiple_write_locations_enabled,
         default_endpoint: state.default_endpoint.clone(),
@@ -818,6 +825,7 @@ mod tests {
             ]
             .into(),
             preferred_write_endpoints: vec![regional_endpoint("eastus")].into(),
+            account_write_endpoints: vec![regional_endpoint("eastus")].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: false,
             default_endpoint: default_endpoint(),
@@ -838,6 +846,8 @@ mod tests {
                 regional_endpoint("westus"),
             ]
             .into(),
+            account_write_endpoints: vec![regional_endpoint("eastus"), regional_endpoint("westus")]
+                .into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: true,
             default_endpoint: default_endpoint(),

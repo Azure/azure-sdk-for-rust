@@ -1025,14 +1025,18 @@ mod tests {
 
     #[cfg(feature = "preview_dtx")]
     fn make_dtx_operation() -> CosmosOperation {
+        make_dtx_operation_for(crate::models::DistributedTransactionType::Write)
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    fn make_dtx_operation_for(
+        transaction_type: crate::models::DistributedTransactionType,
+    ) -> CosmosOperation {
         let account = AccountReference::with_master_key(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );
-        CosmosOperation::distributed_transaction(
-            account,
-            crate::models::DistributedTransactionType::Write,
-        )
+        CosmosOperation::distributed_transaction(account, transaction_type)
     }
 
     fn make_success_result() -> TransportResult {
@@ -1231,26 +1235,40 @@ mod tests {
     #[cfg(feature = "preview_dtx")]
     #[test]
     fn dtx_bodyless_write_forbidden_refreshes_topology_before_dtx_classification() {
-        let op = make_dtx_operation();
-        let result = make_dtx_http_error(
-            CosmosStatus::from_parts(StatusCode::Forbidden, Some(SubStatusCode::new(3))),
-            Vec::new(),
-            None,
-        );
-        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
-        let endpoint = CosmosEndpoint::global(
-            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
-        );
+        for transaction_type in [
+            crate::models::DistributedTransactionType::Write,
+            crate::models::DistributedTransactionType::Read,
+        ] {
+            let op = make_dtx_operation_for(transaction_type);
+            let result = make_dtx_http_error(
+                CosmosStatus::from_parts(StatusCode::Forbidden, Some(SubStatusCode::new(3))),
+                Vec::new(),
+                None,
+            );
+            let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+            let endpoint = CosmosEndpoint::global(
+                url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            );
 
-        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+            let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
 
-        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
-        assert!(effects
-            .iter()
-            .any(|effect| matches!(effect, LocationEffect::RefreshAccountProperties)));
-        assert!(effects
-            .iter()
-            .any(|effect| matches!(effect, LocationEffect::MarkPartitionUnavailable(_))));
+            assert!(
+                matches!(action, OperationAction::FailoverRetry { .. }),
+                "{transaction_type:?} DTX 403/3 should failover-retry"
+            );
+            assert!(
+                effects
+                    .iter()
+                    .any(|effect| matches!(effect, LocationEffect::RefreshAccountProperties)),
+                "{transaction_type:?} DTX 403/3 should refresh topology"
+            );
+            assert!(
+                effects
+                    .iter()
+                    .any(|effect| matches!(effect, LocationEffect::MarkPartitionUnavailable(_))),
+                "{transaction_type:?} DTX 403/3 should mark partition unavailable"
+            );
+        }
     }
 
     #[cfg(feature = "preview_dtx")]

@@ -618,6 +618,7 @@ pub(crate) async fn execute_operation_pipeline(
                     location_state_store,
                     operation.is_read_only(),
                     operation.operation_type().routes_to_write_endpoints(),
+                    is_distributed_transaction_operation(operation),
                 );
                 diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;
             }
@@ -634,6 +635,7 @@ pub(crate) async fn execute_operation_pipeline(
                     location_state_store,
                     operation.is_read_only(),
                     operation.operation_type().routes_to_write_endpoints(),
+                    is_distributed_transaction_operation(operation),
                 );
                 diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;
             }
@@ -720,6 +722,7 @@ pub(crate) async fn execute_operation_pipeline(
                     location_state_store,
                     operation.is_read_only(),
                     operation.operation_type().routes_to_write_endpoints(),
+                    is_distributed_transaction_operation(operation),
                 );
                 // Re-resolve the primary routing against the advanced
                 // retry_state and freshly snapshotted location. The
@@ -977,8 +980,13 @@ fn resolve_endpoint(
         Vec::new()
     };
 
-    let primary =
-        preferred_endpoints_for_attempt(account, retry_state, read_only, route_to_write_endpoints);
+    let primary = preferred_endpoints_for_attempt(
+        account,
+        retry_state,
+        read_only,
+        route_to_write_endpoints,
+        is_distributed_transaction_operation(operation),
+    );
     let selected = try_select_endpoint(
         operation,
         retry_state,
@@ -1043,8 +1051,12 @@ fn resolve_endpoint(
             // default endpoint, but no pipeline operation should run before
             // topology discovery completes. The `debug_assert!` below
             // guards that invariant.
-            account
-                .preferred_write_endpoints
+            let fallback_write_endpoints = if is_distributed_transaction_operation(operation) {
+                &account.account_write_endpoints
+            } else {
+                &account.preferred_write_endpoints
+            };
+            fallback_write_endpoints
                 .first()
                 .expect("preferred_write_endpoints is always non-empty")
                 .clone()
@@ -1154,13 +1166,31 @@ fn resolve_endpoint(
     }
 }
 
+fn is_distributed_transaction_operation(operation: &CosmosOperation) -> bool {
+    #[cfg(feature = "preview_dtx")]
+    {
+        operation.resource_type() == crate::models::ResourceType::DistributedTransactionBatch
+    }
+
+    #[cfg(not(feature = "preview_dtx"))]
+    {
+        let _ = operation;
+        false
+    }
+}
+
 fn preferred_endpoints_for_attempt<'a>(
     account: &'a AccountEndpointState,
     retry_state: &OperationRetryState,
     read_only: bool,
     route_to_write_endpoints: bool,
+    is_distributed_transaction: bool,
 ) -> &'a [CosmosEndpoint] {
-    if read_only && (route_to_write_endpoints || retry_state.route_reads_to_write_endpoints()) {
+    if is_distributed_transaction {
+        &account.account_write_endpoints
+    } else if read_only
+        && (route_to_write_endpoints || retry_state.route_reads_to_write_endpoints())
+    {
         &account.preferred_write_endpoints
     } else if !read_only && retry_state.ppaf_write_retry_allowed {
         // PPAF on single-master accounts: writes iterate over the full read
@@ -1672,6 +1702,7 @@ fn advance_to_next_attempt(
     location_state_store: &LocationStateStore,
     is_read_only: bool,
     route_to_write_endpoints: bool,
+    is_distributed_transaction: bool,
 ) {
     let next_location = location_state_store.snapshot();
     let endpoints_len = preferred_endpoints_for_attempt(
@@ -1679,6 +1710,7 @@ fn advance_to_next_attempt(
         &new_state,
         is_read_only,
         route_to_write_endpoints,
+        is_distributed_transaction,
     )
     .len();
     let pending = std::mem::take(&mut retry_state.pending_write_effects);
@@ -3408,6 +3440,7 @@ fn try_advance_after_both_transient(
         retry_state,
         is_read_only,
         !is_read_only,
+        false,
     );
     let endpoints_len = endpoints.len();
     if endpoints_len > 0 {
@@ -3808,6 +3841,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![read_endpoint].into(),
             preferred_write_endpoints: vec![write_endpoint.clone()].into(),
+            account_write_endpoints: vec![write_endpoint.clone()].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: false,
             default_endpoint: write_endpoint.clone(),
@@ -3851,14 +3885,18 @@ mod tests {
 
     #[cfg(feature = "preview_dtx")]
     #[test]
-    fn resolve_endpoint_uses_write_region_for_read_dtx() {
+    fn resolve_endpoint_uses_account_write_region_order_for_read_dtx() {
         let operation = CosmosOperation::distributed_transaction(
             test_account(),
             crate::models::DistributedTransactionType::Read,
         );
-        let write_endpoint = CosmosEndpoint::regional(
+        let account_write_endpoint = CosmosEndpoint::regional(
             "eastus".into(),
             Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let preferred_write_endpoint = CosmosEndpoint::regional(
+            "westus3".into(),
+            Url::parse("https://test-westus3.documents.azure.com:443/").unwrap(),
         );
         let read_endpoint = CosmosEndpoint::regional(
             "westus2".into(),
@@ -3868,10 +3906,11 @@ mod tests {
         let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
             generation: 0,
             preferred_read_endpoints: vec![read_endpoint].into(),
-            preferred_write_endpoints: vec![write_endpoint.clone()].into(),
+            preferred_write_endpoints: vec![preferred_write_endpoint].into(),
+            account_write_endpoints: vec![account_write_endpoint.clone()].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: false,
-            default_endpoint: write_endpoint.clone(),
+            default_endpoint: account_write_endpoint.clone(),
         }));
 
         let retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
@@ -3889,7 +3928,56 @@ mod tests {
             false,
             Duration::from_secs(60),
         );
-        assert_eq!(routing.endpoint, write_endpoint);
+        assert_eq!(routing.endpoint, account_write_endpoint);
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn resolve_endpoint_uses_account_write_region_order_for_write_dtx() {
+        let operation = CosmosOperation::distributed_transaction(
+            test_account(),
+            crate::models::DistributedTransactionType::Write,
+        );
+        let account_write_endpoint = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let preferred_write_endpoint = CosmosEndpoint::regional(
+            "westus3".into(),
+            Url::parse("https://test-westus3.documents.azure.com:443/").unwrap(),
+        );
+        let read_endpoint = CosmosEndpoint::regional(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+        );
+
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![read_endpoint].into(),
+            preferred_write_endpoints: vec![preferred_write_endpoint].into(),
+            account_write_endpoints: vec![account_write_endpoint.clone()].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: true,
+            default_endpoint: account_write_endpoint.clone(),
+        }));
+
+        let mut retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            true,
+            Vec::new(),
+            3,
+            1,
+        );
+        retry_state.ppaf_write_retry_allowed = true;
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            Duration::from_secs(60),
+        );
+        assert_eq!(routing.endpoint, account_write_endpoint);
     }
 
     #[test]
@@ -3915,6 +4003,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![read_endpoint.clone()].into(),
             preferred_write_endpoints: vec![default_endpoint.clone()].into(),
+            account_write_endpoints: vec![default_endpoint.clone()].into(),
             unavailable_endpoints: unavailable,
             multiple_write_locations_enabled: false,
             default_endpoint: default_endpoint.clone(),
@@ -3979,6 +4068,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![read_endpoint.clone()].into(),
             preferred_write_endpoints: vec![read_endpoint.clone()].into(),
+            account_write_endpoints: vec![read_endpoint.clone()].into(),
             unavailable_endpoints: unavailable,
             multiple_write_locations_enabled: false,
             default_endpoint: read_endpoint.clone(),
@@ -4045,6 +4135,12 @@ mod tests {
             ]
             .into(),
             preferred_write_endpoints: vec![
+                endpoint_a.clone(),
+                endpoint_b.clone(),
+                endpoint_c.clone(),
+            ]
+            .into(),
+            account_write_endpoints: vec![
                 endpoint_a.clone(),
                 endpoint_b.clone(),
                 endpoint_c.clone(),
@@ -4223,6 +4319,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![endpoint.clone()].into(),
             preferred_write_endpoints: vec![endpoint.clone()].into(),
+            account_write_endpoints: vec![endpoint.clone()].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: false,
             default_endpoint: endpoint.clone(),
@@ -4280,7 +4377,8 @@ mod tests {
         let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
             generation: 0,
             preferred_read_endpoints: vec![endpoint.clone(), fallback_endpoint.clone()].into(),
-            preferred_write_endpoints: vec![endpoint].into(),
+            preferred_write_endpoints: vec![endpoint.clone()].into(),
+            account_write_endpoints: vec![endpoint].into(),
             unavailable_endpoints: unavailable,
             multiple_write_locations_enabled: true,
             default_endpoint: fallback_endpoint.clone(),
@@ -4327,6 +4425,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![read_endpoint.clone()].into(),
             preferred_write_endpoints: vec![hub_endpoint.clone()].into(),
+            account_write_endpoints: vec![hub_endpoint.clone()].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: false,
             default_endpoint: default_endpoint.clone(),
@@ -4391,6 +4490,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![read_endpoint.clone()].into(),
             preferred_write_endpoints: vec![hub_endpoint.clone()].into(),
+            account_write_endpoints: vec![hub_endpoint.clone()].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: false,
             default_endpoint: default_endpoint.clone(),
@@ -4457,6 +4557,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![read_endpoint.clone()].into(),
             preferred_write_endpoints: vec![hub_endpoint.clone()].into(),
+            account_write_endpoints: vec![hub_endpoint.clone()].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: false,
             default_endpoint: default_endpoint.clone(),
@@ -4536,6 +4637,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![read_endpoint.clone()].into(),
             preferred_write_endpoints: vec![hub_endpoint.clone()].into(),
+            account_write_endpoints: vec![hub_endpoint.clone()].into(),
             unavailable_endpoints: unavailable,
             multiple_write_locations_enabled: false,
             default_endpoint: default_endpoint.clone(),
@@ -4626,6 +4728,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![isolated_endpoint.clone(), hub_endpoint.clone()].into(),
             preferred_write_endpoints: vec![hub_endpoint.clone()].into(),
+            account_write_endpoints: vec![hub_endpoint.clone()].into(),
             unavailable_endpoints: unavailable,
             multiple_write_locations_enabled: false,
             default_endpoint: default_endpoint.clone(),
@@ -4723,6 +4826,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![r1.clone(), r2.clone()].into(),
             preferred_write_endpoints: vec![r1.clone(), r2.clone()].into(),
+            account_write_endpoints: vec![r1.clone(), r2.clone()].into(),
             unavailable_endpoints: unavailable,
             multiple_write_locations_enabled: true,
             default_endpoint: r1.clone(),
@@ -4804,6 +4908,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![r1.clone(), r2.clone()].into(),
             preferred_write_endpoints: vec![r1.clone(), r2.clone()].into(),
+            account_write_endpoints: vec![r1.clone(), r2.clone()].into(),
             unavailable_endpoints: unavailable,
             multiple_write_locations_enabled: true,
             default_endpoint: r1.clone(),
@@ -4881,6 +4986,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![hub.clone(), satellite.clone()].into(),
             preferred_write_endpoints: vec![hub.clone()].into(),
+            account_write_endpoints: vec![hub.clone()].into(),
             unavailable_endpoints: unavailable,
             multiple_write_locations_enabled: false,
             default_endpoint: hub.clone(),
@@ -4945,6 +5051,7 @@ mod tests {
             ]
             .into(),
             preferred_write_endpoints: vec![default_endpoint.clone()].into(),
+            account_write_endpoints: vec![default_endpoint.clone()].into(),
             unavailable_endpoints: unavailable,
             multiple_write_locations_enabled: false,
             default_endpoint: default_endpoint.clone(),
@@ -5005,6 +5112,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![east.clone(), west.clone()].into(),
             preferred_write_endpoints: vec![east.clone(), west.clone()].into(),
+            account_write_endpoints: vec![east.clone(), west.clone()].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: true,
             default_endpoint: east.clone(),
@@ -5055,6 +5163,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![east.clone(), west.clone()].into(),
             preferred_write_endpoints: vec![east.clone(), west.clone()].into(),
+            account_write_endpoints: vec![east.clone(), west.clone()].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: true,
             default_endpoint: east.clone(),
@@ -5108,6 +5217,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![west.clone(), east.clone()].into(),
             preferred_write_endpoints: vec![east.clone()].into(),
+            account_write_endpoints: vec![east.clone()].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: false,
             default_endpoint: east.clone(),
@@ -5156,6 +5266,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![east.clone(), west.clone()].into(),
             preferred_write_endpoints: vec![east.clone()].into(),
+            account_write_endpoints: vec![east.clone()].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: false,
             default_endpoint: east.clone(),
@@ -5218,6 +5329,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![north.clone(), central.clone()].into(),
             preferred_write_endpoints: vec![north.clone()].into(),
+            account_write_endpoints: vec![north.clone()].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: false,
             default_endpoint: north.clone(),
@@ -5299,6 +5411,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![north.clone(), central.clone()].into(),
             preferred_write_endpoints: vec![north.clone()].into(),
+            account_write_endpoints: vec![north.clone()].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: false,
             default_endpoint: north.clone(),
@@ -5402,6 +5515,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![north.clone(), central.clone()].into(),
             preferred_write_endpoints: vec![north.clone(), central.clone()].into(),
+            account_write_endpoints: vec![north.clone(), central.clone()].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: true,
             default_endpoint: north.clone(),
@@ -5455,6 +5569,7 @@ mod tests {
             generation: 1,
             preferred_read_endpoints: vec![north.clone()].into(),
             preferred_write_endpoints: vec![north.clone()].into(),
+            account_write_endpoints: vec![north.clone()].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: true,
             default_endpoint: north.clone(),
@@ -5520,6 +5635,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![north.clone(), central.clone()].into(),
             preferred_write_endpoints: vec![north.clone(), central.clone()].into(),
+            account_write_endpoints: vec![north.clone(), central.clone()].into(),
             unavailable_endpoints: unavailable,
             multiple_write_locations_enabled: true,
             default_endpoint: north.clone(),
@@ -5571,6 +5687,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![north.clone(), central.clone()].into(),
             preferred_write_endpoints: vec![north.clone(), central.clone()].into(),
+            account_write_endpoints: vec![north.clone(), central.clone()].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: true,
             default_endpoint: north.clone(),
@@ -5626,6 +5743,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![north.clone(), central.clone()].into(),
             preferred_write_endpoints: vec![north.clone()].into(),
+            account_write_endpoints: vec![north.clone()].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: false,
             default_endpoint: north.clone(),
@@ -5708,6 +5826,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![north.clone(), central.clone()].into(),
             preferred_write_endpoints: vec![north.clone()].into(),
+            account_write_endpoints: vec![north.clone()].into(),
             unavailable_endpoints: unavailable,
             multiple_write_locations_enabled: false,
             default_endpoint: north.clone(),
@@ -5779,6 +5898,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![central.clone(), east.clone()].into(),
             preferred_write_endpoints: vec![central.clone(), east.clone()].into(),
+            account_write_endpoints: vec![central.clone(), east.clone()].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: true,
             default_endpoint: central.clone(),
@@ -5854,6 +5974,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![central.clone(), east.clone()].into(),
             preferred_write_endpoints: vec![central.clone(), east.clone()].into(),
+            account_write_endpoints: vec![central.clone(), east.clone()].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: true,
             default_endpoint: central.clone(),
@@ -5936,6 +6057,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![central.clone(), east.clone()].into(),
             preferred_write_endpoints: vec![central.clone(), east.clone()].into(),
+            account_write_endpoints: vec![central.clone(), east.clone()].into(),
             unavailable_endpoints: unavailable,
             multiple_write_locations_enabled: true,
             default_endpoint: central.clone(),
@@ -6020,6 +6142,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![central.clone(), east.clone()].into(),
             preferred_write_endpoints: vec![central.clone(), east.clone()].into(),
+            account_write_endpoints: vec![central.clone(), east.clone()].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: true,
             default_endpoint: central.clone(),
@@ -6079,6 +6202,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![east.clone()].into(),
             preferred_write_endpoints: vec![east.clone()].into(),
+            account_write_endpoints: vec![east.clone()].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: false,
             default_endpoint: east.clone(),
@@ -6125,6 +6249,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![east.clone()].into(),
             preferred_write_endpoints: vec![east.clone()].into(),
+            account_write_endpoints: vec![east.clone()].into(),
             unavailable_endpoints: unavailable,
             multiple_write_locations_enabled: false,
             default_endpoint: east.clone(),
@@ -6150,6 +6275,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![east.clone()].into(),
             preferred_write_endpoints: vec![east.clone()].into(),
+            account_write_endpoints: vec![east.clone()].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: false,
             default_endpoint: east.clone(),
@@ -6203,6 +6329,7 @@ mod tests {
                 generation: 0,
                 preferred_read_endpoints: vec![east.clone(), west.clone()].into(),
                 preferred_write_endpoints: vec![east.clone()].into(),
+                account_write_endpoints: vec![east.clone()].into(),
                 unavailable_endpoints: Default::default(),
                 multiple_write_locations_enabled: false,
                 default_endpoint: east.clone(),
@@ -6261,6 +6388,7 @@ mod tests {
                 generation: 0,
                 preferred_read_endpoints: vec![east.clone()].into(),
                 preferred_write_endpoints: vec![east.clone()].into(),
+                account_write_endpoints: vec![east.clone()].into(),
                 unavailable_endpoints: Default::default(),
                 multiple_write_locations_enabled: false,
                 default_endpoint: east.clone(),
@@ -6292,6 +6420,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![east.clone()].into(),
             preferred_write_endpoints: vec![east.clone()].into(),
+            account_write_endpoints: vec![east.clone()].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: false,
             default_endpoint: east.clone(),
@@ -7460,7 +7589,8 @@ mod tests {
         super::LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
             generation: 0,
             preferred_read_endpoints: endpoints.clone().into(),
-            preferred_write_endpoints: endpoints.into(),
+            preferred_write_endpoints: endpoints.clone().into(),
+            account_write_endpoints: endpoints.into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: false,
             default_endpoint: default,
