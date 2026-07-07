@@ -153,44 +153,53 @@ impl ContainerCache {
     async fn read_container_properties_by_id(
         &self,
         container_link: ResourceLink,
+        options: Option<ReadContainerOptions>,
+    ) -> azure_core::Result<CosmosResponse<ContainerProperties>> {
+        // Hedged path is isolated behind a boxed future so its state never inflates the
+        // common (non-hedged) path future.
+        if let Some(strategy) = self.hedging.clone() {
+            return Box::pin(self.hedged_container_read(strategy, container_link, options)).await;
+        }
+
+        // Unchanged single-endpoint path.
+        let mut cosmos_request =
+            CosmosRequest::builder(OperationType::Read, container_link.clone()).build()?;
+        let location_endpoint = self
+            .global_endpoint_manager
+            .resolve_service_endpoint(&cosmos_request);
+        cosmos_request
+            .request_context
+            .route_to_location_endpoint(cosmos_request.resource_link.url(&location_endpoint));
+        let ctx_owned = Context::default().with_value(container_link);
+        self.pipeline.send(cosmos_request, ctx_owned).await
+    }
+
+    /// Runs the Collection Read through the metadata hedging strategy. Kept as a separate
+    /// (boxed at the call site) future so the hedge state does not enlarge the common path.
+    async fn hedged_container_read(
+        &self,
+        strategy: Arc<MetadataHedgingStrategy>,
+        container_link: ResourceLink,
         _options: Option<ReadContainerOptions>,
     ) -> azure_core::Result<CosmosResponse<ContainerProperties>> {
         let cosmos_request =
             CosmosRequest::builder(OperationType::Read, container_link.clone()).build()?;
-
         let ctx_owned = Context::default().with_value(container_link);
-
-        match &self.hedging {
-            // Hedged path: the strategy resolves the primary endpoint, races a single
-            // cross-region hedge, and returns the authoritative winner.
-            Some(strategy) => {
-                let hedged = Box::pin(strategy.execute::<ContainerProperties>(
-                    cosmos_request,
-                    ctx_owned,
-                    &self.pipeline,
-                    &self.global_endpoint_manager,
-                ))
-                .await?;
-                tracing::debug!(
-                    hedge_fired = hedged.hedge_fired,
-                    hedge_won = hedged.hedge_won,
-                    winning_region = %hedged.winning_endpoint,
-                    "metadata hedging: collection read"
-                );
-                Ok(hedged.response)
-            }
-            // Unchanged single-endpoint path.
-            None => {
-                let mut cosmos_request = cosmos_request;
-                let location_endpoint = self
-                    .global_endpoint_manager
-                    .resolve_service_endpoint(&cosmos_request);
-                cosmos_request.request_context.route_to_location_endpoint(
-                    cosmos_request.resource_link.url(&location_endpoint),
-                );
-                self.pipeline.send(cosmos_request, ctx_owned).await
-            }
-        }
+        let hedged = strategy
+            .execute::<ContainerProperties>(
+                cosmos_request,
+                ctx_owned,
+                &self.pipeline,
+                &self.global_endpoint_manager,
+            )
+            .await?;
+        tracing::debug!(
+            hedge_fired = hedged.hedge_fired,
+            hedge_won = hedged.hedge_won,
+            winning_region = %hedged.winning_endpoint,
+            "metadata hedging: collection read"
+        );
+        Ok(hedged.response)
     }
 }
 

@@ -229,33 +229,19 @@ impl PartitionKeyRangeCache {
             )?;
 
             let response = if iteration_count == 1 {
-                match &self.hedging {
-                    // Hedge the FIRST page only. If the hedge wins, pin later pages to it.
-                    Some(strategy) => {
-                        let ctx = Context::default().with_value(pk_range_link.clone());
-                        let hedged = Box::pin(strategy.execute::<()>(
-                            request,
-                            ctx,
-                            &self.pipeline,
-                            &self.endpoint_manager,
-                        ))
-                        .await?;
-                        tracing::debug!(
-                            hedge_fired = hedged.hedge_fired,
-                            hedge_won = hedged.hedge_won,
-                            winning_region = %hedged.winning_endpoint,
-                            "metadata hedging: partition key range first page"
-                        );
-                        if hedged.hedge_won {
-                            pinned_endpoint = Some(hedged.winning_endpoint);
-                        }
-                        hedged.response
+                if let Some(strategy) = self.hedging.clone() {
+                    // Hedge the FIRST page only, isolated behind a boxed future. If the
+                    // hedge wins, pin later pages to the winning region.
+                    let (resp, won_endpoint) =
+                        Box::pin(self.hedged_first_page(strategy, request, pk_range_link)).await?;
+                    if let Some(endpoint) = won_endpoint {
+                        pinned_endpoint = Some(endpoint);
                     }
-                    None => {
-                        let endpoint = self.endpoint_manager.resolve_service_endpoint(&request);
-                        self.send_partition_key_range_request(request, pk_range_link, endpoint)
-                            .await?
-                    }
+                    resp
+                } else {
+                    let endpoint = self.endpoint_manager.resolve_service_endpoint(&request);
+                    self.send_partition_key_range_request(request, pk_range_link, endpoint)
+                        .await?
                 }
             } else {
                 // Pages 2..N: pin to the winning region when a hedge won page 1, otherwise
@@ -341,6 +327,30 @@ impl PartitionKeyRangeCache {
         }
 
         Ok(cosmos_request)
+    }
+
+    /// Runs the first PartitionKeyRange ReadFeed page through the hedging strategy,
+    /// returning the winning response and the winning region *iff* the hedge won (so the
+    /// caller can pin pages 2..N to it). Kept separate (boxed at the call site) so the
+    /// hedge state does not enlarge the routing-map fetch future on the common path.
+    async fn hedged_first_page(
+        &self,
+        strategy: Arc<MetadataHedgingStrategy>,
+        request: CosmosRequest,
+        resource_link: ResourceLink,
+    ) -> azure_core::Result<(CosmosResponse<()>, Option<Url>)> {
+        let ctx = Context::default().with_value(resource_link);
+        let hedged = strategy
+            .execute::<()>(request, ctx, &self.pipeline, &self.endpoint_manager)
+            .await?;
+        tracing::debug!(
+            hedge_fired = hedged.hedge_fired,
+            hedge_won = hedged.hedge_won,
+            winning_region = %hedged.winning_endpoint,
+            "metadata hedging: partition key range first page"
+        );
+        let won_endpoint = hedged.hedge_won.then_some(hedged.winning_endpoint);
+        Ok((hedged.response, won_endpoint))
     }
 
     /// Routes an already-built request to `endpoint` and sends it through the pipeline.

@@ -57,6 +57,8 @@ pub struct TestOptions {
     /// Application region for the fault injection client.
     /// Used in combination with `fault_injection_builder`.
     pub fault_client_application_region: Option<RegionName>,
+    /// Whether to enable metadata hedging on the normal (non-fault) client.
+    pub client_metadata_hedging_enabled: bool,
     /// Timeout for the test. If None, uses DEFAULT_TEST_TIMEOUT.
     pub timeout: Option<Duration>,
 }
@@ -84,6 +86,12 @@ impl TestOptions {
     /// Sets the application region for the fault injection client.
     pub fn with_fault_client_application_region(mut self, region: RegionName) -> Self {
         self.fault_client_application_region = Some(region);
+        self
+    }
+
+    /// Enables metadata hedging on the normal (non-fault) client.
+    pub fn with_client_metadata_hedging(mut self, enabled: bool) -> Self {
+        self.client_metadata_hedging_enabled = enabled;
         self
     }
 
@@ -187,20 +195,28 @@ impl TestClient {
     pub async fn from_env_with_fault_options(
         fault_client_application_region: Option<RegionName>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        Self::from_env_inner(None, None, fault_client_application_region).await
+        Self::from_env_inner(None, None, fault_client_application_region, false).await
     }
 
     pub async fn from_env(
         application_region: Option<RegionName>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        Self::from_env_inner(application_region, None, None).await
+        Self::from_env_inner(application_region, None, None, false).await
+    }
+
+    /// Like [`from_env`](Self::from_env) but enables metadata hedging on the client.
+    pub async fn from_env_with_hedging(
+        application_region: Option<RegionName>,
+        metadata_hedging_enabled: bool,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
+        Self::from_env_inner(application_region, None, None, metadata_hedging_enabled).await
     }
 
     pub async fn from_env_with_fault_builder(
         fault_builder: FaultInjectionClientBuilder,
         application_region: Option<RegionName>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        Self::from_env_inner(None, Some(fault_builder), application_region).await
+        Self::from_env_inner(None, Some(fault_builder), application_region, false).await
     }
 
     /// Creates a new [`TestClient`] from local environment variables.
@@ -212,6 +228,7 @@ impl TestClient {
         application_region: Option<RegionName>,
         fault_builder: Option<FaultInjectionClientBuilder>,
         fault_client_application_region: Option<RegionName>,
+        metadata_hedging_enabled: bool,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let Ok(env_var) = std::env::var(CONNECTION_STRING_ENV_VAR) else {
             // No connection string provided, so we'll skip tests that require it.
@@ -235,6 +252,7 @@ impl TestClient {
                     true,
                     fault_builder,
                     None,
+                    metadata_hedging_enabled,
                 )
                 .await
             }
@@ -245,6 +263,7 @@ impl TestClient {
                     false,
                     fault_builder,
                     fault_client_application_region,
+                    metadata_hedging_enabled,
                 )
                 .await
             }
@@ -257,6 +276,7 @@ impl TestClient {
         mut allow_invalid_certificates: bool,
         fault_builder: Option<FaultInjectionClientBuilder>,
         fault_client_application_region: Option<RegionName>,
+        metadata_hedging_enabled: bool,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let connection_string: ConnectionString = connection_string.parse()?;
 
@@ -275,6 +295,11 @@ impl TestClient {
         // Apply application region for the client
         if let Some(region) = application_region.or(fault_client_application_region) {
             builder = builder.with_application_region(region);
+        }
+
+        // Enable metadata hedging on the client when requested.
+        if metadata_hedging_enabled {
+            builder = builder.with_metadata_hedging_enabled(true);
         }
 
         // Configure invalid certificate acceptance (e.g., for emulator)
@@ -359,7 +384,11 @@ impl TestClient {
             .with_env_filter(EnvFilter::from_default_env())
             .try_init();
 
-        let test_client = Self::from_env(options.client_application_region.clone()).await?;
+        let test_client = Self::from_env_with_hedging(
+            options.client_application_region.clone(),
+            options.client_metadata_hedging_enabled,
+        )
+        .await?;
 
         // Create fault injection client if builder or application region were provided
         // builder should be passed in for emulator tests to ensure the FaultClient

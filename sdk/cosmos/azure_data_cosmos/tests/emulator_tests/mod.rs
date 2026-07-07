@@ -5,6 +5,7 @@ mod cosmos_containers;
 mod cosmos_databases;
 mod cosmos_fault_injection;
 mod cosmos_items;
+mod cosmos_metadata_hedging;
 mod cosmos_offers;
 mod cosmos_query;
 
