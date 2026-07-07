@@ -41,9 +41,10 @@ Param (
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
-. "$PSScriptRoot/../common/scripts/common.ps1"
+. ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
+. ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'Cargo.ps1'))
 
-$resolvedToolchain = [Channels]::Nightly()
+$resolvedToolchain = Get-ResolvedRustToolchain -Toolchain 'nightly'
 
 Write-Host "Getting package properties for $PackageName in $ServiceDirectory."
 $pkgProperties = Get-PkgProperties -PackageName $PackageName -ServiceDirectory $ServiceDirectory
@@ -77,7 +78,7 @@ if ($pkgProperties.ChangeLogPath) {
     -ReplaceLatestEntryTitle $ReplaceLatestEntryTitle -ReleaseDate $ReleaseDate
 }
 
-$tomlPath = Join-Path $pkgProperties.DirectoryPath "Cargo.toml"
+$tomlPath = ([System.IO.Path]::Combine($pkgProperties.DirectoryPath, 'Cargo.toml'))
 $content = Get-Content -Path $tomlPath -Raw
 $updated = $content -replace '(\[package\](.|\n)+?version\s*=\s*)"(.+?)"', "`$1`"$packageSemVer`""
 

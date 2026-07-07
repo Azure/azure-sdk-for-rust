@@ -29,6 +29,46 @@ async fn write_forbidden_403_3() {
     assert_eq!(substatus, "3");
 }
 
+/// Control-plane writes must honor the single-write-region rule too: database
+/// and container create/delete plus offer replace all return `403 / 3
+/// (WriteForbidden)` on a read-only region, matching data-plane writes and the
+/// real service. The region guard short-circuits before any resource lookup,
+/// so nonexistent ids still surface the region error rather than 404.
+#[tokio::test]
+async fn control_plane_write_forbidden_403_3_on_read_region() {
+    use azure_core::http::{Method, Request, Url};
+
+    let ctx = setup_multi_region(WriteMode::Single).await;
+    let west = &ctx.west_url;
+
+    // Each control-plane write verb, aimed at the read region.
+    let cases = [
+        (Method::Post, format!("{west}/dbs")),
+        (Method::Delete, format!("{west}/dbs/testdb")),
+        (Method::Post, format!("{west}/dbs/testdb/colls")),
+        (Method::Delete, format!("{west}/dbs/testdb/colls/testcoll")),
+        (Method::Put, format!("{west}/offers/some_offer")),
+    ];
+
+    for (method, url) in cases {
+        let mut req = Request::new(Url::parse(&url).unwrap(), method);
+        // A well-formed body keeps create requests valid; it is never parsed
+        // because the write-region guard rejects the request first.
+        req.set_body(serde_json::to_vec(&serde_json::json!({"id": "x"})).unwrap());
+        let response = ctx.emulator.execute_request(&req).await.unwrap();
+        assert_eq!(
+            response.status(),
+            StatusCode::Forbidden,
+            "{url} must be forbidden on a read region"
+        );
+        let substatus = response
+            .headers()
+            .get_optional_str(&SUBSTATUS)
+            .unwrap_or("0");
+        assert_eq!(substatus, "3", "{url} must carry WriteForbidden substatus");
+    }
+}
+
 #[tokio::test]
 async fn write_to_write_region_succeeds() {
     let ctx = setup_multi_region(WriteMode::Single).await;
