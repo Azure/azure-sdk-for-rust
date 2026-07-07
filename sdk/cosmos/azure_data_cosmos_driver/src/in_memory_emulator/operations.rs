@@ -5,18 +5,20 @@
 
 // cspell:ignore acked llsn
 
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Instant;
 
-use azure_core::http::headers::HeaderValue;
+use azure_core::http::headers::{HeaderName, HeaderValue};
 use azure_core::http::{AsyncRawResponse, StatusCode};
+use serde::Deserialize;
 
 use super::config::ContainerConfig;
 use super::dispatch::{OperationType, ParsedRequest};
 use super::epk::{compute_epk, extract_pk_from_body, parse_partition_key_header, Epk};
 use super::response::headers::{
-    ACTIVITY_ID, GLOBAL_COMMITTED_LSN, INTERNAL_PARTITION_ID, ITEM_LOCAL_LSN, ITEM_LSN,
-    LAST_STATE_CHANGE_UTC, LOCAL_LSN, NUMBER_OF_READ_REGIONS, PARTITION_KEY_RANGE_ID,
+    ACTIVITY_ID, CONTINUATION, GLOBAL_COMMITTED_LSN, INTERNAL_PARTITION_ID, ITEM_LOCAL_LSN,
+    ITEM_LSN, LAST_STATE_CHANGE_UTC, LOCAL_LSN, NUMBER_OF_READ_REGIONS, PARTITION_KEY_RANGE_ID,
     QUORUM_ACKED_LOCAL_LSN, QUORUM_ACKED_LSN, RESOURCE_QUOTA, RESOURCE_USAGE, SERVICE_VERSION,
     TRANSPORT_REQUEST_ID,
 };
@@ -28,10 +30,12 @@ use super::store::{
     StoredDocument,
 };
 use super::system_properties::{
-    account_properties_to_json, container_to_json, database_to_json, inject_system_properties,
-    pkranges_to_json,
+    account_properties_to_json, container_to_json, database_to_json, feed_to_json,
+    inject_system_properties, offer_to_json, pkranges_to_json,
 };
 use crate::models::PartitionKeyDefinition;
+
+static OFFER_REPLACE_PENDING: HeaderName = HeaderName::from_static("x-ms-offer-replace-pending");
 
 /// If any non-source target region's replication queue is saturated, returns
 /// a 429/3075 error response so callers can short-circuit before committing.
@@ -104,6 +108,9 @@ pub(crate) async fn handle_operation(
     let response = match &parsed.operation {
         OperationType::ReadAccount => handle_read_account(store, start),
         OperationType::CreateDatabase => {
+            if !store.config().is_write_region(region_name) {
+                return write_forbidden_response(start);
+            }
             handle_create_database(store, region_name, parsed, request_body, start).await
         }
         OperationType::ReadDatabase => handle_read_database(
@@ -112,13 +119,21 @@ pub(crate) async fn handle_operation(
             parsed.db_id.as_deref().unwrap_or(""),
             start,
         ),
-        OperationType::DeleteDatabase => handle_delete_database(
-            store,
-            region_name,
-            parsed.db_id.as_deref().unwrap_or(""),
-            start,
-        ),
+        OperationType::DeleteDatabase => {
+            if !store.config().is_write_region(region_name) {
+                return write_forbidden_response(start);
+            }
+            handle_delete_database(
+                store,
+                region_name,
+                parsed.db_id.as_deref().unwrap_or(""),
+                start,
+            )
+        }
         OperationType::CreateContainer => {
+            if !store.config().is_write_region(region_name) {
+                return write_forbidden_response(start);
+            }
             handle_create_container(
                 store,
                 region_name,
@@ -136,13 +151,18 @@ pub(crate) async fn handle_operation(
             parsed.coll_id.as_deref().unwrap_or(""),
             start,
         ),
-        OperationType::DeleteContainer => handle_delete_container(
-            store,
-            region_name,
-            parsed.db_id.as_deref().unwrap_or(""),
-            parsed.coll_id.as_deref().unwrap_or(""),
-            start,
-        ),
+        OperationType::DeleteContainer => {
+            if !store.config().is_write_region(region_name) {
+                return write_forbidden_response(start);
+            }
+            handle_delete_container(
+                store,
+                region_name,
+                parsed.db_id.as_deref().unwrap_or(""),
+                parsed.coll_id.as_deref().unwrap_or(""),
+                start,
+            )
+        }
         OperationType::ReadPKRanges => handle_read_pkranges(
             store,
             region_name,
@@ -151,6 +171,13 @@ pub(crate) async fn handle_operation(
             parsed.if_none_match.as_deref(),
             start,
         ),
+        OperationType::ReadFeedDatabases => {
+            handle_read_feed_databases(store, region_name, parsed, start)
+        }
+        OperationType::ReadFeedContainers => {
+            handle_read_feed_containers(store, region_name, parsed, start)
+        }
+        OperationType::ReadFeedItems => handle_read_feed_items(store, region_name, parsed, start),
         OperationType::Create => {
             if !store.config().is_write_region(region_name) {
                 return write_forbidden_response(start);
@@ -176,12 +203,35 @@ pub(crate) async fn handle_operation(
             }
             handle_delete(store, region_name, parsed, start).await
         }
-        OperationType::Query => unsupported_response(
-            "SQL queries are not supported by the in-memory emulator. \
-             See sdk/cosmos/azure_data_cosmos/docs/in-memory-emulator-spec.md \
-             section 1 (Non-Goals).",
-            start,
-        ),
+        OperationType::QueryDatabases => {
+            handle_query_databases(store, region_name, parsed, request_body, start)
+        }
+        OperationType::QueryContainers => {
+            handle_query_containers(store, region_name, parsed, request_body, start)
+        }
+        OperationType::QueryItems => {
+            handle_query_items(store, region_name, parsed, request_body, start)
+        }
+        OperationType::QueryPlan => {
+            handle_query_plan(store, region_name, parsed, request_body, start)
+        }
+        OperationType::Batch => {
+            if !store.config().is_write_region(region_name) {
+                return write_forbidden_response(start);
+            }
+            handle_batch(store, region_name, parsed, request_body, start).await
+        }
+        OperationType::ReadFeedOffers => handle_read_feed_offers(store, region_name, parsed, start),
+        OperationType::QueryOffers => {
+            handle_query_offers(store, region_name, parsed, request_body, start)
+        }
+        OperationType::ReadOffer => handle_read_offer(store, region_name, parsed, start),
+        OperationType::ReplaceOffer => {
+            if !store.config().is_write_region(region_name) {
+                return write_forbidden_response(start);
+            }
+            handle_replace_offer(store, region_name, parsed, request_body, start)
+        }
         OperationType::BadRequestPath(desc) => bad_request_path_response(desc, start),
         OperationType::Unsupported(desc) => unsupported_response(desc, start),
     };
@@ -647,6 +697,1235 @@ fn handle_read_pkranges(
         })
 }
 
+fn paginate_values(
+    values: Vec<serde_json::Value>,
+    max_item_count: Option<i32>,
+    continuation: Option<&str>,
+    start: Instant,
+) -> Result<(Vec<serde_json::Value>, Option<String>), AsyncRawResponse> {
+    let offset = match continuation {
+        Some(token) => token.parse::<usize>().map_err(|_| {
+            error_response(
+                StatusCode::BadRequest,
+                None,
+                "BadRequest",
+                "Invalid continuation token",
+                0.0,
+                "",
+                start,
+            )
+            .build()
+        })?,
+        None => 0,
+    };
+
+    let total = values.len();
+    let limit = match max_item_count {
+        Some(n) if n > 0 => n as usize,
+        _ => total.saturating_sub(offset),
+    };
+    let end = offset.saturating_add(limit).min(total);
+    let page = if offset >= total {
+        Vec::new()
+    } else {
+        values[offset..end].to_vec()
+    };
+    let next = (end < total).then(|| end.to_string());
+    Ok((page, next))
+}
+
+#[derive(Clone, Copy)]
+struct FeedPageOptions<'a> {
+    max_item_count: Option<i32>,
+    continuation: Option<&'a str>,
+}
+
+impl<'a> FeedPageOptions<'a> {
+    fn from_request(parsed: &'a ParsedRequest) -> Self {
+        Self {
+            max_item_count: parsed.max_item_count,
+            continuation: parsed.continuation.as_deref(),
+        }
+    }
+}
+
+fn success_feed_response(
+    envelope_name: &str,
+    rid: impl Into<String>,
+    items: Vec<serde_json::Value>,
+    page_options: FeedPageOptions<'_>,
+    charge: f64,
+    session_token: &str,
+    start: Instant,
+) -> AsyncRawResponse {
+    let (page, next) = match paginate_values(
+        items,
+        page_options.max_item_count,
+        page_options.continuation,
+        start,
+    ) {
+        Ok(v) => v,
+        Err(response) => return response,
+    };
+    let item_count = page.len() as u32;
+    let body = feed_to_json(envelope_name, page, rid);
+    let mut builder = success_response(StatusCode::Ok, &body, charge, session_token, start)
+        .with_item_count(item_count);
+    if let Some(next) = next {
+        builder = builder.with_header_value(CONTINUATION.clone(), next);
+    }
+    builder.build()
+}
+
+#[derive(Deserialize)]
+struct QuerySpec {
+    query: String,
+    #[serde(default)]
+    parameters: Vec<QueryParameter>,
+}
+
+#[derive(Deserialize)]
+struct QueryParameter {
+    name: String,
+    value: serde_json::Value,
+}
+
+fn parse_query_spec(
+    request_body: &[u8],
+    start: Instant,
+) -> Result<(String, Vec<(String, serde_json::Value)>), AsyncRawResponse> {
+    let spec: QuerySpec = serde_json::from_slice(request_body).map_err(|e| {
+        error_response(
+            StatusCode::BadRequest,
+            None,
+            "BadRequest",
+            &format!("Invalid query JSON body: {e}"),
+            0.0,
+            "",
+            start,
+        )
+        .build()
+    })?;
+    if spec.query.trim().is_empty() {
+        return Err(error_response(
+            StatusCode::BadRequest,
+            None,
+            "BadRequest",
+            "Query text must not be empty",
+            0.0,
+            "",
+            start,
+        )
+        .build());
+    }
+    let parameters = spec
+        .parameters
+        .into_iter()
+        .map(|p| (p.name, p.value))
+        .collect();
+    Ok((spec.query, parameters))
+}
+
+fn execute_query_feed(
+    envelope_name: &str,
+    rid: impl Into<String>,
+    values: Vec<serde_json::Value>,
+    parsed: &ParsedRequest,
+    request_body: &[u8],
+    session_token: &str,
+    start: Instant,
+) -> AsyncRawResponse {
+    let (query, parameters) = match parse_query_spec(request_body, start) {
+        Ok(v) => v,
+        Err(response) => return response,
+    };
+    let results = match crate::query::eval::query_documents(&query, &parameters, &values) {
+        Ok(results) => results,
+        Err(e) => {
+            return error_response(
+                StatusCode::BadRequest,
+                None,
+                "BadRequest",
+                &e.to_string(),
+                0.0,
+                "",
+                start,
+            )
+            .build();
+        }
+    };
+    success_feed_response(
+        envelope_name,
+        rid,
+        results,
+        FeedPageOptions::from_request(parsed),
+        1.0,
+        session_token,
+        start,
+    )
+}
+
+fn handle_read_feed_databases(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    start: Instant,
+) -> AsyncRawResponse {
+    let region_ref = match store.region(region_name) {
+        Some(r) => r,
+        None => return not_found_region(start),
+    };
+    let databases: Vec<_> = region_ref
+        .list_databases()
+        .iter()
+        .map(database_to_json)
+        .collect();
+    success_feed_response(
+        "Databases",
+        "",
+        databases,
+        FeedPageOptions::from_request(parsed),
+        1.0,
+        "",
+        start,
+    )
+}
+
+fn handle_query_databases(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    request_body: &[u8],
+    start: Instant,
+) -> AsyncRawResponse {
+    let region_ref = match store.region(region_name) {
+        Some(r) => r,
+        None => return not_found_region(start),
+    };
+    let databases: Vec<_> = region_ref
+        .list_databases()
+        .iter()
+        .map(database_to_json)
+        .collect();
+    execute_query_feed("Databases", "", databases, parsed, request_body, "", start)
+}
+
+fn handle_read_feed_containers(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    start: Instant,
+) -> AsyncRawResponse {
+    let db_id = parsed.db_id.as_deref().unwrap_or("");
+    let region_ref = match store.region(region_name) {
+        Some(r) => r,
+        None => return not_found_region(start),
+    };
+    let Some(db) = region_ref.get_database(db_id) else {
+        return error_response(
+            StatusCode::NotFound,
+            None,
+            "NotFound",
+            &format!("Database '{}' does not exist", db_id),
+            0.0,
+            "",
+            start,
+        )
+        .build();
+    };
+    let containers: Vec<_> = region_ref
+        .list_containers(db_id)
+        .iter()
+        .map(container_to_json)
+        .collect();
+    success_feed_response(
+        "DocumentCollections",
+        db.rid,
+        containers,
+        FeedPageOptions::from_request(parsed),
+        1.0,
+        "",
+        start,
+    )
+}
+
+fn handle_query_containers(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    request_body: &[u8],
+    start: Instant,
+) -> AsyncRawResponse {
+    let db_id = parsed.db_id.as_deref().unwrap_or("");
+    let region_ref = match store.region(region_name) {
+        Some(r) => r,
+        None => return not_found_region(start),
+    };
+    let Some(db) = region_ref.get_database(db_id) else {
+        return error_response(
+            StatusCode::NotFound,
+            None,
+            "NotFound",
+            &format!("Database '{}' does not exist", db_id),
+            0.0,
+            "",
+            start,
+        )
+        .build();
+    };
+    let containers: Vec<_> = region_ref
+        .list_containers(db_id)
+        .iter()
+        .map(container_to_json)
+        .collect();
+    execute_query_feed(
+        "DocumentCollections",
+        db.rid,
+        containers,
+        parsed,
+        request_body,
+        "",
+        start,
+    )
+}
+
+fn handle_read_feed_offers(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    start: Instant,
+) -> AsyncRawResponse {
+    let region_ref = match store.region(region_name) {
+        Some(r) => r,
+        None => return not_found_region(start),
+    };
+    let offers: Vec<_> = region_ref.list_offers().iter().map(offer_to_json).collect();
+    success_feed_response(
+        "Offers",
+        "",
+        offers,
+        FeedPageOptions::from_request(parsed),
+        1.0,
+        "",
+        start,
+    )
+}
+
+fn handle_query_offers(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    request_body: &[u8],
+    start: Instant,
+) -> AsyncRawResponse {
+    let region_ref = match store.region(region_name) {
+        Some(r) => r,
+        None => return not_found_region(start),
+    };
+    let offers: Vec<_> = region_ref.list_offers().iter().map(offer_to_json).collect();
+    execute_query_feed("Offers", "", offers, parsed, request_body, "", start)
+}
+
+fn handle_read_offer(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    start: Instant,
+) -> AsyncRawResponse {
+    let offer_id = parsed.offer_id.as_deref().unwrap_or("");
+    let region_ref = match store.region(region_name) {
+        Some(r) => r,
+        None => return not_found_region(start),
+    };
+    match region_ref.get_offer(offer_id) {
+        Some(offer) => {
+            let body = offer_to_json(&offer);
+            success_response(StatusCode::Ok, &body, 1.0, "", start)
+                .with_etag(&offer.etag)
+                .build()
+        }
+        None => error_response(
+            StatusCode::NotFound,
+            None,
+            "NotFound",
+            &format!("Offer '{}' does not exist", offer_id),
+            0.0,
+            "",
+            start,
+        )
+        .build(),
+    }
+}
+
+fn parse_offer_throughput(request_body: &[u8], start: Instant) -> Result<u32, AsyncRawResponse> {
+    let body: serde_json::Value = serde_json::from_slice(request_body).map_err(|_| {
+        error_response(
+            StatusCode::BadRequest,
+            None,
+            "BadRequest",
+            "Invalid JSON body",
+            0.0,
+            "",
+            start,
+        )
+        .build()
+    })?;
+    let throughput = body
+        .pointer("/content/offerThroughput")
+        .and_then(|v| v.as_u64())
+        .and_then(|v| u32::try_from(v).ok())
+        .ok_or_else(|| {
+            error_response(
+                StatusCode::BadRequest,
+                None,
+                "BadRequest",
+                "Missing or invalid content.offerThroughput",
+                0.0,
+                "",
+                start,
+            )
+            .build()
+        })?;
+    let config = ContainerConfig::default().with_throughput(throughput);
+    if let Err(e) = config.build() {
+        return Err(error_response(
+            StatusCode::BadRequest,
+            None,
+            "BadRequest",
+            &e.to_string(),
+            0.0,
+            "",
+            start,
+        )
+        .build());
+    }
+    Ok(throughput)
+}
+
+fn handle_replace_offer(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    request_body: &[u8],
+    start: Instant,
+) -> AsyncRawResponse {
+    let offer_id = parsed.offer_id.as_deref().unwrap_or("");
+    let throughput = match parse_offer_throughput(request_body, start) {
+        Ok(v) => v,
+        Err(response) => return response,
+    };
+    let Some(offer) = store.replace_offer_internal(offer_id, throughput) else {
+        return error_response(
+            StatusCode::NotFound,
+            None,
+            "NotFound",
+            &format!("Offer '{}' does not exist", offer_id),
+            0.0,
+            "",
+            start,
+        )
+        .build();
+    };
+    let token = store.advance_master_partition_lsn(region_name);
+    let body = offer_to_json(&offer);
+    success_response(StatusCode::Ok, &body, 1.0, &token, start)
+        .with_etag(&offer.etag)
+        .with_header_value(OFFER_REPLACE_PENDING.clone(), "false")
+        .build()
+}
+
+fn collect_item_documents(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    start: Instant,
+) -> Result<(String, Vec<serde_json::Value>, String), AsyncRawResponse> {
+    let db_id = parsed.db_id.as_deref().unwrap_or("");
+    let coll_id = parsed.coll_id.as_deref().unwrap_or("");
+    let region_ref = match store.region(region_name) {
+        Some(r) => r,
+        None => return Err(not_found_region(start)),
+    };
+    if !region_ref.database_exists(db_id) {
+        return Err(error_response(
+            StatusCode::NotFound,
+            None,
+            "NotFound",
+            &format!("Database '{}' does not exist", db_id),
+            0.0,
+            "",
+            start,
+        )
+        .build());
+    }
+
+    let result = region_ref.with_container(db_id, coll_id, |state| {
+        let requested_epk = match parsed.partition_key_header.as_deref() {
+            Some(header) => match parse_partition_key_header(header) {
+                Ok(components) if components.is_empty() => None,
+                Ok(components) => Some(compute_epk(
+                    &components,
+                    state.metadata.partition_key.kind(),
+                    state.metadata.partition_key.version(),
+                )),
+                Err(e) => return Err(bad_partition_key_response(e, start)),
+            },
+            None => None,
+        };
+        let start_epk = parsed.start_epk.as_deref().map(Epk::from);
+        let end_epk = parsed.end_epk.as_deref().map(Epk::from);
+        let mut docs = Vec::new();
+        let mut token_parts = Vec::new();
+        for partition in &state.physical_partitions {
+            if parsed
+                .partition_key_range_id
+                .as_deref()
+                .is_some_and(|id| id != partition.id.to_string())
+            {
+                continue;
+            }
+            if let Some(response) = check_partition_lock(partition, start) {
+                return Err(response);
+            }
+            let region_id = store.config().region_id_for(region_name);
+            token_parts.push(session_token_for(
+                partition,
+                region_id,
+                incoming_session_for(parsed, partition.id).as_ref(),
+            ));
+            let stored = partition.documents.read().unwrap();
+            for (epk, logical) in stored.iter() {
+                if requested_epk
+                    .as_ref()
+                    .is_some_and(|requested| requested != epk)
+                {
+                    continue;
+                }
+                if start_epk.as_ref().is_some_and(|min| epk < min) {
+                    continue;
+                }
+                if end_epk.as_ref().is_some_and(|max| epk >= max) {
+                    continue;
+                }
+                docs.extend(logical.values().map(|doc| doc.body.clone()));
+            }
+        }
+        Ok((state.metadata.rid.clone(), docs, token_parts.join(",")))
+    });
+
+    match result {
+        Some(Ok(v)) => Ok(v),
+        Some(Err(response)) => Err(response),
+        None => Err(container_not_found(db_id, coll_id, start)),
+    }
+}
+
+fn handle_read_feed_items(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    start: Instant,
+) -> AsyncRawResponse {
+    match collect_item_documents(store, region_name, parsed, start) {
+        Ok((rid, docs, token)) => success_feed_response(
+            "Documents",
+            rid,
+            docs,
+            FeedPageOptions::from_request(parsed),
+            1.0,
+            &token,
+            start,
+        ),
+        Err(response) => response,
+    }
+}
+
+fn handle_query_items(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    request_body: &[u8],
+    start: Instant,
+) -> AsyncRawResponse {
+    match collect_item_documents(store, region_name, parsed, start) {
+        Ok((rid, docs, token)) => {
+            execute_query_feed("Documents", rid, docs, parsed, request_body, &token, start)
+        }
+        Err(response) => response,
+    }
+}
+
+fn local_distinct_type_to_dataflow(
+    distinct_type: crate::query::plan::DistinctType,
+) -> crate::driver::dataflow::query_plan::DistinctType {
+    match distinct_type {
+        crate::query::plan::DistinctType::None => {
+            crate::driver::dataflow::query_plan::DistinctType::None
+        }
+        crate::query::plan::DistinctType::Ordered => {
+            crate::driver::dataflow::query_plan::DistinctType::Ordered
+        }
+        crate::query::plan::DistinctType::Unordered => {
+            crate::driver::dataflow::query_plan::DistinctType::Unordered
+        }
+    }
+}
+
+fn local_sort_order_to_dataflow(
+    sort_order: crate::query::plan::SortOrder,
+) -> crate::driver::dataflow::query_plan::SortOrder {
+    match sort_order {
+        crate::query::plan::SortOrder::Ascending => {
+            crate::driver::dataflow::query_plan::SortOrder::Ascending
+        }
+        crate::query::plan::SortOrder::Descending => {
+            crate::driver::dataflow::query_plan::SortOrder::Descending
+        }
+    }
+}
+
+fn local_query_info_to_dataflow(
+    info: crate::query::plan::LocalQueryInfo,
+) -> crate::driver::dataflow::query_plan::QueryInfo {
+    crate::driver::dataflow::query_plan::QueryInfo {
+        distinct_type: local_distinct_type_to_dataflow(info.distinct_type),
+        top: info.top.map(|v| v as u64),
+        offset: info.offset.map(|v| v as u64),
+        limit: info.limit.map(|v| v as u64),
+        order_by: info
+            .order_by
+            .into_iter()
+            .map(local_sort_order_to_dataflow)
+            .collect(),
+        order_by_expressions: info.order_by_expressions,
+        group_by_expressions: info.group_by_expressions,
+        group_by_aliases: Vec::new(),
+        aggregates: info
+            .aggregates
+            .into_iter()
+            .map(|a| format!("{a:?}"))
+            .collect(),
+        group_by_alias_to_aggregate_type: HashMap::new(),
+        rewritten_query: None,
+        has_select_value: info.has_select_value,
+        has_non_streaming_order_by: false,
+    }
+}
+
+fn full_query_range() -> crate::driver::dataflow::query_plan::QueryRange {
+    crate::driver::dataflow::query_plan::QueryRange {
+        min: Epk::MIN.as_str().to_string(),
+        max: Epk::MAX.as_str().to_string(),
+        is_min_inclusive: true,
+        is_max_inclusive: false,
+    }
+}
+
+fn handle_query_plan(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    request_body: &[u8],
+    start: Instant,
+) -> AsyncRawResponse {
+    let db_id = parsed.db_id.as_deref().unwrap_or("");
+    let coll_id = parsed.coll_id.as_deref().unwrap_or("");
+    let region_ref = match store.region(region_name) {
+        Some(r) => r,
+        None => return not_found_region(start),
+    };
+    if !region_ref.database_exists(db_id) {
+        return error_response(
+            StatusCode::NotFound,
+            None,
+            "NotFound",
+            &format!("Database '{}' does not exist", db_id),
+            0.0,
+            "",
+            start,
+        )
+        .build();
+    }
+    let Some(container) = region_ref.get_container(db_id, coll_id) else {
+        return container_not_found(db_id, coll_id, start);
+    };
+    let (query, parameters) = match parse_query_spec(request_body, start) {
+        Ok(v) => v,
+        Err(response) => return response,
+    };
+    let program = match crate::query::parse(&query) {
+        Ok(program) => program,
+        Err(e) => {
+            return error_response(
+                StatusCode::BadRequest,
+                None,
+                "BadRequest",
+                &format!("failed to parse query: {e}"),
+                0.0,
+                "",
+                start,
+            )
+            .build();
+        }
+    };
+    let pk_paths: Vec<&str> = container
+        .metadata
+        .partition_key
+        .paths()
+        .iter()
+        .map(|p| p.as_ref())
+        .collect();
+    let local_plan = match crate::query::plan::generate_query_plan_with_parameters(
+        &program.query,
+        &pk_paths,
+        &parameters,
+    ) {
+        Ok(plan) => plan,
+        Err(e) => {
+            return error_response(
+                StatusCode::BadRequest,
+                None,
+                "BadRequest",
+                &e.to_string(),
+                0.0,
+                "",
+                start,
+            )
+            .build();
+        }
+    };
+
+    let plan = crate::driver::dataflow::query_plan::QueryPlan {
+        partitioned_query_execution_info_version: 1,
+        query_info: Some(local_query_info_to_dataflow(local_plan.query_info)),
+        query_ranges: vec![full_query_range()],
+        hybrid_search_query_info: None,
+    };
+    let body = match serde_json::to_value(plan) {
+        Ok(body) => body,
+        Err(e) => {
+            return error_response(
+                StatusCode::InternalServerError,
+                None,
+                "InternalError",
+                &format!("failed to serialize query plan: {e}"),
+                0.0,
+                "",
+                start,
+            )
+            .build();
+        }
+    };
+    success_response(StatusCode::Ok, &body, 1.0, "", start)
+        .with_item_count(1)
+        .build()
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(tag = "operationType", rename_all_fields = "camelCase")]
+enum BatchOperation {
+    Create {
+        id: Option<String>,
+        resource_body: serde_json::Value,
+    },
+    Upsert {
+        id: Option<String>,
+        resource_body: serde_json::Value,
+        #[serde(default)]
+        if_match: Option<String>,
+        #[serde(default)]
+        if_none_match: Option<String>,
+    },
+    Replace {
+        id: String,
+        resource_body: serde_json::Value,
+        #[serde(default)]
+        if_match: Option<String>,
+    },
+    Read {
+        id: String,
+        #[serde(default)]
+        if_match: Option<String>,
+        #[serde(default)]
+        if_none_match: Option<String>,
+    },
+    Delete {
+        id: String,
+        #[serde(default)]
+        if_match: Option<String>,
+    },
+}
+
+fn batch_result(
+    status_code: u16,
+    resource_body: Option<serde_json::Value>,
+    etag: Option<&str>,
+    request_charge: f64,
+) -> serde_json::Value {
+    let mut result = serde_json::Map::new();
+    result.insert("statusCode".to_string(), serde_json::json!(status_code));
+    if let Some(body) = resource_body {
+        result.insert("resourceBody".to_string(), body);
+    }
+    if let Some(etag) = etag {
+        result.insert("eTag".to_string(), serde_json::json!(etag));
+    }
+    result.insert(
+        "requestCharge".to_string(),
+        serde_json::json!(request_charge),
+    );
+    serde_json::Value::Object(result)
+}
+
+fn failed_batch_results(
+    len: usize,
+    failure_index: usize,
+    failure_status: u16,
+    failure_body: Option<serde_json::Value>,
+) -> Vec<serde_json::Value> {
+    (0..len)
+        .map(|i| {
+            if i == failure_index {
+                batch_result(failure_status, failure_body.clone(), None, 1.0)
+            } else {
+                batch_result(424, None, None, 1.0)
+            }
+        })
+        .collect()
+}
+
+fn batch_bad_request(message: impl AsRef<str>, start: Instant) -> AsyncRawResponse {
+    error_response(
+        StatusCode::BadRequest,
+        None,
+        "BadRequest",
+        message.as_ref(),
+        0.0,
+        "",
+        start,
+    )
+    .build()
+}
+
+fn batch_doc_id(
+    explicit_id: Option<&str>,
+    body: &serde_json::Value,
+    start: Instant,
+) -> Result<String, AsyncRawResponse> {
+    let body_id = body.get("id").and_then(|v| v.as_str());
+    match (explicit_id, body_id) {
+        (Some(id), Some(body_id)) if id != body_id => Err(batch_bad_request(
+            "Document id in request body must match the batch operation id",
+            start,
+        )),
+        (Some(id), _) => Ok(id.to_string()),
+        (None, Some(body_id)) => Ok(body_id.to_string()),
+        (None, None) => Err(batch_bad_request("Missing 'id' field in document", start)),
+    }
+}
+
+fn validate_batch_body_partition_key(
+    body: &serde_json::Value,
+    expected_components: &[super::epk::PartitionKeyComponent],
+    meta: &ContainerMetadata,
+    start: Instant,
+) -> Result<(), AsyncRawResponse> {
+    let body_components = extract_pk_from_body(body, meta.partition_key.paths())
+        .map_err(|e| bad_partition_key_response(e, start))?;
+    if body_components != expected_components {
+        return Err(batch_bad_request(
+            "Transactional batch operations must use the batch partition key",
+            start,
+        ));
+    }
+    Ok(())
+}
+
+async fn handle_batch(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    request_body: &[u8],
+    start: Instant,
+) -> AsyncRawResponse {
+    const MAX_BATCH_OPERATIONS: usize = 100;
+    const MAX_BATCH_PAYLOAD_BYTES: usize = 2 * 1024 * 1024;
+
+    let db_id = parsed.db_id.as_deref().unwrap_or("");
+    let coll_id = parsed.coll_id.as_deref().unwrap_or("");
+
+    if request_body.len() > MAX_BATCH_PAYLOAD_BYTES {
+        return error_response(
+            StatusCode::PayloadTooLarge,
+            None,
+            "RequestEntityTooLarge",
+            "Transactional batch payload exceeds the maximum allowed size",
+            0.0,
+            "",
+            start,
+        )
+        .build();
+    }
+
+    let operations: Vec<BatchOperation> = match serde_json::from_slice(request_body) {
+        Ok(ops) => ops,
+        Err(e) => return batch_bad_request(format!("Invalid batch JSON body: {e}"), start),
+    };
+    if operations.len() > MAX_BATCH_OPERATIONS {
+        return batch_bad_request("Transactional batch cannot exceed 100 operations", start);
+    }
+
+    let batch_pk_components = match parsed.partition_key_header.as_deref() {
+        Some(header) => match parse_partition_key_header(header) {
+            Ok(components) if !components.is_empty() => components,
+            Ok(_) => {
+                return batch_bad_request(
+                    "Transactional batch requires a non-empty partition key",
+                    start,
+                )
+            }
+            Err(e) => return bad_partition_key_response(e, start),
+        },
+        None => {
+            return batch_bad_request(
+                "Transactional batch requires x-ms-documentdb-partitionkey",
+                start,
+            )
+        }
+    };
+
+    let region_ref = match store.region(region_name) {
+        Some(r) => r,
+        None => return not_found_region(start),
+    };
+    if !region_ref.database_exists(db_id) {
+        return error_response(
+            StatusCode::NotFound,
+            None,
+            "NotFound",
+            &format!("Database '{}' does not exist", db_id),
+            0.0,
+            "",
+            start,
+        )
+        .build();
+    }
+
+    let result = region_ref.with_container(db_id, coll_id, |state| {
+        let epk = compute_epk(
+            &batch_pk_components,
+            state.metadata.partition_key.kind(),
+            state.metadata.partition_key.version(),
+        );
+        let partition = match state.find_partition(&epk) {
+            Some(p) => p,
+            None => {
+                return Err(error_response(
+                    StatusCode::InternalServerError,
+                    None,
+                    "InternalError",
+                    "No partition found for EPK",
+                    1.0,
+                    "",
+                    start,
+                )
+                .build());
+            }
+        };
+        if let Some(response) = check_partition_lock(partition, start) {
+            return Err(response);
+        }
+
+        let has_write = operations
+            .iter()
+            .any(|op| !matches!(op, BatchOperation::Read { .. }));
+        // A transactional batch must evaluate all operations against one
+        // stable partition snapshot, including read-only batches. Holding the
+        // document write lock prevents concurrent point writes from changing
+        // the snapshot while the batch is being evaluated.
+        let mut docs_guard = partition.documents.write().unwrap();
+        let mut working_docs = docs_guard.clone();
+        let batch_lsn = if has_write {
+            partition.current_lsn() + 1
+        } else {
+            partition.current_lsn()
+        };
+        let mut results = Vec::with_capacity(operations.len());
+        let mut changes: Vec<(StoredDocument, bool)> = Vec::new();
+
+        for (index, operation) in operations.iter().enumerate() {
+            let logical = working_docs.entry(epk.clone()).or_default();
+            match operation {
+                BatchOperation::Create { id, resource_body } => {
+                    validate_batch_body_partition_key(
+                        resource_body,
+                        &batch_pk_components,
+                        &state.metadata,
+                        start,
+                    )?;
+                    let doc_id = batch_doc_id(id.as_deref(), resource_body, start)?;
+                    if logical.contains_key(&doc_id) {
+                        results = failed_batch_results(operations.len(), index, 409, None);
+                        return Ok((results, Vec::new(), String::new(), 1.0, None, None));
+                    }
+                    let mut body = resource_body.clone();
+                    let (_, doc_rid) = store.rid_generator().next_document_rid(
+                        state.metadata.numeric_db_id,
+                        state.metadata.numeric_coll_id,
+                    );
+                    let ts = current_timestamp();
+                    let etag = new_etag();
+                    let self_link = format!("{}docs/{}/", state.metadata.self_link, doc_rid);
+                    inject_system_properties(&doc_rid, &self_link, &etag, ts, &mut body);
+                    let body_size_bytes = serde_json::to_vec(resource_body).map_or(0, |v| v.len());
+                    let stored = StoredDocument {
+                        body: body.clone(),
+                        id: doc_id.clone(),
+                        rid: doc_rid,
+                        etag: etag.clone(),
+                        ts,
+                        self_link,
+                        lsn: batch_lsn,
+                        epk: epk.clone(),
+                        body_size_bytes,
+                        source_region: region_name.to_string(),
+                    };
+                    logical.insert(doc_id, stored.clone());
+                    changes.push((stored.clone(), false));
+                    results.push(batch_result(
+                        201,
+                        parsed.content_response_on_write.then_some(body),
+                        Some(&etag),
+                        1.0,
+                    ));
+                }
+                BatchOperation::Upsert {
+                    id,
+                    resource_body,
+                    if_match,
+                    if_none_match,
+                } => {
+                    validate_batch_body_partition_key(
+                        resource_body,
+                        &batch_pk_components,
+                        &state.metadata,
+                        start,
+                    )?;
+                    let doc_id = batch_doc_id(id.as_deref(), resource_body, start)?;
+                    if let Some(existing) = logical.get(&doc_id) {
+                        if if_match.as_ref().is_some_and(|etag| etag != &existing.etag)
+                            || if_none_match.as_deref() == Some("*")
+                        {
+                            results = failed_batch_results(operations.len(), index, 412, None);
+                            return Ok((results, Vec::new(), String::new(), 1.0, None, None));
+                        }
+                    }
+                    let status = if logical.contains_key(&doc_id) {
+                        200
+                    } else {
+                        201
+                    };
+                    let mut body = resource_body.clone();
+                    let (doc_rid, self_link) = logical
+                        .get(&doc_id)
+                        .map(|existing| (existing.rid.clone(), existing.self_link.clone()))
+                        .unwrap_or_else(|| {
+                            let (_, rid) = store.rid_generator().next_document_rid(
+                                state.metadata.numeric_db_id,
+                                state.metadata.numeric_coll_id,
+                            );
+                            let link = format!("{}docs/{}/", state.metadata.self_link, rid);
+                            (rid, link)
+                        });
+                    let ts = current_timestamp();
+                    let etag = new_etag();
+                    inject_system_properties(&doc_rid, &self_link, &etag, ts, &mut body);
+                    let body_size_bytes = serde_json::to_vec(resource_body).map_or(0, |v| v.len());
+                    let stored = StoredDocument {
+                        body: body.clone(),
+                        id: doc_id.clone(),
+                        rid: doc_rid,
+                        etag: etag.clone(),
+                        ts,
+                        self_link,
+                        lsn: batch_lsn,
+                        epk: epk.clone(),
+                        body_size_bytes,
+                        source_region: region_name.to_string(),
+                    };
+                    logical.insert(doc_id, stored.clone());
+                    changes.push((stored.clone(), false));
+                    results.push(batch_result(
+                        status,
+                        parsed.content_response_on_write.then_some(body),
+                        Some(&etag),
+                        1.0,
+                    ));
+                }
+                BatchOperation::Replace {
+                    id,
+                    resource_body,
+                    if_match,
+                } => {
+                    validate_batch_body_partition_key(
+                        resource_body,
+                        &batch_pk_components,
+                        &state.metadata,
+                        start,
+                    )?;
+                    let doc_id = batch_doc_id(Some(id), resource_body, start)?;
+                    let Some(existing) = logical.get(&doc_id).cloned() else {
+                        results = failed_batch_results(operations.len(), index, 404, None);
+                        return Ok((results, Vec::new(), String::new(), 1.0, None, None));
+                    };
+                    if if_match.as_ref().is_some_and(|etag| etag != &existing.etag) {
+                        results = failed_batch_results(operations.len(), index, 412, None);
+                        return Ok((results, Vec::new(), String::new(), 1.0, None, None));
+                    }
+                    let mut body = resource_body.clone();
+                    let ts = current_timestamp();
+                    let etag = new_etag();
+                    inject_system_properties(
+                        &existing.rid,
+                        &existing.self_link,
+                        &etag,
+                        ts,
+                        &mut body,
+                    );
+                    let body_size_bytes = serde_json::to_vec(resource_body).map_or(0, |v| v.len());
+                    let stored = StoredDocument {
+                        body: body.clone(),
+                        id: doc_id.clone(),
+                        rid: existing.rid,
+                        etag: etag.clone(),
+                        ts,
+                        self_link: existing.self_link,
+                        lsn: batch_lsn,
+                        epk: epk.clone(),
+                        body_size_bytes,
+                        source_region: region_name.to_string(),
+                    };
+                    logical.insert(doc_id, stored.clone());
+                    changes.push((stored.clone(), false));
+                    results.push(batch_result(
+                        200,
+                        parsed.content_response_on_write.then_some(body),
+                        Some(&etag),
+                        1.0,
+                    ));
+                }
+                BatchOperation::Read {
+                    id,
+                    if_match,
+                    if_none_match,
+                } => {
+                    let Some(existing) = logical.get(id) else {
+                        results = failed_batch_results(operations.len(), index, 404, None);
+                        return Ok((results, Vec::new(), String::new(), 1.0, None, None));
+                    };
+                    if if_match.as_ref().is_some_and(|etag| etag != &existing.etag) {
+                        results = failed_batch_results(operations.len(), index, 412, None);
+                        return Ok((results, Vec::new(), String::new(), 1.0, None, None));
+                    }
+                    if if_none_match
+                        .as_ref()
+                        .is_some_and(|etag| etag == &existing.etag)
+                    {
+                        results.push(batch_result(304, None, Some(&existing.etag), 1.0));
+                    } else {
+                        results.push(batch_result(
+                            200,
+                            Some(existing.body.clone()),
+                            Some(&existing.etag),
+                            1.0,
+                        ));
+                    }
+                }
+                BatchOperation::Delete { id, if_match } => {
+                    let Some(existing) = logical.get(id).cloned() else {
+                        results = failed_batch_results(operations.len(), index, 404, None);
+                        return Ok((results, Vec::new(), String::new(), 1.0, None, None));
+                    };
+                    if if_match.as_ref().is_some_and(|etag| etag != &existing.etag) {
+                        results = failed_batch_results(operations.len(), index, 412, None);
+                        return Ok((results, Vec::new(), String::new(), 1.0, None, None));
+                    }
+                    logical.remove(id);
+                    let tombstone = StoredDocument {
+                        body: serde_json::Value::Null,
+                        id: id.clone(),
+                        rid: existing.rid,
+                        etag: existing.etag.clone(),
+                        ts: current_timestamp(),
+                        self_link: existing.self_link,
+                        lsn: batch_lsn,
+                        epk: epk.clone(),
+                        body_size_bytes: 0,
+                        source_region: region_name.to_string(),
+                    };
+                    changes.push((tombstone, true));
+                    results.push(batch_result(204, None, Some(&existing.etag), 1.0));
+                }
+            }
+        }
+
+        if has_write {
+            *docs_guard = working_docs;
+            partition.advance_lsn();
+            partition.advance_local_lsn();
+        }
+        let documents_in_partition = docs_guard
+            .values()
+            .map(std::collections::BTreeMap::len)
+            .sum::<usize>();
+        let region_id = store.config().region_id_for(region_name);
+        let token = session_token_for(
+            partition,
+            region_id,
+            incoming_session_for(parsed, partition.id).as_ref(),
+        );
+        let headers = Some(PointResponseHeaders::from_partition_snapshot(
+            partition,
+            store.next_transport_request_id(),
+            documents_in_partition,
+        ));
+        let charge = results
+            .iter()
+            .filter_map(|r| r.get("requestCharge").and_then(|v| v.as_f64()))
+            .sum::<f64>();
+        Ok((results, changes, token, charge, headers, Some(batch_lsn)))
+    });
+
+    match result {
+        Some(Ok((results, changes, token, charge, headers, lsn))) => {
+            for (doc, is_delete) in changes {
+                store.replicate(region_name, db_id, coll_id, &doc, is_delete);
+            }
+            // A real Cosmos DB account returns 207 MultiStatus when any
+            // individual operation in the batch failed (statusCode >= 300),
+            // and 200 OK only when every operation succeeded.
+            let has_failure = results.iter().any(|r| {
+                r.get("statusCode")
+                    .and_then(|v| v.as_u64())
+                    .is_some_and(|s| s >= 300)
+            });
+            let status = if has_failure {
+                StatusCode::MultiStatus
+            } else {
+                StatusCode::Ok
+            };
+            let body = serde_json::Value::Array(results);
+            let mut builder = success_response(status, &body, charge, &token, start);
+            if let Some(lsn) = lsn {
+                builder = builder.with_lsn(lsn);
+            }
+            decorate_point_response(builder, headers, None).build()
+        }
+        Some(Err(response)) => response,
+        None => container_not_found(db_id, coll_id, start),
+    }
+}
+
 // --- Point Operations ---
 
 /// Resolves the partition key components and EPK for a point operation.
@@ -759,6 +2038,14 @@ impl PointResponseHeaders {
             .values()
             .map(std::collections::BTreeMap::len)
             .sum::<usize>();
+        Self::from_partition_snapshot(partition, transport_request_id, documents_in_partition)
+    }
+
+    fn from_partition_snapshot(
+        partition: &PhysicalPartition,
+        transport_request_id: u32,
+        documents_in_partition: usize,
+    ) -> Self {
         Self {
             partition_key_range_id: partition.id,
             internal_partition_id: partition.rid.clone(),
