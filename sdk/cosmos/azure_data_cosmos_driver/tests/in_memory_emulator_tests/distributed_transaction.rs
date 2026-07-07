@@ -346,7 +346,7 @@ async fn dtx_all_not_modified_read_is_completed() {
         &ctx.gateway_url,
         "testdb",
         "testcoll",
-        &serde_json::json!({"id": "etagged", "pk": "pk1", "value": 1}),
+        &serde_json::json!({"id": "item-with-etag", "pk": "pk1", "value": 1}),
         r#"["pk1"]"#,
         true,
     );
@@ -359,7 +359,7 @@ async fn dtx_all_not_modified_read_is_completed() {
         "operations": [{
             "databaseName": "testdb",
             "collectionName": "testcoll",
-            "id": "etagged",
+            "id": "item-with-etag",
             "partitionKey": ["pk1"],
             "index": 0,
             "operationType": "Read",
