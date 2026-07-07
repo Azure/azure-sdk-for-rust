@@ -21,19 +21,20 @@
 
 use azure_core::http::StatusCode;
 use azure_data_cosmos::{
-    models::{ContainerProperties, DatabaseProperties, ItemResponse},
+    models::{ContainerProperties, DatabaseProperties, ItemResponse, ThroughputProperties},
     options::{
-        ContentResponseOnWrite, ItemReadOptions, ItemWriteOptions, OperationOptions,
-        OperationOptionsBuilder, Region, ThrottlingRetryOptionsBuilder,
+        ContentResponseOnWrite, CreateContainerOptions, ItemReadOptions, ItemWriteOptions,
+        OperationOptions, OperationOptionsBuilder, Region, ThrottlingRetryOptionsBuilder,
     },
     AccountEndpoint, AccountReference, ContainerClient, CosmosClient, CosmosClientBuilder,
-    CosmosRuntimeBuilder, RoutingStrategy,
+    CosmosRuntimeBuilder, FeedScope, Query, RoutingStrategy, TransactionalBatch,
 };
 use azure_data_cosmos_driver::in_memory_emulator::{
     ConsistencyLevel, ContainerConfig, InMemoryEmulatorHttpClient, VirtualAccountConfig,
     VirtualRegion,
 };
 use azure_data_cosmos_driver::models::ConnectionString;
+use futures::TryStreamExt;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::time::{Duration, Instant};
@@ -50,6 +51,13 @@ struct TestItem {
     id: String,
     pk: String,
     value: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+struct QueryTestItem {
+    id: String,
+    pk: String,
+    score: i64,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
@@ -165,6 +173,7 @@ fn assert_emulator_item_response(resp: &ItemResponse, expected_status: StatusCod
 /// occasionally be exhausted on the failing region under CI contention before
 /// the routing layer marks the endpoint unavailable. Logs every attempt so we
 /// can see in CI which retry succeeded (or whether 503s are still occurring).
+#[cfg(feature = "fault_injection")]
 async fn read_item_with_503_retry(
     container: &ContainerClient,
     pk: &'static str,
@@ -495,6 +504,150 @@ async fn sdk_create_database_and_container_through_driver() {
 
     backend.cleanup_real_database(&db_name).await;
 }
+
+#[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
+async fn sdk_query_metadata_databases_and_containers() {
+    let (backend, db_name, _emu_container, _real_container) = setup_with_container().await;
+
+    let db_query = Query::from("SELECT * FROM c WHERE c.id = @id")
+        .with_parameter("@id", db_name.as_str())
+        .unwrap();
+    let emu_databases: Vec<DatabaseProperties> = backend
+        .emulator_client
+        .query_databases(db_query.clone(), None)
+        .await
+        .unwrap()
+        .try_collect()
+        .await
+        .unwrap();
+    assert_eq!(emu_databases.len(), 1);
+    assert_eq!(emu_databases[0].id.as_deref(), Some(db_name.as_str()));
+
+    if let Some(ref real_client) = backend.real_client {
+        let real_databases: Vec<DatabaseProperties> = real_client
+            .query_databases(db_query, None)
+            .await
+            .unwrap()
+            .try_collect()
+            .await
+            .unwrap();
+        assert_eq!(real_databases.len(), emu_databases.len());
+        assert_eq!(real_databases[0].id, emu_databases[0].id);
+    }
+
+    let container_query = Query::from("SELECT * FROM c WHERE c.id = @id")
+        .with_parameter("@id", "testcoll")
+        .unwrap();
+    let emu_containers: Vec<ContainerProperties> = backend
+        .emulator_client
+        .database_client(&db_name)
+        .query_containers(container_query.clone(), None)
+        .await
+        .unwrap()
+        .try_collect()
+        .await
+        .unwrap();
+    assert_eq!(emu_containers.len(), 1);
+    assert_eq!(emu_containers[0].id, "testcoll");
+
+    if let Some(ref real_client) = backend.real_client {
+        let real_containers: Vec<ContainerProperties> = real_client
+            .database_client(&db_name)
+            .query_containers(container_query, None)
+            .await
+            .unwrap()
+            .try_collect()
+            .await
+            .unwrap();
+        assert_eq!(real_containers.len(), emu_containers.len());
+        assert_eq!(real_containers[0].id, emu_containers[0].id);
+    }
+
+    backend.cleanup_real_database(&db_name).await;
+}
+
+#[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
+async fn sdk_container_throughput_read_and_replace() {
+    let backend = SdkDualBackend::setup().await.unwrap();
+    let db_name = backend.unique_db_name();
+    let container_name = "sdk_offer";
+    let props = ContainerProperties::new(container_name.to_string(), "/pk".into());
+    let options =
+        CreateContainerOptions::default().with_throughput(ThroughputProperties::manual(400));
+
+    backend
+        .emulator_client
+        .create_database(&db_name, None)
+        .await
+        .unwrap();
+    backend
+        .emulator_client
+        .database_client(&db_name)
+        .create_container(props.clone(), Some(options.clone()))
+        .await
+        .unwrap();
+
+    if let Some(ref real_client) = backend.real_client {
+        real_client.create_database(&db_name, None).await.unwrap();
+        real_client
+            .database_client(&db_name)
+            .create_container(props.clone(), Some(options))
+            .await
+            .unwrap();
+    }
+
+    let emu_container = backend
+        .emulator_client
+        .database_client(&db_name)
+        .container_client(container_name)
+        .await
+        .unwrap();
+    let emu_throughput = emu_container.read_throughput(None).await.unwrap().unwrap();
+    assert_eq!(emu_throughput.throughput(), Some(400));
+
+    let emu_replaced = emu_container
+        .begin_replace_throughput(ThroughputProperties::manual(500), None)
+        .await
+        .unwrap()
+        .await
+        .unwrap()
+        .into_model()
+        .unwrap();
+    assert_eq!(emu_replaced.throughput(), Some(500));
+    let emu_throughput = emu_container.read_throughput(None).await.unwrap().unwrap();
+    assert_eq!(emu_throughput.throughput(), Some(500));
+
+    if let Some(ref real_client) = backend.real_client {
+        let real_container = real_client
+            .database_client(&db_name)
+            .container_client(container_name)
+            .await
+            .unwrap();
+        let real_throughput = real_container.read_throughput(None).await.unwrap().unwrap();
+        assert_eq!(real_throughput.throughput(), Some(400));
+
+        let real_replaced = real_container
+            .begin_replace_throughput(ThroughputProperties::manual(500), None)
+            .await
+            .unwrap()
+            .await
+            .unwrap()
+            .into_model()
+            .unwrap();
+        assert_eq!(real_replaced.throughput(), emu_replaced.throughput());
+    }
+
+    backend.cleanup_real_database(&db_name).await;
+}
+
 #[tokio::test]
 #[cfg_attr(
     test_category = "emulator_vnext",
@@ -864,6 +1017,178 @@ async fn sdk_create_multiple_items_and_read_back() {
             let real_doc: TestItem = real_read.into_body().into_single().unwrap();
             assert_eq!(real_doc.value, i);
         }
+    }
+
+    backend.cleanup_real_database(&db_name).await;
+}
+
+#[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
+async fn sdk_query_items_with_filter_and_projection() {
+    let (backend, db_name, emu_container, real_container) = setup_with_container().await;
+
+    for i in 0..3 {
+        let item = QueryTestItem {
+            id: format!("query-{i}"),
+            pk: "pk1".into(),
+            score: i,
+        };
+        emu_container
+            .create_item("pk1", &item.id, &item, None)
+            .await
+            .unwrap();
+        if let Some(ref real) = real_container {
+            real.create_item("pk1", &item.id, &item, None)
+                .await
+                .unwrap();
+        }
+    }
+
+    fn query() -> Query {
+        Query::from("SELECT * FROM c WHERE c.pk = @pk AND c.score >= @min")
+            .with_parameter("@pk", "pk1")
+            .unwrap()
+            .with_parameter("@min", 1)
+            .unwrap()
+    }
+
+    let emu_items: Vec<QueryTestItem> = emu_container
+        .query_items(query(), FeedScope::partition("pk1"), None)
+        .await
+        .unwrap()
+        .try_collect()
+        .await
+        .unwrap();
+    assert_eq!(emu_items.len(), 2);
+    assert_eq!(emu_items[0].id, "query-1");
+    assert_eq!(emu_items[1].id, "query-2");
+
+    if let Some(ref real) = real_container {
+        let real_items: Vec<QueryTestItem> = real
+            .query_items(query(), FeedScope::partition("pk1"), None)
+            .await
+            .unwrap()
+            .try_collect()
+            .await
+            .unwrap();
+        assert_eq!(real_items.len(), emu_items.len());
+        assert_eq!(
+            real_items.iter().map(|i| &i.id).collect::<Vec<_>>(),
+            emu_items.iter().map(|i| &i.id).collect::<Vec<_>>()
+        );
+    }
+
+    backend.cleanup_real_database(&db_name).await;
+}
+
+#[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
+async fn sdk_transactional_batch_create_read_and_rollback() {
+    let (backend, db_name, emu_container, real_container) = setup_with_container().await;
+
+    let emu_batch = TransactionalBatch::new("pk1")
+        .create_item(TestItem {
+            id: "batch-1".into(),
+            pk: "pk1".into(),
+            value: 1,
+        })
+        .unwrap()
+        .read_item("batch-1", None);
+    let emu_response = emu_container
+        .execute_transactional_batch(emu_batch, None)
+        .await
+        .unwrap();
+    assert_eq!(emu_response.status(), StatusCode::Ok);
+    let emu_model = emu_response.into_model().unwrap();
+    assert_eq!(
+        emu_model
+            .results()
+            .iter()
+            .map(|r| r.status_code())
+            .collect::<Vec<_>>(),
+        vec![201, 200]
+    );
+
+    if let Some(ref real) = real_container {
+        let real_batch = TransactionalBatch::new("pk1")
+            .create_item(TestItem {
+                id: "batch-1".into(),
+                pk: "pk1".into(),
+                value: 1,
+            })
+            .unwrap()
+            .read_item("batch-1", None);
+        let real_response = real
+            .execute_transactional_batch(real_batch, None)
+            .await
+            .unwrap();
+        assert_eq!(real_response.status(), StatusCode::Ok);
+        let real_model = real_response.into_model().unwrap();
+        assert_eq!(
+            real_model
+                .results()
+                .iter()
+                .map(|r| r.status_code())
+                .collect::<Vec<_>>(),
+            vec![201, 200]
+        );
+    }
+
+    let failing_batch = TransactionalBatch::new("pk1")
+        .create_item(TestItem {
+            id: "batch-rollback".into(),
+            pk: "pk1".into(),
+            value: 9,
+        })
+        .unwrap()
+        .delete_item("missing", None);
+    let emu_response = emu_container
+        .execute_transactional_batch(failing_batch, None)
+        .await
+        .unwrap();
+    let emu_model = emu_response.into_model().unwrap();
+    assert_eq!(
+        emu_model
+            .results()
+            .iter()
+            .map(|r| r.status_code())
+            .collect::<Vec<_>>(),
+        vec![424, 404]
+    );
+    let emu_err = emu_container
+        .read_item("pk1", "batch-rollback", None)
+        .await
+        .expect_err("rolled-back batch item must not exist in emulator");
+    assert_eq!(emu_err.status().status_code(), StatusCode::NotFound);
+
+    if let Some(ref real) = real_container {
+        let failing_batch = TransactionalBatch::new("pk1")
+            .create_item(TestItem {
+                id: "batch-rollback".into(),
+                pk: "pk1".into(),
+                value: 9,
+            })
+            .unwrap()
+            .delete_item("missing", None);
+        let real_response = real
+            .execute_transactional_batch(failing_batch, None)
+            .await
+            .unwrap();
+        let real_model = real_response.into_model().unwrap();
+        assert_eq!(
+            real_model
+                .results()
+                .iter()
+                .map(|r| r.status_code())
+                .collect::<Vec<_>>(),
+            vec![424, 404]
+        );
     }
 
     backend.cleanup_real_database(&db_name).await;

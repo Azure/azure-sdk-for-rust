@@ -151,7 +151,19 @@ try {
 
     foreach ($package in $packages) {
       $sourcePath = [System.IO.Path]::Combine($RepoRoot, "target", "package", "$($package.name)-$($package.version)")
-      $cratePath = [System.IO.Path]::Combine($RepoRoot, "target", "package", "tmp-crate", "$($package.name)-$($package.version).crate")
+
+      # The .crate file location depends on the Cargo subcommand. `cargo publish` (used with -Release)
+      # writes it to target/package/tmp-crate as an intermediate artifact since
+      # https://github.com/rust-lang/cargo/pull/15915 (Rust 1.93), while `cargo package` writes it
+      # directly to target/package as a final artifact.
+      $crateFileName = "$($package.name)-$($package.version).crate"
+      if ($Release) {
+        $cratePath = [System.IO.Path]::Combine($RepoRoot, "target", "package", "tmp-crate", $crateFileName)
+      }
+      else {
+        $cratePath = [System.IO.Path]::Combine($RepoRoot, "target", "package", $crateFileName)
+      }
+
       $targetPath = [System.IO.Path]::Combine($OutputPath, $package.name)
       $targetContentsPath = [System.IO.Path]::Combine($targetPath, "contents")
       $targetApiReviewFile = [System.IO.Path]::Combine($targetPath, "$($package.name).rust.json")
