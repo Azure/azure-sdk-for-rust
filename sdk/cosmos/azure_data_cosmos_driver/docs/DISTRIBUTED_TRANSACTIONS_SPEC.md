@@ -62,15 +62,15 @@ offline testing.
 
 ## 2. Scope & Feature Gating
 
-| Concern | Decision |
-|---|---|
-| Feature flag (driver) | `preview_dtx` — gates all DTX models, serialization, retry logic, and the emulator handler. |
-| Feature flag (SDK) | `preview_dtx` — enables `azure_data_cosmos_driver/preview_dtx` transitively and exposes the SDK builders. |
-| Emulator tests | require `__internal_in_memory_emulator preview_dtx`. |
-| Connectivity mode | Gateway only. Direct mode is out of scope. |
-| Account scope | Same-account only. Cross-account transactions are not supported. |
-| Encoding | JSON only in both directions. No HybridRow / binary encoding. |
-| Stability | **Not production-ready.** APIs may change without notice while `preview_dtx` remains off by default. |
+| Concern               | Decision                                                                                                  |
+| --------------------- | --------------------------------------------------------------------------------------------------------- |
+| Feature flag (driver) | `preview_dtx` — gates all DTX models, serialization, retry logic, and the emulator handler.               |
+| Feature flag (SDK)    | `preview_dtx` — enables `azure_data_cosmos_driver/preview_dtx` transitively and exposes the SDK builders. |
+| Emulator tests        | require `__internal_in_memory_emulator preview_dtx`.                                                      |
+| Connectivity mode     | Gateway only. Direct mode is out of scope.                                                                |
+| Account scope         | Same-account only. Cross-account transactions are not supported.                                          |
+| Encoding              | JSON only in both directions. No HybridRow / binary encoding.                                             |
+| Stability             | **Not production-ready.** APIs may change without notice while `preview_dtx` remains off by default.      |
 
 > The `preview_dtx` gate is deliberately coarse: it wraps public types, the driver
 > `execute_distributed_transaction` entry point, the pipeline retry classifiers, and
@@ -129,21 +129,21 @@ let read_tx = client.create_distributed_read_transaction();
 `DistributedWriteTransaction` buffers write operations with a fluent builder and
 commits them atomically:
 
-| Method | Purpose |
-|---|---|
-| `create_item<T: Serialize>(...)` | Buffer a create. |
-| `replace_item<T: Serialize>(...)` | Buffer a replace. |
-| `upsert_item<T: Serialize>(...)` | Buffer an upsert. |
-| `delete_item(...)` | Buffer a delete. |
-| `patch_item(...)` | Buffer a patch (optionally with a filter predicate). |
-| `commit()` → `DistributedTransactionResponse` | Execute all buffered writes as one atomic unit. |
+| Method                                        | Purpose                                              |
+| --------------------------------------------- | ---------------------------------------------------- |
+| `create_item<T: Serialize>(...)`              | Buffer a create.                                     |
+| `replace_item<T: Serialize>(...)`             | Buffer a replace.                                    |
+| `upsert_item<T: Serialize>(...)`              | Buffer an upsert.                                    |
+| `delete_item(...)`                            | Buffer a delete.                                     |
+| `patch_item(...)`                             | Buffer a patch (optionally with a filter predicate). |
+| `commit()` → `DistributedTransactionResponse` | Execute all buffered writes as one atomic unit.      |
 
 `DistributedReadTransaction` buffers point reads that execute under a consistent
 cross-partition snapshot:
 
-| Method | Purpose |
-|---|---|
-| `read_item(...)` | Buffer a point read. |
+| Method                                        | Purpose                                              |
+| --------------------------------------------- | ---------------------------------------------------- |
+| `read_item(...)`                              | Buffer a point read.                                 |
 | `commit()` → `DistributedTransactionResponse` | Execute all buffered reads under snapshot isolation. |
 
 Per-operation options:
@@ -191,11 +191,11 @@ and any lower-level consumer):
 
 The request targets `POST {account}/operations/dtc`.
 
-| Header | Value |
-|---|---|
+| Header                          | Value                                                        |
+| ------------------------------- | ------------------------------------------------------------ |
 | `x-ms-cosmos-idempotency-token` | Request `idempotency_token` (`Uuid`), stable across retries. |
-| `x-ms-cosmos-operation-type` | `CommitDistributedTransaction` (write) or `Read` (read). |
-| `x-ms-cosmos-resource-type` | `DistributedTransactionBatch`. |
+| `x-ms-cosmos-operation-type`    | `CommitDistributedTransaction` (write) or `Read` (read).     |
+| `x-ms-cosmos-resource-type`     | `DistributedTransactionBatch`.                               |
 
 `ResourceType::DistributedTransactionBatch` is what routes the request to the DTX
 retry classifier in the pipeline and marks the operation body-bearing for throttle
@@ -239,20 +239,20 @@ Serialization rules:
 
 ### 5.3 Status-code families
 
-| Transaction | Envelope statuses |
-|---|---|
-| Write (commit) | `200` commit · `452` abort · `449` · `408` · `429` · `400` · `403` · `500` |
-| Read (snapshot) | `200` · `304` · `207` · `404` · `449` · `408` |
+| Transaction     | Envelope statuses                                                          |
+| --------------- | -------------------------------------------------------------------------- |
+| Write (commit)  | `200` commit · `452` abort · `449` · `408` · `429` · `400` · `403` · `500` |
+| Read (snapshot) | `200` · `304` · `207` · `404` · `449` · `408`                              |
 
 DTX-specific sub-status codes:
 
-| Status / sub | Name | Meaning |
-|---|---|---|
-| `453` / `5415` | `DtcOperationRolledBack` | A prepared (voted-Yes) write op that was rolled back by an abort. |
-| `449` / `5352` | `DtcCoordinatorRaceConflict` | Coordinator race; bodyless-retriable. |
-| `500` / `5411` | `DtcLedgerFailure` | Infra failure; bodyless-retriable. |
-| `500` / `5412` | `DtcAccountConfigFailure` | Infra failure; bodyless-retriable. |
-| `500` / `5413` | `DtcDispatchFailure` | Infra failure; bodyless-retriable. |
+| Status / sub   | Name                         | Meaning                                                           |
+| -------------- | ---------------------------- | ----------------------------------------------------------------- |
+| `453` / `5415` | `DtcOperationRolledBack`     | A prepared (voted-Yes) write op that was rolled back by an abort. |
+| `449` / `5352` | `DtcCoordinatorRaceConflict` | Coordinator race; bodyless-retriable.                             |
+| `500` / `5411` | `DtcLedgerFailure`           | Infra failure; bodyless-retriable.                                |
+| `500` / `5412` | `DtcAccountConfigFailure`    | Infra failure; bodyless-retriable.                                |
+| `500` / `5413` | `DtcDispatchFailure`         | Infra failure; bodyless-retriable.                                |
 
 ---
 
@@ -328,14 +328,14 @@ The whole request is safe to replay because `OperationType::is_idempotent` retur
 the `idempotency_token` is generated once and reused on every attempt so the
 coordinator can dedupe.
 
-| Parameter | Value |
-|---|---|
-| `DTX_OUTER_MAX_RETRIES` | 10 |
-| `DTX_OUTER_MAX_CUMULATIVE_DELAY` | 30 s |
-| `DTX_OUTER_BASE_DELAY` | 1 s |
-| `DTX_OUTER_MAX_EXPONENT` | 5 |
-| `DTX_OUTER_JITTER_RATIO` | ±25 % |
-| Server hint | `max(computed, retry-after)` — honors `x-ms-retry-after-ms`. |
+| Parameter                        | Value                                                        |
+| -------------------------------- | ------------------------------------------------------------ |
+| `DTX_OUTER_MAX_RETRIES`          | 10                                                           |
+| `DTX_OUTER_MAX_CUMULATIVE_DELAY` | 30 s                                                         |
+| `DTX_OUTER_BASE_DELAY`           | 1 s                                                          |
+| `DTX_OUTER_MAX_EXPONENT`         | 5                                                            |
+| `DTX_OUTER_JITTER_RATIO`         | ±25 %                                                        |
+| Server hint                      | `max(computed, retry-after)` — honors `x-ms-retry-after-ms`. |
 
 ### 7.2 Inner classifier (bodyless envelope)
 
@@ -344,10 +344,10 @@ For `ResourceType::DistributedTransactionBatch`, the pipeline routes to
 bodyless envelope means the request failed in transport / dispatch before the
 coordinator produced a transaction result, so replay is safe. Two classes:
 
-| Class | Trigger | Budget | Backoff |
-|---|---|---|---|
-| Coordinator-retriable | `408 RequestTimeout`, or `449` + sub `5352` | `MAX_DTX_COORDINATOR_RETRIES` = 10 | server `retry-after` or `DTX_COORDINATOR_RETRY_INTERVAL` = 1 s |
-| Infra-retriable | `500` + sub `5411` / `5412` / `5413` | `MAX_DTX_INFRA_RETRIES` = 9 | exponential `DTX_INFRA_BASE_BACKOFF` 100 ms → `DTX_INFRA_MAX_BACKOFF` 5 s, `DTX_INFRA_MAX_EXPONENT` 6 |
+| Class                 | Trigger                                     | Budget                             | Backoff                                                                                               |
+| --------------------- | ------------------------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Coordinator-retriable | `408 RequestTimeout`, or `449` + sub `5352` | `MAX_DTX_COORDINATOR_RETRIES` = 10 | server `retry-after` or `DTX_COORDINATOR_RETRY_INTERVAL` = 1 s                                        |
+| Infra-retriable       | `500` + sub `5411` / `5412` / `5413`        | `MAX_DTX_INFRA_RETRIES` = 9        | exponential `DTX_INFRA_BASE_BACKOFF` 100 ms → `DTX_INFRA_MAX_BACKOFF` 5 s, `DTX_INFRA_MAX_EXPONENT` 6 |
 
 These counters live on `OperationRetryState`
 (`dtx_coordinator_retry_count` / `dtx_infra_retry_count`) and drive the
@@ -373,8 +373,10 @@ spans partitions, tokens are **per operation**, keyed by the operation's
 
 - Assembles split tokens (LSN plus a separate `partitionKeyRangeId`) into the
   `{pkRangeId}:{lsn}` form before folding them into the session container.
-- Supports **signed** region LSNs (`region_progress: HashMap<u64, i64>`), so tokens
-  such as `0#3#12=-1` parse correctly.
+- Models per-region progress as `region_progress: HashMap<u64, Option<u64>>`,
+  where `None` is the wire "no-progress" sentinel (`-1`) and `Some(lsn)` a
+  recorded region LSN, so tokens such as `0#3#12=-1` parse and round-trip
+  correctly (`None` sorts below any `Some` in recency/merge comparisons).
 - Under **Session** consistency, malformed tokens are **rejected strictly** so a
   corrupt token cannot silently weaken read-your-own-writes. Outside Session
   consistency the bookkeeping is best-effort.
@@ -590,12 +592,12 @@ still in progress).
 
 ## 11. Test Coverage
 
-| Layer | Tests |
-|---|---|
-| Driver unit (models) | `serialize_create_operation`, `serialize_read_omits_body_and_empty_session_token`, `serialize_patch_adds_condition`, `parse_out_of_order_results_reorders_by_index`, `parse_duplicate_index_success_fails_closed`, `parse_duplicate_index_error_pads_with_envelope_status`, `parse_multistatus_promotes_wire_order_then_reorders`. |
-| Driver unit (operation) | `distributed_write_transaction_is_idempotent`, `distributed_read_transaction_is_read_only_and_idempotent`. |
-| Emulator integration | `dtx_create_then_read`, `dtx_failed_write_does_not_partially_commit` (asserts `452` envelope + `453`/`5415` siblings + no partial commit), `dtx_read_snapshot_failure_rewrites_successful_reads` (asserts `424` rewrite + `404` envelope). |
-| Dual-backend | `dtx_create_read_matches_live_account` (ignored) — runs single- and multi-container create/read against the emulator and, when a DTX-enabled account is configured, compares emulator vs. live snapshots. |
+| Layer                   | Tests                                                                                                                                                                                                                                                                                                                              |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Driver unit (models)    | `serialize_create_operation`, `serialize_read_omits_body_and_empty_session_token`, `serialize_patch_adds_condition`, `parse_out_of_order_results_reorders_by_index`, `parse_duplicate_index_success_fails_closed`, `parse_duplicate_index_error_pads_with_envelope_status`, `parse_multistatus_promotes_wire_order_then_reorders`. |
+| Driver unit (operation) | `distributed_write_transaction_is_idempotent`, `distributed_read_transaction_is_read_only_and_idempotent`.                                                                                                                                                                                                                         |
+| Emulator integration    | `dtx_create_then_read`, `dtx_failed_write_does_not_partially_commit` (asserts `452` envelope + `453`/`5415` siblings + no partial commit), `dtx_read_snapshot_failure_rewrites_successful_reads` (asserts `424` rewrite + `404` envelope).                                                                                         |
+| Dual-backend            | `dtx_create_read_matches_live_account` (ignored) — runs single- and multi-container create/read against the emulator and, when a DTX-enabled account is configured, compares emulator vs. live snapshots.                                                                                                                          |
 
 Run the driver DTX suites with:
 

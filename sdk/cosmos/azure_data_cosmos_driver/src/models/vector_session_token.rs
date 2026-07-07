@@ -19,7 +19,11 @@ use azure_core::fmt::SafeDebug;
 pub(crate) struct VectorSessionToken {
     version: u64,
     global_lsn: u64,
-    region_progress: HashMap<u64, i64>,
+    /// Per-region progress. `None` marks a region with no local progress yet
+    /// (the wire sentinel `-1`); `Some(lsn)` is a recorded region LSN. Because
+    /// `Option<u64>` orders `None` below any `Some`, a no-progress region is
+    /// naturally treated as behind in recency/merge comparisons.
+    region_progress: HashMap<u64, Option<u64>>,
 }
 
 impl VectorSessionToken {
@@ -103,6 +107,9 @@ impl VectorSessionToken {
                     .with_message(format!("invalid session token: bad region LSN '{lsn_str}'"))
                     .build()
             })?;
+            // Region LSNs are signed on the wire: `-1` (and any negative) marks
+            // a region with no local progress yet, modeled here as `None`.
+            let lsn = if lsn < 0 { None } else { Some(lsn as u64) };
             region_progress.insert(region_id, lsn);
         }
 
@@ -172,7 +179,7 @@ impl VectorSessionToken {
                 changed = true;
             }
             for (&region, &other_lsn) in &other.region_progress {
-                let entry = self.region_progress.entry(region).or_insert(0);
+                let entry = self.region_progress.entry(region).or_insert(None);
                 if other_lsn > *entry {
                     *entry = other_lsn;
                     changed = true;
@@ -223,7 +230,11 @@ impl fmt::Display for VectorSessionToken {
         let mut regions: Vec<_> = self.region_progress.iter().collect();
         regions.sort_by_key(|&(&k, _)| k);
         for (&region, &lsn) in &regions {
-            write!(f, "#{}={}", region, lsn)?;
+            // Round-trip a no-progress region back to the wire sentinel `-1`.
+            match lsn {
+                Some(v) => write!(f, "#{}={}", region, v)?,
+                None => write!(f, "#{}=-1", region)?,
+            }
         }
         Ok(())
     }
@@ -330,11 +341,16 @@ mod tests {
     use super::*;
 
     /// Helper to build a `VectorSessionToken` for assertions without parsing.
+    /// Region LSNs are given as `i64` for terse literals; `-1` (and any
+    /// negative) maps to the `None` no-progress marker.
     fn make_token(version: u64, global_lsn: u64, regions: &[(u64, i64)]) -> VectorSessionToken {
         VectorSessionToken {
             version,
             global_lsn,
-            region_progress: regions.iter().copied().collect(),
+            region_progress: regions
+                .iter()
+                .map(|&(region, lsn)| (region, if lsn < 0 { None } else { Some(lsn as u64) }))
+                .collect(),
         }
     }
 
@@ -412,6 +428,28 @@ mod tests {
         let b = VectorSessionToken::parse("1#100#2=20").unwrap();
         assert!(a.merge(&b));
         assert_eq!(a, make_token(1, 100, &[(1, 10), (2, 20)]));
+    }
+
+    #[test]
+    fn merge_none_region_stays_none_not_zero() {
+        // A no-progress region (`None` / wire `-1`) merged into a token that
+        // lacks it must stay `None`, not be bumped to `Some(0)` (the old i64
+        // `or_insert(0)` floor over-stated progress as LSN 0).
+        let mut a = VectorSessionToken::parse("1#100").unwrap();
+        let b = VectorSessionToken::parse("1#100#7=-1").unwrap();
+        a.merge(&b);
+        assert_eq!(a, make_token(1, 100, &[(7, -1)]));
+        assert_eq!(a.to_string(), "1#100#7=-1");
+    }
+
+    #[test]
+    fn merge_some_region_overrides_none() {
+        // A recorded LSN (`Some`) is strictly more recent than no-progress
+        // (`None`), so it wins the per-region max.
+        let mut a = VectorSessionToken::parse("1#100#7=-1").unwrap();
+        let b = VectorSessionToken::parse("1#100#7=5").unwrap();
+        assert!(a.merge(&b));
+        assert_eq!(a, make_token(1, 100, &[(7, 5)]));
     }
 
     #[test]

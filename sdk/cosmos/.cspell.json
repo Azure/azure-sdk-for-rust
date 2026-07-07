@@ -81,6 +81,7 @@
     "derefs",
     "dhat",
     "diagnosability",
+    "distributedtransactionbatch",
     "Dmaster",
     "dlclose",
     "dlopen",
