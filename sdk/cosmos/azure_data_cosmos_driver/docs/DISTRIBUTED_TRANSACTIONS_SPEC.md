@@ -126,6 +126,10 @@ let write_tx = client.create_distributed_write_transaction();
 let read_tx = client.create_distributed_read_transaction();
 ```
 
+Each operation method takes a `&ContainerClient` for the target container. The
+SDK resolves the underlying driver `ContainerReference` internally; callers do
+not use `ContainerReference` when building SDK distributed transactions.
+
 `DistributedWriteTransaction` buffers write operations with a fluent builder and
 commits them atomically:
 

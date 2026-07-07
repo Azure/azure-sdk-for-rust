@@ -14,9 +14,9 @@ use azure_core::Bytes;
 use azure_data_cosmos_driver::models as driver_models;
 use serde::{de::DeserializeOwned, Serialize};
 
-use crate::clients::ClientContext;
+use crate::clients::{ClientContext, ContainerClient};
 use crate::diagnostics::DiagnosticsContext;
-use crate::models::{ContainerReference, PartitionKey, PatchInstructions};
+use crate::models::{PartitionKey, PatchInstructions};
 use crate::options::{Precondition, SessionToken};
 
 /// Options for a single operation inside a distributed transaction.
@@ -92,7 +92,7 @@ impl DistributedWriteTransaction {
     /// Adds a create item operation.
     pub fn create_item<T: Serialize>(
         mut self,
-        container: ContainerReference,
+        container: &ContainerClient,
         partition_key: impl Into<PartitionKey>,
         item_id: impl Into<std::borrow::Cow<'static, str>>,
         item: T,
@@ -113,7 +113,7 @@ impl DistributedWriteTransaction {
     /// Adds a replace item operation.
     pub fn replace_item<T: Serialize>(
         mut self,
-        container: ContainerReference,
+        container: &ContainerClient,
         partition_key: impl Into<PartitionKey>,
         item_id: impl Into<std::borrow::Cow<'static, str>>,
         item: T,
@@ -134,7 +134,7 @@ impl DistributedWriteTransaction {
     /// Adds an upsert item operation.
     pub fn upsert_item<T: Serialize>(
         mut self,
-        container: ContainerReference,
+        container: &ContainerClient,
         partition_key: impl Into<PartitionKey>,
         item_id: impl Into<std::borrow::Cow<'static, str>>,
         item: T,
@@ -155,7 +155,7 @@ impl DistributedWriteTransaction {
     /// Adds a delete item operation.
     pub fn delete_item(
         mut self,
-        container: ContainerReference,
+        container: &ContainerClient,
         partition_key: impl Into<PartitionKey>,
         item_id: impl Into<std::borrow::Cow<'static, str>>,
         options: Option<DistributedTransactionOperationOptions>,
@@ -174,7 +174,7 @@ impl DistributedWriteTransaction {
     /// Adds a patch item operation.
     pub fn patch_item(
         mut self,
-        container: ContainerReference,
+        container: &ContainerClient,
         partition_key: impl Into<PartitionKey>,
         item_id: impl Into<std::borrow::Cow<'static, str>>,
         patch: PatchInstructions,
@@ -223,7 +223,7 @@ impl DistributedReadTransaction {
     /// Adds a read item operation.
     pub fn read_item(
         mut self,
-        container: ContainerReference,
+        container: &ContainerClient,
         partition_key: impl Into<PartitionKey>,
         item_id: impl Into<std::borrow::Cow<'static, str>>,
         options: Option<DistributedTransactionOperationOptions>,
@@ -256,7 +256,7 @@ impl DistributedReadTransaction {
 
 fn operation_with_options(
     kind: driver_models::DistributedTransactionOperationKind,
-    container: ContainerReference,
+    container: &ContainerClient,
     partition_key: impl Into<PartitionKey>,
     item_id: impl Into<std::borrow::Cow<'static, str>>,
     body: Option<Bytes>,
@@ -264,7 +264,11 @@ fn operation_with_options(
 ) -> driver_models::DistributedTransactionOperation {
     let mut operation = driver_models::DistributedTransactionOperation::new(
         kind,
-        driver_models::DistributedTransactionTarget::new(container, partition_key, item_id),
+        driver_models::DistributedTransactionTarget::new(
+            container.container_reference().clone(),
+            partition_key,
+            item_id,
+        ),
     );
     if let Some(body) = body {
         operation = operation.with_resource_body(body);
@@ -281,7 +285,7 @@ fn operation_with_options(
 }
 
 fn patch_operation_with_options(
-    container: ContainerReference,
+    container: &ContainerClient,
     partition_key: impl Into<PartitionKey>,
     item_id: impl Into<std::borrow::Cow<'static, str>>,
     body: Bytes,
@@ -289,7 +293,11 @@ fn patch_operation_with_options(
 ) -> driver_models::DistributedTransactionOperation {
     let mut operation = driver_models::DistributedTransactionOperation::new(
         driver_models::DistributedTransactionOperationKind::Patch,
-        driver_models::DistributedTransactionTarget::new(container, partition_key, item_id),
+        driver_models::DistributedTransactionTarget::new(
+            container.container_reference().clone(),
+            partition_key,
+            item_id,
+        ),
     )
     .with_resource_body(body);
 
