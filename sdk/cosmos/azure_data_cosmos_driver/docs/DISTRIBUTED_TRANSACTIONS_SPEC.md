@@ -636,9 +636,9 @@ Aligned with the .NET API review (PR #5877 §12–13):
   API surface, type hierarchy, idempotency & single-use contract, session
   consistency, error behavior, and open questions.
   <https://github.com/Azure/azure-cosmos-dotnet-v3/pull/5877/files>
-- Related driver specs: [TRANSPORT_PIPELINE_SPEC.md](TRANSPORT_PIPELINE_SPEC.md),
-  [ErrorCodesAndRetries.md](ErrorCodesAndRetries.md),
-  [PATCH_HANDLER_SPEC.md](PATCH_HANDLER_SPEC.md).
+- Related driver specs:
+  `TRANSPORT_PIPELINE_SPEC.md`, `ErrorCodesAndRetries.md`, and
+  `PATCH_HANDLER_SPEC.md`.
 
 ---
 

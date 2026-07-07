@@ -17,11 +17,13 @@ use super::config::ContainerConfig;
 use super::dispatch::{OperationType, ParsedRequest};
 use super::epk::{compute_epk, extract_pk_from_body, parse_partition_key_header, Epk};
 use super::response::headers::{
-    ACTIVITY_ID, CONTINUATION, ETAG, GLOBAL_COMMITTED_LSN, INTERNAL_PARTITION_ID, ITEM_LOCAL_LSN,
+    ACTIVITY_ID, CONTINUATION, GLOBAL_COMMITTED_LSN, INTERNAL_PARTITION_ID, ITEM_LOCAL_LSN,
     ITEM_LSN, LAST_STATE_CHANGE_UTC, LOCAL_LSN, NUMBER_OF_READ_REGIONS, PARTITION_KEY_RANGE_ID,
-    QUORUM_ACKED_LOCAL_LSN, QUORUM_ACKED_LSN, REQUEST_CHARGE, RESOURCE_QUOTA, RESOURCE_USAGE,
-    SERVICE_VERSION, SESSION_TOKEN, SUBSTATUS, TRANSPORT_REQUEST_ID,
+    QUORUM_ACKED_LOCAL_LSN, QUORUM_ACKED_LSN, RESOURCE_QUOTA, RESOURCE_USAGE, SERVICE_VERSION,
+    TRANSPORT_REQUEST_ID,
 };
+#[cfg(feature = "preview_dtx")]
+use super::response::headers::{ETAG, REQUEST_CHARGE, SESSION_TOKEN, SUBSTATUS};
 use super::response::{error_response, success_response, ResponseBuilder};
 use super::ru_model::RuChargingModel;
 use super::session::SessionToken;
