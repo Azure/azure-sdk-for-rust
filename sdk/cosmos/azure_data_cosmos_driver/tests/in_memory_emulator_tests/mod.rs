@@ -4,6 +4,7 @@
 //! Shared test helpers for the in-memory emulator integration tests.
 
 pub mod account_metadata_refresh;
+pub mod batch;
 pub mod control_plane;
 pub mod error_cases;
 pub mod error_diagnostics;
@@ -12,8 +13,11 @@ pub mod excluded_regions_fallback;
 pub mod hedging;
 pub mod host_recorder;
 pub mod multi_region;
+pub mod offers;
 pub mod point_operations;
 pub mod ppaf_dynamic_enablement;
+pub mod query;
+pub mod read_feed;
 #[cfg(feature = "fault_injection")]
 pub mod regional_gateway_unreachable;
 pub mod split_merge;

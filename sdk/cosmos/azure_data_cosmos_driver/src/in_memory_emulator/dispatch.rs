@@ -13,18 +13,29 @@ use percent_encoding::percent_decode_str;
 pub(crate) enum OperationType {
     ReadAccount,
     CreateDatabase,
+    ReadFeedDatabases,
+    QueryDatabases,
     ReadDatabase,
     DeleteDatabase,
     CreateContainer,
+    ReadFeedContainers,
+    QueryContainers,
     ReadContainer,
     DeleteContainer,
     ReadPKRanges,
+    ReadFeedItems,
     Create,
     Read,
     Replace,
     Upsert,
     Delete,
-    Query,
+    QueryItems,
+    QueryPlan,
+    Batch,
+    ReadFeedOffers,
+    QueryOffers,
+    ReadOffer,
+    ReplaceOffer,
     Unsupported(String),
     /// Trailing-slash on a resource URL. Real Cosmos returns 400 BadRequest
     /// for these (not 501) — keep the variant separate so the handler can
@@ -39,6 +50,7 @@ pub(crate) struct ParsedRequest {
     pub db_id: Option<String>,
     pub coll_id: Option<String>,
     pub doc_id: Option<String>,
+    pub offer_id: Option<String>,
     pub partition_key_header: Option<String>,
     pub if_match: Option<String>,
     pub if_none_match: Option<String>,
@@ -50,6 +62,22 @@ pub(crate) struct ParsedRequest {
     /// throughput instead of silently falling back to `ContainerConfig::default()`
     /// (which has no provisioned RU/s and disables throttling for the container).
     pub offer_throughput: Option<u32>,
+    #[allow(dead_code)]
+    pub offer_autopilot_settings: Option<String>,
+    #[allow(dead_code)]
+    pub max_item_count: Option<i32>,
+    #[allow(dead_code)]
+    pub continuation: Option<String>,
+    #[allow(dead_code)]
+    pub partition_key_range_id: Option<String>,
+    #[allow(dead_code)]
+    pub start_epk: Option<String>,
+    #[allow(dead_code)]
+    pub end_epk: Option<String>,
+    #[allow(dead_code)]
+    pub is_query_plan: bool,
+    #[allow(dead_code)]
+    pub is_batch: bool,
     #[allow(dead_code)]
     pub is_upsert: bool, // used during dispatch resolution
 }
@@ -64,8 +92,20 @@ static ACTIVITY_ID: HeaderName = HeaderName::from_static("x-ms-activity-id");
 static CONTENT_RESPONSE: HeaderName =
     HeaderName::from_static("x-ms-cosmos-populate-content-response-on-write");
 static PREFER: HeaderName = HeaderName::from_static("prefer");
-static IS_QUERY: HeaderName = HeaderName::from_static("x-ms-documentdb-query");
+static IS_QUERY: HeaderName = HeaderName::from_static("x-ms-documentdb-isquery");
+static IS_QUERY_LEGACY: HeaderName = HeaderName::from_static("x-ms-documentdb-query");
+static IS_QUERY_PLAN_REQUEST: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-is-query-plan-request");
+static MAX_ITEM_COUNT: HeaderName = HeaderName::from_static("x-ms-max-item-count");
+static CONTINUATION: HeaderName = HeaderName::from_static("x-ms-continuation");
+static PARTITION_KEY_RANGE_ID: HeaderName =
+    HeaderName::from_static("x-ms-documentdb-partitionkeyrangeid");
+static START_EPK: HeaderName = HeaderName::from_static("x-ms-start-epk");
+static END_EPK: HeaderName = HeaderName::from_static("x-ms-end-epk");
+static IS_BATCH_REQUEST: HeaderName = HeaderName::from_static("x-ms-cosmos-is-batch-request");
 static OFFER_THROUGHPUT: HeaderName = HeaderName::from_static("x-ms-offer-throughput");
+static OFFER_AUTOPILOT_SETTINGS: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-offer-autopilot-settings");
 
 /// Parses an HTTP request into a `ParsedRequest`.
 pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
@@ -101,10 +141,21 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
         .get_optional_str(&IS_UPSERT)
         .map(|s| s.eq_ignore_ascii_case("true"))
         .unwrap_or(false);
-    let is_query = headers
-        .get_optional_str(&IS_QUERY)
-        .map(|v| v.eq_ignore_ascii_case("true"))
-        .unwrap_or(false);
+    let is_query = header_true(headers.get_optional_str(&IS_QUERY))
+        || header_true(headers.get_optional_str(&IS_QUERY_LEGACY));
+    let is_query_plan = header_true(headers.get_optional_str(&IS_QUERY_PLAN_REQUEST));
+    let is_batch = header_true(headers.get_optional_str(&IS_BATCH_REQUEST));
+    let max_item_count = headers
+        .get_optional_str(&MAX_ITEM_COUNT)
+        .and_then(|s| s.trim().parse::<i32>().ok());
+    let continuation = headers
+        .get_optional_str(&CONTINUATION)
+        .map(|s| s.to_string());
+    let partition_key_range_id = headers
+        .get_optional_str(&PARTITION_KEY_RANGE_ID)
+        .map(|s| s.to_string());
+    let start_epk = headers.get_optional_str(&START_EPK).map(|s| s.to_string());
+    let end_epk = headers.get_optional_str(&END_EPK).map(|s| s.to_string());
     // Parse `x-ms-offer-throughput` (RU/s) from the request headers. Invalid /
     // non-numeric values are treated as absent; the container creation handler
     // then uses `ContainerConfig::default()`. A failing parse is intentionally
@@ -113,6 +164,9 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
     let offer_throughput = headers
         .get_optional_str(&OFFER_THROUGHPUT)
         .and_then(|s| s.trim().parse::<u32>().ok());
+    let offer_autopilot_settings = headers
+        .get_optional_str(&OFFER_AUTOPILOT_SETTINGS)
+        .map(|s| s.to_string());
 
     let path = url.path();
     // Reject trailing slashes after the leading `/`. `/dbs/mydb/colls/mycoll/docs/`
@@ -127,7 +181,14 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
             path
         ))
     } else {
-        resolve_operation(method.as_ref(), &segments, is_upsert, is_query)
+        resolve_operation(
+            method.as_ref(),
+            &segments,
+            is_upsert,
+            is_query,
+            is_query_plan,
+            is_batch,
+        )
     };
 
     // Index by *position*, not by keyword search. Cosmos URLs are
@@ -139,12 +200,14 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
     let db_id = segment_after_keyword(&segments, 0, "dbs");
     let coll_id = segment_after_keyword(&segments, 2, "colls");
     let doc_id = segment_after_keyword(&segments, 4, "docs");
+    let offer_id = segment_after_keyword(&segments, 0, "offers");
 
     ParsedRequest {
         operation,
         db_id,
         coll_id,
         doc_id,
+        offer_id,
         partition_key_header,
         if_match,
         if_none_match,
@@ -152,8 +215,22 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
         activity_id,
         content_response_on_write,
         offer_throughput,
+        offer_autopilot_settings,
+        max_item_count,
+        continuation,
+        partition_key_range_id,
+        start_epk,
+        end_epk,
+        is_query_plan,
+        is_batch,
         is_upsert,
     }
+}
+
+fn header_true(value: Option<&str>) -> bool {
+    value
+        .map(|v| v.eq_ignore_ascii_case("true"))
+        .unwrap_or(false)
 }
 
 /// Parses URL path into segments, skipping empty entries.
@@ -205,6 +282,8 @@ fn resolve_operation(
     segments: &[String],
     is_upsert: bool,
     is_query: bool,
+    is_query_plan: bool,
+    is_batch: bool,
 ) -> OperationType {
     let depth = segments.len();
 
@@ -212,8 +291,17 @@ fn resolve_operation(
         // GET / → ReadAccount
         ("GET", 0) => OperationType::ReadAccount,
 
-        // POST /dbs → CreateDatabase
-        ("POST", 1) if segments[0] == "dbs" => OperationType::CreateDatabase,
+        // GET /dbs → ReadFeedDatabases
+        ("GET", 1) if segments[0] == "dbs" => OperationType::ReadFeedDatabases,
+
+        // POST /dbs → CreateDatabase/QueryDatabases
+        ("POST", 1) if segments[0] == "dbs" => {
+            if is_query {
+                OperationType::QueryDatabases
+            } else {
+                OperationType::CreateDatabase
+            }
+        }
 
         // GET /dbs/{db} → ReadDatabase
         ("GET", 2) if segments[0] == "dbs" => OperationType::ReadDatabase,
@@ -221,9 +309,18 @@ fn resolve_operation(
         // DELETE /dbs/{db} → DeleteDatabase
         ("DELETE", 2) if segments[0] == "dbs" => OperationType::DeleteDatabase,
 
-        // POST /dbs/{db}/colls → CreateContainer
+        // GET /dbs/{db}/colls → ReadFeedContainers
+        ("GET", 3) if segments[0] == "dbs" && segments[2] == "colls" => {
+            OperationType::ReadFeedContainers
+        }
+
+        // POST /dbs/{db}/colls → CreateContainer/QueryContainers
         ("POST", 3) if segments[0] == "dbs" && segments[2] == "colls" => {
-            OperationType::CreateContainer
+            if is_query {
+                OperationType::QueryContainers
+            } else {
+                OperationType::CreateContainer
+            }
         }
 
         // GET /dbs/{db}/colls/{coll} → ReadContainer
@@ -243,10 +340,19 @@ fn resolve_operation(
             OperationType::ReadPKRanges
         }
 
-        // POST /dbs/{db}/colls/{coll}/docs → Create/Upsert/Query
+        // GET /dbs/{db}/colls/{coll}/docs → ReadFeedItems
+        ("GET", 5) if segments[0] == "dbs" && segments[2] == "colls" && segments[4] == "docs" => {
+            OperationType::ReadFeedItems
+        }
+
+        // POST /dbs/{db}/colls/{coll}/docs → Create/Upsert/Query/QueryPlan/Batch
         ("POST", 5) if segments[0] == "dbs" && segments[2] == "colls" && segments[4] == "docs" => {
-            if is_query {
-                OperationType::Query
+            if is_query_plan {
+                OperationType::QueryPlan
+            } else if is_query {
+                OperationType::QueryItems
+            } else if is_batch {
+                OperationType::Batch
             } else if is_upsert {
                 OperationType::Upsert
             } else {
@@ -271,6 +377,18 @@ fn resolve_operation(
             OperationType::Delete
         }
 
+        // GET /offers → ReadFeedOffers
+        ("GET", 1) if segments[0] == "offers" => OperationType::ReadFeedOffers,
+
+        // POST /offers → QueryOffers
+        ("POST", 1) if segments[0] == "offers" && is_query => OperationType::QueryOffers,
+
+        // GET /offers/{rid} → ReadOffer
+        ("GET", 2) if segments[0] == "offers" => OperationType::ReadOffer,
+
+        // PUT /offers/{rid} → ReplaceOffer
+        ("PUT", 2) if segments[0] == "offers" => OperationType::ReplaceOffer,
+
         _ => OperationType::Unsupported(format!("{} {}", method, segments.join("/"))),
     }
 }
@@ -286,6 +404,7 @@ pub(crate) fn resolve_region<'a>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use azure_core::http::headers::HeaderValue;
     use azure_core::http::{Method, Request, Url};
 
     fn make_request(method: &str, path: &str) -> Request {
@@ -298,6 +417,11 @@ mod tests {
             _ => Method::Get,
         };
         Request::new(url.parse().unwrap(), method)
+    }
+
+    fn insert_header(req: &mut Request, name: HeaderName, value: &str) {
+        req.headers_mut()
+            .insert(name, HeaderValue::from(value.to_string()));
     }
 
     #[test]
@@ -372,6 +496,21 @@ mod tests {
     }
 
     #[test]
+    fn read_database_feed() {
+        let req = make_request("GET", "/dbs");
+        let parsed = parse_request(&req);
+        assert_eq!(parsed.operation, OperationType::ReadFeedDatabases);
+    }
+
+    #[test]
+    fn query_databases() {
+        let mut req = make_request("POST", "/dbs");
+        insert_header(&mut req, IS_QUERY.clone(), "True");
+        let parsed = parse_request(&req);
+        assert_eq!(parsed.operation, OperationType::QueryDatabases);
+    }
+
+    #[test]
     fn read_database() {
         let req = make_request("GET", "/dbs/mydb");
         let parsed = parse_request(&req);
@@ -384,6 +523,23 @@ mod tests {
         let req = make_request("POST", "/dbs/mydb/colls");
         let parsed = parse_request(&req);
         assert_eq!(parsed.operation, OperationType::CreateContainer);
+        assert_eq!(parsed.db_id.as_deref(), Some("mydb"));
+    }
+
+    #[test]
+    fn read_container_feed() {
+        let req = make_request("GET", "/dbs/mydb/colls");
+        let parsed = parse_request(&req);
+        assert_eq!(parsed.operation, OperationType::ReadFeedContainers);
+        assert_eq!(parsed.db_id.as_deref(), Some("mydb"));
+    }
+
+    #[test]
+    fn query_containers() {
+        let mut req = make_request("POST", "/dbs/mydb/colls");
+        insert_header(&mut req, IS_QUERY.clone(), "True");
+        let parsed = parse_request(&req);
+        assert_eq!(parsed.operation, OperationType::QueryContainers);
         assert_eq!(parsed.db_id.as_deref(), Some("mydb"));
     }
 
@@ -405,6 +561,46 @@ mod tests {
     }
 
     #[test]
+    fn read_document_feed() {
+        let req = make_request("GET", "/dbs/mydb/colls/mycoll/docs");
+        let parsed = parse_request(&req);
+        assert_eq!(parsed.operation, OperationType::ReadFeedItems);
+    }
+
+    #[test]
+    fn query_items_uses_current_driver_header() {
+        let mut req = make_request("POST", "/dbs/mydb/colls/mycoll/docs");
+        insert_header(&mut req, IS_QUERY.clone(), "True");
+        let parsed = parse_request(&req);
+        assert_eq!(parsed.operation, OperationType::QueryItems);
+    }
+
+    #[test]
+    fn query_items_accepts_legacy_query_header() {
+        let mut req = make_request("POST", "/dbs/mydb/colls/mycoll/docs");
+        insert_header(&mut req, IS_QUERY_LEGACY.clone(), "True");
+        let parsed = parse_request(&req);
+        assert_eq!(parsed.operation, OperationType::QueryItems);
+    }
+
+    #[test]
+    fn query_plan_takes_precedence_over_item_query() {
+        let mut req = make_request("POST", "/dbs/mydb/colls/mycoll/docs");
+        insert_header(&mut req, IS_QUERY.clone(), "True");
+        insert_header(&mut req, IS_QUERY_PLAN_REQUEST.clone(), "True");
+        let parsed = parse_request(&req);
+        assert_eq!(parsed.operation, OperationType::QueryPlan);
+    }
+
+    #[test]
+    fn batch_document_feed() {
+        let mut req = make_request("POST", "/dbs/mydb/colls/mycoll/docs");
+        insert_header(&mut req, IS_BATCH_REQUEST.clone(), "True");
+        let parsed = parse_request(&req);
+        assert_eq!(parsed.operation, OperationType::Batch);
+    }
+
+    #[test]
     fn upsert_document() {
         let url: Url = "https://test.emulator.local/dbs/mydb/colls/mycoll/docs"
             .parse()
@@ -423,6 +619,25 @@ mod tests {
         let req = make_request("GET", "/dbs/mydb/colls/mycoll/pkranges");
         let parsed = parse_request(&req);
         assert_eq!(parsed.operation, OperationType::ReadPKRanges);
+    }
+
+    #[test]
+    fn offer_routes() {
+        let read_feed = parse_request(&make_request("GET", "/offers"));
+        assert_eq!(read_feed.operation, OperationType::ReadFeedOffers);
+
+        let mut query = make_request("POST", "/offers");
+        insert_header(&mut query, IS_QUERY.clone(), "True");
+        assert_eq!(parse_request(&query).operation, OperationType::QueryOffers);
+
+        assert_eq!(
+            parse_request(&make_request("GET", "/offers/offer1")).operation,
+            OperationType::ReadOffer
+        );
+        assert_eq!(
+            parse_request(&make_request("PUT", "/offers/offer1")).operation,
+            OperationType::ReplaceOffer
+        );
     }
 
     #[test]
