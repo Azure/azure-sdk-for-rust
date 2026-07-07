@@ -5,6 +5,11 @@
 
 use super::*;
 
+static DTX_IDEMPOTENCY_TOKEN: HeaderName = HeaderName::from_static("x-ms-cosmos-idempotency-token");
+static DTX_OPERATION_TYPE: HeaderName = HeaderName::from_static("x-ms-cosmos-operation-type");
+static DTX_RESOURCE_TYPE: HeaderName = HeaderName::from_static("x-ms-cosmos-resource-type");
+const DTX_RESOURCE_TYPE_VALUE: &str = "DistributedTransactionBatch";
+
 fn dtx_request(gateway_url: &str, operations: serde_json::Value) -> Request {
     let url = format!("{gateway_url}/operations/dtc");
     let mut request = Request::new(Url::parse(&url).unwrap(), Method::Post);
@@ -26,15 +31,15 @@ fn dtx_request(gateway_url: &str, operations: serde_json::Value) -> Request {
         "Read"
     };
     request.headers_mut().insert(
-        HeaderName::from_static("x-ms-cosmos-idempotency-token"),
+        DTX_IDEMPOTENCY_TOKEN.clone(),
         HeaderValue::from_static("3f2504e0-4f89-41d3-9a0c-0305e82c3301"),
     );
     request.headers_mut().insert(
-        HeaderName::from_static("x-ms-cosmos-resource-type"),
-        HeaderValue::from_static("DistributedTransactionBatch"),
+        DTX_RESOURCE_TYPE.clone(),
+        HeaderValue::from_static(DTX_RESOURCE_TYPE_VALUE),
     );
     request.headers_mut().insert(
-        HeaderName::from_static("x-ms-cosmos-operation-type"),
+        DTX_OPERATION_TYPE.clone(),
         HeaderValue::from_static(operation_type),
     );
     request.set_body(serde_json::to_vec(&operations).unwrap());

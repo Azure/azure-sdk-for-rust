@@ -80,7 +80,19 @@ pub(crate) mod request_header_names {
     /// region. The same wire name appears under
     /// [`response_header_names::HAS_TENTATIVE_WRITES`] on responses.
     pub const ALLOW_TENTATIVE_WRITES: &str = "x-ms-cosmos-allow-tentative-writes";
+    /// DTX idempotency token (`Uuid`) generated once per distributed transaction.
+    #[cfg(feature = "preview_dtx")]
+    pub const DTX_IDEMPOTENCY_TOKEN: &str = "x-ms-cosmos-idempotency-token";
+    /// DTX coordinator operation type (`CommitDistributedTransaction` or `Read`).
+    #[cfg(feature = "preview_dtx")]
+    pub const DTX_OPERATION_TYPE: &str = "x-ms-cosmos-operation-type";
+    /// DTX coordinator resource type (`DistributedTransactionBatch`).
+    #[cfg(feature = "preview_dtx")]
+    pub const DTX_RESOURCE_TYPE: &str = "x-ms-cosmos-resource-type";
 }
+
+#[cfg(feature = "preview_dtx")]
+pub(crate) const DTX_RESOURCE_TYPE_HEADER_VALUE: &str = "DistributedTransactionBatch";
 
 /// Standard Cosmos DB response header names.
 // cspell:ignore activityid acked llsn gatewayversion serviceversion
@@ -122,6 +134,9 @@ pub(crate) mod response_header_names {
         "x-ms-documentdb-collection-index-transformation-progress";
     pub const COLLECTION_LAZY_INDEXING_PROGRESS: &str =
         "x-ms-documentdb-collection-lazy-indexing-progress";
+    /// DTX idempotency token echoed by the coordinator.
+    #[cfg(feature = "preview_dtx")]
+    pub const DTX_IDEMPOTENCY_TOKEN: &str = "x-ms-cosmos-idempotency-token";
 }
 
 pub const QUERY_CONTENT_TYPE: &str = "application/query+json";
@@ -640,7 +655,7 @@ impl CosmosResponseHeaders {
                     result.collection_lazy_indexing_progress = value.as_str().parse().ok();
                 }
                 #[cfg(feature = "preview_dtx")]
-                "x-ms-cosmos-idempotency-token" => {
+                response_header_names::DTX_IDEMPOTENCY_TOKEN => {
                     result.distributed_transaction_idempotency_token =
                         uuid::Uuid::parse_str(value.as_str()).ok();
                 }
@@ -825,7 +840,7 @@ impl CosmosResponseHeaders {
         );
         #[cfg(feature = "preview_dtx")]
         put_str(
-            "x-ms-cosmos-idempotency-token",
+            response_header_names::DTX_IDEMPOTENCY_TOKEN,
             self.distributed_transaction_idempotency_token
                 .map(|value| value.to_string()),
         );

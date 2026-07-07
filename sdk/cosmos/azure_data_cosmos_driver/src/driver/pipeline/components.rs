@@ -22,7 +22,7 @@ use crate::{
         },
         transport::AuthorizationContext,
     },
-    models::{CosmosResponseHeaders, CosmosStatus},
+    models::{CosmosResponseHeaders, CosmosStatus, ResourceType},
     options::{HedgeThreshold, Region},
 };
 
@@ -344,6 +344,8 @@ pub(crate) struct TransportRequest {
     pub url: Url,
     /// Headers to send (includes operation-specific and attempt-specific headers).
     pub headers: Headers,
+    /// Type of resource targeted by the operation.
+    pub resource_type: ResourceType,
     /// Request body bytes (schema-agnostic).
     pub body: Option<azure_core::Bytes>,
     /// Authorization context for signing.

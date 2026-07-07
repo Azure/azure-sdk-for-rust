@@ -1976,19 +1976,27 @@ impl CosmosDriver {
 
         let custom_headers = options.custom_headers.get_or_insert_with(Default::default);
         custom_headers.insert(
-            azure_core::http::headers::HeaderName::from_static("x-ms-cosmos-idempotency-token"),
+            azure_core::http::headers::HeaderName::from_static(
+                crate::models::request_header_names::DTX_IDEMPOTENCY_TOKEN,
+            ),
             azure_core::http::headers::HeaderValue::from(request.idempotency_token.to_string()),
         );
         custom_headers.insert(
-            azure_core::http::headers::HeaderName::from_static("x-ms-cosmos-operation-type"),
+            azure_core::http::headers::HeaderName::from_static(
+                crate::models::request_header_names::DTX_OPERATION_TYPE,
+            ),
             azure_core::http::headers::HeaderValue::from(match request.transaction_type {
                 crate::models::DistributedTransactionType::Write => "CommitDistributedTransaction",
                 crate::models::DistributedTransactionType::Read => "Read",
             }),
         );
         custom_headers.insert(
-            azure_core::http::headers::HeaderName::from_static("x-ms-cosmos-resource-type"),
-            azure_core::http::headers::HeaderValue::from_static("DistributedTransactionBatch"),
+            azure_core::http::headers::HeaderName::from_static(
+                crate::models::request_header_names::DTX_RESOURCE_TYPE,
+            ),
+            azure_core::http::headers::HeaderValue::from_static(
+                crate::models::cosmos_headers::DTX_RESOURCE_TYPE_HEADER_VALUE,
+            ),
         );
 
         // Bound the outer retry loop by the caller's end-to-end latency budget.

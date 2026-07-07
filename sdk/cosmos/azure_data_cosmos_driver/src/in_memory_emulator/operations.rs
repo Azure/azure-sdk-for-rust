@@ -44,11 +44,14 @@ use crate::models::PatchInstructions;
 static OFFER_REPLACE_PENDING: HeaderName = HeaderName::from_static("x-ms-offer-replace-pending");
 
 #[cfg(feature = "preview_dtx")]
-static DTX_IDEMPOTENCY_TOKEN: HeaderName = HeaderName::from_static("x-ms-cosmos-idempotency-token");
+static DTX_IDEMPOTENCY_TOKEN: HeaderName =
+    HeaderName::from_static(crate::models::request_header_names::DTX_IDEMPOTENCY_TOKEN);
 #[cfg(feature = "preview_dtx")]
-static DTX_OPERATION_TYPE: HeaderName = HeaderName::from_static("x-ms-cosmos-operation-type");
+static DTX_OPERATION_TYPE: HeaderName =
+    HeaderName::from_static(crate::models::request_header_names::DTX_OPERATION_TYPE);
 #[cfg(feature = "preview_dtx")]
-static DTX_RESOURCE_TYPE: HeaderName = HeaderName::from_static("x-ms-cosmos-resource-type");
+static DTX_RESOURCE_TYPE: HeaderName =
+    HeaderName::from_static(crate::models::request_header_names::DTX_RESOURCE_TYPE);
 
 /// Sub-status paired with `410 Gone` when a physical partition is locked because
 /// a split or merge is in progress.
@@ -416,7 +419,9 @@ pub(crate) async fn handle_operation(
             return None;
         }
         let resource_type = headers.get_optional_str(&DTX_RESOURCE_TYPE)?;
-        if !resource_type.eq_ignore_ascii_case("DistributedTransactionBatch") {
+        if !resource_type
+            .eq_ignore_ascii_case(crate::models::cosmos_headers::DTX_RESOURCE_TYPE_HEADER_VALUE)
+        {
             return None;
         }
         match headers.get_optional_str(&DTX_OPERATION_TYPE)? {

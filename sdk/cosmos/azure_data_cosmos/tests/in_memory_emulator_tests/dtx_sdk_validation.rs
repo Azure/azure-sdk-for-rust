@@ -29,6 +29,7 @@ use uuid::Uuid;
 static DTX_IDEMPOTENCY_TOKEN: HeaderName = HeaderName::from_static("x-ms-cosmos-idempotency-token");
 static DTX_OPERATION_TYPE: HeaderName = HeaderName::from_static("x-ms-cosmos-operation-type");
 static DTX_RESOURCE_TYPE: HeaderName = HeaderName::from_static("x-ms-cosmos-resource-type");
+const DTX_RESOURCE_TYPE_VALUE: &str = "DistributedTransactionBatch";
 
 async fn emulator_client(
     endpoint: &str,
@@ -83,7 +84,7 @@ fn raw_dtx_request(endpoint: &str, body: serde_json::Value, include_headers: boo
             .insert(DTX_OPERATION_TYPE.clone(), "Read");
         request
             .headers_mut()
-            .insert(DTX_RESOURCE_TYPE.clone(), "DistributedTransactionBatch");
+            .insert(DTX_RESOURCE_TYPE.clone(), DTX_RESOURCE_TYPE_VALUE);
     }
     request.set_body(serde_json::to_vec(&body).unwrap());
     request

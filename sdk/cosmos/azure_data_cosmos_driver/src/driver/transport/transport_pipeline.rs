@@ -24,7 +24,7 @@ use crate::{
         RequestEvent, RequestEventType, RequestHandle, RequestSentStatus, TransportSecurity,
         TransportShardDiagnostics,
     },
-    models::{CosmosResponseHeaders, CosmosStatus, Credential, SubStatusCode},
+    models::{CosmosResponseHeaders, CosmosStatus, Credential, ResourceType, SubStatusCode},
 };
 
 use super::{
@@ -342,10 +342,11 @@ pub(crate) async fn execute_transport_pipeline(
         // Check for 429 throttling → transport-level retry
         let result = result.result;
         // DTX request detection only exists when the preview feature is enabled;
-        // in default builds no request carries the DTX resource-type header, so
+        // in default builds no request can carry the DTX typed resource value, so
         // the flag is a constant `false` and the throttle path behaves as before.
         #[cfg(feature = "preview_dtx")]
-        let is_distributed_transaction_request = is_distributed_transaction_request(&http_request);
+        let is_distributed_transaction_request =
+            request.resource_type == ResourceType::DistributedTransactionBatch;
         #[cfg(not(feature = "preview_dtx"))]
         let is_distributed_transaction_request = false;
         let action =
@@ -430,17 +431,6 @@ pub(crate) async fn execute_transport_pipeline(
 
 fn deadline_exceeded_result(request_sent: RequestSentStatus) -> TransportResult {
     TransportResult::deadline_exceeded(request_sent)
-}
-
-#[cfg(feature = "preview_dtx")]
-fn is_distributed_transaction_request(request: &HttpRequest) -> bool {
-    request.headers.iter().any(|(name, value)| {
-        name.as_str()
-            .eq_ignore_ascii_case("x-ms-cosmos-resource-type")
-            && value
-                .as_str()
-                .eq_ignore_ascii_case("DistributedTransactionBatch")
-    })
 }
 
 async fn execute_http_attempt(
@@ -989,39 +979,6 @@ mod tests {
         ));
     }
 
-    #[cfg(feature = "preview_dtx")]
-    #[test]
-    fn is_distributed_transaction_request_detects_dtx_header_only() {
-        use azure_core::http::headers::{HeaderName, HeaderValue, Headers};
-
-        let build = |headers: Headers| HttpRequest {
-            url: url::Url::parse("https://test.documents.azure.com/operations/dtc").unwrap(),
-            method: azure_core::http::Method::Post,
-            headers,
-            body: None,
-            timeout: None,
-            #[cfg(feature = "fault_injection")]
-            evaluation_collector: None,
-        };
-
-        let mut dtx_headers = Headers::new();
-        dtx_headers.insert(
-            HeaderName::from_static("x-ms-cosmos-resource-type"),
-            HeaderValue::from_static("DistributedTransactionBatch"),
-        );
-        assert!(is_distributed_transaction_request(&build(dtx_headers)));
-
-        // An ordinary point operation carries no DTX resource-type header, so the
-        // DTX throttle carve-out never applies to it.
-        let mut doc_headers = Headers::new();
-        doc_headers.insert(
-            HeaderName::from_static("x-ms-documentdb-partitionkey"),
-            HeaderValue::from_static("[\"pk1\"]"),
-        );
-        assert!(!is_distributed_transaction_request(&build(doc_headers)));
-        assert!(!is_distributed_transaction_request(&build(Headers::new())));
-    }
-
     #[test]
     fn deadline_capped_delay_uses_max_zero_when_remaining_below_margin() {
         let requested = Duration::from_millis(500);
@@ -1087,6 +1044,7 @@ mod tests {
             endpoint: endpoint.clone(),
             url: endpoint.url().clone(),
             headers: azure_core::http::headers::Headers::new(),
+            resource_type: ResourceType::Database,
             body: None,
             auth_context: super::super::AuthorizationContext::new(
                 azure_core::http::Method::Get,
@@ -1452,6 +1410,7 @@ mod tests {
             endpoint: endpoint.clone(),
             url: endpoint.url().clone(),
             headers: azure_core::http::headers::Headers::new(),
+            resource_type: ResourceType::Database,
             body: None,
             auth_context: super::super::AuthorizationContext::new(
                 azure_core::http::Method::Get,

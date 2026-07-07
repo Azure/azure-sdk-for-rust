@@ -1417,6 +1417,7 @@ fn build_transport_request(
         endpoint: ctx.routing.endpoint.clone(),
         url,
         headers,
+        resource_type,
         body: operation.body().map(azure_core::Bytes::copy_from_slice),
         auth_context,
         execution_context: ctx.execution_context,
