@@ -504,6 +504,7 @@ considered. Entries are append-only; superseded entries are marked, not deleted.
 - [ADR-008 — Implement emulator rollback fidelity](adr/008_implement_emulator_rollback.md)
 - [ADR-009 — Keep outer retry in the driver](adr/009_keep_retry_driver.md)
 - [ADR-010 — Limit preview scope](adr/010_limit_preview_scope.md)
+- [ADR-011 — Route distributed transactions through account write regions](adr/011_route_transactions.md)
 
 ---
 
