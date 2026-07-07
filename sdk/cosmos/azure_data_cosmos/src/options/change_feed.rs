@@ -23,21 +23,15 @@ pub use azure_data_cosmos_driver::models::ChangeFeedStartFrom;
 
 /// Selects which change feed mode to read.
 ///
-/// Only [`LatestVersion`](Self::LatestVersion) is supported today;
-/// [`AllVersionsAndDeletes`](Self::AllVersionsAndDeletes) is reserved for a
-/// future release and currently rejected by
-/// [`ContainerClient::query_change_feed()`](crate::clients::ContainerClient::query_change_feed).
+/// Only [`LatestVersion`](Self::LatestVersion) is supported today. The enum is
+/// `#[non_exhaustive]`, so additional modes can be added in a future release
+/// without breaking callers.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum ChangeFeedMode {
     /// Returns the latest version of each changed item ("incremental" feed).
     #[default]
     LatestVersion,
-
-    /// Returns every intermediate version plus deletes ("full fidelity" feed).
-    ///
-    /// Not yet implemented.
-    AllVersionsAndDeletes,
 }
 
 /// Options for change feed operations.
@@ -137,8 +131,8 @@ mod tests {
 
     #[test]
     fn options_builder_chain() {
-        let opts = ChangeFeedOptions::default().with_mode(ChangeFeedMode::AllVersionsAndDeletes);
+        let opts = ChangeFeedOptions::default().with_mode(ChangeFeedMode::LatestVersion);
 
-        assert_eq!(opts.mode, ChangeFeedMode::AllVersionsAndDeletes);
+        assert_eq!(opts.mode, ChangeFeedMode::LatestVersion);
     }
 }

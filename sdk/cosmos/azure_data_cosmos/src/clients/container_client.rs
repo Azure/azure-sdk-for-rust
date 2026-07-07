@@ -8,10 +8,10 @@ use crate::{
     models::{BatchResponse, ItemResponse, ResourceResponse},
     models::{ContainerProperties, PatchInstructions, ThroughputProperties},
     options::{
-        BatchOptions, ChangeFeedMode, ChangeFeedOptions, ChangeFeedStartFrom,
-        DeleteContainerOptions, ItemReadOptions, ItemWriteOptions, PatchItemOptions, Precondition,
-        QueryOptions, ReadContainerOptions, ReadFeedRangesOptions, ReplaceContainerOptions,
-        SessionToken, ThroughputOptions,
+        BatchOptions, ChangeFeedOptions, ChangeFeedStartFrom, DeleteContainerOptions,
+        ItemReadOptions, ItemWriteOptions, PatchItemOptions, Precondition, QueryOptions,
+        ReadContainerOptions, ReadFeedRangesOptions, ReplaceContainerOptions, SessionToken,
+        ThroughputOptions,
     },
     PartitionKey, Query,
 };
@@ -901,35 +901,6 @@ impl ContainerClient {
         options: Option<ChangeFeedOptions>,
     ) -> crate::Result<ChangeFeedPageIterator<T>> {
         let options = options.unwrap_or_default();
-
-        // AllVersionsAndDeletes is reserved for a future release. Reject it
-        // explicitly rather than silently behaving like LatestVersion.
-        //
-        // TODO: When enabling AllVersionsAndDeletes, revisit start/resume
-        // semantics — they differ from LatestVersion:
-        //   - `Beginning` is invalid under AVAD (bounded retention window);
-        //     require `Now` or a `PointInTime` within retention and reject
-        //     `Beginning` for this mode.
-        //   - `Now` is re-evaluated per request, so a range never polled before
-        //     a checkpoint resumes from resume-time and would drop the
-        //     intermediate versions/deletes between the original start and the
-        //     resume. Resolve `Now` to a concrete per-range start position (or
-        //     snapshot the start time as a `PointInTime`) so AVAD resume is
-        //     lossless.
-        //   - The continuation token does not persist the feed mode; callers
-        //     must re-pass AllVersionsAndDeletes on resume.
-        if options.mode == ChangeFeedMode::AllVersionsAndDeletes {
-            return Err(crate::DriverCosmosError::builder()
-                .with_status(crate::error::CosmosStatus::new(
-                    azure_core::http::StatusCode::NotImplemented,
-                ))
-                .with_message(
-                    "AllVersionsAndDeletes change feed mode is not yet supported; \
-                     use ChangeFeedMode::LatestVersion",
-                )
-                .build()
-                .into());
-        }
 
         let mut initial_operation = CosmosOperation::change_feed(
             self.container_ref.clone(),
