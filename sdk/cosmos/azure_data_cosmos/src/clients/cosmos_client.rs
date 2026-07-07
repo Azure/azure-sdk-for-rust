@@ -103,28 +103,38 @@ impl CosmosClient {
         DatabaseClient::new(self.context.clone(), id)
     }
 
-    /// Creates a preview distributed write transaction builder.
+    /// Commits a preview distributed write transaction.
     ///
     /// **Preview / work in progress.** Requires the disabled-by-default
     /// `preview_dtx` feature and a service account with the DTX feature enabled.
     /// Not supported for production use; the API may change without notice.
     #[cfg(feature = "preview_dtx")]
-    pub fn create_distributed_write_transaction(
+    pub async fn commit_distributed_write(
         &self,
-    ) -> crate::clients::DistributedWriteTransaction {
-        crate::clients::DistributedWriteTransaction::new(self.context.clone())
+        transaction: crate::clients::DistributedWriteTransaction,
+    ) -> crate::Result<crate::clients::DistributedTransactionResponse> {
+        crate::clients::distributed_transaction::commit_distributed_write(
+            &self.context,
+            transaction,
+        )
+        .await
     }
 
-    /// Creates a preview distributed read transaction builder.
+    /// Executes a preview distributed read transaction.
     ///
     /// **Preview / work in progress.** Requires the disabled-by-default
     /// `preview_dtx` feature and a service account with the DTX feature enabled.
     /// Not supported for production use; the API may change without notice.
     #[cfg(feature = "preview_dtx")]
-    pub fn create_distributed_read_transaction(
+    pub async fn execute_distributed_read(
         &self,
-    ) -> crate::clients::DistributedReadTransaction {
-        crate::clients::DistributedReadTransaction::new(self.context.clone())
+        transaction: crate::clients::DistributedReadTransaction,
+    ) -> crate::Result<crate::clients::DistributedTransactionResponse> {
+        crate::clients::distributed_transaction::execute_distributed_read(
+            &self.context,
+            transaction,
+        )
+        .await
     }
 
     /// Gets the endpoint of the database account this client is connected to.

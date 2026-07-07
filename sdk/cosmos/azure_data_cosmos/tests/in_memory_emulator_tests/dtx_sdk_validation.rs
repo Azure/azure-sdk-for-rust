@@ -119,9 +119,16 @@ async fn write_transaction_rejects_container_from_different_account() -> Result<
         .container_client("coll")
         .await?;
 
+    let transaction = azure_data_cosmos::DistributedWriteTransaction::new().delete_item(
+        &foreign_container,
+        "pk",
+        "item",
+        None,
+    );
+
     let result = transaction_client
-        .create_distributed_write_transaction()
-        .delete_item(&foreign_container, "pk", "item", None);
+        .commit_distributed_write(transaction)
+        .await;
     let error = match result {
         Ok(_) => panic!("foreign account container should be rejected"),
         Err(error) => error,
@@ -131,7 +138,7 @@ async fn write_transaction_rejects_container_from_different_account() -> Result<
     assert!(
         error
             .to_string()
-            .contains("same Cosmos account as the transaction client"),
+            .contains("same Cosmos account as the committing client"),
         "unexpected error: {error}"
     );
     Ok(())
@@ -157,9 +164,16 @@ async fn read_transaction_rejects_container_from_different_account() -> Result<(
         .container_client("coll")
         .await?;
 
+    let transaction = azure_data_cosmos::DistributedReadTransaction::new().read_item(
+        &foreign_container,
+        "pk",
+        "item",
+        None,
+    );
+
     let result = transaction_client
-        .create_distributed_read_transaction()
-        .read_item(&foreign_container, "pk", "item", None);
+        .execute_distributed_read(transaction)
+        .await;
     let error = match result {
         Ok(_) => panic!("foreign account container should be rejected"),
         Err(error) => error,
@@ -169,7 +183,7 @@ async fn read_transaction_rejects_container_from_different_account() -> Result<(
     assert!(
         error
             .to_string()
-            .contains("same Cosmos account as the transaction client"),
+            .contains("same Cosmos account as the committing client"),
         "unexpected error: {error}"
     );
     Ok(())

@@ -28,7 +28,7 @@ mod cosmos_client;
 mod cosmos_client_builder;
 mod database_client;
 #[cfg(feature = "preview_dtx")]
-mod distributed_transaction;
+pub(crate) mod distributed_transaction;
 pub(crate) mod offers_client;
 mod throughput_poller;
 

@@ -102,7 +102,7 @@ out internally.
 flowchart TD
     subgraph SDK["azure_data_cosmos (SDK)"]
         B["DistributedWriteTransaction / DistributedReadTransaction<br/>fluent builders buffer operations"]
-        B --> C["commit() → DistributedTransactionRequest"]
+      B --> C["CosmosClient execute method → DistributedTransactionRequest"]
     end
     subgraph Driver["azure_data_cosmos_driver"]
         C --> D["execute_distributed_transaction()<br/>OUTER retry loop (body-bearing)"]
@@ -130,17 +130,28 @@ Two distinct retry tiers cooperate (see [§7](#7-retry-architecture)):
 
 ### 4.1 SDK builders (`azure_data_cosmos`)
 
-Factory methods hang off `CosmosClient`:
+Transaction documents mirror `TransactionalBatch`: callers prepare a data-only
+transaction and pass it to the account client for execution:
 
 ```rust no_run
 // Feature: preview_dtx
-let write_tx = client.create_distributed_write_transaction();
-let read_tx = client.create_distributed_read_transaction();
+let write_tx = DistributedWriteTransaction::new()
+  .create_item(&container_a, "tenant-1", "item-1", item_1, None)?
+  .delete_item(&container_b, "tenant-2", "item-2", None)?;
+
+let response = client.commit_distributed_write(write_tx).await?;
+
+let read_tx = DistributedReadTransaction::new()
+  .read_item(&container_a, "tenant-1", "item-1", None)?
+  .read_item(&container_b, "tenant-2", "item-2", None)?;
+
+let response = client.execute_distributed_read(read_tx).await?;
 ```
 
 Each operation method takes a `&ContainerClient` for the target container. The
 SDK resolves the underlying driver `ContainerReference` internally; callers do
-not use `ContainerReference` when building SDK distributed transactions.
+not use `ContainerReference` when building SDK distributed transactions. The
+same-account check runs when `CosmosClient` executes the prepared transaction.
 
 `DistributedWriteTransaction` buffers write operations with a fluent builder and
 commits them atomically:
@@ -152,7 +163,9 @@ commits them atomically:
 | `upsert_item<T: Serialize>(...)`              | Buffer an upsert.                                    |
 | `delete_item(...)`                            | Buffer a delete.                                     |
 | `patch_item(...)`                             | Buffer a patch (optionally with a filter predicate). |
-| `commit()` → `DistributedTransactionResponse` | Execute all buffered writes as one atomic unit.      |
+
+`CosmosClient::commit_distributed_write(...)` executes all buffered writes as one
+atomic unit and returns a `DistributedTransactionResponse`.
 
 `DistributedReadTransaction` buffers point reads that execute under a consistent
 cross-partition snapshot:
@@ -160,7 +173,9 @@ cross-partition snapshot:
 | Method                                        | Purpose                                              |
 | --------------------------------------------- | ---------------------------------------------------- |
 | `read_item(...)`                              | Buffer a point read.                                 |
-| `commit()` → `DistributedTransactionResponse` | Execute all buffered reads under snapshot isolation. |
+
+`CosmosClient::execute_distributed_read(...)` executes all buffered reads under
+snapshot isolation and returns a `DistributedTransactionResponse`.
 
 Per-operation options:
 
