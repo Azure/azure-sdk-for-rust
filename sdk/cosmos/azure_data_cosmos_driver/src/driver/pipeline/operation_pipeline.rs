@@ -617,6 +617,7 @@ pub(crate) async fn execute_operation_pipeline(
                     new_state,
                     location_state_store,
                     operation.is_read_only(),
+                    operation.operation_type().routes_to_write_endpoints(),
                 );
                 diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;
             }
@@ -632,6 +633,7 @@ pub(crate) async fn execute_operation_pipeline(
                     new_state,
                     location_state_store,
                     operation.is_read_only(),
+                    operation.operation_type().routes_to_write_endpoints(),
                 );
                 diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;
             }
@@ -717,6 +719,7 @@ pub(crate) async fn execute_operation_pipeline(
                     new_state,
                     location_state_store,
                     operation.is_read_only(),
+                    operation.operation_type().routes_to_write_endpoints(),
                 );
                 // Re-resolve the primary routing against the advanced
                 // retry_state and freshly snapshotted location. The
@@ -950,6 +953,7 @@ fn resolve_endpoint(
 ) -> RoutingDecision {
     let account = location.account.as_ref();
     let read_only = operation.is_read_only();
+    let route_to_write_endpoints = operation.operation_type().routes_to_write_endpoints();
     // Build an in-flight skip set from effects deferred during this
     // operation. On retries this skips regions we've already failed against
     // so the next attempt picks a different region. Both kinds of deferred
@@ -959,7 +963,7 @@ fn resolve_endpoint(
     //
     // Multi-write retries rotate via `LocationIndex`; PPAF single-master writes
     // use the read endpoint list to discover the current write region.
-    let in_flight_failed: Vec<&Region> = if !read_only {
+    let in_flight_failed: Vec<&Region> = if route_to_write_endpoints {
         retry_state
             .pending_write_effects
             .iter()
@@ -973,7 +977,8 @@ fn resolve_endpoint(
         Vec::new()
     };
 
-    let primary = preferred_endpoints_for_attempt(account, retry_state, read_only);
+    let primary =
+        preferred_endpoints_for_attempt(account, retry_state, read_only, route_to_write_endpoints);
     let selected = try_select_endpoint(
         operation,
         retry_state,
@@ -1153,8 +1158,9 @@ fn preferred_endpoints_for_attempt<'a>(
     account: &'a AccountEndpointState,
     retry_state: &OperationRetryState,
     read_only: bool,
+    route_to_write_endpoints: bool,
 ) -> &'a [CosmosEndpoint] {
-    if read_only && retry_state.route_reads_to_write_endpoints() {
+    if read_only && (route_to_write_endpoints || retry_state.route_reads_to_write_endpoints()) {
         &account.preferred_write_endpoints
     } else if !read_only && retry_state.ppaf_write_retry_allowed {
         // PPAF on single-master accounts: writes iterate over the full read
@@ -1664,11 +1670,16 @@ fn advance_to_next_attempt(
     new_state: OperationRetryState,
     location_state_store: &LocationStateStore,
     is_read_only: bool,
+    route_to_write_endpoints: bool,
 ) {
     let next_location = location_state_store.snapshot();
-    let endpoints_len =
-        preferred_endpoints_for_attempt(next_location.account.as_ref(), &new_state, is_read_only)
-            .len();
+    let endpoints_len = preferred_endpoints_for_attempt(
+        next_location.account.as_ref(),
+        &new_state,
+        is_read_only,
+        route_to_write_endpoints,
+    )
+    .len();
     let pending = std::mem::take(&mut retry_state.pending_write_effects);
     *retry_state = new_state.advance_location(endpoints_len, next_location.account.generation);
     retry_state.pending_write_effects = pending;
@@ -3391,8 +3402,12 @@ fn try_advance_after_both_transient(
     }
 
     retry_state.failover_retry_count = next_count;
-    let endpoints =
-        preferred_endpoints_for_attempt(location.account.as_ref(), retry_state, is_read_only);
+    let endpoints = preferred_endpoints_for_attempt(
+        location.account.as_ref(),
+        retry_state,
+        is_read_only,
+        !is_read_only,
+    );
     let endpoints_len = endpoints.len();
     if endpoints_len > 0 {
         // Walk the LocationIndex forward starting from its current
@@ -3822,6 +3837,49 @@ mod tests {
             pending_write_effects: Vec::new(),
             hedge_already_fired: false,
         };
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            Duration::from_secs(60),
+        );
+        assert_eq!(routing.endpoint, write_endpoint);
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn resolve_endpoint_uses_write_region_for_read_dtx() {
+        let operation = CosmosOperation::distributed_transaction(
+            test_account(),
+            crate::models::DistributedTransactionType::Read,
+        );
+        let write_endpoint = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let read_endpoint = CosmosEndpoint::regional(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+        );
+
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![read_endpoint].into(),
+            preferred_write_endpoints: vec![write_endpoint.clone()].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: write_endpoint.clone(),
+        }));
+
+        let retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            false,
+            Vec::new(),
+            3,
+            1,
+        );
 
         let routing = super::resolve_endpoint(
             &operation,

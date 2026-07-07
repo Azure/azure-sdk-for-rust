@@ -355,13 +355,13 @@ fn evaluate_http_outcome(
     body: Vec<u8>,
     request_sent: RequestSentStatus,
 ) -> (OperationAction, Vec<LocationEffect>) {
+    if let Some(result) = try_handle_write_forbidden(operation, endpoint, retry_state, &status) {
+        return result;
+    }
+
     #[cfg(feature = "preview_dtx")]
     if operation.resource_type() == crate::models::ResourceType::DistributedTransactionBatch {
         return evaluate_dtx_http_outcome(status, cosmos_headers, body, retry_state);
-    }
-
-    if let Some(result) = try_handle_write_forbidden(operation, endpoint, retry_state, &status) {
-        return result;
     }
 
     if let Some(result) =
@@ -1223,13 +1223,38 @@ mod tests {
 
     #[cfg(feature = "preview_dtx")]
     #[test]
+    fn dtx_bodyless_write_forbidden_refreshes_topology_before_dtx_classification() {
+        let op = make_dtx_operation();
+        let result = make_dtx_http_error(
+            CosmosStatus::from_parts(StatusCode::Forbidden, Some(SubStatusCode::new(3))),
+            Vec::new(),
+            None,
+        );
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert!(effects
+            .iter()
+            .any(|effect| matches!(effect, LocationEffect::RefreshAccountProperties)));
+        assert!(effects
+            .iter()
+            .any(|effect| matches!(effect, LocationEffect::MarkPartitionUnavailable(_))));
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
     fn dtx_http_outcomes_never_failover_session_or_hedge() {
         // DTX is a write-bearing resource routed through the shared pipeline.
-        // The early return for `DistributedTransactionBatch` in
-        // `evaluate_http_outcome` is the single guard that keeps DTX responses
+        // The DTX classification in `evaluate_http_outcome` keeps DTX responses
         // out of the cross-region failover / session-retry / hedging machinery,
-        // which is unsafe for writes (see PR #4432). This pins that guard: every
-        // coordinator HTTP outcome must resolve to `DtxRetry` (bodyless
+        // which is unsafe for writes (see PR #4432). This pins that guard except
+        // for 403/3 WriteForbidden, which must refresh write-region topology
+        // first. Every other coordinator HTTP outcome must resolve to `DtxRetry` (bodyless
         // coordinator/infra retry) or `Complete` (body handed to the outer
         // coordinator loop) — never `FailoverRetry`, `SessionRetry`, or `Hedge`,
         // and never a location effect.
@@ -1245,7 +1270,6 @@ mod tests {
             CosmosStatus::new(StatusCode::from(503_u16)),
             CosmosStatus::from_parts(StatusCode::from(429_u16), Some(SubStatusCode::new(3092))),
             CosmosStatus::from_parts(StatusCode::from(404_u16), Some(SubStatusCode::new(1002))),
-            CosmosStatus::from_parts(StatusCode::from(403_u16), Some(SubStatusCode::new(3))),
             CosmosStatus::new(StatusCode::from(408_u16)),
             CosmosStatus::new(StatusCode::from(410_u16)),
             CosmosStatus::new(StatusCode::from(500_u16)),

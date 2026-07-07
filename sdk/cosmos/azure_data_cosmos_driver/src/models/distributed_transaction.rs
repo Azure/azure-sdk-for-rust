@@ -413,7 +413,7 @@ fn invalid_partition_key(message: impl Into<String>) -> crate::error::CosmosErro
 }
 
 /// The resource body returned for one distributed transaction operation.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, SafeDebug, Default, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum DistributedTransactionResultBody {
     /// No resource body was returned.
@@ -424,10 +424,12 @@ pub enum DistributedTransactionResultBody {
 }
 
 /// Result of one operation in a distributed transaction response.
-#[derive(Clone, Debug)]
+#[derive(Clone, SafeDebug)]
+#[safe(true)]
 #[non_exhaustive]
 pub struct DistributedTransactionOperationResult {
     /// Raw operation response object returned by the coordinator.
+    #[safe(false)]
     pub raw_response: serde_json::Map<String, serde_json::Value>,
     /// Zero-based request operation index.
     pub index: usize,
@@ -444,6 +446,7 @@ pub struct DistributedTransactionOperationResult {
     /// Request charge for this operation.
     pub request_charge: Option<RequestCharge>,
     /// Operation resource body.
+    #[safe(false)]
     pub resource_body: DistributedTransactionResultBody,
 }
 
@@ -463,7 +466,8 @@ impl DistributedTransactionOperationResult {
 }
 
 /// Response returned by the distributed transaction coordinator.
-#[derive(Clone, Debug)]
+#[derive(Clone, SafeDebug)]
+#[safe(true)]
 #[non_exhaustive]
 pub struct DistributedTransactionResponse {
     /// Overall transaction status.

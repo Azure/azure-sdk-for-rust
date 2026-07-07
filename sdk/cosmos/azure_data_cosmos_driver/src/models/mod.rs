@@ -606,6 +606,16 @@ impl OperationType {
         }
     }
 
+    /// Returns true if this operation must be routed to write endpoints.
+    pub fn routes_to_write_endpoints(self) -> bool {
+        match self {
+            #[cfg(feature = "preview_dtx")]
+            OperationType::CommitDistributedTransaction
+            | OperationType::ReadDistributedTransaction => true,
+            _ => !self.is_read_only(),
+        }
+    }
+
     /// Returns true if the operation is idempotent (safe to retry).
     pub fn is_idempotent(self) -> bool {
         match self {

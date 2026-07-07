@@ -10,6 +10,7 @@
 
 use std::{borrow::Cow, sync::Arc};
 
+use azure_core::fmt::SafeDebug;
 use azure_core::Bytes;
 use azure_data_cosmos_driver::models as driver_models;
 use serde::{de::DeserializeOwned, Serialize};
@@ -317,7 +318,8 @@ fn patch_operation_with_options(
 }
 
 /// Response from a distributed transaction.
-#[derive(Clone, Debug)]
+#[derive(Clone, SafeDebug)]
+#[safe(true)]
 pub struct DistributedTransactionResponse {
     inner: driver_models::DistributedTransactionResponse,
     headers: ResponseHeaders,
@@ -428,7 +430,8 @@ impl DistributedTransactionResponse {
 }
 
 /// Result for one operation in a distributed transaction response.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, SafeDebug)]
+#[safe(true)]
 pub struct DistributedTransactionOperationResult<'a> {
     inner: &'a driver_models::DistributedTransactionOperationResult,
 }
