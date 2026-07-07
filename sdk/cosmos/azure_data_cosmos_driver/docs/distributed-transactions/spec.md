@@ -494,17 +494,17 @@ dual-backend comparison test assert parity.
 Each ADR records a decision, its context, the consequences, and the alternatives
 considered. Entries are append-only; superseded entries are marked, not deleted.
 
-- [ADR-001 — Ship DTX behind a disabled-by-default `preview_dtx` feature](adr/001_ship_preview_feature.md)
-- [ADR-002 — Match the .NET v3 JSON wire contract exactly](adr/002_match_wire_contract.md)
-- [ADR-003 — Split body-bearing and bodyless retry tiers](adr/003_split_retry_tiers.md)
-- [ADR-004 — Fail closed on ambiguous coordinator responses](adr/004_fail_ambiguous_responses.md)
-- [ADR-005 — Promote `207` in request order](adr/005_promote_multistatus.md)
-- [ADR-006 — Generate and reuse idempotency tokens](adr/006_generate_idempotency_token.md)
-- [ADR-007 — Merge per-operation session tokens strictly](adr/007_merge_session_tokens.md)
-- [ADR-008 — Implement emulator rollback fidelity](adr/008_implement_emulator_rollback.md)
-- [ADR-009 — Keep outer retry in the driver](adr/009_keep_retry_driver.md)
-- [ADR-010 — Limit preview scope](adr/010_limit_preview_scope.md)
-- [ADR-011 — Route distributed transactions through account write regions](adr/011_route_transactions.md)
+- ADR-001 — Ship DTX behind a disabled-by-default `preview_dtx` feature: `adr/001_ship_preview_feature.md`
+- ADR-002 — Match the .NET v3 JSON wire contract exactly: `adr/002_match_wire_contract.md`
+- ADR-003 — Split body-bearing and bodyless retry tiers: `adr/003_split_retry_tiers.md`
+- ADR-004 — Fail closed on ambiguous coordinator responses: `adr/004_fail_ambiguous_responses.md`
+- ADR-005 — Promote `207` in request order: `adr/005_promote_multistatus.md`
+- ADR-006 — Generate and reuse idempotency tokens: `adr/006_generate_idempotency_token.md`
+- ADR-007 — Merge per-operation session tokens strictly: `adr/007_merge_session_tokens.md`
+- ADR-008 — Implement emulator rollback fidelity: `adr/008_implement_emulator_rollback.md`
+- ADR-009 — Keep outer retry in the driver: `adr/009_keep_retry_driver.md`
+- ADR-010 — Limit preview scope: `adr/010_limit_preview_scope.md`
+- ADR-011 — Route distributed transactions through account write regions: `adr/011_route_transactions.md`
 
 ---
 

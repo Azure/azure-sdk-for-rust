@@ -91,8 +91,8 @@ impl DistributedWriteTransaction {
         }
     }
 
-    /// Returns the operations in this transaction.
-    pub(crate) fn operations(self) -> Vec<driver_models::DistributedTransactionOperation> {
+    /// Consumes this transaction and returns its operations.
+    pub(crate) fn into_operations(self) -> Vec<driver_models::DistributedTransactionOperation> {
         self.operations
     }
 
@@ -220,8 +220,8 @@ impl DistributedReadTransaction {
         }
     }
 
-    /// Returns the operations in this transaction.
-    pub(crate) fn operations(self) -> Vec<driver_models::DistributedTransactionOperation> {
+    /// Consumes this transaction and returns its operations.
+    pub(crate) fn into_operations(self) -> Vec<driver_models::DistributedTransactionOperation> {
         self.operations
     }
 
@@ -317,7 +317,7 @@ pub(crate) async fn commit_distributed_write(
     context: &ClientContext,
     transaction: DistributedWriteTransaction,
 ) -> crate::Result<DistributedTransactionResponse> {
-    let operations = transaction.operations();
+    let operations = transaction.into_operations();
     validate_transaction_account(context, &operations)?;
     let request = driver_models::DistributedTransactionRequest::new(
         driver_models::DistributedTransactionType::Write,
@@ -334,7 +334,7 @@ pub(crate) async fn execute_distributed_read(
     context: &ClientContext,
     transaction: DistributedReadTransaction,
 ) -> crate::Result<DistributedTransactionResponse> {
-    let operations = transaction.operations();
+    let operations = transaction.into_operations();
     validate_transaction_account(context, &operations)?;
     let request = driver_models::DistributedTransactionRequest::new(
         driver_models::DistributedTransactionType::Read,
