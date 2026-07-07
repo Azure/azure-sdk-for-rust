@@ -210,6 +210,11 @@ async fn plan_fresh(
     let mut nodes: Vec<Box<dyn PipelineNode>> = Vec::new();
     for query_range in &query_plan.query_ranges {
         let feed_range = query_range_to_feed_range(query_range)?;
+        // Restrict the query-plan range to the operation's requested scope.
+        // Ranges entirely outside the target contribute no request leaves.
+        let Some(feed_range) = clip_to_target(feed_range, operation) else {
+            continue;
+        };
         let resolved = topology_provider
             .resolve_ranges(&feed_range, PartitionRoutingRefresh::UseCached)
             .await?;
@@ -259,6 +264,11 @@ async fn plan_resume_from_saved_snapshot(
 
     for query_range in &query_plan.query_ranges {
         let feed_range = query_range_to_feed_range(query_range)?;
+        // Restrict the query-plan range to the operation's requested scope,
+        // mirroring the fresh path. Ranges outside the target are skipped.
+        let Some(feed_range) = clip_to_target(feed_range, operation) else {
+            continue;
+        };
         let resolved = topology_provider
             .resolve_ranges(&feed_range, PartitionRoutingRefresh::UseCached)
             .await?;
@@ -400,6 +410,28 @@ fn query_range_to_feed_range(
     let min = EffectivePartitionKey::from(query_range.min.as_str());
     let max = EffectivePartitionKey::from(query_range.max.as_str());
     FeedRange::new(min, max)
+}
+
+/// Clips a query-plan feed range to the operation's requested scope
+/// ([`CosmosOperation::target`]).
+///
+/// The backend query plan's ranges are derived from the query text alone and
+/// never reflect the caller's requested [`FeedRange`] target, so the planner
+/// must intersect them here. Returns `None` when the query range lies entirely
+/// outside the target, meaning it contributes no request leaves.
+///
+/// When the operation has no target, or targets a logical partition / prefix,
+/// the range is returned unchanged: a logical-partition [`FeedRange`] collapses
+/// its `[min, max)` bounds to a single effective partition key and therefore
+/// cannot be intersected as an EPK range. Prefix-scoped fan-out is handled
+/// elsewhere; clipping it here would incorrectly drop every range.
+fn clip_to_target(feed_range: FeedRange, operation: &CosmosOperation) -> Option<FeedRange> {
+    match operation.target() {
+        Some(target) if !target.is_logical_partition() => {
+            intersect_feed_ranges(&feed_range, target)
+        }
+        _ => Some(feed_range),
+    }
 }
 
 /// Returns true if the union of `pieces` covers `range` end-to-end.
@@ -640,6 +672,18 @@ mod tests {
 
     fn cross_partition_query_operation() -> CosmosOperation {
         CosmosOperation::query_items(test_container(), Some(FeedRange::full()))
+            .with_body(br#"{"query":"SELECT * FROM c"}"#.to_vec())
+    }
+
+    /// A cross-partition query scoped to an explicit EPK feed-range target,
+    /// e.g. `FeedScope::range([min, max))`.
+    fn query_operation_with_target(min: &str, max: &str) -> CosmosOperation {
+        let target = FeedRange::new(
+            EffectivePartitionKey::from(min),
+            EffectivePartitionKey::from(max),
+        )
+        .unwrap();
+        CosmosOperation::query_items(test_container(), Some(target))
             .with_body(br#"{"query":"SELECT * FROM c"}"#.to_vec())
     }
 
@@ -957,6 +1001,90 @@ mod tests {
             .await
             .unwrap();
         assert_drain_requests_with_partitions(pipeline, &[("20", "80", "pkrange-wide", "", "FF")]);
+    }
+
+    #[tokio::test]
+    async fn restricts_fanout_to_explicit_target_range() {
+        // The reported bug: query plan spans the whole space `[, FF)` but the
+        // caller scoped the query to `[00, 80)` via `FeedScope::range`. Only
+        // the requested slice must be queried, not the neighbouring `[80, FF)`
+        // partition.
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = query_operation_with_target("00", "80");
+        let mut topology =
+            MockTopologyProvider::new(vec![Ok(vec![rr("00", "80", "pkrange-left")])]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+            .await
+            .unwrap();
+        assert_drain_requests(pipeline, &[("00", "80", "pkrange-left")]);
+    }
+
+    #[tokio::test]
+    async fn drops_query_ranges_outside_target() {
+        // Two disjoint query-plan ranges; the target only overlaps the first.
+        // The second range must contribute no request leaves (and its topology
+        // must never be resolved).
+        let plan = plan_with_ranges(vec![qr("", "40"), qr("80", "FF")]);
+        let op = query_operation_with_target("", "40");
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "40", "pkrange-A")])]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+            .await
+            .unwrap();
+        assert_drain_requests(pipeline, &[("", "40", "pkrange-A")]);
+    }
+
+    #[tokio::test]
+    async fn clips_query_range_to_partial_target_overlap() {
+        // The target `[20, 60)` partially overlaps a single query-plan range
+        // spanning several partitions. Only partitions within the target,
+        // clipped to its bounds, may be queried.
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = query_operation_with_target("20", "60");
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+            rr("00", "40", "pkrange-1"),
+            rr("40", "80", "pkrange-2"),
+        ])]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+            .await
+            .unwrap();
+        assert_drain_requests_with_partitions(
+            pipeline,
+            &[
+                ("20", "40", "pkrange-1", "00", "40"),
+                ("40", "60", "pkrange-2", "40", "80"),
+            ],
+        );
+    }
+
+    #[tokio::test]
+    async fn resume_restricts_fanout_to_target_range() {
+        // Resuming a target-scoped query must also honour the target: the
+        // `[80, FF)` partition lies outside `[00, 80)` and must not be queried
+        // even though the query plan spans `[, FF)`.
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = query_operation_with_target("00", "80");
+        let mut topology =
+            MockTopologyProvider::new(vec![Ok(vec![rr("00", "80", "pkrange-left")])]);
+
+        let resume = saved_drain(vec![("00", "80", saved_request(Some("server-token-xyz")))]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+            .await
+            .unwrap();
+        assert_drain_requests_with_partitions_and_continuation(
+            pipeline,
+            &[(
+                "00",
+                "80",
+                "pkrange-left",
+                "00",
+                "80",
+                Some("server-token-xyz"),
+            )],
+        );
     }
 
     #[tokio::test]
