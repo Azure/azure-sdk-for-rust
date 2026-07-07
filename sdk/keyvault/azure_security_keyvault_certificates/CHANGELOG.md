@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Regenerated for service version 2026-03-01-preview.
+- Upgraded to API service version `2026-03-01-preview`.
 
 ### Breaking Changes
 

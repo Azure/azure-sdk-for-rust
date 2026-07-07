@@ -6,7 +6,7 @@
 use super::{
     models_serde, CertificatePolicyAction, CurveName, DeletionRecoveryLevel, KeyType, KeyUsageType,
 };
-use azure_core::{base64, fmt::SafeDebug, time::OffsetDateTime};
+use azure_core::{base64, fmt::SafeDebug, time::OffsetDateTime, Value};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -250,6 +250,11 @@ pub struct CertificatePolicy {
     /// Actions that will be performed by Key Vault over the lifetime of a certificate.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub lifetime_actions: Option<Vec<LifetimeAction>>,
+
+    /// Configuration that enables the platform to manage the certificate on behalf of the user. This feature is currently intended
+    /// for internal use only.
+    #[serde(rename = "platformManaged", skip_serializing_if = "Option::is_none")]
+    pub platform_managed: Option<PlatformManaged>,
 
     /// Properties of the secret backing a certificate.
     #[serde(rename = "secret_props", skip_serializing_if = "Option::is_none")]
@@ -783,6 +788,19 @@ pub struct OrganizationDetails {
     /// Id of the organization.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+}
+
+/// Properties of the platform managed certificate. This feature is currently intended for internal use only.
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+pub struct PlatformManaged {
+    /// The intended usage of the certificate.
+    #[serde(rename = "certificateUsage", skip_serializing_if = "Option::is_none")]
+    pub certificate_usage: Option<String>,
+
+    /// JSON-formatted platform managed metadata. The schema is intentionally undefined as this feature is currently intended
+    /// for internal use only.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<HashMap<String, Value>>,
 }
 
 /// The certificate restore parameters.
