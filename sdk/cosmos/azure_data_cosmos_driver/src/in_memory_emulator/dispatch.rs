@@ -15,14 +15,19 @@ pub(crate) enum OperationType {
     CreateDatabase,
     ReadFeedDatabases,
     QueryDatabases,
+    ReadFeedDatabases,
+    QueryDatabases,
     ReadDatabase,
     DeleteDatabase,
     CreateContainer,
     ReadFeedContainers,
     QueryContainers,
+    ReadFeedContainers,
+    QueryContainers,
     ReadContainer,
     DeleteContainer,
     ReadPKRanges,
+    ReadFeedItems,
     ReadFeedItems,
     Create,
     Read,
@@ -64,6 +69,22 @@ pub(crate) struct ParsedRequest {
     /// throughput instead of silently falling back to `ContainerConfig::default()`
     /// (which has no provisioned RU/s and disables throttling for the container).
     pub offer_throughput: Option<u32>,
+    #[allow(dead_code)]
+    pub offer_autopilot_settings: Option<String>,
+    #[allow(dead_code)]
+    pub max_item_count: Option<i32>,
+    #[allow(dead_code)]
+    pub continuation: Option<String>,
+    #[allow(dead_code)]
+    pub partition_key_range_id: Option<String>,
+    #[allow(dead_code)]
+    pub start_epk: Option<String>,
+    #[allow(dead_code)]
+    pub end_epk: Option<String>,
+    #[allow(dead_code)]
+    pub is_query_plan: bool,
+    #[allow(dead_code)]
+    pub is_batch: bool,
     #[allow(dead_code)]
     pub offer_autopilot_settings: Option<String>,
     #[allow(dead_code)]

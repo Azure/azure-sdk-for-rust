@@ -35,6 +35,25 @@ function Get-CargoMetadata() {
   cargo metadata --no-deps --format-version 1 --manifest-path "$RepoRoot/Cargo.toml" | ConvertFrom-Json -Depth 100 -AsHashtable
 }
 
+function Test-ShouldPackDependency(
+  $dependency,
+  $dependencyPackage
+) {
+  if (!$dependency['path'] -or !$dependencyPackage) {
+    return $false
+  }
+
+  if ($dependency['kind'] -ne 'dev') {
+    return $true
+  }
+
+  # `cargo package` verification can resolve publishable workspace
+  # dev-dependencies from crates.io after rewriting path dependencies. Pack
+  # them alongside the requested crate, but skip helper crates that set
+  # `publish = false` because they cannot be packaged for upload anyway.
+  return $null -eq $dependencyPackage.publish
+}
+
 function Get-CargoPackages() {
   $metadata = Get-CargoMetadata
 
@@ -43,8 +62,8 @@ function Get-CargoPackages() {
   foreach ($package in $metadata.packages) {
     $package.UnreleasedDependencies = @()
     foreach ($dependency in $package.dependencies) {
-      if ($dependency['path'] -and $dependency['kind'] -ne 'dev') {
-        $dependencyPackage = $metadata.packages | Where-Object -Property name -EQ -Value $dependency.name | Select-Object -First 1
+      $dependencyPackage = $metadata.packages | Where-Object -Property name -EQ -Value $dependency.name | Select-Object -First 1
+      if (Test-ShouldPackDependency $dependency $dependencyPackage) {
         $package.UnreleasedDependencies += $dependencyPackage
       }
     }
