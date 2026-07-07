@@ -675,7 +675,7 @@ pub(crate) async fn execute_operation_pipeline(
                     retry_state.pending_write_effects.clear();
                 }
 
-                tracing::error!(
+                tracing::debug!(
                     activity_id = %activity_id,
                     status = ?cosmos_status,
                     error = %error,
@@ -2034,7 +2034,7 @@ fn finalize_hedge_attempt(
             body,
             ..
         } => {
-            tracing::warn!(
+            tracing::debug!(
                 activity_id = %diagnostics.activity_id(),
                 request_count = diagnostics.request_count(),
                 http_status = u16::from(status.status_code()),
