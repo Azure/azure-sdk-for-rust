@@ -486,6 +486,11 @@ pub struct CosmosResponseHeaders {
 
     /// Collection lazy indexing progress percentage (`x-ms-documentdb-collection-lazy-indexing-progress`).
     pub collection_lazy_indexing_progress: Option<i64>,
+
+    /// Distributed transaction idempotency token returned by the coordinator
+    /// (`x-ms-cosmos-idempotency-token`).
+    #[cfg(feature = "preview_dtx")]
+    pub distributed_transaction_idempotency_token: Option<uuid::Uuid>,
 }
 
 impl CosmosResponseHeaders {
@@ -633,6 +638,11 @@ impl CosmosResponseHeaders {
                 }
                 response_header_names::COLLECTION_LAZY_INDEXING_PROGRESS => {
                     result.collection_lazy_indexing_progress = value.as_str().parse().ok();
+                }
+                #[cfg(feature = "preview_dtx")]
+                "x-ms-cosmos-idempotency-token" => {
+                    result.distributed_transaction_idempotency_token =
+                        uuid::Uuid::parse_str(value.as_str()).ok();
                 }
                 _ => {}
             }
@@ -812,6 +822,12 @@ impl CosmosResponseHeaders {
             response_header_names::COLLECTION_LAZY_INDEXING_PROGRESS,
             self.collection_lazy_indexing_progress
                 .map(|v| v.to_string()),
+        );
+        #[cfg(feature = "preview_dtx")]
+        put_str(
+            "x-ms-cosmos-idempotency-token",
+            self.distributed_transaction_idempotency_token
+                .map(|value| value.to_string()),
         );
         h
     }
@@ -1292,6 +1308,8 @@ mod tests {
             log_results: Some("ok".into()),
             collection_index_transformation_progress: Some(100),
             collection_lazy_indexing_progress: Some(75),
+            #[cfg(feature = "preview_dtx")]
+            distributed_transaction_idempotency_token: Some(uuid::Uuid::new_v4()),
         };
 
         let raw = original.to_raw_headers();
@@ -1413,6 +1431,11 @@ mod tests {
         assert_eq!(
             round_tripped.collection_lazy_indexing_progress,
             original.collection_lazy_indexing_progress
+        );
+        #[cfg(feature = "preview_dtx")]
+        assert_eq!(
+            round_tripped.distributed_transaction_idempotency_token,
+            original.distributed_transaction_idempotency_token
         );
     }
 

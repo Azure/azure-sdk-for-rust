@@ -686,6 +686,9 @@ impl DistributedTransactionResponse {
 
     pub(crate) fn with_response_headers(mut self, headers: &CosmosResponseHeaders) -> Self {
         self.headers = headers.clone();
+        if let Some(token) = headers.distributed_transaction_idempotency_token {
+            self.idempotency_token = token;
+        }
         self.activity_id = headers.activity_id.clone();
         self.request_charge = headers.request_charge;
         self.retry_after_ms = headers.retry_after_ms;
@@ -1340,5 +1343,48 @@ mod tests {
             request.idempotency_token, token,
             "idempotency token must be stable across retries"
         );
+    }
+
+    #[test]
+    fn response_headers_prefer_valid_idempotency_token_header() {
+        let request_token = Uuid::new_v4();
+        let response_token = Uuid::new_v4();
+        let mut raw_headers = azure_core::http::headers::Headers::new();
+        raw_headers.insert("x-ms-cosmos-idempotency-token", response_token.to_string());
+        let headers = CosmosResponseHeaders::from_headers(&raw_headers);
+
+        let response = DistributedTransactionResponse::from_body(
+            azure_core::http::StatusCode::Ok,
+            None,
+            br#"{"operationResponses":[]}"#,
+            0,
+            request_token,
+        )
+        .with_response_headers(&headers);
+
+        assert_eq!(response.idempotency_token, response_token);
+    }
+
+    #[test]
+    fn response_headers_fall_back_to_request_idempotency_token() {
+        for header_value in [None, Some("not-a-uuid")] {
+            let request_token = Uuid::new_v4();
+            let mut raw_headers = azure_core::http::headers::Headers::new();
+            if let Some(header_value) = header_value {
+                raw_headers.insert("x-ms-cosmos-idempotency-token", header_value);
+            }
+            let headers = CosmosResponseHeaders::from_headers(&raw_headers);
+
+            let response = DistributedTransactionResponse::from_body(
+                azure_core::http::StatusCode::Ok,
+                None,
+                br#"{"operationResponses":[]}"#,
+                0,
+                request_token,
+            )
+            .with_response_headers(&headers);
+
+            assert_eq!(response.idempotency_token, request_token);
+        }
     }
 }
