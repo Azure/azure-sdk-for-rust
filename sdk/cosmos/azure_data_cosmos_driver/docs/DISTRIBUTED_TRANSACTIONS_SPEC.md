@@ -45,7 +45,7 @@ snapshot reads are a separate DTX operation shape: callers must use
 Ordinary reads and queries outside `DistributedReadTransaction` are not part of
 the DTC snapshot protocol; in particular, queries can observe an intermediate view
 while a distributed write transaction is still committing across participants.
-Applications that need a transactionally consistent cross-partition read must use
+Applications that need a cross-partition read with transactional consistency must use
 DTX transactional point reads and cannot rely on query isolation for that purpose.
 
 This document specifies how the Rust driver and SDK implement the client half of
