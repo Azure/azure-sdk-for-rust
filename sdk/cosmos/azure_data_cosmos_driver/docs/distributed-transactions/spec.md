@@ -19,7 +19,7 @@
 7. [Retry Architecture](#7-retry-architecture)
 8. [Session-Token Handling](#8-session-token-handling)
 9. [In-Memory Emulator Fidelity](#9-in-memory-emulator-fidelity)
-10. [**Architecture Decision Record (ADR)**](#10-architecture-decision-record-adr)
+10. [Architecture Decision Records](#10-architecture-decision-records)
 11. [Test Coverage](#11-test-coverage)
 12. [Known Limitations & Open Questions](#12-known-limitations--open-questions)
 13. [References](#13-references)
@@ -45,8 +45,8 @@ snapshot reads are a separate DTX operation shape: callers must use
 Ordinary reads and queries outside `DistributedReadTransaction` are not part of
 the DTC snapshot protocol; in particular, queries can observe an intermediate view
 while a distributed write transaction is still committing across participants.
-Applications that need a cross-partition read with transactional consistency must use
-DTX transactional point reads and cannot rely on query isolation for that purpose.
+Applications that need a cross-partition read with transactional consistency must
+use DTX transactional point reads and cannot rely on query isolation for that purpose.
 
 This document specifies how the Rust driver and SDK implement the client half of
 that contract: request construction, the `POST /operations/dtc` wire shape,
@@ -85,9 +85,9 @@ offline testing.
 | Stability             | **Not production-ready.** APIs may change without notice while `preview_dtx` remains off by default.      |
 
 > The `preview_dtx` gate is deliberately coarse: it wraps public types, the driver
-> `execute_distributed_transaction` entry point, the pipeline retry classifiers, and
-> the emulator `/operations/dtc` handler as a single unit so partial builds cannot
-> compile a half-wired feature.
+> `execute_distributed_transaction` entry point, the pipeline retry classifiers,
+> and the emulator `/operations/dtc` handler as a single unit so partial builds
+> cannot compile a half-wired feature.
 
 ---
 
@@ -102,7 +102,7 @@ out internally.
 flowchart TD
     subgraph SDK["azure_data_cosmos (SDK)"]
         B["DistributedWriteTransaction / DistributedReadTransaction<br/>fluent builders buffer operations"]
-      B --> C["CosmosClient execute method → DistributedTransactionRequest"]
+        B --> C["CosmosClient execute method → DistributedTransactionRequest"]
     end
     subgraph Driver["azure_data_cosmos_driver"]
         C --> D["execute_distributed_transaction()<br/>OUTER retry loop (body-bearing)"]
@@ -136,14 +136,14 @@ transaction and pass it to the account client for execution:
 ```rust no_run
 // Feature: preview_dtx
 let write_tx = DistributedWriteTransaction::new()
-  .create_item(&container_a, "tenant-1", "item-1", item_1, None)?
-  .delete_item(&container_b, "tenant-2", "item-2", None)?;
+    .create_item(&container_a, "tenant-1", "item-1", item_1, None)?
+    .delete_item(&container_b, "tenant-2", "item-2", None);
 
 let response = client.commit_distributed_write(write_tx).await?;
 
 let read_tx = DistributedReadTransaction::new()
-  .read_item(&container_a, "tenant-1", "item-1", None)?
-  .read_item(&container_b, "tenant-2", "item-2", None)?;
+    .read_item(&container_a, "tenant-1", "item-1", None)
+    .read_item(&container_b, "tenant-2", "item-2", None);
 
 let response = client.execute_distributed_read(read_tx).await?;
 ```
@@ -156,13 +156,13 @@ same-account check runs when `CosmosClient` executes the prepared transaction.
 `DistributedWriteTransaction` buffers write operations with a fluent builder and
 commits them atomically:
 
-| Method                                        | Purpose                                              |
-| --------------------------------------------- | ---------------------------------------------------- |
-| `create_item<T: Serialize>(...)`              | Buffer a create.                                     |
-| `replace_item<T: Serialize>(...)`             | Buffer a replace.                                    |
-| `upsert_item<T: Serialize>(...)`              | Buffer an upsert.                                    |
-| `delete_item(...)`                            | Buffer a delete.                                     |
-| `patch_item(...)`                             | Buffer a patch (optionally with a filter predicate). |
+| Method                            | Purpose                                              |
+| --------------------------------- | ---------------------------------------------------- |
+| `create_item<T: Serialize>(...)`  | Buffer a create.                                     |
+| `replace_item<T: Serialize>(...)` | Buffer a replace.                                    |
+| `upsert_item<T: Serialize>(...)`  | Buffer an upsert.                                    |
+| `delete_item(...)`                | Buffer a delete.                                     |
+| `patch_item(...)`                 | Buffer a patch (optionally with a filter predicate). |
 
 `CosmosClient::commit_distributed_write(...)` executes all buffered writes as one
 atomic unit and returns a `DistributedTransactionResponse`.
@@ -170,9 +170,9 @@ atomic unit and returns a `DistributedTransactionResponse`.
 `DistributedReadTransaction` buffers point reads that execute under a consistent
 cross-partition snapshot:
 
-| Method                                        | Purpose                                              |
-| --------------------------------------------- | ---------------------------------------------------- |
-| `read_item(...)`                              | Buffer a point read.                                 |
+| Method           | Purpose              |
+| ---------------- | -------------------- |
+| `read_item(...)` | Buffer a point read. |
 
 `CosmosClient::execute_distributed_read(...)` executes all buffered reads under
 snapshot isolation and returns a `DistributedTransactionResponse`.
@@ -188,7 +188,7 @@ Per-operation options:
 
 `DistributedTransactionResponse` exposes:
 
-- `status_code()` / `is_success_status_code()` — the promoted envelope status.
+- `status()` / `is_success_status_code()` — the promoted envelope status.
 - `idempotency_token()` — the `Uuid` reused across internal retries (observability
   and correlation only).
 - `is_retriable()` — the coordinator's retriable hint.
@@ -298,11 +298,11 @@ turns a coordinator response into the client model. The order of operations is:
    status (when the envelope was already a failure). This guarantees a success
    envelope is never returned with unparseable per-operation data.
 2. **Per-operation parse.** Each entry is retained as a raw JSON object and also
-  parsed into typed accessors for `index`, `statusCode`, `subStatusCode`, `etag`,
-  `sessionToken`, `partitionKeyRangeId`, `requestCharge`, and `resourceBody`.
-  Successful write transaction operation responses do not carry `resourceBody`;
-  successful read transaction operation responses carry the read item body. Any
-  parse error or a count mismatch triggers the same fail-closed / padded fallback.
+   parsed into typed accessors for `index`, `statusCode`, `subStatusCode`, `etag`,
+   `sessionToken`, `partitionKeyRangeId`, `requestCharge`, and `resourceBody`.
+   Successful write transaction operation responses do not carry `resourceBody`;
+   successful read transaction operation responses carry the read item body. Any
+   parse error or a count mismatch triggers the same fail-closed / padded fallback.
 3. **Reorder by `index`.** Results are placed into request order. A duplicate or
    out-of-range index is treated as malformed (fail-closed / padded).
 4. **`207` promotion (request order).** If the envelope is `207 MultiStatus`, the
@@ -489,180 +489,21 @@ dual-backend comparison test assert parity.
 
 ---
 
-## 10. **Architecture Decision Record (ADR)**
+## 10. Architecture Decision Records
 
-Each ADR entry records a decision, its context, the consequences, and the
-alternatives considered. Entries are append-only; superseded entries are marked, not
-deleted.
+Each ADR records a decision, its context, the consequences, and the alternatives
+considered. Entries are append-only; superseded entries are marked, not deleted.
 
-### ADR-001 — Ship DTX behind a disabled-by-default `preview_dtx` feature
-
-**Context.** DTX is a preview capability whose wire contract and API surface are
-still evolving. It must not affect stable builds or the public API.
-
-**Decision.** Gate every DTX type, the driver entry point, the pipeline classifiers,
-and the emulator handler behind a single `preview_dtx` Cargo feature, off by default.
-The SDK feature re-exports the driver feature transitively.
-
-**Consequences.** Default builds contain no DTX surface; preview consumers opt in
-explicitly. A coarse single gate prevents a half-wired feature from compiling.
-
-**Alternatives.** Per-module features (rejected: too granular, easy to mis-wire); a
-runtime flag (rejected: still ships preview types in the stable API).
-
-### ADR-002 — Match the .NET v3 JSON wire contract exactly
-
-**Context.** A single backend DTC coordinator serves .NET, Java, and Rust clients.
-Divergence in body shape, header names, or status promotion would fork server
-behavior per client.
-
-**Decision.** Mirror the .NET v3 contract (PR #6002) byte-for-byte: the
-`operations[]` body layout, the three `x-ms-cosmos-*` headers, JSON-only encoding,
-and the `condition`-inside-`resourceBody` shape for conditional patch.
-
-**Consequences.** Full interop with the shared coordinator; the .NET wire-contract
-doc is directly usable as the Rust conformance oracle. No HybridRow/binary path.
-
-**Alternatives.** A Rust-native envelope with a translation layer (rejected: added
-surface with no benefit and a permanent drift risk).
-
-### ADR-003 — Two-tier retry: outer body-bearing vs inner bodyless
-
-**Context.** Some DTX failures reach the coordinator's transaction logic (and come
-back with a body plus an authoritative `isRetriable`), while others fail in
-transport/dispatch before any transaction state exists (bodyless envelopes).
-Conflating them would either over-retry non-idempotent-looking states or under-retry
-safe transport blips.
-
-**Decision.** Split retries by **body presence**. The bodyless inner classifier
-(`evaluate_dtx_http_outcome`) owns `408` and specific `449`/`500` sub-statuses with
-their own budgets; the body-bearing outer loop obeys the coordinator's `isRetriable`.
-A body-bearing `408`/`449`/`500` is intentionally left to the outer loop.
-
-**Consequences.** Safe, deterministic replay; each tier has an independent budget
-that matches the .NET client. Requires the pipeline to route
-`DistributedTransactionBatch` specially.
-
-**Alternatives.** A single unified retry policy (rejected: cannot distinguish
-"never reached the coordinator" from "coordinator says retriable").
-
-### ADR-004 — Fail closed on ambiguous coordinator responses
-
-**Context.** A malformed body, a per-operation parse error, or a result/operation
-count mismatch under a **success** envelope would otherwise let a partial or
-unverifiable result be reported as success.
-
-**Decision.** On any such anomaly under a success envelope, synthesize `500`
-(`fail_closed`); under a failure envelope, pad every operation with the envelope
-status (`padded`). Never emit a success with unparseable per-operation data.
-
-**Consequences.** Callers retry or reconcile rather than trust ambiguous data,
-upholding "atomic or nothing." Slightly more conservative than the raw server bytes.
-
-**Alternatives.** Surface partial results with a warning (rejected: violates atomic
-guarantees and pushes ambiguity onto every caller).
-
-### ADR-005 — Promote `207` in request order, after reordering, excluding `424`
-
-**Context.** A `207 MultiStatus` must be collapsed to a single actionable status.
-The coordinator may return per-operation results out of request order, so the
-order in which promotion scans them determines which failure "wins".
-
-**Decision.** Reorder results by `index` first, then promote to the **first**
-per-operation status `>= 400` that is not `424` in **request order**. `424
-FailedDependency` is neutral and never promoted. This matches .NET's
-`DistributedTransactionResponse` (PR #5974), which reorders then promotes the
-lowest-request-index failure.
-
-**Consequences.** For an out-of-order multi-failure response, the promoted
-envelope status is deterministic in request order and agrees with the .NET SDK
-against the same coordinator. `424` correctly signals "aborted due to a sibling,"
-not a root cause.
-
-**Alternatives.** Promote in wire order before reorder (rejected: picks a
-different, coordinator-emission-order-dependent winner than .NET and is not
-stable against out-of-order responses).
-
-### ADR-006 — Auto-generated idempotency token, reused across retries; no caller token
-
-**Context.** Safe replay needs server-side dedupe. .NET auto-generates a `Guid`
-token, reuses it across internal retries, and does not accept a caller-supplied token.
-
-**Decision.** Generate one `Uuid` per `DistributedTransactionRequest`, send it as
-`x-ms-cosmos-idempotency-token` on every attempt, and expose it read-only on the
-response. Mark DTX operation types idempotent so the retry machinery treats replays
-as safe.
-
-**Consequences.** Idempotency within a single commit is automatic. The token is
-observability/correlation only — there is **no** exactly-once guarantee across
-process restarts; callers must reconcile after an unknown outcome.
-
-**Alternatives.** Accept a caller token for cross-restart exactly-once (deferred —
-open question in the .NET review, PR #5877 §13).
-
-### ADR-007 — Strict per-operation session-token merge under Session consistency
-
-**Context.** A DTX spans partitions, so a single commit-level token is insufficient;
-each operation returns its own `{pkRangeId}:{lsn}` token. A corrupt token must not
-silently weaken read-your-own-writes.
-
-**Decision.** Merge tokens per operation keyed by `partitionKeyRangeId`; support
-signed region LSNs; reject malformed tokens **strictly** under Session consistency
-and best-effort otherwise; run the merge only on terminal success.
-
-**Consequences.** Subsequent Session reads on any touched container see committed
-state; a committed transaction is never failed due to token bookkeeping.
-
-**Alternatives.** Best-effort everywhere (rejected: hides corruption under the
-strongest consistency where correctness matters most).
-
-### ADR-008 — Emulator implements true two-phase commit with pre-image rollback
-
-**Context.** Offline tests and the live dual-comparison need coordinator-faithful
-abort/rollback and read-snapshot semantics, not just sequential point-op execution.
-
-**Decision.** The emulator validates all operations (prepare/vote), then applies with
-per-operation pre-image capture and reverse-order rollback on runtime failure. Aborts
-emit `452` with `453`/`5415` for prepared-then-rolled-back writes; read failures
-rewrite successful reads to `424` and promote the surviving codes.
-
-**Consequences.** The emulator reproduces the abort/rollback and snapshot contracts,
-enabling meaningful parity assertions. Transaction type is inferred from operations to
-keep the handler self-contained.
-
-**Alternatives.** Sequential point ops with no rollback (rejected: cannot test the
-atomic-abort or snapshot-failure contracts).
-
-### ADR-009 — Outer retry lives in the driver, not an `azure_core` pipeline policy
-
-**Context.** The driver uses a pure-evaluation, effect-driven pipeline rather than
-`azure_core` retry policies. A DTX request is one logical unit whose replay must reuse
-the same idempotency token and re-serialized body.
-
-**Decision.** Own the outer, body-bearing retry loop inside
-`execute_distributed_transaction`, consistent with the driver architecture, and keep
-only the bodyless classification inside the transport pipeline.
-
-**Consequences.** Retry logic is centralized where the request is assembled; the token
-and body are trivially stable across attempts. Two retry sites exist (documented in
-§7), which is intentional.
-
-**Alternatives.** A generic pipeline retry policy (rejected: does not fit the driver's
-effect model and complicates token reuse).
-
-### ADR-010 — Gateway-only, same-account, JSON-only, commit-only scope for preview
-
-**Context.** The preview targets the coordinator's currently supported surface.
-
-**Decision.** Support Gateway connectivity, same-account transactions, JSON encoding,
-and commit-only semantics (no explicit abort API — abandoning a transaction means not
-committing). Read-within-write is not supported.
-
-**Consequences.** Matches the .NET preview limitations (PR #5877 §12) and keeps the
-Rust surface aligned. These constraints are revisited as the coordinator evolves.
-
-**Alternatives.** Broaden scope now (rejected: server support and API review are
-still in progress).
+- [ADR-001 — Ship DTX behind a disabled-by-default `preview_dtx` feature](adr/001_ship_preview_feature.md)
+- [ADR-002 — Match the .NET v3 JSON wire contract exactly](adr/002_match_wire_contract.md)
+- [ADR-003 — Split body-bearing and bodyless retry tiers](adr/003_split_retry_tiers.md)
+- [ADR-004 — Fail closed on ambiguous coordinator responses](adr/004_fail_ambiguous_responses.md)
+- [ADR-005 — Promote `207` in request order](adr/005_promote_multistatus.md)
+- [ADR-006 — Generate and reuse idempotency tokens](adr/006_generate_idempotency_token.md)
+- [ADR-007 — Merge per-operation session tokens strictly](adr/007_merge_session_tokens.md)
+- [ADR-008 — Implement emulator rollback fidelity](adr/008_implement_emulator_rollback.md)
+- [ADR-009 — Keep outer retry in the driver](adr/009_keep_retry_driver.md)
+- [ADR-010 — Limit preview scope](adr/010_limit_preview_scope.md)
 
 ---
 
@@ -713,8 +554,9 @@ Aligned with the .NET API review (PR #5877 §12–13):
   consistency, error behavior, and open questions.
   <https://github.com/Azure/azure-cosmos-dotnet-v3/pull/5877/files>
 - Related driver specs:
-  `TRANSPORT_PIPELINE_SPEC.md`, `ErrorCodesAndRetries.md`, and
-  `PATCH_HANDLER_SPEC.md`.
+  [`TRANSPORT_PIPELINE_SPEC.md`](../TRANSPORT_PIPELINE_SPEC.md),
+  [`ErrorCodesAndRetries.md`](../ErrorCodesAndRetries.md), and
+  [`PATCH_HANDLER_SPEC.md`](../PATCH_HANDLER_SPEC.md).
 
 ---
 
