@@ -539,6 +539,21 @@ impl EmulatorStore {
             pkrange_rids: Arc::new(RwLock::new(HashMap::new())),
         };
 
+        let offer = meta
+            .provisioned_throughput_ru
+            .map(|throughput| OfferMetadata {
+                id: format!("offer_{}_{}", meta.numeric_db_id, meta.numeric_coll_id),
+                offer_resource_id: meta.rid.clone(),
+                throughput,
+                rid: format!("offer_{}_{}", meta.numeric_db_id, meta.numeric_coll_id),
+                ts,
+                self_link: format!(
+                    "offers/offer_{}_{}/",
+                    meta.numeric_db_id, meta.numeric_coll_id
+                ),
+                etag: new_etag(),
+            });
+
         // Each region gets its own ContainerState (own LSNs, own document
         // store) but they all share the same `ContainerMetadata`, so pkrange
         // RIDs are allocated once via `pkrange_rid_for` and reused.
@@ -549,9 +564,37 @@ impl EmulatorStore {
                 (db_id.to_string(), coll_id.to_string()),
                 ContainerState::new(&meta, &self.rid_generator, self.config.throttling_enabled()),
             );
+            if let Some(offer) = &offer {
+                region
+                    .offers
+                    .write()
+                    .unwrap()
+                    .insert(offer.id.clone(), offer.clone());
+            }
         }
 
         meta
+    }
+
+    pub(crate) fn replace_offer_internal(
+        &self,
+        offer_id: &str,
+        throughput: u32,
+    ) -> Option<OfferMetadata> {
+        let regions = self.regions.read().unwrap();
+        let ts = current_timestamp();
+        let etag = new_etag();
+        let mut updated = None;
+        for region in regions.values() {
+            let mut offers = region.offers.write().unwrap();
+            if let Some(offer) = offers.get_mut(offer_id) {
+                offer.throughput = throughput;
+                offer.ts = ts;
+                offer.etag = etag.clone();
+                updated = Some(offer.clone());
+            }
+        }
+        updated
     }
 
     /// Cascade-deletes a database from every region. Also purges any buffered
@@ -583,11 +626,30 @@ impl EmulatorStore {
             // Then remove databases + cascade containers.
             let removed_db = region.databases.write().unwrap().remove(db_id).is_some();
             if removed_db {
+                // Collect offer IDs for all containers in this database before
+                // removing them so we can purge the associated offer entries.
+                let offer_ids: Vec<String> = region
+                    .containers
+                    .read()
+                    .unwrap()
+                    .iter()
+                    .filter(|((db, _), _)| db == db_id)
+                    .map(|(_, state)| {
+                        format!(
+                            "offer_{}_{}",
+                            state.metadata.numeric_db_id, state.metadata.numeric_coll_id
+                        )
+                    })
+                    .collect();
                 region
                     .containers
                     .write()
                     .unwrap()
                     .retain(|(db, _), _| db != db_id);
+                let mut offers = region.offers.write().unwrap();
+                for offer_id in offer_ids {
+                    offers.remove(&offer_id);
+                }
             }
         }
         if let Some(id) = numeric_db_id {
@@ -608,13 +670,17 @@ impl EmulatorStore {
             let mut buf = region.replication_buffer.write().unwrap();
             buf.retain(|e| !(e.db_id == db_id && e.coll_id == coll_id));
             drop(buf);
-            if region
+            let removed = region
                 .containers
                 .write()
                 .unwrap()
-                .remove(&(db_id.to_string(), coll_id.to_string()))
-                .is_some()
-            {
+                .remove(&(db_id.to_string(), coll_id.to_string()));
+            if let Some(state) = removed {
+                let offer_id = format!(
+                    "offer_{}_{}",
+                    state.metadata.numeric_db_id, state.metadata.numeric_coll_id
+                );
+                region.offers.write().unwrap().remove(&offer_id);
                 existed = true;
             }
         }
@@ -1021,6 +1087,20 @@ impl RegionStoreRef {
         self.region.databases.read().unwrap().get(db_id).cloned()
     }
 
+    /// Lists all databases in deterministic id order.
+    pub fn list_databases(&self) -> Vec<DatabaseMetadata> {
+        let mut databases: Vec<_> = self
+            .region
+            .databases
+            .read()
+            .unwrap()
+            .values()
+            .cloned()
+            .collect();
+        databases.sort_by(|a, b| a.id.cmp(&b.id));
+        databases
+    }
+
     /// Reads a container state.
     pub fn get_container(&self, db_id: &str, coll_id: &str) -> Option<ContainerStateSnapshot> {
         let containers = self.region.containers.read().unwrap();
@@ -1028,6 +1108,38 @@ impl RegionStoreRef {
         containers.get(&key).map(|s| ContainerStateSnapshot {
             metadata: s.metadata.clone(),
         })
+    }
+
+    /// Lists all containers for a database in deterministic id order.
+    pub fn list_containers(&self, db_id: &str) -> Vec<ContainerMetadata> {
+        let mut containers: Vec<_> = self
+            .region
+            .containers
+            .read()
+            .unwrap()
+            .iter()
+            .filter(|((db, _), _)| db == db_id)
+            .map(|(_, state)| state.metadata.clone())
+            .collect();
+        containers.sort_by(|a, b| a.id.cmp(&b.id));
+        containers
+    }
+
+    pub fn list_offers(&self) -> Vec<OfferMetadata> {
+        let mut offers: Vec<_> = self
+            .region
+            .offers
+            .read()
+            .unwrap()
+            .values()
+            .cloned()
+            .collect();
+        offers.sort_by(|a, b| a.id.cmp(&b.id));
+        offers
+    }
+
+    pub fn get_offer(&self, offer_id: &str) -> Option<OfferMetadata> {
+        self.region.offers.read().unwrap().get(offer_id).cloned()
     }
 
     /// Executes a closure against the container's physical partitions.
@@ -1061,6 +1173,7 @@ impl RegionStoreRef {
 pub(crate) struct RegionStore {
     pub databases: RwLock<HashMap<String, DatabaseMetadata>>,
     pub containers: RwLock<HashMap<(String, String), ContainerState>>,
+    pub offers: RwLock<HashMap<String, OfferMetadata>>,
     pub paused: AtomicBool,
     pub replication_buffer: RwLock<VecDeque<PendingReplication>>,
     /// Per-region master-partition LSN counter for control-plane operations
@@ -1074,6 +1187,7 @@ impl RegionStore {
         Self {
             databases: RwLock::new(HashMap::new()),
             containers: RwLock::new(HashMap::new()),
+            offers: RwLock::new(HashMap::new()),
             paused: AtomicBool::new(false),
             replication_buffer: RwLock::new(VecDeque::new()),
             master_partition_lsn: AtomicU64::new(0),
@@ -1132,6 +1246,17 @@ pub(crate) struct ContainerMetadata {
     /// region replicas (and split-child seeding paths) reuse it instead of
     /// drawing a fresh value from the per-account `RidGenerator`.
     pub pkrange_rids: Arc<RwLock<HashMap<u32, String>>>,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct OfferMetadata {
+    pub id: String,
+    pub rid: String,
+    pub offer_resource_id: String,
+    pub throughput: u32,
+    pub ts: u64,
+    pub self_link: String,
+    pub etag: String,
 }
 
 /// A container's state including metadata and physical partitions.

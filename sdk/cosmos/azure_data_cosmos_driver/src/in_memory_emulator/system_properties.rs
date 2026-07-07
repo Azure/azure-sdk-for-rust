@@ -3,6 +3,20 @@
 
 //! System property generation and JSON injection.
 
+/// Returns a feed response body with the given service envelope name.
+pub(crate) fn feed_to_json(
+    envelope_name: &str,
+    items: Vec<serde_json::Value>,
+    rid: impl Into<String>,
+) -> serde_json::Value {
+    let count = items.len();
+    serde_json::json!({
+        envelope_name: items,
+        "_rid": rid.into(),
+        "_count": count
+    })
+}
+
 /// Injects system properties (`_rid`, `_self`, `_etag`, `_ts`, `_attachments`)
 /// into a document's JSON body.
 ///
@@ -87,6 +101,24 @@ pub(crate) fn container_to_json(meta: &super::store::ContainerMetadata) -> serde
         "_triggers": "triggers/",
         "_udfs": "udfs/",
         "_conflicts": "conflicts/"
+    })
+}
+
+/// Returns a JSON representation of throughput offer metadata.
+pub(crate) fn offer_to_json(meta: &super::store::OfferMetadata) -> serde_json::Value {
+    serde_json::json!({
+        "id": meta.id,
+        "_rid": meta.rid,
+        "_self": meta.self_link,
+        "_etag": meta.etag,
+        "_ts": meta.ts,
+        "resource": meta.offer_resource_id,
+        "offerResourceId": meta.offer_resource_id,
+        "offerType": "Invalid",
+        "offerVersion": "V2",
+        "content": {
+            "offerThroughput": meta.throughput
+        }
     })
 }
 
