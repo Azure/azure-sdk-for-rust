@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::ENV_NAME;
+use crate::{VaultArgs, ENV_NAME};
 use azure_core::Result;
 use azure_core_test::{
-    perf::{CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption},
+    perf::{CreatePerfTestReturn, PerfTest},
     Recording, TestContext,
 };
 use azure_security_keyvault_keys::{
@@ -22,27 +22,10 @@ pub struct GetKey {
 }
 
 impl GetKey {
-    pub(crate) fn test_metadata() -> PerfTestMetadata {
-        PerfTestMetadata {
-            name: "get_key",
-            description: "Get a key from Key Vault",
-            options: vec![PerfTestOption {
-                name: "vault_url",
-                display_message: "The URL of the Key Vault to use in the test",
-                mandatory: false,
-                short_activator: Some('u'),
-                long_activator: "vault-url",
-                expected_args_len: 1,
-                ..Default::default()
-            }],
-            create_test: Self::create_new_test,
-        }
-    }
-
-    fn create_new_test(runner: PerfRunner) -> CreatePerfTestReturn {
+    pub fn new(args: VaultArgs) -> CreatePerfTestReturn {
         async move {
             Ok(Box::new(GetKey {
-                vault_url: runner.try_get_test_arg("vault_url")?,
+                vault_url: args.vault_url,
                 random_key_name: OnceLock::new(),
                 client: OnceLock::new(),
                 body: CreateKeyParameters {
