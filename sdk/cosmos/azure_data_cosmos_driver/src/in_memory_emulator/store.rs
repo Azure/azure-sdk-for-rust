@@ -159,6 +159,26 @@ pub struct EmulatorStore {
     /// per-id locks is preferable to a remove-on-drop dance that races
     /// fresh acquisitions.
     control_plane_locks: std::sync::Mutex<HashMap<String, Arc<async_lock::Mutex<()>>>>,
+    /// Serializes emulator document writes while preview distributed
+    /// transactions are enabled.
+    ///
+    /// DTX rollback restores pre-images. Without a transaction-wide write
+    /// guard, a concurrent point write can commit between preimage capture and
+    /// rollback, then be overwritten by the restore path.
+    #[cfg(feature = "preview_dtx")]
+    document_write_lock: Arc<async_lock::Mutex<()>>,
+    /// Buffers replication issued while a distributed transaction is applying so
+    /// a rollback can discard replicas that were never durably committed.
+    ///
+    /// `Some(buffer)` means a DTX write transaction is capturing replication.
+    /// The DTX write path holds `document_write_lock` for the whole
+    /// transaction, which serializes every emulator write, so no unrelated
+    /// write's replication can be captured here. `None` is the normal
+    /// immediate-replication path. On commit the buffer is drained and
+    /// replayed; on abort it is dropped so rolled-back writes never reach
+    /// secondary regions.
+    #[cfg(feature = "preview_dtx")]
+    dtx_replication_capture: std::sync::Mutex<Option<Vec<CapturedReplication>>>,
     /// Tracks spawned replication tasks so tests can drain them.
     replication_tasks: std::sync::Mutex<tokio::task::JoinSet<()>>,
     /// Tracks spawned split/merge tasks separately from replication so a
@@ -200,6 +220,17 @@ pub struct EmulatorStore {
     captured_panics: std::sync::Mutex<Vec<Box<dyn std::any::Any + Send + 'static>>>,
 }
 
+/// A replication operation buffered during a distributed transaction so it can
+/// be replayed on commit or dropped on rollback.
+#[cfg(feature = "preview_dtx")]
+struct CapturedReplication {
+    source_region: String,
+    db_id: String,
+    coll_id: String,
+    doc: StoredDocument,
+    is_delete: bool,
+}
+
 impl EmulatorStore {
     /// Creates a new store from the given account configuration.
     pub(crate) fn new(config: VirtualAccountConfig) -> Arc<Self> {
@@ -215,6 +246,10 @@ impl EmulatorStore {
 
             split_merge_locks: std::sync::Mutex::new(HashMap::new()),
             control_plane_locks: std::sync::Mutex::new(HashMap::new()),
+            #[cfg(feature = "preview_dtx")]
+            document_write_lock: Arc::new(async_lock::Mutex::new(())),
+            #[cfg(feature = "preview_dtx")]
+            dtx_replication_capture: std::sync::Mutex::new(None),
             replication_tasks: std::sync::Mutex::new(tokio::task::JoinSet::new()),
             control_plane_tasks: std::sync::Mutex::new(Vec::new()),
             transport_request_counter: AtomicU32::new(0),
@@ -390,6 +425,19 @@ impl EmulatorStore {
         self.control_plane_lock(&format!("{}::{}", db, coll))
     }
 
+    /// Returns the preview-DTX document write lock.
+    #[cfg(feature = "preview_dtx")]
+    pub(crate) fn document_write_lock(&self) -> Arc<async_lock::Mutex<()>> {
+        self.document_write_lock.clone()
+    }
+
+    /// Returns the preview-DTX document write lock for internal emulator tests.
+    #[cfg(feature = "preview_dtx")]
+    #[doc(hidden)]
+    pub fn document_write_lock_for_tests(&self) -> Arc<async_lock::Mutex<()>> {
+        self.document_write_lock.clone()
+    }
+
     /// Awaits all pending in-flight replication tasks and surfaces any
     /// previously-captured background panics. Test-only.
     ///
@@ -539,6 +587,21 @@ impl EmulatorStore {
             pkrange_rids: Arc::new(RwLock::new(HashMap::new())),
         };
 
+        let offer = meta
+            .provisioned_throughput_ru
+            .map(|throughput| OfferMetadata {
+                id: format!("offer_{}_{}", meta.numeric_db_id, meta.numeric_coll_id),
+                offer_resource_id: meta.rid.clone(),
+                throughput,
+                rid: format!("offer_{}_{}", meta.numeric_db_id, meta.numeric_coll_id),
+                ts,
+                self_link: format!(
+                    "offers/offer_{}_{}/",
+                    meta.numeric_db_id, meta.numeric_coll_id
+                ),
+                etag: new_etag(),
+            });
+
         // Each region gets its own ContainerState (own LSNs, own document
         // store) but they all share the same `ContainerMetadata`, so pkrange
         // RIDs are allocated once via `pkrange_rid_for` and reused.
@@ -549,9 +612,37 @@ impl EmulatorStore {
                 (db_id.to_string(), coll_id.to_string()),
                 ContainerState::new(&meta, &self.rid_generator, self.config.throttling_enabled()),
             );
+            if let Some(offer) = &offer {
+                region
+                    .offers
+                    .write()
+                    .unwrap()
+                    .insert(offer.id.clone(), offer.clone());
+            }
         }
 
         meta
+    }
+
+    pub(crate) fn replace_offer_internal(
+        &self,
+        offer_id: &str,
+        throughput: u32,
+    ) -> Option<OfferMetadata> {
+        let regions = self.regions.read().unwrap();
+        let ts = current_timestamp();
+        let etag = new_etag();
+        let mut updated = None;
+        for region in regions.values() {
+            let mut offers = region.offers.write().unwrap();
+            if let Some(offer) = offers.get_mut(offer_id) {
+                offer.throughput = throughput;
+                offer.ts = ts;
+                offer.etag = etag.clone();
+                updated = Some(offer.clone());
+            }
+        }
+        updated
     }
 
     /// Cascade-deletes a database from every region. Also purges any buffered
@@ -583,11 +674,30 @@ impl EmulatorStore {
             // Then remove databases + cascade containers.
             let removed_db = region.databases.write().unwrap().remove(db_id).is_some();
             if removed_db {
+                // Collect offer IDs for all containers in this database before
+                // removing them so we can purge the associated offer entries.
+                let offer_ids: Vec<String> = region
+                    .containers
+                    .read()
+                    .unwrap()
+                    .iter()
+                    .filter(|((db, _), _)| db == db_id)
+                    .map(|(_, state)| {
+                        format!(
+                            "offer_{}_{}",
+                            state.metadata.numeric_db_id, state.metadata.numeric_coll_id
+                        )
+                    })
+                    .collect();
                 region
                     .containers
                     .write()
                     .unwrap()
                     .retain(|(db, _), _| db != db_id);
+                let mut offers = region.offers.write().unwrap();
+                for offer_id in offer_ids {
+                    offers.remove(&offer_id);
+                }
             }
         }
         if let Some(id) = numeric_db_id {
@@ -608,13 +718,17 @@ impl EmulatorStore {
             let mut buf = region.replication_buffer.write().unwrap();
             buf.retain(|e| !(e.db_id == db_id && e.coll_id == coll_id));
             drop(buf);
-            if region
+            let removed = region
                 .containers
                 .write()
                 .unwrap()
-                .remove(&(db_id.to_string(), coll_id.to_string()))
-                .is_some()
-            {
+                .remove(&(db_id.to_string(), coll_id.to_string()));
+            if let Some(state) = removed {
+                let offer_id = format!(
+                    "offer_{}_{}",
+                    state.metadata.numeric_db_id, state.metadata.numeric_coll_id
+                );
+                region.offers.write().unwrap().remove(&offer_id);
                 existed = true;
             }
         }
@@ -778,6 +892,26 @@ impl EmulatorStore {
         doc: &StoredDocument,
         is_delete: bool,
     ) {
+        // While a distributed transaction is applying, buffer replication so a
+        // rollback can discard replicas that were never durably committed. The
+        // DTX write path holds `document_write_lock` for the whole transaction,
+        // which serializes all emulator writes, so this cannot capture an
+        // unrelated concurrent write's replication.
+        #[cfg(feature = "preview_dtx")]
+        {
+            let mut capture = self.dtx_replication_capture.lock().unwrap();
+            if let Some(buffer) = capture.as_mut() {
+                buffer.push(CapturedReplication {
+                    source_region: source_region.to_string(),
+                    db_id: db_id.to_string(),
+                    coll_id: coll_id.to_string(),
+                    doc: doc.clone(),
+                    is_delete,
+                });
+                return;
+            }
+        }
+
         // Reap any replication tasks that have already finished so the
         // JoinSet does not grow unboundedly across long-running tests with
         // delayed replication. `try_join_next` is non-blocking and returns
@@ -848,6 +982,44 @@ impl EmulatorStore {
                 });
             }
         }
+    }
+
+    /// Begins buffering replication for a distributed transaction. Must be
+    /// paired with [`Self::commit_dtx_replication_capture`] (replay) or
+    /// [`Self::abort_dtx_replication_capture`] (discard). Called under
+    /// `document_write_lock`, which serializes all emulator writes.
+    #[cfg(feature = "preview_dtx")]
+    pub(crate) fn begin_dtx_replication_capture(&self) {
+        *self.dtx_replication_capture.lock().unwrap() = Some(Vec::new());
+    }
+
+    /// Replays every replication buffered since
+    /// [`Self::begin_dtx_replication_capture`], then returns to immediate
+    /// replication. Called after a distributed transaction commits.
+    #[cfg(feature = "preview_dtx")]
+    pub(crate) fn commit_dtx_replication_capture(self: &Arc<Self>) {
+        let captured = self.dtx_replication_capture.lock().unwrap().take();
+        let Some(captured) = captured else {
+            return;
+        };
+        for entry in captured {
+            self.replicate(
+                &entry.source_region,
+                &entry.db_id,
+                &entry.coll_id,
+                &entry.doc,
+                entry.is_delete,
+            );
+        }
+    }
+
+    /// Discards every replication buffered since
+    /// [`Self::begin_dtx_replication_capture`], then returns to immediate
+    /// replication. Called after a distributed transaction rolls back so
+    /// rolled-back writes never reach secondary regions.
+    #[cfg(feature = "preview_dtx")]
+    pub(crate) fn abort_dtx_replication_capture(&self) {
+        *self.dtx_replication_capture.lock().unwrap() = None;
     }
 
     /// Applies a replicated document to a target region.
@@ -1021,6 +1193,20 @@ impl RegionStoreRef {
         self.region.databases.read().unwrap().get(db_id).cloned()
     }
 
+    /// Lists all databases in deterministic id order.
+    pub fn list_databases(&self) -> Vec<DatabaseMetadata> {
+        let mut databases: Vec<_> = self
+            .region
+            .databases
+            .read()
+            .unwrap()
+            .values()
+            .cloned()
+            .collect();
+        databases.sort_by(|a, b| a.id.cmp(&b.id));
+        databases
+    }
+
     /// Reads a container state.
     pub fn get_container(&self, db_id: &str, coll_id: &str) -> Option<ContainerStateSnapshot> {
         let containers = self.region.containers.read().unwrap();
@@ -1028,6 +1214,38 @@ impl RegionStoreRef {
         containers.get(&key).map(|s| ContainerStateSnapshot {
             metadata: s.metadata.clone(),
         })
+    }
+
+    /// Lists all containers for a database in deterministic id order.
+    pub fn list_containers(&self, db_id: &str) -> Vec<ContainerMetadata> {
+        let mut containers: Vec<_> = self
+            .region
+            .containers
+            .read()
+            .unwrap()
+            .iter()
+            .filter(|((db, _), _)| db == db_id)
+            .map(|(_, state)| state.metadata.clone())
+            .collect();
+        containers.sort_by(|a, b| a.id.cmp(&b.id));
+        containers
+    }
+
+    pub fn list_offers(&self) -> Vec<OfferMetadata> {
+        let mut offers: Vec<_> = self
+            .region
+            .offers
+            .read()
+            .unwrap()
+            .values()
+            .cloned()
+            .collect();
+        offers.sort_by(|a, b| a.id.cmp(&b.id));
+        offers
+    }
+
+    pub fn get_offer(&self, offer_id: &str) -> Option<OfferMetadata> {
+        self.region.offers.read().unwrap().get(offer_id).cloned()
     }
 
     /// Executes a closure against the container's physical partitions.
@@ -1061,6 +1279,7 @@ impl RegionStoreRef {
 pub(crate) struct RegionStore {
     pub databases: RwLock<HashMap<String, DatabaseMetadata>>,
     pub containers: RwLock<HashMap<(String, String), ContainerState>>,
+    pub offers: RwLock<HashMap<String, OfferMetadata>>,
     pub paused: AtomicBool,
     pub replication_buffer: RwLock<VecDeque<PendingReplication>>,
     /// Per-region master-partition LSN counter for control-plane operations
@@ -1074,6 +1293,7 @@ impl RegionStore {
         Self {
             databases: RwLock::new(HashMap::new()),
             containers: RwLock::new(HashMap::new()),
+            offers: RwLock::new(HashMap::new()),
             paused: AtomicBool::new(false),
             replication_buffer: RwLock::new(VecDeque::new()),
             master_partition_lsn: AtomicU64::new(0),
@@ -1132,6 +1352,17 @@ pub(crate) struct ContainerMetadata {
     /// region replicas (and split-child seeding paths) reuse it instead of
     /// drawing a fresh value from the per-account `RidGenerator`.
     pub pkrange_rids: Arc<RwLock<HashMap<u32, String>>>,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct OfferMetadata {
+    pub id: String,
+    pub rid: String,
+    pub offer_resource_id: String,
+    pub throughput: u32,
+    pub ts: u64,
+    pub self_link: String,
+    pub etag: String,
 }
 
 /// A container's state including metadata and physical partitions.
@@ -1237,6 +1468,20 @@ impl PhysicalPartition {
     /// Returns whether this partition is currently locked (split/merge in progress).
     pub fn is_locked(&self) -> bool {
         self.locked.load(Ordering::SeqCst)
+    }
+
+    /// Restores the partition's LSN counters to previously captured values.
+    ///
+    /// Used by the in-memory DTX handler to roll back a partially-applied
+    /// distributed transaction: applied point operations advance the LSN, so an
+    /// abort must reset the counters (in addition to the document map) to leave
+    /// no trace of the rolled-back writes.
+    #[cfg(feature = "preview_dtx")]
+    pub fn restore_counters(&self, lsn: u64, local_lsn: u64, vector_clock_version: u64) {
+        self.lsn.store(lsn, Ordering::SeqCst);
+        self.local_lsn.store(local_lsn, Ordering::SeqCst);
+        self.vector_clock_version
+            .store(vector_clock_version, Ordering::SeqCst);
     }
 }
 

@@ -41,6 +41,11 @@ pub(crate) fn is_operation_supported_by_gateway_v2(
             | OperationType::HeadFeed
             | OperationType::Execute
             | OperationType::Patch => false,
+            // Distributed transactions route through the standard gateway
+            // coordinator, never the thin-client Gateway 2.0 path.
+            #[cfg(feature = "preview_dtx")]
+            OperationType::CommitDistributedTransaction
+            | OperationType::ReadDistributedTransaction => false,
         },
         ResourceType::DatabaseAccount
         | ResourceType::Database
@@ -50,6 +55,8 @@ pub(crate) fn is_operation_supported_by_gateway_v2(
         | ResourceType::UserDefinedFunction
         | ResourceType::PartitionKeyRange
         | ResourceType::Offer => false,
+        #[cfg(feature = "preview_dtx")]
+        ResourceType::DistributedTransactionBatch => false,
     }
 }
 

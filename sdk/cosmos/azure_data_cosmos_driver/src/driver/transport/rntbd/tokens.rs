@@ -719,6 +719,12 @@ impl From<ResourceType> for RntbdResourceType {
             ResourceType::UserDefinedFunction => 0x000A,
             ResourceType::PartitionKeyRange => 0x0016,
             ResourceType::Offer => 0x000F,
+            // Distributed transactions do not use the thin-client RNTBD
+            // encoder; they route through the standard gateway coordinator.
+            #[cfg(feature = "preview_dtx")]
+            ResourceType::DistributedTransactionBatch => unreachable!(
+                "ResourceType::DistributedTransactionBatch must not reach RNTBD encoding"
+            ),
         };
         Self(id)
     }
@@ -795,6 +801,13 @@ impl From<OperationType> for RntbdOperationType {
                 unreachable!(
                     "OperationType::Patch must be handled by patch_handler before RNTBD encoding"
                 )
+            }
+            // Distributed transactions do not use the thin-client RNTBD
+            // encoder; they route through the standard gateway coordinator.
+            #[cfg(feature = "preview_dtx")]
+            OperationType::CommitDistributedTransaction
+            | OperationType::ReadDistributedTransaction => {
+                unreachable!("distributed transaction operations must not reach RNTBD encoding")
             }
         };
         Self(id)

@@ -503,6 +503,13 @@ fn proxy_operation_type_name(op: OperationType) -> &'static str {
         OperationType::HeadFeed => "HeadFeed",
         OperationType::Execute => "ExecuteJavaScript",
         OperationType::Patch => "Patch",
+        // Distributed transactions never reach Gateway 2.0 dispatch (rejected
+        // by `is_operation_supported_by_gateway_v2`); they route through the
+        // standard gateway coordinator.
+        #[cfg(feature = "preview_dtx")]
+        OperationType::CommitDistributedTransaction | OperationType::ReadDistributedTransaction => {
+            unreachable!("distributed transaction operations must not reach Gateway 2.0 dispatch")
+        }
     }
 }
 
@@ -520,6 +527,10 @@ fn proxy_resource_type_name(rt: ResourceType) -> &'static str {
         ResourceType::UserDefinedFunction => "UserDefinedFunction",
         ResourceType::PartitionKeyRange => "PartitionKeyRange",
         ResourceType::Offer => "Offer",
+        #[cfg(feature = "preview_dtx")]
+        ResourceType::DistributedTransactionBatch => {
+            unreachable!("distributed transaction batch must not reach Gateway 2.0 dispatch")
+        }
     }
 }
 

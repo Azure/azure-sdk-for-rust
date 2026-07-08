@@ -24,15 +24,13 @@ pin-project.workspace = true
 reqwest = { workspace = true, optional = true }
 serde.workspace = true
 serde_json = { workspace = true, features = ["raw_value"] }
+time.workspace = true
 tracing.workspace = true
 url.workspace = true
 
 # NOTE: Cargo does not support feature-gating dev-dependencies. The `serde` and
 # `tokio test-util` entries below merge into existing features and add no
-# compile-time cost. `uuid` is only required by the
-# `__internal_in_memory_emulator`-gated dual-backend tests; if its compile
-# footprint becomes a concern, move those tests to a dedicated crate gated on
-# the same feature instead of trying to gate the dev-dep here.
+# compile-time cost.
 [dev-dependencies]
 azure_core_test = { workspace = true, features = ["tracing"] }
 # Re-declare the driver here with the internal test-only diagnostics-construction feature.
@@ -56,7 +54,6 @@ clap.workspace = true
 reqwest = { workspace = true, features = ["http2"] }
 serde = { workspace = true, features = ["derive"] }
 serde_bytes.workspace = true
-time.workspace = true
 tokio = { workspace = true, features = [
   "rt-multi-thread",
   "macros",
@@ -87,6 +84,9 @@ hmac_openssl = ["azure_core/hmac_openssl"]
 fault_injection = [
   "azure_data_cosmos_driver/fault_injection",
 ] # Enables support for fault injection testing
+preview_dtx = [
+  "azure_data_cosmos_driver/preview_dtx",
+] # Enables preview Distributed Transaction APIs. Disabled by default and not production-ready.
 __internal_in_memory_emulator = [
   "azure_data_cosmos_driver/__internal_in_memory_emulator",
   "key_auth",

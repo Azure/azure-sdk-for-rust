@@ -19,6 +19,7 @@ pub mod headers {
     pub static REQUEST_CHARGE: HeaderName = HeaderName::from_static("x-ms-request-charge");
     pub static SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
     pub static ETAG: HeaderName = HeaderName::from_static("etag");
+    pub static CONTINUATION: HeaderName = HeaderName::from_static("x-ms-continuation");
     pub static CONTENT_TYPE: HeaderName = HeaderName::from_static("content-type");
     pub static DATE: HeaderName = HeaderName::from_static("date");
     pub static VERSION: HeaderName = HeaderName::from_static("x-ms-version");
@@ -199,6 +200,11 @@ impl ResponseBuilder {
     pub fn with_header_value(mut self, name: HeaderName, value: impl ToString) -> Self {
         self.headers
             .insert(name, HeaderValue::from(value.to_string()));
+        self
+    }
+
+    pub fn without_header(mut self, name: HeaderName) -> Self {
+        self.headers.remove(name);
         self
     }
 
