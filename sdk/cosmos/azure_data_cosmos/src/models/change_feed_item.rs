@@ -15,10 +15,12 @@
 //!
 //! For [`ChangeFeedMode::LatestVersion`](crate::options::ChangeFeedMode::LatestVersion)
 //! reads the service surfaces the latest version of each created or replaced
-//! item, so only `current` is populated and `previous` / `metadata` are absent.
-//! The envelope also models `previous` and `metadata` because full-fidelity
-//! (all versions and deletes) reads populate them; keeping the fields optional
-//! lets a single type serve both wire shapes without loss.
+//! item, so `current` is populated, `previous` is absent, and `metadata`
+//! (when present) is partial — it may carry positional fields such as
+//! `lsn`/`crts` but no operation type. The envelope also models `previous` and
+//! full `metadata` because full-fidelity (all versions and deletes) reads
+//! populate them; keeping every field optional lets a single type serve both
+//! wire shapes without loss.
 
 use azure_core::fmt::SafeDebug;
 use serde::Deserialize;
@@ -45,21 +47,24 @@ pub enum ChangeFeedOperationType {
 
 /// Per-change metadata returned with a change feed item.
 ///
-/// Populated for full-fidelity (all versions and deletes) reads; for
+/// Populated for full-fidelity (all versions and deletes) reads. For
 /// [`ChangeFeedMode::LatestVersion`](crate::options::ChangeFeedMode::LatestVersion)
-/// reads the enclosing [`ChangeFeedItem`]'s metadata is absent entirely (see
-/// [`ChangeFeedItem::metadata`]).
+/// reads the service may omit the metadata envelope entirely, or return a
+/// partial one that carries positional fields such as `lsn`/`crts` but no
+/// `operationType`.
 ///
-/// All fields other than [`operation_type`](Self::operation_type) are optional
-/// because the service only populates them for the operations and container
-/// configurations to which they apply.
+/// Every field is optional because the service only populates each one for the
+/// operations and container configurations to which it applies.
 #[derive(Clone, SafeDebug, Deserialize)]
 #[safe(true)]
 #[non_exhaustive]
 pub struct ChangeFeedMetadata {
     /// The type of change (create, replace, or delete).
-    #[serde(rename = "operationType")]
-    operation_type: ChangeFeedOperationType,
+    ///
+    /// Present for full-fidelity reads; absent for LatestVersion reads, whose
+    /// metadata (when present) does not carry an operation type.
+    #[serde(rename = "operationType", default)]
+    operation_type: Option<ChangeFeedOperationType>,
 
     /// The logical sequence number (LSN) of the change within its partition.
     #[serde(rename = "lsn", default)]
@@ -82,8 +87,11 @@ pub struct ChangeFeedMetadata {
 }
 
 impl ChangeFeedMetadata {
-    /// The type of change (create, replace, or delete).
-    pub fn operation_type(&self) -> ChangeFeedOperationType {
+    /// The type of change (create, replace, or delete), when reported.
+    ///
+    /// Present for full-fidelity reads; `None` for LatestVersion reads, whose
+    /// metadata does not carry an operation type.
+    pub fn operation_type(&self) -> Option<ChangeFeedOperationType> {
         self.operation_type
     }
 
@@ -121,10 +129,11 @@ impl ChangeFeedMetadata {
 /// the SDK does not strip the envelope, so the whole wire shape is preserved.
 ///
 /// For [`ChangeFeedMode::LatestVersion`](crate::options::ChangeFeedMode::LatestVersion)
-/// reads only [`current`](Self::current) is populated — the latest version of
-/// each created or replaced document; [`previous`](Self::previous) and
-/// [`metadata`](Self::metadata) are absent. Full-fidelity (all versions and
-/// deletes) reads additionally populate [`metadata`](Self::metadata) and, for
+/// reads [`current`](Self::current) holds the latest version of each created or
+/// replaced document; [`previous`](Self::previous) is absent and
+/// [`metadata`](Self::metadata) is either absent or partial (no operation
+/// type). Full-fidelity (all versions and deletes) reads additionally populate
+/// [`metadata`](Self::metadata) and, for
 /// replaces and deletes on containers that retain pre-images,
 /// [`previous`](Self::previous).
 ///
@@ -156,7 +165,8 @@ pub struct ChangeFeedItem<T> {
 
     /// Metadata describing the change (operation type, LSN, timestamps).
     ///
-    /// Populated for full-fidelity reads; absent for LatestVersion reads.
+    /// Populated for full-fidelity reads. For LatestVersion reads it may be
+    /// absent, or a partial object carrying `lsn`/`crts` but no operation type.
     #[serde(rename = "metadata", default)]
     metadata: Option<ChangeFeedMetadata>,
 }
@@ -179,7 +189,8 @@ impl<T> ChangeFeedItem<T> {
 
     /// The metadata describing this change, when reported.
     ///
-    /// Populated for full-fidelity reads; absent for LatestVersion reads.
+    /// Populated for full-fidelity reads. For LatestVersion reads it may be
+    /// absent, or a partial object carrying `lsn`/`crts` but no operation type.
     pub fn metadata(&self) -> Option<&ChangeFeedMetadata> {
         self.metadata.as_ref()
     }
@@ -193,7 +204,7 @@ impl<T> ChangeFeedItem<T> {
     pub fn operation_type(&self) -> Option<ChangeFeedOperationType> {
         self.metadata
             .as_ref()
-            .map(ChangeFeedMetadata::operation_type)
+            .and_then(ChangeFeedMetadata::operation_type)
     }
 }
 
@@ -325,6 +336,30 @@ mod tests {
         let metadata = item.metadata().expect("metadata should be present");
         assert_eq!(metadata.lsn(), Some(400));
         assert!(metadata.time_to_live_expired().is_none());
+    }
+
+    #[test]
+    fn deserializes_latest_version_envelope_with_partial_metadata() {
+        // Against the real service a LatestVersion read can return a metadata
+        // object that carries positional fields (lsn/crts) but no
+        // `operationType`. The item must still deserialize (regression: a
+        // required `operationType` previously failed these responses).
+        let envelope = json!({
+            "current": { "id": "1", "value": 7 },
+            "metadata": {
+                "lsn": 100,
+                "crts": 1720322460
+            }
+        });
+        let item: ChangeFeedItem<Doc> = serde_json::from_value(envelope).unwrap();
+
+        assert_eq!(item.current().and_then(|d| d.value), Some(7));
+        assert!(item.previous().is_none());
+        let metadata = item.metadata().expect("metadata should be present");
+        assert!(metadata.operation_type().is_none());
+        assert!(item.operation_type().is_none());
+        assert_eq!(metadata.lsn(), Some(100));
+        assert_eq!(metadata.conflict_resolution_timestamp(), Some(1720322460));
     }
 
     #[test]
