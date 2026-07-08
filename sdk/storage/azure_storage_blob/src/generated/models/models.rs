@@ -441,6 +441,10 @@ pub struct BlobProperties {
     #[serde(rename = "ServerEncrypted", skip_serializing_if = "Option::is_none")]
     pub server_encrypted: Option<bool>,
 
+    /// The smart access tier of the blob.
+    #[serde(rename = "SmartAccessTier", skip_serializing_if = "Option::is_none")]
+    pub smart_access_tier: Option<AccessTier>,
+
     /// The number of tags for the blob.
     #[serde(rename = "TagCount", skip_serializing_if = "Option::is_none")]
     pub tag_count: Option<i32>,
