@@ -30,10 +30,6 @@ pub struct DownloadBlobTestOptions {
     #[arg(long)]
     size: usize,
 
-    // The number of blobs to download.
-    #[arg(long, default_value_t = 5)]
-    count: usize,
-
     #[arg(long, default_value_t = CollectOptions::Stream, value_enum)]
     collect: CollectOptions,
 

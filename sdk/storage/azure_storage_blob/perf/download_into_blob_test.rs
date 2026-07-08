@@ -15,22 +15,20 @@ use azure_core_test::{
 use azure_storage_blob::{models::BlobClientDownloadOptions, BlobContainerClient};
 use bytes::Bytes;
 use clap::Args;
-use futures::{lock::Mutex, FutureExt, TryStreamExt};
+use futures::{lock::Mutex, FutureExt};
 
 use crate::{
     clap_parsers::non_zero_usize,
     extensions::{OnceLockExt, RecordingExt},
 };
 
+const BLOB_NAME: &str = "perf-blob";
+
 #[derive(Args, Clone, Debug)]
 pub struct DownloadIntoBlobTestOptions {
     // The size of each blob in bytes.
     #[arg(long)]
     size: usize,
-
-    // The number of blobs to download.
-    #[arg(long, default_value_t = 5)]
-    count: usize,
 
     // Number of concurrent network transfers.
     #[arg(long, value_parser = non_zero_usize)]
@@ -45,7 +43,6 @@ pub struct DownloadIntoBlobTestOptions {
 }
 
 pub struct DownloadIntoBlobTest {
-    count: usize,
     size: usize,
     concurrency: Option<NonZero<usize>>,
     partition_size: Option<NonZero<usize>>,
@@ -58,7 +55,6 @@ impl DownloadIntoBlobTest {
     pub fn new(args: DownloadIntoBlobTestOptions) -> CreatePerfTestReturn {
         async move {
             Ok(Box::new(DownloadIntoBlobTest {
-                count: args.count,
                 size: args.size,
                 concurrency: args.concurrency,
                 partition_size: args.partition_size,
@@ -89,28 +85,23 @@ impl PerfTest for DownloadIntoBlobTest {
         })?;
         container_client.create(None).await?;
 
-        for i in 0..self.count {
-            let blob_name = format!("blob-{}", i);
-            let blob_client = container_client.blob_client(&blob_name);
-            let body = vec![0u8; self.size];
-            let body_bytes = Bytes::from(body);
-            let _ = blob_client.upload(body_bytes.into(), None).await?;
-        }
+        // Create the blob for the test.
+        let blob_client = container_client.blob_client(BLOB_NAME);
+        let body = vec![0u8; self.size]; // Blob size specified by the test option
+        let body_bytes = Bytes::from(body);
+
+        blob_client.upload(body_bytes.into(), None).await?;
 
         Ok(())
     }
 
     async fn run(&self, _context: Arc<TestContext>) -> azure_core::Result<()> {
-        let mut blob_list = self.client.get().unwrap().list_blobs(None)?;
-        while let Some(blob_item) = blob_list.try_next().await? {
-            self.client
-                .get()
-                .unwrap()
-                .blob_client(blob_item.name.unwrap().as_ref())
-                .download_into(&mut self.buffer.lock().await, Some(self.download_options()))
-                .await?;
-            black_box(&self.buffer.lock().await);
-        }
+        let blob_client = self.client.get().unwrap().blob_client(BLOB_NAME);
+        let mut buf = self.buffer.lock().await;
+        blob_client
+            .download_into(&mut buf, Some(self.download_options()))
+            .await?;
+        black_box(buf);
         Ok(())
     }
 
