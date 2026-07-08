@@ -864,7 +864,12 @@ impl ContainerClient {
     /// Queries the change feed for a container, returning a stream of pages.
     ///
     /// The change feed provides an ordered list of changes (creates and
-    /// replaces in LatestVersion mode) made to items in the container.
+    /// replaces) made to items in the container.
+    ///
+    /// Every change is returned as a
+    /// [`ChangeFeedItem<T>`](crate::models::ChangeFeedItem) wire-format
+    /// envelope, so bind `T = ChangeFeedItem<YourDoc>` and read the post-change
+    /// document via [`current()`](crate::models::ChangeFeedItem::current).
     ///
     /// # Arguments
     /// * `scope` - Determines which partitions to read changes from.
@@ -876,7 +881,10 @@ impl ContainerClient {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// use azure_data_cosmos::{clients::ContainerClient, feed::FeedScope, options::ChangeFeedStartFrom};
+    /// use azure_data_cosmos::{
+    ///     clients::ContainerClient, feed::FeedScope, models::ChangeFeedItem,
+    ///     options::ChangeFeedStartFrom,
+    /// };
     /// use futures::StreamExt;
     /// use serde::Deserialize;
     ///
@@ -886,13 +894,17 @@ impl ContainerClient {
     /// # async fn example(container: ContainerClient) -> Result<(), Box<dyn std::error::Error>> {
     /// // Read all changes from the beginning
     /// let mut pages = container
-    ///     .query_change_feed::<MyItem>(FeedScope::full_container(), ChangeFeedStartFrom::Beginning, None)
+    ///     .query_change_feed::<ChangeFeedItem<MyItem>>(
+    ///         FeedScope::full_container(),
+    ///         ChangeFeedStartFrom::Beginning,
+    ///         None,
+    ///     )
     ///     .await?;
     ///
     /// while let Some(page) = pages.next().await {
     ///     let page = page?;
     ///     for item in page.items() {
-    ///         println!("changed: {:?}", item);
+    ///         println!("changed: {:?}", item.current());
     ///     }
     ///     // Save checkpoint for resumption
     ///     let _token = pages.to_continuation_token()?;

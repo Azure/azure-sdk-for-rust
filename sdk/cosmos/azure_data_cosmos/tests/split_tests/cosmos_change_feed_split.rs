@@ -22,7 +22,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use azure_data_cosmos::feed::{ChangeFeedPageIterator, ContinuationToken, FeedScope};
-use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
+use azure_data_cosmos::models::{ChangeFeedItem, ContainerProperties, ThroughputProperties};
 use azure_data_cosmos::options::{ChangeFeedOptions, ChangeFeedStartFrom, CreateContainerOptions};
 use framework::{MockItem, TestClient, TestOptions};
 use futures::StreamExt;
@@ -37,9 +37,11 @@ const MAX_DRAIN_POLLS: usize = 500;
 const EMPTY_STREAK_TO_STOP: usize = 5;
 
 /// Drains a change feed iterator until it reports a streak of empty pages or a
-/// poll cap is reached, returning every item seen.
+/// poll cap is reached, returning the post-change document (`current`) of every
+/// item seen. These baseline/post-split writes are all creates, so `current` is
+/// always present.
 async fn drain_changes(
-    iterator: &mut ChangeFeedPageIterator<MockItem>,
+    iterator: &mut ChangeFeedPageIterator<ChangeFeedItem<MockItem>>,
 ) -> Result<Vec<MockItem>, Box<dyn Error>> {
     let mut collected = Vec::new();
     let mut empty_streak = 0usize;
@@ -56,7 +58,12 @@ async fn drain_changes(
             }
         } else {
             empty_streak = 0;
-            collected.extend(page.into_items());
+            collected.extend(page.into_items().into_iter().map(|envelope| {
+                envelope
+                    .current()
+                    .cloned()
+                    .expect("change feed items carry a current document")
+            }));
         }
 
         if polls >= MAX_DRAIN_POLLS {
@@ -124,7 +131,7 @@ pub async fn change_feed_resume_across_split() -> Result<(), Box<dyn Error>> {
             // Drain the whole baseline from the beginning, then capture a resume
             // token at the caught-up position.
             let mut iterator = container_client
-                .query_change_feed::<MockItem>(
+                .query_change_feed::<ChangeFeedItem<MockItem>>(
                     FeedScope::full_container(),
                     ChangeFeedStartFrom::Beginning,
                     None,
@@ -171,7 +178,7 @@ pub async fn change_feed_resume_across_split() -> Result<(), Box<dyn Error>> {
             // Resume from the pre-split token: exactly the post-split changes
             // must surface, with no replayed baseline and no losses.
             let mut resumed = container_client
-                .query_change_feed::<MockItem>(
+                .query_change_feed::<ChangeFeedItem<MockItem>>(
                     FeedScope::full_container(),
                     // Ignored on resume: the token carries its own position.
                     ChangeFeedStartFrom::Beginning,
