@@ -9,9 +9,10 @@ use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::{
     models::{
         BlobClientGetPropertiesResultHeaders, BlockBlobClientCommitBlockListOptions,
-        BlockBlobClientStageBlockFromUrlOptions, BlockBlobClientStageBlockOptions,
-        BlockBlobClientUploadBlobFromUrlOptions, BlockBlobClientUploadOptions, BlockListType,
-        BlockLookupList,
+        BlockBlobClientStageBlockFromUrlOptions, BlockBlobClientStageBlockFromUrlResultHeaders,
+        BlockBlobClientStageBlockOptions, BlockBlobClientStageBlockResultHeaders,
+        BlockBlobClientUploadBlobFromUrlOptions, BlockBlobClientUploadBlobFromUrlResultHeaders,
+        BlockBlobClientUploadOptions, BlockListType, BlockLookupList,
     },
     BlobContainerClientOptions,
 };
@@ -152,10 +153,11 @@ async fn test_upload_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     .await?;
 
     // Regular Scenario
-    blob_client
+    let upload_response = blob_client
         .block_blob_client()
         .upload_blob_from_url(source_blob_client.url().as_str().into(), None)
         .await?;
+    assert!(upload_response.content_crc64()?.is_some());
 
     let create_options = BlockBlobClientUploadBlobFromUrlOptions::default().if_not_exists();
 
@@ -235,7 +237,7 @@ async fn test_stage_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
     let block_id: Vec<u8> = b"block1".to_vec();
 
     // Regular Scenario
-    block_blob_client
+    let stage_response = block_blob_client
         .stage_block_from_url(
             &block_id,
             u64::try_from(source_content.len())?,
@@ -243,6 +245,7 @@ async fn test_stage_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
             None,
         )
         .await?;
+    assert!(stage_response.content_crc64()?.is_some());
 
     // Staged Block Scenario
     let block_list = block_blob_client
@@ -371,9 +374,19 @@ async fn upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         };
         {
             let _scope = count_policy.check_request_scope();
-            block_blob_client
+            let upload_result = block_blob_client
                 .upload(bytes.clone().into(), Some(options))
                 .await?;
+            // Note: x-ms-content-crc64 is only returned for single-shot (Put Blob) uploads,
+            // not partitioned uploads committed via Put Block List.
+            if expected_stage_block_calls == 0 {
+                assert!(
+                    upload_result.content_crc64.is_some(),
+                    "Failed parallel={},partition_size={}",
+                    parallel,
+                    partition_size
+                );
+            }
         }
         let body_data = blob_client.download(None).await?.body.collect().await?;
         assert_eq!(
@@ -629,7 +642,7 @@ async fn test_stage_block_transactional_checksums(ctx: TestContext) -> Result<()
     );
 
     // MD5 Match Scenario
-    block_blob_client
+    let response = block_blob_client
         .stage_block(
             &block_id,
             u64::try_from(content.len())?,
@@ -640,6 +653,8 @@ async fn test_stage_block_transactional_checksums(ctx: TestContext) -> Result<()
             }),
         )
         .await?;
+    assert!(response.content_md5()?.is_some());
+    assert!(response.content_crc64()?.is_some());
 
     // CRC64 Mismatch Scenario
     let response = block_blob_client
@@ -659,7 +674,7 @@ async fn test_stage_block_transactional_checksums(ctx: TestContext) -> Result<()
     );
 
     // CRC64 Match Scenario
-    block_blob_client
+    let response = block_blob_client
         .stage_block(
             &block_id,
             u64::try_from(content.len())?,
@@ -670,6 +685,8 @@ async fn test_stage_block_transactional_checksums(ctx: TestContext) -> Result<()
             }),
         )
         .await?;
+    assert!(response.content_crc64()?.is_some());
+    assert!(response.content_md5()?.is_none());
 
     container_client.delete(None).await?;
     Ok(())

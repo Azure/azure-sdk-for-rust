@@ -180,6 +180,23 @@ pub struct BlobDownloadProperties {
     /// Base64-encoded SHA-256 hash of the customer-provided encryption key
     /// used to encrypt the blob (`x-ms-encryption-key-sha256` header).
     pub encryption_key_sha256: Option<String>,
+
+    /// The access tier of the blob (`x-ms-access-tier` header).
+    pub access_tier: Option<String>,
+
+    /// Date/time the access tier was last changed (`x-ms-access-tier-change-time` header).
+    ///
+    /// Only returned if the tier on the blob was ever set.
+    pub access_tier_changed_on: Option<OffsetDateTime>,
+
+    /// Whether the access tier was inferred rather than explicitly set
+    /// (`x-ms-access-tier-inferred` header).
+    pub access_tier_inferred: Option<bool>,
+
+    /// The underlying tier of a smart tier blob (`x-ms-smart-access-tier` header).
+    ///
+    /// Only returned if the blob is in the Smart tier.
+    pub smart_access_tier: Option<String>,
 }
 
 impl BlobClientDownloadResult {
@@ -270,6 +287,15 @@ impl BlobDownloadProperties {
                 .get_optional_as(&HeaderName::from_static("x-ms-encryption-scope"))?,
             encryption_key_sha256: headers
                 .get_optional_as(&HeaderName::from_static("x-ms-encryption-key-sha256"))?,
+            access_tier: headers.get_optional_as(&HeaderName::from_static("x-ms-access-tier"))?,
+            access_tier_changed_on: headers.get_optional_with(
+                &HeaderName::from_static("x-ms-access-tier-change-time"),
+                |h| parse_rfc7231(h.as_str()),
+            )?,
+            access_tier_inferred: headers
+                .get_optional_as(&HeaderName::from_static("x-ms-access-tier-inferred"))?,
+            smart_access_tier: headers
+                .get_optional_as(&HeaderName::from_static("x-ms-smart-access-tier"))?,
             metadata,
             object_replication_rules,
         })

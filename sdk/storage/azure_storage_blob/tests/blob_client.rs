@@ -10,20 +10,20 @@ use azure_core::{
 use azure_core_test::{recorded, Matcher, TestContext, TestMode, VarOptions};
 use azure_storage_blob::{
     models::{
-        AccessTier, AccountKind, BlobClientAcquireLeaseOptions,
+        AccessTier, AccountKind, ArchiveStatus, BlobClientAcquireLeaseOptions,
         BlobClientAcquireLeaseResultHeaders, BlobClientChangeLeaseResultHeaders,
         BlobClientDownloadOptions, BlobClientGetAccountInfoResultHeaders,
         BlobClientGetPropertiesOptions, BlobClientGetPropertiesResultHeaders,
         BlobClientSetImmutabilityPolicyOptions, BlobClientSetMetadataOptions,
         BlobClientSetPropertiesOptions, BlobClientSetTierOptions, BlobTags,
-        BlockBlobClientUploadOptions, ImmutabilityPolicyMode, LeaseState, RehydratePriority,
-        StorageErrorCode,
+        BlockBlobClientCommitBlockListOptions, BlockBlobClientUploadOptions,
+        ImmutabilityPolicyMode, LeaseState, RehydratePriority, StorageErrorCode,
     },
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions, StorageError,
 };
 use azure_storage_blob_test::{
-    create_test_blob, get_blob_name, get_container_client, get_container_name, ClientOptionsExt,
-    StorageAccount, TestPolicy,
+    block_lookup, create_test_blob, get_blob_name, get_container_client, get_container_name,
+    ClientOptionsExt, StorageAccount, TestPolicy,
 };
 use bytes::{BufMut, BytesMut};
 use flate2::{write::GzEncoder, Compression};
@@ -233,6 +233,61 @@ async fn test_download_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert_eq!(17, response.properties.content_length.unwrap());
     let body_data = response.body.collect().await?;
     assert_eq!(b"hello rusty world".as_ref(), &body_data[..]);
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_download_blob_ranged_checksums(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let data = b"hello rusty world";
+
+    blob_client
+        .upload(RequestContent::from(data.to_vec()), None)
+        .await?;
+
+    // Range Download with CRC64 Scenario
+    let response = blob_client
+        .download(Some(BlobClientDownloadOptions {
+            range: Some((0..17u64).into()),
+            range_get_content_crc64: Some(true),
+            ..Default::default()
+        }))
+        .await?;
+    assert!(response.properties.content_crc64.is_some());
+    assert!(response.properties.content_md5.is_none());
+    let body_data = response.body.collect().await?;
+    assert_eq!(data.as_ref(), &body_data[..]);
+
+    // Range Download with MD5 Scenario
+    let response = blob_client
+        .download(Some(BlobClientDownloadOptions {
+            range: Some((0..17u64).into()),
+            range_get_content_md5: Some(true),
+            ..Default::default()
+        }))
+        .await?;
+    assert!(response.properties.content_md5.is_some());
+    assert!(response.properties.content_crc64.is_none());
+    let body_data = response.body.collect().await?;
+    assert_eq!(data.as_ref(), &body_data[..]);
+
+    // Range Download without Checksum Scenario (neither requested, partial range)
+    let response = blob_client
+        .download(Some(BlobClientDownloadOptions {
+            range: Some((0..10u64).into()),
+            ..Default::default()
+        }))
+        .await?;
+    assert!(response.properties.content_crc64.is_none());
+    assert!(response.properties.content_md5.is_none());
+    let body_data = response.body.collect().await?;
+    assert_eq!(&data[..10], &body_data[..]);
 
     container_client.delete(None).await?;
     Ok(())
@@ -1584,6 +1639,215 @@ async fn test_gzip_blob_with_metadata_roundtrip(ctx: TestContext) -> Result<(), 
         decompressed,
         "decompressed body must match original plaintext"
     );
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_set_access_tier_smart(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+
+    // Create Two Blobs
+    let blob_name_1 = "smart-blob1".to_string();
+    let blob_name_2 = "smart-blob2".to_string();
+    let blob_client_1 = container_client.blob_client(&blob_name_1);
+    let blob_client_2 = container_client.blob_client(&blob_name_2);
+    create_test_blob(&blob_client_1, None, None).await?;
+    create_test_blob(&blob_client_2, None, None).await?;
+
+    // Set Smart Tier
+    blob_client_1.set_tier(AccessTier::Smart, None).await?;
+    blob_client_2.set_tier(AccessTier::Smart, None).await?;
+
+    // Assert via get_properties
+    let response = blob_client_1.get_properties(None).await?;
+    assert_eq!(
+        AccessTier::Smart.to_string(),
+        response.access_tier()?.unwrap()
+    );
+    assert!(response.smart_access_tier()?.is_some());
+
+    // Assert via list_blobs
+    let mut list_blobs_response = container_client.list_blobs(None)?.into_pages();
+    let page = list_blobs_response.try_next().await?;
+    let list_blob_segment_response = page.unwrap().into_model()?;
+    for blob in &list_blob_segment_response.blob_items {
+        let properties = blob.properties.as_ref().unwrap();
+        assert_eq!(Some(AccessTier::Smart), properties.access_tier);
+        assert!(properties.smart_access_tier.is_some());
+    }
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_set_access_tier_smart_rehydrate(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+
+    // Create Two Blobs
+    let blob_name_1 = "smart-blob1".to_string();
+    let blob_name_2 = "smart-blob2".to_string();
+    let blob_client_1 = container_client.blob_client(&blob_name_1);
+    let blob_client_2 = container_client.blob_client(&blob_name_2);
+    create_test_blob(&blob_client_1, None, None).await?;
+    create_test_blob(&blob_client_2, None, None).await?;
+
+    // Move Blobs to Archive Tier
+    blob_client_1.set_tier(AccessTier::Archive, None).await?;
+    blob_client_2.set_tier(AccessTier::Archive, None).await?;
+
+    // Rehydrate to Smart Tier (High Priority)
+    blob_client_1
+        .set_tier(
+            AccessTier::Smart,
+            Some(BlobClientSetTierOptions {
+                rehydrate_priority: Some(RehydratePriority::High),
+                ..Default::default()
+            }),
+        )
+        .await?;
+    blob_client_2
+        .set_tier(
+            AccessTier::Smart,
+            Some(BlobClientSetTierOptions {
+                rehydrate_priority: Some(RehydratePriority::High),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Assert via get_properties
+    let response = blob_client_1.get_properties(None).await?;
+    assert_eq!(
+        Some(ArchiveStatus::RehydratePendingToSmart),
+        response.archive_status()?
+    );
+
+    // Assert via list_blobs
+    let mut list_blobs_response = container_client.list_blobs(None)?.into_pages();
+    let page = list_blobs_response.try_next().await?;
+    let list_blob_segment_response = page.unwrap().into_model()?;
+    for blob in &list_blob_segment_response.blob_items {
+        let properties = blob.properties.as_ref().unwrap();
+        assert_eq!(
+            Some(ArchiveStatus::RehydratePendingToSmart),
+            properties.archive_status
+        );
+    }
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_upload_block_blob_smart_access_tier(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+
+    // Upload with Smart Tier
+    blob_client
+        .upload(
+            RequestContent::from(b"hello smart tier".to_vec()),
+            Some(BlockBlobClientUploadOptions {
+                tier: Some(AccessTier::Smart),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Assert
+    let response = blob_client.get_properties(None).await?;
+    assert_eq!(
+        AccessTier::Smart.to_string(),
+        response.access_tier()?.unwrap()
+    );
+    assert!(response.smart_access_tier()?.is_some());
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_commit_block_list_smart_access_tier(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let block_blob_client = blob_client.block_blob_client();
+
+    // Stage Block
+    let block_id: Vec<u8> = b"1".to_vec();
+    let data = b"smart tier block data";
+    block_blob_client
+        .stage_block(
+            &block_id,
+            u64::try_from(data.len())?,
+            RequestContent::from(data.to_vec()),
+            None,
+        )
+        .await?;
+
+    // Commit Block List with Smart Tier
+    let block_lookup_list = block_lookup(block_id);
+    block_blob_client
+        .commit_block_list(
+            block_lookup_list.try_into()?,
+            Some(BlockBlobClientCommitBlockListOptions {
+                tier: Some(AccessTier::Smart),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Assert
+    let response = blob_client.get_properties(None).await?;
+    assert_eq!(
+        AccessTier::Smart.to_string(),
+        response.access_tier()?.unwrap()
+    );
+    assert!(response.smart_access_tier()?.is_some());
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_download_access_tier_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+
+    // Upload Blob and Set Smart Tier
+    blob_client
+        .upload(RequestContent::from(b"smart tier download".to_vec()), None)
+        .await?;
+    blob_client.set_tier(AccessTier::Smart, None).await?;
+
+    // Assert via download
+    let response = blob_client.download(None).await?;
+    assert_eq!(
+        Some(AccessTier::Smart.to_string()),
+        response.properties.access_tier
+    );
+    assert!(response.properties.smart_access_tier.is_some());
+    assert!(response.properties.access_tier_changed_on.is_some());
+    // Service omits x-ms-access-tier-inferred when the tier is explicitly set,
+    // returning the header only when the tier is inferred.
+    assert!(!response.properties.access_tier_inferred.unwrap_or(false));
 
     container_client.delete(None).await?;
     Ok(())

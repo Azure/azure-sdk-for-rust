@@ -4,7 +4,8 @@
 use azure_core::http::{headers::CONTENT_TYPE, RequestContent, StatusCode};
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
-    AppendBlobClientAppendBlockFromUrlOptions, AppendBlobClientAppendBlockOptions,
+    AppendBlobClientAppendBlockFromUrlOptions, AppendBlobClientAppendBlockFromUrlResultHeaders,
+    AppendBlobClientAppendBlockOptions, AppendBlobClientAppendBlockResultHeaders,
     AppendBlobClientCreateOptions, BlobClientGetPropertiesResultHeaders, BlobType,
 };
 use azure_storage_blob_test::{
@@ -87,11 +88,13 @@ async fn test_append_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Erro
     append_blob_client.create(None).await?;
 
     // Act
-    append_blob_client
+    let append_response = append_blob_client
         .append_block_from_url(blob_client_2.url().as_str().into(), 17, None)
         .await?;
 
     // Assert
+    assert!(append_response.content_crc64()?.is_some());
+
     let response = blob_client.download(None).await?;
     assert_eq!(17, response.properties.content_length.unwrap());
     let body_data = response.body.collect().await?;
@@ -301,7 +304,7 @@ async fn test_append_block_transactional_checksums(ctx: TestContext) -> Result<(
     );
 
     // MD5 Match Scenario
-    append_blob_client
+    let response = append_blob_client
         .append_block(
             RequestContent::from(content.clone()),
             u64::try_from(content.len())?,
@@ -311,6 +314,8 @@ async fn test_append_block_transactional_checksums(ctx: TestContext) -> Result<(
             }),
         )
         .await?;
+    assert!(response.content_md5()?.is_some());
+    assert!(response.content_crc64()?.is_some());
 
     // CRC64 Mismatch Scenario
     let response = append_blob_client
@@ -329,7 +334,7 @@ async fn test_append_block_transactional_checksums(ctx: TestContext) -> Result<(
     );
 
     // CRC64 Match Scenario
-    append_blob_client
+    let response = append_blob_client
         .append_block(
             RequestContent::from(content.clone()),
             u64::try_from(content.len())?,
@@ -339,6 +344,8 @@ async fn test_append_block_transactional_checksums(ctx: TestContext) -> Result<(
             }),
         )
         .await?;
+    assert!(response.content_crc64()?.is_some());
+    assert!(response.content_md5()?.is_none());
 
     container_client.delete(None).await?;
     Ok(())
