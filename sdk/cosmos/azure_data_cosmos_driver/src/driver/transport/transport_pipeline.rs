@@ -2003,6 +2003,8 @@ mod tests {
             read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             url: endpoint.url().clone(),
             headers,
+            #[cfg(feature = "preview_dtx")]
+            resource_type: ResourceType::Document,
             body: None,
             auth_context: super::super::AuthorizationContext::new(
                 azure_core::http::Method::Get,

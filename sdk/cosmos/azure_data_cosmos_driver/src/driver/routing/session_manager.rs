@@ -478,7 +478,7 @@ mod tests {
             PartitionKey::from("pk1"),
             "doc1",
         ));
-        let token = mgr.resolve_session_token(&read_op, None).unwrap();
+        let token = mgr.resolve_session_token(&read_op, None, None).unwrap();
         assert_eq!(token.as_str(), "0:1#100#1=10");
     }
 
@@ -737,7 +737,7 @@ mod tests {
             PartitionKey::from("pk1"),
             "doc1",
         ));
-        assert!(mgr.resolve_session_token(&read_op, None).is_none());
+        assert!(mgr.resolve_session_token(&read_op, None, None).is_none());
     }
 
     #[cfg(feature = "preview_dtx")]
@@ -791,7 +791,7 @@ mod tests {
             PartitionKey::from("pk1"),
             "doc1",
         ));
-        let token = mgr.resolve_session_token(&read_op, None).unwrap();
+        let token = mgr.resolve_session_token(&read_op, None, None).unwrap();
         assert_eq!(token.as_str(), "0:1#100#1=10");
     }
 

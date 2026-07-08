@@ -117,6 +117,9 @@ mod tests {
                 | OperationType::HeadFeed
                 | OperationType::Execute
                 | OperationType::Patch => false,
+                #[cfg(feature = "preview_dtx")]
+                OperationType::CommitDistributedTransaction
+                | OperationType::ReadDistributedTransaction => false,
             },
             ResourceType::DatabaseAccount
             | ResourceType::Database
@@ -126,6 +129,8 @@ mod tests {
             | ResourceType::UserDefinedFunction
             | ResourceType::PartitionKeyRange
             | ResourceType::Offer => false,
+            #[cfg(feature = "preview_dtx")]
+            ResourceType::DistributedTransactionBatch => false,
         }
     }
 

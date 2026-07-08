@@ -4086,6 +4086,8 @@ mod tests {
             activity_id: &activity_id,
             execution_context: ExecutionContext::Retry,
             deadline: Some(std::time::Instant::now() + Duration::from_secs(5)),
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             resolved_session_token: None,
             throughput_control: None,
         };
@@ -4146,6 +4148,8 @@ mod tests {
             activity_id: &activity_id,
             execution_context: ExecutionContext::Retry,
             deadline: Some(std::time::Instant::now() + Duration::from_secs(5)),
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             resolved_session_token: None,
             throughput_control: None,
         };
@@ -4194,6 +4198,8 @@ mod tests {
             activity_id: &activity_id,
             execution_context: ExecutionContext::Retry,
             deadline: Some(std::time::Instant::now() + Duration::from_secs(5)),
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             resolved_session_token: None,
             throughput_control: None,
         };
@@ -4391,6 +4397,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            true,
             Duration::from_secs(60),
         );
         assert_eq!(routing.endpoint, account_write_endpoint);
@@ -4440,6 +4447,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            true,
             Duration::from_secs(60),
         );
         assert_eq!(routing.endpoint, account_write_endpoint);
@@ -4834,6 +4842,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![endpoint.clone()].into(),
             preferred_write_endpoints: vec![endpoint.clone()].into(),
+            account_write_endpoints: vec![endpoint.clone()].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: false,
             default_endpoint: endpoint.clone(),
@@ -4877,6 +4886,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![endpoint.clone()].into(),
             preferred_write_endpoints: vec![endpoint.clone()].into(),
+            account_write_endpoints: vec![endpoint.clone()].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: false,
             default_endpoint: endpoint.clone(),
@@ -4921,6 +4931,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![endpoint.clone()].into(),
             preferred_write_endpoints: vec![endpoint.clone()].into(),
+            account_write_endpoints: vec![endpoint.clone()].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: false,
             default_endpoint: endpoint,
