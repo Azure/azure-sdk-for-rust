@@ -18,6 +18,8 @@ use std::time::{Duration, Instant};
 use futures::{future::Either, pin_mut};
 use tracing::trace;
 
+#[cfg(feature = "preview_dtx")]
+use crate::models::ResourceType;
 use crate::{
     diagnostics::{
         DiagnosticsContextBuilder, ExecutionContext, FailedTransportShardDiagnostics, PipelineType,
@@ -91,11 +93,10 @@ fn forced_final_retry_delay(deadline: Option<Instant>) -> Option<Duration> {
 pub(crate) fn evaluate_transport_retry(
     result: &TransportResult,
     throttle_state: &ThrottleRetryState,
+    is_distributed_transaction_request: bool,
 ) -> ThrottleAction {
-    let is_throttled = match &result.outcome {
-        TransportOutcome::HttpError { status, .. } => status.is_throttled(),
-        _ => false,
-    };
+    let is_throttled =
+        is_transport_throttle_retry_eligible(result, is_distributed_transaction_request);
 
     if !is_throttled {
         return ThrottleAction::Propagate;
@@ -130,6 +131,28 @@ pub(crate) fn evaluate_transport_retry(
             cumulative_delay: new_cumulative,
             ..*throttle_state
         },
+    }
+}
+
+/// Whether a throttled (`429`) transport result is eligible for the shared
+/// transport throttle-retry path.
+///
+/// A **body-bearing** distributed-transaction `429` is intentionally excluded:
+/// it carries a coordinator transaction result, so it is routed to the DTX outer
+/// loop (governed by the coordinator's `isRetriable` + `retry-after`) instead of
+/// the shared throttle path. As a result the user-configured throttle cap
+/// (`ThrottlingRetryOptions`) does not bound a body-bearing DTX `429`; the DTX
+/// outer-loop budget and the operation deadline do. A **bodyless** DTX `429`
+/// (and every non-DTX `429`) uses the shared path and honors that cap.
+fn is_transport_throttle_retry_eligible(
+    result: &TransportResult,
+    is_distributed_transaction_request: bool,
+) -> bool {
+    match &result.outcome {
+        TransportOutcome::HttpError { status, body, .. } if status.is_throttled() => {
+            !is_distributed_transaction_request || body.is_empty()
+        }
+        _ => false,
     }
 }
 
@@ -320,7 +343,16 @@ pub(crate) async fn execute_transport_pipeline(
 
         // Check for 429 throttling → transport-level retry
         let result = result.result;
-        let action = evaluate_transport_retry(&result, &throttle_state);
+        // DTX request detection only exists when the preview feature is enabled;
+        // in default builds no request can carry the DTX typed resource value, so
+        // the flag is a constant `false` and the throttle path behaves as before.
+        #[cfg(feature = "preview_dtx")]
+        let is_distributed_transaction_request =
+            request.resource_type == ResourceType::DistributedTransactionBatch;
+        #[cfg(not(feature = "preview_dtx"))]
+        let is_distributed_transaction_request = false;
+        let action =
+            evaluate_transport_retry(&result, &throttle_state, is_distributed_transaction_request);
         match action {
             ThrottleAction::Retry { delay, new_state } => {
                 // Never sleep past the end-to-end deadline. If there is no remaining
@@ -353,9 +385,9 @@ pub(crate) async fn execute_transport_pipeline(
                 continue;
             }
             ThrottleAction::Propagate => {
-                let is_throttled = matches!(
-                    &result.outcome,
-                    TransportOutcome::HttpError { status, .. } if status.is_throttled()
+                let is_throttled = is_transport_throttle_retry_eligible(
+                    &result,
+                    is_distributed_transaction_request,
                 );
 
                 // Honor the user-configured `max_retry_count` as the cap on
@@ -764,6 +796,25 @@ mod tests {
         }
     }
 
+    fn make_throttled_result_with_substatus_and_retry_after(
+        sub_status: SubStatusCode,
+        ms: u64,
+    ) -> TransportResult {
+        let mut cosmos_headers = CosmosResponseHeaders::default();
+        cosmos_headers.retry_after_ms = Some(ms);
+        TransportResult {
+            outcome: TransportOutcome::HttpError {
+                status: CosmosStatus::from_parts(
+                    azure_core::http::StatusCode::TooManyRequests,
+                    Some(sub_status),
+                ),
+                cosmos_headers,
+                body: vec![],
+                request_sent: RequestSentStatus::Sent,
+            },
+        }
+    }
+
     fn make_success_result() -> TransportResult {
         TransportResult {
             outcome: TransportOutcome::Success {
@@ -779,7 +830,7 @@ mod tests {
         let result = make_throttled_result_with_retry_after(42);
         let state = ThrottleRetryState::new();
 
-        match evaluate_transport_retry(&result, &state) {
+        match evaluate_transport_retry(&result, &state, false) {
             ThrottleAction::Retry { delay, new_state } => {
                 assert_eq!(delay, Duration::from_millis(42));
                 assert_eq!(new_state.attempt_count, 1);
@@ -793,7 +844,7 @@ mod tests {
         let result = make_throttled_result();
         let state = ThrottleRetryState::new();
 
-        match evaluate_transport_retry(&result, &state) {
+        match evaluate_transport_retry(&result, &state, false) {
             ThrottleAction::Retry { delay, new_state } => {
                 // fallback base is 5ms with +/-25% jitter.
                 assert!(delay >= Duration::from_nanos(3_750_000));
@@ -810,7 +861,7 @@ mod tests {
         let result = make_throttled_result_with_retry_after(10_000);
         let state = ThrottleRetryState::new();
 
-        match evaluate_transport_retry(&result, &state) {
+        match evaluate_transport_retry(&result, &state, false) {
             ThrottleAction::Retry { delay, .. } => {
                 assert_eq!(delay, Duration::from_secs(5)); // capped
             }
@@ -827,7 +878,7 @@ mod tests {
         };
 
         assert!(matches!(
-            evaluate_transport_retry(&result, &state),
+            evaluate_transport_retry(&result, &state, false),
             ThrottleAction::Propagate
         ));
     }
@@ -841,7 +892,7 @@ mod tests {
         let state = ThrottleRetryState::with_limits(0, Duration::from_secs(30));
 
         assert!(matches!(
-            evaluate_transport_retry(&result, &state),
+            evaluate_transport_retry(&result, &state, false),
             ThrottleAction::Propagate
         ));
     }
@@ -860,7 +911,7 @@ mod tests {
             };
             assert!(
                 matches!(
-                    evaluate_transport_retry(&result, &state),
+                    evaluate_transport_retry(&result, &state, false),
                     ThrottleAction::Retry { .. }
                 ),
                 "attempt {attempt} should retry under a cap of 2"
@@ -873,7 +924,7 @@ mod tests {
             ..ThrottleRetryState::with_limits(2, max_wait)
         };
         assert!(matches!(
-            evaluate_transport_retry(&result, &state),
+            evaluate_transport_retry(&result, &state, false),
             ThrottleAction::Propagate
         ));
     }
@@ -890,7 +941,7 @@ mod tests {
 
         // 500ms accumulated + 2000ms next delay = 2.5s > 1s budget.
         assert!(matches!(
-            evaluate_transport_retry(&result, &state),
+            evaluate_transport_retry(&result, &state, false),
             ThrottleAction::Propagate
         ));
     }
@@ -908,7 +959,7 @@ mod tests {
         // so the throttle classifier propagates rather than scheduling
         // another retry.
         assert!(matches!(
-            evaluate_transport_retry(&result, &state),
+            evaluate_transport_retry(&result, &state, false),
             ThrottleAction::Propagate
         ));
     }
@@ -919,7 +970,48 @@ mod tests {
         let state = ThrottleRetryState::new();
 
         assert!(matches!(
-            evaluate_transport_retry(&result, &state),
+            evaluate_transport_retry(&result, &state, false),
+            ThrottleAction::Propagate
+        ));
+    }
+
+    #[test]
+    fn evaluate_transport_retry_dtx_bodyless_429_uses_shared_throttle() {
+        let result = make_throttled_result_with_retry_after(42);
+        let state = ThrottleRetryState::new();
+
+        assert!(matches!(
+            evaluate_transport_retry(&result, &state, true),
+            ThrottleAction::Retry { .. }
+        ));
+    }
+
+    #[test]
+    fn evaluate_transport_retry_dtx_bodyless_429_ru_budget_uses_shared_throttle() {
+        let result = make_throttled_result_with_substatus_and_retry_after(
+            SubStatusCode::RU_BUDGET_EXCEEDED,
+            42,
+        );
+        let state = ThrottleRetryState::new();
+
+        match evaluate_transport_retry(&result, &state, true) {
+            ThrottleAction::Retry { delay, .. } => {
+                assert_eq!(delay, Duration::from_millis(42));
+            }
+            other => panic!("expected shared throttle retry, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn evaluate_transport_retry_dtx_body_bearing_429_propagates_to_outer_loop() {
+        let mut result = make_throttled_result_with_retry_after(42);
+        if let TransportOutcome::HttpError { body, .. } = &mut result.outcome {
+            *body = br#"{"isRetriable":true}"#.to_vec();
+        }
+        let state = ThrottleRetryState::new();
+
+        assert!(matches!(
+            evaluate_transport_retry(&result, &state, true),
             ThrottleAction::Propagate
         ));
     }
@@ -989,6 +1081,8 @@ mod tests {
             endpoint: endpoint.clone(),
             url: endpoint.url().clone(),
             headers: azure_core::http::headers::Headers::new(),
+            #[cfg(feature = "preview_dtx")]
+            resource_type: ResourceType::Database,
             body: None,
             auth_context: super::super::AuthorizationContext::new(
                 azure_core::http::Method::Get,
@@ -1354,6 +1448,8 @@ mod tests {
             endpoint: endpoint.clone(),
             url: endpoint.url().clone(),
             headers: azure_core::http::headers::Headers::new(),
+            #[cfg(feature = "preview_dtx")]
+            resource_type: ResourceType::Database,
             body: None,
             auth_context: super::super::AuthorizationContext::new(
                 azure_core::http::Method::Get,

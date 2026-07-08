@@ -6,6 +6,8 @@
 pub mod account_metadata_refresh;
 pub mod batch;
 pub mod control_plane;
+#[cfg(feature = "preview_dtx")]
+pub mod distributed_transaction;
 pub mod error_cases;
 pub mod error_diagnostics;
 pub mod excluded_regions_fallback;
