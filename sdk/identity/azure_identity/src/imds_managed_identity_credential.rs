@@ -156,22 +156,28 @@ impl ImdsManagedIdentityCredential {
 
         if status == StatusCode::Unauthorized {
             if let Ok(challenge) = rsp.headers().get_str(&AUTHENTICATE_HEADER) {
-                let challenge_response = self.retrieve_challenge_response(challenge)?;
-                req.insert_header(AUTHORIZATION_HEADER, format!("Basic {challenge_response}"));
+                if let Some(challenge_location) = challenge
+                    .split_once('=')
+                    .map(|(_, location)| location.trim())
+                {
+                    let challenge_response =
+                        self.retrieve_challenge_response(challenge_location)?;
+                    req.insert_header(AUTHORIZATION_HEADER, format!("Basic {challenge_response}"));
 
-                // try the request again with the challenge response header. Then, drop through to the usual error handling and token extraction
-                rsp = self
-                    .pipeline
-                    .send(
-                        &ctx,
-                        &mut req,
-                        Some(PipelineSendOptions {
-                            skip_checks: true,
-                            ..Default::default()
-                        }),
-                    )
-                    .await?;
-                status = rsp.status();
+                    // try the request again with the challenge response header. Then, drop through to the usual error handling and token extraction
+                    rsp = self
+                        .pipeline
+                        .send(
+                            &ctx,
+                            &mut req,
+                            Some(PipelineSendOptions {
+                                skip_checks: true,
+                                ..Default::default()
+                            }),
+                        )
+                        .await?;
+                    status = rsp.status();
+                }
             }
         }
 
@@ -207,7 +213,7 @@ impl ImdsManagedIdentityCredential {
 
     // This is used for Arc for server's flavour of IMDS, where a challenge-response protocol is implemented.
     fn retrieve_challenge_response(&self, challenge: &str) -> Result<String, Error> {
-        let challenge_path = Path::new(challenge);
+        let challenge_path = Path::new(challenge).canonicalize()?;
         let expected_challenge_base = if cfg!(windows) {
             let program_data_dir = self.env.var("PROGRAMDATA")?;
             Path::new(&program_data_dir).join("AzureConnectedMachineAgent\\Tokens\\")

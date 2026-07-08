@@ -561,7 +561,7 @@ mod tests {
         let mut challenge_headers = Headers::default();
         let response_path = token_path.to_owned();
         let response_path_str = response_path.to_str().unwrap().to_string();
-        let response_header = HeaderValue::from(response_path_str);
+        let response_header = HeaderValue::from(format!("Realm={response_path_str}"));
 
         challenge_headers.insert("www-authenticate", response_header);
 
