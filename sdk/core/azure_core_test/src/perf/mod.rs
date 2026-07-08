@@ -48,6 +48,15 @@ pub trait PerfTest: Send + Sync {
 pub trait PerfTestFactory: Subcommand + Clone + Debug {
     fn name(&self) -> &'static str;
     fn create_test(&self) -> CreatePerfTestReturn;
+    fn peek(&self) -> PeekSubcommandInfo {
+        Default::default()
+    }
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct PeekSubcommandInfo {
+    // Resource size
+    pub size: Option<i64>,
 }
 
 pub type CreatePerfTestReturn =
@@ -129,15 +138,6 @@ struct PerfRunnerOptions<T: PerfTestFactory> {
     pub subcommand: T,
 }
 
-// Options which do not belong to the core perf runner, but may belong to a subcommand.
-// This is used to scan through arguments that may be present on a subcommand, allowing
-// the main PerfRunner to act on them if they exist.
-#[derive(Parser, Default, Debug, Clone)]
-struct SearchedSubcommandOptions {
-    #[arg(short, long, value_name = "SIZE")]
-    size: Option<i64>,
-}
-
 fn duration_seconds(s: &str) -> std::result::Result<Duration, String> {
     s.parse::<i64>()
         .map(Duration::seconds)
@@ -170,7 +170,6 @@ impl<T: PerfTestFactory> Display for PerfRunnerOptions<T> {
 #[derive(Debug, Clone)]
 pub struct PerfRunner<T: PerfTestFactory> {
     options: PerfRunnerOptions<T>,
-    searched_subcommand_options: SearchedSubcommandOptions,
     package_dir: &'static str,
     module_name: &'static str,
     progress: Arc<AtomicU64>,
@@ -191,7 +190,6 @@ impl<T: PerfTestFactory> PerfRunner<T> {
     ) -> std::result::Result<Self, clap::Error> {
         Ok(Self {
             options: PerfRunnerOptions::<T>::try_parse()?,
-            searched_subcommand_options: SearchedSubcommandOptions::try_parse().unwrap_or_default(),
             package_dir,
             module_name,
             progress: Arc::new(AtomicU64::new(0)),
@@ -206,8 +204,6 @@ impl<T: PerfTestFactory> PerfRunner<T> {
     ) -> std::result::Result<Self, clap::Error> {
         Ok(Self {
             options: PerfRunnerOptions::<T>::try_parse_from(args.iter())?,
-            searched_subcommand_options: SearchedSubcommandOptions::try_parse_from(args)
-                .unwrap_or_default(),
             package_dir,
             module_name,
             progress: Arc::new(AtomicU64::new(0)),
@@ -293,7 +289,7 @@ impl<T: PerfTestFactory> PerfRunner<T> {
                 // Still useful to print the latencies above even if we're not writing them to a file.
                 if !self.options.results_file.is_empty() {
                     // Detect size from the selected test's subcommand args, defaulting to -1.
-                    let size: i64 = self.searched_subcommand_options.size.unwrap_or(-1);
+                    let size: i64 = self.options.subcommand.peek().size.unwrap_or(-1);
 
                     let results: Vec<OperationResult> = latencies
                         .iter()

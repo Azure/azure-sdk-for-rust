@@ -10,7 +10,9 @@ mod list_blob_test;
 mod upload_blob_test;
 
 use azure_core::error::ResultExt;
-use azure_core_test::perf::{CreatePerfTestReturn, PerfRunner, PerfTestFactory};
+use azure_core_test::perf::{
+    CreatePerfTestReturn, PeekSubcommandInfo, PerfRunner, PerfTestFactory,
+};
 use clap::Subcommand;
 use download_blob_test::DownloadBlobTestOptions;
 use list_blob_test::ListBlobTestOptions;
@@ -44,6 +46,20 @@ impl PerfTestFactory for BlobTest {
             BlobTest::Download(_) => "DownloadBlob",
             BlobTest::DownloadInto(_) => "DownloadIntoBlob",
             BlobTest::List(_) => "ListBlob",
+        }
+    }
+    fn peek(&self) -> PeekSubcommandInfo {
+        match self {
+            BlobTest::Upload(options) => PeekSubcommandInfo {
+                size: Some(options.size as i64),
+            },
+            BlobTest::Download(options) => PeekSubcommandInfo {
+                size: Some(options.size as i64),
+            },
+            BlobTest::DownloadInto(options) => PeekSubcommandInfo {
+                size: Some(options.size as i64),
+            },
+            BlobTest::List(_) => PeekSubcommandInfo { size: None },
         }
     }
     fn create_test(&self) -> CreatePerfTestReturn {

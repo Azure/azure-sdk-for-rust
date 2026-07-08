@@ -28,7 +28,7 @@ const BLOB_NAME: &str = "perf-blob";
 pub struct DownloadBlobTestOptions {
     // The size of each blob in bytes.
     #[arg(long)]
-    size: usize,
+    pub size: usize,
 
     #[arg(long, default_value_t = CollectOptions::Stream, value_enum)]
     collect: CollectOptions,

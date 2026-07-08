@@ -24,7 +24,7 @@ use crate::{
 pub struct UploadBlobTestOptions {
     // The size of each blob in bytes.
     #[arg(long)]
-    size: usize,
+    pub size: usize,
 
     // Number of concurrent network transfers.
     #[arg(long, value_parser = non_zero_usize)]

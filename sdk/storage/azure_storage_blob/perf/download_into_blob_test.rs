@@ -28,7 +28,7 @@ const BLOB_NAME: &str = "perf-blob";
 pub struct DownloadIntoBlobTestOptions {
     // The size of each blob in bytes.
     #[arg(long)]
-    size: usize,
+    pub size: usize,
 
     // Number of concurrent network transfers.
     #[arg(long, value_parser = non_zero_usize)]
