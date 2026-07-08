@@ -434,6 +434,47 @@ pub async fn hpk_item_too_many_components_point_op_fails() -> Result<(), Box<dyn
     .await
 }
 
+/// A8: a point read for an existing id addressed to a *different* (but valid,
+/// full) logical partition must return 404 — the item does not live in the
+/// partition being read, so it is not found there.
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+pub async fn hpk_item_wrong_partition_read_not_found() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container = seed_three_level(run_context, db_client).await?;
+
+            // `la-1` really lives in (USA, CA, LosAngeles); confirm it is readable there.
+            run_context
+                .read_item(
+                    &container,
+                    PartitionKey::from(("USA", "CA", "LosAngeles")),
+                    "la-1",
+                    None,
+                )
+                .await?;
+
+            // Reading the same id from a different (valid, full) partition 404s.
+            let err = container
+                .read_item(PartitionKey::from(("USA", "WA", "Seattle")), "la-1", None)
+                .await
+                .expect_err("reading an id from the wrong partition should fail");
+            assert_eq!(
+                err.status().status_code(),
+                StatusCode::NotFound,
+                "reading an existing id from the wrong logical partition should 404"
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
 // ─── Group B — HPK queries ───────────────────────────────────────────────────
 
 /// B1: a query scoped to a full 3-level key returns exactly that partition.
@@ -601,6 +642,160 @@ pub async fn hpk_query_cross_partition_full_container() -> Result<(), Box<dyn Er
                 "cross-partition USA filter should match 8 items"
             );
             assert!(!items.contains(&"Toronto".to_string()));
+
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+// ─── Group B (cont.) — query-surface semantics ───────────────────────────────
+
+/// B7: a SQL filter on a *non-leading* partition-key path, scoped to a routed
+/// partition, is served by the backend (server-side SQL filtering works even
+/// though prefix routing itself does not filter — see #4680).
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+pub async fn hpk_query_secondary_path_filter_servable() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container = seed_three_level(run_context, db_client).await?;
+
+            // Route to the (USA, CA) prefix and let the server filter on the
+            // non-leading `/city` path via SQL.
+            let items: Vec<GeoItem> = collect_query::<GeoItem>(
+                &container,
+                "SELECT * FROM c WHERE c.city = 'SanFrancisco'",
+                FeedScope::partition(("USA", "CA")),
+            )
+            .await?;
+
+            assert_eq!(
+                items.len(),
+                2,
+                "secondary-path filter should match 2 SF items"
+            );
+            assert!(items.iter().all(|i| i.city == "SanFrancisco"));
+            assert_eq!(
+                sorted_ids(items.into_iter().map(|i| i.id)),
+                vec!["sf-1", "sf-2"]
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+/// B8: an `ORDER BY` scoped to a single logical partition is servable — the
+/// backend serves the sort within one partition without the client-side
+/// cross-partition pipeline.
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+pub async fn hpk_query_single_partition_order_by_servable() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container = seed_three_level(run_context, db_client).await?;
+
+            let items: Vec<GeoItem> = collect_query::<GeoItem>(
+                &container,
+                "SELECT * FROM c ORDER BY c.population DESC",
+                FeedScope::partition(("USA", "CA", "LosAngeles")),
+            )
+            .await?;
+
+            // The 3 LA items, sorted by population descending.
+            assert_eq!(
+                items.iter().map(|i| i.id.clone()).collect::<Vec<_>>(),
+                vec!["la-3", "la-2", "la-1"],
+                "single-partition ORDER BY should return the LA items population-descending"
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+/// B9: cross-partition advanced query operators (`DISTINCT`, aggregates,
+/// `GROUP BY`, `OFFSET/LIMIT`) over a hierarchical container are not servable.
+///
+/// The Rust SDK advertises no cross-partition query features
+/// (`SUPPORTED_QUERY_FEATURES=""`), so any full-container query that needs a
+/// client-side pipeline is rejected. On hierarchical containers this is
+/// compounded by the cross-partition fan-out defect (#4681), so these fail
+/// regardless of operator. Each case is expected to error (400 BadRequest /
+/// 1004 CrossPartitionQueryNotServable).
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+pub async fn hpk_query_cross_partition_advanced_not_servable() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container = seed_three_level(run_context, db_client).await?;
+
+            let advanced = [
+                "SELECT DISTINCT c.country FROM c",
+                "SELECT VALUE COUNT(1) FROM c",
+                "SELECT c.state, COUNT(1) AS n FROM c GROUP BY c.state",
+                "SELECT * FROM c OFFSET 1 LIMIT 2",
+            ];
+
+            for query in advanced {
+                let result = collect_query::<serde_json::Value>(
+                    &container,
+                    query,
+                    FeedScope::full_container(),
+                )
+                .await;
+                assert!(
+                    result.is_err(),
+                    "cross-partition query should not be servable on an HPK container: {query}"
+                );
+            }
+
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+/// B10: a full-key equality predicate over the whole container should route to
+/// the single owning partition (closed point) and return the matching docs.
+///
+/// Currently ignored: the full-key equality/`IN` collapse-to-point fix lives in
+/// PR #4638 (issue #4574), which is not yet merged. Until then this predicate
+/// shape either panics the query worker or is rejected. Re-enable once #4638
+/// lands.
+#[tokio::test]
+#[ignore = "GAP (#4574/#4638): full-key equality over full_container collapses to an empty point and \
+            is not servable until PR #4638 merges. Re-enable once the equality/IN point-routing fix lands."]
+pub async fn hpk_query_full_key_equality_cross_partition() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container = seed_three_level(run_context, db_client).await?;
+
+            let items: Vec<GeoItem> = collect_query::<GeoItem>(
+                &container,
+                "SELECT * FROM c WHERE c.country = 'USA' AND c.state = 'CA' AND c.city = 'LosAngeles'",
+                FeedScope::full_container(),
+            )
+            .await?;
+
+            assert_eq!(items.len(), 3, "full-key equality should route to and return the 3 LA items");
+            assert!(items.iter().all(|i| i.city == "LosAngeles"));
 
             Ok(())
         },

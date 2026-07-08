@@ -14,7 +14,7 @@
 
 ### Other Changes
 
-- Added an `emulator_tests::cosmos_hpk` integration-test module and extended `cosmos_feed_ranges` with hierarchical-partition-key (HPK) negative validation tests, covering item CRUD, patch, full-key/prefix/cross-partition queries, component value edge cases (numeric/bool/empty), transactional batch, and feed-range validation against the Cosmos emulator. ([#4155](https://github.com/Azure/azure-sdk-for-rust/issues/4155))
+- Added an `emulator_tests::cosmos_hpk` integration-test module and extended `cosmos_feed_ranges` with hierarchical-partition-key (HPK) negative validation tests, covering item CRUD, patch, wrong-partition reads, full-key/prefix/cross-partition queries, query-surface semantics (secondary-path filtering, single-partition `ORDER BY`, and cross-partition operator rejection), component value edge cases (numeric/bool/empty), transactional batch, and feed-range validation against the Cosmos emulator. ([#4155](https://github.com/Azure/azure-sdk-for-rust/issues/4155))
 
 ## 0.36.0 (2026-06-19)
 
