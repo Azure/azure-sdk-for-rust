@@ -4,19 +4,12 @@
 
 ### Features Added
 
+- Updated the default service version to `2026-10-06`.
 - Added support for `get_user_delegation_key` to `BlobServiceClient`.
 - Added support for `list_blobs_hierarchical` to `BlobContainerClient`.
 - Added support for `list_page_ranges` to `PageBlobClient`.
 - Added `access_tier`, `access_tier_changed_on`, `access_tier_inferred`, and `smart_access_tier` to `BlobDownloadProperties`.
 - `BlockBlobClient::upload_blob_from_url()` now returns the `content_crc64` response header alongside `content_md5` when applicable.
-
-### Breaking Changes
-
-### Bugs Fixed
-
-### Other Changes
-
-- Updated the default service version to `2026-10-06`.
 
 ## 1.0.0 (2026-05-13)
 
