@@ -23,8 +23,9 @@ use azure_core::http::StatusCode;
 use azure_data_cosmos::{
     models::{ContainerProperties, DatabaseProperties, ItemResponse, ThroughputProperties},
     options::{
-        ContentResponseOnWrite, CreateContainerOptions, ItemReadOptions, ItemWriteOptions,
-        OperationOptions, OperationOptionsBuilder, Region, ThrottlingRetryOptionsBuilder,
+        AvailabilityStrategy, ContentResponseOnWrite, CreateContainerOptions, ItemReadOptions,
+        ItemWriteOptions, OperationOptions, OperationOptionsBuilder, Region,
+        ThrottlingRetryOptionsBuilder,
     },
     AccountEndpoint, AccountReference, ContainerClient, CosmosClient, CosmosClientBuilder,
     CosmosRuntimeBuilder, FeedScope, Query, RoutingStrategy, TransactionalBatch,
@@ -368,6 +369,13 @@ fn write_options_with_content() -> ItemWriteOptions {
     let mut operation = OperationOptions::default();
     operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
     ItemWriteOptions::default().with_operation_options(operation)
+}
+
+fn read_options_without_hedging() -> ItemReadOptions {
+    let mut operation = OperationOptions::default();
+    operation.hedging_enabled = Some(false);
+    operation.availability_strategy = Some(AvailabilityStrategy::Disabled);
+    ItemReadOptions::default().with_operation_options(operation)
 }
 
 /// Extracts the session token's global LSN from a write response, asserting the
@@ -1238,9 +1246,10 @@ async fn sdk_create_duplicate_item_returns_conflict() {
 #[tokio::test]
 async fn sdk_read_nonexistent_item_returns_not_found() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
+    let read_options = read_options_without_hedging();
 
     let emu_err = emu_container
-        .read_item("pk1", "does-not-exist", None)
+        .read_item("pk1", "does-not-exist", Some(read_options.clone()))
         .await
         .expect_err("emulator: reading nonexistent item should fail");
     assert_eq!(
@@ -1251,7 +1260,7 @@ async fn sdk_read_nonexistent_item_returns_not_found() {
 
     if let Some(ref real) = real_container {
         let real_err = real
-            .read_item("pk1", "does-not-exist", None)
+            .read_item("pk1", "does-not-exist", Some(read_options))
             .await
             .expect_err("real: reading nonexistent item should fail");
         compare_sdk_errors(&real_err, &emu_err);
