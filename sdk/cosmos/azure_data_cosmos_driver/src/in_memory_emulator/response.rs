@@ -203,6 +203,11 @@ impl ResponseBuilder {
         self
     }
 
+    pub fn without_header(mut self, name: HeaderName) -> Self {
+        self.headers.remove(name);
+        self
+    }
+
     /// Adds the Retry-After header (in milliseconds) for throttling responses.
     pub fn with_retry_after_ms(mut self, ms: u64) -> Self {
         self.headers

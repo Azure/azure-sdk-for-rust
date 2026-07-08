@@ -25,7 +25,7 @@ use crate::{
     models::{
         effective_partition_key::EffectivePartitionKey, AccountEndpoint, AccountReference,
         ContainerProperties, ContainerReference, ContinuationToken, CosmosOperation,
-        DatabaseReference, PartitionKey, ResolvedToken, ResourceType, UserAgent,
+        DatabaseReference, FeedRange, PartitionKey, ResolvedToken, ResourceType, UserAgent,
         UserAgentFeatureFlags,
     },
     options::{
@@ -39,7 +39,21 @@ use futures::future::BoxFuture;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
+#[cfg(feature = "preview_dtx")]
+use std::time::Instant;
 use url::Url;
+
+#[cfg(feature = "preview_dtx")]
+const DTX_OUTER_MAX_RETRIES: u32 = 10;
+// Matches .NET DistributedTransactionCommitter.MaxCumulativeRetryDelay (30 s).
+#[cfg(feature = "preview_dtx")]
+const DTX_OUTER_MAX_CUMULATIVE_DELAY: Duration = Duration::from_secs(30);
+#[cfg(feature = "preview_dtx")]
+const DTX_OUTER_BASE_DELAY: Duration = Duration::from_secs(1);
+#[cfg(feature = "preview_dtx")]
+const DTX_OUTER_MAX_EXPONENT: u32 = 5;
+#[cfg(feature = "preview_dtx")]
+const DTX_OUTER_JITTER_RATIO: f64 = 0.25;
 
 #[cfg(feature = "tokio")]
 use super::routing::EndpointProbeFn;
@@ -1937,6 +1951,182 @@ impl CosmosDriver {
         }
     }
 
+    /// Executes a preview distributed transaction through the Gateway coordinator.
+    #[cfg(feature = "preview_dtx")]
+    pub async fn execute_distributed_transaction(
+        &self,
+        mut request: crate::models::DistributedTransactionRequest,
+        mut options: OperationOptions,
+    ) -> crate::error::Result<crate::models::DistributedTransactionResponse> {
+        if request.operations.is_empty() {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message("cannot execute a distributed transaction with zero operations")
+                .build());
+        }
+
+        let operation_count = request.operations.len();
+        let is_session_consistency = {
+            let effective_options = self.operation_options_view(&options);
+            let session_capturing_disabled = effective_options
+                .session_capturing_disabled()
+                .copied()
+                .unwrap_or(false);
+            let read_consistency_strategy = effective_options
+                .read_consistency_strategy()
+                .copied()
+                .unwrap_or(crate::options::ReadConsistencyStrategy::Default);
+            let account_endpoint = AccountEndpoint::from(self.options.account());
+            let account_properties = self
+                .runtime
+                .account_metadata_cache()
+                .get_or_fetch(account_endpoint, || {
+                    self.fetch_account_properties(self.options.account())
+                })
+                .await?;
+            !session_capturing_disabled
+                && read_consistency_strategy.is_session_effective(
+                    account_properties
+                        .user_consistency_policy
+                        .default_consistency_level,
+                )
+        };
+        // Under Session consistency, stamp each operation that lacks an explicit
+        // token with the resolved session token *before* serialization so the
+        // coordinator honors read-your-own-writes (mirrors .NET
+        // ResolvePartitionLocalToken).
+        if is_session_consistency {
+            self.resolve_distributed_transaction_session_tokens(&mut request.operations)
+                .await;
+        }
+        let body = request.serialize_body()?;
+        let operation = CosmosOperation::distributed_transaction(
+            self.options.account().clone(),
+            request.transaction_type,
+        )
+        .with_body(body);
+
+        let custom_headers = options.custom_headers.get_or_insert_with(Default::default);
+        custom_headers.insert(
+            azure_core::http::headers::HeaderName::from_static(
+                crate::models::request_header_names::DTX_IDEMPOTENCY_TOKEN,
+            ),
+            azure_core::http::headers::HeaderValue::from(request.idempotency_token.to_string()),
+        );
+        custom_headers.insert(
+            azure_core::http::headers::HeaderName::from_static(
+                crate::models::request_header_names::DTX_OPERATION_TYPE,
+            ),
+            azure_core::http::headers::HeaderValue::from(match request.transaction_type {
+                crate::models::DistributedTransactionType::Write => "CommitDistributedTransaction",
+                crate::models::DistributedTransactionType::Read => "Read",
+            }),
+        );
+        custom_headers.insert(
+            azure_core::http::headers::HeaderName::from_static(
+                crate::models::request_header_names::DTX_RESOURCE_TYPE,
+            ),
+            azure_core::http::headers::HeaderValue::from_static(
+                crate::models::cosmos_headers::DTX_RESOURCE_TYPE_HEADER_VALUE,
+            ),
+        );
+
+        // Bound the outer retry loop by the caller's end-to-end latency budget.
+        // Each iteration re-enters the pipeline with a *fresh* per-attempt
+        // deadline (computed as `now + timeout` inside the pipeline), so without
+        // an absolute ceiling here the caller's total timeout would not
+        // constrain the retry loop — only the retry-count and cumulative-delay
+        // caps would. Captured once, before the first attempt, from the same
+        // `end_to_end_latency_policy` the pipeline uses.
+        let outer_deadline = self
+            .operation_options_view(&options)
+            .end_to_end_latency_policy()
+            .map(|policy| Instant::now() + policy.timeout());
+
+        let mut retry_count = 0_u32;
+        let mut cumulative_delay = Duration::ZERO;
+
+        loop {
+            let response = self
+                .execute_singleton_operation(operation.clone(), options.clone())
+                .await?;
+            let status = response.status();
+            let headers = response.headers().clone();
+            let diagnostics = response.diagnostics();
+            let retry_after_ms = headers.retry_after_ms;
+            let body = response.into_body().single()?;
+
+            let response = crate::models::DistributedTransactionResponse::from_body(
+                status.status_code(),
+                status.sub_status(),
+                body.as_ref(),
+                operation_count,
+                request.idempotency_token,
+            )
+            .with_response_headers(&headers)
+            .with_diagnostics(diagnostics);
+
+            let retry_delay = distributed_transaction_outer_retry_delay(
+                &response,
+                retry_after_ms,
+                retry_count,
+                cumulative_delay,
+                outer_deadline,
+            );
+            let Some(retry_delay) = retry_delay else {
+                self.session_manager
+                    .merge_distributed_transaction_session_tokens(
+                        &response,
+                        &request.operations,
+                        is_session_consistency,
+                    )?;
+
+                return Ok(response);
+            };
+
+            retry_count += 1;
+            cumulative_delay = cumulative_delay.saturating_add(retry_delay);
+            azure_core::sleep(
+                azure_core::time::Duration::try_from(retry_delay)
+                    .unwrap_or(azure_core::time::Duration::ZERO),
+            )
+            .await;
+        }
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    async fn resolve_distributed_transaction_session_tokens(
+        &self,
+        operations: &mut [crate::models::DistributedTransactionOperation],
+    ) {
+        for operation in operations.iter_mut() {
+            if operation.session_token.is_some() {
+                continue;
+            }
+
+            let ranges = self
+                .resolve_partition_key_ranges_for_key(
+                    &operation.target.container,
+                    &operation.target.partition_key,
+                    false,
+                )
+                .await;
+            let range = ranges.as_deref().and_then(|ranges| match ranges {
+                [single] => Some(single),
+                _ => None,
+            });
+
+            if let Some(token) = self
+                .session_manager
+                .resolve_distributed_transaction_session_token(operation, range)
+            {
+                operation.session_token = Some(token);
+            }
+        }
+    }
+
     /// Executes a single page of a pre-planned operation using the given plan and options.
     ///
     /// This function mutates the plan in place to account for any changes that occur during execution
@@ -2266,7 +2456,39 @@ impl CosmosDriver {
             return Ok(OperationPlan::new(pipeline, operation));
         }
 
-        // 2. Cross-partition query: obtain a query plan and build the fan-out
+        // 2. Change feed: resolve the target feed range against the current
+        //    topology and build an UnorderedMerge pipeline (no query plan
+        //    needed). Children are polled round-robin and never evicted on
+        //    304 so the stream is infinite.
+        if operation.is_change_feed() {
+            let container = operation.container().ok_or_else(|| {
+                crate::error::CosmosError::builder()
+                    .with_status(
+                        crate::error::CosmosStatus::CLIENT_CROSS_PARTITION_QUERY_REQUIRES_CONTAINER_REF,
+                    )
+                    .with_message("cross-partition change feed requires a container reference")
+                    .build()
+            })?;
+            let feed_range = operation.target().cloned().unwrap_or_else(FeedRange::full);
+            let container_ref = container.clone();
+            let mut topology = CachedTopologyProvider::new(
+                &self.pk_range_cache,
+                container_ref,
+                |container, continuation| {
+                    self.fetch_pk_ranges_from_service(container, continuation)
+                },
+            );
+            let pipeline = planner::build_unordered_merge(
+                &feed_range,
+                &mut topology,
+                &operation,
+                resume_state,
+            )
+            .await?;
+            return Ok(OperationPlan::new(pipeline, operation));
+        }
+
+        // 3. Cross-partition query: obtain a query plan and build the fan-out
         //    pipeline. Try the native FFI provider first (no network call),
         //    falling back to the Gateway if unavailable.
         let container = operation.container().ok_or_else(|| {
@@ -2497,6 +2719,54 @@ impl CosmosDriver {
     }
 }
 
+#[cfg(feature = "preview_dtx")]
+fn distributed_transaction_outer_retry_delay(
+    response: &crate::models::DistributedTransactionResponse,
+    retry_after_ms: Option<u64>,
+    retry_count: u32,
+    cumulative_delay: Duration,
+    deadline: Option<Instant>,
+) -> Option<Duration> {
+    if response.is_completed_status_code() || !response.is_retriable {
+        return None;
+    }
+
+    if retry_count >= DTX_OUTER_MAX_RETRIES {
+        return None;
+    }
+
+    let computed_delay = distributed_transaction_outer_computed_delay(retry_count);
+    let server_delay = retry_after_ms
+        .map(Duration::from_millis)
+        .unwrap_or(Duration::ZERO);
+    let delay = computed_delay.max(server_delay);
+    let next_cumulative = cumulative_delay.checked_add(delay)?;
+    if next_cumulative > DTX_OUTER_MAX_CUMULATIVE_DELAY {
+        return None;
+    }
+
+    // Never sleep past the caller's end-to-end deadline: if the next attempt
+    // could not start until at or after the deadline, stop and surface the
+    // current response instead of retrying.
+    if let Some(deadline) = deadline {
+        if Instant::now() + delay >= deadline {
+            return None;
+        }
+    }
+
+    Some(delay)
+}
+
+#[cfg(feature = "preview_dtx")]
+fn distributed_transaction_outer_computed_delay(retry_count: u32) -> Duration {
+    let exponent = retry_count.min(DTX_OUTER_MAX_EXPONENT);
+    let delay_seconds = DTX_OUTER_BASE_DELAY.as_secs_f64() * 2_f64.powi(exponent as i32);
+    Duration::from_secs_f64(crate::driver::jitter::with_jitter(
+        delay_seconds,
+        DTX_OUTER_JITTER_RATIO,
+    ))
+}
+
 /// Sends a lightweight `GET /probe` connectivity check to a single endpoint
 /// and reports whether the endpoint is reachable.
 ///
@@ -2636,6 +2906,11 @@ mod tests {
         }
     }
 
+    fn scripted_client(plan: ResponsePlan) -> Arc<dyn TransportClient> {
+        let client: Box<dyn TransportClient> = Box::new(ScriptedClient { plan });
+        Arc::from(client)
+    }
+
     #[derive(Debug)]
     struct ScriptedFactory {
         configs: Mutex<Vec<HttpClientConfig>>,
@@ -2673,7 +2948,7 @@ mod tests {
                 .pop_front()
                 .unwrap_or(ResponsePlan::Success);
 
-            Ok(Arc::new(ScriptedClient { plan }))
+            Ok(scripted_client(plan))
         }
     }
 
@@ -2682,6 +2957,162 @@ mod tests {
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "test-key",
         )
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    fn dtx_response(
+        status_code: azure_core::http::StatusCode,
+        is_retriable: bool,
+    ) -> crate::models::DistributedTransactionResponse {
+        crate::models::DistributedTransactionResponse {
+            status_code,
+            sub_status_code: None,
+            operation_results: Vec::new(),
+            idempotency_token: uuid::Uuid::nil(),
+            headers: Default::default(),
+            activity_id: None,
+            request_charge: None,
+            retry_after_ms: None,
+            diagnostics: None,
+            is_retriable,
+            diagnostic_string: None,
+            error_message: None,
+        }
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn dtx_outer_retry_delay_stops_on_success_or_non_retriable() {
+        assert!(distributed_transaction_outer_retry_delay(
+            &dtx_response(azure_core::http::StatusCode::Ok, true),
+            None,
+            0,
+            Duration::ZERO,
+            None,
+        )
+        .is_none());
+        assert!(distributed_transaction_outer_retry_delay(
+            &dtx_response(azure_core::http::StatusCode::from(449_u16), false),
+            None,
+            0,
+            Duration::ZERO,
+            None,
+        )
+        .is_none());
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn dtx_outer_retry_delay_uses_larger_retry_after() {
+        let delay = distributed_transaction_outer_retry_delay(
+            &dtx_response(azure_core::http::StatusCode::from(449_u16), true),
+            Some(5_000),
+            0,
+            Duration::ZERO,
+            None,
+        )
+        .unwrap();
+
+        assert_eq!(delay, Duration::from_secs(5));
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn dtx_outer_retry_delay_stops_at_retry_cap_and_cumulative_budget() {
+        let response = dtx_response(azure_core::http::StatusCode::from(449_u16), true);
+        assert!(distributed_transaction_outer_retry_delay(
+            &response,
+            None,
+            DTX_OUTER_MAX_RETRIES,
+            Duration::ZERO,
+            None,
+        )
+        .is_none());
+        assert!(distributed_transaction_outer_retry_delay(
+            &response,
+            Some(1_000),
+            0,
+            DTX_OUTER_MAX_CUMULATIVE_DELAY,
+            None,
+        )
+        .is_none());
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn dtx_outer_retry_delay_stops_at_caller_deadline() {
+        let response = dtx_response(azure_core::http::StatusCode::from(449_u16), true);
+
+        // A deadline already in the past stops the outer loop even though the
+        // retry-count and cumulative-delay budgets still allow a retry.
+        assert!(distributed_transaction_outer_retry_delay(
+            &response,
+            None,
+            0,
+            Duration::ZERO,
+            Some(Instant::now() - Duration::from_secs(1)),
+        )
+        .is_none());
+
+        // A generous deadline leaves the normal retry behavior intact.
+        assert!(distributed_transaction_outer_retry_delay(
+            &response,
+            None,
+            0,
+            Duration::ZERO,
+            Some(Instant::now() + Duration::from_secs(3600)),
+        )
+        .is_some());
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn dtx_bodyless_infra_envelope_stops_outer_loop() {
+        // Two-tier retry composition: after the inner bodyless classifier
+        // exhausts its infra budget it surfaces the body-less 500/5411 envelope
+        // as a completed transport result. `from_body` must parse that empty
+        // body as non-retriable (`isRetriable` defaults to false), so the outer
+        // coordinator loop stops instead of retrying a body-less envelope.
+        let response = crate::models::DistributedTransactionResponse::from_body(
+            azure_core::http::StatusCode::InternalServerError,
+            Some(crate::models::SubStatusCode::DTC_LEDGER_FAILURE),
+            &[],
+            1,
+            uuid::Uuid::nil(),
+        );
+        assert!(!response.is_retriable);
+        assert!(distributed_transaction_outer_retry_delay(
+            &response,
+            None,
+            0,
+            Duration::ZERO,
+            None,
+        )
+        .is_none());
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn dtx_body_bearing_retriable_envelope_drives_outer_loop() {
+        // The complement: a body-bearing coordinator envelope that declares
+        // `isRetriable` keeps the outer loop retrying (within budget). This is
+        // the hand-off the inner classifier defers to for body-bearing results.
+        let response = crate::models::DistributedTransactionResponse::from_body(
+            azure_core::http::StatusCode::from(449_u16),
+            Some(crate::models::SubStatusCode::DTC_COORDINATOR_RACE_CONFLICT),
+            br#"{"isRetriable":true}"#,
+            1,
+            uuid::Uuid::nil(),
+        );
+        assert!(response.is_retriable);
+        assert!(distributed_transaction_outer_retry_delay(
+            &response,
+            None,
+            0,
+            Duration::ZERO,
+            None,
+        )
+        .is_some());
     }
 
     #[tokio::test]
@@ -3518,9 +3949,7 @@ mod tests {
     /// not relabeled as `SERIALIZATION_RESPONSE_BODY_INVALID` ("missing field `_self`").
     #[tokio::test]
     async fn fetch_account_properties_surfaces_5xx_body_as_status_error() {
-        let client: Arc<dyn TransportClient> = Arc::new(ScriptedClient {
-            plan: ResponsePlan::ServiceUnavailable503,
-        });
+        let client = scripted_client(ResponsePlan::ServiceUnavailable503);
         let transport =
             crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
@@ -3613,12 +4042,17 @@ mod tests {
         }
     }
 
+    fn raw_response_client(status: u16, body: Vec<u8>) -> Arc<dyn TransportClient> {
+        let client: Box<dyn TransportClient> = Box::new(RawResponseClient { status, body });
+        Arc::from(client)
+    }
+
     async fn drive_fetch_with(
         status: u16,
         body: Vec<u8>,
     ) -> std::result::Result<crate::driver::cache::AccountProperties, crate::error::CosmosError>
     {
-        let client: Arc<dyn TransportClient> = Arc::new(RawResponseClient { status, body });
+        let client = raw_response_client(status, body);
         let transport =
             crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
@@ -3655,11 +4089,13 @@ mod tests {
         }
     }
 
+    fn unreachable_client() -> Arc<dyn TransportClient> {
+        let client: Box<dyn TransportClient> = Box::new(UnreachableClient);
+        Arc::from(client)
+    }
+
     async fn drive_probe_with(status: u16) -> bool {
-        let client: Arc<dyn TransportClient> = Arc::new(RawResponseClient {
-            status,
-            body: Vec::new(),
-        });
+        let client = raw_response_client(status, Vec::new());
         let transport =
             crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
@@ -3670,7 +4106,7 @@ mod tests {
     }
 
     async fn drive_probe_unreachable() -> bool {
-        let client: Arc<dyn TransportClient> = Arc::new(UnreachableClient);
+        let client = unreachable_client();
         let transport =
             crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
@@ -3966,7 +4402,8 @@ mod tests {
             }
         }
 
-        let client: Arc<dyn TransportClient> = Arc::new(FailingTransportClient);
+        let client: Box<dyn TransportClient> = Box::new(FailingTransportClient);
+        let client = Arc::from(client);
         let transport =
             crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
@@ -4033,16 +4470,15 @@ mod tests {
 
         // Use a transport that would succeed if we ever got there, so a failed assertion
         // produces an obviously-wrong shape rather than a confused network-error message.
-        let client: Arc<dyn TransportClient> = Arc::new(ScriptedClient {
-            plan: ResponsePlan::Success,
-        });
+        let client = scripted_client(ResponsePlan::Success);
         let transport =
             crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let credential: Box<dyn TokenCredential> = Box::new(BrokenCredential);
         let account = AccountReference::with_credential(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
-            Arc::new(BrokenCredential),
+            Arc::from(credential),
         );
         let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
 
