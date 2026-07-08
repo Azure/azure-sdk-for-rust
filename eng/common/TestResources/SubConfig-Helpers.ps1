@@ -83,6 +83,7 @@ function ShouldMarkValueAsSecret([string]$serviceName, [string]$key, [string]$va
         "ENDPOINT_SUFFIX",
         "SERVICE_DIRECTORY",
         "RUST_TEST_THREADS",
+        "RUST_BACKTRACE",
         "COSMOS_RUSTFLAGS",
         "DATABASE_NAME",
         "ACCOUNT_HOST",
