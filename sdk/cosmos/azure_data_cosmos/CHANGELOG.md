@@ -17,6 +17,7 @@
 ### Other Changes
 
 - Added an `emulator_tests::cosmos_hpk` integration-test module and extended `cosmos_feed_ranges` with hierarchical-partition-key (HPK) negative validation tests, covering item CRUD, patch, wrong-partition reads, full-key/prefix/cross-partition queries, query-surface semantics (secondary-path filtering, single-partition `ORDER BY`, and cross-partition operator rejection), component value edge cases (numeric/bool/empty), transactional batch, and feed-range validation against the Cosmos emulator. ([#4155](https://github.com/Azure/azure-sdk-for-rust/issues/4155))
+- Added an `in_memory_emulator_tests::cosmos_hpk_split` module (gated on the internal `__internal_in_memory_emulator` feature) that exercises HPK over a multi–physical-partition ("split") topology using the in-memory emulator: multi-partition topology reporting, full-key single-partition targeting, deterministic dataset distribution across partitions with cross-partition query fan-out, and a real `split_partition` that preserves data and routing. This covers the Class C split scenarios that a single-partition emulator container cannot reproduce, with no live account required. ([#4155](https://github.com/Azure/azure-sdk-for-rust/issues/4155))
 
 ## 0.36.0 (2026-06-19)
 

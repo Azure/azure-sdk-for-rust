@@ -6,6 +6,7 @@
 //! azure_data_cosmos client surface and (optionally) compare against a
 //! real Cosmos DB account.
 
+pub mod cosmos_hpk_split;
 pub mod driver_end_to_end;
 #[cfg(feature = "preview_dtx")]
 pub mod dtx_live_comparison;
