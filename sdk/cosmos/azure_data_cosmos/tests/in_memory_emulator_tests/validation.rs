@@ -287,10 +287,7 @@ pub fn compare_responses(
     );
 
     // ── Headers ──────────────────────────────────────────────────
-    let header_pairs = extract_header_pairs(&real.headers, &emulator.headers);
-    for (name, real_val, emu_val) in &header_pairs {
-        validate_header_field(name, real_val, emu_val, header_spec.rule_for(name));
-    }
+    compare_headers(&real.headers, &emulator.headers, header_spec);
 
     // ── Body ─────────────────────────────────────────────────────
     match body_spec {
@@ -308,6 +305,18 @@ pub fn compare_responses(
         BodyValidationSpec::DocumentMatch => {
             validate_body_document(&real.body, &emulator.body);
         }
+    }
+}
+
+/// Compares parsed Cosmos response headers according to the given validation spec.
+pub fn compare_headers(
+    real: &CosmosResponseHeaders,
+    emulator: &CosmosResponseHeaders,
+    header_spec: &HeaderValidationSpec,
+) {
+    let header_pairs = extract_header_pairs(real, emulator);
+    for (name, real_val, emu_val) in &header_pairs {
+        validate_header_field(name, real_val, emu_val, header_spec.rule_for(name));
     }
 }
 

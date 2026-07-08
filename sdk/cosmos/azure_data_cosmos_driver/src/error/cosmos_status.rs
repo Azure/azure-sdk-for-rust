@@ -326,6 +326,7 @@ impl SubStatusCode {
             // 449: Retry With
             5350 => Some("RbacAadGroupUnavailable"),
             5351 => Some("AzureRbacAccessDecisionUnavailable"),
+            5352 => Some("DtcCoordinatorRaceConflict"),
 
             // 500: Internal Server Error
             3001 => Some("ConfigurationNameNotEmpty"),
@@ -337,6 +338,10 @@ impl SubStatusCode {
             3042 => Some("OperationCancelledWithNoRollback"),
             3043 => Some("SplitTimedOut"),
             5360 => Some("RbacDisabledDueToArmPath"),
+            5411 => Some("DtcLedgerFailure"),
+            5412 => Some("DtcAccountConfigFailure"),
+            5413 => Some("DtcDispatchFailure"),
+            5415 => Some("DtcOperationRolledBack"),
 
             // 503: Service Unavailable
             1337 => Some("GoneException"),
@@ -509,6 +514,7 @@ impl SubStatusCode {
             20209 => Some("ClientCrossPartitionQueryRequiresContainerRef"),
             20210 => Some("ClientSingletonOperationReturnedEmptyPage"),
             20211 => Some("ClientComputeRangeInvokedWithEmptyPartitionKey"),
+            20212 => Some("ClientChangeFeedPipelineUnexpectedlyDrained"),
             20213 => Some("ClientContinuationTokenSavedRangeUnhonored"),
             20300 => Some("ClientNoOverlappingFeedRangesForSessionToken"),
             20301 => Some("ClientNoThroughputOfferForResource"),
@@ -835,6 +841,26 @@ impl SubStatusCode {
 
     /// RU budget exceeded (3200).
     pub const RU_BUDGET_EXCEEDED: SubStatusCode = SubStatusCode(3200);
+
+    /// DTX coordinator race conflict (5352).
+    #[cfg(feature = "preview_dtx")]
+    pub const DTC_COORDINATOR_RACE_CONFLICT: SubStatusCode = SubStatusCode(5352);
+
+    /// DTX ledger failure (5411).
+    #[cfg(feature = "preview_dtx")]
+    pub const DTC_LEDGER_FAILURE: SubStatusCode = SubStatusCode(5411);
+
+    /// DTX account configuration failure (5412).
+    #[cfg(feature = "preview_dtx")]
+    pub const DTC_ACCOUNT_CONFIG_FAILURE: SubStatusCode = SubStatusCode(5412);
+
+    /// DTX backend dispatch infrastructure failure (5413).
+    #[cfg(feature = "preview_dtx")]
+    pub const DTC_DISPATCH_FAILURE: SubStatusCode = SubStatusCode(5413);
+
+    /// DTX prepared operation rolled back on abort (5415, DtcOperationRolledBack).
+    #[cfg(feature = "preview_dtx")]
+    pub const DTC_OPERATION_ROLLED_BACK: SubStatusCode = SubStatusCode(5415);
 
     /// Gateway throttled (3201).
     pub const GATEWAY_THROTTLED: SubStatusCode = SubStatusCode(3201);
@@ -1372,6 +1398,15 @@ impl SubStatusCode {
     /// list (20211).
     pub const CLIENT_COMPUTE_RANGE_INVOKED_WITH_EMPTY_PARTITION_KEY: SubStatusCode =
         SubStatusCode(20211);
+
+    /// A change feed pipeline reported that it was fully drained (20212).
+    /// The change feed is a conceptually infinite stream — "no changes" is
+    /// surfaced as an empty (304) page, never as a drained pipeline — so a
+    /// drained result indicates an internal invariant violation rather than
+    /// a clean end of stream. Surfacing it as an error keeps the failure
+    /// loud instead of silently terminating the caller's polling loop.
+    pub const CLIENT_CHANGE_FEED_PIPELINE_UNEXPECTEDLY_DRAINED: SubStatusCode =
+        SubStatusCode(20212);
 
     /// A continuation token's saved range could not be honored on resume
     /// because the topology no longer covers it (20213). Surfacing this as
@@ -2175,6 +2210,13 @@ impl CosmosStatus {
     pub const CLIENT_COMPUTE_RANGE_INVOKED_WITH_EMPTY_PARTITION_KEY: CosmosStatus = CosmosStatus {
         status_code: StatusCode::InternalServerError,
         sub_status: Some(SubStatusCode::CLIENT_COMPUTE_RANGE_INVOKED_WITH_EMPTY_PARTITION_KEY),
+    };
+
+    /// 500 / 20212 — a change feed pipeline reported that it was fully
+    /// drained, which violates the infinite-stream invariant.
+    pub const CLIENT_CHANGE_FEED_PIPELINE_UNEXPECTEDLY_DRAINED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_CHANGE_FEED_PIPELINE_UNEXPECTEDLY_DRAINED),
     };
 
     /// 500 / 20213 — continuation token's saved range could not be
