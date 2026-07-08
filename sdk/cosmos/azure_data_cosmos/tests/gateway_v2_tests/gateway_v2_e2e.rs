@@ -1100,6 +1100,13 @@ pub async fn gateway_v2_if_match_precondition_round_trip() -> Result<(), Box<dyn
 /// unit test `wrap_emits_read_consistency_strategy_token_and_drops_consistency_level`
 /// in `gateway_v2_dispatch`; this test guards the wire-acceptance half that a
 /// unit test cannot reach.
+///
+/// `LatestCommitted` is a quorum read that is **not** session-effective (it does
+/// not carry the session token), so it offers no read-your-writes guarantee —
+/// matching .NET/Java, where it deliberately bypasses the session lane. On the
+/// multi-writer live accounts an immediate read can land on a replica that has
+/// not yet converged on the just-written item and legitimately return `404`, so
+/// the read is polled past that brief visibility window before asserting.
 #[tokio::test]
 #[cfg_attr(
     not(any(
@@ -1129,24 +1136,42 @@ pub async fn gateway_v2_read_with_non_default_consistency_strategy(
         .create_item(&pk_value, &item_id, &item, None)
         .await?;
 
-    let read_options = ItemReadOptions::default().with_operation_options(
-        OperationOptionsBuilder::new()
-            .with_read_consistency_strategy(ReadConsistencyStrategy::LatestCommitted)
-            .build(),
-    );
-    let read_resp = container
-        .read_item(&pk_value, &item_id, Some(read_options))
-        .await?;
-    assert_transport_kind(&read_resp.diagnostics(), TransportKind::GatewayV2);
-    assert!(!read_resp.diagnostics().activity_id().as_str().is_empty());
-    let read_item: GwV2TestItem = read_resp.into_model()?;
-    assert_eq!(
-        read_item, item,
-        "a LatestCommitted read must return the item unchanged",
-    );
+    const MAX_ATTEMPTS: u32 = 40;
+    const POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(500);
 
-    drop_database(&client, &db_name).await;
-    Ok(())
+    for attempt in 0..MAX_ATTEMPTS {
+        let read_options = ItemReadOptions::default().with_operation_options(
+            OperationOptionsBuilder::new()
+                .with_read_consistency_strategy(ReadConsistencyStrategy::LatestCommitted)
+                .build(),
+        );
+        match container
+            .read_item(&pk_value, &item_id, Some(read_options))
+            .await
+        {
+            Ok(read_resp) => {
+                assert_transport_kind(&read_resp.diagnostics(), TransportKind::GatewayV2);
+                assert!(!read_resp.diagnostics().activity_id().as_str().is_empty());
+                let read_item: GwV2TestItem = read_resp.into_model()?;
+                assert_eq!(
+                    read_item, item,
+                    "a LatestCommitted read must return the item unchanged",
+                );
+                drop_database(&client, &db_name).await;
+                return Ok(());
+            }
+            Err(e)
+                if e.status().status_code() == StatusCode::NotFound
+                    && attempt + 1 < MAX_ATTEMPTS =>
+            {
+                tokio::time::sleep(POLL_INTERVAL).await;
+            }
+            Err(e) => {
+                return Err(format!("LatestCommitted read failed: {e}").into());
+            }
+        }
+    }
+    unreachable!("loop above always returns on the final iteration");
 }
 
 /// Proves a freshly-provisioned collection is point-readable over Gateway 2.0
