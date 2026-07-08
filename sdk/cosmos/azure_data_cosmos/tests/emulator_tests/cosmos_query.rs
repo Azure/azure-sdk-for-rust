@@ -8,9 +8,9 @@ use std::error::Error;
 
 use azure_data_cosmos::feed::ContinuationToken;
 use azure_data_cosmos::{
-    clients::DatabaseClient,
+    clients::{ContainerClient, DatabaseClient},
     feed::FeedScope,
-    models::CosmosStatus,
+    models::{CosmosStatus, ThroughputProperties},
     options::{MaxItemCountHint, QueryOptions},
     Query,
 };
@@ -117,6 +117,22 @@ where
 struct ItemProjection {
     id: String,
     merge_order: usize,
+}
+
+/// Drains `select value c.id from c` for the given scope and returns the ids.
+async fn collect_ids_for_scope(
+    container_client: &ContainerClient,
+    scope: FeedScope,
+) -> Result<Vec<String>, Box<dyn Error>> {
+    let mut pages = container_client
+        .query_items::<String>("select value c.id from c", scope, None)
+        .await?
+        .into_pages();
+    let mut ids = Vec::new();
+    while let Some(page) = pages.next().await {
+        ids.extend(page?.into_items());
+    }
+    Ok(ids)
 }
 
 #[tokio::test]
@@ -472,6 +488,73 @@ pub async fn cross_partition_query_pagination() -> Result<(), Box<dyn Error>> {
                 },
             )
             .await?;
+
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
+)]
+pub async fn feed_range_scoped_query_honors_range() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |_, db_client| {
+            // 10 logical partitions × 2 items. Provision 11000 RU/s so the
+            // service creates at least 2 physical partitions — a scoped query
+            // then has a neighbouring range it must NOT touch.
+            let items = test_data::generate_mock_items(10, 2);
+            let throughput = ThroughputProperties::manual(11000);
+            let container_client =
+                test_data::create_container_with_items(db_client, items.clone(), Some(throughput))
+                    .await?;
+
+            let ranges = container_client.read_feed_ranges(None).await?;
+            assert!(
+                ranges.len() >= 2,
+                "expected at least 2 physical partitions with 11000 RU/s, got {}",
+                ranges.len()
+            );
+
+            // Baseline: the full container returns every seeded item.
+            let mut all_ids =
+                collect_ids_for_scope(&container_client, FeedScope::full_container()).await?;
+            all_ids.sort();
+            assert_eq!(
+                all_ids.len(),
+                items.len(),
+                "full-container query should return every seeded item"
+            );
+
+            // Enumerate each feed range and query it in isolation — exactly the
+            // customer scenario (`read_feed_ranges()` then query each range).
+            // Before the fan-out clip fix, a `FeedScope::range` query was planned
+            // as a full cross-partition fan-out, so every range returned the
+            // ENTIRE container and the union below contained each id
+            // `ranges.len()` times. With the fix each range is clipped to its
+            // own slice, so every id appears exactly once across all ranges.
+            let mut union_ids = Vec::new();
+            for range in &ranges {
+                let ids = collect_ids_for_scope(&container_client, FeedScope::range(range.clone()))
+                    .await?;
+                union_ids.extend(ids);
+            }
+            union_ids.sort();
+
+            assert_eq!(
+                union_ids, all_ids,
+                "each feed range must return only its own items: the union across \
+                 ranges should equal the full set exactly once, with no over-scan \
+                 or duplication"
+            );
 
             Ok(())
         },
