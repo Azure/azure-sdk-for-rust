@@ -391,6 +391,12 @@ impl PageBlobClient {
             query_builder.set_pair("timeout", timeout.to_string());
         }
         query_builder.build();
+        #[derive(serde::Deserialize)]
+        struct PageBlobClientListPageRangesPage {
+            #[serde(rename = "NextMarker")]
+            next_marker: Option<String>,
+        }
+
         let version = self.version.clone();
         Ok(PageIterator::new(
             move |marker: PagerState, pager_options| {
@@ -439,7 +445,7 @@ impl PageBlobClient {
                         )
                         .await?;
                     let (status, headers, body) = rsp.deconstruct();
-                    let res: PageList = xml::from_xml(&body)?;
+                    let res: PageBlobClientListPageRangesPage = xml::from_xml(&body)?;
                     let rsp = RawResponse::from_bytes(status, headers, body).into();
                     Ok(match res.next_marker {
                         Some(next_marker) if !next_marker.is_empty() => PagerResult::More {

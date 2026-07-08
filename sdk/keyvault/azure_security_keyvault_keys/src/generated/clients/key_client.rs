@@ -12,13 +12,14 @@ use crate::generated::models::{
     KeyClientImportKeyOptions, KeyClientListDeletedKeyPropertiesOptions,
     KeyClientListKeyPropertiesOptions, KeyClientListKeyPropertiesVersionsOptions,
     KeyClientPurgeDeletedKeyOptions, KeyClientRecoverDeletedKeyOptions, KeyClientReleaseOptions,
-    KeyClientRestoreKeyOptions, KeyClientRotateKeyOptions, KeyClientSignOptions,
-    KeyClientUnwrapKeyOptions, KeyClientUpdateKeyPropertiesOptions,
-    KeyClientUpdateKeyRotationPolicyOptions, KeyClientVerifyOptions, KeyClientWrapKeyOptions,
-    KeyOperationParameters, KeyOperationResult, KeyReleaseResult, KeyRotationPolicy,
-    KeyVerifyResult, ListDeletedKeyPropertiesResult, ListKeyPropertiesResult, RandomBytes,
-    ReleaseParameters, RestoreKeyParameters, SignParameters, UpdateKeyPropertiesParameters,
-    VerifyParameters,
+    KeyClientRestoreKeyOptions, KeyClientRotateKeyOptions, KeyClientSecureUnwrapKeyOptions,
+    KeyClientSecureWrapKeyOptions, KeyClientSignOptions, KeyClientUnwrapKeyOptions,
+    KeyClientUpdateKeyPropertiesOptions, KeyClientUpdateKeyRotationPolicyOptions,
+    KeyClientVerifyOptions, KeyClientWrapKeyOptions, KeyOperationParameters, KeyOperationResult,
+    KeyReleaseResult, KeyRotationPolicy, KeyVerifyResult, ListDeletedKeyPropertiesResult,
+    ListKeyPropertiesResult, RandomBytes, ReleaseParameters, RestoreKeyParameters,
+    SecureKeyOperationResult, SecureKeyUnWrapOperationParameters, SecureKeyWrapOperationParameters,
+    SignParameters, UpdateKeyPropertiesParameters, VerifyParameters,
 };
 use azure_core::{
     error::CheckSuccessOptions,
@@ -648,6 +649,12 @@ impl KeyClient {
             query_builder.set_pair("maxresults", maxresults.to_string());
         }
         query_builder.build();
+        #[derive(serde::Deserialize)]
+        struct KeyClientListDeletedKeyPropertiesPage {
+            #[serde(rename = "nextLink")]
+            next_link: Option<String>,
+        }
+
         let api_version = self.api_version.clone();
         Ok(Pager::new(
             move |next_link: PagerState, pager_options| {
@@ -680,7 +687,7 @@ impl KeyClient {
                             )
                             .await?;
                         let (status, headers, body) = rsp.deconstruct();
-                        let res: ListDeletedKeyPropertiesResult = json::from_json(&body)?;
+                        let res: KeyClientListDeletedKeyPropertiesPage = json::from_json(&body)?;
                         let rsp = RawResponse::from_bytes(status, headers, body).into();
                         Ok(match res.next_link {
                             Some(next_link) if !next_link.is_empty() => PagerResult::More {
@@ -722,6 +729,12 @@ impl KeyClient {
             query_builder.set_pair("maxresults", maxresults.to_string());
         }
         query_builder.build();
+        #[derive(serde::Deserialize)]
+        struct KeyClientListKeyPropertiesPage {
+            #[serde(rename = "nextLink")]
+            next_link: Option<String>,
+        }
+
         let api_version = self.api_version.clone();
         Ok(Pager::new(
             move |next_link: PagerState, pager_options| {
@@ -754,7 +767,7 @@ impl KeyClient {
                             )
                             .await?;
                         let (status, headers, body) = rsp.deconstruct();
-                        let res: ListKeyPropertiesResult = json::from_json(&body)?;
+                        let res: KeyClientListKeyPropertiesPage = json::from_json(&body)?;
                         let rsp = RawResponse::from_bytes(status, headers, body).into();
                         Ok(match res.next_link {
                             Some(next_link) if !next_link.is_empty() => PagerResult::More {
@@ -804,6 +817,12 @@ impl KeyClient {
             query_builder.set_pair("maxresults", maxresults.to_string());
         }
         query_builder.build();
+        #[derive(serde::Deserialize)]
+        struct KeyClientListKeyPropertiesVersionsPage {
+            #[serde(rename = "nextLink")]
+            next_link: Option<String>,
+        }
+
         let api_version = self.api_version.clone();
         Ok(Pager::new(
             move |next_link: PagerState, pager_options| {
@@ -836,7 +855,7 @@ impl KeyClient {
                             )
                             .await?;
                         let (status, headers, body) = rsp.deconstruct();
-                        let res: ListKeyPropertiesResult = json::from_json(&body)?;
+                        let res: KeyClientListKeyPropertiesVersionsPage = json::from_json(&body)?;
                         let rsp = RawResponse::from_bytes(status, headers, body).into();
                         Ok(match res.next_link {
                             Some(next_link) if !next_link.is_empty() => PagerResult::More {
@@ -1085,6 +1104,132 @@ impl KeyClient {
         query_builder.build();
         let mut request = Request::new(url, Method::Post);
         request.insert_header("accept", "application/json");
+        let rsp = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut request,
+                Some(PipelineSendOptions {
+                    check_success: CheckSuccessOptions {
+                        success_codes: &[200],
+                    },
+                    ..Default::default()
+                }),
+            )
+            .await?;
+        Ok(rsp.into())
+    }
+
+    /// Securely unwraps a previously wrapped symmetric key using a specified key, ensuring TEE attestation via Microsoft Azure
+    /// Attestation (MAA) before unwrapping.
+    ///
+    /// The SECURE UNWRAP operation supports decryption of a symmetric key using the target key encryption key. This operation
+    /// is the reverse of the SECURE WRAP operation. The SECURE UNWRAP operation applies to asymmetric and symmetric keys stored
+    /// in Azure Key Vault since it uses the private portion of the key. This operation requires the keys/unwrapKey permission.
+    /// The SECURE UNWRAP operation ensures that MAA (Microsoft Azure Attestation Service) is used to attest the TEE (Trusted
+    /// Execution Environment) before the key is unwrapped.
+    ///
+    /// # Arguments
+    ///
+    /// * `key_name` - The name of the key.
+    /// * `key_version` - The version of the key.
+    /// The version is required and should be recorded when wrapping a data encryption key so you can reliably unwrap using the
+    /// same version. You can pass an empty string to select the latest key version but if you don't record the specific version
+    /// used for wrapping a key, key encryption key rotation can make the data inaccessible.
+    /// * `parameters` - The parameters for unwrap operation.
+    /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.secureUnwrapKey")]
+    pub async fn secure_unwrap_key(
+        &self,
+        key_name: &str,
+        key_version: &str,
+        parameters: RequestContent<SecureKeyUnWrapOperationParameters>,
+        options: Option<KeyClientSecureUnwrapKeyOptions<'_>>,
+    ) -> Result<Response<SecureKeyOperationResult>> {
+        if key_name.is_empty() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_name cannot be empty",
+            ));
+        }
+        let options = options.unwrap_or_default();
+        let ctx = options.method_options.context.to_borrowed();
+        let mut url = self.endpoint.clone();
+        let mut path = String::from("/keys/{key-name}/{key-version}/secureunwrapkey");
+        path = path.replace("{key-name}", key_name);
+        path = path.replace("{key-version}", key_version);
+        url.append_path(&path);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
+        let mut request = Request::new(url, Method::Post);
+        request.insert_header("accept", "application/json");
+        request.insert_header("content-type", "application/json");
+        request.set_body(parameters);
+        let rsp = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut request,
+                Some(PipelineSendOptions {
+                    check_success: CheckSuccessOptions {
+                        success_codes: &[200],
+                    },
+                    ..Default::default()
+                }),
+            )
+            .await?;
+        Ok(rsp.into())
+    }
+
+    /// Creates a new 256 bit AES key within the trusted execution environment and wraps this key using a specified key.
+    ///
+    /// The SECURE WRAP operation creates a new 256 bit AES key within the trusted execution environment(TEE) and encrypts the
+    /// same with a key encryption key that has previously been stored in an Azure Key Vault. The WRAP operation is only strictly
+    /// necessary for symmetric keys stored in Azure Key Vault since protection with an asymmetric key can be performed using
+    /// the public portion of the key. This operation is supported for asymmetric keys as a convenience for callers that have
+    /// a key-reference but do not have access to the public key material. This operation requires the keys/wrapKey permission.
+    ///
+    /// You should record the ['KeyOperationResult::kid`] that is returned by this operation
+    /// so you can later parse it with [`ResourceId`](crate::ResourceId) and pass the version to [`KeyClient::secure_unwrap_key()`].
+    /// You can pass an empty string for the version to `secure_unwrap_key()` to select the latest key version
+    /// but if you don't record the specific version used for wrapping a key, key rotation can make the data inaccessible.
+    ///
+    /// # Arguments
+    ///
+    /// * `key_name` - The name of the key.
+    /// * `parameters` - The parameters for wrap operation.
+    /// * `options` - Optional parameters for the request.
+    #[tracing::function("KeyVault.secureWrapKey")]
+    pub async fn secure_wrap_key(
+        &self,
+        key_name: &str,
+        parameters: RequestContent<SecureKeyWrapOperationParameters>,
+        options: Option<KeyClientSecureWrapKeyOptions<'_>>,
+    ) -> Result<Response<SecureKeyOperationResult>> {
+        if key_name.is_empty() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "parameter key_name cannot be empty",
+            ));
+        }
+        let options = options.unwrap_or_default();
+        let ctx = options.method_options.context.to_borrowed();
+        let mut url = self.endpoint.clone();
+        let mut path = String::from("/keys/{key-name}/{key-version}/securewrapkey");
+        path = path.replace("{key-name}", key_name);
+        path = match options.key_version.as_ref() {
+            Some(key_version) => path.replace("{key-version}", key_version),
+            None => path.replace("{key-version}", ""),
+        };
+        url.append_path(&path);
+        let mut query_builder = url.query_builder();
+        query_builder.set_pair("api-version", &self.api_version);
+        query_builder.build();
+        let mut request = Request::new(url, Method::Post);
+        request.insert_header("accept", "application/json");
+        request.insert_header("content-type", "application/json");
+        request.set_body(parameters);
         let rsp = self
             .pipeline
             .send(
@@ -1461,4 +1606,4 @@ impl KeyClient {
 /// SDK author provides a custom options type and should reference this constant
 /// in their `Default` implementation rather than hardcoding the value.
 #[allow(dead_code)]
-pub(crate) const DEFAULT_API_VERSION: &str = "2025-07-01";
+pub(crate) const DEFAULT_API_VERSION: &str = "2026-03-01-preview";
