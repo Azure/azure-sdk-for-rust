@@ -277,7 +277,7 @@ dependencies = [
 
 [[package]]
 name = "azure_core"
-version = "1.1.0-beta.1"
+version = "1.1.0"
 dependencies = [
  "async-lock",
  "async-trait",
@@ -309,7 +309,7 @@ dependencies = [
 
 [[package]]
 name = "azure_core_amqp"
-version = "1.1.0-beta.1"
+version = "1.1.0"
 dependencies = [
  "async-trait",
  "azure_core",
@@ -4073,7 +4073,7 @@ checksum = "40ce102ab67701b8526c123c1bab5cbe42d7040ccfd0f64af1a385808d2f43de"
 
 [[package]]
 name = "typespec"
-version = "1.1.0-beta.1"
+version = "1.1.0"
 dependencies = [
  "base64 0.22.1",
  "bytes",
@@ -4087,7 +4087,7 @@ dependencies = [
 
 [[package]]
 name = "typespec_client_core"
-version = "1.1.0-beta.1"
+version = "1.1.0"
 dependencies = [
  "async-trait",
  "base64 0.22.1",
