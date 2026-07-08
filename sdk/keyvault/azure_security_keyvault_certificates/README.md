@@ -282,7 +282,6 @@ let digest = sha256(plaintext.as_bytes()).to_vec();
 let body = SignParameters {
     algorithm: Some(SignatureAlgorithm::Es256),
     value: Some(digest),
-    ..Default::default()
 };
 
 let signature = key_client
