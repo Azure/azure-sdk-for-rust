@@ -380,6 +380,15 @@ async fn plan_fresh(
     let mut nodes: Vec<Box<dyn PipelineNode>> = Vec::new();
     for query_range in &query_plan.query_ranges {
         let feed_range = query_range_to_feed_range(query_range)?;
+        // Clip the query-plan range to the operation's requested scope (e.g. a
+        // sub-partition EPK window from `FeedScope::range`). The query plan's
+        // ranges describe what the query *text* touches (often the whole
+        // container for a `SELECT`), so they must be narrowed to the caller's
+        // scope; otherwise a scoped query fans out over the whole container. A
+        // range that falls entirely outside the scope contributes nothing.
+        let Some(feed_range) = clip_to_operation_scope(operation, feed_range) else {
+            continue;
+        };
         let resolved = topology_provider
             .resolve_ranges(&feed_range, PartitionRoutingRefresh::UseCached)
             .await?;
@@ -429,6 +438,11 @@ async fn plan_resume_from_saved_snapshot(
 
     for query_range in &query_plan.query_ranges {
         let feed_range = query_range_to_feed_range(query_range)?;
+        // Clip the query-plan range to the operation's requested scope, mirroring
+        // `plan_fresh` so a resumed sub-partition-scoped query stays scoped.
+        let Some(feed_range) = clip_to_operation_scope(operation, feed_range) else {
+            continue;
+        };
         let resolved = topology_provider
             .resolve_ranges(&feed_range, PartitionRoutingRefresh::UseCached)
             .await?;
@@ -570,6 +584,36 @@ fn query_range_to_feed_range(
     let min = EffectivePartitionKey::from(query_range.min.as_str());
     let max = EffectivePartitionKey::from(query_range.max.as_str());
     FeedRange::new(min, max)
+}
+
+/// Returns true when `scope` covers the entire EPK key space (`""..FF`), i.e.
+/// imposes no restriction on a cross-partition query.
+fn scope_covers_full_keyspace(scope: &FeedRange) -> bool {
+    let full = FeedRange::full();
+    scope.min_inclusive() == full.min_inclusive() && scope.max_exclusive() == full.max_exclusive()
+}
+
+/// Clips a query-plan range to the operation's requested scope feed range.
+///
+/// A cross-partition query may be scoped to a user-supplied [`FeedRange`] (e.g.
+/// a sub-partition EPK window from `FeedScope::range`). The query plan's ranges
+/// describe what the query *text* touches (often the whole container for a
+/// `SELECT`), so the ranges we actually query must be clipped to the requested
+/// scope. A scope covering the whole key space imposes no restriction.
+///
+/// Returns `None` when the query range lies entirely outside the scope — that
+/// range contributes nothing and the caller skips it.
+fn clip_to_operation_scope(
+    operation: &CosmosOperation,
+    feed_range: FeedRange,
+) -> Option<FeedRange> {
+    let Some(scope) = operation
+        .target()
+        .filter(|s| !scope_covers_full_keyspace(s))
+    else {
+        return Some(feed_range);
+    };
+    intersect_feed_ranges(&feed_range, scope)
 }
 
 /// Returns true if the union of `pieces` covers `range` end-to-end.
@@ -1070,6 +1114,59 @@ mod tests {
             .await
             .unwrap();
         assert_drain_requests(pipeline, &[("", "FF", "pkrange-0")]);
+    }
+
+    #[tokio::test]
+    async fn scopes_cross_partition_query_to_requested_feed_range() {
+        // Regression: a cross-partition `SELECT` scoped to a sub-partition EPK
+        // window (`FeedScope::range`) must clip the query-plan range to that
+        // window and emit an interior `start`/`end-epk` slice — not fan out
+        // over the whole container. Before the fix, the operation's scope feed
+        // range was ignored entirely and the query did a full scan.
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = CosmosOperation::query_items(
+            test_container(),
+            Some(
+                FeedRange::new(
+                    EffectivePartitionKey::from("20"),
+                    EffectivePartitionKey::from("80"),
+                )
+                .unwrap(),
+            ),
+        )
+        .with_body(br#"{"query":"SELECT * FROM c"}"#.to_vec());
+        // The planner resolves the CLIPPED window; the mock returns the single
+        // owning partition (the whole `["", "FF")`).
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+            .await
+            .unwrap();
+
+        // Emitted EPK slice is clipped to the scope window, inside the whole
+        // partition (partition range stays `["", "FF")`).
+        assert_drain_requests_with_partitions(pipeline, &[("20", "80", "pkrange-0", "", "FF")]);
+    }
+
+    #[tokio::test]
+    async fn full_container_scope_does_not_restrict_cross_partition_query() {
+        // A `FeedScope::full_container()` scope (`FeedRange::full()`) must
+        // impose no restriction: the query fans out over every partition just
+        // as an unscoped cross-partition query does.
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+            rr("", "80", "pkrange-left"),
+            rr("80", "FF", "pkrange-right"),
+        ])]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+            .await
+            .unwrap();
+        assert_drain_requests(
+            pipeline,
+            &[("", "80", "pkrange-left"), ("80", "FF", "pkrange-right")],
+        );
     }
 
     #[tokio::test]

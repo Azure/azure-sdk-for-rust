@@ -93,22 +93,35 @@ impl OperationOverrides {
         continuation_as_if_none_match: bool,
     ) -> crate::error::Result<()> {
         if let Some(feed_range) = &self.feed_range {
+            let mut emitted_epk_bound = false;
             if feed_range.min_inclusive() != &EffectivePartitionKey::MIN {
                 headers.insert(
                     HeaderName::from_static(request_header_names::START_EPK),
                     HeaderValue::from(feed_range.min_inclusive().as_str().to_owned()),
                 );
+                emitted_epk_bound = true;
             }
             if feed_range.max_exclusive() != &EffectivePartitionKey::MAX {
                 headers.insert(
                     HeaderName::from_static(request_header_names::END_EPK),
                     HeaderValue::from(feed_range.max_exclusive().as_str().to_owned()),
                 );
+                emitted_epk_bound = true;
             }
-            headers.insert(
-                HeaderName::from_static(request_header_names::READ_FEED_KEY_TYPE),
-                HeaderValue::from_static("EffectivePartitionKey"),
-            );
+            // An EPK *window* (start/end-epk) must be tagged as an
+            // `EffectivePartitionKeyRange` read — this is the value both the
+            // .NET (`RequestInvokerHandler`) and Java (`FeedRangeEpkImpl`) SDKs
+            // pair with start/end-epk. Sending the point value
+            // (`EffectivePartitionKey`) alongside a range window is an invalid,
+            // self-contradictory header set that the gateway rejects with a bare
+            // HTTP 400 (no sub-status). Only emit it when a bound was actually
+            // written; a whole-partition feed range carries neither.
+            if emitted_epk_bound {
+                headers.insert(
+                    HeaderName::from_static(request_header_names::READ_FEED_KEY_TYPE),
+                    HeaderValue::from_static("EffectivePartitionKeyRange"),
+                );
+            }
         }
 
         if let Some(pk_range_id) = &self.partition_key_range_id {
@@ -3673,7 +3686,7 @@ mod tests {
                     request_header_names::READ_FEED_KEY_TYPE
                 ))
                 .map(|s| s.to_string()),
-            Some("EffectivePartitionKey".to_string())
+            Some("EffectivePartitionKeyRange".to_string())
         );
         assert_eq!(
             headers
@@ -3687,6 +3700,41 @@ mod tests {
                 .map(|s| s.to_string()),
             Some("20".to_string())
         );
+    }
+
+    #[test]
+    fn apply_headers_whole_partition_feed_range_omits_read_key_type_and_epk_bounds() {
+        // A whole-partition feed range (`["", "FF")`) writes neither start-epk
+        // nor end-epk, so it must NOT emit `x-ms-read-key-type` either. The
+        // read-key-type tag is only meaningful alongside an interior EPK window;
+        // emitting the point value here is what produced the original HTTP 400
+        // once scoped queries started routing through this path.
+        let feed_range =
+            FeedRange::new(EffectivePartitionKey::MIN, EffectivePartitionKey::MAX).unwrap();
+        let overrides = OperationOverrides {
+            partition_key_range_id: Some("pkrange".to_string()),
+            feed_range: Some(feed_range),
+            ..Default::default()
+        };
+        let mut headers = azure_core::http::headers::Headers::new();
+        overrides
+            .apply_headers(&mut headers, false)
+            .expect("apply_headers should succeed");
+
+        assert!(
+            headers
+                .get_optional_str(&HeaderName::from_static(
+                    request_header_names::READ_FEED_KEY_TYPE
+                ))
+                .is_none(),
+            "whole-partition feed range must not emit x-ms-read-key-type"
+        );
+        assert!(headers
+            .get_optional_str(&HeaderName::from_static(request_header_names::START_EPK))
+            .is_none());
+        assert!(headers
+            .get_optional_str(&HeaderName::from_static(request_header_names::END_EPK))
+            .is_none());
     }
 
     #[test]

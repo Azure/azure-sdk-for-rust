@@ -12,6 +12,7 @@
 
 ### Bugs Fixed
 
+- Fixed cross-partition queries scoped to a sub-partition feed range (`ContainerClient::query_items` with `FeedScope::range(..)`) ignoring the scope and scanning the whole container, returning documents outside the requested effective-partition-key window. The planner now clips each query-plan range to the operation's scope, and the SDK tags the resulting interior `x-ms-start-epk`/`x-ms-end-epk` window with `x-ms-read-key-type: EffectivePartitionKeyRange` (the value .NET and Java pair with an EPK window) instead of the point value `EffectivePartitionKey`, which the gateway rejected with HTTP 400. ([#PLACEHOLDER](https://github.com/Azure/azure-sdk-for-rust/pull/PLACEHOLDER))
 - Fixed the `AZURE_COSMOS_PPCB_*` environment variables (including `AZURE_COSMOS_PPCB_ENABLED` and the `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` kill switch) being ignored when a `CosmosClient` was built without calling `CosmosClientBuilder::with_partition_failover_options`. The per-partition circuit breaker (PPCB) stayed enabled even with `AZURE_COSMOS_PPCB_ENABLED=false`. The client's driver now resolves these options from the environment when they are not supplied explicitly. ([#4655](https://github.com/Azure/azure-sdk-for-rust/pull/4655))
 
 ### Other Changes
