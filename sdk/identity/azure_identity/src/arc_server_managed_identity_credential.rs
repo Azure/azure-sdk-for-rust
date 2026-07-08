@@ -6,29 +6,26 @@ use crate::{ImdsId, ImdsManagedIdentityCredential};
 use azure_core::{
     credentials::{AccessToken, TokenCredential, TokenRequestOptions},
     http::{
-        headers::HeaderName, ClientOptions, ExponentialRetryOptions, PipelineOptions, RetryOptions,
-        StatusCode, Url,
+        ClientOptions, ExponentialRetryOptions, PipelineOptions, RetryOptions, StatusCode, Url,
     },
     time::Duration,
 };
 use std::{any::type_name, fmt, sync::Arc};
 
-const ENDPOINT: &str = "http://169.254.169.254/metadata/identity/oauth2/token";
-const API_VERSION: &str = "2019-08-01";
-const SECRET_HEADER: HeaderName = HeaderName::from_static("x-identity-header");
-const SECRET_ENV: &str = "IDENTITY_HEADER";
+const ENDPOINT: &str = "http://localhost:40342/metadata/identity/oauth2/token";
+const API_VERSION: &str = "2021-02-01";
 
-pub struct VirtualMachineManagedIdentityCredential {
+pub struct ArcServerManagedIdentityCredential {
     credential: ImdsManagedIdentityCredential,
 }
 
-impl fmt::Debug for VirtualMachineManagedIdentityCredential {
+impl fmt::Debug for ArcServerManagedIdentityCredential {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct(type_name::<Self>()).finish_non_exhaustive()
     }
 }
 
-impl VirtualMachineManagedIdentityCredential {
+impl ArcServerManagedIdentityCredential {
     pub fn new(
         id: ImdsId,
         client_options: ClientOptions,
@@ -70,8 +67,8 @@ impl VirtualMachineManagedIdentityCredential {
             credential: ImdsManagedIdentityCredential::new(
                 endpoint,
                 API_VERSION,
-                Some(SECRET_HEADER),
-                Some(SECRET_ENV),
+                None,
+                None,
                 id,
                 client_options,
                 pipeline_options,
@@ -82,7 +79,7 @@ impl VirtualMachineManagedIdentityCredential {
 }
 
 #[async_trait::async_trait]
-impl TokenCredential for VirtualMachineManagedIdentityCredential {
+impl TokenCredential for ArcServerManagedIdentityCredential {
     async fn get_token(
         &self,
         scopes: &[&str],

@@ -25,6 +25,7 @@ time.workspace = true
 tokio = { workspace = true, optional = true }
 tracing.workspace = true
 url.workspace = true
+rand = { workspace = true, features = ["thread_rng"] }
 
 [dev-dependencies]
 azure_core_test.path = "../../core/azure_core_test"

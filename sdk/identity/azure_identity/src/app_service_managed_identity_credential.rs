@@ -49,8 +49,8 @@ impl AppServiceManagedIdentityCredential {
             credential: ImdsManagedIdentityCredential::new(
                 endpoint,
                 API_VERSION,
-                SECRET_HEADER,
-                SECRET_ENV,
+                Some(SECRET_HEADER),
+                Some(SECRET_ENV),
                 id,
                 client_options,
                 None,

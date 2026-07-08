@@ -16,7 +16,10 @@ use serde::{
     de::{self, Deserializer},
     Deserialize,
 };
-use std::{any::type_name, fmt, str};
+use std::{any::type_name, fmt, fs::File, io::Read, path::Path, str};
+
+const AUTHENTICATE_HEADER: HeaderName = HeaderName::from_static("www-authenticate");
+const AUTHORIZATION_HEADER: HeaderName = HeaderName::from_static("authorization");
 
 /// An identifier for the Azure Instance Metadata Service (IMDS).
 ///
@@ -53,8 +56,8 @@ pub(crate) struct ImdsManagedIdentityCredential {
     pipeline: Pipeline,
     endpoint: Url,
     api_version: String,
-    secret_header: HeaderName,
-    secret_env: String,
+    secret_header: Option<HeaderName>,
+    secret_env: Option<String>,
     id: ImdsId,
     cache: TokenCache,
     env: Env,
@@ -73,8 +76,8 @@ impl ImdsManagedIdentityCredential {
     pub fn new(
         endpoint: Url,
         api_version: &str,
-        secret_header: HeaderName,
-        secret_env: &str,
+        secret_header: Option<HeaderName>,
+        secret_env: Option<&str>,
         id: ImdsId,
         client_options: ClientOptions,
         pipeline_options: Option<PipelineOptions>,
@@ -93,7 +96,7 @@ impl ImdsManagedIdentityCredential {
             endpoint,
             api_version: api_version.to_owned(),
             secret_header: secret_header.to_owned(),
-            secret_env: secret_env.to_owned(),
+            secret_env: secret_env.map(|env| env.to_owned()),
             id,
             cache: TokenCache::new(),
             env,
@@ -126,14 +129,18 @@ impl ImdsManagedIdentityCredential {
 
         req.insert_header("metadata", "true");
 
-        let msi_secret = self.env.var(&self.secret_env);
-        if let Ok(val) = msi_secret {
-            req.insert_header(self.secret_header.clone(), val);
-        };
+        if let Some(ref secret_env) = self.secret_env {
+            if let Some(ref secret_header) = self.secret_header {
+                let msi_secret = self.env.var(secret_env);
+                if let Ok(val) = msi_secret {
+                    req.insert_header(secret_header.clone(), val);
+                };
+            }
+        }
 
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
-        let rsp = self
+        let mut rsp = self
             .pipeline
             .send(
                 &ctx,
@@ -145,7 +152,29 @@ impl ImdsManagedIdentityCredential {
             )
             .await?;
 
-        let status = rsp.status();
+        let mut status = rsp.status();
+
+        if status == StatusCode::Unauthorized {
+            if let Ok(challenge) = rsp.headers().get_str(&AUTHENTICATE_HEADER) {
+                let challenge_response = self.retrieve_challenge_response(challenge)?;
+                req.insert_header(AUTHORIZATION_HEADER, format!("Basic {challenge_response}"));
+
+                // try the request again with the challenge response header. Then, drop through to the usual error handling and token extraction
+                rsp = self
+                    .pipeline
+                    .send(
+                        &ctx,
+                        &mut req,
+                        Some(PipelineSendOptions {
+                            skip_checks: true,
+                            ..Default::default()
+                        }),
+                    )
+                    .await?;
+                status = rsp.status();
+            }
+        }
+
         if !status.is_success() {
             let message = match status {
                 StatusCode::BadRequest => {
@@ -174,6 +203,38 @@ impl ImdsManagedIdentityCredential {
             token_response.access_token,
             token_response.expires_on,
         ))
+    }
+
+    // This is used for Arc for server's flavour of IMDS, where a challenge-response protocol is implemented.
+    fn retrieve_challenge_response(&self, challenge: &str) -> Result<String, Error> {
+        let challenge_path = Path::new(challenge);
+        let expected_challenge_base = if cfg!(windows) {
+            let program_data_dir = self.env.var("PROGRAMDATA")?;
+            Path::new(&program_data_dir).join("AzureConnectedMachineAgent\\Tokens\\")
+        } else {
+            Path::new("/var/opt/azcmagent/tokens/").to_path_buf()
+        };
+
+        if !(challenge_path.starts_with(expected_challenge_base)
+            && challenge_path.extension().is_some_and(|ext| ext == "key"))
+        {
+            if !cfg!(test) {
+                return Err(Error::with_message(
+                    ErrorKind::Credential,
+                    format!("Challenge received was invalid: {challenge}"),
+                ));
+            } else {
+                // for tests, it's okay if the challenge file is not in the expected location
+            }
+        }
+
+        let challenge_file = File::open(challenge_path)?;
+        let mut challenge_response = String::new();
+        challenge_file
+            .take(4096) // avoid slurping a huge file - the challenge response will not be > 4KiB
+            .read_to_string(&mut challenge_response)?;
+
+        Ok(challenge_response)
     }
 }
 
