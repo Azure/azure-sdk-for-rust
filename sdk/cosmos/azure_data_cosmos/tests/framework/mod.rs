@@ -14,10 +14,12 @@
 //!
 //! The framework allows tests to easily run against real Cosmos DB instances, the local emulator, or a mock server using test-proxy.
 
+pub mod emulator_credential;
 pub mod mock_account;
 pub mod test_client;
 pub mod test_data;
 
+pub use emulator_credential::{CosmosEmulatorCredential, CredentialRecorder};
 pub use test_client::{
     assert_local_retry_attempted_on_region, assert_region_contacted_with_retry,
     assert_region_not_contacted, get_effective_hub_endpoint, get_global_endpoint,

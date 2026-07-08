@@ -11,6 +11,8 @@ use std::time::{Duration, Instant};
 use azure_core::http::{headers::Headers, Method};
 use url::Url;
 
+#[cfg(feature = "preview_dtx")]
+use crate::models::ResourceType;
 use crate::{
     diagnostics::{ExecutionContext, RequestSentStatus},
     driver::{
@@ -71,6 +73,30 @@ pub const MAX_BACKEND_FAILOVER_RETRIES: u32 = 120;
 pub const BACKEND_FAILOVER_RETRY_INTERVAL: std::time::Duration =
     std::time::Duration::from_millis(1000);
 
+/// Maximum inner retries for bodyless DTX coordinator envelope failures.
+#[cfg(feature = "preview_dtx")]
+pub const MAX_DTX_COORDINATOR_RETRIES: u32 = 10;
+
+/// Maximum inner retries for bodyless DTX infrastructure envelope failures.
+#[cfg(feature = "preview_dtx")]
+pub const MAX_DTX_INFRA_RETRIES: u32 = 9;
+
+/// Default bodyless DTX coordinator retry delay when the service sends no retry hint.
+#[cfg(feature = "preview_dtx")]
+pub const DTX_COORDINATOR_RETRY_INTERVAL: Duration = Duration::from_secs(1);
+
+/// Base bodyless DTX infrastructure retry delay.
+#[cfg(feature = "preview_dtx")]
+pub const DTX_INFRA_BASE_BACKOFF: Duration = Duration::from_millis(100);
+
+/// Maximum bodyless DTX infrastructure retry delay.
+#[cfg(feature = "preview_dtx")]
+pub const DTX_INFRA_MAX_BACKOFF: Duration = Duration::from_secs(5);
+
+/// Maximum exponent for bodyless DTX infrastructure retry backoff.
+#[cfg(feature = "preview_dtx")]
+pub const DTX_INFRA_MAX_EXPONENT: u32 = 6;
+
 /// Operation-level retry state.
 ///
 /// Tracks failover retry count, session retry count, location index,
@@ -87,6 +113,12 @@ pub(crate) struct OperationRetryState {
     pub session_token_retry_count: u32,
     /// Multi-write backend-failover counter, separate from generic failover retries.
     pub backend_failover_retry_count: u32,
+    /// Bodyless DTX coordinator retry counter.
+    #[cfg(feature = "preview_dtx")]
+    pub dtx_coordinator_retry_count: u32,
+    /// Bodyless DTX infrastructure retry counter.
+    #[cfg(feature = "preview_dtx")]
+    pub dtx_infra_retry_count: u32,
     /// Maximum failover retries.
     pub max_failover_retries: u32,
     /// Maximum retries for backend-driven topology signals; not customer-tunable.
@@ -165,6 +197,10 @@ impl OperationRetryState {
             failover_retry_count: 0,
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
+            #[cfg(feature = "preview_dtx")]
+            dtx_coordinator_retry_count: 0,
+            #[cfg(feature = "preview_dtx")]
+            dtx_infra_retry_count: 0,
             max_failover_retries,
             max_backend_failover_retries: MAX_BACKEND_FAILOVER_RETRIES,
             max_session_retries,
@@ -190,6 +226,18 @@ impl OperationRetryState {
     /// Whether multi-write backend-failover budget allows another 403/3 or 403/1008 retry.
     pub fn can_retry_backend_failover(&self) -> bool {
         self.backend_failover_retry_count < self.max_backend_failover_retries
+    }
+
+    /// Whether the bodyless DTX coordinator retry budget allows another attempt.
+    #[cfg(feature = "preview_dtx")]
+    pub fn can_retry_dtx_coordinator(&self) -> bool {
+        self.dtx_coordinator_retry_count < MAX_DTX_COORDINATOR_RETRIES
+    }
+
+    /// Whether the bodyless DTX infrastructure retry budget allows another attempt.
+    #[cfg(feature = "preview_dtx")]
+    pub fn can_retry_dtx_infra(&self) -> bool {
+        self.dtx_infra_retry_count < MAX_DTX_INFRA_RETRIES
     }
 
     /// Attaches the cross-hedge shared hub-region-processing-only
@@ -229,6 +277,24 @@ impl OperationRetryState {
         Self {
             backend_failover_retry_count: self.backend_failover_retry_count + 1,
             session_retry_routing: SessionRetryRouting::PreferredEndpoints,
+            ..self
+        }
+    }
+
+    /// Advances the bodyless DTX coordinator retry counter.
+    #[cfg(feature = "preview_dtx")]
+    pub fn advance_dtx_coordinator_retry(self) -> Self {
+        Self {
+            dtx_coordinator_retry_count: self.dtx_coordinator_retry_count + 1,
+            ..self
+        }
+    }
+
+    /// Advances the bodyless DTX infrastructure retry counter.
+    #[cfg(feature = "preview_dtx")]
+    pub fn advance_dtx_infra_retry(self) -> Self {
+        Self {
+            dtx_infra_retry_count: self.dtx_infra_retry_count + 1,
             ..self
         }
     }
@@ -280,6 +346,9 @@ pub(crate) struct TransportRequest {
     pub url: Url,
     /// Headers to send (includes operation-specific and attempt-specific headers).
     pub headers: Headers,
+    /// Type of resource targeted by the operation.
+    #[cfg(feature = "preview_dtx")]
+    pub resource_type: ResourceType,
     /// Request body bytes (schema-agnostic).
     pub body: Option<azure_core::Bytes>,
     /// Authorization context for signing.
@@ -542,6 +611,12 @@ pub(crate) enum OperationAction {
     },
     /// Retry for session consistency.
     SessionRetry { new_state: OperationRetryState },
+    /// Retry a bodyless DTX envelope failure with DTX-specific budget.
+    #[cfg(feature = "preview_dtx")]
+    DtxRetry {
+        new_state: OperationRetryState,
+        delay: Duration,
+    },
     /// Race the primary attempt against a single secondary cross-region hedge.
     ///
     /// Emitted in two places:

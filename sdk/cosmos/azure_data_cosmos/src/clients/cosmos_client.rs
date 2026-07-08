@@ -103,6 +103,40 @@ impl CosmosClient {
         DatabaseClient::new(self.context.clone(), id)
     }
 
+    /// Commits a preview distributed write transaction.
+    ///
+    /// **Preview / work in progress.** Requires the disabled-by-default
+    /// `preview_dtx` feature and a service account with the DTX feature enabled.
+    /// Not supported for production use; the API may change without notice.
+    #[cfg(feature = "preview_dtx")]
+    pub async fn commit_distributed_write(
+        &self,
+        transaction: crate::clients::DistributedWriteTransaction,
+    ) -> crate::Result<crate::clients::DistributedTransactionResponse> {
+        crate::clients::distributed_transaction::commit_distributed_write(
+            &self.context,
+            transaction,
+        )
+        .await
+    }
+
+    /// Executes a preview distributed read transaction.
+    ///
+    /// **Preview / work in progress.** Requires the disabled-by-default
+    /// `preview_dtx` feature and a service account with the DTX feature enabled.
+    /// Not supported for production use; the API may change without notice.
+    #[cfg(feature = "preview_dtx")]
+    pub async fn execute_distributed_read(
+        &self,
+        transaction: crate::clients::DistributedReadTransaction,
+    ) -> crate::Result<crate::clients::DistributedTransactionResponse> {
+        crate::clients::distributed_transaction::execute_distributed_read(
+            &self.context,
+            transaction,
+        )
+        .await
+    }
+
     /// Gets the endpoint of the database account this client is connected to.
     pub fn endpoint(&self) -> &Url {
         self.context.driver.account().endpoint()

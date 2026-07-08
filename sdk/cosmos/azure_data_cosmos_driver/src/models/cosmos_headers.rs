@@ -38,15 +38,20 @@ pub(crate) mod request_header_names {
     pub const SESSION_TOKEN: &str = "x-ms-session-token";
     pub const IF_MATCH: &str = "if-match";
     pub const IF_NONE_MATCH: &str = "if-none-match";
+    pub const IF_MODIFIED_SINCE: &str = "if-modified-since";
     pub const PREFER: &str = "prefer";
     pub const IS_QUERY: &str = "x-ms-documentdb-isquery";
     pub const IS_QUERY_PLAN_REQUEST: &str = "x-ms-cosmos-is-query-plan-request";
     pub const SUPPORTED_QUERY_FEATURES: &str = "x-ms-cosmos-supported-query-features";
     pub const IS_UPSERT: &str = "x-ms-documentdb-is-upsert";
     pub const MAX_ITEM_COUNT: &str = "x-ms-max-item-count";
-    /// Change-feed indicator ("Incremental feed"). HTTP standard name `a-im`.
+    /// Change-feed indicator ("Incremental Feed"). HTTP standard name `a-im`.
     pub const A_IM: &str = "a-im";
-    pub const INCREMENTAL_FEED: &str = "Incremental feed";
+    pub const INCREMENTAL_FEED: &str = "Incremental Feed";
+    /// Wire format version for change feed responses.
+    pub const CHANGEFEED_WIRE_FORMAT_VERSION: &str = "x-ms-cosmos-changefeed-wire-format-version";
+    /// The wire format version value used by this SDK.
+    pub const CHANGEFEED_WIRE_FORMAT_VERSION_2021_09_15: &str = "2021-09-15";
     pub const POPULATE_INDEX_METRICS: &str = "x-ms-cosmos-populateindexmetrics";
     pub const POPULATE_QUERY_METRICS: &str = "x-ms-documentdb-populatequerymetrics";
     pub const ENABLE_CROSS_PARTITION_QUERY: &str = "x-ms-documentdb-query-enablecrosspartition";
@@ -80,7 +85,19 @@ pub(crate) mod request_header_names {
     /// region. The same wire name appears under
     /// [`response_header_names::HAS_TENTATIVE_WRITES`] on responses.
     pub const ALLOW_TENTATIVE_WRITES: &str = "x-ms-cosmos-allow-tentative-writes";
+    /// DTX idempotency token (`Uuid`) generated once per distributed transaction.
+    #[cfg(feature = "preview_dtx")]
+    pub const DTX_IDEMPOTENCY_TOKEN: &str = "x-ms-cosmos-idempotency-token";
+    /// DTX coordinator operation type (`CommitDistributedTransaction` or `Read`).
+    #[cfg(feature = "preview_dtx")]
+    pub const DTX_OPERATION_TYPE: &str = "x-ms-cosmos-operation-type";
+    /// DTX coordinator resource type (`DistributedTransactionBatch`).
+    #[cfg(feature = "preview_dtx")]
+    pub const DTX_RESOURCE_TYPE: &str = "x-ms-cosmos-resource-type";
 }
+
+#[cfg(feature = "preview_dtx")]
+pub(crate) const DTX_RESOURCE_TYPE_HEADER_VALUE: &str = "DistributedTransactionBatch";
 
 /// Standard Cosmos DB response header names.
 // cspell:ignore activityid acked llsn gatewayversion serviceversion
@@ -122,6 +139,9 @@ pub(crate) mod response_header_names {
         "x-ms-documentdb-collection-index-transformation-progress";
     pub const COLLECTION_LAZY_INDEXING_PROGRESS: &str =
         "x-ms-documentdb-collection-lazy-indexing-progress";
+    /// DTX idempotency token echoed by the coordinator.
+    #[cfg(feature = "preview_dtx")]
+    pub const DTX_IDEMPOTENCY_TOKEN: &str = "x-ms-cosmos-idempotency-token";
 }
 
 pub const QUERY_CONTENT_TYPE: &str = "application/query+json";
@@ -163,12 +183,29 @@ pub struct CosmosRequestHeaders {
     /// represented by [`MaxItemCountHint::ServerDecides`].
     pub max_item_count: Option<MaxItemCountHint>,
 
-    /// Requests an incremental change feed read (`a-im: Incremental feed`).
+    /// Requests an incremental change feed read (`a-im: Incremental Feed`).
     ///
     /// When `true`, the driver emits the standard change-feed indicator
     /// header. Combine with [`Precondition::if_none_match`] to pass a
     /// continuation token.
     pub incremental_feed: bool,
+
+    /// When `true`, emits the change-feed wire format version header
+    /// (`x-ms-cosmos-changefeed-wire-format-version: 2021-09-15`).
+    ///
+    /// This selects the structured change feed wire format, where each item is
+    /// returned inside an envelope (`{ current, ... }`). It is sent for both
+    /// LatestVersion and AllVersionsAndDeletes so the response shape stays
+    /// consistent across modes; for LatestVersion the envelope simply omits the
+    /// pre-image. The SDK iterator unwraps `current` back into the caller's
+    /// document type.
+    pub changefeed_wire_format_version: bool,
+
+    /// If-Modified-Since timestamp for change feed point-in-time start.
+    ///
+    /// When set, the driver emits `If-Modified-Since: <value>`. The caller
+    /// is responsible for formatting the timestamp in RFC 1123 format.
+    pub if_modified_since: Option<String>,
 
     /// Request index-utilization metrics on the response
     /// (`x-ms-cosmos-populateindexmetrics`). Only meaningful for query
@@ -258,6 +295,20 @@ impl CosmosRequestHeaders {
             headers.insert(
                 request_header_names::A_IM,
                 HeaderValue::from_static(request_header_names::INCREMENTAL_FEED),
+            );
+        }
+        if self.changefeed_wire_format_version {
+            headers.insert(
+                request_header_names::CHANGEFEED_WIRE_FORMAT_VERSION,
+                HeaderValue::from_static(
+                    request_header_names::CHANGEFEED_WIRE_FORMAT_VERSION_2021_09_15,
+                ),
+            );
+        }
+        if let Some(ref ts) = self.if_modified_since {
+            headers.insert(
+                request_header_names::IF_MODIFIED_SINCE,
+                HeaderValue::from(ts.clone()),
             );
         }
         if let Some(v) = self.populate_index_metrics {
@@ -486,6 +537,11 @@ pub struct CosmosResponseHeaders {
 
     /// Collection lazy indexing progress percentage (`x-ms-documentdb-collection-lazy-indexing-progress`).
     pub collection_lazy_indexing_progress: Option<i64>,
+
+    /// Distributed transaction idempotency token returned by the coordinator
+    /// (`x-ms-cosmos-idempotency-token`).
+    #[cfg(feature = "preview_dtx")]
+    pub distributed_transaction_idempotency_token: Option<uuid::Uuid>,
 }
 
 impl CosmosResponseHeaders {
@@ -633,6 +689,11 @@ impl CosmosResponseHeaders {
                 }
                 response_header_names::COLLECTION_LAZY_INDEXING_PROGRESS => {
                     result.collection_lazy_indexing_progress = value.as_str().parse().ok();
+                }
+                #[cfg(feature = "preview_dtx")]
+                response_header_names::DTX_IDEMPOTENCY_TOKEN => {
+                    result.distributed_transaction_idempotency_token =
+                        uuid::Uuid::parse_str(value.as_str()).ok();
                 }
                 _ => {}
             }
@@ -812,6 +873,12 @@ impl CosmosResponseHeaders {
             response_header_names::COLLECTION_LAZY_INDEXING_PROGRESS,
             self.collection_lazy_indexing_progress
                 .map(|v| v.to_string()),
+        );
+        #[cfg(feature = "preview_dtx")]
+        put_str(
+            response_header_names::DTX_IDEMPOTENCY_TOKEN,
+            self.distributed_transaction_idempotency_token
+                .map(|value| value.to_string()),
         );
         h
     }
@@ -1292,6 +1359,8 @@ mod tests {
             log_results: Some("ok".into()),
             collection_index_transformation_progress: Some(100),
             collection_lazy_indexing_progress: Some(75),
+            #[cfg(feature = "preview_dtx")]
+            distributed_transaction_idempotency_token: Some(uuid::Uuid::new_v4()),
         };
 
         let raw = original.to_raw_headers();
@@ -1413,6 +1482,11 @@ mod tests {
         assert_eq!(
             round_tripped.collection_lazy_indexing_progress,
             original.collection_lazy_indexing_progress
+        );
+        #[cfg(feature = "preview_dtx")]
+        assert_eq!(
+            round_tripped.distributed_transaction_idempotency_token,
+            original.distributed_transaction_idempotency_token
         );
     }
 

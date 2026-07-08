@@ -315,7 +315,8 @@ mod tests {
         AccountEndpointState {
             generation: 0,
             preferred_read_endpoints: endpoints.clone().into(),
-            preferred_write_endpoints: endpoints.into(),
+            preferred_write_endpoints: endpoints.clone().into(),
+            account_write_endpoints: endpoints.into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: false,
             default_endpoint: default,
@@ -417,6 +418,39 @@ mod tests {
         let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
         let op = read_database_operation();
         assert!(!should_hedge(Some(&enabled_strategy()), &op, &state, &[],));
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn should_hedge_distributed_transaction_never() {
+        // DTX operations carry `ResourceType::DistributedTransactionBatch`, which
+        // is not in HEDGEABLE_RESOURCE_TYPES, so neither the write commit nor the
+        // read snapshot is hedge-eligible — even though the read reports
+        // `is_read_only() == true`. This is the real guard: hedging can fire at
+        // the pre-attempt STAGE 2b before the DTX classifier ever runs, so the
+        // resource-type exclusion (not the classifier short-circuit) is what
+        // keeps DTX out of hedging. Pin it directly.
+        let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
+        let account = AccountReference::with_master_key(
+            Url::parse("https://acct.documents.azure.com/").unwrap(),
+            "k",
+        );
+        let write = CosmosOperation::distributed_transaction(
+            account.clone(),
+            crate::models::DistributedTransactionType::Write,
+        );
+        let read = CosmosOperation::distributed_transaction(
+            account,
+            crate::models::DistributedTransactionType::Read,
+        );
+        assert!(!should_hedge(
+            Some(&enabled_strategy()),
+            &write,
+            &state,
+            &[]
+        ));
+        assert!(read.is_read_only());
+        assert!(!should_hedge(Some(&enabled_strategy()), &read, &state, &[]));
     }
 
     #[test]
