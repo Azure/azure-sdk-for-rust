@@ -4500,6 +4500,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![eastus.clone(), westus.clone()].into(),
             preferred_write_endpoints: vec![eastus.clone()].into(),
+            account_write_endpoints: vec![eastus.clone()].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: false,
             default_endpoint: eastus.clone(),
@@ -4540,6 +4541,10 @@ mod tests {
             max_failover_retries: 3,
             max_session_retries: 3,
             backend_failover_retry_count: 0,
+            #[cfg(feature = "preview_dtx")]
+            dtx_coordinator_retry_count: 0,
+            #[cfg(feature = "preview_dtx")]
+            dtx_infra_retry_count: 0,
             max_backend_failover_retries:
                 crate::driver::pipeline::components::MAX_BACKEND_FAILOVER_RETRIES,
             can_use_multiple_write_locations: false,
@@ -4669,6 +4674,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![eastus.clone(), westus.clone()].into(),
             preferred_write_endpoints: vec![eastus.clone()].into(),
+            account_write_endpoints: vec![eastus.clone()].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: false,
             default_endpoint: eastus.clone(),
@@ -4785,6 +4791,7 @@ mod tests {
             generation: 0,
             preferred_read_endpoints: vec![eastus.clone(), westus.clone()].into(),
             preferred_write_endpoints: vec![eastus.clone()].into(),
+            account_write_endpoints: vec![eastus.clone()].into(),
             unavailable_endpoints: unavailable,
             multiple_write_locations_enabled: false,
             default_endpoint: eastus.clone(),
