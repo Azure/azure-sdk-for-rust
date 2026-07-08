@@ -1309,6 +1309,27 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn rejects_target_disjoint_from_query_ranges() {
+        // A target that shares no EPKs with any query-plan range clips every
+        // range away, leaving zero request leaves. On the fresh path this is
+        // reported as the same hard error as an empty query plan — the clip
+        // does not silently swallow the query. `NoopTopologyProvider` asserts
+        // no partition is ever resolved (the clip skips before resolution).
+        let plan = plan_with_ranges(vec![qr("80", "FF")]);
+        let op = query_operation_with_target("00", "40");
+        let mut topology = NoopTopologyProvider;
+
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+            .await
+            .unwrap_err();
+        let rendered = err.to_string();
+        assert!(
+            rendered.ends_with("query plan produced no partition ranges to query"),
+            "unexpected: {rendered}"
+        );
+    }
+
+    #[tokio::test]
     async fn propagates_topology_resolution_error() {
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = cross_partition_query_operation();
