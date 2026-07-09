@@ -109,7 +109,9 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
                 updated_indexing_policy.indexing_mode
             );
 
-            let current_throughput = container_client
+            let current_throughput = run_context
+                .management_container_client(db_client, "TheContainer")
+                .await?
                 .read_throughput(None)
                 .await?
                 .expect("throughput should be present");
@@ -117,7 +119,9 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
             assert_eq!(Some(400), current_throughput.throughput());
 
             let new_throughput = ThroughputProperties::manual(500);
-            let throughput_response = container_client
+            let throughput_response = run_context
+                .management_container_client(db_client, "TheContainer")
+                .await?
                 .begin_replace_throughput(new_throughput, None)
                 .await?
                 .await?

@@ -231,11 +231,23 @@ enum AuthMode {
 }
 
 impl AuthMode {
-    /// Reads the auth mode from [`AUTH_MODE_ENV_VAR`], defaulting to [`AuthMode::Key`].
+    /// Reads the auth mode from [`AUTH_MODE_ENV_VAR`].
+    ///
+    /// Defaults to [`AuthMode::Key`] when the variable is unset. Any value other
+    /// than `key` or `aad` (case-insensitive) panics, so a misconfigured CI leg
+    /// fails loudly instead of silently falling back to key auth and skipping
+    /// AAD coverage.
     fn from_env() -> Self {
         match std::env::var(AUTH_MODE_ENV_VAR) {
-            Ok(v) if v.eq_ignore_ascii_case("aad") => AuthMode::Aad,
-            _ => AuthMode::Key,
+            Err(_) => AuthMode::Key,
+            Ok(v) => match v.to_lowercase().as_str() {
+                "key" => AuthMode::Key,
+                "aad" => AuthMode::Aad,
+                _ => panic!(
+                    "{} must be 'key' or 'aad', but was '{}'.",
+                    AUTH_MODE_ENV_VAR, v
+                ),
+            },
         }
     }
 }
@@ -745,6 +757,26 @@ impl TestRunContext {
     /// mode it is the same client returned by [`TestRunContext::client`].
     pub fn management_client(&self) -> &CosmosClient {
         self.management_client.as_ref().unwrap_or(&self.client)
+    }
+
+    /// Gets a container client derived from the management (key) client, for
+    /// operations that are not permitted by the data-plane RBAC role used in
+    /// AAD mode.
+    ///
+    /// Throughput/offer operations (`read_throughput`, `begin_replace_throughput`)
+    /// are control-plane and are rejected by the data-plane role granted in
+    /// `test-resources.bicep`, so they must go through the key client. In key
+    /// mode this is equivalent to deriving a container client from
+    /// [`TestRunContext::client`].
+    pub async fn management_container_client(
+        &self,
+        db_client: &DatabaseClient,
+        container_id: &str,
+    ) -> azure_data_cosmos::Result<ContainerClient> {
+        self.management_client()
+            .database_client(db_client.id())
+            .container_client(container_id)
+            .await
     }
 
     /// Gets the fault injection [`CosmosClient`], if configured.
