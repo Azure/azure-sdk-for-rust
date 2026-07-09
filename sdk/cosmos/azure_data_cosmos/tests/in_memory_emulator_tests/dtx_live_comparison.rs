@@ -2,6 +2,13 @@
 // Licensed under the MIT License.
 
 //! DTX dual-backend comparison tests.
+//!
+//! These tests are intentionally local-only for now. The CI live-test matrix
+//! does not provision a Cosmos DB account whose front door routes `/operations/dtc`,
+//! so preview DTX CI coverage stays emulator-only through the non-ignored
+//! validation tests in this target. Run this comparison manually with
+//! `AZURE_COSMOS_CONNECTION_STRING` set to a DTX-enabled account and pass
+//! `--ignored` when validating real service parity.
 
 use std::{error::Error, sync::Arc, time::Duration};
 
@@ -54,7 +61,7 @@ struct DtxReadTarget<'a> {
 }
 
 #[tokio::test]
-#[ignore = "requires AZURE_COSMOS_CONNECTION_STRING for a live account whose front door routes /operations/dtc"]
+#[ignore = "local-only: requires a DTX-enabled live account whose front door routes /operations/dtc"]
 async fn dtx_create_read_matches_live_account() -> Result<(), Box<dyn Error>> {
     let backend = DualBackend::setup().await?;
     let db_name = format!("{}-dtx", backend.unique_db_name());
