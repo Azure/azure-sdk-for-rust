@@ -798,7 +798,7 @@ impl EmulatorStore {
                 ))
                 .with_message(format!(
                     "no physical partition found for EPK {} in container '{}/{}'",
-                    epk.as_str(),
+                    epk.to_hex(),
                     db_id,
                     coll_id
                 ))
@@ -806,7 +806,7 @@ impl EmulatorStore {
         })?;
         partition
             .session_state
-            .set_force_unavailable_for(epk.as_str());
+            .set_force_unavailable_for(&epk.to_hex());
         Ok(())
     }
 
@@ -1705,7 +1705,7 @@ fn bytes_to_hex_upper(bytes: &[u8]) -> String {
 /// open bound" from "real all-zeros hash" everywhere boundaries flow, which
 /// has no observable upside.
 fn is_epk_min(epk: &Epk) -> bool {
-    epk.as_str().is_empty() || epk.as_str().chars().all(|c| c == '0')
+    epk.as_bytes().is_empty() || epk.as_bytes().iter().all(|&b| b == 0)
 }
 
 /// Returns true if `epk` represents the open upper bound of the EPK space.
@@ -1713,7 +1713,7 @@ fn is_epk_min(epk: &Epk) -> bool {
 /// Mirrors `is_epk_min`: accepts both the canonical `"FF"` sentinel and the
 /// fully-expanded 32-char "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" form.
 fn is_epk_max(epk: &Epk) -> bool {
-    let s = epk.as_str();
+    let s = epk.to_hex();
     s == "FF" || s.eq_ignore_ascii_case("ffffffffffffffffffffffffffffffff")
 }
 
@@ -2449,7 +2449,7 @@ fn compute_epk_midpoint_v2(min: &Epk, max: &Epk) -> Result<Epk, String> {
         if is_epk_max(epk) {
             return Ok(1u128 << 126);
         }
-        u128::from_str_radix(epk.as_str(), 16)
+        u128::from_str_radix(&epk.to_hex(), 16)
             .map_err(|e| format!("corrupted EPK partition bound {}={:?}: {e}", label, epk))
     };
     let min_val = parse(min, "min")?;
@@ -2497,7 +2497,7 @@ fn compute_epk_midpoint_v1(min: &Epk, max: &Epk) -> Result<Epk, String> {
         if is_epk_max(epk) {
             return Ok(u32::MAX);
         }
-        decode_v1_number_hex_to_u32(epk.as_str())
+        decode_v1_number_hex_to_u32(&epk.to_hex())
             .map_err(|e| format!("corrupted V1 EPK partition bound {}={:?}: {e}", label, epk))
     };
     let min_val = parse(min, "min")?;
@@ -2894,7 +2894,7 @@ mod tests {
             PartitionKeyVersion::V1,
         )
         .expect("full-range V1 midpoint");
-        let mid_full_u32 = super::decode_v1_number_hex_to_u32(mid_full.as_str()).unwrap();
+        let mid_full_u32 = super::decode_v1_number_hex_to_u32(&mid_full.to_hex()).unwrap();
         assert_eq!(mid_full_u32, u32::MAX / 2);
 
         // Narrow range: encode two u32 hashes as boundaries and verify the
@@ -2913,7 +2913,7 @@ mod tests {
             PartitionKeyVersion::V1,
         )
         .expect("narrow V1 midpoint");
-        let mid_narrow_u32 = super::decode_v1_number_hex_to_u32(mid_narrow.as_str()).unwrap();
+        let mid_narrow_u32 = super::decode_v1_number_hex_to_u32(&mid_narrow.to_hex()).unwrap();
         assert_eq!(mid_narrow_u32, ((lo_u32 as u64 + hi_u32 as u64) / 2) as u32);
 
         // Lex-order check: the encoded midpoint must sit strictly between
@@ -2923,11 +2923,11 @@ mod tests {
         let lo_hex = encode(lo_u32);
         let hi_hex = encode(hi_u32);
         assert!(
-            lo_hex.as_str() < mid_narrow.as_str() && mid_narrow.as_str() < hi_hex.as_str(),
+            lo_hex.to_hex() < mid_narrow.to_hex() && mid_narrow.to_hex() < hi_hex.to_hex(),
             "V1 midpoint not strictly between bounds: lo={} mid={} hi={}",
-            lo_hex.as_str(),
-            mid_narrow.as_str(),
-            hi_hex.as_str(),
+            lo_hex.to_hex(),
+            mid_narrow.to_hex(),
+            hi_hex.to_hex(),
         );
     }
 
