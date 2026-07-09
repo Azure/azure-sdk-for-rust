@@ -20,8 +20,6 @@
 
 ### Other Changes
 
-- The integration test framework now supports an `AZURE_COSMOS_AUTH_MODE=aad` mode that authenticates all data-plane operations with an Entra ID (AAD) token while using the account key only for database create/delete. A dedicated live CI leg runs the full suite under AAD to broaden Entra ID coverage. ([#4715](https://github.com/Azure/azure-sdk-for-rust/issues/4715))
-
 ## 0.36.0 (2026-06-19)
 
 ### Features Added
