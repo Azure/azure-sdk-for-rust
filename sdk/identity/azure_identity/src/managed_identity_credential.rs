@@ -8,6 +8,7 @@ use crate::{
 };
 use azure_core::credentials::{AccessToken, TokenCredential, TokenRequestOptions};
 use azure_core::http::ClientOptions;
+use std::fs::{self, File};
 use std::{any::type_name, fmt, sync::Arc};
 use tracing::info;
 
@@ -174,6 +175,27 @@ fn get_source(env: &Env) -> ManagedIdentitySource {
         }
         return CloudShell;
     }
+
+    let arc_agent_present = if cfg!(windows) {
+        if let Ok(program_files_path) = env.var("PROGRAMFILES") {
+            !program_files_path.is_empty()
+                && fs::exists(format!(
+                    "{program_files_path}\\AzureConnectedMachineAgent\\himds.exe"
+                ))
+                .unwrap_or(false)
+        } else {
+            // %PROGRAMFILES% should exist on Windows, but if it's not there,
+            // we can't tell if we're on Arc or not, so just assume we aren't
+            false
+        }
+    } else {
+        fs::exists("/opt/azcmagent/bin/himds").unwrap_or(false)
+    };
+
+    if arc_agent_present {
+        return AzureArc;
+    }
+
     Imds
 }
 
