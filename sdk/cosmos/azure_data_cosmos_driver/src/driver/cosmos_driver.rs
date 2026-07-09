@@ -54,6 +54,39 @@ const DTX_OUTER_BASE_DELAY: Duration = Duration::from_secs(1);
 const DTX_OUTER_MAX_EXPONENT: u32 = 5;
 #[cfg(feature = "preview_dtx")]
 const DTX_OUTER_JITTER_RATIO: f64 = 0.25;
+const ACCOUNT_PROPERTIES_CONNECTIVITY_MAX_RETRIES: u32 = 2;
+const ACCOUNT_PROPERTIES_CONNECTIVITY_BASE_DELAY: Duration = Duration::from_millis(100);
+
+fn should_retry_account_properties_connectivity_error(
+    error: &crate::error::CosmosError,
+    request_sent: RequestSentStatus,
+    retry_count: u32,
+) -> bool {
+    retry_count < ACCOUNT_PROPERTIES_CONNECTIVITY_MAX_RETRIES
+        && request_sent.definitely_not_sent()
+        && is_account_properties_connectivity_error(error)
+}
+
+fn is_account_properties_connectivity_error(error: &crate::error::CosmosError) -> bool {
+    if error.is_from_wire() {
+        return false;
+    }
+
+    matches!(
+        error.status().sub_status(),
+        Some(crate::models::SubStatusCode::TRANSPORT_GENERATED_503)
+            | Some(crate::models::SubStatusCode::TRANSPORT_CONNECTION_FAILED)
+            | Some(crate::models::SubStatusCode::TRANSPORT_IO_FAILED)
+            | Some(crate::models::SubStatusCode::TRANSPORT_DNS_FAILED)
+            | Some(crate::models::SubStatusCode::TRANSPORT_HTTP2_INCOMPATIBLE)
+            | Some(crate::models::SubStatusCode::TRANSPORT_BODY_READ_FAILED)
+            | Some(crate::models::SubStatusCode::CLIENT_OPERATION_TIMEOUT)
+    )
+}
+
+fn account_properties_connectivity_retry_delay(retry_count: u32) -> Duration {
+    ACCOUNT_PROPERTIES_CONNECTIVITY_BASE_DELAY * retry_count
+}
 
 #[cfg(feature = "tokio")]
 use super::routing::EndpointProbeFn;
@@ -557,77 +590,118 @@ impl CosmosDriver {
         // `_with_version` calls record the post-negotiation value. Probing first would
         // require a separate diagnostics envelope around the probe itself; we accept the
         // pre-negotiation label on bootstrap as the lower-risk tradeoff.
-        let request_handle = diagnostics.start_request(
-            ExecutionContext::Initial,
-            PipelineType::Metadata,
-            transport_security,
-            transport.diagnostics_kind(),
-            transport.diagnostics_http_version(),
-            &cosmos_endpoint,
-        );
-
-        let mut request = HttpRequest {
-            url: endpoint_url,
-            method: azure_core::http::Method::Get,
-            headers: azure_core::http::headers::Headers::new(),
-            body: None,
-            timeout: None,
-            #[cfg(feature = "fault_injection")]
-            evaluation_collector: None,
-        };
-        cosmos_headers::apply_cosmos_headers(&mut request, user_agent);
-
-        // Tag the request so `FaultInjectingHttpClient` can match
-        // `FaultOperationType::MetadataReadDatabaseAccount` rules against the
-        // bootstrap fetch. Mirrors the data-plane tag in `operation_pipeline`.
-        #[cfg(feature = "fault_injection")]
-        cosmos_headers::apply_fault_injection_operation_tag(
-            &mut request.headers,
-            crate::fault_injection::FaultOperationType::MetadataReadDatabaseAccount,
-        );
-
-        if let Err(err) = request_signing::sign_request(
-            &mut request,
-            account.auth(),
-            &AuthorizationContext::new(
-                azure_core::http::Method::Get,
-                ResourceType::DatabaseAccount,
-                "",
-            ),
-        )
-        .await
-        {
-            // Sign failure: request never went on the wire.
-            let sign_status = err.status();
-            diagnostics.fail_transport_request(
-                request_handle,
-                err.to_string(),
-                RequestSentStatus::NotSent,
-                sign_status,
+        let mut connectivity_retry_count = 0_u32;
+        let (response, request_handle) = loop {
+            let execution_context = if connectivity_retry_count == 0 {
+                ExecutionContext::Initial
+            } else {
+                ExecutionContext::TransportRetry
+            };
+            let request_handle = diagnostics.start_request(
+                execution_context,
+                PipelineType::Metadata,
+                transport_security,
+                transport.diagnostics_kind(),
+                transport.diagnostics_http_version(),
+                &cosmos_endpoint,
             );
-            diagnostics.set_operation_status(sign_status.status_code(), sign_status.sub_status());
-            return Err(crate::error::CosmosErrorBuilder::from_error(err)
-                .with_context(format!("AccountProperties sign_request for {endpoint}"))
-                .with_diagnostics(Arc::new(diagnostics.complete()))
-                .build());
-        }
+            for _ in 0..connectivity_retry_count {
+                diagnostics.increment_local_shard_retry_count(request_handle);
+            }
 
-        let response = match transport.send(&request).await {
-            Ok(r) => r,
-            Err(e) => {
-                let send_status = e.error.status();
+            let mut request = HttpRequest {
+                url: endpoint_url.clone(),
+                method: azure_core::http::Method::Get,
+                headers: azure_core::http::headers::Headers::new(),
+                body: None,
+                timeout: None,
+                #[cfg(feature = "fault_injection")]
+                evaluation_collector: None,
+            };
+            cosmos_headers::apply_cosmos_headers(&mut request, user_agent);
+
+            // Tag the request so `FaultInjectingHttpClient` can match
+            // `FaultOperationType::MetadataReadDatabaseAccount` rules against the
+            // bootstrap fetch. Mirrors the data-plane tag in `operation_pipeline`.
+            #[cfg(feature = "fault_injection")]
+            cosmos_headers::apply_fault_injection_operation_tag(
+                &mut request.headers,
+                crate::fault_injection::FaultOperationType::MetadataReadDatabaseAccount,
+            );
+
+            if let Err(err) = request_signing::sign_request(
+                &mut request,
+                account.auth(),
+                &AuthorizationContext::new(
+                    azure_core::http::Method::Get,
+                    ResourceType::DatabaseAccount,
+                    "",
+                ),
+            )
+            .await
+            {
+                // Sign failure: request never went on the wire.
+                let sign_status = err.status();
                 diagnostics.fail_transport_request(
                     request_handle,
-                    e.error.to_string(),
-                    e.request_sent,
-                    send_status,
+                    err.to_string(),
+                    RequestSentStatus::NotSent,
+                    sign_status,
                 );
                 diagnostics
-                    .set_operation_status(send_status.status_code(), send_status.sub_status());
-                return Err(crate::error::CosmosErrorBuilder::from_error(e.error)
-                    .with_context(format!("AccountProperties fetch from {endpoint}"))
+                    .set_operation_status(sign_status.status_code(), sign_status.sub_status());
+                return Err(crate::error::CosmosErrorBuilder::from_error(err)
+                    .with_context(format!("AccountProperties sign_request for {endpoint}"))
                     .with_diagnostics(Arc::new(diagnostics.complete()))
                     .build());
+            }
+
+            match transport.send(&request).await {
+                Ok(r) => break (r, request_handle),
+                Err(e) => {
+                    if should_retry_account_properties_connectivity_error(
+                        &e.error,
+                        e.request_sent,
+                        connectivity_retry_count,
+                    ) {
+                        connectivity_retry_count += 1;
+                        let delay =
+                            account_properties_connectivity_retry_delay(connectivity_retry_count);
+                        tracing::debug!(
+                            endpoint = %endpoint,
+                            retry_count = connectivity_retry_count,
+                            ?delay,
+                            error = %e.error,
+                            "retrying AccountProperties fetch after connectivity failure"
+                        );
+                        diagnostics.fail_transport_request(
+                            request_handle,
+                            e.error.to_string(),
+                            e.request_sent,
+                            e.error.status(),
+                        );
+                        azure_core::sleep(
+                            azure_core::time::Duration::try_from(delay)
+                                .unwrap_or(azure_core::time::Duration::ZERO),
+                        )
+                        .await;
+                        continue;
+                    }
+
+                    let send_status = e.error.status();
+                    diagnostics.fail_transport_request(
+                        request_handle,
+                        e.error.to_string(),
+                        e.request_sent,
+                        send_status,
+                    );
+                    diagnostics
+                        .set_operation_status(send_status.status_code(), send_status.sub_status());
+                    return Err(crate::error::CosmosErrorBuilder::from_error(e.error)
+                        .with_context(format!("AccountProperties fetch from {endpoint}"))
+                        .with_diagnostics(Arc::new(diagnostics.complete()))
+                        .build());
+                }
             }
         };
         let cosmos_headers = crate::models::CosmosResponseHeaders::from_headers(&response.headers);
@@ -4013,6 +4087,38 @@ mod tests {
         Arc::from(client)
     }
 
+    #[derive(Debug)]
+    struct SequenceClient {
+        plans: Mutex<VecDeque<ResponsePlan>>,
+    }
+
+    impl SequenceClient {
+        fn new(plans: impl IntoIterator<Item = ResponsePlan>) -> Self {
+            Self {
+                plans: Mutex::new(plans.into_iter().collect()),
+            }
+        }
+    }
+
+    #[async_trait]
+    impl TransportClient for SequenceClient {
+        async fn send(&self, request: &HttpRequest) -> Result<HttpResponse, TransportError> {
+            let plan = self
+                .plans
+                .lock()
+                .expect("plan lock poisoned")
+                .pop_front()
+                .unwrap_or(ResponsePlan::Success);
+
+            ScriptedClient { plan }.send(request).await
+        }
+    }
+
+    fn sequence_client(plans: impl IntoIterator<Item = ResponsePlan>) -> Arc<dyn TransportClient> {
+        let client: Box<dyn TransportClient> = Box::new(SequenceClient::new(plans));
+        Arc::from(client)
+    }
+
     async fn drive_fetch_with(
         status: u16,
         body: Vec<u8>,
@@ -4035,6 +4141,94 @@ mod tests {
             false,
         )
         .await
+    }
+
+    #[tokio::test]
+    async fn fetch_account_properties_retries_not_sent_connectivity_failures() {
+        let client = sequence_client([
+            ResponsePlan::ConnectionError,
+            ResponsePlan::ConnectionError,
+            ResponsePlan::Success,
+        ]);
+        let transport =
+            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let account = signed_test_account("https://test.documents.azure.com:443/");
+        let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
+
+        let properties = CosmosDriver::fetch_account_properties_with_transport(
+            &runtime,
+            &transport,
+            &account,
+            None,
+            &user_agent,
+            false,
+        )
+        .await
+        .expect("not-sent connectivity failures should be retried");
+
+        assert_eq!(properties.write_region().unwrap().as_str(), "westus2");
+    }
+
+    #[tokio::test]
+    async fn fetch_account_properties_records_retried_connectivity_attempts() {
+        let client = sequence_client([
+            ResponsePlan::ConnectionError,
+            ResponsePlan::ConnectionError,
+            ResponsePlan::ConnectionError,
+        ]);
+        let transport =
+            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let account = signed_test_account("https://test.documents.azure.com:443/");
+        let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
+
+        let error = CosmosDriver::fetch_account_properties_with_transport(
+            &runtime,
+            &transport,
+            &account,
+            None,
+            &user_agent,
+            false,
+        )
+        .await
+        .expect_err("connectivity failures should surface after retry budget exhaustion");
+
+        let diagnostics = error.diagnostics().expect("error should carry diagnostics");
+        let requests = diagnostics.requests();
+        assert_eq!(
+            requests.len(),
+            3,
+            "initial attempt plus two retries should each have diagnostics: {diagnostics:?}"
+        );
+        assert_eq!(requests[0].execution_context(), ExecutionContext::Initial);
+        assert_eq!(
+            requests[1].execution_context(),
+            ExecutionContext::TransportRetry
+        );
+        assert_eq!(
+            requests[2].execution_context(),
+            ExecutionContext::TransportRetry
+        );
+        assert!(requests.iter().all(|request| {
+            request.request_sent() == crate::diagnostics::RequestSentStatus::NotSent
+        }));
+    }
+
+    #[tokio::test]
+    async fn fetch_account_properties_does_not_retry_wire_failures() {
+        let err = drive_fetch_with(
+            503,
+            br#"{"code":"ServiceUnavailable","message":"server busy"}"#.to_vec(),
+        )
+        .await
+        .expect_err("wire 503 should not use connectivity retries");
+
+        let diagnostics = err.diagnostics().expect("error should carry diagnostics");
+        assert_eq!(diagnostics.requests().len(), 1);
+        assert_eq!(u16::from(err.status().status_code()), 503);
     }
 
     /// `TransportClient` whose `send` always fails at the connection level

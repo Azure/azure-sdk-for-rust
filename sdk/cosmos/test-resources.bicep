@@ -119,7 +119,6 @@ resource accountName_roleAssignmentId 'Microsoft.DocumentDB/databaseAccounts/sql
 }
 
 output COSMOS_RUSTFLAGS string = '--cfg=test_category="${testCategory}"'
-output RUST_TEST_THREADS string = '1'
 output DATABASE_NAME string = databaseName
 output AZURE_COSMOS_CONNECTION_STRING string = 'AccountEndpoint=${reference(resourceId, apiVersion).documentEndpoint};AccountKey=${listKeys(resourceId, apiVersion).primaryMasterKey};'
 output ACCOUNT_HOST string = reference(resourceId, apiVersion).documentEndpoint
