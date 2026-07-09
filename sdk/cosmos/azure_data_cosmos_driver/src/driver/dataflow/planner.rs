@@ -588,7 +588,7 @@ fn query_range_to_feed_range(
 
 /// Returns true when `scope` covers the entire EPK key space (`""..FF`), i.e.
 /// imposes no restriction on a cross-partition query.
-fn scope_covers_full_keyspace(scope: &FeedRange) -> bool {
+fn scope_covers_full_key_space(scope: &FeedRange) -> bool {
     let full = FeedRange::full();
     scope.min_inclusive() == full.min_inclusive() && scope.max_exclusive() == full.max_exclusive()
 }
@@ -609,7 +609,7 @@ fn clip_to_operation_scope(
 ) -> Option<FeedRange> {
     let Some(scope) = operation
         .target()
-        .filter(|s| !scope_covers_full_keyspace(s))
+        .filter(|s| !scope_covers_full_key_space(s))
     else {
         return Some(feed_range);
     };
