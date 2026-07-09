@@ -15,4 +15,4 @@
 // =========================================================================
 
 #[doc(inline)]
-pub use azure_data_cosmos_driver::diagnostics::DiagnosticsContext;
+pub use azure_data_cosmos_driver::diagnostics::{DiagnosticsContext, TransportKind};

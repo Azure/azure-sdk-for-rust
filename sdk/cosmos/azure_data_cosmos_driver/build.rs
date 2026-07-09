@@ -6,5 +6,7 @@
 // unknown cfg names are warned/denied unless explicitly declared via check-cfg.
 fn main() {
     // Allow `#[cfg_attr(not(test_category = "..."), ignore)]` in `tests/*.rs`.
-    println!("cargo:rustc-check-cfg=cfg(test_category, values(\"emulator\", \"emulator_vnext\", \"multi_write\", \"multi_region\", \"native_query_plan\"))");
+    println!(
+        "cargo:rustc-check-cfg=cfg(test_category, values(\"emulator\", \"emulator_vnext\", \"multi_write\", \"multi_region\", \"gateway_v2\", \"gateway_v2_multi_region\", \"native_query_plan\"))"
+    );
 }
