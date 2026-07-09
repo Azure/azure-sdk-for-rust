@@ -259,6 +259,12 @@ impl SecretClient {
             query_builder.set_pair("maxresults", maxresults.to_string());
         }
         query_builder.build();
+        #[derive(serde::Deserialize)]
+        struct SecretClientListDeletedSecretPropertiesPage {
+            #[serde(rename = "nextLink")]
+            next_link: Option<String>,
+        }
+
         let api_version = self.api_version.clone();
         Ok(Pager::new(
             move |next_link: PagerState, pager_options| {
@@ -291,7 +297,8 @@ impl SecretClient {
                             )
                             .await?;
                         let (status, headers, body) = rsp.deconstruct();
-                        let res: ListDeletedSecretPropertiesResult = json::from_json(&body)?;
+                        let res: SecretClientListDeletedSecretPropertiesPage =
+                            json::from_json(&body)?;
                         let rsp = RawResponse::from_bytes(status, headers, body).into();
                         Ok(match res.next_link {
                             Some(next_link) if !next_link.is_empty() => PagerResult::More {
@@ -333,6 +340,12 @@ impl SecretClient {
             query_builder.set_pair("maxresults", maxresults.to_string());
         }
         query_builder.build();
+        #[derive(serde::Deserialize)]
+        struct SecretClientListSecretPropertiesPage {
+            #[serde(rename = "nextLink")]
+            next_link: Option<String>,
+        }
+
         let api_version = self.api_version.clone();
         Ok(Pager::new(
             move |next_link: PagerState, pager_options| {
@@ -365,7 +378,7 @@ impl SecretClient {
                             )
                             .await?;
                         let (status, headers, body) = rsp.deconstruct();
-                        let res: ListSecretPropertiesResult = json::from_json(&body)?;
+                        let res: SecretClientListSecretPropertiesPage = json::from_json(&body)?;
                         let rsp = RawResponse::from_bytes(status, headers, body).into();
                         Ok(match res.next_link {
                             Some(next_link) if !next_link.is_empty() => PagerResult::More {
@@ -416,6 +429,12 @@ impl SecretClient {
             query_builder.set_pair("maxresults", maxresults.to_string());
         }
         query_builder.build();
+        #[derive(serde::Deserialize)]
+        struct SecretClientListSecretPropertiesVersionsPage {
+            #[serde(rename = "nextLink")]
+            next_link: Option<String>,
+        }
+
         let api_version = self.api_version.clone();
         Ok(Pager::new(
             move |next_link: PagerState, pager_options| {
@@ -448,7 +467,8 @@ impl SecretClient {
                             )
                             .await?;
                         let (status, headers, body) = rsp.deconstruct();
-                        let res: ListSecretPropertiesResult = json::from_json(&body)?;
+                        let res: SecretClientListSecretPropertiesVersionsPage =
+                            json::from_json(&body)?;
                         let rsp = RawResponse::from_bytes(status, headers, body).into();
                         Ok(match res.next_link {
                             Some(next_link) if !next_link.is_empty() => PagerResult::More {
@@ -719,4 +739,4 @@ impl SecretClient {
 /// SDK author provides a custom options type and should reference this constant
 /// in their `Default` implementation rather than hardcoding the value.
 #[allow(dead_code)]
-pub(crate) const DEFAULT_API_VERSION: &str = "2025-07-01";
+pub(crate) const DEFAULT_API_VERSION: &str = "2026-03-01-preview";

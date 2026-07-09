@@ -18,6 +18,8 @@ pub(crate) mod cosmos_headers;
 mod cosmos_operation;
 mod cosmos_resource_reference;
 mod cosmos_response;
+#[cfg(feature = "preview_dtx")]
+mod distributed_transaction;
 mod finite_f64;
 pub(crate) mod partition_key;
 mod patch;
@@ -51,11 +53,18 @@ pub use cosmos_headers::{
     AutoscaleAutoUpgradePolicy, AutoscaleThroughputPolicy, CosmosRequestHeaders,
     CosmosResponseHeaders, MaxItemCountHint, OfferAutoscaleSettings,
 };
-pub use cosmos_operation::CosmosOperation;
+pub use cosmos_operation::{ChangeFeedStartFrom, CosmosOperation};
 pub use cosmos_resource_reference::CosmosResourceReference;
 pub(crate) use cosmos_resource_reference::ResourcePaths;
 pub use cosmos_response::CosmosResponse;
 pub(crate) use cosmos_response::CosmosResponsePayload;
+#[cfg(feature = "preview_dtx")]
+pub use distributed_transaction::{
+    DistributedTransactionOperation, DistributedTransactionOperationKind,
+    DistributedTransactionOperationResult, DistributedTransactionRequest,
+    DistributedTransactionResponse, DistributedTransactionResultBody, DistributedTransactionTarget,
+    DistributedTransactionType,
+};
 // Cosmos status types are owned by `crate::error::cosmos_status` (canonical home,
 // tightly coupled to the typed Cosmos error). Re-exported here for ergonomic access
 // via the historic `crate::models::CosmosStatus` path used throughout the driver
@@ -348,6 +357,9 @@ pub enum ResourceType {
     PartitionKeyRange,
     /// An offer (throughput configuration).
     Offer,
+    /// Distributed transaction coordinator batch.
+    #[cfg(feature = "preview_dtx")]
+    DistributedTransactionBatch,
 }
 
 impl ResourceType {
@@ -363,6 +375,8 @@ impl ResourceType {
             ResourceType::UserDefinedFunction => "user_defined_function",
             ResourceType::PartitionKeyRange => "partition_key_range",
             ResourceType::Offer => "offer",
+            #[cfg(feature = "preview_dtx")]
+            ResourceType::DistributedTransactionBatch => "distributed_transaction_batch",
         }
     }
 
@@ -378,6 +392,8 @@ impl ResourceType {
             ResourceType::UserDefinedFunction => "udfs",
             ResourceType::PartitionKeyRange => "pkranges",
             ResourceType::Offer => "offers",
+            #[cfg(feature = "preview_dtx")]
+            ResourceType::DistributedTransactionBatch => "distributedtransactionbatch",
         }
     }
 
@@ -464,6 +480,10 @@ impl std::str::FromStr for ResourceType {
             "user_defined_function" | "udf" => Ok(ResourceType::UserDefinedFunction),
             "partition_key_range" | "pkrange" => Ok(ResourceType::PartitionKeyRange),
             "offer" => Ok(ResourceType::Offer),
+            #[cfg(feature = "preview_dtx")]
+            "distributed_transaction_batch" | "distributedtransactionbatch" => {
+                Ok(ResourceType::DistributedTransactionBatch)
+            }
             _ => Err(format!(
                 "Unknown resource type: '{}'. Expected one of: database_account, database, \
                  document_collection, document, stored_procedure, trigger, \
@@ -523,6 +543,12 @@ pub enum OperationType {
     /// never sent on the wire; the variant is a virtual operation type the
     /// driver dispatches to a dedicated handler.
     Patch,
+    /// Commit a distributed write transaction.
+    #[cfg(feature = "preview_dtx")]
+    CommitDistributedTransaction,
+    /// Execute a distributed read transaction.
+    #[cfg(feature = "preview_dtx")]
+    ReadDistributedTransaction,
 }
 
 impl OperationType {
@@ -548,6 +574,9 @@ impl OperationType {
             | OperationType::Batch
             | OperationType::QueryPlan
             | OperationType::Execute => Method::Post,
+            #[cfg(feature = "preview_dtx")]
+            OperationType::CommitDistributedTransaction
+            | OperationType::ReadDistributedTransaction => Method::Post,
             OperationType::Delete => Method::Delete,
             OperationType::Read => Method::Get,
             OperationType::ReadFeed => Method::Get,
@@ -563,32 +592,47 @@ impl OperationType {
 
     /// Returns true if the operation does not modify server state.
     pub fn is_read_only(self) -> bool {
-        matches!(
-            self,
+        match self {
             OperationType::Read
-                | OperationType::ReadFeed
-                | OperationType::Query
-                | OperationType::SqlQuery
-                | OperationType::QueryPlan
-                | OperationType::Head
-                | OperationType::HeadFeed
-        )
+            | OperationType::ReadFeed
+            | OperationType::Query
+            | OperationType::SqlQuery
+            | OperationType::QueryPlan
+            | OperationType::Head
+            | OperationType::HeadFeed => true,
+            #[cfg(feature = "preview_dtx")]
+            OperationType::ReadDistributedTransaction => true,
+            _ => false,
+        }
+    }
+
+    /// Returns true if this operation must be routed to write endpoints.
+    pub fn routes_to_write_endpoints(self) -> bool {
+        match self {
+            #[cfg(feature = "preview_dtx")]
+            OperationType::CommitDistributedTransaction
+            | OperationType::ReadDistributedTransaction => true,
+            _ => !self.is_read_only(),
+        }
     }
 
     /// Returns true if the operation is idempotent (safe to retry).
     pub fn is_idempotent(self) -> bool {
-        matches!(
-            self,
+        match self {
             OperationType::Read
-                | OperationType::ReadFeed
-                | OperationType::Query
-                | OperationType::SqlQuery
-                | OperationType::QueryPlan
-                | OperationType::Head
-                | OperationType::HeadFeed
-                | OperationType::Replace
-                | OperationType::Delete
-        )
+            | OperationType::ReadFeed
+            | OperationType::Query
+            | OperationType::SqlQuery
+            | OperationType::QueryPlan
+            | OperationType::Head
+            | OperationType::HeadFeed
+            | OperationType::Replace
+            | OperationType::Delete => true,
+            #[cfg(feature = "preview_dtx")]
+            OperationType::CommitDistributedTransaction
+            | OperationType::ReadDistributedTransaction => true,
+            _ => false,
+        }
     }
 
     /// Returns the string representation of this operation type.
@@ -608,6 +652,10 @@ impl OperationType {
             OperationType::HeadFeed => "head_feed",
             OperationType::Execute => "execute",
             OperationType::Patch => "patch",
+            #[cfg(feature = "preview_dtx")]
+            OperationType::CommitDistributedTransaction => "commit_distributed_transaction",
+            #[cfg(feature = "preview_dtx")]
+            OperationType::ReadDistributedTransaction => "read_distributed_transaction",
         }
     }
 }

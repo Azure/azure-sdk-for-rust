@@ -19,7 +19,7 @@ use crate::options::ConnectionPoolOptions;
 /// `Gateway` is an unsharded HTTP/1.1 transport used when the gateway does not
 /// support HTTP/2. `ShardedGateway` is a per-endpoint sharded HTTP/2 transport
 /// used when HTTP/2 has been confirmed via the initialization probe.
-/// `ShardedGateway20` is reserved for Gateway 2.0 thin-client requests and
+/// `ShardedGatewayV2` is reserved for Gateway 2.0 requests and
 /// always uses HTTP/2 prior knowledge.
 #[derive(Clone)]
 pub(crate) enum AdaptiveTransport {
@@ -28,7 +28,7 @@ pub(crate) enum AdaptiveTransport {
     /// Per-endpoint HTTP/2 sharded gateway transport (HTTP/2 keepalive, no TCP keepalive).
     ShardedGateway(Arc<ShardedHttpTransport>),
     /// Gateway 2.0 transport with per-endpoint HTTP/2 sharding.
-    ShardedGateway20(Arc<ShardedHttpTransport>),
+    ShardedGatewayV2(Arc<ShardedHttpTransport>),
 }
 
 impl AdaptiveTransport {
@@ -63,12 +63,12 @@ impl AdaptiveTransport {
     }
 
     /// Creates a Gateway 2.0 transport (always HTTP/2 sharded).
-    pub(crate) fn gateway20(
+    pub(crate) fn gateway_v2(
         connection_pool: &ConnectionPoolOptions,
         client_factory: Arc<dyn HttpClientFactory>,
         config: HttpClientConfig,
     ) -> Self {
-        Self::ShardedGateway20(Arc::new(ShardedHttpTransport::new(
+        Self::ShardedGatewayV2(Arc::new(ShardedHttpTransport::new(
             connection_pool.clone(),
             client_factory,
             config,
@@ -79,7 +79,7 @@ impl AdaptiveTransport {
     pub(crate) fn diagnostics_kind(&self) -> TransportKind {
         match self {
             Self::Gateway(_) | Self::ShardedGateway(_) => TransportKind::Gateway,
-            Self::ShardedGateway20(_) => TransportKind::Gateway20,
+            Self::ShardedGatewayV2(_) => TransportKind::GatewayV2,
         }
     }
 
@@ -87,7 +87,7 @@ impl AdaptiveTransport {
     pub(crate) fn diagnostics_http_version(&self) -> TransportHttpVersion {
         match self {
             Self::Gateway(_) => TransportHttpVersion::Http11,
-            Self::ShardedGateway(_) | Self::ShardedGateway20(_) => TransportHttpVersion::Http2,
+            Self::ShardedGateway(_) | Self::ShardedGatewayV2(_) => TransportHttpVersion::Http2,
         }
     }
 
@@ -95,7 +95,7 @@ impl AdaptiveTransport {
     pub(crate) async fn send(&self, request: &HttpRequest) -> Result<HttpResponse, TransportError> {
         match self {
             Self::Gateway(client) => client.send(request).await,
-            Self::ShardedGateway(transport) | Self::ShardedGateway20(transport) => {
+            Self::ShardedGateway(transport) | Self::ShardedGatewayV2(transport) => {
                 let endpoint_key = EndpointKey::try_from(&request.url).map_err(|e| {
                     TransportError::new(e, crate::diagnostics::RequestSentStatus::NotSent)
                 })?;
@@ -120,7 +120,7 @@ impl AdaptiveTransport {
                 shard_id: None,
                 shard_diagnostics: None,
             },
-            Self::ShardedGateway(transport) | Self::ShardedGateway20(transport) => {
+            Self::ShardedGateway(transport) | Self::ShardedGatewayV2(transport) => {
                 transport
                     .send(request, excluded_shard_id, endpoint_key, preferred_shard_id)
                     .await
@@ -135,7 +135,7 @@ impl AdaptiveTransport {
     ) -> bool {
         match self {
             Self::Gateway(_) => false,
-            Self::ShardedGateway(transport) | Self::ShardedGateway20(transport) => {
+            Self::ShardedGateway(transport) | Self::ShardedGatewayV2(transport) => {
                 transport.can_retry_on_different_shard(excluded_shard_id, endpoint_key)
             }
         }
@@ -152,7 +152,7 @@ impl AdaptiveTransport {
     ) -> Option<u64> {
         match self {
             Self::Gateway(_) => None,
-            Self::ShardedGateway(transport) | Self::ShardedGateway20(transport) => {
+            Self::ShardedGateway(transport) | Self::ShardedGatewayV2(transport) => {
                 transport.pre_select_shard_id(excluded_shard_id, endpoint_key)
             }
         }
