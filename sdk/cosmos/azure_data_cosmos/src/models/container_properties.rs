@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 use std::borrow::Cow;
+use std::time::Duration;
 
 use azure_core::fmt::SafeDebug;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -121,6 +122,16 @@ pub struct ContainerProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub vector_embedding_policy: Option<VectorEmbeddingPolicy>,
 
+    /// The change feed policy for the container.
+    ///
+    /// Configure a retention duration here to enable the
+    /// [`AllVersionsAndDeletes`](crate::options::ChangeFeedMode::AllVersionsAndDeletes)
+    /// ("full fidelity") change feed mode. Without it, only the default
+    /// [`LatestVersion`](crate::options::ChangeFeedMode::LatestVersion) mode is
+    /// available.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub change_feed_policy: Option<ChangeFeedPolicy>,
+
     /// The time-to-live for items in the container.
     ///
     /// For more information see <https://learn.microsoft.com/azure/cosmos-db/time-to-live#time-to-live-configurations>
@@ -149,6 +160,7 @@ impl ContainerProperties {
             unique_key_policy: None,
             conflict_resolution_policy: None,
             vector_embedding_policy: None,
+            change_feed_policy: None,
             default_ttl: TimeToLive::Forever,
             analytical_storage_ttl: TimeToLive::Forever,
             system_properties: SystemProperties::default(),
@@ -178,6 +190,16 @@ impl ContainerProperties {
         vector_embedding_policy: VectorEmbeddingPolicy,
     ) -> Self {
         self.vector_embedding_policy = Some(vector_embedding_policy);
+        self
+    }
+
+    /// Sets the change feed policy for the container.
+    ///
+    /// Use [`ChangeFeedPolicy::all_versions_and_deletes`] to enable the
+    /// [`AllVersionsAndDeletes`](crate::options::ChangeFeedMode::AllVersionsAndDeletes)
+    /// change feed mode with a retention window.
+    pub fn with_change_feed_policy(mut self, change_feed_policy: ChangeFeedPolicy) -> Self {
+        self.change_feed_policy = Some(change_feed_policy);
         self
     }
 
@@ -408,11 +430,61 @@ pub enum ConflictResolutionMode {
     Custom,
 }
 
+/// The change feed policy for a container.
+///
+/// Configuring a retention duration enables the
+/// [`AllVersionsAndDeletes`](crate::options::ChangeFeedMode::AllVersionsAndDeletes)
+/// ("full fidelity") change feed mode: intermediate versions and deletes are
+/// retained for the configured window so they can be read back. Without a
+/// retention duration only the default
+/// [`LatestVersion`](crate::options::ChangeFeedMode::LatestVersion) mode is
+/// available.
+///
+/// The retention window has minute granularity. On the service it must fall
+/// within the supported range (currently 1 hour to 30 days) when full fidelity
+/// is enabled; this type does not enforce that range, leaving the service as the
+/// source of truth.
+///
+/// For more information see <https://learn.microsoft.com/azure/cosmos-db/nosql/change-feed-modes>
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[safe(true)]
+#[non_exhaustive]
+pub struct ChangeFeedPolicy {
+    /// The full-fidelity retention window, in minutes.
+    ///
+    /// A value of `0` (the default) disables full fidelity, leaving only
+    /// `LatestVersion` reads available.
+    #[serde(rename = "retentionDuration", default)]
+    pub retention_duration_minutes: i32,
+}
+
+impl ChangeFeedPolicy {
+    /// Creates a change feed policy that enables the
+    /// [`AllVersionsAndDeletes`](crate::options::ChangeFeedMode::AllVersionsAndDeletes)
+    /// ("full fidelity") mode with the given retention window.
+    ///
+    /// The window has minute granularity; any sub-minute component of
+    /// `retention` is truncated.
+    pub fn all_versions_and_deletes(retention: Duration) -> Self {
+        Self {
+            retention_duration_minutes: (retention.as_secs() / 60) as i32,
+        }
+    }
+
+    /// Returns the full-fidelity retention window.
+    ///
+    /// A zero duration means full fidelity is disabled.
+    pub fn retention_duration(&self) -> Duration {
+        Duration::from_secs(self.retention_duration_minutes.max(0) as u64 * 60)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use serde::{Deserialize, Serialize};
+    use std::time::Duration;
 
-    use super::TimeToLive;
+    use super::{ChangeFeedPolicy, TimeToLive};
     use crate::models::ContainerProperties;
 
     #[derive(Debug, Deserialize, Serialize)]
@@ -547,6 +619,49 @@ mod tests {
         assert_eq!(
             "{\"id\":\"MyContainer\",\"partitionKey\":{\"paths\":[\"/partitionKey\"],\"kind\":\"Hash\",\"version\":2}}",
             json
+        );
+    }
+
+    #[test]
+    fn change_feed_policy_serializes_retention_minutes() {
+        let policy = ChangeFeedPolicy::all_versions_and_deletes(Duration::from_secs(5 * 60));
+        assert_eq!(5, policy.retention_duration_minutes);
+        let json = serde_json::to_string(&policy).unwrap();
+        assert_eq!(r#"{"retentionDuration":5}"#, json);
+    }
+
+    #[test]
+    fn change_feed_policy_truncates_sub_minute_retention() {
+        let policy = ChangeFeedPolicy::all_versions_and_deletes(Duration::from_secs(90));
+        assert_eq!(1, policy.retention_duration_minutes);
+        assert_eq!(Duration::from_secs(60), policy.retention_duration());
+    }
+
+    #[test]
+    fn change_feed_policy_deserializes_retention_minutes() {
+        let policy: ChangeFeedPolicy = serde_json::from_str(r#"{"retentionDuration":10}"#).unwrap();
+        assert_eq!(10, policy.retention_duration_minutes);
+        assert_eq!(Duration::from_secs(10 * 60), policy.retention_duration());
+    }
+
+    #[test]
+    fn container_properties_with_change_feed_policy_round_trips() {
+        let properties = ContainerProperties::new("MyContainer", "/partitionKey".into())
+            .with_change_feed_policy(ChangeFeedPolicy::all_versions_and_deletes(
+                Duration::from_secs(60 * 60),
+            ));
+        let json = serde_json::to_string(&properties).unwrap();
+        assert!(
+            json.contains(r#""changeFeedPolicy":{"retentionDuration":60}"#),
+            "unexpected json: {json}"
+        );
+
+        let round_tripped: ContainerProperties = serde_json::from_str(&json).unwrap();
+        assert_eq!(
+            Some(60),
+            round_tripped
+                .change_feed_policy
+                .map(|p| p.retention_duration_minutes)
         );
     }
 }

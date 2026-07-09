@@ -16,9 +16,9 @@ pub use azure_data_cosmos_driver::models::{
 pub use batch_response::BatchResponse;
 pub use change_feed_item::{ChangeFeedItem, ChangeFeedMetadata, ChangeFeedOperationType};
 pub use container_properties::{
-    ConflictResolutionMode, ConflictResolutionPolicy, ContainerProperties, TimeToLive, UniqueKey,
-    UniqueKeyPolicy, VectorDataType, VectorDistanceFunction, VectorEmbedding,
-    VectorEmbeddingPolicy,
+    ChangeFeedPolicy, ConflictResolutionMode, ConflictResolutionPolicy, ContainerProperties,
+    TimeToLive, UniqueKey, UniqueKeyPolicy, VectorDataType, VectorDistanceFunction,
+    VectorEmbedding, VectorEmbeddingPolicy,
 };
 pub use database_properties::DatabaseProperties;
 pub use indexing_policy::{

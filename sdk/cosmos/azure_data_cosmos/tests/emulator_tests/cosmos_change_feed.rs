@@ -16,6 +16,13 @@
 //!   occurred after the captured position.
 //! * Resuming a partially-polled `StartFrom::Now` feed does not replay history
 //!   on the partitions that were never polled before the checkpoint.
+//!
+//! A second group exercises the `AllVersionsAndDeletes` ("full fidelity") mode
+//! against a container configured with a change feed retention policy: create,
+//! replace, and delete each surface as a distinct [`ChangeFeedItem`] envelope,
+//! and the mode reads correctly across a cross-partition fan-out. These AVAD
+//! tests are gated on `test_category = "emulator"` only — the vnext (Linux)
+//! emulator does not yet support full-fidelity reads.
 
 use super::framework;
 
@@ -23,12 +30,20 @@ use std::error::Error;
 use std::num::NonZeroU32;
 use std::time::Duration;
 
+use azure_data_cosmos::clients::{ContainerClient, DatabaseClient};
 use azure_data_cosmos::feed::{ChangeFeedPageIterator, ContinuationToken, FeedScope};
-use azure_data_cosmos::models::{ChangeFeedItem, ThroughputProperties};
-use azure_data_cosmos::options::{ChangeFeedOptions, ChangeFeedStartFrom, MaxItemCountHint};
-use framework::{test_data, MockItem, TestClient, TestOptions};
+use azure_data_cosmos::models::{
+    ChangeFeedItem, ChangeFeedOperationType, ChangeFeedPolicy, ContainerProperties,
+    ThroughputProperties,
+};
+use azure_data_cosmos::options::{
+    ChangeFeedMode, ChangeFeedOptions, ChangeFeedStartFrom, CreateContainerOptions,
+    MaxItemCountHint,
+};
+use framework::{test_data, MockItem, TestClient, TestOptions, TestRunContext};
 use futures::StreamExt;
 use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 
 /// Maximum number of page polls a drain loop will perform before giving up.
@@ -607,6 +622,315 @@ pub async fn change_feed_max_item_count_pages_backlog() -> Result<(), Box<dyn Er
             assert_eq!(
                 expected, collected,
                 "every item must be delivered exactly once across the paged reads"
+            );
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+// ---------------------------------------------------------------------------
+// AllVersionsAndDeletes ("full fidelity") change feed
+// ---------------------------------------------------------------------------
+
+/// A change feed document tolerant of the minimal `current` a full-fidelity
+/// delete carries: every field is optional so a delete envelope — whose
+/// `current` omits (or nulls out) the document fields — still deserializes
+/// instead of failing the whole page.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AvadItem {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    partition_key: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    description: Option<String>,
+}
+
+impl AvadItem {
+    fn doc(id: &str, partition_key: &str, description: &str) -> Self {
+        Self {
+            id: Some(id.to_string()),
+            partition_key: Some(partition_key.to_string()),
+            description: Some(description.to_string()),
+        }
+    }
+}
+
+/// Creates a container whose change feed policy enables full-fidelity
+/// (`AllVersionsAndDeletes`) reads with the given retention window.
+async fn create_avad_container(
+    run_context: &TestRunContext,
+    db_client: &DatabaseClient,
+    name: &str,
+    retention: Duration,
+    throughput: Option<ThroughputProperties>,
+) -> azure_data_cosmos::Result<ContainerClient> {
+    let properties = ContainerProperties::new(name.to_string(), "/partitionKey".into())
+        .with_change_feed_policy(ChangeFeedPolicy::all_versions_and_deletes(retention));
+    let options = throughput.map(|t| CreateContainerOptions::default().with_throughput(t));
+    run_context
+        .create_container(db_client, properties, options)
+        .await
+}
+
+/// Polls an AVAD change feed, accumulating every envelope seen, until
+/// `is_complete` is satisfied by the collection so far or a deadline elapses.
+///
+/// Full-fidelity changes — deletes especially — can take a little while to
+/// materialize on the emulator, so (unlike the incremental [`drain_changes`]
+/// helper) this keeps polling across empty 304 pages rather than stopping at the
+/// first empty streak.
+async fn drain_avad_until<F>(
+    iterator: &mut ChangeFeedPageIterator<ChangeFeedItem<AvadItem>>,
+    deadline: std::time::Instant,
+    mut is_complete: F,
+) -> Result<Vec<ChangeFeedItem<AvadItem>>, Box<dyn Error>>
+where
+    F: FnMut(&[ChangeFeedItem<AvadItem>]) -> bool,
+{
+    let mut collected = Vec::new();
+
+    while std::time::Instant::now() < deadline {
+        if is_complete(&collected) {
+            break;
+        }
+
+        match iterator.next().await {
+            Some(page) => {
+                let page = page?;
+                if page.items().is_empty() {
+                    tokio::time::sleep(Duration::from_secs(1)).await;
+                } else {
+                    collected.extend(page.into_items());
+                }
+            }
+            None => break,
+        }
+    }
+
+    Ok(collected)
+}
+
+/// AllVersionsAndDeletes surfaces a create, a replace, and a delete of the same
+/// document as three distinct full-fidelity envelopes.
+///
+/// This mirrors the .NET SDK's emulator coverage: with only a retention policy
+/// configured the service does not return a pre-image, so `previous` is absent
+/// on every envelope; the replace's `previousImageLsn` instead chains back to
+/// the create's LSN. The delete carries a delete `operationType` and metadata
+/// but a minimal `current`.
+///
+/// Gated on `test_category = "emulator"` only: full-fidelity reads are not
+/// supported by the vnext (Linux) emulator.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator' (the vnext emulator does not support full-fidelity change feed)"
+)]
+pub async fn all_versions_and_deletes_surfaces_create_replace_delete() -> Result<(), Box<dyn Error>>
+{
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container = create_avad_container(
+                &run_context,
+                db_client,
+                "AvadCreateReplaceDelete",
+                // The emulator accepts a short (5 minute) full-fidelity retention.
+                Duration::from_secs(5 * 60),
+                None,
+            )
+            .await?;
+            let pk = "1";
+
+            let mut iterator = container
+                .query_change_feed::<ChangeFeedItem<AvadItem>>(
+                    FeedScope::partition(pk),
+                    ChangeFeedStartFrom::Now,
+                    Some(
+                        ChangeFeedOptions::default()
+                            .with_mode(ChangeFeedMode::AllVersionsAndDeletes),
+                    ),
+                )
+                .await?;
+
+            // Prime the `Now` position: the first poll (before any writes) is an
+            // empty 304 that establishes where the feed starts.
+            let primed = iterator
+                .next()
+                .await
+                .expect("change feed stream always yields a page")?;
+            assert!(
+                primed.items().is_empty(),
+                "StartFrom::Now must start empty, got {}",
+                primed.items().len()
+            );
+
+            // Create, then replace, then delete the same document.
+            container
+                .create_item(pk, "1", &AvadItem::doc("1", pk, "original test"), None)
+                .await?;
+            container
+                .replace_item(pk, "1", &AvadItem::doc("1", pk, "test after replace"), None)
+                .await?;
+            container.delete_item(pk, "1", None).await?;
+
+            // Full-fidelity deletes can lag, so poll until the delete arrives.
+            let deadline = std::time::Instant::now() + Duration::from_secs(180);
+            let envelopes = drain_avad_until(&mut iterator, deadline, |seen| {
+                seen.iter()
+                    .any(|e| e.operation_type() == Some(ChangeFeedOperationType::Delete))
+            })
+            .await?;
+
+            let find_op = |op| {
+                envelopes
+                    .iter()
+                    .find(move |e| e.operation_type() == Some(op))
+            };
+            let create =
+                find_op(ChangeFeedOperationType::Create).expect("a create envelope must surface");
+            let replace =
+                find_op(ChangeFeedOperationType::Replace).expect("a replace envelope must surface");
+            let delete =
+                find_op(ChangeFeedOperationType::Delete).expect("a delete envelope must surface");
+
+            // Create: `current` holds the original document and there is no
+            // pre-image.
+            assert_eq!(
+                create.current().and_then(|c| c.description.as_deref()),
+                Some("original test")
+            );
+            assert!(
+                create.previous().is_none(),
+                "a create has no previous image"
+            );
+            let create_lsn = create.metadata().and_then(|m| m.lsn());
+            assert!(create_lsn.is_some(), "create metadata must carry an LSN");
+
+            // Replace: `current` holds the new document; the pre-image is not
+            // returned, but `previousImageLsn` chains back to the create's LSN.
+            assert_eq!(
+                replace.current().and_then(|c| c.description.as_deref()),
+                Some("test after replace")
+            );
+            assert!(
+                replace.previous().is_none(),
+                "the retention policy alone does not enable replace pre-images"
+            );
+            assert_eq!(
+                replace.metadata().and_then(|m| m.previous_image_lsn()),
+                create_lsn,
+                "the replace's previousImageLsn must chain to the create's LSN"
+            );
+
+            // Delete: a delete `operationType` with metadata; the emulator does
+            // not return a delete pre-image without an explicit opt-in.
+            assert_eq!(
+                delete.operation_type(),
+                Some(ChangeFeedOperationType::Delete)
+            );
+            assert!(
+                delete.metadata().and_then(|m| m.lsn()).is_some(),
+                "delete metadata must carry an LSN"
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+/// AllVersionsAndDeletes reads fan out across every physical partition: a create
+/// on each of many logical partitions surfaces exactly once as a full-fidelity
+/// create envelope. The container is provisioned with enough throughput to force
+/// multiple physical partitions so the cross-partition merge path is exercised.
+///
+/// Gated on `test_category = "emulator"` only: full-fidelity reads are not
+/// supported by the vnext (Linux) emulator.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator' (the vnext emulator does not support full-fidelity change feed)"
+)]
+pub async fn all_versions_and_deletes_fans_out_creates_across_partitions(
+) -> Result<(), Box<dyn Error>> {
+    const PK_COUNT: usize = 20;
+
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            // 11000 RU/s forces the service to create at least 2 physical
+            // partitions, so the full-container read must fan out.
+            let container = create_avad_container(
+                &run_context,
+                db_client,
+                "AvadFanOut",
+                Duration::from_secs(5 * 60),
+                Some(ThroughputProperties::manual(11000)),
+            )
+            .await?;
+
+            let mut iterator = container
+                .query_change_feed::<ChangeFeedItem<AvadItem>>(
+                    FeedScope::full_container(),
+                    ChangeFeedStartFrom::Now,
+                    Some(
+                        ChangeFeedOptions::default()
+                            .with_mode(ChangeFeedMode::AllVersionsAndDeletes),
+                    ),
+                )
+                .await?;
+
+            // Prime the per-range `Now` positions before writing.
+            let primed = iterator
+                .next()
+                .await
+                .expect("change feed stream always yields a page")?;
+            assert!(
+                primed.items().is_empty(),
+                "StartFrom::Now must start empty, got {}",
+                primed.items().len()
+            );
+
+            let mut expected_ids: Vec<String> = Vec::new();
+            for p in 0..PK_COUNT {
+                let partition_key = format!("pk{p}");
+                let id = format!("doc{p}");
+                expected_ids.push(id.clone());
+                container
+                    .create_item(
+                        partition_key.clone(),
+                        &id,
+                        &AvadItem::doc(&id, &partition_key, "created"),
+                        None,
+                    )
+                    .await?;
+            }
+
+            let deadline = std::time::Instant::now() + Duration::from_secs(180);
+            let envelopes = drain_avad_until(&mut iterator, deadline, |seen| {
+                seen.iter()
+                    .filter(|e| e.operation_type() == Some(ChangeFeedOperationType::Create))
+                    .count()
+                    >= PK_COUNT
+            })
+            .await?;
+
+            let mut seen_ids: Vec<String> = envelopes
+                .iter()
+                .filter(|e| e.operation_type() == Some(ChangeFeedOperationType::Create))
+                .filter_map(|e| e.current().and_then(|c| c.id.clone()))
+                .collect();
+            seen_ids.sort();
+            seen_ids.dedup();
+            expected_ids.sort();
+
+            assert_eq!(
+                seen_ids, expected_ids,
+                "every create must surface exactly once across the fan-out"
             );
             Ok(())
         },

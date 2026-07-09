@@ -1,13 +1,15 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Live split test for the change feed pull API.
+//! Live split tests for the change feed pull API.
 //!
 //! A continuation token captured before a partition split must resume cleanly
 //! across the split: every change written after the captured position is
 //! delivered exactly once — with no replay of pre-token history and no losses —
 //! even on the post-split child partitions whose parent-partition token is
-//! reused.
+//! reused. This is covered for both the default `LatestVersion` mode and the
+//! `AllVersionsAndDeletes` ("full fidelity") mode, the latter also asserting
+//! that post-split deletes surface as full-fidelity delete envelopes.
 //!
 //! Forcing a real split is expensive, so this reuses
 //! [`force_split_and_wait`](super::cosmos_query_split::force_split_and_wait)
@@ -22,10 +24,16 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use azure_data_cosmos::feed::{ChangeFeedPageIterator, ContinuationToken, FeedScope};
-use azure_data_cosmos::models::{ChangeFeedItem, ContainerProperties, ThroughputProperties};
-use azure_data_cosmos::options::{ChangeFeedOptions, ChangeFeedStartFrom, CreateContainerOptions};
+use azure_data_cosmos::models::{
+    ChangeFeedItem, ChangeFeedOperationType, ChangeFeedPolicy, ContainerProperties,
+    ThroughputProperties,
+};
+use azure_data_cosmos::options::{
+    ChangeFeedMode, ChangeFeedOptions, ChangeFeedStartFrom, CreateContainerOptions,
+};
 use framework::{MockItem, TestClient, TestOptions};
 use futures::StreamExt;
+use serde::{Deserialize, Serialize};
 
 /// Maximum page polls a drain loop performs before giving up, guarding the
 /// change feed's intentionally infinite stream against looping forever.
@@ -195,6 +203,224 @@ pub async fn change_feed_resume_across_split() -> Result<(), Box<dyn Error>> {
             assert_eq!(
                 collected_ids, expected_new,
                 "resume across split must deliver exactly the post-split changes once each"
+            );
+            Ok(())
+        },
+        Some(TestOptions::new().with_timeout(Duration::from_secs(40 * 60))),
+    )
+    .await
+}
+
+/// A full-fidelity change feed document tolerant of the minimal `current` a
+/// delete envelope carries: both fields are optional so a delete — whose
+/// `current` omits (or nulls out) the document fields — still deserializes
+/// instead of failing the whole page.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AvadDoc {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    partition_key: Option<String>,
+}
+
+impl AvadDoc {
+    fn new(id: &str, partition_key: &str) -> Self {
+        Self {
+            id: Some(id.to_string()),
+            partition_key: Some(partition_key.to_string()),
+        }
+    }
+}
+
+/// Drains a full-fidelity change feed iterator until it reports a streak of
+/// empty pages or a poll cap is reached, returning every envelope seen.
+async fn drain_avad_envelopes(
+    iterator: &mut ChangeFeedPageIterator<ChangeFeedItem<AvadDoc>>,
+) -> Result<Vec<ChangeFeedItem<AvadDoc>>, Box<dyn Error>> {
+    let mut collected = Vec::new();
+    let mut empty_streak = 0usize;
+    let mut polls = 0usize;
+
+    while let Some(page) = iterator.next().await {
+        let page = page?;
+        polls += 1;
+
+        if page.items().is_empty() {
+            empty_streak += 1;
+            if empty_streak >= EMPTY_STREAK_TO_STOP {
+                break;
+            }
+        } else {
+            empty_streak = 0;
+            collected.extend(page.into_items());
+        }
+
+        if polls >= MAX_DRAIN_POLLS {
+            break;
+        }
+    }
+
+    Ok(collected)
+}
+
+/// The `AllVersionsAndDeletes` ("full fidelity") change feed resumes correctly
+/// across a partition split: a token captured before the split, from a container
+/// with a change feed retention policy, yields exactly the post-split creates
+/// and deletes — each surfacing as a full-fidelity envelope — with no replay of
+/// the pre-token baseline.
+///
+/// This exercises the AVAD variant of the cross-partition resume path: the mode
+/// (and its `Full-Fidelity Feed` A-IM header) must be re-applied on resume so the
+/// pre-split parent token maps onto the post-split children while partitions
+/// without a saved continuation re-apply the feed's original `Now` position.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "split"),
+    ignore = "requires test_category 'split'"
+)]
+pub async fn change_feed_all_versions_and_deletes_resume_across_split() -> Result<(), Box<dyn Error>>
+{
+    const PK_COUNT: usize = 30;
+    const BASELINE_PER_PK: usize = 2;
+    const NEW_PER_PK: usize = 2;
+
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let properties = ContainerProperties::new(
+                "ChangeFeedAvadResumeAcrossSplit",
+                "/partitionKey".into(),
+            )
+            .with_change_feed_policy(ChangeFeedPolicy::all_versions_and_deletes(
+                Duration::from_secs(60 * 60),
+            ));
+            let throughput = ThroughputProperties::manual(1000);
+            let container_client = Arc::new(
+                run_context
+                    .create_container(
+                        db_client,
+                        properties,
+                        Some(CreateContainerOptions::default().with_throughput(throughput)),
+                    )
+                    .await?,
+            );
+
+            // Seed the baseline (pre-split, pre-token) creates. AVAD `Now` must
+            // exclude these, and they must never replay after the split.
+            for p in 0..PK_COUNT {
+                let partition_key = format!("pk{p}");
+                for i in 0..BASELINE_PER_PK {
+                    let id = format!("baseline-{p}-{i}");
+                    container_client
+                        .create_item(partition_key.clone(), &id, &AvadDoc::new(&id, &partition_key), None)
+                        .await?;
+                }
+            }
+
+            let partitions_before = container_client.read_feed_ranges(None).await?.len();
+            assert!(
+                partitions_before >= 1,
+                "expected at least one physical partition before the split"
+            );
+
+            // Open an AVAD feed at `Now` (Beginning is rejected for AVAD) and
+            // drain to a caught-up state to capture a resume token. `Now`
+            // excludes the baseline, so nothing should be collected here.
+            let mut iterator = container_client
+                .query_change_feed::<ChangeFeedItem<AvadDoc>>(
+                    FeedScope::full_container(),
+                    ChangeFeedStartFrom::Now,
+                    Some(
+                        ChangeFeedOptions::default()
+                            .with_mode(ChangeFeedMode::AllVersionsAndDeletes),
+                    ),
+                )
+                .await?;
+            let pre_split = drain_avad_envelopes(&mut iterator).await?;
+            assert!(
+                pre_split.is_empty(),
+                "AVAD StartFrom::Now must exclude the pre-existing baseline, saw {}",
+                pre_split.len()
+            );
+
+            let token = iterator.to_continuation_token()?;
+            let token = ContinuationToken::from_string(token.as_str().to_owned());
+            drop(iterator);
+
+            // Force a real split AFTER the token is captured so the resume must
+            // map the pre-split parent token onto the post-split children.
+            let partitions_after =
+                force_split_and_wait(&container_client, partitions_before).await?;
+            assert!(
+                partitions_after > partitions_before,
+                "split must increase partition count: before={partitions_before}, after={partitions_after}"
+            );
+
+            // After the split: create new docs per pk and delete one baseline doc
+            // per pk. Both are changes AFTER the token, so both must resume.
+            let mut expected_creates: Vec<String> = Vec::new();
+            let mut expected_deletes = 0usize;
+            for p in 0..PK_COUNT {
+                let partition_key = format!("pk{p}");
+                for i in 0..NEW_PER_PK {
+                    let id = format!("post-{p}-{i}");
+                    expected_creates.push(id.clone());
+                    container_client
+                        .create_item(partition_key.clone(), &id, &AvadDoc::new(&id, &partition_key), None)
+                        .await?;
+                }
+                let delete_id = format!("baseline-{p}-0");
+                container_client
+                    .delete_item(partition_key.clone(), &delete_id, None)
+                    .await?;
+                expected_deletes += 1;
+            }
+
+            // Resume from the pre-split token. The mode must be re-applied so the
+            // resumed request also reads full fidelity.
+            let mut resumed = container_client
+                .query_change_feed::<ChangeFeedItem<AvadDoc>>(
+                    FeedScope::full_container(),
+                    // Ignored on resume: the token carries its own position.
+                    ChangeFeedStartFrom::Now,
+                    Some(
+                        ChangeFeedOptions::default()
+                            .with_mode(ChangeFeedMode::AllVersionsAndDeletes)
+                            .with_continuation_token(token),
+                    ),
+                )
+                .await?;
+            let resumed_envelopes = drain_avad_envelopes(&mut resumed).await?;
+
+            // Exactly the post-split creates must surface, once each.
+            let mut got_creates: Vec<String> = resumed_envelopes
+                .iter()
+                .filter(|e| e.operation_type() == Some(ChangeFeedOperationType::Create))
+                .filter_map(|e| e.current().and_then(|c| c.id.clone()))
+                .collect();
+            got_creates.sort();
+            got_creates.dedup();
+            expected_creates.sort();
+            assert_eq!(
+                got_creates, expected_creates,
+                "resume across split must deliver exactly the post-split creates once each"
+            );
+
+            // Every post-split delete must surface as a full-fidelity delete
+            // envelope.
+            let got_deletes = resumed_envelopes
+                .iter()
+                .filter(|e| e.operation_type() == Some(ChangeFeedOperationType::Delete))
+                .count();
+            assert_eq!(
+                got_deletes, expected_deletes,
+                "every post-split delete must surface as a full-fidelity delete envelope"
+            );
+
+            // No baseline create may replay: they were committed before the token.
+            assert!(
+                !got_creates.iter().any(|id| id.starts_with("baseline-")),
+                "baseline creates must not replay after resume"
             );
             Ok(())
         },
