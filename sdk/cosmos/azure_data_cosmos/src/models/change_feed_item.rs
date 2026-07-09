@@ -70,7 +70,7 @@ pub struct ChangeFeedMetadata {
     #[serde(rename = "lsn", default)]
     lsn: Option<i64>,
 
-    /// The commit resource timestamp (`crts`) of the change, in seconds since
+    /// The conflict resolution timestamp (`crts`) of the change, in seconds since
     /// the Unix epoch.
     #[serde(rename = "crts", default)]
     conflict_resolution_timestamp: Option<i64>,
