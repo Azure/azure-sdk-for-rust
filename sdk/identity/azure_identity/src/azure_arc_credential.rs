@@ -12,26 +12,34 @@ use azure_core::{
 };
 use std::{any::type_name, fmt, sync::Arc};
 
-const ENDPOINT: &str = "http://localhost:40342/metadata/identity/oauth2/token";
+const DEFAULT_ENDPOINT: &str = "http://localhost:40342/metadata/identity/oauth2/token";
 const API_VERSION: &str = "2021-02-01";
 
-pub struct ArcServerManagedIdentityCredential {
+pub struct AzureArcCredential {
     credential: ImdsManagedIdentityCredential,
 }
 
-impl fmt::Debug for ArcServerManagedIdentityCredential {
+impl fmt::Debug for AzureArcCredential {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct(type_name::<Self>()).finish_non_exhaustive()
     }
 }
 
-impl ArcServerManagedIdentityCredential {
+impl AzureArcCredential {
     pub fn new(
         id: ImdsId,
         client_options: ClientOptions,
         env: Env,
     ) -> azure_core::Result<Arc<Self>> {
-        let endpoint = Url::parse(ENDPOINT).unwrap(); // valid url constant
+        let identity_endpoint = match (
+            env.var("IDENTITY_ENDPOINT").ok(),
+            env.var("IMDS_ENDPOINT").ok(),
+        ) {
+            (Some(identity_endpoint), Some(_)) => identity_endpoint,
+            _ => DEFAULT_ENDPOINT.to_owned(),
+        };
+
+        let token_url = Url::parse(&identity_endpoint)?;
         let pipeline_options = Some(PipelineOptions {
             // https://learn.microsoft.com/entra/identity/managed-identities-azure-resources/how-to-use-vm-token#error-handling
             retry_status_codes: Vec::from([
@@ -65,7 +73,7 @@ impl ArcServerManagedIdentityCredential {
         };
         Ok(Arc::new(Self {
             credential: ImdsManagedIdentityCredential::new(
-                endpoint,
+                token_url,
                 API_VERSION,
                 None,
                 None,
@@ -79,7 +87,7 @@ impl ArcServerManagedIdentityCredential {
 }
 
 #[async_trait::async_trait]
-impl TokenCredential for ArcServerManagedIdentityCredential {
+impl TokenCredential for AzureArcCredential {
     async fn get_token(
         &self,
         scopes: &[&str],

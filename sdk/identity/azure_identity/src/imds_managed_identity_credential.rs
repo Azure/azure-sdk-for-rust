@@ -6,8 +6,9 @@ use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
     error::{Error, ErrorKind},
     http::{
-        headers::HeaderName, request::Request, ClientOptions, Method, Pipeline, PipelineOptions,
-        PipelineSendOptions, StatusCode, Url,
+        headers::{HeaderName, AUTHORIZATION, WWW_AUTHENTICATE},
+        request::Request,
+        ClientOptions, Method, Pipeline, PipelineOptions, PipelineSendOptions, StatusCode, Url,
     },
     json::from_json,
     time::OffsetDateTime,
@@ -17,9 +18,6 @@ use serde::{
     Deserialize,
 };
 use std::{any::type_name, fmt, fs::File, io::Read, path::Path, str};
-
-const AUTHENTICATE_HEADER: HeaderName = HeaderName::from_static("www-authenticate");
-const AUTHORIZATION_HEADER: HeaderName = HeaderName::from_static("authorization");
 
 /// An identifier for the Azure Instance Metadata Service (IMDS).
 ///
@@ -155,14 +153,14 @@ impl ImdsManagedIdentityCredential {
         let mut status = rsp.status();
 
         if status == StatusCode::Unauthorized {
-            if let Ok(challenge) = rsp.headers().get_str(&AUTHENTICATE_HEADER) {
+            if let Ok(challenge) = rsp.headers().get_str(&WWW_AUTHENTICATE) {
                 if let Some(challenge_location) = challenge
                     .split_once('=')
                     .map(|(_, location)| location.trim())
                 {
                     let challenge_response =
                         self.retrieve_challenge_response(challenge_location)?;
-                    req.insert_header(AUTHORIZATION_HEADER, format!("Basic {challenge_response}"));
+                    req.insert_header(AUTHORIZATION, format!("Basic {challenge_response}"));
 
                     // try the request again with the challenge response header. Then, drop through to the usual error handling and token extraction
                     rsp = self

@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::arc_server_managed_identity_credential::ArcServerManagedIdentityCredential;
+use crate::azure_arc_credential::AzureArcCredential;
 use crate::{
     authentication_error, env::Env, AppServiceManagedIdentityCredential, ImdsId,
     VirtualMachineManagedIdentityCredential,
@@ -91,7 +91,7 @@ impl ManagedIdentityCredential {
                 VirtualMachineManagedIdentityCredential::new(id, options.client_options, env)?
             }
             ManagedIdentitySource::AzureArc => {
-                ArcServerManagedIdentityCredential::new(id, options.client_options, env)?
+                AzureArcCredential::new(id, options.client_options, env)?
             }
             _ => {
                 return Err(azure_core::Error::with_message_fn(
