@@ -8,7 +8,7 @@ use crate::{
 };
 use azure_core::credentials::{AccessToken, TokenCredential, TokenRequestOptions};
 use azure_core::http::ClientOptions;
-use std::fs::{self, File};
+use std::fs;
 use std::{any::type_name, fmt, sync::Arc};
 use tracing::info;
 
