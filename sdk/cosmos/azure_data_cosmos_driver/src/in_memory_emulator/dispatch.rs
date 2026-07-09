@@ -210,8 +210,10 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
     // key-type value is caught by the emulator-backed tests (issues #4680 and
     // #4681).
     let operation = if (start_epk.is_some() || end_epk.is_some())
-        && read_key_type.as_deref() != Some("EffectivePartitionKeyRange")
-    {
+        && read_key_type.as_deref()
+            != Some(
+                crate::models::cosmos_headers::request_header_names::READ_FEED_KEY_TYPE_EPK_RANGE,
+            ) {
         OperationType::InvalidInput(format!(
             "x-ms-read-key-type must be 'EffectivePartitionKeyRange' when \
              x-ms-start-epk/x-ms-end-epk are present, got {read_key_type:?}"

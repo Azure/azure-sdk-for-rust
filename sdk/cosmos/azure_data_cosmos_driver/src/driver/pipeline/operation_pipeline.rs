@@ -123,7 +123,7 @@ impl OperationOverrides {
             // (issues #4680 and #4681).
             headers.insert(
                 HeaderName::from_static(request_header_names::READ_FEED_KEY_TYPE),
-                HeaderValue::from_static("EffectivePartitionKeyRange"),
+                HeaderValue::from_static(request_header_names::READ_FEED_KEY_TYPE_EPK_RANGE),
             );
         }
 
@@ -4057,7 +4057,7 @@ mod tests {
                     request_header_names::READ_FEED_KEY_TYPE
                 ))
                 .map(|s| s.to_string()),
-            Some("EffectivePartitionKeyRange".to_string())
+            Some(request_header_names::READ_FEED_KEY_TYPE_EPK_RANGE.to_string())
         );
         assert_eq!(
             headers

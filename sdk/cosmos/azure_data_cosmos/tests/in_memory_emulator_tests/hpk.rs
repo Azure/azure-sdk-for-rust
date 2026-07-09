@@ -142,13 +142,12 @@ async fn setup_hpk_container() -> ContainerClient {
 }
 
 async fn query_scope(container: &ContainerClient, scope: FeedScope) -> Vec<GeoItem> {
-    container
-        .query_items(Query::from("SELECT * FROM c"), scope, None)
+    // Box the query pipeline futures so callers awaiting `query_scope` don't trip
+    // `clippy::large-futures` (the `query_items` future is ~16 KB on the stack).
+    let iter = Box::pin(container.query_items(Query::from("SELECT * FROM c"), scope, None))
         .await
-        .unwrap()
-        .try_collect()
-        .await
-        .unwrap()
+        .unwrap();
+    Box::pin(iter.try_collect()).await.unwrap()
 }
 
 /// #4680 — a one-level prefix `(USA,)` returns only the 8 USA rows, not CANADA.
