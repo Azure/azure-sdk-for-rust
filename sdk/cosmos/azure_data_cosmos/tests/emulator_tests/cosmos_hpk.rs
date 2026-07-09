@@ -652,9 +652,16 @@ pub async fn hpk_query_cross_partition_full_container() -> Result<(), Box<dyn Er
 
 // ─── Group B (cont.) — query-surface semantics ───────────────────────────────
 
-/// B7: a SQL filter on a *non-leading* partition-key path, scoped to a routed
-/// partition, is served by the backend (server-side SQL filtering works even
-/// though prefix routing itself does not filter — see #4680).
+/// B7: a SQL filter on a *non-leading* partition-key path, scoped to a fully
+/// routed (single logical partition) 3-level key, is served by the backend.
+///
+/// This deliberately scopes to a **full** key rather than a prefix: prefix
+/// scoping (`FeedScope::partition(("USA", "CA"))`) lowers to a single-point EPK
+/// and is not reliably servable across emulator versions — that behavior is the
+/// #4680 gap, covered by the ignored `hpk_query_prefix_*` tests. Here we prove
+/// the complementary, supported case: within a routed partition the server
+/// accepts and applies a SQL predicate that references a non-leading key path
+/// (`/city`).
 #[tokio::test]
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
@@ -665,12 +672,12 @@ pub async fn hpk_query_secondary_path_filter_servable() -> Result<(), Box<dyn Er
         async |run_context, db_client| {
             let container = seed_three_level(run_context, db_client).await?;
 
-            // Route to the (USA, CA) prefix and let the server filter on the
-            // non-leading `/city` path via SQL.
+            // Route to the full (USA, CA, SanFrancisco) key and have the server
+            // apply a SQL predicate on the non-leading `/city` path.
             let items: Vec<GeoItem> = collect_query::<GeoItem>(
                 &container,
                 "SELECT * FROM c WHERE c.city = 'SanFrancisco'",
-                FeedScope::partition(("USA", "CA")),
+                FeedScope::partition(("USA", "CA", "SanFrancisco")),
             )
             .await?;
 
