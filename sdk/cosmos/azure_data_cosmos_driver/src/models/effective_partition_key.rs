@@ -52,6 +52,47 @@ impl EffectivePartitionKey {
         Self(bytes.into())
     }
 
+    /// Returns the next EPK after `self`: the smallest EPK strictly greater than
+    /// `self`, used to turn a closed point `[A, A]` (the gateway equality / `IN`
+    /// predicate shape, issue #4574) into a non-empty half-open range
+    /// `[A, successor(A))` so it routes and filters through the normal
+    /// `[min, max)` paths without collapsing to the empty set.
+    ///
+    /// Computed by a big-endian byte increment: decode the hex EPK to bytes,
+    /// increment the right-most byte that is not `0xFF`, and zero every `0xFF`
+    /// byte to its right (carry propagation). The width is preserved. This
+    /// mirrors the Java SDK's `FeedRangeInternal.addToEffectivePartitionKey(_, +1)`.
+    ///
+    /// Carry-out of the full width cannot happen for a real EPK: `hash_v2_to_epk`
+    /// masks the leading byte to `<= 0x3F`, so a hashed EPK is never all-`0xFF`.
+    /// For hierarchical (MultiHash) keys the same mask applies to every
+    /// component's leading byte, so the carry can never cross a component
+    /// boundary. As a defensive fallback for a hypothetical all-`0xFF` input we
+    /// return [`EffectivePartitionKey::MAX`], a safe over-approximation.
+    pub(crate) fn successor(&self) -> EffectivePartitionKey {
+        let s = self.to_hex();
+        if s.is_empty() {
+            // The minimum EPK ("") successor is the smallest representable EPK.
+            return EffectivePartitionKey::from("00");
+        }
+        let mut bytes = hex_to_bytes(&s);
+        if bytes.is_empty() {
+            // `s` is non-empty (checked above) but decoded to nothing, i.e. it
+            // was not valid hex (should not occur for a computed EPK); fall back
+            // to the maximum so the resulting range still covers `self`.
+            return EffectivePartitionKey::MAX.clone();
+        }
+        for i in (0..bytes.len()).rev() {
+            if bytes[i] != 0xFF {
+                bytes[i] += 1;
+                return EffectivePartitionKey::from(bytes_to_hex_upper(&bytes));
+            }
+            bytes[i] = 0x00;
+        }
+        // All bytes were 0xFF (unreachable for a real masked EPK).
+        EffectivePartitionKey::MAX.clone()
+    }
+
     /// Computes the effective partition key from partition key values.
     ///
     /// This hashes the given values according to the partition key kind and version,
@@ -371,6 +412,56 @@ fn hex_nibble(c: u8) -> Option<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn successor_increments_last_digit() {
+        assert_eq!(EffectivePartitionKey::from("30").successor().to_hex(), "31");
+        assert_eq!(
+            EffectivePartitionKey::from("3AAB").successor().to_hex(),
+            "3AAC"
+        );
+    }
+
+    #[test]
+    fn successor_carries_across_trailing_ff() {
+        // Last byte 0xFF rolls to 0x00 and carries into the previous byte.
+        assert_eq!(
+            EffectivePartitionKey::from("3AFF").successor().to_hex(),
+            "3B00"
+        );
+        // Multiple trailing 0xFF bytes all carry.
+        assert_eq!(
+            EffectivePartitionKey::from("01FFFF").successor().to_hex(),
+            "020000"
+        );
+    }
+
+    #[test]
+    fn successor_is_strictly_greater_and_width_preserving() {
+        let a = EffectivePartitionKey::from("22E342F38A486A088463DFF7838A5963");
+        let next = a.successor();
+        assert_eq!(next.to_hex(), "22E342F38A486A088463DFF7838A5964");
+        assert_eq!(next.to_hex().len(), a.to_hex().len());
+        assert!(next > a);
+    }
+
+    #[test]
+    fn successor_handles_hpk_width() {
+        // A full hierarchical (MultiHash) EPK is 64 hex chars; the successor is
+        // width-preserving and only touches the final component.
+        let hpk = "06AB34CFE4E482236BCACBBF50E234AB00000000000000000000000000000000";
+        let next = EffectivePartitionKey::from(hpk).successor();
+        assert_eq!(
+            next.to_hex(),
+            "06AB34CFE4E482236BCACBBF50E234AB00000000000000000000000000000001"
+        );
+        assert_eq!(next.to_hex().len(), 64);
+    }
+
+    #[test]
+    fn successor_of_min_is_smallest_epk() {
+        assert_eq!(EffectivePartitionKey::MIN.successor().to_hex(), "00");
+    }
 
     #[test]
     fn empty_pk_returns_min() {
