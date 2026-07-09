@@ -272,6 +272,7 @@ pub(crate) async fn handle_operation(
                 .await
         }
         OperationType::BadRequestPath(desc) => bad_request_path_response(desc, start),
+        OperationType::InvalidInput(desc) => invalid_input_response(desc, start),
         OperationType::Unsupported(desc) => unsupported_response(desc, start),
     };
 
@@ -4824,6 +4825,19 @@ fn bad_request_path_response(path: &str, start: Instant) -> AsyncRawResponse {
         None,
         "BadRequest",
         &format!("Invalid request path: {}", path),
+        0.0,
+        "",
+        start,
+    )
+    .build()
+}
+
+fn invalid_input_response(message: &str, start: Instant) -> AsyncRawResponse {
+    error_response(
+        StatusCode::BadRequest,
+        None,
+        "BadRequest",
+        &format!("One of the input values is invalid. {message}"),
         0.0,
         "",
         start,

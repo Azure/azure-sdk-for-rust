@@ -202,10 +202,14 @@ pub(crate) async fn build_sequential_drain(
     // TODO: enforce max fan-out (default 100, configurable). See FEED_OPERATIONS_REQS.md §3.
 
     if request_nodes.is_empty() {
-        // Resumed past every range that still has work: the pipeline is
-        // fully drained. Otherwise the plan / topology yielded nothing to
-        // query — that's a service contract violation.
-        if saved_snapshot.is_some() {
+        // Resumed past every range that still has work: the pipeline is fully
+        // drained. A prefix-scoped fan-out whose query ranges all fall outside
+        // the prefix EPK range is likewise empty — the query simply matches no
+        // partition, which the reference SDKs (.NET routes directly to the
+        // prefix's effective ranges and lets the server filter) surface as an
+        // empty page rather than an error. Only an *unscoped* plan that yields
+        // no ranges is a genuine service-contract violation.
+        if saved_snapshot.is_some() || prefix_clip.is_some() {
             return Ok(Pipeline::new(Box::new(DrainedLeaf)));
         }
         return Err(crate::error::CosmosError::builder()
@@ -553,7 +557,17 @@ async fn plan_resume_from_saved_snapshot(
     // saved continuation without risking duplicate emission or data loss —
     // fail loudly.
     for (idx, entry) in saved.active_tokens.iter().enumerate() {
-        if !range_fully_covered(&entry.range, &coverage[idx]) {
+        // A saved token range can extend outside the current prefix scope when
+        // resuming a continuation captured before the prefix clip existed (for
+        // example a token issued by an older SDK that over-scanned the whole
+        // physical partition). Only the portion of the saved range that falls
+        // inside the prefix must be covered by the current topology; the rest
+        // is out of scope and treated as already satisfied, matching the .NET
+        // route-to-prefix model which never queries outside the prefix.
+        let Some(effective_range) = clip_to_prefix(entry.range.clone(), prefix_clip) else {
+            continue;
+        };
+        if !range_fully_covered(&effective_range, &coverage[idx]) {
             const MAX_COVERAGE_PIECES_RENDERED: usize = 8;
             let coverage_summary = if coverage[idx].is_empty() {
                 "(no overlapping topology ranges)".to_string()
@@ -586,8 +600,8 @@ async fn plan_resume_from_saved_snapshot(
                     "continuation token active range [{}, {}) could not be fully covered \
                      by the current topology above the cursor (covered: {}); the query \
                      cannot be safely resumed",
-                    entry.range.min_inclusive().as_str(),
-                    entry.range.max_exclusive().as_str(),
+                    effective_range.min_inclusive().as_str(),
+                    effective_range.max_exclusive().as_str(),
                     coverage_summary,
                 ))
                 .build());
@@ -631,7 +645,14 @@ fn prefix_epk_range(operation: &CosmosOperation) -> crate::error::Result<Option<
     let pk_def = container.partition_key_definition();
     if pk_def.is_complete(partition_key) {
         // A complete key hashes to a single EPK point and should already have
-        // been planned as a trivial single-partition request; nothing to clip.
+        // been planned as a trivial single-partition request; reaching here
+        // means an upstream invariant broke, so flag it in debug builds while
+        // still degrading gracefully in release.
+        debug_assert!(
+            false,
+            "prefix_epk_range reached with a complete partition key; complete \
+             keys must be handled by build_trivial_pipeline"
+        );
         return Ok(None);
     }
     let range = EffectivePartitionKey::compute_range(partition_key.values(), pk_def)?;
@@ -1328,6 +1349,10 @@ mod tests {
         // A split point strictly inside [start, end): start is a prefix of both,
         // and "80" < "FF" so start < mid < end.
         let mid = format!("{start}80");
+        assert!(
+            start.as_str() < mid.as_str() && mid.as_str() < end.as_str(),
+            "split point must satisfy start < mid < end (start={start}, mid={mid}, end={end})"
+        );
 
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = prefix_query_operation(&prefix);
@@ -1380,6 +1405,156 @@ mod tests {
         assert_drain_requests(
             pipeline,
             &[("", "80", "pkrange-left"), ("80", "FF", "pkrange-right")],
+        );
+    }
+
+    fn multihash_pk_def_three_level() -> PartitionKeyDefinition {
+        serde_json::from_str(
+            r#"{"paths":["/country","/state","/city"],"kind":"MultiHash","version":2}"#,
+        )
+        .unwrap()
+    }
+
+    fn multihash_container_three_level() -> ContainerReference {
+        let props = ContainerProperties {
+            id: Cow::Owned("coll".into()),
+            partition_key: multihash_pk_def_three_level(),
+            system_properties: SystemProperties::default(),
+        };
+        ContainerReference::new(test_account(), "db", "db_rid", "coll", "coll_rid", &props)
+    }
+
+    #[tokio::test]
+    async fn three_level_two_component_prefix_clips_fan_out_to_epk_range() {
+        // A two-component prefix (country, state) of a three-level container is
+        // EPK-scoped the same way a one-level prefix is: the prefix mechanism is
+        // independent of hierarchy depth (issue #4680).
+        let prefix = PartitionKey::from(("USA", "CA"));
+        let range =
+            EffectivePartitionKey::compute_range(prefix.values(), &multihash_pk_def_three_level())
+                .expect("prefix range");
+        let (start, end) = (
+            range.start.as_str().to_owned(),
+            range.end.as_str().to_owned(),
+        );
+        assert_ne!(start, end, "a two-of-three prefix must be a real range");
+        assert_eq!(start.len(), 64, "two hashed components => 64 hex chars");
+
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let target = FeedRange::for_partition(prefix.clone(), &multihash_pk_def_three_level());
+        let op = CosmosOperation::query_items(multihash_container_three_level(), Some(target))
+            .with_body(br#"{"query":"SELECT * FROM c"}"#.to_vec());
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+            .await
+            .unwrap();
+
+        assert_drain_requests_with_partitions(
+            pipeline,
+            &[(start.as_str(), end.as_str(), "pkrange-0", "", "FF")],
+        );
+    }
+
+    #[tokio::test]
+    async fn fresh_prefix_disjoint_from_query_ranges_yields_empty_pipeline() {
+        // A predicated prefix query whose plan ranges fall entirely outside the
+        // prefix EPK range matches no partition. Like the .NET SDK — which routes
+        // directly to the prefix's effective ranges and lets the server filter —
+        // this is an empty page, not an error. The clip happens before topology
+        // resolution, so the (empty) topology script is never consulted.
+        let prefix = PartitionKey::from("USA");
+        let range = EffectivePartitionKey::compute_range(prefix.values(), &multihash_pk_def())
+            .expect("prefix range");
+        // A query range that starts at the prefix's exclusive max cannot overlap
+        // the half-open prefix range [start, end).
+        let end = range.end.as_str().to_owned();
+        let plan = plan_with_ranges(vec![qr(&end, "FF")]);
+        let op = prefix_query_operation(&prefix);
+        let mut topology = MockTopologyProvider::new(vec![]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+            .await
+            .unwrap();
+
+        assert!(
+            matches!(
+                pipeline.snapshot_state().unwrap(),
+                PipelineNodeState::Drained
+            ),
+            "a fully-disjoint prefix query must drain to an empty page, not error"
+        );
+    }
+
+    #[tokio::test]
+    async fn prefix_skips_query_ranges_outside_the_prefix() {
+        // With multiple query ranges, only the ranges overlapping the prefix
+        // survive the clip; ranges entirely outside are dropped without
+        // consulting the topology for them.
+        let prefix = PartitionKey::from("USA");
+        let range = EffectivePartitionKey::compute_range(prefix.values(), &multihash_pk_def())
+            .expect("prefix range");
+        let (start, end) = (
+            range.start.as_str().to_owned(),
+            range.end.as_str().to_owned(),
+        );
+
+        // First range is exactly the prefix interior (survives); second range is
+        // entirely above the prefix (dropped). Only one topology result is
+        // scripted, proving the second range never reaches resolution.
+        let plan = plan_with_ranges(vec![qr(&start, &end), qr(&end, "FF")]);
+        let op = prefix_query_operation(&prefix);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr(&start, &end, "pkrange-0")])]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+            .await
+            .unwrap();
+
+        assert_drain_requests_with_partitions(
+            pipeline,
+            &[(
+                start.as_str(),
+                end.as_str(),
+                "pkrange-0",
+                start.as_str(),
+                end.as_str(),
+            )],
+        );
+    }
+
+    #[tokio::test]
+    async fn resume_saved_range_outside_prefix_is_dropped() {
+        // Resuming a continuation whose saved token range lies entirely outside
+        // the current prefix scope (for example a token captured by an older SDK
+        // that over-scanned the whole physical partition) must not hard-fail the
+        // coverage guard: the out-of-prefix portion is treated as already
+        // satisfied. Here the saved token covers [end, FF) — above the prefix —
+        // so the resume drains to an empty page.
+        let prefix = PartitionKey::from("USA");
+        let range = EffectivePartitionKey::compute_range(prefix.values(), &multihash_pk_def())
+            .expect("prefix range");
+        let end = range.end.as_str().to_owned();
+
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = prefix_query_operation(&prefix);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
+
+        let resume = saved_drain(vec![(
+            end.as_str(),
+            "FF",
+            saved_request(Some("server-token-abc")),
+        )]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+            .await
+            .unwrap();
+
+        assert!(
+            matches!(
+                pipeline.snapshot_state().unwrap(),
+                PipelineNodeState::Drained
+            ),
+            "a saved range outside the prefix must drain, not raise an unhonored-range error"
         );
     }
 

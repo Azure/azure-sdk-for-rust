@@ -205,6 +205,13 @@ async fn hpk_query_prefix_correctness_guard() {
     )
     .await;
 
+    // A green result on an *empty* set would silently pass the loop-based
+    // anti-leak checks below, so pin the expected count first (issue #4680).
+    assert_eq!(
+        items.len(),
+        5,
+        "prefix (USA, CA) should return exactly 5 items"
+    );
     for item in &items {
         assert_eq!(item.country, "USA", "leaked foreign country: {item:?}");
         assert_eq!(item.state, "CA", "leaked foreign state: {item:?}");
