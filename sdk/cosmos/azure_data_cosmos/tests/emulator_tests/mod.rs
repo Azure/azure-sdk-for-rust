@@ -13,8 +13,8 @@ mod cosmos_offers;
 mod cosmos_patch;
 mod cosmos_proxy;
 mod cosmos_query;
+mod cosmos_query_feed_range_scope;
 mod cosmos_response_metadata;
-mod cosmos_scope_bug;
 
 #[path = "../framework/mod.rs"]
 mod framework;

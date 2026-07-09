@@ -1567,6 +1567,43 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn resume_scopes_cross_partition_query_to_requested_feed_range() {
+        // Regression companion to `scopes_cross_partition_query_to_requested_feed_range`
+        // for the RESUME path: `plan_resume_from_saved_snapshot` must clip the
+        // query-plan range to the operation's `FeedScope::range` window too.
+        //
+        // The saved token covers exactly the scoped window `[20, 80)`. Without
+        // the clip, the query range stays `["", "FF")`, so the leaf above the
+        // cursor would additionally emit a fresh-start `[80, FF)` sub-leaf. With
+        // the clip, only the single `[20, 80)` leaf (carrying the saved token) is
+        // emitted.
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = CosmosOperation::query_items(
+            test_container(),
+            Some(
+                FeedRange::new(
+                    EffectivePartitionKey::from("20"),
+                    EffectivePartitionKey::from("80"),
+                )
+                .unwrap(),
+            ),
+        )
+        .with_body(br#"{"query":"SELECT * FROM c"}"#.to_vec());
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
+
+        let resume = saved_drain(vec![("20", "80", saved_request(Some("server-token-xyz")))]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+            .await
+            .unwrap();
+
+        assert_drain_requests_with_partitions_and_continuation(
+            pipeline,
+            &[("20", "80", "pkrange-0", "", "FF", Some("server-token-xyz"))],
+        );
+    }
+
+    #[tokio::test]
     async fn resume_propagates_server_continuation_to_every_surviving_leaf_after_split() {
         // The saved `[55, AA)` child held a server continuation. Between
         // sessions the underlying partition split into `[55, 70)` + `[70, AA)`;

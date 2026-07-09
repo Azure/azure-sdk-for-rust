@@ -32,7 +32,9 @@ use std::error::Error;
 
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::feed::{FeedRange, FeedScope};
-use azure_data_cosmos::models::{ContainerProperties, PartitionKeyDefinition};
+use azure_data_cosmos::models::{
+    ContainerProperties, EffectivePartitionKey, PartitionKeyDefinition,
+};
 use azure_data_cosmos::{PartitionKey, Query};
 use futures::TryStreamExt;
 use serde::{Deserialize, Serialize};
@@ -154,6 +156,25 @@ pub async fn feed_range_scope_restricts_cross_partition_query() -> Result<(), Bo
                  got {} docs, expected 1. unexpected(outside window)={:?}",
                 got_c.len(),
                 got_c.difference(&expected_c).collect::<Vec<_>>()
+            );
+
+            // Test D: a window that lies ENTIRELY in the gap between two adjacent
+            // EPKs must return zero documents. `X_mid + "8"` is strictly greater
+            // than `X_mid` (it keeps `X_mid` as a prefix) and, because adjacent
+            // 32-hex EPKs differ within those 32 chars, strictly less than
+            // `X_{mid+1}` — so `[X_mid + "8", X_{mid+1})` contains no doc's EPK.
+            // This guards against an off-by-one where the lower bound is treated
+            // as inclusive of `X_mid`.
+            let gap_start =
+                EffectivePartitionKey::from(format!("{}8", points[mid].1.min_inclusive().as_str()));
+            let window_d = FeedRange::new(gap_start, points[mid + 1].1.min_inclusive().clone())?;
+            let got_d = drain_ids(&container, FeedScope::range(window_d)).await?;
+            assert!(
+                got_d.is_empty(),
+                "SCOPE BUG (empty gap window): a window between adjacent EPKs \
+                 returned {} docs, expected 0. unexpected={:?}",
+                got_d.len(),
+                got_d.iter().collect::<Vec<_>>()
             );
 
             Ok(())
