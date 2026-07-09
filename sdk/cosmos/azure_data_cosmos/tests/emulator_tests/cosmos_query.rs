@@ -536,24 +536,49 @@ pub async fn feed_range_scoped_query_honors_range() -> Result<(), Box<dyn Error>
 
             // Enumerate each feed range and query it in isolation — exactly the
             // customer scenario (`read_feed_ranges()` then query each range).
-            // Before the fan-out clip fix, a `FeedScope::range` query was planned
-            // as a full cross-partition fan-out, so every range returned the
-            // ENTIRE container and the union below contained each id
-            // `ranges.len()` times. With the fix each range is clipped to its
-            // own slice, so every id appears exactly once across all ranges.
-            let mut union_ids = Vec::new();
+            // Capture each range's result set separately so we can assert on the
+            // per-range slices, not just their union: a union-only check would
+            // still pass if one range returned every item and another returned
+            // nothing, which is exactly the over-scan bug this test guards.
+            let mut per_range_ids: Vec<Vec<String>> = Vec::new();
             for range in &ranges {
-                let ids = collect_ids_for_scope(&container_client, FeedScope::range(range.clone()))
-                    .await?;
-                union_ids.extend(ids);
+                let mut ids =
+                    collect_ids_for_scope(&container_client, FeedScope::range(range.clone()))
+                        .await?;
+                ids.sort();
+                per_range_ids.push(ids);
             }
-            union_ids.sort();
 
+            // Every range must return a non-empty slice. Each physical partition
+            // owns a share of the 10 logical partitions, so a correctly-scoped
+            // query can never come back empty; an empty range would mean the
+            // scope was dropped and the items were served by some other range.
+            for (i, ids) in per_range_ids.iter().enumerate() {
+                assert!(
+                    !ids.is_empty(),
+                    "feed range {i} returned no items; a scoped query must return \
+                     that range's own slice, not defer to another range"
+                );
+            }
+
+            // The ranges must be disjoint: before the fan-out clip fix every
+            // range fanned out across the whole container, so ids were
+            // duplicated across ranges. Flatten and check for duplicates.
+            let mut flattened: Vec<String> = per_range_ids.iter().flatten().cloned().collect();
+            flattened.sort();
+            let mut deduped = flattened.clone();
+            deduped.dedup();
             assert_eq!(
-                union_ids, all_ids,
-                "each feed range must return only its own items: the union across \
-                 ranges should equal the full set exactly once, with no over-scan \
-                 or duplication"
+                flattened, deduped,
+                "feed ranges must be disjoint: no id may be returned by more than \
+                 one range"
+            );
+
+            // And together the ranges must cover exactly the full container —
+            // no over-scan and nothing missing.
+            assert_eq!(
+                flattened, all_ids,
+                "the union across ranges must equal the full container exactly once"
             );
 
             Ok(())
