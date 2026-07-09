@@ -92,11 +92,10 @@ impl HeaderValidationSpec {
     ///   `offer_replace_pending`, `has_tentative_writes`, query/continuation
     ///   metrics (no-op on point ops).
     /// - **`Ignore`** — emulator does not (and intentionally will not)
-    ///   produce these headers, or they encode internal pkrange state that
-    ///   has no public meaning: `item_lsn`, `item_local_lsn`,
+    ///   produce these headers, or they encode internal state that has no
+    ///   public meaning for the operation under test: `item_local_lsn`,
     ///   `quorum_acked_lsn`, `quorum_acked_local_lsn`, `resource_quota`,
-    ///   `resource_usage`, `partition_key_range_id`, `internal_partition_id`,
-    ///   and the index-build progress headers a real backend emits but the
+    ///   `resource_usage`, and the index-build progress headers a real backend emits but the
     ///   in-memory emulator has no indexing engine to reproduce —
     ///   `collection_index_transformation_progress`,
     ///   `collection_lazy_indexing_progress`.
@@ -106,13 +105,13 @@ impl HeaderValidationSpec {
             .with_rule("request_charge", HeaderMatch::NonNegative)
             .with_rule("session_token", HeaderMatch::Exists)
             .with_rule("etag", HeaderMatch::Exists)
-            .with_rule("continuation", HeaderMatch::Symmetric)
+            .with_rule("continuation", HeaderMatch::Ignore)
             .with_rule("item_count", HeaderMatch::Symmetric)
             .with_rule("index_metrics", HeaderMatch::Symmetric)
             .with_rule("query_metrics", HeaderMatch::Symmetric)
             .with_rule("server_duration_ms", HeaderMatch::Exists)
             .with_rule("lsn", HeaderMatch::Exists)
-            .with_rule("item_lsn", HeaderMatch::Ignore)
+            .with_rule("item_lsn", HeaderMatch::Symmetric)
             .with_rule("offer_replace_pending", HeaderMatch::Symmetric)
             .with_rule("retry_after_ms", HeaderMatch::Symmetric)
             .with_rule("correlated_activity_id", HeaderMatch::Symmetric)
@@ -129,8 +128,8 @@ impl HeaderValidationSpec {
             .with_rule("resource_quota", HeaderMatch::Ignore)
             .with_rule("resource_usage", HeaderMatch::Ignore)
             .with_rule("has_tentative_writes", HeaderMatch::Symmetric)
-            .with_rule("partition_key_range_id", HeaderMatch::Ignore)
-            .with_rule("internal_partition_id", HeaderMatch::Ignore)
+            .with_rule("partition_key_range_id", HeaderMatch::Symmetric)
+            .with_rule("internal_partition_id", HeaderMatch::Symmetric)
             .with_rule("log_results", HeaderMatch::Symmetric)
             .with_rule(
                 "collection_index_transformation_progress",
@@ -152,7 +151,7 @@ impl HeaderValidationSpec {
             .with_rule("query_metrics", HeaderMatch::Symmetric)
             .with_rule("server_duration_ms", HeaderMatch::Exists)
             .with_rule("lsn", HeaderMatch::Exists)
-            .with_rule("item_lsn", HeaderMatch::Ignore)
+            .with_rule("item_lsn", HeaderMatch::Symmetric)
             .with_rule("offer_replace_pending", HeaderMatch::Symmetric)
             .with_rule("retry_after_ms", HeaderMatch::Symmetric)
             .with_rule("correlated_activity_id", HeaderMatch::Symmetric)
@@ -169,8 +168,8 @@ impl HeaderValidationSpec {
             .with_rule("resource_quota", HeaderMatch::Ignore)
             .with_rule("resource_usage", HeaderMatch::Ignore)
             .with_rule("has_tentative_writes", HeaderMatch::Symmetric)
-            .with_rule("partition_key_range_id", HeaderMatch::Ignore)
-            .with_rule("internal_partition_id", HeaderMatch::Ignore)
+            .with_rule("partition_key_range_id", HeaderMatch::Symmetric)
+            .with_rule("internal_partition_id", HeaderMatch::Symmetric)
             .with_rule("log_results", HeaderMatch::Symmetric)
             .with_rule(
                 "collection_index_transformation_progress",
@@ -217,6 +216,52 @@ impl HeaderValidationSpec {
             )
             .with_rule("collection_lazy_indexing_progress", HeaderMatch::Ignore)
             .with_rule("lsn", HeaderMatch::Ignore)
+    }
+
+    /// Default spec for successful query pages.
+    ///
+    /// Query metrics, index metrics, and RU charges are intentionally relaxed:
+    /// live backends expose useful query-engine and indexing details that the
+    /// in-memory emulator cannot faithfully reproduce. Query comparison tests
+    /// should log those values for diagnostics, while using this spec for basic
+    /// header sanity and presence checks.
+    pub fn for_query_operation() -> Self {
+        Self::new()
+            .with_rule("activity_id", HeaderMatch::Exists)
+            .with_rule("request_charge", HeaderMatch::NonNegative)
+            .with_rule("session_token", HeaderMatch::Exists)
+            .with_rule("etag", HeaderMatch::Symmetric)
+            .with_rule("continuation", HeaderMatch::Symmetric)
+            .with_rule("item_count", HeaderMatch::Symmetric)
+            .with_rule("index_metrics", HeaderMatch::Ignore)
+            .with_rule("query_metrics", HeaderMatch::Ignore)
+            .with_rule("server_duration_ms", HeaderMatch::Exists)
+            .with_rule("lsn", HeaderMatch::Symmetric)
+            .with_rule("item_lsn", HeaderMatch::Ignore)
+            .with_rule("offer_replace_pending", HeaderMatch::Symmetric)
+            .with_rule("retry_after_ms", HeaderMatch::Symmetric)
+            .with_rule("correlated_activity_id", HeaderMatch::Symmetric)
+            .with_rule("transport_request_id", HeaderMatch::Exists)
+            .with_rule("global_committed_lsn", HeaderMatch::Exists)
+            .with_rule("quorum_acked_lsn", HeaderMatch::Ignore)
+            .with_rule("quorum_acked_local_lsn", HeaderMatch::Ignore)
+            .with_rule("local_lsn", HeaderMatch::Exists)
+            .with_rule("item_local_lsn", HeaderMatch::Ignore)
+            .with_rule("number_of_read_regions", HeaderMatch::Exists)
+            .with_rule("last_state_change_utc", HeaderMatch::Exists)
+            .with_rule("gateway_version", HeaderMatch::Exists)
+            .with_rule("service_version", HeaderMatch::Exists)
+            .with_rule("resource_quota", HeaderMatch::Ignore)
+            .with_rule("resource_usage", HeaderMatch::Ignore)
+            .with_rule("has_tentative_writes", HeaderMatch::Symmetric)
+            .with_rule("partition_key_range_id", HeaderMatch::Symmetric)
+            .with_rule("internal_partition_id", HeaderMatch::Symmetric)
+            .with_rule("log_results", HeaderMatch::Symmetric)
+            .with_rule(
+                "collection_index_transformation_progress",
+                HeaderMatch::Ignore,
+            )
+            .with_rule("collection_lazy_indexing_progress", HeaderMatch::Ignore)
     }
 }
 
