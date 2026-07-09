@@ -312,6 +312,27 @@ mod tests {
         assert_eq!(items[1].current(), Some(&Doc { id: "2".into() }));
     }
 
+    #[test]
+    fn preserves_envelope_metadata() {
+        // The parse-only iterator must hand the caller the whole envelope. A
+        // real LatestVersion read wraps each item with a partial `metadata`
+        // object (positional fields, no `operationType`); that metadata must
+        // survive to the caller rather than being stripped.
+        let body = json!({
+            "Documents": [
+                { "current": { "id": "1" }, "metadata": { "lsn": 100, "crts": 1720322460 } }
+            ],
+            "_count": 1
+        });
+        let items: Vec<ChangeFeedItem<Doc>> =
+            deserialize_change_feed_items(make_response(body)).unwrap();
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].current(), Some(&Doc { id: "1".into() }));
+        let metadata = items[0].metadata().expect("metadata should survive");
+        assert!(metadata.operation_type().is_none());
+        assert_eq!(metadata.lsn(), Some(100));
+    }
+
     /// Builds an SDK [`CosmosResponse`] wrapping the given JSON body so the
     /// deserialize helper can be exercised end to end.
     fn make_response(body: serde_json::Value) -> CosmosResponse {
