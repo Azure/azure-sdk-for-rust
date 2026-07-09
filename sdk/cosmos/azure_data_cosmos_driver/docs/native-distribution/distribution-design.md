@@ -9,7 +9,7 @@
 The crate `azure_data_cosmos_driver_native` compiles to a native library — `azurecosmosdriver.{dll,so,dylib}` (and a static `.a`) plus a cbindgen-generated C header — wrapping the schema-agnostic driver core (see `NATIVE_WRAPPER_SPEC.md`, introduced in #4461). It is the single reuse point for **every non-Rust language SDK**. This doc defines how that compiled artifact reaches those SDKs:
 
 - **.NET** (`Microsoft.Azure.Cosmos`) — first consumer, via NuGet.
-- **Go** (`azcosmos`) — near-term, via cgo (the Foreign Function Interface — FFI — mechanism Go uses to link C libraries). **Not** NuGet.
+- **Go** (`azcosmos`) — near-term, via cgo (the Foreign Function Interface — FFI — mechanism Go uses to link C libraries). **Not** NuGet. *(Publish strategy is **WIP** — see the callout in [§6](#6-per-consumer-and-pipeline-specifics--adrs) and [ADR 0004](adr/0004-go-cgo-prebuilt.md).)*
 - **Java** — future, likely a JAR with bundled natives. Consumption model **not finalized; not urgent.** Called out so the design stays multi-language.
 
 Non-goal: the C-ABI surface itself — that is owned by `NATIVE_WRAPPER_SPEC.md`. This doc moves the *compiled bytes*; it does not define the functions.
@@ -82,12 +82,20 @@ Consumer distribution is **per-language feeds**; the build-once "bundle" is an *
 
 The per-language link model, platform matrix, build/signing pipeline, ABI handshake, and compatibility posture are all **decisions** — so they live in the ADRs rather than being restated here (restating them is exactly what lets the doc and the ADRs drift). The at-a-glance table in [§4](#4-decisions-at-a-glance) links each one; in brief:
 
+> **⚠️ Go publish strategy — WIP.** The direction is firm: Go consumes a **packaged native binary via cgo** (`CGO_ENABLED=1`), linking the **FFI stubs generated from the cbindgen C header** — the driver ships **inside** the consumed artifact and is linked at `go build`. What is explicitly **ruled out** is a "pure-Go shim" that downloads the native library at build or run time: customers link a real binary through the FFI stubs, they are never handed a downloader stub. Still being pressure-tested: the *delivery shape* ([§8](#8-open-questions) Q3), the static-vs-dynamic default (Q4), and the pure-Go-port alternative (below). Recorded firmly in [ADR 0004](adr/0004-go-cgo-prebuilt.md).
+
 - **.NET / Go consumption** — [ADR 0003](adr/0003-dotnet-nuget-nativeassets.md) (per-RID NuGet NativeAssets + meta-package), [ADR 0004](adr/0004-go-cgo-prebuilt.md) (cgo against a prebuilt header + lib).
 - **Java** — deliberately **not finalized** (likely a JAR with bundled natives); tracked in [§8](#8-open-questions) so the build-once hand-off ([ADR 0001](adr/0001-build-once-internal-handoff.md)) stays general enough to repackage into a JAR later without redesign.
 - **Platform matrix** — [ADR 0008](adr/0008-platform-matrix.md).
 - **ABI handshake & versioning** — [ADR 0005](adr/0005-abi-version-handshake.md) and [ADR 0010](adr/0010-native-version-fanout.md).
 - **Build, signing & CI** — [ADR 0009](adr/0009-build-and-signing-pipeline.md).
 - **Compatibility posture (major-version cutover, no parallel managed transport)** — [ADR 0007](adr/0007-native-is-opt-in.md).
+
+### Alternative considered — a pure-Go port (spike)
+
+A different answer to "how does Go get the driver" is to **not consume the native binary at all** and instead **re-port the Rust driver into pure Go** — no cgo, no native artifact. A time-boxed spike built a working vertical slice this way (point read/create plus the retry, routing, and multi-region + transport-failure failover paths) with **`CGO_ENABLED=0` and zero third-party dependencies**, and validated it **behavior-for-behavior against the real Rust driver** with a differential harness: the same scenarios run through both implementations against one shared in-memory emulator, asserting the caller-visible outcomes match.
+
+This does **not** change the design, and the native + cgo model stands, because a pure-Go port **abandons build-once single provenance** ([ADR 0001](adr/0001-build-once-internal-handoff.md)): every language would re-implement and re-verify the driver, so "the driver" becomes N parallel, hand-maintained translations that must chase every change to the Rust core — precisely the drift this design exists to prevent. The spike's real value is as a **parity oracle and risk probe** for the port surface, not as a shipping vehicle; accordingly the pure-Go option stays *rejected for distribution* in [ADR 0004](adr/0004-go-cgo-prebuilt.md).
 
 ## 7. Rollout
 
@@ -104,7 +112,7 @@ The native transport is the defining change of the new major; there is no separa
 
 1. **Internal hand-off shape** — Azure Artifacts Universal Package vs raw pipeline artifact for the one-build → three-jobs hand-off?
 2. **Packaging ownership** — central fan-out (in azure-sdk-for-rust publishing into three language feeds) vs each SDK repo pulls the hand-off and publishes itself? (Security-boundary question.)
-3. **Go delivery** — Universal Package fetched at build vs a vendored "binaries" Go module?
+3. **Go delivery shape** — Universal Package fetched at build vs a vendored "binaries" Go module. *Not open: whichever shape wins, the native library is **packaged inside** the delivered artifact and linked via cgo — never a pure-Go shim that downloads the library separately.*
 4. **Static vs dynamic default for Go** — self-contained `.a` vs shared `.so`?
 5. **Version mapping** — *Resolved by [ADR 0010](adr/0010-native-version-fanout.md):* one native version is fanned out to all feeds simultaneously and each SDK pins that **exact** version (hosts accept only that one ABI revision, ADR 0005), rather than an independent per-language cadence off a pinned range.
 6. **NuGet naming** — `Microsoft.Azure.Cosmos.NativeAssets.*` (reserved prefix) confirmed; meta-package name?

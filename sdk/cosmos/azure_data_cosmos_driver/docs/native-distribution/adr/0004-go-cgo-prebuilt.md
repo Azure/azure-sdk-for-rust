@@ -1,14 +1,17 @@
 # ADR 0004 — Go consumes via cgo against a prebuilt header + lib from the Go feed
 
-**Status:** Accepted (proposed for review)
+**Status:** Proposed for review — core model firm, **delivery shape WIP**
+
+> **WIP.** The *decision* — Go links a **packaged** prebuilt native library via cgo (`CGO_ENABLED=1`) using the `C.*` FFI stubs from the cbindgen header — is firm. Still being settled: the **delivery shape** (Universal Package vs vendored binaries module, Q3) and the static-vs-dynamic default (Q4). Explicitly **out of scope**: a pure-Go shim that downloads the native lib — the binary is packaged and linked, never fetched by a stub. The pure-Go-*port* alternative (re-implementing the driver in Go) was spiked and is discussed under *Alternatives considered* + the design doc.
 
 ## Context
 Go has no NuGet. Go links C libraries through cgo, which needs a C header and a library available at `go build` time. The Go SDK already implements the completion-queue receive loop, `cgo.Handle` correlation, and buffer copy-out; the only distribution question is how header+lib+ABI version reach the Go build.
 
 ## Decision
-- Go consumes the prebuilt **`include/` header and `lib/` library via cgo** (`#cgo CFLAGS -I…` to parse the header into `C.*` symbols; `#cgo LDFLAGS -L… -lazurecosmosdriver` to link), **not NuGet**.
+- Go consumes the prebuilt **`include/` header and `lib/` library via cgo** with **`CGO_ENABLED=1`**: `#cgo CFLAGS -I…` parses the header into the `C.*` **FFI stubs**, and `#cgo LDFLAGS -L… -lazurecosmosdriver` links the library. **Not** NuGet, and **not** a pure-Go build.
+- The native library is **packaged inside the delivered artifact** and linked at `go build`. It is **not** a pure-Go shim that downloads the library at build/run time — customers link a real binary through the FFI stubs; they are not handed a downloader stub.
 - Prefer the **static `.a`** for a self-contained Go binary; dynamic linking is supported as an option.
-- The header + lib are delivered through the **azure-sdk-for-go feed** — an Azure Artifacts Universal Package fetched at build, or a vendored "binaries" Go module with per-OS build tags (delivery shape is open Q3). Either way it derives from the ADR 0001 hand-off artifact.
+- The header + lib are delivered through the **azure-sdk-for-go feed** — an Azure Artifacts Universal Package fetched at build, or a vendored "binaries" Go module with per-OS build tags (delivery *shape* is open Q3; in every shape the binary is **packaged**, not fetched by a shim). Either way it derives from the ADR 0001 hand-off artifact.
 
 ## Consequences
 - Go reuses the exact same signed binaries as .NET — no Go-specific build of the driver.
@@ -18,4 +21,5 @@ Go has no NuGet. Go links C libraries through cgo, which needs a C header and a 
 ## Alternatives considered
 - Wrap the lib in NuGet for Go — rejected: Go can't consume NuGet.
 - A neutral consumer bundle Go downloads — rejected (ADR 0001/0002): pulls irrelevant formats.
-- Pure-Go reimplementation of the driver — rejected: defeats the shared-core goal.
+- A pure-Go **shim module** that downloads the native lib at build/run time — rejected: customers can't be handed a downloader stub; the binary must be packaged and linked via cgo.
+- **Pure-Go reimplementation of the driver — rejected (for distribution).** A time-boxed spike built a working `CGO_ENABLED=0`, zero-dependency vertical slice (point read/create + retry, routing, and multi-region/transport failover) and validated it behavior-for-behavior against the real Rust driver with a differential harness. It still defeats build-once single provenance (ADR 0001): every language would re-port and re-verify, making "the driver" N hand-maintained translations that chase every Rust change. Valuable as a parity oracle / risk probe, not a shipping vehicle — see the design doc's *Alternative considered — a pure-Go port* section.
