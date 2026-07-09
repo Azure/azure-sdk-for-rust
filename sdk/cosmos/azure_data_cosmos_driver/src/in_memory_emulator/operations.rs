@@ -2727,8 +2727,8 @@ fn local_query_info_to_dataflow(
 
 fn full_query_range() -> crate::driver::dataflow::query_plan::QueryRange {
     crate::driver::dataflow::query_plan::QueryRange {
-        min: Epk::MIN.as_str().to_string(),
-        max: Epk::MAX.as_str().to_string(),
+        min: Epk::MIN.to_hex(),
+        max: Epk::MAX.to_hex(),
         is_min_inclusive: true,
         is_max_inclusive: false,
     }
@@ -3854,7 +3854,7 @@ fn handle_read(
         // Check forced session unavailability (one-shot)
         if partition
             .session_state
-            .check_and_clear_forced_for(epk.as_str())
+            .check_and_clear_forced_for(&epk.to_hex())
         {
             return Err(error_response(
                 StatusCode::NotFound,

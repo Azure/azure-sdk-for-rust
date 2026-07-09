@@ -503,10 +503,12 @@ async fn replace_item_through_driver() {
 async fn read_with_stale_session_token_returns_404_1002() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
-    // To reliably trigger 404/1002 on both backends, we first do a write to
-    // get a real session token (with the correct PKRange ID), then bump its LSN
-    // far beyond the partition's actual LSN. This ensures the service matches
-    // the token to the correct partition and detects the stale LSN.
+    // We first do a write to get a real session token (with the correct PKRange
+    // ID), then bump its LSN far beyond the partition's actual LSN. This makes
+    // the service match the token to the correct partition and detect that it
+    // cannot be satisfied, reported as 404 / sub-status 1002
+    // (ReadSessionNotAvailable) on both classic gateway and the Gateway 2.0
+    // thin-client path.
     //
     // We derive the token (and pkrange id) from a seed create on each backend
     // — `pk1` does not always hash to pkrange 0 under V2 hashing, so a
@@ -608,6 +610,22 @@ async fn read_with_stale_session_token_returns_404_1002() {
         let stale_token: String = real_stale_token
             .clone()
             .expect("real_stale_token should be set when real driver is available");
+
+        // On a multi-region account the read regions may not have replicated
+        // the freshly created database/container/item yet; a lagging region
+        // returns a plain resource 404 (no sub-status) instead of the session
+        // 404/1002 we assert below. Confirm the seed item is point-readable from
+        // every advertised read region before issuing the stale read.
+        backend
+            .wait_for_sentinel_readable_from_all_regions(
+                &db_name,
+                "testcoll",
+                "pk1",
+                "seed-for-session",
+            )
+            .await
+            .expect("seed item should become readable from all regions");
+
         let real_err = driver
             .execute_singleton_operation(
                 CosmosOperation::read_item(ItemReference::from_name(
@@ -621,20 +639,23 @@ async fn read_with_stale_session_token_returns_404_1002() {
             .await;
 
         let real_err = real_err.expect_err("Real should return an error for stale session read");
+        // The read targets a nonexistent item, so it returns HTTP 404 on every
+        // consistency level. Under Session the seed-derived token's bumped LSN
+        // additionally trips the soft 404 / sub-status 1002 (ReadSessionNotAvailable)
+        // path (asserted below); Eventual/Strong ignore the token entirely.
         assert_eq!(
-            Some(real_err.status().status_code()),
-            Some(azure_core::http::StatusCode::NotFound),
-            "Real error should be HTTP 404",
+            real_err.status().status_code(),
+            azure_core::http::StatusCode::NotFound,
+            "Real stale session read should return HTTP 404",
         );
-        let error_code = real_err
-            .status()
-            .sub_status()
-            .map(|s| s.value().to_string());
-        if error_code.as_deref() != Some("1002") {
-            eprintln!(
-                "  [warning] Real service returned substatus {:?} instead of 1002 — \
-                 gateway may not enforce session consistency for V1 tokens on this account",
-                error_code,
+        // Substatus 1002 is only produced under Session consistency; on
+        // Eventual/Strong accounts the stale token is ignored and the missing
+        // item surfaces as a plain 404/0. Only assert 1002 on Session accounts.
+        if DualBackend::real_account_uses_session_consistency() {
+            assert_eq!(
+                real_err.status().sub_status().map(|s| s.value()),
+                Some(1002),
+                "Real 404 stale session read should surface substatus 1002",
             );
         }
     }

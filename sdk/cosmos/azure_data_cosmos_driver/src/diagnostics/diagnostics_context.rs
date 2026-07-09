@@ -159,7 +159,7 @@ pub enum TransportSecurity {
 
 /// The concrete transport kind used for a request.
 ///
-/// This distinguishes the standard gateway path from Gateway 2.0 thin-client
+/// This distinguishes the standard gateway path from Gateway 2.0
 /// routing while keeping TLS/emulator concerns in [`TransportSecurity`].
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -169,8 +169,8 @@ pub enum TransportKind {
     #[default]
     Gateway,
 
-    /// Gateway 2.0 thin-client transport.
-    Gateway20,
+    /// Gateway 2.0 transport.
+    GatewayV2,
 }
 
 impl TransportKind {
@@ -178,7 +178,7 @@ impl TransportKind {
     pub fn as_str(self) -> &'static str {
         match self {
             TransportKind::Gateway => "gateway",
-            TransportKind::Gateway20 => "gateway20",
+            TransportKind::GatewayV2 => "gateway_v2",
         }
     }
 
@@ -188,8 +188,8 @@ impl TransportKind {
     }
 
     /// Returns true if this request used the Gateway 2.0 transport.
-    pub fn is_gateway20(self) -> bool {
-        matches!(self, TransportKind::Gateway20)
+    pub fn is_gateway_v2(self) -> bool {
+        matches!(self, TransportKind::GatewayV2)
     }
 }
 
@@ -2893,9 +2893,9 @@ mod tests {
     #[test]
     fn transport_kind_classification() {
         assert!(TransportKind::Gateway.is_gateway());
-        assert!(!TransportKind::Gateway.is_gateway20());
-        assert!(TransportKind::Gateway20.is_gateway20());
-        assert!(!TransportKind::Gateway20.is_gateway());
+        assert!(!TransportKind::Gateway.is_gateway_v2());
+        assert!(TransportKind::GatewayV2.is_gateway_v2());
+        assert!(!TransportKind::GatewayV2.is_gateway());
     }
 
     #[test]
@@ -2947,8 +2947,8 @@ mod tests {
             "\"gateway\""
         );
         assert_eq!(
-            serde_json::to_string(&TransportKind::Gateway20).unwrap(),
-            "\"gateway20\""
+            serde_json::to_string(&TransportKind::GatewayV2).unwrap(),
+            "\"gateway_v2\""
         );
     }
 
