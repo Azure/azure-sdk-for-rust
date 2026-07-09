@@ -278,7 +278,7 @@ impl<T: Send + DeserializeOwned + 'static> Stream for ChangeFeedPageIterator<T> 
 #[cfg(test)]
 mod tests {
     use super::deserialize_change_feed_items;
-    use crate::models::{ChangeFeedItem, CosmosResponse};
+    use crate::models::{ChangeFeedItem, ChangeFeedOperationType, CosmosResponse};
     use azure_core::http::StatusCode;
     use azure_data_cosmos_driver::diagnostics::DiagnosticsContext;
     use azure_data_cosmos_driver::models::{
@@ -331,6 +331,68 @@ mod tests {
         let metadata = items[0].metadata().expect("metadata should survive");
         assert!(metadata.operation_type().is_none());
         assert_eq!(metadata.lsn(), Some(100));
+    }
+
+    #[test]
+    fn deserializes_all_versions_and_deletes_page() {
+        // AllVersionsAndDeletes binds `T = ChangeFeedItem<Doc>` and keeps the
+        // whole envelope: create + replace + delete, with metadata and a
+        // pre-image preserved rather than stripped.
+        let body = json!({
+            "Documents": [
+                {
+                    "current": { "id": "1" },
+                    "metadata": { "operationType": "create", "lsn": 10 }
+                },
+                {
+                    "current": { "id": "2" },
+                    "previous": { "id": "2" },
+                    "metadata": { "operationType": "replace", "lsn": 11, "previousImageLsn": 10 }
+                },
+                {
+                    "previous": { "id": "3" },
+                    "metadata": { "operationType": "delete", "lsn": 12, "timeToLiveExpired": true }
+                }
+            ],
+            "_count": 3
+        });
+
+        let items: Vec<ChangeFeedItem<Doc>> =
+            deserialize_change_feed_items(make_response(body)).unwrap();
+        assert_eq!(items.len(), 3);
+
+        // Create: current present, no previous.
+        assert_eq!(
+            items[0].operation_type(),
+            Some(ChangeFeedOperationType::Create)
+        );
+        assert_eq!(items[0].current(), Some(&Doc { id: "1".into() }));
+        assert!(items[0].previous().is_none());
+        assert_eq!(items[0].metadata().and_then(|m| m.lsn()), Some(10));
+
+        // Replace: both current and previous present.
+        assert_eq!(
+            items[1].operation_type(),
+            Some(ChangeFeedOperationType::Replace)
+        );
+        assert_eq!(items[1].current(), Some(&Doc { id: "2".into() }));
+        assert_eq!(items[1].previous(), Some(&Doc { id: "2".into() }));
+        assert_eq!(
+            items[1].metadata().and_then(|m| m.previous_image_lsn()),
+            Some(10)
+        );
+
+        // Delete: current absent, previous (pre-image) preserved, TTL flag set.
+        assert_eq!(
+            items[2].operation_type(),
+            Some(ChangeFeedOperationType::Delete)
+        );
+        assert!(items[2].current().is_none());
+        assert_eq!(items[2].previous(), Some(&Doc { id: "3".into() }));
+        assert_eq!(
+            items[2].metadata().and_then(|m| m.time_to_live_expired()),
+            Some(true)
+        );
     }
 
     /// Builds an SDK [`CosmosResponse`] wrapping the given JSON body so the

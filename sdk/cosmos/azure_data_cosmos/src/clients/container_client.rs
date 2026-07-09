@@ -8,10 +8,10 @@ use crate::{
     models::{BatchResponse, ItemResponse, ResourceResponse},
     models::{ContainerProperties, PatchInstructions, ThroughputProperties},
     options::{
-        BatchOptions, ChangeFeedOptions, ChangeFeedStartFrom, DeleteContainerOptions,
-        ItemReadOptions, ItemWriteOptions, PatchItemOptions, Precondition, QueryOptions,
-        ReadContainerOptions, ReadFeedRangesOptions, ReplaceContainerOptions, SessionToken,
-        ThroughputOptions,
+        BatchOptions, ChangeFeedMode, ChangeFeedOptions, ChangeFeedStartFrom,
+        DeleteContainerOptions, ItemReadOptions, ItemWriteOptions, PatchItemOptions, Precondition,
+        QueryOptions, ReadContainerOptions, ReadFeedRangesOptions, ReplaceContainerOptions,
+        SessionToken, ThroughputOptions,
     },
     PartitionKey, Query,
 };
@@ -863,13 +863,22 @@ impl ContainerClient {
 
     /// Queries the change feed for a container, returning a stream of pages.
     ///
-    /// The change feed provides an ordered list of changes (creates and
-    /// replaces) made to items in the container.
-    ///
-    /// Every change is returned as a
+    /// The change feed provides an ordered list of changes made to items in the
+    /// container. Every change is returned as a
     /// [`ChangeFeedItem<T>`](crate::models::ChangeFeedItem) wire-format
     /// envelope, so bind `T = ChangeFeedItem<YourDoc>` and read the post-change
     /// document via [`current()`](crate::models::ChangeFeedItem::current).
+    ///
+    /// The [`mode`](crate::options::ChangeFeedOptions::mode) selects what each
+    /// change carries:
+    ///
+    /// * [`ChangeFeedMode::LatestVersion`] (default) — the latest version of
+    ///   each created or replaced item. Only `current()` is populated.
+    /// * [`ChangeFeedMode::AllVersionsAndDeletes`] — every intermediate version
+    ///   plus deletes ("full fidelity"). The envelope additionally exposes the
+    ///   pre-change document
+    ///   ([`previous()`](crate::models::ChangeFeedItem::previous)) and change
+    ///   [`metadata()`](crate::models::ChangeFeedItem::metadata).
     ///
     /// # Arguments
     /// * `scope` - Determines which partitions to read changes from.
@@ -878,7 +887,27 @@ impl ContainerClient {
     ///   the token holds its own position.
     /// * `options` - Optional parameters controlling mode, session token, and paging.
     ///
+    /// # AllVersionsAndDeletes limitations
+    ///
+    /// * [`ChangeFeedStartFrom::Beginning`] is **rejected** for this mode:
+    ///   intermediate versions and deletes are only retained within the
+    ///   container's retention / continuous-backup window, so there is no
+    ///   "beginning of all history" to read from. Use
+    ///   [`ChangeFeedStartFrom::Now`] or a [`ChangeFeedStartFrom::PointInTime`]
+    ///   within the retention window.
+    /// * [`ChangeFeedStartFrom::Now`] is re-evaluated per range the first time a
+    ///   range is polled, so a range that is never polled before a checkpoint
+    ///   resumes from resume-time and can drop the intermediate versions and
+    ///   deletes that occurred between the original start and the resume. `Now`
+    ///   is deliberately **not** converted to a concrete `PointInTime`, because
+    ///   that would change its semantics; lossless per-range `Now` resolution is
+    ///   a future improvement.
+    /// * The continuation token does not persist the feed mode, so callers must
+    ///   re-pass [`ChangeFeedMode::AllVersionsAndDeletes`] on resume.
+    ///
     /// # Examples
+    ///
+    /// Read the latest version of each change from the beginning:
     ///
     /// ```rust,no_run
     /// use azure_data_cosmos::{
@@ -912,6 +941,46 @@ impl ContainerClient {
     /// # Ok(())
     /// # }
     /// ```
+    ///
+    /// Read every version and delete ("full fidelity"):
+    ///
+    /// ```rust,no_run
+    /// use azure_data_cosmos::{
+    ///     clients::ContainerClient,
+    ///     feed::FeedScope,
+    ///     models::ChangeFeedItem,
+    ///     options::{ChangeFeedMode, ChangeFeedOptions, ChangeFeedStartFrom},
+    /// };
+    /// use futures::StreamExt;
+    /// use serde::Deserialize;
+    ///
+    /// // A delete envelope may omit non-key fields, so keep them optional.
+    /// #[derive(Debug, Deserialize)]
+    /// struct MyItem {
+    ///     id: String,
+    ///     #[serde(default)]
+    ///     value: Option<i64>,
+    /// }
+    ///
+    /// # async fn example(container: ContainerClient) -> Result<(), Box<dyn std::error::Error>> {
+    /// let options = ChangeFeedOptions::default().with_mode(ChangeFeedMode::AllVersionsAndDeletes);
+    /// let mut pages = container
+    ///     .query_change_feed::<ChangeFeedItem<MyItem>>(
+    ///         FeedScope::full_container(),
+    ///         ChangeFeedStartFrom::Now,
+    ///         Some(options),
+    ///     )
+    ///     .await?;
+    ///
+    /// while let Some(page) = pages.next().await {
+    ///     for item in page?.items() {
+    ///         println!("{:?}: current={:?} previous={:?}",
+    ///             item.operation_type(), item.current(), item.previous());
+    ///     }
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
     pub async fn query_change_feed<T: DeserializeOwned + Send + 'static>(
         &self,
         scope: FeedScope,
@@ -920,10 +989,41 @@ impl ContainerClient {
     ) -> crate::Result<ChangeFeedPageIterator<T>> {
         let options = options.unwrap_or_default();
 
-        let mut initial_operation = CosmosOperation::change_feed(
-            self.container_ref.clone(),
-            Some(scope.into_feed_range(self.container_ref.partition_key_definition())),
-        );
+        let feed_range = scope.into_feed_range(self.container_ref.partition_key_definition());
+
+        // The mode selects the base operation, i.e. which `A-IM` header is sent.
+        // Both modes return `ChangeFeedItem<T>` envelopes; AllVersionsAndDeletes
+        // additionally populates `previous` and `metadata`.
+        let mut initial_operation = match options.mode {
+            ChangeFeedMode::AllVersionsAndDeletes => {
+                // AllVersionsAndDeletes can only read within the container's
+                // retention window, so "from the beginning of all history" is
+                // not a valid start. Reject it with a clear client error rather
+                // than issuing a request the service would refuse.
+                if start_from == ChangeFeedStartFrom::Beginning {
+                    return Err(crate::DriverCosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::new(
+                            azure_core::http::StatusCode::BadRequest,
+                        ))
+                        .with_message(
+                            "ChangeFeedStartFrom::Beginning is not supported for \
+                             ChangeFeedMode::AllVersionsAndDeletes because intermediate versions \
+                             and deletes are only retained within the container's retention / \
+                             continuous-backup window; use ChangeFeedStartFrom::Now or a \
+                             ChangeFeedStartFrom::PointInTime within the retention window",
+                        )
+                        .build()
+                        .into());
+                }
+                CosmosOperation::change_feed_all_versions_and_deletes(
+                    self.container_ref.clone(),
+                    Some(feed_range),
+                )
+            }
+            ChangeFeedMode::LatestVersion => {
+                CosmosOperation::change_feed(self.container_ref.clone(), Some(feed_range))
+            }
+        };
 
         if let Some(token) = options.session_token {
             initial_operation = initial_operation.with_session_token(token);

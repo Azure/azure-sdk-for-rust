@@ -48,6 +48,13 @@ pub(crate) mod request_header_names {
     /// Change-feed indicator ("Incremental Feed"). HTTP standard name `a-im`.
     pub const A_IM: &str = "a-im";
     pub const INCREMENTAL_FEED: &str = "Incremental Feed";
+    /// Full-fidelity change-feed indicator ("Full-Fidelity Feed").
+    ///
+    /// Selects the AllVersionsAndDeletes change feed, which returns every
+    /// intermediate version and delete as an envelope with `current`,
+    /// `previous`, and `metadata`. Sent as the `a-im` value in place of
+    /// [`INCREMENTAL_FEED`].
+    pub const FULL_FIDELITY_FEED: &str = "Full-Fidelity Feed";
     /// Wire format version for change feed responses.
     pub const CHANGEFEED_WIRE_FORMAT_VERSION: &str = "x-ms-cosmos-changefeed-wire-format-version";
     /// The wire format version value used by this SDK.
@@ -188,7 +195,21 @@ pub struct CosmosRequestHeaders {
     /// When `true`, the driver emits the standard change-feed indicator
     /// header. Combine with [`Precondition::if_none_match`] to pass a
     /// continuation token.
+    ///
+    /// Mutually exclusive with [`full_fidelity_feed`](Self::full_fidelity_feed);
+    /// if both are set, full-fidelity takes precedence when emitting `a-im`.
     pub incremental_feed: bool,
+
+    /// Requests a full-fidelity change feed read (`a-im: Full-Fidelity Feed`).
+    ///
+    /// When `true`, the driver emits the full-fidelity change-feed indicator,
+    /// selecting the AllVersionsAndDeletes mode where every intermediate
+    /// version and delete is returned inside an envelope
+    /// (`{ current, previous, metadata }`).
+    ///
+    /// Mutually exclusive with [`incremental_feed`](Self::incremental_feed);
+    /// full-fidelity takes precedence when emitting `a-im`.
+    pub full_fidelity_feed: bool,
 
     /// When `true`, emits the change-feed wire format version header
     /// (`x-ms-cosmos-changefeed-wire-format-version: 2021-09-15`).
@@ -291,7 +312,20 @@ impl CosmosRequestHeaders {
                 HeaderValue::from(wire),
             );
         }
-        if self.incremental_feed {
+        // `a-im` selects the change feed mode. Full-fidelity
+        // (AllVersionsAndDeletes) takes precedence over incremental
+        // (LatestVersion); the two are mutually exclusive, but guard the
+        // invariant and emit exactly one value.
+        debug_assert!(
+            !(self.full_fidelity_feed && self.incremental_feed),
+            "full_fidelity_feed and incremental_feed are mutually exclusive"
+        );
+        if self.full_fidelity_feed {
+            headers.insert(
+                request_header_names::A_IM,
+                HeaderValue::from_static(request_header_names::FULL_FIDELITY_FEED),
+            );
+        } else if self.incremental_feed {
             headers.insert(
                 request_header_names::A_IM,
                 HeaderValue::from_static(request_header_names::INCREMENTAL_FEED),
@@ -1305,6 +1339,45 @@ mod tests {
         cosmos_headers.write_to_headers(&mut headers);
         assert_eq!(
             headers.get_optional_str(&HeaderName::from_static("x-ms-max-item-count")),
+            None
+        );
+    }
+
+    #[test]
+    fn write_to_headers_emits_incremental_a_im() {
+        let cosmos_headers = CosmosRequestHeaders {
+            incremental_feed: true,
+            ..Default::default()
+        };
+        let mut headers = Headers::new();
+        cosmos_headers.write_to_headers(&mut headers);
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static("a-im")),
+            Some("Incremental Feed")
+        );
+    }
+
+    #[test]
+    fn write_to_headers_emits_full_fidelity_a_im() {
+        let cosmos_headers = CosmosRequestHeaders {
+            full_fidelity_feed: true,
+            ..Default::default()
+        };
+        let mut headers = Headers::new();
+        cosmos_headers.write_to_headers(&mut headers);
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static("a-im")),
+            Some("Full-Fidelity Feed")
+        );
+    }
+
+    #[test]
+    fn write_to_headers_omits_a_im_when_no_feed_mode() {
+        let cosmos_headers = CosmosRequestHeaders::default();
+        let mut headers = Headers::new();
+        cosmos_headers.write_to_headers(&mut headers);
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static("a-im")),
             None
         );
     }

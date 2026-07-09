@@ -82,6 +82,13 @@ pub(crate) struct ParsedRequest {
     pub is_batch: bool,
     #[allow(dead_code)]
     pub is_upsert: bool, // used during dispatch resolution
+    /// Value of the change-feed `A-IM` request header, when present.
+    ///
+    /// `"Incremental Feed"` selects the LatestVersion change feed and
+    /// `"Full-Fidelity Feed"` selects AllVersionsAndDeletes. The emulator's
+    /// read-feed handler consults this to decide whether to return flat
+    /// documents or full-fidelity envelopes.
+    pub a_im: Option<String>,
 }
 
 // Header name constants for request parsing
@@ -108,6 +115,7 @@ static IS_BATCH_REQUEST: HeaderName = HeaderName::from_static("x-ms-cosmos-is-ba
 static OFFER_THROUGHPUT: HeaderName = HeaderName::from_static("x-ms-offer-throughput");
 static OFFER_AUTOPILOT_SETTINGS: HeaderName =
     HeaderName::from_static("x-ms-cosmos-offer-autopilot-settings");
+static A_IM: HeaderName = HeaderName::from_static("a-im");
 
 /// Parses an HTTP request into a `ParsedRequest`.
 pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
@@ -169,6 +177,7 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
     let offer_autopilot_settings = headers
         .get_optional_str(&OFFER_AUTOPILOT_SETTINGS)
         .map(|s| s.to_string());
+    let a_im = headers.get_optional_str(&A_IM).map(|s| s.to_string());
 
     let path = url.path();
     // Reject trailing slashes after the leading `/`. `/dbs/mydb/colls/mycoll/docs/`
@@ -226,6 +235,7 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
         is_query_plan,
         is_batch,
         is_upsert,
+        a_im,
     }
 }
 

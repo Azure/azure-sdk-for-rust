@@ -23,15 +23,32 @@ pub use azure_data_cosmos_driver::models::ChangeFeedStartFrom;
 
 /// Selects which change feed mode to read.
 ///
-/// Only [`LatestVersion`](Self::LatestVersion) is supported today. The enum is
-/// `#[non_exhaustive]`, so additional modes can be added in a future release
-/// without breaking callers.
+/// * [`LatestVersion`](Self::LatestVersion) (default) returns the latest
+///   version of each created or replaced item.
+/// * [`AllVersionsAndDeletes`](Self::AllVersionsAndDeletes) returns every
+///   intermediate version plus deletes ("full fidelity"). In this mode the
+///   caller binds the item type to
+///   [`ChangeFeedItem<YourDoc>`](crate::models::ChangeFeedItem) so the whole
+///   change envelope is preserved. See
+///   [`ContainerClient::query_change_feed()`](crate::clients::ContainerClient::query_change_feed)
+///   for its start-position restrictions.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum ChangeFeedMode {
     /// Returns the latest version of each changed item ("incremental" feed).
     #[default]
     LatestVersion,
+
+    /// Returns every intermediate version plus deletes ("full fidelity" feed).
+    ///
+    /// Each change is delivered as a
+    /// [`ChangeFeedItem<YourDoc>`](crate::models::ChangeFeedItem) envelope
+    /// carrying the post-change document (`current`), the pre-change document
+    /// (`previous`, when available), and change
+    /// [`metadata`](crate::models::ChangeFeedMetadata). Reading from the
+    /// beginning is not supported for this mode because intermediate versions
+    /// and deletes are only retained within the container's retention window.
+    AllVersionsAndDeletes,
 }
 
 /// Options for change feed operations.

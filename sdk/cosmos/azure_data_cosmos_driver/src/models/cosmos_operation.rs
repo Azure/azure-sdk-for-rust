@@ -13,6 +13,19 @@ use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use time::OffsetDateTime;
 
+/// Which change feed mode a factory should configure.
+///
+/// Private helper shared by [`CosmosOperation::change_feed`] and
+/// [`CosmosOperation::change_feed_all_versions_and_deletes`]; the only
+/// difference between the two is the `A-IM` header value they emit.
+#[derive(Clone, Copy)]
+enum ChangeFeedFactoryMode {
+    /// LatestVersion: `A-IM: Incremental Feed`.
+    Incremental,
+    /// AllVersionsAndDeletes: `A-IM: Full-Fidelity Feed`.
+    FullFidelity,
+}
+
 /// The position a change feed is started from.
 ///
 /// Passed explicitly when starting a change feed read and persisted inside the
@@ -39,9 +52,12 @@ pub enum ChangeFeedStartFrom {
     /// "Now" is evaluated when the request is sent, so on resume a never-polled
     /// partition starts from resume time rather than the original start time.
     /// This is acceptable for LatestVersion (it still converges to the latest
-    /// state under at-least-once delivery), but AllVersionsAndDeletes must
-    /// resolve "Now" to a concrete start position before persisting so resume
-    /// does not drop intermediate versions/deletes.
+    /// state under at-least-once delivery). For AllVersionsAndDeletes it is a
+    /// documented limitation: a range that is never polled before a checkpoint
+    /// can drop the intermediate versions and deletes that occurred between the
+    /// original start and the resume. "Now" is deliberately not pinned to a
+    /// concrete start position before persisting, because that would change its
+    /// semantics; lossless per-range "Now" resolution is a future improvement.
     Now,
 
     /// Start from a specific point in time (wire header `If-Modified-Since`).
@@ -757,11 +773,51 @@ impl CosmosOperation {
     /// `target` scopes the change feed to a specific partition or EPK range.
     /// Pass `None` or `Some(FeedRange::full())` to read the entire container.
     pub fn change_feed(container: ContainerReference, target: Option<FeedRange>) -> Self {
+        Self::change_feed_with_mode(container, target, ChangeFeedFactoryMode::Incremental)
+    }
+
+    /// Creates a full-fidelity (AllVersionsAndDeletes) change feed read
+    /// operation for a container.
+    ///
+    /// Identical to [`change_feed`](Self::change_feed) except it sets the
+    /// `A-IM` header to `Full-Fidelity Feed` instead of `Incremental Feed`.
+    /// This selects the AllVersionsAndDeletes mode, in which every intermediate
+    /// version and delete is returned inside an envelope carrying `current`
+    /// (post-image), `previous` (pre-image, when enabled), and `metadata`
+    /// (operation type, LSN, timestamps). The SDK does **not** unwrap
+    /// `current`; the caller deserializes each item into a `ChangeFeedItem<T>`.
+    ///
+    /// Like [`change_feed`](Self::change_feed) this also sets the
+    /// `x-ms-cosmos-changefeed-wire-format-version` header and marks the
+    /// operation as a change feed read. The start position is set via
+    /// [`with_change_feed_start`](Self::with_change_feed_start).
+    ///
+    /// `target` scopes the change feed to a specific partition or EPK range.
+    /// Pass `None` or `Some(FeedRange::full())` to read the entire container.
+    pub fn change_feed_all_versions_and_deletes(
+        container: ContainerReference,
+        target: Option<FeedRange>,
+    ) -> Self {
+        Self::change_feed_with_mode(container, target, ChangeFeedFactoryMode::FullFidelity)
+    }
+
+    /// Shared constructor for the change feed factories. The only difference
+    /// between LatestVersion and AllVersionsAndDeletes is which `A-IM` value is
+    /// emitted; everything else (resource shape, wire-format-version header,
+    /// change-feed marking) is identical.
+    fn change_feed_with_mode(
+        container: ContainerReference,
+        target: Option<FeedRange>,
+        mode: ChangeFeedFactoryMode,
+    ) -> Self {
         let resource_ref: CosmosResourceReference = CosmosResourceReference::from(container)
             .with_resource_type(ResourceType::Document)
             .into_feed_reference();
         let mut headers = CosmosRequestHeaders::new();
-        headers.incremental_feed = true;
+        match mode {
+            ChangeFeedFactoryMode::Incremental => headers.incremental_feed = true,
+            ChangeFeedFactoryMode::FullFidelity => headers.full_fidelity_feed = true,
+        }
         headers.changefeed_wire_format_version = true;
         let mut operation =
             Self::new(OperationType::ReadFeed, resource_ref, target).with_request_headers(headers);
@@ -1055,6 +1111,23 @@ mod tests {
 
         assert!(op.is_change_feed());
         assert!(op.request_headers().incremental_feed);
+        assert!(!op.request_headers().full_fidelity_feed);
+        assert!(op.request_headers().changefeed_wire_format_version);
+    }
+
+    /// The full-fidelity (AllVersionsAndDeletes) factory sets the
+    /// full-fidelity indicator instead of the incremental one, while keeping
+    /// the wire-format-version header and change-feed marking.
+    #[test]
+    fn change_feed_all_versions_and_deletes_sets_full_fidelity_header() {
+        let op = CosmosOperation::change_feed_all_versions_and_deletes(
+            test_container(),
+            Some(FeedRange::full()),
+        );
+
+        assert!(op.is_change_feed());
+        assert!(op.request_headers().full_fidelity_feed);
+        assert!(!op.request_headers().incremental_feed);
         assert!(op.request_headers().changefeed_wire_format_version);
     }
 

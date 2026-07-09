@@ -652,6 +652,7 @@ pub(crate) async fn handle_operation(
             is_query_plan: false,
             is_batch: false,
             is_upsert: matches!(operation_type, OperationType::Upsert),
+            a_im: None,
         };
 
         match operation_type {
@@ -1456,6 +1457,7 @@ pub(crate) async fn handle_operation(
             is_query_plan: false,
             is_batch: false,
             is_upsert: false,
+            a_im: None,
         }
     }
 
@@ -2640,17 +2642,57 @@ fn handle_read_feed_items(
     start: Instant,
 ) -> AsyncRawResponse {
     match collect_item_documents(store, region_name, parsed, start) {
-        Ok((rid, docs, token)) => success_feed_response(
-            "Documents",
-            rid,
-            docs,
-            FeedPageOptions::from_request(parsed),
-            1.0,
-            &token,
-            start,
-        ),
+        Ok((rid, docs, token)) => {
+            // Full-fidelity (AllVersionsAndDeletes) change feed reads carry
+            // `A-IM: Full-Fidelity Feed`. The in-memory store only retains the
+            // latest state of each document (no change log), so it cannot replay
+            // historical versions, deletes, or pre-images. It therefore
+            // synthesizes a minimal `create` envelope per current document so the
+            // SDK's full-fidelity code path (header emission, mode dispatch, and
+            // the iterator's raw `ChangeFeedItem<T>` deserialization) can be
+            // exercised end-to-end. Deletes / `previous` images remain covered by
+            // unit tests and are a documented follow-up. Incremental
+            // (`A-IM: Incremental Feed`) and plain read-feed requests are
+            // unchanged and return flat documents.
+            let docs = if is_full_fidelity_feed(parsed.a_im.as_deref()) {
+                docs.into_iter().map(full_fidelity_envelope).collect()
+            } else {
+                docs
+            };
+            success_feed_response(
+                "Documents",
+                rid,
+                docs,
+                FeedPageOptions::from_request(parsed),
+                1.0,
+                &token,
+                start,
+            )
+        }
         Err(response) => response,
     }
+}
+
+/// Returns `true` when the `A-IM` header selects the full-fidelity
+/// (AllVersionsAndDeletes) change feed.
+fn is_full_fidelity_feed(a_im: Option<&str>) -> bool {
+    a_im.is_some_and(|value| value.eq_ignore_ascii_case("Full-Fidelity Feed"))
+}
+
+/// Wraps a current document body in a minimal full-fidelity change envelope.
+///
+/// The emulator has no change log, so every retained document is surfaced as a
+/// `create`. `crts` is taken from the document's `_ts` when available; `lsn` and
+/// `previous` are omitted because the store does not track them.
+fn full_fidelity_envelope(doc: serde_json::Value) -> serde_json::Value {
+    let crts = doc.get("_ts").cloned().unwrap_or(serde_json::Value::Null);
+    serde_json::json!({
+        "current": doc,
+        "metadata": {
+            "operationType": "create",
+            "crts": crts,
+        },
+    })
 }
 
 fn handle_query_items(
