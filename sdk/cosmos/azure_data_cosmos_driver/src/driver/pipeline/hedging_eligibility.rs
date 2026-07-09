@@ -36,8 +36,7 @@ const DEFAULT_THRESHOLD_CAP: Duration = Duration::from_millis(1000);
 /// control-plane container/collection metadata read that warms a cold
 /// container cache — hedging it across regions keeps a slow or unhealthy
 /// preferred region from stalling the read (and any operation blocked on it)
-/// past the caller's timeout, which is the cross-region-failover-preemption
-/// scenario in issue #4253. Both are idempotent reads.
+/// past the caller's timeout. Both are idempotent reads.
 ///
 /// Subsequent phases may widen this single constant further — no other change
 /// to [`should_hedge`] is required.
