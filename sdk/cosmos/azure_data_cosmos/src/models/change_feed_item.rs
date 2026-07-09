@@ -23,7 +23,8 @@
 //! wire shapes without loss.
 
 use azure_core::fmt::SafeDebug;
-use serde::Deserialize;
+use serde::de::{DeserializeOwned, Error as _};
+use serde::{Deserialize, Deserializer};
 
 /// The type of change that produced a change feed item.
 ///
@@ -149,26 +150,84 @@ impl ChangeFeedMetadata {
 /// [`Debug`] rather than `SafeDebug`: it is a generic envelope around the
 /// caller's own document `T`, so its `Debug` output is only available when `T`
 /// itself is `Debug`.
-#[derive(Clone, Debug, Deserialize)]
+///
+/// # Non-enveloped backends
+///
+/// A backend that does not honor the `x-ms-cosmos-changefeed-wire-format-version`
+/// header — an older gateway, a region where the feature has not rolled out, or
+/// an emulator build without change-feed enveloping — returns the bare document
+/// (`{ "id": ... }`) instead of the `{ "current": ... }` envelope. Such an item
+/// deserializes with the whole document mapped onto [`current`](Self::current)
+/// and no [`previous`](Self::previous) / [`metadata`](Self::metadata), so a
+/// caller reading `.current()` sees the document on either wire shape rather
+/// than losing it. An item is treated as an envelope when it carries any of the
+/// reserved `current`, `previous`, or `metadata` keys; a flat document whose own
+/// top level happens to use one of those names is the one documented exception.
+#[derive(Clone, Debug)]
 #[non_exhaustive]
-#[serde(bound(deserialize = "T: serde::Deserialize<'de>"))]
 pub struct ChangeFeedItem<T> {
     /// The document after the change. Present for creates and replaces; for
     /// deletes it may be absent or a minimal document (id and partition key).
-    #[serde(rename = "current", default)]
     current: Option<T>,
 
     /// The document before the change. Present for replaces and deletes when
     /// the container is configured to retain pre-images; otherwise absent.
-    #[serde(rename = "previous", default)]
     previous: Option<T>,
 
     /// Metadata describing the change (operation type, LSN, timestamps).
     ///
     /// Populated for full-fidelity reads. For LatestVersion reads it may be
     /// absent, or a partial object carrying `lsn`/`crts` but no operation type.
-    #[serde(rename = "metadata", default)]
     metadata: Option<ChangeFeedMetadata>,
+}
+
+impl<'de, T> Deserialize<'de> for ChangeFeedItem<T>
+where
+    T: DeserializeOwned,
+{
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        // The wire-format envelope is a JSON object carrying any of the
+        // reserved `current`, `previous`, or `metadata` keys. A backend that
+        // does not envelope change feed items returns the bare document
+        // instead; treat that whole document as the post-change `current` so
+        // no data is lost. See the type-level docs for the reserved-key caveat.
+        let value = serde_json::Value::deserialize(deserializer)?;
+        let is_envelope = value.as_object().is_some_and(|fields| {
+            fields.contains_key("current")
+                || fields.contains_key("previous")
+                || fields.contains_key("metadata")
+        });
+
+        if is_envelope {
+            #[derive(Deserialize)]
+            struct Envelope<T> {
+                current: Option<T>,
+                previous: Option<T>,
+                metadata: Option<ChangeFeedMetadata>,
+            }
+
+            let Envelope {
+                current,
+                previous,
+                metadata,
+            } = serde_json::from_value(value).map_err(D::Error::custom)?;
+            Ok(ChangeFeedItem {
+                current,
+                previous,
+                metadata,
+            })
+        } else {
+            let current = serde_json::from_value(value).map_err(D::Error::custom)?;
+            Ok(ChangeFeedItem {
+                current: Some(current),
+                previous: None,
+                metadata: None,
+            })
+        }
+    }
 }
 
 impl<T> ChangeFeedItem<T> {
@@ -266,6 +325,60 @@ mod tests {
         assert!(item.previous().is_none());
         assert!(item.metadata().is_none());
         assert!(item.operation_type().is_none());
+    }
+
+    #[test]
+    fn deserializes_flat_non_enveloped_document() {
+        // A backend that does not honor the wire-format header (an older
+        // gateway or an emulator without change-feed enveloping) returns the
+        // bare document with no envelope keys. The whole document must map onto
+        // `current` so the caller still reads it via `.current()`.
+        let flat = json!({ "id": "9", "value": 99 });
+        let item: ChangeFeedItem<Doc> = serde_json::from_value(flat).unwrap();
+
+        assert_eq!(
+            item.current(),
+            Some(&Doc {
+                id: "9".into(),
+                value: Some(99)
+            })
+        );
+        assert!(item.previous().is_none());
+        assert!(item.metadata().is_none());
+        assert!(item.operation_type().is_none());
+    }
+
+    #[test]
+    fn flat_document_without_optional_fields_still_deserializes() {
+        // The bare document need not carry every field; only what `T` requires.
+        let flat = json!({ "id": "10" });
+        let item: ChangeFeedItem<Doc> = serde_json::from_value(flat).unwrap();
+
+        assert_eq!(
+            item.current(),
+            Some(&Doc {
+                id: "10".into(),
+                value: None
+            })
+        );
+        assert!(item.previous().is_none());
+        assert!(item.metadata().is_none());
+    }
+
+    #[test]
+    fn delete_envelope_without_current_is_treated_as_envelope() {
+        // A full-fidelity delete envelope carries `previous`/`metadata` but no
+        // `current`; it must be recognized as an envelope (not mistaken for a
+        // flat document) so `previous` and `metadata` survive.
+        let envelope = json!({
+            "previous": { "id": "3", "value": 30 },
+            "metadata": { "operationType": "delete", "lsn": 300 }
+        });
+        let item: ChangeFeedItem<Doc> = serde_json::from_value(envelope).unwrap();
+
+        assert!(item.current().is_none());
+        assert_eq!(item.previous().map(|d| d.id.as_str()), Some("3"));
+        assert_eq!(item.operation_type(), Some(ChangeFeedOperationType::Delete));
     }
 
     #[test]
