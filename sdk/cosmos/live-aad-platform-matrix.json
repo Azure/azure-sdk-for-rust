@@ -1,0 +1,20 @@
+{
+  "displayNames": {
+    "aad": "aad_auth"
+  },
+  "matrix": {
+    "Agent": {
+      "ubuntu": {
+        "OSVmImage": "env:LINUXVMIMAGE",
+        "Pool": "env:LINUXPOOL"
+      }
+    },
+    "RustToolchainName": ["stable"],
+    "AZURE_COSMOS_AUTH_MODE": ["aad"],
+    "Account Settings": {
+      "Session SingleWrite": {
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAutomaticFailover = $false }"
+      }
+    }
+  }
+}

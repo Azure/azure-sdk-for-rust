@@ -37,6 +37,7 @@ pub const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
 pub const ACCOUNT_HOST_ENV_VAR: &str = "ACCOUNT_HOST";
 pub const ALLOW_INVALID_CERTS_ENV_VAR: &str = "AZURE_COSMOS_ALLOW_INVALID_CERT";
 pub const TEST_MODE_ENV_VAR: &str = "AZURE_COSMOS_TEST_MODE";
+pub const AUTH_MODE_ENV_VAR: &str = "AZURE_COSMOS_AUTH_MODE";
 pub const EMULATOR_CONNECTION_STRING: &str = "AccountEndpoint=https://127.0.0.1:8081;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;";
 pub const HUB_REGION: Region = Region::EAST_US_2;
 pub const SATELLITE_REGION: Region = Region::WEST_US_3;
@@ -215,6 +216,28 @@ enum CosmosTestMode {
 
     /// Tests can run if the env vars are set, but will not fail if they are not.
     Allowed,
+}
+
+/// Selects which credential the primary (data-plane) test client uses.
+#[derive(PartialEq, Eq, Clone, Copy, Debug, Default)]
+enum AuthMode {
+    /// Authenticate every operation with the account key (default).
+    #[default]
+    Key,
+    /// Authenticate data-plane operations with an Entra ID (AAD) token. Database
+    /// management (create/delete) still uses the account key, because it is not
+    /// expressible as a Cosmos data-plane RBAC action.
+    Aad,
+}
+
+impl AuthMode {
+    /// Reads the auth mode from [`AUTH_MODE_ENV_VAR`], defaulting to [`AuthMode::Key`].
+    fn from_env() -> Self {
+        match std::env::var(AUTH_MODE_ENV_VAR) {
+            Ok(v) if v.eq_ignore_ascii_case("aad") => AuthMode::Aad,
+            _ => AuthMode::Key,
+        }
+    }
 }
 
 const DEFAULT_EMULATOR_DATABASE_NAME: &str = "emulator-test-db";
@@ -544,9 +567,25 @@ impl TestClient {
         };
 
         // CosmosClient is designed to be cloned cheaply, so we can clone it here.
-        if let Some(account) = test_client.cosmos_client.clone() {
+        if let Some(key_client) = test_client.cosmos_client.clone() {
             let fault_cosmos_client = fault_client.and_then(|fc| fc.cosmos_client);
-            let run = TestRunContext::new(account, fault_cosmos_client);
+
+            // In AAD mode the primary (data-plane) client authenticates with an
+            // Entra ID token, while the key client is retained for database
+            // management (create/delete), which is not a data-plane RBAC action.
+            let (primary_client, management_client) = match AuthMode::from_env() {
+                AuthMode::Aad => {
+                    let region = options
+                        .client_application_region
+                        .clone()
+                        .unwrap_or(HUB_REGION);
+                    let (aad_client, _recorder) = build_aad_client_from_env(region).await?;
+                    (aad_client, Some(key_client))
+                }
+                AuthMode::Key => (key_client, None),
+            };
+
+            let run = TestRunContext::new(primary_client, fault_cosmos_client, management_client);
 
             // Apply timeout around entire test including retries on 429s
             let timeout = options.timeout.unwrap_or(DEFAULT_TEST_TIMEOUT);
@@ -636,7 +675,11 @@ impl TestClient {
                 // Ensure the shared database exists (create if needed, ignore conflict).
                 let db_id = get_shared_database_id();
                 // Emulator is always strong consistency, so we can skip the read check in that case
-                match run_context.client().create_database(db_id, None).await {
+                match run_context
+                    .management_client()
+                    .create_database(db_id, None)
+                    .await
+                {
                     Ok(_) => {}
                     Err(e) if e.status().status_code() == StatusCode::Conflict => {}
                     Err(e) => return Err(e.into()),
@@ -663,15 +706,23 @@ pub struct TestRunContext {
     client: CosmosClient,
     /// The fault injection Cosmos client (if configured).
     fault_client: Option<CosmosClient>,
+    /// The key-authenticated client used for database management in AAD mode.
+    /// `None` in key mode (management uses `client`).
+    management_client: Option<CosmosClient>,
 }
 
 impl TestRunContext {
-    pub fn new(client: CosmosClient, fault_client: Option<CosmosClient>) -> Self {
+    pub fn new(
+        client: CosmosClient,
+        fault_client: Option<CosmosClient>,
+        management_client: Option<CosmosClient>,
+    ) -> Self {
         let run_id = azure_core::Uuid::new_v4().simple().to_string();
         Self {
             run_id,
             client,
             fault_client,
+            management_client,
         }
     }
 
@@ -685,6 +736,15 @@ impl TestRunContext {
     /// Gets the underlying normal (non-fault) [`CosmosClient`].
     pub fn client(&self) -> &CosmosClient {
         &self.client
+    }
+
+    /// Gets the client used for database management (create/delete databases).
+    ///
+    /// In AAD mode this is a key-authenticated client, because database
+    /// management is not expressible as a Cosmos data-plane RBAC action. In key
+    /// mode it is the same client returned by [`TestRunContext::client`].
+    pub fn management_client(&self) -> &CosmosClient {
+        self.management_client.as_ref().unwrap_or(&self.client)
     }
 
     /// Gets the fault injection [`CosmosClient`], if configured.
@@ -713,19 +773,29 @@ impl TestRunContext {
 
     /// Creates a new, empty, database for this test run with default throughput options.
     pub async fn create_db(&self) -> azure_data_cosmos::Result<DatabaseClient> {
-        // The TestAccount has a unique context_id that includes the test name.
+        // Database creation/deletion is management-plane and is not expressible
+        // as a Cosmos data-plane RBAC action, so it always goes through the
+        // management (key) client. The returned handle is derived from the
+        // primary client so downstream container/item operations exercise the
+        // primary credential (AAD in AAD mode).
         let db_name = self.db_name();
-        let response = match self.client().create_database(&db_name, None).await {
+        let response = match self
+            .management_client()
+            .create_database(&db_name, None)
+            .await
+        {
             // The database creation was successful.
             Ok(props) => props,
             Err(e) if e.status().status_code() == StatusCode::Conflict => {
                 // The database already exists, from a previous test run.
                 // Delete it and re-create it.
-                let db_client = self.client().database_client(&db_name);
+                let db_client = self.management_client().database_client(&db_name);
                 db_client.delete(None).await?;
 
                 // Re-create the database.
-                self.client().create_database(&db_name, None).await?
+                self.management_client()
+                    .create_database(&db_name, None)
+                    .await?
             }
             Err(e) => {
                 // Some other error occurred.
@@ -1033,7 +1103,10 @@ impl TestRunContext {
             "SELECT * FROM root r WHERE r.id LIKE 'auto-test-{}'",
             self.run_id
         ));
-        let mut pager = self.client().query_databases(query, None).await?;
+        let mut pager = self
+            .management_client()
+            .query_databases(query, None)
+            .await?;
         let mut ids = Vec::new();
         while let Some(db) = pager.try_next().await? {
             if let Some(id) = db.id {
@@ -1045,7 +1118,10 @@ impl TestRunContext {
         // We COULD choose not to delete them and instead validate that they were deleted, but this is what I've gone with for now.
         for id in ids {
             println!("Deleting left-over database: {}", &id);
-            self.client().database_client(&id).delete(None).await?;
+            self.management_client()
+                .database_client(&id)
+                .delete(None)
+                .await?;
         }
         Ok(())
     }

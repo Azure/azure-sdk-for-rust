@@ -67,6 +67,17 @@ extends:
         Path: sdk/cosmos/live-platform-matrix.json
         Selection: sparse
         GenerateVMJobs: true
+      # Dedicated live leg that runs the full integration suite with the primary
+      # (data-plane) client authenticated via Entra ID (AAD) instead of the
+      # account key. `AZURE_COSMOS_AUTH_MODE=aad` surfaces as a job env var and
+      # is read by the test framework (tests/framework/test_client.rs), which
+      # then uses AAD for data-plane operations and the account key only for
+      # database create/delete. Pinned to a single consistency config on Linux
+      # to bound live-account cost.
+      - Name: Cosmos_live_test_aad
+        Path: sdk/cosmos/live-aad-platform-matrix.json
+        Selection: all
+        GenerateVMJobs: true
     # Non-blocking vnext (Linux) emulator coverage. Adds a single extra job to
     # the Build stage's matrix that runs the cosmos integration test suite
     # against the local vnext Cosmos emulator container. The matrix entry
