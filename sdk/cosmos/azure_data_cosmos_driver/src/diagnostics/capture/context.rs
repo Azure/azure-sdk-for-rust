@@ -66,7 +66,7 @@ fn transport_security_from_u64(value: Option<u64>) -> TransportSecurity {
 /// Reconstructs the transport kind from its captured discriminant, defaulting to gateway.
 fn transport_kind_from_u64(value: Option<u64>) -> TransportKind {
     match value {
-        Some(1) => TransportKind::Gateway20,
+        Some(1) => TransportKind::GatewayV2,
         _ => TransportKind::Gateway,
     }
 }
@@ -269,7 +269,7 @@ mod tests {
                 .with_transport(
                     PipelineType::Metadata,
                     TransportSecurity::EmulatorWithInsecureCertificates,
-                    TransportKind::Gateway20,
+                    TransportKind::GatewayV2,
                     TransportHttpVersion::Http11,
                 )
                 .with_server_duration_ms(12.0)
@@ -288,7 +288,7 @@ mod tests {
             ExecutionContext::Initial,
             PipelineType::Metadata,
             TransportSecurity::EmulatorWithInsecureCertificates,
-            TransportKind::Gateway20,
+            TransportKind::GatewayV2,
             TransportHttpVersion::Http11,
             &endpoint,
         );
@@ -313,7 +313,7 @@ mod tests {
             req.transport_security(),
             TransportSecurity::EmulatorWithInsecureCertificates
         );
-        assert_eq!(req.transport_kind(), TransportKind::Gateway20);
+        assert_eq!(req.transport_kind(), TransportKind::GatewayV2);
         assert_eq!(req.transport_http_version(), TransportHttpVersion::Http11);
         // Server-reported duration is the captured 12ms, not the 20ms client span.
         assert_eq!(req.server_duration_ms(), Some(12.0));

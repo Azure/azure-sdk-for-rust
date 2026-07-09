@@ -1008,6 +1008,22 @@ impl TestRunContext {
             .await
     }
 
+    /// Builds a [`CosmosClient`] authenticated with an Entra ID (AAD) token
+    /// credential, targeting the same account the key client uses.
+    ///
+    /// This is the entry point for AAD integration tests. The returned client
+    /// performs data-plane operations under AAD; database/container management
+    /// must still go through the key client (`client()`), because the
+    /// data-plane RBAC role granted in `test-resources.bicep` does not permit
+    /// management-plane operations.
+    ///
+    /// See [`build_aad_client_from_env`] for credential-selection details.
+    pub async fn aad_client(
+        &self,
+    ) -> Result<(CosmosClient, Option<super::CredentialRecorder>), Box<dyn std::error::Error>> {
+        build_aad_client_from_env(HUB_REGION).await
+    }
+
     /// Cleans up test resources.
     ///
     /// This should be called at the end of a test run to delete any databases created during the test.
@@ -1033,4 +1049,85 @@ impl TestRunContext {
         }
         Ok(())
     }
+}
+
+/// Returns `true` if `endpoint`'s host is a loopback/local host, indicating the
+/// Cosmos DB emulator rather than a live account.
+fn host_is_local(endpoint: &str) -> bool {
+    match url::Url::parse(endpoint) {
+        Ok(url) => matches!(
+            url.host_str(),
+            Some("127.0.0.1") | Some("localhost") | Some("::1") | Some("[::1]")
+        ),
+        Err(_) => false,
+    }
+}
+
+/// Builds a [`CosmosClient`] authenticated with an Entra ID (AAD) token
+/// credential, reading the target account from the same environment the
+/// key-auth client uses (`AZURE_COSMOS_CONNECTION_STRING`).
+///
+/// Credential selection is based on the target host:
+/// - **Emulator** (`AZURE_COSMOS_CONNECTION_STRING=emulator`, or an endpoint
+///   whose host is `127.0.0.1`/`localhost`): uses [`CosmosEmulatorCredential`],
+///   which mints the emulator's fake JWT signed with the account's master key,
+///   and enables invalid-certificate acceptance. A [`CredentialRecorder`] is
+///   returned so tests can assert the AAD path (not key auth) was exercised.
+/// - **Live account**: uses `azure_core_test::credentials::from_env`, which
+///   resolves to `AzurePipelinesCredential` in CI (matching the principal the
+///   bicep grants the data-plane RBAC role to) and `DeveloperToolsCredential`
+///   locally. No recorder is returned in this case.
+pub async fn build_aad_client_from_env(
+    region: Region,
+) -> Result<(CosmosClient, Option<super::CredentialRecorder>), Box<dyn std::error::Error>> {
+    use super::CosmosEmulatorCredential;
+
+    let env_var = std::env::var(CONNECTION_STRING_ENV_VAR)?;
+    let is_emulator_shorthand = env_var == "emulator";
+    let connection_string_str = if is_emulator_shorthand {
+        EMULATOR_CONNECTION_STRING
+    } else {
+        env_var.as_str()
+    };
+
+    let parsed: ConnectionString = connection_string_str.parse()?;
+    let endpoint_str = parsed.account_endpoint().to_string();
+    let endpoint: azure_data_cosmos::AccountEndpoint = endpoint_str.parse()?;
+
+    let is_emulator = is_emulator_shorthand || host_is_local(&endpoint_str);
+
+    let mut builder = CosmosClient::builder();
+    let strategy = RoutingStrategy::ProximityTo(region);
+
+    let (credential, recorder): (
+        std::sync::Arc<dyn azure_core::credentials::TokenCredential>,
+        Option<super::CredentialRecorder>,
+    ) = if is_emulator {
+        // The emulator serves a self-signed certificate, so route the client
+        // through a runtime that skips certificate validation for emulator
+        // hosts (mirroring the key-auth emulator client setup).
+        let runtime = CosmosRuntime::builder()
+            .with_connection_pool(
+                ConnectionPoolOptions::builder()
+                    .with_server_certificate_validation(
+                        ServerCertificateValidation::RequiredUnlessEmulator,
+                    )
+                    .build()?,
+            )
+            .build()
+            .await?;
+        builder = builder.with_runtime(runtime);
+
+        // Sign the fake JWT with the same master key the emulator validates against.
+        let master_key = parsed.account_key().secret().to_string();
+        let credential = std::sync::Arc::new(CosmosEmulatorCredential::with_master_key(master_key));
+        let recorder = credential.recorder();
+        (credential, Some(recorder))
+    } else {
+        (azure_core_test::credentials::from_env(None)?, None)
+    };
+
+    let account = azure_data_cosmos::AccountReference::with_credential(endpoint, credential);
+    let client = builder.build(account, strategy).await?;
+    Ok((client, recorder))
 }

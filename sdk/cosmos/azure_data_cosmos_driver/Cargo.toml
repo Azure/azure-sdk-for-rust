@@ -29,11 +29,11 @@ crossbeam-epoch = { workspace = true, features = ["std"] }
 futures.workspace = true
 h2 = { workspace = true, optional = true }
 percent-encoding = { workspace = true, optional = true }
-rand = { workspace = true, optional = true }
+rand.workspace = true
 reqwest = { workspace = true, optional = true }
 serde.workspace = true
 serde_json.workspace = true
-time = { workspace = true, optional = true }
+time.workspace = true
 tokio = { workspace = true, optional = true, features = ["rt", "time"] }
 tracing.workspace = true
 url.workspace = true
@@ -77,7 +77,8 @@ reqwest = [
 ]
 rustls = ["reqwest", "reqwest/rustls", "__tls"]
 native_tls = ["reqwest", "reqwest/native-tls", "__tls"]
-fault_injection = ["dep:rand"]
+fault_injection = []
+preview_dtx = [] # Enables preview Distributed Transaction APIs. Disabled by default and not production-ready.
 # `capture_engine` exposes the prototype deferred, append-only diagnostics
 # **capture** engine (`diagnostics::capture::{event, context, encode, pool,
 # recorder}` plus `gate::finish`). It is OFF by default and is NOT
@@ -95,7 +96,6 @@ capture_engine = []
 # covered by SemVer and may change or disappear at any time.
 __internal_in_memory_emulator = [
   "dep:tokio",
-  "dep:time",
   "dep:percent-encoding",
 ]
 __internal_mocking = []

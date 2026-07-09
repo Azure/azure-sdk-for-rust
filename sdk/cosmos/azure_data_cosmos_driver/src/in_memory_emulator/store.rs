@@ -159,6 +159,26 @@ pub struct EmulatorStore {
     /// per-id locks is preferable to a remove-on-drop dance that races
     /// fresh acquisitions.
     control_plane_locks: std::sync::Mutex<HashMap<String, Arc<async_lock::Mutex<()>>>>,
+    /// Serializes emulator document writes while preview distributed
+    /// transactions are enabled.
+    ///
+    /// DTX rollback restores pre-images. Without a transaction-wide write
+    /// guard, a concurrent point write can commit between preimage capture and
+    /// rollback, then be overwritten by the restore path.
+    #[cfg(feature = "preview_dtx")]
+    document_write_lock: Arc<async_lock::Mutex<()>>,
+    /// Buffers replication issued while a distributed transaction is applying so
+    /// a rollback can discard replicas that were never durably committed.
+    ///
+    /// `Some(buffer)` means a DTX write transaction is capturing replication.
+    /// The DTX write path holds `document_write_lock` for the whole
+    /// transaction, which serializes every emulator write, so no unrelated
+    /// write's replication can be captured here. `None` is the normal
+    /// immediate-replication path. On commit the buffer is drained and
+    /// replayed; on abort it is dropped so rolled-back writes never reach
+    /// secondary regions.
+    #[cfg(feature = "preview_dtx")]
+    dtx_replication_capture: std::sync::Mutex<Option<Vec<CapturedReplication>>>,
     /// Tracks spawned replication tasks so tests can drain them.
     replication_tasks: std::sync::Mutex<tokio::task::JoinSet<()>>,
     /// Tracks spawned split/merge tasks separately from replication so a
@@ -200,6 +220,17 @@ pub struct EmulatorStore {
     captured_panics: std::sync::Mutex<Vec<Box<dyn std::any::Any + Send + 'static>>>,
 }
 
+/// A replication operation buffered during a distributed transaction so it can
+/// be replayed on commit or dropped on rollback.
+#[cfg(feature = "preview_dtx")]
+struct CapturedReplication {
+    source_region: String,
+    db_id: String,
+    coll_id: String,
+    doc: StoredDocument,
+    is_delete: bool,
+}
+
 impl EmulatorStore {
     /// Creates a new store from the given account configuration.
     pub(crate) fn new(config: VirtualAccountConfig) -> Arc<Self> {
@@ -215,6 +246,10 @@ impl EmulatorStore {
 
             split_merge_locks: std::sync::Mutex::new(HashMap::new()),
             control_plane_locks: std::sync::Mutex::new(HashMap::new()),
+            #[cfg(feature = "preview_dtx")]
+            document_write_lock: Arc::new(async_lock::Mutex::new(())),
+            #[cfg(feature = "preview_dtx")]
+            dtx_replication_capture: std::sync::Mutex::new(None),
             replication_tasks: std::sync::Mutex::new(tokio::task::JoinSet::new()),
             control_plane_tasks: std::sync::Mutex::new(Vec::new()),
             transport_request_counter: AtomicU32::new(0),
@@ -388,6 +423,19 @@ impl EmulatorStore {
         coll: &str,
     ) -> Arc<async_lock::Mutex<()>> {
         self.control_plane_lock(&format!("{}::{}", db, coll))
+    }
+
+    /// Returns the preview-DTX document write lock.
+    #[cfg(feature = "preview_dtx")]
+    pub(crate) fn document_write_lock(&self) -> Arc<async_lock::Mutex<()>> {
+        self.document_write_lock.clone()
+    }
+
+    /// Returns the preview-DTX document write lock for internal emulator tests.
+    #[cfg(feature = "preview_dtx")]
+    #[doc(hidden)]
+    pub fn document_write_lock_for_tests(&self) -> Arc<async_lock::Mutex<()>> {
+        self.document_write_lock.clone()
     }
 
     /// Awaits all pending in-flight replication tasks and surfaces any
@@ -750,7 +798,7 @@ impl EmulatorStore {
                 ))
                 .with_message(format!(
                     "no physical partition found for EPK {} in container '{}/{}'",
-                    epk.as_str(),
+                    epk.to_hex(),
                     db_id,
                     coll_id
                 ))
@@ -758,7 +806,7 @@ impl EmulatorStore {
         })?;
         partition
             .session_state
-            .set_force_unavailable_for(epk.as_str());
+            .set_force_unavailable_for(&epk.to_hex());
         Ok(())
     }
 
@@ -844,6 +892,26 @@ impl EmulatorStore {
         doc: &StoredDocument,
         is_delete: bool,
     ) {
+        // While a distributed transaction is applying, buffer replication so a
+        // rollback can discard replicas that were never durably committed. The
+        // DTX write path holds `document_write_lock` for the whole transaction,
+        // which serializes all emulator writes, so this cannot capture an
+        // unrelated concurrent write's replication.
+        #[cfg(feature = "preview_dtx")]
+        {
+            let mut capture = self.dtx_replication_capture.lock().unwrap();
+            if let Some(buffer) = capture.as_mut() {
+                buffer.push(CapturedReplication {
+                    source_region: source_region.to_string(),
+                    db_id: db_id.to_string(),
+                    coll_id: coll_id.to_string(),
+                    doc: doc.clone(),
+                    is_delete,
+                });
+                return;
+            }
+        }
+
         // Reap any replication tasks that have already finished so the
         // JoinSet does not grow unboundedly across long-running tests with
         // delayed replication. `try_join_next` is non-blocking and returns
@@ -914,6 +982,44 @@ impl EmulatorStore {
                 });
             }
         }
+    }
+
+    /// Begins buffering replication for a distributed transaction. Must be
+    /// paired with [`Self::commit_dtx_replication_capture`] (replay) or
+    /// [`Self::abort_dtx_replication_capture`] (discard). Called under
+    /// `document_write_lock`, which serializes all emulator writes.
+    #[cfg(feature = "preview_dtx")]
+    pub(crate) fn begin_dtx_replication_capture(&self) {
+        *self.dtx_replication_capture.lock().unwrap() = Some(Vec::new());
+    }
+
+    /// Replays every replication buffered since
+    /// [`Self::begin_dtx_replication_capture`], then returns to immediate
+    /// replication. Called after a distributed transaction commits.
+    #[cfg(feature = "preview_dtx")]
+    pub(crate) fn commit_dtx_replication_capture(self: &Arc<Self>) {
+        let captured = self.dtx_replication_capture.lock().unwrap().take();
+        let Some(captured) = captured else {
+            return;
+        };
+        for entry in captured {
+            self.replicate(
+                &entry.source_region,
+                &entry.db_id,
+                &entry.coll_id,
+                &entry.doc,
+                entry.is_delete,
+            );
+        }
+    }
+
+    /// Discards every replication buffered since
+    /// [`Self::begin_dtx_replication_capture`], then returns to immediate
+    /// replication. Called after a distributed transaction rolls back so
+    /// rolled-back writes never reach secondary regions.
+    #[cfg(feature = "preview_dtx")]
+    pub(crate) fn abort_dtx_replication_capture(&self) {
+        *self.dtx_replication_capture.lock().unwrap() = None;
     }
 
     /// Applies a replicated document to a target region.
@@ -1363,6 +1469,20 @@ impl PhysicalPartition {
     pub fn is_locked(&self) -> bool {
         self.locked.load(Ordering::SeqCst)
     }
+
+    /// Restores the partition's LSN counters to previously captured values.
+    ///
+    /// Used by the in-memory DTX handler to roll back a partially-applied
+    /// distributed transaction: applied point operations advance the LSN, so an
+    /// abort must reset the counters (in addition to the document map) to leave
+    /// no trace of the rolled-back writes.
+    #[cfg(feature = "preview_dtx")]
+    pub fn restore_counters(&self, lsn: u64, local_lsn: u64, vector_clock_version: u64) {
+        self.lsn.store(lsn, Ordering::SeqCst);
+        self.local_lsn.store(local_lsn, Ordering::SeqCst);
+        self.vector_clock_version
+            .store(vector_clock_version, Ordering::SeqCst);
+    }
 }
 
 /// A stored document with system properties.
@@ -1585,7 +1705,7 @@ fn bytes_to_hex_upper(bytes: &[u8]) -> String {
 /// open bound" from "real all-zeros hash" everywhere boundaries flow, which
 /// has no observable upside.
 fn is_epk_min(epk: &Epk) -> bool {
-    epk.as_str().is_empty() || epk.as_str().chars().all(|c| c == '0')
+    epk.as_bytes().is_empty() || epk.as_bytes().iter().all(|&b| b == 0)
 }
 
 /// Returns true if `epk` represents the open upper bound of the EPK space.
@@ -1593,7 +1713,7 @@ fn is_epk_min(epk: &Epk) -> bool {
 /// Mirrors `is_epk_min`: accepts both the canonical `"FF"` sentinel and the
 /// fully-expanded 32-char "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" form.
 fn is_epk_max(epk: &Epk) -> bool {
-    let s = epk.as_str();
+    let s = epk.to_hex();
     s == "FF" || s.eq_ignore_ascii_case("ffffffffffffffffffffffffffffffff")
 }
 
@@ -2329,7 +2449,7 @@ fn compute_epk_midpoint_v2(min: &Epk, max: &Epk) -> Result<Epk, String> {
         if is_epk_max(epk) {
             return Ok(1u128 << 126);
         }
-        u128::from_str_radix(epk.as_str(), 16)
+        u128::from_str_radix(&epk.to_hex(), 16)
             .map_err(|e| format!("corrupted EPK partition bound {}={:?}: {e}", label, epk))
     };
     let min_val = parse(min, "min")?;
@@ -2377,7 +2497,7 @@ fn compute_epk_midpoint_v1(min: &Epk, max: &Epk) -> Result<Epk, String> {
         if is_epk_max(epk) {
             return Ok(u32::MAX);
         }
-        decode_v1_number_hex_to_u32(epk.as_str())
+        decode_v1_number_hex_to_u32(&epk.to_hex())
             .map_err(|e| format!("corrupted V1 EPK partition bound {}={:?}: {e}", label, epk))
     };
     let min_val = parse(min, "min")?;
@@ -2774,7 +2894,7 @@ mod tests {
             PartitionKeyVersion::V1,
         )
         .expect("full-range V1 midpoint");
-        let mid_full_u32 = super::decode_v1_number_hex_to_u32(mid_full.as_str()).unwrap();
+        let mid_full_u32 = super::decode_v1_number_hex_to_u32(&mid_full.to_hex()).unwrap();
         assert_eq!(mid_full_u32, u32::MAX / 2);
 
         // Narrow range: encode two u32 hashes as boundaries and verify the
@@ -2793,7 +2913,7 @@ mod tests {
             PartitionKeyVersion::V1,
         )
         .expect("narrow V1 midpoint");
-        let mid_narrow_u32 = super::decode_v1_number_hex_to_u32(mid_narrow.as_str()).unwrap();
+        let mid_narrow_u32 = super::decode_v1_number_hex_to_u32(&mid_narrow.to_hex()).unwrap();
         assert_eq!(mid_narrow_u32, ((lo_u32 as u64 + hi_u32 as u64) / 2) as u32);
 
         // Lex-order check: the encoded midpoint must sit strictly between
@@ -2803,11 +2923,11 @@ mod tests {
         let lo_hex = encode(lo_u32);
         let hi_hex = encode(hi_u32);
         assert!(
-            lo_hex.as_str() < mid_narrow.as_str() && mid_narrow.as_str() < hi_hex.as_str(),
+            lo_hex.to_hex() < mid_narrow.to_hex() && mid_narrow.to_hex() < hi_hex.to_hex(),
             "V1 midpoint not strictly between bounds: lo={} mid={} hi={}",
-            lo_hex.as_str(),
-            mid_narrow.as_str(),
-            hi_hex.as_str(),
+            lo_hex.to_hex(),
+            mid_narrow.to_hex(),
+            hi_hex.to_hex(),
         );
     }
 

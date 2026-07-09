@@ -66,7 +66,7 @@ pub(crate) fn transport_security_to_u64(value: TransportSecurity) -> u64 {
 pub(crate) fn transport_kind_to_u64(value: TransportKind) -> u64 {
     match value {
         TransportKind::Gateway => 0,
-        TransportKind::Gateway20 => 1,
+        TransportKind::GatewayV2 => 1,
     }
 }
 

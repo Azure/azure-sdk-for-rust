@@ -3,8 +3,11 @@
 
 //! Driver test client for emulator-based E2E tests.
 
+use azure_core::http::StatusCode;
 #[cfg(feature = "fault_injection")]
 use azure_data_cosmos_driver::fault_injection::FaultInjectionRule;
+#[cfg(feature = "__internal_testing")]
+use azure_data_cosmos_driver::CosmosDriver;
 use azure_data_cosmos_driver::{
     diagnostics::{DiagnosticsContext, PipelineType, TransportSecurity},
     driver::CosmosDriverRuntime,
@@ -16,6 +19,7 @@ use azure_data_cosmos_driver::{
         ConnectionPoolOptions, DriverOptions, OperationOptions, PartitionFailoverOptions, Region,
         ServerCertificateValidation,
     },
+    SubStatusCode,
 };
 use std::{error::Error, future::Future, sync::Arc};
 use tracing_subscriber::EnvFilter;
@@ -23,7 +27,8 @@ use uuid::Uuid;
 
 use super::env::{
     get_test_mode, is_azure_pipelines, CosmosTestMode, CONNECTION_STRING_ENV_VAR,
-    EMULATOR_CONNECTION_STRING,
+    EMULATOR_CONNECTION_STRING, GATEWAY_V2_ENDPOINT_ENV_VAR, GATEWAY_V2_KEY_ENV_VAR,
+    GATEWAY_V2_MULTI_REGION_ENDPOINT_ENV_VAR, GATEWAY_V2_MULTI_REGION_KEY_ENV_VAR,
 };
 
 /// A test client that provides access to a Cosmos DB driver for testing.
@@ -77,6 +82,25 @@ pub fn resolve_test_env() -> Result<Option<TestEnv>, Box<dyn Error>> {
         return Ok(None);
     }
 
+    // For `test_category = "gateway_v2"` and `"gateway_v2_multi_region"` builds,
+    // the ARM-provisioned `AZURE_COSMOS_CONNECTION_STRING` account does NOT
+    // advertise a Gateway 2.0 endpoint. Fault-injection rules scoped to
+    // `TransportKind::GatewayV2` will therefore never fire against it. Use the
+    // pre-provisioned Gateway 2.0 account whose credentials are surfaced in
+    // `AZURE_COSMOS_GW_V2_ENDPOINT` / `AZURE_COSMOS_GW_V2_KEY` by
+    // `sdk/cosmos/ci.yml`. We deliberately do NOT fall back to the standard
+    // connection string here — running gateway_v2 tests against a non-Gateway-2.0
+    // account would silently produce confusing failures (transport-kind-gated
+    // fault rules would never match).
+    #[cfg(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    ))]
+    {
+        return resolve_gateway_v2_env(test_mode);
+    }
+
+    #[allow(unreachable_code)]
     let connection_string = match std::env::var(CONNECTION_STRING_ENV_VAR) {
         Ok(val) if val.to_lowercase() == "emulator" => EMULATOR_CONNECTION_STRING.to_string(),
         Ok(val) => val,
@@ -108,6 +132,111 @@ pub fn resolve_test_env() -> Result<Option<TestEnv>, Box<dyn Error>> {
         account,
         connection_pool,
     }))
+}
+
+/// Builds a [`TestEnv`] from the pre-provisioned Gateway 2.0 account
+/// credentials.
+///
+/// Picks the endpoint/key pair based on the active `test_category`:
+///
+/// * `test_category = "gateway_v2_multi_region"` →
+///   `AZURE_COSMOS_GW_V2_MULTI_REGION_ENDPOINT` /
+///   `AZURE_COSMOS_GW_V2_MULTI_REGION_KEY` (a multi-region GW_V2 account).
+/// * `test_category = "gateway_v2"` →
+///   `AZURE_COSMOS_GW_V2_ENDPOINT` / `AZURE_COSMOS_GW_V2_KEY` (a single-region
+///   GW_V2 account).
+///
+/// Returns `Ok(None)` when both env vars are missing or empty in local-dev
+/// mode (the caller's `cfg` block returns `Ok(None)` directly). Panics on
+/// Azure Pipelines or `Required` test mode when only one of the two vars is
+/// set — that's a misconfigured pipeline rather than an intentional skip.
+#[cfg(any(
+    test_category = "gateway_v2",
+    test_category = "gateway_v2_multi_region"
+))]
+fn resolve_gateway_v2_env(test_mode: CosmosTestMode) -> Result<Option<TestEnv>, Box<dyn Error>> {
+    fn read(name: &str) -> Option<String> {
+        std::env::var(name).ok().filter(|v| !v.trim().is_empty())
+    }
+
+    // Multi-region tests need a multi-region GW_V2 account; single-region
+    // tests use the single-region account. Both fall back to "no GW_V2
+    // env vars set" rather than crossing wires between pools.
+    #[cfg(test_category = "gateway_v2_multi_region")]
+    let (endpoint_var, key_var) = (
+        GATEWAY_V2_MULTI_REGION_ENDPOINT_ENV_VAR,
+        GATEWAY_V2_MULTI_REGION_KEY_ENV_VAR,
+    );
+    #[cfg(all(
+        test_category = "gateway_v2",
+        not(test_category = "gateway_v2_multi_region")
+    ))]
+    let (endpoint_var, key_var) = (GATEWAY_V2_ENDPOINT_ENV_VAR, GATEWAY_V2_KEY_ENV_VAR);
+
+    let endpoint = read(endpoint_var);
+    let key = read(key_var);
+
+    match (endpoint, key) {
+        (Some(endpoint), Some(key)) => {
+            let normalized = normalize_gateway_v2_endpoint(&endpoint);
+            let endpoint = normalized
+                .parse()
+                .map_err(|e: url::ParseError| -> Box<dyn Error> {
+                    format!(
+                        "{} value {:?} (normalized to {:?}) is not a valid URL: {}",
+                        endpoint_var, endpoint, normalized, e,
+                    )
+                    .into()
+                })?;
+            let account = AccountReference::with_master_key(endpoint, key);
+            let connection_pool = ConnectionPoolOptions::builder().build()?;
+            Ok(Some(TestEnv {
+                account,
+                connection_pool,
+            }))
+        }
+        (None, None) => {
+            if test_mode == CosmosTestMode::Required || is_azure_pipelines() {
+                panic!(
+                    "{} / {} are not set but test_category=\"gateway_v2\" requires a \
+                     pre-provisioned Gateway 2.0 account",
+                    endpoint_var, key_var,
+                );
+            }
+            Ok(None)
+        }
+        (endpoint, key) => panic!(
+            "exactly one of {} / {} is set ({}={}, {}={}); both must be present \
+             for test_category=\"gateway_v2\"",
+            endpoint_var,
+            key_var,
+            endpoint_var,
+            if endpoint.is_some() { "set" } else { "unset" },
+            key_var,
+            if key.is_some() { "set" } else { "unset" },
+        ),
+    }
+}
+
+/// Normalizes a Gateway 2.0 endpoint string so it can be parsed by `Url::parse`:
+/// trims whitespace, prepends `https://` when no scheme is present, and appends a
+/// trailing `/` to match Cosmos's canonical `https://<host>/` form.
+#[cfg(any(
+    test_category = "gateway_v2",
+    test_category = "gateway_v2_multi_region"
+))]
+fn normalize_gateway_v2_endpoint(raw: &str) -> String {
+    let trimmed = raw.trim();
+    let with_scheme = if trimmed.contains("://") {
+        trimmed.to_owned()
+    } else {
+        format!("https://{trimmed}")
+    };
+    if with_scheme.ends_with('/') {
+        with_scheme
+    } else {
+        format!("{with_scheme}/")
+    }
 }
 
 impl DriverTestClient {
@@ -577,10 +706,44 @@ impl DriverTestRunContext {
         let db_name = database
             .name()
             .ok_or_else(|| "database reference must be name-based".to_string())?;
-        let container = driver
-            .resolve_container_by_name(db_name, container_name)
-            .await?;
-        Ok(container)
+        // After a successful container CREATE the just-created collection
+        // can be briefly unreadable on individual regional gateways with
+        // 404/1013 (`CollectionCreateInProgress`) — the create returns
+        // 201 from the write region before all regional gateways finish
+        // propagating the new collection metadata. Retry with backoff
+        // while that race settles. This is a no-op on accounts where the
+        // resolve already succeeds on the first call (notably the
+        // emulator and most production single-region accounts).
+        let mut delay_ms = 500u64;
+        let mut last_err_msg: Option<String> = None;
+        for _ in 0..12 {
+            match driver
+                .resolve_container_by_name(db_name, container_name)
+                .await
+            {
+                Ok(c) => return Ok(c),
+                Err(e) => {
+                    // Match on the typed status/sub-status (404/1013) rather
+                    // than substring-scanning the error message.
+                    let status = e.status();
+                    let create_in_progress = status.status_code() == StatusCode::NotFound
+                        && status.sub_status()
+                            == Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS);
+                    if create_in_progress {
+                        tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
+                        delay_ms = (delay_ms * 2).min(5000);
+                        last_err_msg = Some(format!("{e}"));
+                        continue;
+                    }
+                    return Err(e.into());
+                }
+            }
+        }
+        Err(format!(
+            "resolve_container_by_name failed after 12 retries: {}",
+            last_err_msg.unwrap_or_else(|| "<no error captured>".into())
+        )
+        .into())
     }
 
     /// Creates an item using the driver.
@@ -716,6 +879,63 @@ impl DriverTestRunContext {
         Ok(driver
             .resolve_all_partition_key_ranges(container, force_refresh)
             .await)
+    }
+
+    /// Creates a single long-lived driver that the caller holds for the
+    /// duration of a test.
+    ///
+    /// Unlike the per-operation helpers — each of which builds a throwaway
+    /// driver — every operation issued through this driver shares its
+    /// in-memory routing and hub-region cache state. This is required for
+    /// tests that assert on cross-operation cache behavior, where state
+    /// populated by one read must be observed by a later read.
+    #[cfg(feature = "__internal_testing")]
+    pub async fn create_persistent_driver(&self) -> Result<Arc<CosmosDriver>, Box<dyn Error>> {
+        Ok(self
+            .client
+            .runtime
+            .create_driver(self.driver_options()?)
+            .await?)
+    }
+
+    /// Reads an item on a caller-provided persistent driver so the driver's
+    /// in-memory cache state persists across reads. Mirrors
+    /// [`read_item`](Self::read_item) but reuses the given driver instead of
+    /// creating a fresh one per call.
+    #[cfg(feature = "__internal_testing")]
+    pub async fn read_item_on(
+        &self,
+        driver: &Arc<CosmosDriver>,
+        container: &ContainerReference,
+        item_id: &str,
+        partition_key: impl Into<PartitionKey>,
+    ) -> Result<CosmosResponse, Box<dyn Error>> {
+        let pk = partition_key.into();
+        let item_ref = ItemReference::from_name(container, pk, item_id.to_owned());
+        let operation = CosmosOperation::read_item(item_ref);
+        let result = driver
+            .execute_singleton_operation(operation, OperationOptions::default())
+            .await?;
+        Ok(result)
+    }
+
+    /// Returns a snapshot of the per-partition hub-region cache for the given
+    /// persistent driver.
+    #[cfg(feature = "__internal_testing")]
+    pub fn hub_region_cache_snapshot(&self, driver: &Arc<CosmosDriver>) -> Vec<(String, String)> {
+        driver.__test_only_hub_region_cache_snapshot()
+    }
+
+    /// Forces `per_partition_automatic_failover_enabled = true` on the given
+    /// driver's in-memory partition state. Required for live tests that
+    /// exercise the hub-region caching path when the test account does not
+    /// advertise the PPAF account property
+    /// (`enable_per_partition_failover_behavior`). Without this override, the
+    /// hub-region latch in `build_session_retry_state` never arms and the
+    /// cache stays empty regardless of the wire flow.
+    #[cfg(feature = "__internal_testing")]
+    pub fn force_ppaf_enabled(&self, driver: &Arc<CosmosDriver>) {
+        driver.__test_only_force_ppaf_enabled();
     }
 
     /// Validates diagnostics for a successful data plane operation.
