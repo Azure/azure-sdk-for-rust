@@ -6,10 +6,6 @@
 
 - `Error` now captures a `std::backtrace::Backtrace` at construction time and includes it in `Debug` output (e.g., `{:?}`) when `RUST_BACKTRACE=1` is set.
 
-### Breaking Changes
-
-### Bugs Fixed
-
 ### Other Changes
 
 - Added `#[must_use]` to `AsyncRuntime` functions.

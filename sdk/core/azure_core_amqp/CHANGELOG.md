@@ -6,12 +6,6 @@
 
 - Added `AmqpSessionOptions::with_unbounded_windows()`, a shared constructor that sets both session flow-control windows to `u32::MAX` for messaging crates that rely on per-link credit for flow control.
 
-### Breaking Changes
-
-### Bugs Fixed
-
-### Other Changes
-
 ## 1.0.0 (2026-05-11)
 
 ### Features Added
