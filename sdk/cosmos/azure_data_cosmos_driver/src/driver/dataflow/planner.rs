@@ -173,10 +173,30 @@ pub(crate) async fn build_sequential_drain(
         }
     };
 
+    // When the operation targets a hierarchical-partition-key *prefix* (an
+    // incomplete logical partition key), the fan-out must be scoped to the EPK
+    // range that covers every completion of that prefix. Without this clip the
+    // query scans whole physical partitions and returns rows outside the prefix
+    // (issue #4680).
+    let prefix_clip = prefix_epk_range(operation)?;
+
     let request_nodes = if let Some(saved) = saved_snapshot.as_ref() {
-        plan_resume_from_saved_snapshot(query_plan, topology_provider, operation, saved).await?
+        plan_resume_from_saved_snapshot(
+            query_plan,
+            topology_provider,
+            operation,
+            saved,
+            prefix_clip.as_ref(),
+        )
+        .await?
     } else {
-        plan_fresh(query_plan, topology_provider, operation).await?
+        plan_fresh(
+            query_plan,
+            topology_provider,
+            operation,
+            prefix_clip.as_ref(),
+        )
+        .await?
     };
 
     // TODO: enforce max fan-out (default 100, configurable). See FEED_OPERATIONS_REQS.md §3.
@@ -372,14 +392,24 @@ fn push_change_feed_leaf(
 }
 
 /// Builds the request leaves for a fresh (non-resumed) cross-partition plan.
+///
+/// When `prefix_clip` is `Some`, each query-plan range is first intersected
+/// with it so a hierarchical-partition-key prefix target only fans out over —
+/// and is EPK-scoped to — the physical partitions its completions can live in
+/// (issue #4680). Query-plan ranges that fall entirely outside the prefix are
+/// skipped.
 async fn plan_fresh(
     query_plan: &QueryPlan,
     topology_provider: &mut dyn TopologyProvider,
     operation: &Arc<CosmosOperation>,
+    prefix_clip: Option<&FeedRange>,
 ) -> crate::error::Result<Vec<Box<dyn PipelineNode>>> {
     let mut nodes: Vec<Box<dyn PipelineNode>> = Vec::new();
     for query_range in &query_plan.query_ranges {
         let feed_range = query_range_to_feed_range(query_range)?;
+        let Some(feed_range) = clip_to_prefix(feed_range, prefix_clip) else {
+            continue;
+        };
         let resolved = topology_provider
             .resolve_ranges(&feed_range, PartitionRoutingRefresh::UseCached)
             .await?;
@@ -423,12 +453,16 @@ async fn plan_resume_from_saved_snapshot(
     topology_provider: &mut dyn TopologyProvider,
     operation: &Arc<CosmosOperation>,
     saved: &SavedSnapshot,
+    prefix_clip: Option<&FeedRange>,
 ) -> crate::error::Result<Vec<Box<dyn PipelineNode>>> {
     let mut nodes: Vec<Box<dyn PipelineNode>> = Vec::new();
     let mut coverage: Vec<Vec<FeedRange>> = vec![Vec::new(); saved.active_tokens.len()];
 
     for query_range in &query_plan.query_ranges {
         let feed_range = query_range_to_feed_range(query_range)?;
+        let Some(feed_range) = clip_to_prefix(feed_range, prefix_clip) else {
+            continue;
+        };
         let resolved = topology_provider
             .resolve_ranges(&feed_range, PartitionRoutingRefresh::UseCached)
             .await?;
@@ -570,6 +604,50 @@ fn query_range_to_feed_range(
     let min = EffectivePartitionKey::from(query_range.min.as_str());
     let max = EffectivePartitionKey::from(query_range.max.as_str());
     FeedRange::new(min, max)
+}
+
+/// Computes the EPK range a hierarchical-partition-key *prefix* target must be
+/// clipped to, or `None` when the operation does not target a partition-key
+/// prefix.
+///
+/// A cross-partition query whose target is a *logical partition* only reaches
+/// the fan-out planner when the key is an incomplete HPK prefix — a complete
+/// key is trivial and handled by [`build_trivial_pipeline`]. Such a prefix
+/// collapses to a single EPK point in its [`FeedRange`]
+/// (`min_inclusive() == max_exclusive()`), so on its own it cannot scope the
+/// fan-out. Instead the fan-out is scoped to `[prefix_epk, prefix_epk + "FF")`
+/// from [`EffectivePartitionKey::compute_range`]; otherwise the query scans
+/// every physical partition and returns rows outside the prefix (issue #4680).
+fn prefix_epk_range(operation: &CosmosOperation) -> crate::error::Result<Option<FeedRange>> {
+    let Some(target) = operation.target() else {
+        return Ok(None);
+    };
+    let Some(partition_key) = target.partition_key() else {
+        return Ok(None);
+    };
+    let Some(container) = operation.container() else {
+        return Ok(None);
+    };
+    let pk_def = container.partition_key_definition();
+    if pk_def.is_complete(partition_key) {
+        // A complete key hashes to a single EPK point and should already have
+        // been planned as a trivial single-partition request; nothing to clip.
+        return Ok(None);
+    }
+    let range = EffectivePartitionKey::compute_range(partition_key.values(), pk_def)?;
+    Ok(Some(FeedRange::new(range.start, range.end)?))
+}
+
+/// Intersects a query-plan `feed_range` with the operation's prefix clip range.
+///
+/// Returns the unmodified `feed_range` when there is no prefix clip, the
+/// intersection when the two overlap, or `None` when the query-plan range falls
+/// entirely outside the prefix (in which case the caller skips it).
+fn clip_to_prefix(feed_range: FeedRange, prefix_clip: Option<&FeedRange>) -> Option<FeedRange> {
+    match prefix_clip {
+        None => Some(feed_range),
+        Some(clip) => intersect_feed_ranges(&feed_range, clip),
+    }
 }
 
 /// Returns true if the union of `pieces` covers `range` end-to-end.
@@ -1178,6 +1256,131 @@ mod tests {
             .await
             .unwrap();
         assert_drain_requests_with_partitions(pipeline, &[("20", "80", "pkrange-wide", "", "FF")]);
+    }
+
+    // --- hierarchical partition key prefix clipping (issue #4680) ---
+
+    fn multihash_pk_def() -> PartitionKeyDefinition {
+        serde_json::from_str(r#"{"paths":["/country","/state"],"kind":"MultiHash","version":2}"#)
+            .unwrap()
+    }
+
+    fn multihash_container() -> ContainerReference {
+        let props = ContainerProperties {
+            id: Cow::Owned("coll".into()),
+            partition_key: multihash_pk_def(),
+            system_properties: SystemProperties::default(),
+        };
+        ContainerReference::new(test_account(), "db", "db_rid", "coll", "coll_rid", &props)
+    }
+
+    /// Builds a cross-partition query whose target is a one-level prefix
+    /// (`(country,)`) of a two-level `/country/state` MultiHash container.
+    fn prefix_query_operation(prefix: &PartitionKey) -> CosmosOperation {
+        let target = FeedRange::for_partition(prefix.clone(), &multihash_pk_def());
+        CosmosOperation::query_items(multihash_container(), Some(target))
+            .with_body(br#"{"query":"SELECT * FROM c"}"#.to_vec())
+    }
+
+    #[tokio::test]
+    async fn clips_prefix_fan_out_to_epk_range() {
+        // A prefix scope over an HPK container must be EPK-scoped to
+        // [prefix_epk, prefix_epk+"FF") inside its physical partition, not scan
+        // the whole partition (issue #4680).
+        let prefix = PartitionKey::from("USA");
+        let range = EffectivePartitionKey::compute_range(prefix.values(), &multihash_pk_def())
+            .expect("prefix range");
+        let (start, end) = (
+            range.start.as_str().to_owned(),
+            range.end.as_str().to_owned(),
+        );
+        assert_ne!(
+            start, end,
+            "a one-level prefix must be a real range, not a point"
+        );
+
+        // Query plan covers the whole space; a single physical partition owns it.
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = prefix_query_operation(&prefix);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+            .await
+            .unwrap();
+
+        assert_drain_requests_with_partitions(
+            pipeline,
+            &[(start.as_str(), end.as_str(), "pkrange-0", "", "FF")],
+        );
+    }
+
+    #[tokio::test]
+    async fn prefix_fan_out_spans_multiple_partitions() {
+        // When the prefix EPK range straddles a physical partition boundary the
+        // fan-out must emit one EPK-scoped request per overlapping partition.
+        let prefix = PartitionKey::from("USA");
+        let range = EffectivePartitionKey::compute_range(prefix.values(), &multihash_pk_def())
+            .expect("prefix range");
+        let (start, end) = (
+            range.start.as_str().to_owned(),
+            range.end.as_str().to_owned(),
+        );
+        // A split point strictly inside [start, end): start is a prefix of both,
+        // and "80" < "FF" so start < mid < end.
+        let mid = format!("{start}80");
+
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = prefix_query_operation(&prefix);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+            rr("", &mid, "pkrange-left"),
+            rr(&mid, "FF", "pkrange-right"),
+        ])]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+            .await
+            .unwrap();
+
+        assert_drain_requests_with_partitions(
+            pipeline,
+            &[
+                (
+                    start.as_str(),
+                    mid.as_str(),
+                    "pkrange-left",
+                    "",
+                    mid.as_str(),
+                ),
+                (
+                    mid.as_str(),
+                    end.as_str(),
+                    "pkrange-right",
+                    mid.as_str(),
+                    "FF",
+                ),
+            ],
+        );
+    }
+
+    #[tokio::test]
+    async fn full_container_query_is_not_prefix_clipped() {
+        // A full-container cross-partition query over an HPK container carries no
+        // prefix target, so every physical partition is queried unscoped.
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = CosmosOperation::query_items(multihash_container(), Some(FeedRange::full()))
+            .with_body(br#"{"query":"SELECT * FROM c"}"#.to_vec());
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+            rr("", "80", "pkrange-left"),
+            rr("80", "FF", "pkrange-right"),
+        ])]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+            .await
+            .unwrap();
+
+        assert_drain_requests(
+            pipeline,
+            &[("", "80", "pkrange-left"), ("80", "FF", "pkrange-right")],
+        );
     }
 
     #[tokio::test]

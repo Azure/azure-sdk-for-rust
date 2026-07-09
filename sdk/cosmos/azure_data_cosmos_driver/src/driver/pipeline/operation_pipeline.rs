@@ -105,9 +105,14 @@ impl OperationOverrides {
                     HeaderValue::from(feed_range.max_exclusive().as_str().to_owned()),
                 );
             }
+            // `x-ms-start-epk`/`x-ms-end-epk` describe an effective-partition-key
+            // *range*, so the key type must be `EffectivePartitionKeyRange`. The
+            // point value `EffectivePartitionKey` is rejected by the gateway with
+            // `400 "One of the input values is invalid"` for range-scoped requests
+            // (issues #4680 and #4681).
             headers.insert(
                 HeaderName::from_static(request_header_names::READ_FEED_KEY_TYPE),
-                HeaderValue::from_static("EffectivePartitionKey"),
+                HeaderValue::from_static("EffectivePartitionKeyRange"),
             );
         }
 
@@ -3673,7 +3678,7 @@ mod tests {
                     request_header_names::READ_FEED_KEY_TYPE
                 ))
                 .map(|s| s.to_string()),
-            Some("EffectivePartitionKey".to_string())
+            Some("EffectivePartitionKeyRange".to_string())
         );
         assert_eq!(
             headers
