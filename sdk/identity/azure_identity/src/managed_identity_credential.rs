@@ -590,7 +590,7 @@ mod tests {
         run_supported_source_test(
             Env::from(
                 &[
-                    (IDENTITY_ENDPOINT, "http://localhost:40342"),
+                    (IDENTITY_ENDPOINT, "http://localhost:40342/metadata/identity/oauth2/token"),
                     (IMDS_ENDPOINT, "..."),
                 ][..]),
             None,
