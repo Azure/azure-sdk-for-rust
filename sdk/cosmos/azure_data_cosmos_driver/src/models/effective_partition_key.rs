@@ -741,6 +741,40 @@ mod tests {
         assert!(range.end.to_hex().ends_with("FF"));
     }
 
+    /// The `[epk, epk+"FF")` prefix range relies on every hash component's first
+    /// hex digit being masked into `[0-3]` (`hash_bytes[0] & 0x3F`), so the "FF"
+    /// sentinel is always lexicographically greater than any real completion of
+    /// the prefix. Guard that coupling so `compute_range` and the planner's
+    /// prefix clip cannot silently break.
+    #[test]
+    fn compute_range_first_nibble_masked_keeps_ff_sentinel_valid() {
+        let pk_def = PartitionKeyDefinition::from(("/tenantId", "/userId", "/sessionId"));
+        for values in [
+            vec![PartitionKeyValue::from("tenant1".to_string())],
+            vec![
+                PartitionKeyValue::from("tenant1".to_string()),
+                PartitionKeyValue::from("user1".to_string()),
+            ],
+        ] {
+            let range = EffectivePartitionKey::compute_range(&values, &pk_def).unwrap();
+            let start = range.start.to_hex();
+            // Each hash component is 32 hex chars; the first digit of every
+            // component must be in [0-3] for the "FF" upper bound to dominate.
+            for component_start in (0..start.len()).step_by(32) {
+                let first = start.as_bytes()[component_start];
+                assert!(
+                    (b'0'..=b'3').contains(&first),
+                    "component at {component_start} starts with '{}', expected [0-3]",
+                    first as char
+                );
+            }
+            assert!(
+                range.end.to_hex() > start,
+                "the FF sentinel must exceed the prefix EPK"
+            );
+        }
+    }
+
     /// compute_range returns a point for single-hash (non-MultiHash) keys
     /// when the component count matches the definition path count.
     #[test]

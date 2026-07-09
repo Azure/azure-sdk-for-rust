@@ -22,8 +22,13 @@ pub enum FeedScope {
 impl FeedScope {
     /// Returns a [`FeedScope`] that represents the given partition key, which is used for targeting a specific partition in the container.
     ///
-    /// The provided [`PartitionKey`] MUST specify all levels of the hierarchy (e.g. in a multi-level hierarchical partition key, you must provide values for all levels, not just a prefix).
-    /// Use [`range()`](FeedScope::range) with a [`FeedRange`] that covers the desired partition(s) to specify anything beyond a single logical partition.
+    /// The provided [`PartitionKey`] may specify all levels of a hierarchical
+    /// (multi-level) partition key to target a single logical partition, or only
+    /// a *prefix* of the levels (e.g. `("USA", "CA")` on a `/country/state/city`
+    /// container) to target every logical partition that shares that prefix. A
+    /// prefix scope is executed as a filtered cross-partition query bounded to the
+    /// prefix's effective-partition-key range, so it only returns items under the
+    /// prefix rather than scanning whole physical partitions.
     pub fn partition(pk: impl Into<PartitionKey>) -> Self {
         Self::Partition(pk.into())
     }
