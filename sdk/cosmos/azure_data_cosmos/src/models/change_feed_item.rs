@@ -101,7 +101,7 @@ impl ChangeFeedMetadata {
         self.lsn
     }
 
-    /// The commit resource timestamp (`crts`) of the change, in seconds since
+    /// The conflict resolution timestamp (`crts`) of the change, in seconds since
     /// the Unix epoch, when reported by the service.
     pub fn conflict_resolution_timestamp(&self) -> Option<i64> {
         self.conflict_resolution_timestamp
