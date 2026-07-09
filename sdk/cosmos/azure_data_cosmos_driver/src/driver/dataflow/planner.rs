@@ -378,12 +378,20 @@ async fn plan_fresh(
     operation: &Arc<CosmosOperation>,
 ) -> crate::error::Result<Vec<Box<dyn PipelineNode>>> {
     let mut nodes: Vec<Box<dyn PipelineNode>> = Vec::new();
+    // For partition-scoped queries (e.g. `FeedScope::partition(partial_hpk)`)
+    // the operation carries a FeedRange that bounds the partition-key prefix.
+    // The server-supplied `query_ranges` always cover the full container, so
+    // we intersect each one with the operation scope to keep the fan-out (and
+    // the per-pkrange wire EPK bounds) scoped to that prefix.
+    let scope_range = operation.target();
     for query_range in &query_plan.query_ranges {
-        let feed_range = query_range_to_feed_range(query_range)?;
-        // Restrict the query-plan range to the operation's requested scope.
-        // Ranges entirely outside the target contribute no request leaves.
-        let Some(feed_range) = clip_to_target(feed_range, operation) else {
-            continue;
+        let plan_range = query_range_to_feed_range(query_range)?;
+        let feed_range = match scope_range {
+            Some(scope) => match intersect_feed_ranges(scope, &plan_range) {
+                Some(r) => r,
+                None => continue,
+            },
+            None => plan_range,
         };
         let resolved = topology_provider
             .resolve_ranges(&feed_range, PartitionRoutingRefresh::UseCached)
@@ -431,13 +439,17 @@ async fn plan_resume_from_saved_snapshot(
 ) -> crate::error::Result<Vec<Box<dyn PipelineNode>>> {
     let mut nodes: Vec<Box<dyn PipelineNode>> = Vec::new();
     let mut coverage: Vec<Vec<FeedRange>> = vec![Vec::new(); saved.active_tokens.len()];
+    // See `plan_fresh` for rationale on intersecting with the operation scope.
+    let scope_range = operation.target();
 
     for query_range in &query_plan.query_ranges {
-        let feed_range = query_range_to_feed_range(query_range)?;
-        // Restrict the query-plan range to the operation's requested scope,
-        // mirroring the fresh path. Ranges outside the target are skipped.
-        let Some(feed_range) = clip_to_target(feed_range, operation) else {
-            continue;
+        let plan_range = query_range_to_feed_range(query_range)?;
+        let feed_range = match scope_range {
+            Some(scope) => match intersect_feed_ranges(scope, &plan_range) {
+                Some(r) => r,
+                None => continue,
+            },
+            None => plan_range,
         };
         let resolved = topology_provider
             .resolve_ranges(&feed_range, PartitionRoutingRefresh::UseCached)
@@ -543,8 +555,8 @@ async fn plan_resume_from_saved_snapshot(
                     .map(|r| {
                         format!(
                             "[{}, {})",
-                            r.min_inclusive().as_str(),
-                            r.max_exclusive().as_str()
+                            r.min_inclusive().to_hex(),
+                            r.max_exclusive().to_hex()
                         )
                     })
                     .collect();
@@ -562,8 +574,8 @@ async fn plan_resume_from_saved_snapshot(
                     "continuation token active range [{}, {}) could not be fully covered \
                      by the current topology above the cursor (covered: {}); the query \
                      cannot be safely resumed",
-                    entry.range.min_inclusive().as_str(),
-                    entry.range.max_exclusive().as_str(),
+                    entry.range.min_inclusive().to_hex(),
+                    entry.range.max_exclusive().to_hex(),
                     coverage_summary,
                 ))
                 .build());
@@ -580,28 +592,6 @@ fn query_range_to_feed_range(
     let min = EffectivePartitionKey::from(query_range.min.as_str());
     let max = EffectivePartitionKey::from(query_range.max.as_str());
     FeedRange::new(min, max)
-}
-
-/// Clips a query-plan feed range to the operation's requested scope
-/// ([`CosmosOperation::target`]).
-///
-/// The backend query plan's ranges are derived from the query text alone and
-/// never reflect the caller's requested [`FeedRange`] target, so the planner
-/// must intersect them here. Returns `None` when the query range lies entirely
-/// outside the target, meaning it contributes no request leaves.
-///
-/// When the operation has no target, or targets a logical partition / prefix,
-/// the range is returned unchanged: a logical-partition [`FeedRange`] collapses
-/// its `[min, max)` bounds to a single effective partition key and therefore
-/// cannot be intersected as an EPK range. Prefix-scoped fan-out is handled
-/// elsewhere; clipping it here would incorrectly drop every range.
-fn clip_to_target(feed_range: FeedRange, operation: &CosmosOperation) -> Option<FeedRange> {
-    match operation.target() {
-        Some(target) if !target.is_logical_partition() => {
-            intersect_feed_ranges(&feed_range, target)
-        }
-        _ => Some(feed_range),
-    }
 }
 
 /// Returns true if the union of `pieces` covers `range` end-to-end.
@@ -621,10 +611,10 @@ fn range_fully_covered(range: &FeedRange, pieces: &[FeedRange]) -> bool {
             piece.min_inclusive() >= range.min_inclusive()
                 && piece.max_exclusive() <= range.max_exclusive(),
             "range_fully_covered piece [{}, {}) is not a subset of range [{}, {})",
-            piece.min_inclusive().as_str(),
-            piece.max_exclusive().as_str(),
-            range.min_inclusive().as_str(),
-            range.max_exclusive().as_str(),
+            piece.min_inclusive().to_hex(),
+            piece.max_exclusive().to_hex(),
+            range.min_inclusive().to_hex(),
+            range.max_exclusive().to_hex(),
         );
         if piece.min_inclusive() > &cursor {
             return false;
@@ -672,8 +662,8 @@ fn validate_saved_snapshot(
                 )
                 .with_message(format!(
                     "continuation token has invalid active_tokens entry (min `{}` > max `{}`)",
-                    min.as_str(),
-                    max.as_str(),
+                    min.to_hex(),
+                    max.to_hex(),
                 ))
                 .build());
         }
@@ -688,7 +678,7 @@ fn validate_saved_snapshot(
                 .with_message(format!(
                     "continuation token has zero-width active_tokens entry (min == max == `{}`); \
                      zero-width entries cannot carry remaining work",
-                    min.as_str(),
+                    min.to_hex(),
                 ))
                 .build());
         }
@@ -702,10 +692,10 @@ fn validate_saved_snapshot(
                     .with_message(format!(
                         "continuation token active_tokens must be sorted and non-overlapping; \
                          entry [{}, {}) is out of order or overlaps the previous entry [{}, {})",
-                        range.min_inclusive().as_str(),
-                        range.max_exclusive().as_str(),
-                        prev.range.min_inclusive().as_str(),
-                        prev.range.max_exclusive().as_str(),
+                        range.min_inclusive().to_hex(),
+                        range.max_exclusive().to_hex(),
+                        prev.range.min_inclusive().to_hex(),
+                        prev.range.max_exclusive().to_hex(),
                     ))
                     .build());
             }
@@ -726,9 +716,9 @@ fn validate_saved_snapshot(
                 .with_message(format!(
                     "continuation token cursor `{}` is past the first active_tokens entry [{}, {}); \
                      cursor must be at or before every active range",
-                    cursor.as_str(),
-                    first.range.min_inclusive().as_str(),
-                    first.range.max_exclusive().as_str(),
+                    cursor.to_hex(),
+                    first.range.min_inclusive().to_hex(),
+                    first.range.max_exclusive().to_hex(),
                 ))
                 .build());
         }
@@ -768,8 +758,8 @@ fn validate_unordered_merge_tokens(
                 .with_message(format!(
                     "continuation token has invalid active_tokens entry \
                      (min `{}` >= max `{}`)",
-                    min.as_str(),
-                    max.as_str(),
+                    min.to_hex(),
+                    max.to_hex(),
                 ))
                 .build());
         }
@@ -783,10 +773,10 @@ fn validate_unordered_merge_tokens(
                     .with_message(format!(
                         "continuation token active_tokens must be sorted and non-overlapping; \
                          entry [{}, {}) overlaps [{}, {})",
-                        range.min_inclusive().as_str(),
-                        range.max_exclusive().as_str(),
-                        prev.range.min_inclusive().as_str(),
-                        prev.range.max_exclusive().as_str(),
+                        range.min_inclusive().to_hex(),
+                        range.max_exclusive().to_hex(),
+                        prev.range.min_inclusive().to_hex(),
+                        prev.range.max_exclusive().to_hex(),
                     ))
                     .build());
             }
@@ -1301,34 +1291,6 @@ mod tests {
             .await
             .unwrap();
         assert_drain_requests(pipeline, &[("", "40", "pkrange-A")]);
-    }
-
-    #[tokio::test]
-    async fn logical_partition_target_is_not_clipped() {
-        // A logical-partition (prefix) target must NOT be clipped: its
-        // `[min, max)` bounds collapse to a single EPK, so intersecting the
-        // query-plan ranges against it would drop everything. The guard in
-        // `clip_to_target` leaves such ranges untouched, letting the query
-        // fan out across the resolved topology. This also documents that
-        // prefix-scoped over-scan is handled elsewhere (see follow-up).
-        let plan = plan_with_ranges(vec![qr("", "FF")]);
-        let target =
-            FeedRange::for_partition(PartitionKey::from("pk1"), &test_partition_key_definition());
-        assert!(target.is_logical_partition());
-        let op = CosmosOperation::query_items(test_container(), Some(target))
-            .with_body(br#"{"query":"SELECT * FROM c"}"#.to_vec());
-        let mut topology = PhysicalTopologyProvider::new(vec![
-            rr("00", "80", "pkrange-left"),
-            rr("80", "FF", "pkrange-right"),
-        ]);
-
-        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
-            .await
-            .unwrap();
-        assert_drain_requests(
-            pipeline,
-            &[("00", "80", "pkrange-left"), ("80", "FF", "pkrange-right")],
-        );
     }
 
     #[tokio::test]

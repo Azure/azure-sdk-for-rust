@@ -180,15 +180,14 @@ pub async fn diagnostics_contain_expected_fields() -> Result<(), Box<dyn Error>>
             "Duration should be non-zero"
         );
 
-        // Verify request details
+        // Verify request details. Live accounts can legitimately produce more
+        // than one request for a simple create when the transport retries a
+        // transient failure, so validate the final successful attempt instead
+        // of asserting a single-attempt operation.
         let requests = diagnostics.requests();
-        assert_eq!(
-            requests.len(),
-            1,
-            "Should have exactly one request for simple create"
-        );
+        assert!(!requests.is_empty(), "Should have at least one request");
 
-        let request = &requests[0];
+        let request = requests.last().expect("requests must be non-empty");
 
         // Verify endpoint is captured
         assert!(

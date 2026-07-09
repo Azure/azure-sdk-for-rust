@@ -641,6 +641,12 @@ impl CertificateClient {
             query_builder.set_pair("maxresults", maxresults.to_string());
         }
         query_builder.build();
+        #[derive(serde::Deserialize)]
+        struct CertificateClientListCertificatePropertiesPage {
+            #[serde(rename = "nextLink")]
+            next_link: Option<String>,
+        }
+
         let api_version = self.api_version.clone();
         Ok(Pager::new(
             move |next_link: PagerState, pager_options| {
@@ -673,7 +679,8 @@ impl CertificateClient {
                             )
                             .await?;
                         let (status, headers, body) = rsp.deconstruct();
-                        let res: ListCertificatePropertiesResult = json::from_json(&body)?;
+                        let res: CertificateClientListCertificatePropertiesPage =
+                            json::from_json(&body)?;
                         let rsp = RawResponse::from_bytes(status, headers, body).into();
                         Ok(match res.next_link {
                             Some(next_link) if !next_link.is_empty() => PagerResult::More {
@@ -724,6 +731,12 @@ impl CertificateClient {
             query_builder.set_pair("maxresults", maxresults.to_string());
         }
         query_builder.build();
+        #[derive(serde::Deserialize)]
+        struct CertificateClientListCertificatePropertiesVersionsPage {
+            #[serde(rename = "nextLink")]
+            next_link: Option<String>,
+        }
+
         let api_version = self.api_version.clone();
         Ok(Pager::new(
             move |next_link: PagerState, pager_options| {
@@ -756,7 +769,8 @@ impl CertificateClient {
                             )
                             .await?;
                         let (status, headers, body) = rsp.deconstruct();
-                        let res: ListCertificatePropertiesResult = json::from_json(&body)?;
+                        let res: CertificateClientListCertificatePropertiesVersionsPage =
+                            json::from_json(&body)?;
                         let rsp = RawResponse::from_bytes(status, headers, body).into();
                         Ok(match res.next_link {
                             Some(next_link) if !next_link.is_empty() => PagerResult::More {
@@ -801,6 +815,12 @@ impl CertificateClient {
             query_builder.set_pair("maxresults", maxresults.to_string());
         }
         query_builder.build();
+        #[derive(serde::Deserialize)]
+        struct CertificateClientListDeletedCertificatePropertiesPage {
+            #[serde(rename = "nextLink")]
+            next_link: Option<String>,
+        }
+
         let api_version = self.api_version.clone();
         Ok(Pager::new(
             move |next_link: PagerState, pager_options| {
@@ -833,7 +853,8 @@ impl CertificateClient {
                             )
                             .await?;
                         let (status, headers, body) = rsp.deconstruct();
-                        let res: ListDeletedCertificatePropertiesResult = json::from_json(&body)?;
+                        let res: CertificateClientListDeletedCertificatePropertiesPage =
+                            json::from_json(&body)?;
                         let rsp = RawResponse::from_bytes(status, headers, body).into();
                         Ok(match res.next_link {
                             Some(next_link) if !next_link.is_empty() => PagerResult::More {
@@ -874,6 +895,12 @@ impl CertificateClient {
             query_builder.set_pair("maxresults", maxresults.to_string());
         }
         query_builder.build();
+        #[derive(serde::Deserialize)]
+        struct CertificateClientListIssuerPropertiesPage {
+            #[serde(rename = "nextLink")]
+            next_link: Option<String>,
+        }
+
         let api_version = self.api_version.clone();
         Ok(Pager::new(
             move |next_link: PagerState, pager_options| {
@@ -906,7 +933,8 @@ impl CertificateClient {
                             )
                             .await?;
                         let (status, headers, body) = rsp.deconstruct();
-                        let res: ListIssuerPropertiesResult = json::from_json(&body)?;
+                        let res: CertificateClientListIssuerPropertiesPage =
+                            json::from_json(&body)?;
                         let rsp = RawResponse::from_bytes(status, headers, body).into();
                         Ok(match res.next_link {
                             Some(next_link) if !next_link.is_empty() => PagerResult::More {
