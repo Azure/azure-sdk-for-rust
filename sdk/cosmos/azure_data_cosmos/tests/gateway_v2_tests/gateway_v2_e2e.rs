@@ -241,6 +241,19 @@ async fn provision_database_and_v1_container(
     db_client.create_container(properties, None).await?;
     let container_client = wait_for_container_ready(&db_client, &container_name).await?;
 
+    let body = container_client.read(None).await?.into_body().single()?;
+    let raw: serde_json::Value = serde_json::from_slice(&body)?;
+    assert!(
+        raw["partitionKey"].get("version").is_none(),
+        "the service must omit partitionKey.version when reading a V1 container"
+    );
+    let properties: ContainerProperties = serde_json::from_slice(&body)?;
+    assert_eq!(
+        properties.partition_key.version(),
+        PartitionKeyVersion::V1,
+        "a version-less service response must deserialize as V1"
+    );
+
     Ok((db_name, container_client))
 }
 
