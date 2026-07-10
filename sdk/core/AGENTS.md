@@ -5,7 +5,7 @@ These rules apply in addition to the repository root [AGENTS.md](../../AGENTS.md
 ## Semver Propagation
 
 - Treat `sdk/core` as an ordered stack: `typespec -> typespec_client_core -> azure_core`.
-- `typespec_client_core` re-exports `typespec`; `azure_core` re-exports `typespec_client_core`.
+- `typespec_client_core` re-exports public APIs from `typespec`; `azure_core` re-exports public APIs `typespec_client_core` with few exceptions.
 - A semver-relevant change in a lower crate requires **at least** the same bump in each higher crate.
 - A lower crate may force a higher bump, but a higher crate can still require a larger bump because of its own public API changes.
 
