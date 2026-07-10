@@ -7,7 +7,7 @@ use std::{fmt, sync::Arc};
 
 use super::cosmos_transport_client::TransportClient;
 
-use crate::diagnostics::TransportHttpVersion;
+use crate::diagnostics::{TransportHttpVersion, TransportKind};
 use crate::options::ConnectionPoolOptions;
 
 /// HTTP protocol policy required by a transport.
@@ -26,6 +26,18 @@ pub struct HttpClientConfig {
     pub(crate) request_timeout: std::time::Duration,
     pub(crate) allow_invalid_cert: bool,
     pub(crate) http2_keep_alive_while_idle: bool,
+    /// The transport kind this HTTP client serves, when it is bound to a
+    /// dataplane transport. Metadata clients (account discovery, etc.) leave
+    /// this `None` because they are not gateway/Gateway-2.0-specific.
+    ///
+    /// This is consumed by the fault-injection layer so rules can scope
+    /// themselves to a specific transport (`with_transport_kind`). The field
+    /// has no readers when the `fault_injection` feature is disabled, so the
+    /// dead-code warning is silenced only for that build configuration —
+    /// when the feature is on, the field is read in
+    /// `fault_injection::fault_injecting_factory::FaultInjectingHttpClientFactory::build`.
+    #[cfg_attr(not(feature = "fault_injection"), allow(dead_code))]
+    pub(crate) transport_kind: Option<TransportKind>,
 }
 
 impl HttpClientConfig {
@@ -42,6 +54,7 @@ impl HttpClientConfig {
             request_timeout: connection_pool.max_metadata_request_timeout(),
             allow_invalid_cert: false,
             http2_keep_alive_while_idle: negotiated_version.is_http2(),
+            transport_kind: None,
         }
     }
 
@@ -58,16 +71,18 @@ impl HttpClientConfig {
             request_timeout: connection_pool.max_dataplane_request_timeout(),
             allow_invalid_cert: false,
             http2_keep_alive_while_idle: negotiated_version.is_http2(),
+            transport_kind: Some(TransportKind::Gateway),
         }
     }
 
     /// Config for Gateway 2.0 requests (always HTTP/2).
-    pub(crate) fn dataplane_gateway20(connection_pool: &ConnectionPoolOptions) -> Self {
+    pub(crate) fn dataplane_gateway_v2(connection_pool: &ConnectionPoolOptions) -> Self {
         Self {
             version_policy: HttpVersionPolicy::Http2Only,
             request_timeout: connection_pool.max_dataplane_request_timeout(),
             allow_invalid_cert: false,
             http2_keep_alive_while_idle: true,
+            transport_kind: Some(TransportKind::GatewayV2),
         }
     }
 
@@ -119,10 +134,10 @@ mod tests {
     }
 
     #[test]
-    fn dataplane_gateway20_always_uses_http2_only() {
+    fn dataplane_gateway_v2_always_uses_http2_only() {
         let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
         assert_eq!(
-            HttpClientConfig::dataplane_gateway20(&pool).version_policy,
+            HttpClientConfig::dataplane_gateway_v2(&pool).version_policy,
             HttpVersionPolicy::Http2Only
         );
     }
@@ -133,6 +148,22 @@ mod tests {
         let config = HttpClientConfig::metadata(&pool, TransportHttpVersion::Http2);
         assert!(!config.allow_invalid_cert);
         assert!(config.with_allow_invalid_cert().allow_invalid_cert);
+    }
+
+    #[cfg(feature = "rustls")]
+    #[test]
+    fn default_factory_builds_client_with_default_tls_backend() {
+        // The default backend is `TlsBackend::Rustls`; building the client must
+        // succeed (i.e. `tls_backend_rustls()` is wired up under the `rustls`
+        // feature).
+        let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
+        assert_eq!(pool.tls_backend(), crate::options::TlsBackend::Rustls);
+        let config = HttpClientConfig::metadata(&pool, TransportHttpVersion::Http2);
+        let factory = DefaultHttpClientFactory::new();
+        assert!(
+            factory.build(&pool, config).is_ok(),
+            "building the reqwest client with the default TLS backend should succeed"
+        );
     }
 }
 
@@ -185,6 +216,19 @@ impl HttpClientFactory for DefaultHttpClientFactory {
             {
                 builder = builder.danger_accept_invalid_certs(true);
             }
+        }
+
+        // Enforce the selected TLS backend on the reqwest transport. The driver
+        // does not otherwise expose the transport, so this is the supported way
+        // to assert a specific backend. The whole block compiles in only under
+        // the `rustls` feature: `tls_backend_rustls()` (and the `tls_backend()`
+        // accessor it reads) exist only then. With a different TLS feature the
+        // backend is not driver-selectable and reqwest's own default applies.
+        #[cfg(feature = "rustls")]
+        {
+            builder = match connection_pool.tls_backend() {
+                crate::options::TlsBackend::Rustls => builder.tls_backend_rustls(),
+            };
         }
 
         builder = match config.version_policy {

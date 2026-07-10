@@ -132,14 +132,12 @@ impl ContainerRoutingMap {
             return None;
         }
 
-        let epk_str = epk.as_str();
-
         // Special case: the minimum EPK is always in the first range.
-        if epk_str.is_empty() {
+        if epk.as_bytes().is_empty() {
             return Some(&self.ordered_ranges[0]);
         }
 
-        let idx = self.find_range_index(epk_str);
+        let idx = self.find_range_index(epk);
 
         let range = &self.ordered_ranges[idx];
         let min_ok = range.min_inclusive <= *epk;
@@ -240,7 +238,7 @@ impl ContainerRoutingMap {
         let max_epk = epk_range.end;
 
         // Start: rightmost range whose min_inclusive <= query min.
-        let start_idx = self.find_range_index(min_epk.as_str());
+        let start_idx = self.find_range_index(min_epk);
 
         // End: first range whose min_inclusive >= query max (all ranges from
         // start_idx up to but not including this index overlap the query).
@@ -329,11 +327,10 @@ impl ContainerRoutingMap {
     /// `min_inclusive <= epk`.
     ///
     /// Callers must ensure `ordered_ranges` is non-empty and `epk` is non-empty.
-    fn find_range_index(&self, epk: &str) -> usize {
-        let epk_val = EffectivePartitionKey::from(epk);
+    fn find_range_index(&self, epk: &EffectivePartitionKey) -> usize {
         match self
             .ordered_ranges
-            .binary_search_by(|r| r.min_inclusive.cmp(&epk_val))
+            .binary_search_by(|r| r.min_inclusive.cmp(epk))
         {
             Ok(i) => i,               // Exact match on min_inclusive.
             Err(i) if i > 0 => i - 1, // epk falls between ranges[i-1] and ranges[i].
@@ -353,18 +350,17 @@ impl ContainerRoutingMap {
     fn validate_and_build_index(
         sorted: &[PartitionKeyRange],
     ) -> Result<(i32, HashMap<String, PartitionKeyRange>), RoutingMapError> {
-        let min_epk = EffectivePartitionKey::MIN.clone();
         let max_epk = EffectivePartitionKey::MAX.clone();
-        let mut expected_min = min_epk.as_str();
+        let mut expected_min = EffectivePartitionKey::MIN.clone();
         for range in sorted {
-            match range.min_inclusive.as_str().cmp(expected_min) {
+            match range.min_inclusive.cmp(&expected_min) {
                 std::cmp::Ordering::Greater => return Err(RoutingMapError::IncompleteRanges),
                 std::cmp::Ordering::Less => return Err(RoutingMapError::OverlappingRanges),
                 std::cmp::Ordering::Equal => {}
             }
-            expected_min = range.max_exclusive.as_str();
+            expected_min = range.max_exclusive.clone();
         }
-        if expected_min != max_epk.as_str() {
+        if expected_min != max_epk {
             return Err(RoutingMapError::IncompleteRanges);
         }
 

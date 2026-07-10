@@ -22,7 +22,7 @@ quote.workspace = true
 syn.workspace = true
 
 [dev-dependencies]
-azure_core_test.path = "../azure_core_test"
+azure_core_test.workspace = true
 tokio.workspace = true
 
 [lints]

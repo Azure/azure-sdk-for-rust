@@ -8,7 +8,13 @@
 
 pub mod binary_round_trip;
 pub mod driver_end_to_end;
+#[cfg(feature = "preview_dtx")]
+pub mod dtx_live_comparison;
+#[cfg(feature = "preview_dtx")]
+pub mod dtx_sdk_validation;
 pub mod dual_backend;
 pub mod end_to_end;
+pub mod hpk;
+pub mod session_token;
 pub mod user_agent;
 pub mod validation;

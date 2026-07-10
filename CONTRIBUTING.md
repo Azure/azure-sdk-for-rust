@@ -435,15 +435,22 @@ The incremented version will be a "beta" of an incrementally higher release. Thi
 
 ### Toolchains
 
-The stable and nightly Rust toolchain versions used throughout the repository are pinned to specific versions. The stable channel is pinned in `rust-toolchain.toml`; the nightly channel is pinned in `eng/scripts/Language-Settings.ps1` and in the shebang lines of the `eng/scripts/*.rs` utility scripts.
+Rust toolchain versions are pinned in a few places. In most cases, running `cargo build` or `cargo test` from the repository root or a crate directory will prompt rustup to install the required toolchain and components automatically.
 
-Project maintainers can update both channels by running:
+Current pin locations:
+
+- Stable/default toolchain: root `rust-toolchain.toml` -> `channel` e.g., `"1.95"`
+- MSRV: root `Cargo.toml` -> `rust-version` e.g., `"1.88"`
+- Nightly for `eng/scripts` and `cargo +nightly` utility scripts: `eng/scripts/Language-Settings.ps1` e.g., `"nightly-2026-04-14"`
+- Nightly for tooling under `eng/tools` such as doc and APIView generation: `eng/tools/rust-toolchain.toml` -> `channel` e.g., `"nightly-2025-05-09"`
+
+Project maintainers can update the root stable toolchain, the `eng/scripts` nightly pin, and the `eng/scripts/**/*.rs` nightly shebangs by running:
 
 ```powershell
 eng/scripts/Update-Rust.ps1
 ```
 
-This script automatically detects the latest stable release from GitHub and finds a working nightly toolchain. You can also specify either or both versions explicitly:
+This script automatically detects the latest stable release from GitHub and finds a working nightly toolchain for `eng/scripts`. You can also specify either or both versions explicitly:
 
 ```powershell
 eng/scripts/Update-Rust.ps1 -Version 1.96.0 -NightlyVersion 2026-05-01
@@ -452,6 +459,8 @@ eng/scripts/Update-Rust.ps1 -Version 1.96.0 -NightlyVersion 2026-05-01
 Outside contributors who need a newer toolchain should [open an issue](https://github.com/Azure/azure-sdk-for-rust/issues) describing specifically why the update is needed.
 
 The minimum supported Rust version (MSRV) is pinned to an older version in the root `Cargo.toml` and is updated less frequently because raising it is a breaking change. To request an MSRV bump, [open an issue](https://github.com/Azure/azure-sdk-for-rust/issues) with a clear justification for why the increase is necessary.
+
+The `eng/tools/rust-toolchain.toml` file is maintained independently because it pins the JSON output format required by tooling under `eng/tools`; `eng/scripts/Update-Rust.ps1` does not modify it.
 
 ## Samples
 

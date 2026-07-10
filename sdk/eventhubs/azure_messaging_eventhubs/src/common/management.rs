@@ -10,6 +10,7 @@ use azure_core_amqp::{
     AmqpManagementApis, AmqpOrderedMap, AmqpSimpleValue, AmqpTimestamp, AmqpValue,
 };
 use std::{sync::Arc, time::SystemTime};
+use tracing::warn;
 
 /// Represents an instance of the Event Hubs management client.
 ///
@@ -53,6 +54,15 @@ impl ManagementInstance {
         })
     }
 
+    #[tracing::instrument(
+        level = "debug",
+        skip_all,
+        fields(
+            connection_id = %self.recoverable_connection.get_connection_id(),
+            eventhub = %eventhub,
+        ),
+        err,
+    )]
     pub async fn get_eventhub_properties(&self, eventhub: &str) -> Result<EventHubProperties> {
         let mut application_properties: AmqpOrderedMap<String, AmqpSimpleValue> =
             AmqpOrderedMap::new();
@@ -65,33 +75,67 @@ impl ManagementInstance {
             .await?;
 
         if !response.contains_key(EVENTHUB_PROPERTY_PARTITION_COUNT) {
+            warn!(
+                missing_key = EVENTHUB_PROPERTY_PARTITION_COUNT,
+                "Management response for event hub properties is missing a required key"
+            );
             return Err(EventHubsError::from(ErrorKind::InvalidManagementResponse));
         }
         let name: String = response
             .get(EVENTHUB_PROPERTY_NAME)
-            .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?
+            .ok_or_else(|| {
+                warn!(
+                    missing_key = EVENTHUB_PROPERTY_NAME,
+                    "Management response for event hub properties is missing a required key"
+                );
+                EventHubsError::from(ErrorKind::InvalidManagementResponse)
+            })?
             .into();
         let created_at: Option<SystemTime> = Into::<AmqpTimestamp>::into(
             response
                 .get(EVENTHUB_PROPERTY_CREATED_AT)
-                .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?
+                .ok_or_else(|| {
+                    warn!(
+                        missing_key = EVENTHUB_PROPERTY_CREATED_AT,
+                        "Management response for event hub properties is missing a required key"
+                    );
+                    EventHubsError::from(ErrorKind::InvalidManagementResponse)
+                })?
                 .clone(),
         )
         .0;
 
         let partition_ids = response
             .get(EVENTHUB_PROPERTY_PARTITION_IDS)
-            .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?;
+            .ok_or_else(|| {
+                warn!(
+                    missing_key = EVENTHUB_PROPERTY_PARTITION_IDS,
+                    "Management response for event hub properties is missing a required key"
+                );
+                EventHubsError::from(ErrorKind::InvalidManagementResponse)
+            })?;
 
         let partition_ids = match partition_ids {
             AmqpValue::Array(partition_ids) => partition_ids
                 .iter()
                 .map(|id| match id {
                     AmqpValue::String(id) => Ok(id.clone()),
-                    _ => Err(EventHubsError::from(ErrorKind::InvalidManagementResponse)),
+                    _ => {
+                        warn!(
+                            key = EVENTHUB_PROPERTY_PARTITION_IDS,
+                            "Management response partition id entry is not a string"
+                        );
+                        Err(EventHubsError::from(ErrorKind::InvalidManagementResponse))
+                    }
                 })
                 .collect::<Result<Vec<String>>>()?,
-            _ => return Err(EventHubsError::from(ErrorKind::InvalidManagementResponse)),
+            _ => {
+                warn!(
+                    key = EVENTHUB_PROPERTY_PARTITION_IDS,
+                    "Management response partition ids value is not an array"
+                );
+                return Err(EventHubsError::from(ErrorKind::InvalidManagementResponse));
+            }
         };
         Ok(EventHubProperties {
             name,
@@ -100,6 +144,16 @@ impl ManagementInstance {
         })
     }
 
+    #[tracing::instrument(
+        level = "debug",
+        skip_all,
+        fields(
+            connection_id = %self.recoverable_connection.get_connection_id(),
+            eventhub = %eventhub,
+            partition_id = %partition_id,
+        ),
+        err,
+    )]
     pub async fn get_eventhub_partition_properties(
         &self,
         eventhub: &str,
@@ -117,44 +171,71 @@ impl ManagementInstance {
             .await?;
 
         // Look for the required response properties
-        if !response.contains_key(EVENTHUB_PARTITION_PROPERTIES_TYPE)
-            || !response
-                .contains_key(EVENTHUB_PARTITION_PROPERTIES_LAST_ENQUEUED_SEQUENCE_NUMBER_EPOCH)
-        {
+        if !response.contains_key(EVENTHUB_PARTITION_PROPERTIES_TYPE) {
+            warn!(
+                missing_key = EVENTHUB_PARTITION_PROPERTIES_TYPE,
+                "Management response for partition properties is missing a required key"
+            );
             return Err(EventHubsError::from(ErrorKind::InvalidManagementResponse));
         }
+        if !response.contains_key(EVENTHUB_PARTITION_PROPERTIES_LAST_ENQUEUED_SEQUENCE_NUMBER_EPOCH)
+        {
+            warn!(
+                missing_key = EVENTHUB_PARTITION_PROPERTIES_LAST_ENQUEUED_SEQUENCE_NUMBER_EPOCH,
+                "Management response for partition properties is missing a required key"
+            );
+            return Err(EventHubsError::from(ErrorKind::InvalidManagementResponse));
+        }
+
+        let missing_key = |key: &'static str| {
+            move || {
+                warn!(
+                    missing_key = key,
+                    "Management response for partition properties is missing a required key"
+                );
+                EventHubsError::from(ErrorKind::InvalidManagementResponse)
+            }
+        };
 
         Ok(EventHubPartitionProperties {
             beginning_sequence_number: response
                 .get(EVENTHUB_PARTITION_PROPERTIES_BEGIN_SEQUENCE_NUMBER)
-                .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?
+                .ok_or_else(missing_key(
+                    EVENTHUB_PARTITION_PROPERTIES_BEGIN_SEQUENCE_NUMBER,
+                ))?
                 .into(),
             id: response
                 .get(EVENTHUB_PROPERTY_PARTITION)
-                .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?
+                .ok_or_else(missing_key(EVENTHUB_PROPERTY_PARTITION))?
                 .into(),
             eventhub: response
                 .get(EVENTHUB_PROPERTY_NAME)
-                .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?
+                .ok_or_else(missing_key(EVENTHUB_PROPERTY_NAME))?
                 .into(),
 
             last_enqueued_sequence_number: response
                 .get(EVENTHUB_PARTITION_PROPERTIES_LAST_ENQUEUED_SEQUENCE_NUMBER)
-                .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?
+                .ok_or_else(missing_key(
+                    EVENTHUB_PARTITION_PROPERTIES_LAST_ENQUEUED_SEQUENCE_NUMBER,
+                ))?
                 .into(),
             last_enqueued_offset: response
                 .get(EVENTHUB_PARTITION_PROPERTIES_LAST_ENQUEUED_OFFSET)
-                .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?
+                .ok_or_else(missing_key(
+                    EVENTHUB_PARTITION_PROPERTIES_LAST_ENQUEUED_OFFSET,
+                ))?
                 .into(),
             last_enqueued_time_utc: Into::<AmqpTimestamp>::into(
                 response
                     .get(EVENTHUB_PARTITION_PROPERTIES_LAST_ENQUEUED_TIME_UTC)
-                    .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?,
+                    .ok_or_else(missing_key(
+                        EVENTHUB_PARTITION_PROPERTIES_LAST_ENQUEUED_TIME_UTC,
+                    ))?,
             )
             .0,
             is_empty: response
                 .get(EVENTHUB_PARTITION_PROPERTIES_IS_EMPTY)
-                .ok_or_else(|| EventHubsError::from(ErrorKind::InvalidManagementResponse))?
+                .ok_or_else(missing_key(EVENTHUB_PARTITION_PROPERTIES_IS_EMPTY))?
                 .into(),
         })
     }

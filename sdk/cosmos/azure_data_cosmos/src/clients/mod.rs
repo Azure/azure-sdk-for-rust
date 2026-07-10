@@ -11,6 +11,12 @@ pub use container_client::ContainerClient;
 pub use cosmos_client::CosmosClient;
 pub use cosmos_client_builder::CosmosClientBuilder;
 pub use database_client::DatabaseClient;
+#[cfg(feature = "preview_dtx")]
+pub use distributed_transaction::{
+    DistributedReadTransaction, DistributedTransactionOperationOptions,
+    DistributedTransactionOperationResult, DistributedTransactionPatchOperationOptions,
+    DistributedTransactionResponse, DistributedWriteTransaction,
+};
 pub use throughput_poller::ThroughputPoller;
 
 // =========================================================================
@@ -21,6 +27,8 @@ mod container_client;
 mod cosmos_client;
 mod cosmos_client_builder;
 mod database_client;
+#[cfg(feature = "preview_dtx")]
+pub(crate) mod distributed_transaction;
 pub(crate) mod offers_client;
 mod throughput_poller;
 

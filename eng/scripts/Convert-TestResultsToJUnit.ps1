@@ -1,5 +1,8 @@
 #!/usr/bin/env pwsh
 
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
 #Requires -Version 7.0
 <#
 .SYNOPSIS
@@ -23,8 +26,8 @@ The directory where JUnit XML files should be written. Defaults to test-results/
 #>
 
 param(
-  [string]$TestResultsDirectory = "$PSScriptRoot/../../test-results",
-  [string]$OutputDirectory = "$PSScriptRoot/../../test-results/junit"
+  [string]$TestResultsDirectory = ([System.IO.Path]::Combine($PSScriptRoot, '..', '..', 'test-results')),
+  [string]$OutputDirectory = ([System.IO.Path]::Combine($PSScriptRoot, '..', '..', 'test-results', 'junit'))
 )
 
 $ErrorActionPreference = 'Stop'
@@ -32,22 +35,29 @@ Set-StrictMode -Version 2.0
 . ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
 . ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'Cargo.ps1'))
 
+Write-Host "##vso[task.setvariable variable=HasJUnitTestResults]false"
 Write-Host "Converting test results from JSON to JUnit XML using cargo2junit"
 Write-Host "  Input directory:  $TestResultsDirectory"
 Write-Host "  Output directory: $OutputDirectory"
 
 if (!(Test-Path $TestResultsDirectory)) {
-  LogWarning "Test results directory not found: $TestResultsDirectory"
-  Write-Host "No test results to convert."
+  Write-Host "Skipping JUnit conversion because the test results directory does not exist."
   exit 0
 }
 
-$jsonFiles = @(Get-ChildItem -Path $TestResultsDirectory -Filter "*.json" -File)
-if ($jsonFiles.Count -eq 0) {
-  LogWarning "No JSON files found in $TestResultsDirectory"
-  Write-Host "No test results to convert."
+$allJsonFiles = @(Get-ChildItem -Path $TestResultsDirectory -Filter "*.json" -File)
+if ($allJsonFiles.Count -eq 0) {
+  Write-Host "Skipping JUnit conversion because no JSON test result files were produced."
   exit 0
 }
+
+$jsonFiles = @($allJsonFiles | Where-Object { $_.Length -gt 0 })
+if ($jsonFiles.Count -eq 0) {
+  Write-Host "Skipping JUnit conversion because all JSON test result files are empty."
+  exit 0
+}
+
+Write-Host "##vso[task.setvariable variable=HasJUnitTestResults]true"
 
 if (!(Test-Path $OutputDirectory)) {
   New-Item -ItemType Directory -Path $OutputDirectory | Out-Null

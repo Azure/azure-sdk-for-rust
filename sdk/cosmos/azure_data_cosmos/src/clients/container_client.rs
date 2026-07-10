@@ -3,14 +3,15 @@
 
 use crate::{
     clients::{offers_client, BinaryEncoding, ClientContext},
-    feed::{FeedRange, FeedScope, QueryItemIterator},
+    feed::{ChangeFeedPageIterator, FeedRange, FeedScope, QueryItemIterator},
     models::TransactionalBatch,
     models::{BatchResponse, ItemResponse, ResourceResponse},
     models::{ContainerProperties, PatchInstructions, ThroughputProperties},
     options::{
-        BatchOptions, DeleteContainerOptions, ItemReadOptions, ItemWriteOptions, PatchItemOptions,
-        Precondition, QueryOptions, ReadContainerOptions, ReadFeedRangesOptions,
-        ReplaceContainerOptions, SessionToken, ThroughputOptions,
+        BatchOptions, ChangeFeedOptions, ChangeFeedStartFrom, DeleteContainerOptions,
+        ItemReadOptions, ItemWriteOptions, PatchItemOptions, Precondition, QueryOptions,
+        ReadContainerOptions, ReadFeedRangesOptions, ReplaceContainerOptions, SessionToken,
+        ThroughputOptions,
     },
     PartitionKey, Query,
 };
@@ -31,6 +32,12 @@ pub struct ContainerClient {
 }
 
 impl ContainerClient {
+    /// Returns the resolved [`ContainerReference`] for the container this client is attached to.
+    #[cfg(feature = "preview_dtx")]
+    pub(crate) fn container_reference(&self) -> &ContainerReference {
+        &self.container_ref
+    }
+
     pub(crate) async fn new(
         context: ClientContext,
         container_id: &str,
@@ -851,6 +858,91 @@ impl ContainerClient {
             )
             .await?;
         Ok(QueryItemIterator::new(
+            self.context.driver.clone(),
+            Some(self.container_ref.clone()),
+            plan,
+            options.operation,
+        ))
+    }
+
+    /// Queries the change feed for a container, returning a stream of pages.
+    ///
+    /// The change feed provides an ordered list of changes (creates and
+    /// replaces in LatestVersion mode) made to items in the container.
+    ///
+    /// # Arguments
+    /// * `scope` - Determines which partitions to read changes from.
+    /// * `start_from` - Where to begin reading when no continuation token is
+    ///   provided. Ignored when `options` carries a continuation token, since
+    ///   the token holds its own position.
+    /// * `options` - Optional parameters controlling mode, session token, and paging.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// use azure_data_cosmos::{clients::ContainerClient, feed::FeedScope, options::ChangeFeedStartFrom};
+    /// use futures::StreamExt;
+    /// use serde::Deserialize;
+    ///
+    /// #[derive(Debug, Deserialize)]
+    /// struct MyItem { id: String }
+    ///
+    /// # async fn example(container: ContainerClient) -> Result<(), Box<dyn std::error::Error>> {
+    /// // Read all changes from the beginning
+    /// let mut pages = container
+    ///     .query_change_feed::<MyItem>(FeedScope::full_container(), ChangeFeedStartFrom::Beginning, None)
+    ///     .await?;
+    ///
+    /// while let Some(page) = pages.next().await {
+    ///     let page = page?;
+    ///     for item in page.items() {
+    ///         println!("changed: {:?}", item);
+    ///     }
+    ///     // Save checkpoint for resumption
+    ///     let _token = pages.to_continuation_token()?;
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn query_change_feed<T: DeserializeOwned + Send + 'static>(
+        &self,
+        scope: FeedScope,
+        start_from: ChangeFeedStartFrom,
+        options: Option<ChangeFeedOptions>,
+    ) -> crate::Result<ChangeFeedPageIterator<T>> {
+        let options = options.unwrap_or_default();
+
+        let mut initial_operation = CosmosOperation::change_feed(
+            self.container_ref.clone(),
+            Some(scope.into_feed_range(self.container_ref.partition_key_definition())),
+        );
+
+        if let Some(token) = options.session_token {
+            initial_operation = initial_operation.with_session_token(token);
+        }
+        if let Some(hint) = options.feed.max_item_count {
+            initial_operation = initial_operation.with_max_item_count(hint);
+        }
+
+        // Record the start position on the operation. It is serialized into the
+        // continuation token, so partitions that were never polled before a
+        // checkpoint can re-apply the original start position on resume instead
+        // of silently reading from the beginning. Partitions that have already
+        // been polled resume from their saved per-partition ETag, which takes
+        // precedence. The driver owns the mapping to wire headers.
+        initial_operation = initial_operation.with_change_feed_start(start_from);
+
+        let plan = self
+            .context
+            .driver
+            .plan_operation(
+                initial_operation,
+                &options.operation,
+                options.feed.continuation_token.as_ref(),
+            )
+            .await?;
+
+        Ok(ChangeFeedPageIterator::new(
             self.context.driver.clone(),
             Some(self.container_ref.clone()),
             plan,
