@@ -17,6 +17,8 @@
 
 ### Other Changes
 
+- Changed the retry pacing for the backend topology-change signals `403/3` (WriteForbidden, multi-write) and `403/1008` (DatabaseAccountNotFound) from a fixed 1s interval to exponential backoff with jitter (1s base, ×2 growth, capped at 15s per retry, ±25% jitter). Retries are now bounded by a cumulative ~2 min delay budget rather than a fixed retry count, keeping the overall convergence window while easing pressure on the service as a partition split or regional failover settles. Single-write `403/3` continues to use the generic failover path. ([#4620](https://github.com/Azure/azure-sdk-for-rust/issues/4620))
+
 ## 0.5.0 (2026-06-19)
 
 ### Features Added

@@ -66,12 +66,34 @@ impl std::fmt::Display for RoutingDecision {
     }
 }
 
-/// Maximum retries for backend-driven topology signals; about two minutes at 1s spacing.
-pub const MAX_BACKEND_FAILOVER_RETRIES: u32 = 120;
+/// Safety cap on backend-failover attempts for topology signals (403/3, 403/1008).
+///
+/// Retries are normally bounded by [`BACKEND_FAILOVER_MAX_TOTAL_DELAY`]; this
+/// count is a defensive upper bound so a pathological run can't loop
+/// unbounded. Sized with generous headroom above the ~2 min budget even when
+/// jitter shrinks individual delays.
+pub const MAX_BACKEND_FAILOVER_RETRIES: u32 = 40;
 
-/// Delay between backend-failover attempts; matches Java/Python's 1000ms default.
-pub const BACKEND_FAILOVER_RETRY_INTERVAL: std::time::Duration =
-    std::time::Duration::from_millis(1000);
+/// Base delay for the first backend-failover retry. Matches the previous fixed
+/// 1000ms cadence, which now becomes the starting point of exponential growth.
+pub const BACKEND_FAILOVER_BASE_BACKOFF: Duration = Duration::from_millis(1000);
+
+/// Exponential growth factor applied to [`BACKEND_FAILOVER_BASE_BACKOFF`].
+pub const BACKEND_FAILOVER_BACKOFF_FACTOR: f64 = 2.0;
+
+/// Per-retry ceiling for the exponential backend-failover backoff.
+pub const BACKEND_FAILOVER_MAX_BACKOFF: Duration = Duration::from_secs(15);
+
+/// Symmetric jitter band applied to each backend-failover delay (±25%).
+pub const BACKEND_FAILOVER_JITTER_RATIO: f64 = 0.25;
+
+/// Cumulative delay budget for backend-failover retries; keeps the historical
+/// ~2 min total-time budget while the topology change settles.
+pub const BACKEND_FAILOVER_MAX_TOTAL_DELAY: Duration = Duration::from_secs(120);
+
+/// Maximum exponent for the backend-failover backoff, guarding against
+/// overflow before the per-retry cap is applied.
+const BACKEND_FAILOVER_MAX_EXPONENT: u32 = 8;
 
 /// Maximum inner retries for bodyless DTX coordinator envelope failures.
 #[cfg(feature = "preview_dtx")]
@@ -113,6 +135,12 @@ pub(crate) struct OperationRetryState {
     pub session_token_retry_count: u32,
     /// Multi-write backend-failover counter, separate from generic failover retries.
     pub backend_failover_retry_count: u32,
+    /// Cumulative delay already scheduled across backend-failover retries.
+    ///
+    /// Gates further 403/3 & 403/1008 retries against
+    /// [`BACKEND_FAILOVER_MAX_TOTAL_DELAY`] so the ~2 min budget holds
+    /// regardless of the exponential-backoff curve.
+    pub backend_failover_cumulative_delay: Duration,
     /// Bodyless DTX coordinator retry counter.
     #[cfg(feature = "preview_dtx")]
     pub dtx_coordinator_retry_count: u32,
@@ -197,6 +225,7 @@ impl OperationRetryState {
             failover_retry_count: 0,
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
+            backend_failover_cumulative_delay: Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -223,9 +252,32 @@ impl OperationRetryState {
         self.failover_retry_count < self.max_failover_retries
     }
 
-    /// Whether multi-write backend-failover budget allows another 403/3 or 403/1008 retry.
+    /// Whether the backend-failover budget allows another 403/3 or 403/1008 retry.
+    ///
+    /// Bounded primarily by the cumulative delay budget
+    /// ([`BACKEND_FAILOVER_MAX_TOTAL_DELAY`]); the retry count is a defensive
+    /// safety cap.
     pub fn can_retry_backend_failover(&self) -> bool {
-        self.backend_failover_retry_count < self.max_backend_failover_retries
+        self.backend_failover_cumulative_delay < BACKEND_FAILOVER_MAX_TOTAL_DELAY
+            && self.backend_failover_retry_count < self.max_backend_failover_retries
+    }
+
+    /// Exponential-backoff delay (with jitter) for the next backend-failover retry.
+    ///
+    /// Grows as `base * factor^count`, capped at
+    /// [`BACKEND_FAILOVER_MAX_BACKOFF`], then jittered by
+    /// [`BACKEND_FAILOVER_JITTER_RATIO`] to avoid synchronized retry waves.
+    pub fn backend_failover_delay(&self) -> Duration {
+        let exponent = self
+            .backend_failover_retry_count
+            .min(BACKEND_FAILOVER_MAX_EXPONENT);
+        let scaled = BACKEND_FAILOVER_BASE_BACKOFF
+            .mul_f64(BACKEND_FAILOVER_BACKOFF_FACTOR.powi(exponent as i32));
+        let capped = scaled.min(BACKEND_FAILOVER_MAX_BACKOFF);
+        Duration::from_secs_f64(with_jitter(
+            capped.as_secs_f64(),
+            BACKEND_FAILOVER_JITTER_RATIO,
+        ))
     }
 
     /// Whether the bodyless DTX coordinator retry budget allows another attempt.
@@ -272,10 +324,12 @@ impl OperationRetryState {
         }
     }
 
-    /// Advances the dedicated backend-failover counter without touching generic failover retries.
-    pub fn advance_backend_failover(self) -> Self {
+    /// Advances the dedicated backend-failover counter without touching generic
+    /// failover retries, accumulating the scheduled `delay` toward the budget.
+    pub fn advance_backend_failover(self, delay: Duration) -> Self {
         Self {
             backend_failover_retry_count: self.backend_failover_retry_count + 1,
+            backend_failover_cumulative_delay: self.backend_failover_cumulative_delay + delay,
             session_retry_routing: SessionRetryRouting::PreferredEndpoints,
             ..self
         }
@@ -791,14 +845,74 @@ mod tests {
     }
 
     #[test]
-    fn advance_session_retry_multi_write_stays_on_preferred_endpoints() {
-        let state = OperationRetryState::initial(0, true, Vec::new(), 3, 2);
+    fn backend_failover_delay_grows_exponentially_then_caps() {
+        // Jittered bands for base 1s, factor 2, per-retry cap 15s, jitter ±25%.
+        let cases = [
+            (
+                0u32,
+                Duration::from_millis(750),
+                Duration::from_millis(1250),
+            ),
+            (1, Duration::from_millis(1500), Duration::from_millis(2500)),
+            (2, Duration::from_millis(3000), Duration::from_millis(5000)),
+            (3, Duration::from_millis(6000), Duration::from_millis(10000)),
+            // 2^4 = 16s exceeds the 15s cap, so this and all later attempts cap.
+            (
+                4,
+                Duration::from_millis(11250),
+                Duration::from_millis(18750),
+            ),
+            (
+                10,
+                Duration::from_millis(11250),
+                Duration::from_millis(18750),
+            ),
+        ];
+        for (count, lo, hi) in cases {
+            let mut state = OperationRetryState::initial(0, true, Vec::new(), 3, 1);
+            state.backend_failover_retry_count = count;
+            let delay = state.backend_failover_delay();
+            assert!(
+                delay >= lo && delay <= hi,
+                "count {count}: delay {delay:?} outside expected jitter band [{lo:?}, {hi:?}]"
+            );
+        }
+    }
 
-        let state = state.advance_session_retry();
-        assert_eq!(state.session_token_retry_count, 1);
-        assert_eq!(
-            state.session_retry_routing,
-            SessionRetryRouting::PreferredEndpoints
+    #[test]
+    fn backend_failover_gate_terminates_on_cumulative_budget() {
+        let mut state = OperationRetryState::initial(0, true, Vec::new(), 3, 1);
+        // Count is well under the safety cap, but the delay budget is spent.
+        state.backend_failover_retry_count = 1;
+        state.backend_failover_cumulative_delay = BACKEND_FAILOVER_MAX_TOTAL_DELAY;
+        assert!(
+            !state.can_retry_backend_failover(),
+            "spent cumulative delay budget must stop retries regardless of count"
         );
+
+        state.backend_failover_cumulative_delay =
+            BACKEND_FAILOVER_MAX_TOTAL_DELAY - Duration::from_secs(1);
+        assert!(
+            state.can_retry_backend_failover(),
+            "budget with headroom remaining must still allow a retry"
+        );
+    }
+
+    #[test]
+    fn advance_backend_failover_accumulates_delay_without_touching_generic_budget() {
+        let state = OperationRetryState::initial(0, true, Vec::new(), 3, 1);
+        let first = state.backend_failover_delay();
+        let state = state.advance_backend_failover(first);
+        assert_eq!(state.backend_failover_retry_count, 1);
+        assert_eq!(state.backend_failover_cumulative_delay, first);
+        assert_eq!(
+            state.failover_retry_count, 0,
+            "backend-failover retries must not consume the generic failover budget"
+        );
+
+        let second = state.backend_failover_delay();
+        let state = state.advance_backend_failover(second);
+        assert_eq!(state.backend_failover_retry_count, 2);
+        assert_eq!(state.backend_failover_cumulative_delay, first + second);
     }
 }

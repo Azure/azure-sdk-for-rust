@@ -24,10 +24,7 @@ use crate::{
 
 use std::sync::atomic::Ordering;
 
-use super::components::{
-    OperationAction, OperationRetryState, TransportOutcome, TransportResult,
-    BACKEND_FAILOVER_RETRY_INTERVAL,
-};
+use super::components::{OperationAction, OperationRetryState, TransportOutcome, TransportResult};
 #[cfg(feature = "preview_dtx")]
 use super::components::{
     DTX_COORDINATOR_RETRY_INTERVAL, DTX_INFRA_BASE_BACKOFF, DTX_INFRA_MAX_BACKOFF,
@@ -494,7 +491,8 @@ fn dtx_infra_retry_delay(attempt: u32) -> std::time::Duration {
 /// Always retries cross-region when the failover budget allows, and emits
 /// effects to (a) refresh account properties so the new write region is
 /// learned, (b) mark this endpoint unavailable, and (c) mark this partition
-/// unavailable in the current (read) region for write traffic.
+/// unavailable in the current (read) region for write traffic. Multi-write
+/// paces retries with exponential backoff bounded by the ~2 min budget.
 fn try_handle_write_forbidden(
     operation: &CosmosOperation,
     endpoint: &CosmosEndpoint,
@@ -505,14 +503,15 @@ fn try_handle_write_forbidden(
         return None;
     }
 
-    // Multi-write 403/3 gets the larger backend-failover budget; single-write uses the generic budget.
+    // Multi-write 403/3 gets the exponential backend-failover backoff; single-write uses the generic budget.
     let (new_state, delay) = if retry_state.can_use_multiple_write_locations {
         if !retry_state.can_retry_backend_failover() {
             return None;
         }
+        let delay = retry_state.backend_failover_delay();
         (
-            retry_state.clone().advance_backend_failover(),
-            Some(BACKEND_FAILOVER_RETRY_INTERVAL),
+            retry_state.clone().advance_backend_failover(delay),
+            Some(delay),
         )
     } else {
         if !retry_state.can_retry_failover() {
@@ -542,7 +541,8 @@ fn try_handle_write_forbidden(
 
 /// Handles 403/1008 DatabaseAccountNotFound for all operation types.
 ///
-/// The region no longer owns the account; refresh topology and fail over with bounded retries.
+/// The region no longer owns the account; refresh topology and fail over with
+/// exponential backoff bounded by the ~2 min backend-failover budget.
 fn try_handle_database_account_not_found(
     operation: &CosmosOperation,
     endpoint: &CosmosEndpoint,
@@ -556,8 +556,9 @@ fn try_handle_database_account_not_found(
     if !retry_state.can_retry_backend_failover() {
         return None;
     }
-    let new_state = retry_state.clone().advance_backend_failover();
-    let delay = Some(BACKEND_FAILOVER_RETRY_INTERVAL);
+    let delay = retry_state.backend_failover_delay();
+    let new_state = retry_state.clone().advance_backend_failover(delay);
+    let delay = Some(delay);
 
     let mut effects = vec![
         LocationEffect::RefreshAccountProperties,
@@ -978,6 +979,31 @@ mod tests {
         },
     };
     use azure_core::http::StatusCode;
+    use std::time::Duration;
+
+    use super::super::components::{
+        BACKEND_FAILOVER_JITTER_RATIO, BACKEND_FAILOVER_MAX_BACKOFF,
+        BACKEND_FAILOVER_MAX_TOTAL_DELAY,
+    };
+
+    /// Lower/upper bounds of the jittered first backend-failover delay (base 1s ±25%).
+    fn first_backend_failover_delay_bounds() -> (Duration, Duration) {
+        let base = Duration::from_millis(1000);
+        let lo = base.mul_f64(1.0 - BACKEND_FAILOVER_JITTER_RATIO);
+        let hi = base.mul_f64(1.0 + BACKEND_FAILOVER_JITTER_RATIO);
+        (lo, hi)
+    }
+
+    /// Asserts a delay is a plausible jittered backend-failover backoff:
+    /// positive and never above the per-retry cap plus jitter.
+    fn assert_within_backoff_cap(delay: Duration) {
+        let max = BACKEND_FAILOVER_MAX_BACKOFF.mul_f64(1.0 + BACKEND_FAILOVER_JITTER_RATIO);
+        assert!(delay > Duration::ZERO, "backoff delay must be positive");
+        assert!(
+            delay <= max,
+            "backoff delay {delay:?} must stay within capped+jitter {max:?}"
+        );
+    }
 
     #[cfg(feature = "preview_dtx")]
     use super::super::components::{MAX_DTX_COORDINATOR_RETRIES, MAX_DTX_INFRA_RETRIES};
@@ -1499,6 +1525,7 @@ mod tests {
             failover_retry_count: 1,
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
+            backend_failover_cumulative_delay: std::time::Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -1826,6 +1853,62 @@ mod tests {
     }
 
     #[test]
+    fn backend_failover_aborts_when_cumulative_delay_budget_exhausted() {
+        // Even with retry-count headroom, a spent cumulative delay budget must
+        // bubble up the original topology status rather than retry forever.
+        let op = make_create_operation();
+        let mut state = OperationRetryState::initial(0, true, Vec::new(), 3, 1);
+        state.backend_failover_retry_count = 1;
+        state.backend_failover_cumulative_delay = BACKEND_FAILOVER_MAX_TOTAL_DELAY;
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, _effects) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            http_error_status(CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND),
+            &state,
+        );
+
+        assert!(
+            matches!(action, OperationAction::Abort { .. }),
+            "spent cumulative delay budget must abort even with retry-count headroom, got {action:?}"
+        );
+    }
+
+    #[test]
+    fn backend_failover_delay_stays_within_cap_across_retries() {
+        // Walk several successive multi-write 403/3 retries through the full
+        // evaluate path; every scheduled delay must stay within the jittered cap.
+        let op = make_create_operation();
+        let mut state = OperationRetryState::initial(0, true, Vec::new(), 3, 1);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        for _ in 0..6 {
+            let (action, _effects) = evaluate_transport_result(
+                &op,
+                &endpoint,
+                http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+                &state,
+            );
+            match action {
+                OperationAction::FailoverRetry {
+                    new_state,
+                    delay: Some(delay),
+                } => {
+                    assert_within_backoff_cap(delay);
+                    state = new_state;
+                }
+                other => panic!("expected paced FailoverRetry, got {other:?}"),
+            }
+        }
+        assert_eq!(state.backend_failover_retry_count, 6);
+    }
+
+    #[test]
     fn database_account_not_found_does_not_consume_generic_failover_budget() {
         // Backend-failover retries must not consume the generic failover budget.
         let op = make_create_operation();
@@ -1845,10 +1928,15 @@ mod tests {
             OperationAction::FailoverRetry { new_state, delay } => {
                 assert_eq!(new_state.failover_retry_count, 0);
                 assert_eq!(new_state.backend_failover_retry_count, 1);
+                let delay = delay.expect("multi-write 1008 must pace retries with a backoff delay");
+                let (lo, hi) = first_backend_failover_delay_bounds();
+                assert!(
+                    delay >= lo && delay <= hi,
+                    "multi-write 1008 first retry must use ~1s exponential base (jittered), got {delay:?}"
+                );
                 assert_eq!(
-                    delay,
-                    Some(BACKEND_FAILOVER_RETRY_INTERVAL),
-                    "multi-write 1008 must pace retries with BACKEND_FAILOVER_RETRY_INTERVAL"
+                    new_state.backend_failover_cumulative_delay, delay,
+                    "scheduled delay must be accumulated toward the budget"
                 );
             }
             other => panic!("expected FailoverRetry, got {:?}", other),
@@ -1875,10 +1963,16 @@ mod tests {
             OperationAction::FailoverRetry { new_state, delay } => {
                 assert_eq!(new_state.failover_retry_count, 0);
                 assert_eq!(new_state.backend_failover_retry_count, 1);
+                let delay =
+                    delay.expect("multi-write 403/3 must pace retries with a backoff delay");
+                let (lo, hi) = first_backend_failover_delay_bounds();
+                assert!(
+                    delay >= lo && delay <= hi,
+                    "multi-write 403/3 first retry must use ~1s exponential base (jittered), got {delay:?}"
+                );
                 assert_eq!(
-                    delay,
-                    Some(BACKEND_FAILOVER_RETRY_INTERVAL),
-                    "multi-write 403/3 must pace retries with BACKEND_FAILOVER_RETRY_INTERVAL"
+                    new_state.backend_failover_cumulative_delay, delay,
+                    "scheduled delay must be accumulated toward the budget"
                 );
             }
             other => panic!("expected FailoverRetry, got {:?}", other),
@@ -1959,10 +2053,16 @@ mod tests {
             OperationAction::FailoverRetry { new_state, delay } => {
                 assert_eq!(new_state.failover_retry_count, 0);
                 assert_eq!(new_state.backend_failover_retry_count, 1);
+                let delay =
+                    delay.expect("single-write 1008 must pace retries with a backoff delay");
+                let (lo, hi) = first_backend_failover_delay_bounds();
+                assert!(
+                    delay >= lo && delay <= hi,
+                    "single-write 1008 first retry must use ~1s exponential base (jittered), got {delay:?}"
+                );
                 assert_eq!(
-                    delay,
-                    Some(BACKEND_FAILOVER_RETRY_INTERVAL),
-                    "single-write 1008 must pace retries with BACKEND_FAILOVER_RETRY_INTERVAL"
+                    new_state.backend_failover_cumulative_delay, delay,
+                    "scheduled delay must be accumulated toward the budget"
                 );
             }
             other => panic!("expected FailoverRetry, got {:?}", other),
@@ -2306,6 +2406,7 @@ mod tests {
             failover_retry_count: 1,
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
+            backend_failover_cumulative_delay: std::time::Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]

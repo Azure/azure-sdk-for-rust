@@ -773,7 +773,8 @@ async fn create_item_403_1008_retry_honors_excluded_region() {
     let mut opts = OperationOptions::default();
     opts.excluded_regions = Some(ExcludedRegions::from_iter([Region::WEST_US]));
 
-    // 120-attempt budget x 1000ms BACKEND_FAILOVER_RETRY_INTERVAL = up to ~120s wall time.
+    // Exponential backend-failover backoff is bounded by the ~120s cumulative
+    // delay budget; 180s leaves CI headroom for jitter and per-attempt latency.
     let result = tokio::time::timeout(
         std::time::Duration::from_secs(180),
         driver.execute_operation(op, opts),
@@ -834,8 +835,8 @@ async fn metadata_refresh_ignores_excluded_regions() {
     // Exclude East — the same region that hosts the global bootstrap endpoint.
     opts.excluded_regions = Some(ExcludedRegions::from_iter([Region::EAST_US]));
 
-    // 120-attempt budget x 1000ms BACKEND_FAILOVER_RETRY_INTERVAL = up
-    // to ~120s wall time on bubble-up; 180s leaves CI headroom.
+    // Exponential backend-failover backoff is bounded by the ~120s cumulative
+    // delay budget on bubble-up; 180s leaves CI headroom.
     let result = tokio::time::timeout(
         std::time::Duration::from_secs(180),
         driver.execute_operation(op, opts),
