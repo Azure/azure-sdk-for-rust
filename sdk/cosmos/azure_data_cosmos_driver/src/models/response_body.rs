@@ -180,21 +180,20 @@ where
 /// binary JSON or UTF-8 text JSON.
 ///
 /// A buffer that begins with the binary preamble (`0x80`, detected by
-/// [`is_binary`](crate::binary_json::is_binary)) is decoded by the binary-JSON
-/// codec into a [`serde_json::Value`] and then deserialized into `T`; any other
+/// [`is_binary`](crate::binary_json::is_binary)) is deserialized directly by the
+/// binary-JSON codec's native serde deserializer
+/// ([`from_slice`](crate::binary_json::from_slice)) — driving `T::deserialize`
+/// straight off the bytes with no intermediate [`serde_json::Value`]; any other
 /// buffer is parsed directly as text JSON. Because no UTF-8 text JSON document
 /// can begin with `0x80` (it is a UTF-8 continuation byte), the detection is
-/// unambiguous and the text path is byte-for-byte unchanged — the binary branch
-/// stays inert until the service negotiates binary responses. `message` is the
+/// unambiguous and the text path is byte-for-byte unchanged. `message` is the
 /// error context attached on failure.
 fn deserialize_response<T: DeserializeOwned>(
     bytes: &[u8],
     message: &'static str,
 ) -> crate::error::Result<T> {
     if crate::binary_json::is_binary(bytes) {
-        let value =
-            crate::binary_json::decode(bytes).map_err(|e| invalid_body_error(message, e))?;
-        serde_json::from_value(value).map_err(|e| invalid_body_error(message, e))
+        crate::binary_json::from_slice(bytes).map_err(|e| invalid_body_error(message, e))
     } else {
         serde_json::from_slice(bytes).map_err(|e| invalid_body_error(message, e))
     }

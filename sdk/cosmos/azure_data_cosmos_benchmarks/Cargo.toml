@@ -21,6 +21,10 @@ harness = false
 name = "binary_encode"
 harness = false
 
+[[bench]]
+name = "binary_decode"
+harness = false
+
 [dependencies]
 async-trait.workspace = true
 azure_core.workspace = true
