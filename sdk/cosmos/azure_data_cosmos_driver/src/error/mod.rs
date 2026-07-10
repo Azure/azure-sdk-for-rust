@@ -1881,12 +1881,12 @@ mod tests {
              Caused by:\n  \
              0: 408/20008 (ClientOperationTimeout): inner timeout",
         );
-        // The Debug variant renders diagnostics via `{diag:?}` (derived
-        // `Debug` on `DiagnosticsContext`), so the section is the
-        // struct-style dump starting with `DiagnosticsContext {`.
+        serde_json::from_str::<serde_json::Value>(diag_section).unwrap_or_else(|e| {
+            panic!("Diagnostics section must be valid JSON: {e}\n{diag_section}")
+        });
         assert!(
-            diag_section.starts_with("DiagnosticsContext {"),
-            "Diagnostics section must start with `DiagnosticsContext {{`, got: {diag_section}",
+            !diag_section.contains("DiagnosticsContext {"),
+            "Diagnostics section must be JSON, not a Rust Debug dump: {diag_section}",
         );
         assert!(
             !rendered.contains("Stack backtrace:"),
@@ -1924,11 +1924,12 @@ mod tests {
             interposed.is_empty() || interposed.starts_with("\n\nStack backtrace:\n"),
             "interposed content between source chain and diagnostics must be empty or a Stack backtrace block, got: {interposed}",
         );
-        // Alternate Debug renders diagnostics via `{diag:#?}` — the
-        // pretty-printed struct dump, still beginning with the type name.
+        serde_json::from_str::<serde_json::Value>(diag_section).unwrap_or_else(|e| {
+            panic!("Diagnostics section must be valid JSON: {e}\n{diag_section}")
+        });
         assert!(
-            diag_section.starts_with("DiagnosticsContext {"),
-            "Diagnostics section must start with `DiagnosticsContext {{`, got: {diag_section}",
+            !diag_section.contains("DiagnosticsContext {"),
+            "Diagnostics section must be JSON, not a Rust Debug dump: {diag_section}",
         );
     }
 

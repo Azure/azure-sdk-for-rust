@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added runtime diagnostics output configuration via `CosmosRuntimeBuilder::with_diagnostics_options`, including the env-backed `AZURE_COSMOS_DIAGNOSTICS_DEFAULT_VERBOSITY` option. The built-in default is now summary diagnostics JSON. ([#4733](https://github.com/Azure/azure-sdk-for-rust/pull/4733))
 - Gateway 2.0 transport (a regional proxy forwarding RNTBD-over-HTTP/2) is selected automatically when the account advertises thin-client endpoints and the connectivity probe confirms them. Transport selection is fully server-driven, with HTTP/2 as the only client-side prerequisite. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319))
 - HTTP 449 (RetryWith) responses are now retried transparently in-region with exponential backoff, so callers no longer see spurious 449 errors from concurrent writes. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319))
 - `ReadConsistencyStrategy` is now honored across Gateway V1 and V2 reads. Adds the `LatestCommitted` variant (a quorum read independent of the account default); `GlobalStrong` is rejected with `BadRequest` unless the account default is `Strong`. Per-request strategy overrides the client default. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319))

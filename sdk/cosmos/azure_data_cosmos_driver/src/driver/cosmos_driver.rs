@@ -567,7 +567,7 @@ impl CosmosDriver {
     ) -> (DiagnosticsContextBuilder, TransportSecurity) {
         let mut diagnostics = DiagnosticsContextBuilder::new(
             activity_id,
-            Arc::new(crate::options::DiagnosticsOptions::default()),
+            Arc::clone(runtime.diagnostics_options_arc()),
         );
         diagnostics.set_cpu_monitor(runtime.cpu_monitor().clone());
         diagnostics.set_machine_id(Arc::clone(runtime.machine_id()));
