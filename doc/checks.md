@@ -92,7 +92,7 @@ Checks dependency bans, licenses, and sources. Advisories are handled separately
 
 ```bash
 cargo install cargo-deny
-cargo deny check bans licenses sources
+cargo deny --all-features check bans licenses sources
 ```
 
 ### Semver
