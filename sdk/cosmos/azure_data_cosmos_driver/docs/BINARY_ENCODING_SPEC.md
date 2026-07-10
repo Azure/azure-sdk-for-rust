@@ -215,17 +215,17 @@ sequenceDiagram
     participant DE as binary_json::from_slice
 
     App->>CC: create_item(pk, id, item: T)
-    CC->>SER: to_vec(&item)
+    CC->>SER: to_vec(item)
     Note over SER: T::serialize drives BinarySerializer<br/>straight to 0x80… bytes (no Value)
-    SER-->>CC: Vec<u8> (binary body)
+    SER-->>CC: binary body bytes
     CC->>DRV: CosmosOperation.with_body(bytes)<br/>+ supported-serialization-formats header
     DRV->>SVC: HTTP POST (Content-Type: application/json)
     SVC-->>DRV: response body (text or 0x80 binary)
-    DRV-->>CC: raw Vec<u8>
+    DRV-->>CC: raw body bytes
 
-    App->>CC: read_item(pk, id) → into_model::<T>()
+    App->>CC: read_item(pk, id) then into_model
     CC->>DE: deserialize_response(bytes)
-    Note over DE: is_binary(bytes)?<br/>0x80 ⇒ from_slice::<T> (native, no Value;<br/>exotic forms via decode → Value fallback)<br/>else ⇒ serde_json::from_slice::<T>
+    Note over DE: is_binary(bytes)?<br/>0x80 then from_slice into T (native, no Value;<br/>exotic forms via decode then Value fallback)<br/>else serde_json::from_slice into T
     DE-->>CC: T
     CC-->>App: ItemResponse / T
 ```
