@@ -5,9 +5,14 @@
 
 #![allow(clippy::large_futures)]
 
-use std::{borrow::Cow, error::Error, num::NonZeroU32, sync::Arc, time::Duration};
+use std::{
+    borrow::Cow, collections::BTreeSet, error::Error, num::NonZeroU32, sync::Arc, time::Duration,
+};
 
-use azure_core::{credentials::Secret, http::StatusCode};
+use azure_core::{
+    credentials::Secret,
+    http::{Method, Request, StatusCode, Url},
+};
 use azure_data_cosmos::{
     feed::{ContinuationToken, FeedRange},
     models::{ContainerProperties, PartitionKeyDefinition, PartitionKeyVersion},
@@ -21,11 +26,14 @@ use azure_data_cosmos::{
 use azure_data_cosmos_driver::{
     driver::CosmosDriverRuntime,
     in_memory_emulator::{
-        ConsistencyLevel, InMemoryEmulatorHttpClient, VirtualAccountConfig, VirtualRegion,
+        ConsistencyLevel, ContainerConfig, InMemoryEmulatorHttpClient, VirtualAccountConfig,
+        VirtualRegion,
     },
+    models::partition_key_range::PartitionKeyRange as DriverPartitionKeyRange,
     models::{
         AccountReference as DriverAccountReference, ConnectionString,
         ContainerReference as DriverContainerReference, CosmosOperation, CosmosResponseHeaders,
+        EffectivePartitionKey,
     },
     options::{DriverOptions, OperationOptions as DriverOperationOptions},
     CosmosDriver,
@@ -49,6 +57,7 @@ struct Backend {
 
 struct QueryComparisonHarness {
     emulator: Backend,
+    emulator_http: Arc<InMemoryEmulatorHttpClient>,
     emulator_store: Arc<azure_data_cosmos_driver::in_memory_emulator::EmulatorStore>,
     external: Option<Backend>,
     run_id: String,
@@ -56,6 +65,14 @@ struct QueryComparisonHarness {
 
 impl QueryComparisonHarness {
     async fn setup() -> Result<Self, Box<dyn Error>> {
+        Self::setup_with_external(true).await
+    }
+
+    async fn setup_in_memory_only() -> Result<Self, Box<dyn Error>> {
+        Self::setup_with_external(false).await
+    }
+
+    async fn setup_with_external(include_external: bool) -> Result<Self, Box<dyn Error>> {
         let _ = tracing_subscriber::fmt::fmt()
             .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
             .try_init();
@@ -99,8 +116,13 @@ impl QueryComparisonHarness {
                 client: emulator_client,
                 driver: emulator_driver,
             },
+            emulator_http: Arc::clone(&emulator),
             emulator_store,
-            external: resolve_external_backend().await?,
+            external: if include_external {
+                resolve_external_backend().await?
+            } else {
+                None
+            },
             run_id,
         })
     }
@@ -262,13 +284,23 @@ impl FixtureKind {
                 json!({"id":"hash-a-1","pk":"pk-a","value":1}),
                 json!({"id":"hash-a-2","pk":"pk-a","value":2}),
                 json!({"id":"hash-b-0","pk":"pk-b","value":10}),
+                json!({"id":"hash-b-1","pk":"pk-b","value":11}),
                 json!({"id":"hash-c-0","pk":"pk-c","value":20}),
+                json!({"id":"hash-d-0","pk":"pk-d","value":30}),
+                json!({"id":"hash-d-1","pk":"pk-d","value":31}),
+                json!({"id":"hash-e-0","pk":"pk-e","value":40}),
             ],
             FixtureKind::Hpk => vec![
                 json!({"id":"hpk-a-u1-s1","tenant":"tenant-a","user":"user-1","session":"session-1","value":0}),
                 json!({"id":"hpk-a-u1-s2","tenant":"tenant-a","user":"user-1","session":"session-2","value":1}),
                 json!({"id":"hpk-a-u2-s1","tenant":"tenant-a","user":"user-2","session":"session-1","value":2}),
+                json!({"id":"hpk-a-u2-s2","tenant":"tenant-a","user":"user-2","session":"session-2","value":3}),
+                json!({"id":"hpk-a-u3-s1","tenant":"tenant-a","user":"user-3","session":"session-1","value":4}),
+                json!({"id":"hpk-a-u3-s2","tenant":"tenant-a","user":"user-3","session":"session-2","value":5}),
+                json!({"id":"hpk-a-u4-s1","tenant":"tenant-a","user":"user-4","session":"session-1","value":6}),
                 json!({"id":"hpk-b-u1-s1","tenant":"tenant-b","user":"user-1","session":"session-1","value":10}),
+                json!({"id":"hpk-b-u2-s1","tenant":"tenant-b","user":"user-2","session":"session-1","value":11}),
+                json!({"id":"hpk-c-u1-s1","tenant":"tenant-c","user":"user-1","session":"session-1","value":20}),
             ],
         }
     }
@@ -288,14 +320,40 @@ async fn provision_fixture(
     db_name: &str,
     fixture: FixtureKind,
 ) -> Result<FixtureHandles, Box<dyn Error>> {
+    provision_fixture_with_topology(harness, db_name, fixture, None, &[]).await
+}
+
+async fn provision_fixture_with_topology(
+    harness: &QueryComparisonHarness,
+    db_name: &str,
+    fixture: FixtureKind,
+    container_config: Option<ContainerConfig>,
+    split_epks: &[EffectivePartitionKey],
+) -> Result<FixtureHandles, Box<dyn Error>> {
     let pk_definition = fixture.partition_key_definition();
     let container_name = fixture.container_name();
     harness.emulator_store.create_database(db_name);
-    harness
-        .emulator_store
-        .create_container(db_name, container_name, pk_definition.clone());
+    if let Some(config) = container_config {
+        harness.emulator_store.create_container_with_config(
+            db_name,
+            container_name,
+            pk_definition.clone(),
+            config,
+        );
+    } else {
+        harness
+            .emulator_store
+            .create_container(db_name, container_name, pk_definition.clone());
+    }
 
     create_database_if_needed(&harness.emulator.client, db_name).await?;
+    let emulator_driver_container = harness
+        .emulator
+        .driver
+        .resolve_container(db_name, container_name)
+        .await?;
+    split_physical_partitions_at_epks(harness, db_name, container_name, split_epks).await?;
+
     if let Some(external) = &harness.external {
         create_database_if_needed(&external.client, db_name).await?;
         create_container_if_needed(
@@ -325,11 +383,6 @@ async fn provision_fixture(
         seed_documents(container, fixture, &docs).await?;
     }
 
-    let emulator_driver_container = harness
-        .emulator
-        .driver
-        .resolve_container(db_name, container_name)
-        .await?;
     let external_driver_container = if let Some(external) = &harness.external {
         Some(
             external
@@ -349,6 +402,83 @@ async fn provision_fixture(
         documents: docs,
         pk_definition,
     })
+}
+
+async fn split_physical_partitions_at_epks(
+    harness: &QueryComparisonHarness,
+    db_name: &str,
+    container_name: &str,
+    split_epks: &[EffectivePartitionKey],
+) -> Result<(), Box<dyn Error>> {
+    for split_epk in split_epks {
+        let ranges =
+            read_emulator_physical_partition_ranges(harness, db_name, container_name).await?;
+        if ranges
+            .iter()
+            .any(|range| range.min_inclusive == *split_epk || range.max_exclusive == *split_epk)
+        {
+            continue;
+        }
+        let partition_id = partition_containing_split_epk(&ranges, split_epk).ok_or_else(|| {
+            std::io::Error::other(format!(
+                "split EPK {} is not strictly inside an existing physical partition",
+                split_epk.to_hex()
+            ))
+        })?;
+        harness.emulator_store.split_partition_at_epk(
+            db_name,
+            container_name,
+            partition_id,
+            split_epk.clone(),
+            Duration::ZERO,
+        );
+        harness
+            .emulator_store
+            .wait_for_split(db_name, container_name, partition_id)
+            .await;
+    }
+    Ok(())
+}
+
+async fn read_emulator_physical_partition_ranges(
+    harness: &QueryComparisonHarness,
+    db_name: &str,
+    container_name: &str,
+) -> Result<Vec<DriverPartitionKeyRange>, Box<dyn Error>> {
+    let url = format!("{EMULATOR_GATEWAY_URL}/dbs/{db_name}/colls/{container_name}/pkranges");
+    let request = Request::new(Url::parse(&url)?, Method::Get);
+    let response = harness.emulator_http.execute_request(&request).await?;
+    let status = response.status();
+    let raw = response.try_into_raw_response().await?;
+    if status != StatusCode::Ok {
+        return Err(std::io::Error::other(format!(
+            "reading pkranges returned {status:?}: {}",
+            String::from_utf8_lossy(raw.body().as_ref())
+        ))
+        .into());
+    }
+    let body: Value = serde_json::from_slice(raw.body().as_ref())?;
+    let ranges = body["PartitionKeyRanges"].as_array().ok_or_else(|| {
+        std::io::Error::other(format!(
+            "pkranges response did not contain PartitionKeyRanges: {body}"
+        ))
+    })?;
+    let mut ranges = ranges
+        .iter()
+        .map(|range| serde_json::from_value::<DriverPartitionKeyRange>(range.clone()))
+        .collect::<Result<Vec<_>, _>>()?;
+    ranges.sort_by(|left, right| left.min_inclusive.cmp(&right.min_inclusive));
+    Ok(ranges)
+}
+
+fn partition_containing_split_epk(
+    ranges: &[DriverPartitionKeyRange],
+    split_epk: &EffectivePartitionKey,
+) -> Option<u32> {
+    ranges
+        .iter()
+        .find(|range| range.min_inclusive < *split_epk && *split_epk < range.max_exclusive)
+        .and_then(|range| range.id.parse().ok())
 }
 
 async fn create_database_if_needed(
@@ -471,6 +601,75 @@ async fn query_results_plans_and_resume_paths_match() -> Result<(), Box<dyn Erro
     Ok(())
 }
 
+#[tokio::test]
+async fn query_results_match_across_physical_partition_topologies() -> Result<(), Box<dyn Error>> {
+    let harness = QueryComparisonHarness::setup_in_memory_only().await?;
+
+    let hash_single = provision_fixture_with_topology(
+        &harness,
+        &format!("{}-hash-single", harness.database_name()),
+        FixtureKind::HashV2,
+        Some(ContainerConfig::new().with_partition_count(1).build()?),
+        &[],
+    )
+    .await?;
+    run_topology_scenarios(
+        &harness,
+        &hash_single,
+        &hash_scenarios(&hash_single.pk_definition)?,
+    )
+    .await?;
+
+    let hash_multi = provision_fixture_with_topology(
+        &harness,
+        &format!("{}-hash-multi", harness.database_name()),
+        FixtureKind::HashV2,
+        Some(ContainerConfig::new().with_partition_count(4).build()?),
+        &[],
+    )
+    .await?;
+    run_topology_scenarios(
+        &harness,
+        &hash_multi,
+        &hash_scenarios(&hash_multi.pk_definition)?,
+    )
+    .await?;
+
+    let hpk_single = provision_fixture_with_topology(
+        &harness,
+        &format!("{}-hpk-single", harness.database_name()),
+        FixtureKind::Hpk,
+        Some(ContainerConfig::new().with_partition_count(1).build()?),
+        &[],
+    )
+    .await?;
+    run_topology_scenarios(
+        &harness,
+        &hpk_single,
+        &hpk_scenarios(&hpk_single.pk_definition)?,
+    )
+    .await?;
+
+    let hpk_split_epks = hpk_tenant_a_split_epks(&FixtureKind::Hpk.partition_key_definition());
+    let hpk_split = provision_fixture_with_topology(
+        &harness,
+        &format!("{}-hpk-split", harness.database_name()),
+        FixtureKind::Hpk,
+        Some(ContainerConfig::new().with_partition_count(1).build()?),
+        &hpk_split_epks,
+    )
+    .await?;
+    assert_tenant_a_level2_spans_multiple_physical_partitions(&harness, &hpk_split).await?;
+    run_topology_scenarios(
+        &harness,
+        &hpk_split,
+        &hpk_scenarios(&hpk_split.pk_definition)?,
+    )
+    .await?;
+
+    Ok(())
+}
+
 fn hash_scenarios(pk_definition: &PartitionKeyDefinition) -> Result<Vec<Scenario>, Box<dyn Error>> {
     let pk_range = FeedRange::for_partition(PartitionKey::from("pk-a"), pk_definition);
     Ok(vec![
@@ -478,7 +677,10 @@ fn hash_scenarios(pk_definition: &PartitionKeyDefinition) -> Result<Vec<Scenario
             name: "hash_full_container",
             query: Query::from("SELECT * FROM c"),
             scope: FeedScope::full_container(),
-            expected_ids: &["hash-a-0", "hash-a-1", "hash-a-2", "hash-b-0", "hash-c-0"],
+            expected_ids: &[
+                "hash-a-0", "hash-a-1", "hash-a-2", "hash-b-0", "hash-b-1", "hash-c-0", "hash-d-0",
+                "hash-d-1", "hash-e-0",
+            ],
             projection: Projection::Full,
             compare_external_results: true,
             compare_external_page_headers: false,
@@ -554,7 +756,15 @@ fn hpk_scenarios(pk_definition: &PartitionKeyDefinition) -> Result<Vec<Scenario>
             query: Query::from("SELECT * FROM c WHERE c.tenant = @tenant")
                 .with_parameter("@tenant", "tenant-a")?,
             scope: FeedScope::full_container(),
-            expected_ids: &["hpk-a-u1-s1", "hpk-a-u1-s2", "hpk-a-u2-s1"],
+            expected_ids: &[
+                "hpk-a-u1-s1",
+                "hpk-a-u1-s2",
+                "hpk-a-u2-s1",
+                "hpk-a-u2-s2",
+                "hpk-a-u3-s1",
+                "hpk-a-u3-s2",
+                "hpk-a-u4-s1",
+            ],
             projection: Projection::Full,
             compare_external_results: false,
             compare_external_page_headers: false,
@@ -564,7 +774,15 @@ fn hpk_scenarios(pk_definition: &PartitionKeyDefinition) -> Result<Vec<Scenario>
             query: Query::from("SELECT * FROM c WHERE c.tenant = @tenant")
                 .with_parameter("@tenant", "tenant-a")?,
             scope: FeedScope::range(tenant_range),
-            expected_ids: &["hpk-a-u1-s1", "hpk-a-u1-s2", "hpk-a-u2-s1"],
+            expected_ids: &[
+                "hpk-a-u1-s1",
+                "hpk-a-u1-s2",
+                "hpk-a-u2-s1",
+                "hpk-a-u2-s2",
+                "hpk-a-u3-s1",
+                "hpk-a-u3-s2",
+                "hpk-a-u4-s1",
+            ],
             projection: Projection::Full,
             compare_external_results: false,
             compare_external_page_headers: false,
@@ -588,7 +806,15 @@ fn hpk_scenarios(pk_definition: &PartitionKeyDefinition) -> Result<Vec<Scenario>
                 PartitionKey::from("tenant-a"),
                 pk_definition,
             )?),
-            expected_ids: &["hpk-a-u1-s1", "hpk-a-u1-s2", "hpk-a-u2-s1"],
+            expected_ids: &[
+                "hpk-a-u1-s1",
+                "hpk-a-u1-s2",
+                "hpk-a-u2-s1",
+                "hpk-a-u2-s2",
+                "hpk-a-u3-s1",
+                "hpk-a-u3-s2",
+                "hpk-a-u4-s1",
+            ],
             projection: Projection::Fields(&["id", "tenant"]),
             compare_external_results: false,
             compare_external_page_headers: false,
@@ -605,6 +831,200 @@ fn explicit_feed_range_for_partition(
         logical.min_inclusive().clone(),
         logical.max_exclusive().clone(),
     )?)
+}
+
+fn hpk_tenant_a_split_epks(pk_definition: &PartitionKeyDefinition) -> Vec<EffectivePartitionKey> {
+    let tenant_range = FeedRange::for_partition(PartitionKey::from("tenant-a"), pk_definition);
+    let mut user_boundaries: Vec<_> = ["user-1", "user-2", "user-3", "user-4"]
+        .into_iter()
+        .map(|user| {
+            FeedRange::for_partition(PartitionKey::from(("tenant-a", user)), pk_definition)
+                .min_inclusive()
+                .clone()
+        })
+        .collect();
+    user_boundaries.sort();
+    vec![
+        tenant_range.min_inclusive().clone(),
+        tenant_range.max_exclusive().clone(),
+        user_boundaries[user_boundaries.len() / 2].clone(),
+    ]
+}
+
+async fn assert_tenant_a_level2_spans_multiple_physical_partitions(
+    harness: &QueryComparisonHarness,
+    fixture: &FixtureHandles,
+) -> Result<(), Box<dyn Error>> {
+    let physical_ranges = read_emulator_physical_partition_ranges(
+        harness,
+        fixture.emulator_driver_container.database_name(),
+        fixture.emulator_driver_container.name(),
+    )
+    .await?;
+    let tenant_range =
+        FeedRange::for_partition(PartitionKey::from("tenant-a"), &fixture.pk_definition);
+    let tenant_ranges =
+        physical_partition_ids_overlapping_feed_range(&physical_ranges, &tenant_range);
+    assert_eq!(
+        2,
+        tenant_ranges.len(),
+        "tenant-a prefix should span exactly the two physical partitions split inside the top-level HPK"
+    );
+
+    let mut level2_partition_ids = BTreeSet::new();
+    for user in ["user-1", "user-2", "user-3", "user-4"] {
+        let user_range = FeedRange::for_partition(
+            PartitionKey::from(("tenant-a", user)),
+            &fixture.pk_definition,
+        );
+        level2_partition_ids.extend(physical_partition_ids_overlapping_feed_range(
+            &physical_ranges,
+            &user_range,
+        ));
+    }
+    assert!(
+        level2_partition_ids.len() > 1,
+        "tenant-a level-2 prefixes should land on different physical partitions"
+    );
+    Ok(())
+}
+
+#[derive(Clone)]
+struct EpkRangeBounds {
+    min: EffectivePartitionKey,
+    max: EffectivePartitionKey,
+}
+
+impl EpkRangeBounds {
+    fn from_feed_range(range: &FeedRange) -> Self {
+        Self {
+            min: range.min_inclusive().clone(),
+            max: range.max_exclusive().clone(),
+        }
+    }
+
+    fn from_partition_key_range(range: &DriverPartitionKeyRange) -> Self {
+        Self {
+            min: range.min_inclusive.clone(),
+            max: range.max_exclusive.clone(),
+        }
+    }
+}
+
+fn physical_partition_ids_overlapping_feed_range(
+    physical_ranges: &[DriverPartitionKeyRange],
+    feed_range: &FeedRange,
+) -> BTreeSet<String> {
+    let target = EpkRangeBounds::from_feed_range(feed_range);
+    physical_ranges
+        .iter()
+        .filter(|physical_range| {
+            ranges_overlap(
+                &EpkRangeBounds::from_partition_key_range(physical_range),
+                &target,
+            )
+        })
+        .map(|physical_range| physical_range.id.clone())
+        .collect()
+}
+
+async fn expected_touched_partition_ids(
+    harness: &QueryComparisonHarness,
+    fixture: &FixtureHandles,
+    scenario: &Scenario,
+) -> Result<BTreeSet<String>, Box<dyn Error>> {
+    let plan = fetch_query_plan(
+        &harness.emulator.driver,
+        &fixture.emulator_driver_container,
+        &scenario.query,
+    )
+    .await?;
+    let query_ranges = query_plan_ranges(&plan)?;
+    let scope_range = scope_feed_range(&scenario.scope, &fixture.pk_definition);
+    let scope_bounds = EpkRangeBounds::from_feed_range(&scope_range);
+    let physical_ranges = read_emulator_physical_partition_ranges(
+        harness,
+        fixture.emulator_driver_container.database_name(),
+        fixture.emulator_driver_container.name(),
+    )
+    .await?;
+
+    let mut expected = BTreeSet::new();
+    for physical_range in physical_ranges {
+        let physical_bounds = EpkRangeBounds::from_partition_key_range(&physical_range);
+        if query_ranges.iter().any(|query_bounds| {
+            ranges_overlap(query_bounds, &scope_bounds)
+                && ranges_overlap(&physical_bounds, query_bounds)
+                && ranges_overlap(&physical_bounds, &scope_bounds)
+        }) {
+            expected.insert(physical_range.id);
+        }
+    }
+    Ok(expected)
+}
+
+fn query_plan_ranges(plan: &Value) -> Result<Vec<EpkRangeBounds>, Box<dyn Error>> {
+    let ranges = plan["queryRanges"].as_array().ok_or_else(|| {
+        std::io::Error::other(format!("query plan did not contain queryRanges: {plan}"))
+    })?;
+    ranges
+        .iter()
+        .map(|range| {
+            let min = range["min"].as_str().ok_or_else(|| {
+                std::io::Error::other(format!("query range missing min: {range}"))
+            })?;
+            let max = range["max"].as_str().ok_or_else(|| {
+                std::io::Error::other(format!("query range missing max: {range}"))
+            })?;
+            Ok(EpkRangeBounds {
+                min: EffectivePartitionKey::from(min),
+                max: EffectivePartitionKey::from(max),
+            })
+        })
+        .collect()
+}
+
+fn scope_feed_range(scope: &FeedScope, pk_definition: &PartitionKeyDefinition) -> FeedRange {
+    match scope.clone() {
+        FeedScope::Partition(partition_key) => {
+            FeedRange::for_partition(partition_key, pk_definition)
+        }
+        FeedScope::Range(range) => range,
+        _ => FeedRange::full(),
+    }
+}
+
+fn ranges_overlap(left: &EpkRangeBounds, right: &EpkRangeBounds) -> bool {
+    match (left.min == left.max, right.min == right.max) {
+        (true, true) => left.min == right.min,
+        (true, false) => right.min <= left.min && left.min < right.max,
+        (false, true) => left.min <= right.min && right.min < left.max,
+        (false, false) => left.min < right.max && right.min < left.max,
+    }
+}
+
+fn assert_touched_partition_ids(
+    scenario: &Scenario,
+    mode: &str,
+    headers: &[CosmosResponseHeaders],
+    expected: &BTreeSet<String>,
+) -> Result<(), Box<dyn Error>> {
+    let mut actual = BTreeSet::new();
+    for (page_index, headers) in headers.iter().enumerate() {
+        let partition_id = headers.partition_key_range_id.as_ref().ok_or_else(|| {
+            std::io::Error::other(format!(
+                "scenario={} mode={mode} page={page_index} did not return x-ms-documentdb-partitionkeyrangeid",
+                scenario.name
+            ))
+        })?;
+        actual.insert(partition_id.clone());
+    }
+    assert_eq!(
+        expected, &actual,
+        "{} {mode} touched physical partitions",
+        scenario.name
+    );
+    Ok(())
 }
 
 async fn run_scenarios(
@@ -670,6 +1090,52 @@ async fn run_scenarios(
                 &emulator_resume.headers,
             );
         }
+    }
+    Ok(())
+}
+
+async fn run_topology_scenarios(
+    harness: &QueryComparisonHarness,
+    fixture: &FixtureHandles,
+    scenarios: &[Scenario],
+) -> Result<(), Box<dyn Error>> {
+    for scenario in scenarios {
+        let expected = expected_items(
+            &fixture.documents,
+            scenario.expected_ids,
+            scenario.projection,
+        );
+        let expected_partition_ids =
+            expected_touched_partition_ids(harness, fixture, scenario).await?;
+
+        let collect = drain_collect(
+            &fixture.emulator_container,
+            scenario,
+            "in-memory-topology",
+            "collect",
+        )
+        .await?;
+        assert_eq!(
+            expected, collect.items,
+            "{} topology collect",
+            scenario.name
+        );
+        assert_touched_partition_ids(
+            scenario,
+            "collect",
+            &collect.headers,
+            &expected_partition_ids,
+        )?;
+
+        let resume = drain_resume(
+            &fixture.emulator_container,
+            scenario,
+            "in-memory-topology",
+            "resume",
+        )
+        .await?;
+        assert_eq!(expected, resume.items, "{} topology resume", scenario.name);
+        assert_touched_partition_ids(scenario, "resume", &resume.headers, &expected_partition_ids)?;
     }
     Ok(())
 }
