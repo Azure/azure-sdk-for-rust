@@ -4,20 +4,26 @@ This document describes the design and phased implementation plan for **Cosmos
 binary JSON encoding** in the Rust Cosmos DB stack (`azure_data_cosmos` and
 `azure_data_cosmos_driver`).
 
-> **Status:** Implemented (encode + decode). The **decoder** and the **native
-> serde serializer** ([`binary_json::to_vec`]) are the two production paths and
-> are wired in: responses auto-detect the `0x80` preamble and decode, and item
-> writes serialize `T: Serialize` straight to binary via `to_vec` with no
-> intermediate `serde_json::Value`. The deferred items (patch / batch / bulk,
-> and a native serde *Deserializer*) are noted inline. Open questions are
-> tracked in [§12](#12-open-questions).
+> **Status:** Implemented (encode + decode). The **native serde serializer**
+> ([`binary_json::to_vec`]) and the **native serde deserializer**
+> ([`binary_json::from_slice`]) are the two production paths and are wired in:
+> item writes serialize `T: Serialize` straight to binary via `to_vec` with no
+> intermediate `serde_json::Value`, and responses auto-detect the `0x80`
+> preamble and deserialize straight into `T` via `from_slice` (again with no
+> intermediate `Value` on the common path). The deferred items (patch / batch /
+> bulk) are noted inline. Open questions are tracked in
+> [§12](#12-open-questions).
 >
-> **Note on `encode(&Value)`.** An earlier prototype went `T → serde_json::Value
-> → encode(&Value)` (referred to as "v1" in the git history). That intermediate
-> step is **no longer on the write path** — the SDK calls the native
-> [`binary_json::to_vec`] serializer directly. The `encode(&Value)` function is
-> retained only as an internal parity/round-trip test oracle and is not
-> described as a shipping strategy below.
+> **Note on `encode(&Value)` / `decode(&[u8]) -> Value`.** Earlier prototypes
+> routed through `serde_json::Value` on both sides (`T → Value → encode` on
+> write, `decode → Value → from_value` on read). Neither is on the hot path
+> anymore — the SDK calls the native [`binary_json::to_vec`] /
+> [`binary_json::from_slice`] directly. The `Value`-based
+> [`encode`](#81-serializer-native-minimal-valid--t-serialize--binary) and
+> [`decode`](#82-decoder-complete--binary--value-reference-oracle--fallback)
+> functions are retained as reference oracles (parity tests, fuzzing corpus)
+> and, for `decode`, as the fallback the deserializer uses for rare exotic wire
+> forms (see [§8.3](#83-deserializer-native--binary--t)).
 
 ## 1. Overview
 
@@ -79,11 +85,12 @@ introduced binary encoding for point operations:
   `EnableBinaryResponseOnPointOperations` request option.
 - Patch, batch, and bulk were explicitly **out of scope**.
 
-The Rust design adopts the same enablement model but goes **straight to a
-native serde serializer** on the write path (rather than a text→binary
-transcoder): `T: Serialize` is encoded directly to Cosmos binary JSON via
-[`binary_json::to_vec`], with no intermediate text or `serde_json::Value`. Scope
-is also extended to query.
+The Rust design adopts the same enablement model but goes **straight to native
+serde codecs** on both sides (rather than text↔binary transcoders):
+`T: Serialize` is encoded directly to Cosmos binary JSON via
+[`binary_json::to_vec`], and binary responses are deserialized straight into
+`T: Deserialize` via [`binary_json::from_slice`], with no intermediate text or
+`serde_json::Value` on the common path. Scope is also extended to query.
 
 ## 4. The Cosmos binary JSON format
 
@@ -154,9 +161,10 @@ table; the serializer is comparatively small.
 ## 6. Rust ser/de architecture
 
 The write path serializes `T` straight to binary via the native serde
-serializer; the response path auto-detects the `0x80` preamble and decodes. The
-schema-agnostic driver stays a byte passthrough in both directions — it only
-emits the negotiation header.
+serializer; the response path auto-detects the `0x80` preamble and deserializes
+straight into `T` via the native serde deserializer. The schema-agnostic driver
+stays a byte passthrough in both directions — it only emits the negotiation
+header.
 
 ```mermaid
 flowchart LR
@@ -167,15 +175,15 @@ flowchart LR
   subgraph DRV["azure_data_cosmos_driver (schema-agnostic)"]
     OP["models/cosmos_operation.rs<br/>body: Vec&lt;u8&gt; (0x80…)"]
     HDR["driver/transport/cosmos_headers.rs<br/>x-ms-cosmos-supported-serialization-formats"]
-    DRB["models/response_body.rs<br/>deserialize_response:<br/>is_binary? decode(bytes) : from_slice"]
+    DRB["models/response_body.rs<br/>deserialize_response:<br/>is_binary? from_slice::&lt;T&gt; : serde_json::from_slice"]
   end
   subgraph CODEC["binary_json codec"]
     SER["ser::to_vec<br/>(serde::Serializer)"]
-    DEC["reader::decode<br/>(binary → Value)"]
+    DE["de::from_slice<br/>(serde::Deserializer)"]
   end
   CI --> SER --> OP --> HDR
   HDR -->|HTTP| SVC[(Cosmos DB)]
-  SVC --> DRB --> DEC --> RB
+  SVC --> DRB --> DE --> RB
 ```
 
 Key facts (verified against the current tree):
@@ -184,13 +192,14 @@ Key facts (verified against the current tree):
   calls `binary_json::to_vec(item)` when binary is enabled and
   `serde_json::to_vec(item)` otherwise. `create_item` / `replace_item` /
   `upsert_item` all route through it.
-- **One decode choke point.** Reads, write responses, **and** query all funnel
-  through `models/response_body.rs::deserialize_response`, which inspects the
-  first byte (`is_binary`) and routes binary buffers through `decode` and text
-  through `serde_json::from_slice`. Query parses the whole `{"Documents":[…]}`
-  envelope as `FeedBody<T>`, which itself lands on the same boundary — so all
-  three response shapes are covered at once.
-- **Driver stays passthrough.** The schema-agnostic driver never decodes item
+- **One deserialize choke point.** Reads, write responses, **and** query all
+  funnel through `models/response_body.rs::deserialize_response`, which inspects
+  the first byte (`is_binary`) and routes binary buffers through the native
+  `binary_json::from_slice::<T>` and text through `serde_json::from_slice`.
+  Query parses the whole `{"Documents":[…]}` envelope as `FeedBody<T>`, which
+  itself lands on the same boundary — so all three response shapes are covered
+  at once.
+- **Driver stays passthrough.** The schema-agnostic driver never parses item
   bodies; its only encode-side change is emitting the negotiation header. The
   lone body-parsing exception is the patch handler — and patch is deferred.
 
@@ -203,7 +212,7 @@ sequenceDiagram
     participant SER as binary_json::to_vec
     participant DRV as Driver (schema-agnostic)
     participant SVC as Cosmos DB
-    participant DEC as binary_json::decode
+    participant DE as binary_json::from_slice
 
     App->>CC: create_item(pk, id, item: T)
     CC->>SER: to_vec(&item)
@@ -215,9 +224,9 @@ sequenceDiagram
     DRV-->>CC: raw Vec<u8>
 
     App->>CC: read_item(pk, id) → into_model::<T>()
-    CC->>DEC: deserialize_response(bytes)
-    Note over DEC: is_binary(bytes)?<br/>0x80 ⇒ decode → Value → from_value::<T><br/>else ⇒ serde_json::from_slice::<T>
-    DEC-->>CC: T
+    CC->>DE: deserialize_response(bytes)
+    Note over DE: is_binary(bytes)?<br/>0x80 ⇒ from_slice::<T> (native, no Value;<br/>exotic forms via decode → Value fallback)<br/>else ⇒ serde_json::from_slice::<T>
+    DE-->>CC: T
     CC-->>App: ItemResponse / T
 ```
 
@@ -225,9 +234,9 @@ sequenceDiagram
 
 1. **Self-contained codec module.** The codec is schema-agnostic and lives in
    `azure_data_cosmos_driver::binary_json`. It operates directly on
-   `T: Serialize` (encode) and `&[u8] → serde_json::Value` (decode). The binary
-   format is a stable wire format (algorithm plus constants), which the cosmos
-   `AGENTS.md` permits sharing rather than duplicating.
+   `T: Serialize` (encode) and `T: Deserialize` (decode). The binary format is a
+   stable wire format (algorithm plus constants), which the cosmos `AGENTS.md`
+   permits sharing rather than duplicating.
 
 2. **Native serde serializer on the write path.** `BinarySerializer:
    serde::Serializer` (module `binary_json::ser`, entry point
@@ -236,12 +245,15 @@ sequenceDiagram
    transcode-through-`Value` approach. This mirrors .NET's refactored
    typed-serializer path and is the **only** encode strategy shipped.
 
-3. **Decode by auto-detection at the SDK boundary.** `deserialize_response`
-   inspects the first byte; `0x80` ⇒ binary ⇒ `decode` → `Value` →
-   `serde_json::from_value`; anything else ⇒ `serde_json::from_slice`. Robust
-   even if header negotiation changes, and uniformly covers reads / write
-   responses / query. (A native serde *Deserializer* that reads straight from
-   binary is a deferred follow-up — see [§8.3](#83-deferred-native-serde-deserializer).)
+3. **Native serde deserializer on the read path.** `BinaryDeserializer:
+   serde::Deserializer` (module `binary_json::de`, entry point
+   [`binary_json::from_slice`]) drives `T::deserialize` straight off the bytes.
+   `deserialize_response` inspects the first byte; `0x80` ⇒ binary ⇒
+   `from_slice::<T>`; anything else ⇒ `serde_json::from_slice`. Robust even if
+   header negotiation changes, and uniformly covers reads / write responses /
+   query. Objects, arrays, and plain scalars stream natively with no
+   intermediate `Value`; the rare exotic wire forms fall back to the reference
+   [`decode`] reader for a single value (see [§8.3](#83-deserializer-native--binary--t)).
 
 4. **Encode at the SDK call sites,** gated by an enablement flag. The path is
    `binary_json::to_vec(item)` → `with_body`, chosen in `serialize_item_body`.
@@ -280,7 +292,7 @@ fitting `LC` marker on `end()`. This is one scratch allocation per nesting level
 `serde_json::to_vec`); the alphabetized key order of `serde_json::to_value` is
 irrelevant because the serializer never builds a `Value`.
 
-### 8.2 Decoder (complete) — `binary → Value`
+### 8.2 Decoder (complete) — `binary → Value` (reference oracle + fallback)
 
 `binary_json::reader::decode` is a reader over `&[u8]`:
 
@@ -290,31 +302,67 @@ irrelevant because the serializer never builds a `Value`.
   offset); all string forms incl. base64/GUID/compressed (hex, datetime, packed
   N-bit); all number widths; null/bool/guid; arrays and objects with 1/2/4-byte
   length and optional count; uniform number arrays.
-- Output is a `serde_json::Value`, which the SDK boundary then feeds to
-  `serde_json::from_value::<T>` for the typed path.
+- Output is a `serde_json::Value`.
 
-### 8.3 Deferred: native serde `Deserializer`
+`decode` is no longer on the SDK read hot path. It remains as (a) the reference
+oracle for parity tests and the fuzzing target, and (b) the **fallback** the
+native deserializer ([§8.3](#83-deserializer-native--binary--t)) invokes for the
+rare exotic wire forms.
 
-The symmetric read-side optimization — a `BinaryReader: serde::Deserializer` so
-`DeserializeOwned` reads straight from binary without the intermediate `Value` —
-is **not yet implemented**. The decode path currently goes binary → `Value` →
-`serde_json::from_value`. This is the main remaining perf opportunity on the
-read side.
+### 8.3 Deserializer (native) — `binary → T`
+
+`binary_json::de` implements `serde::Deserializer` and is exposed as
+[`binary_json::from_slice`]. It drives a target type's own `Deserialize` impl
+straight off the buffer:
+
+- **Objects / arrays** stream through `MapAccess` / `SeqAccess`, deserializing
+  each key/value or element in place — **no** intermediate `serde_json::Value`
+  for the container structure. The container's declared count (or payload end
+  offset) frames the stream, mirroring the reference decoder's bounds checks.
+- **Common scalars** (null, booleans, every literal/fixed-width/extended number,
+  and plain UTF-8 strings — system, encoded-length, and `StrL1/2/4`) feed the
+  visitor directly. Plain strings are handed over as **borrowed** slices
+  (`visit_borrowed_str`) pointing into the response buffer, so no per-string
+  allocation is needed for types that accept borrowed data.
+- **`Option` / newtype structs** are handled explicitly (`null` ⇒ `None`;
+  newtype ⇒ transparent inner value).
+- **Exotic wire forms** — GUID / base64 / compressed / reference strings, binary
+  blobs, uniform number arrays — and **Rust enums** (serde's externally-tagged
+  shape) fall back to the reference [`decode`] reader for a single value, which
+  is then forwarded through `serde_json::Value`'s own deserializer. This keeps
+  the native fast path small while inheriting the decoder's completeness.
+
+Real Cosmos item bodies are objects of plain scalars, so the native fast path
+covers them end-to-end; the `Value` fallback fires only for the uncommon forms.
+
+`from_slice::<serde_json::Value>(buf)` is asserted to equal `decode(buf)`, and a
+2000-case generative test checks native-vs-`decode` parity over random values.
 
 ### 8.4 Performance
 
-Criterion `binary_encode` bench (encode only), comparing text (`serde_json::to_vec`),
-the retired transcode-through-`Value` prototype, and the shipped native
-`to_vec`:
+Both benches live in `azure_data_cosmos_benchmarks`
+(`cargo bench -p azure_data_cosmos_benchmarks --bench binary_encode` /
+`--bench binary_decode`), comparing text, the retired via-`Value` path, and the
+shipped native codec on a small (~64 B) and a large (~1.7 MB) item.
 
-| Item | text | transcode-via-`Value` | **native `to_vec`** |
+**Encode** (`binary_encode`):
+
+| Item | text (`to_vec`) | via-`Value` (`encode`) | **native `to_vec`** |
 | ---- | --------------: | ------------------: | -------------------: |
 | ~64 B | ~0.33 µs | ~1.85 µs | **~0.75 µs** (~2.5× faster) |
 | ~1.7 MB | ~2.33 ms | ~2.17 ms | **~1.64 ms** (~24% faster; ~1.0 GiB/s) |
 
-On large items the native serializer is faster than *both* the transcode
-approach and text JSON, since it skips the `Value` build / second traversal and
-avoids text number/container formatting.
+**Decode into a typed struct** (`binary_decode`, `LogEntry` target):
+
+| Item | text (`from_slice`) | via-`Value` (`decode`+`from_value`) | **native `from_slice`** |
+| ---- | --------------: | ------------------: | -------------------: |
+| ~64 B | ~0.90 µs | ~1.64 µs | **~0.90 µs** (~1.8× faster than via-`Value`) |
+| ~1.7 MB | ~852 µs | ~587 µs | **~582 µs** (~32% faster than text) |
+
+On both sides the native codec is faster than *both* the via-`Value` path and
+text JSON on large payloads, by skipping the `Value` build / extra traversal
+(and, on decode, borrowing strings from the buffer). The gain is largest on
+small items, where the `Value` allocation dominated the fixed overhead.
 
 ## 9. Negotiation and enablement
 
@@ -337,21 +385,24 @@ All phases below are **done** except the noted follow-ups.
 | Phase | Deliverable | Status |
 | ----- | ----------- | ------ |
 | **P0** | Marker constants, system-string table, error types, cross-language round-trip test corpus. | ✅ done |
-| **P1** | Complete decoder wired into `deserialize_response` with first-byte auto-detect. | ✅ done (binary reads + response envelopes) |
+| **P1** | Complete decoder ([`decode`]) with first-byte auto-detect; native deserializer ([`from_slice`]) wired into `deserialize_response`. | ✅ done (binary reads + response envelopes) |
 | **P2** | Native serde serializer ([`to_vec`]) wired into `create` / `upsert` / `replace`, behind the enablement flag. | ✅ done (binary writes) |
 | **P3** | Negotiation header + env-var enablement; end-to-end binary round-trip via the in-memory emulator. | ✅ done |
-| **P4** | Decoder fuzzing; text-vs-binary encode benchmark. | ✅ done |
+| **P4** | Decoder fuzzing; text-vs-binary encode **and** decode benchmarks. | ✅ done |
 
-**Follow-ups / deferred:** native serde `Deserializer` (read-side `Value`
-elision); query request-body encoding + negotiation; public builder option for
-enablement; patch, transactional batch, and bulk.
+**Follow-ups / deferred:** query request-body encoding + negotiation; public
+builder option for enablement; patch, transactional batch, and bulk. (The
+native deserializer's exotic-form path still routes through `decode` → `Value`;
+extending native visitor coverage to those rare forms is a possible future
+optimization.)
 
 ## 11. Testing strategy
 
-- **Round-trip property tests:** `T → binary → T` (native `to_vec` →
-  `decode` → `serde_json::from_value`) and a 2000-case generative test asserting
-  `to_vec(&value)` byte-matches the `encode(&Value)` oracle for arbitrary
-  `serde_json::Value` inputs.
+- **Round-trip property tests:** `T → binary → T` on both codecs (native
+  `to_vec` → native `from_slice`, and `to_vec` → `decode`), plus 2000-case
+  generative parity tests asserting `to_vec(&value)` byte-matches the
+  `encode(&Value)` oracle and `from_slice::<Value>(bytes)` equals `decode(bytes)`
+  for arbitrary `serde_json::Value` inputs.
 - **Cross-compatibility vectors:** binary buffers captured from .NET output;
   decode-parity against the known text form is the correctness bar.
 - **Decoder fuzzing:** malformed / truncated / adversarial buffers. The decoder
@@ -360,11 +411,12 @@ enablement; patch, transactional batch, and bulk.
 - **Emulator integration tests:** read / write / query with binary enabled,
   asserting text-equivalent results. Gated under the existing `emulator`
   test categories.
-- **Benchmarks:** `azure_data_cosmos_benchmarks`'s `binary_encode` bench
-  compares text (`serde_json::to_vec`), the retired transcode-through-`Value`
-  prototype, and the shipped native `to_vec` on small and ~1.7 MB items (see the
-  [§8.4](#84-performance) table). Run with
-  `cargo bench -p azure_data_cosmos_benchmarks --bench binary_encode`.
+- **Benchmarks:** `azure_data_cosmos_benchmarks`'s `binary_encode` and
+  `binary_decode` benches compare text (`serde_json`), the retired via-`Value`
+  path, and the shipped native codec on small and ~1.7 MB items (see the
+  [§8.4](#84-performance) tables). Run with
+  `cargo bench -p azure_data_cosmos_benchmarks --bench binary_encode` and
+  `--bench binary_decode`.
 
 ## 12. Open questions
 
@@ -379,11 +431,14 @@ enablement; patch, transactional batch, and bulk.
 ## 13. Change map (as implemented)
 
 - **`azure_data_cosmos_driver/src/binary_json/`** — codec module: `markers`,
-  `system_strings`, `error` (incl. `serde::ser::Error`), `reader` (decoder),
+  `system_strings`, `error` (incl. `serde::ser::Error` + `serde::de::Error`),
+  `reader` (`decode` reference oracle + shared cursor exposed to `de`),
   `writer` (`encode(&Value)` parity oracle + shared emit helpers), `ser`
-  (native `serde::Serializer`, `to_vec`), `vectors`, `fuzz_tests`.
+  (native `serde::Serializer`, `to_vec`), `de` (native `serde::Deserializer`,
+  `from_slice`), `vectors`, `fuzz_tests`.
 - `azure_data_cosmos_driver/src/models/response_body.rs`:
-  `deserialize_response` auto-detects the `0x80` preamble and decodes.
+  `deserialize_response` auto-detects the `0x80` preamble and calls
+  `binary_json::from_slice::<T>`.
 - `azure_data_cosmos/src/clients/container_client.rs`: `serialize_item_body`
   calls `binary_json::to_vec` on the binary write path; `apply_binary_negotiation`
   sets the header.
@@ -392,7 +447,8 @@ enablement; patch, transactional batch, and bulk.
   from `AZURE_COSMOS_BINARY_ENCODING_ENABLED`.
 - `azure_data_cosmos_driver/src/models/cosmos_headers.rs`: the
   supported-serialization-formats header field + emission.
-- `azure_data_cosmos_benchmarks/benches/binary_encode.rs`: the encode benchmark.
+- `azure_data_cosmos_benchmarks/benches/binary_encode.rs` /
+  `binary_decode.rs`: the encode and decode benchmarks.
 
 ## 14. References
 
