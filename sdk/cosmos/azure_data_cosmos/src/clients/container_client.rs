@@ -1158,17 +1158,26 @@ fn apply_item_options(
 /// Serializes an item write body as either Cosmos binary JSON (`binary`) or
 /// UTF-8 text JSON.
 ///
-/// The binary path is `T` → [`serde_json::Value`] →
-/// [`binary_json::encode`](azure_data_cosmos_driver::binary_json::encode); the
-/// text path is the original [`serde_json::to_vec`]. Both produce a body the
-/// service accepts — the binary form begins with the `0x80` preamble, which the
-/// service detects from the first byte, so the request `Content-Type` stays
-/// `application/json`.
+/// The binary path uses the driver's native serde serializer
+/// [`binary_json::to_vec`](azure_data_cosmos_driver::binary_json::to_vec),
+/// encoding `T` straight to Cosmos binary JSON without an intermediate
+/// [`serde_json::Value`]; the text path is the original [`serde_json::to_vec`].
+/// Both produce a body the service accepts — the binary form begins with the
+/// `0x80` preamble, which the service detects from the first byte, so the
+/// request `Content-Type` stays `application/json`.
 fn serialize_item_body<T: Serialize>(item: &T, binary: bool) -> crate::Result<Vec<u8>> {
     if binary {
-        let value = serde_json::to_value(item)?;
-        Ok(azure_data_cosmos_driver::binary_json::encode(&value))
+        let body = azure_data_cosmos_driver::binary_json::to_vec(item)?;
+        tracing::info!(
+            binary_encoding = true,
+            "binary encoding applied to item write body"
+        );
+        Ok(body)
     } else {
+        tracing::info!(
+            binary_encoding = false,
+            "item write body serialized as text JSON"
+        );
         Ok(serde_json::to_vec(item)?)
     }
 }

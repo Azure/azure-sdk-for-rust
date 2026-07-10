@@ -102,6 +102,18 @@ impl From<serde_json::Error> for CosmosError {
     }
 }
 
+impl From<azure_data_cosmos_driver::binary_json::BinaryError> for CosmosError {
+    fn from(error: azure_data_cosmos_driver::binary_json::BinaryError) -> Self {
+        Self(
+            DriverCosmosError::builder()
+                .with_status(CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_message("Cosmos binary JSON serialization or deserialization failed")
+                .with_source(error)
+                .build(),
+        )
+    }
+}
+
 impl From<url::ParseError> for CosmosError {
     fn from(error: url::ParseError) -> Self {
         Self(
