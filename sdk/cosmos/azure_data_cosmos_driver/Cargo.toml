@@ -40,7 +40,7 @@ url.workspace = true
 uuid = { workspace = true, features = ["v4", "fast-rng"] }
 
 [dev-dependencies]
-azure_identity = { path = "../../identity/azure_identity", version = "1.1.0-beta.1" }
+azure_identity.workspace = true
 quick-xml.workspace = true
 serde = { workspace = true, features = ["derive"] }
 tokio = { workspace = true, features = [

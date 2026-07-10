@@ -22,7 +22,7 @@ tracing = ["tracing-subscriber"]
 async-trait.workspace = true
 azure_core = { workspace = true, default-features = false, features = ["test"] }
 azure_core_test_macros.workspace = true
-azure_identity = { path = "../../identity/azure_identity", version = "1.1.0-beta.1" }
+azure_identity.workspace = true
 clap.workspace = true
 dotenvy = "0.15.7"
 flate2.workspace = true

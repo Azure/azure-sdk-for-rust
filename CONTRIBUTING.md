@@ -413,13 +413,13 @@ Release builds will fail if a library depends on another Azure SDK for Rust libr
 
 #### Workspace dependencies
 
-The root `Cargo.toml` file represents released versions of crates commonly used by other Azure SDK for Rust libraries. To use a released version of a library, use `workspace = true` in your library's `Cargo.toml`.
+The root `Cargo.toml` file is the source of truth for common internal dependencies. Service crates should generally use `workspace = true`, which typically resolves to the latest published internal crate.
 
 ```toml
 azure_core = { workspace = true }
 ```
 
-If an SDK library depends on an unreleased SDK library, specify that dependency using a `path`-based dependency with a `version` matching the crate version, which is required for the library to release:
+If a crate needs unreleased changes from `sdk/core`, use an explicit `path`-based dependency with a matching `version` instead of `workspace = true`:
 
 ```toml
 azure_core = { path = "../../core/azure_core", version = "0.31.0" }
