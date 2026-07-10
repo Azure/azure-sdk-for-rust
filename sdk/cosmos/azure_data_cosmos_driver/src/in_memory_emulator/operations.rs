@@ -2645,6 +2645,30 @@ fn collect_item_documents(
         };
         let start_epk = parsed.start_epk.as_deref().map(Epk::from);
         let end_epk = parsed.end_epk.as_deref().map(Epk::from);
+        // A query that pins an explicit physical partition key range id must fail
+        // with 410/1002 (PartitionKeyRangeGone) when that range no longer exists
+        // (e.g. it was split away). Real Cosmos surfaces PartitionKeyRangeGone here
+        // so the client refreshes its pkrange cache and re-resolves to the child
+        // ranges; returning an empty 200 instead would silently drop the remaining
+        // results of a continuation issued before the split.
+        if let Some(requested_id) = parsed.partition_key_range_id.as_deref() {
+            let exists = state
+                .physical_partitions
+                .iter()
+                .any(|partition| partition.id.to_string() == requested_id);
+            if !exists {
+                return Err(error_response(
+                    StatusCode::Gone,
+                    Some(1002),
+                    "Gone",
+                    "The partition key range specified by the request is no longer present (split/merge).",
+                    0.0,
+                    "",
+                    start,
+                )
+                .build());
+            }
+        }
         let mut docs = Vec::new();
         let mut token_parts = Vec::new();
         let mut max_lsn = 0_u64;

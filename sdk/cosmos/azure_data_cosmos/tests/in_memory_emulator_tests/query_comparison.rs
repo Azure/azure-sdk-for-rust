@@ -430,12 +430,7 @@ async fn split_physical_partitions_at_points(
         {
             continue;
         }
-        let partition_id = partition_containing_split_epk(&ranges, split_epk).ok_or_else(|| {
-            std::io::Error::other(format!(
-                "split EPK {} is not strictly inside an existing physical partition",
-                split_epk.to_hex()
-            ))
-        })?;
+        let partition_id = partition_containing_split_epk(&ranges, split_epk)?;
         harness.emulator_store.split_partition_at_epk(
             db_name,
             container_name,
@@ -485,11 +480,24 @@ async fn read_emulator_physical_partition_ranges(
 fn partition_containing_split_epk(
     ranges: &[DriverPartitionKeyRange],
     split_epk: &EffectivePartitionKey,
-) -> Option<u32> {
-    ranges
+) -> Result<u32, Box<dyn Error>> {
+    let range = ranges
         .iter()
         .find(|range| range.min_inclusive < *split_epk && *split_epk < range.max_exclusive)
-        .and_then(|range| range.id.parse().ok())
+        .ok_or_else(|| {
+            std::io::Error::other(format!(
+                "split EPK {} is not strictly inside an existing physical partition",
+                split_epk.to_hex()
+            ))
+        })?;
+    range.id.parse::<u32>().map_err(|e| -> Box<dyn Error> {
+        std::io::Error::other(format!(
+            "physical partition id {:?} containing split EPK {} is not a valid u32: {e}",
+            range.id,
+            split_epk.to_hex(),
+        ))
+        .into()
+    })
 }
 
 async fn create_database_if_needed(
@@ -686,6 +694,141 @@ async fn query_results_match_across_physical_partition_topologies() -> Result<()
     Ok(())
 }
 
+// TODO(cosmos): remove `#[ignore]` once the driver's mid-query-split resume bug
+// is fixed in a separate PR. The emulator side is complete: it now returns
+// `410/1002 PartitionKeyRangeGone` for a query pinned to a split-away pkrange and
+// bumps the routing-map ETag on split, so the driver correctly enters split
+// recovery. The remaining failure is a driver bug — resuming a continuation
+// across the split drops the last leaf's tail document (returns 8/9) — that lives
+// in the split-recovery continuation snapshot, not in this test or the emulator.
+#[tokio::test]
+#[ignore = "driver bug (separate PR): resume across a mid-query partition split drops the last document (8/9); emulator 410-Gone + ETag-on-split fidelity is in place"]
+async fn query_resume_survives_mid_query_split() -> Result<(), Box<dyn Error>> {
+    // Regression coverage for resuming a query continuation ACROSS a physical
+    // partition split. The container starts as a single physical partition; we
+    // drain one page, split that partition underneath the outstanding
+    // continuation, then resume from the pre-split token. The driver must
+    // re-resolve the now-gone parent partition-key range into its children and
+    // finish the scan with no lost and no unbounded duplicate documents.
+    let harness = QueryComparisonHarness::setup_in_memory_only().await?;
+    let db_name = format!("{}-resume-split", harness.database_name());
+    let fixture = provision_fixture_with_topology(
+        &harness,
+        &db_name,
+        FixtureKind::HashV2,
+        Some(ContainerConfig::new().with_partition_count(1).build()?),
+        &[],
+    )
+    .await?;
+
+    let query = Query::from("SELECT * FROM c");
+    let scope = FeedScope::full_container();
+    let expected: BTreeSet<String> = fixture
+        .documents
+        .iter()
+        .map(|doc| doc["id"].as_str().expect("seed doc has id").to_owned())
+        .collect();
+
+    let mut collected: Vec<Value> = Vec::new();
+
+    // Drain the first page under the single-partition layout, then snapshot the
+    // continuation token before mutating the topology.
+    let mut pages = fixture
+        .emulator_container
+        .query_items::<Value>(query.clone(), scope.clone(), Some(query_options(None)))
+        .await?
+        .into_pages();
+    let first_page = pages
+        .next()
+        .await
+        .ok_or_else(|| std::io::Error::other("expected at least one page before splitting"))??;
+    collected.extend(first_page.into_items());
+    let token = pages.to_continuation_token()?;
+    let raw = token.as_str().to_owned();
+    drop(pages);
+    let mut continuation = Some(ContinuationToken::from_string(raw));
+
+    // Split the single physical partition WHILE the continuation is outstanding.
+    split_first_physical_partition(&harness, &db_name, FixtureKind::HashV2.container_name())
+        .await?;
+
+    // Resume from the pre-split token under the new two-partition layout.
+    let max_pages = expected.len() + 64;
+    let mut drained = false;
+    for _ in 0..max_pages {
+        let mut pages = fixture
+            .emulator_container
+            .query_items::<Value>(
+                query.clone(),
+                scope.clone(),
+                Some(query_options(continuation.take())),
+            )
+            .await?
+            .into_pages();
+        let Some(page) = pages.next().await else {
+            drained = true;
+            break;
+        };
+        let page = page?;
+        collected.extend(page.into_items());
+        let token = pages.to_continuation_token()?;
+        let raw = token.as_str().to_owned();
+        drop(pages);
+        continuation = Some(ContinuationToken::from_string(raw));
+    }
+    assert!(
+        drained,
+        "resume across mid-query split did not drain within {max_pages} pages"
+    );
+
+    // No loss: every seeded document is observed at least once across the pre-
+    // and post-split pages.
+    let unique: BTreeSet<String> = collected
+        .iter()
+        .map(|doc| doc["id"].as_str().expect("query item has id").to_owned())
+        .collect();
+    assert_eq!(
+        expected, unique,
+        "resume across mid-query split lost or gained documents"
+    );
+
+    // Bounded replay: a split may cause a partition's already-read prefix to be
+    // re-scanned, but total observed rows must stay within a small multiple of
+    // the document count (no unbounded duplication).
+    assert!(
+        collected.len() <= expected.len() * 2,
+        "resume across mid-query split produced excessive duplication: {} rows for {} documents",
+        collected.len(),
+        expected.len()
+    );
+
+    Ok(())
+}
+
+/// Splits the first physical partition of a container at its midpoint, waiting
+/// for the split to fully apply. Used to mutate topology while a query
+/// continuation is outstanding.
+async fn split_first_physical_partition(
+    harness: &QueryComparisonHarness,
+    db_name: &str,
+    container_name: &str,
+) -> Result<(), Box<dyn Error>> {
+    let ranges = read_emulator_physical_partition_ranges(harness, db_name, container_name).await?;
+    let partition_id: u32 = ranges
+        .first()
+        .ok_or_else(|| std::io::Error::other("container has no physical partitions to split"))?
+        .id
+        .parse()?;
+    harness
+        .emulator_store
+        .split_partition(db_name, container_name, partition_id, Duration::ZERO);
+    harness
+        .emulator_store
+        .wait_for_split(db_name, container_name, partition_id)
+        .await;
+    Ok(())
+}
+
 fn hash_scenarios(pk_definition: &PartitionKeyDefinition) -> Result<Vec<Scenario>, Box<dyn Error>> {
     let pk_range = FeedRange::for_partition(PartitionKey::from("pk-a"), pk_definition);
     Ok(vec![
@@ -832,6 +975,42 @@ fn hpk_scenarios(pk_definition: &PartitionKeyDefinition) -> Result<Vec<Scenario>
                 "hpk-a-u4-s1",
             ],
             projection: Projection::Fields(&["id", "tenant"]),
+            compare_external_results: false,
+            compare_external_page_headers: false,
+        },
+        Scenario {
+            // Pure prefix-key scope with NO WHERE predicate: tenant isolation is
+            // enforced solely by the EPK prefix range derived from the partial
+            // partition key, not by any SQL filter. This is the exact code path
+            // the HPK over-span bug lived in, so it is exercised on its own.
+            name: "hpk_tenant_prefix_partition_scope_no_where",
+            query: Query::from("SELECT * FROM c"),
+            scope: FeedScope::partition(PartitionKey::from("tenant-a")),
+            expected_ids: &[
+                "hpk-a-u1-s1",
+                "hpk-a-u1-s2",
+                "hpk-a-u2-s1",
+                "hpk-a-u2-s2",
+                "hpk-a-u3-s1",
+                "hpk-a-u3-s2",
+                "hpk-a-u4-s1",
+            ],
+            projection: Projection::Full,
+            // The standard gateway rejects partial-HPK EPK-range execution, so
+            // the external comparison is skipped for this emulator-only path.
+            compare_external_results: false,
+            compare_external_page_headers: false,
+        },
+        Scenario {
+            // Absent top-level prefix: a never-seeded tenant prefix must return
+            // zero documents (no over-span into co-located tenants sharing the
+            // same physical partition after a split) while still targeting only
+            // the partition(s) covering that prefix range.
+            name: "hpk_absent_tenant_prefix",
+            query: Query::from("SELECT * FROM c"),
+            scope: FeedScope::partition(PartitionKey::from("tenant-absent")),
+            expected_ids: &[],
+            projection: Projection::Full,
             compare_external_results: false,
             compare_external_page_headers: false,
         },
@@ -1006,7 +1185,15 @@ fn scope_feed_range(scope: &FeedScope, pk_definition: &PartitionKeyDefinition) -
             FeedRange::for_partition(partition_key, pk_definition)
         }
         FeedScope::Range(range) => range,
-        _ => FeedRange::full(),
+        // `FeedScope` is `#[non_exhaustive]`, so this catch-all is required to
+        // compile. Any future variant must be handled explicitly here (and in
+        // `expected_touched_partition_ids`); silently widening it to
+        // `FeedRange::full()` would over-broaden the expected touched-partition
+        // set and could mask a routing regression, so fail loudly instead.
+        _ => unreachable!(
+            "scope_feed_range encountered an unhandled FeedScope variant; \
+             update this helper and expected_touched_partition_ids to cover it"
+        ),
     }
 }
 
@@ -1206,10 +1393,19 @@ async fn drain_resume(
     backend: &str,
     mode: &str,
 ) -> Result<DrainResult, Box<dyn Error>> {
+    // Upper bound on resume round-trips. With `max_item_count=1` every page
+    // yields at most one item, plus a bounded number of empty pages (one per
+    // targeted-but-empty physical partition) and one terminal empty page.
+    // Derive a generous cap from the expected item count so a runaway or
+    // under-draining continuation loop fails with a clear diagnostic instead of
+    // silently truncating the result set (which would otherwise surface as a
+    // confusing item-count mismatch downstream).
+    let max_pages = scenario.expected_ids.len() + 64;
     let mut continuation: Option<ContinuationToken> = None;
     let mut items = Vec::new();
     let mut headers = Vec::new();
-    for page_index in 0..100 {
+    let mut drained = false;
+    for page_index in 0..max_pages {
         let mut pages = container
             .query_items::<Value>(
                 scenario.query.clone(),
@@ -1219,6 +1415,7 @@ async fn drain_resume(
             .await?
             .into_pages();
         let Some(page) = pages.next().await else {
+            drained = true;
             break;
         };
         let page = page?;
@@ -1239,6 +1436,13 @@ async fn drain_resume(
         let raw = token.as_str().to_owned();
         drop(pages);
         continuation = Some(ContinuationToken::from_string(raw));
+    }
+    if !drained {
+        return Err(std::io::Error::other(format!(
+            "scenario={} backend={backend} mode={mode} did not drain within {max_pages} resume round-trips; the continuation loop is under-draining or looping",
+            scenario.name
+        ))
+        .into());
     }
     Ok(DrainResult {
         items: normalize_items(items, scenario.projection),

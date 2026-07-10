@@ -2015,6 +2015,10 @@ impl EmulatorStore {
             unreachable!()
         };
         let child_lsn = parent_lsn + 1;
+        // One ETag for the whole split, applied to every region's container
+        // metadata below so the pkrange routing map's change-feed observes the
+        // topology change consistently across regions.
+        let new_container_etag = new_etag();
 
         let regions = self.regions.read().unwrap();
         for region in regions.values() {
@@ -2124,6 +2128,13 @@ impl EmulatorStore {
                 state.physical_partitions.remove(parent_idx);
                 state.physical_partitions.push(child1);
                 state.physical_partitions.push(child2);
+                // Bump the container ETag so the pkrange routing-map change-feed
+                // reflects the new topology. The driver refreshes its pkrange
+                // cache incrementally via `If-None-Match`; without a new ETag the
+                // emulator answers `304 Not Modified` and the driver keeps
+                // resolving to the now-gone parent range, looping until it
+                // exhausts split retries on a continuation issued before the split.
+                state.metadata.etag = new_container_etag.clone();
                 // No per-region counter to reconcile any more — the shared
                 // counter on `ContainerMetadata` was already advanced when the
                 // child IDs were allocated.
