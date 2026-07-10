@@ -1,14 +1,10 @@
 # Release History
 
-## 1.1.0-beta.1 (Unreleased)
+## 1.1.0 (2026-07-09)
 
 ### Features Added
 
 - `Error` now captures a `std::backtrace::Backtrace` at construction time and includes it in `Debug` output (e.g., `{:?}`) when `RUST_BACKTRACE=1` is set.
-
-### Breaking Changes
-
-### Bugs Fixed
 
 ### Other Changes
 
