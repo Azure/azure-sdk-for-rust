@@ -17,6 +17,10 @@ harness = false
 name = "backtrace_capture"
 harness = false
 
+[[bench]]
+name = "binary_encode"
+harness = false
+
 [dependencies]
 async-trait.workspace = true
 azure_core.workspace = true
@@ -24,6 +28,8 @@ azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", features = [
   "__internal_mocking",
   "__internal_backtrace_bench",
 ] }
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread", "time"] }
 url.workspace = true
 
