@@ -9,8 +9,8 @@ use azure_core::{
     Uuid,
 };
 use azure_data_cosmos::clients::ContainerClient;
-use azure_data_cosmos::models::ContainerProperties;
 use azure_data_cosmos::models::ItemResponse;
+use azure_data_cosmos::models::{ContainerProperties, PartitionKeyDefinition, PartitionKeyVersion};
 use azure_data_cosmos::options::{
     ContentResponseOnWrite, ItemWriteOptions, OperationOptions, Precondition,
 };
@@ -139,6 +139,29 @@ async fn create_container(
     Ok(container_client)
 }
 
+/// Like [`create_container`] but provisions an explicit **partition key
+/// version 1** container. New containers default to V2, so this pins `V1` via
+/// [`PartitionKeyDefinition::with_version`] to exercise the classic-gateway
+/// point-op path for legacy V1 containers.
+async fn create_v1_container(
+    run_context: &TestRunContext,
+) -> azure_data_cosmos::Result<ContainerClient> {
+    let db_client = run_context.create_db().await?;
+    let container_id = format!("Container-V1-{}", Uuid::new_v4());
+    let pk_def =
+        PartitionKeyDefinition::from("/partition_key").with_version(PartitionKeyVersion::V1);
+    run_context
+        .create_container(
+            &db_client,
+            ContainerProperties::new(container_id.clone(), pk_def),
+            None,
+        )
+        .await?;
+    let container_client = db_client.container_client(&container_id).await?;
+
+    Ok(container_client)
+}
+
 #[tokio::test]
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
@@ -249,6 +272,104 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
                             azure_core::http::StatusCode::NotFound,
                             err.status().status_code()
                         );
+                        break;
+                    }
+                }
+            }
+
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+/// Point CRUD (create → read → replace → delete) against a legacy **partition
+/// key version 1** container over the classic gateway. Companion to the
+/// Gateway 2.0 V1 test: classic gateway hashes the partition key server-side,
+/// so it was never affected by the client-side EPK version-default bug, but we
+/// pin the V1 point-op path here so both transports stay covered.
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
+)]
+pub async fn v1_container_item_crud() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_v1_container(run_context).await?;
+            let unique_id = Uuid::new_v4().to_string();
+
+            let mut item = TestItem {
+                id: format!("v1-item-{unique_id}").into(),
+                partition_key: Some(format!("v1-pk-{unique_id}").into()),
+                value: 1,
+                nested: NestedItem {
+                    nested_value: "initial".into(),
+                },
+                bool_value: true,
+            };
+            let pk = format!("v1-pk-{unique_id}");
+            let item_id = format!("v1-item-{unique_id}");
+
+            let create_resp = container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
+            assert_response(
+                &create_resp,
+                StatusCode::Created,
+                &get_effective_hub_endpoint(),
+                false,
+            );
+
+            let read_resp = container_client.read_item(&pk, &item_id, None).await?;
+            assert_response(
+                &read_resp,
+                StatusCode::Ok,
+                &get_effective_hub_endpoint(),
+                true,
+            );
+            let read_item: TestItem = read_resp.into_model()?;
+            assert_eq!(item, read_item, "V1 container read must round-trip");
+
+            item.value = 2;
+            item.nested.nested_value = "updated".into();
+            let replace_resp = container_client
+                .replace_item(&pk, &item_id, &item, None)
+                .await?;
+            assert_response(
+                &replace_resp,
+                StatusCode::Ok,
+                &get_effective_hub_endpoint(),
+                false,
+            );
+
+            let reread: TestItem = container_client
+                .read_item(&pk, &item_id, None)
+                .await?
+                .into_model()?;
+            assert_eq!(item, reread, "replace must be reflected on re-read");
+
+            let delete_resp = container_client.delete_item(&pk, &item_id, None).await?;
+            assert_response(
+                &delete_resp,
+                StatusCode::NoContent,
+                &get_effective_hub_endpoint(),
+                false,
+            );
+
+            // Read after delete should eventually 404.
+            loop {
+                match container_client.read_item(&pk, &item_id, None).await {
+                    Ok(_) => {
+                        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+                    }
+                    Err(err) => {
+                        assert_eq!(StatusCode::NotFound, err.status().status_code());
                         break;
                     }
                 }

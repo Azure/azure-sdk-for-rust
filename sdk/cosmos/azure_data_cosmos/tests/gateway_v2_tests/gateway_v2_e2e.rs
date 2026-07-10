@@ -7,7 +7,7 @@ use azure_core::credentials::Secret;
 use azure_core::http::{Etag, StatusCode};
 use azure_data_cosmos::diagnostics::{DiagnosticsContext, TransportKind};
 use azure_data_cosmos::models::{
-    ContainerProperties, PartitionKeyDefinition, ThroughputProperties,
+    ContainerProperties, PartitionKeyDefinition, PartitionKeyVersion, ThroughputProperties,
 };
 use azure_data_cosmos::options::{
     CreateContainerOptions, ItemReadOptions, ItemWriteOptions, MaxItemCountHint,
@@ -218,6 +218,32 @@ async fn provision_database_and_container(
     Ok((db_name, container_client))
 }
 
+/// Like [`provision_database_and_container`] but provisions an explicit
+/// **partition key version 1** container. New containers created without an
+/// explicit version get V2, so this pins `V1` via [`PartitionKeyDefinition::with_version`].
+///
+/// V1 containers are the ones that exposed the version-default bug: on read-back
+/// the service omits the `version` field for legacy V1 containers, and Gateway
+/// 2.0 computes the effective partition key client-side, so a V1 container
+/// mis-detected as V2 produced a V2 EPK the proxy could not route.
+async fn provision_database_and_v1_container(
+    client: &CosmosClient,
+) -> Result<(String, azure_data_cosmos::clients::ContainerClient), Box<dyn std::error::Error>> {
+    let unique = azure_core::Uuid::new_v4();
+    let db_name = format!("gw_v2-test-db-{unique}");
+    let container_name = format!("gw_v2-test-v1-container-{unique}");
+
+    client.create_database(&db_name, None).await?;
+    let db_client = client.database_client(&db_name);
+
+    let pk_def = PartitionKeyDefinition::from("/pk").with_version(PartitionKeyVersion::V1);
+    let properties = ContainerProperties::new(container_name.clone(), pk_def);
+    db_client.create_container(properties, None).await?;
+    let container_client = wait_for_container_ready(&db_client, &container_name).await?;
+
+    Ok((db_name, container_client))
+}
+
 async fn drop_database(client: &CosmosClient, db_name: &str) {
     let db_client = client.database_client(db_name);
     let _ = db_client.delete(None).await;
@@ -329,6 +355,77 @@ pub async fn gateway_v2_point_crud_round_trip() -> Result<(), Box<dyn std::error
     let delete_resp = container.delete_item(&pk_value, &item_id, None).await?;
     assert_transport_kind(&delete_resp.diagnostics(), TransportKind::GatewayV2);
     assert!(!delete_resp.diagnostics().activity_id().as_str().is_empty());
+
+    drop_database(&client, &db_name).await;
+    Ok(())
+}
+
+/// Regression test for the partition-key version-default bug: drives a point
+/// CRUD round-trip (create → read → replace → delete) against a legacy
+/// **partition key version 1** container over Gateway 2.0.
+///
+/// Because Gateway 2.0 computes the effective partition key client-side, a V1
+/// container whose read-back definition omits `version` (as the service does
+/// for V1) must be treated as V1 — not V2 — or every point operation mis-routes
+/// and stalls until timeout. This test would fail (timeout / 503) against the
+/// buggy V2-default and passes once absent versions default to V1.
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
+)]
+pub async fn gateway_v2_v1_container_point_crud_round_trip(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let Some((endpoint, key)) = live_credentials() else {
+        return Ok(());
+    };
+
+    let client = build_client(&endpoint, &key).await?;
+    let (db_name, container) = provision_database_and_v1_container(&client).await?;
+
+    let pk_value = format!("pk-{}", azure_core::Uuid::new_v4());
+    let item_id = format!("item-{}", azure_core::Uuid::new_v4());
+    let mut item = GwV2TestItem {
+        id: item_id.clone(),
+        pk: pk_value.clone(),
+        value: 1,
+        label: "initial".into(),
+    };
+
+    let create_resp = container
+        .create_item(&pk_value, &item_id, &item, None)
+        .await?;
+    assert_transport_kind(&create_resp.diagnostics(), TransportKind::GatewayV2);
+
+    let read_resp = container.read_item(&pk_value, &item_id, None).await?;
+    assert_transport_kind(&read_resp.diagnostics(), TransportKind::GatewayV2);
+    let read_item: GwV2TestItem = read_resp.into_model()?;
+    assert_eq!(read_item, item, "V1 container read must round-trip");
+
+    item.value = 2;
+    item.label = "updated".into();
+    let replace_resp = container
+        .replace_item(&pk_value, &item_id, &item, None)
+        .await?;
+    assert_transport_kind(&replace_resp.diagnostics(), TransportKind::GatewayV2);
+
+    let reread: GwV2TestItem = container
+        .read_item(&pk_value, &item_id, None)
+        .await?
+        .into_model()?;
+    assert_eq!(reread, item, "replace must be reflected on re-read");
+
+    let delete_resp = container.delete_item(&pk_value, &item_id, None).await?;
+    assert_transport_kind(&delete_resp.diagnostics(), TransportKind::GatewayV2);
+
+    let read_after_delete = container.read_item(&pk_value, &item_id, None).await;
+    assert!(
+        read_after_delete.is_err(),
+        "read after delete on a V1 container must fail (NotFound)"
+    );
 
     drop_database(&client, &db_name).await;
     Ok(())
