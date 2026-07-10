@@ -222,7 +222,7 @@ fn connection_pool(endpoint: &str) -> Result<ConnectionPoolOptions, Box<dyn Erro
 async fn resolve_hub_region_and_exclusions(
     driver: &CosmosDriver,
 ) -> (Region, Option<ExcludedRegions>) {
-    let Some((writable, readable)) = driver.__internal_cached_account_regions().await else {
+    let Some((writable, readable)) = driver.cached_account_regions_for_testing().await else {
         return (HUB_REGION, None);
     };
     let mut regions = Vec::<Region>::new();

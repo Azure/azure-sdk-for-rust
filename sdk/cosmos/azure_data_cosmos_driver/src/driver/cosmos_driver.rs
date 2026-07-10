@@ -1472,14 +1472,21 @@ impl CosmosDriver {
         self.options.account()
     }
 
-    /// Test-only API. Returns cached writable and readable account regions.
+    /// **Internal test hook -- not part of the public API.**
     ///
-    /// The in-memory emulator comparison tests use this to pin a live
-    /// multi-region account to one hub region via default `ExcludedRegions`.
-    /// It does not fetch account metadata; callers should use it after the
-    /// driver has been initialized.
-    #[cfg(feature = "__internal_in_memory_emulator")]
-    pub async fn __internal_cached_account_regions(
+    /// Returns cached writable and readable account regions. The in-memory
+    /// emulator comparison tests use this to pin a live multi-region account
+    /// to one hub region via default `ExcludedRegions`. It does not fetch
+    /// account metadata; callers should use it after the driver has been
+    /// initialized.
+    ///
+    /// **Do not call from production code.** Available only because
+    /// integration tests live outside the crate and cannot reach the account
+    /// metadata cache directly. May be changed or removed at any time without
+    /// a semver bump.
+    #[cfg(any(test, feature = "__internal_in_memory_emulator"))]
+    #[doc(hidden)]
+    pub async fn cached_account_regions_for_testing(
         &self,
     ) -> Option<(Vec<crate::options::Region>, Vec<crate::options::Region>)> {
         let endpoint = AccountEndpoint::from(self.options.account());
