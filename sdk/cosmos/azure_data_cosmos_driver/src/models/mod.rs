@@ -256,8 +256,25 @@ impl<S1: Into<String>, S2: Into<String>, S3: Into<String>> From<(S1, S2, S3)>
     }
 }
 
+/// The serde default for a [`PartitionKeyDefinition`] `version` field that is
+/// absent on the wire.
+///
+/// The Cosmos service omits `version` **only** for legacy V1 (Hash) containers;
+/// V2 and MultiHash container definitions always serialize an explicit
+/// `version: 2`. So an absent version unambiguously means a V1 container.
+///
+/// This default only affects deserialization of a version-less definition read
+/// back from the service. The create path ([`PartitionKeyDefinition::new`])
+/// hard-codes `V2` independently and is unaffected.
+///
+/// Defaulting to V2 here previously broke Gateway 2.0 (thin-client) point-op
+/// routing: the client computes the EffectivePartitionKey (EPK) client-side, so
+/// a V1 container mis-detected as V2 produced a V2 (MurmurHash3-128) EPK the
+/// proxy could not reconcile with the container's V1 routing map, stalling
+/// point operations until timeout. This matches the .NET/Java convention where
+/// an absent partition-key version deserializes to V1.
 fn default_pk_version() -> PartitionKeyVersion {
-    PartitionKeyVersion::V2
+    PartitionKeyVersion::V1
 }
 
 /// Partition key version.
@@ -845,8 +862,24 @@ mod tests {
 
         assert_eq!(parsed.paths().len(), 1);
         assert_eq!(parsed.paths()[0].as_ref(), "/pk");
-        assert_eq!(parsed.version(), PartitionKeyVersion::V2);
+        // An absent `version` on the wire means a legacy V1 (Hash) container:
+        // the service only omits `version` for V1; V2/MultiHash always send an
+        // explicit `version: 2`. See `default_pk_version`.
+        assert_eq!(parsed.version(), PartitionKeyVersion::V1);
         assert_eq!(parsed.kind(), PartitionKeyKind::Hash);
+    }
+
+    #[test]
+    fn partition_key_definition_explicit_versions_honored() {
+        // An explicit `version` on the wire is always honored as-is; only an
+        // absent version defaults (to V1).
+        let v1: PartitionKeyDefinition =
+            serde_json::from_str(r#"{"paths":["/pk"],"version":1}"#).unwrap();
+        let v2: PartitionKeyDefinition =
+            serde_json::from_str(r#"{"paths":["/pk"],"version":2}"#).unwrap();
+
+        assert_eq!(v1.version(), PartitionKeyVersion::V1);
+        assert_eq!(v2.version(), PartitionKeyVersion::V2);
     }
 
     #[test]
