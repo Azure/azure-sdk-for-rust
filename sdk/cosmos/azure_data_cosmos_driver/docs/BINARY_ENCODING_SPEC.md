@@ -209,25 +209,25 @@ Key facts (verified against the current tree):
 sequenceDiagram
     participant App as Application
     participant CC as ContainerClient
-    participant SER as binary_json::to_vec
-    participant DRV as Driver (schema-agnostic)
+    participant SER as Serializer to_vec
+    participant DRV as Driver
     participant SVC as Cosmos DB
-    participant DE as binary_json::from_slice
+    participant DE as Deserializer from_slice
 
-    App->>CC: create_item(pk, id, item: T)
+    App->>CC: create_item(pk, id, item)
     CC->>SER: to_vec(item)
-    Note over SER: T::serialize drives BinarySerializer<br/>straight to 0x80… bytes (no Value)
+    Note over SER: T serialize drives the binary serializer straight to 0x80 bytes, no Value
     SER-->>CC: binary body bytes
-    CC->>DRV: CosmosOperation.with_body(bytes)<br/>+ supported-serialization-formats header
-    DRV->>SVC: HTTP POST (Content-Type: application/json)
-    SVC-->>DRV: response body (text or 0x80 binary)
+    CC->>DRV: with_body(bytes) plus serialization-format header
+    DRV->>SVC: HTTP POST, content type application json
+    SVC-->>DRV: response body, text or 0x80 binary
     DRV-->>CC: raw body bytes
 
     App->>CC: read_item(pk, id) then into_model
     CC->>DE: deserialize_response(bytes)
-    Note over DE: is_binary(bytes)?<br/>0x80 then from_slice into T (native, no Value;<br/>exotic forms via decode then Value fallback)<br/>else serde_json::from_slice into T
-    DE-->>CC: T
-    CC-->>App: ItemResponse / T
+    Note over DE: if 0x80 use native from_slice (no Value, exotic forms via decode fallback) else use serde_json from_slice
+    DE-->>CC: typed value T
+    CC-->>App: ItemResponse
 ```
 
 ## 7. Design decisions
