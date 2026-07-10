@@ -29,7 +29,7 @@ crossbeam-epoch = { workspace = true, features = ["std"] }
 futures.workspace = true
 h2 = { workspace = true, optional = true }
 percent-encoding = { workspace = true, optional = true }
-rand = { workspace = true, optional = true }
+rand.workspace = true
 reqwest = { workspace = true, optional = true }
 serde.workspace = true
 serde_json.workspace = true
@@ -40,7 +40,7 @@ url.workspace = true
 uuid = { workspace = true, features = ["v4", "fast-rng"] }
 
 [dev-dependencies]
-azure_identity.workspace = true
+azure_identity = { path = "../../identity/azure_identity", version = "1.1.0-beta.1" }
 quick-xml.workspace = true
 serde = { workspace = true, features = ["derive"] }
 tokio = { workspace = true, features = [
@@ -76,7 +76,7 @@ reqwest = [
 ]
 rustls = ["reqwest", "reqwest/rustls", "__tls"]
 native_tls = ["reqwest", "reqwest/native-tls", "__tls"]
-fault_injection = ["dep:rand"]
+fault_injection = []
 preview_dtx = [] # Enables preview Distributed Transaction APIs. Disabled by default and not production-ready.
 # `__internal_in_memory_emulator` exposes the in-memory query evaluator
 # (`crate::query::eval`, `crate::query::value`) used by the in-memory Cosmos DB

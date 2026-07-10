@@ -164,9 +164,13 @@ fn build_string_to_sign(auth_ctx: &AuthorizationContext, date_string: &str) -> S
         method_str.len() + resource_type.len() + resource_link.len() + date_string.len() + 6;
     let mut s = String::with_capacity(capacity);
     use std::fmt::Write as _;
+    // Cosmos REST API requires the date portion of the canonical string to be
+    // lowercased before HMAC. We lowercase here so callers may pass the date in
+    // proper RFC 7231 case (the case the Gateway 2.0 RNTBD `Date` token expects).
     let _ = write!(
         s,
-        "{method_str}\n{resource_type}\n{resource_link}\n{date_string}\n\n"
+        "{method_str}\n{resource_type}\n{resource_link}\n{}\n\n",
+        date_string.to_ascii_lowercase()
     );
     s
 }
@@ -208,5 +212,32 @@ mod tests {
 
         let expected = "get\ndbs\n\nmon, 01 jan 1900 01:00:00 gmt\n\n";
         assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn build_string_to_sign_lowercases_proper_case_date_for_hmac() {
+        // Regression: the Cosmos REST canonical text requires the date to be
+        // lowercased for HMAC. Callers (`request_signing::sign_request`) pass
+        // the date in proper RFC 7231 case so the same value can be set as
+        // the `x-ms-date` header and emitted as the Gateway 2.0 RNTBD `Date`
+        // token (both want proper case). Pin that the canonical text still
+        // lowercases the date internally — if this regresses, master-key auth
+        // breaks against every Cosmos account.
+        let auth_ctx = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::DocumentCollection,
+            "dbs/MyDatabase/colls/MyCollection",
+        );
+
+        let proper_case = "Mon, 01 Jan 1900 01:00:00 GMT";
+        let lower_case = "mon, 01 jan 1900 01:00:00 gmt";
+        let signed_proper = build_string_to_sign(&auth_ctx, proper_case);
+        let signed_lower = build_string_to_sign(&auth_ctx, lower_case);
+
+        assert_eq!(signed_proper, signed_lower);
+        assert!(
+            signed_proper.contains(lower_case),
+            "canonical text must carry the lowercased date; got {signed_proper:?}"
+        );
     }
 }

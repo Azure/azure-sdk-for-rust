@@ -92,6 +92,35 @@ impl SessionContainer {
         None
     }
 
+    /// Resolves the session token for a single partition-key range as
+    /// `<pk_range_id>:<vector>`.
+    ///
+    /// Used on the RNTBD/thin-client path where a request targets exactly one
+    /// physical partition: that backend rejects a multi-range composite token
+    /// (`"Session token specified is invalid."`), so a partition-scoped request
+    /// must carry only its own range's token. Returns `None` when no token has
+    /// been cached for that range yet (the request is then sent without one).
+    pub(crate) fn resolve_session_token_for_range(
+        &self,
+        container: &ContainerReference,
+        pk_range_id: &str,
+    ) -> Option<SessionToken> {
+        let guard = self.inner.read().unwrap_or_else(|e| e.into_inner());
+
+        let lookup = |rid: &str| -> Option<SessionToken> {
+            let vector = guard.tokens.get(rid)?.get(pk_range_id)?;
+            Some(SessionToken::new(format!("{pk_range_id}:{vector}")))
+        };
+
+        let rid = container.rid();
+        if let Some(token) = lookup(rid) {
+            return Some(token);
+        }
+        let np = name_path(container);
+        let resolved_rid = guard.name_to_rid.get(np)?;
+        lookup(resolved_rid.as_str())
+    }
+
     /// Resolves the session token for a specific partition key range.
     ///
     /// If the target range has no token, parent ranges are merged and emitted
@@ -268,6 +297,18 @@ mod tests {
     }
 
     #[test]
+    fn set_and_get_token_with_negative_region_lsn() {
+        // Regression: a `-1` region LSN must not cause the token to be dropped
+        // (previously parsed as u64, which silently stored nothing and broke
+        // read-your-writes).
+        let sc = SessionContainer::new();
+        let c = test_container("db1", "c1", "rid1");
+        sc.set_session_token(&c, "0:0#2#2=-1");
+        let token = sc.resolve_session_token(&c).unwrap();
+        assert_eq!(token.as_str(), "0:0#2#2=-1");
+    }
+
+    #[test]
     fn merge_updates_existing() {
         let sc = SessionContainer::new();
         let c = test_container("db1", "c1", "rid1");
@@ -317,6 +358,46 @@ mod tests {
             .unwrap();
 
         assert_eq!(token.as_str(), "child:1#200#1=20");
+    }
+
+    #[test]
+    fn resolve_for_range_returns_only_that_range() {
+        // The RNTBD/thin-client path rejects a multi-range composite on a
+        // partition-scoped request, so a scoped resolve must return exactly one
+        // `<pk_range_id>:<vector>` segment even when other ranges are cached.
+        let sc = SessionContainer::new();
+        let c = test_container("db1", "c1", "rid1");
+        sc.set_session_token(&c, "0:0#2#2=-1,1:0#1#2=-1");
+
+        assert_eq!(
+            sc.resolve_session_token_for_range(&c, "0")
+                .unwrap()
+                .as_str(),
+            "0:0#2#2=-1",
+        );
+        assert_eq!(
+            sc.resolve_session_token_for_range(&c, "1")
+                .unwrap()
+                .as_str(),
+            "1:0#1#2=-1",
+        );
+        // A range with no cached token yields nothing (request sent without one).
+        assert!(sc.resolve_session_token_for_range(&c, "2").is_none());
+    }
+
+    #[test]
+    fn resolve_for_range_uses_name_fallback() {
+        let sc = SessionContainer::new();
+        let c_actual = test_container("db1", "c1", "rid_actual");
+        sc.set_session_token(&c_actual, "0:1#100#1=10");
+
+        let c_lookup = test_container("db1", "c1", "rid_different");
+        assert_eq!(
+            sc.resolve_session_token_for_range(&c_lookup, "0")
+                .unwrap()
+                .as_str(),
+            "0:1#100#1=10",
+        );
     }
 
     #[test]

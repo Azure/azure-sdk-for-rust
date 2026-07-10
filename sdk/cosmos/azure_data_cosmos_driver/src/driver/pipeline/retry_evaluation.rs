@@ -24,7 +24,9 @@ use crate::{
 
 use std::sync::atomic::Ordering;
 
-use super::components::{OperationAction, OperationRetryState, TransportOutcome, TransportResult};
+use super::components::{
+    OperationAction, OperationRetryState, RetryWithRetryState, TransportOutcome, TransportResult,
+};
 #[cfg(feature = "preview_dtx")]
 use super::components::{
     DTX_COORDINATOR_RETRY_INTERVAL, DTX_INFRA_BASE_BACKOFF, DTX_INFRA_MAX_BACKOFF,
@@ -83,13 +85,18 @@ fn make_partition_unavailable(
 /// treated as region-confirming **except** the explicit retry-trigger set
 /// and client-synthesized statuses. This means uncommon-but-deterministic
 /// service responses (202 Accepted, 207 MultiStatus, 404/0 NotFound, 413
-/// Payload Too Large, 449 RetryWith, 451 Unavailable For Legal Reasons,
-/// etc.) all flush deferred marks just like the more familiar 200/409/412.
+/// Payload Too Large, 451 Unavailable For Legal Reasons, etc.) all flush
+/// deferred marks just like the more familiar 200/409/412. **449 RetryWith
+/// is deliberately excluded** from the confirming set — see the note on
+/// `try_handle_retry_with`; the request hasn't completed yet and the next
+/// retry must hit the same region.
 ///
 /// Returns `false` for:
 /// - 503 ServiceUnavailable, 408 RequestTimeout, 410 Gone, 429/3092 (system
 ///   resource unavailable), 403/3 (write forbidden) — the retry-trigger set;
 ///   we have no proof any region accepted the request.
+/// - 449 RetryWith — the request never completed; the backend is asking for
+///   another attempt in the same region. Deferred effects must not flush.
 /// - Client-synthesized statuses (e.g. `CLIENT_OPERATION_TIMEOUT`) — these
 ///   never came from a server.
 ///
@@ -113,6 +120,11 @@ pub(crate) fn is_region_confirming_status(status: &CosmosStatus) -> bool {
         || code == azure_core::http::StatusCode::RequestTimeout
         || code == azure_core::http::StatusCode::Gone
     {
+        return false;
+    }
+
+    // 449 RetryWith — request never completed, same-region retry pending.
+    if status.is_retry_with() {
         return false;
     }
 
@@ -306,10 +318,17 @@ pub(crate) fn evaluate_hedge_leg_effects(
         }
 
         TransportOutcome::TransportError { request_sent, .. } => {
-            // Mirrors `evaluate_transport_layer_outcome`: `definitely_not_sent`
-            // emits no effects; `sent` marks the partition unavailable and
-            // (when PPCB is not managing failover) the endpoint too.
-            if !request_sent.definitely_not_sent() {
+            // Mirrors `evaluate_transport_layer_outcome`: a not-sent failure is
+            // endpoint-wide (mark the endpoint, leave PPCB's partition counter
+            // untouched); a sent/unknown failure means the endpoint is
+            // reachable but this partition had an issue (mark the partition
+            // only — sibling partitions on the endpoint are unaffected).
+            if request_sent.definitely_not_sent() {
+                eval.effects.push(LocationEffect::MarkEndpointUnavailable {
+                    endpoint: endpoint.clone(),
+                    reason: UnavailableReason::TransportError,
+                });
+            } else {
                 eval.effects.push(LocationEffect::MarkPartitionUnavailable(
                     make_partition_unavailable(
                         operation,
@@ -318,12 +337,6 @@ pub(crate) fn evaluate_hedge_leg_effects(
                         operation.is_read_only(),
                     ),
                 ));
-                if !is_ppcb_managed(operation, retry_state) {
-                    eval.effects.push(LocationEffect::MarkEndpointUnavailable {
-                        endpoint: endpoint.clone(),
-                        reason: UnavailableReason::TransportError,
-                    });
-                }
             }
         }
 
@@ -383,6 +396,10 @@ fn evaluate_http_outcome(
     if let Some(result) =
         try_handle_retry_trigger_group(operation, endpoint, retry_state, &status, request_sent)
     {
+        return result;
+    }
+
+    if let Some(result) = try_handle_retry_with(retry_state, &status) {
         return result;
     }
 
@@ -493,6 +510,19 @@ fn dtx_infra_retry_delay(attempt: u32) -> std::time::Duration {
 /// learned, (b) mark this endpoint unavailable, and (c) mark this partition
 /// unavailable in the current (read) region for write traffic. Multi-write
 /// paces retries with exponential backoff bounded by the ~2 min budget.
+///
+/// **Hub-region discovery branch.** When the
+/// `hub_region_processing_only` latch is active on a read with a known
+/// partition key range ID, the 403/3 instead means "this region is not the
+/// current hub for this partition". The handler emits an
+/// [`LocationEffect::AdvanceHubRegionDiscovery`] that rotates the cached
+/// hub endpoint to the next preferred-read endpoint and consumes a
+/// failover-budget attempt. Once that budget is exhausted the branch returns
+/// `None`, which aborts the operation rather than retrying indefinitely. It
+/// does NOT emit
+/// [`LocationEffect::MarkEndpointUnavailable`] or
+/// [`LocationEffect::RefreshAccountProperties`] — the endpoint is healthy
+/// for non-hub reads of other partitions, and the topology is unchanged.
 fn try_handle_write_forbidden(
     operation: &CosmosOperation,
     endpoint: &CosmosEndpoint,
@@ -503,7 +533,62 @@ fn try_handle_write_forbidden(
         return None;
     }
 
-    // Multi-write 403/3 gets the exponential backend-failover backoff; single-write uses the generic budget.
+    // Hub-region discovery on the read path: rotate the per-partition cache
+    // entry to the next preferred-read endpoint and retry without polluting
+    // account-level state. The latch is single-master-only (enforced at both
+    // setters); the `!can_use_multiple_write_locations` guard below is
+    // defense-in-depth so a stray multi-master latch can never route a read
+    // into this single-master branch instead of the multi-write budget.
+    //
+    // **No fall-through to standard write-forbidden effects.** A 403/3 on a
+    // read with the hub-region header carries a *partition-scoped* meaning
+    // ("this region is not the hub for this partition"), not a region- or
+    // endpoint-level health signal. Falling back to
+    // `RefreshAccountProperties` / `MarkEndpointUnavailable` /
+    // `MarkPartitionUnavailable` would poison routing state for unrelated
+    // partitions. When the partition key range ID is known, emit
+    // `AdvanceHubRegionDiscovery` to rotate the cache; when missing, retry
+    // failover with no location effects.
+    if retry_state.hub_region_processing_only
+        && operation.is_read_only()
+        && !retry_state.can_use_multiple_write_locations
+    {
+        // Enforce the failover budget here — the outer pipeline does not cap
+        // failover attempts on its own, so returning `None` (which aborts) is
+        // the only thing that terminates a persistent 403/3 read.
+        if !retry_state.can_retry_failover() {
+            return None;
+        }
+
+        let effects = if let Some(pk_range_id) = retry_state.partition_key_range_id.clone() {
+            vec![LocationEffect::AdvanceHubRegionDiscovery {
+                partition_key_range_id: pk_range_id,
+                failed_endpoint: endpoint.clone(),
+            }]
+        } else {
+            // No partition key range ID available for this hub-region read
+            // (e.g. a read that did not go through PK-range pre-resolution).
+            // Without it we cannot rotate a per-partition cache entry, so fall
+            // back to a plain failover retry with no location effects.
+            tracing::warn!(
+                endpoint = %endpoint.url(),
+                failover_retries = retry_state.failover_retry_count,
+                "hub-region 403/3 retry has no partition_key_range_id; \
+                 skipping AdvanceHubRegionDiscovery and falling back to plain failover retry",
+            );
+            Vec::new()
+        };
+        return Some((
+            OperationAction::FailoverRetry {
+                new_state: retry_state.clone().advance_failover(),
+                delay: None,
+            },
+            effects,
+        ));
+    }
+
+    // Multi-write 403/3 gets the exponential backend-failover backoff;
+    // single-write uses the generic budget.
     let (new_state, delay) = if retry_state.can_use_multiple_write_locations {
         if !retry_state.can_retry_backend_failover() {
             return None;
@@ -630,15 +715,13 @@ fn try_handle_read_session_not_available(
 /// 4. `!hub_region_processing_only` — defense-in-depth idempotency;
 ///    structurally already guaranteed by latch-once semantics.
 ///
-/// **Hedging coordination (future).** When
-/// `OperationRetryState` gains a `shared_hub_region_latch:
-/// Option<Arc<AtomicBool>>` (populated by `execute_with_hedging()`),
-/// this function MUST also CAS-set the shared latch with
-/// `Release` ordering when it latches the per-state flag. That is the
-/// Rust counterpart of .NET v3's `CrossRegionAvailabilityContext` flag
-/// from azure-cosmos-dotnet-v3#5815 and is what propagates the
-/// discovery from one hedge to its siblings without each hedge
-/// independently re-running the 404/1002 cycle.
+/// **Hedging coordination.** When this operation is running inside
+/// `execute_hedged`, `OperationRetryState` carries a
+/// `shared_hub_region_latch: Option<Arc<AtomicBool>>`. This function
+/// CAS-sets that shared latch with `Release` ordering when it latches
+/// the per-state flag, propagating the discovery from one hedge to its
+/// siblings without each hedge independently re-running the 404/1002
+/// cycle.
 fn build_session_retry_state(retry_state: &OperationRetryState) -> OperationRetryState {
     let mut new_state = retry_state.clone().advance_session_retry();
     if retry_state.is_dataplane
@@ -722,6 +805,59 @@ fn try_handle_retry_trigger_group(
             delay: None,
         },
         effects,
+    ))
+}
+
+/// Handles HTTP 449 RetryWith — the Cosmos backend is signaling a
+/// transient concurrency conflict (concurrent writes racing through
+/// the store, RBAC info momentarily unavailable, etc.) and asking the
+/// client to retry in the same region after a short delay.
+///
+/// Mirrors the cross-SDK `RetryWithRetryPolicy` (nested in
+/// `GoneAndRetryWithRequestRetryPolicy`): the retry schedule starts at
+/// ~10ms + a small random salt, exponentially backs off up to ~1s per
+/// retry, and gives up once the cumulative delay budget is exhausted
+/// (~30s by default). The failover-retry budget is **not** consumed —
+/// failing over to another region is not the correct response to a
+/// concurrency conflict; the same record needs to be retried in the
+/// same region.
+///
+/// Returns `None` when:
+///
+/// * The status is not 449 (falls through to other handlers).
+/// * The cumulative-wait budget would be exceeded by the next retry
+///   delay (caller surfaces the 449 to the application).
+fn try_handle_retry_with(
+    retry_state: &OperationRetryState,
+    status: &CosmosStatus,
+) -> Option<(OperationAction, Vec<LocationEffect>)> {
+    if !status.is_retry_with() {
+        return None;
+    }
+
+    // Look at (or initialize) the per-operation retry-with state to
+    // compute the next delay, then check whether the cumulative budget
+    // can absorb it. The delay is computed **once** here and threaded
+    // through both the budget check and the cumulative-delay bookkeeping
+    // in `advance_retry_with_delay` so the salt's randomness never
+    // produces a drift between "budget-checked delay" and "actual sleep".
+    let current_state = retry_state
+        .retry_with_state
+        .clone()
+        .unwrap_or_else(RetryWithRetryState::new);
+    let delay = current_state.next_delay();
+    if !current_state.can_retry(delay) {
+        return None;
+    }
+
+    Some((
+        OperationAction::InRegionRetry {
+            new_state: retry_state.clone().advance_retry_with_delay(delay),
+            delay,
+        },
+        // No location effects — 449 is region-local, the next attempt
+        // must hit the same region.
+        Vec::new(),
     ))
 }
 
@@ -969,6 +1105,10 @@ fn build_transport_error(
 
 #[cfg(test)]
 mod tests {
+    use super::super::components::{
+        BACKEND_FAILOVER_JITTER_RATIO, BACKEND_FAILOVER_MAX_BACKOFF,
+        BACKEND_FAILOVER_MAX_TOTAL_DELAY,
+    };
     use super::*;
     use crate::{
         diagnostics::RequestSentStatus,
@@ -980,11 +1120,6 @@ mod tests {
     };
     use azure_core::http::StatusCode;
     use std::time::Duration;
-
-    use super::super::components::{
-        BACKEND_FAILOVER_JITTER_RATIO, BACKEND_FAILOVER_MAX_BACKOFF,
-        BACKEND_FAILOVER_MAX_TOTAL_DELAY,
-    };
 
     /// Lower/upper bounds of the jittered first backend-failover delay (base 1s ±25%).
     fn first_backend_failover_delay_bounds() -> (Duration, Duration) {
@@ -1524,6 +1659,7 @@ mod tests {
             location: crate::driver::routing::LocationIndex::initial(0),
             failover_retry_count: 1,
             session_token_retry_count: 0,
+            retry_with_state: None,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: std::time::Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
@@ -2405,6 +2541,7 @@ mod tests {
             location: crate::driver::routing::LocationIndex::initial(0),
             failover_retry_count: 1,
             session_token_retry_count: 0,
+            retry_with_state: None,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: std::time::Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
@@ -2961,17 +3098,346 @@ mod tests {
         }
     }
 
+    // ── 449 RetryWith ─────────────────────────────────────────────────────
+    //
+    // The handler-level tests below lock in the behavior described in
+    // `try_handle_retry_with`:
+    //
+    //   1. 449 alone triggers an in-region FailoverRetry with a non-zero delay.
+    //   2. The retry-with state is initialized on first 449 and advanced on
+    //      every subsequent 449 hit.
+    //   3. Once the cumulative-wait budget is exhausted, the 449 propagates
+    //      to the caller (no further retries scheduled).
+    //   4. is_region_confirming_status excludes 449 so deferred location
+    //      effects don't flush on RetryWith.
+
+    fn make_449_error() -> TransportResult {
+        make_http_error_status(CosmosStatus::new(StatusCode::from(449u16)))
+    }
+
+    #[test]
+    fn retry_with_449_returns_in_region_retry_with_delay() {
+        let op = make_read_operation();
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, make_449_error(), &state);
+        match action {
+            OperationAction::InRegionRetry { new_state, delay } => {
+                // First retry: 10ms initial + [0,5)ms salt → strictly < 15ms.
+                assert!(delay >= Duration::from_millis(10));
+                assert!(delay < Duration::from_millis(15));
+                let rw = new_state
+                    .retry_with_state
+                    .expect("first 449 must initialize retry_with_state");
+                assert_eq!(rw.attempt_count, 1);
+                // The delay must be recorded in the cumulative bookkeeping
+                // verbatim — no drift between the budget-checked delay
+                // and the cumulative delta.
+                assert_eq!(rw.cumulative_delay, delay);
+            }
+            other => panic!("expected InRegionRetry, got {other:?}"),
+        }
+        // 449 is region-local — no MarkEndpointUnavailable / MarkPartitionUnavailable.
+        assert!(
+            effects.is_empty(),
+            "449 must not emit location effects (in-region retry only)",
+        );
+    }
+
+    #[test]
+    fn retry_with_449_advances_existing_retry_with_state() {
+        let op = make_read_operation();
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        // Pretend we've already retried 3 times.
+        state.retry_with_state = Some(RetryWithRetryState {
+            attempt_count: 3,
+            cumulative_delay: Duration::from_millis(100),
+            ..RetryWithRetryState::new()
+        });
+
+        let (action, _) = evaluate_transport_result(&op, &endpoint, make_449_error(), &state);
+        match action {
+            OperationAction::InRegionRetry { new_state, .. } => {
+                let rw = new_state.retry_with_state.expect("state must persist");
+                assert_eq!(rw.attempt_count, 4);
+            }
+            other => panic!("expected InRegionRetry, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn retry_with_449_aborts_when_cumulative_budget_exhausted() {
+        let op = make_read_operation();
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        // Budget already fully spent — next delay can't fit.
+        state.retry_with_state = Some(RetryWithRetryState {
+            attempt_count: 11,
+            cumulative_delay: Duration::from_secs(30),
+            ..RetryWithRetryState::new()
+        });
+
+        let (action, _) = evaluate_transport_result(&op, &endpoint, make_449_error(), &state);
+        // Falls through to Abort (no other handler claims 449).
+        assert!(
+            matches!(action, OperationAction::Abort { .. }),
+            "exhausted RetryWith budget must surface 449 to the caller, got {action:?}",
+        );
+    }
+
+    #[test]
+    fn is_region_confirming_status_excludes_449() {
+        // 449 RetryWith is a same-region retry trigger — the request never
+        // completed and deferred write-path effects must NOT flush.
+        let status_449 = CosmosStatus::new(StatusCode::from(449u16));
+        assert!(
+            !super::is_region_confirming_status(&status_449),
+            "449 RetryWith must not be region-confirming (else deferred effects would flush mid-retry)",
+        );
+
+        // Sanity: 200 still confirms, 503 still does not.
+        assert!(super::is_region_confirming_status(&CosmosStatus::new(
+            StatusCode::Ok
+        )));
+        assert!(!super::is_region_confirming_status(&CosmosStatus::new(
+            StatusCode::ServiceUnavailable
+        )));
+    }
+
+    #[test]
+    fn try_handle_retry_with_returns_none_for_non_449_status() {
+        // Sanity: only 449 triggers this policy; every other status must
+        // fall through so other handlers see it.
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        for status in [
+            CosmosStatus::new(StatusCode::Ok),
+            CosmosStatus::new(StatusCode::ServiceUnavailable),
+            CosmosStatus::new(StatusCode::TooManyRequests),
+            CosmosStatus::new(StatusCode::Gone),
+            CosmosStatus::new(StatusCode::RequestTimeout),
+        ] {
+            assert!(
+                super::try_handle_retry_with(&state, &status).is_none(),
+                "non-449 status {status:?} must not be claimed by try_handle_retry_with",
+            );
+        }
+    }
+
+    // ── Hub region caching ────────────────────────────────────────────
+
+    /// Helper: builds an OperationRetryState configured as if the
+    /// hub-region-processing-only latch is currently set for a single-master
+    /// data-plane read with a known partition key range ID.
+    fn state_with_hub_latch(pk_range_id: &str) -> OperationRetryState {
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        state.is_dataplane = true;
+        state.hub_region_processing_only = true;
+        state.partition_key_range_id = Some(pk_range_id.parse().unwrap());
+        state
+    }
+
+    /// Hub-region branch in `try_handle_write_forbidden`: when the latch is
+    /// set, the request is read-only, and a partition key range ID is known,
+    /// the 403/3 emits an `AdvanceHubRegionDiscovery` effect (and only that
+    /// effect) — no `MarkEndpointUnavailable` or
+    /// `RefreshAccountProperties`, since the endpoint is healthy for non-hub
+    /// reads of other partitions and the topology is unchanged.
+    #[test]
+    fn read_403_3_with_hub_latch_emits_advance_effect() {
+        let op = make_read_operation();
+        let state = state_with_hub_latch("0");
+        let endpoint = test_endpoint();
+        let (action, effects) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            make_http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            &state,
+        );
+
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert_eq!(effects.len(), 1, "exactly one effect: advance discovery");
+        assert!(matches!(
+            effects[0],
+            LocationEffect::AdvanceHubRegionDiscovery { .. }
+        ));
+        // Defense-in-depth: confirm the standard 403/3 effects are NOT present.
+        assert!(!effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+        assert!(!effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::RefreshAccountProperties)));
+        assert!(!effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
+    }
+
+    /// Regression: 403/3 for a write operation must keep emitting the existing
+    /// write-forbidden effects (`RefreshAccountProperties`,
+    /// `MarkEndpointUnavailable`, `MarkPartitionUnavailable`), even if the
+    /// retry state happens to carry the hub-region latch (which it wouldn't
+    /// in production for a write — defense in depth).
+    #[test]
+    fn write_403_3_with_hub_latch_keeps_existing_behavior() {
+        let op = make_create_operation();
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        state.is_dataplane = true;
+        state.hub_region_processing_only = true; // defense in depth
+        state.partition_key_range_id = Some("0".parse().unwrap());
+        let endpoint = test_endpoint();
+
+        let (action, effects) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            make_http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            &state,
+        );
+
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::RefreshAccountProperties)));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+        assert!(!effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::AdvanceHubRegionDiscovery { .. })));
+    }
+
+    /// Regression: 403/3 for a read without the hub latch must keep emitting
+    /// the existing effects unchanged.
+    #[test]
+    fn read_403_3_without_hub_latch_keeps_existing_behavior() {
+        let op = make_read_operation();
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        let endpoint = test_endpoint();
+
+        let (action, effects) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            make_http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            &state,
+        );
+
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::RefreshAccountProperties)));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+        assert!(!effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::AdvanceHubRegionDiscovery { .. })));
+    }
+
+    /// Hub-region read with the latch active but no partition key range ID
+    /// falls back to a plain failover retry with no location effects, and
+    /// never panics. (Validates #618.)
+    #[test]
+    fn read_403_3_with_hub_latch_no_pk_range_id_falls_back_gracefully() {
+        let op = make_read_operation();
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        state.is_dataplane = true;
+        state.hub_region_processing_only = true;
+        // partition_key_range_id intentionally left as None.
+
+        let endpoint = test_endpoint();
+        let (action, effects) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            make_http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            &state,
+        );
+
+        // Graceful fallback: failover retry with no effects (no panic).
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert!(
+            effects.is_empty(),
+            "missing pk_range_id must not emit any location effects, got {effects:?}",
+        );
+    }
+
+    /// Hub-region 403/3 read aborts once the failover budget is exhausted
+    /// rather than retrying indefinitely. (Validates #579.)
+    #[test]
+    fn read_403_3_with_hub_latch_aborts_when_failover_budget_exhausted() {
+        let op = make_read_operation();
+        let mut state = state_with_hub_latch("0");
+        state.failover_retry_count = state.max_failover_retries;
+        let endpoint = test_endpoint();
+
+        let (action, effects) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            make_http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            &state,
+        );
+
+        assert!(
+            matches!(action, OperationAction::Abort { .. }),
+            "hub-region 403/3 must abort once the failover budget is exhausted, got {action:?}",
+        );
+        // No routing-state mutations on the terminal abort.
+        assert!(
+            effects.is_empty(),
+            "aborted hub-region 403/3 must emit no effects"
+        );
+    }
+
+    /// Defense-in-depth (multi-master invariant): even if the hub-region
+    /// latch is somehow set on a multi-master account, a 403/3 read must NOT
+    /// enter the single-master hub-region branch. It falls through to the
+    /// multi-write budget, emitting the standard write-forbidden effects
+    /// (`RefreshAccountProperties`) rather than `AdvanceHubRegionDiscovery`.
+    #[test]
+    fn read_403_3_with_hub_latch_on_multi_master_skips_hub_branch() {
+        let op = make_read_operation();
+        // Multi-master account: can_use_multiple_write_locations = true.
+        let mut state = OperationRetryState::initial(0, true, Vec::new(), 3, 3);
+        state.is_dataplane = true;
+        state.hub_region_processing_only = true; // stray latch, must be ignored
+        state.partition_key_range_id = Some("0".parse().unwrap());
+        let endpoint = test_endpoint();
+
+        let (action, effects) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            make_http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            &state,
+        );
+
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert!(
+            !effects
+                .iter()
+                .any(|e| matches!(e, LocationEffect::AdvanceHubRegionDiscovery { .. })),
+            "multi-master 403/3 must not take the hub-region branch",
+        );
+        assert!(
+            effects
+                .iter()
+                .any(|e| matches!(e, LocationEffect::RefreshAccountProperties)),
+            "multi-master 403/3 must take the standard write-forbidden path",
+        );
+    }
+
     // ── Shared hub-region latch (Part 5) ──────────────────────────
 
-    use std::sync::{
-        atomic::{AtomicBool, Ordering},
-        Arc,
-    };
+    use std::sync::{atomic::AtomicBool, Arc};
 
     /// T-S1 — When the per-state latch fires and a shared latch is
     /// attached, the shared `Arc<AtomicBool>` is `Release`-stored as
-    /// `true`. Counterpart of .NET PR #5815's `CrossRegionAvailabilityContext`
-    /// propagation test.
+    /// `true`, verifying cross-hedge propagation of the first 1002.
     #[test]
     fn shared_hub_region_latch_propagates_first_1002_across_hedges() {
         let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
@@ -3099,12 +3565,12 @@ mod tests {
         assert!(!eval.observed_session_unavailable);
     }
 
-    /// Transport error with `RequestSentStatus::Sent` on a read emits
-    /// the same `MarkPartitionUnavailable` + `MarkEndpointUnavailable`
-    /// pair the consuming path emits — see
+    /// Transport error with `RequestSentStatus::Sent` means the endpoint was
+    /// reachable but this partition had an issue — emits `MarkPartitionUnavailable`
+    /// ONLY (no endpoint mark), matching the sent branch of
     /// `evaluate_transport_layer_outcome`.
     #[test]
-    fn hedge_leg_effects_transport_sent_emits_marks() {
+    fn hedge_leg_effects_transport_sent_marks_partition_only() {
         let op = make_read_operation();
         let endpoint = test_endpoint();
         let state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
@@ -3115,18 +3581,23 @@ mod tests {
             .effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
-        assert!(eval
-            .effects
-            .iter()
-            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+        assert!(
+            !eval
+                .effects
+                .iter()
+                .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })),
+            "sent transport error must not mark the endpoint — siblings are unaffected",
+        );
     }
 
-    /// Transport error with `RequestSentStatus::NotSent` emits NO
-    /// effects (the failure is purely client-side; failing over is safe
-    /// and incurs no routing-state consequences) — matches the
+    /// Transport error with `RequestSentStatus::NotSent` is an endpoint-wide
+    /// failure — emits `MarkEndpointUnavailable` (and no partition mark, so
+    /// PPCB's partition counter is not inflated), matching the
     /// `definitely_not_sent` branch in `evaluate_transport_layer_outcome`.
+    /// This is what drives G2 fail-fast: an unreachable thin-client proxy
+    /// rotates its region out instead of being retried.
     #[test]
-    fn hedge_leg_effects_transport_not_sent_is_empty() {
+    fn hedge_leg_effects_transport_not_sent_marks_endpoint() {
         let op = make_create_operation();
         let endpoint = test_endpoint();
         let state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
@@ -3134,8 +3605,17 @@ mod tests {
 
         let eval = evaluate_hedge_leg_effects(&op, &endpoint, &state, &result);
         assert!(
-            eval.effects.is_empty(),
-            "not-sent transport error must not mark routing state",
+            eval.effects
+                .iter()
+                .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })),
+            "not-sent transport error must mark the endpoint unavailable",
+        );
+        assert!(
+            !eval
+                .effects
+                .iter()
+                .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))),
+            "not-sent transport error must not inflate the partition counter",
         );
     }
 

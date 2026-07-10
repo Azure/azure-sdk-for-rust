@@ -22,7 +22,7 @@ rust-version.workspace = true
 async-trait.workspace = true
 azure_core.workspace = true
 azure_messaging_eventhubs = { path = "../azure_messaging_eventhubs", version = "0.15.0" }
-azure_storage_blob.workspace = true
+azure_storage_blob = { path = "../../storage/azure_storage_blob", version = "1.1.0-beta.1" }
 futures.workspace = true
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
@@ -30,9 +30,9 @@ time = { workspace = true, features = ["serde"] }
 tracing = { workspace = true }
 
 [dev-dependencies]
-azure_core_opentelemetry.workspace = true
+azure_core_opentelemetry = { path = "../../core/azure_core_opentelemetry", version = "1.1.0-beta.1" }
 azure_core_test = { workspace = true, features = ["tracing"] }
-azure_identity.workspace = true
+azure_identity = { path = "../../identity/azure_identity", version = "1.1.0-beta.1" }
 opentelemetry.workspace = true
 opentelemetry-appender-tracing.workspace = true
 opentelemetry-stdout.workspace = true

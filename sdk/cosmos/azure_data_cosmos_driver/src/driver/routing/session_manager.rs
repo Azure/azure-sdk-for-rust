@@ -62,14 +62,21 @@ impl SessionManager {
     /// Resolution order:
     /// 1. If the user explicitly provided a session token via
     ///    [`CosmosOperation::with_session_token`](crate::models::CosmosOperation::with_session_token), use that.
-    /// 2. Otherwise, look up the cached token by the operation's
-    ///    [`ContainerReference`].
+    /// 2. If the request targets a specific partition-key range (`pk_range_id`
+    ///    is `Some`), return only that range's cached token. The RNTBD/thin-client
+    ///    backend rejects a multi-range composite token on a partition-scoped
+    ///    request with `"Session token specified is invalid."`, so a scoped
+    ///    request must carry only its own range's token (matching direct-mode
+    ///    semantics). Returns `None` when that range has no cached token yet.
+    /// 3. Otherwise (no resolved range — e.g. a not-yet-routed or non-partitioned
+    ///    request), fall back to the full composite cached by container.
     ///
     /// Returns `None` if no token is available or the operation has no container.
     pub(crate) fn resolve_session_token(
         &self,
         operation: &CosmosOperation,
         user_token: Option<&SessionToken>,
+        pk_range_id: Option<&str>,
     ) -> Option<SessionToken> {
         // User-provided token takes precedence
         if let Some(token) = user_token {
@@ -82,7 +89,12 @@ impl SessionManager {
         // map child ranges back to their parent session tokens.
 
         let container = operation.container()?;
-        self.container.resolve_session_token(container)
+        match pk_range_id {
+            Some(pk_range_id) => self
+                .container
+                .resolve_session_token_for_range(container, pk_range_id),
+            None => self.container.resolve_session_token(container),
+        }
     }
 
     /// Captures the session token from a response into the cache.
@@ -259,7 +271,7 @@ mod tests {
             PartitionKey::from("pk1"),
             "doc1",
         ));
-        assert!(mgr.resolve_session_token(&op, None).is_none());
+        assert!(mgr.resolve_session_token(&op, None, None).is_none());
     }
 
     #[test]
@@ -272,7 +284,7 @@ mod tests {
             "doc1",
         ));
         let user_token = SessionToken::new("user-provided");
-        let result = mgr.resolve_session_token(&op, Some(&user_token));
+        let result = mgr.resolve_session_token(&op, Some(&user_token), None);
         assert_eq!(result.unwrap().as_str(), "user-provided");
     }
 
@@ -293,7 +305,7 @@ mod tests {
         );
         mgr.capture_session_token(&op, &headers);
 
-        let token = mgr.resolve_session_token(&op, None).unwrap();
+        let token = mgr.resolve_session_token(&op, None, None).unwrap();
         assert_eq!(token.as_str(), "0:1#100#1=10");
     }
 
@@ -309,7 +321,7 @@ mod tests {
 
         let headers = make_response_headers(None, Some("coll_rid1"), None);
         mgr.capture_session_token(&op, &headers);
-        assert!(mgr.resolve_session_token(&op, None).is_none());
+        assert!(mgr.resolve_session_token(&op, None, None).is_none());
     }
 
     #[test]
@@ -336,7 +348,7 @@ mod tests {
         );
         mgr.capture_session_token(&op, &h2);
 
-        let token = mgr.resolve_session_token(&op, None).unwrap();
+        let token = mgr.resolve_session_token(&op, None, None).unwrap();
         assert!(token.as_str().contains("200"));
     }
 
@@ -391,7 +403,7 @@ mod tests {
             "doc1",
         ));
 
-        let token = mgr.resolve_session_token(&op_resolve, None).unwrap();
+        let token = mgr.resolve_session_token(&op_resolve, None, None).unwrap();
         assert_eq!(token.as_str(), "0:1#100");
     }
 
@@ -414,7 +426,7 @@ mod tests {
 
         // Token is stored under the ContainerReference's RID (coll_rid1),
         // not the owner_id header value.
-        let token = mgr.resolve_session_token(&op, None).unwrap();
+        let token = mgr.resolve_session_token(&op, None, None).unwrap();
         assert_eq!(token.as_str(), "0:1#100");
     }
 
@@ -466,7 +478,7 @@ mod tests {
             PartitionKey::from("pk1"),
             "doc1",
         ));
-        let token = mgr.resolve_session_token(&read_op, None).unwrap();
+        let token = mgr.resolve_session_token(&read_op, None, None).unwrap();
         assert_eq!(token.as_str(), "0:1#100#1=10");
     }
 
@@ -725,7 +737,7 @@ mod tests {
             PartitionKey::from("pk1"),
             "doc1",
         ));
-        assert!(mgr.resolve_session_token(&read_op, None).is_none());
+        assert!(mgr.resolve_session_token(&read_op, None, None).is_none());
     }
 
     #[cfg(feature = "preview_dtx")]
@@ -779,7 +791,7 @@ mod tests {
             PartitionKey::from("pk1"),
             "doc1",
         ));
-        let token = mgr.resolve_session_token(&read_op, None).unwrap();
+        let token = mgr.resolve_session_token(&read_op, None, None).unwrap();
         assert_eq!(token.as_str(), "0:1#100#1=10");
     }
 
@@ -888,7 +900,7 @@ mod tests {
         // from the ContainerReference, not from response headers.
         let headers = make_response_headers(Some("0:1#100"), None, None);
         mgr.capture_session_token(&op, &headers);
-        assert!(mgr.resolve_session_token(&op, None).is_some());
+        assert!(mgr.resolve_session_token(&op, None, None).is_some());
     }
 
     #[test]
@@ -945,8 +957,8 @@ mod tests {
         );
         mgr.capture_session_token(&op2, &h2);
 
-        let t1 = mgr.resolve_session_token(&op1, None).unwrap();
-        let t2 = mgr.resolve_session_token(&op2, None).unwrap();
+        let t1 = mgr.resolve_session_token(&op1, None, None).unwrap();
+        let t2 = mgr.resolve_session_token(&op2, None, None).unwrap();
         assert!(t1.as_str().contains("100"));
         assert!(t2.as_str().contains("999"));
     }
@@ -968,7 +980,7 @@ mod tests {
         );
         mgr.capture_session_token(&op, &headers);
 
-        let token = mgr.resolve_session_token(&op, None).unwrap();
+        let token = mgr.resolve_session_token(&op, None, None).unwrap();
         assert!(token.as_str().contains("0:") && token.as_str().contains("1:"));
     }
 
@@ -1099,7 +1111,7 @@ mod tests {
             PartitionKey::from("pk1"),
             "doc1",
         ));
-        assert!(mgr.resolve_session_token(&probe_op, None).is_none());
+        assert!(mgr.resolve_session_token(&probe_op, None, None).is_none());
     }
 
     #[test]
@@ -1139,6 +1151,6 @@ mod tests {
             PartitionKey::from("pk1"),
             "doc1",
         ));
-        assert!(mgr.resolve_session_token(&probe_op, None).is_none());
+        assert!(mgr.resolve_session_token(&probe_op, None, None).is_none());
     }
 }
