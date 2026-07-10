@@ -234,6 +234,17 @@ async fn read_item_with_503_retry(
 const EMULATOR_GATEWAY_URL: &str = "https://eastus.emulator.local";
 const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
 const TEST_MODE_ENV_VAR: &str = "AZURE_COSMOS_TEST_MODE";
+const SETUP_TIMEOUT_SECONDS_ENV_VAR: &str = "AZURE_COSMOS_TEST_SETUP_TIMEOUT_SECONDS";
+const DEFAULT_SETUP_TIMEOUT_SECONDS: u64 = 180;
+
+fn setup_timeout() -> Duration {
+    std::env::var(SETUP_TIMEOUT_SECONDS_ENV_VAR)
+        .ok()
+        .and_then(|value| value.parse::<u64>().ok())
+        .filter(|seconds| *seconds > 0)
+        .map(Duration::from_secs)
+        .unwrap_or_else(|| Duration::from_secs(DEFAULT_SETUP_TIMEOUT_SECONDS))
+}
 
 struct SdkDualBackend {
     emulator_client: CosmosClient,
@@ -1936,9 +1947,8 @@ async fn resolve_container_when_ready(
     db_name: &str,
     container_name: &str,
 ) -> Result<ContainerClient, Box<dyn Error>> {
-    const READY_TIMEOUT: Duration = Duration::from_secs(120);
     const MAX_BACKOFF: Duration = Duration::from_secs(5);
-    let deadline = Instant::now() + READY_TIMEOUT;
+    let deadline = Instant::now() + setup_timeout();
 
     // Phase 1: resolve the container's metadata (routing / PK ranges).
     let mut backoff = Duration::from_millis(250);
