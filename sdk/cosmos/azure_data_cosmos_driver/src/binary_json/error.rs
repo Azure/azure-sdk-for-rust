@@ -173,6 +173,12 @@ impl serde::ser::Error for BinaryError {
     }
 }
 
+impl serde::de::Error for BinaryError {
+    fn custom<T: fmt::Display>(msg: T) -> Self {
+        BinaryError::Custom(msg.to_string())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

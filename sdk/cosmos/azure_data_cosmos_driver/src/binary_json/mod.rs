@@ -44,6 +44,7 @@
 //! > binary responses (a later phase adds the request-side negotiation header
 //! > and wires the encoder into the SDK write/query paths).
 
+pub mod de;
 pub mod error;
 pub mod markers;
 pub mod reader;
@@ -56,6 +57,7 @@ mod fuzz_tests;
 #[cfg(test)]
 mod vectors;
 
+pub use de::from_slice;
 pub use error::{BinaryError, Result};
 pub use reader::decode;
 pub use ser::to_vec;

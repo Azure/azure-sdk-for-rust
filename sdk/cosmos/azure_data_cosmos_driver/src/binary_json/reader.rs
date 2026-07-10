@@ -50,6 +50,44 @@ use super::{is_binary, BinaryError, Result};
 /// guarding against stack exhaustion from adversarial input.
 const MAX_DEPTH: usize = 256;
 
+/// A single native scalar token read directly from the buffer, used by the
+/// native serde deserializer ([`super::de`]) to feed a visitor without
+/// materializing a [`serde_json::Value`]. Only the common, cheaply-decodable
+/// forms are represented here; exotic string/number forms fall back to
+/// [`Reader::read_value`] in the deserializer.
+pub(super) enum ScalarToken<'a> {
+    /// `null`.
+    Null,
+    /// `true` / `false`.
+    Bool(bool),
+    /// A signed integer (literal, fixed-width, or extended).
+    I64(i64),
+    /// An unsigned integer that does not fit `i64` (`NumberUInt64`).
+    U64(u64),
+    /// A double.
+    F64(f64),
+    /// A plain UTF-8 string borrowed directly from the buffer (system,
+    /// encoded-length, or `StrL1/2/4` form).
+    Str(&'a str),
+}
+
+/// Framing for a container being streamed by the native deserializer: either a
+/// known element/member `count`, or a byte `end` offset to read until.
+pub(super) struct Frame {
+    /// Declared element/member count, when the marker carries one.
+    pub(super) count: Option<usize>,
+    /// Absolute buffer offset at which the container's payload ends.
+    pub(super) end: usize,
+}
+
+/// The two container shapes the native deserializer streams.
+pub(super) enum ContainerHeader {
+    /// An array; stream `visit_seq`.
+    Array(Frame),
+    /// An object; stream `visit_map`.
+    Object(Frame),
+}
+
 /// Decodes a complete Cosmos binary JSON buffer into a [`serde_json::Value`].
 ///
 /// The buffer must begin with the [`PREAMBLE`](super::PREAMBLE) byte (`0x80`); the single
@@ -98,12 +136,25 @@ pub fn decode(buffer: &[u8]) -> Result<Value> {
 /// `pos` is an absolute offset into `buf`; the first value begins at `pos == 1`
 /// (just past the [`PREAMBLE`](super::PREAMBLE)). Every read advances `pos` only after verifying
 /// the bytes are present, so the reader never indexes out of bounds.
-struct Reader<'a> {
-    buf: &'a [u8],
-    pos: usize,
+pub(super) struct Reader<'a> {
+    pub(super) buf: &'a [u8],
+    pub(super) pos: usize,
 }
 
 impl<'a> Reader<'a> {
+    /// Creates a reader positioned at `pos` within `buf`.
+    pub(super) fn new(buf: &'a [u8], pos: usize) -> Self {
+        Self { buf, pos }
+    }
+
+    /// Returns the next byte without advancing the cursor.
+    pub(super) fn peek_u8(&self) -> Result<u8> {
+        self.buf
+            .get(self.pos)
+            .copied()
+            .ok_or(BinaryError::UnexpectedEof { needed: 1 })
+    }
+
     /// Reads a single byte, advancing the cursor.
     fn read_u8(&mut self) -> Result<u8> {
         let byte = *self
@@ -203,11 +254,10 @@ impl<'a> Reader<'a> {
     /// container children are read at `depth + 1`. Exceeding [`MAX_DEPTH`]
     /// returns [`BinaryError::DepthLimitExceeded`] rather than risking stack
     /// exhaustion on deeply nested adversarial input.
-    fn read_value(&mut self, depth: usize) -> Result<Value> {
+    pub(super) fn read_value(&mut self, depth: usize) -> Result<Value> {
         if depth > MAX_DEPTH {
             return Err(BinaryError::DepthLimitExceeded { limit: MAX_DEPTH });
         }
-
         // Offset of this value's type marker, captured before consuming it so
         // error positions point at the marker.
         let offset = self.pos;
@@ -402,6 +452,199 @@ impl<'a> Reader<'a> {
                 offset,
             }),
         }
+    }
+
+    /// Attempts to read the next value as a native scalar token, consuming it
+    /// only when it is one of the cheaply-decodable forms.
+    ///
+    /// Returns `Ok(Some(_))` (advancing the cursor) for `null`, booleans, every
+    /// literal/fixed-width/extended number, system strings, and plain
+    /// UTF-8 strings (encoded-length and `StrL1/2/4`). Returns `Ok(None)`
+    /// **without advancing** for any other marker — containers and the exotic
+    /// string/number forms — which the deserializer handles via a container
+    /// stream or the [`read_value`](Self::read_value) fallback respectively.
+    pub(super) fn try_read_native_scalar(&mut self) -> Result<Option<ScalarToken<'a>>> {
+        let offset = self.pos;
+        let marker = self.peek_u8()?;
+        let token = match marker {
+            NULL => ScalarToken::Null,
+            FALSE => ScalarToken::Bool(false),
+            TRUE => ScalarToken::Bool(true),
+
+            // Literal integer: the value is encoded in the marker itself.
+            m if (LITERAL_INT_MIN..LITERAL_INT_MAX).contains(&m) => ScalarToken::I64(i64::from(m)),
+
+            // Fixed-width and extended numbers all project to a JSON number.
+            NUMBER_UINT8 => {
+                self.pos += 1;
+                return Ok(Some(ScalarToken::I64(i64::from(self.read_u8()?))));
+            }
+            NUMBER_INT16 | INT16 => {
+                self.pos += 1;
+                return Ok(Some(ScalarToken::I64(i64::from(self.read_i16_le()?))));
+            }
+            NUMBER_INT32 | INT32 => {
+                self.pos += 1;
+                return Ok(Some(ScalarToken::I64(i64::from(self.read_i32_le()?))));
+            }
+            NUMBER_INT64 | INT64 => {
+                self.pos += 1;
+                return Ok(Some(ScalarToken::I64(self.read_i64_le()?)));
+            }
+            NUMBER_UINT64 => {
+                self.pos += 1;
+                let v = self.read_u64_le()?;
+                // Prefer the signed projection when it fits, matching the
+                // `Value` decoder's number handling.
+                return Ok(Some(match i64::try_from(v) {
+                    Ok(i) => ScalarToken::I64(i),
+                    Err(_) => ScalarToken::U64(v),
+                }));
+            }
+            NUMBER_DOUBLE | FLOAT64 => {
+                self.pos += 1;
+                return Ok(Some(ScalarToken::F64(self.read_f64_le()?)));
+            }
+            INT8 => {
+                self.pos += 1;
+                return Ok(Some(ScalarToken::I64(i64::from(self.read_i8()?))));
+            }
+            UINT32 => {
+                self.pos += 1;
+                return Ok(Some(ScalarToken::I64(i64::from(self.read_u32_le()?))));
+            }
+            FLOAT32 => {
+                self.pos += 1;
+                return Ok(Some(ScalarToken::F64(f64::from(self.read_f32_le()?))));
+            }
+
+            // 1-byte system string: borrow the static dictionary entry.
+            m if (SYSTEM_STRING_1BYTE_MIN..SYSTEM_STRING_1BYTE_MAX).contains(&m) => {
+                let s = system_string_for_marker(m)
+                    .ok_or(BinaryError::InvalidMarker { marker: m, offset })?;
+                self.pos += 1;
+                return Ok(Some(ScalarToken::Str(s)));
+            }
+
+            // Encoded-length string: length carried in the marker.
+            m if (ENCODED_STRING_LENGTH_MIN..ENCODED_STRING_LENGTH_MAX).contains(&m) => {
+                self.pos += 1;
+                let len = usize::from(m & ENCODED_STRING_LENGTH_MASK);
+                return Ok(Some(ScalarToken::Str(self.read_str_slice(len, offset)?)));
+            }
+
+            // Length-prefixed strings.
+            STR_L1 => {
+                self.pos += 1;
+                let len = usize::from(self.read_u8()?);
+                return Ok(Some(ScalarToken::Str(self.read_str_slice(len, offset)?)));
+            }
+            STR_L2 => {
+                self.pos += 1;
+                let len = usize::from(self.read_u16_le()?);
+                return Ok(Some(ScalarToken::Str(self.read_str_slice(len, offset)?)));
+            }
+            STR_L4 => {
+                self.pos += 1;
+                let len = self.read_u32_le()? as usize;
+                return Ok(Some(ScalarToken::Str(self.read_str_slice(len, offset)?)));
+            }
+
+            // Not a native scalar: leave the cursor untouched.
+            _ => return Ok(None),
+        };
+        // Single-byte tokens (null/bool/literal-int): consume just the marker.
+        self.pos += 1;
+        Ok(Some(token))
+    }
+
+    /// Borrows a `len`-byte UTF-8 slice directly from the buffer, advancing the
+    /// cursor. `marker_offset` positions a UTF-8 error.
+    fn read_str_slice(&mut self, len: usize, marker_offset: usize) -> Result<&'a str> {
+        let bytes = self.read_bytes(len)?;
+        std::str::from_utf8(bytes).map_err(|_| BinaryError::InvalidUtf8 {
+            offset: marker_offset,
+        })
+    }
+
+    /// Attempts to read a standard array/object container header, consuming the
+    /// marker and length/count prefix only when the marker is one of the
+    /// streamable container forms (`Arr0/1/L*/LC*`, `Obj0/1/L*/LC*`).
+    ///
+    /// Returns `Ok(None)` **without advancing** for anything else (including the
+    /// uniform number-array markers, which have no per-element framing and are
+    /// handled via the [`read_value`](Self::read_value) fallback).
+    pub(super) fn read_container_header(&mut self) -> Result<Option<ContainerHeader>> {
+        let marker = self.peek_u8()?;
+        let header = match marker {
+            ARR0 => ContainerHeader::Array(Frame {
+                count: Some(0),
+                end: self.pos + 1,
+            }),
+            ARR1 => {
+                // A one-element array with no length prefix: the element
+                // follows immediately, so stream by count and let the element
+                // read advance the cursor.
+                self.pos += 1;
+                return Ok(Some(ContainerHeader::Array(Frame {
+                    count: Some(1),
+                    end: self.buf.len(),
+                })));
+            }
+            ARR_L1 | ARR_L2 | ARR_L4 | ARR_LC1 | ARR_LC2 | ARR_LC4 => {
+                let (count, end) = self.read_container_frame(marker, [ARR_L1, ARR_L2, ARR_L4])?;
+                return Ok(Some(ContainerHeader::Array(Frame { count, end })));
+            }
+            OBJ0 => ContainerHeader::Object(Frame {
+                count: Some(0),
+                end: self.pos + 1,
+            }),
+            OBJ1 => {
+                self.pos += 1;
+                return Ok(Some(ContainerHeader::Object(Frame {
+                    count: Some(1),
+                    end: self.buf.len(),
+                })));
+            }
+            OBJ_L1 | OBJ_L2 | OBJ_L4 | OBJ_LC1 | OBJ_LC2 | OBJ_LC4 => {
+                let (count, end) = self.read_container_frame(marker, [OBJ_L1, OBJ_L2, OBJ_L4])?;
+                return Ok(Some(ContainerHeader::Object(Frame { count, end })));
+            }
+            _ => return Ok(None),
+        };
+        // Empty-container markers (`Arr0`/`Obj0`): consume just the marker.
+        self.pos += 1;
+        Ok(Some(header))
+    }
+
+    /// Parses the length (and optional count) prefix shared by the `L*`/`LC*`
+    /// array and object markers, consuming the marker and prefixes. `l_markers`
+    /// are the three length-only markers (width 1/2/4) for this container kind;
+    /// the `LC*` (length + count) markers sit three positions above their `L*`
+    /// counterparts.
+    fn read_container_frame(
+        &mut self,
+        marker: u8,
+        l_markers: [u8; 3],
+    ) -> Result<(Option<usize>, usize)> {
+        let [l1, l2, l4] = l_markers;
+        let width = if marker == l1 || marker == l1 + 3 {
+            1
+        } else if marker == l2 || marker == l2 + 3 {
+            2
+        } else {
+            4
+        };
+        let has_count = marker == l1 + 3 || marker == l2 + 3 || marker == l4 + 3;
+        self.pos += 1; // consume the marker
+        let payload_len = self.read_len(width)?;
+        let count = if has_count {
+            Some(self.read_len(width)?)
+        } else {
+            None
+        };
+        let end = self.bounded_end(payload_len)?;
+        Ok((count, end))
     }
 
     /// Reads a 1-, 2-, or 4-byte little-endian length or count field.
