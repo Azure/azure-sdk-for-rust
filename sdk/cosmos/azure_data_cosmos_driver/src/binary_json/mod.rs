@@ -47,6 +47,7 @@
 pub mod error;
 pub mod markers;
 pub mod reader;
+pub mod ser;
 pub mod system_strings;
 pub mod writer;
 
@@ -57,6 +58,7 @@ mod vectors;
 
 pub use error::{BinaryError, Result};
 pub use reader::decode;
+pub use ser::to_vec;
 pub use writer::encode;
 
 /// The Cosmos binary JSON preamble byte.
