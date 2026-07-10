@@ -1,16 +1,10 @@
 # Release History
 
-## 1.1.0-beta.1 (Unreleased)
+## 1.1.0 (2026-07-09)
 
 ### Features Added
 
 - Added `AmqpSessionOptions::with_unbounded_windows()`, a shared constructor that sets both session flow-control windows to `u32::MAX` for messaging crates that rely on per-link credit for flow control.
-
-### Breaking Changes
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 1.0.0 (2026-05-11)
 

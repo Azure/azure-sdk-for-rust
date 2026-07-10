@@ -15,6 +15,7 @@
 
 ### Bugs Fixed
 
+- Fixed hierarchical-partition-key (HPK) queries. A `FeedScope::partition` scope with only a *prefix* of the key hierarchy (e.g. `("USA", "CA")` on a `/country/state/city` container) now filters to that prefix instead of returning every item in the physical partition (issue [#4680](https://github.com/Azure/azure-sdk-for-rust/issues/4680)), and cross-partition queries over an HPK container no longer fail with `400 Bad Request` (issue [#4681](https://github.com/Azure/azure-sdk-for-rust/issues/4681)). ([#4729](https://github.com/Azure/azure-sdk-for-rust/pull/4729))
 - Fixed the `AZURE_COSMOS_PPCB_*` environment variables (including `AZURE_COSMOS_PPCB_ENABLED` and the `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` kill switch) being ignored when a `CosmosClient` was built without calling `CosmosClientBuilder::with_partition_failover_options`. The per-partition circuit breaker (PPCB) stayed enabled even with `AZURE_COSMOS_PPCB_ENABLED=false`. The client's driver now resolves these options from the environment when they are not supplied explicitly. ([#4655](https://github.com/Azure/azure-sdk-for-rust/pull/4655))
 
 ### Other Changes
