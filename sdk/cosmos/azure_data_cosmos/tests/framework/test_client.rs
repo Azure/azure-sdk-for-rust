@@ -1063,6 +1063,26 @@ fn host_is_local(endpoint: &str) -> bool {
     }
 }
 
+/// Returns `true` when the tests are targeting a local Cosmos DB emulator
+/// (classic or vnext) rather than a live account.
+///
+/// This mirrors the connection-string host inspection used to build the test
+/// client (`AZURE_COSMOS_CONNECTION_STRING="emulator"`, or an endpoint whose
+/// host is `127.0.0.1`/`localhost`). It lets a test that is only servable
+/// against a live account (or the vnext emulator) skip cleanly on the classic
+/// emulator while still running everywhere else.
+pub fn is_emulator_target() -> bool {
+    match std::env::var(CONNECTION_STRING_ENV_VAR) {
+        Ok(v) if v == "emulator" => true,
+        Ok(v) => v
+            .parse::<ConnectionString>()
+            .ok()
+            .map(|cs| host_is_local(cs.account_endpoint()))
+            .unwrap_or(false),
+        Err(_) => false,
+    }
+}
+
 /// Builds a [`CosmosClient`] authenticated with an Entra ID (AAD) token
 /// credential, reading the target account from the same environment the
 /// key-auth client uses (`AZURE_COSMOS_CONNECTION_STRING`).

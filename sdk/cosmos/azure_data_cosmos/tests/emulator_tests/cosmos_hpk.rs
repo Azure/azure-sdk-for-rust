@@ -184,6 +184,32 @@ fn sorted_ids<I: IntoIterator<Item = String>>(ids: I) -> Vec<String> {
     v
 }
 
+/// Prefix HPK queries (`FeedScope::partition` with a *partial* key) are servable
+/// against a live account (validated by #4729) and the service-accurate
+/// `vnext-preview` emulator, but the **classic** Cosmos emulator rejects them
+/// with 400 BadRequest — it predates service-accurate EPK-range HPK query
+/// support.
+///
+/// Returns `true` (and logs) when the current target is the classic emulator, so
+/// a prefix test can skip cleanly there while still running against live accounts
+/// and the vnext emulator. The #4680 filtering fix is additionally covered
+/// deterministically in CI by `in_memory_emulator_tests::hpk`.
+fn skip_prefix_query_on_classic_emulator() -> bool {
+    // vnext is also a local emulator but *does* serve prefix EPK-range queries,
+    // so only the non-vnext local emulator (classic) is skipped.
+    let is_classic_emulator =
+        framework::is_emulator_target() && !cfg!(test_category = "emulator_vnext");
+    if is_classic_emulator {
+        eprintln!(
+            "skipping prefix HPK query test: not servable on the classic Cosmos \
+             emulator (400 BadRequest). Covered in CI by \
+             in_memory_emulator_tests::hpk; runs here against live accounts and \
+             the vnext emulator."
+        );
+    }
+    is_classic_emulator
+}
+
 // ─── Group A — HPK point CRUD ────────────────────────────────────────────────
 
 /// A1: create an item with a full 3-level key and read it back by the same key.
@@ -523,19 +549,19 @@ pub async fn hpk_query_full_key_scope() -> Result<(), Box<dyn Error>> {
 /// requests, so `FeedScope::partition(prefix)` filters to the prefix instead of
 /// scanning the entire physical partition.
 ///
-/// Runs only on the vnext emulator. The classic Cosmos emulator rejects the
-/// prefix EPK-range query with 400 BadRequest (it predates service-accurate
-/// EPK-range HPK query support); the #4680 fix is covered deterministically in
-/// CI by `in_memory_emulator_tests::hpk`. This variant exercises the same
-/// behavior against the service-accurate `vnext-preview` emulator.
+/// Runs against **live accounts** and the service-accurate `vnext-preview`
+/// emulator. Skipped at runtime on the classic Cosmos emulator, which rejects
+/// the prefix EPK-range query with 400 BadRequest; the #4680 fix is covered
+/// deterministically in CI by `in_memory_emulator_tests::hpk`.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator_vnext"),
-    ignore = "prefix EPK-range queries are only servable on the vnext emulator; \
-              the classic emulator returns 400. #4680 filtering is covered in CI by \
-              in_memory_emulator_tests::hpk."
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn hpk_query_prefix_level1() -> Result<(), Box<dyn Error>> {
+    if skip_prefix_query_on_classic_emulator() {
+        return Ok(());
+    }
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
             let container = seed_three_level(run_context, db_client).await?;
@@ -552,13 +578,18 @@ pub async fn hpk_query_prefix_level1() -> Result<(), Box<dyn Error>> {
 }
 
 /// B3: a level-2 prefix query returns every item under that prefix.
+///
+/// Runs against live accounts and the vnext emulator; skipped on the classic
+/// emulator (see `hpk_query_prefix_level1`).
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator_vnext"),
-    ignore = "prefix EPK-range queries are only servable on the vnext emulator \
-              (see hpk_query_prefix_level1)."
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn hpk_query_prefix_level2() -> Result<(), Box<dyn Error>> {
+    if skip_prefix_query_on_classic_emulator() {
+        return Ok(());
+    }
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
             let container = seed_three_level(run_context, db_client).await?;
@@ -575,13 +606,18 @@ pub async fn hpk_query_prefix_level2() -> Result<(), Box<dyn Error>> {
 }
 
 /// B4: a prefix that matches no items returns an empty result without error.
+///
+/// Runs against live accounts and the vnext emulator; skipped on the classic
+/// emulator (see `hpk_query_prefix_level1`).
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator_vnext"),
-    ignore = "prefix EPK-range queries are only servable on the vnext emulator \
-              (see hpk_query_prefix_level1)."
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn hpk_query_prefix_no_match_returns_empty() -> Result<(), Box<dyn Error>> {
+    if skip_prefix_query_on_classic_emulator() {
+        return Ok(());
+    }
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
             let container = seed_three_level(run_context, db_client).await?;
@@ -599,13 +635,18 @@ pub async fn hpk_query_prefix_no_match_returns_empty() -> Result<(), Box<dyn Err
 /// B5: a prefix query returns ONLY items under the prefix and excludes siblings
 /// — an explicit anti-leak guard (cf. the .NET prefix-iterator test that is
 /// currently `[Ignore]`d).
+///
+/// Runs against live accounts and the vnext emulator; skipped on the classic
+/// emulator (see `hpk_query_prefix_level1`).
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator_vnext"),
-    ignore = "prefix EPK-range queries are only servable on the vnext emulator \
-              (see hpk_query_prefix_level1)."
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn hpk_query_prefix_correctness_guard() -> Result<(), Box<dyn Error>> {
+    if skip_prefix_query_on_classic_emulator() {
+        return Ok(());
+    }
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
             let container = seed_three_level(run_context, db_client).await?;
