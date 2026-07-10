@@ -105,7 +105,7 @@ impl HeaderValidationSpec {
             .with_rule("request_charge", HeaderMatch::NonNegative)
             .with_rule("session_token", HeaderMatch::Exists)
             .with_rule("etag", HeaderMatch::Exists)
-            .with_rule("continuation", HeaderMatch::Ignore)
+            .with_rule("continuation", HeaderMatch::Symmetric)
             .with_rule("item_count", HeaderMatch::Symmetric)
             .with_rule("index_metrics", HeaderMatch::Symmetric)
             .with_rule("query_metrics", HeaderMatch::Symmetric)
