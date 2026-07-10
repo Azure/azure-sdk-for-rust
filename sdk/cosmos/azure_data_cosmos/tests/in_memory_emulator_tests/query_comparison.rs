@@ -261,8 +261,8 @@ enum FixtureKind {
 impl FixtureKind {
     fn container_name(self) -> &'static str {
         match self {
-            FixtureKind::HashV1 => "hashv1",
-            FixtureKind::HashV2 => "hashv2",
+            FixtureKind::HashV1 => "hash-v1",
+            FixtureKind::HashV2 => "hash-v2",
             FixtureKind::Hpk => "hpk",
         }
     }
@@ -328,7 +328,7 @@ async fn provision_fixture_with_topology(
     db_name: &str,
     fixture: FixtureKind,
     container_config: Option<ContainerConfig>,
-    split_epks: &[EffectivePartitionKey],
+    split_points: &[EffectivePartitionKey],
 ) -> Result<FixtureHandles, Box<dyn Error>> {
     let pk_definition = fixture.partition_key_definition();
     let container_name = fixture.container_name();
@@ -352,7 +352,7 @@ async fn provision_fixture_with_topology(
         .driver
         .resolve_container(db_name, container_name)
         .await?;
-    split_physical_partitions_at_epks(harness, db_name, container_name, split_epks).await?;
+    split_physical_partitions_at_points(harness, db_name, container_name, split_points).await?;
 
     if let Some(external) = &harness.external {
         create_database_if_needed(&external.client, db_name).await?;
@@ -404,13 +404,13 @@ async fn provision_fixture_with_topology(
     })
 }
 
-async fn split_physical_partitions_at_epks(
+async fn split_physical_partitions_at_points(
     harness: &QueryComparisonHarness,
     db_name: &str,
     container_name: &str,
-    split_epks: &[EffectivePartitionKey],
+    split_points: &[EffectivePartitionKey],
 ) -> Result<(), Box<dyn Error>> {
-    for split_epk in split_epks {
+    for split_epk in split_points {
         let ranges =
             read_emulator_physical_partition_ranges(harness, db_name, container_name).await?;
         if ranges
@@ -650,13 +650,13 @@ async fn query_results_match_across_physical_partition_topologies() -> Result<()
     )
     .await?;
 
-    let hpk_split_epks = hpk_tenant_a_split_epks(&FixtureKind::Hpk.partition_key_definition());
+    let hpk_split_points = hpk_tenant_a_split_points(&FixtureKind::Hpk.partition_key_definition());
     let hpk_split = provision_fixture_with_topology(
         &harness,
         &format!("{}-hpk-split", harness.database_name()),
         FixtureKind::Hpk,
         Some(ContainerConfig::new().with_partition_count(1).build()?),
-        &hpk_split_epks,
+        &hpk_split_points,
     )
     .await?;
     assert_tenant_a_level2_spans_multiple_physical_partitions(&harness, &hpk_split).await?;
@@ -833,7 +833,7 @@ fn explicit_feed_range_for_partition(
     )?)
 }
 
-fn hpk_tenant_a_split_epks(pk_definition: &PartitionKeyDefinition) -> Vec<EffectivePartitionKey> {
+fn hpk_tenant_a_split_points(pk_definition: &PartitionKeyDefinition) -> Vec<EffectivePartitionKey> {
     let tenant_range = FeedRange::for_partition(PartitionKey::from("tenant-a"), pk_definition);
     let mut user_boundaries: Vec<_> = ["user-1", "user-2", "user-3", "user-4"]
         .into_iter()

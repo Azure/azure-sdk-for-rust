@@ -180,11 +180,11 @@ async fn query_plan_returns_hpk_prefix_range_for_partial_where_clause() {
     let hpk_def: PartitionKeyDefinition = ("/tenant", "/user", "/session").into();
     ctx.emulator
         .store()
-        .create_container("testdb", "hpkcoll", hpk_def.clone());
+        .create_container("testdb", "hpk-coll", hpk_def.clone());
 
     let mut req = query_request(
         &ctx.gateway_url,
-        "/dbs/testdb/colls/hpkcoll/docs",
+        "/dbs/testdb/colls/hpk-coll/docs",
         serde_json::json!({
             "query": "SELECT * FROM c WHERE c.tenant = @tenant",
             "parameters": [
