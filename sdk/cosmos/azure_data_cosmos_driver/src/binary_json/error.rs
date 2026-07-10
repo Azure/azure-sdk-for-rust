@@ -92,6 +92,13 @@ pub enum BinaryError {
         /// Number of unconsumed bytes.
         remaining: usize,
     },
+
+    /// A custom, caller-supplied error message.
+    ///
+    /// Produced on the **encode** path by the native `serde` serializer: when a
+    /// value's `Serialize` implementation fails, serde funnels the failure
+    /// through [`serde::ser::Error::custom`], which maps to this variant.
+    Custom(String),
 }
 
 impl fmt::Display for BinaryError {
@@ -151,11 +158,20 @@ impl fmt::Display for BinaryError {
                     "binary JSON buffer has {remaining} trailing byte(s) after the top-level value"
                 )
             }
+            BinaryError::Custom(message) => {
+                write!(f, "binary JSON serialization error: {message}")
+            }
         }
     }
 }
 
 impl std::error::Error for BinaryError {}
+
+impl serde::ser::Error for BinaryError {
+    fn custom<T: fmt::Display>(msg: T) -> Self {
+        BinaryError::Custom(msg.to_string())
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -183,5 +199,16 @@ mod tests {
         // it can participate in `?`/`Box<dyn Error>` flows.
         fn assert_error<E: std::error::Error>(_: &E) {}
         assert_error(&BinaryError::TrailingBytes { remaining: 1 });
+    }
+
+    #[test]
+    fn ser_error_custom_maps_to_custom_variant() {
+        // `serde::ser::Error::custom` is how a value's failing `Serialize`
+        // impl surfaces on the native binary encode path; it must land in the
+        // `Custom` variant and preserve the message.
+        use serde::ser::Error as _;
+        let err = BinaryError::custom("field went wrong");
+        assert_eq!(err, BinaryError::Custom("field went wrong".to_owned()));
+        assert!(err.to_string().contains("field went wrong"));
     }
 }
