@@ -597,6 +597,10 @@ struct Scenario {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: vnext returns the full ['', 'FF') query range for a partition-key equality filter instead of the bounded point EPK range that real Cosmos and the in-memory emulator produce, so the query-plan comparison diverges"
+)]
 async fn query_results_plans_and_resume_paths_match() -> Result<(), Box<dyn Error>> {
     let harness = QueryComparisonHarness::setup().await?;
     let db_name = harness.database_name();
