@@ -375,20 +375,25 @@ pub async fn v1_container_item_crud() -> Result<(), Box<dyn Error>> {
                 false,
             );
 
-            // Read after delete should eventually 404.
-            loop {
+            const MAX_DELETE_POLLS: u32 = 20;
+            for attempt in 0..MAX_DELETE_POLLS {
                 match container_client.read_item(&pk, &item_id, None).await {
-                    Ok(_) => {
+                    Ok(_) if attempt + 1 < MAX_DELETE_POLLS => {
                         tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+                    }
+                    Ok(_) => {
+                        return Err(format!(
+                            "V1 item remained readable after {MAX_DELETE_POLLS} delete polls"
+                        )
+                        .into());
                     }
                     Err(err) => {
                         assert_eq!(StatusCode::NotFound, err.status().status_code());
-                        break;
+                        return Ok(());
                     }
                 }
             }
-
-            Ok(())
+            unreachable!("delete polling loop always returns")
         },
         Some(TestOptions::for_emulator()),
     )

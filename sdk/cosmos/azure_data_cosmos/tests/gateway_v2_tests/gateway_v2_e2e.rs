@@ -18,9 +18,9 @@ use azure_data_cosmos::{
     AccountEndpoint, AccountReference, CosmosClient, FeedScope, Query, RoutingStrategy,
     SubStatusCode, TransactionalBatch,
 };
-use futures::StreamExt;
+use futures::{FutureExt, StreamExt};
 use serde::{Deserialize, Serialize};
-use std::num::NonZeroU32;
+use std::{num::NonZeroU32, panic::AssertUnwindSafe};
 
 fn read_env(name: &str) -> Option<String> {
     std::env::var(name).ok().filter(|v| !v.trim().is_empty())
@@ -226,15 +226,13 @@ async fn provision_database_and_container(
 /// the service omits the `version` field for legacy V1 containers, and Gateway
 /// 2.0 computes the effective partition key client-side, so a V1 container
 /// mis-detected as V2 produced a V2 EPK the proxy could not route.
-async fn provision_database_and_v1_container(
+async fn provision_v1_container(
     client: &CosmosClient,
-) -> Result<(String, azure_data_cosmos::clients::ContainerClient), Box<dyn std::error::Error>> {
+    db_name: &str,
+) -> Result<azure_data_cosmos::clients::ContainerClient, Box<dyn std::error::Error>> {
     let unique = azure_core::Uuid::new_v4();
-    let db_name = format!("gw_v2-test-db-{unique}");
     let container_name = format!("gw_v2-test-v1-container-{unique}");
-
-    client.create_database(&db_name, None).await?;
-    let db_client = client.database_client(&db_name);
+    let db_client = client.database_client(db_name);
 
     let pk_def = PartitionKeyDefinition::from("/pk").with_version(PartitionKeyVersion::V1);
     let properties = ContainerProperties::new(container_name.clone(), pk_def);
@@ -254,7 +252,7 @@ async fn provision_database_and_v1_container(
         "a version-less service response must deserialize as V1"
     );
 
-    Ok((db_name, container_client))
+    Ok(container_client)
 }
 
 async fn drop_database(client: &CosmosClient, db_name: &str) {
@@ -397,51 +395,78 @@ pub async fn gateway_v2_v1_container_point_crud_round_trip(
     };
 
     let client = build_client(&endpoint, &key).await?;
-    let (db_name, container) = provision_database_and_v1_container(&client).await?;
+    let db_name = format!("gw_v2-test-db-{}", azure_core::Uuid::new_v4());
+    client.create_database(&db_name, None).await?;
 
-    let pk_value = format!("pk-{}", azure_core::Uuid::new_v4());
-    let item_id = format!("item-{}", azure_core::Uuid::new_v4());
-    let mut item = GwV2TestItem {
-        id: item_id.clone(),
-        pk: pk_value.clone(),
-        value: 1,
-        label: "initial".into(),
-    };
+    let test_result = AssertUnwindSafe(async {
+        let container = provision_v1_container(&client, &db_name).await?;
+        let pk_value = format!("pk-{}", azure_core::Uuid::new_v4());
+        let item_id = format!("item-{}", azure_core::Uuid::new_v4());
+        let mut item = GwV2TestItem {
+            id: item_id.clone(),
+            pk: pk_value.clone(),
+            value: 1,
+            label: "initial".into(),
+        };
 
-    let create_resp = container
-        .create_item(&pk_value, &item_id, &item, None)
-        .await?;
-    assert_transport_kind(&create_resp.diagnostics(), TransportKind::GatewayV2);
+        let create_resp = container
+            .create_item(&pk_value, &item_id, &item, None)
+            .await?;
+        assert_transport_kind(&create_resp.diagnostics(), TransportKind::GatewayV2);
 
-    let read_resp = container.read_item(&pk_value, &item_id, None).await?;
-    assert_transport_kind(&read_resp.diagnostics(), TransportKind::GatewayV2);
-    let read_item: GwV2TestItem = read_resp.into_model()?;
-    assert_eq!(read_item, item, "V1 container read must round-trip");
+        let read_resp = container.read_item(&pk_value, &item_id, None).await?;
+        assert_transport_kind(&read_resp.diagnostics(), TransportKind::GatewayV2);
+        let read_item: GwV2TestItem = read_resp.into_model()?;
+        assert_eq!(read_item, item, "V1 container read must round-trip");
 
-    item.value = 2;
-    item.label = "updated".into();
-    let replace_resp = container
-        .replace_item(&pk_value, &item_id, &item, None)
-        .await?;
-    assert_transport_kind(&replace_resp.diagnostics(), TransportKind::GatewayV2);
+        item.value = 2;
+        item.label = "updated".into();
+        let replace_resp = container
+            .replace_item(&pk_value, &item_id, &item, None)
+            .await?;
+        assert_transport_kind(&replace_resp.diagnostics(), TransportKind::GatewayV2);
 
-    let reread: GwV2TestItem = container
-        .read_item(&pk_value, &item_id, None)
-        .await?
-        .into_model()?;
-    assert_eq!(reread, item, "replace must be reflected on re-read");
+        let reread: GwV2TestItem = container
+            .read_item(&pk_value, &item_id, None)
+            .await?
+            .into_model()?;
+        assert_eq!(reread, item, "replace must be reflected on re-read");
 
-    let delete_resp = container.delete_item(&pk_value, &item_id, None).await?;
-    assert_transport_kind(&delete_resp.diagnostics(), TransportKind::GatewayV2);
+        let delete_resp = container.delete_item(&pk_value, &item_id, None).await?;
+        assert_transport_kind(&delete_resp.diagnostics(), TransportKind::GatewayV2);
 
-    let read_after_delete = container.read_item(&pk_value, &item_id, None).await;
-    assert!(
-        read_after_delete.is_err(),
-        "read after delete on a V1 container must fail (NotFound)"
-    );
+        const MAX_DELETE_POLLS: u32 = 20;
+        for attempt in 0..MAX_DELETE_POLLS {
+            match container.read_item(&pk_value, &item_id, None).await {
+                Err(err) if err.status().status_code() == StatusCode::NotFound => return Ok(()),
+                Err(err) => {
+                    return Err(format!(
+                        "expected NotFound after deleting V1 item, got {}",
+                        err.status()
+                    )
+                    .into());
+                }
+                Ok(_) if attempt + 1 < MAX_DELETE_POLLS => {
+                    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+                }
+                Ok(_) => {
+                    return Err(format!(
+                        "V1 item remained readable after {MAX_DELETE_POLLS} delete polls"
+                    )
+                    .into());
+                }
+            }
+        }
+        unreachable!("delete polling loop always returns")
+    })
+    .catch_unwind()
+    .await;
 
     drop_database(&client, &db_name).await;
-    Ok(())
+    match test_result {
+        Ok(result) => result,
+        Err(panic) => std::panic::resume_unwind(panic),
+    }
 }
 
 /// Exercises a transactional batch routed through Gateway 2.0.
