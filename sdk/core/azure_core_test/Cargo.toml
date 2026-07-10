@@ -1,6 +1,7 @@
 [package]
 name = "azure_core_test"
 version = "0.2.0"
+publish = false
 description = "Utilities for testing client libraries built on azure_core."
 readme = "README.md"
 authors.workspace = true
