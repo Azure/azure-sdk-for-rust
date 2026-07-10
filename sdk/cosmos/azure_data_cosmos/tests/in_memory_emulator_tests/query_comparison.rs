@@ -582,23 +582,28 @@ async fn query_results_plans_and_resume_paths_match() -> Result<(), Box<dyn Erro
     let harness = QueryComparisonHarness::setup().await?;
     let db_name = harness.database_name();
 
-    let hash_v1 = provision_fixture(&harness, &db_name, FixtureKind::HashV1).await?;
-    let hash_v2 = provision_fixture(&harness, &db_name, FixtureKind::HashV2).await?;
-    let hpk = provision_fixture(&harness, &db_name, FixtureKind::Hpk).await?;
+    let result = async {
+        let hash_v1 = provision_fixture(&harness, &db_name, FixtureKind::HashV1).await?;
+        let hash_v2 = provision_fixture(&harness, &db_name, FixtureKind::HashV2).await?;
+        let hpk = provision_fixture(&harness, &db_name, FixtureKind::Hpk).await?;
 
-    let hash_v1_scenarios = hash_scenarios(&hash_v1.pk_definition)?;
-    run_scenarios(&harness, &hash_v1, &hash_v1_scenarios).await?;
+        let hash_v1_scenarios = hash_scenarios(&hash_v1.pk_definition)?;
+        run_scenarios(&harness, &hash_v1, &hash_v1_scenarios).await?;
 
-    let hash_scenarios = hash_scenarios(&hash_v2.pk_definition)?;
-    run_scenarios(&harness, &hash_v2, &hash_scenarios).await?;
+        let hash_scenarios = hash_scenarios(&hash_v2.pk_definition)?;
+        run_scenarios(&harness, &hash_v2, &hash_scenarios).await?;
 
-    let hpk_scenarios = hpk_scenarios(&hpk.pk_definition)?;
-    run_scenarios(&harness, &hpk, &hpk_scenarios).await?;
+        let hpk_scenarios = hpk_scenarios(&hpk.pk_definition)?;
+        run_scenarios(&harness, &hpk, &hpk_scenarios).await?;
+
+        Ok::<(), Box<dyn Error>>(())
+    }
+    .await;
 
     if let Some(external) = &harness.external {
         let _ = external.client.database_client(&db_name).delete(None).await;
     }
-    Ok(())
+    result
 }
 
 #[tokio::test]

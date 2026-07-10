@@ -8,6 +8,7 @@
 //! - `Exact`: values must match exactly
 //! - `Exists`: both must be present (values may differ)
 //! - `NonNegative`: both must be present and non-negative numbers
+//! - `RequiredInEmulatorOnly`: emulator must emit the header; real backend may omit it
 //! - `Ignore`: skip validation for this field
 //!
 //! Status codes must always match. Body payloads are compared structurally with
@@ -37,6 +38,10 @@ pub enum HeaderMatch {
     /// Presence must match: if present in real, must be present in emulator;
     /// if absent in real, must be absent in emulator. Values may differ.
     Symmetric,
+
+    /// Emulator must emit this header. The real backend may emit or omit it.
+    /// Values are allowed to differ when both are present.
+    RequiredInEmulatorOnly,
 
     /// Skip validation for this field entirely.
     Ignore,
@@ -91,6 +96,9 @@ impl HeaderValidationSpec {
     ///   reproduce: `correlated_activity_id` (client-set), `retry_after_ms`,
     ///   `offer_replace_pending`, `has_tentative_writes`, query/continuation
     ///   metrics (no-op on point ops).
+    /// - **`RequiredInEmulatorOnly`** — emulator must emit this diagnostic
+    ///   header, but Gateway-backed real/emulator responses may omit it.
+    ///   Used for `internal_partition_id` on point operations.
     /// - **`Ignore`** — emulator does not (and intentionally will not)
     ///   produce these headers, or they encode internal state that has no
     ///   public meaning for the operation under test: `item_local_lsn`,
@@ -129,7 +137,7 @@ impl HeaderValidationSpec {
             .with_rule("resource_usage", HeaderMatch::Ignore)
             .with_rule("has_tentative_writes", HeaderMatch::Symmetric)
             .with_rule("partition_key_range_id", HeaderMatch::Symmetric)
-            .with_rule("internal_partition_id", HeaderMatch::Symmetric)
+            .with_rule("internal_partition_id", HeaderMatch::RequiredInEmulatorOnly)
             .with_rule("log_results", HeaderMatch::Symmetric)
             .with_rule(
                 "collection_index_transformation_progress",
@@ -169,7 +177,7 @@ impl HeaderValidationSpec {
             .with_rule("resource_usage", HeaderMatch::Ignore)
             .with_rule("has_tentative_writes", HeaderMatch::Symmetric)
             .with_rule("partition_key_range_id", HeaderMatch::Symmetric)
-            .with_rule("internal_partition_id", HeaderMatch::Symmetric)
+            .with_rule("internal_partition_id", HeaderMatch::RequiredInEmulatorOnly)
             .with_rule("log_results", HeaderMatch::Symmetric)
             .with_rule(
                 "collection_index_transformation_progress",
@@ -639,6 +647,14 @@ fn validate_header_field(
                 }
                 _ => {} // both present or both absent — OK
             }
+        }
+        HeaderMatch::RequiredInEmulatorOnly => {
+            assert!(
+                emulator.is_some(),
+                "Header '{}': required in emulator response but missing; real={:?}",
+                name,
+                real,
+            );
         }
         HeaderMatch::Ignore => {}
     }
