@@ -625,4 +625,76 @@ mod tests {
             json!({ "Newtype": 5 })
         );
     }
+
+    /// A tiny deterministic LCG so the generative parity test needs no external
+    /// RNG dependency and reproduces the same values on every run.
+    struct Lcg(u64);
+
+    impl Lcg {
+        fn next_u64(&mut self) -> u64 {
+            // Numerical Recipes LCG constants.
+            self.0 = self.0.wrapping_mul(6364136223846793005).wrapping_add(1);
+            self.0
+        }
+
+        fn below(&mut self, n: u64) -> u64 {
+            self.next_u64() % n
+        }
+    }
+
+    /// Builds a random JSON value up to `depth` levels deep. Object keys are
+    /// generated so that both encode paths see identical `serde_json::Value`
+    /// input (same key ordering), keeping the byte-parity assertion valid.
+    fn random_value(rng: &mut Lcg, depth: u32) -> serde_json::Value {
+        // At depth 0 only scalars are produced to bound recursion.
+        let arms = if depth == 0 { 6 } else { 8 };
+        match rng.below(arms) {
+            0 => serde_json::Value::Null,
+            1 => json!(rng.next_u64().is_multiple_of(2)),
+            2 => json!(rng.below(64) as i64), // hits the literal-int range
+            3 => json!((rng.next_u64() as i64).wrapping_sub(i64::MAX / 2)), // wide i64
+            4 => json!((rng.next_u64() as f64) / 7.0), // double
+            5 => {
+                let len = rng.below(80) as usize; // spans encoded-length + StrL1
+                json!("s".repeat(len))
+            }
+            6 => {
+                let n = rng.below(5) as usize;
+                let items: Vec<_> = (0..n).map(|_| random_value(rng, depth - 1)).collect();
+                serde_json::Value::Array(items)
+            }
+            _ => {
+                let n = rng.below(5) as usize;
+                let mut map = serde_json::Map::new();
+                for i in 0..n {
+                    // Distinct, deterministic keys; Map orders them for us.
+                    map.insert(format!("k{i}"), random_value(rng, depth - 1));
+                }
+                serde_json::Value::Object(map)
+            }
+        }
+    }
+
+    #[test]
+    fn generative_parity_native_matches_value_encoder() {
+        // Property: for any `serde_json::Value`, the native serializer emits the
+        // exact same bytes as the `Value` encoder, and those bytes round-trip.
+        // (Parity holds because both paths observe the same `Value` — identical
+        // key ordering — unlike typed structs, which preserve declaration order.)
+        let mut rng = Lcg(0x1234_5678_9abc_def0);
+        for _ in 0..2_000 {
+            let value = random_value(&mut rng, 4);
+            let native = to_vec(&value).unwrap();
+            assert_eq!(
+                native,
+                encode(&value),
+                "native to_vec diverged from encode(&Value) for {value:?}"
+            );
+            assert_eq!(
+                decode(&native).unwrap(),
+                value,
+                "round-trip mismatch for {value:?}"
+            );
+        }
+    }
 }
