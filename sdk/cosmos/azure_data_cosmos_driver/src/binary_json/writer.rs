@@ -36,6 +36,14 @@ use super::PREAMBLE;
 const ENCODED_STRING_LENGTH_SPAN: usize =
     (ENCODED_STRING_LENGTH_MAX - ENCODED_STRING_LENGTH_MIN) as usize;
 
+/// The `LC1`/`LC2`/`LC4` length+count markers for **arrays**, passed to
+/// [`encode_container`]. Shared with the native serde serializer.
+pub(super) const ARRAY_LC_MARKERS: [u8; 3] = [ARR_LC1, ARR_LC2, ARR_LC4];
+
+/// The `LC1`/`LC2`/`LC4` length+count markers for **objects**, passed to
+/// [`encode_container`]. Shared with the native serde serializer.
+pub(super) const OBJECT_LC_MARKERS: [u8; 3] = [OBJ_LC1, OBJ_LC2, OBJ_LC4];
+
 /// Encodes a [`serde_json::Value`] into a complete Cosmos binary JSON buffer.
 ///
 /// The returned buffer begins with the [`PREAMBLE`] byte
@@ -69,7 +77,7 @@ fn encode_value(value: &Value, out: &mut Vec<u8>) {
             for item in items {
                 encode_value(item, &mut body);
             }
-            encode_container([ARR_LC1, ARR_LC2, ARR_LC4], items.len(), &body, out);
+            encode_container(ARRAY_LC_MARKERS, items.len(), &body, out);
         }
         Value::Object(map) => {
             let mut body = Vec::new();
@@ -77,7 +85,7 @@ fn encode_value(value: &Value, out: &mut Vec<u8>) {
                 encode_string(key, &mut body);
                 encode_value(val, &mut body);
             }
-            encode_container([OBJ_LC1, OBJ_LC2, OBJ_LC4], map.len(), &body, out);
+            encode_container(OBJECT_LC_MARKERS, map.len(), &body, out);
         }
     }
 }
@@ -86,31 +94,65 @@ fn encode_value(value: &Value, out: &mut Vec<u8>) {
 /// `Double` — the minimal set that covers every [`serde_json::Number`].
 fn encode_number(n: &serde_json::Number, out: &mut Vec<u8>) {
     if let Some(i) = n.as_i64() {
-        if (0..i64::from(LITERAL_INT_MAX)).contains(&i) {
-            // Literal int: the value is the marker.
-            out.push(i as u8);
-        } else {
-            out.push(NUMBER_INT64);
-            out.extend_from_slice(&i.to_le_bytes());
-        }
+        encode_i64(i, out);
     } else if let Some(u) = n.as_u64() {
         // Only reached when the value exceeds `i64::MAX` (so `as_i64` is `None`).
-        out.push(NUMBER_UINT64);
-        out.extend_from_slice(&u.to_le_bytes());
+        encode_u64(u, out);
     } else {
         // A `serde_json::Number` that is neither `i64` nor `u64` is an `f64`,
         // and JSON numbers are always finite, so `as_f64` yields a value here.
         let f = n
             .as_f64()
             .expect("serde_json::Number is i64, u64, or finite f64");
-        out.push(NUMBER_DOUBLE);
-        out.extend_from_slice(&f.to_le_bytes());
+        encode_f64(f, out);
     }
+}
+
+/// Encodes a signed integer as a literal int (`0`–`31`) or `Int64`.
+///
+/// Shared by the [`Value`]-based [`encode`] path and the native serde
+/// serializer so both emit identical bytes for the same integer.
+pub(super) fn encode_i64(i: i64, out: &mut Vec<u8>) {
+    if (0..i64::from(LITERAL_INT_MAX)).contains(&i) {
+        // Literal int: the value is the marker.
+        out.push(i as u8);
+    } else {
+        out.push(NUMBER_INT64);
+        out.extend_from_slice(&i.to_le_bytes());
+    }
+}
+
+/// Encodes an unsigned integer as a literal int (`0`–`31`), `Int64` (when it
+/// still fits `i64`), or `UInt64`.
+///
+/// Shared by the [`Value`]-based [`encode`] path and the native serde
+/// serializer.
+pub(super) fn encode_u64(u: u64, out: &mut Vec<u8>) {
+    if let Ok(i) = i64::try_from(u) {
+        // Fits `i64`, so route through the signed path to keep literal-int and
+        // `Int64` selection identical to the `Value` encoder.
+        encode_i64(i, out);
+    } else {
+        out.push(NUMBER_UINT64);
+        out.extend_from_slice(&u.to_le_bytes());
+    }
+}
+
+/// Encodes a floating-point number as an IEEE-754 `Double`.
+///
+/// Shared by the [`Value`]-based [`encode`] path and the native serde
+/// serializer.
+pub(super) fn encode_f64(f: f64, out: &mut Vec<u8>) {
+    out.push(NUMBER_DOUBLE);
+    out.extend_from_slice(&f.to_le_bytes());
 }
 
 /// Encodes a string as an encoded-length string (≤ 63 bytes, length baked into
 /// the marker) or a length-prefixed `StrL1`/`StrL2`/`StrL4`.
-fn encode_string(s: &str, out: &mut Vec<u8>) {
+///
+/// Shared by the [`Value`]-based [`encode`] path and the native serde
+/// serializer.
+pub(super) fn encode_string(s: &str, out: &mut Vec<u8>) {
     let bytes = s.as_bytes();
     let len = bytes.len();
     if len < ENCODED_STRING_LENGTH_SPAN {
@@ -133,7 +175,11 @@ fn encode_string(s: &str, out: &mut Vec<u8>) {
 /// Writes a length+count container: the marker, the payload byte length, the
 /// item/member count, then the pre-encoded `body`. The narrowest of the three
 /// `LC1`/`LC2`/`LC4` markers whose length and count fields both fit is used.
-fn encode_container(lc_markers: [u8; 3], count: usize, body: &[u8], out: &mut Vec<u8>) {
+///
+/// Shared by the [`Value`]-based [`encode`] path and the native serde
+/// serializer, which buffers each container's body in a scratch `Vec` and then
+/// calls this to frame it.
+pub(super) fn encode_container(lc_markers: [u8; 3], count: usize, body: &[u8], out: &mut Vec<u8>) {
     let [lc1, lc2, lc4] = lc_markers;
     let len = body.len();
     if len <= u8::MAX as usize && count <= u8::MAX as usize {
