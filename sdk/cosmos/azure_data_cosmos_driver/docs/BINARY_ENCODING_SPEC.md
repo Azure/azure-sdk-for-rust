@@ -4,9 +4,12 @@ This document describes the design and phased implementation plan for **Cosmos
 binary JSON encoding** in the Rust Cosmos DB stack (`azure_data_cosmos` and
 `azure_data_cosmos_driver`).
 
-> **Status:** Planning / not yet implemented. This is a design reference; the
-> module and call-site changes it describes do not exist yet. Open questions are
-> tracked in [§12](#12-open-questions).
+> **Status:** Implemented (encode + decode). The decoder, the minimal-valid
+> `Value` encoder, and the **native serde serializer** ([`binary_json::to_vec`])
+> all exist and are wired in: responses auto-detect the `0x80` preamble and
+> decode, and item writes serialize `T` straight to binary via `to_vec`. The
+> deferred items (patch / batch / bulk, and a native serde *Deserializer*) are
+> noted inline. Open questions are tracked in [§12](#12-open-questions).
 
 ## 1. Overview
 
@@ -232,11 +235,50 @@ A reader over `&[u8]`:
 - `Null` / `False` / `True`.
 - **No** dedup, compression, or uniform arrays in v1.
 
-### 8.3 serde integration (v2)
+### 8.3 serde integration (v2) — **implemented (serializer)**
 
-`BinaryWriter: serde::Serializer` and `BinaryReader: serde::Deserializer` so
-`T: Serialize` / `DeserializeOwned` flow straight to and from binary without the
-intermediate `Value`, eliminating an allocation and a copy on the hot path.
+The native serde **serializer** is implemented in
+`azure_data_cosmos_driver::binary_json::ser` and exported as
+[`binary_json::to_vec`]. `BinarySerializer: serde::Serializer` drives a value's
+own `Serialize` impl straight to Cosmos binary JSON, so `T: Serialize` flows to
+bytes without the intermediate `serde_json::Value`, eliminating an allocation
+and a traversal on the write hot path.
+
+Implementation notes:
+
+- **Shared emit helpers.** Scalars, strings, and containers are written through
+  the same `pub(super)` helpers the `Value` encoder uses
+  (`encode_i64`/`encode_u64`/`encode_f64`, `encode_string`, `encode_container`),
+  so `to_vec(&v)` is byte-identical to `encode(&serde_json::to_value(&v))` for
+  any `serde_json::Value` — asserted by a 2000-case generative parity test.
+- **Length-prefix buffering.** The `ObjLC*` / `ArrLC*` markers carry the payload
+  byte length and element count *before* the body, which serde does not know up
+  front. Each compound serializer buffers its children into a scratch `Vec` and
+  frames them with the narrowest fitting `LC` marker on `end()` — the same
+  per-container scratch allocation the `Value` encoder makes, but without the
+  `Value` tree itself.
+- **Enum representation.** Enums use serde's externally-tagged convention
+  (unit → name string, others → `{ "Variant": <payload> }`), matching
+  `serde_json`, so `to_vec` → [`decode`] → `serde_json::from_value` round-trips.
+- **Field ordering.** Typed structs preserve field *declaration* order (like
+  `serde_json::to_vec`), whereas `serde_json::to_value` alphabetizes keys. Byte
+  parity with the `Value` encoder therefore holds only for `Value` inputs; for
+  named structs the correctness bar is a faithful round-trip.
+
+**Performance** (criterion `binary_encode` bench, encode only):
+
+| Item | text (`to_vec`) | binary v1 (`Value`) | binary v2 (`to_vec`) |
+| ---- | --------------: | ------------------: | -------------------: |
+| ~64 B | ~0.33 µs | ~1.85 µs | **~0.75 µs** (~2.5× faster than v1) |
+| ~1.7 MB | ~2.33 ms | ~2.17 ms | **~1.64 ms** (~24% faster than v1; ~1.0 GiB/s) |
+
+On large items v2 is faster than *both* v1 binary and text JSON, since it skips
+the `Value` build/second-traversal and avoids text number/container formatting.
+
+**Deferred:** a native serde `BinaryReader: serde::Deserializer` (so
+`DeserializeOwned` reads straight from binary without the intermediate `Value`
+on the decode side). The decode path currently goes binary → `Value` →
+`serde_json::from_value`.
 
 ## 9. Negotiation and enablement
 
@@ -275,8 +317,10 @@ intermediate `Value`, eliminating an allocation and a copy on the hot path.
 - **Emulator integration tests:** read / write / query with binary enabled,
   asserting text-equivalent results. Gated under the existing `emulator`
   test categories.
-- **Benchmarks:** extend `azure_data_cosmos_benchmarks` to compare text vs.
-  binary on the point-read and write paths.
+- **Benchmarks:** `azure_data_cosmos_benchmarks`'s `binary_encode` bench
+  compares text vs. binary v1 (`Value`) vs. binary v2 (`to_vec`) on small and
+  ~1.7 MB items (see the §8.3 table). Run with
+  `cargo bench -p azure_data_cosmos_benchmarks --bench binary_encode`.
 
 ## 12. Open questions
 
