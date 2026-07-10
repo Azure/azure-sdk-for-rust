@@ -3,11 +3,20 @@
 
 use super::framework;
 
+use std::borrow::Cow;
+use std::collections::BTreeSet;
 use std::error::Error;
 
-use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
+use azure_data_cosmos::clients::ContainerClient;
+use azure_data_cosmos::feed::{FeedRange, FeedScope};
+use azure_data_cosmos::models::{
+    ContainerProperties, EffectivePartitionKey, PartitionKeyDefinition, ThroughputProperties,
+};
 use azure_data_cosmos::options::CreateContainerOptions;
+use azure_data_cosmos::{PartitionKey, Query};
 use base64::Engine;
+use futures::StreamExt;
+use serde::{Deserialize, Serialize};
 
 use framework::{TestClient, TestOptions};
 
@@ -270,6 +279,172 @@ pub async fn feed_range_from_partition_key_single_hash_full_key() -> Result<(), 
                 ranges.len(),
                 1,
                 "full key should return exactly one feed range"
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+const DOC_COUNT: usize = 40;
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct Doc {
+    id: String,
+    pk: String,
+}
+
+fn pk_definition() -> PartitionKeyDefinition {
+    PartitionKeyDefinition::new(vec![Cow::Borrowed("/pk")])
+}
+
+/// Runs a feed-range-scoped `SELECT *` and returns the set of returned ids.
+///
+/// Drains the result set page-by-page (via [`into_pages`]) rather than
+/// item-by-item; the paged future is small enough to satisfy
+/// `clippy::large-futures`, which the item-level stream would otherwise trip.
+async fn drain_ids(
+    container: &ContainerClient,
+    scope: FeedScope,
+) -> Result<BTreeSet<String>, Box<dyn Error>> {
+    let mut pages = container
+        .query_items::<Doc>(Query::from("SELECT * FROM c"), scope, None)
+        .await?
+        .into_pages();
+    let mut got = BTreeSet::new();
+    while let Some(page) = pages.next().await {
+        for doc in page?.into_items() {
+            got.insert(doc.id);
+        }
+    }
+    Ok(got)
+}
+
+/// End-to-end regression test for the cross-partition query **scope bug**: the
+/// planner used to ignore the caller's `FeedScope::range(..)` feed range.
+///
+/// Before the fix, `plan_fresh` built its request ranges purely from the query
+/// plan (`query_plan.query_ranges`) and never intersected them with the
+/// operation's scope feed range (`operation.target()`). For a plain `SELECT *`
+/// the query plan reports the whole container, so a `FeedScope::range([X, Y))`
+/// window was silently dropped and the query did a **full scan** — returning
+/// documents outside the requested window.
+///
+/// This seeds one document per partition key, computes each document's
+/// effective partition key locally, and issues cross-partition queries scoped
+/// to interior EPK windows, asserting the result set is exactly the windowed
+/// subset. Without the planner fix these fail with `SCOPE BUG`; with the fix —
+/// plus the `x-ms-read-key-type: EffectivePartitionKeyRange` header correction
+/// that lets the gateway accept the emitted interior EPK window — they pass.
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+pub async fn feed_range_scope_restricts_cross_partition_query() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let properties = ContainerProperties::new("ScopeBugContainer", pk_definition());
+            let container = run_context
+                .create_container(db_client, properties, None)
+                .await?;
+
+            // Seed DOC_COUNT documents, each on its own partition key.
+            let mut docs: Vec<Doc> = Vec::with_capacity(DOC_COUNT);
+            for i in 0..DOC_COUNT {
+                let id = format!("doc-{i:03}");
+                let doc = Doc {
+                    id: id.clone(),
+                    pk: id.clone(),
+                };
+                container
+                    .create_item(PartitionKey::from(doc.pk.clone()), &id, doc.clone(), None)
+                    .await?;
+                docs.push(doc);
+            }
+
+            // Compute each document's effective partition key locally (same hash
+            // the service uses), then sort ascending by EPK.
+            let pk_def = pk_definition();
+            let mut points: Vec<(String, FeedRange)> = docs
+                .iter()
+                .map(|d| {
+                    let fr = FeedRange::for_partition(PartitionKey::from(d.pk.clone()), &pk_def);
+                    (d.id.clone(), fr)
+                })
+                .collect();
+            points.sort_by(|a, b| a.1.min_inclusive().cmp(b.1.min_inclusive()));
+            let k = points.len();
+
+            // Control: a full-container scan must return every seeded document.
+            let all: BTreeSet<String> = points.iter().map(|(id, _)| id.clone()).collect();
+            let control = drain_ids(&container, FeedScope::full_container()).await?;
+            assert_eq!(
+                control, all,
+                "control full-container scan should return all {DOC_COUNT} docs"
+            );
+
+            // Test B: a WIDE interior window [X1, X_{k-1}) must exclude the
+            // globally smallest and largest EPKs => expect k-2 documents.
+            let window_b = FeedRange::new(
+                points[1].1.min_inclusive().clone(),
+                points[k - 1].1.min_inclusive().clone(),
+            )?;
+            let expected_b: BTreeSet<String> =
+                points[1..k - 1].iter().map(|(id, _)| id.clone()).collect();
+            let got_b = drain_ids(&container, FeedScope::range(window_b)).await?;
+            assert_eq!(
+                got_b,
+                expected_b,
+                "SCOPE BUG (wide window): FeedScope::range was ignored and the \
+                 query fell back to a full scan. got {} docs, expected {}. \
+                 unexpected(outside window)={:?}",
+                got_b.len(),
+                expected_b.len(),
+                got_b.difference(&expected_b).collect::<Vec<_>>()
+            );
+
+            // Test C: the TIGHTEST interior window [X_mid, X_{mid+1}) must
+            // return exactly one document.
+            let mid = k / 2;
+            let window_c = FeedRange::new(
+                points[mid].1.min_inclusive().clone(),
+                points[mid + 1].1.min_inclusive().clone(),
+            )?;
+            let expected_c: BTreeSet<String> = std::iter::once(points[mid].0.clone()).collect();
+            let got_c = drain_ids(&container, FeedScope::range(window_c)).await?;
+            assert_eq!(
+                got_c,
+                expected_c,
+                "SCOPE BUG (tight window): FeedScope::range was ignored. \
+                 got {} docs, expected 1. unexpected(outside window)={:?}",
+                got_c.len(),
+                got_c.difference(&expected_c).collect::<Vec<_>>()
+            );
+
+            // Test D: a window that lies ENTIRELY in the gap between two adjacent
+            // EPKs must return zero documents. Appending a whole byte (`80`) to
+            // `X_mid`'s hex keeps `X_mid` as a byte prefix, so the result is
+            // strictly greater than `X_mid` and — because adjacent single-hash
+            // EPKs differ within their leading bytes — strictly less than
+            // `X_{mid+1}`. So `[X_mid || 0x80, X_{mid+1})` contains no doc's EPK.
+            // (A single hex nibble would be dropped by the byte-wise hex parser,
+            // so a full byte is required.) This guards against an off-by-one
+            // where the lower bound is treated as inclusive of `X_mid`.
+            let gap_start = EffectivePartitionKey::from(format!(
+                "{}80",
+                points[mid].1.min_inclusive().to_hex()
+            ));
+            let window_d = FeedRange::new(gap_start, points[mid + 1].1.min_inclusive().clone())?;
+            let got_d = drain_ids(&container, FeedScope::range(window_d)).await?;
+            assert!(
+                got_d.is_empty(),
+                "SCOPE BUG (empty gap window): a window between adjacent EPKs \
+                 returned {} docs, expected 0. unexpected={:?}",
+                got_d.len(),
+                got_d.iter().collect::<Vec<_>>()
             );
 
             Ok(())

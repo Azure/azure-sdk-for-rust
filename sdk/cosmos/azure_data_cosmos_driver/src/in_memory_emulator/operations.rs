@@ -272,6 +272,7 @@ pub(crate) async fn handle_operation(
                 .await
         }
         OperationType::BadRequestPath(desc) => bad_request_path_response(desc, start),
+        OperationType::InvalidInput(desc) => invalid_input_response(desc, start),
         OperationType::Unsupported(desc) => unsupported_response(desc, start),
     };
 
@@ -2576,6 +2577,16 @@ fn collect_item_documents(
         let requested_epk = match parsed.partition_key_header.as_deref() {
             Some(header) => match parse_partition_key_header(header) {
                 Ok(components) if components.is_empty() => None,
+                // A partial hierarchical partition key (fewer components than the
+                // container's PK paths) targets a *prefix* of logical partitions.
+                // Real Cosmos scopes such reads via the `x-ms-start-epk`/
+                // `x-ms-end-epk` range (below) rather than an exact point EPK, so
+                // don't compute a point to exact-match here — that would compare a
+                // 2-component prefix EPK against 3-component item EPKs and drop
+                // every row.
+                Ok(components) if components.len() < state.metadata.partition_key.paths().len() => {
+                    None
+                }
                 Ok(components) => Some(compute_epk(
                     &components,
                     state.metadata.partition_key.kind(),
@@ -4824,6 +4835,19 @@ fn bad_request_path_response(path: &str, start: Instant) -> AsyncRawResponse {
         None,
         "BadRequest",
         &format!("Invalid request path: {}", path),
+        0.0,
+        "",
+        start,
+    )
+    .build()
+}
+
+fn invalid_input_response(message: &str, start: Instant) -> AsyncRawResponse {
+    error_response(
+        StatusCode::BadRequest,
+        None,
+        "BadRequest",
+        &format!("One of the input values is invalid. {message}"),
         0.0,
         "",
         start,

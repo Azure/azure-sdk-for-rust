@@ -67,6 +67,11 @@ pub(crate) mod request_header_names {
     pub const START_EPK: &str = "x-ms-start-epk";
     pub const END_EPK: &str = "x-ms-end-epk";
     pub const READ_FEED_KEY_TYPE: &str = "x-ms-read-key-type";
+    /// The [`READ_FEED_KEY_TYPE`] value for an effective-partition-key *range*
+    /// (`x-ms-start-epk`/`x-ms-end-epk`)-scoped request. The point value
+    /// `EffectivePartitionKey` is rejected by the gateway with `400 "One of the
+    /// input values is invalid"` for range-scoped requests (issues #4680, #4681).
+    pub const READ_FEED_KEY_TYPE_EPK_RANGE: &str = "EffectivePartitionKeyRange";
     /// Internal-only headers carrying the physical pkrange's full EPK bounds
     /// to the GW_V2 dispatcher. The thin-client (Gateway 2.0) proxy requires
     /// `StartEpkHash`/`EndEpkHash` RNTBD body tokens on every Query frame; in
