@@ -1,0 +1,13 @@
+{
+  "schemaPolicy": {
+    "tableSchema": { "version": "v1", "name": "tableSchema",
+      "schemas": [
+        {
+          "version": "v1", "name": "Row", "id": -1, "type": "schema",
+          "options": { "disallowUnschematized": true, "enablePropertyLevelTimestamp": false, "disableSystemPrefix": true },
+          "properties": [], "partitionkeys": [], "primarykeys": [], "statickeys": []
+        }
+      ]
+    }
+  }
+}
