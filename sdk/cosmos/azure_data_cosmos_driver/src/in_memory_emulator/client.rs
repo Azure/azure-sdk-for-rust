@@ -176,7 +176,14 @@ impl InMemoryEmulatorHttpClient {
         // Extract request body
         let body_bytes: Vec<u8> = Bytes::from(request.body()).to_vec();
 
-        let response = handle_operation(&self.store, region_name, &parsed, &body_bytes).await;
+        let response = handle_operation(
+            &self.store,
+            region_name,
+            &parsed,
+            request.headers(),
+            &body_bytes,
+        )
+        .await;
 
         Ok(response)
     }

@@ -1,0 +1,18 @@
+[package]
+name = "generate_api"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+publish = false
+
+[build-dependencies]
+serde = { workspace = true }
+toml = { workspace = true }
+
+[dependencies]
+clap = { workspace = true }
+rustdoc-types = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }

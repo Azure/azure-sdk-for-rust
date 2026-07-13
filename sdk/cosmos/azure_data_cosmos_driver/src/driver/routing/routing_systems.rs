@@ -31,7 +31,7 @@ pub(crate) fn build_account_endpoint_state(
     properties: &AccountProperties,
     default_endpoint: CosmosEndpoint,
     previous_generation: Option<u64>,
-    gateway20_enabled: bool,
+    gateway_v2_enabled: bool,
     preferred_regions: &[Region],
 ) -> AccountEndpointState {
     let generation = previous_generation.map_or(0, |g| g.saturating_add(1));
@@ -39,14 +39,15 @@ pub(crate) fn build_account_endpoint_state(
     let mut preferred_read_endpoints = build_preferred_endpoints(
         &properties.readable_locations,
         &properties.thin_client_readable_locations,
-        gateway20_enabled,
+        gateway_v2_enabled,
     );
 
     let mut preferred_write_endpoints = build_preferred_endpoints(
         &properties.writable_locations,
         &properties.thin_client_writable_locations,
-        gateway20_enabled,
+        gateway_v2_enabled,
     );
+    let mut account_write_endpoints = preferred_write_endpoints.clone();
 
     if !preferred_regions.is_empty() {
         preferred_read_endpoints =
@@ -61,11 +62,15 @@ pub(crate) fn build_account_endpoint_state(
     if preferred_write_endpoints.is_empty() {
         preferred_write_endpoints.push(default_endpoint.clone());
     }
+    if account_write_endpoints.is_empty() {
+        account_write_endpoints.push(default_endpoint.clone());
+    }
 
     AccountEndpointState {
         generation,
         preferred_read_endpoints: preferred_read_endpoints.into(),
         preferred_write_endpoints: preferred_write_endpoints.into(),
+        account_write_endpoints: account_write_endpoints.into(),
         unavailable_endpoints: Default::default(),
         multiple_write_locations_enabled: properties.enable_multiple_write_locations,
         default_endpoint,
@@ -74,11 +79,11 @@ pub(crate) fn build_account_endpoint_state(
 
 fn build_preferred_endpoints(
     standard_locations: &[crate::driver::cache::AccountRegion],
-    thin_client_locations: &[crate::driver::cache::AccountRegion],
-    gateway20_enabled: bool,
+    gateway_v2_locations: &[crate::driver::cache::AccountRegion],
+    gateway_v2_enabled: bool,
 ) -> Vec<CosmosEndpoint> {
-    let thin_client_urls = if gateway20_enabled {
-        parse_thin_client_locations(thin_client_locations)
+    let gateway_v2_urls = if gateway_v2_enabled {
+        parse_gateway_v2_locations(gateway_v2_locations)
     } else {
         HashMap::new()
     };
@@ -87,14 +92,14 @@ fn build_preferred_endpoints(
     for region in standard_locations {
         let url = region.database_account_endpoint.url().clone();
 
-        let endpoint = thin_client_urls
+        let endpoint = gateway_v2_urls
             .get(&region.name)
             .cloned()
-            .map(|gateway20_url| {
-                CosmosEndpoint::regional_with_gateway20(
+            .map(|gateway_v2_url| {
+                CosmosEndpoint::regional_with_gateway_v2(
                     region.name.clone(),
                     url.clone(),
-                    gateway20_url,
+                    gateway_v2_url,
                 )
             })
             .unwrap_or_else(|| CosmosEndpoint::regional(region.name.clone(), url));
@@ -105,12 +110,12 @@ fn build_preferred_endpoints(
     endpoints
 }
 
-fn parse_thin_client_locations(
-    thin_client_locations: &[crate::driver::cache::AccountRegion],
+fn parse_gateway_v2_locations(
+    gateway_v2_locations: &[crate::driver::cache::AccountRegion],
 ) -> HashMap<crate::options::Region, url::Url> {
     let mut urls = HashMap::new();
 
-    for region in thin_client_locations {
+    for region in gateway_v2_locations {
         let url = region.database_account_endpoint.url().clone();
 
         if url.scheme() != "https" {
@@ -118,7 +123,7 @@ fn parse_thin_client_locations(
                 region = %region.name,
                 endpoint = %region.database_account_endpoint,
                 scheme = url.scheme(),
-                "Ignoring non-HTTPS thin-client endpoint URL"
+                "Ignoring non-HTTPS Gateway 2.0 endpoint URL"
             );
             continue;
         }
@@ -130,7 +135,7 @@ fn parse_thin_client_locations(
                         region = %region.name,
                         existing_url = %existing,
                         new_url = %url,
-                        "Duplicate thin-client region with conflicting URL; keeping first entry"
+                        "Duplicate Gateway 2.0 region with conflicting URL; keeping first entry"
                     );
                 }
             })
@@ -183,6 +188,7 @@ pub(crate) fn mark_endpoint_unavailable(
         generation: state.generation,
         preferred_read_endpoints: Arc::clone(&state.preferred_read_endpoints),
         preferred_write_endpoints: Arc::clone(&state.preferred_write_endpoints),
+        account_write_endpoints: Arc::clone(&state.account_write_endpoints),
         unavailable_endpoints: unavailable,
         multiple_write_locations_enabled: state.multiple_write_locations_enabled,
         default_endpoint: state.default_endpoint.clone(),
@@ -208,6 +214,7 @@ pub(crate) fn expire_unavailable_endpoints(
         generation: state.generation,
         preferred_read_endpoints: Arc::clone(&state.preferred_read_endpoints),
         preferred_write_endpoints: Arc::clone(&state.preferred_write_endpoints),
+        account_write_endpoints: Arc::clone(&state.account_write_endpoints),
         unavailable_endpoints: unavailable,
         multiple_write_locations_enabled: state.multiple_write_locations_enabled,
         default_endpoint: state.default_endpoint.clone(),
@@ -486,6 +493,117 @@ fn try_move_next_endpoint(
     false
 }
 
+/// Inserts or updates the per-partition failover entry after a successful
+/// response confirmed the supplied endpoint as the hub.
+///
+/// Writes into [`PartitionEndpointState::failover_overrides`] — the same
+/// per-partition map used by PPAF. On a single-master account the
+/// partition's hub region is its write region, so the entry serves both
+/// PPAF-write routing and hub-region read routing.
+///
+/// **Existing-entry semantics**: only `current_endpoint` is updated. The
+/// `failed_endpoints` set, `first_failed_endpoint`, `last_failure_time`,
+/// and `health_status` are preserved as-is so that:
+///
+/// 1. A subsequent `403/3` against the new hub can advance through
+///    `try_move_next_endpoint` without re-trying endpoints that were
+///    already known to be non-hub.
+/// 2. Any PPAF state (from a prior write rotation) is not silently
+///    wiped by a hub-region read confirmation.
+pub(crate) fn cache_hub_region(
+    current_state: &PartitionEndpointState,
+    pk_range_id: &PartitionKeyRangeId,
+    hub_endpoint: &CosmosEndpoint,
+) -> PartitionEndpointState {
+    if !current_state.per_partition_automatic_failover_enabled {
+        return current_state.clone();
+    }
+    if hub_endpoint.region().is_none() {
+        return current_state.clone();
+    }
+
+    let mut new_state = current_state.clone();
+    let now = Instant::now();
+
+    new_state
+        .failover_overrides
+        .entry(pk_range_id.clone())
+        .and_modify(|entry| {
+            // Only update `current_endpoint` — preserve all other fields so
+            // PPAF rotation history and failed_endpoints tracking are
+            // retained across read-side confirmations.
+            entry.current_endpoint = hub_endpoint.clone();
+        })
+        .or_insert_with(|| PartitionFailoverEntry {
+            current_endpoint: hub_endpoint.clone(),
+            first_failed_endpoint: hub_endpoint.clone(),
+            failed_endpoints: Default::default(),
+            read_failure_count: 0,
+            write_failure_count: 0,
+            first_failure_time: now,
+            last_failure_time: now,
+            health_status: HealthStatus::Unhealthy,
+            // Hub-region entries do not participate in background failback,
+            // so the jitter is unused (mirrors PPAF entries).
+            failback_jitter: Duration::ZERO,
+        });
+
+    new_state
+}
+
+/// Advances the per-partition failover entry to the next preferred read
+/// endpoint after a `403/3 (WriteForbidden)` response on a hub-region
+/// discovery attempt.
+///
+/// Creates a new entry if none exists (cold cache), or rotates the
+/// existing `current_endpoint` to the next un-tried preferred read
+/// endpoint (warm cache that found a stale hub). If all preferred reads
+/// have been exhausted, the entry is removed so the next attempt falls
+/// back to the default selection logic in `resolve_endpoint`.
+///
+/// Pure function: returns a new `PartitionEndpointState`. The caller is
+/// responsible for the CAS swap.
+pub(crate) fn advance_hub_region_discovery(
+    current_state: &PartitionEndpointState,
+    account_state: &AccountEndpointState,
+    pk_range_id: &PartitionKeyRangeId,
+    failed_endpoint: &CosmosEndpoint,
+) -> PartitionEndpointState {
+    if !current_state.per_partition_automatic_failover_enabled {
+        return current_state.clone();
+    }
+
+    let mut new_state = current_state.clone();
+    let now = Instant::now();
+    let next_endpoints = &account_state.preferred_read_endpoints;
+
+    let entry = new_state
+        .failover_overrides
+        .entry(pk_range_id.clone())
+        .or_insert_with(|| PartitionFailoverEntry {
+            current_endpoint: failed_endpoint.clone(),
+            first_failed_endpoint: failed_endpoint.clone(),
+            failed_endpoints: Default::default(),
+            read_failure_count: 0,
+            write_failure_count: 0,
+            first_failure_time: now,
+            last_failure_time: now,
+            health_status: HealthStatus::Unhealthy,
+            failback_jitter: Duration::ZERO,
+        });
+
+    if try_move_next_endpoint(entry, next_endpoints, failed_endpoint) {
+        entry.last_failure_time = now;
+    } else {
+        // All preferred-read endpoints exhausted — drop the entry so the next
+        // attempt falls back to default selection, and the operation aborts via
+        // the failover-budget guard once that budget is depleted.
+        new_state.failover_overrides.remove(pk_range_id.as_str());
+    }
+
+    new_state
+}
+
 /// Transitions expired partition entries from `Unhealthy` to `ProbeCandidate`,
 /// producing a new `PartitionEndpointState`.
 ///
@@ -728,7 +846,7 @@ mod tests {
     }
 
     #[test]
-    fn build_state_adds_gateway20_endpoint_when_enabled() {
+    fn build_state_adds_gateway_v2_endpoint_when_enabled() {
         let properties: AccountProperties = serde_json::from_value(serde_json::json!({
             "_self": "",
             "id": "test",
@@ -750,12 +868,14 @@ mod tests {
 
         let state = build_account_endpoint_state(&properties, default_endpoint(), None, true, &[]);
 
-        assert!(state.preferred_read_endpoints[0].gateway20_url().is_some());
-        assert!(state.preferred_write_endpoints[0].gateway20_url().is_none());
+        assert!(state.preferred_read_endpoints[0].gateway_v2_url().is_some());
+        assert!(state.preferred_write_endpoints[0]
+            .gateway_v2_url()
+            .is_none());
     }
 
     #[test]
-    fn build_state_adds_gateway20_for_write_endpoints_when_present() {
+    fn build_state_adds_gateway_v2_for_write_endpoints_when_present() {
         let properties: AccountProperties = serde_json::from_value(serde_json::json!({
             "_self": "",
             "id": "test",
@@ -778,8 +898,226 @@ mod tests {
 
         let state = build_account_endpoint_state(&properties, default_endpoint(), None, true, &[]);
 
-        assert!(state.preferred_read_endpoints[0].gateway20_url().is_some());
-        assert!(state.preferred_write_endpoints[0].gateway20_url().is_some());
+        assert!(state.preferred_read_endpoints[0].gateway_v2_url().is_some());
+        assert!(state.preferred_write_endpoints[0]
+            .gateway_v2_url()
+            .is_some());
+    }
+
+    /// Regression guard for the "service stops advertising Gateway 2.0" case.
+    ///
+    /// When the account previously returned `thinClient*Locations` but a
+    /// subsequent metadata refresh omits them (e.g., the service rolled the
+    /// account off Gateway 2.0, or thin-client routing was disabled
+    /// region-side), the rebuilt endpoint state must drop the
+    /// `gateway_v2_url` on every endpoint so that follow-up requests route
+    /// through the standard compute-gateway URL.
+    ///
+    /// `uses_gateway_v2(prefer_gateway_v2=true)` checks
+    /// `gateway_v2_url.is_some()`, so a `None` URL is sufficient to force
+    /// the request pipeline back onto the standard gateway transport even
+    /// while the operator-level `gateway_v2_enabled` toggle remains on.
+    #[test]
+    fn build_state_drops_gateway_v2_when_thin_client_locations_disappear() {
+        // First refresh: account advertises both thin-client read and write
+        // endpoints. With `gateway_v2_enabled=true`, every preferred endpoint
+        // must carry a `gateway_v2_url`.
+        let with_g2: AccountProperties = serde_json::from_value(serde_json::json!({
+            "_self": "",
+            "id": "test",
+            "_rid": "test.documents.azure.com",
+            "media": "//media/",
+            "addresses": "//addresses/",
+            "_dbs": "//dbs/",
+            "writableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com:443/" }],
+            "readableLocations": [{ "name": "westus2", "databaseAccountEndpoint": "https://test-westus2.documents.azure.com:443/" }],
+            "thinClientWritableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus-thin.documents.azure.com:444/" }],
+            "thinClientReadableLocations": [{ "name": "westus2", "databaseAccountEndpoint": "https://test-westus2-thin.documents.azure.com:444/" }],
+            "enableMultipleWriteLocations": true,
+            "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
+            "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
+            "queryEngineConfiguration": "{}"
+        })).unwrap();
+
+        let initial = build_account_endpoint_state(&with_g2, default_endpoint(), None, true, &[]);
+        assert!(
+            initial.preferred_read_endpoints[0]
+                .gateway_v2_url()
+                .is_some(),
+            "initial read endpoint must carry a Gateway 2.0 URL"
+        );
+        assert!(
+            initial.preferred_write_endpoints[0]
+                .gateway_v2_url()
+                .is_some(),
+            "initial write endpoint must carry a Gateway 2.0 URL"
+        );
+        assert!(
+            initial.preferred_read_endpoints[0].uses_gateway_v2(true),
+            "initial read endpoint must route through Gateway 2.0 when prefer_gateway_v2=true"
+        );
+        assert!(
+            initial.preferred_write_endpoints[0].uses_gateway_v2(true),
+            "initial write endpoint must route through Gateway 2.0 when prefer_gateway_v2=true"
+        );
+
+        // Second refresh: same standard `writable`/`readable` endpoints, but
+        // the service has stopped returning thin-client locations. Mimics
+        // the database-account call no longer advertising Gateway 2.0.
+        let without_g2: AccountProperties = serde_json::from_value(serde_json::json!({
+            "_self": "",
+            "id": "test",
+            "_rid": "test.documents.azure.com",
+            "media": "//media/",
+            "addresses": "//addresses/",
+            "_dbs": "//dbs/",
+            "writableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com:443/" }],
+            "readableLocations": [{ "name": "westus2", "databaseAccountEndpoint": "https://test-westus2.documents.azure.com:443/" }],
+            "enableMultipleWriteLocations": true,
+            "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
+            "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
+            "queryEngineConfiguration": "{}"
+        })).unwrap();
+
+        // `gateway_v2_enabled` is still `true` on the store — only the wire
+        // payload has changed. The rebuilt endpoints must nevertheless have
+        // no `gateway_v2_url`, forcing fallback to the compute gateway.
+        let rebuilt = build_account_endpoint_state(
+            &without_g2,
+            default_endpoint(),
+            Some(initial.generation),
+            true,
+            &[],
+        );
+        assert_eq!(rebuilt.generation, initial.generation + 1);
+        assert!(
+            rebuilt.preferred_read_endpoints[0]
+                .gateway_v2_url()
+                .is_none(),
+            "read endpoint must lose its Gateway 2.0 URL when the service stops advertising thinClientReadableLocations"
+        );
+        assert!(
+            rebuilt.preferred_write_endpoints[0]
+                .gateway_v2_url()
+                .is_none(),
+            "write endpoint must lose its Gateway 2.0 URL when the service stops advertising thinClientWritableLocations"
+        );
+        assert!(
+            !rebuilt.preferred_read_endpoints[0].uses_gateway_v2(true),
+            "read request must fall back to the compute gateway even when the operator toggle (prefer_gateway_v2) is still true"
+        );
+        assert!(
+            !rebuilt.preferred_write_endpoints[0].uses_gateway_v2(true),
+            "write request must fall back to the compute gateway even when the operator toggle (prefer_gateway_v2) is still true"
+        );
+    }
+
+    /// Regression guard for the "service starts advertising Gateway 2.0" case.
+    ///
+    /// When the account previously returned only standard locations but a
+    /// subsequent metadata refresh adds `thinClient*Locations` (e.g., the
+    /// service rolled the account onto Gateway 2.0), the rebuilt endpoint
+    /// state must adopt a `gateway_v2_url` on every endpoint so that follow-up
+    /// requests route through Gateway 2.0 while the operator toggle is on.
+    #[test]
+    fn build_state_adopts_gateway_v2_when_thin_client_locations_appear() {
+        // First refresh: account advertises only standard locations. With
+        // `gateway_v2_enabled=true` but no thin-client endpoints, no preferred
+        // endpoint may carry a `gateway_v2_url`.
+        let without_g2: AccountProperties = serde_json::from_value(serde_json::json!({
+            "_self": "",
+            "id": "test",
+            "_rid": "test.documents.azure.com",
+            "media": "//media/",
+            "addresses": "//addresses/",
+            "_dbs": "//dbs/",
+            "writableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com:443/" }],
+            "readableLocations": [{ "name": "westus2", "databaseAccountEndpoint": "https://test-westus2.documents.azure.com:443/" }],
+            "enableMultipleWriteLocations": true,
+            "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
+            "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
+            "queryEngineConfiguration": "{}"
+        })).unwrap();
+
+        let initial =
+            build_account_endpoint_state(&without_g2, default_endpoint(), None, true, &[]);
+        assert!(
+            initial.preferred_read_endpoints[0]
+                .gateway_v2_url()
+                .is_none(),
+            "initial read endpoint must carry no Gateway 2.0 URL"
+        );
+        assert!(
+            initial.preferred_write_endpoints[0]
+                .gateway_v2_url()
+                .is_none(),
+            "initial write endpoint must carry no Gateway 2.0 URL"
+        );
+        assert!(
+            !initial.preferred_read_endpoints[0].uses_gateway_v2(true),
+            "initial read endpoint must route through the standard gateway"
+        );
+        assert!(
+            !initial.preferred_write_endpoints[0].uses_gateway_v2(true),
+            "initial write endpoint must route through the standard gateway"
+        );
+
+        // Second refresh: same standard endpoints, but the service has begun
+        // returning thin-client locations. Mimics the database-account call
+        // starting to advertise Gateway 2.0.
+        let with_g2: AccountProperties = serde_json::from_value(serde_json::json!({
+            "_self": "",
+            "id": "test",
+            "_rid": "test.documents.azure.com",
+            "media": "//media/",
+            "addresses": "//addresses/",
+            "_dbs": "//dbs/",
+            "writableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com:443/" }],
+            "readableLocations": [{ "name": "westus2", "databaseAccountEndpoint": "https://test-westus2.documents.azure.com:443/" }],
+            "thinClientWritableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus-thin.documents.azure.com:444/" }],
+            "thinClientReadableLocations": [{ "name": "westus2", "databaseAccountEndpoint": "https://test-westus2-thin.documents.azure.com:444/" }],
+            "enableMultipleWriteLocations": true,
+            "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
+            "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
+            "queryEngineConfiguration": "{}"
+        })).unwrap();
+
+        let rebuilt = build_account_endpoint_state(
+            &with_g2,
+            default_endpoint(),
+            Some(initial.generation),
+            true,
+            &[],
+        );
+        assert_eq!(rebuilt.generation, initial.generation + 1);
+        assert!(
+            rebuilt.preferred_read_endpoints[0]
+                .gateway_v2_url()
+                .is_some(),
+            "read endpoint must gain a Gateway 2.0 URL once the service advertises thinClientReadableLocations"
+        );
+        assert!(
+            rebuilt.preferred_write_endpoints[0]
+                .gateway_v2_url()
+                .is_some(),
+            "write endpoint must gain a Gateway 2.0 URL once the service advertises thinClientWritableLocations"
+        );
+        assert!(
+            rebuilt.preferred_read_endpoints[0].uses_gateway_v2(true),
+            "read request must route through Gateway 2.0 once thin-client endpoints are advertised"
+        );
+        assert!(
+            rebuilt.preferred_write_endpoints[0].uses_gateway_v2(true),
+            "write request must route through Gateway 2.0 once thin-client endpoints are advertised"
+        );
     }
 
     #[test]
@@ -818,6 +1156,7 @@ mod tests {
             ]
             .into(),
             preferred_write_endpoints: vec![regional_endpoint("eastus")].into(),
+            account_write_endpoints: vec![regional_endpoint("eastus")].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: false,
             default_endpoint: default_endpoint(),
@@ -838,6 +1177,8 @@ mod tests {
                 regional_endpoint("westus"),
             ]
             .into(),
+            account_write_endpoints: vec![regional_endpoint("eastus"), regional_endpoint("westus")]
+                .into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: true,
             default_endpoint: default_endpoint(),
@@ -1691,6 +2032,88 @@ mod tests {
         );
     }
 
+    // ── Hub region cache tests ────────────────────────────────────────
+
+    /// A partition state with PPAF enabled — the new gate that
+    /// `cache_hub_region` checks before populating the cache.
+    fn partition_state_ppaf_enabled() -> PartitionEndpointState {
+        let mut ps = PartitionEndpointState::default();
+        ps.per_partition_automatic_failover_enabled = true;
+        ps
+    }
+
+    /// A partition state with PPAF disabled — `cache_hub_region` is a
+    /// no-op against this state.
+    fn partition_state_ppaf_disabled() -> PartitionEndpointState {
+        PartitionEndpointState::default()
+    }
+
+    /// Regression test for the SetCurrent-only update invariant: when
+    /// `cache_hub_region` updates an existing entry (e.g., one populated
+    /// by a prior PPAF rotation or a prior 403/3 discovery), it must
+    /// preserve the `failed_endpoints` set so that a subsequent 403/3
+    /// rotation does not re-try already-tried endpoints.
+    #[test]
+    fn cache_hub_region_updates_existing_entry_preserving_failed_set() {
+        let mut ps = partition_state_ppaf_enabled();
+        let old_hub = regional_endpoint("westus");
+        let new_hub = regional_endpoint("eastus");
+
+        let mut failed = std::collections::HashSet::new();
+        failed.insert(regional_endpoint("centralus"));
+        let original_failed = failed.clone();
+        let original_first_failed = old_hub.clone();
+        ps.failover_overrides.insert(
+            pk("0"),
+            PartitionFailoverEntry {
+                current_endpoint: old_hub.clone(),
+                first_failed_endpoint: original_first_failed.clone(),
+                failed_endpoints: failed,
+                read_failure_count: 7,
+                write_failure_count: 3,
+                first_failure_time: Instant::now(),
+                last_failure_time: Instant::now(),
+                health_status: HealthStatus::Unhealthy,
+                failback_jitter: Duration::ZERO,
+            },
+        );
+
+        let result = cache_hub_region(&ps, &pk("0"), &new_hub);
+        let entry = result.failover_overrides.get(&pk("0")).unwrap();
+        // current_endpoint MUST flip to the new hub.
+        assert_eq!(entry.current_endpoint, new_hub);
+        // Every other field MUST be preserved (SetCurrent-only semantics).
+        assert_eq!(
+            entry.failed_endpoints, original_failed,
+            "failed_endpoints must be preserved so 403/3 rotation does not re-try already-tried endpoints",
+        );
+        assert_eq!(
+            entry.first_failed_endpoint, original_first_failed,
+            "first_failed_endpoint must be preserved so PPAF probe-back logic is not disrupted",
+        );
+        assert_eq!(
+            entry.read_failure_count, 7,
+            "read_failure_count must be preserved (no failure happened — this is a 2xx hub confirmation)",
+        );
+        assert_eq!(
+            entry.write_failure_count, 3,
+            "write_failure_count must be preserved (no failure happened — this is a 2xx hub confirmation)",
+        );
+    }
+
+    /// Hub-region caching is a PPAF-only feature. On accounts without
+    /// PPAF, `cache_hub_region` is a no-op so the unified cache does
+    /// not accumulate state.
+    #[test]
+    fn cache_hub_region_skips_when_ppaf_disabled() {
+        let ps = partition_state_ppaf_disabled();
+        let result = cache_hub_region(&ps, &pk("0"), &regional_endpoint("eastus"));
+        assert!(
+            result.failover_overrides.is_empty(),
+            "hub-region cache must not populate when PPAF is disabled on the account",
+        );
+    }
+
     // ── Hedge feedback (PPCB §9.5) ────────────────────────────────────
 
     /// Convenience: produce a partition state with the hedge-win threshold
@@ -1725,6 +2148,92 @@ mod tests {
         assert!(
             after.circuit_breaker_overrides.is_empty(),
             "no trip until threshold reached",
+        );
+    }
+
+    #[test]
+    fn cache_hub_region_skips_non_regional_endpoint() {
+        let ps = partition_state_ppaf_enabled();
+        let non_regional = default_endpoint();
+        assert!(non_regional.region().is_none());
+
+        let result = cache_hub_region(&ps, &pk("0"), &non_regional);
+        assert!(result.failover_overrides.is_empty());
+    }
+
+    #[test]
+    fn advance_hub_region_discovery_rotates_existing_entry() {
+        let mut ps = partition_state_ppaf_enabled();
+        let account = single_master_account();
+        let eastus = regional_endpoint("eastus");
+        let westus = regional_endpoint("westus");
+        ps.failover_overrides.insert(
+            pk("0"),
+            PartitionFailoverEntry {
+                current_endpoint: eastus.clone(),
+                first_failed_endpoint: eastus.clone(),
+                failed_endpoints: Default::default(),
+                read_failure_count: 0,
+                write_failure_count: 0,
+                first_failure_time: Instant::now(),
+                last_failure_time: Instant::now(),
+                health_status: HealthStatus::Unhealthy,
+                failback_jitter: Duration::ZERO,
+            },
+        );
+
+        let result = advance_hub_region_discovery(&ps, &account, &pk("0"), &eastus);
+        let entry = result.failover_overrides.get(&pk("0")).unwrap();
+        assert_eq!(entry.current_endpoint, westus);
+    }
+
+    #[test]
+    fn advance_hub_region_discovery_removes_entry_when_exhausted() {
+        let mut ps = partition_state_ppaf_enabled();
+        let account = single_master_account();
+        let eastus = regional_endpoint("eastus");
+        let westus = regional_endpoint("westus");
+
+        // Pre-populate so the only un-tried endpoint is westus, currently
+        // pointing at westus — and the failed-endpoint set already covers eastus.
+        let mut failed = std::collections::HashSet::new();
+        failed.insert(eastus.clone());
+        ps.failover_overrides.insert(
+            pk("0"),
+            PartitionFailoverEntry {
+                current_endpoint: westus.clone(),
+                first_failed_endpoint: eastus.clone(),
+                failed_endpoints: failed,
+                read_failure_count: 0,
+                write_failure_count: 0,
+                first_failure_time: Instant::now(),
+                last_failure_time: Instant::now(),
+                health_status: HealthStatus::Unhealthy,
+                failback_jitter: Duration::ZERO,
+            },
+        );
+
+        let result = advance_hub_region_discovery(&ps, &account, &pk("0"), &westus);
+        // Both endpoints have failed — entry is removed so default selection
+        // applies on the next attempt.
+        assert!(!result.failover_overrides.contains_key(&pk("0")));
+    }
+
+    /// Hub-region caching is a PPAF-only feature. On accounts without PPAF,
+    /// `advance_hub_region_discovery` is a no-op so the unified cache does
+    /// not accumulate state. Mirrors `cache_hub_region_skips_when_ppaf_disabled`
+    /// for the rotation path — both writers into `failover_overrides` must
+    /// share the same gating.
+    #[test]
+    fn advance_hub_region_discovery_skips_when_ppaf_disabled() {
+        let ps = partition_state_ppaf_disabled();
+        let account = single_master_account();
+        let eastus = regional_endpoint("eastus");
+
+        let result = advance_hub_region_discovery(&ps, &account, &pk("0"), &eastus);
+        assert!(
+            result.failover_overrides.is_empty(),
+            "advance_hub_region_discovery must not populate the cache when PPAF is disabled on the account",
         );
     }
 

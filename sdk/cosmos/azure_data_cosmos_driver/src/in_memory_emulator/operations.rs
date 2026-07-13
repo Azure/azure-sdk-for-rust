@@ -5,21 +5,25 @@
 
 // cspell:ignore acked llsn
 
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Instant;
 
-use azure_core::http::headers::HeaderValue;
+use azure_core::http::headers::{HeaderName, HeaderValue, Headers};
 use azure_core::http::{AsyncRawResponse, StatusCode};
+use serde::Deserialize;
 
 use super::config::ContainerConfig;
 use super::dispatch::{OperationType, ParsedRequest};
 use super::epk::{compute_epk, extract_pk_from_body, parse_partition_key_header, Epk};
 use super::response::headers::{
-    ACTIVITY_ID, GLOBAL_COMMITTED_LSN, INTERNAL_PARTITION_ID, ITEM_LOCAL_LSN, ITEM_LSN,
-    LAST_STATE_CHANGE_UTC, LOCAL_LSN, NUMBER_OF_READ_REGIONS, PARTITION_KEY_RANGE_ID,
+    ACTIVITY_ID, CONTINUATION, GLOBAL_COMMITTED_LSN, INTERNAL_PARTITION_ID, ITEM_LOCAL_LSN,
+    ITEM_LSN, LAST_STATE_CHANGE_UTC, LOCAL_LSN, NUMBER_OF_READ_REGIONS, PARTITION_KEY_RANGE_ID,
     QUORUM_ACKED_LOCAL_LSN, QUORUM_ACKED_LSN, RESOURCE_QUOTA, RESOURCE_USAGE, SERVICE_VERSION,
     TRANSPORT_REQUEST_ID,
 };
+#[cfg(feature = "preview_dtx")]
+use super::response::headers::{ETAG, REQUEST_CHARGE, SESSION_TOKEN, SUBSTATUS};
 use super::response::{error_response, success_response, ResponseBuilder};
 use super::ru_model::RuChargingModel;
 use super::session::SessionToken;
@@ -28,10 +32,45 @@ use super::store::{
     StoredDocument,
 };
 use super::system_properties::{
-    account_properties_to_json, container_to_json, database_to_json, inject_system_properties,
-    pkranges_to_json,
+    account_properties_to_json, container_to_json, database_to_json, feed_to_json,
+    inject_system_properties, offer_to_json, pkranges_to_json,
 };
-use crate::models::PartitionKeyDefinition;
+#[cfg(feature = "preview_dtx")]
+use crate::driver::pipeline::patch_eval::apply_patch_ops;
+#[cfg(feature = "preview_dtx")]
+use crate::models::PatchInstructions;
+use crate::models::{
+    EffectivePartitionKey, PartitionKeyDefinition, PartitionKeyValue as ModelPartitionKeyValue,
+};
+
+static OFFER_REPLACE_PENDING: HeaderName = HeaderName::from_static("x-ms-offer-replace-pending");
+
+#[cfg(feature = "preview_dtx")]
+static DTX_IDEMPOTENCY_TOKEN: HeaderName =
+    HeaderName::from_static(crate::models::request_header_names::DTX_IDEMPOTENCY_TOKEN);
+#[cfg(feature = "preview_dtx")]
+static DTX_OPERATION_TYPE: HeaderName =
+    HeaderName::from_static(crate::models::request_header_names::DTX_OPERATION_TYPE);
+#[cfg(feature = "preview_dtx")]
+static DTX_RESOURCE_TYPE: HeaderName =
+    HeaderName::from_static(crate::models::request_header_names::DTX_RESOURCE_TYPE);
+
+/// Sub-status paired with `410 Gone` when a physical partition is locked because
+/// a split or merge is in progress.
+const PARTITION_SPLIT_OR_MERGE_SUBSTATUS: u16 = 1007;
+
+/// HTTP status a prepared-then-rolled-back write operation reports in an aborted
+/// distributed transaction, paired with sub-status 5415 (DtcOperationRolledBack).
+/// Mirrors the driver's `SubStatusCode::DTC_OPERATION_ROLLED_BACK`.
+#[cfg(feature = "preview_dtx")]
+const DTX_ROLLED_BACK_STATUS: u16 = 453;
+/// Sub-status accompanying [`DTX_ROLLED_BACK_STATUS`] (DtcOperationRolledBack).
+#[cfg(feature = "preview_dtx")]
+const DTX_ROLLED_BACK_SUBSTATUS: u32 = 5415;
+/// Sub-status paired with `412 PreconditionFailed` when a distributed
+/// transaction patch operation's `condition` (filter predicate) is not met.
+#[cfg(feature = "preview_dtx")]
+const DTX_PATCH_CONDITION_NOT_MET_SUBSTATUS: u16 = 1110;
 
 /// If any non-source target region's replication queue is saturated, returns
 /// a 429/3075 error response so callers can short-circuit before committing.
@@ -98,12 +137,16 @@ pub(crate) async fn handle_operation(
     store: &Arc<EmulatorStore>,
     region_name: &str,
     parsed: &ParsedRequest,
+    request_headers: &Headers,
     request_body: &[u8],
 ) -> AsyncRawResponse {
     let start = Instant::now();
     let response = match &parsed.operation {
         OperationType::ReadAccount => handle_read_account(store, start),
         OperationType::CreateDatabase => {
+            if !store.config().is_write_region(region_name) {
+                return write_forbidden_response(start);
+            }
             handle_create_database(store, region_name, parsed, request_body, start).await
         }
         OperationType::ReadDatabase => handle_read_database(
@@ -112,13 +155,21 @@ pub(crate) async fn handle_operation(
             parsed.db_id.as_deref().unwrap_or(""),
             start,
         ),
-        OperationType::DeleteDatabase => handle_delete_database(
-            store,
-            region_name,
-            parsed.db_id.as_deref().unwrap_or(""),
-            start,
-        ),
+        OperationType::DeleteDatabase => {
+            if !store.config().is_write_region(region_name) {
+                return write_forbidden_response(start);
+            }
+            handle_delete_database(
+                store,
+                region_name,
+                parsed.db_id.as_deref().unwrap_or(""),
+                start,
+            )
+        }
         OperationType::CreateContainer => {
+            if !store.config().is_write_region(region_name) {
+                return write_forbidden_response(start);
+            }
             handle_create_container(
                 store,
                 region_name,
@@ -136,13 +187,18 @@ pub(crate) async fn handle_operation(
             parsed.coll_id.as_deref().unwrap_or(""),
             start,
         ),
-        OperationType::DeleteContainer => handle_delete_container(
-            store,
-            region_name,
-            parsed.db_id.as_deref().unwrap_or(""),
-            parsed.coll_id.as_deref().unwrap_or(""),
-            start,
-        ),
+        OperationType::DeleteContainer => {
+            if !store.config().is_write_region(region_name) {
+                return write_forbidden_response(start);
+            }
+            handle_delete_container(
+                store,
+                region_name,
+                parsed.db_id.as_deref().unwrap_or(""),
+                parsed.coll_id.as_deref().unwrap_or(""),
+                start,
+            )
+        }
         OperationType::ReadPKRanges => handle_read_pkranges(
             store,
             region_name,
@@ -151,6 +207,13 @@ pub(crate) async fn handle_operation(
             parsed.if_none_match.as_deref(),
             start,
         ),
+        OperationType::ReadFeedDatabases => {
+            handle_read_feed_databases(store, region_name, parsed, start)
+        }
+        OperationType::ReadFeedContainers => {
+            handle_read_feed_containers(store, region_name, parsed, start)
+        }
+        OperationType::ReadFeedItems => handle_read_feed_items(store, region_name, parsed, start),
         OperationType::Create => {
             if !store.config().is_write_region(region_name) {
                 return write_forbidden_response(start);
@@ -176,16 +239,1419 @@ pub(crate) async fn handle_operation(
             }
             handle_delete(store, region_name, parsed, start).await
         }
-        OperationType::Query => unsupported_response(
-            "SQL queries are not supported by the in-memory emulator. \
-             See sdk/cosmos/azure_data_cosmos/docs/in-memory-emulator-spec.md \
-             section 1 (Non-Goals).",
-            start,
-        ),
+        OperationType::QueryDatabases => {
+            handle_query_databases(store, region_name, parsed, request_body, start)
+        }
+        OperationType::QueryContainers => {
+            handle_query_containers(store, region_name, parsed, request_body, start)
+        }
+        OperationType::QueryItems => {
+            handle_query_items(store, region_name, parsed, request_body, start)
+        }
+        OperationType::QueryPlan => {
+            handle_query_plan(store, region_name, parsed, request_body, start)
+        }
+        OperationType::Batch => {
+            if !store.config().is_write_region(region_name) {
+                return write_forbidden_response(start);
+            }
+            handle_batch(store, region_name, parsed, request_body, start).await
+        }
+        OperationType::ReadFeedOffers => handle_read_feed_offers(store, region_name, parsed, start),
+        OperationType::QueryOffers => {
+            handle_query_offers(store, region_name, parsed, request_body, start)
+        }
+        OperationType::ReadOffer => handle_read_offer(store, region_name, parsed, start),
+        OperationType::ReplaceOffer => {
+            if !store.config().is_write_region(region_name) {
+                return write_forbidden_response(start);
+            }
+            handle_replace_offer(store, region_name, parsed, request_body, start)
+        }
+        #[cfg(feature = "preview_dtx")]
+        OperationType::DistributedTransaction => {
+            handle_distributed_transaction(store, region_name, request_headers, request_body, start)
+                .await
+        }
         OperationType::BadRequestPath(desc) => bad_request_path_response(desc, start),
+        OperationType::InvalidInput(desc) => invalid_input_response(desc, start),
         OperationType::Unsupported(desc) => unsupported_response(desc, start),
     };
 
+    #[cfg(feature = "preview_dtx")]
+    #[derive(Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    struct DtxRequestBody {
+        operations: Vec<DtxOperation>,
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[derive(Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    struct DtxOperation {
+        index: usize,
+        database_name: String,
+        collection_name: String,
+        id: String,
+        partition_key: serde_json::Value,
+        operation_type: String,
+        #[serde(default)]
+        resource_body: Option<serde_json::Value>,
+        #[serde(default)]
+        session_token: Option<String>,
+        #[serde(default)]
+        if_match: Option<String>,
+        #[serde(default)]
+        if_none_match: Option<String>,
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    async fn handle_distributed_transaction(
+        store: &Arc<EmulatorStore>,
+        region_name: &str,
+        request_headers: &Headers,
+        request_body: &[u8],
+        start: Instant,
+    ) -> AsyncRawResponse {
+        let Some(transaction_type) = validate_dtx_headers(request_headers) else {
+            return error_response(
+                StatusCode::BadRequest,
+                None,
+                "BadRequest",
+                "Distributed transaction request is missing required DTX headers",
+                0.0,
+                "",
+                start,
+            )
+            .build();
+        };
+        let request: DtxRequestBody = match serde_json::from_slice(request_body) {
+            Ok(request) => request,
+            Err(error) => {
+                return error_response(
+                    StatusCode::BadRequest,
+                    None,
+                    "BadRequest",
+                    &format!("Invalid distributed transaction JSON body: {error}"),
+                    0.0,
+                    "",
+                    start,
+                )
+                .build()
+            }
+        };
+
+        if request.operations.is_empty() {
+            return error_response(
+                StatusCode::BadRequest,
+                None,
+                "BadRequest",
+                "Distributed transaction requires at least one operation",
+                0.0,
+                "",
+                start,
+            )
+            .build();
+        }
+
+        if let Err(message) = validate_dtx_operation_indexes(&request.operations) {
+            return error_response(
+                StatusCode::BadRequest,
+                None,
+                "BadRequest",
+                &message,
+                0.0,
+                "",
+                start,
+            )
+            .build();
+        }
+
+        match transaction_type {
+            DtxTransactionKind::Write => {
+                if !is_dtx_write_transaction(&request.operations) {
+                    return error_response(
+                        StatusCode::BadRequest,
+                        None,
+                        "BadRequest",
+                        "Distributed transaction CommitDistributedTransaction header requires at least one write operation",
+                        0.0,
+                        "",
+                        start,
+                    )
+                    .build();
+                }
+                // A write transaction can only commit in the account's write
+                // region. Normal writes enforce this in the dispatch layer
+                // (`handle_operation`), which the DTX path bypasses by calling
+                // the `_locked` point handlers directly, so re-check it here to
+                // match real-account (and normal emulator) behavior.
+                if !store.config().is_write_region(region_name) {
+                    return write_forbidden_response(start);
+                }
+                handle_dtx_write_transaction(store, region_name, &request.operations, start).await
+            }
+            DtxTransactionKind::Read => {
+                if is_dtx_write_transaction(&request.operations) {
+                    return error_response(
+                        StatusCode::BadRequest,
+                        None,
+                        "BadRequest",
+                        "Distributed transaction Read header cannot contain write operations",
+                        0.0,
+                        "",
+                        start,
+                    )
+                    .build();
+                }
+                handle_dtx_read_transaction(store, region_name, &request.operations, start).await
+            }
+        }
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    enum DtxTransactionKind {
+        Write,
+        Read,
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    fn validate_dtx_headers(headers: &Headers) -> Option<DtxTransactionKind> {
+        let token = headers.get_optional_str(&DTX_IDEMPOTENCY_TOKEN)?;
+        if token.trim().is_empty() || uuid::Uuid::parse_str(token).is_err() {
+            return None;
+        }
+        let resource_type = headers.get_optional_str(&DTX_RESOURCE_TYPE)?;
+        if !resource_type
+            .eq_ignore_ascii_case(crate::models::cosmos_headers::DTX_RESOURCE_TYPE_HEADER_VALUE)
+        {
+            return None;
+        }
+        match headers.get_optional_str(&DTX_OPERATION_TYPE)? {
+            value if value.eq_ignore_ascii_case("CommitDistributedTransaction") => {
+                Some(DtxTransactionKind::Write)
+            }
+            value if value.eq_ignore_ascii_case("Read") => Some(DtxTransactionKind::Read),
+            _ => None,
+        }
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    fn validate_dtx_operation_indexes(operations: &[DtxOperation]) -> Result<(), String> {
+        let mut seen = vec![false; operations.len()];
+        for (position, operation) in operations.iter().enumerate() {
+            if operation.index >= operations.len() {
+                return Err(format!(
+                    "Distributed transaction operation index {} is out of range for {} operations",
+                    operation.index,
+                    operations.len()
+                ));
+            }
+            if operation.index != position {
+                return Err(format!(
+                    "Distributed transaction operation index {} does not match request position {}",
+                    operation.index, position
+                ));
+            }
+            if std::mem::replace(&mut seen[operation.index], true) {
+                return Err(format!(
+                    "Distributed transaction operation index {} is duplicated",
+                    operation.index
+                ));
+            }
+        }
+        Ok(())
+    }
+
+    /// Per-operation outcome captured from a nested point-operation response.
+    #[cfg(feature = "preview_dtx")]
+    struct DtxOpOutcome {
+        status: StatusCode,
+        sub_status: Option<u32>,
+        etag: Option<String>,
+        session_token: Option<String>,
+        pk_range_id: Option<String>,
+        local_lsn: Option<u64>,
+        request_charge: f64,
+        resource_body: Option<serde_json::Value>,
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    async fn dtx_point_outcome(response: AsyncRawResponse) -> DtxOpOutcome {
+        let raw = match response.try_into_raw_response().await {
+            Ok(raw) => raw,
+            // Emulator responses are always buffered, so a failure here is an
+            // internal invariant violation, not malformed input. Synthesize a
+            // 500 outcome rather than panicking inside the request handler.
+            Err(_) => {
+                return DtxOpOutcome {
+                    status: StatusCode::InternalServerError,
+                    sub_status: None,
+                    etag: None,
+                    session_token: None,
+                    pk_range_id: None,
+                    local_lsn: None,
+                    request_charge: 1.0,
+                    resource_body: None,
+                }
+            }
+        };
+        let status = raw.status();
+        let headers = raw.headers().clone();
+        let body_bytes = raw.body().as_ref();
+        let sub_status = headers
+            .get_optional_str(&SUBSTATUS)
+            .and_then(|value| value.parse::<u32>().ok());
+        let etag = headers.get_optional_str(&ETAG).map(str::to_owned);
+        let session_token = headers.get_optional_str(&SESSION_TOKEN).map(str::to_owned);
+        let pk_range_id = headers
+            .get_optional_str(&PARTITION_KEY_RANGE_ID)
+            .map(str::to_owned);
+        let local_lsn = headers
+            .get_optional_str(&LOCAL_LSN)
+            .and_then(|value| value.parse::<u64>().ok());
+        let request_charge = headers
+            .get_optional_str(&REQUEST_CHARGE)
+            .and_then(|value| value.parse::<f64>().ok())
+            .unwrap_or(1.0);
+        // Capture the resource body only for successful operations. On a
+        // non-success status the body is an error envelope; using a field-name
+        // heuristic (e.g. a top-level `code`) would wrongly strip valid user
+        // documents that happen to contain that field.
+        let resource_body = if status.is_success() && !body_bytes.is_empty() {
+            serde_json::from_slice::<serde_json::Value>(body_bytes).ok()
+        } else {
+            None
+        };
+        DtxOpOutcome {
+            status,
+            sub_status,
+            etag,
+            session_token,
+            pk_range_id,
+            local_lsn,
+            request_charge,
+            resource_body,
+        }
+    }
+
+    /// Serializes a single per-operation result into the `.NET`-shaped wire
+    /// object consumed by `DistributedTransactionResponse::from_body`.
+    #[cfg(feature = "preview_dtx")]
+    #[allow(clippy::too_many_arguments)]
+    fn dtx_op_json(
+        index: usize,
+        status: StatusCode,
+        sub_status: Option<u32>,
+        etag: Option<&str>,
+        session_token: Option<&str>,
+        pk_range_id: Option<&str>,
+        local_lsn: Option<u64>,
+        request_charge: f64,
+        resource_body: Option<&serde_json::Value>,
+    ) -> serde_json::Value {
+        let mut result = serde_json::Map::new();
+        result.insert("index".to_owned(), serde_json::json!(index));
+        result.insert(
+            "statusCode".to_owned(),
+            serde_json::json!(u16::from(status)),
+        );
+        result.insert(
+            "subStatusCode".to_owned(),
+            serde_json::json!(sub_status.unwrap_or_default()),
+        );
+        result.insert("isRetriable".to_owned(), serde_json::json!(false));
+        if let Some(etag) = etag {
+            result.insert("eTag".to_owned(), serde_json::json!(etag));
+        }
+        if let Some(session_token) = session_token {
+            result.insert("sessionToken".to_owned(), serde_json::json!(session_token));
+        }
+        if let Some(pk_range_id) = pk_range_id {
+            result.insert(
+                "partitionKeyRangeId".to_owned(),
+                serde_json::json!(pk_range_id),
+            );
+        }
+        if let Some(local_lsn) = local_lsn {
+            result.insert("localLsn".to_owned(), serde_json::json!(local_lsn));
+        }
+        result.insert(
+            "requestCharge".to_owned(),
+            serde_json::json!(request_charge),
+        );
+        if let Some(resource_body) = resource_body {
+            result.insert("resourceBody".to_owned(), resource_body.clone());
+        }
+        serde_json::Value::Object(result)
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    async fn execute_dtx_point_operation(
+        store: &Arc<EmulatorStore>,
+        region_name: &str,
+        operation: &DtxOperation,
+        start: Instant,
+    ) -> AsyncRawResponse {
+        if operation.operation_type.eq_ignore_ascii_case("Patch") {
+            return handle_dtx_patch_operation(store, region_name, operation, start).await;
+        }
+
+        let operation_type = match operation.operation_type.as_str() {
+            "Create" => OperationType::Create,
+            "Read" => OperationType::Read,
+            "Replace" => OperationType::Replace,
+            "Upsert" => OperationType::Upsert,
+            "Delete" => OperationType::Delete,
+            other => {
+                return error_response(
+                    StatusCode::BadRequest,
+                    None,
+                    "BadRequest",
+                    &format!("Unsupported DTX operation type '{other}'"),
+                    0.0,
+                    "",
+                    start,
+                )
+                .build()
+            }
+        };
+
+        let point_body = match operation.resource_body.as_ref().map(serde_json::to_vec) {
+            None => Vec::new(),
+            Some(Ok(body)) => body,
+            Some(Err(error)) => {
+                return error_response(
+                    StatusCode::BadRequest,
+                    None,
+                    "BadRequest",
+                    &format!("Failed to serialize DTX operation resource body: {error}"),
+                    0.0,
+                    "",
+                    start,
+                )
+                .build()
+            }
+        };
+        let parsed = ParsedRequest {
+            operation: operation_type.clone(),
+            db_id: Some(operation.database_name.clone()),
+            coll_id: Some(operation.collection_name.clone()),
+            doc_id: Some(operation.id.clone()),
+            offer_id: None,
+            partition_key_header: Some(operation.partition_key.to_string()),
+            if_match: operation.if_match.clone(),
+            if_none_match: operation.if_none_match.clone(),
+            session_token: operation.session_token.clone(),
+            activity_id: None,
+            content_response_on_write: true,
+            offer_throughput: None,
+            offer_autopilot_settings: None,
+            max_item_count: None,
+            continuation: None,
+            partition_key_range_id: None,
+            start_epk: None,
+            end_epk: None,
+            is_query_plan: false,
+            is_batch: false,
+            is_upsert: matches!(operation_type, OperationType::Upsert),
+        };
+
+        match operation_type {
+            OperationType::Create => {
+                handle_create_locked(store, region_name, &parsed, &point_body, start).await
+            }
+            OperationType::Read => handle_read(store, region_name, &parsed, start),
+            OperationType::Replace => {
+                handle_replace_locked(store, region_name, &parsed, &point_body, start).await
+            }
+            OperationType::Upsert => {
+                handle_upsert_locked(store, region_name, &parsed, &point_body, start).await
+            }
+            OperationType::Delete => handle_delete_locked(store, region_name, &parsed, start).await,
+            _ => unreachable!(),
+        }
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    async fn handle_dtx_patch_operation(
+        store: &Arc<EmulatorStore>,
+        region_name: &str,
+        operation: &DtxOperation,
+        start: Instant,
+    ) -> AsyncRawResponse {
+        let Some(resource_body) = operation.resource_body.as_ref() else {
+            return error_response(
+                StatusCode::BadRequest,
+                None,
+                "BadRequest",
+                "DTX Patch operation requires a resourceBody",
+                0.0,
+                "",
+                start,
+            )
+            .build();
+        };
+        let (patch, condition) = match parse_dtx_patch_body(resource_body) {
+            Ok(parsed) => parsed,
+            Err(message) => {
+                return error_response(
+                    StatusCode::BadRequest,
+                    None,
+                    "BadRequest",
+                    &message,
+                    0.0,
+                    "",
+                    start,
+                )
+                .build()
+            }
+        };
+
+        let db_id = &operation.database_name;
+        let coll_id = &operation.collection_name;
+        let region_ref = match store.region(region_name) {
+            Some(region_ref) => region_ref,
+            None => return not_found_region(start),
+        };
+        if !region_ref.database_exists(db_id) {
+            return error_response(
+                StatusCode::NotFound,
+                None,
+                "NotFound",
+                &format!("Database '{}' does not exist", operation.database_name),
+                0.0,
+                "",
+                start,
+            )
+            .build();
+        }
+
+        let parsed = dtx_operation_as_parsed_request(operation);
+        let result = region_ref.with_container(db_id, coll_id, |state| {
+            let empty_body = serde_json::Value::Null;
+            let (_, epk) = match resolve_partition_key(&parsed, &empty_body, &state.metadata) {
+                Ok(value) => value,
+                Err(error) => return Err(bad_partition_key_response(error, start)),
+            };
+            let partition = match state.find_partition(&epk) {
+                Some(partition) => partition,
+                None => {
+                    return Err(error_response(
+                        StatusCode::InternalServerError,
+                        None,
+                        "InternalError",
+                        "No partition found for EPK",
+                        1.0,
+                        "",
+                        start,
+                    )
+                    .build())
+                }
+            };
+            if let Some(response) = check_partition_lock(partition, start) {
+                return Err(response);
+            }
+
+            let charge = 1.0;
+            let region_id = store.config().region_id_for(region_name);
+            let new_doc = {
+                let mut docs = partition.documents.write().unwrap();
+                let logical = docs.entry(epk.clone()).or_default();
+                let Some(current) = logical.get(&operation.id).cloned() else {
+                    let token = session_token_for(
+                        partition,
+                        region_id,
+                        incoming_session_for(&parsed, partition.id).as_ref(),
+                    );
+                    return Err(error_response(
+                        StatusCode::NotFound,
+                        None,
+                        "NotFound",
+                        &format!(
+                            "Entity with the specified id does not exist in the system. ResourceId: {}",
+                            operation.id
+                        ),
+                        1.0,
+                        &token,
+                        start,
+                    )
+                    .build());
+                };
+
+                if operation
+                    .if_match
+                    .as_ref()
+                    .is_some_and(|etag| etag != &current.etag)
+                {
+                    let token = session_token_for(
+                        partition,
+                        region_id,
+                        incoming_session_for(&parsed, partition.id).as_ref(),
+                    );
+                    return Err(error_response(
+                        StatusCode::PreconditionFailed,
+                        None,
+                        "PreconditionFailed",
+                        "One of the specified pre-condition is not met.",
+                        1.0,
+                        &token,
+                        start,
+                    )
+                    .build());
+                }
+
+                match dtx_patch_condition_matches(condition.as_deref(), &current.body) {
+                    Ok(true) => {}
+                    Ok(false) => {
+                        let token = session_token_for(
+                            partition,
+                            region_id,
+                            incoming_session_for(&parsed, partition.id).as_ref(),
+                        );
+                        return Err(error_response(
+                            StatusCode::PreconditionFailed,
+                            Some(DTX_PATCH_CONDITION_NOT_MET_SUBSTATUS.into()),
+                            "PreconditionFailed",
+                            "Patch condition was not met.",
+                            1.0,
+                            &token,
+                            start,
+                        )
+                        .build());
+                    }
+                    Err(message) => {
+                        return Err(error_response(
+                            StatusCode::BadRequest,
+                            None,
+                            "BadRequest",
+                            &message,
+                            1.0,
+                            "",
+                            start,
+                        )
+                        .build())
+                    }
+                }
+
+                if let Some(response) =
+                    check_throttle(partition, charge, store.config().throttling_enabled(), start)
+                {
+                    return Err(response);
+                }
+
+                let mut patched_body = current.body.clone();
+                if let Err(error) = apply_patch_ops(&mut patched_body, &patch.operations) {
+                    return Err(error_response(
+                        StatusCode::BadRequest,
+                        None,
+                        "BadRequest",
+                        &error.to_string(),
+                        1.0,
+                        "",
+                        start,
+                    )
+                    .build());
+                }
+
+                let lsn = partition.advance_lsn();
+                partition.advance_local_lsn();
+                let ts = current_timestamp();
+                let etag = new_etag();
+                inject_system_properties(&current.rid, &current.self_link, &etag, ts, &mut patched_body);
+                let body_size_bytes = serde_json::to_vec(&patched_body).map_or(0, |bytes| bytes.len());
+                let new_doc = StoredDocument {
+                    body: patched_body.clone(),
+                    id: operation.id.clone(),
+                    rid: current.rid,
+                    etag: etag.clone(),
+                    ts,
+                    self_link: current.self_link,
+                    lsn,
+                    epk: epk.clone(),
+                    body_size_bytes,
+                    source_region: region_name.to_string(),
+                };
+                logical.insert(operation.id.clone(), new_doc.clone());
+                new_doc
+            };
+
+            let token = session_token_for(
+                partition,
+                region_id,
+                incoming_session_for(&parsed, partition.id).as_ref(),
+            );
+            let headers = Some(PointResponseHeaders::from_partition(
+                partition,
+                store.next_transport_request_id(),
+            ));
+            Ok((new_doc, token, charge, headers))
+        });
+
+        match result {
+            Some(Ok((doc, token, charge, headers))) => {
+                store.replicate(region_name, db_id, coll_id, &doc, false);
+                let builder = success_response(StatusCode::Ok, &doc.body, charge, &token, start);
+                decorate_point_response(builder, headers, Some(doc.lsn)).build()
+            }
+            Some(Err(response)) => response,
+            None => container_not_found(db_id, coll_id, start),
+        }
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    fn parse_dtx_patch_body(
+        resource_body: &serde_json::Value,
+    ) -> Result<(PatchInstructions, Option<String>), String> {
+        let mut body = resource_body.clone();
+        let condition = match body.as_object_mut().and_then(|map| map.remove("condition")) {
+            Some(serde_json::Value::String(condition)) if !condition.trim().is_empty() => {
+                Some(condition)
+            }
+            Some(serde_json::Value::String(_)) => None,
+            Some(_) => return Err("DTX patch condition must be a string".to_owned()),
+            None => None,
+        };
+        let patch = serde_json::from_value::<PatchInstructions>(body)
+            .map_err(|error| format!("invalid DTX patch resourceBody: {error}"))?;
+        Ok((patch, condition))
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    fn dtx_patch_condition_matches(
+        condition: Option<&str>,
+        document: &serde_json::Value,
+    ) -> Result<bool, String> {
+        let Some(condition) = condition else {
+            return Ok(true);
+        };
+        let sql = if condition
+            .trim_start()
+            .to_ascii_lowercase()
+            .starts_with("from ")
+        {
+            format!("SELECT * {condition}")
+        } else {
+            condition.to_owned()
+        };
+        let program = crate::query::parse(&sql)
+            .map_err(|error| format!("invalid DTX patch condition: {error}"))?;
+        crate::query::eval::matches_query(document, &program.query, &[])
+            .map_err(|error| format!("failed to evaluate DTX patch condition: {error}"))
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    fn is_dtx_write_transaction(operations: &[DtxOperation]) -> bool {
+        operations
+            .iter()
+            .any(|operation| !operation.operation_type.eq_ignore_ascii_case("Read"))
+    }
+
+    /// Executes a write (or mixed read/write) distributed transaction with
+    /// two-phase-commit semantics: every operation is validated ("prepared")
+    /// before any mutation is applied, and a runtime failure during commit
+    /// rolls back every already-applied mutation.
+    ///
+    /// Isolation note: the prepare, commit, and rollback phases acquire the
+    /// partition lock per operation rather than holding a transaction-wide lock,
+    /// so the emulator's DTX atomicity guarantee assumes a single writer per
+    /// partition at a time (as in the test harness). It is not isolated against
+    /// concurrent writers mutating the same partition mid-transaction.
+    #[cfg(feature = "preview_dtx")]
+    async fn handle_dtx_write_transaction(
+        store: &Arc<EmulatorStore>,
+        region_name: &str,
+        operations: &[DtxOperation],
+        start: Instant,
+    ) -> AsyncRawResponse {
+        let write_lock = store.document_write_lock();
+        let _write_guard = write_lock.lock().await;
+        handle_dtx_write_transaction_locked(store, region_name, operations, start).await
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    async fn handle_dtx_write_transaction_locked(
+        store: &Arc<EmulatorStore>,
+        region_name: &str,
+        operations: &[DtxOperation],
+        start: Instant,
+    ) -> AsyncRawResponse {
+        // Phase 1 (prepare): every participant votes. Any "No" vote (a validation
+        // failure such as a conflict or failed pre-condition) aborts the whole
+        // transaction before a single mutation is applied.
+        let votes: Vec<Option<DtxPreflightFailure>> = operations
+            .iter()
+            .map(|operation| preflight_dtx_write_operation(store, region_name, operation).err())
+            .collect();
+        if votes.iter().any(Option::is_some) {
+            return dtx_write_abort_response(operations, &votes, start);
+        }
+
+        // Buffer replication for the duration of the commit so a rollback can
+        // discard replicas that were never durably committed. The buffer is
+        // replayed on success and dropped on abort (below), and is safe because
+        // this path holds `document_write_lock` for the whole transaction.
+        store.begin_dtx_replication_capture();
+
+        // Phase 2 (commit): apply each operation, capturing a pre-image first so a
+        // runtime failure (e.g. throttling) can roll back every mutation that was
+        // already applied, preserving all-or-nothing semantics.
+        let mut outcomes: Vec<DtxOpOutcome> = Vec::with_capacity(operations.len());
+        let mut applied: Vec<(usize, DtxPreimage)> = Vec::new();
+        let mut failed_index: Option<usize> = None;
+        for (index, operation) in operations.iter().enumerate() {
+            let is_write = !operation.operation_type.eq_ignore_ascii_case("Read");
+            let preimage = if is_write {
+                capture_dtx_preimage(store, region_name, operation)
+            } else {
+                None
+            };
+            let outcome = dtx_point_outcome(
+                execute_dtx_point_operation(store, region_name, operation, start).await,
+            )
+            .await;
+            // Reads legitimately return 304 Not Modified (If-None-Match); treat
+            // that as committed so a mixed read/write transaction is not aborted,
+            // consistent with the read path's is_read_success_status.
+            let committed = if is_write {
+                outcome.status.is_success()
+            } else {
+                is_read_success_status(outcome.status)
+            };
+            outcomes.push(outcome);
+            if committed {
+                if let Some(preimage) = preimage {
+                    applied.push((index, preimage));
+                }
+            } else {
+                failed_index = Some(index);
+                break;
+            }
+        }
+
+        if let Some(failed_index) = failed_index {
+            for (index, preimage) in applied.iter().rev() {
+                restore_dtx_preimage(store, region_name, &operations[*index], preimage);
+            }
+            // Drop the buffered replicas: the transaction aborted, so the
+            // rolled-back writes must never reach secondary regions.
+            store.abort_dtx_replication_capture();
+            let failed = &outcomes[failed_index];
+            return dtx_write_runtime_abort_response(
+                operations,
+                operations.len(),
+                failed_index,
+                failed.status,
+                failed.sub_status,
+                start,
+            );
+        }
+
+        // The transaction committed; release the buffered replicas to
+        // secondary regions.
+        store.commit_dtx_replication_capture();
+        dtx_commit_response(&outcomes, start)
+    }
+
+    /// Executes a read-only distributed transaction, producing a confirmed
+    /// point-in-time snapshot across all reads. If any read fails, the reads
+    /// that individually succeeded never contributed to a snapshot, so they are
+    /// rewritten to 424 FailedDependency (body stripped) and the surviving
+    /// failure codes are promoted into the response envelope.
+    #[cfg(feature = "preview_dtx")]
+    async fn handle_dtx_read_transaction(
+        store: &Arc<EmulatorStore>,
+        region_name: &str,
+        operations: &[DtxOperation],
+        start: Instant,
+    ) -> AsyncRawResponse {
+        let mut outcomes: Vec<DtxOpOutcome> = Vec::with_capacity(operations.len());
+        for operation in operations {
+            outcomes.push(
+                dtx_point_outcome(
+                    execute_dtx_point_operation(store, region_name, operation, start).await,
+                )
+                .await,
+            );
+        }
+
+        let snapshot_failed = outcomes
+            .iter()
+            .any(|outcome| !is_read_success_status(outcome.status));
+        if snapshot_failed {
+            for outcome in &mut outcomes {
+                if is_read_success_status(outcome.status) {
+                    outcome.status = StatusCode::FailedDependency;
+                    outcome.sub_status = None;
+                    outcome.etag = None;
+                    outcome.session_token = None;
+                    outcome.resource_body = None;
+                }
+            }
+        }
+
+        let envelope = promote_dtx_read_envelope(&outcomes);
+        dtx_read_response(operations, envelope, &outcomes, start)
+    }
+
+    /// Snapshot of a document (and its partition LSN counters) before a write op
+    /// is applied, used to roll the mutation back on abort.
+    #[cfg(feature = "preview_dtx")]
+    struct DtxPreimage {
+        epk: Epk,
+        document: Option<StoredDocument>,
+        lsn: u64,
+        local_lsn: u64,
+        vector_clock_version: u64,
+    }
+
+    /// Captures the current stored document (if any) targeted by a write op so
+    /// it can be restored verbatim if the transaction later aborts.
+    #[cfg(feature = "preview_dtx")]
+    fn capture_dtx_preimage(
+        store: &Arc<EmulatorStore>,
+        region_name: &str,
+        operation: &DtxOperation,
+    ) -> Option<DtxPreimage> {
+        let region_ref = store.region(region_name)?;
+        region_ref
+            .with_container(
+                &operation.database_name,
+                &operation.collection_name,
+                |state| {
+                    let parsed = dtx_operation_as_parsed_request(operation);
+                    let body = operation
+                        .resource_body
+                        .as_ref()
+                        .cloned()
+                        .unwrap_or(serde_json::Value::Null);
+                    let (_, epk) = resolve_partition_key(&parsed, &body, &state.metadata).ok()?;
+                    let partition = state.find_partition(&epk)?;
+                    let document = partition
+                        .documents
+                        .read()
+                        .unwrap()
+                        .get(&epk)
+                        .and_then(|logical| logical.get(&operation.id))
+                        .cloned();
+                    Some(DtxPreimage {
+                        epk,
+                        document,
+                        lsn: partition.current_lsn(),
+                        local_lsn: partition.current_local_lsn(),
+                        vector_clock_version: partition.current_version(),
+                    })
+                },
+            )
+            .flatten()
+    }
+
+    /// Restores a previously captured pre-image, undoing an applied write op.
+    #[cfg(feature = "preview_dtx")]
+    fn restore_dtx_preimage(
+        store: &Arc<EmulatorStore>,
+        region_name: &str,
+        operation: &DtxOperation,
+        preimage: &DtxPreimage,
+    ) {
+        let Some(region_ref) = store.region(region_name) else {
+            return;
+        };
+        region_ref.with_container(
+            &operation.database_name,
+            &operation.collection_name,
+            |state| {
+                let Some(partition) = state.find_partition(&preimage.epk) else {
+                    return;
+                };
+                let mut documents = partition.documents.write().unwrap();
+                let logical = documents.entry(preimage.epk.clone()).or_default();
+                match &preimage.document {
+                    Some(document) => {
+                        logical.insert(operation.id.clone(), document.clone());
+                    }
+                    None => {
+                        logical.remove(&operation.id);
+                    }
+                }
+                // Reset the partition counters advanced by the applied write so
+                // the abort leaves no LSN progress behind. Rollback runs in
+                // reverse order, so the earliest pre-image restores the final
+                // pre-transaction value.
+                partition.restore_counters(
+                    preimage.lsn,
+                    preimage.local_lsn,
+                    preimage.vector_clock_version,
+                );
+            },
+        );
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    fn is_read_success_status(status: StatusCode) -> bool {
+        matches!(u16::from(status), 200 | 304)
+    }
+
+    /// Promotes the distinct per-operation codes into a read envelope status,
+    /// ignoring 424 FailedDependency: a single distinct code surfaces as-is,
+    /// two or more distinct codes become 207 MultiStatus.
+    #[cfg(feature = "preview_dtx")]
+    fn promote_dtx_read_envelope(outcomes: &[DtxOpOutcome]) -> StatusCode {
+        let mut distinct: Vec<StatusCode> = Vec::new();
+        for outcome in outcomes {
+            if u16::from(outcome.status) == 424 {
+                continue;
+            }
+            if !distinct.contains(&outcome.status) {
+                distinct.push(outcome.status);
+            }
+        }
+        match distinct.as_slice() {
+            [] => StatusCode::Ok,
+            [single] => *single,
+            _ => StatusCode::from(207_u16),
+        }
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    struct DtxPreflightFailure {
+        status: StatusCode,
+        sub_status: Option<u16>,
+        message: String,
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    fn preflight_failure(
+        status: StatusCode,
+        sub_status: Option<u16>,
+        message: impl Into<String>,
+    ) -> DtxPreflightFailure {
+        DtxPreflightFailure {
+            status,
+            sub_status,
+            message: message.into(),
+        }
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    fn preflight_dtx_write_operation(
+        store: &Arc<EmulatorStore>,
+        region_name: &str,
+        operation: &DtxOperation,
+    ) -> Result<(), DtxPreflightFailure> {
+        if operation.operation_type.eq_ignore_ascii_case("Read") {
+            return Ok(());
+        }
+
+        if matches!(
+            operation.operation_type.as_str(),
+            "Create" | "Replace" | "Upsert" | "Patch"
+        ) && operation.resource_body.is_none()
+        {
+            return Err(preflight_failure(
+                StatusCode::BadRequest,
+                None,
+                format!(
+                    "DTX {} operation requires a resourceBody",
+                    operation.operation_type
+                ),
+            ));
+        }
+
+        let region_ref = store.region(region_name).ok_or_else(|| {
+            preflight_failure(StatusCode::NotFound, None, "Region does not exist")
+        })?;
+        if !region_ref.database_exists(&operation.database_name) {
+            return Err(preflight_failure(
+                StatusCode::NotFound,
+                None,
+                format!("Database '{}' does not exist", operation.database_name),
+            ));
+        }
+
+        let outcome = region_ref.with_container(
+            &operation.database_name,
+            &operation.collection_name,
+            |state| {
+                let parsed = dtx_operation_as_parsed_request(operation);
+                let body = operation
+                    .resource_body
+                    .as_ref()
+                    .cloned()
+                    .unwrap_or(serde_json::Value::Null);
+                if matches!(
+                    operation.operation_type.as_str(),
+                    "Create" | "Replace" | "Upsert"
+                ) {
+                    match body.get("id").and_then(|value| value.as_str()) {
+                        Some(body_id) if body_id == operation.id => {}
+                        Some(body_id) => {
+                            return Err(preflight_failure(
+                                StatusCode::BadRequest,
+                                None,
+                                format!(
+                                    "Document id in request body ('{body_id}') must match the DTX operation id ('{}')",
+                                    operation.id
+                                ),
+                            ));
+                        }
+                        None => {
+                            return Err(preflight_failure(
+                                StatusCode::BadRequest,
+                                None,
+                                "DTX create, replace, and upsert operations require resourceBody.id",
+                            ));
+                        }
+                    }
+                }
+                let (_, epk) = resolve_partition_key(&parsed, &body, &state.metadata).map_err(
+                    |error| {
+                        preflight_failure(
+                            StatusCode::BadRequest,
+                            None,
+                            format!("invalid partition key: {error}"),
+                        )
+                    },
+                )?;
+                let partition = state.find_partition(&epk).ok_or_else(|| {
+                    preflight_failure(
+                        StatusCode::InternalServerError,
+                        None,
+                        "No partition found for EPK",
+                    )
+                })?;
+                if partition.is_locked() {
+                    return Err(preflight_failure(
+                        StatusCode::Gone,
+                        Some(PARTITION_SPLIT_OR_MERGE_SUBSTATUS),
+                        "Partition is being split or merged.",
+                    ));
+                }
+
+                let docs = partition.documents.read().unwrap();
+                let existing = docs.get(&epk).and_then(|logical| logical.get(&operation.id));
+                match operation.operation_type.as_str() {
+                    "Create" => {
+                        if existing.is_some() {
+                            return Err(preflight_failure(
+                                StatusCode::Conflict,
+                                None,
+                                format!(
+                                    "Entity with the specified id already exists in the system. ResourceId: {}",
+                                    operation.id
+                                ),
+                            ));
+                        }
+                    }
+                    "Replace" | "Delete" => {
+                        let Some(existing) = existing else {
+                            return Err(preflight_failure(
+                                StatusCode::NotFound,
+                                None,
+                                format!(
+                                    "Entity with the specified id does not exist in the system. ResourceId: {}",
+                                    operation.id
+                                ),
+                            ));
+                        };
+                        if operation
+                            .if_match
+                            .as_ref()
+                            .is_some_and(|etag| etag != &existing.etag)
+                        {
+                            return Err(preflight_failure(
+                                StatusCode::PreconditionFailed,
+                                None,
+                                "One of the specified pre-condition is not met.",
+                            ));
+                        }
+                    }
+                    "Patch" => {
+                        let Some(existing) = existing else {
+                            return Err(preflight_failure(
+                                StatusCode::NotFound,
+                                None,
+                                format!(
+                                    "Entity with the specified id does not exist in the system. ResourceId: {}",
+                                    operation.id
+                                ),
+                            ));
+                        };
+                        if operation
+                            .if_match
+                            .as_ref()
+                            .is_some_and(|etag| etag != &existing.etag)
+                        {
+                            return Err(preflight_failure(
+                                StatusCode::PreconditionFailed,
+                                None,
+                                "One of the specified pre-condition is not met.",
+                            ));
+                        }
+                        let (_, condition) = parse_dtx_patch_body(&body).map_err(|message| {
+                            preflight_failure(StatusCode::BadRequest, None, message)
+                        })?;
+                        match dtx_patch_condition_matches(condition.as_deref(), &existing.body) {
+                            Ok(true) => {}
+                            Ok(false) => {
+                                return Err(preflight_failure(
+                                    StatusCode::PreconditionFailed,
+                                    Some(DTX_PATCH_CONDITION_NOT_MET_SUBSTATUS),
+                                    "Patch condition was not met.",
+                                ));
+                            }
+                            Err(message) => {
+                                return Err(preflight_failure(
+                                    StatusCode::BadRequest,
+                                    None,
+                                    message,
+                                ));
+                            }
+                        }
+                    }
+                    "Upsert" => {}
+                    other => {
+                        return Err(preflight_failure(
+                            StatusCode::BadRequest,
+                            None,
+                            format!("Unsupported DTX operation type '{other}'"),
+                        ));
+                    }
+                }
+                Ok(())
+            },
+        );
+
+        match outcome {
+            Some(result) => result,
+            None => Err(preflight_failure(
+                StatusCode::NotFound,
+                None,
+                format!(
+                    "Container '{}/{}' does not exist",
+                    operation.database_name, operation.collection_name
+                ),
+            )),
+        }
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    fn dtx_operation_as_parsed_request(operation: &DtxOperation) -> ParsedRequest {
+        ParsedRequest {
+            operation: OperationType::Read,
+            db_id: Some(operation.database_name.clone()),
+            coll_id: Some(operation.collection_name.clone()),
+            doc_id: Some(operation.id.clone()),
+            offer_id: None,
+            partition_key_header: Some(operation.partition_key.to_string()),
+            if_match: operation.if_match.clone(),
+            if_none_match: operation.if_none_match.clone(),
+            session_token: operation.session_token.clone(),
+            activity_id: None,
+            content_response_on_write: true,
+            offer_throughput: None,
+            offer_autopilot_settings: None,
+            max_item_count: None,
+            continuation: None,
+            partition_key_range_id: None,
+            start_epk: None,
+            end_epk: None,
+            is_query_plan: false,
+            is_batch: false,
+            is_upsert: false,
+        }
+    }
+
+    /// Builds the 200 envelope for a fully-committed write transaction.
+    #[cfg(feature = "preview_dtx")]
+    fn dtx_commit_response(outcomes: &[DtxOpOutcome], start: Instant) -> AsyncRawResponse {
+        let mut total_charge = 0.0;
+        let operation_responses: Vec<serde_json::Value> = outcomes
+            .iter()
+            .enumerate()
+            .map(|(index, outcome)| {
+                total_charge += outcome.request_charge;
+                dtx_op_json(
+                    index,
+                    outcome.status,
+                    outcome.sub_status,
+                    outcome.etag.as_deref(),
+                    outcome.session_token.as_deref(),
+                    outcome.pk_range_id.as_deref(),
+                    outcome.local_lsn,
+                    outcome.request_charge,
+                    None,
+                )
+            })
+            .collect();
+        let response_body = serde_json::json!({
+            "operationResponses": operation_responses,
+        });
+        dtx_response_builder(StatusCode::Ok, start)
+            .with_request_charge(total_charge)
+            .with_json_body(&response_body)
+            .build()
+    }
+
+    /// Builds the 452 abort envelope for a write transaction that failed during
+    /// the prepare phase. "No" voters keep their real failure code so the caller
+    /// sees the root cause; every "Yes" voter was prepared but rolled back and
+    /// surfaces as 453 (sub-status 5415, DtcOperationRolledBack).
+    #[cfg(feature = "preview_dtx")]
+    fn dtx_write_abort_response(
+        operations: &[DtxOperation],
+        votes: &[Option<DtxPreflightFailure>],
+        start: Instant,
+    ) -> AsyncRawResponse {
+        let mut diagnostic: Option<String> = None;
+        let operation_responses: Vec<serde_json::Value> = votes
+            .iter()
+            .enumerate()
+            .map(|(index, vote)| match vote {
+                Some(failure) => {
+                    if diagnostic.is_none() {
+                        diagnostic = Some(failure.message.clone());
+                    }
+                    dtx_op_json(
+                        operations[index].index,
+                        failure.status,
+                        failure.sub_status.map(u32::from),
+                        None,
+                        None,
+                        None,
+                        None,
+                        1.0,
+                        None,
+                    )
+                }
+                None => dtx_op_json(
+                    operations[index].index,
+                    StatusCode::from(DTX_ROLLED_BACK_STATUS),
+                    Some(DTX_ROLLED_BACK_SUBSTATUS),
+                    None,
+                    None,
+                    None,
+                    None,
+                    1.0,
+                    None,
+                ),
+            })
+            .collect();
+        let response_body = serde_json::json!({
+            "isRetriable": false,
+            "diagnosticString": diagnostic
+                .unwrap_or_else(|| "distributed transaction aborted".to_owned()),
+            "operationResponses": operation_responses,
+        });
+        dtx_response_builder(StatusCode::from(452_u16), start)
+            .with_request_charge(1.0)
+            .with_json_body(&response_body)
+            .build()
+    }
+
+    /// Builds the 452 abort envelope for a write transaction that failed at
+    /// commit time (after prepare succeeded). The failing participant keeps its
+    /// code; all others were rolled back and surface as 453 / 5415.
+    #[cfg(feature = "preview_dtx")]
+    fn dtx_write_runtime_abort_response(
+        operations: &[DtxOperation],
+        operation_count: usize,
+        failed_index: usize,
+        failed_status: StatusCode,
+        failed_sub_status: Option<u32>,
+        start: Instant,
+    ) -> AsyncRawResponse {
+        let operation_responses: Vec<serde_json::Value> = (0..operation_count)
+            .map(|index| {
+                if index == failed_index {
+                    dtx_op_json(
+                        operations[index].index,
+                        failed_status,
+                        failed_sub_status,
+                        None,
+                        None,
+                        None,
+                        None,
+                        1.0,
+                        None,
+                    )
+                } else {
+                    dtx_op_json(
+                        operations[index].index,
+                        StatusCode::from(DTX_ROLLED_BACK_STATUS),
+                        Some(DTX_ROLLED_BACK_SUBSTATUS),
+                        None,
+                        None,
+                        None,
+                        None,
+                        1.0,
+                        None,
+                    )
+                }
+            })
+            .collect();
+        let response_body = serde_json::json!({
+            "isRetriable": false,
+            "diagnosticString":
+                "distributed transaction rolled back after a participant failed to commit",
+            "operationResponses": operation_responses,
+        });
+        dtx_response_builder(StatusCode::from(452_u16), start)
+            .with_request_charge(1.0)
+            .with_json_body(&response_body)
+            .build()
+    }
+
+    /// Builds the response envelope for a read transaction from its (possibly
+    /// rewritten) per-operation outcomes.
+    #[cfg(feature = "preview_dtx")]
+    fn dtx_read_response(
+        operations: &[DtxOperation],
+        envelope: StatusCode,
+        outcomes: &[DtxOpOutcome],
+        start: Instant,
+    ) -> AsyncRawResponse {
+        let mut total_charge = 0.0;
+        let operation_responses: Vec<serde_json::Value> = outcomes
+            .iter()
+            .enumerate()
+            .map(|(index, outcome)| {
+                total_charge += outcome.request_charge;
+                dtx_op_json(
+                    operations[index].index,
+                    outcome.status,
+                    outcome.sub_status,
+                    outcome.etag.as_deref(),
+                    outcome.session_token.as_deref(),
+                    outcome.pk_range_id.as_deref(),
+                    None,
+                    outcome.request_charge,
+                    outcome.resource_body.as_ref(),
+                )
+            })
+            .collect();
+        let response_body = serde_json::json!({
+            "isRetriable": u16::from(envelope) == 449,
+            "operationResponses": operation_responses,
+        });
+        dtx_response_builder(envelope, start)
+            .with_request_charge(total_charge)
+            .with_json_body(&response_body)
+            .build()
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    fn dtx_response_builder(status: StatusCode, start: Instant) -> ResponseBuilder {
+        ResponseBuilder::new(status, start)
+            .without_header(GLOBAL_COMMITTED_LSN.clone())
+            .without_header(QUORUM_ACKED_LSN.clone())
+            .without_header(QUORUM_ACKED_LOCAL_LSN.clone())
+            .without_header(LOCAL_LSN.clone())
+            .without_header(NUMBER_OF_READ_REGIONS.clone())
+            .without_header(LAST_STATE_CHANGE_UTC.clone())
+            .without_header(RESOURCE_QUOTA.clone())
+            .without_header(RESOURCE_USAGE.clone())
+    }
     finalize_response(store, response, parsed.activity_id.as_deref()).await
 }
 
@@ -647,6 +2113,1454 @@ fn handle_read_pkranges(
         })
 }
 
+fn paginate_values(
+    values: Vec<serde_json::Value>,
+    max_item_count: Option<i32>,
+    continuation: Option<&str>,
+    start: Instant,
+) -> Result<(Vec<serde_json::Value>, Option<String>), AsyncRawResponse> {
+    let offset = match continuation {
+        Some(token) => token.parse::<usize>().map_err(|_| {
+            error_response(
+                StatusCode::BadRequest,
+                None,
+                "BadRequest",
+                "Invalid continuation token",
+                0.0,
+                "",
+                start,
+            )
+            .build()
+        })?,
+        None => 0,
+    };
+
+    let total = values.len();
+    let limit = match max_item_count {
+        Some(n) if n > 0 => n as usize,
+        _ => total.saturating_sub(offset),
+    };
+    let end = offset.saturating_add(limit).min(total);
+    let page = if offset >= total {
+        Vec::new()
+    } else {
+        values[offset..end].to_vec()
+    };
+    let next = (end < total).then(|| end.to_string());
+    Ok((page, next))
+}
+
+#[derive(Clone, Copy)]
+struct FeedPageOptions<'a> {
+    max_item_count: Option<i32>,
+    continuation: Option<&'a str>,
+}
+
+impl<'a> FeedPageOptions<'a> {
+    fn from_request(parsed: &'a ParsedRequest) -> Self {
+        Self {
+            max_item_count: parsed.max_item_count,
+            continuation: parsed.continuation.as_deref(),
+        }
+    }
+}
+
+#[derive(Clone)]
+struct FeedResponseHeaders {
+    session_token: String,
+    lsn: Option<u64>,
+    partition_key_range_id: Option<u32>,
+    internal_partition_id: Option<String>,
+}
+
+impl FeedResponseHeaders {
+    fn none() -> Self {
+        Self {
+            session_token: String::new(),
+            lsn: None,
+            partition_key_range_id: None,
+            internal_partition_id: None,
+        }
+    }
+}
+
+fn success_feed_response(
+    envelope_name: &str,
+    rid: impl Into<String>,
+    items: Vec<serde_json::Value>,
+    page_options: FeedPageOptions<'_>,
+    feed_headers: FeedResponseHeaders,
+    start: Instant,
+) -> AsyncRawResponse {
+    let (page, next) = match paginate_values(
+        items,
+        page_options.max_item_count,
+        page_options.continuation,
+        start,
+    ) {
+        Ok(v) => v,
+        Err(response) => return response,
+    };
+    let item_count = page.len() as u32;
+    let body = feed_to_json(envelope_name, page, rid);
+    let mut builder = success_response(
+        StatusCode::Ok,
+        &body,
+        1.0,
+        &feed_headers.session_token,
+        start,
+    )
+    .with_item_count(item_count);
+    if let Some(lsn) = feed_headers.lsn {
+        builder = builder.with_lsn(lsn);
+    }
+    if let Some(id) = feed_headers.partition_key_range_id {
+        builder = builder.with_header_value(PARTITION_KEY_RANGE_ID.clone(), id);
+    }
+    if let Some(id) = feed_headers.internal_partition_id {
+        builder = builder.with_header_value(INTERNAL_PARTITION_ID.clone(), id);
+    }
+    if let Some(next) = next {
+        builder = builder.with_header_value(CONTINUATION.clone(), next);
+    }
+    builder.build()
+}
+
+#[derive(Deserialize)]
+struct QuerySpec {
+    query: String,
+    #[serde(default)]
+    parameters: Vec<QueryParameter>,
+}
+
+#[derive(Deserialize)]
+struct QueryParameter {
+    name: String,
+    value: serde_json::Value,
+}
+
+fn parse_query_spec(
+    request_body: &[u8],
+    start: Instant,
+) -> Result<(String, Vec<(String, serde_json::Value)>), AsyncRawResponse> {
+    let spec: QuerySpec = serde_json::from_slice(request_body).map_err(|e| {
+        error_response(
+            StatusCode::BadRequest,
+            None,
+            "BadRequest",
+            &format!("Invalid query JSON body: {e}"),
+            0.0,
+            "",
+            start,
+        )
+        .build()
+    })?;
+    if spec.query.trim().is_empty() {
+        return Err(error_response(
+            StatusCode::BadRequest,
+            None,
+            "BadRequest",
+            "Query text must not be empty",
+            0.0,
+            "",
+            start,
+        )
+        .build());
+    }
+    let parameters = spec
+        .parameters
+        .into_iter()
+        .map(|p| (p.name, p.value))
+        .collect();
+    Ok((spec.query, parameters))
+}
+
+fn execute_query_feed(
+    envelope_name: &str,
+    rid: impl Into<String>,
+    values: Vec<serde_json::Value>,
+    parsed: &ParsedRequest,
+    request_body: &[u8],
+    feed_headers: FeedResponseHeaders,
+    start: Instant,
+) -> AsyncRawResponse {
+    let (query, parameters) = match parse_query_spec(request_body, start) {
+        Ok(v) => v,
+        Err(response) => return response,
+    };
+    let results = match crate::query::eval::query_documents(&query, &parameters, &values) {
+        Ok(results) => results,
+        Err(e) => {
+            return error_response(
+                StatusCode::BadRequest,
+                None,
+                "BadRequest",
+                &e.to_string(),
+                0.0,
+                "",
+                start,
+            )
+            .build();
+        }
+    };
+    success_feed_response(
+        envelope_name,
+        rid,
+        results,
+        FeedPageOptions::from_request(parsed),
+        feed_headers,
+        start,
+    )
+}
+
+fn handle_read_feed_databases(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    start: Instant,
+) -> AsyncRawResponse {
+    let region_ref = match store.region(region_name) {
+        Some(r) => r,
+        None => return not_found_region(start),
+    };
+    let databases: Vec<_> = region_ref
+        .list_databases()
+        .iter()
+        .map(database_to_json)
+        .collect();
+    success_feed_response(
+        "Databases",
+        "",
+        databases,
+        FeedPageOptions::from_request(parsed),
+        FeedResponseHeaders::none(),
+        start,
+    )
+}
+
+fn handle_query_databases(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    request_body: &[u8],
+    start: Instant,
+) -> AsyncRawResponse {
+    let region_ref = match store.region(region_name) {
+        Some(r) => r,
+        None => return not_found_region(start),
+    };
+    let databases: Vec<_> = region_ref
+        .list_databases()
+        .iter()
+        .map(database_to_json)
+        .collect();
+    execute_query_feed(
+        "Databases",
+        "",
+        databases,
+        parsed,
+        request_body,
+        FeedResponseHeaders::none(),
+        start,
+    )
+}
+
+fn handle_read_feed_containers(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    start: Instant,
+) -> AsyncRawResponse {
+    let db_id = parsed.db_id.as_deref().unwrap_or("");
+    let region_ref = match store.region(region_name) {
+        Some(r) => r,
+        None => return not_found_region(start),
+    };
+    let Some(db) = region_ref.get_database(db_id) else {
+        return error_response(
+            StatusCode::NotFound,
+            None,
+            "NotFound",
+            &format!("Database '{}' does not exist", db_id),
+            0.0,
+            "",
+            start,
+        )
+        .build();
+    };
+    let containers: Vec<_> = region_ref
+        .list_containers(db_id)
+        .iter()
+        .map(container_to_json)
+        .collect();
+    success_feed_response(
+        "DocumentCollections",
+        db.rid,
+        containers,
+        FeedPageOptions::from_request(parsed),
+        FeedResponseHeaders::none(),
+        start,
+    )
+}
+
+fn handle_query_containers(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    request_body: &[u8],
+    start: Instant,
+) -> AsyncRawResponse {
+    let db_id = parsed.db_id.as_deref().unwrap_or("");
+    let region_ref = match store.region(region_name) {
+        Some(r) => r,
+        None => return not_found_region(start),
+    };
+    let Some(db) = region_ref.get_database(db_id) else {
+        return error_response(
+            StatusCode::NotFound,
+            None,
+            "NotFound",
+            &format!("Database '{}' does not exist", db_id),
+            0.0,
+            "",
+            start,
+        )
+        .build();
+    };
+    let containers: Vec<_> = region_ref
+        .list_containers(db_id)
+        .iter()
+        .map(container_to_json)
+        .collect();
+    execute_query_feed(
+        "DocumentCollections",
+        db.rid,
+        containers,
+        parsed,
+        request_body,
+        FeedResponseHeaders::none(),
+        start,
+    )
+}
+
+fn handle_read_feed_offers(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    start: Instant,
+) -> AsyncRawResponse {
+    let region_ref = match store.region(region_name) {
+        Some(r) => r,
+        None => return not_found_region(start),
+    };
+    let offers: Vec<_> = region_ref.list_offers().iter().map(offer_to_json).collect();
+    success_feed_response(
+        "Offers",
+        "",
+        offers,
+        FeedPageOptions::from_request(parsed),
+        FeedResponseHeaders::none(),
+        start,
+    )
+}
+
+fn handle_query_offers(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    request_body: &[u8],
+    start: Instant,
+) -> AsyncRawResponse {
+    let region_ref = match store.region(region_name) {
+        Some(r) => r,
+        None => return not_found_region(start),
+    };
+    let offers: Vec<_> = region_ref.list_offers().iter().map(offer_to_json).collect();
+    execute_query_feed(
+        "Offers",
+        "",
+        offers,
+        parsed,
+        request_body,
+        FeedResponseHeaders::none(),
+        start,
+    )
+}
+
+fn handle_read_offer(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    start: Instant,
+) -> AsyncRawResponse {
+    let offer_id = parsed.offer_id.as_deref().unwrap_or("");
+    let region_ref = match store.region(region_name) {
+        Some(r) => r,
+        None => return not_found_region(start),
+    };
+    match region_ref.get_offer(offer_id) {
+        Some(offer) => {
+            let body = offer_to_json(&offer);
+            success_response(StatusCode::Ok, &body, 1.0, "", start)
+                .with_etag(&offer.etag)
+                .build()
+        }
+        None => error_response(
+            StatusCode::NotFound,
+            None,
+            "NotFound",
+            &format!("Offer '{}' does not exist", offer_id),
+            0.0,
+            "",
+            start,
+        )
+        .build(),
+    }
+}
+
+fn parse_offer_throughput(request_body: &[u8], start: Instant) -> Result<u32, AsyncRawResponse> {
+    let body: serde_json::Value = serde_json::from_slice(request_body).map_err(|_| {
+        error_response(
+            StatusCode::BadRequest,
+            None,
+            "BadRequest",
+            "Invalid JSON body",
+            0.0,
+            "",
+            start,
+        )
+        .build()
+    })?;
+    let throughput = body
+        .pointer("/content/offerThroughput")
+        .and_then(|v| v.as_u64())
+        .and_then(|v| u32::try_from(v).ok())
+        .ok_or_else(|| {
+            error_response(
+                StatusCode::BadRequest,
+                None,
+                "BadRequest",
+                "Missing or invalid content.offerThroughput",
+                0.0,
+                "",
+                start,
+            )
+            .build()
+        })?;
+    let config = ContainerConfig::default().with_throughput(throughput);
+    if let Err(e) = config.build() {
+        return Err(error_response(
+            StatusCode::BadRequest,
+            None,
+            "BadRequest",
+            &e.to_string(),
+            0.0,
+            "",
+            start,
+        )
+        .build());
+    }
+    Ok(throughput)
+}
+
+fn handle_replace_offer(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    request_body: &[u8],
+    start: Instant,
+) -> AsyncRawResponse {
+    let offer_id = parsed.offer_id.as_deref().unwrap_or("");
+    let throughput = match parse_offer_throughput(request_body, start) {
+        Ok(v) => v,
+        Err(response) => return response,
+    };
+    let Some(offer) = store.replace_offer_internal(offer_id, throughput) else {
+        return error_response(
+            StatusCode::NotFound,
+            None,
+            "NotFound",
+            &format!("Offer '{}' does not exist", offer_id),
+            0.0,
+            "",
+            start,
+        )
+        .build();
+    };
+    let token = store.advance_master_partition_lsn(region_name);
+    let body = offer_to_json(&offer);
+    success_response(StatusCode::Ok, &body, 1.0, &token, start)
+        .with_etag(&offer.etag)
+        .with_header_value(OFFER_REPLACE_PENDING.clone(), "false")
+        .build()
+}
+
+fn collect_item_documents(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    start: Instant,
+) -> Result<(String, Vec<serde_json::Value>, String, FeedResponseHeaders), AsyncRawResponse> {
+    let db_id = parsed.db_id.as_deref().unwrap_or("");
+    let coll_id = parsed.coll_id.as_deref().unwrap_or("");
+    let region_ref = match store.region(region_name) {
+        Some(r) => r,
+        None => return Err(not_found_region(start)),
+    };
+    if !region_ref.database_exists(db_id) {
+        return Err(error_response(
+            StatusCode::NotFound,
+            None,
+            "NotFound",
+            &format!("Database '{}' does not exist", db_id),
+            0.0,
+            "",
+            start,
+        )
+        .build());
+    }
+
+    let result = region_ref.with_container(db_id, coll_id, |state| {
+        let requested_epk = match parsed.partition_key_header.as_deref() {
+            Some(header) => match parse_partition_key_header(header) {
+                Ok(components) if components.is_empty() => None,
+                // A partial hierarchical partition key (fewer components than the
+                // container's PK paths) targets a *prefix* of logical partitions.
+                // Real Cosmos scopes such reads via the `x-ms-start-epk`/
+                // `x-ms-end-epk` range (below) rather than an exact point EPK, so
+                // don't compute a point to exact-match here — that would compare a
+                // 2-component prefix EPK against 3-component item EPKs and drop
+                // every row.
+                Ok(components) if components.len() < state.metadata.partition_key.paths().len() => {
+                    None
+                }
+                Ok(components) => Some(compute_epk(
+                    &components,
+                    state.metadata.partition_key.kind(),
+                    state.metadata.partition_key.version(),
+                )),
+                Err(e) => return Err(bad_partition_key_response(e, start)),
+            },
+            None => None,
+        };
+        let start_epk = parsed.start_epk.as_deref().map(Epk::from);
+        let end_epk = parsed.end_epk.as_deref().map(Epk::from);
+        // A query that pins an explicit physical partition key range id must fail
+        // with 410/1002 (PartitionKeyRangeGone) when that range no longer exists
+        // (e.g. it was split away). Real Cosmos surfaces PartitionKeyRangeGone here
+        // so the client refreshes its pkrange cache and re-resolves to the child
+        // ranges; returning an empty 200 instead would silently drop the remaining
+        // results of a continuation issued before the split.
+        if let Some(requested_id) = parsed.partition_key_range_id.as_deref() {
+            let exists = state
+                .physical_partitions
+                .iter()
+                .any(|partition| partition.id.to_string() == requested_id);
+            if !exists {
+                return Err(error_response(
+                    StatusCode::Gone,
+                    Some(1002),
+                    "Gone",
+                    "The partition key range specified by the request is no longer present (split/merge).",
+                    0.0,
+                    "",
+                    start,
+                )
+                .build());
+            }
+        }
+        let mut docs = Vec::new();
+        let mut token_parts = Vec::new();
+        let mut max_lsn = 0_u64;
+        let mut selected_partition: Option<(u32, String)> = None;
+        let mut multiple_partitions = false;
+        for partition in &state.physical_partitions {
+            if parsed
+                .partition_key_range_id
+                .as_deref()
+                .is_some_and(|id| id != partition.id.to_string())
+            {
+                continue;
+            }
+            let overlaps_scope = if let Some(requested_epk) = requested_epk.as_ref() {
+                partition.contains_epk(requested_epk)
+            } else {
+                start_epk
+                    .as_ref()
+                    .is_none_or(|min| partition.epk_max > *min)
+                    && end_epk.as_ref().is_none_or(|max| partition.epk_min < *max)
+            };
+            if !overlaps_scope {
+                continue;
+            }
+            if let Some(response) = check_partition_lock(partition, start) {
+                return Err(response);
+            }
+            match &selected_partition {
+                None => selected_partition = Some((partition.id, partition.rid.clone())),
+                Some((id, _)) if *id == partition.id => {}
+                Some(_) => multiple_partitions = true,
+            }
+            max_lsn = max_lsn.max(partition.current_lsn());
+            let region_id = store.config().region_id_for(region_name);
+            token_parts.push(session_token_for(
+                partition,
+                region_id,
+                incoming_session_for(parsed, partition.id).as_ref(),
+            ));
+            let stored = partition.documents.read().unwrap();
+            for (epk, logical) in stored.iter() {
+                if requested_epk
+                    .as_ref()
+                    .is_some_and(|requested| requested != epk)
+                {
+                    continue;
+                }
+                if start_epk.as_ref().is_some_and(|min| epk < min) {
+                    continue;
+                }
+                if end_epk.as_ref().is_some_and(|max| epk >= max) {
+                    continue;
+                }
+                docs.extend(logical.values().map(|doc| doc.body.clone()));
+            }
+        }
+        let (partition_key_range_id, internal_partition_id) = if multiple_partitions {
+            (None, None)
+        } else {
+            match selected_partition {
+                Some((id, internal_id)) => (Some(id), Some(internal_id)),
+                None => (None, None),
+            }
+        };
+        Ok((
+            state.metadata.rid.clone(),
+            docs,
+            token_parts.join(","),
+            FeedResponseHeaders {
+                session_token: String::new(),
+                lsn: Some(max_lsn),
+                partition_key_range_id,
+                internal_partition_id,
+            },
+        ))
+    });
+
+    match result {
+        Some(Ok(v)) => Ok(v),
+        Some(Err(response)) => Err(response),
+        None => Err(container_not_found(db_id, coll_id, start)),
+    }
+}
+
+fn handle_read_feed_items(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    start: Instant,
+) -> AsyncRawResponse {
+    match collect_item_documents(store, region_name, parsed, start) {
+        Ok((rid, docs, token, mut headers)) => {
+            headers.session_token = token;
+            success_feed_response(
+                "Documents",
+                rid,
+                docs,
+                FeedPageOptions::from_request(parsed),
+                headers,
+                start,
+            )
+        }
+        Err(response) => response,
+    }
+}
+
+fn handle_query_items(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    request_body: &[u8],
+    start: Instant,
+) -> AsyncRawResponse {
+    match collect_item_documents(store, region_name, parsed, start) {
+        Ok((rid, docs, token, mut headers)) => {
+            headers.session_token = token;
+            execute_query_feed("Documents", rid, docs, parsed, request_body, headers, start)
+        }
+        Err(response) => response,
+    }
+}
+
+fn local_distinct_type_to_dataflow(
+    distinct_type: crate::query::plan::DistinctType,
+) -> crate::driver::dataflow::query_plan::DistinctType {
+    match distinct_type {
+        crate::query::plan::DistinctType::None => {
+            crate::driver::dataflow::query_plan::DistinctType::None
+        }
+        crate::query::plan::DistinctType::Ordered => {
+            crate::driver::dataflow::query_plan::DistinctType::Ordered
+        }
+        crate::query::plan::DistinctType::Unordered => {
+            crate::driver::dataflow::query_plan::DistinctType::Unordered
+        }
+    }
+}
+
+fn local_sort_order_to_dataflow(
+    sort_order: crate::query::plan::SortOrder,
+) -> crate::driver::dataflow::query_plan::SortOrder {
+    match sort_order {
+        crate::query::plan::SortOrder::Ascending => {
+            crate::driver::dataflow::query_plan::SortOrder::Ascending
+        }
+        crate::query::plan::SortOrder::Descending => {
+            crate::driver::dataflow::query_plan::SortOrder::Descending
+        }
+    }
+}
+
+fn local_query_info_to_dataflow(
+    info: crate::query::plan::LocalQueryInfo,
+) -> crate::driver::dataflow::query_plan::QueryInfo {
+    crate::driver::dataflow::query_plan::QueryInfo {
+        distinct_type: local_distinct_type_to_dataflow(info.distinct_type),
+        top: info.top.map(|v| v as u64),
+        offset: info.offset.map(|v| v as u64),
+        limit: info.limit.map(|v| v as u64),
+        order_by: info
+            .order_by
+            .into_iter()
+            .map(local_sort_order_to_dataflow)
+            .collect(),
+        order_by_expressions: info.order_by_expressions,
+        group_by_expressions: info.group_by_expressions,
+        group_by_aliases: Vec::new(),
+        aggregates: info
+            .aggregates
+            .into_iter()
+            .map(|a| format!("{a:?}"))
+            .collect(),
+        group_by_alias_to_aggregate_type: HashMap::new(),
+        rewritten_query: Some(String::new()),
+        has_select_value: info.has_select_value,
+        has_non_streaming_order_by: false,
+    }
+}
+
+fn full_query_range() -> crate::driver::dataflow::query_plan::QueryRange {
+    crate::driver::dataflow::query_plan::QueryRange {
+        min: Epk::MIN.to_hex(),
+        max: Epk::MAX.to_hex(),
+        is_min_inclusive: true,
+        is_max_inclusive: false,
+    }
+}
+
+fn epk_range_to_query_range(
+    range: std::ops::Range<EffectivePartitionKey>,
+) -> crate::driver::dataflow::query_plan::QueryRange {
+    crate::driver::dataflow::query_plan::QueryRange {
+        min: range.start.to_hex(),
+        max: range.end.to_hex(),
+        is_min_inclusive: true,
+        is_max_inclusive: true,
+    }
+}
+
+fn model_partition_key_values(
+    values: &[crate::query::plan::PartitionKeyValue],
+) -> crate::error::Result<Vec<ModelPartitionKeyValue>> {
+    values
+        .iter()
+        .map(|value| match value {
+            crate::query::plan::PartitionKeyValue::String(s) => {
+                Ok(ModelPartitionKeyValue::from(s.clone()))
+            }
+            crate::query::plan::PartitionKeyValue::Number(n) => {
+                Ok(ModelPartitionKeyValue::from(*n))
+            }
+            crate::query::plan::PartitionKeyValue::Bool(b) => Ok(ModelPartitionKeyValue::from(*b)),
+            crate::query::plan::PartitionKeyValue::Null => Ok(ModelPartitionKeyValue::NULL),
+            crate::query::plan::PartitionKeyValue::Undefined => {
+                Ok(ModelPartitionKeyValue::UNDEFINED)
+            }
+            crate::query::plan::PartitionKeyValue::UnboundParameter(name) => {
+                Err(crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(StatusCode::BadRequest))
+                    .with_message(format!(
+                        "query plan partition key filter references unbound parameter @{name}"
+                    ))
+                    .build())
+            }
+            crate::query::plan::PartitionKeyValue::InvalidParameter { name, reason } => {
+                Err(crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(StatusCode::BadRequest))
+                    .with_message(format!(
+                        "query plan partition key filter parameter @{name} is invalid: {reason}"
+                    ))
+                    .build())
+            }
+        })
+        .collect()
+}
+
+fn query_ranges_from_pk_filter(
+    filter: &crate::query::plan::PartitionKeyFilter,
+    pk_definition: &PartitionKeyDefinition,
+) -> crate::error::Result<Vec<crate::driver::dataflow::query_plan::QueryRange>> {
+    match filter {
+        crate::query::plan::PartitionKeyFilter::Equality(values) => {
+            let values = model_partition_key_values(values)?;
+            let range = EffectivePartitionKey::compute_range(&values, pk_definition)?;
+            Ok(vec![epk_range_to_query_range(range)])
+        }
+        crate::query::plan::PartitionKeyFilter::InList(value_sets) => value_sets
+            .iter()
+            .map(|values| {
+                let values = model_partition_key_values(values)?;
+                EffectivePartitionKey::compute_range(&values, pk_definition)
+                    .map(epk_range_to_query_range)
+            })
+            .collect(),
+        crate::query::plan::PartitionKeyFilter::Contradictory => Ok(Vec::new()),
+        crate::query::plan::PartitionKeyFilter::Unconstrained
+        | crate::query::plan::PartitionKeyFilter::NotEvaluated => Ok(vec![full_query_range()]),
+    }
+}
+
+fn handle_query_plan(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    request_body: &[u8],
+    start: Instant,
+) -> AsyncRawResponse {
+    let db_id = parsed.db_id.as_deref().unwrap_or("");
+    let coll_id = parsed.coll_id.as_deref().unwrap_or("");
+    let region_ref = match store.region(region_name) {
+        Some(r) => r,
+        None => return not_found_region(start),
+    };
+    if !region_ref.database_exists(db_id) {
+        return error_response(
+            StatusCode::NotFound,
+            None,
+            "NotFound",
+            &format!("Database '{}' does not exist", db_id),
+            0.0,
+            "",
+            start,
+        )
+        .build();
+    }
+    let Some(container) = region_ref.get_container(db_id, coll_id) else {
+        return container_not_found(db_id, coll_id, start);
+    };
+    let (query, parameters) = match parse_query_spec(request_body, start) {
+        Ok(v) => v,
+        Err(response) => return response,
+    };
+    let program = match crate::query::parse(&query) {
+        Ok(program) => program,
+        Err(e) => {
+            return error_response(
+                StatusCode::BadRequest,
+                None,
+                "BadRequest",
+                &format!("failed to parse query: {e}"),
+                0.0,
+                "",
+                start,
+            )
+            .build();
+        }
+    };
+    let pk_paths: Vec<&str> = container
+        .metadata
+        .partition_key
+        .paths()
+        .iter()
+        .map(|p| p.as_ref())
+        .collect();
+    let local_plan = match crate::query::plan::generate_query_plan_with_parameters(
+        &program.query,
+        &pk_paths,
+        &parameters,
+    ) {
+        Ok(plan) => plan,
+        Err(e) => {
+            return error_response(
+                StatusCode::BadRequest,
+                None,
+                "BadRequest",
+                &e.to_string(),
+                0.0,
+                "",
+                start,
+            )
+            .build();
+        }
+    };
+
+    let query_ranges = match query_ranges_from_pk_filter(
+        &local_plan.pk_filters,
+        &container.metadata.partition_key,
+    ) {
+        Ok(ranges) => ranges,
+        Err(e) => {
+            return error_response(
+                e.status().status_code(),
+                e.status().sub_status().map(|s| u32::from(s.value())),
+                "BadRequest",
+                &e.to_string(),
+                0.0,
+                "",
+                start,
+            )
+            .build();
+        }
+    };
+
+    let plan = crate::driver::dataflow::query_plan::QueryPlan {
+        partitioned_query_execution_info_version: 2,
+        query_info: Some(local_query_info_to_dataflow(local_plan.query_info)),
+        query_ranges,
+        hybrid_search_query_info: None,
+    };
+    let mut body = match serde_json::to_value(plan) {
+        Ok(body) => body,
+        Err(e) => {
+            return error_response(
+                StatusCode::InternalServerError,
+                None,
+                "InternalError",
+                &format!("failed to serialize query plan: {e}"),
+                0.0,
+                "",
+                start,
+            )
+            .build();
+        }
+    };
+    if let Some(query_info) = body.get_mut("queryInfo").and_then(|v| v.as_object_mut()) {
+        query_info.insert("dCountInfo".to_owned(), serde_json::Value::Null);
+    }
+    success_response(StatusCode::Ok, &body, 1.0, "", start)
+        .with_item_count(1)
+        .build()
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(tag = "operationType", rename_all_fields = "camelCase")]
+enum BatchOperation {
+    Create {
+        id: Option<String>,
+        resource_body: serde_json::Value,
+    },
+    Upsert {
+        id: Option<String>,
+        resource_body: serde_json::Value,
+        #[serde(default)]
+        if_match: Option<String>,
+        #[serde(default)]
+        if_none_match: Option<String>,
+    },
+    Replace {
+        id: String,
+        resource_body: serde_json::Value,
+        #[serde(default)]
+        if_match: Option<String>,
+    },
+    Read {
+        id: String,
+        #[serde(default)]
+        if_match: Option<String>,
+        #[serde(default)]
+        if_none_match: Option<String>,
+    },
+    Delete {
+        id: String,
+        #[serde(default)]
+        if_match: Option<String>,
+    },
+}
+
+fn batch_result(
+    status_code: u16,
+    resource_body: Option<serde_json::Value>,
+    etag: Option<&str>,
+    request_charge: f64,
+) -> serde_json::Value {
+    let mut result = serde_json::Map::new();
+    result.insert("statusCode".to_string(), serde_json::json!(status_code));
+    if let Some(body) = resource_body {
+        result.insert("resourceBody".to_string(), body);
+    }
+    if let Some(etag) = etag {
+        result.insert("eTag".to_string(), serde_json::json!(etag));
+    }
+    result.insert(
+        "requestCharge".to_string(),
+        serde_json::json!(request_charge),
+    );
+    serde_json::Value::Object(result)
+}
+
+fn failed_batch_results(
+    len: usize,
+    failure_index: usize,
+    failure_status: u16,
+    failure_body: Option<serde_json::Value>,
+) -> Vec<serde_json::Value> {
+    (0..len)
+        .map(|i| {
+            if i == failure_index {
+                batch_result(failure_status, failure_body.clone(), None, 1.0)
+            } else {
+                batch_result(424, None, None, 1.0)
+            }
+        })
+        .collect()
+}
+
+fn batch_bad_request(message: impl AsRef<str>, start: Instant) -> AsyncRawResponse {
+    error_response(
+        StatusCode::BadRequest,
+        None,
+        "BadRequest",
+        message.as_ref(),
+        0.0,
+        "",
+        start,
+    )
+    .build()
+}
+
+fn batch_doc_id(
+    explicit_id: Option<&str>,
+    body: &serde_json::Value,
+    start: Instant,
+) -> Result<String, AsyncRawResponse> {
+    let body_id = body.get("id").and_then(|v| v.as_str());
+    match (explicit_id, body_id) {
+        (Some(id), Some(body_id)) if id != body_id => Err(batch_bad_request(
+            "Document id in request body must match the batch operation id",
+            start,
+        )),
+        (Some(id), _) => Ok(id.to_string()),
+        (None, Some(body_id)) => Ok(body_id.to_string()),
+        (None, None) => Err(batch_bad_request("Missing 'id' field in document", start)),
+    }
+}
+
+fn validate_batch_body_partition_key(
+    body: &serde_json::Value,
+    expected_components: &[super::epk::PartitionKeyComponent],
+    meta: &ContainerMetadata,
+    start: Instant,
+) -> Result<(), AsyncRawResponse> {
+    let body_components = extract_pk_from_body(body, meta.partition_key.paths())
+        .map_err(|e| bad_partition_key_response(e, start))?;
+    if body_components != expected_components {
+        return Err(batch_bad_request(
+            "Transactional batch operations must use the batch partition key",
+            start,
+        ));
+    }
+    Ok(())
+}
+
+async fn handle_batch(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    request_body: &[u8],
+    start: Instant,
+) -> AsyncRawResponse {
+    #[cfg(feature = "preview_dtx")]
+    let write_lock = store.document_write_lock();
+    #[cfg(feature = "preview_dtx")]
+    let _write_guard = write_lock.lock().await;
+
+    const MAX_BATCH_OPERATIONS: usize = 100;
+    const MAX_BATCH_PAYLOAD_BYTES: usize = 2 * 1024 * 1024;
+
+    let db_id = parsed.db_id.as_deref().unwrap_or("");
+    let coll_id = parsed.coll_id.as_deref().unwrap_or("");
+
+    if request_body.len() > MAX_BATCH_PAYLOAD_BYTES {
+        return error_response(
+            StatusCode::PayloadTooLarge,
+            None,
+            "RequestEntityTooLarge",
+            "Transactional batch payload exceeds the maximum allowed size",
+            0.0,
+            "",
+            start,
+        )
+        .build();
+    }
+
+    let operations: Vec<BatchOperation> = match serde_json::from_slice(request_body) {
+        Ok(ops) => ops,
+        Err(e) => return batch_bad_request(format!("Invalid batch JSON body: {e}"), start),
+    };
+    if operations.len() > MAX_BATCH_OPERATIONS {
+        return batch_bad_request("Transactional batch cannot exceed 100 operations", start);
+    }
+
+    let batch_pk_components = match parsed.partition_key_header.as_deref() {
+        Some(header) => match parse_partition_key_header(header) {
+            Ok(components) if !components.is_empty() => components,
+            Ok(_) => {
+                return batch_bad_request(
+                    "Transactional batch requires a non-empty partition key",
+                    start,
+                )
+            }
+            Err(e) => return bad_partition_key_response(e, start),
+        },
+        None => {
+            return batch_bad_request(
+                "Transactional batch requires x-ms-documentdb-partitionkey",
+                start,
+            )
+        }
+    };
+
+    let region_ref = match store.region(region_name) {
+        Some(r) => r,
+        None => return not_found_region(start),
+    };
+    if !region_ref.database_exists(db_id) {
+        return error_response(
+            StatusCode::NotFound,
+            None,
+            "NotFound",
+            &format!("Database '{}' does not exist", db_id),
+            0.0,
+            "",
+            start,
+        )
+        .build();
+    }
+
+    let result = region_ref.with_container(db_id, coll_id, |state| {
+        let epk = compute_epk(
+            &batch_pk_components,
+            state.metadata.partition_key.kind(),
+            state.metadata.partition_key.version(),
+        );
+        let partition = match state.find_partition(&epk) {
+            Some(p) => p,
+            None => {
+                return Err(error_response(
+                    StatusCode::InternalServerError,
+                    None,
+                    "InternalError",
+                    "No partition found for EPK",
+                    1.0,
+                    "",
+                    start,
+                )
+                .build());
+            }
+        };
+        if let Some(response) = check_partition_lock(partition, start) {
+            return Err(response);
+        }
+
+        let has_write = operations
+            .iter()
+            .any(|op| !matches!(op, BatchOperation::Read { .. }));
+        // A transactional batch must evaluate all operations against one
+        // stable partition snapshot, including read-only batches. Holding the
+        // document write lock prevents concurrent point writes from changing
+        // the snapshot while the batch is being evaluated.
+        let mut docs_guard = partition.documents.write().unwrap();
+        let mut working_docs = docs_guard.clone();
+        let batch_lsn = if has_write {
+            partition.current_lsn() + 1
+        } else {
+            partition.current_lsn()
+        };
+        let mut results = Vec::with_capacity(operations.len());
+        let mut changes: Vec<(StoredDocument, bool)> = Vec::new();
+
+        for (index, operation) in operations.iter().enumerate() {
+            let logical = working_docs.entry(epk.clone()).or_default();
+            match operation {
+                BatchOperation::Create { id, resource_body } => {
+                    validate_batch_body_partition_key(
+                        resource_body,
+                        &batch_pk_components,
+                        &state.metadata,
+                        start,
+                    )?;
+                    let doc_id = batch_doc_id(id.as_deref(), resource_body, start)?;
+                    if logical.contains_key(&doc_id) {
+                        results = failed_batch_results(operations.len(), index, 409, None);
+                        return Ok((results, Vec::new(), String::new(), 1.0, None, None));
+                    }
+                    let mut body = resource_body.clone();
+                    let (_, doc_rid) = store.rid_generator().next_document_rid(
+                        state.metadata.numeric_db_id,
+                        state.metadata.numeric_coll_id,
+                    );
+                    let ts = current_timestamp();
+                    let etag = new_etag();
+                    let self_link = format!("{}docs/{}/", state.metadata.self_link, doc_rid);
+                    inject_system_properties(&doc_rid, &self_link, &etag, ts, &mut body);
+                    let body_size_bytes = serde_json::to_vec(resource_body).map_or(0, |v| v.len());
+                    let stored = StoredDocument {
+                        body: body.clone(),
+                        id: doc_id.clone(),
+                        rid: doc_rid,
+                        etag: etag.clone(),
+                        ts,
+                        self_link,
+                        lsn: batch_lsn,
+                        epk: epk.clone(),
+                        body_size_bytes,
+                        source_region: region_name.to_string(),
+                    };
+                    logical.insert(doc_id, stored.clone());
+                    changes.push((stored.clone(), false));
+                    results.push(batch_result(
+                        201,
+                        parsed.content_response_on_write.then_some(body),
+                        Some(&etag),
+                        1.0,
+                    ));
+                }
+                BatchOperation::Upsert {
+                    id,
+                    resource_body,
+                    if_match,
+                    if_none_match,
+                } => {
+                    validate_batch_body_partition_key(
+                        resource_body,
+                        &batch_pk_components,
+                        &state.metadata,
+                        start,
+                    )?;
+                    let doc_id = batch_doc_id(id.as_deref(), resource_body, start)?;
+                    if let Some(existing) = logical.get(&doc_id) {
+                        if if_match.as_ref().is_some_and(|etag| etag != &existing.etag)
+                            || if_none_match.as_deref() == Some("*")
+                        {
+                            results = failed_batch_results(operations.len(), index, 412, None);
+                            return Ok((results, Vec::new(), String::new(), 1.0, None, None));
+                        }
+                    }
+                    let status = if logical.contains_key(&doc_id) {
+                        200
+                    } else {
+                        201
+                    };
+                    let mut body = resource_body.clone();
+                    let (doc_rid, self_link) = logical
+                        .get(&doc_id)
+                        .map(|existing| (existing.rid.clone(), existing.self_link.clone()))
+                        .unwrap_or_else(|| {
+                            let (_, rid) = store.rid_generator().next_document_rid(
+                                state.metadata.numeric_db_id,
+                                state.metadata.numeric_coll_id,
+                            );
+                            let link = format!("{}docs/{}/", state.metadata.self_link, rid);
+                            (rid, link)
+                        });
+                    let ts = current_timestamp();
+                    let etag = new_etag();
+                    inject_system_properties(&doc_rid, &self_link, &etag, ts, &mut body);
+                    let body_size_bytes = serde_json::to_vec(resource_body).map_or(0, |v| v.len());
+                    let stored = StoredDocument {
+                        body: body.clone(),
+                        id: doc_id.clone(),
+                        rid: doc_rid,
+                        etag: etag.clone(),
+                        ts,
+                        self_link,
+                        lsn: batch_lsn,
+                        epk: epk.clone(),
+                        body_size_bytes,
+                        source_region: region_name.to_string(),
+                    };
+                    logical.insert(doc_id, stored.clone());
+                    changes.push((stored.clone(), false));
+                    results.push(batch_result(
+                        status,
+                        parsed.content_response_on_write.then_some(body),
+                        Some(&etag),
+                        1.0,
+                    ));
+                }
+                BatchOperation::Replace {
+                    id,
+                    resource_body,
+                    if_match,
+                } => {
+                    validate_batch_body_partition_key(
+                        resource_body,
+                        &batch_pk_components,
+                        &state.metadata,
+                        start,
+                    )?;
+                    let doc_id = batch_doc_id(Some(id), resource_body, start)?;
+                    let Some(existing) = logical.get(&doc_id).cloned() else {
+                        results = failed_batch_results(operations.len(), index, 404, None);
+                        return Ok((results, Vec::new(), String::new(), 1.0, None, None));
+                    };
+                    if if_match.as_ref().is_some_and(|etag| etag != &existing.etag) {
+                        results = failed_batch_results(operations.len(), index, 412, None);
+                        return Ok((results, Vec::new(), String::new(), 1.0, None, None));
+                    }
+                    let mut body = resource_body.clone();
+                    let ts = current_timestamp();
+                    let etag = new_etag();
+                    inject_system_properties(
+                        &existing.rid,
+                        &existing.self_link,
+                        &etag,
+                        ts,
+                        &mut body,
+                    );
+                    let body_size_bytes = serde_json::to_vec(resource_body).map_or(0, |v| v.len());
+                    let stored = StoredDocument {
+                        body: body.clone(),
+                        id: doc_id.clone(),
+                        rid: existing.rid,
+                        etag: etag.clone(),
+                        ts,
+                        self_link: existing.self_link,
+                        lsn: batch_lsn,
+                        epk: epk.clone(),
+                        body_size_bytes,
+                        source_region: region_name.to_string(),
+                    };
+                    logical.insert(doc_id, stored.clone());
+                    changes.push((stored.clone(), false));
+                    results.push(batch_result(
+                        200,
+                        parsed.content_response_on_write.then_some(body),
+                        Some(&etag),
+                        1.0,
+                    ));
+                }
+                BatchOperation::Read {
+                    id,
+                    if_match,
+                    if_none_match,
+                } => {
+                    let Some(existing) = logical.get(id) else {
+                        results = failed_batch_results(operations.len(), index, 404, None);
+                        return Ok((results, Vec::new(), String::new(), 1.0, None, None));
+                    };
+                    if if_match.as_ref().is_some_and(|etag| etag != &existing.etag) {
+                        results = failed_batch_results(operations.len(), index, 412, None);
+                        return Ok((results, Vec::new(), String::new(), 1.0, None, None));
+                    }
+                    if if_none_match
+                        .as_ref()
+                        .is_some_and(|etag| etag == &existing.etag)
+                    {
+                        results.push(batch_result(304, None, Some(&existing.etag), 1.0));
+                    } else {
+                        results.push(batch_result(
+                            200,
+                            Some(existing.body.clone()),
+                            Some(&existing.etag),
+                            1.0,
+                        ));
+                    }
+                }
+                BatchOperation::Delete { id, if_match } => {
+                    let Some(existing) = logical.get(id).cloned() else {
+                        results = failed_batch_results(operations.len(), index, 404, None);
+                        return Ok((results, Vec::new(), String::new(), 1.0, None, None));
+                    };
+                    if if_match.as_ref().is_some_and(|etag| etag != &existing.etag) {
+                        results = failed_batch_results(operations.len(), index, 412, None);
+                        return Ok((results, Vec::new(), String::new(), 1.0, None, None));
+                    }
+                    logical.remove(id);
+                    let tombstone = StoredDocument {
+                        body: serde_json::Value::Null,
+                        id: id.clone(),
+                        rid: existing.rid,
+                        etag: existing.etag.clone(),
+                        ts: current_timestamp(),
+                        self_link: existing.self_link,
+                        lsn: batch_lsn,
+                        epk: epk.clone(),
+                        body_size_bytes: 0,
+                        source_region: region_name.to_string(),
+                    };
+                    changes.push((tombstone, true));
+                    results.push(batch_result(204, None, Some(&existing.etag), 1.0));
+                }
+            }
+        }
+
+        if has_write {
+            *docs_guard = working_docs;
+            partition.advance_lsn();
+            partition.advance_local_lsn();
+        }
+        let documents_in_partition = docs_guard
+            .values()
+            .map(std::collections::BTreeMap::len)
+            .sum::<usize>();
+        let region_id = store.config().region_id_for(region_name);
+        let token = session_token_for(
+            partition,
+            region_id,
+            incoming_session_for(parsed, partition.id).as_ref(),
+        );
+        let headers = Some(PointResponseHeaders::from_partition_snapshot(
+            partition,
+            store.next_transport_request_id(),
+            documents_in_partition,
+        ));
+        let charge = results
+            .iter()
+            .filter_map(|r| r.get("requestCharge").and_then(|v| v.as_f64()))
+            .sum::<f64>();
+        Ok((results, changes, token, charge, headers, Some(batch_lsn)))
+    });
+
+    match result {
+        Some(Ok((results, changes, token, charge, headers, lsn))) => {
+            for (doc, is_delete) in changes {
+                store.replicate(region_name, db_id, coll_id, &doc, is_delete);
+            }
+            // A real Cosmos DB account returns 207 MultiStatus when any
+            // individual operation in the batch failed (statusCode >= 300),
+            // and 200 OK only when every operation succeeded.
+            let has_failure = results.iter().any(|r| {
+                r.get("statusCode")
+                    .and_then(|v| v.as_u64())
+                    .is_some_and(|s| s >= 300)
+            });
+            let status = if has_failure {
+                StatusCode::MultiStatus
+            } else {
+                StatusCode::Ok
+            };
+            let body = serde_json::Value::Array(results);
+            let mut builder = success_response(status, &body, charge, &token, start);
+            if let Some(lsn) = lsn {
+                builder = builder.with_lsn(lsn);
+            }
+            decorate_point_response(builder, headers, None).build()
+        }
+        Some(Err(response)) => response,
+        None => container_not_found(db_id, coll_id, start),
+    }
+}
+
 // --- Point Operations ---
 
 /// Resolves the partition key components and EPK for a point operation.
@@ -759,6 +3673,14 @@ impl PointResponseHeaders {
             .values()
             .map(std::collections::BTreeMap::len)
             .sum::<usize>();
+        Self::from_partition_snapshot(partition, transport_request_id, documents_in_partition)
+    }
+
+    fn from_partition_snapshot(
+        partition: &PhysicalPartition,
+        transport_request_id: u32,
+        documents_in_partition: usize,
+    ) -> Self {
         Self {
             partition_key_range_id: partition.id,
             internal_partition_id: partition.rid.clone(),
@@ -828,7 +3750,7 @@ fn check_partition_lock(partition: &PhysicalPartition, start: Instant) -> Option
         Some(
             error_response(
                 StatusCode::Gone,
-                Some(1007),
+                Some(PARTITION_SPLIT_OR_MERGE_SUBSTATUS.into()),
                 "Gone",
                 "Partition is being split or merged.",
                 0.0,
@@ -873,6 +3795,21 @@ fn check_throttle(
 }
 
 async fn handle_create(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    request_body: &[u8],
+    start: Instant,
+) -> AsyncRawResponse {
+    #[cfg(feature = "preview_dtx")]
+    let write_lock = store.document_write_lock();
+    #[cfg(feature = "preview_dtx")]
+    let _write_guard = write_lock.lock().await;
+
+    handle_create_locked(store, region_name, parsed, request_body, start).await
+}
+
+async fn handle_create_locked(
     store: &Arc<EmulatorStore>,
     region_name: &str,
     parsed: &ParsedRequest,
@@ -1134,7 +4071,7 @@ fn handle_read(
         // Check forced session unavailability (one-shot)
         if partition
             .session_state
-            .check_and_clear_forced_for(epk.as_str())
+            .check_and_clear_forced_for(&epk.to_hex())
         {
             return Err(error_response(
                 StatusCode::NotFound,
@@ -1266,6 +4203,15 @@ fn handle_read(
                     partition,
                     store.next_transport_request_id(),
                 ));
+                if parsed.if_none_match.as_deref() == Some(etag.as_str())
+                    || parsed.if_none_match.as_deref() == Some("*")
+                {
+                    let builder = ResponseBuilder::new(StatusCode::NotModified, start)
+                        .with_request_charge(charge)
+                        .with_session_token(&token)
+                        .with_etag(&etag);
+                    return Err(decorate_point_response(builder, headers, Some(lsn)).build());
+                }
                 return Ok((body, etag, token, charge, lsn, headers));
             }
         }
@@ -1298,6 +4244,21 @@ fn handle_read(
 }
 
 async fn handle_replace(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    request_body: &[u8],
+    start: Instant,
+) -> AsyncRawResponse {
+    #[cfg(feature = "preview_dtx")]
+    let write_lock = store.document_write_lock();
+    #[cfg(feature = "preview_dtx")]
+    let _write_guard = write_lock.lock().await;
+
+    handle_replace_locked(store, region_name, parsed, request_body, start).await
+}
+
+async fn handle_replace_locked(
     store: &Arc<EmulatorStore>,
     region_name: &str,
     parsed: &ParsedRequest,
@@ -1627,6 +4588,21 @@ async fn handle_upsert(
     request_body: &[u8],
     start: Instant,
 ) -> AsyncRawResponse {
+    #[cfg(feature = "preview_dtx")]
+    let write_lock = store.document_write_lock();
+    #[cfg(feature = "preview_dtx")]
+    let _write_guard = write_lock.lock().await;
+
+    handle_upsert_locked(store, region_name, parsed, request_body, start).await
+}
+
+async fn handle_upsert_locked(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    request_body: &[u8],
+    start: Instant,
+) -> AsyncRawResponse {
     let db_id = parsed.db_id.as_deref().unwrap_or("");
     let coll_id = parsed.coll_id.as_deref().unwrap_or("");
 
@@ -1815,6 +4791,20 @@ async fn handle_upsert(
 }
 
 async fn handle_delete(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    start: Instant,
+) -> AsyncRawResponse {
+    #[cfg(feature = "preview_dtx")]
+    let write_lock = store.document_write_lock();
+    #[cfg(feature = "preview_dtx")]
+    let _write_guard = write_lock.lock().await;
+
+    handle_delete_locked(store, region_name, parsed, start).await
+}
+
+async fn handle_delete_locked(
     store: &Arc<EmulatorStore>,
     region_name: &str,
     parsed: &ParsedRequest,
@@ -2051,6 +5041,19 @@ fn bad_request_path_response(path: &str, start: Instant) -> AsyncRawResponse {
         None,
         "BadRequest",
         &format!("Invalid request path: {}", path),
+        0.0,
+        "",
+        start,
+    )
+    .build()
+}
+
+fn invalid_input_response(message: &str, start: Instant) -> AsyncRawResponse {
+    error_response(
+        StatusCode::BadRequest,
+        None,
+        "BadRequest",
+        &format!("One of the input values is invalid. {message}"),
         0.0,
         "",
         start,
