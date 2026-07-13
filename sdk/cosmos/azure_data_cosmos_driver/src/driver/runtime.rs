@@ -16,8 +16,8 @@ use crate::{
     diagnostics::ProxyConfiguration,
     models::{normalize_wrapping_sdk_identifier, UserAgent, UserAgentFeatureFlags},
     options::{
-        parse_duration_millis_from_env, ConnectionPoolOptions, CorrelationId, DriverOptions,
-        OperationOptions, PartitionFailoverOptions, UserAgentSuffix, WorkloadId,
+        parse_duration_millis_from_env, ConnectionPoolOptions, CorrelationId, DiagnosticsOptions,
+        DriverOptions, OperationOptions, PartitionFailoverOptions, UserAgentSuffix, WorkloadId,
     },
     system::{CpuMemoryMonitor, VmMetadataService},
 };
@@ -92,6 +92,9 @@ pub struct CosmosDriverRuntime {
 
     /// Connection pool configuration for managing TCP connections.
     connection_pool: ConnectionPoolOptions,
+
+    /// Diagnostics output configuration captured at runtime initialization.
+    diagnostics_options: Arc<DiagnosticsOptions>,
 
     /// Bootstrap HTTP transport for initial metadata probes.
     ///
@@ -203,6 +206,16 @@ impl CosmosDriverRuntime {
     /// Returns the connection pool options.
     pub fn connection_pool(&self) -> &ConnectionPoolOptions {
         &self.connection_pool
+    }
+
+    /// Returns the diagnostics output options.
+    pub fn diagnostics_options(&self) -> &DiagnosticsOptions {
+        &self.diagnostics_options
+    }
+
+    /// Returns the shared diagnostics output options.
+    pub(crate) fn diagnostics_options_arc(&self) -> &Arc<DiagnosticsOptions> {
+        &self.diagnostics_options
     }
 
     /// Returns the bootstrap transport for initial metadata probes.
@@ -423,6 +436,7 @@ impl CosmosDriverRuntime {
 pub struct CosmosDriverRuntimeBuilder {
     client_options: Option<ClientOptions>,
     connection_pool: Option<ConnectionPoolOptions>,
+    diagnostics_options: Option<DiagnosticsOptions>,
     operation_options: Option<OperationOptions>,
     workload_id: Option<WorkloadId>,
     correlation_id: Option<CorrelationId>,
@@ -452,6 +466,15 @@ impl CosmosDriverRuntimeBuilder {
     /// Sets the connection pool options.
     pub fn with_connection_pool(mut self, options: ConnectionPoolOptions) -> Self {
         self.connection_pool = Some(options);
+        self
+    }
+
+    /// Sets diagnostics output options captured by this runtime.
+    ///
+    /// If unset, the runtime reads `AZURE_COSMOS_DIAGNOSTICS_*` environment
+    /// variables and falls back to [`DiagnosticsOptions::default`].
+    pub fn with_diagnostics_options(mut self, options: DiagnosticsOptions) -> Self {
+        self.diagnostics_options = Some(options);
         self
     }
 
@@ -568,6 +591,7 @@ impl CosmosDriverRuntimeBuilder {
     ///
     pub async fn build(self) -> crate::error::Result<Arc<CosmosDriverRuntime>> {
         let connection_pool = self.connection_pool.unwrap_or_default();
+        let diagnostics_options = Arc::new(self.diagnostics_options.unwrap_or_default());
 
         // Compute the base feature flags advertised in the User-Agent from
         // runtime-scoped client configuration. HTTP/2 comes from the connection
@@ -648,6 +672,7 @@ impl CosmosDriverRuntimeBuilder {
             id: NEXT_RUNTIME_ID.fetch_add(1, Ordering::Relaxed),
             client_options: self.client_options.unwrap_or_default(),
             connection_pool,
+            diagnostics_options,
             bootstrap_transport,
             http_client_factory,
             env_operation_options: Arc::new(OperationOptions {
@@ -717,6 +742,7 @@ fn compute_user_agent(
 mod tests {
     use super::*;
     use crate::models::AccountReference;
+    use crate::options::{DiagnosticsOptions, DiagnosticsVerbosity};
     use url::Url;
 
     #[tokio::test]
@@ -741,6 +767,34 @@ mod tests {
             .await
             .expect_err("subsequent attempts must also surface the failure");
         assert!(!second_error.to_string().is_empty());
+    }
+
+    #[tokio::test]
+    async fn default_diagnostics_options_use_summary_verbosity() {
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+
+        assert_eq!(
+            runtime.diagnostics_options().default_verbosity(),
+            DiagnosticsVerbosity::Summary
+        );
+    }
+
+    #[tokio::test]
+    async fn diagnostics_options_can_be_configured_on_runtime() {
+        let diagnostics = DiagnosticsOptions::builder()
+            .with_default_verbosity(DiagnosticsVerbosity::Detailed)
+            .build()
+            .unwrap();
+        let runtime = CosmosDriverRuntimeBuilder::new()
+            .with_diagnostics_options(diagnostics)
+            .build()
+            .await
+            .unwrap();
+
+        assert_eq!(
+            runtime.diagnostics_options().default_verbosity(),
+            DiagnosticsVerbosity::Detailed
+        );
     }
 
     /// Verifies that the user-agent suffix set on the runtime appears in the
