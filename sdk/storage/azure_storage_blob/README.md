@@ -128,6 +128,61 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ## Remarks
 
+### Generating SAS URLs
+
+Use the [`azure_storage_sas`] crate to create a user delegation SAS. Obtain a `UserDelegationKey` from `BlobServiceClient::get_user_delegation_key`, build the token with `SasBuilder`, then set it as the query string on the resource URL.
+
+```rust no_run
+use azure_core::{
+    http::{RequestContent, Url, XmlFormat},
+    time::OffsetDateTime,
+};
+use azure_storage_blob::{models::KeyInfo, BlobServiceClient};
+use azure_storage_sas::SasBuilder;
+use azure_identity::DeveloperToolsCredential;
+use time::Duration;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let credential = DeveloperToolsCredential::new(None)?;
+    let storage_account_name = "<storage_account_name>";
+    let container_name = "<container_name>";
+    let blob_name = "<blob_name>";
+
+    let service_url = Url::parse(&format!(
+        "https://{storage_account_name}.blob.core.windows.net/"
+    ))?;
+    let service_client = BlobServiceClient::new(service_url, Some(credential), None)?;
+
+    // Request a user delegation key from the service. The key is signed by
+    // Microsoft Entra ID and binds the SAS to the caller's identity.
+    let now = OffsetDateTime::now_utc();
+    let key_info = KeyInfo {
+        start: Some(now),
+        expiry: Some(now + Duration::hours(1)),
+        ..Default::default()
+    };
+    let request_content: RequestContent<KeyInfo, XmlFormat> = key_info.try_into()?;
+    let udk = service_client
+        .get_user_delegation_key(request_content, None)
+        .await?
+        .into_model()?;
+
+    // Build a read-only SAS token for a single blob, then set it on the blob URL.
+    let token = SasBuilder::new(storage_account_name, &udk, now + Duration::hours(1))?
+        .blob(container_name, blob_name)
+        .read()
+        .build();
+    let mut sas_url = Url::parse(&format!(
+        "https://{storage_account_name}.blob.core.windows.net/{container_name}/{blob_name}"
+    ))?;
+    sas_url.set_query(Some(&token));
+
+    println!("{sas_url}");
+    Ok(())
+}
+```
+
 ### Automatic decompression with custom HTTP transports
 
 By default, all storage clients create an HTTP transport with automatic decompression disabled,
@@ -164,3 +219,4 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 [REST API documentation]: https://learn.microsoft.com/rest/api/storageservices/blob-service-rest-api
 [Product documentation]: https://learn.microsoft.com/azure/storage/blobs/storage-blobs-overview
 [Assign an Azure role for access to blob data]: https://learn.microsoft.com/azure/storage/blobs/assign-azure-role-data-access?tabs=portal
+[`azure_storage_sas`]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_sas

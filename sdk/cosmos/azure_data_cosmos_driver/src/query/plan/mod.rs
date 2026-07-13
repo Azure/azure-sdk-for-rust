@@ -973,8 +973,11 @@ fn extract_hierarchical_pk(
     // back to `Unconstrained` rather than emitting an enormous filter.
     const MAX_HPK_TUPLES: usize = 1024;
 
-    // Per-component accepted values. We short-circuit if any component is
-    // unconstrained.
+    // Per-component accepted values. A leading constrained prefix is useful for
+    // MultiHash routing (`/tenant` on `(/tenant,/user,/session)`), so stop at
+    // the first unconstrained component after at least one constrained one.
+    // A gap later in the hierarchy (`/tenant` missing but `/user` present, or
+    // `/tenant` + `/session` without `/user`) is not a routable HPK prefix.
     let mut per_component: Vec<Vec<PartitionKeyValue>> = Vec::with_capacity(pk_segments.len());
     for pk_path in pk_segments {
         let mut equal_value: Option<PartitionKeyValue> = None;
@@ -1045,7 +1048,12 @@ fn extract_hierarchical_pk(
             }
             (Some(eq), None) => vec![eq],
             (None, Some(list)) => list,
-            (None, None) => return PartitionKeyFilter::Unconstrained,
+            (None, None) => {
+                if per_component.is_empty() {
+                    return PartitionKeyFilter::Unconstrained;
+                }
+                break;
+            }
         };
         per_component.push(component_values);
     }

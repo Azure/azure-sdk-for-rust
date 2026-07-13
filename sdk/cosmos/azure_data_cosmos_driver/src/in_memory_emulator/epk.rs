@@ -295,7 +295,7 @@ mod tests {
             PartitionKeyKind::Hash,
             PartitionKeyVersion::V2,
         );
-        assert_eq!(epk.as_str(), "19819C94CE42A1654CCC8110539D9589");
+        assert_eq!(epk.to_hex(), "19819C94CE42A1654CCC8110539D9589");
     }
 
     /// Header-vs-body parity: a partition key value extracted from an item
@@ -356,8 +356,8 @@ mod tests {
                 epk_header,
                 "EPK diverges for {}: body={} header={}",
                 label,
-                epk_body.as_str(),
-                epk_header.as_str(),
+                epk_body.to_hex(),
+                epk_header.to_hex(),
             );
 
             // V1 too — hierarchical-PK V1 containers exist and the same
@@ -374,8 +374,8 @@ mod tests {
                 epk_header_v1,
                 "V1 EPK diverges for {}: body={} header={}",
                 label,
-                epk_body_v1.as_str(),
-                epk_header_v1.as_str(),
+                epk_body_v1.to_hex(),
+                epk_header_v1.to_hex(),
             );
         }
     }

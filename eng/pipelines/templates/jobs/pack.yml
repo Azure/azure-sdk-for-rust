@@ -81,15 +81,10 @@ jobs:
         filePath: $(Build.SourcesDirectory)/eng/scripts/Test-Semver.ps1
         arguments: -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo' -Toolchain '$(PackToolchain)'
 
-    - task: Powershell@2
-      displayName: Pack Crates
+    # Temporary: remove check until after core crates are published
+    - pwsh: Write-Host "Skipping Pack-Crates.ps1 for auto service directory"
+      displayName: Skip Pack Crates
       condition: and(succeeded(), ne(variables['NoPackagesChanged'],'true'))
-      inputs:
-        pwsh: true
-        filePath: $(Build.SourcesDirectory)/eng/scripts/Pack-Crates.ps1
-        arguments: >
-          -OutputPath '$(Build.ArtifactStagingDirectory)'
-          -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
 
   - ${{ else }}:
     - pwsh: |

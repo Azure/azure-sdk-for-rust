@@ -21,7 +21,7 @@ use super::{
     intersect_feed_ranges,
     query_plan::{QueryInfo, QueryPlan},
     DrainedLeaf, PartitionRoutingRefresh, Pipeline, PipelineNode, PipelineNodeState, RangedToken,
-    Request, RequestTarget, SequentialDrain, TopologyProvider,
+    Request, RequestTarget, ResolvedRange, SequentialDrain, TopologyProvider, UnorderedMerge,
 };
 
 /// Builds a single-node [`Pipeline`] for a trivial operation.
@@ -201,6 +201,176 @@ pub(crate) async fn build_sequential_drain(
     Ok(Pipeline::new(root))
 }
 
+/// Builds an [`UnorderedMerge`] pipeline for change feed operations.
+///
+/// Unlike [`build_sequential_drain`], this does not require a query plan.
+/// The operation's target [`FeedRange`] is resolved against the current
+/// partition topology to produce one [`Request`] leaf per physical
+/// partition. All leaves are wrapped in an [`UnorderedMerge`] that polls
+/// them round-robin without evicting children on 304.
+///
+/// `resume` is an optional [`PipelineNodeState`] from a continuation token.
+/// On resume, `UnorderedMerge { active_tokens, start_from }` carries per-
+/// EPK-range server continuations plus the feed's original start position.
+/// Each physical range is rebuilt by sweeping the saved tokens that overlap it
+/// left to right: every saved sub-range becomes its own EPK-scoped leaf
+/// resuming from that sub-range's continuation, and any slice with no saved
+/// token re-applies `start_from`. A split therefore fans one parent token out
+/// to its children, while a merge reads each saved sub-range independently
+/// without dropping a continuation — matching the per-EPK-range change feed
+/// resume used by the other Cosmos SDKs (.NET, Java, Python).
+pub(crate) async fn build_unordered_merge(
+    feed_range: &FeedRange,
+    topology_provider: &mut dyn TopologyProvider,
+    operation: &Arc<CosmosOperation>,
+    resume: Option<PipelineNodeState>,
+) -> crate::error::Result<Pipeline> {
+    let (saved_tokens, resume_start) = match resume {
+        None => (None, None),
+        Some(PipelineNodeState::Drained) => {
+            return Ok(Pipeline::new(Box::new(DrainedLeaf)));
+        }
+        Some(PipelineNodeState::UnorderedMerge {
+            active_tokens,
+            start_from,
+        }) => (
+            Some(validate_unordered_merge_tokens(active_tokens)?),
+            start_from,
+        ),
+        Some(other) => {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+                .with_message(format!(
+                    "continuation token shape {} does not match a change feed operation",
+                    snapshot_kind(&other)
+                ))
+                .build());
+        }
+    };
+
+    // The start marker is carried so every checkpoint re-persists it. On a
+    // fresh start it comes from the operation; on resume the token's persisted
+    // marker wins, because the caller only hands back the token and does not
+    // repeat the original start position.
+    let is_resume = saved_tokens.is_some();
+    let start_marker = if is_resume {
+        resume_start
+    } else {
+        operation.change_feed_start().cloned()
+    };
+
+    // On resume the operation rebuilt by the SDK no longer carries the original
+    // start headers (the caller only passed the continuation token). Re-derive
+    // them from the persisted marker so partitions with no saved continuation
+    // (never polled before the checkpoint) honor the original start position
+    // instead of silently reading from the beginning. Partitions that do have a
+    // saved continuation still take precedence via their `If-None-Match` ETag.
+    let operation: Arc<CosmosOperation> = match (is_resume, &start_marker) {
+        (true, Some(marker)) => {
+            Arc::new((**operation).clone().with_change_feed_start(marker.clone()))
+        }
+        _ => Arc::clone(operation),
+    };
+
+    let resolved = topology_provider
+        .resolve_ranges(feed_range, PartitionRoutingRefresh::UseCached)
+        .await?;
+
+    let mut request_nodes: Vec<Box<dyn PipelineNode>> = Vec::new();
+
+    for resolved_range in resolved {
+        let range = intersect_feed_ranges(&resolved_range.range, feed_range)
+            .expect("topology provider must return ranges that overlap the feed range");
+
+        // Rebuild this physical range's leaves by sweeping the saved tokens
+        // that overlap it, left to right. Each saved sub-range resumes from its
+        // own `server_continuation`; any slice with no saved token (a
+        // never-polled sub-range, or a brand-new range) emits a fresh-start
+        // leaf that re-applies `start_from`.
+        //
+        // A split appears here as one saved token spanning several physical
+        // children: each child is fully covered, so it yields a single leaf
+        // carrying the parent continuation (the server accepts a parent token
+        // against a post-split child). A merge appears as several saved tokens
+        // inside one physical range: each saved sub-range is read independently
+        // from its own continuation, EPK-scoped via `x-ms-start/end-epk`, so no
+        // saved continuation is dropped. This mirrors the per-EPK-range change
+        // feed resume used by the other Cosmos SDKs (.NET, Java, Python).
+        let mut cursor = range.min_inclusive().clone();
+        let range_max = range.max_exclusive().clone();
+
+        if let Some(tokens) = saved_tokens.as_ref() {
+            // `saved_tokens` is sorted ascending and non-overlapping, so the
+            // overlapping slices are produced in order with no backtracking.
+            for token in tokens {
+                let Some(slice) = intersect_feed_ranges(&token.range, &range) else {
+                    continue;
+                };
+                if &cursor < slice.min_inclusive() {
+                    let gap = FeedRange::new(cursor.clone(), slice.min_inclusive().clone())?;
+                    push_change_feed_leaf(
+                        &mut request_nodes,
+                        &operation,
+                        gap,
+                        &resolved_range,
+                        None,
+                    );
+                }
+                cursor = slice.max_exclusive().clone();
+                push_change_feed_leaf(
+                    &mut request_nodes,
+                    &operation,
+                    slice,
+                    &resolved_range,
+                    Some(token.server_continuation.clone()),
+                );
+            }
+        }
+
+        if cursor < range_max {
+            // Trailing slice with no saved continuation, or the whole range on
+            // a fresh (non-resumed) start.
+            let tail = FeedRange::new(cursor, range_max)?;
+            push_change_feed_leaf(&mut request_nodes, &operation, tail, &resolved_range, None);
+        }
+    }
+
+    if request_nodes.is_empty() {
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES)
+            .with_message("change feed produced no partition ranges to query")
+            .build());
+    }
+
+    let root = Box::new(UnorderedMerge::new(request_nodes).with_start_marker(start_marker));
+    Ok(Pipeline::new(root))
+}
+
+/// Pushes one change feed [`Request`] leaf scoped to `leaf_range` within the
+/// given physical partition, optionally resuming from `continuation`.
+///
+/// When `leaf_range` covers the whole physical partition the EPK scoping
+/// collapses away (`x-ms-start/end-epk` are omitted); a narrower slice — as
+/// produced after a merge — carries explicit EPK bounds.
+fn push_change_feed_leaf(
+    request_nodes: &mut Vec<Box<dyn PipelineNode>>,
+    operation: &Arc<CosmosOperation>,
+    leaf_range: FeedRange,
+    resolved_range: &ResolvedRange,
+    continuation: Option<String>,
+) {
+    let target = RequestTarget::effective_partition_key_range(
+        leaf_range,
+        resolved_range.partition_key_range_id.clone(),
+        resolved_range.range.clone(),
+    );
+    request_nodes.push(Box::new(Request::new(
+        Arc::clone(operation),
+        target,
+        continuation,
+    )));
+}
+
 /// Builds the request leaves for a fresh (non-resumed) cross-partition plan.
 async fn plan_fresh(
     query_plan: &QueryPlan,
@@ -208,8 +378,21 @@ async fn plan_fresh(
     operation: &Arc<CosmosOperation>,
 ) -> crate::error::Result<Vec<Box<dyn PipelineNode>>> {
     let mut nodes: Vec<Box<dyn PipelineNode>> = Vec::new();
+    // For partition-scoped queries (e.g. `FeedScope::partition(partial_hpk)`)
+    // the operation carries a FeedRange that bounds the partition-key prefix.
+    // The server-supplied `query_ranges` always cover the full container, so
+    // we intersect each one with the operation scope to keep the fan-out (and
+    // the per-pkrange wire EPK bounds) scoped to that prefix.
+    let scope_range = operation.target();
     for query_range in &query_plan.query_ranges {
-        let feed_range = query_range_to_feed_range(query_range)?;
+        let plan_range = query_range_to_feed_range(query_range)?;
+        let feed_range = match scope_range {
+            Some(scope) => match intersect_feed_ranges(scope, &plan_range) {
+                Some(r) => r,
+                None => continue,
+            },
+            None => plan_range,
+        };
         let resolved = topology_provider
             .resolve_ranges(&feed_range, PartitionRoutingRefresh::UseCached)
             .await?;
@@ -256,9 +439,18 @@ async fn plan_resume_from_saved_snapshot(
 ) -> crate::error::Result<Vec<Box<dyn PipelineNode>>> {
     let mut nodes: Vec<Box<dyn PipelineNode>> = Vec::new();
     let mut coverage: Vec<Vec<FeedRange>> = vec![Vec::new(); saved.active_tokens.len()];
+    // See `plan_fresh` for rationale on intersecting with the operation scope.
+    let scope_range = operation.target();
 
     for query_range in &query_plan.query_ranges {
-        let feed_range = query_range_to_feed_range(query_range)?;
+        let plan_range = query_range_to_feed_range(query_range)?;
+        let feed_range = match scope_range {
+            Some(scope) => match intersect_feed_ranges(scope, &plan_range) {
+                Some(r) => r,
+                None => continue,
+            },
+            None => plan_range,
+        };
         let resolved = topology_provider
             .resolve_ranges(&feed_range, PartitionRoutingRefresh::UseCached)
             .await?;
@@ -363,8 +555,8 @@ async fn plan_resume_from_saved_snapshot(
                     .map(|r| {
                         format!(
                             "[{}, {})",
-                            r.min_inclusive().as_str(),
-                            r.max_exclusive().as_str()
+                            r.min_inclusive().to_hex(),
+                            r.max_exclusive().to_hex()
                         )
                     })
                     .collect();
@@ -382,8 +574,8 @@ async fn plan_resume_from_saved_snapshot(
                     "continuation token active range [{}, {}) could not be fully covered \
                      by the current topology above the cursor (covered: {}); the query \
                      cannot be safely resumed",
-                    entry.range.min_inclusive().as_str(),
-                    entry.range.max_exclusive().as_str(),
+                    entry.range.min_inclusive().to_hex(),
+                    entry.range.max_exclusive().to_hex(),
                     coverage_summary,
                 ))
                 .build());
@@ -419,10 +611,10 @@ fn range_fully_covered(range: &FeedRange, pieces: &[FeedRange]) -> bool {
             piece.min_inclusive() >= range.min_inclusive()
                 && piece.max_exclusive() <= range.max_exclusive(),
             "range_fully_covered piece [{}, {}) is not a subset of range [{}, {})",
-            piece.min_inclusive().as_str(),
-            piece.max_exclusive().as_str(),
-            range.min_inclusive().as_str(),
-            range.max_exclusive().as_str(),
+            piece.min_inclusive().to_hex(),
+            piece.max_exclusive().to_hex(),
+            range.min_inclusive().to_hex(),
+            range.max_exclusive().to_hex(),
         );
         if piece.min_inclusive() > &cursor {
             return false;
@@ -470,8 +662,8 @@ fn validate_saved_snapshot(
                 )
                 .with_message(format!(
                     "continuation token has invalid active_tokens entry (min `{}` > max `{}`)",
-                    min.as_str(),
-                    max.as_str(),
+                    min.to_hex(),
+                    max.to_hex(),
                 ))
                 .build());
         }
@@ -486,7 +678,7 @@ fn validate_saved_snapshot(
                 .with_message(format!(
                     "continuation token has zero-width active_tokens entry (min == max == `{}`); \
                      zero-width entries cannot carry remaining work",
-                    min.as_str(),
+                    min.to_hex(),
                 ))
                 .build());
         }
@@ -500,10 +692,10 @@ fn validate_saved_snapshot(
                     .with_message(format!(
                         "continuation token active_tokens must be sorted and non-overlapping; \
                          entry [{}, {}) is out of order or overlaps the previous entry [{}, {})",
-                        range.min_inclusive().as_str(),
-                        range.max_exclusive().as_str(),
-                        prev.range.min_inclusive().as_str(),
-                        prev.range.max_exclusive().as_str(),
+                        range.min_inclusive().to_hex(),
+                        range.max_exclusive().to_hex(),
+                        prev.range.min_inclusive().to_hex(),
+                        prev.range.max_exclusive().to_hex(),
                     ))
                     .build());
             }
@@ -524,9 +716,9 @@ fn validate_saved_snapshot(
                 .with_message(format!(
                     "continuation token cursor `{}` is past the first active_tokens entry [{}, {}); \
                      cursor must be at or before every active range",
-                    cursor.as_str(),
-                    first.range.min_inclusive().as_str(),
-                    first.range.max_exclusive().as_str(),
+                    cursor.to_hex(),
+                    first.range.min_inclusive().to_hex(),
+                    first.range.max_exclusive().to_hex(),
                 ))
                 .build());
         }
@@ -543,7 +735,58 @@ fn snapshot_kind(state: &PipelineNodeState) -> &'static str {
         PipelineNodeState::Drained => "Drained",
         PipelineNodeState::Request { .. } => "Request",
         PipelineNodeState::SequentialDrain { .. } => "SequentialDrain",
+        PipelineNodeState::UnorderedMerge { .. } => "UnorderedMerge",
     }
+}
+
+/// Validates the `active_tokens` from an `UnorderedMerge` continuation token.
+///
+/// Each entry must have `min < max` and be non-zero-width. The list must be
+/// sorted ascending by `min_epk` and non-overlapping.
+fn validate_unordered_merge_tokens(
+    active_tokens: Vec<RangedToken>,
+) -> crate::error::Result<Vec<SavedActiveToken>> {
+    let mut parsed: Vec<SavedActiveToken> = Vec::with_capacity(active_tokens.len());
+    for entry in active_tokens {
+        let min = EffectivePartitionKey::from(entry.min_epk);
+        let max = EffectivePartitionKey::from(entry.max_epk);
+        if min >= max {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(
+                    crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+                )
+                .with_message(format!(
+                    "continuation token has invalid active_tokens entry \
+                     (min `{}` >= max `{}`)",
+                    min.to_hex(),
+                    max.to_hex(),
+                ))
+                .build());
+        }
+        let range = FeedRange::new(min, max)?;
+        if let Some(prev) = parsed.last() {
+            if range.min_inclusive() < prev.range.max_exclusive() {
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(
+                        crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+                    )
+                    .with_message(format!(
+                        "continuation token active_tokens must be sorted and non-overlapping; \
+                         entry [{}, {}) overlaps [{}, {})",
+                        range.min_inclusive().to_hex(),
+                        range.max_exclusive().to_hex(),
+                        prev.range.min_inclusive().to_hex(),
+                        prev.range.max_exclusive().to_hex(),
+                    ))
+                    .build());
+            }
+        }
+        parsed.push(SavedActiveToken {
+            range,
+            server_continuation: entry.server_continuation,
+        });
+    }
+    Ok(parsed)
 }
 
 /// Validates that the query plan does not require features we don't yet support.
