@@ -47,19 +47,8 @@ use super::validation::{compare_headers, HeaderValidationSpec};
 const EMULATOR_GATEWAY_URL: &str = "https://eastus.emulator.local";
 const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
 const TEST_MODE_ENV_VAR: &str = "AZURE_COSMOS_TEST_MODE";
-const SETUP_TIMEOUT_SECONDS_ENV_VAR: &str = "AZURE_COSMOS_TEST_SETUP_TIMEOUT_SECONDS";
-const DEFAULT_SETUP_TIMEOUT_SECONDS: u64 = 180;
 const EMULATOR_CONNECTION_STRING: &str = "AccountEndpoint=https://127.0.0.1:8081;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;";
 const HUB_REGION: Region = Region::EAST_US_2;
-
-fn setup_timeout() -> Duration {
-    std::env::var(SETUP_TIMEOUT_SECONDS_ENV_VAR)
-        .ok()
-        .and_then(|value| value.parse::<u64>().ok())
-        .filter(|seconds| *seconds > 0)
-        .map(Duration::from_secs)
-        .unwrap_or_else(|| Duration::from_secs(DEFAULT_SETUP_TIMEOUT_SECONDS))
-}
 
 struct Backend {
     client: CosmosClient,
@@ -534,7 +523,7 @@ async fn resolve_container_when_ready(
     db_name: &str,
     container_name: &str,
 ) -> Result<ContainerClient, Box<dyn Error>> {
-    let deadline = std::time::Instant::now() + setup_timeout();
+    let deadline = std::time::Instant::now() + super::setup_timeout();
     let mut backoff = Duration::from_millis(250);
     loop {
         match client

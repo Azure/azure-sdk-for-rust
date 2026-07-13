@@ -47,12 +47,6 @@ const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
 /// Environment variable controlling test mode.
 const TEST_MODE_ENV_VAR: &str = "AZURE_COSMOS_TEST_MODE";
 
-/// Environment variable controlling the bounded live-account setup readiness window.
-const SETUP_TIMEOUT_SECONDS_ENV_VAR: &str = "AZURE_COSMOS_TEST_SETUP_TIMEOUT_SECONDS";
-
-/// Default live-account setup readiness window.
-const DEFAULT_SETUP_TIMEOUT_SECONDS: u64 = 180;
-
 /// Environment variable exposing the real account's configured default
 /// consistency level (emitted by the test-resources deployment). Substatus
 /// `1002` (ReadSessionNotAvailable) is only produced under Session
@@ -72,15 +66,6 @@ const EMULATOR_GATEWAY_URL: &str = "https://eastus.emulator.local";
 /// rather than the region-specific status under test. Regions not present on
 /// the configured account are silently skipped by the driver.
 const MULTI_REGION_READ_REGIONS: &[Region] = &[Region::CENTRAL_US, Region::EAST_US_2];
-
-fn setup_timeout() -> Duration {
-    std::env::var(SETUP_TIMEOUT_SECONDS_ENV_VAR)
-        .ok()
-        .and_then(|value| value.parse::<u64>().ok())
-        .filter(|seconds| *seconds > 0)
-        .map(Duration::from_secs)
-        .unwrap_or_else(|| Duration::from_secs(DEFAULT_SETUP_TIMEOUT_SECONDS))
-}
 
 fn collection_create_in_progress(err: &azure_data_cosmos_driver::error::CosmosError) -> bool {
     let status = err.status();
@@ -327,7 +312,7 @@ impl DualBackend {
             .with_availability_strategy(AvailabilityStrategy::Disabled)
             .build();
 
-        let setup_timeout = setup_timeout();
+        let setup_timeout = super::setup_timeout();
 
         for region in MULTI_REGION_READ_REGIONS {
             let runtime = CosmosDriverRuntime::builder().build().await?;
