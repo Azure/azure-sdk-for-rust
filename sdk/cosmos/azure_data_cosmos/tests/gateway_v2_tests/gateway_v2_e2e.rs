@@ -326,12 +326,29 @@ async fn assert_item_readable_from_region(
     const POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(500);
 
     let client = build_client_for_region(endpoint, key, region.clone()).await?;
-    let container = client
-        .database_client(db_name)
-        .container_client(container_name)
-        .await?;
+    let db_client = client.database_client(db_name);
 
     for attempt in 0..MAX_ATTEMPTS {
+        let container = match db_client.container_client(container_name).await {
+            Ok(container) => container,
+            Err(e)
+                if (e.status().status_code() == StatusCode::NotFound
+                    || (e.status().status_code() == StatusCode::BadRequest
+                        && e.status()
+                            .sub_status()
+                            .is_some_and(|sub_status| sub_status.value() == 13002)))
+                    && attempt + 1 < MAX_ATTEMPTS =>
+            {
+                tokio::time::sleep(POLL_INTERVAL).await;
+                continue;
+            }
+            Err(e) => {
+                return Err(
+                    format!("container resolution from region {region:?} failed: {e}").into(),
+                );
+            }
+        };
+
         match container.read_item(&expected.pk, &expected.id, None).await {
             Ok(read_resp) => {
                 assert_transport_kind(&read_resp.diagnostics(), TransportKind::GatewayV2);
@@ -343,7 +360,11 @@ async fn assert_item_readable_from_region(
                 return Ok(());
             }
             Err(e)
-                if e.status().status_code() == StatusCode::NotFound
+                if (e.status().status_code() == StatusCode::NotFound
+                    || (e.status().status_code() == StatusCode::BadRequest
+                        && e.status()
+                            .sub_status()
+                            .is_some_and(|sub_status| sub_status.value() == 13002)))
                     && attempt + 1 < MAX_ATTEMPTS =>
             {
                 tokio::time::sleep(POLL_INTERVAL).await;
@@ -421,13 +442,14 @@ pub async fn gateway_v2_point_crud_round_trip() -> Result<(), Box<dyn std::error
 /// for V1) must be treated as V1 — not V2 — or every point operation mis-routes
 /// and stalls until timeout. This test would fail (timeout / 503) against the
 /// buggy V2-default and passes once absent versions default to V1.
+///
+/// The fixed `gateway_v2` CI account is multi-write and does not route legacy
+/// V1 containers, so this regression runs against the single-writer
+/// `gateway_v2_multi_region` account.
 #[tokio::test]
 #[cfg_attr(
-    not(any(
-        test_category = "gateway_v2",
-        test_category = "gateway_v2_multi_region"
-    )),
-    ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
+    not(test_category = "gateway_v2_multi_region"),
+    ignore = "requires the single-writer Gateway 2.0 account (test_category = \"gateway_v2_multi_region\" + AZURE_COSMOS_GW_V2_MULTI_REGION_ENDPOINT/_KEY)"
 )]
 pub async fn gateway_v2_v1_container_point_crud_round_trip(
 ) -> Result<(), Box<dyn std::error::Error>> {

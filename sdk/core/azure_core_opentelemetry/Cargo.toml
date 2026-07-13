@@ -25,7 +25,7 @@ tracing.workspace = true
 [dev-dependencies]
 azure_core_test = { workspace = true, features = ["tracing"] }
 azure_core_test_macros.workspace = true
-azure_identity = { path = "../../identity/azure_identity", version = "1.1.0-beta.1" }
+azure_identity.workspace = true
 opentelemetry_sdk = { workspace = true, features = ["testing"] }
 tokio.workspace = true
 tracing-subscriber.workspace = true
