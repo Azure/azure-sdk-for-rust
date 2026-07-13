@@ -11,9 +11,10 @@ use crate::{
     driver::{
         cache::{PartitionKeyRangeCache, PkRangeFetchResult},
         dataflow::{
-            planner, query_plan::QueryPlan, CachedTopologyProvider, OperationPlan,
-            PartitionRoutingRefresh, PipelineContext, PipelineNodeState, RequestExecutor,
-            RequestTarget, TopologyProvider,
+            planner,
+            query_plan::{QueryPlan, RawQueryPlan},
+            CachedTopologyProvider, OperationPlan, PartitionRoutingRefresh, PipelineContext,
+            PipelineNodeState, RequestExecutor, RequestTarget, TopologyProvider,
         },
         pipeline::operation_pipeline::OperationOverrides,
         routing::{
@@ -42,6 +43,14 @@ use std::time::Duration;
 #[cfg(feature = "preview_dtx")]
 use std::time::Instant;
 use url::Url;
+
+/// Gateway 2.0 endpoint-discovery opt-in header, sent on every
+/// `getDatabaseAccount` request. Aliases the canonical wire string in
+/// `models::cosmos_headers`.
+const GATEWAY_V2_DISCOVERY_OPT_IN: azure_core::http::headers::HeaderName =
+    azure_core::http::headers::HeaderName::from_static(
+        crate::models::cosmos_headers::request_header_names::USE_THINCLIENT,
+    );
 
 #[cfg(feature = "preview_dtx")]
 const DTX_OUTER_MAX_RETRIES: u32 = 10;
@@ -94,8 +103,11 @@ use super::routing::EndpointProbeFn;
 use super::{
     cache::{parse_pk_ranges_response, AccountRegion},
     transport::{
-        cosmos_headers, cosmos_transport_client::HttpRequest, request_signing,
-        AuthorizationContext, CosmosTransport,
+        connectivity_probe::{ConnectivityProbe, Http2ConnectivityProbe},
+        cosmos_headers,
+        cosmos_transport_client::HttpRequest,
+        http_client_factory::HttpClientConfig,
+        request_signing, AuthorizationContext, CosmosTransport,
     },
     CosmosDriverRuntime,
 };
@@ -106,6 +118,7 @@ struct DriverRequestExecutor<'a> {
 }
 
 fn request_target_overrides(
+    operation_partition_key: Option<&PartitionKey>,
     target: RequestTarget,
     continuation: Option<String>,
 ) -> OperationOverrides {
@@ -118,12 +131,36 @@ fn request_target_overrides(
         RequestTarget::EffectivePartitionKeyRange {
             partition_key_range_id,
             range,
-            ..
+            partition_key_range,
         } => OperationOverrides {
             partition_key_range_id: Some(partition_key_range_id),
+            // Only emit `x-ms-start-epk`/`x-ms-end-epk` for the narrowed case
+            // (range < partition_key_range). The public EPK headers paired with
+            // `partitionkeyrangeid` are accepted by Gateway 2.0 but rejected by
+            // the standard gateway with HTTP 400 (verified against live
+            // accounts, independent of the min bound value), so we never emit
+            // them on the full-pkrange XPK fan-out path that must also work on
+            // the standard gateway. Because the narrowed case emits both
+            // headers together, it is only valid on the wire against Gateway
+            // 2.0. The GW_V2 dispatcher derives its RNTBD
+            // `StartEpkHash`/`EndEpkHash` tokens from `pkrange_bounds` (below)
+            // when the public headers are absent.
             feed_range: range,
+            // Always carry the physical pkrange bounds so the GW_V2 dispatcher
+            // can synthesize StartEpkHash/EndEpkHash tokens (which the
+            // thin-client proxy requires on every Query frame). Surfaced via
+            // internal `x-ms-thinclient-pkrange-min`/`-max` headers in
+            // `apply_headers`; the standard gateway ignores unknown headers.
+            pkrange_bounds: Some(partition_key_range),
+            // Propagate the operation's logical partition key (e.g. the
+            // partial-HPK prefix from `FeedScope::partition(...)`) so the
+            // `x-ms-documentdb-partitionkey` HTTP header is emitted on
+            // per-pkrange query fan-out requests. The thin-client proxy
+            // uses this to filter docs within a pkrange by the supplied
+            // prefix; without it, the
+            // backend returns every document in the physical partition.
+            partition_key: operation_partition_key.cloned(),
             continuation,
-            ..Default::default()
         },
         RequestTarget::NonPartitioned => OperationOverrides {
             continuation,
@@ -141,7 +178,7 @@ impl RequestExecutor for DriverRequestExecutor<'_> {
         continuation: Option<String>,
     ) -> BoxFuture<'a, crate::error::Result<CosmosResponse>> {
         let driver = self.driver;
-        let overrides = request_target_overrides(target, continuation);
+        let overrides = request_target_overrides(operation.partition_key(), target, continuation);
 
         Box::pin(async move {
             driver
@@ -530,7 +567,7 @@ impl CosmosDriver {
     ) -> (DiagnosticsContextBuilder, TransportSecurity) {
         let mut diagnostics = DiagnosticsContextBuilder::new(
             activity_id,
-            Arc::new(crate::options::DiagnosticsOptions::default()),
+            Arc::clone(runtime.diagnostics_options_arc()),
         );
         diagnostics.set_cpu_monitor(runtime.cpu_monitor().clone());
         diagnostics.set_machine_id(Arc::clone(runtime.machine_id()));
@@ -609,16 +646,10 @@ impl CosmosDriver {
                 diagnostics.increment_local_shard_retry_count(request_handle);
             }
 
-            let mut request = HttpRequest {
-                url: endpoint_url.clone(),
-                method: azure_core::http::Method::Get,
-                headers: azure_core::http::headers::Headers::new(),
-                body: None,
-                timeout: None,
-                #[cfg(feature = "fault_injection")]
-                evaluation_collector: None,
-            };
-            cosmos_headers::apply_cosmos_headers(&mut request, user_agent);
+            // `build_account_properties_request` applies the standard cosmos headers
+            // and the `x-ms-cosmos-use-thinclient: true` discovery opt-in so the
+            // server emits `thinClient*Locations` when the federation supports it.
+            let mut request = Self::build_account_properties_request(&endpoint, user_agent);
 
             // Tag the request so `FaultInjectingHttpClient` can match
             // `FaultOperationType::MetadataReadDatabaseAccount` rules against the
@@ -761,9 +792,42 @@ impl CosmosDriver {
         tracing::info!(
             endpoint = %endpoint,
             write_region = ?props.write_region(),
+            readable_locations = props.readable_locations.len(),
+            writable_locations = props.writable_locations.len(),
+            thin_client_readable_locations = props.thin_client_readable_locations.len(),
+            thin_client_writable_locations = props.thin_client_writable_locations.len(),
+            thin_client_readable_regions = ?props.gateway_v2_readable_regions(),
+            thin_client_writable_regions = ?props.gateway_v2_writable_regions(),
             "AccountProperties retrieved successfully"
         );
         Ok(props)
+    }
+
+    /// Builds the unsigned `getDatabaseAccount` HTTP request.
+    ///
+    /// Always sets `x-ms-cosmos-use-thinclient: true` so the server emits
+    /// `thinClient*Locations` whenever the federation has thin-client
+    /// enabled. Without this header the server suppresses those fields and
+    /// Gateway 2.0 is silently disabled.
+    fn build_account_properties_request(
+        endpoint: &AccountEndpoint,
+        user_agent: &azure_core::http::headers::HeaderValue,
+    ) -> HttpRequest {
+        let mut request = HttpRequest {
+            url: endpoint.join_path("/"),
+            method: azure_core::http::Method::Get,
+            headers: azure_core::http::headers::Headers::new(),
+            body: None,
+            timeout: None,
+            #[cfg(feature = "fault_injection")]
+            evaluation_collector: None,
+        };
+        cosmos_headers::apply_cosmos_headers(&mut request, user_agent);
+        request.headers.insert(
+            GATEWAY_V2_DISCOVERY_OPT_IN,
+            azure_core::http::headers::HeaderValue::from_static("true"),
+        );
+        request
     }
 
     fn parse_account_properties_payload(
@@ -1302,15 +1366,37 @@ impl CosmosDriver {
                     .map(Duration::from_millis)
                     .unwrap_or(Duration::from_secs(60))
             });
+
+        // Wire the Gateway 2.0 connectivity probe. Before routing data-plane
+        // traffic to a thin-client proxy endpoint, the store issues a
+        // `POST /connectivity-probe` over HTTP/2 and gates Gateway 2.0 off for
+        // all regions unless every probe returns 200. The probe shares the
+        // data plane's Gateway 2.0 HTTP/2 config so it negotiates the same
+        // protocol the real traffic uses. Skip building it entirely when
+        // HTTP/2 is unavailable (the one hard Gateway 2.0 prerequisite);
+        // otherwise the store still no-ops the probe when the account
+        // advertises no thin-client endpoints.
+        let connectivity_probe: Option<Arc<dyn ConnectivityProbe>> =
+            if runtime.connection_pool().gateway_v2_disabled() {
+                None
+            } else {
+                let probe_config =
+                    HttpClientConfig::dataplane_gateway_v2(runtime.connection_pool());
+                let probe_client =
+                    http_client_factory.build(runtime.connection_pool(), probe_config)?;
+                Some(Arc::new(Http2ConnectivityProbe::new(probe_client)))
+            };
+
         let location_state_store = Arc::new(LocationStateStore::new(
             runtime.account_metadata_cache().clone(),
             account_endpoint,
             default_endpoint,
             refresh_callback,
-            runtime.connection_pool().is_gateway20_allowed(),
+            !runtime.connection_pool().gateway_v2_disabled(),
             endpoint_unavailability_ttl,
             options.partition_failover_options().clone(),
             options.preferred_regions().to_vec(),
+            connectivity_probe,
         ));
 
         // Spawn the background failback loop for partition-level overrides.
@@ -1386,6 +1472,38 @@ impl CosmosDriver {
         self.options.account()
     }
 
+    /// **Internal test hook -- not part of the public API.**
+    ///
+    /// Returns cached writable and readable account regions. The in-memory
+    /// emulator comparison tests use this to pin a live multi-region account
+    /// to one hub region via default `ExcludedRegions`. It does not fetch
+    /// account metadata; callers should use it after the driver has been
+    /// initialized.
+    ///
+    /// **Do not call from production code.** Available only because
+    /// integration tests live outside the crate and cannot reach the account
+    /// metadata cache directly. May be changed or removed at any time without
+    /// a semver bump.
+    #[cfg(any(test, feature = "__internal_in_memory_emulator"))]
+    #[doc(hidden)]
+    pub async fn cached_account_regions_for_testing(
+        &self,
+    ) -> Option<(Vec<crate::options::Region>, Vec<crate::options::Region>)> {
+        let endpoint = AccountEndpoint::from(self.options.account());
+        let props = self.runtime.account_metadata_cache().get(&endpoint).await?;
+        let writable = props
+            .writable_locations
+            .iter()
+            .map(|location| location.name.clone())
+            .collect();
+        let readable = props
+            .readable_locations
+            .iter()
+            .map(|location| location.name.clone())
+            .collect();
+        Some((writable, readable))
+    }
+
     /// Returns the runtime.
     pub fn runtime(&self) -> &CosmosDriverRuntime {
         &self.runtime
@@ -1456,6 +1574,40 @@ impl CosmosDriver {
         self.transport.load_full()
     }
 
+    /// Test-only API. Returns a snapshot of the per-partition hub-region cache as
+    /// `(pk_range_id, current_endpoint_url)` pairs.
+    ///
+    /// Reads `PartitionEndpointState::failover_overrides`, which on a
+    /// PPAF-enabled single-master account doubles as the hub-region cache
+    /// for reads (populated by the `hub_region_cache_populate_target`
+    /// pipeline hook when a hub-region-only retry succeeds).
+    #[cfg(any(test, feature = "__internal_testing"))]
+    pub fn __test_only_hub_region_cache_snapshot(&self) -> Vec<(String, String)> {
+        let snapshot = self.location_state_store.snapshot();
+        snapshot
+            .partitions
+            .failover_overrides
+            .iter()
+            .map(|(pk_range_id, entry)| {
+                (
+                    pk_range_id.as_str().to_owned(),
+                    entry.current_endpoint.url().to_string(),
+                )
+            })
+            .collect()
+    }
+
+    /// Test-only API. Forces `per_partition_automatic_failover_enabled = true`
+    /// on the driver's partition state.
+    #[cfg(any(test, feature = "__internal_testing"))]
+    pub fn __test_only_force_ppaf_enabled(&self) {
+        self.location_state_store.apply_partition(|current| {
+            let mut next = current.clone();
+            next.per_partition_automatic_failover_enabled = true;
+            next
+        });
+    }
+
     /// Eagerly primes the account metadata cache and creates the per-account transport.
     ///
     /// Performs an HTTP/2 probe to detect protocol support, then creates the
@@ -1504,14 +1656,16 @@ impl CosmosDriver {
 
         // Seed the routing snapshot with the initial account properties so
         // server-controlled flags (PPAF/PPCB) and writable-region selection
-        // are correct before the first operation runs. Without this, the
-        // routing state would stay at defaults until either the first
-        // operation triggers `sync_account_properties` or the background
-        // refresh loop fires (after `BACKGROUND_REFRESH_INTERVAL`).
-        self.location_state_store.sync_account_properties(
-            cached_properties,
-            self.location_state_store.default_endpoint(),
-        );
+        // are correct before the first operation runs. The probe runs first so
+        // the first operation routes against a probe-verified Gateway 2.0
+        // snapshot rather than the optimistic snapshot derived from
+        // `thinClient*Locations` alone.
+        self.location_state_store
+            .sync_account_properties_with_probe(
+                cached_properties,
+                self.location_state_store.default_endpoint(),
+            )
+            .await;
 
         // Create the per-account transport with the negotiated version.
         let new_transport = Arc::new(CosmosTransport::with_factory(
@@ -1784,7 +1938,8 @@ impl CosmosDriver {
     ///    partition.
     ///
     /// Returns `None` if:
-    /// - PPAF/PPCB is not enabled
+    /// - PPAF/PPCB is disabled **and** the client cannot route over Gateway 2.0
+    ///   (an authoritative stamped range id on the overrides is still honored)
     /// - The operation does not target a partitioned resource
     /// - No container reference or routing target is available
     /// - The cache lookup or fetch fails
@@ -1801,23 +1956,42 @@ impl CosmosDriver {
             return None;
         }
 
-        // A pre-resolved partition key range ID is only useful for
-        // PPAF/PPCB. Skip the work when neither mechanism is enabled.
-        let snapshot = self.location_state_store.snapshot();
-        let partition_state = snapshot.partitions.as_ref();
-        if !partition_state.per_partition_automatic_failover_enabled
-            && !partition_state.per_partition_circuit_breaker_enabled
-        {
-            return None;
-        }
-
         // The dataflow pipeline resolves each query into per-partition
         // sub-operations and stamps the owning physical partition's range ID
         // onto the overrides. When present it is authoritative — use it as-is,
         // skipping any cache lookup (and the multi-range collapse that would
         // otherwise silently drop the seed).
+        //
+        // This is checked BEFORE the PPAF/PPCB gate below: the resolved range
+        // ID is also required to scope the outgoing session token to a single
+        // partition. The thin-client/RNTBD backend rejects a multi-range
+        // composite session token on a partition-scoped request ("Session token
+        // specified is invalid."), so a stamped range id must always be honored
+        // even when PPAF/PPCB are both disabled.
         if let Some(pk_range_id) = overrides.partition_key_range_id.as_deref() {
             return Some(PartitionKeyRangeId::from(pk_range_id.to_owned()));
+        }
+
+        // A cache-resolved partition key range ID (below) scopes the outgoing
+        // session token to a single partition and feeds PPAF/PPCB routing.
+        // Resolve it whenever any consumer needs it:
+        //   * PPAF or PPCB is enabled (for failure attribution / routing), OR
+        //   * the client may route over Gateway 2.0 (thin-client), whose
+        //     backend rejects a multi-range composite session token on a
+        //     partition-scoped request ("Session token specified is invalid.").
+        //
+        // The Gateway 2.0 clause mirrors .NET's
+        // `ThinClientStoreModel::ShouldResolvePartitionKeyRange() => true`:
+        // thin-client-capable clients resolve the range unconditionally, while
+        // pure classic-gateway clients keep the PPAF/PPCB-gated behavior. When
+        // none of these apply, skip the cache work.
+        let snapshot = self.location_state_store.snapshot();
+        let partition_state = snapshot.partitions.as_ref();
+        if !partition_state.per_partition_automatic_failover_enabled
+            && !partition_state.per_partition_circuit_breaker_enabled
+            && !self.location_state_store.gateway_v2_enabled()
+        {
+            return None;
         }
 
         // Need a container reference for any cache-backed resolution below.
@@ -1953,7 +2127,7 @@ impl CosmosDriver {
         // We need to do some refactoring here to shrink the future size and avoid this heap allocation if possible.
         Box::pin(async {
             let container = operation.container().cloned();
-            let mut plan = self.plan_operation(operation, &options, None).await?;
+            let mut plan = Box::pin(self.plan_operation(operation, &options, None)).await?;
             self.execute_plan(&mut plan, container, options).await
         })
         .await
@@ -2565,8 +2739,15 @@ impl CosmosDriver {
         operation: &CosmosOperation,
         options: &OperationOptions,
     ) -> crate::error::Result<QueryPlan> {
-        let query_plan_operation = CosmosOperation::query_plan(container.clone(), "".into())
-            .with_body(operation.body().unwrap_or_default().to_vec());
+        // Advertise the SDK's supported query-rewrite features. The default
+        // (`SUPPORTED_QUERY_FEATURES`) is `"None"` until the cross-partition
+        // pipeline gains rewrite support, but the value must be non-empty so
+        // the Gateway V2 thin-client proxy accepts the QueryPlan request.
+        let query_plan_operation = CosmosOperation::query_plan(
+            container.clone(),
+            std::borrow::Cow::Borrowed(crate::query::SUPPORTED_QUERY_FEATURES),
+        )
+        .with_body(operation.body().unwrap_or_default().to_vec());
 
         let response = self
             .execute_operation_direct(
@@ -2586,13 +2767,17 @@ impl CosmosDriver {
                     .build());
             }
         };
-        let query_plan: QueryPlan = serde_json::from_slice(&query_plan_body).map_err(|e| {
-            crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-                .with_message("failed to parse query plan response")
-                .with_source(e)
-                .build()
-        })?;
+        let raw_query_plan: RawQueryPlan =
+            serde_json::from_slice(&query_plan_body).map_err(|e| {
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                    .with_message("failed to parse query plan response")
+                    .with_source(e)
+                    .build()
+            })?;
+        // Resolve proxy-format `queryRanges` (PartitionKeyInternal arrays)
+        // into canonical EPK hex strings using the container's PK definition.
+        let query_plan = raw_query_plan.resolve(container.partition_key_definition())?;
         Ok(query_plan)
     }
 
@@ -3441,6 +3626,25 @@ mod tests {
     }
 
     #[test]
+    fn build_account_properties_request_sets_thinclient_discovery_header() {
+        let endpoint = AccountEndpoint::try_from("https://test.documents.azure.com:443/").unwrap();
+        let user_agent = azure_core::http::headers::HeaderValue::from_static("test-ua");
+
+        let request = CosmosDriver::build_account_properties_request(&endpoint, &user_agent);
+
+        let opt_in = request
+            .headers
+            .get_optional_str(&GATEWAY_V2_DISCOVERY_OPT_IN)
+            .expect("getDatabaseAccount must send x-ms-cosmos-use-thinclient so the server emits thinClient*Locations");
+        assert_eq!(
+            opt_in, "true",
+            "x-ms-cosmos-use-thinclient must be `true` to enable thin-client discovery"
+        );
+        assert_eq!(request.method, azure_core::http::Method::Get);
+        assert!(request.url.as_str().starts_with(endpoint.url().as_str()));
+    }
+
+    #[test]
     fn parse_account_properties_uses_first_writable_and_readable_regions() {
         let payload = br#"{
             "_self": "",
@@ -3829,15 +4033,17 @@ mod tests {
             EffectivePartitionKey::from("20"),
         )
         .unwrap();
+        let pkrange = crate::models::FeedRange::new(
+            EffectivePartitionKey::from("00"),
+            EffectivePartitionKey::from("40"),
+        )
+        .unwrap();
         let overrides = request_target_overrides(
+            None,
             RequestTarget::effective_partition_key_range(
                 range.clone(),
                 "merged".to_string(),
-                crate::models::FeedRange::new(
-                    EffectivePartitionKey::from("00"),
-                    EffectivePartitionKey::from("40"),
-                )
-                .unwrap(),
+                pkrange.clone(),
             ),
             Some("ct".to_string()),
         );
@@ -3845,26 +4051,67 @@ mod tests {
         assert_eq!(overrides.partition_key_range_id.as_deref(), Some("merged"));
         assert_eq!(overrides.continuation.as_deref(), Some("ct"));
         assert_eq!(overrides.feed_range, Some(range));
+        assert_eq!(overrides.pkrange_bounds, Some(pkrange));
     }
 
     #[test]
-    fn effective_partition_key_range_override_omits_exact_feed_range() {
+    fn effective_partition_key_range_override_omits_feed_range_when_full_pkrange() {
+        // When the request covers the FULL pkrange (range == partition_key_range),
+        // `feed_range` collapses to None — we do NOT emit the public
+        // `x-ms-start-epk`/`x-ms-end-epk` headers on the legacy gateway path
+        // (it rejects them paired with `partitionkeyrangeid` when min is the
+        // empty-string sentinel). The pkrange bounds are still carried in
+        // `pkrange_bounds` for the GW_V2 dispatcher to derive its
+        // `StartEpkHash`/`EndEpkHash` RNTBD tokens.
         let range = crate::models::FeedRange::new(
             EffectivePartitionKey::from("10"),
             EffectivePartitionKey::from("20"),
         )
         .unwrap();
         let overrides = request_target_overrides(
+            None,
             RequestTarget::effective_partition_key_range(
                 range.clone(),
                 "pkrange".to_string(),
-                range,
+                range.clone(),
             ),
             None,
         );
 
         assert_eq!(overrides.partition_key_range_id.as_deref(), Some("pkrange"));
         assert_eq!(overrides.feed_range, None);
+        assert_eq!(overrides.pkrange_bounds, Some(range));
+    }
+
+    #[test]
+    fn effective_partition_key_range_override_forwards_logical_partition_key() {
+        // Regression: partition-scoped queries (e.g. `FeedScope::partition(partial_hpk)`)
+        // decompose into per-pkrange `EffectivePartitionKeyRange` targets. The operation's
+        // logical partition key must be forwarded into the override so the
+        // `x-ms-documentdb-partitionkey` HTTP header (and the RNTBD `PartitionKey` 0x002B
+        // token on the thin-client proxy) is emitted on every per-pkrange fan-out request.
+        // Without this, the thin-client backend returns every document in the physical
+        // partition because it has no per-component prefix to filter by.
+        let range = crate::models::FeedRange::new(
+            EffectivePartitionKey::from("10"),
+            EffectivePartitionKey::from("20"),
+        )
+        .unwrap();
+        let pk = PartitionKey::from("tenant-prefix");
+        let overrides = request_target_overrides(
+            Some(&pk),
+            RequestTarget::effective_partition_key_range(
+                range.clone(),
+                "pkrange".to_string(),
+                range.clone(),
+            ),
+            None,
+        );
+
+        assert_eq!(overrides.partition_key.as_ref(), Some(&pk));
+        assert_eq!(overrides.partition_key_range_id.as_deref(), Some("pkrange"));
+        assert_eq!(overrides.feed_range, None);
+        assert_eq!(overrides.pkrange_bounds, Some(range));
     }
 
     #[tokio::test]
@@ -4765,6 +5012,7 @@ mod tests {
             request_timeout: std::time::Duration::from_secs(5),
             allow_invalid_cert: false,
             http2_keep_alive_while_idle: false,
+            transport_kind: None,
         };
         let transport_client =
             crate::driver::transport::http_client_factory::DefaultHttpClientFactory::new()

@@ -656,7 +656,7 @@ short-circuits the hedge decision before the primary request is sent.
 > stand-alone tail-latency tool, so this coupling is dropped —
 > hedging is on by default and PPAF / PPCB activation is unrelated.
 > Java's threshold (`500ms`) and .NET's (`min(1000ms, RequestTimeout/2)`)
-> bracket the Rust default; users targeting Java parity should configure
+> bracket the Rust default; users wanting tighter latency bounds should configure
 > `500ms` explicitly.
 
 ---

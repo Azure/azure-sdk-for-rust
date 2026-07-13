@@ -6,6 +6,7 @@
 use super::*;
 use azure_core::http::headers::{HeaderName, HeaderValue, CONTENT_TYPE};
 use azure_core::http::{Method, Request, StatusCode, Url};
+use azure_data_cosmos_driver::models::{FeedRange, PartitionKey, PartitionKeyDefinition};
 
 static IS_QUERY: HeaderName = HeaderName::from_static("x-ms-documentdb-isquery");
 static IS_QUERY_PLAN: HeaderName = HeaderName::from_static("x-ms-cosmos-is-query-plan-request");
@@ -158,13 +159,50 @@ async fn query_plan_returns_gateway_shaped_local_plan() {
     let response = ctx.emulator.execute_request(&req).await.unwrap();
     let (status, _, body) = collect_response(response).await;
     assert_eq!(status, StatusCode::Ok);
-    assert_eq!(body["partitionedQueryExecutionInfoVersion"], 1);
+    assert_eq!(body["partitionedQueryExecutionInfoVersion"], 2);
     assert_eq!(body["queryInfo"]["top"], 2);
+    assert_eq!(body["queryInfo"]["dCountInfo"], serde_json::Value::Null);
+    assert_eq!(body["queryInfo"]["rewrittenQuery"], "");
     assert_eq!(body["queryInfo"]["hasSelectValue"], false);
     let ranges = body["queryRanges"].as_array().unwrap();
     assert_eq!(ranges.len(), 1);
-    assert_eq!(ranges[0]["min"], "");
-    assert_eq!(ranges[0]["max"], "FF");
+    let pk_def: PartitionKeyDefinition = "/pk".into();
+    let expected_range = FeedRange::for_partition(PartitionKey::from("pk1"), &pk_def);
+    assert_eq!(ranges[0]["min"], expected_range.min_inclusive().to_hex());
+    assert_eq!(ranges[0]["max"], expected_range.max_exclusive().to_hex());
     assert_eq!(ranges[0]["isMinInclusive"], true);
-    assert_eq!(ranges[0]["isMaxInclusive"], false);
+    assert_eq!(ranges[0]["isMaxInclusive"], true);
+}
+
+#[tokio::test]
+async fn query_plan_returns_hpk_prefix_range_for_partial_where_clause() {
+    let ctx = setup_single_region().await;
+    let hpk_def: PartitionKeyDefinition = ("/tenant", "/user", "/session").into();
+    ctx.emulator
+        .store()
+        .create_container("testdb", "hpk-coll", hpk_def.clone());
+
+    let mut req = query_request(
+        &ctx.gateway_url,
+        "/dbs/testdb/colls/hpk-coll/docs",
+        serde_json::json!({
+            "query": "SELECT * FROM c WHERE c.tenant = @tenant",
+            "parameters": [
+                {"name": "@tenant", "value": "tenant-a"}
+            ]
+        }),
+    );
+    req.headers_mut()
+        .insert(IS_QUERY_PLAN.clone(), HeaderValue::from_static("True"));
+
+    let response = ctx.emulator.execute_request(&req).await.unwrap();
+    let (status, _, body) = collect_response(response).await;
+    assert_eq!(status, StatusCode::Ok);
+    let ranges = body["queryRanges"].as_array().unwrap();
+    assert_eq!(ranges.len(), 1);
+    let expected_range = FeedRange::for_partition(PartitionKey::from("tenant-a"), &hpk_def);
+    assert_eq!(ranges[0]["min"], expected_range.min_inclusive().to_hex());
+    assert_eq!(ranges[0]["max"], expected_range.max_exclusive().to_hex());
+    assert_eq!(ranges[0]["isMinInclusive"], true);
+    assert_eq!(ranges[0]["isMaxInclusive"], true);
 }

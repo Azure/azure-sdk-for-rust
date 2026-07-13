@@ -798,7 +798,7 @@ impl EmulatorStore {
                 ))
                 .with_message(format!(
                     "no physical partition found for EPK {} in container '{}/{}'",
-                    epk.as_str(),
+                    epk.to_hex(),
                     db_id,
                     coll_id
                 ))
@@ -806,7 +806,7 @@ impl EmulatorStore {
         })?;
         partition
             .session_state
-            .set_force_unavailable_for(epk.as_str());
+            .set_force_unavailable_for(&epk.to_hex());
         Ok(())
     }
 
@@ -1705,7 +1705,7 @@ fn bytes_to_hex_upper(bytes: &[u8]) -> String {
 /// open bound" from "real all-zeros hash" everywhere boundaries flow, which
 /// has no observable upside.
 fn is_epk_min(epk: &Epk) -> bool {
-    epk.as_str().is_empty() || epk.as_str().chars().all(|c| c == '0')
+    epk.as_bytes().is_empty() || epk.as_bytes().iter().all(|&b| b == 0)
 }
 
 /// Returns true if `epk` represents the open upper bound of the EPK space.
@@ -1713,7 +1713,7 @@ fn is_epk_min(epk: &Epk) -> bool {
 /// Mirrors `is_epk_min`: accepts both the canonical `"FF"` sentinel and the
 /// fully-expanded 32-char "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" form.
 fn is_epk_max(epk: &Epk) -> bool {
-    let s = epk.as_str();
+    let s = epk.to_hex();
     s == "FF" || s.eq_ignore_ascii_case("ffffffffffffffffffffffffffffffff")
 }
 
@@ -1797,6 +1797,36 @@ impl EmulatorStore {
         partition_id: u32,
         min_lock_duration: Duration,
     ) {
+        self.split_partition_internal(db_id, coll_id, partition_id, None, min_lock_duration);
+    }
+
+    /// Splits a physical partition at an explicit EPK boundary. Test-only.
+    #[doc(hidden)]
+    pub fn split_partition_at_epk(
+        self: &Arc<Self>,
+        db_id: &str,
+        coll_id: &str,
+        partition_id: u32,
+        split_epk: Epk,
+        min_lock_duration: Duration,
+    ) {
+        self.split_partition_internal(
+            db_id,
+            coll_id,
+            partition_id,
+            Some(split_epk),
+            min_lock_duration,
+        );
+    }
+
+    fn split_partition_internal(
+        self: &Arc<Self>,
+        db_id: &str,
+        coll_id: &str,
+        partition_id: u32,
+        split_epk: Option<Epk>,
+        min_lock_duration: Duration,
+    ) {
         // Lock the partition in all regions
         {
             let regions = self.regions.read().unwrap();
@@ -1832,13 +1862,13 @@ impl EmulatorStore {
             }
             // execute_split does the actual doc redistribution under the lock,
             // then unlocks partitions when done
-            store.execute_split(&db, &coll, partition_id);
+            store.execute_split(&db, &coll, partition_id, split_epk);
         });
         self.control_plane_tasks.lock().unwrap().push((key, handle));
     }
 
     /// Performs the actual split after the lock period.
-    fn execute_split(&self, db_id: &str, coll_id: &str, partition_id: u32) {
+    fn execute_split(&self, db_id: &str, coll_id: &str, partition_id: u32, split_epk: Option<Epk>) {
         // Local-only enum used to ferry preview state out of a regions read
         // guard so we can drop the guard before re-acquiring it on the abort
         // path. Avoids recursive same-thread RwLock::read (unspecified in std).
@@ -1880,8 +1910,27 @@ impl EmulatorStore {
                     let parent_max = parent.epk_max.clone();
                     let pk_kind = state.metadata.partition_key.kind();
                     let pk_version = state.metadata.partition_key.version();
-                    let midpoint =
-                        match compute_epk_midpoint(&parent_min, &parent_max, pk_kind, pk_version) {
+                    let midpoint = match split_epk.as_ref() {
+                        Some(epk) if *epk > parent_min && *epk < parent_max => epk.clone(),
+                        Some(epk) => {
+                            tracing::error!(
+                                db_id = db_id,
+                                coll_id = coll_id,
+                                partition_id = partition_id,
+                                split_epk = %epk,
+                                parent_min = %parent_min,
+                                parent_max = %parent_max,
+                                "in-memory emulator: aborting split — explicit split EPK is outside parent range",
+                            );
+                            found = Some(SplitPreview::AbortUnlock);
+                            break;
+                        }
+                        None => match compute_epk_midpoint(
+                            &parent_min,
+                            &parent_max,
+                            pk_kind,
+                            pk_version,
+                        ) {
                             Ok(m) => m,
                             Err(err) => {
                                 tracing::error!(
@@ -1899,7 +1948,8 @@ impl EmulatorStore {
                                 found = Some(SplitPreview::AbortUnlock);
                                 break;
                             }
-                        };
+                        },
+                    };
                     // Both child IDs come from the shared per-container
                     // counter on `ContainerMetadata`, so they are identical
                     // across regions. Likewise RIDs go through the shared
@@ -1965,6 +2015,10 @@ impl EmulatorStore {
             unreachable!()
         };
         let child_lsn = parent_lsn + 1;
+        // One ETag for the whole split, applied to every region's container
+        // metadata below so the pkrange routing map's change-feed observes the
+        // topology change consistently across regions.
+        let new_container_etag = new_etag();
 
         let regions = self.regions.read().unwrap();
         for region in regions.values() {
@@ -2074,6 +2128,13 @@ impl EmulatorStore {
                 state.physical_partitions.remove(parent_idx);
                 state.physical_partitions.push(child1);
                 state.physical_partitions.push(child2);
+                // Bump the container ETag so the pkrange routing-map change-feed
+                // reflects the new topology. The driver refreshes its pkrange
+                // cache incrementally via `If-None-Match`; without a new ETag the
+                // emulator answers `304 Not Modified` and the driver keeps
+                // resolving to the now-gone parent range, looping until it
+                // exhausts split retries on a continuation issued before the split.
+                state.metadata.etag = new_container_etag.clone();
                 // No per-region counter to reconcile any more — the shared
                 // counter on `ContainerMetadata` was already advanced when the
                 // child IDs were allocated.
@@ -2449,7 +2510,7 @@ fn compute_epk_midpoint_v2(min: &Epk, max: &Epk) -> Result<Epk, String> {
         if is_epk_max(epk) {
             return Ok(1u128 << 126);
         }
-        u128::from_str_radix(epk.as_str(), 16)
+        u128::from_str_radix(&epk.to_hex(), 16)
             .map_err(|e| format!("corrupted EPK partition bound {}={:?}: {e}", label, epk))
     };
     let min_val = parse(min, "min")?;
@@ -2497,7 +2558,7 @@ fn compute_epk_midpoint_v1(min: &Epk, max: &Epk) -> Result<Epk, String> {
         if is_epk_max(epk) {
             return Ok(u32::MAX);
         }
-        decode_v1_number_hex_to_u32(epk.as_str())
+        decode_v1_number_hex_to_u32(&epk.to_hex())
             .map_err(|e| format!("corrupted V1 EPK partition bound {}={:?}: {e}", label, epk))
     };
     let min_val = parse(min, "min")?;
@@ -2894,7 +2955,7 @@ mod tests {
             PartitionKeyVersion::V1,
         )
         .expect("full-range V1 midpoint");
-        let mid_full_u32 = super::decode_v1_number_hex_to_u32(mid_full.as_str()).unwrap();
+        let mid_full_u32 = super::decode_v1_number_hex_to_u32(&mid_full.to_hex()).unwrap();
         assert_eq!(mid_full_u32, u32::MAX / 2);
 
         // Narrow range: encode two u32 hashes as boundaries and verify the
@@ -2913,7 +2974,7 @@ mod tests {
             PartitionKeyVersion::V1,
         )
         .expect("narrow V1 midpoint");
-        let mid_narrow_u32 = super::decode_v1_number_hex_to_u32(mid_narrow.as_str()).unwrap();
+        let mid_narrow_u32 = super::decode_v1_number_hex_to_u32(&mid_narrow.to_hex()).unwrap();
         assert_eq!(mid_narrow_u32, ((lo_u32 as u64 + hi_u32 as u64) / 2) as u32);
 
         // Lex-order check: the encoded midpoint must sit strictly between
@@ -2923,11 +2984,11 @@ mod tests {
         let lo_hex = encode(lo_u32);
         let hi_hex = encode(hi_u32);
         assert!(
-            lo_hex.as_str() < mid_narrow.as_str() && mid_narrow.as_str() < hi_hex.as_str(),
+            lo_hex.to_hex() < mid_narrow.to_hex() && mid_narrow.to_hex() < hi_hex.to_hex(),
             "V1 midpoint not strictly between bounds: lo={} mid={} hi={}",
-            lo_hex.as_str(),
-            mid_narrow.as_str(),
-            hi_hex.as_str(),
+            lo_hex.to_hex(),
+            mid_narrow.to_hex(),
+            hi_hex.to_hex(),
         );
     }
 

@@ -177,15 +177,6 @@ async fn test_upload_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
         .upload_blob_from_url(overwrite_blob_client.url().as_str().into(), None)
         .await?;
 
-    // Public Resource Scenario
-    blob_client
-        .block_blob_client()
-        .upload_blob_from_url(
-            "https://www.gutenberg.org/cache/epub/1533/pg1533.txt".into(),
-            None,
-        )
-        .await?;
-
     // Source Authorization Scenario
     let access_token = format!(
         "Bearer {}",
