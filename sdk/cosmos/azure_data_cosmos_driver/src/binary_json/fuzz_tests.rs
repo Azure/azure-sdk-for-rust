@@ -15,7 +15,7 @@
 //! dependency-free PRNG convention) so failures reproduce exactly.
 
 use super::vectors::SCALAR_VECTORS;
-use super::{decode, encode, markers, PREAMBLE};
+use super::{decode, encode, from_slice, markers, PREAMBLE};
 use serde_json::json;
 
 /// A tiny deterministic SplitMix64 PRNG.
@@ -204,4 +204,109 @@ fn all_two_byte_inputs_terminate() {
     for b in 0u16..=255 {
         let _ = decode(&[PREAMBLE, b as u8]);
     }
+}
+
+/// Runs the same buffer through both parsers of untrusted bytes and asserts
+/// their agreement contract, returning the pair of results for the caller to
+/// spot-check counts.
+///
+/// The reference [`decode`] and the native streaming [`from_slice`] are two
+/// independent parsers, and `from_slice` is the one actually wired into item
+/// reads. The contract: neither may panic on any input, and whenever **both**
+/// succeed they must produce the identical [`serde_json::Value`]. (One may
+/// legitimately reject a buffer the other accepts only in the direction where
+/// `from_slice` is stricter — e.g. exotic forms it defers to `decode` for — so
+/// disagreement is asserted only when both return `Ok`.)
+fn assert_decoders_agree(buf: &[u8]) {
+    let decoded = decode(buf);
+    let streamed = from_slice::<serde_json::Value>(buf);
+    if let (Ok(a), Ok(b)) = (&decoded, &streamed) {
+        assert_eq!(
+            a, b,
+            "decode and from_slice disagreed on a buffer both accepted: {buf:02x?}"
+        );
+    }
+}
+
+#[test]
+fn decode_and_from_slice_agree_on_random_bytes() {
+    // Mirror `decode_never_panics_on_random_bytes`, but drive both parsers so
+    // the native streaming path (SeqStream/MapStream termination) receives the
+    // same adversarial coverage as the reference decoder.
+    let mut rng = SplitMix64::new(0x0d1f_f00d_face_b00c);
+    for _ in 0..20_000 {
+        let len = rng.below(65) as usize;
+        let mut buf = Vec::with_capacity(len);
+        let force_preamble = rng.below(2) == 0;
+        for i in 0..len {
+            if i == 0 && force_preamble {
+                buf.push(PREAMBLE);
+            } else if rng.below(3) == 0 {
+                let idx = rng.below(INTERESTING_MARKERS.len() as u64) as usize;
+                buf.push(INTERESTING_MARKERS[idx]);
+            } else {
+                buf.push(rng.byte());
+            }
+        }
+        assert_decoders_agree(&buf);
+    }
+}
+
+#[test]
+fn decode_and_from_slice_agree_on_truncated_and_corrupted_buffers() {
+    // Both parsers over every prefix and every single-byte corruption of the
+    // encoder's output for the sample values.
+    let mut rng = SplitMix64::new(0xabad_1dea_1234_5678);
+    for value in sample_values() {
+        let valid = encode(&value);
+
+        for cut in 0..=valid.len() {
+            assert_decoders_agree(&valid[..cut]);
+        }
+
+        for index in 0..valid.len() {
+            for replacement in [0x00, 0x80, 0xC0, 0xE0, 0xFF, rng.byte()] {
+                let mut corrupted = valid.clone();
+                corrupted[index] = replacement;
+                assert_decoders_agree(&corrupted);
+            }
+        }
+    }
+}
+
+#[test]
+fn from_slice_rejects_undersized_container_count() {
+    // A count-framed object whose declared count (1) is smaller than the number
+    // of members its byte length spans (2). The reference decoder rejects this
+    // via its member-count validation; the native streaming path must agree
+    // rather than silently under-reading and reinterpreting the leftover bytes.
+    //
+    // Build the well-formed 2-member object first, then rewrite the count field
+    // to 1, leaving the byte length untouched.
+    let valid = encode(&json!({ "a": 1, "b": 2 }));
+
+    // Locate the object marker (first byte after the preamble). It must be one
+    // of the count-framed `ObjLC*` forms for this rewrite to apply.
+    let obj_marker = valid[1];
+    assert_eq!(
+        obj_marker,
+        markers::OBJ_LC1,
+        "encoder is expected to emit a 1-byte length+count object here"
+    );
+
+    // Layout for ObjLC1: [PREAMBLE, OBJ_LC1, length(1), count(1), ...members].
+    // The count byte sits at index 3; force it to 1.
+    let mut undersized = valid.clone();
+    undersized[3] = 1;
+
+    // The reference decoder rejects the mismatched count...
+    assert!(
+        decode(&undersized).is_err(),
+        "decode should reject an object whose declared count under-counts its members"
+    );
+    // ...and so must the native streaming deserializer.
+    assert!(
+        from_slice::<serde_json::Value>(&undersized).is_err(),
+        "from_slice should reject an object whose declared count under-counts its members"
+    );
 }

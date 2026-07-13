@@ -78,6 +78,14 @@ pub(super) struct Frame {
     pub(super) count: Option<usize>,
     /// Absolute buffer offset at which the container's payload ends.
     pub(super) end: usize,
+    /// Whether `end` is an authoritative byte boundary derived from a
+    /// length prefix (`true` for the empty `Arr0`/`Obj0` and the length-framed
+    /// `L*`/`LC*` markers) versus a sentinel (`false` for `Arr1`/`Obj1`, whose
+    /// single element has no length prefix so `end` is set to the buffer length
+    /// and must not be treated as the container's true end). When `true`, the
+    /// streaming deserializer asserts the framed byte span is fully consumed,
+    /// matching the reference decoder's length + count validation.
+    pub(super) exact_end: bool,
 }
 
 /// The two container shapes the native deserializer streams.
@@ -580,6 +588,7 @@ impl<'a> Reader<'a> {
             ARR0 => ContainerHeader::Array(Frame {
                 count: Some(0),
                 end: self.pos + 1,
+                exact_end: true,
             }),
             ARR1 => {
                 // A one-element array with no length prefix: the element
@@ -589,26 +598,37 @@ impl<'a> Reader<'a> {
                 return Ok(Some(ContainerHeader::Array(Frame {
                     count: Some(1),
                     end: self.buf.len(),
+                    exact_end: false,
                 })));
             }
             ARR_L1 | ARR_L2 | ARR_L4 | ARR_LC1 | ARR_LC2 | ARR_LC4 => {
                 let (count, end) = self.read_container_frame(marker, [ARR_L1, ARR_L2, ARR_L4])?;
-                return Ok(Some(ContainerHeader::Array(Frame { count, end })));
+                return Ok(Some(ContainerHeader::Array(Frame {
+                    count,
+                    end,
+                    exact_end: true,
+                })));
             }
             OBJ0 => ContainerHeader::Object(Frame {
                 count: Some(0),
                 end: self.pos + 1,
+                exact_end: true,
             }),
             OBJ1 => {
                 self.pos += 1;
                 return Ok(Some(ContainerHeader::Object(Frame {
                     count: Some(1),
                     end: self.buf.len(),
+                    exact_end: false,
                 })));
             }
             OBJ_L1 | OBJ_L2 | OBJ_L4 | OBJ_LC1 | OBJ_LC2 | OBJ_LC4 => {
                 let (count, end) = self.read_container_frame(marker, [OBJ_L1, OBJ_L2, OBJ_L4])?;
-                return Ok(Some(ContainerHeader::Object(Frame { count, end })));
+                return Ok(Some(ContainerHeader::Object(Frame {
+                    count,
+                    end,
+                    exact_end: true,
+                })));
             }
             _ => return Ok(None),
         };

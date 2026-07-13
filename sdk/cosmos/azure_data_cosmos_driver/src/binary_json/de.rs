@@ -226,6 +226,22 @@ impl<'a, 'de> SeqStream<'a, 'de> {
             None => self.de.reader.pos >= self.frame.end,
         }
     }
+
+    /// After a count-framed container is fully produced, verify the declared
+    /// count consumed exactly the framed byte span. A declared count smaller
+    /// than the bytes the container spans would otherwise let the native path
+    /// silently under-read and reinterpret the leftover bytes as the parent's
+    /// next element/member — the reference decoder rejects this with
+    /// `InvalidLength`, so `from_slice` must too. Skipped for `Arr1`/`Obj1`
+    /// (`exact_end == false`), whose `end` is a buffer-length sentinel.
+    fn validate_exact_end(&self) -> Result<()> {
+        if self.frame.exact_end && self.de.reader.pos != self.frame.end {
+            return Err(BinaryError::InvalidLength {
+                detail: "array declared count does not span its declared length",
+            });
+        }
+        Ok(())
+    }
 }
 
 impl<'de> SeqAccess<'de> for SeqStream<'_, 'de> {
@@ -236,6 +252,7 @@ impl<'de> SeqAccess<'de> for SeqStream<'_, 'de> {
         T: DeserializeSeed<'de>,
     {
         if self.finished() {
+            self.validate_exact_end()?;
             return Ok(None);
         }
         let value = seed.deserialize(&mut *self.de)?;
@@ -278,6 +295,18 @@ impl<'a, 'de> MapStream<'a, 'de> {
             None => self.de.reader.pos >= self.frame.end,
         }
     }
+
+    /// See [`SeqStream::validate_exact_end`]: rejects a declared member count
+    /// that does not span the object's framed byte length, matching the
+    /// reference decoder.
+    fn validate_exact_end(&self) -> Result<()> {
+        if self.frame.exact_end && self.de.reader.pos != self.frame.end {
+            return Err(BinaryError::InvalidLength {
+                detail: "object declared count does not span its declared length",
+            });
+        }
+        Ok(())
+    }
 }
 
 impl<'de> MapAccess<'de> for MapStream<'_, 'de> {
@@ -288,6 +317,7 @@ impl<'de> MapAccess<'de> for MapStream<'_, 'de> {
         K: DeserializeSeed<'de>,
     {
         if self.finished() {
+            self.validate_exact_end()?;
             return Ok(None);
         }
         // The property name is a string value; the seed (a field identifier or
