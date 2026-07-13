@@ -14,8 +14,10 @@
 
 // These tests hold `ENV_LOCK` across `.await` so the process-wide binary-encoding
 // env var stays stable while the SDK client is built (enablement is captured
-// during the async build). `#[tokio::test]` uses a current-thread runtime, so the
-// guard never moves between threads and cannot deadlock.
+// during the async build). Each test pins `#[tokio::test(flavor =
+// "current_thread")]` so the `std::sync::MutexGuard` never moves between threads
+// across an await point, keeping the locking strategy correct regardless of
+// tokio's default test-runtime flavor.
 #![allow(clippy::await_holding_lock)]
 
 use azure_data_cosmos::{
@@ -118,7 +120,7 @@ async fn build_container(db_name: &str, binary: bool) -> ContainerClient {
 /// With binary enabled, an item written through the SDK is binary-encoded on the
 /// wire, decoded + stored by the emulator, returned as binary, and decoded back
 /// — and the value survives every hop unchanged.
-#[tokio::test]
+#[tokio::test(flavor = "current_thread")]
 async fn binary_encoding_item_write_read_round_trips() {
     let _guard = ENV_LOCK.lock().unwrap();
 
@@ -184,7 +186,7 @@ async fn binary_encoding_item_write_read_round_trips() {
 /// A document written by a binary-enabled client reads back correctly through a
 /// text-only client (the stored value is format-agnostic), and vice versa —
 /// proving binary and text are interchangeable on the wire.
-#[tokio::test]
+#[tokio::test(flavor = "current_thread")]
 async fn binary_and_text_clients_interoperate() {
     let _guard = ENV_LOCK.lock().unwrap();
 
