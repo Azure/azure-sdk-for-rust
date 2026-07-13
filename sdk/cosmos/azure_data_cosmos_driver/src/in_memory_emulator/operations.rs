@@ -3,7 +3,7 @@
 
 //! Point operation and control-plane operation handlers.
 
-// cspell:ignore acked llsn
+// cspell:ignore acked hexdigit llsn
 
 use std::collections::HashMap;
 use std::sync::Arc;
