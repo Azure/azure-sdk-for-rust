@@ -47,19 +47,8 @@ use super::validation::{compare_headers, HeaderValidationSpec};
 const EMULATOR_GATEWAY_URL: &str = "https://eastus.emulator.local";
 const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
 const TEST_MODE_ENV_VAR: &str = "AZURE_COSMOS_TEST_MODE";
-const SETUP_TIMEOUT_SECONDS_ENV_VAR: &str = "AZURE_COSMOS_TEST_SETUP_TIMEOUT_SECONDS";
-const DEFAULT_SETUP_TIMEOUT_SECONDS: u64 = 180;
 const EMULATOR_CONNECTION_STRING: &str = "AccountEndpoint=https://127.0.0.1:8081;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;";
 const HUB_REGION: Region = Region::EAST_US_2;
-
-fn setup_timeout() -> Duration {
-    std::env::var(SETUP_TIMEOUT_SECONDS_ENV_VAR)
-        .ok()
-        .and_then(|value| value.parse::<u64>().ok())
-        .filter(|seconds| *seconds > 0)
-        .map(Duration::from_secs)
-        .unwrap_or_else(|| Duration::from_secs(DEFAULT_SETUP_TIMEOUT_SECONDS))
-}
 
 struct Backend {
     client: CosmosClient,
@@ -534,7 +523,7 @@ async fn resolve_container_when_ready(
     db_name: &str,
     container_name: &str,
 ) -> Result<ContainerClient, Box<dyn Error>> {
-    let deadline = std::time::Instant::now() + setup_timeout();
+    let deadline = std::time::Instant::now() + super::setup_timeout();
     let mut backoff = Duration::from_millis(250);
     loop {
         match client
@@ -698,15 +687,7 @@ async fn query_results_match_across_physical_partition_topologies() -> Result<()
     Ok(())
 }
 
-// TODO(cosmos): remove `#[ignore]` once the driver's mid-query-split resume bug
-// is fixed in a separate PR. The emulator side is complete: it now returns
-// `410/1002 PartitionKeyRangeGone` for a query pinned to a split-away pkrange and
-// bumps the routing-map ETag on split, so the driver correctly enters split
-// recovery. The remaining failure is a driver bug — resuming a continuation
-// across the split drops the last leaf's tail document (returns 8/9) — that lives
-// in the split-recovery continuation snapshot, not in this test or the emulator.
 #[tokio::test]
-#[ignore = "driver bug (separate PR): resume across a mid-query partition split drops the last document (8/9); emulator 410-Gone + ETag-on-split fidelity is in place"]
 async fn query_resume_survives_mid_query_split() -> Result<(), Box<dyn Error>> {
     // Regression coverage for resuming a query continuation ACROSS a physical
     // partition split. The container starts as a single physical partition; we

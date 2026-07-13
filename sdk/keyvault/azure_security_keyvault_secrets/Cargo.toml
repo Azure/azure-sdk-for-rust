@@ -30,7 +30,7 @@ tokio = { workspace = true }
 azure_core_test = { workspace = true, features = [
   "tracing",
 ] }
-azure_identity = { path = "../../identity/azure_identity", version = "1.1.0-beta.1" }
+azure_identity.workspace = true
 azure_security_keyvault_test = { path = "../azure_security_keyvault_test" }
 include-file.workspace = true
 rand.workspace = true

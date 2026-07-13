@@ -21,8 +21,7 @@ async-lock.workspace = true
 async-stream.workspace = true
 async-trait.workspace = true
 azure_core = { workspace = true, default-features = false }
-# Requires AmqpSessionOptions::with_unbounded_windows from azure_core_amqp 1.1.0 (issue #4570).
-azure_core_amqp = { path = "../../core/azure_core_amqp", version = "1.1.0" }
+azure_core_amqp.workspace = true
 base64.workspace = true
 futures.workspace = true
 hmac.workspace = true
@@ -36,9 +35,9 @@ tracing.workspace = true
 rustc_version.workspace = true
 
 [dev-dependencies]
-azure_core_amqp = { path = "../../core/azure_core_amqp", version = "1.1.0", features = ["test"] }
+azure_core_amqp = { workspace = true, features = ["test"] }
 azure_core_test = { workspace = true, features = ["tracing"] }
-azure_identity = { path = "../../identity/azure_identity", version = "1.1.0-beta.1" }
+azure_identity.workspace = true
 azure_messaging_eventhubs = { path = ".", features = [
   "in_memory_checkpoint_store",
 ] }

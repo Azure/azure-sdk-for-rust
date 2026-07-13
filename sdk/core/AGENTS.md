@@ -25,3 +25,17 @@ These rules apply in addition to the repository root [AGENTS.md](../../AGENTS.md
 - Prefer `workspace = true` in `sdk/core` crate manifests when inheriting workspace-managed dependencies.
 - For unreleased local `sdk/core` dependencies, use the workspace table for the needed `path + version` entry.
 - Keep crates in next-release state in their own manifests; manage cross-crate version wiring from the workspace table.
+
+### Published vs. unpublished graphs
+
+- Mixing published and local versions of `typespec`, `typespec_client_core`, `azure_core`, or crates that expose their types can create duplicate-type failures.
+- Common breakage looks like mismatched `ClientOptions`, `TokenCredential`, or trait implementations that appear identical but come from different crate instances.
+- When changing one side of a test/example graph to local source, check all directly exchanged public types in that graph and keep them on the same crate instance.
+
+### Example and documentation stub crates
+
+- `azure_core_examples` is a non-published helper crate for compile-only examples and docs. It intentionally depends on local `sdk/core/azure_core` by path.
+- Keep stubbed example APIs small and shaped like the public APIs they stand in for, but do not add real behavior unless tests need it.
+- Organize identity stubs in `azure_core_examples::identity` per credential module, mirroring `azure_identity` where practical, and re-export them from `identity/mod.rs`.
+- For markdown compile tests, alias helper modules to the public crate names used in docs (for example `use azure_core_examples::identity as azure_identity;`).
+- If a compile-only test needs just one or two service types and would otherwise mix published and local `azure_core` graphs, prefer a tiny local stub in that test module over broad dependency rewiring.

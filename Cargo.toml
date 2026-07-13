@@ -47,12 +47,10 @@ rust-version = "1.88"
 
 [workspace.dependencies.typespec]
 default-features = false
-path = "sdk/core/typespec"
 version = "1.1.0"
 
 [workspace.dependencies.typespec_client_core]
 default-features = false
-path = "sdk/core/typespec_client_core"
 version = "1.1.0"
 
 [workspace.dependencies.typespec_macros]
@@ -60,14 +58,12 @@ version = "1.0.0"
 
 [workspace.dependencies.azure_core]
 default-features = false
-path = "sdk/core/azure_core"
 version = "1.1.0"
 
 [workspace.dependencies.azure_core_macros]
 version = "1.0.0"
 
 [workspace.dependencies.azure_core_amqp]
-path = "sdk/core/azure_core_amqp"
 version = "1.1.0"
 
 [workspace.dependencies.azure_core_opentelemetry]
