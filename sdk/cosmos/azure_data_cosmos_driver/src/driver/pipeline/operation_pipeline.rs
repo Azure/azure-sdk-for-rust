@@ -2964,20 +2964,7 @@ struct HedgeRaceSignals {
     last_service_error: Option<crate::error::CosmosError>,
 }
 
-async fn apply_hedge_leg_effects(
-    ctx: &AttemptContext<'_>,
-    retry_state_snapshot: &OperationRetryState,
-    endpoint: &CosmosEndpoint,
-    result: &crate::error::Result<TransportResult>,
-    shared_hub_region_latch: Option<&Arc<AtomicBool>>,
-    signals: &mut HedgeRaceSignals,
-) {
-    // Pre-transport / request-build errors carry no `TransportResult`
-    // and therefore no observable side effects to mirror — they fail
-    // before the transport pipeline classifies any response.
-    let Ok(transport_result) = result.as_ref() else {
-        return;
-    };
+fn capture_hedge_leg_signals(transport_result: &TransportResult, signals: &mut HedgeRaceSignals) {
     if matches!(
         &transport_result.outcome,
         TransportOutcome::HttpError { status, .. } if status.is_database_account_not_found()
@@ -2994,6 +2981,23 @@ async fn apply_hedge_leg_effects(
     {
         signals.last_service_error = Some(build_service_error(status, cosmos_headers, body));
     }
+}
+
+async fn apply_hedge_leg_effects(
+    ctx: &AttemptContext<'_>,
+    retry_state_snapshot: &OperationRetryState,
+    endpoint: &CosmosEndpoint,
+    result: &crate::error::Result<TransportResult>,
+    shared_hub_region_latch: Option<&Arc<AtomicBool>>,
+    signals: &mut HedgeRaceSignals,
+) {
+    // Pre-transport / request-build errors carry no `TransportResult`
+    // and therefore no observable side effects to mirror — they fail
+    // before the transport pipeline classifies any response.
+    let Ok(transport_result) = result.as_ref() else {
+        return;
+    };
+    capture_hedge_leg_signals(transport_result, signals);
     let eval = evaluate_hedge_leg_effects(
         ctx.operation,
         endpoint,
@@ -8244,6 +8248,100 @@ mod tests {
         assert!(tentative_writes_header(&request).is_none());
     }
 
+    fn hedge_upgrade_fixture() -> (
+        CosmosOperation,
+        crate::options::OperationOptions,
+        AccountEndpointState,
+        RoutingDecision,
+    ) {
+        let east = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let west = CosmosEndpoint::regional(
+            "westus".into(),
+            Url::parse("https://test-westus.documents.azure.com:443/").unwrap(),
+        );
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+        let threshold = crate::options::HedgeThreshold::new(Duration::from_millis(100)).unwrap();
+        let options = crate::options::OperationOptions {
+            availability_strategy: Some(crate::options::AvailabilityStrategy::Hedging(
+                crate::options::HedgingStrategy::new(threshold),
+            )),
+            ..Default::default()
+        };
+        let account_state = AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![east.clone(), west].into(),
+            preferred_write_endpoints: vec![east.clone()].into(),
+            account_write_endpoints: vec![east.clone()].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: east.clone(),
+        };
+        let primary = RoutingDecision {
+            selected_url: east.url().clone(),
+            endpoint_key: east.endpoint_key(),
+            endpoint: east,
+            transport_mode: TransportMode::Gateway,
+        };
+        (operation, options, account_state, primary)
+    }
+
+    #[test]
+    fn delayed_failover_retry_is_not_upgraded_to_hedge() {
+        let (operation, options, account_state, primary) = hedge_upgrade_fixture();
+        let view = crate::options::OperationOptionsView::new(None, None, None, Some(&options));
+        let state = super::OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        let action = super::OperationAction::FailoverRetry {
+            new_state: state,
+            delay: Some(Duration::from_secs(1)),
+        };
+
+        let result = super::maybe_upgrade_to_hedge(
+            action,
+            &operation,
+            &view,
+            &account_state,
+            &primary,
+            Some(Duration::from_secs(10)),
+        );
+
+        assert!(matches!(
+            result,
+            super::OperationAction::FailoverRetry {
+                delay: Some(delay),
+                ..
+            } if delay == Duration::from_secs(1)
+        ));
+    }
+
+    #[test]
+    fn no_delay_failover_retry_remains_hedge_upgradeable() {
+        let (operation, options, account_state, primary) = hedge_upgrade_fixture();
+        let view = crate::options::OperationOptionsView::new(None, None, None, Some(&options));
+        let state = super::OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        let action = super::OperationAction::FailoverRetry {
+            new_state: state,
+            delay: None,
+        };
+
+        let result = super::maybe_upgrade_to_hedge(
+            action,
+            &operation,
+            &view,
+            &account_state,
+            &primary,
+            Some(Duration::from_secs(10)),
+        );
+
+        assert!(matches!(result, super::OperationAction::Hedge { .. }));
+    }
+
     // ── apply_failover_delay ──────────────────────────────────────────
 
     #[tokio::test]
@@ -8280,6 +8378,20 @@ mod tests {
         )
         .await;
         assert!(start.elapsed() < Duration::from_millis(50));
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn failover_delay_is_capped_to_future_deadline() {
+        let start = tokio::time::Instant::now();
+        let deadline = std::time::Instant::now() + Duration::from_millis(250);
+
+        super::apply_failover_delay(Some(Duration::from_secs(5)), Some(deadline)).await;
+
+        let elapsed = start.elapsed();
+        assert!(
+            elapsed >= Duration::from_millis(200) && elapsed < Duration::from_secs(1),
+            "sleep should stop near the future deadline, got {elapsed:?}"
+        );
     }
 
     // ── enforce_deadline_or_timeout ───────────────────────────────────
@@ -8953,6 +9065,66 @@ mod tests {
             last_error.status(),
             crate::models::CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND
         );
+    }
+
+    #[test]
+    fn dual_1008_hedge_legs_preserve_status_and_backend_budget() {
+        let mut signals = super::HedgeRaceSignals::default();
+        let primary_result = http_result(403, Some(1008));
+        let secondary_result = http_result(403, Some(1008));
+        super::capture_hedge_leg_signals(&primary_result, &mut signals);
+        super::capture_hedge_leg_signals(&secondary_result, &mut signals);
+
+        assert_eq!(signals.database_account_not_found_count, 2);
+        let region_a = crate::options::Region::new("region-a");
+        let region_b = crate::options::Region::new("region-b");
+        let threshold = crate::options::HedgeThreshold::new(Duration::from_millis(100)).unwrap();
+        let race = super::finalize_both_transient(
+            &crate::models::ActivityId::from_string("dual-1008".to_owned()),
+            None,
+            super::HedgingStrategyConfig::new(threshold),
+            Some(region_a.clone()),
+            Some(region_b.clone()),
+            region_a.clone(),
+            region_b.clone(),
+            test_diagnostics(),
+            None,
+            signals.observed_session_unavailable,
+            signals.last_service_error,
+            signals.database_account_not_found_count == 2,
+        );
+        let super::HedgedRaceResult::BothTransient {
+            last_error,
+            both_database_account_not_found,
+            ..
+        } = race
+        else {
+            panic!("dual transient service responses must re-enter the failover loop");
+        };
+        assert_eq!(
+            last_error.status(),
+            crate::models::CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND
+        );
+        assert!(both_database_account_not_found);
+
+        let location = make_advance_test_location(&["region-a", "region-b", "region-c"]);
+        let mut state = make_advance_test_state(0, 3);
+        let delay = super::try_advance_after_both_transient(
+            &mut state,
+            &location,
+            true,
+            Some(&region_a),
+            Some(&region_b),
+            last_error,
+            both_database_account_not_found,
+        )
+        .expect("backend budget must allow the fallback")
+        .expect("dual 1008 fallback must retain the backoff delay");
+
+        assert!(delay > Duration::ZERO);
+        assert_eq!(state.failover_retry_count, 0);
+        assert_eq!(state.backend_failover_retry_count, 1);
+        assert_eq!(state.backend_failover_cumulative_delay, delay);
     }
 
     #[test]
