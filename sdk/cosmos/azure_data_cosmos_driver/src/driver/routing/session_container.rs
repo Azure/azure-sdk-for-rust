@@ -120,7 +120,7 @@ impl SessionContainer {
         if let Some(token) = lookup(rid) {
             return Some(token);
         }
-        let np = name_path(container);
+        let np = index_path(container);
         let resolved_rid = guard.name_to_rid.get(np)?;
         lookup(resolved_rid.as_str())
     }
@@ -139,7 +139,7 @@ impl SessionContainer {
     ) -> Option<SessionToken> {
         let guard = self.inner.read().unwrap_or_else(|e| e.into_inner());
         let pk_map = guard.tokens.get(container.rid()).or_else(|| {
-            let np = name_path(container);
+            let np = index_path(container);
             guard
                 .name_to_rid
                 .get(np)

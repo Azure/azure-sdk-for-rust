@@ -281,6 +281,9 @@ impl CosmosResourceReference {
                 buf: "/operations/dtc".to_owned(),
                 signing_end: 1,
                 signing_override: Some(String::new()),
+                // Fixed literal endpoint with no RID or reserved characters, so
+                // it is routed like a name-based path (raw == percent-encoded).
+                rid_based: false,
             };
         }
 

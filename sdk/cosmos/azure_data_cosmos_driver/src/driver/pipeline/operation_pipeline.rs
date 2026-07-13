@@ -4144,6 +4144,8 @@ mod tests {
             deadline: None,
             resolved_session_token: None,
             throughput_control: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
         };
         build_transport_request(operation, &OperationOverrides::default(), None, &ctx)
             .expect("request should build")

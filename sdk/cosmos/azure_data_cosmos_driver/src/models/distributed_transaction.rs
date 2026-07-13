@@ -278,7 +278,13 @@ fn serialize_operation(
 
     object.insert(
         "databaseName".to_owned(),
-        serde_json::Value::String(target.container.database_name().to_owned()),
+        serde_json::Value::String(
+            target
+                .container
+                .database_name()
+                .unwrap_or_default()
+                .to_owned(),
+        ),
     );
     object.insert(
         "collectionName".to_owned(),
