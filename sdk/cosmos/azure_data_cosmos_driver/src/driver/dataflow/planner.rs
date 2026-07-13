@@ -615,38 +615,52 @@ async fn plan_resume_from_saved_snapshot(
 /// partition key with an equality / `IN` predicate (issue #4574) — a *point*
 /// `[X, X]` per value — and a normal half-open `[min, max)` range otherwise.
 ///
-/// Any closed upper bound (point or not) is made exclusive by advancing it to
-/// its successor, so a point `[X, X]` becomes the non-empty half-open range
-/// `[X, successor(X))` and a closed range `[a, b]` becomes `[a, successor(b))`.
-/// Both then flow through the normal `[min, max)` routing (scope intersection,
-/// topology resolution, per-partition EPK-window emit) instead of collapsing to
-/// the empty set (which panicked, #4574) or being special-cased to whole-
-/// partition routing. Emitting the narrow `[X, successor(X))` window as a
-/// `start`/`end-epk` pair alongside `partitionkeyrangeid` (with
+/// Any closed upper bound is made exclusive by advancing it to its successor,
+/// so a point `[X, X]` becomes the non-empty half-open range `[X, successor(X))`
+/// and a closed range `[a, b]` becomes `[a, successor(b))`. Both then flow
+/// through the normal `[min, max)` routing (scope intersection, topology
+/// resolution, per-partition EPK-window emit) instead of collapsing to the empty
+/// set (which panicked, #4574) or being special-cased to whole-partition
+/// routing. Emitting the narrow `[X, successor(X))` window as a `start`/`end-epk`
+/// pair alongside `partitionkeyrangeid` (with
 /// `x-ms-read-key-type: EffectivePartitionKeyRange`, #4729) is honored by the
 /// gateway and matches the normalize-to-EPK-range model the .NET SDK uses.
 ///
 /// `normalized_len` is the container's full EPK width in bytes (see
-/// [`normalized_epk_len`](crate::models::effective_partition_key::normalized_epk_len));
-/// when present, the successor is derived with
-/// [`normalized_successor`](EffectivePartitionKey::normalized_successor) so a
-/// trailing-zero-trimmed bound is zero-extended to full width before the
-/// increment. `None` (V1 keys) preserves the width of the supplied bound.
+/// [`normalized_epk_len`](crate::models::effective_partition_key::normalized_epk_len)).
+/// It is applied **only to a point** (`min == max`, an equality / `IN` value,
+/// which is always a *full* partition key): the trailing-zero-trimmed value is
+/// zero-extended to full width before the increment, so the successor is the
+/// exact one the backend expects (matching .NET's full-width HPK normalization).
+/// When the width is unknown (V1), a point falls back to the width-preserving
+/// [`successor`](EffectivePartitionKey::successor) so it still becomes a
+/// non-empty window instead of collapsing to the empty set (the #4574 panic).
+///
+/// Every *other* range — including a closed **non-point** range such as an HPK
+/// **prefix** upper bound — is passed through unchanged, exactly as upstream
+/// does. Those bounds are produced at partition-boundary granularity by the
+/// gateway/topology layer; advancing them with a successor over-extends the band
+/// and misroutes (it drops owning physical partitions — the
+/// `hpk_tenant_prefix_where_full_scope` regression).
 fn query_range_to_feed_range(
     query_range: &super::query_plan::QueryRange,
     normalized_len: Option<usize>,
 ) -> crate::error::Result<FeedRange> {
     let min = EffectivePartitionKey::from(query_range.min.as_str());
     let max = EffectivePartitionKey::from(query_range.max.as_str());
-    let max = if query_range.is_max_inclusive {
-        // Closed upper bound (point `[X, X]` or range `[a, b]`): make it
-        // exclusive, normalizing to full EPK width first when known.
+    // Only a closed *point* `[X, X]` (equality / `IN`, min == max) is
+    // transformed — into the non-empty half-open window `[X, successor(X))`.
+    // Every other range is left as-is (upstream behavior).
+    let max = if query_range.is_max_inclusive && min == max {
         match normalized_len {
+            // Full key: normalize to full EPK width before incrementing
+            // (Option B, #4574 / #4638), matching .NET's HPK normalization.
             Some(len) => max.normalized_successor(len),
+            // Unknown width (V1): width-preserving successor keeps `[X, X]` from
+            // collapsing to the empty set.
             None => max.successor(),
         }
     } else {
-        // Half-open `[min, max)` as-is.
         max
     };
     FeedRange::new(min, max)
@@ -1453,9 +1467,10 @@ mod tests {
     }
 
     #[test]
-    fn query_range_to_feed_range_closed_range_uses_width_preserving_successor_when_len_unknown() {
-        // Closed non-point range `[A, B]` with no known EPK width (V1): the
-        // inclusive upper bound is made exclusive at its own width.
+    fn query_range_to_feed_range_closed_nonpoint_range_passes_through_when_len_unknown() {
+        // A closed non-point range `[A, B]` (`min != max`) with no known EPK
+        // width (V1) is passed through unchanged — only equality / `IN` *points*
+        // are transformed.
         let closed = QueryRange {
             min: "20".to_string(),
             max: "3AFF".to_string(),
@@ -1464,15 +1479,19 @@ mod tests {
         };
         let fr = query_range_to_feed_range(&closed, None).unwrap();
         assert_eq!(fr.min_inclusive().to_hex(), "20");
-        // successor("3AFF") = "3B00" (width preserved, no zero-extension).
-        assert_eq!(fr.max_exclusive().to_hex(), "3B00");
+        // Non-point range: upper bound is passed through, no successor applied.
+        assert_eq!(fr.max_exclusive().to_hex(), "3AFF");
     }
 
     #[test]
-    fn query_range_to_feed_range_closed_range_normalizes_upper_bound_to_full_width() {
-        // Closed non-point range `[A, B]` on a single-path V2 container (16-byte
-        // EPK): the trailing-zero-trimmed inclusive upper bound `3A` is
-        // zero-extended to 16 bytes, then incremented at the last byte.
+    fn query_range_to_feed_range_closed_nonpoint_range_passes_through_even_with_known_len() {
+        // Regression guard (#4574 / #4638): a closed *non-point* range
+        // (`min != max`) is an HPK **prefix** bound, not a full key. It must be
+        // passed through unchanged even when the full EPK width is known —
+        // advancing it with a successor over-extends the prefix band and drops
+        // owning partitions (the in-memory-emulator
+        // `hpk_tenant_prefix_where_full_scope` regression: touched {5,6} instead
+        // of {4,5,6}).
         let closed = QueryRange {
             min: "20".to_string(),
             max: "3A".to_string(),
@@ -1481,6 +1500,25 @@ mod tests {
         };
         let fr = query_range_to_feed_range(&closed, Some(16)).unwrap();
         assert_eq!(fr.min_inclusive().to_hex(), "20");
+        // Non-point range: passed through, NOT normalized / incremented.
+        assert_eq!(fr.max_exclusive().to_hex(), "3A");
+    }
+
+    #[test]
+    fn query_range_to_feed_range_normalizes_point_to_full_width() {
+        // A closed *point* (`min == max`, an equality / `IN` value — always a
+        // full key) on a single-path V2 container (16-byte EPK): the
+        // trailing-zero-trimmed value `3A` is zero-extended to 16 bytes, then
+        // incremented at the last byte (Option B full-width normalization,
+        // matching .NET).
+        let point = QueryRange {
+            min: "3A".to_string(),
+            max: "3A".to_string(),
+            is_min_inclusive: true,
+            is_max_inclusive: true,
+        };
+        let fr = query_range_to_feed_range(&point, Some(16)).unwrap();
+        assert_eq!(fr.min_inclusive().to_hex(), "3A");
         // normalized_successor("3A", 16) = "3A" zero-extended to 16 bytes, then
         // +1 at the last byte: [0x3A, 0x00 x14, 0x01].
         let mut expected = vec![0x3Au8];
