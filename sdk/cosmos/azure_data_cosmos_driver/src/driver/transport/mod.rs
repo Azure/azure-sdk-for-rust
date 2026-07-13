@@ -17,13 +17,19 @@ pub(crate) mod adaptive_transport;
 mod authorization_policy;
 #[cfg(feature = "tokio")]
 pub(crate) mod background_task_manager;
+pub(crate) mod connectivity_probe;
 pub(crate) mod cosmos_headers;
 pub(crate) mod cosmos_transport_client;
 mod emulator;
+mod gateway_v2_dispatch;
+/// Gateway 2.0 operation eligibility filter.
+pub(crate) mod gateway_v2_eligibility;
+pub(crate) use gateway_v2_eligibility::is_operation_supported_by_gateway_v2;
 pub(crate) mod http_client_factory;
 pub(crate) mod request_signing;
 #[cfg(feature = "reqwest")]
 pub(crate) mod reqwest_transport_client;
+pub(crate) mod rntbd;
 mod sharded_transport;
 pub(crate) use sharded_transport::EndpointKey;
 mod tracked_transport;
@@ -48,6 +54,9 @@ use self::http_client_factory::DefaultHttpClientFactory;
 pub(crate) use authorization_policy::generate_authorization;
 pub(crate) use authorization_policy::AuthorizationContext;
 pub(crate) use emulator::is_emulator_host;
+pub(crate) use gateway_v2_dispatch::{
+    unwrap_response_for_gateway_v2, wrap_request_for_gateway_v2, WrapInputs,
+};
 pub(crate) use tracked_transport::infer_request_sent_status;
 
 /// Cosmos DB REST API version.
@@ -114,7 +123,7 @@ pub(crate) struct CosmosTransport {
     dataplane_gateway_transport: AdaptiveTransport,
 
     /// Lazily-initialized transport for dataplane Gateway 2.0 operations.
-    dataplane_gateway20_transport: OnceLock<AdaptiveTransport>,
+    dataplane_gateway_v2_transport: OnceLock<AdaptiveTransport>,
 
     /// Lazily-initialized transport for emulator metadata operations.
     insecure_emulator_metadata_transport: OnceLock<AdaptiveTransport>,
@@ -166,7 +175,7 @@ impl CosmosTransport {
             negotiated_version,
             metadata_transport,
             dataplane_gateway_transport,
-            dataplane_gateway20_transport: OnceLock::new(),
+            dataplane_gateway_v2_transport: OnceLock::new(),
             insecure_emulator_metadata_transport: OnceLock::new(),
             insecure_emulator_dataplane_transport: OnceLock::new(),
         })
@@ -207,7 +216,7 @@ impl CosmosTransport {
             negotiated_version,
             metadata_transport,
             dataplane_gateway_transport,
-            dataplane_gateway20_transport: OnceLock::new(),
+            dataplane_gateway_v2_transport: OnceLock::new(),
             insecure_emulator_metadata_transport: OnceLock::new(),
             insecure_emulator_dataplane_transport: OnceLock::new(),
         })
@@ -283,17 +292,19 @@ impl CosmosTransport {
         }
 
         match transport_mode {
-            TransportMode::Gateway20 if self.connection_pool.is_gateway20_allowed() => {
-                let transport = match self.dataplane_gateway20_transport.get() {
+            TransportMode::GatewayV2 if !self.connection_pool.gateway_v2_disabled() => {
+                let transport = match self.dataplane_gateway_v2_transport.get() {
                     Some(t) => t.clone(),
                     None => {
-                        let config = HttpClientConfig::dataplane_gateway20(&self.connection_pool);
-                        let t = AdaptiveTransport::gateway20(
+                        let config = HttpClientConfig::dataplane_gateway_v2(&self.connection_pool);
+                        let t = AdaptiveTransport::gateway_v2(
                             &self.connection_pool,
                             self.http_client_factory.clone(),
                             config,
                         );
-                        self.dataplane_gateway20_transport.get_or_init(|| t).clone()
+                        self.dataplane_gateway_v2_transport
+                            .get_or_init(|| t)
+                            .clone()
                     }
                 };
                 Ok(transport)
@@ -350,27 +361,21 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn dataplane_transport_uses_gateway20_when_selected() {
-        let pool = ConnectionPoolOptionsBuilder::new()
-            .with_is_gateway20_allowed(true)
-            .build()
-            .unwrap();
+    fn dataplane_transport_uses_gateway_v2_when_selected() {
+        let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
         let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http2).unwrap();
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
         let ctx = transport
-            .get_dataplane_transport(&endpoint, TransportMode::Gateway20)
+            .get_dataplane_transport(&endpoint, TransportMode::GatewayV2)
             .unwrap();
-        assert!(matches!(ctx, AdaptiveTransport::ShardedGateway20(_)));
+        assert!(matches!(ctx, AdaptiveTransport::ShardedGatewayV2(_)));
     }
 
     #[test]
     fn dataplane_transport_falls_back_to_sharded_gateway_when_endpoint_is_standard() {
-        let pool = ConnectionPoolOptionsBuilder::new()
-            .with_is_gateway20_allowed(true)
-            .build()
-            .unwrap();
+        let pool = ConnectionPoolOptionsBuilder::new().build().unwrap();
         let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http2).unwrap();
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
@@ -382,19 +387,22 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn dataplane_transport_ignores_gateway20_when_gateway20_disabled() {
+    fn dataplane_transport_skips_gateway_v2_when_http2_disabled() {
+        // HTTP/2 is a hard prerequisite for Gateway 2.0. With HTTP/2 disabled the
+        // pool reports gateway_v2 unavailable, so even a GatewayV2-mode request
+        // falls back to the standard gateway transport.
         let pool = ConnectionPoolOptionsBuilder::new()
-            .with_is_gateway20_allowed(false)
+            .with_is_http2_allowed(false)
             .build()
             .unwrap();
-        let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http2).unwrap();
+        let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http11).unwrap();
         let endpoint =
             AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
 
         let ctx = transport
-            .get_dataplane_transport(&endpoint, TransportMode::Gateway20)
+            .get_dataplane_transport(&endpoint, TransportMode::GatewayV2)
             .unwrap();
-        assert!(matches!(ctx, AdaptiveTransport::ShardedGateway(_)));
+        assert!(matches!(ctx, AdaptiveTransport::Gateway(_)));
     }
 
     #[test]

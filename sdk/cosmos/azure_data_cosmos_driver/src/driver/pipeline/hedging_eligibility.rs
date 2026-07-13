@@ -16,6 +16,7 @@ use crate::{
             hedging_diagnostics::HedgingStrategyConfig,
         },
         routing::AccountEndpointState,
+        transport::EndpointKey,
     },
     models::{CosmosOperation, OperationType, ResourceType},
     options::{
@@ -254,18 +255,30 @@ pub(crate) fn evaluate_hedge_eligibility(
         .find(|ep| ep.region() != primary_region.as_ref() && ep.endpoint_key() != primary_key)?
         .clone();
 
-    // Match the primary's gateway-version preference so a Gateway20-capable
-    // account uses Gateway20 for both legs (and downgrades cleanly for legacy).
-    let prefer_gateway20 = matches!(primary.transport_mode, TransportMode::Gateway20);
-    let use_gateway20 = secondary_ep.uses_gateway20(prefer_gateway20);
-    let transport_mode = if use_gateway20 {
-        TransportMode::Gateway20
+    // Match the primary's gateway-version preference so a GatewayV2-capable
+    // account uses GatewayV2 for both legs (and downgrades cleanly for legacy).
+    let prefer_gateway_v2 = matches!(primary.transport_mode, TransportMode::GatewayV2);
+    let use_gateway_v2 = secondary_ep.uses_gateway_v2(prefer_gateway_v2);
+    let transport_mode = if use_gateway_v2 {
+        TransportMode::GatewayV2
     } else {
         TransportMode::Gateway
     };
+    let selected_url = secondary_ep.selected_url(use_gateway_v2).clone();
+    // Key the connection pool by the URL we will actually dial. For a
+    // GatewayV2 leg that is the thin-client proxy authority (host:proxy-port),
+    // which differs from the logical G1 endpoint authority — mirror
+    // `resolve_endpoint` so the hedge leg shares the main path's G2 pool
+    // instead of opening a duplicate one keyed by the G1 host.
+    let secondary_endpoint_key = if use_gateway_v2 {
+        EndpointKey::try_from(&selected_url).expect("selected URL must have a valid host and port")
+    } else {
+        secondary_ep.endpoint_key()
+    };
     let secondary_routing = RoutingDecision {
-        selected_url: secondary_ep.selected_url(use_gateway20).clone(),
+        selected_url,
         transport_mode,
+        endpoint_key: secondary_endpoint_key,
         endpoint: secondary_ep,
     };
 
@@ -774,9 +787,11 @@ mod tests {
             .cloned()
             .unwrap_or_else(|| account.default_endpoint.clone());
         let url = ep.selected_url(false).clone();
+        let endpoint_key = ep.endpoint_key();
         RoutingDecision {
             selected_url: url,
             transport_mode: TransportMode::Gateway,
+            endpoint_key,
             endpoint: ep,
         }
     }
@@ -792,9 +807,11 @@ mod tests {
             .cloned()
             .expect("test fixture must supply enough preferred read endpoints");
         let url = ep.selected_url(false).clone();
+        let endpoint_key = ep.endpoint_key();
         RoutingDecision {
             selected_url: url,
             transport_mode: TransportMode::Gateway,
+            endpoint_key,
             endpoint: ep,
         }
     }
@@ -897,10 +914,81 @@ mod tests {
             "secondary URL {} did not contain westus2 region tag",
             url_str
         );
-        // Gateway20 not enabled on the test endpoints — falls back to Gateway.
+        // GatewayV2 not enabled on the test endpoints — falls back to Gateway.
         assert_eq!(
             upgrade.secondary_routing.transport_mode,
             TransportMode::Gateway
+        );
+    }
+
+    /// A GatewayV2-capable secondary hedge leg must key the connection pool by
+    /// the thin-client proxy authority (`host:proxy-port`) it actually dials,
+    /// NOT the logical G1 endpoint authority. Mirrors `resolve_endpoint` so the
+    /// hedge leg shares the main path's G2 connection pool instead of opening a
+    /// duplicate one keyed by the G1 host.
+    #[test]
+    fn evaluate_secondary_routing_keys_gateway_v2_leg_by_proxy_authority() {
+        fn g2_endpoint_for(region: Region) -> CosmosEndpoint {
+            let gateway_url = Url::parse(&format!(
+                "https://acct-{}.documents.azure.com/",
+                region.as_str()
+            ))
+            .expect("valid url");
+            let gateway_v2_url = Url::parse(&format!(
+                "https://proxy-{}.documents.azure.com:10250/",
+                region.as_str()
+            ))
+            .expect("valid url");
+            CosmosEndpoint::regional_with_gateway_v2(region, gateway_url, gateway_v2_url)
+        }
+
+        let endpoints: Vec<CosmosEndpoint> = [Region::EAST_US, Region::WEST_US_2]
+            .into_iter()
+            .map(g2_endpoint_for)
+            .collect();
+        let state = AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: endpoints.clone().into(),
+            preferred_write_endpoints: endpoints.clone().into(),
+            account_write_endpoints: endpoints.clone().into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: endpoints[0].clone(),
+        };
+
+        // Primary on EAST_US over GatewayV2 so `prefer_gateway_v2` propagates
+        // to the secondary-leg selection.
+        let primary_ep = endpoints[0].clone();
+        let primary = RoutingDecision {
+            selected_url: primary_ep.selected_url(true).clone(),
+            transport_mode: TransportMode::GatewayV2,
+            endpoint_key: EndpointKey::try_from(primary_ep.selected_url(true))
+                .expect("valid proxy url"),
+            endpoint: primary_ep,
+        };
+
+        let op = read_item_operation();
+        let op_opts = OperationOptions::default();
+        let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
+
+        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None)
+            .expect("eligible multi-region GatewayV2 read");
+        let secondary = &upgrade.secondary_routing;
+
+        assert_eq!(secondary.transport_mode, TransportMode::GatewayV2);
+
+        // The dialed URL is the WEST_US_2 proxy on port 10250.
+        let proxy_url = secondary.endpoint.selected_url(true);
+        assert_eq!(secondary.selected_url.as_str(), proxy_url.as_str());
+        assert!(secondary.selected_url.as_str().contains(":10250"));
+
+        // The pool key must be derived from that proxy URL, NOT the G1 authority.
+        let expected_key = EndpointKey::try_from(proxy_url).expect("valid proxy url");
+        assert_eq!(secondary.endpoint_key, expected_key);
+        assert_ne!(
+            secondary.endpoint_key,
+            secondary.endpoint.endpoint_key(),
+            "G2 hedge leg must not key by the logical G1 endpoint authority",
         );
     }
 

@@ -163,12 +163,12 @@ impl PipelineNode for SequentialDrain {
                     server_continuation,
                 } => {
                     if cursor.is_none() {
-                        cursor = Some(range.min_inclusive().as_str().to_string());
+                        cursor = Some(range.min_inclusive().to_hex());
                     }
                     if let Some(token) = server_continuation {
                         active_tokens.push(RangedToken {
-                            min_epk: range.min_inclusive().as_str().to_string(),
-                            max_epk: range.max_exclusive().as_str().to_string(),
+                            min_epk: range.min_inclusive().to_hex(),
+                            max_epk: range.max_exclusive().to_hex(),
                             server_continuation: token,
                         });
                     }

@@ -1789,6 +1789,13 @@ mod tests {
             .build()
     }
 
+    fn diagnostics_json_section(diag_section: &str) -> &str {
+        diag_section
+            .split_once("\n\nStack backtrace:\n")
+            .map(|(json, _)| json)
+            .unwrap_or(diag_section)
+    }
+
     #[test]
     fn from_error_with_diagnostics_does_not_mutate_original() {
         let original = end_to_end_timeout_error("no diags");
@@ -1881,12 +1888,13 @@ mod tests {
              Caused by:\n  \
              0: 408/20008 (ClientOperationTimeout): inner timeout",
         );
-        // The Debug variant renders diagnostics via `{diag:?}` (derived
-        // `Debug` on `DiagnosticsContext`), so the section is the
-        // struct-style dump starting with `DiagnosticsContext {`.
+        let diagnostics_json = diagnostics_json_section(diag_section);
+        serde_json::from_str::<serde_json::Value>(diagnostics_json).unwrap_or_else(|e| {
+            panic!("Diagnostics section must be valid JSON: {e}\n{diagnostics_json}")
+        });
         assert!(
-            diag_section.starts_with("DiagnosticsContext {"),
-            "Diagnostics section must start with `DiagnosticsContext {{`, got: {diag_section}",
+            !diagnostics_json.contains("DiagnosticsContext {"),
+            "Diagnostics section must be JSON, not a Rust Debug dump: {diagnostics_json}",
         );
         assert!(
             !rendered.contains("Stack backtrace:"),
@@ -1924,11 +1932,13 @@ mod tests {
             interposed.is_empty() || interposed.starts_with("\n\nStack backtrace:\n"),
             "interposed content between source chain and diagnostics must be empty or a Stack backtrace block, got: {interposed}",
         );
-        // Alternate Debug renders diagnostics via `{diag:#?}` — the
-        // pretty-printed struct dump, still beginning with the type name.
+        let diagnostics_json = diagnostics_json_section(diag_section);
+        serde_json::from_str::<serde_json::Value>(diagnostics_json).unwrap_or_else(|e| {
+            panic!("Diagnostics section must be valid JSON: {e}\n{diagnostics_json}")
+        });
         assert!(
-            diag_section.starts_with("DiagnosticsContext {"),
-            "Diagnostics section must start with `DiagnosticsContext {{`, got: {diag_section}",
+            !diagnostics_json.contains("DiagnosticsContext {"),
+            "Diagnostics section must be JSON, not a Rust Debug dump: {diagnostics_json}",
         );
     }
 

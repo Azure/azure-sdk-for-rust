@@ -378,8 +378,21 @@ async fn plan_fresh(
     operation: &Arc<CosmosOperation>,
 ) -> crate::error::Result<Vec<Box<dyn PipelineNode>>> {
     let mut nodes: Vec<Box<dyn PipelineNode>> = Vec::new();
+    // For partition-scoped queries (e.g. `FeedScope::partition(partial_hpk)`)
+    // the operation carries a FeedRange that bounds the partition-key prefix.
+    // The server-supplied `query_ranges` always cover the full container, so
+    // we intersect each one with the operation scope to keep the fan-out (and
+    // the per-pkrange wire EPK bounds) scoped to that prefix.
+    let scope_range = operation.target();
     for query_range in &query_plan.query_ranges {
-        let feed_range = query_range_to_feed_range(query_range)?;
+        let plan_range = query_range_to_feed_range(query_range)?;
+        let feed_range = match scope_range {
+            Some(scope) => match intersect_feed_ranges(scope, &plan_range) {
+                Some(r) => r,
+                None => continue,
+            },
+            None => plan_range,
+        };
         let resolved = topology_provider
             .resolve_ranges(&feed_range, PartitionRoutingRefresh::UseCached)
             .await?;
@@ -426,9 +439,18 @@ async fn plan_resume_from_saved_snapshot(
 ) -> crate::error::Result<Vec<Box<dyn PipelineNode>>> {
     let mut nodes: Vec<Box<dyn PipelineNode>> = Vec::new();
     let mut coverage: Vec<Vec<FeedRange>> = vec![Vec::new(); saved.active_tokens.len()];
+    // See `plan_fresh` for rationale on intersecting with the operation scope.
+    let scope_range = operation.target();
 
     for query_range in &query_plan.query_ranges {
-        let feed_range = query_range_to_feed_range(query_range)?;
+        let plan_range = query_range_to_feed_range(query_range)?;
+        let feed_range = match scope_range {
+            Some(scope) => match intersect_feed_ranges(scope, &plan_range) {
+                Some(r) => r,
+                None => continue,
+            },
+            None => plan_range,
+        };
         let resolved = topology_provider
             .resolve_ranges(&feed_range, PartitionRoutingRefresh::UseCached)
             .await?;
@@ -533,8 +555,8 @@ async fn plan_resume_from_saved_snapshot(
                     .map(|r| {
                         format!(
                             "[{}, {})",
-                            r.min_inclusive().as_str(),
-                            r.max_exclusive().as_str()
+                            r.min_inclusive().to_hex(),
+                            r.max_exclusive().to_hex()
                         )
                     })
                     .collect();
@@ -552,8 +574,8 @@ async fn plan_resume_from_saved_snapshot(
                     "continuation token active range [{}, {}) could not be fully covered \
                      by the current topology above the cursor (covered: {}); the query \
                      cannot be safely resumed",
-                    entry.range.min_inclusive().as_str(),
-                    entry.range.max_exclusive().as_str(),
+                    entry.range.min_inclusive().to_hex(),
+                    entry.range.max_exclusive().to_hex(),
                     coverage_summary,
                 ))
                 .build());
@@ -589,10 +611,10 @@ fn range_fully_covered(range: &FeedRange, pieces: &[FeedRange]) -> bool {
             piece.min_inclusive() >= range.min_inclusive()
                 && piece.max_exclusive() <= range.max_exclusive(),
             "range_fully_covered piece [{}, {}) is not a subset of range [{}, {})",
-            piece.min_inclusive().as_str(),
-            piece.max_exclusive().as_str(),
-            range.min_inclusive().as_str(),
-            range.max_exclusive().as_str(),
+            piece.min_inclusive().to_hex(),
+            piece.max_exclusive().to_hex(),
+            range.min_inclusive().to_hex(),
+            range.max_exclusive().to_hex(),
         );
         if piece.min_inclusive() > &cursor {
             return false;
@@ -640,8 +662,8 @@ fn validate_saved_snapshot(
                 )
                 .with_message(format!(
                     "continuation token has invalid active_tokens entry (min `{}` > max `{}`)",
-                    min.as_str(),
-                    max.as_str(),
+                    min.to_hex(),
+                    max.to_hex(),
                 ))
                 .build());
         }
@@ -656,7 +678,7 @@ fn validate_saved_snapshot(
                 .with_message(format!(
                     "continuation token has zero-width active_tokens entry (min == max == `{}`); \
                      zero-width entries cannot carry remaining work",
-                    min.as_str(),
+                    min.to_hex(),
                 ))
                 .build());
         }
@@ -670,10 +692,10 @@ fn validate_saved_snapshot(
                     .with_message(format!(
                         "continuation token active_tokens must be sorted and non-overlapping; \
                          entry [{}, {}) is out of order or overlaps the previous entry [{}, {})",
-                        range.min_inclusive().as_str(),
-                        range.max_exclusive().as_str(),
-                        prev.range.min_inclusive().as_str(),
-                        prev.range.max_exclusive().as_str(),
+                        range.min_inclusive().to_hex(),
+                        range.max_exclusive().to_hex(),
+                        prev.range.min_inclusive().to_hex(),
+                        prev.range.max_exclusive().to_hex(),
                     ))
                     .build());
             }
@@ -694,9 +716,9 @@ fn validate_saved_snapshot(
                 .with_message(format!(
                     "continuation token cursor `{}` is past the first active_tokens entry [{}, {}); \
                      cursor must be at or before every active range",
-                    cursor.as_str(),
-                    first.range.min_inclusive().as_str(),
-                    first.range.max_exclusive().as_str(),
+                    cursor.to_hex(),
+                    first.range.min_inclusive().to_hex(),
+                    first.range.max_exclusive().to_hex(),
                 ))
                 .build());
         }
@@ -736,8 +758,8 @@ fn validate_unordered_merge_tokens(
                 .with_message(format!(
                     "continuation token has invalid active_tokens entry \
                      (min `{}` >= max `{}`)",
-                    min.as_str(),
-                    max.as_str(),
+                    min.to_hex(),
+                    max.to_hex(),
                 ))
                 .build());
         }
@@ -751,10 +773,10 @@ fn validate_unordered_merge_tokens(
                     .with_message(format!(
                         "continuation token active_tokens must be sorted and non-overlapping; \
                          entry [{}, {}) overlaps [{}, {})",
-                        range.min_inclusive().as_str(),
-                        range.max_exclusive().as_str(),
-                        prev.range.min_inclusive().as_str(),
-                        prev.range.max_exclusive().as_str(),
+                        range.min_inclusive().to_hex(),
+                        range.max_exclusive().to_hex(),
+                        prev.range.min_inclusive().to_hex(),
+                        prev.range.max_exclusive().to_hex(),
                     ))
                     .build());
             }
