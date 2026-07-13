@@ -30,9 +30,9 @@ time = { workspace = true, features = ["serde"] }
 tracing = { workspace = true }
 
 [dev-dependencies]
-azure_core_opentelemetry = { path = "../../core/azure_core_opentelemetry", version = "1.1.0-beta.1" }
+azure_core_opentelemetry.workspace = true
 azure_core_test = { workspace = true, features = ["tracing"] }
-azure_identity = { path = "../../identity/azure_identity", version = "1.1.0-beta.1" }
+azure_identity.workspace = true
 opentelemetry.workspace = true
 opentelemetry-appender-tracing.workspace = true
 opentelemetry-stdout.workspace = true

@@ -18,6 +18,8 @@ Documentation: [cargo-audit](https://github.com/rustsec/rustsec/tree/main/cargo-
 
 Runs in: [Analyze-Code.ps1](https://github.com/Azure/azure-sdk-for-rust/blob/main/eng/scripts/Analyze-Code.ps1)
 
+Checks advisories from RustSec. This is the only advisory scan run from `Analyze-Code.ps1`.
+
 ```bash
 cargo audit
 ```
@@ -86,9 +88,11 @@ Documentation: [cargo-deny](https://github.com/EmbarkStudios/cargo-deny)
 
 Runs in [Analyze-Code.ps1](https://github.com/Azure/azure-sdk-for-rust/blob/main/eng/scripts/Analyze-Code.ps1)
 
+Checks dependency bans, licenses, and sources. Advisories are handled separately by `cargo audit`.
+
 ```bash
 cargo install cargo-deny
-cargo deny
+cargo deny --all-features check bans licenses sources
 ```
 
 ### Semver
