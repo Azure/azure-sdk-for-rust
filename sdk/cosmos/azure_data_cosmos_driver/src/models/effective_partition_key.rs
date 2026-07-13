@@ -74,8 +74,8 @@ impl EffectivePartitionKey {
                 PartitionKeyVersion::V2 => effective_partition_key_v2_binary(pk_values),
             },
             PartitionKeyKind::MultiHash => {
-                // MultiHash is only supported with V2. All MultiHash container definitions
-                // are created with version=2; V1 MultiHash does not exist in Cosmos DB.
+                // MultiHash is only supported with V2. Deserialization rejects
+                // this invalid combination before it can reach routing.
                 assert!(
                     version == PartitionKeyVersion::V2,
                     "MultiHash requires V2, got {:?}",

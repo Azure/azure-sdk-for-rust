@@ -220,6 +220,19 @@ async fn provision_database_and_container(
     db_client.create_container(properties, None).await?;
     let container_client = wait_for_container_ready(&db_client, &container_name).await?;
 
+    let body = container_client.read(None).await?.into_body().single()?;
+    let raw: serde_json::Value = serde_json::from_slice(&body)?;
+    assert_eq!(
+        raw["partitionKey"]["version"], 2,
+        "the service must return an explicit version for a V2 container"
+    );
+    let properties: ContainerProperties = serde_json::from_slice(&body)?;
+    assert_eq!(
+        properties.partition_key.version(),
+        PartitionKeyVersion::V2,
+        "an explicit V2 service response must deserialize as V2"
+    );
+
     Ok((db_name, container_client))
 }
 

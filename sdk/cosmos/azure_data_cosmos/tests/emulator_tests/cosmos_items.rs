@@ -422,9 +422,13 @@ pub async fn v1_container_item_crud() -> Result<(), Box<dyn Error>> {
                         )
                         .into());
                     }
+                    Err(err) if err.status().status_code() == StatusCode::NotFound => return Ok(()),
                     Err(err) => {
-                        assert_eq!(StatusCode::NotFound, err.status().status_code());
-                        return Ok(());
+                        return Err(format!(
+                            "expected NotFound after deleting V1 item, got {}",
+                            err.status()
+                        )
+                        .into());
                     }
                 }
             }

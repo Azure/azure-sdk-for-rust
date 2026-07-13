@@ -130,7 +130,7 @@ pub(crate) struct ContainerProperties {
 /// Partition key definition for a container.
 ///
 /// Specifies the JSON path(s) used for partitioning data across physical partitions.
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
 #[non_exhaustive]
 #[serde(rename_all = "camelCase")]
 pub struct PartitionKeyDefinition {
@@ -141,9 +141,65 @@ pub struct PartitionKeyDefinition {
     #[serde(default)]
     kind: PartitionKeyKind,
 
-    /// Partition key version (1 for single, 2 for hierarchical).
+    /// Partition key hashing version.
+    ///
+    /// The service omits this field for legacy V1 containers; V2 and MultiHash
+    /// container definitions always include an explicit version.
     #[serde(default = "default_pk_version")]
     version: PartitionKeyVersion,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PartitionKeyDefinitionWire {
+    paths: Vec<Cow<'static, str>>,
+    #[serde(default)]
+    kind: PartitionKeyKind,
+    #[serde(default)]
+    version: PartitionKeyVersionWire,
+}
+
+#[derive(Default)]
+enum PartitionKeyVersionWire {
+    #[default]
+    Missing,
+    Present(PartitionKeyVersion),
+}
+
+impl<'de> Deserialize<'de> for PartitionKeyVersionWire {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        PartitionKeyVersion::deserialize(deserializer).map(Self::Present)
+    }
+}
+
+impl<'de> Deserialize<'de> for PartitionKeyDefinition {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let wire = PartitionKeyDefinitionWire::deserialize(deserializer)?;
+        match wire.version {
+            PartitionKeyVersionWire::Missing => Ok(Self {
+                paths: wire.paths,
+                kind: PartitionKeyKind::Hash,
+                version: default_pk_version(),
+            }),
+            PartitionKeyVersionWire::Present(version)
+                if wire.kind == PartitionKeyKind::MultiHash
+                    && version != PartitionKeyVersion::V2 =>
+            {
+                Err(serde::de::Error::custom("MultiHash requires version 2"))
+            }
+            PartitionKeyVersionWire::Present(version) => Ok(Self {
+                paths: wire.paths,
+                kind: wire.kind,
+                version,
+            }),
+        }
+    }
 }
 
 impl PartitionKeyDefinition {
@@ -880,6 +936,32 @@ mod tests {
 
         assert_eq!(v1.version(), PartitionKeyVersion::V1);
         assert_eq!(v2.version(), PartitionKeyVersion::V2);
+    }
+
+    #[test]
+    fn partition_key_definition_versionless_multihash_normalizes_to_v1_hash() {
+        let parsed: PartitionKeyDefinition =
+            serde_json::from_str(r#"{"paths":["/a","/b"],"kind":"MultiHash"}"#).unwrap();
+
+        assert_eq!(parsed.kind(), PartitionKeyKind::Hash);
+        assert_eq!(parsed.version(), PartitionKeyVersion::V1);
+    }
+
+    #[test]
+    fn partition_key_definition_explicit_null_version_is_rejected() {
+        let result =
+            serde_json::from_str::<PartitionKeyDefinition>(r#"{"paths":["/pk"],"version":null}"#);
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn partition_key_definition_explicit_v1_multihash_is_rejected() {
+        let result = serde_json::from_str::<PartitionKeyDefinition>(
+            r#"{"paths":["/a","/b"],"kind":"MultiHash","version":1}"#,
+        );
+
+        assert!(result.is_err());
     }
 
     #[test]
