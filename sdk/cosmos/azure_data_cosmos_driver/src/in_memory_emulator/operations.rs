@@ -2207,7 +2207,7 @@ impl DocumentFeedCursor {
 }
 
 fn is_even_length_hex(value: &str) -> bool {
-    value.len() % 2 == 0 && value.bytes().all(|b| b.is_ascii_hexdigit())
+    value.len().is_multiple_of(2) && value.bytes().all(|b| b.is_ascii_hexdigit())
 }
 
 fn invalid_continuation_response(message: &str, start: Instant) -> AsyncRawResponse {
@@ -3079,6 +3079,7 @@ fn collect_item_documents(
                 }));
             }
         }
+        docs.sort_by(|left, right| left.cursor.cmp(&right.cursor));
         let (partition_key_range_id, internal_partition_id) = if multiple_partitions {
             (None, None)
         } else {
@@ -5540,5 +5541,22 @@ mod tests {
 
         let err = DocumentFeedCursor::parse(&token, Instant::now()).unwrap_err();
         assert_eq!(err.status(), StatusCode::BadRequest);
+    }
+
+    #[test]
+    fn document_feed_cursor_pagination_requires_cursor_sorted_items() {
+        let start = Instant::now();
+        let mut items = vec![
+            document_item("80", "hash-e-0"),
+            document_item("01", "hash-a-0"),
+            document_item("02", "hash-a-1"),
+        ];
+        items.sort_by(|left, right| left.cursor.cmp(&right.cursor));
+
+        let (page, continuation) =
+            paginate_document_feed_items(items, Some(1), None, start).unwrap();
+
+        assert_eq!(ids(&page), vec!["hash-a-0"]);
+        assert!(continuation.is_some());
     }
 }
