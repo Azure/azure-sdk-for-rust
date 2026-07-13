@@ -1117,6 +1117,11 @@ impl SubStatusCode {
     /// `crate::error::Error::serialization`.
     pub const SERIALIZATION_RESPONSE_BODY_INVALID: SubStatusCode = SubStatusCode(20020);
 
+    /// Request body failed to serialize (20021). Distinct from
+    /// [`SubStatusCode::SERIALIZATION_RESPONSE_BODY_INVALID`] so an encode
+    /// failure on the write path is not mislabeled as a response-body error.
+    pub const SERIALIZATION_REQUEST_BODY_INVALID: SubStatusCode = SubStatusCode(20021);
+
     // ----- Authentication boundary mapping code (20402) -----
 
     /// Credential / AAD token acquisition failed before the request was
@@ -1906,6 +1911,14 @@ impl CosmosStatus {
     pub const SERIALIZATION_RESPONSE_BODY_INVALID: CosmosStatus = CosmosStatus {
         status_code: StatusCode::InternalServerError,
         sub_status: Some(SubStatusCode::SERIALIZATION_RESPONSE_BODY_INVALID),
+    };
+
+    /// Request body failed to serialize (HTTP 400, sub-status 20021). The
+    /// caller supplied an item that could not be encoded, so this is a client
+    /// (bad-request) error rather than a server/response error.
+    pub const SERIALIZATION_REQUEST_BODY_INVALID: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::SERIALIZATION_REQUEST_BODY_INVALID),
     };
 
     /// AAD / credential provider token acquisition failed

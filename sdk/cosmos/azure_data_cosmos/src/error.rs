@@ -104,10 +104,16 @@ impl From<serde_json::Error> for CosmosError {
 
 impl From<azure_data_cosmos_driver::binary_json::BinaryError> for CosmosError {
     fn from(error: azure_data_cosmos_driver::binary_json::BinaryError) -> Self {
+        // In the SDK this conversion is only reached on the item **write**
+        // path, where `binary_json::to_vec(item)?` encodes a caller-supplied
+        // item to Cosmos binary JSON. A failure here is therefore a
+        // request-body (encode) error, not a response-body (decode) error —
+        // binary **response** decoding is mapped inside the driver. Labeling it
+        // as request-body keeps the status accurate for the write path.
         Self(
             DriverCosmosError::builder()
-                .with_status(CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-                .with_message("Cosmos binary JSON serialization or deserialization failed")
+                .with_status(CosmosStatus::SERIALIZATION_REQUEST_BODY_INVALID)
+                .with_message("failed to serialize item to Cosmos binary JSON")
                 .with_source(error)
                 .build(),
         )
