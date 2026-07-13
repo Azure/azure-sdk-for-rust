@@ -1,6 +1,7 @@
 [package]
 name = "azure_core_test_macros"
 version = "0.2.0"
+publish = false
 description = "Procedural macros for testing client libraries built on azure_core."
 readme = "README.md"
 authors.workspace = true
@@ -22,7 +23,7 @@ quote.workspace = true
 syn.workspace = true
 
 [dev-dependencies]
-azure_core_test.path = "../azure_core_test"
+azure_core_test.workspace = true
 tokio.workspace = true
 
 [lints]
