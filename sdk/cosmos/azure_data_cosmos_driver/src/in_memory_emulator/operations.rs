@@ -2193,11 +2193,21 @@ impl DocumentFeedCursor {
                 start,
             ));
         }
+        if !is_even_length_hex(&token.epk) {
+            return Err(invalid_continuation_response(
+                "Invalid continuation token EPK",
+                start,
+            ));
+        }
         Ok(Self {
             epk: Epk::from(token.epk.as_str()),
             id: token.id,
         })
     }
+}
+
+fn is_even_length_hex(value: &str) -> bool {
+    value.len() % 2 == 0 && value.bytes().all(|b| b.is_ascii_hexdigit())
 }
 
 fn invalid_continuation_response(message: &str, start: Instant) -> AsyncRawResponse {
@@ -5517,5 +5527,18 @@ mod tests {
 
         assert_eq!(ids(&page), vec!["hash-e-0"]);
         assert!(next.is_none());
+    }
+
+    #[test]
+    fn document_feed_cursor_rejects_malformed_epk_hex() {
+        let token = serde_json::to_string(&DocumentFeedCursorToken {
+            kind: DOCUMENT_FEED_CURSOR_TOKEN_KIND.to_owned(),
+            epk: "00zz".to_owned(),
+            id: "item1".to_owned(),
+        })
+        .unwrap();
+
+        let err = DocumentFeedCursor::parse(&token, Instant::now()).unwrap_err();
+        assert_eq!(err.status(), StatusCode::BadRequest);
     }
 }
