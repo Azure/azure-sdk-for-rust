@@ -223,9 +223,9 @@ async fn provision_database_and_container(
     Ok((db_name, container_client))
 }
 
-/// Like [`provision_database_and_container`] but provisions an explicit
-/// **partition key version 1** container. New containers created without an
-/// explicit version get V2, so this pins `V1` via [`PartitionKeyDefinition::with_version`].
+/// Like [`provision_database_and_container`] but provisions a legacy
+/// **partition key version 1** container by intentionally omitting `version`;
+/// the service interprets a version-less create payload as V1.
 ///
 /// V1 containers are the ones that exposed the version-default bug: on read-back
 /// the service omits the `version` field for legacy V1 containers, and Gateway

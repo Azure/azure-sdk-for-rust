@@ -147,10 +147,10 @@ async fn create_container(
     Ok(container_client)
 }
 
-/// Like [`create_container`] but provisions an explicit **partition key
-/// version 1** container. New containers default to V2, so this pins `V1` via
-/// [`PartitionKeyDefinition::with_version`] to exercise the classic-gateway
-/// point-op path for legacy V1 containers.
+/// Like [`create_container`] but provisions a legacy **partition key version
+/// 1** container by intentionally omitting `version`; the service interprets
+/// a version-less create payload as V1. This exercises the classic-gateway
+/// point-operation path for legacy V1 containers.
 async fn create_v1_container(
     run_context: &TestRunContext,
 ) -> Result<ContainerClient, Box<dyn Error>> {
