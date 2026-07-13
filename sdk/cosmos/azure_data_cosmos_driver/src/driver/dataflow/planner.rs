@@ -14,7 +14,10 @@ use std::sync::Arc;
 
 use crate::{
     driver::dataflow::query_plan::DistinctType,
-    models::{effective_partition_key::EffectivePartitionKey, CosmosOperation, FeedRange},
+    models::{
+        effective_partition_key::{normalized_epk_len, EffectivePartitionKey},
+        CosmosOperation, FeedRange,
+    },
 };
 
 use super::{
@@ -392,8 +395,13 @@ async fn plan_fresh(
     // multiple `IN` values that resolve to the same partition don't produce
     // duplicate identical requests (and hence duplicate documents).
     let mut point_partitions_emitted = std::collections::HashSet::new();
+    // Full EPK width for this container, used to zero-extend a closed range's
+    // inclusive upper bound to full width before making it exclusive (#4574).
+    let normalized_len = operation
+        .container()
+        .and_then(|c| normalized_epk_len(c.partition_key_definition()));
     for query_range in &query_plan.query_ranges {
-        let plan_range = query_range_to_feed_range(query_range)?;
+        let plan_range = query_range_to_feed_range(query_range, normalized_len)?;
         let is_point = plan_range.min_inclusive() == plan_range.max_exclusive();
         let feed_range = match scope_range {
             Some(scope) if is_point => {
@@ -481,9 +489,13 @@ async fn plan_resume_from_saved_snapshot(
     // `plan_fresh`); dedups colocated `IN` values so they don't produce
     // duplicate whole-partition requests.
     let mut point_partitions_emitted = std::collections::HashSet::new();
+    // Full EPK width for this container (see `plan_fresh`).
+    let normalized_len = operation
+        .container()
+        .and_then(|c| normalized_epk_len(c.partition_key_definition()));
 
     for query_range in &query_plan.query_ranges {
-        let plan_range = query_range_to_feed_range(query_range)?;
+        let plan_range = query_range_to_feed_range(query_range, normalized_len)?;
         let is_point = plan_range.min_inclusive() == plan_range.max_exclusive();
         let feed_range = match scope_range {
             Some(scope) if is_point => {
@@ -693,15 +705,26 @@ async fn plan_resume_from_saved_snapshot(
 /// operations (issue #4638). A closed *non-point* range `[a, b]` (`a < b`) still
 /// has its inclusive upper bound made exclusive so it flows through half-open
 /// routing.
+///
+/// `normalized_len` is the container's full EPK width in bytes (see
+/// [`normalized_epk_len`](crate::models::effective_partition_key::normalized_epk_len));
+/// when present, the exclusive upper bound is derived with
+/// [`normalized_successor`](EffectivePartitionKey::normalized_successor) so a
+/// trailing-zero-trimmed upper bound is zero-extended to full width before the
+/// increment. `None` (V1 keys) preserves the width of the supplied bound.
 fn query_range_to_feed_range(
     query_range: &super::query_plan::QueryRange,
+    normalized_len: Option<usize>,
 ) -> crate::error::Result<FeedRange> {
     let min = EffectivePartitionKey::from(query_range.min.as_str());
     let max = EffectivePartitionKey::from(query_range.max.as_str());
     let max = if query_range.is_max_inclusive && min != max {
         // Closed non-point range `[a, b]` (a < b): make the inclusive upper
-        // bound exclusive.
-        max.successor()
+        // bound exclusive, normalizing to full EPK width first when known.
+        match normalized_len {
+            Some(len) => max.normalized_successor(len),
+            None => max.successor(),
+        }
     } else {
         // Half-open `[min, max)` as-is, or the closed point `[X, X]` kept as a
         // point (min == max) and widened to its whole partition at emit time.
@@ -1485,7 +1508,7 @@ mod tests {
             is_min_inclusive: true,
             is_max_inclusive: true,
         };
-        let fr = query_range_to_feed_range(&point).unwrap();
+        let fr = query_range_to_feed_range(&point, None).unwrap();
         assert_eq!(fr.min_inclusive().to_hex(), "30");
         assert_eq!(fr.max_exclusive().to_hex(), "30");
     }
@@ -1494,9 +1517,47 @@ mod tests {
     fn query_range_to_feed_range_preserves_half_open() {
         // A half-open range `[A, B)` (isMaxInclusive=false) is a plain range —
         // the common full-container / split case.
-        let fr = query_range_to_feed_range(&qr("20", "80")).unwrap();
+        let fr = query_range_to_feed_range(&qr("20", "80"), None).unwrap();
         assert_eq!(fr.min_inclusive().to_hex(), "20");
         assert_eq!(fr.max_exclusive().to_hex(), "80");
+    }
+
+    #[test]
+    fn query_range_to_feed_range_closed_range_uses_width_preserving_successor_when_len_unknown() {
+        // Closed non-point range `[A, B]` with no known EPK width (V1): the
+        // inclusive upper bound is made exclusive at its own width.
+        let closed = QueryRange {
+            min: "20".to_string(),
+            max: "3AFF".to_string(),
+            is_min_inclusive: true,
+            is_max_inclusive: true,
+        };
+        let fr = query_range_to_feed_range(&closed, None).unwrap();
+        assert_eq!(fr.min_inclusive().to_hex(), "20");
+        // successor("3AFF") = "3B00" (width preserved, no zero-extension).
+        assert_eq!(fr.max_exclusive().to_hex(), "3B00");
+    }
+
+    #[test]
+    fn query_range_to_feed_range_closed_range_normalizes_upper_bound_to_full_width() {
+        // Closed non-point range `[A, B]` on a single-path V2 container (16-byte
+        // EPK): the trailing-zero-trimmed inclusive upper bound `3A` is
+        // zero-extended to 16 bytes, then incremented at the last byte.
+        let closed = QueryRange {
+            min: "20".to_string(),
+            max: "3A".to_string(),
+            is_min_inclusive: true,
+            is_max_inclusive: true,
+        };
+        let fr = query_range_to_feed_range(&closed, Some(16)).unwrap();
+        assert_eq!(fr.min_inclusive().to_hex(), "20");
+        // normalized_successor("3A", 16) = "3A" zero-extended to 16 bytes, then
+        // +1 at the last byte: [0x3A, 0x00 x14, 0x01].
+        let mut expected = vec![0x3Au8];
+        expected.resize(16, 0x00);
+        expected[15] = 0x01;
+        let expected_hex: String = expected.iter().map(|b| format!("{:02X}", b)).collect();
+        assert_eq!(fr.max_exclusive().to_hex(), expected_hex);
     }
 
     #[tokio::test]

@@ -58,9 +58,44 @@ impl EffectivePartitionKey {
     /// `[A, successor(A))` so it routes and filters through the normal
     /// `[min, max)` paths without collapsing to the empty set.
     ///
-    /// Computed by a big-endian byte increment: decode the hex EPK to bytes,
-    /// increment the right-most byte that is not `0xFF`, and zero every `0xFF`
-    /// byte to its right (carry propagation). The width is preserved. This
+    /// The width of `self` is preserved (big-endian increment, see
+    /// [`increment_be`](Self::increment_be)). Use
+    /// [`normalized_successor`](Self::normalized_successor) when the EPK must
+    /// first be zero-extended to the partition key definition's full width.
+    pub(crate) fn successor(&self) -> EffectivePartitionKey {
+        self.increment_be(self.as_bytes().to_vec())
+    }
+
+    /// Returns the successor of `self` after first normalizing it to the full
+    /// EPK width for the partition key definition (`normalized_len_bytes`), by
+    /// right-padding with `0x00` (trailing zeros) before the increment.
+    ///
+    /// The backend and other SDKs may hand back an EPK with trailing zero bytes
+    /// trimmed (e.g. a 15-byte value for a 16-byte hash whose last byte is
+    /// `0x00`). Incrementing the trimmed form (see [`successor`](Self::successor))
+    /// would bump the wrong byte position and over-cover, breaking the
+    /// range-overlap checks that assume every EPK is compared at full width.
+    /// Normalizing to `normalized_len_bytes` first makes `[X, successor(X))`
+    /// the tightest correct half-open range. This mirrors the .NET SDK, which
+    /// always zero-extends hierarchical EPKs to full length before comparing.
+    ///
+    /// `normalized_len_bytes` is the full EPK width in bytes for the container's
+    /// partition key definition — `16 * paths().len()` for V2 hash / MultiHash
+    /// (see [`normalized_epk_len`]). When `self` is already at least that wide
+    /// (the common full-key case), no padding is applied and the result equals
+    /// [`successor`](Self::successor).
+    pub(crate) fn normalized_successor(&self, normalized_len_bytes: usize) -> EffectivePartitionKey {
+        let mut bytes = self.as_bytes().to_vec();
+        if bytes.len() < normalized_len_bytes {
+            bytes.resize(normalized_len_bytes, 0x00);
+        }
+        self.increment_be(bytes)
+    }
+
+    /// Big-endian increment shared by [`successor`](Self::successor) and
+    /// [`normalized_successor`](Self::normalized_successor): increment the
+    /// right-most byte that is not `0xFF`, zeroing every `0xFF` byte to its
+    /// right (carry propagation). The width of `bytes` is preserved. This
     /// mirrors the Java SDK's `FeedRangeInternal.addToEffectivePartitionKey(_, +1)`.
     ///
     /// Carry-out of the full width cannot happen for a real EPK: `hash_v2_to_epk`
@@ -69,18 +104,10 @@ impl EffectivePartitionKey {
     /// component's leading byte, so the carry can never cross a component
     /// boundary. As a defensive fallback for a hypothetical all-`0xFF` input we
     /// return [`EffectivePartitionKey::MAX`], a safe over-approximation.
-    pub(crate) fn successor(&self) -> EffectivePartitionKey {
-        let s = self.to_hex();
-        if s.is_empty() {
+    fn increment_be(&self, mut bytes: Vec<u8>) -> EffectivePartitionKey {
+        if bytes.is_empty() {
             // The minimum EPK ("") successor is the smallest representable EPK.
             return EffectivePartitionKey::from("00");
-        }
-        let mut bytes = hex_to_bytes(&s);
-        if bytes.is_empty() {
-            // `s` is non-empty (checked above) but decoded to nothing, i.e. it
-            // was not valid hex (should not occur for a computed EPK); fall back
-            // to the maximum so the resulting range still covers `self`.
-            return EffectivePartitionKey::MAX.clone();
         }
         for i in (0..bytes.len()).rev() {
             if bytes[i] != 0xFF {
@@ -320,6 +347,30 @@ pub(crate) fn hash_v2_raw_bytes(data: &[u8]) -> [u8; 16] {
     hash_bytes
 }
 
+/// Width of a single V2 hash component in bytes (MurmurHash3-128 = 16 bytes).
+pub(crate) const V2_HASH_COMPONENT_BYTES: usize = 16;
+
+/// Full EPK width in bytes for `definition`, or `None` when the EPK is not
+/// fixed-width for this definition (V1 encoding).
+///
+/// V2 hash / MultiHash EPKs are `16 * paths().len()` bytes — each component is a
+/// 16-byte MurmurHash3-128 (see [`hash_v2_raw_bytes`] /
+/// [`effective_partition_key_multi_hash_v2_binary`]). Callers use this to
+/// zero-extend an EPK to full width before comparing or incrementing (see
+/// [`EffectivePartitionKey::normalized_successor`]).
+///
+/// V1 uses a variable-width binary tuple (see
+/// [`effective_partition_key_v1_binary`]) with no single canonical full width,
+/// so `None` is returned and callers must leave V1 EPKs unchanged.
+pub(crate) fn normalized_epk_len(definition: &PartitionKeyDefinition) -> Option<usize> {
+    match (definition.version(), definition.kind()) {
+        (PartitionKeyVersion::V2, PartitionKeyKind::Hash | PartitionKeyKind::MultiHash) => {
+            Some(V2_HASH_COMPONENT_BYTES * definition.paths().len().max(1))
+        }
+        _ => None,
+    }
+}
+
 /// V2 EPK raw bytes for hash-partitioned collections.
 pub(crate) fn effective_partition_key_v2_binary(pk_values: &[PartitionKeyValue]) -> Vec<u8> {
     let mut buf: Vec<u8> = Vec::new();
@@ -461,6 +512,67 @@ mod tests {
     #[test]
     fn successor_of_min_is_smallest_epk() {
         assert_eq!(EffectivePartitionKey::MIN.successor().to_hex(), "00");
+    }
+
+    #[test]
+    fn normalized_successor_zero_extends_then_increments() {
+        // A trailing-zero-trimmed EPK ("3A" for a 16-byte hash) is padded to
+        // full width with 0x00 before the increment, so the successor bumps the
+        // real last byte position, not the trimmed one.
+        let mut expected = vec![0x3Au8];
+        expected.resize(16, 0x00);
+        expected[15] = 0x01;
+        let expected_hex: String = expected.iter().map(|b| format!("{:02X}", b)).collect();
+        assert_eq!(
+            EffectivePartitionKey::from("3A")
+                .normalized_successor(16)
+                .to_hex(),
+            expected_hex
+        );
+    }
+
+    #[test]
+    fn normalized_successor_is_noop_pad_for_full_width_key() {
+        // When the EPK is already at (or beyond) the normalized width, no
+        // padding is applied and the result equals the plain successor.
+        let full = EffectivePartitionKey::from("22E342F38A486A088463DFF7838A5963");
+        assert_eq!(
+            full.normalized_successor(16).to_hex(),
+            full.successor().to_hex()
+        );
+    }
+
+    #[test]
+    fn normalized_successor_hpk_pads_to_multi_component_width() {
+        // Hierarchical (MultiHash, 2 paths) width is 32 bytes; a value carrying
+        // only the first component is zero-extended across both before +1.
+        let first_component = "06AB34CFE4E482236BCACBBF50E234AB";
+        let mut expected = hex_to_bytes(first_component);
+        expected.resize(32, 0x00);
+        expected[31] = 0x01;
+        let expected_hex: String = expected.iter().map(|b| format!("{:02X}", b)).collect();
+        assert_eq!(
+            EffectivePartitionKey::from(first_component)
+                .normalized_successor(32)
+                .to_hex(),
+            expected_hex
+        );
+    }
+
+    #[test]
+    fn normalized_epk_len_is_16_per_v2_hash_component() {
+        let single = PartitionKeyDefinition::new(vec!["/pk".into()]);
+        assert_eq!(normalized_epk_len(&single), Some(16));
+
+        let hpk = PartitionKeyDefinition::new(vec!["/a".into(), "/b".into()]);
+        assert_eq!(normalized_epk_len(&hpk), Some(32));
+    }
+
+    #[test]
+    fn normalized_epk_len_is_none_for_v1() {
+        let v1 = PartitionKeyDefinition::new(vec!["/pk".into()])
+            .with_version(PartitionKeyVersion::V1);
+        assert_eq!(normalized_epk_len(&v1), None);
     }
 
     #[test]
