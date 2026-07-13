@@ -1936,9 +1936,8 @@ async fn resolve_container_when_ready(
     db_name: &str,
     container_name: &str,
 ) -> Result<ContainerClient, Box<dyn Error>> {
-    const READY_TIMEOUT: Duration = Duration::from_secs(120);
     const MAX_BACKOFF: Duration = Duration::from_secs(5);
-    let deadline = Instant::now() + READY_TIMEOUT;
+    let deadline = Instant::now() + super::setup_timeout();
 
     // Phase 1: resolve the container's metadata (routing / PK ranges).
     let mut backoff = Duration::from_millis(250);

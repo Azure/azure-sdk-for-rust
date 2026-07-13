@@ -1588,7 +1588,7 @@ mod tests {
     }
 
     #[test]
-    fn wrap_emits_v1_binary_effective_partition_key_for_versionless_collections() {
+    fn wrap_emits_v1_binary_effective_partition_key_for_version_less_collections() {
         // A container definition read back from the service with no `version`
         // field is a legacy V1 container (the service omits `version` only for
         // V1). Gateway 2.0 routes point ops on the client-computed EPK, so a

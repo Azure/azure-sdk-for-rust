@@ -10,11 +10,19 @@ use azure_core::{
 };
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::models::ItemResponse;
-use azure_data_cosmos::models::{ContainerProperties, PartitionKeyDefinition, PartitionKeyVersion};
+use azure_data_cosmos::models::{ContainerProperties, PartitionKeyVersion};
 use azure_data_cosmos::options::{
     ContentResponseOnWrite, ItemWriteOptions, OperationOptions, Precondition,
 };
 use azure_data_cosmos::PartitionKey;
+use azure_data_cosmos_driver::{
+    models::{AccountReference as DriverAccountReference, CosmosOperation, DatabaseReference},
+    options::{
+        ConnectionPoolOptions, OperationOptions as DriverOperationOptions,
+        ServerCertificateValidation,
+    },
+    CosmosDriverRuntime, DriverOptions,
+};
 use framework::get_effective_hub_endpoint;
 use framework::TestRunContext;
 use framework::{TestClient, TestOptions};
@@ -145,18 +153,45 @@ async fn create_container(
 /// point-op path for legacy V1 containers.
 async fn create_v1_container(
     run_context: &TestRunContext,
-) -> azure_data_cosmos::Result<ContainerClient> {
+) -> Result<ContainerClient, Box<dyn Error>> {
     let db_client = run_context.create_db().await?;
     let container_id = format!("Container-V1-{}", Uuid::new_v4());
-    let pk_def =
-        PartitionKeyDefinition::from("/partition_key").with_version(PartitionKeyVersion::V1);
-    run_context
-        .create_container(
-            &db_client,
-            ContainerProperties::new(container_id.clone(), pk_def),
-            None,
+    let connection_string = framework::resolve_connection_string()
+        .ok_or("Cosmos connection string is not configured")?;
+    let account = DriverAccountReference::with_master_key(
+        connection_string.account_endpoint().parse::<url::Url>()?,
+        connection_string.account_key().clone(),
+    );
+    let runtime = CosmosDriverRuntime::builder()
+        .with_connection_pool(
+            ConnectionPoolOptions::builder()
+                .with_server_certificate_validation(
+                    ServerCertificateValidation::RequiredUnlessEmulator,
+                )
+                .build()?,
+        )
+        .build()
+        .await?;
+    let driver = runtime
+        .create_driver(DriverOptions::builder(account.clone()).build())
+        .await?;
+    let database = DatabaseReference::from_name(account, db_client.id().to_string());
+    let body = format!(
+        r#"{{"id":"{container_id}","partitionKey":{{"paths":["/partition_key"],"kind":"Hash"}}}}"#
+    );
+    let response = driver
+        .execute_singleton_operation(
+            CosmosOperation::create_container(database).with_body(body.into_bytes()),
+            DriverOperationOptions::default(),
         )
         .await?;
+    if !response.status().is_success() {
+        return Err(format!(
+            "failed to create version-less V1 container: {}",
+            response.status()
+        )
+        .into());
+    }
     let container_client = db_client.container_client(&container_id).await?;
 
     let body = container_client.read(None).await?.into_body().single()?;

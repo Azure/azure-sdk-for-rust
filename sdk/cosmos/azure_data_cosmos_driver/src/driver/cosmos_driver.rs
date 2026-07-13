@@ -567,7 +567,7 @@ impl CosmosDriver {
     ) -> (DiagnosticsContextBuilder, TransportSecurity) {
         let mut diagnostics = DiagnosticsContextBuilder::new(
             activity_id,
-            Arc::new(crate::options::DiagnosticsOptions::default()),
+            Arc::clone(runtime.diagnostics_options_arc()),
         );
         diagnostics.set_cpu_monitor(runtime.cpu_monitor().clone());
         diagnostics.set_machine_id(Arc::clone(runtime.machine_id()));
@@ -1470,6 +1470,38 @@ impl CosmosDriver {
     /// Returns the account reference.
     pub fn account(&self) -> &AccountReference {
         self.options.account()
+    }
+
+    /// **Internal test hook -- not part of the public API.**
+    ///
+    /// Returns cached writable and readable account regions. The in-memory
+    /// emulator comparison tests use this to pin a live multi-region account
+    /// to one hub region via default `ExcludedRegions`. It does not fetch
+    /// account metadata; callers should use it after the driver has been
+    /// initialized.
+    ///
+    /// **Do not call from production code.** Available only because
+    /// integration tests live outside the crate and cannot reach the account
+    /// metadata cache directly. May be changed or removed at any time without
+    /// a semver bump.
+    #[cfg(any(test, feature = "__internal_in_memory_emulator"))]
+    #[doc(hidden)]
+    pub async fn cached_account_regions_for_testing(
+        &self,
+    ) -> Option<(Vec<crate::options::Region>, Vec<crate::options::Region>)> {
+        let endpoint = AccountEndpoint::from(self.options.account());
+        let props = self.runtime.account_metadata_cache().get(&endpoint).await?;
+        let writable = props
+            .writable_locations
+            .iter()
+            .map(|location| location.name.clone())
+            .collect();
+        let readable = props
+            .readable_locations
+            .iter()
+            .map(|location| location.name.clone())
+            .collect();
+        Some((writable, readable))
     }
 
     /// Returns the runtime.

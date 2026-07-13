@@ -18,6 +18,11 @@ use azure_data_cosmos::{
     AccountEndpoint, AccountReference, CosmosClient, FeedScope, Query, RoutingStrategy,
     SubStatusCode, TransactionalBatch,
 };
+use azure_data_cosmos_driver::{
+    models::{AccountReference as DriverAccountReference, CosmosOperation, DatabaseReference},
+    options::OperationOptions,
+    CosmosDriverRuntime, DriverOptions,
+};
 use futures::{FutureExt, StreamExt};
 use serde::{Deserialize, Serialize};
 use std::{num::NonZeroU32, panic::AssertUnwindSafe};
@@ -228,15 +233,38 @@ async fn provision_database_and_container(
 /// mis-detected as V2 produced a V2 EPK the proxy could not route.
 async fn provision_v1_container(
     client: &CosmosClient,
+    endpoint: &str,
+    key: &str,
     db_name: &str,
 ) -> Result<azure_data_cosmos::clients::ContainerClient, Box<dyn std::error::Error>> {
     let unique = azure_core::Uuid::new_v4();
     let container_name = format!("gw_v2-test-v1-container-{unique}");
     let db_client = client.database_client(db_name);
 
-    let pk_def = PartitionKeyDefinition::from("/pk").with_version(PartitionKeyVersion::V1);
-    let properties = ContainerProperties::new(container_name.clone(), pk_def);
-    db_client.create_container(properties, None).await?;
+    let account = DriverAccountReference::with_master_key(
+        normalize_gateway_v2_endpoint(endpoint).parse::<url::Url>()?,
+        key.to_string(),
+    );
+    let runtime = CosmosDriverRuntime::builder().build().await?;
+    let driver = runtime
+        .create_driver(DriverOptions::builder(account.clone()).build())
+        .await?;
+    let database = DatabaseReference::from_name(account, db_name.to_string());
+    let body =
+        format!(r#"{{"id":"{container_name}","partitionKey":{{"paths":["/pk"],"kind":"Hash"}}}}"#);
+    let response = driver
+        .execute_singleton_operation(
+            CosmosOperation::create_container(database).with_body(body.into_bytes()),
+            OperationOptions::default(),
+        )
+        .await?;
+    if !response.status().is_success() {
+        return Err(format!(
+            "failed to create version-less V1 container: {}",
+            response.status()
+        )
+        .into());
+    }
     let container_client = wait_for_container_ready(&db_client, &container_name).await?;
 
     let body = container_client.read(None).await?.into_body().single()?;
@@ -399,7 +427,7 @@ pub async fn gateway_v2_v1_container_point_crud_round_trip(
     client.create_database(&db_name, None).await?;
 
     let test_result = AssertUnwindSafe(async {
-        let container = provision_v1_container(&client, &db_name).await?;
+        let container = provision_v1_container(&client, &endpoint, &key, &db_name).await?;
         let pk_value = format!("pk-{}", azure_core::Uuid::new_v4());
         let item_id = format!("item-{}", azure_core::Uuid::new_v4());
         let mut item = GwV2TestItem {
