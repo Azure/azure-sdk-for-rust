@@ -37,9 +37,11 @@ use super::system_properties::{
 };
 #[cfg(feature = "preview_dtx")]
 use crate::driver::pipeline::patch_eval::apply_patch_ops;
-use crate::models::PartitionKeyDefinition;
 #[cfg(feature = "preview_dtx")]
 use crate::models::PatchInstructions;
+use crate::models::{
+    EffectivePartitionKey, PartitionKeyDefinition, PartitionKeyValue as ModelPartitionKeyValue,
+};
 
 static OFFER_REPLACE_PENDING: HeaderName = HeaderName::from_static("x-ms-offer-replace-pending");
 
@@ -2163,13 +2165,31 @@ impl<'a> FeedPageOptions<'a> {
     }
 }
 
+#[derive(Clone)]
+struct FeedResponseHeaders {
+    session_token: String,
+    lsn: Option<u64>,
+    partition_key_range_id: Option<u32>,
+    internal_partition_id: Option<String>,
+}
+
+impl FeedResponseHeaders {
+    fn none() -> Self {
+        Self {
+            session_token: String::new(),
+            lsn: None,
+            partition_key_range_id: None,
+            internal_partition_id: None,
+        }
+    }
+}
+
 fn success_feed_response(
     envelope_name: &str,
     rid: impl Into<String>,
     items: Vec<serde_json::Value>,
     page_options: FeedPageOptions<'_>,
-    charge: f64,
-    session_token: &str,
+    feed_headers: FeedResponseHeaders,
     start: Instant,
 ) -> AsyncRawResponse {
     let (page, next) = match paginate_values(
@@ -2183,8 +2203,23 @@ fn success_feed_response(
     };
     let item_count = page.len() as u32;
     let body = feed_to_json(envelope_name, page, rid);
-    let mut builder = success_response(StatusCode::Ok, &body, charge, session_token, start)
-        .with_item_count(item_count);
+    let mut builder = success_response(
+        StatusCode::Ok,
+        &body,
+        1.0,
+        &feed_headers.session_token,
+        start,
+    )
+    .with_item_count(item_count);
+    if let Some(lsn) = feed_headers.lsn {
+        builder = builder.with_lsn(lsn);
+    }
+    if let Some(id) = feed_headers.partition_key_range_id {
+        builder = builder.with_header_value(PARTITION_KEY_RANGE_ID.clone(), id);
+    }
+    if let Some(id) = feed_headers.internal_partition_id {
+        builder = builder.with_header_value(INTERNAL_PARTITION_ID.clone(), id);
+    }
     if let Some(next) = next {
         builder = builder.with_header_value(CONTINUATION.clone(), next);
     }
@@ -2246,7 +2281,7 @@ fn execute_query_feed(
     values: Vec<serde_json::Value>,
     parsed: &ParsedRequest,
     request_body: &[u8],
-    session_token: &str,
+    feed_headers: FeedResponseHeaders,
     start: Instant,
 ) -> AsyncRawResponse {
     let (query, parameters) = match parse_query_spec(request_body, start) {
@@ -2273,8 +2308,7 @@ fn execute_query_feed(
         rid,
         results,
         FeedPageOptions::from_request(parsed),
-        1.0,
-        session_token,
+        feed_headers,
         start,
     )
 }
@@ -2299,8 +2333,7 @@ fn handle_read_feed_databases(
         "",
         databases,
         FeedPageOptions::from_request(parsed),
-        1.0,
-        "",
+        FeedResponseHeaders::none(),
         start,
     )
 }
@@ -2321,7 +2354,15 @@ fn handle_query_databases(
         .iter()
         .map(database_to_json)
         .collect();
-    execute_query_feed("Databases", "", databases, parsed, request_body, "", start)
+    execute_query_feed(
+        "Databases",
+        "",
+        databases,
+        parsed,
+        request_body,
+        FeedResponseHeaders::none(),
+        start,
+    )
 }
 
 fn handle_read_feed_containers(
@@ -2357,8 +2398,7 @@ fn handle_read_feed_containers(
         db.rid,
         containers,
         FeedPageOptions::from_request(parsed),
-        1.0,
-        "",
+        FeedResponseHeaders::none(),
         start,
     )
 }
@@ -2398,7 +2438,7 @@ fn handle_query_containers(
         containers,
         parsed,
         request_body,
-        "",
+        FeedResponseHeaders::none(),
         start,
     )
 }
@@ -2419,8 +2459,7 @@ fn handle_read_feed_offers(
         "",
         offers,
         FeedPageOptions::from_request(parsed),
-        1.0,
-        "",
+        FeedResponseHeaders::none(),
         start,
     )
 }
@@ -2437,7 +2476,15 @@ fn handle_query_offers(
         None => return not_found_region(start),
     };
     let offers: Vec<_> = region_ref.list_offers().iter().map(offer_to_json).collect();
-    execute_query_feed("Offers", "", offers, parsed, request_body, "", start)
+    execute_query_feed(
+        "Offers",
+        "",
+        offers,
+        parsed,
+        request_body,
+        FeedResponseHeaders::none(),
+        start,
+    )
 }
 
 fn handle_read_offer(
@@ -2553,7 +2600,7 @@ fn collect_item_documents(
     region_name: &str,
     parsed: &ParsedRequest,
     start: Instant,
-) -> Result<(String, Vec<serde_json::Value>, String), AsyncRawResponse> {
+) -> Result<(String, Vec<serde_json::Value>, String, FeedResponseHeaders), AsyncRawResponse> {
     let db_id = parsed.db_id.as_deref().unwrap_or("");
     let coll_id = parsed.coll_id.as_deref().unwrap_or("");
     let region_ref = match store.region(region_name) {
@@ -2598,8 +2645,35 @@ fn collect_item_documents(
         };
         let start_epk = parsed.start_epk.as_deref().map(Epk::from);
         let end_epk = parsed.end_epk.as_deref().map(Epk::from);
+        // A query that pins an explicit physical partition key range id must fail
+        // with 410/1002 (PartitionKeyRangeGone) when that range no longer exists
+        // (e.g. it was split away). Real Cosmos surfaces PartitionKeyRangeGone here
+        // so the client refreshes its pkrange cache and re-resolves to the child
+        // ranges; returning an empty 200 instead would silently drop the remaining
+        // results of a continuation issued before the split.
+        if let Some(requested_id) = parsed.partition_key_range_id.as_deref() {
+            let exists = state
+                .physical_partitions
+                .iter()
+                .any(|partition| partition.id.to_string() == requested_id);
+            if !exists {
+                return Err(error_response(
+                    StatusCode::Gone,
+                    Some(1002),
+                    "Gone",
+                    "The partition key range specified by the request is no longer present (split/merge).",
+                    0.0,
+                    "",
+                    start,
+                )
+                .build());
+            }
+        }
         let mut docs = Vec::new();
         let mut token_parts = Vec::new();
+        let mut max_lsn = 0_u64;
+        let mut selected_partition: Option<(u32, String)> = None;
+        let mut multiple_partitions = false;
         for partition in &state.physical_partitions {
             if parsed
                 .partition_key_range_id
@@ -2608,9 +2682,26 @@ fn collect_item_documents(
             {
                 continue;
             }
+            let overlaps_scope = if let Some(requested_epk) = requested_epk.as_ref() {
+                partition.contains_epk(requested_epk)
+            } else {
+                start_epk
+                    .as_ref()
+                    .is_none_or(|min| partition.epk_max > *min)
+                    && end_epk.as_ref().is_none_or(|max| partition.epk_min < *max)
+            };
+            if !overlaps_scope {
+                continue;
+            }
             if let Some(response) = check_partition_lock(partition, start) {
                 return Err(response);
             }
+            match &selected_partition {
+                None => selected_partition = Some((partition.id, partition.rid.clone())),
+                Some((id, _)) if *id == partition.id => {}
+                Some(_) => multiple_partitions = true,
+            }
+            max_lsn = max_lsn.max(partition.current_lsn());
             let region_id = store.config().region_id_for(region_name);
             token_parts.push(session_token_for(
                 partition,
@@ -2634,7 +2725,25 @@ fn collect_item_documents(
                 docs.extend(logical.values().map(|doc| doc.body.clone()));
             }
         }
-        Ok((state.metadata.rid.clone(), docs, token_parts.join(",")))
+        let (partition_key_range_id, internal_partition_id) = if multiple_partitions {
+            (None, None)
+        } else {
+            match selected_partition {
+                Some((id, internal_id)) => (Some(id), Some(internal_id)),
+                None => (None, None),
+            }
+        };
+        Ok((
+            state.metadata.rid.clone(),
+            docs,
+            token_parts.join(","),
+            FeedResponseHeaders {
+                session_token: String::new(),
+                lsn: Some(max_lsn),
+                partition_key_range_id,
+                internal_partition_id,
+            },
+        ))
     });
 
     match result {
@@ -2651,15 +2760,17 @@ fn handle_read_feed_items(
     start: Instant,
 ) -> AsyncRawResponse {
     match collect_item_documents(store, region_name, parsed, start) {
-        Ok((rid, docs, token)) => success_feed_response(
-            "Documents",
-            rid,
-            docs,
-            FeedPageOptions::from_request(parsed),
-            1.0,
-            &token,
-            start,
-        ),
+        Ok((rid, docs, token, mut headers)) => {
+            headers.session_token = token;
+            success_feed_response(
+                "Documents",
+                rid,
+                docs,
+                FeedPageOptions::from_request(parsed),
+                headers,
+                start,
+            )
+        }
         Err(response) => response,
     }
 }
@@ -2672,8 +2783,9 @@ fn handle_query_items(
     start: Instant,
 ) -> AsyncRawResponse {
     match collect_item_documents(store, region_name, parsed, start) {
-        Ok((rid, docs, token)) => {
-            execute_query_feed("Documents", rid, docs, parsed, request_body, &token, start)
+        Ok((rid, docs, token, mut headers)) => {
+            headers.session_token = token;
+            execute_query_feed("Documents", rid, docs, parsed, request_body, headers, start)
         }
         Err(response) => response,
     }
@@ -2730,7 +2842,7 @@ fn local_query_info_to_dataflow(
             .map(|a| format!("{a:?}"))
             .collect(),
         group_by_alias_to_aggregate_type: HashMap::new(),
-        rewritten_query: None,
+        rewritten_query: Some(String::new()),
         has_select_value: info.has_select_value,
         has_non_streaming_order_by: false,
     }
@@ -2742,6 +2854,78 @@ fn full_query_range() -> crate::driver::dataflow::query_plan::QueryRange {
         max: Epk::MAX.to_hex(),
         is_min_inclusive: true,
         is_max_inclusive: false,
+    }
+}
+
+fn epk_range_to_query_range(
+    range: std::ops::Range<EffectivePartitionKey>,
+) -> crate::driver::dataflow::query_plan::QueryRange {
+    crate::driver::dataflow::query_plan::QueryRange {
+        min: range.start.to_hex(),
+        max: range.end.to_hex(),
+        is_min_inclusive: true,
+        is_max_inclusive: true,
+    }
+}
+
+fn model_partition_key_values(
+    values: &[crate::query::plan::PartitionKeyValue],
+) -> crate::error::Result<Vec<ModelPartitionKeyValue>> {
+    values
+        .iter()
+        .map(|value| match value {
+            crate::query::plan::PartitionKeyValue::String(s) => {
+                Ok(ModelPartitionKeyValue::from(s.clone()))
+            }
+            crate::query::plan::PartitionKeyValue::Number(n) => {
+                Ok(ModelPartitionKeyValue::from(*n))
+            }
+            crate::query::plan::PartitionKeyValue::Bool(b) => Ok(ModelPartitionKeyValue::from(*b)),
+            crate::query::plan::PartitionKeyValue::Null => Ok(ModelPartitionKeyValue::NULL),
+            crate::query::plan::PartitionKeyValue::Undefined => {
+                Ok(ModelPartitionKeyValue::UNDEFINED)
+            }
+            crate::query::plan::PartitionKeyValue::UnboundParameter(name) => {
+                Err(crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(StatusCode::BadRequest))
+                    .with_message(format!(
+                        "query plan partition key filter references unbound parameter @{name}"
+                    ))
+                    .build())
+            }
+            crate::query::plan::PartitionKeyValue::InvalidParameter { name, reason } => {
+                Err(crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(StatusCode::BadRequest))
+                    .with_message(format!(
+                        "query plan partition key filter parameter @{name} is invalid: {reason}"
+                    ))
+                    .build())
+            }
+        })
+        .collect()
+}
+
+fn query_ranges_from_pk_filter(
+    filter: &crate::query::plan::PartitionKeyFilter,
+    pk_definition: &PartitionKeyDefinition,
+) -> crate::error::Result<Vec<crate::driver::dataflow::query_plan::QueryRange>> {
+    match filter {
+        crate::query::plan::PartitionKeyFilter::Equality(values) => {
+            let values = model_partition_key_values(values)?;
+            let range = EffectivePartitionKey::compute_range(&values, pk_definition)?;
+            Ok(vec![epk_range_to_query_range(range)])
+        }
+        crate::query::plan::PartitionKeyFilter::InList(value_sets) => value_sets
+            .iter()
+            .map(|values| {
+                let values = model_partition_key_values(values)?;
+                EffectivePartitionKey::compute_range(&values, pk_definition)
+                    .map(epk_range_to_query_range)
+            })
+            .collect(),
+        crate::query::plan::PartitionKeyFilter::Contradictory => Ok(Vec::new()),
+        crate::query::plan::PartitionKeyFilter::Unconstrained
+        | crate::query::plan::PartitionKeyFilter::NotEvaluated => Ok(vec![full_query_range()]),
     }
 }
 
@@ -2819,13 +3003,32 @@ fn handle_query_plan(
         }
     };
 
+    let query_ranges = match query_ranges_from_pk_filter(
+        &local_plan.pk_filters,
+        &container.metadata.partition_key,
+    ) {
+        Ok(ranges) => ranges,
+        Err(e) => {
+            return error_response(
+                e.status().status_code(),
+                e.status().sub_status().map(|s| u32::from(s.value())),
+                "BadRequest",
+                &e.to_string(),
+                0.0,
+                "",
+                start,
+            )
+            .build();
+        }
+    };
+
     let plan = crate::driver::dataflow::query_plan::QueryPlan {
-        partitioned_query_execution_info_version: 1,
+        partitioned_query_execution_info_version: 2,
         query_info: Some(local_query_info_to_dataflow(local_plan.query_info)),
-        query_ranges: vec![full_query_range()],
+        query_ranges,
         hybrid_search_query_info: None,
     };
-    let body = match serde_json::to_value(plan) {
+    let mut body = match serde_json::to_value(plan) {
         Ok(body) => body,
         Err(e) => {
             return error_response(
@@ -2840,6 +3043,9 @@ fn handle_query_plan(
             .build();
         }
     };
+    if let Some(query_info) = body.get_mut("queryInfo").and_then(|v| v.as_object_mut()) {
+        query_info.insert("dCountInfo".to_owned(), serde_json::Value::Null);
+    }
     success_response(StatusCode::Ok, &body, 1.0, "", start)
         .with_item_count(1)
         .build()
