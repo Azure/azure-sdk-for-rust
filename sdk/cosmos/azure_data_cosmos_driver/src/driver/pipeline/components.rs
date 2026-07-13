@@ -319,11 +319,22 @@ pub(crate) struct ThrottleRetryState {
 /// account-properties fetch): a patient budget, since metadata is cached.
 pub(crate) const DEFAULT_MAX_THROTTLE_ATTEMPTS: u32 = 9;
 pub(crate) const DEFAULT_MAX_THROTTLE_WAIT: Duration = Duration::from_secs(30);
+/// Per-retry delay cap ("interval") for metadata 429 retries: caps how long a
+/// single retry may wait (the service `x-ms-retry-after-ms` value is clamped to
+/// this).
+pub(crate) const DEFAULT_MAX_PER_RETRY_DELAY: Duration = Duration::from_secs(5);
 /// Default throttle-retry budget for latency-sensitive data-plane (document)
-/// requests: a shorter total wait spread over more, quicker retries.
+/// requests: more retries, each allowed a longer per-retry interval, with a
+/// cumulative-wait budget sized so the retry count (not the wait) is the
+/// effective limiter.
 pub(crate) const DATA_PLANE_MAX_THROTTLE_ATTEMPTS: u32 = 18;
-pub(crate) const DATA_PLANE_MAX_THROTTLE_WAIT: Duration = Duration::from_secs(15);
-const DEFAULT_MAX_PER_RETRY_DELAY: Duration = Duration::from_secs(5);
+/// Per-retry delay cap ("interval") for data-plane 429 retries.
+pub(crate) const DATA_PLANE_MAX_PER_RETRY_DELAY: Duration = Duration::from_secs(15);
+/// Cumulative-wait budget for data-plane 429 retries. Sized so all
+/// [`DATA_PLANE_MAX_THROTTLE_ATTEMPTS`] retries can run at the
+/// [`DATA_PLANE_MAX_PER_RETRY_DELAY`] interval (18 × 15s = 270s), i.e. the retry
+/// **count** is the effective limiter, not the wait budget.
+pub(crate) const DATA_PLANE_MAX_THROTTLE_WAIT: Duration = Duration::from_secs(270);
 const DEFAULT_FALLBACK_BASE_DELAY: Duration = Duration::from_millis(5);
 const DEFAULT_BACKOFF_FACTOR: f64 = 2.0;
 const DEFAULT_BACKOFF_JITTER_RATIO: f64 = 0.25;
@@ -332,23 +343,33 @@ impl ThrottleRetryState {
     /// Creates a new throttle retry state with default parameters.
     #[cfg(test)]
     pub fn new() -> Self {
-        Self::with_limits(DEFAULT_MAX_THROTTLE_ATTEMPTS, DEFAULT_MAX_THROTTLE_WAIT)
+        Self::with_limits(
+            DEFAULT_MAX_THROTTLE_ATTEMPTS,
+            DEFAULT_MAX_THROTTLE_WAIT,
+            DEFAULT_MAX_PER_RETRY_DELAY,
+        )
     }
 
     /// Creates a new throttle retry state with caller-supplied limits for the
-    /// maximum number of 429 retries (`max_attempts`) and the cumulative wait
-    /// budget (`max_wait_time`). All other backoff parameters keep their
-    /// defaults.
+    /// maximum number of 429 retries (`max_attempts`), the cumulative wait
+    /// budget (`max_wait_time`), and the per-retry delay cap
+    /// (`max_per_retry_delay`, which clamps the service `x-ms-retry-after-ms`
+    /// value and the backoff fallback for a single retry). All other backoff
+    /// parameters keep their defaults.
     ///
     /// `max_attempts == 0` disables throttle retries: the first 429 is
     /// propagated to the caller.
-    pub fn with_limits(max_attempts: u32, max_wait_time: Duration) -> Self {
+    pub fn with_limits(
+        max_attempts: u32,
+        max_wait_time: Duration,
+        max_per_retry_delay: Duration,
+    ) -> Self {
         Self {
             attempt_count: 0,
             max_attempts,
             cumulative_delay: Duration::ZERO,
             max_wait_time,
-            max_per_retry_delay: DEFAULT_MAX_PER_RETRY_DELAY,
+            max_per_retry_delay,
             fallback_base_delay: DEFAULT_FALLBACK_BASE_DELAY,
             backoff_factor: DEFAULT_BACKOFF_FACTOR,
             backoff_jitter_ratio: DEFAULT_BACKOFF_JITTER_RATIO,
@@ -643,20 +664,25 @@ mod tests {
     }
 
     #[test]
-    fn throttle_retry_state_with_limits_overrides_attempts_and_wait() {
-        let state = ThrottleRetryState::with_limits(3, Duration::from_secs(7));
+    fn throttle_retry_state_with_limits_overrides_attempts_wait_and_per_retry() {
+        let state =
+            ThrottleRetryState::with_limits(3, Duration::from_secs(7), Duration::from_secs(9));
         assert_eq!(state.attempt_count, 0);
         assert_eq!(state.max_attempts, 3);
         assert_eq!(state.max_wait_time, Duration::from_secs(7));
-        // Backoff parameters keep their defaults.
+        assert_eq!(state.max_per_retry_delay, Duration::from_secs(9));
+        // Remaining backoff parameters keep their defaults.
         assert_eq!(state.fallback_base_delay, Duration::from_millis(5));
-        assert_eq!(state.max_per_retry_delay, Duration::from_secs(5));
         assert_eq!(state.backoff_jitter_ratio, 0.25);
     }
 
     #[test]
     fn next_throttle_retry_honors_service_retry_after_and_advances() {
-        let state = ThrottleRetryState::with_limits(9, Duration::from_secs(30));
+        let state = ThrottleRetryState::with_limits(
+            9,
+            Duration::from_secs(30),
+            DEFAULT_MAX_PER_RETRY_DELAY,
+        );
         let (delay, next) = state
             .next_throttle_retry(Some(1000))
             .expect("first retry within budget");
@@ -667,8 +693,12 @@ mod tests {
 
     #[test]
     fn next_throttle_retry_caps_delay_at_per_retry_max() {
-        let state = ThrottleRetryState::with_limits(9, Duration::from_secs(30));
-        // Service asks for 60s; the per-retry cap (5s) must clamp it.
+        let state = ThrottleRetryState::with_limits(
+            9,
+            Duration::from_secs(30),
+            DEFAULT_MAX_PER_RETRY_DELAY,
+        );
+        // Service asks for 60s; the metadata per-retry cap (5s) must clamp it.
         let (delay, _) = state
             .next_throttle_retry(Some(60_000))
             .expect("retry within budget");
@@ -676,15 +706,34 @@ mod tests {
     }
 
     #[test]
+    fn next_throttle_retry_caps_delay_at_data_plane_per_retry_max() {
+        let state = ThrottleRetryState::with_limits(
+            DATA_PLANE_MAX_THROTTLE_ATTEMPTS,
+            DATA_PLANE_MAX_THROTTLE_WAIT,
+            DATA_PLANE_MAX_PER_RETRY_DELAY,
+        );
+        // Service asks for 60s; the data-plane per-retry cap (15s) must clamp it.
+        let (delay, _) = state
+            .next_throttle_retry(Some(60_000))
+            .expect("retry within budget");
+        assert_eq!(delay, Duration::from_secs(15));
+    }
+
+    #[test]
     fn next_throttle_retry_stops_when_attempt_budget_exhausted() {
-        let mut state = ThrottleRetryState::with_limits(1, Duration::from_secs(30));
+        let mut state = ThrottleRetryState::with_limits(
+            1,
+            Duration::from_secs(30),
+            DEFAULT_MAX_PER_RETRY_DELAY,
+        );
         state.attempt_count = 1;
         assert!(state.next_throttle_retry(Some(10)).is_none());
     }
 
     #[test]
     fn next_throttle_retry_stops_when_wait_budget_exceeded() {
-        let mut state = ThrottleRetryState::with_limits(9, Duration::from_secs(5));
+        let mut state =
+            ThrottleRetryState::with_limits(9, Duration::from_secs(5), DEFAULT_MAX_PER_RETRY_DELAY);
         state.cumulative_delay = Duration::from_secs(4);
         // A 5s (capped) delay would push cumulative to 9s, over the 5s budget.
         assert!(state.next_throttle_retry(Some(5000)).is_none());
@@ -696,9 +745,14 @@ mod tests {
         let from_limits = ThrottleRetryState::with_limits(
             DEFAULT_MAX_THROTTLE_ATTEMPTS,
             DEFAULT_MAX_THROTTLE_WAIT,
+            DEFAULT_MAX_PER_RETRY_DELAY,
         );
         assert_eq!(from_new.max_attempts, from_limits.max_attempts);
         assert_eq!(from_new.max_wait_time, from_limits.max_wait_time);
+        assert_eq!(
+            from_new.max_per_retry_delay,
+            from_limits.max_per_retry_delay
+        );
     }
 
     #[test]

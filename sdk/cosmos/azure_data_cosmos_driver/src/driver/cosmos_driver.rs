@@ -16,7 +16,8 @@ use crate::{
             RequestTarget, TopologyProvider,
         },
         pipeline::components::{
-            ThrottleRetryState, DEFAULT_MAX_THROTTLE_ATTEMPTS, DEFAULT_MAX_THROTTLE_WAIT,
+            ThrottleRetryState, DEFAULT_MAX_PER_RETRY_DELAY, DEFAULT_MAX_THROTTLE_ATTEMPTS,
+            DEFAULT_MAX_THROTTLE_WAIT,
         },
         pipeline::operation_pipeline::OperationOverrides,
         routing::{
@@ -552,6 +553,7 @@ impl CosmosDriver {
         let mut throttle = ThrottleRetryState::with_limits(
             DEFAULT_MAX_THROTTLE_ATTEMPTS,
             DEFAULT_MAX_THROTTLE_WAIT,
+            DEFAULT_MAX_PER_RETRY_DELAY,
         );
 
         loop {

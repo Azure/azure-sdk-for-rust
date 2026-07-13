@@ -10,7 +10,7 @@
 
 ### Bugs Fixed
 
-- Improved HTTP 429 (throttle) retry handling: data-plane operations now default to 18 retries / 15s (previously 9 / 30s) for faster reaction, metadata stays at 9 / 30s, and the bootstrap account-properties fetch now retries 429 (previously it had none). Both remain configurable through `ThrottlingRetryOptions`. ([#4675](https://github.com/Azure/azure-sdk-for-rust/issues/4675))
+- Improved HTTP 429 (throttle) retry handling: data-plane operations now default to 18 retries with a per-retry interval clamped to 15s (~270s cumulative, so the retry count is the limiter), previously 9 retries / 30s; metadata stays at 9 retries / 30s with a 5s per-retry interval, and the bootstrap account-properties fetch now retries 429 (previously it had none). Both remain configurable through `ThrottlingRetryOptions`. ([#4675](https://github.com/Azure/azure-sdk-for-rust/issues/4675))
 - Fixed the `AZURE_COSMOS_PPCB_*` environment variables (including `AZURE_COSMOS_PPCB_ENABLED` and the `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` kill switch) being ignored when a `CosmosClient` was built without calling `CosmosClientBuilder::with_partition_failover_options`. The per-partition circuit breaker (PPCB) stayed enabled even with `AZURE_COSMOS_PPCB_ENABLED=false`. The client's driver now resolves these options from the environment when they are not supplied explicitly. ([#4655](https://github.com/Azure/azure-sdk-for-rust/pull/4655))
 
 ### Other Changes

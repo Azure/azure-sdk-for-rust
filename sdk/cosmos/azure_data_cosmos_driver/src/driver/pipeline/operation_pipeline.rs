@@ -40,8 +40,9 @@ use crate::{
 use super::{
     components::{
         OperationAction, OperationRetryState, RoutingDecision, TransportMode, TransportOutcome,
-        TransportRequest, TransportResult, DATA_PLANE_MAX_THROTTLE_ATTEMPTS,
-        DATA_PLANE_MAX_THROTTLE_WAIT, DEFAULT_MAX_THROTTLE_ATTEMPTS, DEFAULT_MAX_THROTTLE_WAIT,
+        TransportRequest, TransportResult, DATA_PLANE_MAX_PER_RETRY_DELAY,
+        DATA_PLANE_MAX_THROTTLE_ATTEMPTS, DATA_PLANE_MAX_THROTTLE_WAIT,
+        DEFAULT_MAX_PER_RETRY_DELAY, DEFAULT_MAX_THROTTLE_ATTEMPTS, DEFAULT_MAX_THROTTLE_WAIT,
     },
     hedging_diagnostics::{HedgeDiagnostics, HedgingStrategyConfig},
     hedging_eligibility::evaluate_hedge_eligibility,
@@ -56,17 +57,24 @@ use crate::driver::transport::{
     AuthorizationContext,
 };
 
-/// Default throttle-retry budget (max attempts, max cumulative wait) for a
-/// pipeline class when the caller hasn't configured `ThrottlingRetryOptions`.
-/// Data-plane favors a shorter total wait; metadata keeps the patient budget.
-fn default_throttle_budget(pipeline_type: PipelineType) -> (u32, Duration) {
+/// Default throttle-retry budget for a pipeline class when the caller hasn't
+/// configured `ThrottlingRetryOptions`: the maximum number of 429 retries, the
+/// cumulative-wait budget, and the per-retry delay cap ("interval"). Data-plane
+/// gets more retries at a longer interval (count-limited); metadata keeps the
+/// patient, shorter-interval budget.
+fn default_throttle_budget(pipeline_type: PipelineType) -> (u32, Duration, Duration) {
     if pipeline_type.is_data_plane() {
         (
             DATA_PLANE_MAX_THROTTLE_ATTEMPTS,
             DATA_PLANE_MAX_THROTTLE_WAIT,
+            DATA_PLANE_MAX_PER_RETRY_DELAY,
         )
     } else {
-        (DEFAULT_MAX_THROTTLE_ATTEMPTS, DEFAULT_MAX_THROTTLE_WAIT)
+        (
+            DEFAULT_MAX_THROTTLE_ATTEMPTS,
+            DEFAULT_MAX_THROTTLE_WAIT,
+            DEFAULT_MAX_PER_RETRY_DELAY,
+        )
     }
 }
 
@@ -191,7 +199,8 @@ pub(crate) async fn execute_operation_pipeline(
     // bounded by `end_to_end_latency_policy` (see the per-attempt deadline
     // wiring below), not by these knobs in aggregate.
     let throttling_retry_options = options.throttling_retry_options();
-    let (default_attempts, default_wait) = default_throttle_budget(pipeline_type);
+    let (default_attempts, default_wait, max_throttle_per_retry_delay) =
+        default_throttle_budget(pipeline_type);
     let max_throttle_attempts = throttling_retry_options
         .max_retry_count()
         .copied()
@@ -509,6 +518,7 @@ pub(crate) async fn execute_operation_pipeline(
                 endpoint_key: routing.endpoint.endpoint_key(),
                 max_throttle_attempts,
                 max_throttle_wait_time,
+                max_throttle_per_retry_delay,
             },
             &mut diagnostics,
         )
@@ -2221,7 +2231,8 @@ async fn perform_single_attempt(
     // `ThrottlingRetryOptions` identically to a non-hedged attempt. Each leg
     // enters the transport pipeline once and starts with a fresh budget.
     let throttling_retry_options = ctx.options.throttling_retry_options();
-    let (default_attempts, default_wait) = default_throttle_budget(ctx.pipeline_type);
+    let (default_attempts, default_wait, max_throttle_per_retry_delay) =
+        default_throttle_budget(ctx.pipeline_type);
     let max_throttle_attempts = throttling_retry_options
         .max_retry_count()
         .copied()
@@ -2244,6 +2255,7 @@ async fn perform_single_attempt(
             endpoint_key: routing.endpoint.endpoint_key(),
             max_throttle_attempts,
             max_throttle_wait_time,
+            max_throttle_per_retry_delay,
         },
         diagnostics,
     )
@@ -3516,14 +3528,16 @@ mod tests {
             super::default_throttle_budget(PipelineType::DataPlane),
             (
                 super::DATA_PLANE_MAX_THROTTLE_ATTEMPTS,
-                super::DATA_PLANE_MAX_THROTTLE_WAIT
+                super::DATA_PLANE_MAX_THROTTLE_WAIT,
+                super::DATA_PLANE_MAX_PER_RETRY_DELAY
             )
         );
         assert_eq!(
             super::default_throttle_budget(PipelineType::Metadata),
             (
                 super::DEFAULT_MAX_THROTTLE_ATTEMPTS,
-                super::DEFAULT_MAX_THROTTLE_WAIT
+                super::DEFAULT_MAX_THROTTLE_WAIT,
+                super::DEFAULT_MAX_PER_RETRY_DELAY
             )
         );
     }
