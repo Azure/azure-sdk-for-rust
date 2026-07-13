@@ -145,6 +145,19 @@ impl ResponseBody {
             }
             Self::Items(items) => items
                 .into_iter()
+                // NOTE: `deserialize_response` auto-detects binary per slice via
+                // the `0x80` preamble, but the feed pipeline that produces
+                // `Self::Items` splits the `Documents` array by scanning **text**
+                // JSON — it is not binary-aware. A single-preamble binary feed
+                // envelope would therefore be sliced into sub-documents *without*
+                // preambles, which `is_binary` would then route to the text path.
+                // This is inert today because query/feed binary negotiation is
+                // deferred (the service does not emit binary feeds without the
+                // negotiation header), so the binary `Items` branch is only
+                // exercised by hand-prefixed synthetic tests. When feed/query
+                // binary negotiation is added, the feed splitter must be made
+                // binary-aware (or each slice re-prefixed) before this path can
+                // decode real binary feeds.
                 .map(|b| deserialize_response(&b, "failed to deserialize feed item"))
                 .collect(),
         }
