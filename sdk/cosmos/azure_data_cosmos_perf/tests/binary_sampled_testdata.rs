@@ -69,7 +69,10 @@ fn load_sample_pool() -> Result<Vec<Map<String, Value>>, Box<dyn Error>> {
 
     for entry in std::fs::read_dir(&testdata_dir)? {
         let path = entry?.path();
-        if path.extension().and_then(|e| e.to_str()).map(str::to_ascii_lowercase)
+        if path
+            .extension()
+            .and_then(|e| e.to_str())
+            .map(str::to_ascii_lowercase)
             != Some("json".to_string())
         {
             continue;
