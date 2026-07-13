@@ -2,6 +2,7 @@
   "recommendations": [
     "editorconfig.editorconfig",
     "github.copilot-chat",
+    "ms-vscode.powershell",
     "rust-lang.rust-analyzer",
     "streetsidesoftware.code-spell-checker",
     "tamasfe.even-better-toml",
