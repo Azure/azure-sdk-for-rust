@@ -101,35 +101,13 @@ pub(crate) fn evaluate_transport_retry(
         return ThrottleAction::Propagate;
     }
 
-    if throttle_state.attempt_count >= throttle_state.max_attempts {
-        return ThrottleAction::Propagate;
-    }
+    // Service-specified retry delay, else exponential fallback; the budget and
+    // per-retry cap are applied by `next_throttle_retry`.
+    let retry_after_ms = result.cosmos_headers().and_then(|h| h.retry_after_ms);
 
-    // Extract the service-specified retry delay from the parsed cosmos
-    // response headers, or fall back to exponential backoff.
-    let service_delay = result
-        .cosmos_headers()
-        .and_then(|h| h.retry_after_ms)
-        .map(Duration::from_millis);
-
-    let delay = service_delay.unwrap_or_else(|| throttle_state.fallback_delay());
-
-    // Cap individual retry delay to avoid excessive waits.
-    let delay = delay.min(throttle_state.max_per_retry_delay);
-
-    let new_cumulative = throttle_state.cumulative_delay + delay;
-
-    if new_cumulative > throttle_state.max_wait_time {
-        return ThrottleAction::Propagate;
-    }
-
-    ThrottleAction::Retry {
-        delay,
-        new_state: ThrottleRetryState {
-            attempt_count: throttle_state.attempt_count + 1,
-            cumulative_delay: new_cumulative,
-            ..*throttle_state
-        },
+    match throttle_state.next_throttle_retry(retry_after_ms) {
+        Some((delay, new_state)) => ThrottleAction::Retry { delay, new_state },
+        None => ThrottleAction::Propagate,
     }
 }
 
@@ -1253,6 +1231,113 @@ mod tests {
                     "expected HttpError(429) for max_throttle_attempts={max_throttle_attempts}, \
                      got {other:?}"
                 ),
+            }
+        }
+    }
+
+    /// Always returns HTTP 429 with `x-ms-retry-after-ms: 0`, counting each
+    /// invocation. The zero retry-after forces every throttle delay to `0`, so
+    /// the *attempt count* (not the cumulative-wait budget) is the sole limiter
+    /// — keeping the large class-default budgets fast and their wire counts
+    /// deterministic, unlike `AlwaysThrottlesTransportClient` (whose exponential
+    /// fallback only stays cheap for small attempt counts).
+    #[derive(Debug)]
+    struct AlwaysThrottlesZeroDelayClient {
+        request_count: Arc<std::sync::atomic::AtomicUsize>,
+    }
+
+    #[async_trait]
+    impl TransportClient for AlwaysThrottlesZeroDelayClient {
+        async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
+            self.request_count
+                .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            let mut headers = azure_core::http::headers::Headers::new();
+            headers.insert(
+                azure_core::http::headers::HeaderName::from_static("x-ms-retry-after-ms"),
+                azure_core::http::headers::HeaderValue::from_static("0"),
+            );
+            Ok(HttpResponse {
+                status: 429,
+                headers,
+                body: vec![],
+            })
+        }
+    }
+
+    /// End-to-end: the per-class *default* throttle budgets (data-plane 18 /
+    /// metadata 9, from `default_throttle_budget`) drive the real
+    /// `execute_transport_pipeline` loop to the expected number of wire
+    /// attempts, confirming the values wired in by the operation pipeline are
+    /// the ones honored on the wire. Follows the same mock + `N + 1` accounting
+    /// as `execute_transport_pipeline_honors_configured_max_throttle_attempts`;
+    /// `x-ms-retry-after-ms: 0` makes the attempt count the sole limiter so the
+    /// forced-final retry stays suppressed (total = 1 initial + N retries).
+    #[tokio::test]
+    async fn execute_transport_pipeline_honors_class_default_throttle_budgets() {
+        use crate::driver::pipeline::components::{
+            DATA_PLANE_MAX_THROTTLE_ATTEMPTS, DATA_PLANE_MAX_THROTTLE_WAIT,
+            DEFAULT_MAX_THROTTLE_ATTEMPTS, DEFAULT_MAX_THROTTLE_WAIT,
+        };
+
+        // The data-plane default must retry strictly more often than metadata,
+        // so the two cases below can never collapse to the same wire count.
+        assert!(DATA_PLANE_MAX_THROTTLE_ATTEMPTS > DEFAULT_MAX_THROTTLE_ATTEMPTS);
+
+        for (pipeline_type, attempts, wait) in [
+            (
+                PipelineType::DataPlane,
+                DATA_PLANE_MAX_THROTTLE_ATTEMPTS,
+                DATA_PLANE_MAX_THROTTLE_WAIT,
+            ),
+            (
+                PipelineType::Metadata,
+                DEFAULT_MAX_THROTTLE_ATTEMPTS,
+                DEFAULT_MAX_THROTTLE_WAIT,
+            ),
+        ] {
+            let request_count = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+            let client = AdaptiveTransport::Gateway(Arc::new(AlwaysThrottlesZeroDelayClient {
+                request_count: Arc::clone(&request_count),
+            }));
+            let mut diagnostics = DiagnosticsContextBuilder::new(
+                ActivityId::from_string(format!("throttle-default-{pipeline_type:?}")),
+                Arc::new(DiagnosticsOptions::default()),
+            );
+
+            let result = execute_transport_pipeline(
+                test_request(None),
+                &TransportPipelineContext {
+                    transport: &client,
+                    allow_sent_transport_retry: false,
+                    credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
+                    user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
+                    pipeline_type,
+                    transport_security: TransportSecurity::Secure,
+                    endpoint_key: test_endpoint_key(),
+                    max_throttle_attempts: attempts,
+                    max_throttle_wait_time: wait,
+                },
+                &mut diagnostics,
+            )
+            .await;
+
+            // 1 initial + N retries = N + 1 (forced-final retry suppressed once
+            // the attempt budget is the limiter).
+            let expected = attempts as usize + 1;
+            assert_eq!(
+                request_count.load(std::sync::atomic::Ordering::SeqCst),
+                expected,
+                "{pipeline_type:?} default budget ({attempts} attempts) must yield {expected} \
+                 wire requests, observed {}",
+                request_count.load(std::sync::atomic::Ordering::SeqCst),
+            );
+
+            match result.outcome {
+                TransportOutcome::HttpError { status, .. } => assert!(
+                    status.is_throttled(),
+                    "expected 429 to propagate for {pipeline_type:?}, got {status:?}",
+                ),
+                other => panic!("expected HttpError(429) for {pipeline_type:?}, got {other:?}"),
             }
         }
     }

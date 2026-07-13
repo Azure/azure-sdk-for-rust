@@ -15,6 +15,9 @@ use crate::{
             PartitionRoutingRefresh, PipelineContext, PipelineNodeState, RequestExecutor,
             RequestTarget, TopologyProvider,
         },
+        pipeline::components::{
+            ThrottleRetryState, DEFAULT_MAX_THROTTLE_ATTEMPTS, DEFAULT_MAX_THROTTLE_WAIT,
+        },
         pipeline::operation_pipeline::OperationOverrides,
         routing::{
             partition_key_range_id::PartitionKeyRangeId, session_manager::SessionManager,
@@ -543,139 +546,173 @@ impl CosmosDriver {
         // `_with_version` calls record the post-negotiation value. Probing first would
         // require a separate diagnostics envelope around the probe itself; we accept the
         // pre-negotiation label on bootstrap as the lower-risk tradeoff.
-        let request_handle = diagnostics.start_request(
-            ExecutionContext::Initial,
-            PipelineType::Metadata,
-            transport_security,
-            transport.diagnostics_kind(),
-            transport.diagnostics_http_version(),
-            &cosmos_endpoint,
+        // Bootstrap fetch runs off the normal transport pipeline, so it must
+        // apply the same 429 throttle-retry budget the metadata pipeline uses
+        // (previously bootstrap had no retry at all).
+        let mut throttle = ThrottleRetryState::with_limits(
+            DEFAULT_MAX_THROTTLE_ATTEMPTS,
+            DEFAULT_MAX_THROTTLE_WAIT,
         );
 
-        let mut request = HttpRequest {
-            url: endpoint_url,
-            method: azure_core::http::Method::Get,
-            headers: azure_core::http::headers::Headers::new(),
-            body: None,
-            timeout: None,
-            #[cfg(feature = "fault_injection")]
-            evaluation_collector: None,
-        };
-        cosmos_headers::apply_cosmos_headers(&mut request, user_agent);
-
-        // Tag the request so `FaultInjectingHttpClient` can match
-        // `FaultOperationType::MetadataReadDatabaseAccount` rules against the
-        // bootstrap fetch. Mirrors the data-plane tag in `operation_pipeline`.
-        #[cfg(feature = "fault_injection")]
-        cosmos_headers::apply_fault_injection_operation_tag(
-            &mut request.headers,
-            crate::fault_injection::FaultOperationType::MetadataReadDatabaseAccount,
-        );
-
-        if let Err(err) = request_signing::sign_request(
-            &mut request,
-            account.auth(),
-            &AuthorizationContext::new(
-                azure_core::http::Method::Get,
-                ResourceType::DatabaseAccount,
-                "",
-            ),
-        )
-        .await
-        {
-            // Sign failure: request never went on the wire.
-            let sign_status = err.status();
-            diagnostics.fail_transport_request(
-                request_handle,
-                err.to_string(),
-                RequestSentStatus::NotSent,
-                sign_status,
+        loop {
+            let execution_context = if throttle.attempt_count == 0 {
+                ExecutionContext::Initial
+            } else {
+                ExecutionContext::Retry
+            };
+            let request_handle = diagnostics.start_request(
+                execution_context,
+                PipelineType::Metadata,
+                transport_security,
+                transport.diagnostics_kind(),
+                transport.diagnostics_http_version(),
+                &cosmos_endpoint,
             );
-            diagnostics.set_operation_status(sign_status.status_code(), sign_status.sub_status());
-            return Err(crate::error::CosmosErrorBuilder::from_error(err)
-                .with_context(format!("AccountProperties sign_request for {endpoint}"))
-                .with_diagnostics(Arc::new(diagnostics.complete()))
-                .build());
-        }
 
-        let response = match transport.send(&request).await {
-            Ok(r) => r,
-            Err(e) => {
-                let send_status = e.error.status();
+            let mut request = HttpRequest {
+                url: endpoint_url.clone(),
+                method: azure_core::http::Method::Get,
+                headers: azure_core::http::headers::Headers::new(),
+                body: None,
+                timeout: None,
+                #[cfg(feature = "fault_injection")]
+                evaluation_collector: None,
+            };
+            cosmos_headers::apply_cosmos_headers(&mut request, user_agent);
+
+            // Tag the request so `FaultInjectingHttpClient` can match
+            // `FaultOperationType::MetadataReadDatabaseAccount` rules against the
+            // bootstrap fetch. Mirrors the data-plane tag in `operation_pipeline`.
+            #[cfg(feature = "fault_injection")]
+            cosmos_headers::apply_fault_injection_operation_tag(
+                &mut request.headers,
+                crate::fault_injection::FaultOperationType::MetadataReadDatabaseAccount,
+            );
+
+            if let Err(err) = request_signing::sign_request(
+                &mut request,
+                account.auth(),
+                &AuthorizationContext::new(
+                    azure_core::http::Method::Get,
+                    ResourceType::DatabaseAccount,
+                    "",
+                ),
+            )
+            .await
+            {
+                // Sign failure: request never went on the wire.
+                let sign_status = err.status();
                 diagnostics.fail_transport_request(
                     request_handle,
-                    e.error.to_string(),
-                    e.request_sent,
-                    send_status,
+                    err.to_string(),
+                    RequestSentStatus::NotSent,
+                    sign_status,
                 );
                 diagnostics
-                    .set_operation_status(send_status.status_code(), send_status.sub_status());
-                return Err(crate::error::CosmosErrorBuilder::from_error(e.error)
-                    .with_context(format!("AccountProperties fetch from {endpoint}"))
+                    .set_operation_status(sign_status.status_code(), sign_status.sub_status());
+                return Err(crate::error::CosmosErrorBuilder::from_error(err)
+                    .with_context(format!("AccountProperties sign_request for {endpoint}"))
                     .with_diagnostics(Arc::new(diagnostics.complete()))
                     .build());
             }
-        };
-        let cosmos_headers = crate::models::CosmosResponseHeaders::from_headers(&response.headers);
-        let status_code = azure_core::http::StatusCode::from(response.status);
-        let sub_status = cosmos_headers.substatus;
-        let cosmos_status = crate::error::CosmosStatus::from_parts(status_code, sub_status);
 
-        diagnostics.record_response(request_handle, status_code, &cosmos_headers);
+            let response = match transport.send(&request).await {
+                Ok(r) => r,
+                Err(e) => {
+                    let send_status = e.error.status();
+                    diagnostics.fail_transport_request(
+                        request_handle,
+                        e.error.to_string(),
+                        e.request_sent,
+                        send_status,
+                    );
+                    diagnostics
+                        .set_operation_status(send_status.status_code(), send_status.sub_status());
+                    return Err(crate::error::CosmosErrorBuilder::from_error(e.error)
+                        .with_context(format!("AccountProperties fetch from {endpoint}"))
+                        .with_diagnostics(Arc::new(diagnostics.complete()))
+                        .build());
+                }
+            };
+            let cosmos_headers =
+                crate::models::CosmosResponseHeaders::from_headers(&response.headers);
+            let status_code = azure_core::http::StatusCode::from(response.status);
+            let sub_status = cosmos_headers.substatus;
+            let cosmos_status = crate::error::CosmosStatus::from_parts(status_code, sub_status);
 
-        // Gate parsing on HTTP status. Non-2xx bodies (5xx envelopes, AAD 401/403, proxy text)
-        // would otherwise serde-fail and surface as `SERIALIZATION_RESPONSE_BODY_INVALID`.
-        // 3xx is treated as non-success here as a safety net: the production reqwest client
-        // built by `DefaultHttpClientFactory` keeps reqwest's default `Policy::limited(10)` and
-        // transparently follows 3xx redirects on the wire (see
-        // `bootstrap_transport_follows_3xx_redirects_against_real_server` for the end-to-end
-        // proof). A 3xx that still reaches this branch therefore means a redirect
-        // the transport could not follow — hop-limit exhausted, missing/relative
-        // Location, scheme downgrade blocked by reqwest, etc. — and we surface it
-        // as `CosmosError` with the upstream status preserved rather than letting
-        // the redirect body parse-fail.
-        if !status_code.is_success() {
-            diagnostics.set_operation_status(status_code, sub_status);
-            let diagnostics_arc = Arc::new(diagnostics.complete());
-            return Err(crate::error::CosmosError::builder()
-                .with_status(cosmos_status)
-                .with_response_parts(crate::models::CosmosResponsePayload::new(
-                    response.body,
-                    cosmos_headers,
-                ))
-                .with_diagnostics(diagnostics_arc)
-                .with_message(format!(
-                    "AccountProperties fetch from {endpoint} returned HTTP {status_code}"
-                ))
-                .build());
-        }
+            diagnostics.record_response(request_handle, status_code, &cosmos_headers);
 
-        let props = match Self::parse_account_properties_payload(&response.body) {
-            Ok(props) => props,
-            Err(err) => {
-                // Operation-status reflects the synthetic serialization failure, not
-                // the wire 2xx — keeps diagnostics consistent with the data-plane
-                // pipeline, where parse failures rebrand operation status.
-                let parse_status = err.status();
-                diagnostics
-                    .set_operation_status(parse_status.status_code(), parse_status.sub_status());
+            // Retry 429s using the shared throttle budget before surfacing the error.
+            if cosmos_status.is_throttled() {
+                if let Some((delay, next)) =
+                    throttle.next_throttle_retry(cosmos_headers.retry_after_ms)
+                {
+                    throttle = next;
+                    azure_core::sleep(
+                        azure_core::time::Duration::try_from(delay)
+                            .unwrap_or(azure_core::time::Duration::ZERO),
+                    )
+                    .await;
+                    continue;
+                }
+            }
+
+            // Gate parsing on HTTP status. Non-2xx bodies (5xx envelopes, AAD 401/403, proxy text)
+            // would otherwise serde-fail and surface as `SERIALIZATION_RESPONSE_BODY_INVALID`.
+            // 3xx is treated as non-success here as a safety net: the production reqwest client
+            // built by `DefaultHttpClientFactory` keeps reqwest's default `Policy::limited(10)` and
+            // transparently follows 3xx redirects on the wire (see
+            // `bootstrap_transport_follows_3xx_redirects_against_real_server` for the end-to-end
+            // proof). A 3xx that still reaches this branch therefore means a redirect
+            // the transport could not follow — hop-limit exhausted, missing/relative
+            // Location, scheme downgrade blocked by reqwest, etc. — and we surface it
+            // as `CosmosError` with the upstream status preserved rather than letting
+            // the redirect body parse-fail.
+            if !status_code.is_success() {
+                diagnostics.set_operation_status(status_code, sub_status);
                 let diagnostics_arc = Arc::new(diagnostics.complete());
-                return Err(crate::error::CosmosErrorBuilder::from_error(err)
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(cosmos_status)
                     .with_response_parts(crate::models::CosmosResponsePayload::new(
-                        crate::models::ResponseBody::NoPayload,
+                        response.body,
                         cosmos_headers,
                     ))
                     .with_diagnostics(diagnostics_arc)
-                    .with_context(format!("AccountProperties payload from {endpoint}"))
+                    .with_message(format!(
+                        "AccountProperties fetch from {endpoint} returned HTTP {status_code}"
+                    ))
                     .build());
             }
-        };
-        tracing::info!(
-            endpoint = %endpoint,
-            write_region = ?props.write_region(),
-            "AccountProperties retrieved successfully"
-        );
-        Ok(props)
+
+            let props = match Self::parse_account_properties_payload(&response.body) {
+                Ok(props) => props,
+                Err(err) => {
+                    // Operation-status reflects the synthetic serialization failure, not
+                    // the wire 2xx — keeps diagnostics consistent with the data-plane
+                    // pipeline, where parse failures rebrand operation status.
+                    let parse_status = err.status();
+                    diagnostics.set_operation_status(
+                        parse_status.status_code(),
+                        parse_status.sub_status(),
+                    );
+                    let diagnostics_arc = Arc::new(diagnostics.complete());
+                    return Err(crate::error::CosmosErrorBuilder::from_error(err)
+                        .with_response_parts(crate::models::CosmosResponsePayload::new(
+                            crate::models::ResponseBody::NoPayload,
+                            cosmos_headers,
+                        ))
+                        .with_diagnostics(diagnostics_arc)
+                        .with_context(format!("AccountProperties payload from {endpoint}"))
+                        .build());
+                }
+            };
+            tracing::info!(
+                endpoint = %endpoint,
+                write_region = ?props.write_region(),
+                "AccountProperties retrieved successfully"
+            );
+            return Ok(props);
+        }
     }
 
     fn parse_account_properties_payload(
@@ -3554,6 +3591,69 @@ mod tests {
         assert!(
             err.response().is_some(),
             "with_response_parts + with_diagnostics must promote the error to Wire, exposing response(). Got: {err:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn fetch_account_properties_retries_on_throttle_then_succeeds() {
+        // Returns 429 (with x-ms-retry-after-ms) on the first attempt, then 200.
+        // Bootstrap must retry the throttle instead of surfacing it.
+        #[derive(Debug)]
+        struct ThrottleThenSucceedClient {
+            calls: Arc<std::sync::atomic::AtomicUsize>,
+        }
+
+        #[async_trait]
+        impl TransportClient for ThrottleThenSucceedClient {
+            async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
+                let n = self.calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                if n == 0 {
+                    let mut headers = Headers::new();
+                    headers.insert(
+                        azure_core::http::headers::HeaderName::from_static("x-ms-retry-after-ms"),
+                        azure_core::http::headers::HeaderValue::from_static("1"),
+                    );
+                    Ok(HttpResponse {
+                        status: 429,
+                        headers,
+                        body: Vec::new(),
+                    })
+                } else {
+                    Ok(HttpResponse {
+                        status: 200,
+                        headers: Headers::new(),
+                        body: ACCOUNT_PROPERTIES_PAYLOAD.as_bytes().to_vec(),
+                    })
+                }
+            }
+        }
+
+        let calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let client: Arc<dyn TransportClient> = Arc::new(ThrottleThenSucceedClient {
+            calls: Arc::clone(&calls),
+        });
+        let transport =
+            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let account = signed_test_account("https://test.documents.azure.com:443/");
+        let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
+
+        CosmosDriver::fetch_account_properties_with_transport(
+            &runtime,
+            &transport,
+            &account,
+            None,
+            &user_agent,
+            false,
+        )
+        .await
+        .expect("bootstrap must retry the 429 and then succeed");
+
+        assert_eq!(
+            calls.load(std::sync::atomic::Ordering::SeqCst),
+            2,
+            "expected one throttled attempt followed by one successful retry"
         );
     }
 

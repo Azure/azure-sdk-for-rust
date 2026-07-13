@@ -10,6 +10,7 @@
 
 ### Bugs Fixed
 
+- Improved HTTP 429 (throttle) retry handling: data-plane operations now default to 18 retries / 15s (previously 9 / 30s) for faster reaction, metadata stays at 9 / 30s, and the bootstrap account-properties fetch now retries 429 (previously it had none). Both remain configurable through `ThrottlingRetryOptions`. ([#4675](https://github.com/Azure/azure-sdk-for-rust/issues/4675))
 - Fixed `AZURE_COSMOS_PPCB_*` environment variables (including the `AZURE_COSMOS_PPCB_ENABLED` master switch and the `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` kill switch) being silently ignored when a caller built `DriverOptions` without calling `DriverOptionsBuilder::with_partition_failover_options`. The environment is read only by `PartitionFailoverOptionsBuilder::build`, but the omitted-options path used a bare `PartitionFailoverOptions::default()` (which hard-codes PPCB enabled and reads no environment), so PPCB stayed on even with `AZURE_COSMOS_PPCB_ENABLED=false`. `DriverOptionsBuilder::build` now resolves the partition-failover options from the environment when the caller does not supply them (falling back to defaults, fail-soft, if an environment value is out of bounds). An explicitly supplied `PartitionFailoverOptions` continues to take precedence. ([#4655](https://github.com/Azure/azure-sdk-for-rust/pull/4655))
 
 ### Other Changes

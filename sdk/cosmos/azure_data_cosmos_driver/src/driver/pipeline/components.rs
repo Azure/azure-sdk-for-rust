@@ -315,9 +315,14 @@ pub(crate) struct ThrottleRetryState {
     pub forced_final_retry_used: bool,
 }
 
-/// Hard-coded defaults for throttle retry.
+/// Default throttle-retry budget for metadata requests (and the bootstrap
+/// account-properties fetch): a patient budget, since metadata is cached.
 pub(crate) const DEFAULT_MAX_THROTTLE_ATTEMPTS: u32 = 9;
 pub(crate) const DEFAULT_MAX_THROTTLE_WAIT: Duration = Duration::from_secs(30);
+/// Default throttle-retry budget for latency-sensitive data-plane (document)
+/// requests: a shorter total wait spread over more, quicker retries.
+pub(crate) const DATA_PLANE_MAX_THROTTLE_ATTEMPTS: u32 = 18;
+pub(crate) const DATA_PLANE_MAX_THROTTLE_WAIT: Duration = Duration::from_secs(15);
 const DEFAULT_MAX_PER_RETRY_DELAY: Duration = Duration::from_secs(5);
 const DEFAULT_FALLBACK_BASE_DELAY: Duration = Duration::from_millis(5);
 const DEFAULT_BACKOFF_FACTOR: f64 = 2.0;
@@ -383,6 +388,35 @@ impl ThrottleRetryState {
         }
 
         Duration::from_secs_f64(with_jitter(base_delay.as_secs_f64(), ratio))
+    }
+
+    /// Advances the state for one 429 retry, honoring the service
+    /// `x-ms-retry-after-ms` (`retry_after_ms`) when present and otherwise using
+    /// the exponential fallback. Returns the capped delay and advanced state, or
+    /// `None` when the attempt-count or cumulative-wait budget is exhausted.
+    pub fn next_throttle_retry(&self, retry_after_ms: Option<u64>) -> Option<(Duration, Self)> {
+        if self.attempt_count >= self.max_attempts {
+            return None;
+        }
+
+        let delay = retry_after_ms
+            .map(Duration::from_millis)
+            .unwrap_or_else(|| self.fallback_delay())
+            .min(self.max_per_retry_delay);
+
+        let new_cumulative = self.cumulative_delay + delay;
+        if new_cumulative > self.max_wait_time {
+            return None;
+        }
+
+        Some((
+            delay,
+            Self {
+                attempt_count: self.attempt_count + 1,
+                cumulative_delay: new_cumulative,
+                ..self.clone()
+            },
+        ))
     }
 }
 
@@ -618,6 +652,42 @@ mod tests {
         assert_eq!(state.fallback_base_delay, Duration::from_millis(5));
         assert_eq!(state.max_per_retry_delay, Duration::from_secs(5));
         assert_eq!(state.backoff_jitter_ratio, 0.25);
+    }
+
+    #[test]
+    fn next_throttle_retry_honors_service_retry_after_and_advances() {
+        let state = ThrottleRetryState::with_limits(9, Duration::from_secs(30));
+        let (delay, next) = state
+            .next_throttle_retry(Some(1000))
+            .expect("first retry within budget");
+        assert_eq!(delay, Duration::from_millis(1000));
+        assert_eq!(next.attempt_count, 1);
+        assert_eq!(next.cumulative_delay, Duration::from_millis(1000));
+    }
+
+    #[test]
+    fn next_throttle_retry_caps_delay_at_per_retry_max() {
+        let state = ThrottleRetryState::with_limits(9, Duration::from_secs(30));
+        // Service asks for 60s; the per-retry cap (5s) must clamp it.
+        let (delay, _) = state
+            .next_throttle_retry(Some(60_000))
+            .expect("retry within budget");
+        assert_eq!(delay, Duration::from_secs(5));
+    }
+
+    #[test]
+    fn next_throttle_retry_stops_when_attempt_budget_exhausted() {
+        let mut state = ThrottleRetryState::with_limits(1, Duration::from_secs(30));
+        state.attempt_count = 1;
+        assert!(state.next_throttle_retry(Some(10)).is_none());
+    }
+
+    #[test]
+    fn next_throttle_retry_stops_when_wait_budget_exceeded() {
+        let mut state = ThrottleRetryState::with_limits(9, Duration::from_secs(5));
+        state.cumulative_delay = Duration::from_secs(4);
+        // A 5s (capped) delay would push cumulative to 9s, over the 5s budget.
+        assert!(state.next_throttle_retry(Some(5000)).is_none());
     }
 
     #[test]
