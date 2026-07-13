@@ -9,7 +9,7 @@ use std::error::Error;
 use azure_data_cosmos::feed::ContinuationToken;
 use azure_data_cosmos::{
     clients::{ContainerClient, DatabaseClient},
-    feed::FeedScope,
+    feed::{FeedRange, FeedScope},
     models::{CosmosStatus, ThroughputProperties},
     options::{MaxItemCountHint, QueryOptions},
     Query,
@@ -536,10 +536,6 @@ pub async fn feed_range_scoped_query_honors_range() -> Result<(), Box<dyn Error>
 
             // Enumerate each feed range and query it in isolation — exactly the
             // customer scenario (`read_feed_ranges()` then query each range).
-            // Capture each range's result set separately so we can assert on the
-            // per-range slices, not just their union: a union-only check would
-            // still pass if one range returned every item and another returned
-            // nothing, which is exactly the over-scan bug this test guards.
             let mut per_range_ids: Vec<Vec<String>> = Vec::new();
             for range in &ranges {
                 let mut ids =
@@ -549,36 +545,38 @@ pub async fn feed_range_scoped_query_honors_range() -> Result<(), Box<dyn Error>
                 per_range_ids.push(ids);
             }
 
-            // Every range must return a non-empty slice. Each physical partition
-            // owns a share of the 10 logical partitions, so a correctly-scoped
-            // query can never come back empty; an empty range would mean the
-            // scope was dropped and the items were served by some other range.
-            for (i, ids) in per_range_ids.iter().enumerate() {
-                assert!(
-                    !ids.is_empty(),
-                    "feed range {i} returned no items; a scoped query must return \
-                     that range's own slice, not defer to another range"
-                );
+            // Independently compute the expected grouping: map each seeded item to
+            // the physical range that owns its partition key, using the SDK's
+            // partition-key → EPK-range math as an oracle (which does not depend on
+            // the query fan-out path under test). Asserting the whole grouping in a
+            // single comparison covers non-emptiness, disjointness, and full
+            // coverage at once, and stays correct regardless of how the emulator
+            // chose to split the container. Before the fan-out clip fix each range
+            // returned the ENTIRE container, so `per_range_ids` held every id in
+            // every range and would not match this partition.
+            let pk_definition = container_client
+                .read(None)
+                .await?
+                .into_model()?
+                .partition_key;
+            let mut expected_ids: Vec<Vec<String>> = vec![Vec::new(); ranges.len()];
+            for item in &items {
+                let logical =
+                    FeedRange::for_partition(item.partition_key.clone().into(), &pk_definition);
+                let owner = ranges
+                    .iter()
+                    .position(|range| logical.is_subset_of(range))
+                    .expect("every partition key must fall within exactly one feed range");
+                expected_ids[owner].push(item.id.clone());
+            }
+            for ids in &mut expected_ids {
+                ids.sort();
             }
 
-            // The ranges must be disjoint: before the fan-out clip fix every
-            // range fanned out across the whole container, so ids were
-            // duplicated across ranges. Flatten and check for duplicates.
-            let mut flattened: Vec<String> = per_range_ids.iter().flatten().cloned().collect();
-            flattened.sort();
-            let mut deduped = flattened.clone();
-            deduped.dedup();
             assert_eq!(
-                flattened, deduped,
-                "feed ranges must be disjoint: no id may be returned by more than \
-                 one range"
-            );
-
-            // And together the ranges must cover exactly the full container —
-            // no over-scan and nothing missing.
-            assert_eq!(
-                flattened, all_ids,
-                "the union across ranges must equal the full container exactly once"
+                expected_ids, per_range_ids,
+                "each feed range must return exactly the items whose partition key \
+                 maps into it — no over-scan, no missing items, no empty ranges"
             );
 
             Ok(())
