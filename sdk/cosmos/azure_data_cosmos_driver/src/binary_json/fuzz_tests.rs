@@ -179,8 +179,9 @@ fn adversarial_length_prefixes_do_not_over_allocate() {
     bin.extend_from_slice(&huge.to_le_bytes());
     assert!(decode(&bin).is_err());
 
-    // A uniform Int64 array claiming u32::MAX items: must error, not try to
-    // build a 4-billion-element vector.
+    // A uniform Int64 array claiming u16::MAX items (the max an ArrNumC2
+    // count field can express): must error, not try to build a 65,535-element
+    // vector from a buffer that carries almost no payload.
     let mut uniform = vec![PREAMBLE, markers::ARR_NUM_C2, markers::INT64];
     uniform.extend_from_slice(&(u16::MAX).to_le_bytes());
     assert!(decode(&uniform).is_err());
