@@ -939,7 +939,7 @@ mod tests {
     }
 
     #[test]
-    fn partition_key_definition_versionless_multihash_normalizes_to_v1_hash() {
+    fn partition_key_definition_version_less_multihash_normalizes_to_v1_hash() {
         let parsed: PartitionKeyDefinition =
             serde_json::from_str(r#"{"paths":["/a","/b"],"kind":"MultiHash"}"#).unwrap();
 
