@@ -275,6 +275,46 @@ fn decode_and_from_slice_agree_on_truncated_and_corrupted_buffers() {
 }
 
 #[test]
+fn many_references_to_one_large_string_stay_bounded() {
+    // A buffer with one large `StrL2` string followed by many `StrR2`
+    // references to it must not amplify into unbounded aggregate output: the
+    // reference-expansion budget caps the total materialized text and fails
+    // rather than allocating O(S²) `String`s. The decoder must still terminate
+    // (never hang / OOM), and the native path must not panic either.
+    let payload_len = 4096usize;
+    let reference_count = 5000usize;
+    let element_count = reference_count + 1;
+
+    // Container prefix is ArrLC4: PREAMBLE + marker + 4-byte length + 4-byte
+    // count, so the first element (the big string) begins at offset 10.
+    let string_offset: u16 = 1 + 1 + 4 + 4;
+
+    // Body: the big StrL2 string, then `reference_count` StrR2 refs to it.
+    let mut body = Vec::new();
+    body.push(markers::STR_L2);
+    body.extend_from_slice(&(payload_len as u16).to_le_bytes());
+    body.extend(std::iter::repeat_n(b'a', payload_len));
+    for _ in 0..reference_count {
+        body.push(markers::STR_R2);
+        body.extend_from_slice(&string_offset.to_le_bytes());
+    }
+
+    let mut buf = vec![PREAMBLE, markers::ARR_LC4];
+    buf.extend_from_slice(&(body.len() as u32).to_le_bytes());
+    buf.extend_from_slice(&(element_count as u32).to_le_bytes());
+    buf.extend_from_slice(&body);
+
+    // `reference_count * payload_len` ≈ 20 MB of expansion far exceeds the
+    // ~16× buffer budget, so the decoder must reject it with an error.
+    assert!(
+        decode(&buf).is_err(),
+        "expected the reference-expansion budget to reject the amplified buffer"
+    );
+    // The native path must also terminate without panicking.
+    let _ = from_slice::<serde_json::Value>(&buf);
+}
+
+#[test]
 fn from_slice_rejects_undersized_container_count() {
     // A count-framed object whose declared count (1) is smaller than the number
     // of members its byte length spans (2). The reference decoder rejects this

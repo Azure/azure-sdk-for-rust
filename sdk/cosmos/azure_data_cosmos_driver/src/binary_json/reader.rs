@@ -25,6 +25,8 @@
 use base64::Engine;
 use serde_json::{Map, Value};
 
+use std::cell::Cell;
+
 use super::markers::{
     ARR0, ARR1, ARR_ARR_NUM_C1C1, ARR_ARR_NUM_C2C2, ARR_L1, ARR_L2, ARR_L4, ARR_LC1, ARR_LC2,
     ARR_LC4, ARR_NUM_C1, ARR_NUM_C2, BASE64_STRING_LENGTH1, BASE64_STRING_LENGTH2,
@@ -127,10 +129,7 @@ pub fn decode(buffer: &[u8]) -> Result<Value> {
 
     // Start reading after the one-byte preamble. The reader keeps absolute
     // offsets (into `buffer`) so error positions account for the preamble.
-    let mut reader = Reader {
-        buf: buffer,
-        pos: 1,
-    };
+    let mut reader = Reader::new(buffer, 1);
     let value = reader.read_value(0)?;
     let remaining = buffer.len() - reader.pos;
     if remaining != 0 {
@@ -147,12 +146,43 @@ pub fn decode(buffer: &[u8]) -> Result<Value> {
 pub(super) struct Reader<'a> {
     pub(super) buf: &'a [u8],
     pub(super) pos: usize,
+    /// Remaining budget, in bytes, for text materialized by **reference-string**
+    /// resolution ([`STR_R1`](super::markers::STR_R1)–[`STR_R4`](super::markers::STR_R4)).
+    ///
+    /// Each reference decodes a *fresh owned copy* of its target string, so a
+    /// crafted buffer (one long string plus many short references to it) can
+    /// expand to O(S²) aggregate output from a size-`S` buffer even though every
+    /// individual length prefix is buffer-bounded. This shared counter caps the
+    /// total reference-expanded bytes for one decode; exceeding it fails with
+    /// [`BinaryError::InvalidLength`]. Non-reference strings are backed 1:1 by
+    /// buffer bytes and are not charged. Shared (via [`Cell`]) across every
+    /// reference resolution in the value tree because they all run on the same
+    /// reader instance.
+    ref_budget: Cell<usize>,
+}
+
+/// The reference-string expansion budget for a buffer of `buf_len` bytes.
+///
+/// References normally *shrink* payloads (they replace a repeated string with a
+/// few offset bytes), so a legitimate buffer never approaches this. The cap is
+/// generous — a multiple of the buffer size, floored at a small constant so
+/// tiny buffers still permit some expansion — while still bounding the
+/// adversarial O(S²) blow-up to O(S).
+fn reference_budget(buf_len: usize) -> usize {
+    const FLOOR: usize = 64 * 1024;
+    const FACTOR: usize = 16;
+    buf_len.saturating_mul(FACTOR).max(FLOOR)
 }
 
 impl<'a> Reader<'a> {
     /// Creates a reader positioned at `pos` within `buf`.
     pub(super) fn new(buf: &'a [u8], pos: usize) -> Self {
-        Self { buf, pos }
+        let ref_budget = Cell::new(reference_budget(buf.len()));
+        Self {
+            buf,
+            pos,
+            ref_budget,
+        }
     }
 
     /// Returns the next byte without advancing the cursor.
@@ -1075,11 +1105,25 @@ impl<'a> Reader<'a> {
 
         // Decode the referenced string from its own cursor. It is a single
         // string value, so depth does not grow and a bare reader suffices.
-        let mut sub = Reader {
-            buf: self.buf,
-            pos: target,
-        };
-        sub.read_value(0)
+        // The target is guaranteed a non-reference string, so this sub-read
+        // resolves no further references and needs no shared budget.
+        let mut sub = Reader::new(self.buf, target);
+        let value = sub.read_value(0)?;
+
+        // Charge the materialized text against the shared reference-expansion
+        // budget so many references to one large string cannot amplify a
+        // size-`S` buffer into O(S²) aggregate output.
+        if let Value::String(s) = &value {
+            let remaining = self.ref_budget.get();
+            let cost = s.len();
+            if cost > remaining {
+                return Err(BinaryError::InvalidLength {
+                    detail: "reference-string expansion exceeds the decode budget",
+                });
+            }
+            self.ref_budget.set(remaining - cost);
+        }
+        Ok(value)
     }
 }
 
