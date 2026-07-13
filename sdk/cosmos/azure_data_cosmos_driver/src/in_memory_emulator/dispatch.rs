@@ -43,6 +43,11 @@ pub(crate) enum OperationType {
     /// for these (not 501) — keep the variant separate so the handler can
     /// emit the right status and substatus.
     BadRequestPath(String),
+    /// A request whose headers are internally inconsistent — for example an
+    /// EPK-range-scoped read (`x-ms-start-epk`/`x-ms-end-epk`) that declares
+    /// the point key type instead of `EffectivePartitionKeyRange`. Real Cosmos
+    /// rejects these with `400 "One of the input values is invalid"`.
+    InvalidInput(String),
 }
 
 /// Parsed request data extracted from an HTTP request.
@@ -104,6 +109,7 @@ static PARTITION_KEY_RANGE_ID: HeaderName =
     HeaderName::from_static("x-ms-documentdb-partitionkeyrangeid");
 static START_EPK: HeaderName = HeaderName::from_static("x-ms-start-epk");
 static END_EPK: HeaderName = HeaderName::from_static("x-ms-end-epk");
+static READ_FEED_KEY_TYPE: HeaderName = HeaderName::from_static("x-ms-read-key-type");
 static IS_BATCH_REQUEST: HeaderName = HeaderName::from_static("x-ms-cosmos-is-batch-request");
 static OFFER_THROUGHPUT: HeaderName = HeaderName::from_static("x-ms-offer-throughput");
 static OFFER_AUTOPILOT_SETTINGS: HeaderName =
@@ -158,6 +164,9 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
         .map(|s| s.to_string());
     let start_epk = headers.get_optional_str(&START_EPK).map(|s| s.to_string());
     let end_epk = headers.get_optional_str(&END_EPK).map(|s| s.to_string());
+    let read_key_type = headers
+        .get_optional_str(&READ_FEED_KEY_TYPE)
+        .map(|s| s.to_string());
     // Parse `x-ms-offer-throughput` (RU/s) from the request headers. Invalid /
     // non-numeric values are treated as absent; the container creation handler
     // then uses `ContainerConfig::default()`. A failing parse is intentionally
@@ -191,6 +200,26 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
             is_query_plan,
             is_batch,
         )
+    };
+
+    // A read scoped to an effective-partition-key *range*
+    // (`x-ms-start-epk`/`x-ms-end-epk`) must declare the range key type
+    // `EffectivePartitionKeyRange`. The point key type `EffectivePartitionKey`
+    // is rejected by the real gateway with `400 "One of the input values is
+    // invalid"`; mirror that here so a regression that reverts the driver's
+    // key-type value is caught by the emulator-backed tests (issues #4680 and
+    // #4681).
+    let operation = if (start_epk.is_some() || end_epk.is_some())
+        && read_key_type.as_deref()
+            != Some(
+                crate::models::cosmos_headers::request_header_names::READ_FEED_KEY_TYPE_EPK_RANGE,
+            ) {
+        OperationType::InvalidInput(format!(
+            "x-ms-read-key-type must be 'EffectivePartitionKeyRange' when \
+             x-ms-start-epk/x-ms-end-epk are present, got {read_key_type:?}"
+        ))
+    } else {
+        operation
     };
 
     // Index by *position*, not by keyword search. Cosmos URLs are

@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added runtime diagnostics output configuration via `CosmosRuntimeBuilder::with_diagnostics_options`, including the env-backed `AZURE_COSMOS_DIAGNOSTICS_DEFAULT_VERBOSITY` option. The built-in default is now summary diagnostics JSON. ([#4733](https://github.com/Azure/azure-sdk-for-rust/pull/4733))
 - Gateway 2.0 transport (a regional proxy forwarding RNTBD-over-HTTP/2) is selected automatically when the account advertises thin-client endpoints and the connectivity probe confirms them. Transport selection is fully server-driven, with HTTP/2 as the only client-side prerequisite. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319))
 - HTTP 449 (RetryWith) responses are now retried transparently in-region with exponential backoff, so callers no longer see spurious 449 errors from concurrent writes. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319))
 - `ReadConsistencyStrategy` is now honored across Gateway V1 and V2 reads. Adds the `LatestCommitted` variant (a quorum read independent of the account default); `GlobalStrong` is rejected with `BadRequest` unless the account default is `Strong`. Per-request strategy overrides the client default. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319))
@@ -15,6 +16,7 @@
 
 ### Bugs Fixed
 
+- Fixed hierarchical-partition-key (HPK) queries. A `FeedScope::partition` scope with only a *prefix* of the key hierarchy (e.g. `("USA", "CA")` on a `/country/state/city` container) now filters to that prefix instead of returning every item in the physical partition (issue [#4680](https://github.com/Azure/azure-sdk-for-rust/issues/4680)), and cross-partition queries over an HPK container no longer fail with `400 Bad Request` (issue [#4681](https://github.com/Azure/azure-sdk-for-rust/issues/4681)). ([#4729](https://github.com/Azure/azure-sdk-for-rust/pull/4729))
 - Fixed the `AZURE_COSMOS_PPCB_*` environment variables (including `AZURE_COSMOS_PPCB_ENABLED` and the `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` kill switch) being ignored when a `CosmosClient` was built without calling `CosmosClientBuilder::with_partition_failover_options`. The per-partition circuit breaker (PPCB) stayed enabled even with `AZURE_COSMOS_PPCB_ENABLED=false`. The client's driver now resolves these options from the environment when they are not supplied explicitly. ([#4655](https://github.com/Azure/azure-sdk-for-rust/pull/4655))
 
 ### Other Changes

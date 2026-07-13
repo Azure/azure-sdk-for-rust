@@ -210,7 +210,7 @@ impl DiagnosticsOptions {
 /// - `AZURE_COSMOS_DIAGNOSTICS_MAX_SUMMARY_SIZE_BYTES`: Maximum size in bytes for
 ///   summary mode output (default: `8192`, min: `4096`)
 /// - `AZURE_COSMOS_DIAGNOSTICS_DEFAULT_VERBOSITY`: Default verbosity level.
-///   Valid values: `default`, `summary`, `detailed` (default: `detailed`)
+///   Valid values: `default`, `summary`, `detailed` (default: `summary`)
 /// - `AZURE_COSMOS_DIAGNOSTICS_MAX_REQUESTS`: Maximum per-attempt request
 ///   records retained per operation before run-length compaction applies
 ///   (default: `512`, min: `16`)
@@ -255,7 +255,7 @@ impl DiagnosticsOptionsBuilder {
 
     /// Sets the default verbosity level.
     ///
-    /// Default: `DiagnosticsVerbosity::Detailed`.
+    /// Default: `DiagnosticsVerbosity::Summary`.
     pub fn with_default_verbosity(mut self, verbosity: DiagnosticsVerbosity) -> Self {
         self.default_verbosity = Some(verbosity);
         self
@@ -294,10 +294,10 @@ impl DiagnosticsOptionsBuilder {
             ValidationBounds::min(MIN_MAX_SUMMARY_SIZE_BYTES),
         )?;
 
-        let default_verbosity = self
-            .default_verbosity
-            .or(env.default_verbosity)
-            .unwrap_or(DiagnosticsVerbosity::Detailed);
+        let default_verbosity = match self.default_verbosity.or(env.default_verbosity) {
+            Some(DiagnosticsVerbosity::Default) | None => DiagnosticsVerbosity::Summary,
+            Some(verbosity) => verbosity,
+        };
 
         let max_request_diagnostics = resolve_from_env(
             self.max_request_diagnostics,
@@ -323,7 +323,7 @@ mod tests {
     fn defaults() {
         let options = DiagnosticsOptions::default();
         assert_eq!(options.max_summary_size_bytes, 8 * 1024);
-        assert_eq!(options.default_verbosity, DiagnosticsVerbosity::Detailed);
+        assert_eq!(options.default_verbosity, DiagnosticsVerbosity::Summary);
         assert_eq!(options.max_request_diagnostics, 512);
     }
 
@@ -380,11 +380,21 @@ mod tests {
     fn custom_values() {
         let options = DiagnosticsOptionsBuilder::new()
             .with_max_summary_size_bytes(16 * 1024)
-            .with_default_verbosity(DiagnosticsVerbosity::Summary)
+            .with_default_verbosity(DiagnosticsVerbosity::Detailed)
             .build()
             .unwrap();
 
         assert_eq!(options.max_summary_size_bytes, 16 * 1024);
+        assert_eq!(options.default_verbosity, DiagnosticsVerbosity::Detailed);
+    }
+
+    #[test]
+    fn explicit_default_verbosity_resolves_to_summary() {
+        let options = DiagnosticsOptionsBuilder::new()
+            .with_default_verbosity(DiagnosticsVerbosity::Default)
+            .build()
+            .unwrap();
+
         assert_eq!(options.default_verbosity, DiagnosticsVerbosity::Summary);
     }
 

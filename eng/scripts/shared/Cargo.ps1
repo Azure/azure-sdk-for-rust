@@ -43,22 +43,17 @@ function Test-ShouldPackDependency(
     return $false
   }
 
-  if ($dependency['kind'] -ne 'dev') {
-    return $true
-  }
-
-  # `cargo package` verification can resolve publishable workspace
-  # dev-dependencies from crates.io after rewriting path dependencies. Pack
-  # them alongside the requested crate, but skip helper crates that set
-  # `publish = false` because they cannot be packaged for upload anyway.
-  return $null -eq $dependencyPackage.publish
+  # `cargo package` can verify path-only dev-dependencies without packing them
+  # as separate crates first, so only non-dev path dependencies need to be
+  # expanded into the package set.
+  return $dependency['kind'] -ne 'dev'
 }
 
 function Get-CargoPackages() {
   $metadata = Get-CargoMetadata
 
-  # Path based dependencies are assumed to be unreleased package versions. In
-  # non-release builds these should be packed as well.
+  # Path based non-dev dependencies are assumed to be unreleased package
+  # versions. In non-release builds these should be packed as well.
   foreach ($package in $metadata.packages) {
     $package.UnreleasedDependencies = @()
     foreach ($dependency in $package.dependencies) {
