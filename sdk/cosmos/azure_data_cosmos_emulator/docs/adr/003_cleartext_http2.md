@@ -5,7 +5,7 @@
 
 ## Context
 
-HTTP/2 is a hard requirement for Gateway V2. PR1 hosts plaintext HTTP (TLS is deferred), so the
+HTTP/2 is a hard requirement for Gateway 2.0. PR1 hosts plaintext HTTP (TLS is deferred), so the
 data plane must run cleartext HTTP/2 (h2c). The question was whether a driver change is needed to
 negotiate h2c.
 
@@ -28,7 +28,7 @@ cleartext HTTP/1.1-only server.
 ## Alternatives
 
 - Serving HTTP/1.1 in PR1 and deferring HTTP/2 to the TLS PR was rejected: it would leave the
-  Gateway V2 path without validation for longer and understate the HTTP/2 requirement.
+  Gateway 2.0 path without validation for longer and understate the HTTP/2 requirement.
 - Adding a new client toggle to force prior knowledge was rejected as redundant with existing
   behavior.
 
