@@ -770,6 +770,46 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn create_driver_rejects_http_production_endpoint() {
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let account = AccountReference::with_master_key(
+            Url::parse("http://myaccount.documents.azure.com/").unwrap(),
+            "***not-base64***",
+        );
+
+        let error = runtime
+            .create_driver(DriverOptions::builder(account).build())
+            .await
+            .expect_err("http production endpoint must be rejected");
+        assert_eq!(
+            error.status(),
+            crate::error::CosmosStatus::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL
+        );
+    }
+
+    #[tokio::test]
+    async fn create_driver_rejects_http_backup_endpoint() {
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let account = AccountReference::with_master_key(
+            Url::parse("https://myaccount.documents.azure.com/").unwrap(),
+            "***not-base64***",
+        )
+        .with_backup_endpoints(vec![Url::parse(
+            "http://myaccount-backup.documents.azure.com/",
+        )
+        .unwrap()]);
+
+        let error = runtime
+            .create_driver(DriverOptions::builder(account).build())
+            .await
+            .expect_err("http backup endpoint must be rejected");
+        assert_eq!(
+            error.status(),
+            crate::error::CosmosStatus::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL
+        );
+    }
+
+    #[tokio::test]
     async fn default_diagnostics_options_use_summary_verbosity() {
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
 

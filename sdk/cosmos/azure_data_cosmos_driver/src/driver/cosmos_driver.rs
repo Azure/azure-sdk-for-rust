@@ -106,6 +106,7 @@ use super::{
         connectivity_probe::{ConnectivityProbe, Http2ConnectivityProbe},
         cosmos_headers,
         cosmos_transport_client::HttpRequest,
+        ensure_endpoint_scheme_allowed,
         http_client_factory::HttpClientConfig,
         request_signing, AuthorizationContext, CosmosTransport,
     },
@@ -1256,6 +1257,14 @@ impl CosmosDriver {
     ) -> crate::error::Result<Self> {
         let account = options.account().clone();
         let account_endpoint = AccountEndpoint::from(&account);
+
+        // Reject plaintext http:// endpoints unless they point to an emulator host.
+        // Validate the primary endpoint and every backup endpoint before any I/O.
+        ensure_endpoint_scheme_allowed(&account_endpoint)?;
+        for backup in account.backup_endpoints() {
+            ensure_endpoint_scheme_allowed(&AccountEndpoint::from(backup.clone()))?;
+        }
+
         let default_endpoint = CosmosEndpoint::global(account.endpoint().clone());
 
         // Per-driver User-Agent: compute the cross-SDK feature flags advertised
