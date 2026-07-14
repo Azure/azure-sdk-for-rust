@@ -53,7 +53,7 @@ use self::http_client_factory::DefaultHttpClientFactory;
 
 pub(crate) use authorization_policy::generate_authorization;
 pub(crate) use authorization_policy::AuthorizationContext;
-pub(crate) use emulator::is_emulator_host;
+pub(crate) use emulator::{ensure_endpoint_scheme_allowed, is_emulator_host};
 pub(crate) use gateway_v2_dispatch::{
     unwrap_response_for_gateway_v2, wrap_request_for_gateway_v2, WrapInputs,
 };
