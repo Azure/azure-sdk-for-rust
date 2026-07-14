@@ -11,11 +11,12 @@ negotiate h2c.
 
 ## Decision
 
-Serve h2c from the host using `axum::serve` (hyper-util's `auto` builder accepts HTTP/2
-prior-knowledge connections automatically) and rely on the driver's **existing** behavior:
-the `Http2Only` reqwest client already sets `http2_prior_knowledge()` (h2c against `http://`),
-initialization already probes HTTP/2 then falls back to HTTP/1.1, and `http://` is already
-permitted for loopback emulator hosts. No mandatory driver change.
+Serve h2c from the host using `axum::serve`, explicitly enabling axum's non-default `http2`
+feature so hyper-util's `auto` builder accepts HTTP/2 prior-knowledge connections. Then rely on the
+driver's **existing** behavior: the `Http2Only` reqwest client already sets
+`http2_prior_knowledge()` (h2c against `http://`), initialization already probes HTTP/2 then falls
+back to HTTP/1.1, and `http://` is already permitted for loopback emulator hosts. No mandatory
+driver change.
 
 ## Consequences
 
