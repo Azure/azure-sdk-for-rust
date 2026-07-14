@@ -9,7 +9,7 @@ use std::error::Error;
 use azure_data_cosmos::feed::ContinuationToken;
 use azure_data_cosmos::{
     clients::{ContainerClient, DatabaseClient},
-    feed::{FeedRange, FeedScope},
+    feed::FeedScope,
     models::{CosmosStatus, ThroughputProperties},
     options::{MaxItemCountHint, QueryOptions},
     Query,
@@ -509,8 +509,8 @@ pub async fn feed_range_scoped_query_honors_range() -> Result<(), Box<dyn Error>
     TestClient::run_with_unique_db(
         async |_, db_client| {
             // 10 logical partitions × 2 items. Provision 11000 RU/s so the
-            // service creates at least 2 physical partitions — a scoped query
-            // then has a neighbouring range it must NOT touch.
+            // container splits into 2 physical partitions — a scoped query then
+            // has a neighbouring range it must NOT touch.
             let items = test_data::generate_mock_items(10, 2);
             let throughput = ThroughputProperties::manual(11000);
             let container_client =
@@ -518,63 +518,51 @@ pub async fn feed_range_scoped_query_honors_range() -> Result<(), Box<dyn Error>
                     .await?;
 
             let ranges = container_client.read_feed_ranges(None).await?;
-            assert!(
-                ranges.len() >= 2,
-                "expected at least 2 physical partitions with 11000 RU/s, got {}",
+            assert_eq!(
+                ranges.len(),
+                2,
+                "expected exactly 2 physical partitions with 11000 RU/s, got {}",
                 ranges.len()
             );
 
-            // Baseline: the full container returns every seeded item.
-            let mut all_ids =
-                collect_ids_for_scope(&container_client, FeedScope::full_container()).await?;
-            all_ids.sort();
-            assert_eq!(
-                all_ids.len(),
-                items.len(),
-                "full-container query should return every seeded item"
-            );
-
-            // Enumerate each feed range and query it in isolation — exactly the
-            // customer scenario (`read_feed_ranges()` then query each range).
-            let mut per_range_ids: Vec<Vec<String>> = Vec::new();
+            // Query each feed range in isolation — exactly the customer scenario
+            // (`read_feed_ranges()` then query each range) — and collect the ids
+            // each range returns. Pair each result set with its range so we can
+            // order the outer list by the range's lower bound, independent of the
+            // order `read_feed_ranges` happens to return.
+            let mut per_range: Vec<(String, Vec<String>)> = Vec::new();
             for range in &ranges {
                 let mut ids =
                     collect_ids_for_scope(&container_client, FeedScope::range(range.clone()))
                         .await?;
-                ids.sort();
-                per_range_ids.push(ids);
+                ids.sort_by_key(|id| id.parse::<u32>().expect("mock ids are numeric"));
+                per_range.push((range.min_inclusive().to_hex(), ids));
             }
+            per_range.sort_by(|a, b| a.0.cmp(&b.0));
+            let per_range_ids: Vec<Vec<&str>> = per_range
+                .iter()
+                .map(|(_, ids)| ids.iter().map(String::as_str).collect())
+                .collect();
 
-            // Independently compute the expected grouping: map each seeded item to
-            // the physical range that owns its partition key, using the SDK's
-            // partition-key → EPK-range math as an oracle (which does not depend on
-            // the query fan-out path under test). Asserting the whole grouping in a
-            // single comparison covers non-emptiness, disjointness, and full
-            // coverage at once, and stays correct regardless of how the emulator
-            // chose to split the container. Before the fan-out clip fix each range
-            // returned the ENTIRE container, so `per_range_ids` held every id in
-            // every range and would not match this partition.
-            let pk_definition = container_client
-                .read(None)
-                .await?
-                .into_model()?
-                .partition_key;
-            let mut expected_ids: Vec<Vec<String>> = vec![Vec::new(); ranges.len()];
-            for item in &items {
-                let logical =
-                    FeedRange::for_partition(item.partition_key.clone().into(), &pk_definition);
-                let owner = ranges
-                    .iter()
-                    .position(|range| logical.is_subset_of(range))
-                    .expect("every partition key must fall within exactly one feed range");
-                expected_ids[owner].push(item.id.clone());
-            }
-            for ids in &mut expected_ids {
-                ids.sort();
-            }
+            // The container deterministically splits into two physical ranges at
+            // EPK `0x1FFF…FF` (`[00, 1FFF…FF)` and `[1FFF…FF, FF)`), so each of the
+            // 10 partition keys maps to exactly one range and a correctly-scoped
+            // query returns only that range's ids. These groupings were captured
+            // from a real Cosmos DB account and are identical on the emulator —
+            // the effective-partition-key hash and the split boundary are
+            // algorithm-driven, not environment-specific. Before the fan-out clip
+            // fix each `FeedScope::range` query fanned out across the whole
+            // container, so every range returned all 20 ids instead of its slice.
+            let expected: Vec<Vec<&str>> = vec![
+                vec![
+                    "0", "1", "20", "21", "30", "31", "40", "41", "50", "51", "70", "71", "90",
+                    "91",
+                ],
+                vec!["10", "11", "60", "61", "80", "81"],
+            ];
 
             assert_eq!(
-                expected_ids, per_range_ids,
+                expected, per_range_ids,
                 "each feed range must return exactly the items whose partition key \
                  maps into it — no over-scan, no missing items, no empty ranges"
             );
