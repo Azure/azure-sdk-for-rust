@@ -16,13 +16,33 @@ behind an `auth` config block and CLI flags:
 
 - Optional HTTPS via axum + rustls (`--https --cert --key`); h2c remains the default when off.
 - Auth modes: `none` (default), `key` (validate the `Authorization` HMAC against a primary key and
-  a primary read-only key, matching the service), and `entra` (validate a bearer JWT and check its
-  object ID / app ID against an allow-list supplied in config or via `--allowed-oid`).
+  a primary read-only key, matching the service), and `entra` (validate a bearer JWT; see trust
+  inputs below).
+- **HTTPS is required when `key` or `entra` auth is selected.** Enabling either auth mode without
+  `--https` is a startup error; the process exits with a descriptive message. This prevents account
+  keys or bearer tokens from being transmitted over plaintext h2c.
+
+### Entra JWT trust inputs
+
+An allow-list of object IDs / app IDs is _not_ sufficient to authenticate a JWT. PR3 must define
+and validate the following trust inputs before the `entra` mode can be accepted:
+
+| Input | Flag / config key | Purpose |
+|---|---|---|
+| JWKS source | `--jwks-uri` or `--jwks-file` | Provides the public keys used to verify the JWT signature. The offline goal recommends `--jwks-file`; `--jwks-uri` is used for online (AAD-connected) deployments. |
+| Expected issuer | `--issuer` | The `iss` claim value that the emulator will accept; prevents tokens issued by a different authority from being accepted. |
+| Expected audience | `--audience` | The `aud` claim value, typically the emulator's resource URI; prevents tokens issued for other apps from being replayed. |
+| Allowed OIDs / app IDs | `--allowed-oid` (repeatable) | After the signature, issuer, and audience are validated, restrict access to the listed object or application IDs. |
+
+All four inputs must be provided when `entra` mode is enabled; the process exits with a descriptive
+error if any are missing.
 
 ## Consequences
 
 The initial hosting and control-plane work ships without certificate or token friction, and can be
-validated over h2c immediately. Auth and HTTPS land as a self-contained, reviewable increment.
+validated over h2c immediately. Auth and HTTPS land as a self-contained, reviewable increment, with
+a security-sound design: authenticated modes are gated behind HTTPS, and JWT validation is complete
+rather than rely on an allow-list alone.
 
 ## Alternatives
 
