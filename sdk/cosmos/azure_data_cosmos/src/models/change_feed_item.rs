@@ -92,7 +92,7 @@ pub struct ChangeFeedMetadata {
 
     /// The LSN of the previous image of the item, when a pre-image is available
     /// (replace and delete operations on containers that retain pre-images).
-    #[serde(rename = "previousImageLsn", default)]
+    #[serde(rename = "previousImageLSN", default)]
     previous_image_lsn: Option<i64>,
 
     /// `Some(true)` when the change is a delete caused by the item's
@@ -232,10 +232,24 @@ where
 
         if is_envelope {
             #[derive(Deserialize)]
-            struct Envelope<T> {
-                current: Option<T>,
-                previous: Option<T>,
+            struct Envelope {
+                current: Option<serde_json::Value>,
+                previous: Option<serde_json::Value>,
                 metadata: Option<ChangeFeedMetadata>,
+            }
+
+            // For deletes the service returns an empty `current` object (and,
+            // for pre-image containers, the removed document in `previous`).
+            // Treat an empty or null object as absent so callers with strict
+            // document types don't fail to deserialize a delete.
+            fn document<T: DeserializeOwned>(
+                value: Option<serde_json::Value>,
+            ) -> Result<Option<T>, serde_json::Error> {
+                match value {
+                    None | Some(serde_json::Value::Null) => Ok(None),
+                    Some(serde_json::Value::Object(map)) if map.is_empty() => Ok(None),
+                    Some(other) => serde_json::from_value(other).map(Some),
+                }
             }
 
             let Envelope {
@@ -244,8 +258,8 @@ where
                 metadata,
             } = serde_json::from_value(value).map_err(D::Error::custom)?;
             Ok(ChangeFeedItem {
-                current,
-                previous,
+                current: document(current).map_err(D::Error::custom)?,
+                previous: document(previous).map_err(D::Error::custom)?,
                 metadata,
             })
         } else {
@@ -465,7 +479,7 @@ mod tests {
                 "operationType": "replace",
                 "lsn": 200,
                 "crts": 1720322500,
-                "previousImageLsn": 199
+                "previousImageLSN": 199
             }
         });
         let item: ChangeFeedItem<Doc> = serde_json::from_value(envelope).unwrap();
@@ -524,6 +538,28 @@ mod tests {
         let metadata = item.metadata().expect("metadata should be present");
         assert_eq!(metadata.lsn(), Some(400));
         assert!(metadata.time_to_live_expired().is_none());
+    }
+
+    #[test]
+    fn deserializes_delete_envelope_with_empty_current() {
+        // A full-fidelity delete returns an empty `current` object with the
+        // deleted item's identity carried in `metadata`. The empty object must
+        // map to `None` so callers with strict document types (a required `id`
+        // here) can still deserialize the delete instead of failing on `{}`.
+        let envelope = json!({
+            "current": {},
+            "metadata": {
+                "operationType": "delete",
+                "id": "item-1",
+                "partitionKey": ["tenant-a"]
+            }
+        });
+        let item: ChangeFeedItem<Doc> = serde_json::from_value(envelope).unwrap();
+
+        assert_eq!(item.operation_type(), Some(ChangeFeedOperationType::Delete));
+        assert!(item.current().is_none());
+        assert!(item.previous().is_none());
+        assert!(item.metadata().is_some());
     }
 
     #[test]
