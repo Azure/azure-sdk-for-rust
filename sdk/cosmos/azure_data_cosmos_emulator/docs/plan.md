@@ -58,11 +58,11 @@ emulator implementation out of the driver crate (it depends heavily on driver-in
 
 The work ships across three pull requests.
 
-| PR | Contents | Feature/cfg |
-| --- | --- | --- |
+| PR      | Contents                                                                                                                                                                                                                          | Feature/cfg                                                                 |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
 | **PR1** | New host crate; per-region h2c hosting of Gateway V1 **and** Gateway V2 (config-gated); management REST API for control-plane actions; CI running the existing emulator suites against the hosted emulator in both gateway modes. | `__internal_in_memory_emulator_host`, `test_category = "emulator_inmemory"` |
-| **PR2** | New emulator store primitives: region offline/online and runtime write-region failover, with net-new tests and their management REST endpoints. | same host feature |
-| **PR3** | Optional HTTPS and authentication (primary key, primary read-only key, Entra ID with an allow-list of object IDs). | new `auth` config block |
+| **PR2** | New emulator store primitives: region offline/online and runtime write-region failover, with net-new tests and their management REST endpoints.                                                                                   | same host feature                                                           |
+| **PR3** | Optional HTTPS and authentication (primary key, primary read-only key, Entra ID with an allow-list of object IDs).                                                                                                                | new `auth` config block                                                     |
 
 ### Feature gating
 
@@ -78,17 +78,31 @@ The work ships across three pull requests.
 
 ## 3. Architecture Overview
 
-```text
-                       ┌────────────────────────────────────────────────┐
-                       │        azure_data_cosmos_emulator (bin)         │
-                       │                                                 │
-  client SDK  ──h2c──▶ │  Region "East US"  gateway listener :8081 ─┐    │
-  (any lang)           │  Region "East US"  thin-client     :8444 ─┤    │
-                       │  Region "West US"  gateway listener :8082 ─┼──▶ │  Arc<InMemoryEmulatorHttpClient>
-  operator    ──http─▶ │  Region "West US"  thin-client     :8445 ─┤    │      └── Arc<EmulatorStore>
-  (curl)               │  Management API                    :9090 ─┘    │
-                       └────────────────────────────────────────────────┘
-                                  (all listeners share ONE store)
+```mermaid
+flowchart LR
+    SDK["Client SDK<br/>(any language)"]
+    OP["Operator<br/>(curl)"]
+
+    subgraph HOST["azure_data_cosmos_emulator (binary)"]
+        direction TB
+        EG["East US gateway :8081"]
+        ET["East US thin-client :8444"]
+        WG["West US gateway :8082"]
+        WT["West US thin-client :8445"]
+        MGMT["Management API :9090"]
+        STORE["Single shared store<br/>Arc&lt;InMemoryEmulatorHttpClient&gt; owns Arc&lt;EmulatorStore&gt;"]
+        EG --> STORE
+        ET --> STORE
+        WG --> STORE
+        WT --> STORE
+        MGMT --> STORE
+    end
+
+    SDK -- h2c --> EG
+    SDK -- h2c --> ET
+    SDK -- h2c --> WG
+    SDK -- h2c --> WT
+    OP -- http --> MGMT
 ```
 
 - **Port-per-region.** Each virtual region is a distinct `127.0.0.1:{port}` gateway endpoint.
@@ -108,19 +122,20 @@ The work ships across three pull requests.
 
 ### Crate layout (proposed)
 
-```text
-sdk/cosmos/azure_data_cosmos_emulator/
-├── Cargo.toml            # publish = false; deps: clap, axum, tokio, serde, serde_json, tracing
-├── README.md
-├── docs/
-│   ├── plan.md           # this document
-│   └── adr/              # architecture decision records
-└── src/
-    ├── main.rs           # CLI (clap), startup, listener wiring
-    ├── config.rs         # serde DTOs + translation to driver types + seeding
-    ├── data_plane.rs     # HTTP <-> azure_core::http::Request bridge (Gateway V1)
-    ├── gateway_v2.rs     # thin-client listener, connectivity probe, RNTBD bridge
-    └── management.rs     # control-plane REST API (axum router)
+```mermaid
+flowchart TB
+    ROOT["azure_data_cosmos_emulator/"]
+    ROOT --> CARGO["Cargo.toml<br/>publish = false; clap, axum, tokio, serde, serde_json, tracing"]
+    ROOT --> README["README.md"]
+    ROOT --> DOCS["docs/"]
+    ROOT --> SRC["src/"]
+    DOCS --> PLAN["plan.md: this document"]
+    DOCS --> ADR["adr/: architecture decision records"]
+    SRC --> MAIN["main.rs: CLI, startup, listener wiring"]
+    SRC --> CONFIG["config.rs: serde DTOs, translate to driver types, seeding"]
+    SRC --> DP["data_plane.rs: HTTP to azure_core Request bridge (Gateway V1)"]
+    SRC --> GW2["gateway_v2.rs: thin-client listener, connectivity probe, RNTBD bridge"]
+    SRC --> MGMT["management.rs: control-plane REST API (axum router)"]
 ```
 
 ---
@@ -173,22 +188,22 @@ API can further modify state at runtime. (YAML support is deferred; see ADR-005.
 
 ### 4.2 Field reference
 
-| Path | Type | Notes |
-| --- | --- | --- |
-| `account.writeMode` | `"single" \| "multi"` | Maps to `WriteMode`. In `single`, the first region is the hub/write region. |
-| `account.consistency` | enum | `Strong \| BoundedStaleness \| Session \| ConsistentPrefix \| Eventual`. |
-| `account.perPartitionFailover` | bool | Initial `enablePerPartitionFailoverBehavior`; can be toggled at runtime. |
-| `account.throttling` | bool | Enables per-partition RU/s enforcement (429/3200). |
-| `account.regions[].gatewayPort` | u16 | Gateway V1 (JSON REST) port. Region endpoint = `http://127.0.0.1:{gatewayPort}`. |
-| `account.regions[].thinClientPort` | u16, optional | When present, enables Gateway V2 simulation for the region. |
-| `account.regions[].regionId` | u64, optional | Auto-assigned by position when omitted. |
-| `account.replication` | object | Default replication delay + buffer cap. |
-| `account.replicationOverrides[]` | array | Per source→target replication overrides. |
-| `management.port` | u16 | Control-plane REST API port. |
-| `databases[].containers[].partitionKey` | object | Standard Cosmos partition key definition (`paths`, `kind`, `version`). |
-| `databases[].containers[].partitionCount` | u32 | Initial physical partition count. |
-| `databases[].containers[].throughput` | u32 | Provisioned RU/s (drives throttling when enabled). |
-| `databases[].containers[].seedItems[]` | array | Documents created on startup; each carries its `partitionKey` value array and the `document` body. |
+| Path                                      | Type                  | Notes                                                                                              |
+| ----------------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------- |
+| `account.writeMode`                       | `"single" \| "multi"` | Maps to `WriteMode`. In `single`, the first region is the hub/write region.                        |
+| `account.consistency`                     | enum                  | `Strong \| BoundedStaleness \| Session \| ConsistentPrefix \| Eventual`.                           |
+| `account.perPartitionFailover`            | bool                  | Initial `enablePerPartitionFailoverBehavior`; can be toggled at runtime.                           |
+| `account.throttling`                      | bool                  | Enables per-partition RU/s enforcement (429/3200).                                                 |
+| `account.regions[].gatewayPort`           | u16                   | Gateway V1 (JSON REST) port. Region endpoint = `http://127.0.0.1:{gatewayPort}`.                   |
+| `account.regions[].thinClientPort`        | u16, optional         | When present, enables Gateway V2 simulation for the region.                                        |
+| `account.regions[].regionId`              | u64, optional         | Auto-assigned by position when omitted.                                                            |
+| `account.replication`                     | object                | Default replication delay + buffer cap.                                                            |
+| `account.replicationOverrides[]`          | array                 | Per source→target replication overrides.                                                           |
+| `management.port`                         | u16                   | Control-plane REST API port.                                                                       |
+| `databases[].containers[].partitionKey`   | object                | Standard Cosmos partition key definition (`paths`, `kind`, `version`).                             |
+| `databases[].containers[].partitionCount` | u32                   | Initial physical partition count.                                                                  |
+| `databases[].containers[].throughput`     | u32                   | Provisioned RU/s (drives throttling when enabled).                                                 |
+| `databases[].containers[].seedItems[]`    | array                 | Documents created on startup; each carries its `partitionKey` value array and the `document` body. |
 
 Seed items are created through the same request path as real writes (a synthesized create-item
 request per item), so EPK routing, RU accounting, and replication behave identically to
@@ -246,19 +261,58 @@ GET /account
 
 ### 6.2 Partition split / merge
 
+A split accepts an optional JSON body that selects **how the split boundary is chosen**. Three
+modes are supported, mirroring the real service and the emulator's existing split hooks:
+
+| `mode`               | Split boundary                                                                                                                           | Backing store API                                                            |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `midpoint` (default) | Geometric midpoint of the partition's EPK range, independent of the data distribution.                                                   | `split_partition` (existing)                                                 |
+| `epk`                | An explicit EPK boundary supplied as a hex string (same form as the `minInclusive` / `maxExclusive` values in the `/pkranges` response). | `split_partition_at_epk` (existing) + a hex-to-`Epk` parser (small addition) |
+| `storage`            | An EPK computed to balance document count / storage across the two children, the way the service splits under storage pressure.          | `split_partition_by_storage` (new helper)                                    |
+
 ```text
 POST /databases/{db}/containers/{coll}/partitions/{partitionId}/split
-    → 202 { "database": "testdb", "container": "testcoll", "parent": 0, "children": [4, 5] }
+    body (optional): {
+      "mode": "midpoint" | "epk" | "storage",   // default: "midpoint"
+      "epk": "<hex EPK>",                        // required when mode = "epk"; ignored otherwise
+      "lockDurationMs": 0                        // optional; 410/1007 window before children appear
+    }
+    → 202 {
+        "database": "testdb", "container": "testcoll",
+        "parent": 0, "children": [4, 5],
+        "mode": "storage", "splitEpk": "6A3C000000000000000000000000000000"
+      }
 
 POST /databases/{db}/containers/{coll}/partitions/merge
-    body: { "partitionIds": [4, 5] }
+    body: { "partitionIds": [4, 5] }             // exactly two adjacent partitions
     → 202 { "merged": [4, 5], "into": 6 }
 ```
 
-Sample:
+The response always echoes the resolved `mode` and the concrete `splitEpk` that was applied, so a
+caller that requested `midpoint` or `storage` learns the boundary the emulator chose. Only the
+`epk` hex parser and the `storage` mode are new code behind this endpoint; `midpoint` and the
+`epk` split execution reuse existing store hooks.
+
+Samples — one request per split mode:
 
 ```bash
+# 1) Mid-point split (default): halve the partition's EPK range geometrically.
 curl -X POST http://127.0.0.1:9090/databases/testdb/containers/testcoll/partitions/0/split
+
+# 2) Custom-EPK split: split at an explicit hex EPK boundary.
+curl -X POST http://127.0.0.1:9090/databases/testdb/containers/testcoll/partitions/0/split \
+  -H 'content-type: application/json' \
+  -d '{ "mode": "epk", "epk": "3FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" }'
+
+# 3) Storage-based split: pick a boundary that balances documents across the children.
+curl -X POST http://127.0.0.1:9090/databases/testdb/containers/testcoll/partitions/0/split \
+  -H 'content-type: application/json' \
+  -d '{ "mode": "storage" }'
+
+# Any mode may set a non-zero lock window; the partition returns 410/1007 until it elapses.
+curl -X POST http://127.0.0.1:9090/databases/testdb/containers/testcoll/partitions/0/split \
+  -H 'content-type: application/json' \
+  -d '{ "mode": "midpoint", "lockDurationMs": 500 }'
 ```
 
 ### 6.3 Region offline / online (PR2)
@@ -379,9 +433,20 @@ async fn serve_cosmos(
 ### 7.3 Control-plane primitives
 
 ```rust
-// Already public today (behind the base emulator feature):
-store.split_partition("testdb", "testcoll", 0);
-store.merge_partitions("testdb", "testcoll", &[4, 5]);
+use std::time::Duration;
+
+// Split — existing store hooks (behind the base emulator feature):
+store.split_partition("testdb", "testcoll", 0, Duration::ZERO);        // REST mode = "midpoint"
+// `split_epk` is an Epk parsed from the request's hex boundary (REST mode = "epk").
+store.split_partition_at_epk("testdb", "testcoll", 0, split_epk, Duration::ZERO);
+
+// Split — storage-based (new helper): computes a balancing EPK from the live doc distribution.
+store.split_partition_by_storage("testdb", "testcoll", 0, Duration::ZERO); // REST mode = "storage"
+
+// Merge exactly two adjacent partitions:
+store.merge_partitions("testdb", "testcoll", 4, 5, Duration::ZERO);
+
+// Replication + per-partition failover (existing):
 store.pause_replication("West US");
 store.resume_replication("West US");
 store.set_per_partition_failover(true);
@@ -456,18 +521,18 @@ hosting and control-plane work (ADR-008).
 
 ## 11. Architecture Decision Records
 
-| ADR | Decision |
-| --- | --- |
-| [ADR-001](adr/001_separate_host_crate.md) | Host in a separate `publish = false` binary crate; keep the emulator in the driver behind a host feature. |
-| [ADR-002](adr/002_port_per_region.md) | Model each region as a distinct localhost port; one shared store. |
-| [ADR-003](adr/003_cleartext_http2.md) | Serve cleartext HTTP/2 (h2c) and reuse the driver's existing prior-knowledge probe. |
-| [ADR-004](adr/004_management_rest_api.md) | Expose emulator-only control-plane actions via a separate management REST API. |
-| [ADR-005](adr/005_json_config_startup_seed.md) | Drive startup topology and seed data from a JSON config file; defer YAML. |
-| [ADR-006](adr/006_gateway_v2_rntbd.md) | Simulate Gateway V2 by promoting the test-only inverse RNTBD codec to production, config-gated. |
-| [ADR-007](adr/007_region_offline_failover_primitives.md) | Add runtime region-offline and write-region failover store primitives (PR2). |
-| [ADR-008](adr/008_defer_auth_https.md) | Defer HTTPS and authentication to a dedicated later PR. |
-| [ADR-009](adr/009_ci_reuse_existing_suites.md) | Validate via the existing suites over a new `emulator_inmemory` cfg, in both gateway modes. |
-| [ADR-010](adr/010_pr_sequencing.md) | Sequence the work as PR1 (hosting + control plane + CI), PR2 (primitives), PR3 (auth/HTTPS). |
+| ADR                                                      | Decision                                                                                                  |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| [ADR-001](adr/001_separate_host_crate.md)                | Host in a separate `publish = false` binary crate; keep the emulator in the driver behind a host feature. |
+| [ADR-002](adr/002_port_per_region.md)                    | Model each region as a distinct localhost port; one shared store.                                         |
+| [ADR-003](adr/003_cleartext_http2.md)                    | Serve cleartext HTTP/2 (h2c) and reuse the driver's existing prior-knowledge probe.                       |
+| [ADR-004](adr/004_management_rest_api.md)                | Expose emulator-only control-plane actions via a separate management REST API.                            |
+| [ADR-005](adr/005_json_config_startup_seed.md)           | Drive startup topology and seed data from a JSON config file; defer YAML.                                 |
+| [ADR-006](adr/006_gateway_v2_rntbd.md)                   | Simulate Gateway V2 by promoting the test-only inverse RNTBD codec to production, config-gated.           |
+| [ADR-007](adr/007_region_offline_failover_primitives.md) | Add runtime region-offline and write-region failover store primitives (PR2).                              |
+| [ADR-008](adr/008_defer_auth_https.md)                   | Defer HTTPS and authentication to a dedicated later PR.                                                   |
+| [ADR-009](adr/009_ci_reuse_existing_suites.md)           | Validate via the existing suites over a new `emulator_inmemory` cfg, in both gateway modes.               |
+| [ADR-010](adr/010_pr_sequencing.md)                      | Sequence the work as PR1 (hosting + control plane + CI), PR2 (primitives), PR3 (auth/HTTPS).              |
 
 ---
 
