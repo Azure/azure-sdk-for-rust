@@ -257,6 +257,13 @@ where
         // Detecting `previous`/`metadata` (not just `current`) still lets a
         // full-fidelity delete envelope, which has no `current`, be recognized.
         // See the type-level docs for the sole reserved-key caveat.
+        //
+        // Buffering into `Value` first is what lets us inspect the shape at
+        // runtime and tolerate a non-enveloping backend (the vnext emulator
+        // does not honor the wire-format header). It costs one extra DOM parse
+        // per item. Once non-enveloping backends are no longer supported this
+        // whole impl collapses to a plain `#[derive(Deserialize)]` with
+        // `Option` fields, removing the buffering and the double-parse.
         let value = serde_json::Value::deserialize(deserializer)?;
         let is_envelope = value.as_object().is_some_and(|fields| {
             !fields.is_empty()
