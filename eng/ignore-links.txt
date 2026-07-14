@@ -1,0 +1,17 @@
+# Links that the Verify-Links pipeline should skip.
+# One link per line; lines beginning with '#' are comments.
+# Matching is an exact string comparison against the link as it appears in the source.
+
+# Rustdoc-generated font license (target/.../doc/static.files/SourceSerif4-LICENSE-*.md).
+# These external sites reject the link-checker's automated requests.
+http://www.adobe.com/
+http://scripts.sil.org/OFL
+
+# SECURITY.md (repo-root, synced from azure-sdk-tools template).
+# MSRC pages return 403 to the automated link checker.
+https://www.microsoft.com/en-us/msrc/pgp-key-msrc
+https://www.microsoft.com/en-us/msrc/cvd
+
+# SUPPORT.md (repo-root, synced from azure-sdk-tools template).
+# The azure-sdk-rust Stack Overflow tag has no questions yet, so it 404s.
+https://stackoverflow.com/questions/tagged/azure-sdk-rust
