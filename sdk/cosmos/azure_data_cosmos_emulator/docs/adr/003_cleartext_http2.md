@@ -1,36 +1,39 @@
-# ADR-003 — Serve cleartext HTTP/2 (h2c) and reuse the existing probe
+# ADR-003 — Support cleartext HTTP/2 for local emulator endpoints
 
 **Status:** Accepted
 **Date:** 2026-07-14
 
 ## Context
 
-HTTP/2 is a hard requirement for Gateway 2.0. PR1 hosts plaintext HTTP (TLS is deferred), so the
-data plane must run cleartext HTTP/2 (h2c). The question was whether a driver change is needed to
-negotiate h2c.
+Gateway 2.0 requires HTTP/2. Local emulator scenarios also need to avoid certificate provisioning
+and trust-store configuration when transport security is not under test. Cleartext HTTP/2 (h2c)
+provides HTTP/2 framing on loopback without TLS, while production Cosmos endpoints remain HTTPS
+only.
 
 ## Decision
 
-Serve h2c from the host using `axum::serve`, explicitly enabling axum's non-default `http2`
-feature so hyper-util's `auto` builder accepts HTTP/2 prior-knowledge connections. Then rely on the
-driver's **existing** behavior: the `Http2Only` reqwest client already sets
-`http2_prior_knowledge()` (h2c against `http://`), initialization already probes HTTP/2 then falls
-back to HTTP/1.1, and `http://` is already permitted for loopback emulator hosts. No mandatory
-driver change.
+The host accepts h2c prior-knowledge connections on configured loopback endpoints. The Gateway 2.0
+listener rejects HTTP/1.x requests. The standard gateway listener may accept either HTTP/1.1 or
+HTTP/2 so the driver's normal negotiation and fallback behavior remains observable.
+
+The driver permits `http://` Gateway 2.0 URLs only when the endpoint is recognized as an emulator
+host. All other Gateway 2.0 endpoints must use `https://`. The existing `Http2Only` transport uses
+`http2_prior_knowledge()` and the existing account probe determines whether standard gateway
+traffic uses HTTP/2 or falls back to HTTP/1.1.
 
 ## Consequences
 
-The hosted emulator negotiates HTTP/2 with the unmodified driver. A change to
-`has_explicit_http2_incompatibility` is held as a **contingency**, applied only if end-to-end
-validation reveals the driver does not cleanly fall back from h2c to HTTP/1.1 against a
-cleartext HTTP/1.1-only server.
+Gateway 2.0 can be exercised locally without certificates. Plaintext traffic is limited to
+explicit emulator hosts, preserving the production transport boundary. Authentication modes that
+carry credentials require TLS, as described by ADR-008.
 
 ## Alternatives
 
-- Serving HTTP/1.1 in PR1 and deferring HTTP/2 to the TLS PR was rejected: it would leave the
-  Gateway 2.0 path without validation for longer and understate the HTTP/2 requirement.
-- Adding a new client toggle to force prior knowledge was rejected as redundant with existing
-  behavior.
+- Supporting only HTTP/1.1 was rejected because it cannot model Gateway 2.0.
+- Requiring TLS for every local run was rejected because certificate setup would obscure tests
+  unrelated to transport security.
+- Adding a client option to force prior knowledge was rejected because the existing HTTP/2-only
+  transport already provides that behavior.
 
 ## References
 

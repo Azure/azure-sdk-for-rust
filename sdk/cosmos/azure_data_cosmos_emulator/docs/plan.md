@@ -518,24 +518,31 @@ block and CLI flags:
   check its object ID / app ID against an allow-list supplied in config or via `--allowed-oid`).
 
 Splitting auth/HTTPS into its own PR keeps certificate and token friction out of the initial
-hosting and control-plane work (ADR-008).
+hosting and control-plane work ([ADR-008](adr/008_transport_security_and_authentication.md)).
 
 ---
 
 ## 11. Architecture Decision Records
 
-| ADR                                                      | Decision                                                                                                  |
-| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| [ADR-001](adr/001_separate_host_crate.md)                | Host in a separate `publish = false` binary crate; keep the emulator in the driver behind a host feature. |
-| [ADR-002](adr/002_port_per_region.md)                    | Model each region as a distinct localhost port; one shared store.                                         |
-| [ADR-003](adr/003_cleartext_http2.md)                    | Serve cleartext HTTP/2 (h2c) and reuse the driver's existing prior-knowledge probe.                       |
-| [ADR-004](adr/004_management_rest_api.md)                | Expose emulator-only control-plane actions via a separate management REST API.                            |
-| [ADR-005](adr/005_json_config_startup_seed.md)           | Drive startup topology and seed data from a JSON config file; defer YAML.                                 |
-| [ADR-006](adr/006_gateway_v2_rntbd.md)                   | Simulate Gateway 2.0 by promoting the test-only inverse RNTBD codec to production, config-gated.          |
-| [ADR-007](adr/007_region_offline_failover_primitives.md) | Add runtime region-offline and write-region failover store primitives (PR2).                              |
-| [ADR-008](adr/008_defer_auth_https.md)                   | Defer HTTPS and authentication to a dedicated later PR.                                                   |
-| [ADR-009](adr/009_ci_reuse_existing_suites.md)           | Validate via the existing suites over a new `emulator_inmemory` cfg, in both gateway modes.               |
-| [ADR-010](adr/010_pr_sequencing.md)                      | Sequence the work as PR1 (hosting + control plane + CI), PR2 (primitives), PR3 (auth/HTTPS).              |
+- [ADR-001](adr/001_separate_host_crate.md): Host in a separate `publish = false` binary crate;
+  keep the emulator in the driver behind a host feature.
+- [ADR-002](adr/002_port_per_region.md): Model each region as a distinct localhost port backed by
+  one shared store.
+- [ADR-003](adr/003_cleartext_http2.md): Support h2c on emulator endpoints while retaining
+  HTTPS-only production routing.
+- [ADR-004](adr/004_management_rest_api.md): Expose emulator-only control-plane actions through a
+  separate management REST API.
+- [ADR-005](adr/005_json_config_startup_seed.md): Keep canonical startup configuration in
+  host-owned JSON and seed through the data plane.
+- [ADR-006](adr/006_gateway_v2_rntbd.md): Keep RNTBD framing private to the driver behind a
+  high-level hosted-emulator adapter.
+- [ADR-007](adr/007_dynamic_account_topology.md): Model outages and write-region failover as
+  dynamic account-topology state.
+- [ADR-008](adr/008_transport_security_and_authentication.md): Enforce transport security and
+  authentication at the host boundary.
+
+Delivery sequencing, CI rollout, and temporary test exclusions remain in this plan. They are not
+architecture decisions and are intentionally excluded from the ADR directory.
 
 ---
 

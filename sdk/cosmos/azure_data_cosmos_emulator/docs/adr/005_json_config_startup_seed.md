@@ -16,21 +16,25 @@ Accept a single JSON file via `--config`. The host owns `serde` DTOs that mirror
 translate them into driver types (`VirtualAccountConfig`, `VirtualRegion`, `ContainerConfig`).
 Seed documents are created through the normal write path — one synthesized create-item request per
 item through `execute_request` — so EPK routing, RU accounting, and replication match
-client-issued writes. The management REST API can further modify state at runtime. YAML is
-deferred.
+client-issued writes. The management REST API can further modify state at runtime.
+
+JSON is the canonical configuration representation. Additional syntaxes may be introduced only as
+parsers that map to the same host-owned configuration model; they must not create a second set of
+configuration semantics.
 
 ## Consequences
 
 Startup provisioning is declarative and reproducible; runtime mutation stays available through the
 control-plane API. Keeping the DTOs in the host crate leaves the driver's config types untouched.
-JSON is supported first because `serde_json` is already a workspace dependency.
+The configuration contract remains independent from the driver's internal structs and from any
+particular parser implementation.
 
 ## Alternatives
 
 - Adding `serde` derives directly to the driver config types was rejected: several fields are not
   serializable, and it would leak host concerns into the driver.
-- Shipping YAML in the first PR was rejected: `serde_yaml` is unmaintained; a maintained crate can
-  be added later if needed.
+- Making YAML a second canonical contract was rejected because two independently evolving
+  representations would make validation and automation ambiguous.
 - Seeding items by writing store internals directly was rejected: routing through `execute_request`
   guarantees identical semantics to real writes.
 

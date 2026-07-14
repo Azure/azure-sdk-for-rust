@@ -8,8 +8,8 @@
 Some control-plane actions are part of the Cosmos gateway contract (database/container/offer/item
 CRUD, PK-ranges, account read) and are already served on the region gateway ports. Others —
 partition split/merge, region offline/online, runtime write-region failover, per-partition
-failover toggle, replication pause/resume — have **no** gateway equivalent and today exist only as
-`EmulatorStore` method calls reachable in-process.
+failover toggle, replication pause/resume — have **no** gateway equivalent. They require an
+emulator-specific control surface when the emulator runs out of process.
 
 ## Decision
 
