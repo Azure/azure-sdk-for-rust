@@ -99,6 +99,24 @@ pub struct ChangeFeedMetadata {
     /// time-to-live (TTL) expiring, rather than an explicit delete.
     #[serde(rename = "timeToLiveExpired", default)]
     time_to_live_expired: Option<bool>,
+
+    /// The id of the deleted item.
+    ///
+    /// Populated for delete operations in full-fidelity reads (a delete
+    /// carries the removed item's identity here because `current` is empty);
+    /// absent otherwise.
+    #[serde(rename = "id", default)]
+    id: Option<String>,
+
+    /// The partition key of the deleted item, as returned on the wire.
+    ///
+    /// Populated for delete operations in full-fidelity reads; absent
+    /// otherwise. Kept as the raw JSON value because the wire representation is
+    /// an array of the partition key component values (one entry per level for
+    /// a hierarchical partition key), which has no path-name context here to
+    /// reshape into a map.
+    #[serde(rename = "partitionKey", default)]
+    partition_key: Option<serde_json::Value>,
 }
 
 impl ChangeFeedMetadata {
@@ -131,6 +149,23 @@ impl ChangeFeedMetadata {
     /// expiring rather than an explicit delete.
     pub fn time_to_live_expired(&self) -> Option<bool> {
         self.time_to_live_expired
+    }
+
+    /// The id of the deleted item, when reported.
+    ///
+    /// Populated for delete operations in full-fidelity reads; `None`
+    /// otherwise.
+    pub fn id(&self) -> Option<&str> {
+        self.id.as_deref()
+    }
+
+    /// The partition key of the deleted item, when reported.
+    ///
+    /// Populated for delete operations in full-fidelity reads; `None`
+    /// otherwise. Returned as the raw JSON value (an array of the partition
+    /// key component values, one per level for a hierarchical partition key).
+    pub fn partition_key(&self) -> Option<&serde_json::Value> {
+        self.partition_key.as_ref()
     }
 }
 
@@ -559,7 +594,10 @@ mod tests {
         assert_eq!(item.operation_type(), Some(ChangeFeedOperationType::Delete));
         assert!(item.current().is_none());
         assert!(item.previous().is_none());
-        assert!(item.metadata().is_some());
+        let metadata = item.metadata().expect("metadata should be present");
+        // The deleted item's identity is surfaced from the metadata.
+        assert_eq!(metadata.id(), Some("item-1"));
+        assert_eq!(metadata.partition_key(), Some(&json!(["tenant-a"])));
     }
 
     #[test]
