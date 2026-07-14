@@ -13,8 +13,8 @@ already resolves a request's region by `(scheme, host, port)`.
 
 Bind one gateway listener per region on a distinct `127.0.0.1:{port}`. A single shared
 `EmulatorStore` backs every listener; the region is resolved per request from the `Host` header.
-A single-region account is simply one port. Gateway V2 adds an optional second (thin-client) port
-per region.
+A single-region account is simply one port. Gateway 2.0 adds an optional second RNTBD port per
+region.
 
 ## Consequences
 
