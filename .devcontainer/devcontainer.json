@@ -3,8 +3,14 @@
 {
   "name": "Azure SDK for Rust",
   "build": {
-    "dockerfile": "Dockerfile"
+    "dockerfile": "Dockerfile",
+    "options": [
+      "--platform=linux/amd64"
+    ]
   },
+  "runArgs": [
+    "--platform=linux/amd64"
+  ],
   "onCreateCommand": ".devcontainer/oncreate",
   "features": {
     "ghcr.io/devcontainers/features/azure-cli:1": {},
@@ -27,8 +33,6 @@
     "vscode": {
       "extensions": [
         "editorconfig.editorconfig",
-        "github.copilot-chat",
-        "ms-vscode.powershell",
         "rust-lang.rust-analyzer",
         "streetsidesoftware.code-spell-checker",
         "tamasfe.even-better-toml",
