@@ -18,8 +18,8 @@ Add a new `test_category = "emulator_inmemory"` cfg (registered in the `build.rs
 provisioning config, wait for `GET /health`, and point `AZURE_COSMOS_CONNECTION_STRING` at the
 hosted endpoint.
 hosted endpoint. Add a `ContinueOnError` matrix leg to `sdk/cosmos/ci.yml` (modeled on
-`Cosmos_vnext_emulator`) that runs the existing suites in **both** Gateway V1 and Gateway V2
-(thin-client) modes. This CI pass replaces a standalone HTTP/2 validation spike.
+`Cosmos_vnext_emulator`) that runs the existing suites in **both** Gateway V1 and Gateway 2.0
+(RNTBD) modes. This CI pass replaces a standalone HTTP/2 validation spike.
 
 ## Consequences
 
