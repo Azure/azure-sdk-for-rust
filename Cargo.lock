@@ -788,7 +788,6 @@ dependencies = [
  "async-stream",
  "async-trait",
  "azure_core 1.1.0",
- "azure_core_opentelemetry 1.1.0-beta.1",
  "azure_core_test",
  "azure_identity 1.0.0",
  "azure_storage_blob_test",
@@ -798,9 +797,6 @@ dependencies = [
  "clap",
  "flate2",
  "futures",
- "opentelemetry 0.32.0",
- "opentelemetry-stdout",
- "opentelemetry_sdk 0.32.1",
  "percent-encoding",
  "pin-project",
  "rand 0.10.1",
@@ -842,20 +838,15 @@ version = "1.1.0-beta.1"
 dependencies = [
  "async-trait",
  "azure_core 1.1.0",
- "azure_core_opentelemetry 1.1.0-beta.1",
  "azure_core_test",
  "azure_identity 1.0.0",
  "azure_storage_common",
  "azure_storage_sas",
- "clap",
  "futures",
- "opentelemetry-stdout",
- "opentelemetry_sdk 0.32.1",
  "rand 0.10.1",
  "serde",
  "time",
  "tokio",
- "tracing-subscriber",
 ]
 
 [[package]]

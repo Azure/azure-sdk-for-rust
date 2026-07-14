@@ -1,18 +1,13 @@
 # Release History
 
-## 1.1.0-beta.1 (Unreleased)
+## 1.1.0-beta.1 (2026-07-14)
 
 ### Features Added
 
-- Added support for `get_user_delegation_key` to `BlobServiceClient`.
+- Added `BlobServiceClient::get_user_delegation_key()` to obtain a user delegation key for creating user delegation SAS tokens.
 - Added support for `list_blobs_hierarchical` to `BlobContainerClient`.
 - Added support for `list_page_ranges` to `PageBlobClient`.
-
-### Breaking Changes
-
-### Bugs Fixed
-
-### Other Changes
+- Added support for `download_into` to `BlobClient` which enables downloads to write blob contents directly into a caller-provided buffer.
 
 ## 1.0.0 (2026-05-13)
 

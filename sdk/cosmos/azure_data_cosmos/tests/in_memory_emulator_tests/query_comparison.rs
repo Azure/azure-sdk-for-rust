@@ -687,15 +687,7 @@ async fn query_results_match_across_physical_partition_topologies() -> Result<()
     Ok(())
 }
 
-// TODO(cosmos): remove `#[ignore]` once the driver's mid-query-split resume bug
-// is fixed in a separate PR. The emulator side is complete: it now returns
-// `410/1002 PartitionKeyRangeGone` for a query pinned to a split-away pkrange and
-// bumps the routing-map ETag on split, so the driver correctly enters split
-// recovery. The remaining failure is a driver bug — resuming a continuation
-// across the split drops the last leaf's tail document (returns 8/9) — that lives
-// in the split-recovery continuation snapshot, not in this test or the emulator.
 #[tokio::test]
-#[ignore = "driver bug (separate PR): resume across a mid-query partition split drops the last document (8/9); emulator 410-Gone + ETag-on-split fidelity is in place"]
 async fn query_resume_survives_mid_query_split() -> Result<(), Box<dyn Error>> {
     // Regression coverage for resuming a query continuation ACROSS a physical
     // partition split. The container starts as a single physical partition; we

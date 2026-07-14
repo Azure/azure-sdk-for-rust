@@ -39,7 +39,6 @@ tokio = { workspace = true, optional = true, features = [
 workspace = true
 
 [dev-dependencies]
-azure_core_opentelemetry.path = "../../core/azure_core_opentelemetry"
 azure_core_test = { workspace = true, features = [
   "tracing",
 ] }
@@ -49,9 +48,6 @@ azure_storage_sas.path = "../azure_storage_sas"
 clap = { workspace = true, features = ["env"] }
 flate2.workspace = true
 futures.workspace = true
-opentelemetry.workspace = true
-opentelemetry-stdout.workspace = true
-opentelemetry_sdk.workspace = true
 rand.workspace = true
 tokio = { workspace = true, features = ["macros", "rt"] }
 tracing.workspace = true
