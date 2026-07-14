@@ -13,7 +13,7 @@
 2. [Scope, Phasing & Feature Gating](#2-scope-phasing--feature-gating)
 3. [Architecture Overview](#3-architecture-overview)
 4. [Configuration File](#4-configuration-file)
-5. [Data-Plane Hosting (Gateway V1 & Gateway V2)](#5-data-plane-hosting-gateway-v1--gateway-v2)
+5. [Data-Plane Hosting (Gateway V1 & Gateway 2.0)](#5-data-plane-hosting-gateway-v1--gateway-20)
 6. [Management REST API (Control Plane)](#6-management-rest-api-control-plane)
 7. [Rust Public API Surface](#7-rust-public-api-surface)
 8. [HTTP/2 & Transport Notes](#8-http2--transport-notes)
@@ -43,7 +43,7 @@ emulator implementation out of the driver crate (it depends heavily on driver-in
   just enough **public** surface — gated behind a feature flag the host crate sets automatically
   — to construct, seed, control, and serve the emulator.
 - **Wire fidelity.** The hosted emulator speaks the real Cosmos DB wire protocol: Gateway V1
-  (JSON REST) and, when enabled, Gateway V2 (thin-client / RNTBD over HTTP/2). Existing SDK test
+  (JSON REST) and, when enabled, Gateway 2.0 (RNTBD over HTTP/2). Existing SDK test
   suites run against it unchanged.
 - **Deterministic, offline, no Docker.** No network access, no external accounts, no containers
   required to run the store itself.
@@ -58,11 +58,11 @@ emulator implementation out of the driver crate (it depends heavily on driver-in
 
 The work ships across three pull requests.
 
-| PR      | Contents                                                                                                                                                                                                                          | Feature/cfg                                                                 |
-| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| **PR1** | New host crate; per-region h2c hosting of Gateway V1 **and** Gateway V2 (config-gated); management REST API for control-plane actions; CI running the existing emulator suites against the hosted emulator in both gateway modes. | `__internal_in_memory_emulator_host`, `test_category = "emulator_inmemory"` |
-| **PR2** | New emulator store primitives: region offline/online and runtime write-region failover, with net-new tests and their management REST endpoints.                                                                                   | same host feature                                                           |
-| **PR3** | Optional HTTPS and authentication (primary key, primary read-only key, Entra ID with an allow-list of object IDs).                                                                                                                | new `auth` config block                                                     |
+| PR      | Contents                                                                                                                                                                                                                           | Feature/cfg                                                                 |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| **PR1** | New host crate; per-region h2c hosting of Gateway V1 **and** Gateway 2.0 (config-gated); management REST API for control-plane actions; CI running the existing emulator suites against the hosted emulator in both gateway modes. | `__internal_in_memory_emulator_host`, `test_category = "emulator_inmemory"` |
+| **PR2** | New emulator store primitives: region offline/online and runtime write-region failover, with net-new tests and their management REST endpoints.                                                                                    | same host feature                                                           |
+| **PR3** | Optional HTTPS and authentication (primary key, primary read-only key, Entra ID with an allow-list of object IDs).                                                                                                                 | new `auth` config block                                                     |
 
 ### Feature gating
 
@@ -86,9 +86,9 @@ flowchart LR
     subgraph HOST["azure_data_cosmos_emulator (binary)"]
         direction TB
         EG["East US gateway :8081"]
-        ET["East US thin-client :8444"]
+        ET["East US Gateway 2.0 :8444"]
         WG["West US gateway :8082"]
-        WT["West US thin-client :8445"]
+        WT["West US Gateway 2.0 :8445"]
         MGMT["Management API :9090"]
         STORE["Single shared store<br/>Arc&lt;InMemoryEmulatorHttpClient&gt; owns Arc&lt;EmulatorStore&gt;"]
         EG --> STORE
@@ -114,8 +114,8 @@ flowchart LR
 - **Data-plane bridge.** Each gateway listener rebuilds an `azure_core::http::Request` from the
   incoming HTTP request and calls `InMemoryEmulatorHttpClient::execute_request`, then converts
   the `AsyncRawResponse` back to an HTTP response.
-- **Gateway V2 (optional).** When a region declares a `thinClientPort`, the host binds a
-  thin-client listener that answers the connectivity probe and speaks RNTBD; the store's account
+- **Gateway 2.0 (optional).** When a region declares a `thinClientPort`, the host binds a
+  Gateway 2.0 listener that answers the connectivity probe and speaks RNTBD; the store's account
   topology then advertises `thinClient{Readable,Writable}Locations`.
 - **Management port.** A dedicated port serves the control-plane REST API, kept separate from the
   Cosmos wire protocol so the two never collide.
@@ -133,7 +133,7 @@ sdk/cosmos/azure_data_cosmos_emulator/
     ├── main.rs           # CLI (clap), startup, listener wiring
     ├── config.rs         # serde DTOs + translation to driver types + seeding
     ├── data_plane.rs     # HTTP <-> azure_core::http::Request bridge (Gateway V1)
-    ├── gateway_v2.rs     # thin-client listener, connectivity probe, RNTBD bridge
+    ├── gateway_v2.rs     # Gateway 2.0 listener, connectivity probe, RNTBD bridge
     └── management.rs     # control-plane REST API (axum router)
 ```
 
@@ -194,7 +194,7 @@ API can further modify state at runtime. (YAML support is deferred; see ADR-005.
 | `account.perPartitionFailover`            | bool                  | Initial `enablePerPartitionFailoverBehavior`; can be toggled at runtime.                           |
 | `account.throttling`                      | bool                  | Enables per-partition RU/s enforcement (429/3200).                                                 |
 | `account.regions[].gatewayPort`           | u16                   | Gateway V1 (JSON REST) port. Region endpoint = `http://127.0.0.1:{gatewayPort}`.                   |
-| `account.regions[].thinClientPort`        | u16, optional         | When present, enables Gateway V2 simulation for the region.                                        |
+| `account.regions[].thinClientPort`        | u16, optional         | When present, enables Gateway 2.0 simulation for the region.                                       |
 | `account.regions[].regionId`              | u64, optional         | Auto-assigned by position when omitted.                                                            |
 | `account.replication`                     | object                | Default replication delay + buffer cap.                                                            |
 | `account.replicationOverrides[]`          | array                 | Per source→target replication overrides.                                                           |
@@ -210,7 +210,7 @@ client-issued writes.
 
 ---
 
-## 5. Data-Plane Hosting (Gateway V1 & Gateway V2)
+## 5. Data-Plane Hosting (Gateway V1 & Gateway 2.0)
 
 ### 5.1 Gateway V1 (JSON REST)
 
@@ -219,22 +219,22 @@ delegates to `execute_request`. All existing point operations and Cosmos control
 operations that are part of the gateway contract (database/container/offer CRUD, PK-ranges,
 account read) are served here unchanged.
 
-### 5.2 Gateway V2 (thin-client / RNTBD)
+### 5.2 Gateway 2.0 (RNTBD over HTTP/2)
 
 Enabled per region by setting `thinClientPort`. When enabled:
 
 1. The account topology advertises `thinClientReadableLocations` / `thinClientWritableLocations`
    pointing at `http://127.0.0.1:{thinClientPort}`.
-2. The thin-client listener answers `POST /connectivity-probe` with `200 OK`.
+2. The Gateway 2.0 listener answers `POST /connectivity-probe` with `200 OK`.
 3. Data-plane requests arrive as RNTBD frames wrapped in HTTP/2 POSTs. The listener **decodes**
-   the RNTBD request frame + thin-client headers, reconstructs the logical operation, dispatches
+   the RNTBD request frame + literal `thinclient` headers, reconstructs the logical operation, dispatches
    it through the same store, and **encodes** the result as an RNTBD response frame.
 
 The driver already owns the client-side RNTBD codec (`RntbdRequestFrame::write`,
 `RntbdResponse::read`). This work promotes the currently test-only inverse halves
 (`RntbdRequestFrame::read`, `RntbdResponse::write`) to production, co-located in
 `src/driver/transport/rntbd/` behind the host feature (ADR-006). Because the driver's request
-pipeline decides Gateway V2 purely from whether the endpoint advertises a thin-client URL,
+pipeline decides Gateway 2.0 purely from whether the endpoint advertises a Gateway 2.0 URL,
 advertising it plus serving RNTBD is sufficient — no driver routing change is required.
 
 ---
@@ -458,7 +458,7 @@ store.set_region_online("West US");
 store.set_write_region("West US")?;             // runtime single-write failover; Err on unknown region
 ```
 
-### 7.4 Gateway V2 server codec (behind host feature)
+### 7.4 Gateway 2.0 server codec (behind host feature)
 
 ```rust
 // Promoted from test-only helpers to production, co-located with the client codec.
@@ -474,7 +474,7 @@ response.write(&mut out)?;                               // encode outbound (ser
 
 ## 8. HTTP/2 & Transport Notes
 
-HTTP/2 is a hard requirement for Gateway V2. The relevant driver behavior **already exists**:
+HTTP/2 is a hard requirement for Gateway 2.0. The relevant driver behavior **already exists**:
 
 - The `Http2Only` reqwest client sets `http2_prior_knowledge()`, which performs cleartext h2c
   against `http://` endpoints.
@@ -500,7 +500,7 @@ incompatibility matcher is a **contingency** only if end-to-end validation revea
   to the hosted endpoint and the `emulator_inmemory` cfg.
 - Add a `ContinueOnError` matrix leg to `sdk/cosmos/ci.yml` modeled on `Cosmos_vnext_emulator`,
   running the **existing** emulator suites against the hosted emulator in **both** Gateway V1 and
-  Gateway V2 (thin-client) modes. This is the real end-to-end validation of h2c + RNTBD.
+  Gateway 2.0 modes. This is the real end-to-end validation of h2c + RNTBD.
 
 ---
 
@@ -529,7 +529,7 @@ hosting and control-plane work (ADR-008).
 | [ADR-003](adr/003_cleartext_http2.md)                    | Serve cleartext HTTP/2 (h2c) and reuse the driver's existing prior-knowledge probe.                       |
 | [ADR-004](adr/004_management_rest_api.md)                | Expose emulator-only control-plane actions via a separate management REST API.                            |
 | [ADR-005](adr/005_json_config_startup_seed.md)           | Drive startup topology and seed data from a JSON config file; defer YAML.                                 |
-| [ADR-006](adr/006_gateway_v2_rntbd.md)                   | Simulate Gateway V2 by promoting the test-only inverse RNTBD codec to production, config-gated.           |
+| [ADR-006](adr/006_gateway_v2_rntbd.md)                   | Simulate Gateway 2.0 by promoting the test-only inverse RNTBD codec to production, config-gated.          |
 | [ADR-007](adr/007_region_offline_failover_primitives.md) | Add runtime region-offline and write-region failover store primitives (PR2).                              |
 | [ADR-008](adr/008_defer_auth_https.md)                   | Defer HTTPS and authentication to a dedicated later PR.                                                   |
 | [ADR-009](adr/009_ci_reuse_existing_suites.md)           | Validate via the existing suites over a new `emulator_inmemory` cfg, in both gateway modes.               |
@@ -553,7 +553,7 @@ hosting and control-plane work (ADR-008).
 ## 13. References
 
 - In-memory emulator spec: `../../azure_data_cosmos_driver/docs/in-memory-emulator-spec.md`
-- Gateway V2 spec: `../../azure_data_cosmos_driver/docs/GATEWAY_V2_SPEC.md`
+- Gateway 2.0 spec: `../../azure_data_cosmos_driver/docs/GATEWAY_V2_SPEC.md`
 - Transport pipeline spec: `../../azure_data_cosmos_driver/docs/TRANSPORT_PIPELINE_SPEC.md`
 - RNTBD codec: `../../azure_data_cosmos_driver/src/driver/transport/rntbd/`
 - Cosmos test setup: `../../eng/scripts/Invoke-CosmosTestSetup.ps1`
