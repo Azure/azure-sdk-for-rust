@@ -122,20 +122,19 @@ flowchart LR
 
 ### Crate layout (proposed)
 
-```mermaid
-flowchart TB
-    ROOT["azure_data_cosmos_emulator/"]
-    ROOT --> CARGO["Cargo.toml<br/>publish = false; clap, axum, tokio, serde, serde_json, tracing"]
-    ROOT --> README["README.md"]
-    ROOT --> DOCS["docs/"]
-    ROOT --> SRC["src/"]
-    DOCS --> PLAN["plan.md: this document"]
-    DOCS --> ADR["adr/: architecture decision records"]
-    SRC --> MAIN["main.rs: CLI, startup, listener wiring"]
-    SRC --> CONFIG["config.rs: serde DTOs, translate to driver types, seeding"]
-    SRC --> DP["data_plane.rs: HTTP to azure_core Request bridge (Gateway V1)"]
-    SRC --> GW2["gateway_v2.rs: thin-client listener, connectivity probe, RNTBD bridge"]
-    SRC --> MGMT["management.rs: control-plane REST API (axum router)"]
+```text
+sdk/cosmos/azure_data_cosmos_emulator/
+├── Cargo.toml            # publish = false; deps: clap, axum, tokio, serde, serde_json, tracing
+├── README.md
+├── docs/
+│   ├── plan.md           # this document
+│   └── adr/              # architecture decision records
+└── src/
+    ├── main.rs           # CLI (clap), startup, listener wiring
+    ├── config.rs         # serde DTOs + translation to driver types + seeding
+    ├── data_plane.rs     # HTTP <-> azure_core::http::Request bridge (Gateway V1)
+    ├── gateway_v2.rs     # thin-client listener, connectivity probe, RNTBD bridge
+    └── management.rs     # control-plane REST API (axum router)
 ```
 
 ---
