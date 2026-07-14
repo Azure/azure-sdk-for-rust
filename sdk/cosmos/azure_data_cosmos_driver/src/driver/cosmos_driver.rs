@@ -636,9 +636,34 @@ impl CosmosDriver {
         // budget the metadata pipeline uses (previously bootstrap had no 429
         // retry at all).
         let mut connectivity_retry_count = 0_u32;
+        // Resolve the caller-configured throttle limits the same way the
+        // metadata operation pipeline does, falling back to the metadata class
+        // defaults. This is a static helper that only receives the runtime, so
+        // only the runtime-level layers apply: the client-wide default set via
+        // `with_default_operation_options` (which takes precedence) and the
+        // environment (`AZURE_COSMOS_MAX_THROTTLE_RETRY_COUNT`). Without this a
+        // caller that disabled retries (`max_retry_count = 0`) would still see
+        // the nine-retry metadata default here, inconsistent with normal
+        // metadata operations. The per-retry delay cap has no caller override
+        // and stays at the metadata class default, matching the pipeline.
+        let bootstrap_options = OperationOptionsView::new(
+            Some(Arc::clone(runtime.env_operation_options())),
+            Some(runtime.default_operation_options()),
+            None,
+            None,
+        );
+        let throttling_retry_options = bootstrap_options.throttling_retry_options();
+        let max_throttle_attempts = throttling_retry_options
+            .max_retry_count()
+            .copied()
+            .unwrap_or(DEFAULT_MAX_THROTTLE_ATTEMPTS);
+        let max_throttle_wait_time = throttling_retry_options
+            .max_retry_wait_time()
+            .copied()
+            .unwrap_or(DEFAULT_MAX_THROTTLE_WAIT);
         let mut throttle = ThrottleRetryState::with_limits(
-            DEFAULT_MAX_THROTTLE_ATTEMPTS,
-            DEFAULT_MAX_THROTTLE_WAIT,
+            max_throttle_attempts,
+            max_throttle_wait_time,
             DEFAULT_MAX_PER_RETRY_DELAY,
         );
         let mut execution_context = ExecutionContext::Initial;
@@ -3080,7 +3105,7 @@ mod tests {
         models::AccountReference,
         options::{
             ContentResponseOnWrite, CorrelationId, DriverOptionsBuilder, OperationOptionsBuilder,
-            UserAgentSuffix, WorkloadId,
+            ThrottlingRetryOptionsBuilder, UserAgentSuffix, WorkloadId,
         },
     };
 
@@ -4404,6 +4429,78 @@ mod tests {
             calls.load(std::sync::atomic::Ordering::SeqCst),
             2,
             "expected one throttled attempt followed by one successful retry"
+        );
+    }
+
+    #[tokio::test]
+    async fn fetch_account_properties_honors_disabled_throttle_retries() {
+        // A caller-configured `max_retry_count = 0` disables throttle retries.
+        // The bootstrap probe must honor it the same way normal metadata
+        // operations do: surface the 429 after a single wire attempt instead of
+        // falling back to the nine-retry metadata default.
+        #[derive(Debug)]
+        struct AlwaysThrottleClient {
+            calls: Arc<std::sync::atomic::AtomicUsize>,
+        }
+
+        #[async_trait]
+        impl TransportClient for AlwaysThrottleClient {
+            async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
+                self.calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                let mut headers = Headers::new();
+                headers.insert(
+                    azure_core::http::headers::HeaderName::from_static("x-ms-retry-after-ms"),
+                    azure_core::http::headers::HeaderValue::from_static("1"),
+                );
+                Ok(HttpResponse {
+                    status: 429,
+                    headers,
+                    body: Vec::new(),
+                })
+            }
+        }
+
+        let calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let client: Arc<dyn TransportClient> = Arc::new(AlwaysThrottleClient {
+            calls: Arc::clone(&calls),
+        });
+        let transport =
+            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+
+        let opts = OperationOptionsBuilder::new()
+            .with_throttling_retry_options(
+                ThrottlingRetryOptionsBuilder::new()
+                    .with_max_retry_count(0)
+                    .build(),
+            )
+            .build();
+        let runtime = CosmosDriverRuntimeBuilder::new()
+            .with_default_operation_options(opts)
+            .build()
+            .await
+            .unwrap();
+        let account = signed_test_account("https://test.documents.azure.com:443/");
+        let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
+
+        let err = CosmosDriver::fetch_account_properties_with_transport(
+            &runtime,
+            &transport,
+            &account,
+            None,
+            &user_agent,
+            false,
+        )
+        .await
+        .expect_err("disabled throttle retries must surface the 429");
+        assert!(
+            err.status().is_throttled(),
+            "expected the 429 to propagate, got {err:?}"
+        );
+
+        assert_eq!(
+            calls.load(std::sync::atomic::Ordering::SeqCst),
+            1,
+            "max_retry_count = 0 must yield exactly one wire attempt (no retries)"
         );
     }
 
