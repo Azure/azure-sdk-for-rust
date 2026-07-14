@@ -39,7 +39,7 @@ tokio = { workspace = true, optional = true, features = [
 workspace = true
 
 [dev-dependencies]
-azure_core_opentelemetry.path = "../../core/azure_core_opentelemetry"
+azure_core_opentelemetry.workspace = true
 azure_core_test = { workspace = true, features = [
   "tracing",
 ] }
