@@ -13,7 +13,7 @@ reviewable increments that each land something coherent.
 
 Sequence the work as three PRs:
 
-- **PR1** — the new host crate; per-region h2c hosting of Gateway V1 **and** Gateway V2
+- **PR1** — the new host crate; per-region h2c hosting of Gateway V1 **and** Gateway 2.0
   (config-gated); the management REST API over the control-plane actions that map to existing store
   methods; and CI running the existing suites against the hosted emulator in both gateway modes.
 - **PR2** — the new store primitives (region offline/online, runtime write-region failover) with
