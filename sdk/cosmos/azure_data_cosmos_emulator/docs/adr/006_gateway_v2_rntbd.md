@@ -8,9 +8,10 @@
 Gateway V2 (thin-client) uses the RNTBD wire format over HTTP/2 instead of JSON REST. To let the
 hosted emulator exercise the driver's Gateway V2 path, the emulator must act as an RNTBD **server**:
 answer the connectivity probe, decode inbound request frames, and encode outbound response frames.
-The driver already owns the **client** halves (`RntbdRequestFrame::write`, `RntbdResponse::read`);
-the inverse halves exist only as `#[cfg(test)]` helpers. Today the emulator advertises no
-thin-client endpoints, so the driver always suppresses Gateway V2 against it.
+The driver already owns the **client** halves (`RntbdRequestFrame::write`, `RntbdResponse::read`).
+Tests contain reusable pieces of the inverse logic—a test-local request parser and direct response
+frame construction—but no inverse associated methods yet. Today the emulator advertises no
+Gateway 2.0 endpoints, so the driver always suppresses Gateway 2.0 against it.
 
 ## Decision
 
