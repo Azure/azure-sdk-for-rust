@@ -1,6 +1,6 @@
 [package]
 name = "azure_storage_common"
-version = "0.1.0"
+version = "0.2.0"
 description = "Common types shared across Azure Storage client libraries."
 readme = "README.md"
 authors.workspace = true
