@@ -554,7 +554,7 @@ hosting and control-plane work (ADR-008).
 
 ## 13. References
 
-- In-memory emulator spec: `../../azure_data_cosmos_driver/docs/in-memory-emulator-spec.md`
+- In-memory emulator spec: `../../azure_data_cosmos/docs/in-memory-emulator-spec.md`
 - Gateway 2.0 spec: `../../azure_data_cosmos_driver/docs/GATEWAY_V2_SPEC.md`
 - Transport pipeline spec: `../../azure_data_cosmos_driver/docs/TRANSPORT_PIPELINE_SPEC.md`
 - RNTBD codec: `../../azure_data_cosmos_driver/src/driver/transport/rntbd/`
