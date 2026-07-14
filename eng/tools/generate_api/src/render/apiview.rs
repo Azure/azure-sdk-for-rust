@@ -511,6 +511,8 @@ mod tests {
             items: vec![ApiItem {
                 name: "MyType".to_string(),
                 kind: ApiItemKind::TraitImpl,
+                owner_kind: None,
+                inherent_impl_sort_key: None,
                 doc_comments: Vec::new(),
                 attributes: vec![ApiAttribute {
                     text: "#[cfg(feature = \"std\")]".to_string(),
@@ -583,19 +585,33 @@ mod tests {
             path: "demo".to_string(),
             doc_comments: Vec::new(),
             attributes: Vec::new(),
-            items: vec![ApiItem {
-                name: "Foo".to_string(),
-                kind: ApiItemKind::Struct,
-                doc_comments: Vec::new(),
-                attributes: Vec::new(),
-                declaration: "pub struct Foo;".to_string(),
-                members: vec![ApiMember {
-                    name: "method".to_string(),
+            items: vec![
+                ApiItem {
+                    name: "Foo".to_string(),
+                    kind: ApiItemKind::Struct,
+                    owner_kind: None,
+                    inherent_impl_sort_key: None,
                     doc_comments: Vec::new(),
                     attributes: Vec::new(),
-                    declaration: "pub fn method(&self);".to_string(),
-                }],
-            }],
+                    declaration: "pub struct Foo;".to_string(),
+                    members: Vec::new(),
+                },
+                ApiItem {
+                    name: "Foo".to_string(),
+                    kind: ApiItemKind::InherentImpl,
+                    owner_kind: Some(ApiItemKind::Struct),
+                    inherent_impl_sort_key: None,
+                    doc_comments: Vec::new(),
+                    attributes: Vec::new(),
+                    declaration: "impl Foo {".to_string(),
+                    members: vec![ApiMember {
+                        name: "method".to_string(),
+                        doc_comments: Vec::new(),
+                        attributes: Vec::new(),
+                        declaration: "pub fn method(&self);".to_string(),
+                    }],
+                },
+            ],
             modules: Vec::new(),
         };
 
@@ -629,8 +645,71 @@ mod tests {
         );
         assert_eq!(
             lines[2].related_to_line.as_deref(),
-            Some("module.demo.Foo_0.impl")
+            Some("module.demo.Foo_1")
         );
+    }
+
+    #[test]
+    fn keeps_duplicate_member_names_in_separate_inherent_impl_blocks() {
+        let module = ApiModule {
+            path: "demo".to_string(),
+            doc_comments: Vec::new(),
+            attributes: Vec::new(),
+            items: vec![
+                ApiItem {
+                    name: "Builder".to_string(),
+                    kind: ApiItemKind::Struct,
+                    owner_kind: None,
+                    inherent_impl_sort_key: None,
+                    doc_comments: Vec::new(),
+                    attributes: Vec::new(),
+                    declaration: "pub struct Builder<S>(S);".to_string(),
+                    members: Vec::new(),
+                },
+                ApiItem {
+                    name: "Builder".to_string(),
+                    kind: ApiItemKind::InherentImpl,
+                    owner_kind: Some(ApiItemKind::Struct),
+                    inherent_impl_sort_key: None,
+                    doc_comments: Vec::new(),
+                    attributes: Vec::new(),
+                    declaration: "impl Builder<BlobState> {".to_string(),
+                    members: vec![ApiMember {
+                        name: "read".to_string(),
+                        doc_comments: Vec::new(),
+                        attributes: Vec::new(),
+                        declaration: "pub fn read(self) -> Self;".to_string(),
+                    }],
+                },
+                ApiItem {
+                    name: "Builder".to_string(),
+                    kind: ApiItemKind::InherentImpl,
+                    owner_kind: Some(ApiItemKind::Struct),
+                    inherent_impl_sort_key: None,
+                    doc_comments: Vec::new(),
+                    attributes: Vec::new(),
+                    declaration: "impl<S: QueueState> Builder<S> {".to_string(),
+                    members: vec![ApiMember {
+                        name: "read".to_string(),
+                        doc_comments: Vec::new(),
+                        attributes: Vec::new(),
+                        declaration: "pub fn read(self) -> Self;".to_string(),
+                    }],
+                },
+            ],
+            modules: Vec::new(),
+        };
+
+        let lines = render_module_contents(&module, &RenderOptions::default());
+        let read_line_ids = lines
+            .iter()
+            .flat_map(|line| line.children.iter())
+            .filter_map(|line| line.line_id.as_deref())
+            .filter(|line_id| line_id.ends_with(".read_0"))
+            .collect::<Vec<_>>();
+
+        assert_eq!(read_line_ids.len(), 2);
+        assert_ne!(read_line_ids[0], read_line_ids[1]);
     }
 
     #[test]
@@ -642,6 +721,8 @@ mod tests {
             items: vec![ApiItem {
                 name: "Foo".to_string(),
                 kind: ApiItemKind::Struct,
+                owner_kind: None,
+                inherent_impl_sort_key: None,
                 doc_comments: vec!["/// item docs".to_string()],
                 attributes: Vec::new(),
                 declaration: "pub struct Foo;".to_string(),

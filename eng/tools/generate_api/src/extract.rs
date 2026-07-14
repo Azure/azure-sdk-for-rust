@@ -3,7 +3,9 @@
 
 use crate::{
     driver::PackageMetadata,
-    model::{ApiAttribute, ApiItem, ApiItemKind, ApiMember, ApiModel, ApiModule},
+    model::{
+        ApiAttribute, ApiItem, ApiItemKind, ApiMember, ApiModel, ApiModule, InherentImplSortKey,
+    },
 };
 use rustdoc_types::{
     Constant, Crate, Function, FunctionHeader, GenericArg, GenericArgs, GenericBound,
@@ -102,6 +104,11 @@ fn extract_module(
                 let extracted = extract_item(krate, child);
                 if seen_declarations.insert(extracted.declaration.clone()) {
                     result.items.push(extracted);
+                }
+                for inherent_impl in inherent_impls_for_item(krate, child) {
+                    if seen_declarations.insert(inherent_impl.declaration.clone()) {
+                        result.items.push(inherent_impl);
+                    }
                 }
             }
             _ => {}
@@ -277,6 +284,10 @@ fn expand_item_with_impls(krate: &Crate, target: &Item) -> ExpandedUse {
         items: vec![extract_item(krate, target)],
         modules: Vec::new(),
     };
+
+    for sibling in inherent_impls_for_item(krate, target) {
+        expanded.items.push(sibling);
+    }
 
     for sibling in trait_impls_for_item(krate, target) {
         expanded.items.push(sibling);
@@ -614,6 +625,8 @@ fn extract_item(krate: &Crate, item: &Item) -> ApiItem {
             .clone()
             .unwrap_or_else(|| fallback_item_name(item).to_string()),
         kind: item_kind(item),
+        owner_kind: None,
+        inherent_impl_sort_key: None,
         doc_comments: extract_doc_comments(item),
         attributes,
         declaration: render_item_declaration(krate, item),
@@ -622,9 +635,6 @@ fn extract_item(krate: &Crate, item: &Item) -> ApiItem {
 }
 
 fn extract_members(krate: &Crate, item: &Item) -> Vec<ApiMember> {
-    if let Some(impl_ids) = item_impl_ids(item) {
-        return extract_inherent_impl_members(krate, impl_ids);
-    }
     match &item.inner {
         ItemEnum::Trait(trait_item) => extract_trait_members(krate, trait_item),
         _ => Vec::new(),
@@ -709,6 +719,8 @@ fn extract_trait_impl(krate: &Crate, item: &Item, impl_block: &Impl) -> Option<A
     Some(ApiItem {
         name: self_type,
         kind: ApiItemKind::TraitImpl,
+        owner_kind: None,
+        inherent_impl_sort_key: None,
         doc_comments: extract_doc_comments(item),
         attributes: extract_attributes(item),
         declaration,
@@ -716,18 +728,78 @@ fn extract_trait_impl(krate: &Crate, item: &Item, impl_block: &Impl) -> Option<A
     })
 }
 
-fn extract_inherent_impl_members(krate: &Crate, impl_ids: &[Id]) -> Vec<ApiMember> {
+fn inherent_impls_for_item(krate: &Crate, target: &Item) -> Vec<ApiItem> {
+    let Some(impl_ids) = item_impl_ids(target) else {
+        return Vec::new();
+    };
+    let owner_kind = item_kind(target);
+
     impl_ids
         .iter()
         .filter_map(|impl_id| krate.index.get(impl_id))
         .filter_map(|impl_item| match &impl_item.inner {
             ItemEnum::Impl(impl_block) if include_inherent_impl_block(impl_block) => {
-                Some(&impl_block.items)
+                extract_inherent_impl(krate, target, owner_kind, impl_item, impl_block)
             }
             _ => None,
         })
-        .flat_map(|items| extract_impl_items(krate, items))
         .collect()
+}
+
+fn extract_inherent_impl(
+    krate: &Crate,
+    target: &Item,
+    owner_kind: ApiItemKind,
+    item: &Item,
+    impl_block: &Impl,
+) -> Option<ApiItem> {
+    let self_type = render_type(&impl_block.for_);
+    let members = extract_impl_items(krate, &impl_block.items);
+    if members.is_empty() {
+        return None;
+    }
+
+    Some(ApiItem {
+        name: target
+            .name
+            .clone()
+            .unwrap_or_else(|| fallback_item_name(target).to_string()),
+        kind: ApiItemKind::InherentImpl,
+        owner_kind: Some(owner_kind),
+        inherent_impl_sort_key: Some(inherent_impl_sort_key(&impl_block.for_)),
+        doc_comments: extract_doc_comments(item),
+        attributes: extract_attributes(item),
+        declaration: render_inherent_impl_declaration(impl_block, &self_type),
+        members,
+    })
+}
+
+fn inherent_impl_sort_key(type_: &Type) -> InherentImplSortKey {
+    InherentImplSortKey {
+        type_arg_classes: inherent_impl_type_arg_classes(type_),
+        rendered_self_type: render_type(type_),
+    }
+}
+
+fn inherent_impl_type_arg_classes(type_: &Type) -> Vec<u8> {
+    match type_ {
+        Type::ResolvedPath(path) => match &path.args {
+            Some(args) => match args.as_ref() {
+                GenericArgs::AngleBracketed { args, .. } => args
+                    .iter()
+                    .filter_map(|arg| match arg {
+                        GenericArg::Type(Type::Generic(_)) => Some(0),
+                        GenericArg::Type(Type::Infer) => Some(1),
+                        GenericArg::Type(_) => Some(2),
+                        _ => None,
+                    })
+                    .collect(),
+                _ => Vec::new(),
+            },
+            None => Vec::new(),
+        },
+        _ => Vec::new(),
+    }
 }
 
 fn extract_impl_items(krate: &Crate, item_ids: &[Id]) -> Vec<ApiMember> {
@@ -1399,6 +1471,16 @@ fn render_trait_impl_declaration(impl_block: &Impl, trait_path: &Path, self_type
     }
     declaration.push_str(&render_path(trait_path));
     declaration.push_str(" for ");
+    declaration.push_str(self_type);
+    declaration.push_str(&render_where_clause(&impl_block.generics.where_predicates));
+    declaration.push_str(" {");
+    declaration
+}
+
+fn render_inherent_impl_declaration(impl_block: &Impl, self_type: &str) -> String {
+    let mut declaration = String::from("impl");
+    declaration.push_str(&render_generics_declaration(&impl_block.generics));
+    declaration.push(' ');
     declaration.push_str(self_type);
     declaration.push_str(&render_where_clause(&impl_block.generics.where_predicates));
     declaration.push_str(" {");
@@ -2541,7 +2623,7 @@ mod tests {
     }
 
     #[test]
-    fn extract_members_for_enum_includes_inherent_impl_methods() {
+    fn extracts_inherent_impl_blocks_for_enum_methods() {
         let enum_id = Id(1);
         let impl_id = Id(2);
         let func_id = Id(3);
@@ -2601,11 +2683,13 @@ mod tests {
         ]);
 
         let enum_item = krate.index.get(&enum_id).expect("enum item present");
-        let extracted = extract_item(&krate, enum_item);
+        let extracted = inherent_impls_for_item(&krate, enum_item);
 
-        assert_eq!(extracted.members.len(), 1);
+        assert_eq!(extracted.len(), 1);
+        assert_eq!(extracted[0].kind, ApiItemKind::InherentImpl);
+        assert_eq!(extracted[0].declaration, "impl Status {");
         assert_eq!(
-            extracted.members[0].declaration,
+            extracted[0].members[0].declaration,
             "fn is_ready(&self) -> bool;"
         );
     }
