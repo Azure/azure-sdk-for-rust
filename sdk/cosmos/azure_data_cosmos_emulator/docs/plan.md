@@ -276,21 +276,23 @@ POST /databases/{db}/containers/{coll}/partitions/{partitionId}/split
       "epk": "<hex EPK>",                        // required when mode = "epk"; ignored otherwise
       "lockDurationMs": 0                        // optional; 410/1007 window before children appear
     }
-    → 202 {
-        "database": "testdb", "container": "testcoll",
-        "parent": 0, "children": [4, 5],
-        "mode": "storage", "splitEpk": "6A3C000000000000000000000000000000"
-      }
+    → 202 { "operationId": "op-split-123", "status": "Running" }
 
 POST /databases/{db}/containers/{coll}/partitions/merge
     body: { "partitionIds": [4, 5] }             // exactly two adjacent partitions
-    → 202 { "merged": [4, 5], "into": 6 }
+    → 202 { "operationId": "op-merge-456", "status": "Running" }
+
+GET /operations/{operationId}
+    → 200 { "operationId": "...", "status": "Running" | "Succeeded" | "Failed" }
+    // On success, include operation-specific result details:
+    // split: { "database": "testdb", "container": "testcoll", "parent": 0, "children": [4, 5], "mode": "storage", "splitEpk": "6A3C000000000000000000000000000000" }
+    // merge: { "merged": [4, 5], "into": 6 }
 ```
 
-The response always echoes the resolved `mode` and the concrete `splitEpk` that was applied, so a
-caller that requested `midpoint` or `storage` learns the boundary the emulator chose. Only the
-`epk` hex parser and the `storage` mode are new code behind this endpoint; `midpoint` and the
-`epk` split execution reuse existing store hooks.
+The operation result (via `GET /operations/{operationId}`) echoes the resolved `mode` and the
+concrete `splitEpk` that was applied, so a caller that requested `midpoint` or `storage` learns
+the boundary the emulator chose. Only the `epk` hex parser and the `storage` mode are new code
+behind this endpoint; `midpoint` and the `epk` split execution reuse existing store hooks.
 
 Samples — one request per split mode:
 
