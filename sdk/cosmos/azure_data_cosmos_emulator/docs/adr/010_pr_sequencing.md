@@ -24,7 +24,7 @@ Sequence the work as three PRs:
 
 PR1 is independently meaningful because the CI leg validates it end-to-end; it does not depend on
 the new primitives, which the existing suites do not exercise. PR2 and PR3 are self-contained,
-testable increments. Gateway V2 is folded into PR1 so a single CI pass validates both protocol
+testable increments. Gateway 2.0 is folded into PR1 so a single CI pass validates both protocol
 paths.
 
 ## Alternatives
