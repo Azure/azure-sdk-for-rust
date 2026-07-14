@@ -6,10 +6,10 @@
 #Requires -Version 7.0
 
 $ErrorActionPreference = 'Stop'
-Set-StrictMode -Version 2.0
 
 . ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
-. ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'Cargo.ps1'))
+. ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'common.ps1'))
+Set-StrictMode -Version 3
 
 $resolvedToolchain = Get-ResolvedRustToolchain -Toolchain 'nightly'
 if (!$resolvedToolchain) {
@@ -17,24 +17,22 @@ if (!$resolvedToolchain) {
   exit 1
 }
 
-$cargoArgs = @(
-  'watch',
-  '-s',
-  "RUSTDOCFLAGS=""--cfg=docsrs --enable-index-page -Z unstable-options"" cargo +$resolvedToolchain doc --all-features --workspace --no-deps",
-  '-s',
-  'http-server --index --port 8080 ./target/doc'
-)
+$process = Start-PipedProcess `
+  -FilePath 'cargo' `
+  -ArgumentList @(
+    'watch',
+    '-s',
+    "cargo +$resolvedToolchain doc --all-features --workspace --no-deps",
+    '-s',
+    'http-server --index --port 8080 ./target/doc'
+  ) `
+  -WorkingDirectory $RepoRoot `
+  -Environment @{
+    RUSTDOCFLAGS = '--cfg=docsrs --enable-index-page -Z unstable-options'
+  } `
+  -DoNotExitOnFailedExitCode
 
-Push-Location $RepoRoot
-try {
-  Write-Host "> cargo $($cargoArgs -join ' ')"
-  & cargo @cargoArgs 2>&1 | ForEach-Object { $_ }
-
-  if ($LASTEXITCODE -ne 0) {
-    LogErrorForFile $PSCommandPath "Command failed to execute: cargo $($cargoArgs -join ' ')"
-    exit $LASTEXITCODE
-  }
-}
-finally {
-  Pop-Location
+if ($process.ExitCode) {
+  LogErrorForFile $PSCommandPath "Failed to watch Rust docs."
+  exit $process.ExitCode
 }
