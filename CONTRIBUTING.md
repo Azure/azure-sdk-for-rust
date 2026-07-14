@@ -444,6 +444,20 @@ Current pin locations:
 - Nightly for `eng/scripts` and `cargo +nightly` utility scripts: `eng/scripts/Language-Settings.ps1` e.g., `"nightly-2026-04-14"`
 - Nightly for tooling under `eng/tools` such as doc and APIView generation: `eng/tools/rust-toolchain.toml` -> `channel` e.g., `"nightly-2025-05-09"`
 
+Contributors can install pinned toolchains easily with:
+
+```powershell
+eng/scripts/Install-RustToolchains.ps1
+```
+
+By default this installs only the pinned stable toolchain. To install stable plus all optional toolchains:
+
+```powershell
+eng/scripts/Install-RustToolchains.ps1 -MSRV -Nightly -Tools
+```
+
+To preview commands without executing them, use `-WhatIf`.
+
 Project maintainers can update the root stable toolchain, the `eng/scripts` nightly pin, and the `eng/scripts/**/*.rs` nightly shebangs by running:
 
 ```powershell

@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! This example demonstrates how to enable logging and OpenTelemetry distributed tracing
+//! This sample demonstrates how to enable logging and OpenTelemetry distributed tracing
 //! when making requests to Azure Blob Storage.
 //!
 //! # Regular Logging
@@ -24,7 +24,7 @@
 //!
 //! - Set the `AZURE_STORAGE_ACCOUNT_NAME` environment variable to your storage account name
 //! - Authenticate using Azure CLI: `az login`
-//! - Set `RUST_LOG` to control log level (optional, defaults to `trace` in this example):
+//! - Set `RUST_LOG` to control log level (optional, defaults to `trace` in this sample):
 //!   - `error` - Only errors
 //!   - `warn` - Warnings and errors
 //!   - `info` - Info, warnings, and errors
@@ -35,7 +35,7 @@
 //!
 //! ```bash
 //! az login
-//! cargo run --package azure_storage_blob --example blob_storage_logging -- <ACCOUNT_NAME>
+//! cargo run --manifest-path samples/storage_blob_logging/Cargo.toml -- <ACCOUNT_NAME>
 //! ```
 //!
 //! The `<ACCOUNT_NAME>` argument can also be provided via the `AZURE_STORAGE_ACCOUNT_NAME`
@@ -44,7 +44,7 @@
 //! To enable OpenTelemetry tracing (outputs spans to stdout):
 //!
 //! ```bash
-//! cargo run --package azure_storage_blob --example blob_storage_logging -- <ACCOUNT_NAME> --otel
+//! cargo run --manifest-path samples/storage_blob_logging/Cargo.toml -- <ACCOUNT_NAME> --otel
 //! ```
 
 use azure_core::{
@@ -63,19 +63,15 @@ use tracing_subscriber::EnvFilter;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
-    // Check for --otel flag to enable OpenTelemetry distributed tracing.
     let otel_enabled = args.otel;
 
-    // Initialize tracing subscriber to see HTTP requests and responses.
-    // When --otel is enabled, default to "warn" to reduce noise and let spans be visible.
-    // When --otel is disabled, default to "trace" to show detailed HTTP logs.
     let default_level = if otel_enabled { "warn" } else { "trace" };
     let env_filter =
         EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(default_level));
     println!("RUST_LOG filter: {}", env_filter);
     tracing_subscriber::fmt()
         .with_env_filter(env_filter)
-        .with_writer(std::io::stderr) // Write logs to stderr so they don't interleave with otel stdout
+        .with_writer(std::io::stderr)
         .init();
 
     let otel_provider = if otel_enabled {
@@ -90,22 +86,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         None
     };
 
-    // Get Azure Storage Account name.
     let account = &args.account_name;
-
     let container_name = "test-container";
     let blob_name = "hello_world.txt";
     let content = b"Hello, World!";
 
-    // Create OAuth credentials using Azure CLI
     println!("Authenticating with Azure CLI...");
     let credential = AzureCliCredential::new(None)?;
 
-    // Create BlobContainerClient
     let endpoint = format!("https://{}.blob.core.windows.net", account);
 
-    // Configure client options with optional OpenTelemetry tracing.
-    // Azure Storage headers (x-ms-version, x-ms-request-id, etc.) are logged by default.
     let client_options = BlobServiceClientOptions {
         client_options: ClientOptions {
             instrumentation: InstrumentationOptions {
@@ -124,11 +114,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some(client_options),
     )?;
     let container_client = service_client.blob_container_client(container_name);
-
-    // Create BlobClient
     let blob_client = container_client.blob_client(blob_name);
 
-    // Create container if it does not exist
     println!("Creating container '{}'...", container_name);
     if container_client.exists().await? {
         println!("Container already exists, continuing...");
@@ -137,24 +124,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("Container created successfully");
     }
 
-    // Upload the file
     println!("\nUploading blob '{}'...", blob_name);
     blob_client
         .upload(RequestContent::from(content.to_vec()), None)
         .await?;
     println!("Blob uploaded successfully");
 
-    // Download the file
     println!("\nDownloading blob '{}'...", blob_name);
     let response = blob_client.download(None).await?;
     let downloaded_content = response.body.collect().await?;
 
-    // Print the contents to stdout
     println!("\n=== File Contents ===");
     println!("{}", String::from_utf8_lossy(&downloaded_content));
     println!("=====================");
 
-    // Shutdown OpenTelemetry tracer provider to flush remaining spans.
     if let Some(provider) = otel_provider {
         let _ = provider.shutdown();
         println!("\nOpenTelemetry spans flushed.");

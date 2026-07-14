@@ -74,8 +74,8 @@ impl EffectivePartitionKey {
                 PartitionKeyVersion::V2 => effective_partition_key_v2_binary(pk_values),
             },
             PartitionKeyKind::MultiHash => {
-                // MultiHash is only supported with V2. All MultiHash container definitions
-                // are created with version=2; V1 MultiHash does not exist in Cosmos DB.
+                // MultiHash is only supported with V2. Deserialization rejects
+                // this invalid combination before it can reach routing.
                 assert!(
                     version == PartitionKeyVersion::V2,
                     "MultiHash requires V2, got {:?}",
@@ -574,6 +574,43 @@ mod tests {
                 component
             );
         }
+    }
+
+    /// The definition's `version` must drive the EPK algorithm end-to-end:
+    /// a version-less definition (deserialized as V1) must produce the V1
+    /// binary encoding, while a V2 definition produces the V2 encoding for the
+    /// same partition key value. This locks down the version→algorithm wiring
+    /// that Gateway 2.0 point-op routing depends on.
+    #[test]
+    fn definition_version_selects_epk_algorithm() {
+        let pk_values = [PartitionKeyValue::from("tenant1".to_string())];
+
+        // A version-less definition read back from the service is a legacy V1
+        // container (see `default_pk_version`).
+        let v1_def: PartitionKeyDefinition = serde_json::from_str(r#"{"paths":["/pk"]}"#).unwrap();
+        assert_eq!(v1_def.version(), PartitionKeyVersion::V1);
+        let v2_def: PartitionKeyDefinition =
+            serde_json::from_str(r#"{"paths":["/pk"],"version":2}"#).unwrap();
+        assert_eq!(v2_def.version(), PartitionKeyVersion::V2);
+
+        let v1_epk = EffectivePartitionKey::compute(&pk_values, v1_def.kind(), v1_def.version());
+        let v2_epk = EffectivePartitionKey::compute(&pk_values, v2_def.kind(), v2_def.version());
+
+        assert_eq!(
+            v1_epk.as_bytes(),
+            effective_partition_key_v1_binary(&pk_values).as_slice(),
+            "version-less (V1) definition must produce the V1 EPK encoding"
+        );
+        assert_eq!(
+            v2_epk.as_bytes(),
+            effective_partition_key_v2_binary(&pk_values).as_slice(),
+            "V2 definition must produce the V2 EPK encoding"
+        );
+        assert_ne!(
+            v1_epk.as_bytes(),
+            v2_epk.as_bytes(),
+            "V1 and V2 EPK encodings must differ for the same partition key value"
+        );
     }
 
     /// A single-component MultiHash EPK should produce the same 32-char hex

@@ -1,17 +1,11 @@
 # Release History
 
-## 1.1.0-beta.1 (Unreleased)
+## 1.1.0-beta.1 (2026-07-14)
 
 ### Features Added
 
 - Added `ListOfSentMessage::into_message()` to extract the single `SentMessage` returned by `QueueClient::send_message()`.
 - Added `QueueServiceClient::get_user_delegation_key()` to obtain a user delegation key for creating user delegation SAS tokens.
-
-### Breaking Changes
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 1.0.0 (2026-05-13)
 
