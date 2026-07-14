@@ -461,7 +461,7 @@ store.set_write_region("West US")?;             // runtime single-write failover
 ### 7.4 Gateway 2.0 server codec (behind host feature)
 
 ```rust
-// Promoted from test-only helpers to production, co-located with the client codec.
+// Server-side codec methods extracted and completed from the existing test parsing/building logic.
 use azure_data_cosmos_driver::driver::transport::rntbd::{RntbdRequestFrame, RntbdResponse};
 
 let frame = RntbdRequestFrame::read(&request_bytes)?;   // decode inbound (server side)
