@@ -483,11 +483,11 @@ HTTP/2 is a hard requirement for Gateway 2.0. The relevant driver behavior **alr
 - `ensure_endpoint_scheme_allowed` already permits `http://` for `localhost` / `127.0.0.1` /
   `[::1]` (and `AZURE_COSMOS_EMULATOR_HOST`).
 
-`axum::serve` uses hyper-util's protocol-detecting `auto` builder, which accepts h2c
-prior-knowledge connections automatically. So the host serves h2c, the existing probe negotiates
-HTTP/2 against it, and no mandatory driver change is required. A targeted change to the
-incompatibility matcher is a **contingency** only if end-to-end validation reveals a gap
-(ADR-003).
+`axum::serve` uses hyper-util's protocol-detecting `auto` builder and accepts h2c
+prior-knowledge connections when axum is compiled with its non-default `http2` feature. The host
+must enable that feature explicitly. With it enabled, the existing probe negotiates HTTP/2 against
+the host and no mandatory driver change is required. A targeted change to the incompatibility
+matcher is a **contingency** only if end-to-end validation reveals a gap (ADR-003).
 
 ---
 
