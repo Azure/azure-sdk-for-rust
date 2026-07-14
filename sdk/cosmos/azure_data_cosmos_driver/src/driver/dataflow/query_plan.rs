@@ -93,29 +93,13 @@ pub(crate) struct RawQueryPlan {
 
 /// A raw query range as deserialized off the wire, with `min` / `max` still
 /// in proxy or Gateway form. See [`RawQueryPlan`] for the resolution path.
-///
-/// `is_min_inclusive` is validated (must be `true`) during
-/// [`RawQueryPlan::resolve`] and is not carried onto the planner-ready
-/// [`QueryRange`], since every query-plan range is contractually min-inclusive.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct RawQueryRange {
     pub min: serde_json::Value,
     pub max: serde_json::Value,
-    /// Query-plan ranges are min-inclusive; a range that omits `isMinInclusive`
-    /// is treated as min-inclusive. An explicit `false` is rejected in
-    /// [`RawQueryPlan::resolve`].
-    #[serde(
-        default = "min_inclusive_default",
-        deserialize_with = "bool_from_int_or_bool"
-    )]
-    pub is_min_inclusive: bool,
     #[serde(deserialize_with = "bool_from_int_or_bool")]
     pub is_max_inclusive: bool,
-}
-
-fn min_inclusive_default() -> bool {
-    true
 }
 
 impl RawQueryPlan {
@@ -133,20 +117,6 @@ impl RawQueryPlan {
     pub(crate) fn resolve(self, pk_definition: &PartitionKeyDefinition) -> Result<QueryPlan> {
         let mut query_ranges = Vec::with_capacity(self.query_ranges.len());
         for raw in self.query_ranges {
-            // Query-plan ranges are contractually min-inclusive. Assert that
-            // expectation rather than silently ignoring it: a `false` here would
-            // mean the gateway (or native library) sent a range shape we don't
-            // model, which could execute the query against the wrong bound.
-            // (Ashley review, #4638.)
-            if !raw.is_min_inclusive {
-                return Err(CosmosError::builder()
-                    .with_status(CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-                    .with_message(
-                        "query plan returned a range with isMinInclusive=false, which is not \
-                         supported (query-plan EPK ranges are expected to be min-inclusive)",
-                    )
-                    .build());
-            }
             let min = resolve_epk_bound(&raw.min, pk_definition)?;
             let max = resolve_epk_bound(&raw.max, pk_definition)?;
             query_ranges.push(QueryRange {
@@ -396,8 +366,8 @@ pub(crate) enum SortOrder {
 /// (arrays); `string_or_json` flattens those to the JSON text. The Gateway
 /// path additionally runs each `RawQueryRange` through
 /// [`RawQueryPlan::resolve`] to hash structured PK values into proper EPK hex.
-// Query-plan ranges are always min-inclusive (validated in
-// `RawQueryPlan::resolve`), so only `is_max_inclusive` is carried here.
+// Query-plan ranges are always min-inclusive, so only `is_max_inclusive` is
+// carried here (the wire `isMinInclusive` is ignored on deserialize).
 #[derive(Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct QueryRange {
@@ -454,32 +424,6 @@ mod tests {
         assert_eq!(plan.query_ranges[0].min, "");
         assert_eq!(plan.query_ranges[0].max, "FF");
         assert!(!plan.query_ranges[0].is_max_inclusive);
-    }
-
-    #[test]
-    fn resolve_rejects_non_min_inclusive_range() {
-        // The gateway is expected to only ever send min-inclusive ranges; if it
-        // ever sends `isMinInclusive: false`, resolution must fail loudly rather
-        // than silently mis-route the query (Ashley review, #4638).
-        let json = r#"{
-            "partitionedQueryExecutionInfoVersion": 1,
-            "queryRanges": [
-                {
-                    "min": "",
-                    "max": "FF",
-                    "isMinInclusive": false,
-                    "isMaxInclusive": false
-                }
-            ]
-        }"#;
-        let raw: RawQueryPlan = serde_json::from_str(json).expect("valid raw JSON");
-        let err = raw
-            .resolve(&default_pk_def())
-            .expect_err("non-min-inclusive range must be rejected");
-        assert!(
-            err.to_string().contains("isMinInclusive=false"),
-            "unexpected error: {err}"
-        );
     }
 
     #[test]
