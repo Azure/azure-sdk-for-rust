@@ -412,9 +412,10 @@ async fn plan_fresh(
             // Clip the resolved partition to the query range (for an equality
             // point this is the narrow `[X, successor(X))` window, emitted as a
             // `start`/`end-epk` pair alongside `partitionkeyrangeid`).
-            let range = intersect_feed_ranges(&resolved_range.range, &feed_range).ok_or_else(
-                || topology_range_not_overlapping_error(&resolved_range.range, &feed_range),
-            )?;
+            let range =
+                intersect_feed_ranges(&resolved_range.range, &feed_range).ok_or_else(|| {
+                    topology_range_not_overlapping_error(&resolved_range.range, &feed_range)
+                })?;
 
             let target = RequestTarget::effective_partition_key_range(
                 range,
@@ -1353,8 +1354,13 @@ mod tests {
             .unwrap();
 
         // Narrow `[30, successor(30))` EPK window over the owning partition.
-        let s30 = EffectivePartitionKey::from("30").normalized_successor(16).to_hex();
-        assert_drain_requests_with_partitions(pipeline, &[("30", s30.as_str(), "pkrange-0", "", "FF")]);
+        let s30 = EffectivePartitionKey::from("30")
+            .normalized_successor(16)
+            .to_hex();
+        assert_drain_requests_with_partitions(
+            pipeline,
+            &[("30", s30.as_str(), "pkrange-0", "", "FF")],
+        );
     }
 
     #[tokio::test]
@@ -1389,8 +1395,12 @@ mod tests {
             .await
             .unwrap();
 
-        let s30 = EffectivePartitionKey::from("30").normalized_successor(16).to_hex();
-        let s50 = EffectivePartitionKey::from("50").normalized_successor(16).to_hex();
+        let s30 = EffectivePartitionKey::from("30")
+            .normalized_successor(16)
+            .to_hex();
+        let s50 = EffectivePartitionKey::from("50")
+            .normalized_successor(16)
+            .to_hex();
         assert_drain_requests_with_partitions(
             pipeline,
             &[
@@ -1429,8 +1439,12 @@ mod tests {
             .await
             .unwrap();
 
-        let s20 = EffectivePartitionKey::from("20").normalized_successor(16).to_hex();
-        let sc0 = EffectivePartitionKey::from("C0").normalized_successor(16).to_hex();
+        let s20 = EffectivePartitionKey::from("20")
+            .normalized_successor(16)
+            .to_hex();
+        let sc0 = EffectivePartitionKey::from("C0")
+            .normalized_successor(16)
+            .to_hex();
         assert_drain_requests_with_partitions(
             pipeline,
             &[
@@ -2111,7 +2125,9 @@ mod tests {
             .await
             .unwrap();
         // Left window dropped (at/below cursor); right window emitted fresh-start.
-        let sc0 = EffectivePartitionKey::from("C0").normalized_successor(16).to_hex();
+        let sc0 = EffectivePartitionKey::from("C0")
+            .normalized_successor(16)
+            .to_hex();
         assert_drain_requests_with_partitions_and_continuation(
             pipeline,
             &[("C0", sc0.as_str(), "pk-right", "80", "FF", None)],
@@ -2146,8 +2162,12 @@ mod tests {
             Ok(vec![rr("", "FF", "pk-0")]),
         ]);
 
-        let s20 = EffectivePartitionKey::from("20").normalized_successor(16).to_hex();
-        let s50 = EffectivePartitionKey::from("50").normalized_successor(16).to_hex();
+        let s20 = EffectivePartitionKey::from("20")
+            .normalized_successor(16)
+            .to_hex();
+        let s50 = EffectivePartitionKey::from("50")
+            .normalized_successor(16)
+            .to_hex();
 
         // Each in-flight window has its own saved server continuation.
         let resume = PipelineNodeState::SequentialDrain {

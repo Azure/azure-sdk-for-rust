@@ -84,7 +84,10 @@ impl EffectivePartitionKey {
     /// (see [`normalized_epk_len`]). When `self` is already at least that wide
     /// (the common full-key case), no padding is applied and the result equals
     /// [`successor`](Self::successor).
-    pub(crate) fn normalized_successor(&self, normalized_len_bytes: usize) -> EffectivePartitionKey {
+    pub(crate) fn normalized_successor(
+        &self,
+        normalized_len_bytes: usize,
+    ) -> EffectivePartitionKey {
         let mut bytes = self.as_bytes().to_vec();
         if bytes.len() < normalized_len_bytes {
             bytes.resize(normalized_len_bytes, 0x00);
@@ -570,8 +573,8 @@ mod tests {
 
     #[test]
     fn normalized_epk_len_is_none_for_v1() {
-        let v1 = PartitionKeyDefinition::new(vec!["/pk".into()])
-            .with_version(PartitionKeyVersion::V1);
+        let v1 =
+            PartitionKeyDefinition::new(vec!["/pk".into()]).with_version(PartitionKeyVersion::V1);
         assert_eq!(normalized_epk_len(&v1), None);
     }
 

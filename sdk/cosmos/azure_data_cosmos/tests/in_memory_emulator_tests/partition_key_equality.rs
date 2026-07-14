@@ -135,7 +135,11 @@ async fn equality_predicate_cross_partition_returns_single_row() {
 
     let items = query_full_container(&container, query).await;
 
-    assert_eq!(items.len(), 1, "equality should return exactly 1 row, got {items:?}");
+    assert_eq!(
+        items.len(),
+        1,
+        "equality should return exactly 1 row, got {items:?}"
+    );
     assert_eq!(items[0].pk, "pk-3");
     assert_eq!(items[0].id, "id-3");
 }
@@ -156,7 +160,11 @@ async fn in_predicate_cross_partition_returns_matching_rows() {
     let mut items = query_full_container(&container, query).await;
     items.sort_by(|a, b| a.pk.cmp(&b.pk));
 
-    assert_eq!(items.len(), 2, "IN(2) should return exactly 2 rows, got {items:?}");
+    assert_eq!(
+        items.len(),
+        2,
+        "IN(2) should return exactly 2 rows, got {items:?}"
+    );
     assert_eq!(items[0].pk, "pk-1");
     assert_eq!(items[1].pk, "pk-6");
 }
@@ -173,5 +181,8 @@ async fn equality_predicate_no_match_returns_empty() {
 
     let items = query_full_container(&container, query).await;
 
-    assert!(items.is_empty(), "absent equality should return 0 rows, got {items:?}");
+    assert!(
+        items.is_empty(),
+        "absent equality should return 0 rows, got {items:?}"
+    );
 }
