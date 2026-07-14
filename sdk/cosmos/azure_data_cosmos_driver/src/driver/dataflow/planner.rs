@@ -1078,6 +1078,7 @@ mod tests {
         QueryRange {
             min: min.to_string(),
             max: max.to_string(),
+            is_min_inclusive: true,
             is_max_inclusive: false,
         }
     }
@@ -1340,6 +1341,7 @@ mod tests {
         let point = QueryRange {
             min: "30".to_string(),
             max: "30".to_string(),
+            is_min_inclusive: true,
             is_max_inclusive: true,
         };
         let plan = plan_with_ranges(vec![point]);
@@ -1372,11 +1374,13 @@ mod tests {
             QueryRange {
                 min: "30".to_string(),
                 max: "30".to_string(),
+                is_min_inclusive: true,
                 is_max_inclusive: true,
             },
             QueryRange {
                 min: "50".to_string(),
                 max: "50".to_string(),
+                is_min_inclusive: true,
                 is_max_inclusive: true,
             },
         ]);
@@ -1415,11 +1419,13 @@ mod tests {
             QueryRange {
                 min: "20".to_string(),
                 max: "20".to_string(),
+                is_min_inclusive: true,
                 is_max_inclusive: true,
             },
             QueryRange {
                 min: "C0".to_string(),
                 max: "C0".to_string(),
+                is_min_inclusive: true,
                 is_max_inclusive: true,
             },
         ]);
@@ -1456,6 +1462,7 @@ mod tests {
         let point = QueryRange {
             min: "30".to_string(),
             max: "30".to_string(),
+            is_min_inclusive: true,
             is_max_inclusive: true,
         };
         let fr = query_range_to_feed_range(&point, None).unwrap();
@@ -1481,6 +1488,7 @@ mod tests {
         let closed = QueryRange {
             min: "20".to_string(),
             max: "3AFF".to_string(),
+            is_min_inclusive: true,
             is_max_inclusive: true,
         };
         let fr = query_range_to_feed_range(&closed, None).unwrap();
@@ -1501,6 +1509,7 @@ mod tests {
         let closed = QueryRange {
             min: "20".to_string(),
             max: "3A".to_string(),
+            is_min_inclusive: true,
             is_max_inclusive: true,
         };
         let fr = query_range_to_feed_range(&closed, Some(16)).unwrap();
@@ -1519,6 +1528,7 @@ mod tests {
         let point = QueryRange {
             min: "3A".to_string(),
             max: "3A".to_string(),
+            is_min_inclusive: true,
             is_max_inclusive: true,
         };
         let fr = query_range_to_feed_range(&point, Some(16)).unwrap();
@@ -2088,11 +2098,13 @@ mod tests {
             QueryRange {
                 min: "20".to_string(),
                 max: "20".to_string(),
+                is_min_inclusive: true,
                 is_max_inclusive: true,
             },
             QueryRange {
                 min: "C0".to_string(),
                 max: "C0".to_string(),
+                is_min_inclusive: true,
                 is_max_inclusive: true,
             },
         ]);
@@ -2133,11 +2145,13 @@ mod tests {
             QueryRange {
                 min: "20".to_string(),
                 max: "20".to_string(),
+                is_min_inclusive: true,
                 is_max_inclusive: true,
             },
             QueryRange {
                 min: "50".to_string(),
                 max: "50".to_string(),
+                is_min_inclusive: true,
                 is_max_inclusive: true,
             },
         ]);

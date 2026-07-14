@@ -88,6 +88,7 @@ fn full_range_plan() -> QueryPlan {
         query_ranges: vec![QueryRange {
             min: String::new(),
             max: "FF".to_string(),
+            is_min_inclusive: true,
             is_max_inclusive: false,
         }],
         hybrid_search_query_info: None,
