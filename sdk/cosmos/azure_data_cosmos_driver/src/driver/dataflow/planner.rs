@@ -641,7 +641,7 @@ async fn plan_resume_from_saved_snapshot(
 /// **prefix** upper bound — is passed through unchanged, exactly as upstream
 /// does. Those bounds are produced at partition-boundary granularity by the
 /// gateway/topology layer; advancing them with a successor over-extends the band
-/// and misroutes (it drops owning physical partitions — the
+/// and routes incorrectly (it drops owning physical partitions — the
 /// `hpk_tenant_prefix_where_full_scope` regression).
 fn query_range_to_feed_range(
     query_range: &super::query_plan::QueryRange,
@@ -963,7 +963,13 @@ mod tests {
     }
 
     fn test_partition_key_definition() -> PartitionKeyDefinition {
-        serde_json::from_str(r#"{"paths":["/pk"]}"#).unwrap()
+        // Explicit `version: 2`: this fixture models a modern V2 hash container,
+        // which is the shape the EPK-window normalization path targets. An
+        // absent `version` now deserializes to legacy V1 (see
+        // `models::default_pk_version`), which would route these point queries
+        // through the width-preserving `successor()` path instead of the
+        // full-width `normalized_successor(16)` EPK window.
+        serde_json::from_str(r#"{"paths":["/pk"],"version":2}"#).unwrap()
     }
 
     fn test_container_props() -> ContainerProperties {
@@ -1481,7 +1487,7 @@ mod tests {
     }
 
     #[test]
-    fn query_range_to_feed_range_closed_nonpoint_range_passes_through_when_len_unknown() {
+    fn query_range_to_feed_range_closed_non_point_range_passes_through_when_len_unknown() {
         // A closed non-point range `[A, B]` (`min != max`) with no known EPK
         // width (V1) is passed through unchanged — only equality / `IN` *points*
         // are transformed.
@@ -1498,7 +1504,7 @@ mod tests {
     }
 
     #[test]
-    fn query_range_to_feed_range_closed_nonpoint_range_passes_through_even_with_known_len() {
+    fn query_range_to_feed_range_closed_non_point_range_passes_through_even_with_known_len() {
         // Regression guard (#4574 / #4638): a closed *non-point* range
         // (`min != max`) is an HPK **prefix** bound, not a full key. It must be
         // passed through unchanged even when the full EPK width is known —

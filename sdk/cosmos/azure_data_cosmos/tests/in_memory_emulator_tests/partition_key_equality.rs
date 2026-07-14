@@ -68,7 +68,7 @@ async fn setup_container() -> ContainerClient {
     let emulator = std::sync::Arc::new(InMemoryEmulatorHttpClient::new(config));
     let emulator_store = emulator.store();
 
-    let db_name = format!("pkeq-{run_id}");
+    let db_name = format!("partition-key-equality-{run_id}");
     emulator_store.create_database(&db_name);
     emulator_store.create_container_with_config(
         &db_name,
