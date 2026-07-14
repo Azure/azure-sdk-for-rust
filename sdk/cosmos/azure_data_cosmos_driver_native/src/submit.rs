@@ -348,9 +348,9 @@ pub extern "C" fn cosmos_submit_operation(
             // the continuation token through the planner and retains the
             // plan so we can mint the next-page token.
             let container = operation.container().cloned();
-            let mut plan = driver_arc
-                .plan_operation(operation, &options, continuation.as_ref())
-                .await?;
+            let mut plan =
+                Box::pin(driver_arc.plan_operation(operation, &options, continuation.as_ref()))
+                    .await?;
             let page = driver_arc
                 .execute_plan(&mut plan, container, options)
                 .await?;
