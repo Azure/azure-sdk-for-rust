@@ -31,7 +31,7 @@ paths.
 
 - Splitting hosting and CI into separate PRs was rejected: hosting without the CI validation proves
   nothing, so they ship together.
-- Deferring Gateway V2 to its own PR was rejected: hosting both gateways from the start lets one CI
+- Deferring Gateway 2.0 to its own PR was rejected: hosting both gateways from the start lets one CI
   pass cover both (ADR-006).
 
 ## References
