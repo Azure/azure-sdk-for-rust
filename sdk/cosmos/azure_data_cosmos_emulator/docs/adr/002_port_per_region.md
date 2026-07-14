@@ -31,4 +31,4 @@ serve every port. Region gateway URLs in the config are plain `http://127.0.0.1:
 
 ## References
 
-- Plan & summary: ../plan.md
+- Plan & summary: `sdk/cosmos/azure_data_cosmos_emulator/docs/plan.md`

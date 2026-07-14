@@ -9,19 +9,19 @@
 
 ## Table of Contents
 
-1. [Goals & Motivation](#1-goals--motivation)
-2. [Scope, Phasing & Feature Gating](#2-scope-phasing--feature-gating)
-3. [Architecture Overview](#3-architecture-overview)
-4. [Configuration File](#4-configuration-file)
-5. [Data-Plane Hosting (Gateway V1 & Gateway 2.0)](#5-data-plane-hosting-gateway-v1--gateway-20)
-6. [Management REST API (Control Plane)](#6-management-rest-api-control-plane)
-7. [Rust Public API Surface](#7-rust-public-api-surface)
-8. [HTTP/2 & Transport Notes](#8-http2--transport-notes)
-9. [CI Integration](#9-ci-integration)
-10. [Authentication & HTTPS (Deferred)](#10-authentication--https-deferred)
-11. [Architecture Decision Records](#11-architecture-decision-records)
-12. [Open Questions & Future Work](#12-open-questions--future-work)
-13. [References](#13-references)
+1. Goals & Motivation
+2. Scope, Phasing & Feature Gating
+3. Architecture Overview
+4. Configuration File
+5. Data-Plane Hosting (Gateway V1 & Gateway 2.0)
+6. Management REST API (Control Plane)
+7. Rust Public API Surface
+8. HTTP/2 & Transport Notes
+9. CI Integration
+10. Authentication & HTTPS (Deferred)
+11. Architecture Decision Records
+12. Open Questions & Future Work
+13. References
 
 ---
 
@@ -518,28 +518,30 @@ block and CLI flags:
   check its object ID / app ID against an allow-list supplied in config or via `--allowed-oid`).
 
 Splitting auth/HTTPS into its own PR keeps certificate and token friction out of the initial
-hosting and control-plane work ([ADR-008](adr/008_transport_security_and_authentication.md)).
+hosting and control-plane work. See ADR-008 in
+`sdk/cosmos/azure_data_cosmos_emulator/docs/adr/008_transport_security_and_authentication.md`.
 
 ---
 
 ## 11. Architecture Decision Records
 
-- [ADR-001](adr/001_separate_host_crate.md): Host in a separate `publish = false` binary crate;
-  keep the emulator in the driver behind a host feature.
-- [ADR-002](adr/002_port_per_region.md): Model each region as a distinct localhost port backed by
-  one shared store.
-- [ADR-003](adr/003_cleartext_http2.md): Support h2c on emulator endpoints while retaining
-  HTTPS-only production routing.
-- [ADR-004](adr/004_management_rest_api.md): Expose emulator-only control-plane actions through a
-  separate management REST API.
-- [ADR-005](adr/005_json_config_startup_seed.md): Keep canonical startup configuration in
-  host-owned JSON and seed through the data plane.
-- [ADR-006](adr/006_gateway_v2_rntbd.md): Keep RNTBD framing private to the driver behind a
-  high-level hosted-emulator adapter.
-- [ADR-007](adr/007_dynamic_account_topology.md): Model outages and write-region failover as
-  dynamic account-topology state.
-- [ADR-008](adr/008_transport_security_and_authentication.md): Enforce transport security and
-  authentication at the host boundary.
+- ADR-001 (`sdk/cosmos/azure_data_cosmos_emulator/docs/adr/001_separate_host_crate.md`): Host in a
+  separate `publish = false` binary crate; keep the emulator in the driver behind a host feature.
+- ADR-002 (`sdk/cosmos/azure_data_cosmos_emulator/docs/adr/002_port_per_region.md`): Model each
+  region as a distinct localhost port backed by one shared store.
+- ADR-003 (`sdk/cosmos/azure_data_cosmos_emulator/docs/adr/003_cleartext_http2.md`): Support h2c on
+  emulator endpoints while retaining HTTPS-only production routing.
+- ADR-004 (`sdk/cosmos/azure_data_cosmos_emulator/docs/adr/004_management_rest_api.md`): Expose
+  emulator-only control-plane actions through a separate management REST API.
+- ADR-005 (`sdk/cosmos/azure_data_cosmos_emulator/docs/adr/005_json_config_startup_seed.md`): Keep
+  canonical startup configuration in host-owned JSON and seed through the data plane.
+- ADR-006 (`sdk/cosmos/azure_data_cosmos_emulator/docs/adr/006_gateway_v2_rntbd.md`): Keep RNTBD
+  framing private to the driver behind a high-level hosted-emulator adapter.
+- ADR-007 (`sdk/cosmos/azure_data_cosmos_emulator/docs/adr/007_dynamic_account_topology.md`): Model
+  outages and write-region failover as dynamic account-topology state.
+- ADR-008
+  (`sdk/cosmos/azure_data_cosmos_emulator/docs/adr/008_transport_security_and_authentication.md`):
+  Enforce transport security and authentication at the host boundary.
 
 Delivery sequencing, CI rollout, and temporary test exclusions remain in this plan. They are not
 architecture decisions and are intentionally excluded from the ADR directory.
@@ -561,8 +563,10 @@ architecture decisions and are intentionally excluded from the ADR directory.
 
 ## 13. References
 
-- In-memory emulator spec: `../../azure_data_cosmos/docs/in-memory-emulator-spec.md`
-- Gateway 2.0 spec: `../../azure_data_cosmos_driver/docs/GATEWAY_V2_SPEC.md`
-- Transport pipeline spec: `../../azure_data_cosmos_driver/docs/TRANSPORT_PIPELINE_SPEC.md`
-- RNTBD codec: `../../azure_data_cosmos_driver/src/driver/transport/rntbd/`
-- Cosmos test setup: `../../eng/scripts/Invoke-CosmosTestSetup.ps1`
+- In-memory emulator spec:
+  `sdk/cosmos/azure_data_cosmos/docs/in-memory-emulator-spec.md`
+- Gateway 2.0 spec: `sdk/cosmos/azure_data_cosmos_driver/docs/GATEWAY_V2_SPEC.md`
+- Transport pipeline spec:
+  `sdk/cosmos/azure_data_cosmos_driver/docs/TRANSPORT_PIPELINE_SPEC.md`
+- RNTBD codec: `sdk/cosmos/azure_data_cosmos_driver/src/driver/transport/rntbd/`
+- Cosmos test setup: `sdk/cosmos/eng/scripts/Invoke-CosmosTestSetup.ps1`

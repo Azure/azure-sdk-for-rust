@@ -43,4 +43,4 @@ preserved until the dynamic state is changed.
 
 ## References
 
-- Plan & summary: ../plan.md
+- Plan & summary: `sdk/cosmos/azure_data_cosmos_emulator/docs/plan.md`

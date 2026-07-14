@@ -32,4 +32,4 @@ and the management API never collides with Cosmos paths because it lives on a se
 
 ## References
 
-- Plan & summary: ../plan.md
+- Plan & summary: `sdk/cosmos/azure_data_cosmos_emulator/docs/plan.md`

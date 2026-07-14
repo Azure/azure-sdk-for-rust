@@ -37,5 +37,6 @@ carry credentials require TLS, as described by ADR-008.
 
 ## References
 
-- Plan & summary: ../plan.md
-- Transport pipeline spec: ../../../azure_data_cosmos_driver/docs/TRANSPORT_PIPELINE_SPEC.md
+- Plan & summary: `sdk/cosmos/azure_data_cosmos_emulator/docs/plan.md`
+- Transport pipeline spec:
+  `sdk/cosmos/azure_data_cosmos_driver/docs/TRANSPORT_PIPELINE_SPEC.md`
