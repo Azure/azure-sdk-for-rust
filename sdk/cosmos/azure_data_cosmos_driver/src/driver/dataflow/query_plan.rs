@@ -99,8 +99,6 @@ pub(crate) struct RawQueryRange {
     pub min: serde_json::Value,
     pub max: serde_json::Value,
     #[serde(deserialize_with = "bool_from_int_or_bool")]
-    pub is_min_inclusive: bool,
-    #[serde(deserialize_with = "bool_from_int_or_bool")]
     pub is_max_inclusive: bool,
 }
 
@@ -124,7 +122,6 @@ impl RawQueryPlan {
             query_ranges.push(QueryRange {
                 min,
                 max,
-                is_min_inclusive: raw.is_min_inclusive,
                 is_max_inclusive: raw.is_max_inclusive,
             });
         }
@@ -369,14 +366,10 @@ pub(crate) enum SortOrder {
 /// (arrays); `string_or_json` flattens those to the JSON text. The Gateway
 /// path additionally runs each `RawQueryRange` through
 /// [`RawQueryPlan::resolve`] to hash structured PK values into proper EPK hex.
+// Query-plan ranges are always min-inclusive, so only `is_max_inclusive` is
+// carried here (the wire `isMinInclusive` is ignored on deserialize).
 #[derive(Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
-// `is_min_inclusive` is wire-format only: query-plan ranges are always
-// min-inclusive and `FeedRange` is half-open `[min, max)`. `is_max_inclusive`
-// IS honored when converting to a `FeedRange` (see `query_range_to_feed_range`):
-// a closed range from an equality / `IN` predicate is normalized to
-// `[min, successor(max))` so it routes correctly (#4574).
-#[allow(dead_code)]
 pub(crate) struct QueryRange {
     /// The minimum EPK value (hex string, `""` for MIN, `"FF"` for MAX).
     #[serde(deserialize_with = "string_or_json")]
@@ -386,11 +379,10 @@ pub(crate) struct QueryRange {
     #[serde(deserialize_with = "string_or_json")]
     pub max: String,
 
-    /// Whether the minimum value is inclusive.
-    #[serde(deserialize_with = "bool_from_int_or_bool")]
-    pub is_min_inclusive: bool,
-
-    /// Whether the maximum value is inclusive.
+    /// Whether the maximum value is inclusive. A closed range from an equality
+    /// / `IN` predicate (`is_max_inclusive == true`) is normalized to
+    /// `[min, successor(max))` when converting to a `FeedRange` (see
+    /// `query_range_to_feed_range`) so it routes correctly (#4574).
     #[serde(deserialize_with = "bool_from_int_or_bool")]
     pub is_max_inclusive: bool,
 }
@@ -431,7 +423,6 @@ mod tests {
         assert_eq!(plan.query_ranges.len(), 1);
         assert_eq!(plan.query_ranges[0].min, "");
         assert_eq!(plan.query_ranges[0].max, "FF");
-        assert!(plan.query_ranges[0].is_min_inclusive);
         assert!(!plan.query_ranges[0].is_max_inclusive);
     }
 
@@ -563,7 +554,6 @@ mod tests {
         assert_eq!(plan.query_ranges.len(), 1);
         assert_eq!(plan.query_ranges[0].min, "");
         assert_eq!(plan.query_ranges[0].max, "FF");
-        assert!(plan.query_ranges[0].is_min_inclusive);
         assert!(!plan.query_ranges[0].is_max_inclusive);
     }
 
@@ -582,7 +572,6 @@ mod tests {
         let plan = parse(json);
         assert_eq!(plan.query_ranges[0].min, "");
         assert_eq!(plan.query_ranges[0].max, "FF");
-        assert!(plan.query_ranges[0].is_min_inclusive);
         assert!(!plan.query_ranges[0].is_max_inclusive);
     }
 
@@ -612,7 +601,6 @@ mod tests {
         );
         assert_eq!(plan.query_ranges[0].min, expected.to_hex());
         assert_eq!(plan.query_ranges[0].max, expected.to_hex());
-        assert!(plan.query_ranges[0].is_min_inclusive);
         assert!(plan.query_ranges[0].is_max_inclusive);
         // Non-empty EPK string (the actual hash hex).
         assert!(!plan.query_ranges[0].min.is_empty());

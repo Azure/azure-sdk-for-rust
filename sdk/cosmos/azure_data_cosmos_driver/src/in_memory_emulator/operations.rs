@@ -3215,7 +3215,6 @@ fn full_query_range() -> crate::driver::dataflow::query_plan::QueryRange {
     crate::driver::dataflow::query_plan::QueryRange {
         min: Epk::MIN.to_hex(),
         max: Epk::MAX.to_hex(),
-        is_min_inclusive: true,
         is_max_inclusive: false,
     }
 }
@@ -3226,7 +3225,6 @@ fn epk_range_to_query_range(
     crate::driver::dataflow::query_plan::QueryRange {
         min: range.start.to_hex(),
         max: range.end.to_hex(),
-        is_min_inclusive: true,
         is_max_inclusive: true,
     }
 }

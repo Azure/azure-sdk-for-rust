@@ -579,6 +579,48 @@ mod tests {
     }
 
     #[test]
+    fn normalized_successor_encodes_the_planner_algorithm_end_to_end() {
+        // Encodes the exact normalization the planner applies to an equality /
+        // `IN` point: derive the container's full EPK width from its PK
+        // definition, then take the width-normalized successor of a
+        // trailing-zero-trimmed value. Covers the length-normalization the
+        // query-combined tests only exercise implicitly.
+
+        // Single-hash (V2): width is 16 bytes. A trimmed "3A" pads to 16 bytes
+        // then increments the true last byte.
+        let single = PartitionKeyDefinition::new(vec!["/pk".into()]);
+        let len = normalized_epk_len(&single).unwrap();
+        let mut expected = vec![0x3Au8];
+        expected.resize(len, 0x00);
+        expected[len - 1] = 0x01;
+        let expected_hex: String = expected.iter().map(|b| format!("{:02X}", b)).collect();
+        assert_eq!(
+            EffectivePartitionKey::from("3A")
+                .normalized_successor(len)
+                .to_hex(),
+            expected_hex
+        );
+
+        // HPK (MultiHash, 3 paths): width is 48 bytes. A value carrying only the
+        // first component is zero-extended across all three before +1.
+        let hpk =
+            PartitionKeyDefinition::new(vec!["/state".into(), "/city".into(), "/county".into()]);
+        let hpk_len = normalized_epk_len(&hpk).unwrap();
+        assert_eq!(hpk_len, 48);
+        let first_component = "06AB34CFE4E482236BCACBBF50E234AB";
+        let mut expected = hex_to_bytes(first_component);
+        expected.resize(hpk_len, 0x00);
+        expected[hpk_len - 1] = 0x01;
+        let expected_hex: String = expected.iter().map(|b| format!("{:02X}", b)).collect();
+        assert_eq!(
+            EffectivePartitionKey::from(first_component)
+                .normalized_successor(hpk_len)
+                .to_hex(),
+            expected_hex
+        );
+    }
+
+    #[test]
     fn empty_pk_returns_min() {
         let result =
             EffectivePartitionKey::compute(&[], PartitionKeyKind::Hash, PartitionKeyVersion::V2);
