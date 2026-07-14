@@ -495,6 +495,8 @@ incompatibility matcher is a **contingency** only if end-to-end validation revea
 
 - Register a new `test_category = "emulator_inmemory"` cfg in the `build.rs` of both
   `azure_data_cosmos` and `azure_data_cosmos_driver`.
+- Add `test_category = "emulator_inmemory"` to the `#[cfg_attr(...)]` gates and ignore messages
+  of the existing emulator suites in both crates, preserving intentional legacy-only exclusions.
 - Extend `sdk/cosmos/eng/scripts/Invoke-CosmosTestSetup.ps1` to build and start the host binary
   with a provisioning config, wait for `GET /health`, then set `AZURE_COSMOS_CONNECTION_STRING`
   to the hosted endpoint and the `emulator_inmemory` cfg.
