@@ -5,7 +5,7 @@ use crate::{
     clients::{offers_client, ClientContext},
     feed::{ChangeFeedPageIterator, FeedRange, FeedScope, QueryItemIterator},
     models::TransactionalBatch,
-    models::{BatchResponse, ItemResponse, ResourceResponse},
+    models::{BatchResponse, ChangeFeedItem, ItemResponse, ResourceResponse},
     models::{ContainerProperties, PatchInstructions, ThroughputProperties},
     options::{
         BatchOptions, ChangeFeedOptions, ChangeFeedStartFrom, DeleteContainerOptions,
@@ -867,9 +867,12 @@ impl ContainerClient {
     /// replaces) made to items in the container.
     ///
     /// Every change is returned as a
-    /// [`ChangeFeedItem<T>`](crate::models::ChangeFeedItem) wire-format
-    /// envelope, so bind `T = ChangeFeedItem<YourDoc>` and read the post-change
-    /// document via [`current()`](crate::models::ChangeFeedItem::current).
+    /// [`ChangeFeedItem<D>`](crate::models::ChangeFeedItem) wire-format
+    /// envelope: pass your own document type `D` and the iterator yields
+    /// `ChangeFeedItem<D>`. Read the post-change document via
+    /// [`current()`](crate::models::ChangeFeedItem::current). Binding the
+    /// envelope into the return type means a caller cannot accidentally
+    /// deserialize straight into their document and silently lose the envelope.
     ///
     /// # Arguments
     /// * `scope` - Determines which partitions to read changes from.
@@ -882,8 +885,7 @@ impl ContainerClient {
     ///
     /// ```rust,no_run
     /// use azure_data_cosmos::{
-    ///     clients::ContainerClient, feed::FeedScope, models::ChangeFeedItem,
-    ///     options::ChangeFeedStartFrom,
+    ///     clients::ContainerClient, feed::FeedScope, options::ChangeFeedStartFrom,
     /// };
     /// use futures::StreamExt;
     /// use serde::Deserialize;
@@ -894,7 +896,7 @@ impl ContainerClient {
     /// # async fn example(container: ContainerClient) -> Result<(), Box<dyn std::error::Error>> {
     /// // Read all changes from the beginning
     /// let mut pages = container
-    ///     .query_change_feed::<ChangeFeedItem<MyItem>>(
+    ///     .query_change_feed::<MyItem>(
     ///         FeedScope::full_container(),
     ///         ChangeFeedStartFrom::Beginning,
     ///         None,
@@ -912,12 +914,12 @@ impl ContainerClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn query_change_feed<T: DeserializeOwned + Send + 'static>(
+    pub async fn query_change_feed<D: DeserializeOwned + Send + 'static>(
         &self,
         scope: FeedScope,
         start_from: ChangeFeedStartFrom,
         options: Option<ChangeFeedOptions>,
-    ) -> crate::Result<ChangeFeedPageIterator<T>> {
+    ) -> crate::Result<ChangeFeedPageIterator<ChangeFeedItem<D>>> {
         let options = options.unwrap_or_default();
 
         let mut initial_operation = CosmosOperation::change_feed(

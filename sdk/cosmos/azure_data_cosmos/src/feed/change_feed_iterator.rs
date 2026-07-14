@@ -187,8 +187,7 @@ fn deserialize_change_feed_items<T: DeserializeOwned>(
 ///
 /// ```rust,no_run
 /// use azure_data_cosmos::{
-///     clients::ContainerClient, feed::FeedScope, models::ChangeFeedItem,
-///     options::ChangeFeedStartFrom,
+///     clients::ContainerClient, feed::FeedScope, options::ChangeFeedStartFrom,
 /// };
 /// use futures::StreamExt;
 /// use serde::Deserialize;
@@ -198,7 +197,7 @@ fn deserialize_change_feed_items<T: DeserializeOwned>(
 ///
 /// # async fn example(container: ContainerClient) -> Result<(), Box<dyn std::error::Error>> {
 /// let mut pages = container
-///     .query_change_feed::<ChangeFeedItem<MyItem>>(
+///     .query_change_feed::<MyItem>(
 ///         FeedScope::full_container(),
 ///         ChangeFeedStartFrom::Beginning,
 ///         None,

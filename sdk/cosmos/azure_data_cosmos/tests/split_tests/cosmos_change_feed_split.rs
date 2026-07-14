@@ -131,7 +131,7 @@ pub async fn change_feed_resume_across_split() -> Result<(), Box<dyn Error>> {
             // Drain the whole baseline from the beginning, then capture a resume
             // token at the caught-up position.
             let mut iterator = container_client
-                .query_change_feed::<ChangeFeedItem<MockItem>>(
+                .query_change_feed::<MockItem>(
                     FeedScope::full_container(),
                     ChangeFeedStartFrom::Beginning,
                     None,
@@ -178,7 +178,7 @@ pub async fn change_feed_resume_across_split() -> Result<(), Box<dyn Error>> {
             // Resume from the pre-split token: exactly the post-split changes
             // must surface, with no replayed baseline and no losses.
             let mut resumed = container_client
-                .query_change_feed::<ChangeFeedItem<MockItem>>(
+                .query_change_feed::<MockItem>(
                     FeedScope::full_container(),
                     // Ignored on resume: the token carries its own position.
                     ChangeFeedStartFrom::Beginning,

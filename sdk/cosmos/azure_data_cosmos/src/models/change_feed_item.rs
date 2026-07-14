@@ -10,8 +10,9 @@
 //! returning the bare document. The envelope carries the post-change document
 //! (`current`), the pre-change document (`previous`, when the container is
 //! configured to retain pre-images), and per-change [`ChangeFeedMetadata`].
-//! Callers bind `T = ChangeFeedItem<YourDoc>` when calling
-//! [`ContainerClient::query_change_feed`](crate::clients::ContainerClient::query_change_feed).
+//! Callers pass their own document type `D` to
+//! [`ContainerClient::query_change_feed`](crate::clients::ContainerClient::query_change_feed),
+//! which yields [`ChangeFeedItem<D>`] envelopes.
 //!
 //! For [`ChangeFeedMode::LatestVersion`](crate::options::ChangeFeedMode::LatestVersion)
 //! reads the service surfaces the latest version of each created or replaced
@@ -30,6 +31,11 @@ use serde::{Deserialize, Deserializer};
 ///
 /// Parsed from the `operationType` field of the change feed metadata envelope
 /// (`"create"`, `"replace"`, or `"delete"`).
+///
+/// The wire format may add operation types in future service versions. An
+/// unrecognized value deserializes to [`Unknown`](Self::Unknown) rather than
+/// failing, so a single new operation type cannot fail the page it appears in
+/// and permanently stall the feed.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
@@ -44,6 +50,14 @@ pub enum ChangeFeedOperationType {
     /// (id and partition key only); the pre-image is available in `previous`
     /// when the container retains pre-images.
     Delete,
+
+    /// An operation type not recognized by this SDK version.
+    ///
+    /// Any `operationType` value the SDK does not know maps here instead of
+    /// failing deserialization, keeping the change feed alive across service
+    /// upgrades that introduce new operation types.
+    #[serde(other)]
+    Unknown,
 }
 
 /// Per-change metadata returned with a change feed item.
@@ -125,9 +139,10 @@ impl ChangeFeedMetadata {
 /// Each item is a wire-format envelope describing one change: the document
 /// after the change ([`current`](Self::current)), the document before the
 /// change ([`previous`](Self::previous)), and the change
-/// [`metadata`](Self::metadata). Bind `T = ChangeFeedItem<YourDoc>` when calling
+/// [`metadata`](Self::metadata). Pass your document type `D` to
 /// [`ContainerClient::query_change_feed`](crate::clients::ContainerClient::query_change_feed);
-/// the SDK does not strip the envelope, so the whole wire shape is preserved.
+/// it yields `ChangeFeedItem<D>` and does not strip the envelope, so the whole
+/// wire shape is preserved.
 ///
 /// For [`ChangeFeedMode::LatestVersion`](crate::options::ChangeFeedMode::LatestVersion)
 /// reads [`current`](Self::current) holds the latest version of each created or
@@ -160,9 +175,17 @@ impl ChangeFeedMetadata {
 /// deserializes with the whole document mapped onto [`current`](Self::current)
 /// and no [`previous`](Self::previous) / [`metadata`](Self::metadata), so a
 /// caller reading `.current()` sees the document on either wire shape rather
-/// than losing it. An item is treated as an envelope when it carries any of the
-/// reserved `current`, `previous`, or `metadata` keys; a flat document whose own
-/// top level happens to use one of those names is the one documented exception.
+/// than losing it.
+///
+/// An item is treated as an envelope only when it is a non-empty object whose
+/// keys are drawn *entirely* from the reserved set `current`, `previous`, and
+/// `metadata`. A flat document is virtually always distinguishable because it
+/// also carries its own keys (its `id`, partition key, and fields) alongside
+/// any reserved-looking one, so a bare `{ "id": ..., "metadata": ... }` is
+/// correctly read as the document rather than as an empty envelope. The one
+/// documented exception is a flat document whose top level consists *solely* of
+/// reserved names (for example a document that has only a field literally named
+/// `current`); such a document is read as an envelope.
 #[derive(Clone, Debug)]
 #[non_exhaustive]
 pub struct ChangeFeedItem<T> {
@@ -189,16 +212,22 @@ where
     where
         D: Deserializer<'de>,
     {
-        // The wire-format envelope is a JSON object carrying any of the
-        // reserved `current`, `previous`, or `metadata` keys. A backend that
-        // does not envelope change feed items returns the bare document
-        // instead; treat that whole document as the post-change `current` so
-        // no data is lost. See the type-level docs for the reserved-key caveat.
+        // An enveloped item is a JSON object whose top-level keys are drawn
+        // entirely from the reserved set {current, previous, metadata}. A
+        // non-enveloped (flat) document written by a caller almost always
+        // carries other keys too — its id, partition key, and fields — so
+        // requiring *every* key to be reserved keeps a flat document that
+        // merely includes a `metadata`/`previous`/`current` field from being
+        // misread as an (empty) envelope with its real contents dropped.
+        // Detecting `previous`/`metadata` (not just `current`) still lets a
+        // full-fidelity delete envelope, which has no `current`, be recognized.
+        // See the type-level docs for the sole reserved-key caveat.
         let value = serde_json::Value::deserialize(deserializer)?;
         let is_envelope = value.as_object().is_some_and(|fields| {
-            fields.contains_key("current")
-                || fields.contains_key("previous")
-                || fields.contains_key("metadata")
+            !fields.is_empty()
+                && fields
+                    .keys()
+                    .all(|key| matches!(key.as_str(), "current" | "previous" | "metadata"))
         });
 
         if is_envelope {
@@ -366,6 +395,52 @@ mod tests {
     }
 
     #[test]
+    fn flat_document_with_reserved_field_name_is_not_misread_as_envelope() {
+        // Regression guard for the non-enveloped path: a flat document that
+        // happens to carry a top-level `metadata` (or `previous`) field must
+        // still be read as the document. Because it also carries its own keys
+        // (`id`/`value`), not every key is reserved, so it is a flat document —
+        // its contents must survive rather than being dropped for an empty
+        // envelope.
+        let flat = json!({
+            "id": "42",
+            "value": 7,
+            "metadata": { "author": "bob" }
+        });
+        let item: ChangeFeedItem<Doc> = serde_json::from_value(flat).unwrap();
+
+        assert_eq!(
+            item.current(),
+            Some(&Doc {
+                id: "42".into(),
+                value: Some(7)
+            })
+        );
+        assert!(item.previous().is_none());
+        assert!(item.metadata().is_none());
+
+        // The same holds for a stray top-level `previous` field.
+        let flat = json!({ "id": "43", "previous": "unrelated" });
+        let item: ChangeFeedItem<Doc> = serde_json::from_value(flat).unwrap();
+        assert_eq!(item.current().map(|d| d.id.as_str()), Some("43"));
+        assert!(item.previous().is_none());
+    }
+
+    #[test]
+    fn delete_envelope_with_only_metadata_is_treated_as_envelope() {
+        // Counterpart to the flat-document guard: an object whose keys are all
+        // reserved is an envelope even when `metadata` is the only key, so a
+        // full-fidelity delete that carries neither `current` nor `previous`
+        // still surfaces its metadata rather than being parsed as a document.
+        let envelope = json!({ "metadata": { "operationType": "delete", "lsn": 400 } });
+        let item: ChangeFeedItem<Doc> = serde_json::from_value(envelope).unwrap();
+
+        assert!(item.current().is_none());
+        assert!(item.previous().is_none());
+        assert_eq!(item.operation_type(), Some(ChangeFeedOperationType::Delete));
+    }
+
+    #[test]
     fn delete_envelope_without_current_is_treated_as_envelope() {
         // A full-fidelity delete envelope carries `previous`/`metadata` but no
         // `current`; it must be recognized as an envelope (not mistaken for a
@@ -485,5 +560,26 @@ mod tests {
             let parsed: ChangeFeedOperationType = serde_json::from_value(json!(wire)).unwrap();
             assert_eq!(parsed, expected);
         }
+    }
+
+    #[test]
+    fn unknown_operation_type_maps_to_unknown_variant() {
+        // A future/unknown `operationType` must not fail deserialization: it
+        // maps to `Unknown` so one new value cannot fail the whole page and
+        // permanently stall the feed.
+        let parsed: ChangeFeedOperationType = serde_json::from_value(json!("resurrect")).unwrap();
+        assert_eq!(parsed, ChangeFeedOperationType::Unknown);
+
+        // The same must hold when it arrives inside a full envelope.
+        let envelope = json!({
+            "current": { "id": "1", "value": 1 },
+            "metadata": { "operationType": "resurrect", "lsn": 500 }
+        });
+        let item: ChangeFeedItem<Doc> = serde_json::from_value(envelope).unwrap();
+        assert_eq!(
+            item.operation_type(),
+            Some(ChangeFeedOperationType::Unknown)
+        );
+        assert_eq!(item.current().and_then(|d| d.value), Some(1));
     }
 }

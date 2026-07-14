@@ -131,7 +131,7 @@ pub async fn change_feed_from_beginning_single_partition() -> Result<(), Box<dyn
             let container = test_data::create_container_with_items(db_client, items, None).await?;
 
             let mut iterator = container
-                .query_change_feed::<ChangeFeedItem<MockItem>>(
+                .query_change_feed::<MockItem>(
                     FeedScope::partition("partition3"),
                     ChangeFeedStartFrom::Beginning,
                     None,
@@ -175,7 +175,7 @@ pub async fn change_feed_from_beginning_full_container() -> Result<(), Box<dyn E
             .await?;
 
             let mut iterator = container
-                .query_change_feed::<ChangeFeedItem<MockItem>>(
+                .query_change_feed::<MockItem>(
                     FeedScope::full_container(),
                     ChangeFeedStartFrom::Beginning,
                     None,
@@ -209,7 +209,7 @@ pub async fn change_feed_start_from_now_returns_only_new_changes() -> Result<(),
                 test_data::create_container_with_items(db_client, baseline, None).await?;
 
             let mut iterator = container
-                .query_change_feed::<ChangeFeedItem<MockItem>>(
+                .query_change_feed::<MockItem>(
                     FeedScope::partition("partition0"),
                     ChangeFeedStartFrom::Now,
                     None,
@@ -271,7 +271,7 @@ pub async fn change_feed_no_changes_returns_empty_page() -> Result<(), Box<dyn E
                 test_data::create_container_with_items(db_client, Vec::new(), None).await?;
 
             let mut iterator = container
-                .query_change_feed::<ChangeFeedItem<MockItem>>(
+                .query_change_feed::<MockItem>(
                     FeedScope::partition("partition0"),
                     ChangeFeedStartFrom::Beginning,
                     None,
@@ -323,7 +323,7 @@ pub async fn change_feed_continuation_token_resume() -> Result<(), Box<dyn Error
 
             // Drain the baseline, then capture a resume token.
             let mut iterator = container
-                .query_change_feed::<ChangeFeedItem<MockItem>>(
+                .query_change_feed::<MockItem>(
                     FeedScope::partition("partition0"),
                     ChangeFeedStartFrom::Beginning,
                     None,
@@ -355,7 +355,7 @@ pub async fn change_feed_continuation_token_resume() -> Result<(), Box<dyn Error
 
             // Resume from the token: only the new items should appear.
             let mut resumed = container
-                .query_change_feed::<ChangeFeedItem<MockItem>>(
+                .query_change_feed::<MockItem>(
                     FeedScope::partition("partition0"),
                     // Ignored on resume: the token carries its own position.
                     ChangeFeedStartFrom::Beginning,
@@ -414,7 +414,7 @@ pub async fn change_feed_now_resume_does_not_replay_history() -> Result<(), Box<
             .await?;
 
             let mut iterator = container
-                .query_change_feed::<ChangeFeedItem<MockItem>>(
+                .query_change_feed::<MockItem>(
                     FeedScope::full_container(),
                     ChangeFeedStartFrom::Now,
                     None,
@@ -443,7 +443,7 @@ pub async fn change_feed_now_resume_does_not_replay_history() -> Result<(), Box<
             // — must yield only empty pages. A non-empty page means an unpolled
             // partition replayed its history instead of honoring `Now`.
             let mut resumed = container
-                .query_change_feed::<ChangeFeedItem<MockItem>>(
+                .query_change_feed::<MockItem>(
                     FeedScope::full_container(),
                     // Ignored on resume: the token carries its own position.
                     ChangeFeedStartFrom::Beginning,
@@ -508,7 +508,7 @@ pub async fn change_feed_point_in_time_excludes_earlier_changes() -> Result<(), 
             }
 
             let mut iterator = container
-                .query_change_feed::<ChangeFeedItem<MockItem>>(
+                .query_change_feed::<MockItem>(
                     FeedScope::partition("partition0"),
                     ChangeFeedStartFrom::PointInTime(marker),
                     None,
@@ -561,7 +561,7 @@ pub async fn change_feed_max_item_count_pages_backlog() -> Result<(), Box<dyn Er
                 test_data::create_container_with_items(db_client, items, None).await?;
 
             let mut iterator = container
-                .query_change_feed::<ChangeFeedItem<MockItem>>(
+                .query_change_feed::<MockItem>(
                     FeedScope::partition("partition0"),
                     ChangeFeedStartFrom::Beginning,
                     Some(ChangeFeedOptions::default().with_max_item_count(
