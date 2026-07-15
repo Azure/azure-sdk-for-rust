@@ -583,7 +583,7 @@ fn extracts_inherent_impl_blocks_for_enum_methods() {
 }
 
 #[test]
-fn merges_equivalent_generic_inherent_impl_blocks() {
+fn keeps_source_distinct_generic_inherent_impl_blocks_separate() {
     let struct_id = Id(1);
     let impl_one_id = Id(2);
     let impl_two_id = Id(3);
@@ -648,15 +648,21 @@ fn merges_equivalent_generic_inherent_impl_blocks() {
         .filter(|item| item.kind == ApiItemKind::InherentImpl)
         .collect::<Vec<_>>();
 
-    assert_eq!(impls.len(), 1);
-    assert_eq!(impls[0].declaration, "impl<T> Foo<T> {");
+    assert_eq!(impls.len(), 2);
+    assert_eq!(
+        impls
+            .iter()
+            .map(|item| item.declaration.as_str())
+            .collect::<Vec<_>>(),
+        vec!["impl<T> Foo<T> {", "impl<T> Foo<T> {"]
+    );
     assert_eq!(
         impls[0]
             .doc_comments
             .iter()
             .map(String::as_str)
             .collect::<Vec<_>>(),
-        vec!["/// first impl docs", "/// second impl docs"]
+        vec!["/// first impl docs"]
     );
     assert_eq!(
         impls[0]
@@ -664,7 +670,7 @@ fn merges_equivalent_generic_inherent_impl_blocks() {
             .iter()
             .map(|attribute| attribute.text.as_str())
             .collect::<Vec<_>>(),
-        vec!["#[cfg(feature = \"one\")]", "#[must_use]"]
+        vec!["#[cfg(feature = \"one\")]"]
     );
     assert_eq!(
         impls[0]
@@ -672,12 +678,36 @@ fn merges_equivalent_generic_inherent_impl_blocks() {
             .iter()
             .map(|member| member.name.as_str())
             .collect::<Vec<_>>(),
-        vec!["one", "two"]
+        vec!["one"]
+    );
+    assert_eq!(
+        impls[1]
+            .doc_comments
+            .iter()
+            .map(String::as_str)
+            .collect::<Vec<_>>(),
+        vec!["/// second impl docs"]
+    );
+    assert_eq!(
+        impls[1]
+            .attributes
+            .iter()
+            .map(|attribute| attribute.text.as_str())
+            .collect::<Vec<_>>(),
+        vec!["#[must_use]"]
+    );
+    assert_eq!(
+        impls[1]
+            .members
+            .iter()
+            .map(|member| member.name.as_str())
+            .collect::<Vec<_>>(),
+        vec!["two"]
     );
 }
 
 #[test]
-fn merges_equivalent_explicit_inherent_impl_blocks() {
+fn keeps_source_distinct_explicit_inherent_impl_blocks_separate() {
     let struct_id = Id(1);
     let impl_one_id = Id(2);
     let impl_two_id = Id(3);
@@ -729,15 +759,29 @@ fn merges_equivalent_explicit_inherent_impl_blocks() {
         .filter(|item| item.kind == ApiItemKind::InherentImpl)
         .collect::<Vec<_>>();
 
-    assert_eq!(impls.len(), 1);
-    assert_eq!(impls[0].declaration, "impl Foo<BlobState> {");
+    assert_eq!(impls.len(), 2);
+    assert_eq!(
+        impls
+            .iter()
+            .map(|item| item.declaration.as_str())
+            .collect::<Vec<_>>(),
+        vec!["impl Foo<BlobState> {", "impl Foo<BlobState> {"]
+    );
     assert_eq!(
         impls[0]
             .members
             .iter()
             .map(|member| member.name.as_str())
             .collect::<Vec<_>>(),
-        vec!["one", "two"]
+        vec!["one"]
+    );
+    assert_eq!(
+        impls[1]
+            .members
+            .iter()
+            .map(|member| member.name.as_str())
+            .collect::<Vec<_>>(),
+        vec!["two"]
     );
 }
 
@@ -818,7 +862,7 @@ fn keeps_divergent_typestate_inherent_impl_blocks_separate() {
 }
 
 #[test]
-fn local_reexport_merges_equivalent_inherent_impl_blocks() {
+fn local_reexport_keeps_source_distinct_inherent_impl_blocks_separate() {
     let hidden_module_id = Id(1);
     let struct_id = Id(2);
     let impl_one_id = Id(3);
@@ -900,15 +944,113 @@ fn local_reexport_merges_equivalent_inherent_impl_blocks() {
         .filter(|item| item.kind == ApiItemKind::InherentImpl)
         .collect::<Vec<_>>();
 
-    assert_eq!(impls.len(), 1);
-    assert_eq!(impls[0].declaration, "impl<T> Foo<T> {");
+    assert_eq!(impls.len(), 2);
+    assert_eq!(
+        impls
+            .iter()
+            .map(|item| item.declaration.as_str())
+            .collect::<Vec<_>>(),
+        vec!["impl<T> Foo<T> {", "impl<T> Foo<T> {"]
+    );
     assert_eq!(
         impls[0]
             .members
             .iter()
             .map(|member| member.name.as_str())
             .collect::<Vec<_>>(),
-        vec!["one", "two"]
+        vec!["one"]
+    );
+    assert_eq!(
+        impls[1]
+            .members
+            .iter()
+            .map(|member| member.name.as_str())
+            .collect::<Vec<_>>(),
+        vec!["two"]
+    );
+}
+
+#[test]
+fn sorts_inferred_type_arguments_after_generic_type_parameters() {
+    let struct_id = Id(1);
+    let generic_impl_id = Id(2);
+    let inferred_impl_id = Id(3);
+    let explicit_impl_id = Id(4);
+    let generic_read_id = Id(5);
+    let inferred_read_id = Id(6);
+    let explicit_read_id = Id(7);
+
+    let model = extract_model(
+        &package_metadata("demo"),
+        &crate_with_items(vec![
+            item(
+                struct_id,
+                Some("Builder"),
+                ItemEnum::Struct(Struct {
+                    kind: StructKind::Unit,
+                    generics: empty_generics(),
+                    impls: vec![explicit_impl_id, inferred_impl_id, generic_impl_id],
+                }),
+            ),
+            impl_item_for_type_with_items(
+                generic_impl_id,
+                Type::ResolvedPath(path("Builder", struct_id.0).with_args(
+                    GenericArgs::AngleBracketed {
+                        args: vec![GenericArg::Type(Type::Generic("S".to_string()))],
+                        constraints: Vec::new(),
+                    },
+                )),
+                Generics {
+                    params: vec![type_param("S")],
+                    where_predicates: Vec::new(),
+                },
+                vec![generic_read_id],
+            ),
+            impl_item_for_type_with_items(
+                inferred_impl_id,
+                Type::ResolvedPath(path("Builder", struct_id.0).with_args(
+                    GenericArgs::AngleBracketed {
+                        args: vec![GenericArg::Infer],
+                        constraints: Vec::new(),
+                    },
+                )),
+                empty_generics(),
+                vec![inferred_read_id],
+            ),
+            impl_item_for_type_with_items(
+                explicit_impl_id,
+                Type::ResolvedPath(path("Builder", struct_id.0).with_args(
+                    GenericArgs::AngleBracketed {
+                        args: vec![GenericArg::Type(Type::ResolvedPath(path("BlobState", 50)))],
+                        constraints: Vec::new(),
+                    },
+                )),
+                empty_generics(),
+                vec![explicit_read_id],
+            ),
+            inherent_method(generic_read_id, "generic"),
+            inherent_method(inferred_read_id, "inferred"),
+            inherent_method(explicit_read_id, "explicit"),
+        ]),
+        &mut NoopResolver,
+    )
+    .expect("model extraction should succeed");
+
+    let impls = model
+        .root_module
+        .sorted_items()
+        .into_iter()
+        .filter(|item| item.kind == ApiItemKind::InherentImpl)
+        .map(|item| item.declaration.as_str())
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        impls,
+        vec![
+            "impl<S> Builder<S> {",
+            "impl Builder<_> {",
+            "impl Builder<BlobState> {",
+        ]
     );
 }
 

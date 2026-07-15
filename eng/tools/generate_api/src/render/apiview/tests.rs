@@ -13,6 +13,7 @@ fn renders_trait_impl_tokens_with_typed_members() {
         items: vec![ApiItem {
             name: "MyType".to_string(),
             kind: ApiItemKind::TraitImpl,
+            source_id: None,
             owner_kind: None,
             inherent_impl_sort_key: None,
             doc_comments: Vec::new(),
@@ -90,6 +91,7 @@ fn renders_inherent_members_inside_impl_blocks() {
             ApiItem {
                 name: "Foo".to_string(),
                 kind: ApiItemKind::Struct,
+                source_id: None,
                 owner_kind: None,
                 inherent_impl_sort_key: None,
                 doc_comments: Vec::new(),
@@ -100,6 +102,7 @@ fn renders_inherent_members_inside_impl_blocks() {
             ApiItem {
                 name: "Foo".to_string(),
                 kind: ApiItemKind::InherentImpl,
+                source_id: None,
                 owner_kind: Some(ApiItemKind::Struct),
                 inherent_impl_sort_key: None,
                 doc_comments: Vec::new(),
@@ -160,6 +163,7 @@ fn keeps_duplicate_member_names_in_separate_inherent_impl_blocks() {
             ApiItem {
                 name: "Builder".to_string(),
                 kind: ApiItemKind::Struct,
+                source_id: None,
                 owner_kind: None,
                 inherent_impl_sort_key: None,
                 doc_comments: Vec::new(),
@@ -170,6 +174,7 @@ fn keeps_duplicate_member_names_in_separate_inherent_impl_blocks() {
             ApiItem {
                 name: "Builder".to_string(),
                 kind: ApiItemKind::InherentImpl,
+                source_id: None,
                 owner_kind: Some(ApiItemKind::Struct),
                 inherent_impl_sort_key: None,
                 doc_comments: Vec::new(),
@@ -185,6 +190,7 @@ fn keeps_duplicate_member_names_in_separate_inherent_impl_blocks() {
             ApiItem {
                 name: "Builder".to_string(),
                 kind: ApiItemKind::InherentImpl,
+                source_id: None,
                 owner_kind: Some(ApiItemKind::Struct),
                 inherent_impl_sort_key: None,
                 doc_comments: Vec::new(),
@@ -222,6 +228,7 @@ fn omits_doc_comment_lines_when_docs_are_disabled() {
         items: vec![ApiItem {
             name: "Foo".to_string(),
             kind: ApiItemKind::Struct,
+            source_id: None,
             owner_kind: None,
             inherent_impl_sort_key: None,
             doc_comments: vec!["/// item docs".to_string()],

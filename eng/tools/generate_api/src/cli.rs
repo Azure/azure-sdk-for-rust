@@ -15,8 +15,8 @@ struct Args {
     #[arg(long, value_name = "PATH")]
     manifest_path: PathBuf,
 
-    /// Output format to generate. Defaults to review.
-    #[arg(long, value_enum, default_value_t = OutputFormat::Review)]
+    /// Output format to generate. Defaults to markdown.
+    #[arg(long, value_enum, default_value_t = OutputFormat::Markdown)]
     format: OutputFormat,
 
     /// Do not emit documentation comments in APIView output.
@@ -38,14 +38,14 @@ pub(crate) struct Request {
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, ValueEnum)]
 pub(crate) enum OutputFormat {
-    Review,
+    Markdown,
     Apiview,
 }
 
 impl OutputFormat {
     pub(crate) fn default_file_name(self) -> &'static str {
         match self {
-            Self::Review => "API.md",
+            Self::Markdown => "API.md",
             Self::Apiview => "apiview.json",
         }
     }

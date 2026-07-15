@@ -49,6 +49,7 @@ impl ApiModule {
 pub(crate) struct ApiItem {
     pub(crate) name: String,
     pub(crate) kind: ApiItemKind,
+    pub(crate) source_id: Option<String>,
     pub(crate) owner_kind: Option<ApiItemKind>,
     pub(crate) inherent_impl_sort_key: Option<InherentImplSortKey>,
     pub(crate) doc_comments: Vec<String>,

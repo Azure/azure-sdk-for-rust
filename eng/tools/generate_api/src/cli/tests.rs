@@ -4,7 +4,7 @@
 use super::*;
 
 #[test]
-fn defaults_to_review_format() {
+fn defaults_to_markdown_format() {
     let args = Args::parse_from([
         "generate_api",
         "--manifest-path",
@@ -13,7 +13,7 @@ fn defaults_to_review_format() {
         "/tmp/generate_api",
     ]);
 
-    assert_eq!(args.format, OutputFormat::Review);
+    assert_eq!(args.format, OutputFormat::Markdown);
     assert!(!args.no_docs);
 }
 

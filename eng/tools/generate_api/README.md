@@ -15,13 +15,13 @@ cargo run --manifest-path eng/tools/Cargo.toml -p generate_api -- \
 ### Arguments
 
 - `--manifest-path <path>`: path to the target crate's `Cargo.toml`
-- `--format <review|apiview>`: optional output format to generate; defaults to `review`
+- `--format <markdown|apiview>`: optional output format to generate; defaults to `markdown`
 - `--no-docs`: when generating `apiview`, omit documentation comment tokens
 - `--output <dir>`: directory where generated files are written
 
 ### Outputs
 
-- default `review` output writes `API.md`
+- default `markdown` output writes `API.md`
 - `--format apiview` writes `apiview.json`
 - `--format apiview --no-docs` writes `apiview.json` without doc comment tokens
 

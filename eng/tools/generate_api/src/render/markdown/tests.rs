@@ -17,6 +17,7 @@ fn renders_explicit_trait_impl_blocks() {
             items: vec![ApiItem {
                 name: "MyType".to_string(),
                 kind: ApiItemKind::TraitImpl,
+                source_id: None,
                 owner_kind: None,
                 inherent_impl_sort_key: None,
                 doc_comments: Vec::new(),
@@ -58,6 +59,7 @@ fn renders_inherent_members_inside_impl_blocks() {
                 ApiItem {
                     name: "Foo".to_string(),
                     kind: ApiItemKind::Struct,
+                    source_id: None,
                     owner_kind: None,
                     inherent_impl_sort_key: None,
                     doc_comments: Vec::new(),
@@ -68,6 +70,7 @@ fn renders_inherent_members_inside_impl_blocks() {
                 ApiItem {
                     name: "Foo".to_string(),
                     kind: ApiItemKind::InherentImpl,
+                    source_id: None,
                     owner_kind: Some(ApiItemKind::Struct),
                     inherent_impl_sort_key: None,
                     doc_comments: Vec::new(),

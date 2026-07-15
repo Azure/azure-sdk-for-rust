@@ -21,13 +21,13 @@
 The tool exposes:
 
 - `--manifest-path <path/to/Cargo.toml>`
-- `--format <review|apiview>` default `review`
+- `--format <markdown|apiview>` default `markdown`
 - `--no-docs` only for `apiview`
 - `--output <directory>`
 
 Behavior:
 
-- default `review` writes `API.md`
+- default `markdown` writes `API.md`
 - `--format apiview` writes `apiview.json`
 - `--no-docs` suppresses APIView doc comment tokens
 - progress goes to stdout
@@ -108,11 +108,12 @@ Ordering is deterministic and shared by both output formats.
 
 ## Module rendering
 
-- Review output renders child modules as nested `pub mod name { ... }`
+- Markdown output renders child modules as nested `pub mod name { ... }`
 - APIView uses the same logical module tree with root unwrapped
 - Module doc comments and attributes render above the module declaration
 - Trait members are extracted into `ApiItem.members` instead of being embedded in the declaration string. Renderers handle the opening `{` and implied closing `}` separately so each member gets its own APIView `LineId`
 - Inherent impl blocks on structs enums and unions are first-class items with `ApiItem.members`. Do not flatten their members into the owning type. This preserves typestate surfaces such as multiple `read()` methods on different `SasBuilder` impls
+- Keep separate source impl blocks separate even when their rendered headers match. Preserve each block's own attrs docs and members
 - Non-derived trait impls are also first-class items with `ApiItem.members`
 
 ## Re-export rules
@@ -169,7 +170,7 @@ Known synthesized derives:
 Documentation handling:
 
 - rustdoc docs stay separate from attrs in the shared model
-- review output renders `///`
+- markdown output currently omits doc comments
 - APIView renders comment tokens with documentation markers
 
 Signature normalization:

@@ -586,65 +586,52 @@ fn insert_expanded(
 }
 
 fn insert_item(module: &mut ApiModule, seen_declarations: &mut BTreeSet<String>, item: ApiItem) {
-    if item.kind == ApiItemKind::InherentImpl {
-        merge_or_insert_inherent_impl(&mut module.items, item);
-        return;
-    }
-
-    if seen_declarations.insert(item.declaration.clone()) {
+    if seen_declarations.insert(item_dedup_key(&item)) {
         module.items.push(item);
     }
 }
 
-fn merge_or_insert_inherent_impl(items: &mut Vec<ApiItem>, item: ApiItem) {
-    if let Some(existing) = items
-        .iter_mut()
-        .find(|candidate| inherent_impl_merge_key(candidate) == inherent_impl_merge_key(&item))
-    {
-        merge_inherent_impl(existing, item);
-    } else {
-        items.push(item);
-    }
-}
-
-fn inherent_impl_merge_key(item: &ApiItem) -> (&str, Option<ApiItemKind>, &str) {
-    (&item.name, item.owner_kind, &item.declaration)
-}
-
-fn merge_inherent_impl(existing: &mut ApiItem, incoming: ApiItem) {
-    merge_unique(&mut existing.doc_comments, incoming.doc_comments);
-    merge_attributes(&mut existing.attributes, incoming.attributes);
-    for member in incoming.members {
-        if let Some(existing_member) = existing
-            .members
-            .iter_mut()
-            .find(|candidate| candidate.declaration == member.declaration)
-        {
-            merge_unique(&mut existing_member.doc_comments, member.doc_comments);
-            merge_attributes(&mut existing_member.attributes, member.attributes);
-        } else {
-            existing.members.push(member);
+fn item_dedup_key(item: &ApiItem) -> String {
+    match item.kind {
+        ApiItemKind::InherentImpl => {
+            let source_id = item.source_id.as_deref().unwrap_or("no-source-id");
+            format!("{source_id}\u{1f}{}", inherent_impl_fingerprint(item))
         }
+        _ => item.declaration.clone(),
     }
 }
 
-fn merge_unique<T: PartialEq>(existing: &mut Vec<T>, incoming: Vec<T>) {
-    for item in incoming {
-        if !existing.contains(&item) {
-            existing.push(item);
-        }
-    }
-}
+fn inherent_impl_fingerprint(item: &ApiItem) -> String {
+    let doc_comments = item.doc_comments.join("\u{1f}");
+    let attributes = item
+        .attributes
+        .iter()
+        .map(|attribute| attribute.text.as_str())
+        .collect::<Vec<_>>()
+        .join("\u{1f}");
+    let members = item
+        .members
+        .iter()
+        .map(|member| {
+            format!(
+                "{}\u{1f}{}\u{1f}{}",
+                member.name,
+                member.doc_comments.join("\u{1f}"),
+                member
+                    .attributes
+                    .iter()
+                    .map(|attribute| attribute.text.as_str())
+                    .collect::<Vec<_>>()
+                    .join("\u{1f}")
+            ) + &format!("\u{1f}{}", member.declaration)
+        })
+        .collect::<Vec<_>>()
+        .join("\u{1e}");
 
-fn merge_attributes(existing: &mut Vec<ApiAttribute>, incoming: Vec<ApiAttribute>) {
-    for attribute in incoming {
-        if !existing
-            .iter()
-            .any(|candidate| candidate.text == attribute.text)
-        {
-            existing.push(attribute);
-        }
-    }
+    format!(
+        "{}\u{1d}{}\u{1d}{}\u{1d}{}",
+        item.declaration, doc_comments, attributes, members
+    )
 }
 
 fn insert_module(
@@ -677,6 +664,7 @@ fn extract_item(krate: &Crate, item: &Item) -> ApiItem {
             .clone()
             .unwrap_or_else(|| fallback_item_name(item).to_string()),
         kind: item_kind(item),
+        source_id: Some(item.id.0.to_string()),
         owner_kind: None,
         inherent_impl_sort_key: None,
         doc_comments: extract_doc_comments(item),
@@ -771,6 +759,7 @@ fn extract_trait_impl(krate: &Crate, item: &Item, impl_block: &Impl) -> Option<A
     Some(ApiItem {
         name: self_type,
         kind: ApiItemKind::TraitImpl,
+        source_id: Some(item.id.0.to_string()),
         owner_kind: None,
         inherent_impl_sort_key: None,
         doc_comments: extract_doc_comments(item),
@@ -817,6 +806,7 @@ fn extract_inherent_impl(
             .clone()
             .unwrap_or_else(|| fallback_item_name(target).to_string()),
         kind: ApiItemKind::InherentImpl,
+        source_id: Some(item.id.0.to_string()),
         owner_kind: Some(owner_kind),
         inherent_impl_sort_key: Some(inherent_impl_sort_key(&impl_block.for_)),
         doc_comments: extract_doc_comments(item),
@@ -841,6 +831,7 @@ fn inherent_impl_type_arg_classes(type_: &Type) -> Vec<u8> {
                     .iter()
                     .filter_map(|arg| match arg {
                         GenericArg::Type(Type::Generic(_)) => Some(0),
+                        GenericArg::Infer => Some(1),
                         GenericArg::Type(Type::Infer) => Some(1),
                         GenericArg::Type(_) => Some(2),
                         _ => None,
