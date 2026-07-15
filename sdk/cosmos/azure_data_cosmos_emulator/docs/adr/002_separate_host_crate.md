@@ -25,9 +25,8 @@ non-SemVer (the `__internal_` prefix), so stable builds are unaffected.
 
 ## Alternatives
 
+- Extracting the emulator into its own library crate was rejected because it would force a large,
   unstable slice of driver internals to become public.
-  internal feature already communicates the same stability boundary. A second feature would add
-  feature-matrix complexity without providing a meaningful compatibility guarantee.
 - Adding a second host-specific feature was rejected because the existing emulator feature already
   owns this internal surface and the split would add no useful granularity.
 
