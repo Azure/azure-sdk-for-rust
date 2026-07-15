@@ -12,7 +12,8 @@
 - This tool lives under `eng/tools/generate_api`.
 - `eng/tools/generate_api_report` is prior art only and not part of this design.
 - Run the CLI from the repo root.
-- Keep this file current as later plans change design behavior or integration points.
+- Keep this file current as design behavior or integration points change.
+- Keep this file concise for LLMs but still easy for humans to review. Prefer short bullets and only enough detail to preserve intent.
 - Keep `README.md` focused on basic intent and usage: what the tool does, how to call it, what it writes, and where it is called from under `eng/pipelines/`. Keep deeper extraction rendering and ordering rules here.
 
 ## CLI
@@ -38,6 +39,7 @@ Behavior:
 - Uses `eng/tools/rust-toolchain.toml` toolchain `nightly-2025-05-09`
 - Current deps: `rustdoc-types`, `serde`, `serde_json`, `clap`
 - `rustc-dev` stays included because long-term direction remains closer to librustdoc/HIR
+- Keep implementation and tests separate when practical. Prefer sibling `tests.rs` files over nested `mod tests` blocks. Tiny local `#[test]` items may stay inline
 
 ## Extraction design
 
