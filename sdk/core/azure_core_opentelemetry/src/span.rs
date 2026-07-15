@@ -63,6 +63,10 @@ impl Span for OpenTelemetrySpan {
         self.context.span().end();
     }
 
+    fn end_at(&self, end_time: std::time::SystemTime) {
+        self.context.span().end_with_timestamp(end_time);
+    }
+
     fn span_id(&self) -> [u8; 8] {
         self.context.span().span_context().span_id().to_bytes()
     }
@@ -154,6 +158,7 @@ mod tests {
     use opentelemetry_sdk::trace::{in_memory_exporter::InMemorySpanExporter, SdkTracerProvider};
     use std::io::{Error, ErrorKind};
     use std::sync::Arc;
+    use std::time::{Duration, SystemTime};
     use tracing::trace;
 
     fn create_exportable_tracer_provider() -> (Arc<SdkTracerProvider>, InMemorySpanExporter) {
@@ -300,6 +305,81 @@ mod tests {
                 assert_eq!(span.parent_span_id.to_bytes(), span2.span_id());
             }
         }
+    }
+
+    #[test]
+    fn test_open_telemetry_span_backdated() {
+        let (otel_tracer_provider, otel_exporter) = create_exportable_tracer_provider();
+        let tracer_provider = OpenTelemetryTracerProvider::new(otel_tracer_provider);
+        let tracer = tracer_provider.get_tracer(Some("Backdated"), "test", Some("0.1.0"));
+
+        // Choose timestamps clearly in the past so we can prove the span is *not*
+        // stamped at "now".
+        let now = SystemTime::now();
+        let past_start = now - Duration::from_secs(3600);
+        let past_end = now - Duration::from_secs(1800);
+
+        let span = tracer.start_span_at(
+            "backdated_span".into(),
+            SpanKind::Client,
+            vec![],
+            past_start,
+        );
+        span.end_at(past_end);
+
+        let spans = otel_exporter.get_finished_spans().unwrap();
+        assert_eq!(spans.len(), 1);
+        let span = &spans[0];
+        assert_eq!(span.name, "backdated_span");
+        // The injected past timestamps must be preserved exactly, not replaced with "now".
+        assert_eq!(span.start_time, past_start);
+        assert_eq!(span.end_time, past_end);
+        assert!(span.start_time < span.end_time);
+        assert!(span.end_time < now);
+    }
+
+    #[test]
+    fn test_open_telemetry_span_backdated_with_parent() {
+        let (otel_tracer_provider, otel_exporter) = create_exportable_tracer_provider();
+        let tracer_provider = OpenTelemetryTracerProvider::new(otel_tracer_provider);
+        let tracer = tracer_provider.get_tracer(Some("Backdated"), "test", Some("0.1.0"));
+
+        // Reconstruct a completed operation: a backdated root with a backdated attempt child.
+        let now = SystemTime::now();
+        let root_start = now - Duration::from_secs(600);
+        let child_start = now - Duration::from_secs(590);
+        let child_end = now - Duration::from_secs(585);
+        let root_end = now - Duration::from_secs(580);
+
+        let root = tracer.start_span_at("operation".into(), SpanKind::Client, vec![], root_start);
+        let child = tracer.start_span_with_parent_at(
+            "attempt".into(),
+            SpanKind::Client,
+            vec![],
+            root.clone(),
+            child_start,
+        );
+        child.end_at(child_end);
+        root.end_at(root_end);
+
+        let spans = otel_exporter.get_finished_spans().unwrap();
+        assert_eq!(spans.len(), 2);
+
+        let root_span = spans.iter().find(|s| s.name == "operation").unwrap();
+        let child_span = spans.iter().find(|s| s.name == "attempt").unwrap();
+
+        assert_eq!(root_span.start_time, root_start);
+        assert_eq!(root_span.end_time, root_end);
+        assert_eq!(child_span.start_time, child_start);
+        assert_eq!(child_span.end_time, child_end);
+        assert!(root_span.end_time < now);
+
+        // The child must be parented to the backdated root.
+        assert_ne!(
+            child_span.parent_span_id,
+            opentelemetry::trace::SpanId::INVALID
+        );
+        assert_eq!(child_span.parent_span_id.to_bytes(), root.span_id());
     }
 
     #[test]

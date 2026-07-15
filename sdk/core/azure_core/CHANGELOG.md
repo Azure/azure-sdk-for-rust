@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added `Tracer::start_span_at`, `Tracer::start_span_with_parent_at`, and `Span::end_at` (re-exported from `typespec_client_core`) to allow reconstructing spans with explicit (backdated) start and end timestamps.
+
 ### Breaking Changes
 
 ### Bugs Fixed
