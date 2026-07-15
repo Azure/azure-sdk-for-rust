@@ -78,3 +78,9 @@ extends:
         Path: sdk/cosmos/vnext-emulator-matrix.json
         Selection: all
         GenerateVMJobs: true
+      - Name: Cosmos_inmemory_emulator
+        # Both jobs use port-zero host configs. Test setup parses the host's
+        # ready record and exports its OS-assigned account and management URLs.
+        Path: sdk/cosmos/inmemory-emulator-matrix.json
+        Selection: all
+        GenerateVMJobs: true

@@ -25,6 +25,7 @@ use super::ru_model::RuChargingModel;
 /// which is what the driver's background refresh loop polls.
 #[derive(Clone, Debug)]
 pub struct VirtualAccountConfig {
+    account_id: String,
     regions: Vec<VirtualRegion>,
     write_mode: WriteMode,
     consistency: ConsistencyLevel,
@@ -62,6 +63,7 @@ impl VirtualAccountConfig {
             }
         }
         Ok(Self {
+            account_id: "emulator-account".to_owned(),
             regions,
             write_mode: WriteMode::Single,
             consistency: ConsistencyLevel::Session,
@@ -71,6 +73,19 @@ impl VirtualAccountConfig {
             throttling_enabled: false,
             enable_per_partition_failover: Arc::new(AtomicBool::new(false)),
         })
+    }
+
+    /// Sets the account ID emitted by the hosted account-discovery response.
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    #[doc(hidden)]
+    pub fn with_account_id(mut self, account_id: impl Into<String>) -> Self {
+        self.account_id = account_id.into();
+        self
+    }
+
+    /// Returns the account ID emitted by account discovery.
+    pub(crate) fn account_id(&self) -> &str {
+        &self.account_id
     }
 
     /// Sets the write mode.
@@ -241,19 +256,20 @@ impl VirtualAccountConfig {
         let scheme = url.scheme();
         let port = url.port_or_known_default();
         for r in &self.regions {
-            let Some(rhost) = r.gateway_url.host_str() else {
-                continue;
+            let matches = |candidate: &Url| {
+                candidate
+                    .host_str()
+                    .is_some_and(|candidate_host| candidate_host.eq_ignore_ascii_case(host))
+                    && candidate.scheme() == scheme
+                    && candidate.port_or_known_default() == port
             };
-            if !rhost.eq_ignore_ascii_case(host) {
-                continue;
+            if matches(&r.gateway_url) {
+                return Some(&r.name);
             }
-            if r.gateway_url.scheme() != scheme {
-                continue;
+            #[cfg(feature = "__internal_in_memory_emulator")]
+            if r.thin_client_url.as_ref().is_some_and(matches) {
+                return Some(&r.name);
             }
-            if r.gateway_url.port_or_known_default() != port {
-                continue;
-            }
-            return Some(&r.name);
         }
         None
     }
@@ -273,6 +289,8 @@ impl VirtualAccountConfig {
 pub struct VirtualRegion {
     name: String,
     gateway_url: Url,
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    thin_client_url: Option<Url>,
     region_id: u64,
 }
 
@@ -285,8 +303,18 @@ impl VirtualRegion {
         Self {
             name: name.to_string(),
             gateway_url,
+            #[cfg(feature = "__internal_in_memory_emulator")]
+            thin_client_url: None,
             region_id: 0,
         }
+    }
+
+    /// Configures the Gateway V2 thin-client endpoint for this region.
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    #[doc(hidden)]
+    pub fn with_thin_client_url(mut self, url: Url) -> Self {
+        self.thin_client_url = Some(url);
+        self
     }
 
     /// Creates a new region with an explicit region ID.
@@ -301,6 +329,13 @@ impl VirtualRegion {
 
     pub fn gateway_url(&self) -> &Url {
         &self.gateway_url
+    }
+
+    /// Returns the Gateway V2 thin-client endpoint when hosted externally.
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    #[doc(hidden)]
+    pub(crate) fn thin_client_url(&self) -> Option<&Url> {
+        self.thin_client_url.as_ref()
     }
 
     pub fn region_id(&self) -> u64 {

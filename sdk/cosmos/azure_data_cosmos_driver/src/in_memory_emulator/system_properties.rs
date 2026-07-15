@@ -189,8 +189,8 @@ pub(crate) fn account_properties_to_json(
         }
     };
 
-    serde_json::json!({
-        "id": "emulator-account",
+    let mut response = serde_json::json!({
+        "id": config.account_id(),
         "_rid": "emulator.documents.azure.com",
         "_self": "",
         "media": "//media/",
@@ -211,5 +211,49 @@ pub(crate) fn account_properties_to_json(
         "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
         "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
         "queryEngineConfiguration": "{}"
-    })
+    });
+
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    {
+        let thin_client_readable: Vec<_> = config
+            .regions()
+            .iter()
+            .filter_map(|region| {
+                region.thin_client_url().map(|url| {
+                    serde_json::json!({
+                        "name": region.name(),
+                        "databaseAccountEndpoint": url.as_str()
+                    })
+                })
+            })
+            .collect();
+        let thin_client_writable: Vec<_> = config
+            .regions()
+            .iter()
+            .filter(|region| config.is_write_region(region.name()))
+            .filter_map(|region| {
+                region.thin_client_url().map(|url| {
+                    serde_json::json!({
+                        "name": region.name(),
+                        "databaseAccountEndpoint": url.as_str()
+                    })
+                })
+            })
+            .collect();
+        if !thin_client_readable.is_empty() {
+            let object = response
+                .as_object_mut()
+                .expect("account properties response is a JSON object");
+            object.insert(
+                "thinClientReadableLocations".to_owned(),
+                serde_json::Value::Array(thin_client_readable),
+            );
+            object.insert(
+                "thinClientWritableLocations".to_owned(),
+                serde_json::Value::Array(thin_client_writable),
+            );
+        }
+    }
+
+    response
 }

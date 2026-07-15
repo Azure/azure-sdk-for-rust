@@ -12,7 +12,7 @@ use std::{
 
 use tracing::warn;
 
-use crate::driver::cache::AccountProperties;
+use crate::driver::{cache::AccountProperties, transport::is_emulator_host};
 use crate::options::{PartitionFailoverOptions, Region};
 
 use super::{
@@ -118,12 +118,14 @@ fn parse_gateway_v2_locations(
     for region in gateway_v2_locations {
         let url = region.database_account_endpoint.url().clone();
 
-        if url.scheme() != "https" {
+        if url.scheme() != "https"
+            && !(url.scheme() == "http" && is_emulator_host(&region.database_account_endpoint))
+        {
             warn!(
                 region = %region.name,
                 endpoint = %region.database_account_endpoint,
                 scheme = url.scheme(),
-                "Ignoring non-HTTPS Gateway 2.0 endpoint URL"
+                "Ignoring non-HTTPS Gateway 2.0 endpoint URL outside the emulator"
             );
             continue;
         }

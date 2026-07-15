@@ -140,7 +140,7 @@ pub(crate) async fn handle_operation(
     store: &Arc<EmulatorStore>,
     region_name: &str,
     parsed: &ParsedRequest,
-    request_headers: &Headers,
+    _request_headers: &Headers,
     request_body: &[u8],
 ) -> AsyncRawResponse {
     let start = Instant::now();
@@ -273,8 +273,14 @@ pub(crate) async fn handle_operation(
         }
         #[cfg(feature = "preview_dtx")]
         OperationType::DistributedTransaction => {
-            handle_distributed_transaction(store, region_name, request_headers, request_body, start)
-                .await
+            handle_distributed_transaction(
+                store,
+                region_name,
+                _request_headers,
+                request_body,
+                start,
+            )
+            .await
         }
         OperationType::BadRequestPath(desc) => bad_request_path_response(desc, start),
         OperationType::InvalidInput(desc) => invalid_input_response(desc, start),
@@ -4559,6 +4565,7 @@ fn handle_read(
                     .ru_model()
                     .compute_read_ru(doc.body_size_bytes);
                 let lsn = partition.current_lsn();
+                let item_lsn = doc.lsn;
                 let body = doc.body.clone();
                 let etag = doc.etag.clone();
                 drop(docs);
@@ -4575,11 +4582,16 @@ fn handle_read(
                         .with_etag(&etag);
                     return Err(decorate_point_response(builder, headers, Some(lsn)).build());
                 }
-                return Ok((body, etag, token, charge, lsn, headers));
+                return Ok((body, etag, token, charge, lsn, item_lsn, headers));
             }
         }
 
-        Err(error_response(
+        let lsn = partition.current_lsn();
+        let headers = Some(PointResponseHeaders::from_partition(
+            partition,
+            store.next_transport_request_id(),
+        ));
+        let builder = error_response(
             StatusCode::NotFound,
             None,
             "NotFound",
@@ -4591,15 +4603,16 @@ fn handle_read(
             &token,
             start,
         )
-        .build())
+        .with_lsn(lsn);
+        Err(decorate_point_response(builder, headers, Some(lsn)).build())
     });
 
     match result {
-        Some(Ok((body, etag, token, charge, lsn, headers))) => {
+        Some(Ok((body, etag, token, charge, lsn, item_lsn, headers))) => {
             let builder = success_response(StatusCode::Ok, &body, charge, &token, start)
                 .with_etag(&etag)
                 .with_lsn(lsn);
-            decorate_point_response(builder, headers, Some(lsn)).build()
+            decorate_point_response(builder, headers, Some(item_lsn)).build()
         }
         Some(Err(response)) => response,
         None => container_not_found(db_id, coll_id, start),
@@ -5053,6 +5066,23 @@ async fn handle_upsert_locked(
         let (new_doc, status, charge) = {
             let mut docs = partition.documents.write().unwrap();
             let logical = docs.entry(epk.clone()).or_default();
+            if let Some(if_match) = parsed.if_match.as_ref() {
+                if logical
+                    .get(&doc_id)
+                    .is_none_or(|existing| *if_match != existing.etag)
+                {
+                    return Err(error_response(
+                        StatusCode::PreconditionFailed,
+                        None,
+                        "PreconditionFailed",
+                        "One of the specified pre-condition is not met.",
+                        1.0,
+                        "",
+                        start,
+                    )
+                    .build());
+                }
+            }
             let (status, rid, self_link) = match logical.get(&doc_id) {
                 Some(existing) => (
                     StatusCode::Ok,

@@ -20,8 +20,12 @@ use std::time::{Duration, Instant};
 /// A read operation should succeed because the fault never fires.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dyn Error>> {
     let condition = FaultInjectionConditionBuilder::new()
@@ -82,8 +86,12 @@ pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dy
 /// Tests that a ServiceUnavailable fault with probability 1.0 causes read failures.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 pub async fn fault_injection_service_unavailable_causes_failure() -> Result<(), Box<dyn Error>> {
     let condition = FaultInjectionConditionBuilder::new()
@@ -141,8 +149,12 @@ pub async fn fault_injection_service_unavailable_causes_failure() -> Result<(), 
 /// A rule targeting only ReadItem should not affect CreateItem operations.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 pub async fn fault_injection_operation_type_filter() -> Result<(), Box<dyn Error>> {
     let condition = FaultInjectionConditionBuilder::new()
@@ -206,8 +218,12 @@ pub async fn fault_injection_operation_type_filter() -> Result<(), Box<dyn Error
 /// then allow operations to succeed normally.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 pub async fn fault_injection_hit_limit_stops_after_n_faults() -> Result<(), Box<dyn Error>> {
     let condition = FaultInjectionConditionBuilder::new()
@@ -285,8 +301,12 @@ pub async fn fault_injection_hit_limit_stops_after_n_faults() -> Result<(), Box<
 /// Tests that a ConnectionError fault causes read failures.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 pub async fn fault_injection_connection_error() -> Result<(), Box<dyn Error>> {
     let condition = FaultInjectionConditionBuilder::new()
@@ -1073,8 +1093,12 @@ pub async fn gateway_v2_449_retry_with_succeeds_after_hit_limit() -> Result<(), 
 /// retry path instead of driving the loop directly.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 pub async fn fault_injection_429_honors_configurable_throttle_retry_count(
 ) -> Result<(), Box<dyn Error>> {
@@ -1173,8 +1197,12 @@ pub async fn fault_injection_429_honors_configurable_throttle_retry_count(
 ///    invalidation.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 pub async fn pkrange_refresh_transient_failure_preserves_cached_routing_map(
 ) -> Result<(), Box<dyn Error>> {

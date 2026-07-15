@@ -7,6 +7,8 @@ use uuid::Uuid;
 
 use crate::models::CosmosStatus;
 
+#[cfg(any(test, feature = "__internal_in_memory_emulator"))]
+use super::tokens::{write_uuid_le, TokenValue};
 use super::{
     status::map_rntbd_status_to_cosmos_status,
     tokens::{data_conversion_error, read_u32_le, read_uuid_le, RntbdResponseToken, Token},
@@ -49,6 +51,105 @@ pub(crate) struct RntbdResponse {
 }
 
 impl RntbdResponse {
+    /// Writes this response as a Gateway 2.0 RNTBD frame.
+    #[cfg(any(test, feature = "__internal_in_memory_emulator"))]
+    pub(crate) fn write(&self, out: &mut impl std::io::Write) -> azure_core::Result<()> {
+        let mut metadata = Vec::with_capacity(13);
+        metadata.push(Token::new(
+            RntbdResponseToken::PayloadPresent,
+            TokenValue::Byte(u8::from(!self.body.is_empty())),
+        ));
+        if let Some(value) = &self.continuation_token {
+            metadata.push(Token::new(
+                RntbdResponseToken::ContinuationToken,
+                TokenValue::String(value.clone()),
+            ));
+        }
+        if let Some(value) = &self.etag {
+            metadata.push(Token::new(
+                RntbdResponseToken::ETag,
+                TokenValue::String(value.clone()),
+            ));
+        }
+        if let Some(value) = self.retry_after_ms {
+            metadata.push(Token::new(
+                RntbdResponseToken::RetryAfterMilliseconds,
+                TokenValue::ULong(value),
+            ));
+        }
+        if let Some(value) = self.lsn {
+            metadata.push(Token::new(
+                RntbdResponseToken::Lsn,
+                TokenValue::LongLong(value),
+            ));
+        }
+        if let Some(value) = self.request_charge {
+            metadata.push(Token::new(
+                RntbdResponseToken::RequestCharge,
+                TokenValue::Double(value),
+            ));
+        }
+        if let Some(value) = &self.owner_full_name {
+            metadata.push(Token::new(
+                RntbdResponseToken::OwnerFullName,
+                TokenValue::String(value.clone()),
+            ));
+        }
+        if let Some(value) = self.status.sub_status() {
+            metadata.push(Token::new(
+                RntbdResponseToken::SubStatus,
+                TokenValue::ULong(value.value() as u32),
+            ));
+        }
+        if let Some(value) = &self.partition_key_range_id {
+            metadata.push(Token::new(
+                RntbdResponseToken::PartitionKeyRangeId,
+                TokenValue::String(value.clone()),
+            ));
+        }
+        if let Some(value) = self.item_lsn {
+            metadata.push(Token::new(
+                RntbdResponseToken::ItemLsn,
+                TokenValue::LongLong(value),
+            ));
+        }
+        if let Some(value) = self.global_committed_lsn {
+            metadata.push(Token::new(
+                RntbdResponseToken::GlobalCommittedLsn,
+                TokenValue::LongLong(value),
+            ));
+        }
+        if let Some(value) = self.transport_request_id {
+            metadata.push(Token::new(
+                RntbdResponseToken::TransportRequestId,
+                TokenValue::ULong(value),
+            ));
+        }
+        if let Some(value) = &self.session_token {
+            metadata.push(Token::new(
+                RntbdResponseToken::SessionToken,
+                TokenValue::String(value.clone()),
+            ));
+        }
+
+        let metadata_len: usize = metadata.iter().map(Token::encoded_len).sum();
+        let header_len = u32::try_from(24 + metadata_len)
+            .map_err(|_| data_conversion_error("RNTBD response header length exceeds u32::MAX"))?;
+        out.write_all(&header_len.to_le_bytes())?;
+        out.write_all(&u32::from(u16::from(self.status.status_code())).to_le_bytes())?;
+        write_uuid_le(out, self.activity_id)?;
+        for token in metadata {
+            token.write_to(out)?;
+        }
+        if !self.body.is_empty() {
+            let body_len = u32::try_from(self.body.len())
+                .map_err(|_| data_conversion_error("RNTBD response body exceeds u32::MAX"))?;
+            out.write_all(&body_len.to_le_bytes())?;
+            out.write_all(&self.body)?;
+        }
+        Ok(())
+    }
+
     /// Reads a Gateway 2.0 RNTBD response frame.
     ///
     /// Wire layout:
@@ -206,6 +307,30 @@ mod tests {
     use azure_core::http::StatusCode;
 
     use crate::driver::transport::rntbd::tokens::{write_uuid_le, TokenValue};
+
+    #[test]
+    fn response_round_trips_through_server_encoder() {
+        let response = RntbdResponse {
+            status: CosmosStatus::new(StatusCode::Created).with_sub_status(1002),
+            activity_id: Uuid::from_u128(0x1234_5678_90ab_cdef_0123_4567_89ab_cdef),
+            body: br#"{"id":"doc1"}"#.to_vec(),
+            continuation_token: Some("next".to_owned()),
+            etag: Some("etag".to_owned()),
+            retry_after_ms: Some(10),
+            lsn: Some(11),
+            request_charge: Some(5.5),
+            owner_full_name: Some("dbs/db/colls/coll/docs/doc1".to_owned()),
+            partition_key_range_id: Some("0".to_owned()),
+            item_lsn: Some(12),
+            global_committed_lsn: Some(13),
+            transport_request_id: Some(14),
+            session_token: Some("1#12".to_owned()),
+        };
+        let mut bytes = Vec::new();
+        response.write(&mut bytes).unwrap();
+
+        assert_eq!(RntbdResponse::read(&bytes).unwrap(), response);
+    }
 
     #[test]
     fn unknown_token_id_is_silently_skipped() {

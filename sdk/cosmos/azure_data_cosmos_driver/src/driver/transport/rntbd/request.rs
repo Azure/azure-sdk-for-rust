@@ -10,6 +10,8 @@ use crate::models::{OperationType, ResourceType};
 use super::tokens::{
     data_conversion_error, write_uuid_le, RntbdOperationType, RntbdResourceType, Token,
 };
+#[cfg(any(test, feature = "__internal_in_memory_emulator"))]
+use super::tokens::{read_u16_le, read_u32_le, read_uuid_le};
 
 /// A Gateway 2.0 RNTBD request frame.
 ///
@@ -30,6 +32,64 @@ pub(crate) struct RntbdRequestFrame {
 }
 
 impl RntbdRequestFrame {
+    /// Reads a Gateway 2.0 RNTBD request frame.
+    #[cfg(any(test, feature = "__internal_in_memory_emulator"))]
+    pub(crate) fn read(bytes: &[u8]) -> azure_core::Result<Self> {
+        let mut src = bytes;
+        let header_len = read_u32_le(&mut src)? as usize;
+        if header_len < 24 {
+            return Err(data_conversion_error(format!(
+                "RNTBD request header length {header_len} is smaller than 24 bytes"
+            )));
+        }
+        if header_len > bytes.len() {
+            return Err(data_conversion_error(format!(
+                "RNTBD request header length {header_len} exceeds buffer length {}",
+                bytes.len()
+            )));
+        }
+
+        let resource_type =
+            ResourceType::try_from(RntbdResourceType::try_from(read_u16_le(&mut src)?)?)?;
+        let operation_type =
+            OperationType::try_from(RntbdOperationType::try_from(read_u16_le(&mut src)?)?)?;
+        let activity_id = read_uuid_le(&mut src)?;
+
+        let metadata_len = header_len - 24;
+        let metadata_bytes = src.get(..metadata_len).ok_or_else(|| {
+            data_conversion_error(format!(
+                "RNTBD request header length {header_len} exceeds buffer"
+            ))
+        })?;
+        let mut metadata_src = metadata_bytes;
+        let mut metadata = Vec::new();
+        while !metadata_src.is_empty() {
+            metadata.push(Token::read_from(&mut metadata_src)?);
+        }
+
+        let mut tail = &bytes[header_len..];
+        let body = if tail.is_empty() {
+            None
+        } else {
+            let payload_len = read_u32_le(&mut tail)? as usize;
+            if tail.len() != payload_len {
+                return Err(data_conversion_error(format!(
+                    "RNTBD request payload length {payload_len} did not match remaining bytes {}",
+                    tail.len()
+                )));
+            }
+            Some(tail.to_vec())
+        };
+
+        Ok(Self {
+            resource_type,
+            operation_type,
+            activity_id,
+            metadata,
+            body,
+        })
+    }
+
     /// Writes the request frame as Gateway 2.0 RNTBD bytes into `out`.
     ///
     /// Streaming into a caller-provided [`std::io::Write`] avoids forcing a
@@ -91,10 +151,7 @@ impl RntbdRequestFrame {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::driver::transport::rntbd::tokens::{
-        data_conversion_error, read_u16_le, read_u32_le, read_uuid_le, RntbdOperationType,
-        RntbdResourceType, TokenValue,
-    };
+    use crate::driver::transport::rntbd::tokens::{RntbdOperationType, TokenValue};
 
     /// Serializes a frame into a fresh `Vec<u8>` for assertions.
     fn serialize(frame: &RntbdRequestFrame) -> azure_core::Result<Vec<u8>> {
@@ -130,7 +187,7 @@ mod tests {
                 };
 
                 let bytes = serialize(&frame).unwrap();
-                let parsed = parse_request_for_tests(&bytes, frame.body.is_some()).unwrap();
+                let parsed = RntbdRequestFrame::read(&bytes).unwrap();
 
                 assert_eq!(parsed, frame);
             }
@@ -174,7 +231,7 @@ mod tests {
         };
 
         let bytes = serialize(&frame).unwrap();
-        let parsed = parse_request_for_tests(&bytes, false).unwrap();
+        let parsed = RntbdRequestFrame::read(&bytes).unwrap();
 
         assert_eq!(parsed, frame);
     }
@@ -478,60 +535,5 @@ mod tests {
         let expected =
             "230000000300030078563412ab90efcd0123456789abcdef0400020001000002000001020000007b7d";
         assert_eq!(hex, expected);
-    }
-
-    fn parse_request_for_tests(
-        bytes: &[u8],
-        has_body: bool,
-    ) -> azure_core::Result<RntbdRequestFrame> {
-        let mut src = bytes;
-        // The leading length field is the request HEADER length (length field
-        // itself + resource/operation type + activity id + metadata tokens) and
-        // does NOT include the body length prefix or body bytes.
-        let header_len = read_u32_le(&mut src)? as usize;
-        let resource_type =
-            ResourceType::try_from(RntbdResourceType::try_from(read_u16_le(&mut src)?)?)?;
-        let operation_type =
-            OperationType::try_from(RntbdOperationType::try_from(read_u16_le(&mut src)?)?)?;
-        let activity_id = read_uuid_le(&mut src)?;
-
-        let mut metadata = Vec::new();
-        // Bytes consumed so far: 4 (length) + 2 (resource) + 2 (operation) + 16 (activity) = 24.
-        let metadata_end = header_len.saturating_sub(24);
-        let metadata_bytes = src.get(..metadata_end).ok_or_else(|| {
-            data_conversion_error(format!("request header length {header_len} exceeds buffer"))
-        })?;
-        let mut metadata_src = metadata_bytes;
-        while !metadata_src.is_empty() {
-            metadata.push(Token::read_from(&mut metadata_src)?);
-        }
-        src = &src[metadata_end..];
-
-        let body = if has_body {
-            let payload_len = read_u32_le(&mut src)? as usize;
-            if src.len() != payload_len {
-                return Err(data_conversion_error(format!(
-                    "request payload length {payload_len} did not match remaining bytes {}",
-                    src.len()
-                )));
-            }
-            Some(src.to_vec())
-        } else {
-            if !src.is_empty() {
-                return Err(data_conversion_error(format!(
-                    "unexpected {} trailing bytes after header section",
-                    src.len()
-                )));
-            }
-            None
-        };
-
-        Ok(RntbdRequestFrame {
-            resource_type,
-            operation_type,
-            activity_id,
-            metadata,
-            body,
-        })
     }
 }

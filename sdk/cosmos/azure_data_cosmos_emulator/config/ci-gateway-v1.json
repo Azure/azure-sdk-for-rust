@@ -1,0 +1,25 @@
+{
+  "account": {
+    "id": "emulator-account",
+    "writeMode": "single",
+    "consistency": "Session",
+    "perPartitionFailover": false,
+    "throttling": false,
+    "regions": [
+      {
+        "name": "East US",
+        "gatewayPort": 0,
+        "regionId": 0
+      }
+    ],
+    "replication": {
+      "minDelayMs": 0,
+      "maxDelayMs": 0,
+      "maxBufferedReplications": 10000
+    }
+  },
+  "management": {
+    "port": 0
+  },
+  "databases": []
+}

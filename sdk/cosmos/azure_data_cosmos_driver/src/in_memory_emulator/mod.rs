@@ -31,6 +31,8 @@ mod client;
 mod config;
 mod dispatch;
 mod epk;
+#[cfg(feature = "__internal_in_memory_emulator")]
+mod gateway_v2;
 mod observer;
 mod operations;
 mod response;
@@ -50,4 +52,4 @@ pub use observer::RequestObserver;
 #[doc(hidden)]
 pub use response::headers as test_headers;
 pub use ru_model::RuChargingModel;
-pub use store::EmulatorStore;
+pub use store::{EmulatorStore, ManualControlPlaneOperation};

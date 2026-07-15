@@ -14,6 +14,131 @@ if ($env:COSMOS_RUSTFLAGS) {
     Write-Host "RUSTFLAGS appended with COSMOS_RUSTFLAGS: $env:RUSTFLAGS"
 }
 
+# Hosted in-memory emulator path. The additional CI matrix sets one of the two
+# flavors below so the existing emulator suites run against both Gateway V1
+# and Gateway 2.0 over cleartext HTTP/2.
+if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
+    $repoRoot = (Resolve-Path ([System.IO.Path]::Combine($PSScriptRoot, '..', '..', '..', '..'))).Path
+    $configuration = if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -eq 'inmemory-v2') {
+        [System.IO.Path]::Combine($repoRoot, 'sdk', 'cosmos', 'azure_data_cosmos_emulator', 'config', 'ci-gateway-v2.json')
+    } else {
+        [System.IO.Path]::Combine($repoRoot, 'sdk', 'cosmos', 'azure_data_cosmos_emulator', 'config', 'ci-gateway-v1.json')
+    }
+    $ready = $false
+    $expectedGateway20 = $env:AZURE_COSMOS_EMULATOR_FLAVOR -eq 'inmemory-v2'
+    $managementEndpoint = $env:AZURE_COSMOS_INMEMORY_MANAGEMENT_ENDPOINT
+    $accountEndpoint = $env:AZURE_COSMOS_INMEMORY_ACCOUNT_ENDPOINT
+    if ($managementEndpoint -and $accountEndpoint) {
+        $healthUrl = ([System.Uri]::new([System.Uri]$managementEndpoint, 'health')).AbsoluteUri
+        try {
+            $response = Invoke-WebRequest -Uri $healthUrl -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
+            $health = $response.Content | ConvertFrom-Json
+            $ready = $response.StatusCode -eq 200 -and $health.gateway20Enabled -eq $expectedGateway20
+        } catch {
+            $ready = $false
+        }
+    }
+
+    if (-not $ready) {
+        Get-Process azure_data_cosmos_emulator -ErrorAction SilentlyContinue | Stop-Process -Force
+    }
+
+    if (-not $ready) {
+        LogGroupStart "Building hosted Cosmos DB in-memory emulator"
+        Push-Location $repoRoot
+        try {
+            Invoke-LoggedCommand 'cargo build -p azure_data_cosmos_emulator'
+        } finally {
+            Pop-Location
+        }
+        LogGroupEnd
+
+        $executableName = if ($IsWindows) {
+            'azure_data_cosmos_emulator.exe'
+        } else {
+            'azure_data_cosmos_emulator'
+        }
+        $executable = [System.IO.Path]::Combine($repoRoot, 'target', 'debug', $executableName)
+        $stdout = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), 'azure-data-cosmos-emulator.out.log')
+        $stderr = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), 'azure-data-cosmos-emulator.err.log')
+        Remove-Item $stdout, $stderr -Force -ErrorAction SilentlyContinue
+
+        LogGroupStart "Starting hosted Cosmos DB in-memory emulator"
+        $process = Start-Process `
+            -FilePath $executable `
+            -ArgumentList @('--config', $configuration) `
+            -RedirectStandardOutput $stdout `
+            -RedirectStandardError $stderr `
+            -PassThru
+        $env:AZURE_COSMOS_INMEMORY_EMULATOR_PID = $process.Id.ToString()
+        $env:AZURE_COSMOS_INMEMORY_EXPECT_GATEWAY20 = $expectedGateway20.ToString().ToLowerInvariant()
+        Write-Host "Started hosted emulator process $($process.Id) using '$configuration'."
+
+        $deadline = (Get-Date).AddSeconds(60)
+        $readyRecord = $null
+        while ((Get-Date) -lt $deadline) {
+            if ($process.HasExited) {
+                break
+            }
+            if (-not $readyRecord -and (Test-Path $stdout)) {
+                $readyLine = Get-Content $stdout -ErrorAction SilentlyContinue | Select-Object -Last 1
+                if ($readyLine) {
+                    try {
+                        $candidate = $readyLine | ConvertFrom-Json -ErrorAction Stop
+                        if ($candidate.event -eq 'ready') {
+                            $readyRecord = $candidate
+                            $managementEndpoint = [string]$readyRecord.managementEndpoint
+                            $accountEndpoint = [string]$readyRecord.accountEndpoint
+                            $hasGateway20 = @($readyRecord.regions | Where-Object { $_.gateway20Endpoint }).Count -gt 0
+                            if (-not $managementEndpoint -or -not $accountEndpoint -or $hasGateway20 -ne $expectedGateway20) {
+                                throw 'Hosted emulator ready record does not match the requested gateway mode.'
+                            }
+                            $healthUrl = ([System.Uri]::new([System.Uri]$managementEndpoint, 'health')).AbsoluteUri
+                        }
+                    } catch {
+                        $readyRecord = $null
+                        Write-Host "Waiting for a valid hosted emulator ready record: $($_.Exception.Message)"
+                    }
+                }
+            }
+            if ($readyRecord) {
+                try {
+                    $response = Invoke-WebRequest -Uri $healthUrl -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
+                    $health = $response.Content | ConvertFrom-Json
+                    if ($response.StatusCode -eq 200 -and $health.gateway20Enabled -eq $expectedGateway20) {
+                        $ready = $true
+                        break
+                    }
+                } catch {
+                    Write-Host "Waiting for hosted in-memory emulator readiness: $($_.Exception.Message)"
+                }
+            }
+            Start-Sleep -Seconds 1
+        }
+        if (-not $ready) {
+            Get-Content $stdout, $stderr -ErrorAction SilentlyContinue | Write-Host
+            if (-not $process.HasExited) {
+                $process | Stop-Process -Force -ErrorAction SilentlyContinue
+            }
+            throw 'Hosted Cosmos DB in-memory emulator did not become ready within 60 seconds.'
+        }
+        LogGroupEnd
+    } else {
+        $env:AZURE_COSMOS_INMEMORY_EXPECT_GATEWAY20 = $expectedGateway20.ToString().ToLowerInvariant()
+    }
+
+    $env:AZURE_COSMOS_INMEMORY_MANAGEMENT_ENDPOINT = $managementEndpoint
+    $env:AZURE_COSMOS_INMEMORY_ACCOUNT_ENDPOINT = $accountEndpoint
+    $emulatorKey = 'C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=='
+    $env:AZURE_COSMOS_CONNECTION_STRING = "AccountEndpoint=$accountEndpoint;AccountKey=$emulatorKey;"
+    $env:AZURE_COSMOS_TEST_MODE = 'required'
+    $env:RUSTFLAGS = $env:RUSTFLAGS -replace '\s*--cfg=test_category="[^"]*"', ''
+    $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"emulator_inmemory`""
+    $env:RUST_TEST_THREADS = '1'
+    Write-Host "Hosted emulator is ready; RUSTFLAGS set to: $env:RUSTFLAGS"
+    return
+}
+
 # Vnext (Linux) emulator path. Triggered by AZURE_COSMOS_EMULATOR_FLAVOR=vnext
 # (set as a matrix variable on the cosmos vnext leg in
 # sdk/cosmos/vnext-emulator-matrix.json). Manages the Docker container

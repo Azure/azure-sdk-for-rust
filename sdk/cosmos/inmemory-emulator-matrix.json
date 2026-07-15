@@ -1,0 +1,17 @@
+{
+  "displayNames": {
+    "inmemory-v1": "inmemory_emulator_gateway_v1_dynamic_ports",
+    "inmemory-v2": "inmemory_emulator_gateway_2_0_dynamic_ports"
+  },
+  "matrix": {
+    "Agent": {
+      "ubuntu": {
+        "OSVmImage": "env:LINUXVMIMAGE",
+        "Pool": "env:LINUXPOOL"
+      }
+    },
+    "RustToolchainName": ["stable"],
+    "AZURE_COSMOS_EMULATOR_FLAVOR": ["inmemory-v1", "inmemory-v2"],
+    "ContinueOnError": ["true"]
+  }
+}

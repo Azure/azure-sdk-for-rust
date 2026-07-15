@@ -40,6 +40,54 @@ impl ControlPlaneTaskKey {
     }
 }
 
+enum ControlPlaneProgression {
+    Automatic(Duration),
+    Manual(futures::channel::oneshot::Receiver<()>),
+}
+
+impl ControlPlaneProgression {
+    async fn wait(self) -> bool {
+        match self {
+            Self::Automatic(duration) => {
+                if !duration.is_zero() {
+                    tokio::time::sleep(duration).await;
+                }
+                true
+            }
+            Self::Manual(release) => release.await.is_ok(),
+        }
+    }
+}
+
+/// Handle for a manually progressed split or merge operation.
+#[doc(hidden)]
+pub struct ManualControlPlaneOperation {
+    release: Option<futures::channel::oneshot::Sender<()>>,
+    completed: futures::channel::oneshot::Receiver<bool>,
+}
+
+impl ManualControlPlaneOperation {
+    /// Releases the operation's partition lock and waits for topology replacement.
+    pub async fn complete(mut self) -> crate::error::Result<()> {
+        self.release
+            .take()
+            .ok_or_else(|| host_control_plane_error("manual operation was already released"))?
+            .send(())
+            .map_err(|_| host_control_plane_error("manual operation task ended before release"))?;
+        if self
+            .completed
+            .await
+            .map_err(|_| host_control_plane_error("manual operation ended without a result"))?
+        {
+            Ok(())
+        } else {
+            Err(host_control_plane_error(
+                "manual operation could not update the requested partitions",
+            ))
+        }
+    }
+}
+
 /// Applies a single document mutation to a partition under LWW
 /// (Last-Writer-Wins) on `(_ts, lsn)`.
 ///
@@ -1783,6 +1831,208 @@ impl ThroughputTracker {
 // --- Split / Merge ---
 
 impl EmulatorStore {
+    /// Returns the EPK boundary a midpoint split would use for a physical partition.
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    #[doc(hidden)]
+    pub fn midpoint_split_epk(
+        &self,
+        db_id: &str,
+        coll_id: &str,
+        partition_id: u32,
+    ) -> crate::error::Result<Epk> {
+        let region = self
+            .region(self.config.write_region_name())
+            .ok_or_else(|| host_control_plane_error("write region does not exist"))?;
+        region
+            .with_container(db_id, coll_id, |state| {
+                let partition = state
+                    .physical_partitions
+                    .iter()
+                    .find(|partition| partition.id == partition_id)
+                    .ok_or_else(|| {
+                        host_control_plane_error(format!(
+                            "partition {partition_id} does not exist in {db_id}/{coll_id}"
+                        ))
+                    })?;
+                compute_epk_midpoint(
+                    &partition.epk_min,
+                    &partition.epk_max,
+                    state.metadata.partition_key.kind(),
+                    state.metadata.partition_key.version(),
+                )
+                .map_err(host_control_plane_error)
+            })
+            .ok_or_else(|| {
+                host_control_plane_error(format!("container {db_id}/{coll_id} does not exist"))
+            })?
+    }
+
+    /// Returns a split EPK that most closely balances serialized document bytes.
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    #[doc(hidden)]
+    pub fn storage_split_epk(
+        &self,
+        db_id: &str,
+        coll_id: &str,
+        partition_id: u32,
+    ) -> crate::error::Result<Epk> {
+        let region = self
+            .region(self.config.write_region_name())
+            .ok_or_else(|| host_control_plane_error("write region does not exist"))?;
+        region
+            .with_container(db_id, coll_id, |state| {
+                let partition = state
+                    .physical_partitions
+                    .iter()
+                    .find(|partition| partition.id == partition_id)
+                    .ok_or_else(|| {
+                        host_control_plane_error(format!(
+                            "partition {partition_id} does not exist in {db_id}/{coll_id}"
+                        ))
+                    })?;
+                let documents = partition.documents.read().unwrap();
+                let groups: Vec<(Epk, u64)> = documents
+                    .iter()
+                    .map(|(epk, documents)| {
+                        let bytes = documents
+                            .values()
+                            .map(|document| document.body_size_bytes.max(1) as u64)
+                            .sum();
+                        (epk.clone(), bytes)
+                    })
+                    .collect();
+                if groups.len() < 2 {
+                    return Err(host_control_plane_error(
+                        "storage split requires documents in at least two distinct EPK groups",
+                    ));
+                }
+
+                let total_bytes: u64 = groups.iter().map(|(_, bytes)| bytes).sum();
+                let mut left_bytes = groups[0].1;
+                let mut best = (total_bytes.abs_diff(left_bytes.saturating_mul(2)), 1usize);
+                for (index, (_, bytes)) in groups.iter().enumerate().skip(1).take(groups.len() - 2)
+                {
+                    left_bytes = left_bytes.saturating_add(*bytes);
+                    let score = total_bytes.abs_diff(left_bytes.saturating_mul(2));
+                    if score < best.0 {
+                        best = (score, index + 1);
+                    }
+                }
+                Ok(groups[best.1].0.clone())
+            })
+            .ok_or_else(|| {
+                host_control_plane_error(format!("container {db_id}/{coll_id} does not exist"))
+            })?
+    }
+
+    /// Starts a storage-balanced split and returns the selected EPK boundary.
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    #[doc(hidden)]
+    pub fn split_partition_by_storage(
+        self: &Arc<Self>,
+        db_id: &str,
+        coll_id: &str,
+        partition_id: u32,
+        min_lock_duration: Duration,
+    ) -> crate::error::Result<Epk> {
+        let split_epk = self.storage_split_epk(db_id, coll_id, partition_id)?;
+        self.split_partition_at_epk(
+            db_id,
+            coll_id,
+            partition_id,
+            split_epk.clone(),
+            min_lock_duration,
+        );
+        Ok(split_epk)
+    }
+
+    /// Returns the IDs of partitions whose parent list contains all supplied IDs.
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    #[doc(hidden)]
+    pub fn child_partition_ids(&self, db_id: &str, coll_id: &str, parent_ids: &[u32]) -> Vec<u32> {
+        let Some(region) = self.region(self.config.write_region_name()) else {
+            return Vec::new();
+        };
+        let mut children = region
+            .with_container(db_id, coll_id, |state| {
+                state
+                    .physical_partitions
+                    .iter()
+                    .filter(|partition| {
+                        parent_ids
+                            .iter()
+                            .all(|parent_id| partition.parents.contains(parent_id))
+                    })
+                    .map(|partition| partition.id)
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
+        children.sort_unstable();
+        children
+    }
+
+    /// Splits at an explicit EPK and awaits this specific control-plane operation.
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    #[doc(hidden)]
+    pub async fn split_partition_and_wait(
+        self: &Arc<Self>,
+        db_id: &str,
+        coll_id: &str,
+        partition_id: u32,
+        split_epk: Epk,
+        min_lock_duration: Duration,
+    ) -> crate::error::Result<Vec<u32>> {
+        let (completion, completed) = futures::channel::oneshot::channel();
+        self.split_partition_internal(
+            db_id,
+            coll_id,
+            partition_id,
+            Some(split_epk),
+            ControlPlaneProgression::Automatic(min_lock_duration),
+            Some(completion),
+        );
+        if !completed
+            .await
+            .map_err(|_| host_control_plane_error("split task ended before reporting a result"))?
+        {
+            return Err(host_control_plane_error(
+                "split did not complete; verify the partition and EPK boundary",
+            ));
+        }
+        let children = self.child_partition_ids(db_id, coll_id, &[partition_id]);
+        if children.len() != 2 {
+            return Err(host_control_plane_error(
+                "split completed without producing exactly two child partitions",
+            ));
+        }
+        Ok(children)
+    }
+
+    /// Locks a partition for a split that completes only when its handle is released.
+    #[doc(hidden)]
+    pub fn begin_manual_split_partition(
+        self: &Arc<Self>,
+        db_id: &str,
+        coll_id: &str,
+        partition_id: u32,
+        split_epk: Epk,
+    ) -> ManualControlPlaneOperation {
+        let (release, released) = futures::channel::oneshot::channel();
+        let (completion, completed) = futures::channel::oneshot::channel();
+        self.split_partition_internal(
+            db_id,
+            coll_id,
+            partition_id,
+            Some(split_epk),
+            ControlPlaneProgression::Manual(released),
+            Some(completion),
+        );
+        ManualControlPlaneOperation {
+            release: Some(release),
+            completed,
+        }
+    }
+
     /// Splits a physical partition into two child partitions.
     ///
     /// During `min_lock_duration` (plus doc redistribution time), operations on the
@@ -1797,7 +2047,14 @@ impl EmulatorStore {
         partition_id: u32,
         min_lock_duration: Duration,
     ) {
-        self.split_partition_internal(db_id, coll_id, partition_id, None, min_lock_duration);
+        self.split_partition_internal(
+            db_id,
+            coll_id,
+            partition_id,
+            None,
+            ControlPlaneProgression::Automatic(min_lock_duration),
+            None,
+        );
     }
 
     /// Splits a physical partition at an explicit EPK boundary. Test-only.
@@ -1815,7 +2072,8 @@ impl EmulatorStore {
             coll_id,
             partition_id,
             Some(split_epk),
-            min_lock_duration,
+            ControlPlaneProgression::Automatic(min_lock_duration),
+            None,
         );
     }
 
@@ -1825,7 +2083,8 @@ impl EmulatorStore {
         coll_id: &str,
         partition_id: u32,
         split_epk: Option<Epk>,
-        min_lock_duration: Duration,
+        progression: ControlPlaneProgression,
+        completion: Option<futures::channel::oneshot::Sender<bool>>,
     ) {
         // Lock the partition in all regions
         {
@@ -1855,20 +2114,36 @@ impl EmulatorStore {
             coll: coll_id.to_string(),
             partitions: vec![partition_id],
         };
+        let track_in_test_registry = completion.is_none();
         let handle = tokio::spawn(async move {
             let _guard = lock.lock().await;
-            if !min_lock_duration.is_zero() {
-                tokio::time::sleep(min_lock_duration).await;
+            if !progression.wait().await {
+                store.unlock_partitions(&(db.clone(), coll.clone()), &[partition_id]);
+                if let Some(completion) = completion {
+                    let _ = completion.send(false);
+                }
+                return;
             }
             // execute_split does the actual doc redistribution under the lock,
             // then unlocks partitions when done
-            store.execute_split(&db, &coll, partition_id, split_epk);
+            let succeeded = store.execute_split(&db, &coll, partition_id, split_epk);
+            if let Some(completion) = completion {
+                let _ = completion.send(succeeded);
+            }
         });
-        self.control_plane_tasks.lock().unwrap().push((key, handle));
+        if track_in_test_registry {
+            self.control_plane_tasks.lock().unwrap().push((key, handle));
+        }
     }
 
     /// Performs the actual split after the lock period.
-    fn execute_split(&self, db_id: &str, coll_id: &str, partition_id: u32, split_epk: Option<Epk>) {
+    fn execute_split(
+        &self,
+        db_id: &str,
+        coll_id: &str,
+        partition_id: u32,
+        split_epk: Option<Epk>,
+    ) -> bool {
         // Local-only enum used to ferry preview state out of a regions read
         // guard so we can drop the guard before re-acquiring it on the abort
         // path. Avoids recursive same-thread RwLock::read (unspecified in std).
@@ -2007,9 +2282,9 @@ impl EmulatorStore {
                         }
                     }
                 }
-                return;
+                return false;
             }
-            None => return,
+            None => return false,
         })
         else {
             unreachable!()
@@ -2140,6 +2415,7 @@ impl EmulatorStore {
                 // child IDs were allocated.
             }
         }
+        true
     }
 
     /// Merges two adjacent physical partitions into one child partition.
@@ -2156,6 +2432,87 @@ impl EmulatorStore {
         partition_id_a: u32,
         partition_id_b: u32,
         min_lock_duration: Duration,
+    ) {
+        self.merge_partitions_internal(
+            db_id,
+            coll_id,
+            partition_id_a,
+            partition_id_b,
+            ControlPlaneProgression::Automatic(min_lock_duration),
+            None,
+        );
+    }
+
+    /// Merges two adjacent partitions and awaits this specific operation.
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    #[doc(hidden)]
+    pub async fn merge_partitions_and_wait(
+        self: &Arc<Self>,
+        db_id: &str,
+        coll_id: &str,
+        partition_id_a: u32,
+        partition_id_b: u32,
+        min_lock_duration: Duration,
+    ) -> crate::error::Result<u32> {
+        let (completion, completed) = futures::channel::oneshot::channel();
+        self.merge_partitions_internal(
+            db_id,
+            coll_id,
+            partition_id_a,
+            partition_id_b,
+            ControlPlaneProgression::Automatic(min_lock_duration),
+            Some(completion),
+        );
+        if !completed
+            .await
+            .map_err(|_| host_control_plane_error("merge task ended before reporting a result"))?
+        {
+            return Err(host_control_plane_error(
+                "merge did not complete; verify that both partitions exist and are adjacent",
+            ));
+        }
+        let children = self.child_partition_ids(db_id, coll_id, &[partition_id_a, partition_id_b]);
+        match children.as_slice() {
+            [child] => Ok(*child),
+            _ => Err(host_control_plane_error(
+                "merge completed without producing exactly one child partition",
+            )),
+        }
+    }
+
+    /// Locks two partitions for a merge that completes only when its handle is released.
+    #[doc(hidden)]
+    pub fn begin_manual_merge_partitions(
+        self: &Arc<Self>,
+        db_id: &str,
+        coll_id: &str,
+        partition_id_a: u32,
+        partition_id_b: u32,
+    ) -> ManualControlPlaneOperation {
+        let (release, released) = futures::channel::oneshot::channel();
+        let (completion, completed) = futures::channel::oneshot::channel();
+        self.merge_partitions_internal(
+            db_id,
+            coll_id,
+            partition_id_a,
+            partition_id_b,
+            ControlPlaneProgression::Manual(released),
+            Some(completion),
+        );
+        ManualControlPlaneOperation {
+            release: Some(release),
+            completed,
+        }
+    }
+
+    fn merge_partitions_internal(
+        self: &Arc<Self>,
+        db_id: &str,
+        coll_id: &str,
+        partition_id_a: u32,
+        partition_id_b: u32,
+        progression: ControlPlaneProgression,
+        completion: Option<futures::channel::oneshot::Sender<bool>>,
     ) {
         // Lock both partitions in all regions
         {
@@ -2183,14 +2540,27 @@ impl EmulatorStore {
             coll: coll_id.to_string(),
             partitions: vec![partition_id_a, partition_id_b],
         };
+        let track_in_test_registry = completion.is_none();
         let handle = tokio::spawn(async move {
             let _guard = lock.lock().await;
-            if !min_lock_duration.is_zero() {
-                tokio::time::sleep(min_lock_duration).await;
+            if !progression.wait().await {
+                store.unlock_partitions(
+                    &(db.clone(), coll.clone()),
+                    &[partition_id_a, partition_id_b],
+                );
+                if let Some(completion) = completion {
+                    let _ = completion.send(false);
+                }
+                return;
             }
-            store.execute_merge(&db, &coll, partition_id_a, partition_id_b);
+            let succeeded = store.execute_merge(&db, &coll, partition_id_a, partition_id_b);
+            if let Some(completion) = completion {
+                let _ = completion.send(succeeded);
+            }
         });
-        self.control_plane_tasks.lock().unwrap().push((key, handle));
+        if track_in_test_registry {
+            self.control_plane_tasks.lock().unwrap().push((key, handle));
+        }
     }
 
     fn unlock_partitions(&self, key: &(String, String), partition_ids: &[u32]) {
@@ -2208,7 +2578,13 @@ impl EmulatorStore {
     }
 
     /// Performs the actual merge after the lock period.
-    fn execute_merge(&self, db_id: &str, coll_id: &str, partition_id_a: u32, partition_id_b: u32) {
+    fn execute_merge(
+        &self,
+        db_id: &str,
+        coll_id: &str,
+        partition_id_a: u32,
+        partition_id_b: u32,
+    ) -> bool {
         enum MergePreview {
             Ready((Epk, Epk, u64, u32, String, Option<u32>)),
             NonAdjacent(Epk, Epk),
@@ -2281,11 +2657,11 @@ impl EmulatorStore {
                         "in-memory emulator: rejecting merge for non-adjacent partitions",
                     );
                     self.unlock_partitions(&key, &[partition_id_a, partition_id_b]);
-                    return;
+                    return false;
                 }
                 None => {
                     self.unlock_partitions(&key, &[partition_id_a, partition_id_b]);
-                    return;
+                    return false;
                 }
             };
 
@@ -2451,7 +2827,18 @@ impl EmulatorStore {
                 state.physical_partitions.push(child);
             }
         }
+        true
     }
+}
+
+#[cfg(feature = "__internal_in_memory_emulator")]
+fn host_control_plane_error(message: impl Into<String>) -> crate::error::CosmosError {
+    crate::error::CosmosError::builder()
+        .with_status(crate::error::CosmosStatus::new(
+            azure_core::http::StatusCode::BadRequest,
+        ))
+        .with_message(message.into())
+        .build()
 }
 
 /// Computes the EPK midpoint between two EPK bounds (hex strings).
@@ -2648,6 +3035,55 @@ fn decode_v1_number_hex_to_u32(hex: &str) -> Result<u32, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn manual_split_waits_for_explicit_completion() {
+        use crate::models::PartitionKeyDefinition;
+
+        let config = super::super::config::VirtualAccountConfig::new(vec![
+            super::super::config::VirtualRegion::new(
+                "r1",
+                url::Url::parse("https://r1.local").unwrap(),
+            ),
+        ])
+        .unwrap();
+        let store = EmulatorStore::new(config);
+        store.create_database("db");
+        let partition_key: PartitionKeyDefinition = serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"], "kind": "Hash", "version": 2
+        }))
+        .unwrap();
+        store.create_container_with_config(
+            "db",
+            "c",
+            partition_key,
+            super::super::config::ContainerConfig::new()
+                .with_partition_count(1)
+                .build()
+                .unwrap(),
+        );
+
+        let split_epk = store.midpoint_split_epk("db", "c", 0).unwrap();
+        let operation = store.begin_manual_split_partition("db", "c", 0, split_epk);
+        let locked = store
+            .region("r1")
+            .unwrap()
+            .with_container("db", "c", |state| {
+                state
+                    .physical_partitions
+                    .iter()
+                    .find(|partition| partition.id == 0)
+                    .unwrap()
+                    .is_locked()
+            })
+            .unwrap();
+        assert!(locked);
+        assert!(store.child_partition_ids("db", "c", &[0]).is_empty());
+
+        operation.complete().await.unwrap();
+
+        assert_eq!(store.child_partition_ids("db", "c", &[0]).len(), 2);
+    }
 
     #[test]
     fn partitions_distribute_across_full_v2_epk_space() {

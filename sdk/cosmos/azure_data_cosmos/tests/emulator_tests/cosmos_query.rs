@@ -121,8 +121,12 @@ struct ItemProjection {
 
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 pub async fn single_partition_query_simple() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -150,8 +154,12 @@ pub async fn single_partition_query_simple() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 pub async fn single_partition_query_with_parameters() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -189,8 +197,12 @@ pub async fn single_partition_query_with_parameters() -> Result<(), Box<dyn Erro
 
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 pub async fn single_partition_query_with_projection() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -224,8 +236,12 @@ pub async fn single_partition_query_with_projection() -> Result<(), Box<dyn Erro
 
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 pub async fn cross_partition_query_with_projection_and_filter() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -256,12 +272,20 @@ pub async fn cross_partition_query_with_projection_and_filter() -> Result<(), Bo
 
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 #[cfg_attr(
     test_category = "emulator_vnext",
     ignore = "skipped on vnext emulator: behavioral divergence"
+)]
+#[cfg_attr(
+    test_category = "emulator_inmemory",
+    ignore = "in-memory query planner does not model CrossPartitionQueryNotServable"
 )]
 pub async fn cross_partition_query_with_order_by_fails() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -322,12 +346,20 @@ pub async fn cross_partition_query_with_order_by_fails() -> Result<(), Box<dyn E
 
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 #[cfg_attr(
     test_category = "emulator_vnext",
     ignore = "skipped on vnext emulator: behavioral divergence"
+)]
+#[cfg_attr(
+    test_category = "emulator_inmemory",
+    ignore = "hosted in-memory emulator does not yet carry query and index metrics request flags"
 )]
 pub async fn query_returns_index_and_query_metrics() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -417,8 +449,12 @@ pub async fn query_returns_index_and_query_metrics() -> Result<(), Box<dyn Error
 
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
 )]
 pub async fn single_partition_query_pagination() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -453,8 +489,16 @@ pub async fn single_partition_query_pagination() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(any(
+        test_category = "emulator",
+        test_category = "emulator_vnext",
+        test_category = "emulator_inmemory"
+    )),
+    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
+)]
+#[cfg_attr(
+    test_category = "emulator_inmemory",
+    ignore = "unordered cross-partition row order differs in the in-memory emulator"
 )]
 pub async fn cross_partition_query_pagination() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(

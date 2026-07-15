@@ -1,6 +1,6 @@
 # Hosted In-Memory Cosmos DB Emulator — Plan & Summary
 
-**Status:** Draft / Plan (not yet implemented)
+**Status:** PR1 implementation in progress
 **Date:** 2026-07-14
 **Crates:** `azure_data_cosmos_emulator` (new binary host), `azure_data_cosmos_driver` (emulator core, behind a feature)
 **Feature gate:** `__internal_in_memory_emulator` (non-SemVer emulator surface)
@@ -515,13 +515,9 @@ store.set_write_region("West US")?;             // runtime single-write failover
 ### 7.4 Gateway 2.0 server codec (behind host feature)
 
 ```rust
-// Server-side codec methods extracted and completed from the existing test parsing/building logic.
-use azure_data_cosmos_driver::driver::transport::rntbd::{RntbdRequestFrame, RntbdResponse};
-
-let frame = RntbdRequestFrame::read(&request_bytes)?;   // decode inbound (server side)
-// ... dispatch through the store ...
-let mut out = Vec::new();
-response.write(&mut out)?;                               // encode outbound (server side)
+// The inverse codec remains co-located with the client codec inside the driver.
+// The host consumes one high-level API instead of public token/frame internals.
+let response = emulator.execute_gateway_v2_request(&request).await?;
 ```
 
 ---

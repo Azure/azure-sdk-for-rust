@@ -65,6 +65,10 @@ pub async fn proxy_disabled_by_default_ignores_env() -> Result<(), Box<dyn Error
 /// Verifies that a client built with `with_proxy_allowed(true)`
 /// routes requests through the proxy specified by `HTTPS_PROXY`.
 #[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_inmemory",
+    ignore = "h2c prior-knowledge transport is incompatible with this HTTP/1 proxy harness"
+)]
 pub async fn proxy_enabled_routes_through_proxy() -> Result<(), Box<dyn Error>> {
     // Skip on the vnext (Linux) emulator pipeline: the vnext gateway does
     // not honor an outbound proxy in the same way the legacy emulator does

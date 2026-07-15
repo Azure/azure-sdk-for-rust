@@ -46,6 +46,29 @@ async fn create_duplicate_409() {
 }
 
 #[tokio::test]
+async fn upsert_missing_with_if_match_returns_412() {
+    let ctx = setup_single_region().await;
+    let body = serde_json::json!({"id": "missing", "pk": "pk1", "value": 42});
+    let mut request = create_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        &body,
+        r#"["pk1"]"#,
+        false,
+    );
+    request
+        .headers_mut()
+        .insert(IS_UPSERT.clone(), HeaderValue::from_static("True"));
+    request
+        .headers_mut()
+        .insert(IF_MATCH.clone(), HeaderValue::from_static("\"stale\""));
+
+    let response = ctx.emulator.execute_request(&request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::PreconditionFailed);
+}
+
+#[tokio::test]
 async fn replace_nonexistent_404() {
     let ctx = setup_single_region().await;
 

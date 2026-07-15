@@ -407,6 +407,7 @@ pub(crate) fn wrap_request_for_gateway_v2(
 pub(crate) fn unwrap_response_for_gateway_v2(
     response: HttpResponse,
 ) -> azure_core::Result<HttpResponse> {
+    let outer_headers = response.headers.clone();
     let response = RntbdResponse::read(&response.body)?;
     let status = u16::from(response.status.status_code());
     if !(100..=599).contains(&status) {
@@ -460,8 +461,35 @@ pub(crate) fn unwrap_response_for_gateway_v2(
     if let Some(global_committed_lsn) = response.global_committed_lsn.filter(|value| *value != 0) {
         headers.insert(X_MS_GLOBAL_COMMITTED_LSN, global_committed_lsn.to_string());
     }
+    if let Some(partition_key_range_id) = response.partition_key_range_id {
+        headers.insert(
+            response_header_names::PARTITION_KEY_RANGE_ID,
+            partition_key_range_id,
+        );
+    }
+    if let Some(transport_request_id) = response.transport_request_id {
+        headers.insert(
+            response_header_names::TRANSPORT_REQUEST_ID,
+            transport_request_id.to_string(),
+        );
+    }
     if let Some(owner_full_name) = response.owner_full_name {
         headers.insert(response_header_names::OWNER_FULL_NAME, owner_full_name);
+    }
+    for name in [
+        response_header_names::SERVER_DURATION_MS,
+        response_header_names::LSN,
+        response_header_names::ITEM_LSN,
+        response_header_names::GLOBAL_COMMITTED_LSN,
+        response_header_names::QUERY_METRICS,
+        response_header_names::INDEX_METRICS,
+    ] {
+        let header = HeaderName::from_static(name);
+        if headers.get_optional_str(&header).is_none() {
+            if let Some(value) = outer_headers.get_optional_str(&header) {
+                headers.insert(header, value.to_owned());
+            }
+        }
     }
 
     Ok(HttpResponse {

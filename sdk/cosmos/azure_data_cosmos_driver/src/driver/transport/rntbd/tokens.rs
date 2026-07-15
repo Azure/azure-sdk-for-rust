@@ -673,6 +673,26 @@ pub(super) enum RntbdResponseToken {
     SessionToken,
 }
 
+impl From<RntbdResponseToken> for TokenId {
+    fn from(value: RntbdResponseToken) -> Self {
+        Self(match value {
+            RntbdResponseToken::PayloadPresent => 0x0000,
+            RntbdResponseToken::ContinuationToken => 0x0003,
+            RntbdResponseToken::ETag => 0x0004,
+            RntbdResponseToken::RetryAfterMilliseconds => 0x000C,
+            RntbdResponseToken::Lsn => 0x0013,
+            RntbdResponseToken::RequestCharge => 0x0015,
+            RntbdResponseToken::OwnerFullName => 0x0017,
+            RntbdResponseToken::SubStatus => 0x001C,
+            RntbdResponseToken::PartitionKeyRangeId => 0x0021,
+            RntbdResponseToken::ItemLsn => 0x0032,
+            RntbdResponseToken::GlobalCommittedLsn => 0x0029,
+            RntbdResponseToken::TransportRequestId => 0x0035,
+            RntbdResponseToken::SessionToken => 0x003E,
+        })
+    }
+}
+
 impl TryFrom<u16> for RntbdResponseToken {
     type Error = ();
 
@@ -820,7 +840,7 @@ impl TryFrom<u16> for RntbdOperationType {
     fn try_from(value: u16) -> azure_core::Result<Self> {
         match value {
             0x0001 | 0x0003 | 0x0004 | 0x0005 | 0x0006 | 0x0008 | 0x0009 | 0x000F | 0x0011
-            | 0x0012 | 0x0013 | 0x0025 => Ok(Self(value)),
+            | 0x0012 | 0x0013 | 0x0025 | 0x0042 => Ok(Self(value)),
             other => Err(data_conversion_error(format!(
                 "unknown RNTBD operation type 0x{other:04X}"
             ))),
@@ -840,6 +860,7 @@ impl TryFrom<RntbdOperationType> for OperationType {
             0x0006 => Ok(Self::Replace),
             0x0008 => Ok(Self::Execute),
             0x0009 => Ok(Self::SqlQuery),
+            0x0042 => Ok(Self::QueryPlan),
             0x000F => Ok(Self::Query),
             0x0011 => Ok(Self::Head),
             0x0012 => Ok(Self::HeadFeed),

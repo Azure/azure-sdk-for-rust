@@ -7,7 +7,32 @@
 
 $ShutdownTimeout = 30
 
-if ($IsWindows) {
+if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
+    if ($env:AZURE_COSMOS_INMEMORY_EXPECT_GATEWAY20 -eq 'true') {
+        try {
+            $healthUrl = ([System.Uri]::new([System.Uri]$env:AZURE_COSMOS_INMEMORY_MANAGEMENT_ENDPOINT, 'health')).AbsoluteUri
+            $health = Invoke-RestMethod -Uri $healthUrl -TimeoutSec 5 -ErrorAction Stop
+            if ($health.connectivityProbes -lt 1 -or $health.gateway20Requests -lt 1) {
+                throw "Gateway 2.0 CI leg did not exercise the Gateway 2.0 path (probes=$($health.connectivityProbes), requests=$($health.gateway20Requests))."
+            }
+            Write-Host "Hosted Gateway 2.0 traffic verified (probes=$($health.connectivityProbes), requests=$($health.gateway20Requests))."
+        } catch {
+            LogError "Failed to verify hosted Gateway 2.0 traffic: $($_.Exception.Message)"
+        }
+    }
+
+    if ($env:AZURE_COSMOS_INMEMORY_EMULATOR_PID) {
+        $hostProcess = Get-Process -Id ([int]$env:AZURE_COSMOS_INMEMORY_EMULATOR_PID) -ErrorAction SilentlyContinue
+    } else {
+        $hostProcess = Get-Process azure_data_cosmos_emulator -ErrorAction SilentlyContinue
+    }
+    if ($hostProcess) {
+        $hostProcess | Stop-Process -Force -ErrorAction SilentlyContinue
+        $hostProcess | Wait-Process -Timeout 10 -ErrorAction SilentlyContinue
+    }
+}
+
+elseif ($IsWindows) {
     $EmulatorPath = & "$PSScriptRoot\Get-CosmosEmulatorPath.ps1"
     if ($null -eq $EmulatorPath) {
         Write-Host "Unable to confirm Cosmos DB Emulator location, skipping shutdown."
@@ -72,11 +97,16 @@ if ($IsWindows) {
 # Test-Setup.ps1. When the pipeline deploys a live Cosmos account, the connection
 # string is injected as a pipeline variable and must survive across packages.
 Write-Host "Clearing emulator environment variables."
-if ($env:AZURE_COSMOS_CONNECTION_STRING -eq "emulator") {
+if ($env:AZURE_COSMOS_CONNECTION_STRING -eq "emulator" -or
+    $env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
     $env:AZURE_COSMOS_CONNECTION_STRING = $null
 }
 $env:AZURE_COSMOS_TEST_MODE = $null
 $env:AZURE_COSMOS_EMULATOR_HOST = $null
+$env:AZURE_COSMOS_INMEMORY_EMULATOR_PID = $null
+$env:AZURE_COSMOS_INMEMORY_EXPECT_GATEWAY20 = $null
+$env:AZURE_COSMOS_INMEMORY_MANAGEMENT_ENDPOINT = $null
+$env:AZURE_COSMOS_INMEMORY_ACCOUNT_ENDPOINT = $null
 # Remove any --cfg=test_category="..." flag added by Test-Setup.ps1 or COSMOS_RUSTFLAGS.
 # The next package's setup will re-add the correct flag from COSMOS_RUSTFLAGS
 # (or from AZURE_COSMOS_EMULATOR_FLAVOR=vnext when running the vnext stage).
