@@ -294,15 +294,15 @@ POST /databases/{db}/containers/{coll}/partitions/{partitionId}/split
     body (optional): {
       "mode": "midpoint" | "epk" | "storage",   // default: "midpoint"
       "epk": "<hex EPK>",                        // required when mode = "epk"; ignored otherwise
-      "lockMode": "instant" | "delayed" | "manual", // default: "instant"
-      "lockDurationMs": 500                     // required only when lockMode = "delayed"
+      "progressionMode": "automatic" | "manual", // default: "automatic"
+      "lockDurationMs": 500                     // automatic only; default: 0
     }
     → 202 { "operationId": "op-split-123", "status": "Running", "phase": "Preparing" }
 
 POST /databases/{db}/containers/{coll}/partitions/merge
     body: {
       "partitionIds": [4, 5],                   // exactly two adjacent partitions
-      "lockMode": "manual"
+      "progressionMode": "manual"
     }
     → 202 { "operationId": "op-merge-456", "status": "Running", "phase": "Preparing" }
 
@@ -333,8 +333,8 @@ Operation phase semantics are deterministic:
 - `Succeeded`: source partitions are removed and replacements are available.
 - `Failed`: no further advancement is allowed; the operation contains the error.
 
-`instant` operations advance automatically without an observable lock-window guarantee. `delayed`
-operations hold `Swapping` for the configured `lockDurationMs`. `manual` operations advance only
+`automatic` operations hold `Swapping` for the configured `lockDurationMs`; the default `0` gives
+no observable lock-window guarantee. `manual` operations reject `lockDurationMs` and advance only
 through `POST /operations/{operationId}/advance`, allowing reliable assertions in every phase.
 
 Samples — one request per split mode:
@@ -356,16 +356,16 @@ curl -X POST "${management_endpoint}databases/testdb/containers/testcoll/partiti
   -H 'content-type: application/json' \
   -d '{ "mode": "storage" }'
 
-# Delayed mode provides a timed 410/1007 window.
+# Automatic progression can provide a timed 410/1007 window.
 curl -X POST "${management_endpoint}databases/testdb/containers/testcoll/partitions/0/split" \
   -H 'content-type: application/json' \
-  -d '{ "mode": "midpoint", "lockMode": "delayed", "lockDurationMs": 500 }'
+  -d '{ "mode": "midpoint", "progressionMode": "automatic", "lockDurationMs": 500 }'
 
 # Manual mode allows deterministic phase-by-phase assertions.
 operation_id=$(curl -sS -X POST \
   "${management_endpoint}databases/testdb/containers/testcoll/partitions/0/split" \
   -H 'content-type: application/json' \
-  -d '{ "mode": "midpoint", "lockMode": "manual" }' | jq -r .operationId)
+  -d '{ "mode": "midpoint", "progressionMode": "manual" }' | jq -r .operationId)
 curl -X POST "${management_endpoint}operations/${operation_id}/advance" # Preparing → Swapping
 curl -X POST "${management_endpoint}operations/${operation_id}/advance" # Swapping → Succeeded
 ```

@@ -17,10 +17,11 @@ Bind one gateway listener per region to a distinct loopback endpoint. A single s
 single-region account has one standard gateway endpoint. Gateway 2.0 adds an optional second RNTBD
 endpoint per region.
 
-Every configured port is optional and defaults to `0`, which asks the operating system to assign
-an available port. An explicit non-zero port remains available for interactive scenarios that
-need a stable endpoint. Account discovery advertises the **actual bound URLs**, never the requested
-port value.
+The standard gateway and management ports default to `0`, which asks the operating system to assign
+available ports. Gateway 2.0 is enabled by including `gateway20Port`; its value may also be `0` for
+OS assignment, while omission disables that optional listener. Explicit non-zero ports remain
+available for interactive scenarios that need stable endpoints. Account discovery advertises the
+**actual bound URLs**, never the requested port values.
 
 After all listeners are bound, the host writes one machine-readable JSON `ready` record to stdout.
 Diagnostic logs go to stderr so automation can parse stdout without log filtering. The record

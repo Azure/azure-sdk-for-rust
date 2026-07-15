@@ -27,18 +27,18 @@ these phases:
 3. `Succeeded`: source partitions are gone and replacement partitions are visible.
 4. `Failed`: a terminal error is available on the operation resource.
 
-Each operation selects one lock/progression mode:
+Each operation selects one progression mode:
 
-- `instant` (default): progress automatically through all phases without a guaranteed observable
-  `Swapping` window.
-- `delayed`: enter `Swapping` automatically, remain there for `lockDurationMs`, then complete.
+- `automatic` (default): enter `Swapping` automatically, remain there for `lockDurationMs`, then
+  complete. The duration defaults to `0`, which provides no guaranteed observable `Swapping`
+  window.
 - `manual`: remain in each non-terminal phase until `POST /operations/{operationId}/advance` moves
   the operation forward by one phase.
 
-`lockDurationMs` is required and positive for `delayed`; it is rejected for `instant` and `manual`.
-Advancing an automatic or terminal operation returns `409 Conflict`. The operation state machine,
-not a generic lock API, owns partition locking so tests cannot create a lock state unrelated to an
-actual topology transition.
+`lockDurationMs` must be non-negative and is accepted only for `automatic` operations. Supplying it
+for `manual` progression returns `400 Bad Request`. Advancing an automatic or terminal operation
+returns `409 Conflict`. The operation state machine, not a generic lock API, owns partition locking
+so tests cannot create a lock state unrelated to an actual topology transition.
 
 ## Consequences
 
