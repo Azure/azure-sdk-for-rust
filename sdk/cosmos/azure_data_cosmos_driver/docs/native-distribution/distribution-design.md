@@ -18,7 +18,7 @@ Non-goal: the C-ABI surface itself — that is owned by `NATIVE_WRAPPER_SPEC.md`
 
 Provenance and distribution are two different concerns, and the design keeps them decoupled:
 
-- **Provenance (build-once):** there must be exactly **one** build + binary-signing of the machine code per release, or .NET, Go, and Java silently drift onto different driver builds. This lives **internal to CI** and is never consumer-facing.
+- **Provenance (build-once):** there must be exactly **one coordinated release build + binary-signing/authenticity event** for the machine code per release, or .NET, Go, and Java silently drift onto different driver builds. This lives **internal to CI** and is never consumer-facing.
 - **Distribution:** how a consumer physically pulls the bytes. This should be **each language's existing, idiomatic feed** — not a new neutral feed, and not a cross-language bundle.
 
 The whole design follows from keeping these apart: **one internal build artifact → fan-out to per-language packages on per-language feeds.**
@@ -49,15 +49,15 @@ Recorded as ADRs; this is the index with one-line rationale. See [`adr/`](adr/00
 | [0006](adr/0006-binding-owns-marshalling.md) | Each binding **owns its marshalling and buffer copy-out**; the ABI stays bytes-in/bytes-out. | Keeps the ABI schema-agnostic. |
 | [0007](adr/0007-native-is-opt-in.md) | Native transport ships in a **new SDK major**; no parallel managed transport, no silent fallback. | A major-version cutover, not a per-call opt-in. |
 | [0008](adr/0008-platform-matrix.md) | A defined **platform matrix**; unsupported platforms fail with an actionable error. | Bounded support surface. |
-| [0009](adr/0009-build-and-signing-pipeline.md) | **One build, sign the binaries once, fan-out** to per-language publish jobs that must consume the hand-off and never rebuild. | Provenance + trust enforced by pipeline discipline. |
+| [0009](adr/0009-build-and-signing-pipeline.md) | **One build, sign/authenticate the binaries once, fan-out** to per-language publish jobs that must consume the hand-off and never rebuild. | Provenance + trust enforced by verification, not just discipline. |
 | [0010](adr/0010-native-version-fanout.md) | **One native version fanned out to all feeds simultaneously**; each SDK pins that **exact** version. | One source of truth for "which driver"; no cross-language version skew. |
 
 ## 5. The model
 
 ```
-   Rust build — ONE run, all platforms (azure-sdk-for-rust CI)
+   Rust release build — ONE coordinated provenance event
    produces .dll/.so/.dylib/.a + azurecosmosdriver.h + ABI_VERSION
-   and SIGNS THE BINARIES (Authenticode / codesign + notarize)
+   and SIGNS / AUTHENTICATES THE ARTIFACTS
                           │
                           ▼
    INTERNAL HAND-OFF ARTIFACT  (Azure Artifacts Universal Package

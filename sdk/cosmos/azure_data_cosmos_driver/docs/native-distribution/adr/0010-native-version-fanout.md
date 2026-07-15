@@ -12,7 +12,7 @@ The native driver ships on its own SemVer (ADR 0005), while .NET, Go, and Java e
 
 ## Consequences
 - No cross-language version skew: a fix in the native driver lands everywhere in one coordinated fan-out, not at N independent times.
-- The fan-out pipeline (ADR 0009) publishes a release as an all-or-nothing set; a partial fan-out (some feeds updated, some not) is an explicit failure state to guard.
+- The fan-out pipeline (ADR 0009) treats a release as one coordinated set: it can stage and validate the hand-off atomically before public publish, but if a public-feed publish partially succeeds the remedy is **roll-forward**, not retraction. A partial fan-out (some feeds updated, some not) is still an explicit failure state to detect and repair immediately.
 - Languages keep cadence freedom for their *own* surface area while staying lockstep on the native bytes.
 
 ## Alternatives considered

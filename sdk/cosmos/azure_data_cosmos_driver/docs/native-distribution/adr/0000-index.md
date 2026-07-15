@@ -12,9 +12,9 @@ ADRs (Architecture Decision Records) capture **what we decided** and a brief **w
 | [0004](0004-go-cgo-prebuilt.md) | Go consumes via cgo against a prebuilt header + lib from the Go feed | Proposed (delivery shape WIP) |
 | [0005](0005-abi-version-handshake.md) | Native lib exports an ABI version; hosts check it before use | Accepted |
 | [0006](0006-binding-owns-marshalling.md) | Each language binding owns marshalling and buffer copy-out | Accepted |
-| [0007](0007-native-is-opt-in.md) | Native transport is opt-in until GA, then default-with-fallback | Accepted |
+| [0007](0007-native-is-opt-in.md) | Native transport ships in a new SDK major; no parallel managed transport | Accepted |
 | [0008](0008-platform-matrix.md) | A defined platform matrix; unsupported platforms error clearly | Accepted |
 | [0009](0009-build-and-signing-pipeline.md) | One build, sign binaries once, fan-out; jobs never rebuild | Accepted |
-| [0010](0010-native-version-fanout.md) | One native version fanned out to all feeds simultaneously; each SDK pins a compatible range | Proposed |
+| [0010](0010-native-version-fanout.md) | One native version fanned out to all feeds simultaneously; each SDK pins that exact version | Proposed |
 
 > These are **proposed** for the design review. "Accepted" is provisional until the review signs off.

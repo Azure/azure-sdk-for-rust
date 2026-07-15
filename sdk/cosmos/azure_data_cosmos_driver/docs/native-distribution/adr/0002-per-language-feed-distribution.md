@@ -15,7 +15,7 @@ Each language already has mature feed infrastructure with its own ACLs, signing 
 ## Consequences
 - Reuses each SDK's mature feed, ACL, signing, and governance — **no new consumer feed to build**.
 - Idiomatic: matches how the Azure SDKs already ship dependencies.
-- Drift protection now depends on pipeline discipline (ADR 0009) rather than a single shared consumer artifact.
+- Drift protection now depends on the verification-backed fan-out pipeline (ADR 0009) rather than a single shared consumer artifact.
 
 ## Alternatives considered
 - Single neutral consumer bundle/feed carrying all formats — rejected: forces irrelevant bytes on consumers; new infra; not idiomatic.

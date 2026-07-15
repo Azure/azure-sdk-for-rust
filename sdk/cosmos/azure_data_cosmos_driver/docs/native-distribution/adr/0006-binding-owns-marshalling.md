@@ -7,7 +7,7 @@ The driver core is schema-agnostic: the C-ABI passes request/response bodies as 
 
 ## Decision
 - The ABI stays **bytes-in / bytes-out**; the wrapper does no JSON parsing.
-- Each language binding **owns its own marshalling** (string encoding, structs) and **copies response buffers out of native memory** into host memory, then frees the native buffer.
+- Each language binding **owns its own marshalling** (string encoding, structs) and **copies response buffers out of native memory** into host memory, then frees the native buffer. Where a binding turns host strings into bytes for the driver boundary, it uses **UTF-8**.
 - Rust owns the buffer until the host copies it out; ownership transfer is explicit per the ABI spec.
 
 ## Consequences
