@@ -58,11 +58,11 @@ emulator implementation out of the driver crate (it depends heavily on driver-in
 
 The work ships across three pull requests.
 
-| PR      | Contents                                                                                                                                                                                                                           | Feature/cfg                                                                 |
-| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| **PR1** | New host crate; per-region h2c hosting of Gateway V1 **and** Gateway 2.0 (config-gated); management REST API for control-plane actions; CI running the existing emulator suites against the hosted emulator in both gateway modes. | `__internal_in_memory_emulator`, `test_category = "emulator_inmemory"`      |
-| **PR2** | New emulator store primitives: region offline/online and runtime write-region failover, with net-new tests and their management REST endpoints.                                                                                    | same host feature                                                           |
-| **PR3** | Optional HTTPS and authentication (primary key, primary read-only key, Entra ID with an allow-list of object IDs).                                                                                                                 | new `auth` config block                                                     |
+| PR      | Contents                                                                                                                                                                                                                           | Feature/cfg                                                            |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| **PR1** | New host crate; per-region h2c hosting of Gateway V1 **and** Gateway 2.0 (config-gated); management REST API for control-plane actions; CI running the existing emulator suites against the hosted emulator in both gateway modes. | `__internal_in_memory_emulator`, `test_category = "emulator_inmemory"` |
+| **PR2** | New emulator store primitives: region offline/online and runtime write-region failover, with net-new tests and their management REST endpoints.                                                                                    | same host feature                                                      |
+| **PR3** | Optional HTTPS and authentication (primary key, primary read-only key, Entra ID with an allow-list of object IDs).                                                                                                                 | new `auth` config block                                                |
 
 ### Feature gating
 

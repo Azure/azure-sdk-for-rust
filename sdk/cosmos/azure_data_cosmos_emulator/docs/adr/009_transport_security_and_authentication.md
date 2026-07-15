@@ -22,11 +22,11 @@ It supports three authentication modes:
 
 Entra validation requires all of the following trust inputs:
 
-| Input | Purpose |
-| --- | --- |
-| JWKS URI or local JWKS file | Verify the token signature. |
-| Expected issuer | Restrict the accepted token authority. |
-| Expected audience | Prevent tokens issued for another resource from being replayed. |
+| Input                             | Purpose                                                           |
+| --------------------------------- | ----------------------------------------------------------------- |
+| JWKS URI or local JWKS file       | Verify the token signature.                                       |
+| Expected issuer                   | Restrict the accepted token authority.                            |
+| Expected audience                 | Prevent tokens issued for another resource from being replayed.   |
 | Allowed object or application IDs | Restrict authenticated principals after cryptographic validation. |
 
 Selecting an authenticated mode without HTTPS, or omitting required trust inputs, is a startup
