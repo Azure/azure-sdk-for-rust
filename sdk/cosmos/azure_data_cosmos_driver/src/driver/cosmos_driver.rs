@@ -1382,7 +1382,7 @@ impl CosmosDriver {
         // all regions unless every probe returns 200. The probe shares the
         // data plane's Gateway 2.0 HTTP/2 config so it negotiates the same
         // protocol the real traffic uses. Skip building it entirely when
-        // HTTP/2 is unavailable (the one hard Gateway 2.0 prerequisite);
+        // Gateway 2.0 is explicitly disabled or HTTP/2 is unavailable;
         // otherwise the store still no-ops the probe when the account
         // advertises no thin-client endpoints.
         let connectivity_probe: Option<Arc<dyn ConnectivityProbe>> =
