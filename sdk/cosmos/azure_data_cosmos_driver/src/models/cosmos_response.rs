@@ -3,12 +3,14 @@
 
 //! Cosmos DB operation result types.
 
+use crate::diagnostics::DiagnosticsContext;
 use crate::models::{CosmosResponseHeaders, CosmosStatus};
+use std::sync::Arc;
 
 /// Result of a Cosmos DB operation.
 ///
-/// Contains the response body (as raw bytes), relevant headers, and comprehensive
-/// status information for the operation.
+/// Contains the response body (as raw bytes), relevant headers, comprehensive
+/// status information, and the always-collected [`DiagnosticsContext`] for the operation.
 ///
 /// # Schema-Agnostic Design
 ///
@@ -24,6 +26,11 @@ use crate::models::{CosmosResponseHeaders, CosmosStatus};
 /// let status = result.status();
 /// println!("Status: {}", status);
 /// println!("RU Charge: {}", result.headers().request_charge.unwrap_or_default().value());
+///
+/// // Diagnostics are always available.
+/// let diagnostics = result.diagnostics();
+/// println!("Operation: {}", diagnostics.operation_name());
+///
 /// if status.is_success() {
 ///     let body = result.into_body();
 ///     // Deserialize body...
@@ -40,17 +47,27 @@ pub struct CosmosResponse {
 
     /// Operation status including HTTP status code and optional sub-status.
     status: CosmosStatus,
+
+    /// Always-collected operation diagnostics.
+    diagnostics: Arc<DiagnosticsContext>,
 }
 
 impl CosmosResponse {
     /// Creates a new `CosmosResponse`.
     ///
-    /// This is typically called by the driver after completing an operation.
-    pub(crate) fn new(body: Vec<u8>, headers: CosmosResponseHeaders, status: CosmosStatus) -> Self {
+    /// This is typically called by the driver after completing an operation, passing the
+    /// [`DiagnosticsContext`] produced while executing it.
+    pub(crate) fn new(
+        body: Vec<u8>,
+        headers: CosmosResponseHeaders,
+        status: CosmosStatus,
+        diagnostics: Arc<DiagnosticsContext>,
+    ) -> Self {
         Self {
             body,
             headers,
             status,
+            diagnostics,
         }
     }
 
@@ -76,12 +93,22 @@ impl CosmosResponse {
     pub fn status(&self) -> CosmosStatus {
         self.status
     }
+
+    /// Returns the operation's diagnostics context.
+    ///
+    /// Diagnostics are always collected, so this never returns `None`. The returned
+    /// [`DiagnosticsContext`] is reference-counted and cheap to clone.
+    pub fn diagnostics(&self) -> Arc<DiagnosticsContext> {
+        self.diagnostics.clone()
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::diagnostics::{DiagnosticsContextBuilder, ExecutionContext, RequestDiagnostics};
     use crate::models::{ActivityId, CosmosResponseHeaders, RequestCharge, SubStatusCode};
+    use crate::options::{DiagnosticsOptions, Region};
     use azure_core::http::StatusCode;
 
     fn make_status(
@@ -89,6 +116,22 @@ mod tests {
         sub_status_code: Option<SubStatusCode>,
     ) -> CosmosStatus {
         CosmosStatus::from_parts(status_code.unwrap_or(StatusCode::Ok), sub_status_code)
+    }
+
+    /// Builds a completed diagnostics context recording a single attempt with the given status.
+    fn diagnostics(status: CosmosStatus) -> Arc<DiagnosticsContext> {
+        let mut builder = DiagnosticsContextBuilder::new(
+            "read_item",
+            ActivityId::from_static("test-op"),
+            true,
+            Arc::new(DiagnosticsOptions::default()),
+        );
+        builder.record_request(
+            RequestDiagnostics::new(ExecutionContext::Initial, "https://acct/", status)
+                .with_region(Region::WEST_US_2)
+                .with_request_charge(RequestCharge::new(1.0)),
+        );
+        Arc::new(builder.complete(Some(status)))
     }
 
     #[test]
@@ -99,10 +142,12 @@ mod tests {
             ..Default::default()
         };
 
+        let status = make_status(Some(StatusCode::Ok), None);
         let result = CosmosResponse::new(
             b"{\"id\": \"test\"}".to_vec(),
             headers,
-            make_status(Some(StatusCode::Ok), None),
+            status,
+            diagnostics(status),
         );
 
         let status = result.status();
@@ -118,13 +163,15 @@ mod tests {
 
     #[test]
     fn cosmos_response_error_status() {
+        let status = make_status(
+            Some(StatusCode::TooManyRequests),
+            Some(SubStatusCode::new(3200)),
+        );
         let result = CosmosResponse::new(
             b"{}".to_vec(),
             CosmosResponseHeaders::new(),
-            make_status(
-                Some(StatusCode::TooManyRequests),
-                Some(SubStatusCode::new(3200)),
-            ),
+            status,
+            diagnostics(status),
         );
 
         let status = result.status();
@@ -139,11 +186,8 @@ mod tests {
             request_charge: Some(RequestCharge::new(1.0)),
             ..Default::default()
         };
-        let result = CosmosResponse::new(
-            b"body".to_vec(),
-            headers,
-            make_status(Some(StatusCode::Created), None),
-        );
+        let status = make_status(Some(StatusCode::Created), None);
+        let result = CosmosResponse::new(b"body".to_vec(), headers, status, diagnostics(status));
 
         assert_eq!(result.body(), b"body");
         assert_eq!(result.status().status_code(), StatusCode::Created);
@@ -163,10 +207,33 @@ mod tests {
             Some(StatusCode::NotFound),
             Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE),
         );
-        let result = CosmosResponse::new(b"{}".to_vec(), CosmosResponseHeaders::new(), status);
+        let result = CosmosResponse::new(
+            b"{}".to_vec(),
+            CosmosResponseHeaders::new(),
+            status,
+            diagnostics(status),
+        );
 
         let result_status = result.status();
         assert_eq!(result_status.status_code(), StatusCode::NotFound);
         assert!(result_status.is_read_session_not_available());
+    }
+
+    #[test]
+    fn cosmos_response_exposes_diagnostics() {
+        let status = make_status(Some(StatusCode::Ok), None);
+        let result = CosmosResponse::new(
+            b"{}".to_vec(),
+            CosmosResponseHeaders::new(),
+            status,
+            diagnostics(status),
+        );
+
+        let diag = result.diagnostics();
+        assert_eq!(diag.operation_name(), "read_item");
+        assert!(diag.is_completed());
+        assert!(!diag.is_failure());
+        assert_eq!(diag.requests().len(), 1);
+        assert_eq!(diag.contacted_regions(), &[Region::WEST_US_2]);
     }
 }

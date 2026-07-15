@@ -4,22 +4,72 @@
 //! Cosmos DB driver instance.
 
 use crate::{
+    diagnostics::{DiagnosticsContextBuilder, ExecutionContext, RequestDiagnostics},
     models::{
         AccountEndpoint, AccountReference, ActivityId, ContainerProperties, ContainerReference,
         CosmosOperation, CosmosResponse, CosmosResponseHeaders, CosmosStatus, DatabaseProperties,
-        DatabaseReference,
+        DatabaseReference, OperationType, ResourceType,
     },
     options::{
-        DriverOptions, OperationOptions, Region, RuntimeOptions, ThroughputControlGroupSnapshot,
+        DiagnosticsOptions, DriverOptions, OperationOptions, Region, RuntimeOptions,
+        ThroughputControlGroupSnapshot,
     },
 };
 use azure_core::http::headers::{HeaderName, HeaderValue};
 use azure_core::http::{Context, Request};
+use std::sync::Arc;
+use std::time::Instant;
 
 use super::{
     transport::{uses_dataplane_pipeline, AuthorizationContext, RequestSentExt, RequestSentStatus},
     CosmosDriverRuntime,
 };
+
+/// Returns the logical operation name for a resource/operation pair.
+///
+/// This is a plain, human-readable name used to populate
+/// [`DiagnosticsContext::operation_name`](crate::diagnostics::DiagnosticsContext::operation_name);
+/// it is not (yet) an OpenTelemetry semantic-convention name.
+fn operation_name_for(operation_type: OperationType, resource_type: ResourceType) -> &'static str {
+    use OperationType::*;
+    use ResourceType::*;
+    match (resource_type, operation_type) {
+        (Document, Read) => "read_item",
+        (Document, Create) => "create_item",
+        (Document, Upsert) => "upsert_item",
+        (Document, Replace) => "replace_item",
+        (Document, Delete) => "delete_item",
+        (Document, ReadFeed) => "read_all_items",
+        (Document, Query) | (Document, SqlQuery) => "query_items",
+        (DocumentCollection, Read) => "read_container",
+        (DocumentCollection, Create) => "create_container",
+        (DocumentCollection, Replace) => "replace_container",
+        (DocumentCollection, Delete) => "delete_container",
+        (DocumentCollection, ReadFeed)
+        | (DocumentCollection, Query)
+        | (DocumentCollection, SqlQuery) => "query_containers",
+        (Database, Read) => "read_database",
+        (Database, Create) => "create_database",
+        (Database, Delete) => "delete_database",
+        (Database, ReadFeed) | (Database, Query) | (Database, SqlQuery) => "query_databases",
+        (StoredProcedure, Execute) => "execute_stored_procedure",
+        (_, Batch) => "execute_batch",
+        _ => "unknown",
+    }
+}
+
+/// Returns whether an operation is a point operation (a single-item read or write) rather than a
+/// query or feed read, used to select the applicable latency threshold.
+fn is_point_operation(operation_type: OperationType) -> bool {
+    !matches!(
+        operation_type,
+        OperationType::Query
+            | OperationType::SqlQuery
+            | OperationType::QueryPlan
+            | OperationType::ReadFeed
+            | OperationType::HeadFeed
+    )
+}
 
 /// Cosmos DB driver instance.
 ///
@@ -237,6 +287,14 @@ impl CosmosDriver {
         const MAX_TRANSPORT_RETRIES: usize = 1;
         let mut attempt = 0usize;
 
+        // Diagnostics are always collected: build the operation context as the pipeline runs.
+        let mut diagnostics = DiagnosticsContextBuilder::new(
+            operation_name_for(operation_type, resource_type),
+            activity_id.clone(),
+            is_point_operation(operation_type),
+            DiagnosticsOptions::shared_default(),
+        );
+
         loop {
             let mut request = Request::new(url.clone(), method);
 
@@ -274,6 +332,7 @@ impl CosmosDriver {
             let mut ctx = Context::default();
             ctx.insert(auth_context.clone());
 
+            let attempt_start = Instant::now();
             let result = pipeline.send(&ctx, &mut request).await;
 
             match result {
@@ -285,10 +344,27 @@ impl CosmosDriver {
                     let body = response.into_body();
                     let status = CosmosStatus::from_parts(status_code, sub_status);
 
+                    // Record the successful attempt on the diagnostics context.
+                    let execution_context = if attempt == 0 {
+                        ExecutionContext::Initial
+                    } else {
+                        ExecutionContext::TransportRetry
+                    };
+                    let mut request_diagnostics =
+                        RequestDiagnostics::new(execution_context, url.as_str(), status)
+                            .with_request_charge(cosmos_headers.request_charge.unwrap_or_default())
+                            .with_duration(attempt_start.elapsed());
+                    if let Some(request_activity_id) = cosmos_headers.activity_id.clone() {
+                        request_diagnostics =
+                            request_diagnostics.with_activity_id(request_activity_id);
+                    }
+                    diagnostics.record_request(request_diagnostics);
+
                     return Ok(CosmosResponse::new(
                         body.as_ref().to_vec(),
                         cosmos_headers,
                         status,
+                        Arc::new(diagnostics.complete(Some(status))),
                     ));
                 }
                 Err(e) => {
