@@ -4,7 +4,7 @@
 //! Distributed tracing trait definitions
 //!
 use crate::http::{Context, Request};
-use std::{borrow::Cow, fmt::Debug, sync::Arc};
+use std::{borrow::Cow, fmt::Debug, sync::Arc, time::SystemTime};
 
 /// Overall architecture for distributed tracing in the SDK.
 ///
@@ -83,6 +83,75 @@ pub trait Tracer: Send + Sync + Debug {
         parent: Arc<dyn Span>,
     ) -> Arc<dyn Span>;
 
+    /// Starts a new span with the given name and type, backdated to an explicit start time.
+    ///
+    /// This is the backdating variant of [`Tracer::start_span`]. It lets a caller
+    /// reconstruct a span for an operation that has *already completed* by recording the
+    /// timestamp at which the operation actually started, rather than "now". This is
+    /// required for tail-based (late-bound) sampling, where the decision to emit a span is
+    /// made after the operation finishes. The newly created span will have the "current"
+    /// span as a parent.
+    ///
+    /// # Arguments
+    /// - `name`: The name of the span to start.
+    /// - `kind`: The type of the span to start.
+    /// - `attributes`: A vector of attributes to associate with the span.
+    /// - `start_time`: The explicit start time to record for the span.
+    ///
+    /// # Returns
+    /// An `Arc<dyn Span>` representing the started span.
+    ///
+    /// # Note
+    /// The default implementation ignores `start_time` and delegates to
+    /// [`Tracer::start_span`] so that existing implementations remain source-compatible.
+    /// Implementations backed by a tracing system that supports explicit timestamps (such
+    /// as the OpenTelemetry bridge) override this to honor `start_time`.
+    fn start_span_at(
+        &self,
+        name: Cow<'static, str>,
+        kind: SpanKind,
+        attributes: Vec<Attribute>,
+        start_time: SystemTime,
+    ) -> Arc<dyn Span> {
+        let _ = start_time;
+        self.start_span(name, kind, attributes)
+    }
+
+    /// Starts a new child span with the given name, type, and parent span, backdated to an explicit start time.
+    ///
+    /// This is the backdating variant of [`Tracer::start_span_with_parent`]. It lets a
+    /// caller reconstruct a child span (for example, a single retry attempt) under an
+    /// explicit parent using the timestamp at which the child operation actually started.
+    ///
+    /// # Arguments
+    /// - `name`: The name of the span to start.
+    /// - `kind`: The type of the span to start.
+    /// - `attributes`: A vector of attributes to associate with the span.
+    /// - `parent`: The parent span to use for the new span.
+    /// - `start_time`: The explicit start time to record for the span.
+    ///
+    /// # Returns
+    /// An `Arc<dyn Span>` representing the started span.
+    ///
+    /// # Note
+    /// The default implementation ignores `start_time` and delegates to
+    /// [`Tracer::start_span_with_parent`] so that existing implementations remain
+    /// source-compatible. Implementations backed by a tracing system that supports explicit
+    /// timestamps (such as the OpenTelemetry bridge) override this to honor `start_time`.
+    ///
+    /// Note: This method may panic if the parent span cannot be downcasted to the expected type.
+    fn start_span_with_parent_at(
+        &self,
+        name: Cow<'static, str>,
+        kind: SpanKind,
+        attributes: Vec<Attribute>,
+        parent: Arc<dyn Span>,
+        start_time: SystemTime,
+    ) -> Arc<dyn Span> {
+        let _ = start_time;
+        self.start_span_with_parent(name, kind, attributes, parent)
+    }
+
     /// Returns the namespace the tracer was configured with (if any).
     ///
     /// # Returns
@@ -148,6 +217,26 @@ pub trait Span: AsAny + Send + Sync {
 
     /// Ends the current span.
     fn end(&self);
+
+    /// Ends the current span at an explicit end time.
+    ///
+    /// This is the backdating variant of [`Span::end`]. It lets a caller close a
+    /// reconstructed span at the timestamp the operation actually finished, rather than
+    /// "now" — the counterpart to [`Tracer::start_span_at`] for late-bound (tail-sampled)
+    /// spans.
+    ///
+    /// # Arguments
+    /// - `end_time`: The explicit end time to record for the span.
+    ///
+    /// # Note
+    /// The default implementation ignores `end_time` and delegates to [`Span::end`] so that
+    /// existing implementations remain source-compatible. Implementations backed by a
+    /// tracing system that supports explicit timestamps (such as the OpenTelemetry bridge)
+    /// override this to honor `end_time`.
+    fn end_at(&self, end_time: SystemTime) {
+        let _ = end_time;
+        self.end();
+    }
 
     /// Sets the status of the current span.
     /// # Arguments
