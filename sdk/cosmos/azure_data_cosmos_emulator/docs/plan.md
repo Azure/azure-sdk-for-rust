@@ -3,7 +3,7 @@
 **Status:** Draft / Plan (not yet implemented)
 **Date:** 2026-07-14
 **Crates:** `azure_data_cosmos_emulator` (new binary host), `azure_data_cosmos_driver` (emulator core, behind a feature)
-**Feature gate:** `__internal_in_memory_emulator_host` (non-SemVer, host-only surface)
+**Feature gate:** `__internal_in_memory_emulator` (non-SemVer emulator surface)
 
 ---
 
@@ -60,19 +60,18 @@ The work ships across three pull requests.
 
 | PR      | Contents                                                                                                                                                                                                                           | Feature/cfg                                                                 |
 | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| **PR1** | New host crate; per-region h2c hosting of Gateway V1 **and** Gateway 2.0 (config-gated); management REST API for control-plane actions; CI running the existing emulator suites against the hosted emulator in both gateway modes. | `__internal_in_memory_emulator_host`, `test_category = "emulator_inmemory"` |
+| **PR1** | New host crate; per-region h2c hosting of Gateway V1 **and** Gateway 2.0 (config-gated); management REST API for control-plane actions; CI running the existing emulator suites against the hosted emulator in both gateway modes. | `__internal_in_memory_emulator`, `test_category = "emulator_inmemory"`      |
 | **PR2** | New emulator store primitives: region offline/online and runtime write-region failover, with net-new tests and their management REST endpoints.                                                                                    | same host feature                                                           |
 | **PR3** | Optional HTTPS and authentication (primary key, primary read-only key, Entra ID with an allow-list of object IDs).                                                                                                                 | new `auth` config block                                                     |
 
 ### Feature gating
 
-- The emulator core remains behind the existing `__internal_in_memory_emulator` feature.
-- A new feature `__internal_in_memory_emulator_host = ["__internal_in_memory_emulator"]` gates
-  the additional **host-only** public surface (the server-side RNTBD codec halves and the new
-  control-plane primitives). The host crate enables it automatically via its dependency
-  declaration, so consumers never set it by hand.
-- Both features use the `__internal_` prefix: this surface is **not** part of any SemVer
-  contract and may change at any time.
+- The emulator core and the public surface required by the host remain behind the existing
+  `__internal_in_memory_emulator` feature.
+- The host crate enables the feature automatically via its dependency declaration, so consumers
+  of the host never set it by hand.
+- The `__internal_` prefix means the surface is **not** part of the driver's SemVer contract and
+  may change at any time.
 
 ---
 
@@ -85,11 +84,11 @@ flowchart LR
 
     subgraph HOST["azure_data_cosmos_emulator (binary)"]
         direction TB
-        EG["East US gateway :8081"]
-        ET["East US Gateway 2.0 :8444"]
-        WG["West US gateway :8082"]
-        WT["West US Gateway 2.0 :8445"]
-        MGMT["Management API :9090"]
+        EG["East US gateway<br/>(assigned endpoint)"]
+        ET["East US Gateway 2.0<br/>(assigned endpoint)"]
+        WG["West US gateway<br/>(assigned endpoint)"]
+        WT["West US Gateway 2.0<br/>(assigned endpoint)"]
+        MGMT["Management API<br/>(assigned endpoint)"]
         STORE["Single shared store<br/>Arc&lt;InMemoryEmulatorHttpClient&gt; owns Arc&lt;EmulatorStore&gt;"]
         EG --> STORE
         ET --> STORE
@@ -114,7 +113,7 @@ flowchart LR
 - **Data-plane bridge.** Each gateway listener rebuilds an `azure_core::http::Request` from the
   incoming HTTP request and calls `InMemoryEmulatorHttpClient::execute_request`, then converts
   the `AsyncRawResponse` back to an HTTP response.
-- **Gateway 2.0 (optional).** When a region declares a `thinClientPort`, the host binds a
+- **Gateway 2.0 (optional).** When a region enables `gateway20`, the host binds a
   Gateway 2.0 listener that answers the connectivity probe and speaks RNTBD; the store's account
   topology then advertises `thinClient{Readable,Writable}Locations`.
 - **Management port.** A dedicated port serves the control-plane REST API, kept separate from the
@@ -156,15 +155,15 @@ API can further modify state at runtime. (YAML support is deferred; see ADR-006.
     "perPartitionFailover": false,
     "throttling": false,
     "regions": [
-      { "name": "East US", "gatewayPort": 8081, "thinClientPort": 8444, "regionId": 0 },
-      { "name": "West US", "gatewayPort": 8082, "thinClientPort": 8445, "regionId": 1 }
+      { "name": "East US", "gatewayPort": 0, "gateway20Port": 0, "regionId": 0 },
+      { "name": "West US", "gatewayPort": 0, "gateway20Port": 0, "regionId": 1 }
     ],
     "replication": { "minDelayMs": 20, "maxDelayMs": 50, "maxBufferedReplications": 10000 },
     "replicationOverrides": [
       { "source": "East US", "target": "West US", "minDelayMs": 200, "maxDelayMs": 500 }
     ]
   },
-  "management": { "port": 9090 },
+  "management": { "port": 0 },
   "databases": [
     {
       "id": "testdb",
@@ -193,12 +192,12 @@ API can further modify state at runtime. (YAML support is deferred; see ADR-006.
 | `account.consistency`                     | enum                  | `Strong \| BoundedStaleness \| Session \| ConsistentPrefix \| Eventual`.                           |
 | `account.perPartitionFailover`            | bool                  | Initial `enablePerPartitionFailoverBehavior`; can be toggled at runtime.                           |
 | `account.throttling`                      | bool                  | Enables per-partition RU/s enforcement (429/3200).                                                 |
-| `account.regions[].gatewayPort`           | u16                   | Gateway V1 (JSON REST) port. Region endpoint = `http://127.0.0.1:{gatewayPort}`.                   |
-| `account.regions[].thinClientPort`        | u16, optional         | When present, enables Gateway 2.0 simulation for the region.                                       |
+| `account.regions[].gatewayPort`           | u16, optional         | Standard gateway port. Missing or `0` requests an OS-assigned port.                                |
+| `account.regions[].gateway20Port`         | u16, optional         | Enables Gateway 2.0. Missing disables it; `0` requests an OS-assigned port.                        |
 | `account.regions[].regionId`              | u64, optional         | Auto-assigned by position when omitted.                                                            |
 | `account.replication`                     | object                | Default replication delay + buffer cap.                                                            |
 | `account.replicationOverrides[]`          | array                 | Per source→target replication overrides.                                                           |
-| `management.port`                         | u16                   | Control-plane REST API port.                                                                       |
+| `management.port`                         | u16, optional         | Management API port. Missing or `0` requests an OS-assigned port.                                  |
 | `databases[].containers[].partitionKey`   | object                | Standard Cosmos partition key definition (`paths`, `kind`, `version`).                             |
 | `databases[].containers[].partitionCount` | u32                   | Initial physical partition count.                                                                  |
 | `databases[].containers[].throughput`     | u32                   | Provisioned RU/s (drives throttling when enabled).                                                 |
@@ -207,6 +206,26 @@ API can further modify state at runtime. (YAML support is deferred; see ADR-006.
 Seed items are created through the same request path as real writes (a synthesized create-item
 request per item), so EPK routing, RU accounting, and replication behave identically to
 client-issued writes.
+
+After binding all listeners, the host writes one JSON `ready` record to stdout. It contains the
+resolved management endpoint, hub account endpoint, and all regional standard-gateway and
+Gateway 2.0 URLs. Logs are written to stderr. `GET /account` returns the same resolved topology.
+Automation must consume these full URLs rather than reconstructing them from the requested ports.
+
+```json
+{
+  "event": "ready",
+  "managementEndpoint": "http://127.0.0.1:49150/",
+  "accountEndpoint": "http://127.0.0.1:49151/",
+  "regions": [
+    {
+      "name": "East US",
+      "gatewayEndpoint": "http://127.0.0.1:49151/",
+      "gateway20Endpoint": "http://127.0.0.1:49152/"
+    }
+  ]
+}
+```
 
 ---
 
@@ -221,10 +240,10 @@ account read) are served here unchanged.
 
 ### 5.2 Gateway 2.0 (RNTBD over HTTP/2)
 
-Enabled per region by setting `thinClientPort`. When enabled:
+Enabled per region by setting `gateway20Port`. When enabled:
 
 1. The account topology advertises `thinClientReadableLocations` / `thinClientWritableLocations`
-   pointing at `http://127.0.0.1:{thinClientPort}`.
+  pointing at the bound `gateway20Endpoint` reported by the host.
 2. The Gateway 2.0 listener answers `POST /connectivity-probe` with `200 OK`.
 3. Data-plane requests arrive as RNTBD frames wrapped in HTTP/2 POSTs. The listener **decodes**
    the RNTBD request frame + literal `thinclient` headers, reconstructs the logical operation, dispatches
@@ -245,8 +264,9 @@ The management API exposes only the control-plane actions that have **no Cosmos 
 equivalent**. Database, container, offer, and item lifecycle are **not** here — those are served
 by the standard Cosmos data-plane endpoints on the region gateway ports (or seeded via config).
 
-All endpoints below are served on the management port (e.g. `:9090`), use JSON bodies, and
-return JSON. Errors use conventional HTTP status codes with a `{ "error": "..." }` body.
+All endpoints below are served on the resolved `managementEndpoint` from the startup `ready`
+record, use JSON bodies, and return JSON. Errors use conventional HTTP status codes with a
+`{ "error": "..." }` body.
 
 ### 6.1 Introspection
 
@@ -274,19 +294,31 @@ POST /databases/{db}/containers/{coll}/partitions/{partitionId}/split
     body (optional): {
       "mode": "midpoint" | "epk" | "storage",   // default: "midpoint"
       "epk": "<hex EPK>",                        // required when mode = "epk"; ignored otherwise
-      "lockDurationMs": 0                        // optional; 410/1007 window before children appear
+      "lockMode": "instant" | "delayed" | "manual", // default: "instant"
+      "lockDurationMs": 500                     // required only when lockMode = "delayed"
     }
-    → 202 { "operationId": "op-split-123", "status": "Running" }
+    → 202 { "operationId": "op-split-123", "status": "Running", "phase": "Preparing" }
 
 POST /databases/{db}/containers/{coll}/partitions/merge
-    body: { "partitionIds": [4, 5] }             // exactly two adjacent partitions
-    → 202 { "operationId": "op-merge-456", "status": "Running" }
+    body: {
+      "partitionIds": [4, 5],                   // exactly two adjacent partitions
+      "lockMode": "manual"
+    }
+    → 202 { "operationId": "op-merge-456", "status": "Running", "phase": "Preparing" }
 
 GET /operations/{operationId}
-    → 200 { "operationId": "...", "status": "Running" | "Succeeded" | "Failed" }
+    → 200 {
+        "operationId": "...",
+        "status": "Running" | "Succeeded" | "Failed",
+        "phase": "Preparing" | "Swapping" | "Succeeded" | "Failed"
+      }
     // On success, include operation-specific result details:
     // split: { "database": "testdb", "container": "testcoll", "parent": 0, "children": [4, 5], "mode": "storage", "splitEpk": "6A3C000000000000000000000000000000" }
     // merge: { "merged": [4, 5], "into": 6 }
+
+POST /operations/{operationId}/advance
+    → 200 { "operationId": "...", "status": "Running", "phase": "Swapping" }
+    // Valid only for manual operations. Each call advances one phase.
 ```
 
 The operation result (via `GET /operations/{operationId}`) echoes the resolved `mode` and the
@@ -294,26 +326,48 @@ concrete `splitEpk` that was applied, so a caller that requested `midpoint` or `
 the boundary the emulator chose. Only the `epk` hex parser and the `storage` mode are new code
 behind this endpoint; `midpoint` and the `epk` split execution reuse existing store hooks.
 
+Operation phase semantics are deterministic:
+
+- `Preparing`: source partitions remain available and replacement partitions are hidden.
+- `Swapping`: source partition requests return `410/1007` and replacements remain hidden.
+- `Succeeded`: source partitions are removed and replacements are available.
+- `Failed`: no further advancement is allowed; the operation contains the error.
+
+`instant` operations advance automatically without an observable lock-window guarantee. `delayed`
+operations hold `Swapping` for the configured `lockDurationMs`. `manual` operations advance only
+through `POST /operations/{operationId}/advance`, allowing reliable assertions in every phase.
+
 Samples — one request per split mode:
 
 ```bash
+# Read this URL from the host's JSON ready record.
+management_endpoint="http://127.0.0.1:49150/"
+
 # 1) Mid-point split (default): halve the partition's EPK range geometrically.
-curl -X POST http://127.0.0.1:9090/databases/testdb/containers/testcoll/partitions/0/split
+curl -X POST "${management_endpoint}databases/testdb/containers/testcoll/partitions/0/split"
 
 # 2) Custom-EPK split: split at an explicit hex EPK boundary.
-curl -X POST http://127.0.0.1:9090/databases/testdb/containers/testcoll/partitions/0/split \
+curl -X POST "${management_endpoint}databases/testdb/containers/testcoll/partitions/0/split" \
   -H 'content-type: application/json' \
   -d '{ "mode": "epk", "epk": "3FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" }'
 
 # 3) Storage-based split: pick a boundary that balances documents across the children.
-curl -X POST http://127.0.0.1:9090/databases/testdb/containers/testcoll/partitions/0/split \
+curl -X POST "${management_endpoint}databases/testdb/containers/testcoll/partitions/0/split" \
   -H 'content-type: application/json' \
   -d '{ "mode": "storage" }'
 
-# Any mode may set a non-zero lock window; the partition returns 410/1007 until it elapses.
-curl -X POST http://127.0.0.1:9090/databases/testdb/containers/testcoll/partitions/0/split \
+# Delayed mode provides a timed 410/1007 window.
+curl -X POST "${management_endpoint}databases/testdb/containers/testcoll/partitions/0/split" \
   -H 'content-type: application/json' \
-  -d '{ "mode": "midpoint", "lockDurationMs": 500 }'
+  -d '{ "mode": "midpoint", "lockMode": "delayed", "lockDurationMs": 500 }'
+
+# Manual mode allows deterministic phase-by-phase assertions.
+operation_id=$(curl -sS -X POST \
+  "${management_endpoint}databases/testdb/containers/testcoll/partitions/0/split" \
+  -H 'content-type: application/json' \
+  -d '{ "mode": "midpoint", "lockMode": "manual" }' | jq -r .operationId)
+curl -X POST "${management_endpoint}operations/${operation_id}/advance" # Preparing → Swapping
+curl -X POST "${management_endpoint}operations/${operation_id}/advance" # Swapping → Succeeded
 ```
 
 ### 6.3 Region offline / online (PR2)
@@ -332,7 +386,7 @@ An offline region is dropped from the account topology's readable/writable locat
 Sample:
 
 ```bash
-curl -X POST http://127.0.0.1:9090/regions/West%20US/offline
+curl -X POST "${management_endpoint}regions/West%20US/offline"
 ```
 
 ### 6.4 Runtime write-region failover (PR2)
@@ -349,7 +403,7 @@ reflects the new `writableLocations`, and the driver re-routes writes accordingl
 Sample:
 
 ```bash
-curl -X POST http://127.0.0.1:9090/failover \
+curl -X POST "${management_endpoint}failover" \
   -H 'content-type: application/json' \
   -d '{ "writeRegion": "West US" }'
 ```
@@ -380,7 +434,7 @@ taking it fully offline.
 
 ## 7. Rust Public API Surface
 
-This is the surface the host crate consumes, all behind `__internal_in_memory_emulator_host`.
+This is the surface the host crate consumes, all behind `__internal_in_memory_emulator`.
 Items marked **(PR2)** are new primitives introduced in the second PR and are shown here as the
 proposed signatures.
 
@@ -498,8 +552,9 @@ matcher is a **contingency** only if end-to-end validation reveals a gap (ADR-00
 - Add `test_category = "emulator_inmemory"` to the `#[cfg_attr(...)]` gates and ignore messages
   of the existing emulator suites in both crates, preserving intentional legacy-only exclusions.
 - Extend `sdk/cosmos/eng/scripts/Invoke-CosmosTestSetup.ps1` to build and start the host binary
-  with a provisioning config, wait for `GET /health`, then set `AZURE_COSMOS_CONNECTION_STRING`
-  to the hosted endpoint and the `emulator_inmemory` cfg.
+  with a provisioning config, parse the JSON `ready` record from stdout, wait for `GET /health` on
+  the resolved management endpoint, then build `AZURE_COSMOS_CONNECTION_STRING` from the reported
+  `accountEndpoint` and set the `emulator_inmemory` cfg.
 - Add a `ContinueOnError` matrix leg to `sdk/cosmos/ci.yml` modeled on `Cosmos_vnext_emulator`,
   running the **existing** emulator suites against the hosted emulator in **both** Gateway V1 and
   Gateway 2.0 modes. This is the real end-to-end validation of h2c + RNTBD.

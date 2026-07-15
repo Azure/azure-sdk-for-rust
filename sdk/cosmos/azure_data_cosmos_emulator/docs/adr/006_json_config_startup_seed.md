@@ -18,6 +18,11 @@ Seed documents are created through the normal write path — one synthesized cre
 item through `execute_request` — so EPK routing, RU accounting, and replication match
 client-issued writes. The management REST API can further modify state at runtime.
 
+Listener ports are optional configuration hints. Missing values and `0` request OS-assigned ports;
+the runtime endpoint contract is the JSON `ready` record and management account response described
+by ADR-003. Public configuration uses `gateway20` terminology. Literal `thinClient*` names are
+reserved for Cosmos account-topology fields and wire headers.
+
 JSON is the canonical configuration representation. Additional syntaxes may be introduced only as
 parsers that map to the same host-owned configuration model; they must not create a second set of
 configuration semantics.

@@ -14,21 +14,22 @@ exposing large swaths of internal surface.
 
 Add a new `publish = false` binary crate `azure_data_cosmos_emulator` that hosts the emulator.
 The emulator implementation stays in the driver; the driver exposes a small, additional **public**
-surface behind a feature flag (`__internal_in_memory_emulator_host`) that the host crate enables
-automatically through its dependency declaration.
+surface behind the existing `__internal_in_memory_emulator` feature. The host crate enables that
+feature automatically through its dependency declaration.
 
 ## Consequences
 
 The host crate stays thin (CLI, HTTP listeners, config, management API). The emulator keeps full
-access to driver internals. The extra surface is opt-in and clearly non-SemVer (the `__internal_`
-prefix), so stable builds and the public API are unaffected.
+access to driver internals. The externally reachable emulator surface remains opt-in and clearly
+non-SemVer (the `__internal_` prefix), so stable builds are unaffected.
 
 ## Alternatives
 
-- Extracting the emulator into its own library crate was rejected: it would force a large,
   unstable slice of driver internals to become public.
-- Growing the existing test-only feature to cover hosting was rejected: it would entangle
-  in-process test wiring with server-only concerns.
+  internal feature already communicates the same stability boundary. A second feature would add
+  feature-matrix complexity without providing a meaningful compatibility guarantee.
+- Adding a second host-specific feature was rejected because the existing emulator feature already
+  owns this internal surface and the split would add no useful granularity.
 
 ## References
 
