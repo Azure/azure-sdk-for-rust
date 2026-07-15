@@ -362,7 +362,7 @@ async fn all_regions_403_1008_bounded_retries_then_bubble_up() {
     seed_item_via_driver(&driver, "all-stale-item").await;
     recorder.clear();
 
-    // Timeout is the runaway-loop guard for the 120-attempt backend-failover budget.
+    // Timeout is the runaway-loop guard for the backend-failover budget.
     let result = tokio::time::timeout(
         Duration::from_secs(180),
         read_item(&driver, "all-stale-item"),
@@ -516,7 +516,7 @@ async fn all_regions_403_3_bounded_retries_then_bubble_up() {
 
     recorder.clear();
 
-    // Timeout is the runaway-loop guard for the 120-attempt backend-failover budget.
+    // Timeout is the runaway-loop guard for the backend-failover budget.
     let result = tokio::time::timeout(
         Duration::from_secs(180),
         create_item(&driver, "403-3-all-forbidden-item"),
@@ -715,7 +715,7 @@ async fn write_403_3_retry_honors_excluded_region() {
     let mut opts = OperationOptions::default();
     opts.excluded_regions = Some(ExcludedRegions::from_iter([Region::WEST_US]));
 
-    // Timeout leaves headroom for the 120-attempt backend-failover budget.
+    // Timeout leaves headroom for the backend-failover budget.
     let result = tokio::time::timeout(
         std::time::Duration::from_secs(180),
         driver.execute_operation(op, opts),
@@ -773,7 +773,7 @@ async fn create_item_403_1008_retry_honors_excluded_region() {
     let mut opts = OperationOptions::default();
     opts.excluded_regions = Some(ExcludedRegions::from_iter([Region::WEST_US]));
 
-    // Exponential backend-failover backoff is bounded by the ~120s cumulative
+    // Exponential backend-failover backoff is bounded by the 5s cumulative
     // delay budget; 180s leaves CI headroom for jitter and per-attempt latency.
     let result = tokio::time::timeout(
         std::time::Duration::from_secs(180),
@@ -835,7 +835,7 @@ async fn metadata_refresh_ignores_excluded_regions() {
     // Exclude East — the same region that hosts the global bootstrap endpoint.
     opts.excluded_regions = Some(ExcludedRegions::from_iter([Region::EAST_US]));
 
-    // Exponential backend-failover backoff is bounded by the ~120s cumulative
+    // Exponential backend-failover backoff is bounded by the 5s cumulative
     // delay budget on bubble-up; 180s leaves CI headroom.
     let result = tokio::time::timeout(
         std::time::Duration::from_secs(180),

@@ -51,13 +51,19 @@ These are deterministic client errors. No retry will change the outcome.
 
 | Substatus | Meaning | Action | Budget (multi-write) | Budget (single-write) |
 |-----------|---------|--------|----------------------|-----------------------|
-| 3 | `WriteForbidden` — region is not currently a valid write region for this partition (writes only) | Refresh account topology + cross-region failover retry | **120** attempts × **1000 ms** delay (dedicated `backend_failover_retry_count`) | 3 attempts × 0 ms delay (shared generic budget) |
-| 1008 | `DatabaseAccountNotFound` — region no longer owns this account (all op types, including reads, writes, queries, feed-range queries, metadata) | Refresh account topology + cross-region failover retry | **120** attempts × **1000 ms** delay (dedicated `backend_failover_retry_count`) | **120** attempts × **1000 ms** delay (dedicated `backend_failover_retry_count`) |
+| 3 | `WriteForbidden` — region is not currently a valid write region for this partition (writes only) | Refresh account topology + cross-region failover retry | **5s cumulative delay** with exponential backoff and jitter (dedicated backend-failover state) | **5s cumulative delay** with exponential backoff and jitter (dedicated backend-failover state) |
+| 1008 | `DatabaseAccountNotFound` — region no longer owns this account (all op types, including reads, writes, queries, feed-range queries, metadata) | Refresh account topology + cross-region failover retry | **5s cumulative delay** with exponential backoff and jitter (dedicated backend-failover state) | **5s cumulative delay** with exponential backoff and jitter (dedicated backend-failover state) |
 | Other | Permission denied | Abort | — | — |
 
 Both 403/3 and 403/1008 signal that the cached topology in the SDK has diverged from the backend's current routing — typically during a backend-initiated failover or a customer-initiated topology change. On each retry the driver requests `LocationEffect::RefreshAccountProperties` so the next attempt routes against the freshly learned region set. The metadata refresh itself is rate-limited (at most one network fetch per `refresh_interval`, default 5 s) and is independent of the caller's `excluded_regions` — the GetDatabaseAccount probe iterates the global endpoint and the cached `readable_locations` regardless of the operation-level exclusion list, because excluding a region from data-plane routing should not blind the SDK to topology changes happening in that region.
 
-**Why a dedicated 120-attempt × 1s budget on multi-write?** The 3-attempt generic failover budget is exhausted long before the backend's topology change finishes propagating, turning a recoverable convergence window into a hard application-visible failure. 120 attempts × 1 s ≈ 2 minutes of bounded retries gives the backend time to settle while still guaranteeing eventual bubble-up. Without the delay, the SDK hot-loops 120 cross-region requests in well under a second — faster than the backend convergence window it is reacting to. Exponential backoff was rejected because the bound is already short, the signal is a topology change rather than a load spike, and growth would push worst-case wall time into the 10-minute range.
+**Why a dedicated 5s cumulative budget?** The 3-attempt generic failover budget can be exhausted before the refreshed topology becomes usable, turning a recoverable convergence window into an application-visible failure. The dedicated policy starts at 1 s, doubles on each retry, applies ±25% jitter, and caps each delay at 15 s. The final delay is truncated to the remaining cumulative budget, and a 10-attempt cap is retained as a defensive bound. This provides fast early retries without hot-looping cross-region requests while the topology settles.
+
+Live add/remove-region experiments across 2–10 physical partitions and 8–38 GB showed the SDK-visible transition completing in 263–314 ms with no surfaced topology errors. A follow-up read experiment completed the transition in 263 ms with 0 surfaced errors across 1,257 point reads.
+
+For single-write `403/3`, a real failover with the generic three-retry policy surfaced 9 application errors during a ~4.8 s convergence window. Repeating failovers with 15s, 10s, and 5s backend budgets each surfaced 0 application errors. The 5s run observed 12 internal `403/3` responses across 401 writes; its longest operation succeeded after 6.35 s including request and refresh overhead.
+
+Persistent fault injection exhausted the 5s budget in three retries (four total attempts) and approximately 6.65–6.81 s wall time, including request and refresh overhead.
 
 #### `excluded_regions` interaction
 
@@ -220,9 +226,8 @@ Without PPCB, the driver marks entire endpoints as unavailable when errors occur
 |-------|--------|-------|
 | Transport (429) | 9 attempts or 30s | Per-request, local only |
 | Operation failover (generic — 5xx, 408, 410, transport) | 3 attempts | Per-operation, cross-region |
-| Backend-failover (403/1008) — single-write and multi-write | **120 attempts × 1000 ms** | Per-operation, cross-region |
-| Backend-failover (403/3) — multi-write | **120 attempts × 1000 ms** | Per-operation, cross-region |
-| Backend-failover (403/3) — single-write | 3 attempts × 0 ms (generic) | Per-operation, cross-region |
+| Backend-failover (403/1008) — single-write and multi-write | **5s cumulative delay**, exponential backoff + jitter | Per-operation, cross-region |
+| Backend-failover (403/3) — single-write and multi-write | **5s cumulative delay**, exponential backoff + jitter | Per-operation, cross-region |
 | Session retry (404/1002) | 2 (single-write) or `preferred_endpoints.len()` (multi-write) | Per-operation |
 
 ## Comparison with Other SDKs
@@ -239,4 +244,3 @@ Without PPCB, the driver marks entire endpoints as unavailable when errors occur
 | PPCB | Yes | Yes | Yes | **Yes** |
 
 The Rust driver is intentionally more aggressive about retrying writes. This is a deliberate design choice for maximum availability, leveraging Cosmos DB's conflict detection and the use of Etags as the safety net for duplicates and idempotency concerns.
-

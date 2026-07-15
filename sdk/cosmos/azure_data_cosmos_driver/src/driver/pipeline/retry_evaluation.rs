@@ -509,7 +509,7 @@ fn dtx_infra_retry_delay(attempt: u32) -> std::time::Duration {
 /// effects to (a) refresh account properties so the new write region is
 /// learned, (b) mark this endpoint unavailable, and (c) mark this partition
 /// unavailable in the current (read) region for write traffic. Multi-write
-/// paces retries with exponential backoff bounded by the ~2 min budget.
+/// paces retries with exponential backoff bounded by the 5s budget.
 ///
 /// **Hub-region discovery branch.** When the
 /// `hub_region_processing_only` latch is active on a read with a known
@@ -587,23 +587,12 @@ fn try_handle_write_forbidden(
         ));
     }
 
-    // Multi-write 403/3 gets the exponential backend-failover backoff;
-    // single-write uses the generic budget.
-    let (new_state, delay) = if retry_state.can_use_multiple_write_locations {
-        if !retry_state.can_retry_backend_failover() {
-            return None;
-        }
-        let delay = retry_state.backend_failover_delay();
-        (
-            retry_state.clone().advance_backend_failover(delay),
-            Some(delay),
-        )
-    } else {
-        if !retry_state.can_retry_failover() {
-            return None;
-        }
-        (retry_state.clone().advance_failover(), None)
-    };
+    if !retry_state.can_retry_backend_failover() {
+        return None;
+    }
+    let delay = retry_state.backend_failover_delay();
+    let new_state = retry_state.clone().advance_backend_failover(delay);
+    let delay = Some(delay);
 
     let mut effects = vec![
         LocationEffect::RefreshAccountProperties,
@@ -627,7 +616,7 @@ fn try_handle_write_forbidden(
 /// Handles 403/1008 DatabaseAccountNotFound for all operation types.
 ///
 /// The region no longer owns the account; refresh topology and fail over with
-/// exponential backoff bounded by the ~2 min backend-failover budget.
+/// exponential backoff bounded by the 5s backend-failover budget.
 fn try_handle_database_account_not_found(
     operation: &CosmosOperation,
     endpoint: &CosmosEndpoint,
@@ -1931,7 +1920,7 @@ mod tests {
         // backend-failover budget rather than the generic one.
         let mut state = OperationRetryState::initial(0, true, Vec::new(), 3, 1);
         // Drive the backend-failover counter directly to the cap rather than
-        // looping 120× through `advance_backend_failover`.
+        // looping through `advance_backend_failover`.
         state.backend_failover_retry_count = state.max_backend_failover_retries;
         let endpoint = CosmosEndpoint::global(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
@@ -2023,7 +2012,7 @@ mod tests {
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
         );
 
-        for _ in 0..6 {
+        loop {
             let (action, _effects) = evaluate_transport_result(
                 &op,
                 &endpoint,
@@ -2038,10 +2027,19 @@ mod tests {
                     assert_within_backoff_cap(delay);
                     state = new_state;
                 }
-                other => panic!("expected paced FailoverRetry, got {other:?}"),
+                OperationAction::Abort { .. } => break,
+                other => panic!("expected paced FailoverRetry or Abort, got {other:?}"),
             }
         }
-        assert_eq!(state.backend_failover_retry_count, 6);
+        assert_eq!(
+            state.backend_failover_cumulative_delay,
+            BACKEND_FAILOVER_MAX_TOTAL_DELAY
+        );
+        assert!(
+            state.backend_failover_retry_count == 3,
+            "5s budget should be exhausted in 3 retries, got {}",
+            state.backend_failover_retry_count
+        );
     }
 
     #[test]
@@ -2116,8 +2114,7 @@ mod tests {
     }
 
     #[test]
-    fn write_forbidden_on_single_write_uses_generic_failover_budget() {
-        // Single-write 403/3 uses the generic budget, not the multi-write rotation budget.
+    fn write_forbidden_on_single_write_uses_backend_failover_budget() {
         let op = make_create_operation();
         let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
         let endpoint = CosmosEndpoint::global(
@@ -2133,20 +2130,23 @@ mod tests {
 
         match action {
             OperationAction::FailoverRetry { new_state, delay } => {
-                assert_eq!(new_state.failover_retry_count, 1);
-                assert_eq!(new_state.backend_failover_retry_count, 0);
-                assert_eq!(
-                    delay, None,
-                    "single-write 403/3 uses the generic budget and must not pace retries"
+                assert_eq!(new_state.failover_retry_count, 0);
+                assert_eq!(new_state.backend_failover_retry_count, 1);
+                let delay =
+                    delay.expect("single-write 403/3 must pace retries with a backoff delay");
+                let (lo, hi) = first_backend_failover_delay_bounds();
+                assert!(
+                    delay >= lo && delay <= hi,
+                    "single-write 403/3 first retry must use ~1s exponential base (jittered), got {delay:?}"
                 );
+                assert_eq!(new_state.backend_failover_cumulative_delay, delay);
             }
             other => panic!("expected FailoverRetry, got {:?}", other),
         }
     }
 
     #[test]
-    fn write_forbidden_on_single_write_aborts_when_generic_budget_exhausted() {
-        // Single-write 403/3 must bubble up once the generic budget is exhausted.
+    fn write_forbidden_on_single_write_ignores_exhausted_generic_budget() {
         let op = make_create_operation();
         let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
         state.failover_retry_count = state.max_failover_retries;
@@ -2161,11 +2161,33 @@ mod tests {
             &state,
         );
 
-        assert!(
-            matches!(action, OperationAction::Abort { .. }),
-            "single-write 403/3 must abort once generic failover budget is exhausted, got {:?}",
-            action
+        match action {
+            OperationAction::FailoverRetry { new_state, delay } => {
+                assert_eq!(new_state.failover_retry_count, state.max_failover_retries);
+                assert_eq!(new_state.backend_failover_retry_count, 1);
+                assert!(delay.is_some());
+            }
+            other => panic!("expected backend FailoverRetry, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn write_forbidden_on_single_write_aborts_when_backend_budget_exhausted() {
+        let op = make_create_operation();
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        state.backend_failover_cumulative_delay = BACKEND_FAILOVER_MAX_TOTAL_DELAY;
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
         );
+
+        let (action, _effects) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            &state,
+        );
+
+        assert!(matches!(action, OperationAction::Abort { .. }));
     }
 
     #[test]

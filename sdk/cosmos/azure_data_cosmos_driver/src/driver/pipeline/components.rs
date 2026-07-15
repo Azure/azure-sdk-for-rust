@@ -75,9 +75,9 @@ impl std::fmt::Display for RoutingDecision {
 ///
 /// Retries are normally bounded by [`BACKEND_FAILOVER_MAX_TOTAL_DELAY`]; this
 /// count is a defensive upper bound so a pathological run can't loop
-/// unbounded. Sized with generous headroom above the ~2 min budget even when
+/// unbounded. Sized with generous headroom above the 5s budget even when
 /// jitter shrinks individual delays.
-pub const MAX_BACKEND_FAILOVER_RETRIES: u32 = 40;
+pub const MAX_BACKEND_FAILOVER_RETRIES: u32 = 10;
 
 /// Base delay for the first backend-failover retry. Matches the previous fixed
 /// 1000ms cadence, which now becomes the starting point of exponential growth.
@@ -92,9 +92,8 @@ pub const BACKEND_FAILOVER_MAX_BACKOFF: Duration = Duration::from_secs(15);
 /// Symmetric jitter band applied to each backend-failover delay (±25%).
 pub const BACKEND_FAILOVER_JITTER_RATIO: f64 = 0.25;
 
-/// Cumulative delay budget for backend-failover retries; keeps the historical
-/// ~2 min total-time budget while the topology change settles.
-pub const BACKEND_FAILOVER_MAX_TOTAL_DELAY: Duration = Duration::from_secs(120);
+/// Cumulative delay budget for backend-failover retries.
+pub const BACKEND_FAILOVER_MAX_TOTAL_DELAY: Duration = Duration::from_secs(5);
 
 /// Maximum exponent for the backend-failover backoff, guarding against
 /// overflow before the per-retry cap is applied.
@@ -152,7 +151,7 @@ pub(crate) struct OperationRetryState {
     /// Cumulative delay already scheduled across backend-failover retries.
     ///
     /// Gates further 403/3 & 403/1008 retries against
-    /// [`BACKEND_FAILOVER_MAX_TOTAL_DELAY`] so the ~2 min budget holds
+    /// [`BACKEND_FAILOVER_MAX_TOTAL_DELAY`] so the 5s budget holds
     /// regardless of the exponential-backoff curve.
     pub backend_failover_cumulative_delay: Duration,
     /// Bodyless DTX coordinator retry counter.
@@ -1028,7 +1027,8 @@ mod tests {
 
     #[test]
     fn backend_failover_delay_grows_exponentially_then_caps() {
-        // Jittered bands for base 1s, factor 2, per-retry cap 15s, jitter ±25%.
+        // Jittered bands for base 1s and factor 2. The 5s cumulative budget
+        // takes precedence once the exponential delay reaches it.
         let cases = [
             (
                 0u32,
@@ -1037,18 +1037,9 @@ mod tests {
             ),
             (1, Duration::from_millis(1500), Duration::from_millis(2500)),
             (2, Duration::from_millis(3000), Duration::from_millis(5000)),
-            (3, Duration::from_millis(6000), Duration::from_millis(10000)),
-            // 2^4 = 16s exceeds the 15s cap, so this and all later attempts cap.
-            (
-                4,
-                Duration::from_millis(11250),
-                Duration::from_millis(18750),
-            ),
-            (
-                10,
-                Duration::from_millis(11250),
-                Duration::from_millis(18750),
-            ),
+            (3, Duration::from_secs(5), Duration::from_secs(5)),
+            (4, Duration::from_secs(5), Duration::from_secs(5)),
+            (10, Duration::from_secs(5), Duration::from_secs(5)),
         ];
         for (count, lo, hi) in cases {
             let mut state = OperationRetryState::initial(0, true, Vec::new(), 3, 1);
