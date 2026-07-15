@@ -8,7 +8,9 @@ use async_lock::OnceCell;
 
 use azure_data_cosmos_driver::driver::{CosmosDriverRuntime, CosmosDriverRuntimeBuilder};
 
-use crate::options::{ConnectionPoolOptions, OperationOptions, UserAgentSuffix};
+use crate::options::{
+    ConnectionPoolOptions, DiagnosticsOptions, OperationOptions, UserAgentSuffix,
+};
 
 /// Shared runtime for one or more [`CosmosClient`](crate::CosmosClient) instances.
 ///
@@ -21,6 +23,8 @@ use crate::options::{ConnectionPoolOptions, OperationOptions, UserAgentSuffix};
 ///   to different accounts and wish to share some common [`OperationOptions`] between them ([`CosmosRuntimeBuilder::with_default_operation_options`]).
 /// * You need to modify connection pool options, such as connect timeouts, or allowing insecure TLS connections to the emulator
 ///   ([`CosmosRuntimeBuilder::with_connection_pool`])
+/// * You need to modify diagnostics output options such as the default verbosity
+///   ([`CosmosRuntimeBuilder::with_diagnostics_options`])
 #[derive(Clone, Debug)]
 pub struct CosmosRuntime(Arc<CosmosDriverRuntime>);
 
@@ -81,6 +85,12 @@ impl CosmosRuntimeBuilder {
     /// allowance, and emulator certificate-validation behavior.
     pub fn with_connection_pool(mut self, options: ConnectionPoolOptions) -> Self {
         self.0 = self.0.with_connection_pool(options);
+        self
+    }
+
+    /// Configures diagnostics output options for clients using this runtime.
+    pub fn with_diagnostics_options(mut self, options: DiagnosticsOptions) -> Self {
+        self.0 = self.0.with_diagnostics_options(options);
         self
     }
 
@@ -147,6 +157,7 @@ impl From<CosmosDriverRuntimeBuilder> for CosmosRuntimeBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::options::DiagnosticsVerbosity;
 
     #[tokio::test]
     async fn global_returns_same_runtime_across_calls() {
@@ -155,6 +166,25 @@ mod tests {
         assert!(
             Arc::ptr_eq(&a.0, &b.0),
             "global() must return the same Arc on repeated calls"
+        );
+    }
+
+    #[tokio::test]
+    async fn diagnostics_options_are_forwarded_to_driver_runtime() {
+        let diagnostics = DiagnosticsOptions::builder()
+            .with_default_verbosity(DiagnosticsVerbosity::Detailed)
+            .build()
+            .unwrap();
+
+        let runtime = CosmosRuntimeBuilder::new()
+            .with_diagnostics_options(diagnostics)
+            .build()
+            .await
+            .unwrap();
+
+        assert_eq!(
+            runtime.0.diagnostics_options().default_verbosity(),
+            DiagnosticsVerbosity::Detailed
         );
     }
 

@@ -168,6 +168,21 @@ impl PartitionKeyRangeCache {
             .try_lookup(container, force_refresh, fetch_pk_ranges)
             .await?;
 
+        if epk_range.start == epk_range.end {
+            // Point range (equality / `IN` predicate resolves to the single EPK
+            // `X`). `get_overlapping_ranges` treats `X..X` as an empty
+            // `std::ops::Range` and misses the owning partition when `X` sits on
+            // a partition's lower boundary. Resolve via the boundary-correct
+            // point lookup instead (mirrors `resolve_partition_key_range_ids`).
+            return Some(
+                routing_map
+                    .get_range_by_effective_partition_key(epk_range.start)
+                    .cloned()
+                    .into_iter()
+                    .collect(),
+            );
+        }
+
         Some(
             routing_map
                 .get_overlapping_ranges(epk_range)
@@ -814,6 +829,36 @@ mod tests {
         for r in &ranges {
             assert!(!r.id.is_empty());
         }
+    }
+
+    #[tokio::test]
+    async fn resolve_overlapping_ranges_point_resolves_to_owning_partition_including_boundary() {
+        // Option B (issues #4574 / #4638): an equality / `IN` predicate yields a
+        // *point* EPK range `X..X`. `get_overlapping_ranges` treats that as an
+        // empty `std::ops::Range` and misses the owning partition when `X` sits
+        // on a partition's lower boundary, so `resolve_overlapping_ranges` must
+        // route points through the boundary-correct point lookup instead.
+        let cache = PartitionKeyRangeCache::new();
+        let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
+
+        // Point strictly inside range "0" ["", "80").
+        let inside = EffectivePartitionKey::from("40");
+        let ranges = cache
+            .resolve_overlapping_ranges(&container, &inside..&inside, false, two_range_fetch)
+            .await
+            .unwrap();
+        assert_eq!(ranges.len(), 1);
+        assert_eq!(ranges[0].id, "0");
+
+        // Point exactly on the boundary "80" == range "1".min_inclusive. This is
+        // the case `get_overlapping_ranges(X..X)` would miss (returns empty).
+        let boundary = EffectivePartitionKey::from("80");
+        let ranges = cache
+            .resolve_overlapping_ranges(&container, &boundary..&boundary, false, two_range_fetch)
+            .await
+            .unwrap();
+        assert_eq!(ranges.len(), 1);
+        assert_eq!(ranges[0].id, "1");
     }
 
     #[tokio::test]

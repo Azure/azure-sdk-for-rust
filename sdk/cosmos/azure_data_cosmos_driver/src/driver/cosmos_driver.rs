@@ -106,6 +106,7 @@ use super::{
         connectivity_probe::{ConnectivityProbe, Http2ConnectivityProbe},
         cosmos_headers,
         cosmos_transport_client::HttpRequest,
+        ensure_endpoint_scheme_allowed,
         http_client_factory::HttpClientConfig,
         request_signing, AuthorizationContext, CosmosTransport,
     },
@@ -567,7 +568,7 @@ impl CosmosDriver {
     ) -> (DiagnosticsContextBuilder, TransportSecurity) {
         let mut diagnostics = DiagnosticsContextBuilder::new(
             activity_id,
-            Arc::new(crate::options::DiagnosticsOptions::default()),
+            Arc::clone(runtime.diagnostics_options_arc()),
         );
         diagnostics.set_cpu_monitor(runtime.cpu_monitor().clone());
         diagnostics.set_machine_id(Arc::clone(runtime.machine_id()));
@@ -1256,6 +1257,14 @@ impl CosmosDriver {
     ) -> crate::error::Result<Self> {
         let account = options.account().clone();
         let account_endpoint = AccountEndpoint::from(&account);
+
+        // Reject plaintext http:// endpoints unless they point to an emulator host.
+        // Validate the primary endpoint and every backup endpoint before any I/O.
+        ensure_endpoint_scheme_allowed(&account_endpoint)?;
+        for backup in account.backup_endpoints() {
+            ensure_endpoint_scheme_allowed(&AccountEndpoint::from(backup.clone()))?;
+        }
+
         let default_endpoint = CosmosEndpoint::global(account.endpoint().clone());
 
         // Per-driver User-Agent: compute the cross-SDK feature flags advertised
@@ -1373,7 +1382,7 @@ impl CosmosDriver {
         // all regions unless every probe returns 200. The probe shares the
         // data plane's Gateway 2.0 HTTP/2 config so it negotiates the same
         // protocol the real traffic uses. Skip building it entirely when
-        // HTTP/2 is unavailable (the one hard Gateway 2.0 prerequisite);
+        // Gateway 2.0 is explicitly disabled or HTTP/2 is unavailable;
         // otherwise the store still no-ops the probe when the account
         // advertises no thin-client endpoints.
         let connectivity_probe: Option<Arc<dyn ConnectivityProbe>> =
@@ -1470,6 +1479,38 @@ impl CosmosDriver {
     /// Returns the account reference.
     pub fn account(&self) -> &AccountReference {
         self.options.account()
+    }
+
+    /// **Internal test hook -- not part of the public API.**
+    ///
+    /// Returns cached writable and readable account regions. The in-memory
+    /// emulator comparison tests use this to pin a live multi-region account
+    /// to one hub region via default `ExcludedRegions`. It does not fetch
+    /// account metadata; callers should use it after the driver has been
+    /// initialized.
+    ///
+    /// **Do not call from production code.** Available only because
+    /// integration tests live outside the crate and cannot reach the account
+    /// metadata cache directly. May be changed or removed at any time without
+    /// a semver bump.
+    #[cfg(any(test, feature = "__internal_in_memory_emulator"))]
+    #[doc(hidden)]
+    pub async fn cached_account_regions_for_testing(
+        &self,
+    ) -> Option<(Vec<crate::options::Region>, Vec<crate::options::Region>)> {
+        let endpoint = AccountEndpoint::from(self.options.account());
+        let props = self.runtime.account_metadata_cache().get(&endpoint).await?;
+        let writable = props
+            .writable_locations
+            .iter()
+            .map(|location| location.name.clone())
+            .collect();
+        let readable = props
+            .readable_locations
+            .iter()
+            .map(|location| location.name.clone())
+            .collect();
+        Some((writable, readable))
     }
 
     /// Returns the runtime.

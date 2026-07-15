@@ -1619,7 +1619,6 @@ impl DiagnosticsContextBuilder {
 /// - **Summary**: Optimized for size constraints, deduplicates similar requests
 /// - **Detailed**: Full information about every request
 #[non_exhaustive]
-#[derive(Debug)]
 pub struct DiagnosticsContext {
     /// Operation-level activity ID.
     activity_id: ActivityId,
@@ -1980,6 +1979,12 @@ impl PartialEq for DiagnosticsContext {
 
 impl Eq for DiagnosticsContext {}
 
+impl std::fmt::Debug for DiagnosticsContext {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.to_json_string(Some(DiagnosticsVerbosity::Default)))
+    }
+}
+
 impl std::fmt::Display for DiagnosticsContext {
     /// `{ctx}` — one-line summary suitable for `tracing` fields and log
     /// lines: `activity=… duration=…ms requests=N charge=…RU [status=…]`.
@@ -2106,6 +2111,17 @@ mod tests {
         Arc::new(DiagnosticsOptions::default())
     }
 
+    fn make_options_with_default_verbosity(
+        verbosity: DiagnosticsVerbosity,
+    ) -> Arc<DiagnosticsOptions> {
+        Arc::new(
+            DiagnosticsOptions::builder()
+                .with_default_verbosity(verbosity)
+                .build()
+                .unwrap(),
+        )
+    }
+
     /// Helper to create a completed DiagnosticsContext from a builder.
     fn make_context_with<F>(activity_id: ActivityId, f: F) -> DiagnosticsContext
     where
@@ -2217,6 +2233,24 @@ mod tests {
         }
 
         value
+    }
+
+    fn assert_no_rust_debug_internals(rendered: &str) {
+        for leaked in [
+            "DiagnosticsContext {",
+            "RequestDiagnostics {",
+            "RequestEvent {",
+            "Instant {",
+            "CpuMemoryMonitorInner",
+            "RwLock {",
+            "OnceLock(",
+            "cached_json",
+        ] {
+            assert!(
+                !rendered.contains(leaked),
+                "diagnostics Debug output must be JSON, not a Rust Debug dump containing `{leaked}`:\n{rendered}"
+            );
+        }
     }
 
     #[test]
@@ -2588,6 +2622,146 @@ mod tests {
             }]
         });
         assert_eq!(actual, expected, "Summary JSON mismatch.\nActual:\n{json}");
+    }
+
+    #[test]
+    fn debug_renders_summary_json() {
+        let mut builder = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("debug-json-test".to_string()),
+            make_options(),
+        );
+        builder.set_cpu_monitor(CpuMemoryMonitor::get_or_init(Duration::from_secs(5)));
+        builder.set_test_system_usage(SystemUsageSnapshot::new_for_test(
+            vec!["(12.3%)".to_string()],
+            Some(2048),
+            16,
+            true,
+        ));
+        builder.set_machine_id(Arc::new("uuid_debug-json-machine".to_string()));
+        builder.set_operation_status(
+            StatusCode::ServiceUnavailable,
+            Some(SubStatusCode::TRANSPORT_GENERATED_503),
+        );
+        let handle = builder.start_test_request(
+            ExecutionContext::Initial,
+            Some(Region::EAST_US_2),
+            "https://test.eastus2.documents.azure.com",
+        );
+        builder.add_event(handle, RequestEvent::new(RequestEventType::TransportStart));
+        builder.add_event(
+            handle,
+            RequestEvent::new(RequestEventType::TransportFailed)
+                .with_details("transport failed with quoted value: \"timeout\""),
+        );
+        builder.set_transport_shard(
+            handle,
+            TransportShardDiagnostics::new(1, 2, 3, 4, 5, 6, true),
+        );
+        builder.add_failed_transport_shard(
+            handle,
+            FailedTransportShardDiagnostics::new(
+                TransportShardDiagnostics::new(2, 3, 4, 5, 6, 7, false),
+                RequestSentStatus::Unknown,
+                "previous shard failed",
+            ),
+        );
+        builder.increment_local_shard_retry_count(handle);
+        builder.fail_transport_request(
+            handle,
+            "503/20011: error sending request for url (https://test.eastus2.documents.azure.com/dbs/db/colls/coll/docs)",
+            RequestSentStatus::Unknown,
+            CosmosStatus::TRANSPORT_GENERATED_503,
+        );
+        let ctx = builder.complete();
+
+        let rendered = format!("{ctx:?}");
+        assert_eq!(
+            rendered,
+            ctx.to_json_string(Some(DiagnosticsVerbosity::Default)),
+            "DiagnosticsContext Debug must stay delegated to default JSON"
+        );
+        let actual = normalize_diagnostics_json(&rendered);
+        let expected: serde_json::Value = serde_json::json!({
+            "activity_id": "debug-json-test",
+            "total_duration_ms": 0,
+            "total_request_charge": 0.0,
+            "request_count": 1,
+            "system_usage": {
+                "cpu": {
+                    "samples": ["(12.3%)"],
+                    "status": "available"
+                },
+                "memory_available_mb": 2048,
+                "processor_count": 16,
+                "cpu_overloaded": true
+            },
+            "machine_id": "uuid_debug-json-machine",
+            "regions": [{
+                "region": "eastus2",
+                "request_count": 1,
+                "total_request_charge": 0.0,
+                "first": {
+                    "execution_context": "initial",
+                    "endpoint": "https://test.eastus2.documents.azure.com/",
+                    "status": "503/20003 (TransportGenerated503)",
+                    "request_charge": 0.0,
+                    "duration_ms": 0,
+                    "timed_out": false
+                },
+                "last": null,
+                "deduplicated_groups": []
+            }]
+        });
+
+        assert_eq!(
+            actual, expected,
+            "Debug JSON mismatch.\nActual:\n{rendered}"
+        );
+        assert_no_rust_debug_internals(&rendered);
+
+        let alternate_rendered = format!("{ctx:#?}");
+        assert_eq!(
+            serde_json::from_str::<serde_json::Value>(&alternate_rendered).unwrap(),
+            serde_json::from_str::<serde_json::Value>(
+                ctx.to_json_string(Some(DiagnosticsVerbosity::Summary))
+            )
+            .unwrap(),
+            "alternate Debug must also render valid summary diagnostics JSON"
+        );
+        assert_no_rust_debug_internals(&alternate_rendered);
+    }
+
+    #[test]
+    fn debug_honors_configured_detailed_default_verbosity() {
+        let mut builder = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("debug-detailed-default".to_string()),
+            make_options_with_default_verbosity(DiagnosticsVerbosity::Detailed),
+        );
+        let handle = builder.start_test_request(
+            ExecutionContext::Initial,
+            Some(Region::WEST_US_2),
+            "https://test.documents.azure.com",
+        );
+        builder.complete_request(handle, StatusCode::Ok, None);
+        let ctx = builder.complete();
+
+        let rendered = format!("{ctx:?}");
+        assert_eq!(
+            rendered,
+            ctx.to_json_string(Some(DiagnosticsVerbosity::Default)),
+            "DiagnosticsContext Debug must use the configured default verbosity"
+        );
+        assert_eq!(
+            rendered,
+            ctx.to_json_string(Some(DiagnosticsVerbosity::Detailed)),
+            "configured default verbosity should allow Detailed Debug JSON"
+        );
+        let value: serde_json::Value = serde_json::from_str(&rendered).unwrap();
+        assert!(
+            value.get("requests").and_then(|v| v.as_array()).is_some(),
+            "detailed diagnostics JSON must include the requests array: {rendered}"
+        );
+        assert_no_rust_debug_internals(&rendered);
     }
 
     #[test]

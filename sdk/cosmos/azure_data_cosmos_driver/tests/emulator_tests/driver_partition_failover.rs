@@ -80,7 +80,7 @@ pub async fn pkrange_fetch_503_falls_back_gracefully_to_data_operation(
             // Create an item — succeeds even though pkrange pre-resolution is failing.
             let item_json = br#"{"id": "pkrange-fallback-1", "pk": "pk1", "value": "test"}"#;
             context
-                .create_item(&container, "pkrange-fallback-1", "pk1", item_json)
+                .create_seed_item(&container, "pkrange-fallback-1", "pk1", item_json)
                 .await
                 .expect("CreateItem must succeed even when pkrange metadata fetch returns 503");
 
@@ -153,7 +153,7 @@ pub async fn pkrange_fetch_transient_failure_then_recovers() -> Result<(), Box<d
                 let body =
                     format!(r#"{{"id": "pkrange-transient-{i}", "pk": "pk1", "value": "test"}}"#);
                 context
-                    .create_item(
+                    .create_seed_item(
                         &container,
                         &format!("pkrange-transient-{i}"),
                         "pk1",
@@ -226,7 +226,7 @@ pub async fn partition_split_on_read_retries_and_succeeds() -> Result<(), Box<dy
         // Seed an item (no fault on writes — rule only targets ReadItem).
         let item_json = br#"{"id": "split-item-1", "pk": "pk1", "value": "test"}"#;
         context
-            .create_item(&container, "split-item-1", "pk1", item_json)
+            .create_seed_item(&container, "split-item-1", "pk1", item_json)
             .await?;
 
         // The first read should hit the 410 and retry, then succeed on the second attempt.
@@ -355,7 +355,7 @@ pub async fn partition_split_on_read_exhausts_retries_and_fails() -> Result<(), 
         // Seed an item (fault only targets reads).
         let item_json = br#"{"id": "split-persistent-1", "pk": "pk1", "value": "test"}"#;
         context
-            .create_item(&container, "split-persistent-1", "pk1", item_json)
+            .create_seed_item(&container, "split-persistent-1", "pk1", item_json)
             .await?;
 
         // With a persistent 410 on all reads, the driver exhausts its retry budget.

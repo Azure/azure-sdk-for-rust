@@ -7,7 +7,7 @@ use azure_core::credentials::Secret;
 use azure_core::http::{Etag, StatusCode};
 use azure_data_cosmos::diagnostics::{DiagnosticsContext, TransportKind};
 use azure_data_cosmos::models::{
-    ContainerProperties, PartitionKeyDefinition, ThroughputProperties,
+    ContainerProperties, PartitionKeyDefinition, PartitionKeyVersion, ThroughputProperties,
 };
 use azure_data_cosmos::options::{
     CreateContainerOptions, ItemReadOptions, ItemWriteOptions, MaxItemCountHint,
@@ -18,9 +18,14 @@ use azure_data_cosmos::{
     AccountEndpoint, AccountReference, CosmosClient, FeedScope, Query, RoutingStrategy,
     SubStatusCode, TransactionalBatch,
 };
-use futures::StreamExt;
+use azure_data_cosmos_driver::{
+    models::{AccountReference as DriverAccountReference, CosmosOperation, DatabaseReference},
+    options::OperationOptions,
+    CosmosDriverRuntime, DriverOptions,
+};
+use futures::{FutureExt, StreamExt};
 use serde::{Deserialize, Serialize};
-use std::num::NonZeroU32;
+use std::{num::NonZeroU32, panic::AssertUnwindSafe};
 
 fn read_env(name: &str) -> Option<String> {
     std::env::var(name).ok().filter(|v| !v.trim().is_empty())
@@ -215,7 +220,80 @@ async fn provision_database_and_container(
     db_client.create_container(properties, None).await?;
     let container_client = wait_for_container_ready(&db_client, &container_name).await?;
 
+    let body = container_client.read(None).await?.into_body().single()?;
+    let raw: serde_json::Value = serde_json::from_slice(&body)?;
+    assert_eq!(
+        raw["partitionKey"]["version"], 2,
+        "the service must return an explicit version for a V2 container"
+    );
+    let properties: ContainerProperties = serde_json::from_slice(&body)?;
+    assert_eq!(
+        properties.partition_key.version(),
+        PartitionKeyVersion::V2,
+        "an explicit V2 service response must deserialize as V2"
+    );
+
     Ok((db_name, container_client))
+}
+
+/// Like [`provision_database_and_container`] but provisions a legacy
+/// **partition key version 1** container by intentionally omitting `version`;
+/// the service interprets a version-less create payload as V1.
+///
+/// V1 containers are the ones that exposed the version-default bug: on read-back
+/// the service omits the `version` field for legacy V1 containers, and Gateway
+/// 2.0 computes the effective partition key client-side, so a V1 container
+/// mis-detected as V2 produced a V2 EPK the proxy could not route.
+async fn provision_v1_container(
+    client: &CosmosClient,
+    endpoint: &str,
+    key: &str,
+    db_name: &str,
+) -> Result<azure_data_cosmos::clients::ContainerClient, Box<dyn std::error::Error>> {
+    let unique = azure_core::Uuid::new_v4();
+    let container_name = format!("gw_v2-test-v1-container-{unique}");
+    let db_client = client.database_client(db_name);
+
+    let account = DriverAccountReference::with_master_key(
+        normalize_gateway_v2_endpoint(endpoint).parse::<url::Url>()?,
+        key.to_string(),
+    );
+    let runtime = CosmosDriverRuntime::builder().build().await?;
+    let driver = runtime
+        .create_driver(DriverOptions::builder(account.clone()).build())
+        .await?;
+    let database = DatabaseReference::from_name(account, db_name.to_string());
+    let body =
+        format!(r#"{{"id":"{container_name}","partitionKey":{{"paths":["/pk"],"kind":"Hash"}}}}"#);
+    let response = driver
+        .execute_singleton_operation(
+            CosmosOperation::create_container(database).with_body(body.into_bytes()),
+            OperationOptions::default(),
+        )
+        .await?;
+    if !response.status().is_success() {
+        return Err(format!(
+            "failed to create version-less V1 container: {}",
+            response.status()
+        )
+        .into());
+    }
+    let container_client = wait_for_container_ready(&db_client, &container_name).await?;
+
+    let body = container_client.read(None).await?.into_body().single()?;
+    let raw: serde_json::Value = serde_json::from_slice(&body)?;
+    assert!(
+        raw["partitionKey"].get("version").is_none(),
+        "the service must omit partitionKey.version when reading a V1 container"
+    );
+    let properties: ContainerProperties = serde_json::from_slice(&body)?;
+    assert_eq!(
+        properties.partition_key.version(),
+        PartitionKeyVersion::V1,
+        "a version-less service response must deserialize as V1"
+    );
+
+    Ok(container_client)
 }
 
 async fn drop_database(client: &CosmosClient, db_name: &str) {
@@ -248,12 +326,29 @@ async fn assert_item_readable_from_region(
     const POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(500);
 
     let client = build_client_for_region(endpoint, key, region.clone()).await?;
-    let container = client
-        .database_client(db_name)
-        .container_client(container_name)
-        .await?;
+    let db_client = client.database_client(db_name);
 
     for attempt in 0..MAX_ATTEMPTS {
+        let container = match db_client.container_client(container_name).await {
+            Ok(container) => container,
+            Err(e)
+                if (e.status().status_code() == StatusCode::NotFound
+                    || (e.status().status_code() == StatusCode::BadRequest
+                        && e.status()
+                            .sub_status()
+                            .is_some_and(|sub_status| sub_status.value() == 13002)))
+                    && attempt + 1 < MAX_ATTEMPTS =>
+            {
+                tokio::time::sleep(POLL_INTERVAL).await;
+                continue;
+            }
+            Err(e) => {
+                return Err(
+                    format!("container resolution from region {region:?} failed: {e}").into(),
+                );
+            }
+        };
+
         match container.read_item(&expected.pk, &expected.id, None).await {
             Ok(read_resp) => {
                 assert_transport_kind(&read_resp.diagnostics(), TransportKind::GatewayV2);
@@ -265,7 +360,11 @@ async fn assert_item_readable_from_region(
                 return Ok(());
             }
             Err(e)
-                if e.status().status_code() == StatusCode::NotFound
+                if (e.status().status_code() == StatusCode::NotFound
+                    || (e.status().status_code() == StatusCode::BadRequest
+                        && e.status()
+                            .sub_status()
+                            .is_some_and(|sub_status| sub_status.value() == 13002)))
                     && attempt + 1 < MAX_ATTEMPTS =>
             {
                 tokio::time::sleep(POLL_INTERVAL).await;
@@ -332,6 +431,105 @@ pub async fn gateway_v2_point_crud_round_trip() -> Result<(), Box<dyn std::error
 
     drop_database(&client, &db_name).await;
     Ok(())
+}
+
+/// Regression test for the partition-key version-default bug: drives a point
+/// CRUD round-trip (create → read → replace → delete) against a legacy
+/// **partition key version 1** container over Gateway 2.0.
+///
+/// Because Gateway 2.0 computes the effective partition key client-side, a V1
+/// container whose read-back definition omits `version` (as the service does
+/// for V1) must be treated as V1 — not V2 — or every point operation mis-routes
+/// and stalls until timeout. This test would fail (timeout / 503) against the
+/// buggy V2-default and passes once absent versions default to V1.
+///
+/// The fixed `gateway_v2` CI account is multi-write and does not route legacy
+/// V1 containers, so this regression runs against the single-writer
+/// `gateway_v2_multi_region` account.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "gateway_v2_multi_region"),
+    ignore = "requires the single-writer Gateway 2.0 account (test_category = \"gateway_v2_multi_region\" + AZURE_COSMOS_GW_V2_MULTI_REGION_ENDPOINT/_KEY)"
+)]
+pub async fn gateway_v2_v1_container_point_crud_round_trip(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let Some((endpoint, key)) = live_credentials() else {
+        return Ok(());
+    };
+
+    let client = build_client(&endpoint, &key).await?;
+    let db_name = format!("gw_v2-test-db-{}", azure_core::Uuid::new_v4());
+    client.create_database(&db_name, None).await?;
+
+    let test_result = AssertUnwindSafe(async {
+        let container = provision_v1_container(&client, &endpoint, &key, &db_name).await?;
+        let pk_value = format!("pk-{}", azure_core::Uuid::new_v4());
+        let item_id = format!("item-{}", azure_core::Uuid::new_v4());
+        let mut item = GwV2TestItem {
+            id: item_id.clone(),
+            pk: pk_value.clone(),
+            value: 1,
+            label: "initial".into(),
+        };
+
+        let create_resp = container
+            .create_item(&pk_value, &item_id, &item, None)
+            .await?;
+        assert_transport_kind(&create_resp.diagnostics(), TransportKind::GatewayV2);
+
+        let read_resp = container.read_item(&pk_value, &item_id, None).await?;
+        assert_transport_kind(&read_resp.diagnostics(), TransportKind::GatewayV2);
+        let read_item: GwV2TestItem = read_resp.into_model()?;
+        assert_eq!(read_item, item, "V1 container read must round-trip");
+
+        item.value = 2;
+        item.label = "updated".into();
+        let replace_resp = container
+            .replace_item(&pk_value, &item_id, &item, None)
+            .await?;
+        assert_transport_kind(&replace_resp.diagnostics(), TransportKind::GatewayV2);
+
+        let reread: GwV2TestItem = container
+            .read_item(&pk_value, &item_id, None)
+            .await?
+            .into_model()?;
+        assert_eq!(reread, item, "replace must be reflected on re-read");
+
+        let delete_resp = container.delete_item(&pk_value, &item_id, None).await?;
+        assert_transport_kind(&delete_resp.diagnostics(), TransportKind::GatewayV2);
+
+        const MAX_DELETE_POLLS: u32 = 20;
+        for attempt in 0..MAX_DELETE_POLLS {
+            match container.read_item(&pk_value, &item_id, None).await {
+                Err(err) if err.status().status_code() == StatusCode::NotFound => return Ok(()),
+                Err(err) => {
+                    return Err(format!(
+                        "expected NotFound after deleting V1 item, got {}",
+                        err.status()
+                    )
+                    .into());
+                }
+                Ok(_) if attempt + 1 < MAX_DELETE_POLLS => {
+                    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+                }
+                Ok(_) => {
+                    return Err(format!(
+                        "V1 item remained readable after {MAX_DELETE_POLLS} delete polls"
+                    )
+                    .into());
+                }
+            }
+        }
+        unreachable!("delete polling loop always returns")
+    })
+    .catch_unwind()
+    .await;
+
+    drop_database(&client, &db_name).await;
+    match test_result {
+        Ok(result) => result,
+        Err(panic) => std::panic::resume_unwind(panic),
+    }
 }
 
 /// Exercises a transactional batch routed through Gateway 2.0.

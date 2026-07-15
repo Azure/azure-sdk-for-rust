@@ -184,6 +184,38 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn resolves_normalized_point_to_owning_partition_including_boundary() {
+        // Issue #4574: an equality / `IN` predicate's closed point `[X, X]` is
+        // normalized to the half-open `[X, successor(X))`, which must resolve to
+        // exactly its owning partition. Topology is split at "80"; a point
+        // inside the right partition and a point exactly at the "80" boundary
+        // both belong to partition "2".
+        let cache = PartitionKeyRangeCache::new();
+        let mut provider = CachedTopologyProvider::new(&cache, make_container(), two_range_fetch);
+
+        let inside_epk = EffectivePartitionKey::from("C0");
+        let inside = FeedRange::new(inside_epk.clone(), inside_epk.successor()).unwrap();
+        let ranges = provider
+            .resolve_ranges(&inside, PartitionRoutingRefresh::ForceRefresh)
+            .await
+            .unwrap();
+        assert_eq!(ranges.len(), 1);
+        assert_eq!(ranges[0].partition_key_range_id, "2");
+
+        let boundary_epk = EffectivePartitionKey::from("80");
+        let at_boundary = FeedRange::new(boundary_epk.clone(), boundary_epk.successor()).unwrap();
+        let ranges = provider
+            .resolve_ranges(&at_boundary, PartitionRoutingRefresh::UseCached)
+            .await
+            .unwrap();
+        assert_eq!(ranges.len(), 1);
+        assert_eq!(
+            ranges[0].partition_key_range_id, "2",
+            "a point at the inclusive lower bound belongs to that partition"
+        );
+    }
+
+    #[tokio::test]
     async fn resolves_single_range_for_full_epk_space() {
         let cache = PartitionKeyRangeCache::new();
         let mut provider =
