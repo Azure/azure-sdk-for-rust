@@ -1,4 +1,4 @@
-# ADR-002 — Model each region as a distinct localhost port
+# ADR-003 — Model each region as a distinct localhost port
 
 **Status:** Accepted
 **Date:** 2026-07-14

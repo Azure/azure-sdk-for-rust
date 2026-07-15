@@ -1,4 +1,4 @@
-# ADR-003 — Support cleartext HTTP/2 for local emulator endpoints
+# ADR-004 — Support cleartext HTTP/2 for local emulator endpoints
 
 **Status:** Accepted
 **Date:** 2026-07-14
@@ -25,7 +25,7 @@ traffic uses HTTP/2 or falls back to HTTP/1.1.
 
 Gateway 2.0 can be exercised locally without certificates. Plaintext traffic is limited to
 explicit emulator hosts, preserving the production transport boundary. Authentication modes that
-carry credentials require TLS, as described by ADR-008.
+carry credentials require TLS, as described by ADR-009.
 
 ## Alternatives
 

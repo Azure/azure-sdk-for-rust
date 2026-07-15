@@ -1,4 +1,4 @@
-# ADR-001 — Host in a separate binary crate; keep the emulator in the driver
+# ADR-002 — Host in a separate binary crate; keep the emulator in the driver
 
 **Status:** Accepted
 **Date:** 2026-07-14

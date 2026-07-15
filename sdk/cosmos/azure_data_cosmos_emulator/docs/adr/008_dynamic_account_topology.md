@@ -1,4 +1,4 @@
-# ADR-007 — Model outages and failover as dynamic account topology
+# ADR-008 — Model outages and failover as dynamic account topology
 
 **Status:** Proposed
 **Date:** 2026-07-14

@@ -143,7 +143,7 @@ sdk/cosmos/azure_data_cosmos_emulator/
 
 A single JSON file, referenced with `--config`, describes the account topology, the databases
 and containers to create, and optional seed items — all applied on startup. The management REST
-API can further modify state at runtime. (YAML support is deferred; see ADR-005.)
+API can further modify state at runtime. (YAML support is deferred; see ADR-006.)
 
 ### 4.1 Sample
 
@@ -233,7 +233,7 @@ Enabled per region by setting `thinClientPort`. When enabled:
 The driver already owns the client-side RNTBD codec (`RntbdRequestFrame::write`,
 `RntbdResponse::read`). This work promotes the currently test-only inverse halves
 (`RntbdRequestFrame::read`, `RntbdResponse::write`) to production, co-located in
-`src/driver/transport/rntbd/` behind the host feature (ADR-006). Because the driver's request
+`src/driver/transport/rntbd/` behind the host feature (ADR-007). Because the driver's request
 pipeline decides Gateway 2.0 purely from whether the endpoint advertises a Gateway 2.0 URL,
 advertising it plus serving RNTBD is sufficient — no driver routing change is required.
 
@@ -487,7 +487,7 @@ HTTP/2 is a hard requirement for Gateway 2.0. The relevant driver behavior **alr
 prior-knowledge connections when axum is compiled with its non-default `http2` feature. The host
 must enable that feature explicitly. With it enabled, the existing probe negotiates HTTP/2 against
 the host and no mandatory driver change is required. A targeted change to the incompatibility
-matcher is a **contingency** only if end-to-end validation reveals a gap (ADR-003).
+matcher is a **contingency** only if end-to-end validation reveals a gap (ADR-004).
 
 ---
 
@@ -518,29 +518,32 @@ block and CLI flags:
   check its object ID / app ID against an allow-list supplied in config or via `--allowed-oid`).
 
 Splitting auth/HTTPS into its own PR keeps certificate and token friction out of the initial
-hosting and control-plane work. See ADR-008 in
-`sdk/cosmos/azure_data_cosmos_emulator/docs/adr/008_transport_security_and_authentication.md`.
+hosting and control-plane work. See ADR-009 in
+`sdk/cosmos/azure_data_cosmos_emulator/docs/adr/009_transport_security_and_authentication.md`.
 
 ---
 
 ## 11. Architecture Decision Records
 
-- ADR-001 (`sdk/cosmos/azure_data_cosmos_emulator/docs/adr/001_separate_host_crate.md`): Host in a
+- ADR-001
+  (`sdk/cosmos/azure_data_cosmos_emulator/docs/adr/001_build_memory_backed_sdk_test_emulator.md`):
+  Build a memory-backed host for deterministic Cosmos DB SDK topology and transport testing.
+- ADR-002 (`sdk/cosmos/azure_data_cosmos_emulator/docs/adr/002_separate_host_crate.md`): Host in a
   separate `publish = false` binary crate; keep the emulator in the driver behind a host feature.
-- ADR-002 (`sdk/cosmos/azure_data_cosmos_emulator/docs/adr/002_port_per_region.md`): Model each
+- ADR-003 (`sdk/cosmos/azure_data_cosmos_emulator/docs/adr/003_port_per_region.md`): Model each
   region as a distinct localhost port backed by one shared store.
-- ADR-003 (`sdk/cosmos/azure_data_cosmos_emulator/docs/adr/003_cleartext_http2.md`): Support h2c on
+- ADR-004 (`sdk/cosmos/azure_data_cosmos_emulator/docs/adr/004_cleartext_http2.md`): Support h2c on
   emulator endpoints while retaining HTTPS-only production routing.
-- ADR-004 (`sdk/cosmos/azure_data_cosmos_emulator/docs/adr/004_management_rest_api.md`): Expose
+- ADR-005 (`sdk/cosmos/azure_data_cosmos_emulator/docs/adr/005_management_rest_api.md`): Expose
   emulator-only control-plane actions through a separate management REST API.
-- ADR-005 (`sdk/cosmos/azure_data_cosmos_emulator/docs/adr/005_json_config_startup_seed.md`): Keep
+- ADR-006 (`sdk/cosmos/azure_data_cosmos_emulator/docs/adr/006_json_config_startup_seed.md`): Keep
   canonical startup configuration in host-owned JSON and seed through the data plane.
-- ADR-006 (`sdk/cosmos/azure_data_cosmos_emulator/docs/adr/006_gateway_v2_rntbd.md`): Keep RNTBD
+- ADR-007 (`sdk/cosmos/azure_data_cosmos_emulator/docs/adr/007_gateway_v2_rntbd.md`): Keep RNTBD
   framing private to the driver behind a high-level hosted-emulator adapter.
-- ADR-007 (`sdk/cosmos/azure_data_cosmos_emulator/docs/adr/007_dynamic_account_topology.md`): Model
+- ADR-008 (`sdk/cosmos/azure_data_cosmos_emulator/docs/adr/008_dynamic_account_topology.md`): Model
   outages and write-region failover as dynamic account-topology state.
-- ADR-008
-  (`sdk/cosmos/azure_data_cosmos_emulator/docs/adr/008_transport_security_and_authentication.md`):
+- ADR-009
+  (`sdk/cosmos/azure_data_cosmos_emulator/docs/adr/009_transport_security_and_authentication.md`):
   Enforce transport security and authentication at the host boundary.
 
 Delivery sequencing, CI rollout, and temporary test exclusions remain in this plan. They are not
@@ -551,10 +554,10 @@ architecture decisions and are intentionally excluded from the ADR directory.
 ## 12. Open Questions & Future Work
 
 - **YAML config.** Deferred; `serde_yaml` is unmaintained, so a maintained crate would be added
-  in a follow-up if demand warrants (ADR-005).
+  in a follow-up if demand warrants (ADR-006).
 - **h2c fallback hardening.** If validation shows the driver does not cleanly fall back from h2c
   to HTTP/1.1 against a cleartext HTTP/1.1-only server, broaden `has_explicit_http2_incompatibility`
-  (ADR-003). Not required while the host always serves h2c.
+  (ADR-004). Not required while the host always serves h2c.
 - **Additional control-plane ops.** Throttling toggles, forced session-not-available, and
   replication-delay overrides could be surfaced through the management API later if cross-SDK
   tests need them.

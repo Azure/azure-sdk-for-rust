@@ -1,4 +1,4 @@
-# ADR-004 — Expose control-plane actions via a separate management REST API
+# ADR-005 — Expose control-plane actions via a separate management REST API
 
 **Status:** Accepted
 **Date:** 2026-07-14

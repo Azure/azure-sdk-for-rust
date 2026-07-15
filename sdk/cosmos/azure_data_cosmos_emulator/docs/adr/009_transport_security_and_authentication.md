@@ -1,4 +1,4 @@
-# ADR-008 — Enforce transport security and authentication at the host boundary
+# ADR-009 — Enforce transport security and authentication at the host boundary
 
 **Status:** Proposed
 **Date:** 2026-07-14

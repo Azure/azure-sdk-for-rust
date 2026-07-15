@@ -1,4 +1,4 @@
-# ADR-005 — Drive startup topology and seed data from a JSON config file
+# ADR-006 — Drive startup topology and seed data from a JSON config file
 
 **Status:** Accepted
 **Date:** 2026-07-14

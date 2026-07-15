@@ -1,4 +1,4 @@
-# ADR-006 — Keep hosted Gateway 2.0 framing in the driver
+# ADR-007 — Keep hosted Gateway 2.0 framing in the driver
 
 **Status:** Accepted
 **Date:** 2026-07-14
