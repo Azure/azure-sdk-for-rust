@@ -20,15 +20,15 @@ Keep request decoding and response encoding alongside the existing RNTBD client 
 an RNTBD-framed request, dispatches it through the existing in-memory operation handlers, and
 returns an RNTBD-framed response. Token and frame internals remain private to the driver.
 
-Gateway 2.0 is enabled per region by configuring a thin-client endpoint. Only then does account
+Gateway 2.0 is enabled per region by configuring a Gateway 2.0 endpoint. Only then does account
 discovery advertise `thinClientReadableLocations` and `thinClientWritableLocations`. The
-thin-client listener answers `POST /connectivity-probe` and requires HTTP/2. Unsupported RNTBD
+Gateway 2.0 listener answers `POST /connectivity-probe` and requires HTTP/2. Unsupported RNTBD
 semantics are rejected explicitly instead of being silently discarded.
 
 ## Consequences
 
 The driver remains the single owner of RNTBD wire compatibility. The host depends on a small
-unstable adapter rather than public token types. Accounts without thin-client endpoints retain
+unstable adapter rather than public token types. Accounts without Gateway 2.0 endpoints retain
 standard gateway behavior, while configured regions exercise the same discovery and probe flow as
 the service.
 
