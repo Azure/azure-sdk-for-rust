@@ -14,7 +14,9 @@ pub use azure_data_cosmos_driver::models::{
     PatchInstructions, PatchOperation,
 };
 pub use batch_response::BatchResponse;
-pub use change_feed_item::{ChangeFeedItem, ChangeFeedMetadata, ChangeFeedOperationType};
+pub use change_feed_item::{
+    ChangeFeedItem, ChangeFeedMetadata, ChangeFeedOperationType, LogicalSequenceNumber,
+};
 pub use container_properties::{
     ConflictResolutionMode, ConflictResolutionPolicy, ContainerProperties, TimeToLive, UniqueKey,
     UniqueKeyPolicy, VectorDataType, VectorDistanceFunction, VectorEmbedding,

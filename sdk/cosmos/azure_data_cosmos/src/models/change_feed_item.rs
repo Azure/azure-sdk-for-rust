@@ -26,6 +26,45 @@
 use azure_core::fmt::SafeDebug;
 use serde::de::{DeserializeOwned, Error as _};
 use serde::{Deserialize, Deserializer};
+use std::time::Duration;
+
+/// Deserializes an optional epoch-seconds integer into a [`Duration`].
+fn deserialize_optional_duration_secs<'de, D>(deserializer: D) -> Result<Option<Duration>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let secs = Option::<i64>::deserialize(deserializer)?;
+    Ok(secs.map(|secs| Duration::from_secs(secs.max(0) as u64)))
+}
+
+/// A logical sequence number (LSN) identifying a change's position within its
+/// partition.
+///
+/// LSNs increase monotonically within a single physical partition and order the
+/// changes in a feed. Read the underlying value with [`value`](Self::value), or
+/// convert to and from `i64` via the standard `From`/`Into` conversions.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize)]
+#[serde(transparent)]
+pub struct LogicalSequenceNumber(i64);
+
+impl LogicalSequenceNumber {
+    /// The underlying logical sequence number value.
+    pub fn value(&self) -> i64 {
+        self.0
+    }
+}
+
+impl From<i64> for LogicalSequenceNumber {
+    fn from(value: i64) -> Self {
+        Self(value)
+    }
+}
+
+impl From<LogicalSequenceNumber> for i64 {
+    fn from(value: LogicalSequenceNumber) -> Self {
+        value.0
+    }
+}
 
 /// The type of change that produced a change feed item.
 ///
@@ -83,17 +122,21 @@ pub struct ChangeFeedMetadata {
 
     /// The logical sequence number (LSN) of the change within its partition.
     #[serde(rename = "lsn", default)]
-    lsn: Option<i64>,
+    lsn: Option<LogicalSequenceNumber>,
 
-    /// The conflict resolution timestamp (`crts`) of the change, in seconds since
+    /// The conflict resolution timestamp (`crts`) of the change, measured since
     /// the Unix epoch.
-    #[serde(rename = "crts", default)]
-    conflict_resolution_timestamp: Option<i64>,
+    #[serde(
+        rename = "crts",
+        default,
+        deserialize_with = "deserialize_optional_duration_secs"
+    )]
+    conflict_resolution_timestamp: Option<Duration>,
 
     /// The LSN of the previous image of the item, when a pre-image is available
     /// (replace and delete operations on containers that retain pre-images).
     #[serde(rename = "previousImageLSN", default)]
-    previous_image_lsn: Option<i64>,
+    previous_image_lsn: Option<LogicalSequenceNumber>,
 
     /// `Some(true)` when the change is a delete caused by the item's
     /// time-to-live (TTL) expiring, rather than an explicit delete.
@@ -130,18 +173,18 @@ impl ChangeFeedMetadata {
 
     /// The logical sequence number (LSN) of the change within its partition,
     /// when reported by the service.
-    pub fn lsn(&self) -> Option<i64> {
+    pub fn lsn(&self) -> Option<LogicalSequenceNumber> {
         self.lsn
     }
 
-    /// The conflict resolution timestamp (`crts`) of the change, in seconds since
+    /// The conflict resolution timestamp (`crts`) of the change, measured since
     /// the Unix epoch, when reported by the service.
-    pub fn conflict_resolution_timestamp(&self) -> Option<i64> {
+    pub fn conflict_resolution_timestamp(&self) -> Option<Duration> {
         self.conflict_resolution_timestamp
     }
 
     /// The LSN of the previous image of the item, when a pre-image is available.
-    pub fn previous_image_lsn(&self) -> Option<i64> {
+    pub fn previous_image_lsn(&self) -> Option<LogicalSequenceNumber> {
         self.previous_image_lsn
     }
 
@@ -171,13 +214,12 @@ impl ChangeFeedMetadata {
 
 /// A single item from a Cosmos DB change feed.
 ///
-/// Each item is a wire-format envelope describing one change: the document
+/// Each item is an envelope describing one change: the document
 /// after the change ([`current`](Self::current)), the document before the
 /// change ([`previous`](Self::previous)), and the change
-/// [`metadata`](Self::metadata). Pass your document type `D` to
+/// [`metadata`](Self::metadata). Pass your document type `T` to
 /// [`ContainerClient::query_change_feed`](crate::clients::ContainerClient::query_change_feed);
-/// it yields `ChangeFeedItem<D>` and does not strip the envelope, so the whole
-/// wire shape is preserved.
+/// it yields `ChangeFeedItem<T>` and does not strip the envelope.
 ///
 /// For [`ChangeFeedMode::LatestVersion`](crate::options::ChangeFeedMode::LatestVersion)
 /// reads [`current`](Self::current) holds the latest version of each created or
@@ -201,26 +243,18 @@ impl ChangeFeedMetadata {
 /// caller's own document `T`, so its `Debug` output is only available when `T`
 /// itself is `Debug`.
 ///
-/// # Non-enveloped backends
+/// # Non-enveloped responses
 ///
-/// A backend that does not honor the `x-ms-cosmos-changefeed-wire-format-version`
-/// header — an older gateway, a region where the feature has not rolled out, or
-/// an emulator build without change-feed enveloping — returns the bare document
-/// (`{ "id": ... }`) instead of the `{ "current": ... }` envelope. Such an item
-/// deserializes with the whole document mapped onto [`current`](Self::current)
-/// and no [`previous`](Self::previous) / [`metadata`](Self::metadata), so a
-/// caller reading `.current()` sees the document on either wire shape rather
-/// than losing it.
+/// A backend that returns the document without the change-feed envelope (for
+/// example the Cosmos emulator, which does not produce it) yields the bare
+/// document. In that case the whole document is read as
+/// [`current`](Self::current), with no [`previous`](Self::previous) or
+/// [`metadata`](Self::metadata), so `.current()` still returns it.
 ///
 /// An item is treated as an envelope only when it is a non-empty object whose
-/// keys are drawn *entirely* from the reserved set `current`, `previous`, and
-/// `metadata`. A flat document is virtually always distinguishable because it
-/// also carries its own keys (its `id`, partition key, and fields) alongside
-/// any reserved-looking one, so a bare `{ "id": ..., "metadata": ... }` is
-/// correctly read as the document rather than as an empty envelope. The one
-/// documented exception is a flat document whose top level consists *solely* of
-/// reserved names (for example a document that has only a field literally named
-/// `current`); such a document is read as an envelope.
+/// keys are drawn entirely from `current`, `previous`, and `metadata`; any
+/// other key marks it as a bare document. The sole ambiguous case is a
+/// document whose top level consists only of those reserved names.
 #[derive(Clone, Debug)]
 #[non_exhaustive]
 pub struct ChangeFeedItem<T> {
@@ -387,8 +421,11 @@ mod tests {
         );
         assert!(item.previous().is_none());
         let metadata = item.metadata().expect("metadata should be present");
-        assert_eq!(metadata.lsn(), Some(100));
-        assert_eq!(metadata.conflict_resolution_timestamp(), Some(1720322460));
+        assert_eq!(metadata.lsn(), Some(LogicalSequenceNumber::from(100)));
+        assert_eq!(
+            metadata.conflict_resolution_timestamp(),
+            Some(Duration::from_secs(1720322460))
+        );
         assert!(metadata.previous_image_lsn().is_none());
         assert!(metadata.time_to_live_expired().is_none());
     }
@@ -535,7 +572,7 @@ mod tests {
         assert_eq!(
             item.metadata()
                 .and_then(ChangeFeedMetadata::previous_image_lsn),
-            Some(199)
+            Some(LogicalSequenceNumber::from(199))
         );
     }
 
@@ -578,7 +615,7 @@ mod tests {
         assert!(item.current().is_none());
         assert!(item.previous().is_none());
         let metadata = item.metadata().expect("metadata should be present");
-        assert_eq!(metadata.lsn(), Some(400));
+        assert_eq!(metadata.lsn(), Some(LogicalSequenceNumber::from(400)));
         assert!(metadata.time_to_live_expired().is_none());
     }
 
@@ -627,8 +664,11 @@ mod tests {
         let metadata = item.metadata().expect("metadata should be present");
         assert!(metadata.operation_type().is_none());
         assert!(item.operation_type().is_none());
-        assert_eq!(metadata.lsn(), Some(100));
-        assert_eq!(metadata.conflict_resolution_timestamp(), Some(1720322460));
+        assert_eq!(metadata.lsn(), Some(LogicalSequenceNumber::from(100)));
+        assert_eq!(
+            metadata.conflict_resolution_timestamp(),
+            Some(Duration::from_secs(1720322460))
+        );
     }
 
     #[test]

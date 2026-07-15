@@ -864,15 +864,9 @@ impl ContainerClient {
     /// Queries the change feed for a container, returning a stream of pages.
     ///
     /// The change feed provides an ordered list of changes (creates and
-    /// replaces) made to items in the container.
-    ///
-    /// Every change is returned as a
-    /// [`ChangeFeedItem<D>`](crate::models::ChangeFeedItem) wire-format
-    /// envelope: pass your own document type `D` and the iterator yields
-    /// `ChangeFeedItem<D>`. Read the post-change document via
-    /// [`current()`](crate::models::ChangeFeedItem::current). Binding the
-    /// envelope into the return type means a caller cannot accidentally
-    /// deserialize straight into their document and silently lose the envelope.
+    /// replaces) made to items in the container. Each change is yielded as a
+    /// [`ChangeFeedItem<T>`](crate::models::ChangeFeedItem); see that type for
+    /// how to read the changed document.
     ///
     /// # Arguments
     /// * `scope` - Determines which partitions to read changes from.
@@ -914,12 +908,12 @@ impl ContainerClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn query_change_feed<D: DeserializeOwned + Send + 'static>(
+    pub async fn query_change_feed<T: DeserializeOwned + Send + 'static>(
         &self,
         scope: FeedScope,
         start_from: ChangeFeedStartFrom,
         options: Option<ChangeFeedOptions>,
-    ) -> crate::Result<ChangeFeedPageIterator<ChangeFeedItem<D>>> {
+    ) -> crate::Result<ChangeFeedPageIterator<ChangeFeedItem<T>>> {
         let options = options.unwrap_or_default();
 
         let mut initial_operation = CosmosOperation::change_feed(

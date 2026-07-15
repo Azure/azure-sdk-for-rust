@@ -151,17 +151,8 @@ impl LiveState {
     }
 }
 
-/// Deserializes a change feed response body into the caller's item type.
-///
-/// Every change feed item is returned as a wire-format envelope
-/// (`{ current, ... }`) because the SDK always sends the
-/// `x-ms-cosmos-changefeed-wire-format-version` header (see
-/// [`CosmosOperation::change_feed`]). Each entry in the feed body is
-/// deserialized directly into `T` — which callers bind to
-/// [`ChangeFeedItem<Doc>`](crate::models::ChangeFeedItem) — so the whole
-/// envelope is preserved rather than stripped.
-///
-/// [`CosmosOperation::change_feed`]: azure_data_cosmos_driver::models::CosmosOperation
+/// Deserializes a change feed response body into the caller's item type `T`
+/// (bound to [`ChangeFeedItem<Doc>`](crate::models::ChangeFeedItem)).
 fn deserialize_change_feed_items<T: DeserializeOwned>(
     response: CosmosResponse,
 ) -> crate::Result<Vec<T>> {
@@ -172,9 +163,8 @@ fn deserialize_change_feed_items<T: DeserializeOwned>(
 /// A stream of pages from a Cosmos DB change feed operation.
 ///
 /// Yields [`FeedPage<T>`] instances where `T` is
-/// [`ChangeFeedItem<YourDoc>`](crate::models::ChangeFeedItem): every item is
-/// returned as the wire-format envelope, so the caller reads the post-change
-/// document via [`current()`](crate::models::ChangeFeedItem::current).
+/// [`ChangeFeedItem<YourDoc>`](crate::models::ChangeFeedItem); read the
+/// changed document via [`current()`](crate::models::ChangeFeedItem::current).
 ///
 /// The stream is conceptually infinite: when a partition has no new changes
 /// (304 Not Modified), an empty page is returned instead of terminating the
@@ -329,7 +319,10 @@ mod tests {
         assert_eq!(items[0].current(), Some(&Doc { id: "1".into() }));
         let metadata = items[0].metadata().expect("metadata should survive");
         assert!(metadata.operation_type().is_none());
-        assert_eq!(metadata.lsn(), Some(100));
+        assert_eq!(
+            metadata.lsn(),
+            Some(crate::models::LogicalSequenceNumber::from(100))
+        );
     }
 
     /// Builds an SDK [`CosmosResponse`] wrapping the given JSON body so the
