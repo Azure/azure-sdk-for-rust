@@ -2000,24 +2000,32 @@ mod tests {
     #[test]
     fn accepts_max_depth_nesting() {
         // MAX_DEPTH nested single-item arrays around a scalar leaf is exactly at
-        // the limit and must decode successfully.
-        let mut bytes = vec![markers::ARR1; MAX_DEPTH];
-        bytes.push(0x00); // literal int 0 leaf
-        let mut expected = serde_json::json!(0);
-        for _ in 0..MAX_DEPTH {
-            expected = Value::Array(vec![expected]);
-        }
-        assert_eq!(decode(&buf(&bytes)).unwrap(), expected);
+        // the limit and must decode successfully. Run on a large-stack thread so
+        // the debug-build recursion does not exhaust the 2 MB test-harness stack
+        // (see `crate::binary_json::with_large_test_stack`).
+        crate::binary_json::with_large_test_stack(|| {
+            let mut bytes = vec![markers::ARR1; MAX_DEPTH];
+            bytes.push(0x00); // literal int 0 leaf
+            let mut expected = serde_json::json!(0);
+            for _ in 0..MAX_DEPTH {
+                expected = Value::Array(vec![expected]);
+            }
+            assert_eq!(decode(&buf(&bytes)).unwrap(), expected);
+        });
     }
 
     #[test]
     fn rejects_excessive_nesting() {
-        // One level beyond MAX_DEPTH trips the depth guard.
-        let mut bytes = vec![markers::ARR1; MAX_DEPTH + 1];
-        bytes.push(0x00);
-        assert_eq!(
-            decode(&buf(&bytes)),
-            Err(BinaryError::DepthLimitExceeded { limit: MAX_DEPTH }),
-        );
+        // One level beyond MAX_DEPTH trips the depth guard. Run on a large-stack
+        // thread so the debug-build recursion up to the guard does not exhaust
+        // the 2 MB test-harness stack.
+        crate::binary_json::with_large_test_stack(|| {
+            let mut bytes = vec![markers::ARR1; MAX_DEPTH + 1];
+            bytes.push(0x00);
+            assert_eq!(
+                decode(&buf(&bytes)),
+                Err(BinaryError::DepthLimitExceeded { limit: MAX_DEPTH }),
+            );
+        });
     }
 }

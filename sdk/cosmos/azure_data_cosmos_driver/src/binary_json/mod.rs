@@ -66,6 +66,27 @@ mod fuzz_tests;
 #[cfg(test)]
 mod vectors;
 
+/// Runs `f` on a dedicated thread with a large stack.
+///
+/// The decoder is a recursive descent bounded by `MAX_DEPTH` (256, for
+/// .NET parity). Reaching that bound is safe at runtime — release builds have
+/// small stack frames — but an **unoptimized debug** build produces large,
+/// un-inlined frames, and the test harness runs each `#[test]` on a thread
+/// with only a 2 MB stack (notably on macOS CI). A near-`MAX_DEPTH` recursion
+/// can therefore exhaust that stack before the depth guard returns. Deep-nesting
+/// tests run their body through this helper so they exercise the guard without
+/// tripping a debug-only stack overflow. Production decoding is unaffected.
+#[cfg(test)]
+pub(crate) fn with_large_test_stack<F: FnOnce() + Send + 'static>(f: F) {
+    const STACK_SIZE: usize = 16 * 1024 * 1024;
+    std::thread::Builder::new()
+        .stack_size(STACK_SIZE)
+        .spawn(f)
+        .expect("spawn large-stack test thread")
+        .join()
+        .expect("large-stack test thread panicked");
+}
+
 pub use de::from_slice;
 pub use error::{BinaryError, Result};
 pub use reader::decode;
