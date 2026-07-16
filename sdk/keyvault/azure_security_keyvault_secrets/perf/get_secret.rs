@@ -15,15 +15,24 @@
 
 use std::sync::{Arc, OnceLock};
 
-use azure_core::Result;
+use azure_core::{error::ResultExt, Result};
 use azure_core_test::{
-    perf::{CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption},
+    perf::{CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestFactory},
     Recording, TestContext,
 };
 use azure_security_keyvault_secrets::{
     models::SetSecretParameters, SecretClient, SecretClientOptions,
 };
+use clap::{Args, Subcommand};
 use futures::FutureExt;
+
+#[derive(Args, Clone, Debug)]
+pub struct VaultArgs {
+    // The URL of the Key Vault to use in the test
+    #[arg(short = 'u', long)]
+    vault_url: Option<String>,
+}
+
 struct GetSecrets {
     vault_url: Option<String>,
     random_key_name: OnceLock<String>,
@@ -31,27 +40,10 @@ struct GetSecrets {
 }
 
 impl GetSecrets {
-    fn test_metadata() -> PerfTestMetadata {
-        PerfTestMetadata {
-            name: "get_secret",
-            description: "Get a secret from Key Vault",
-            options: vec![PerfTestOption {
-                name: "vault_url",
-                display_message: "The URL of the Key Vault to use in the test",
-                mandatory: false,
-                short_activator: Some('u'),
-                long_activator: "vault-url",
-                expected_args_len: 1,
-                ..Default::default()
-            }],
-            create_test: Self::create_new_test,
-        }
-    }
-
-    fn create_new_test(runner: PerfRunner) -> CreatePerfTestReturn {
+    pub fn new(args: VaultArgs) -> CreatePerfTestReturn {
         async move {
             Ok(Box::new(GetSecrets {
-                vault_url: runner.try_get_test_arg("vault_url")?,
+                vault_url: args.vault_url,
                 random_key_name: OnceLock::new(),
                 client: OnceLock::new(),
             }) as Box<dyn PerfTest>)
@@ -120,13 +112,30 @@ impl PerfTest for GetSecrets {
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
-    let runner = PerfRunner::new(
-        env!("CARGO_MANIFEST_DIR"),
-        file!(),
-        vec![GetSecrets::test_metadata()],
-    )?;
+    match PerfRunner::<SecretsTest>::new(env!("CARGO_MANIFEST_DIR"), file!()) {
+        Ok(runner) => runner.run().await,
+        Err(e) => e.print().with_context(
+            azure_core_test::ErrorKind::Other,
+            "Failed to print parser error",
+        ),
+    }
+}
 
-    runner.run().await?;
+#[derive(Subcommand, Clone, Debug)]
+enum SecretsTest {
+    GetSecret(VaultArgs),
+}
 
-    Ok(())
+impl PerfTestFactory for SecretsTest {
+    fn name(&self) -> &'static str {
+        match self {
+            SecretsTest::GetSecret(_) => "get_secret",
+        }
+    }
+
+    fn create_test(&self) -> CreatePerfTestReturn {
+        match self {
+            SecretsTest::GetSecret(options) => GetSecrets::new(options.clone()),
+        }
+    }
 }

@@ -14,7 +14,7 @@ keywords = ["sdk", "cloud"]
 categories = ["api-bindings"]
 
 [dependencies]
-azure_core = { workspace = true }
+azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.1", features = ["xml"] }
 serde = { workspace = true }
 time = { workspace = true }
 

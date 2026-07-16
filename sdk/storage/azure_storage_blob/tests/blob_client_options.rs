@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+mod common;
+
 use azure_core::{
     http::{
         ClientOptions, ExponentialRetryOptions, FixedRetryOptions, RequestContent, RetryOptions,
@@ -13,7 +15,7 @@ use azure_storage_blob::{
     models::{BlobClientDownloadOptions, BlobClientGetPropertiesResultHeaders},
     BlobContainerClient, BlobContainerClientOptions,
 };
-use azure_storage_blob_test::{
+use common::{
     create_test_blob, get_blob_name, get_container_client, ClientOptionsExt, FailFirstPolicy,
     StorageAccount, TestPolicy,
 };

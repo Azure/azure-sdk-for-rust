@@ -16,20 +16,49 @@
 mod create_key;
 mod get_key;
 
-use azure_core_test::perf::PerfRunner;
+use azure_core::error::ResultExt;
+use azure_core_test::perf::{CreatePerfTestReturn, PerfRunner, PerfTestFactory};
+use clap::{Args, Subcommand};
 
 /// Environment variable for the Azure Key Vault URL
 pub const ENV_NAME: &str = "AZURE_KEYVAULT_URL";
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
-    let runner = PerfRunner::new(
-        env!("CARGO_MANIFEST_DIR"),
-        file!(),
-        vec![
-            create_key::CreateKey::test_metadata(),
-            get_key::GetKey::test_metadata(),
-        ],
-    )?;
-    runner.run().await
+    match PerfRunner::<KeysTest>::new(env!("CARGO_MANIFEST_DIR"), file!()) {
+        Ok(runner) => runner.run().await,
+        Err(e) => e.print().with_context(
+            azure_core_test::ErrorKind::Other,
+            "Failed to print parser error",
+        ),
+    }
+}
+
+#[derive(Subcommand, Clone, Debug)]
+enum KeysTest {
+    CreateKey(VaultArgs),
+    GetKey(VaultArgs),
+}
+
+impl PerfTestFactory for KeysTest {
+    fn name(&self) -> &'static str {
+        match self {
+            KeysTest::CreateKey(_) => "create_key",
+            KeysTest::GetKey(_) => "get_key",
+        }
+    }
+
+    fn create_test(&self) -> CreatePerfTestReturn {
+        match self {
+            KeysTest::CreateKey(options) => create_key::CreateKey::new(options.clone()),
+            KeysTest::GetKey(options) => get_key::GetKey::new(options.clone()),
+        }
+    }
+}
+
+#[derive(Args, Clone, Debug)]
+pub struct VaultArgs {
+    // The URL of the Key Vault to use in the test
+    #[arg(short = 'u', long)]
+    vault_url: Option<String>,
 }

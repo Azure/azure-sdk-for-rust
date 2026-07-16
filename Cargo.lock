@@ -309,6 +309,7 @@ dependencies = [
  "azure_core_macros 1.0.0",
  "azure_core_test",
  "bytes",
+ "clap",
  "criterion",
  "futures",
  "hmac",
@@ -740,6 +741,7 @@ dependencies = [
  "azure_core_test",
  "azure_identity 1.0.0",
  "azure_security_keyvault_test",
+ "clap",
  "criterion",
  "futures",
  "include-file",
@@ -763,6 +765,7 @@ dependencies = [
  "azure_core_test",
  "azure_identity 1.0.0",
  "azure_security_keyvault_test",
+ "clap",
  "futures",
  "include-file",
  "rand 0.10.1",
@@ -790,7 +793,6 @@ dependencies = [
  "azure_core 1.1.0",
  "azure_core_test",
  "azure_identity 1.0.0",
- "azure_storage_blob_test",
  "azure_storage_common",
  "azure_storage_sas",
  "bytes",
@@ -809,24 +811,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "azure_storage_blob_test"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "azure_core 1.1.0",
- "azure_core_test",
- "azure_identity 1.0.0",
- "azure_storage_blob",
- "bytes",
- "futures",
- "tokio",
-]
-
-[[package]]
 name = "azure_storage_common"
 version = "0.2.0"
 dependencies = [
- "azure_core 1.1.0",
+ "azure_core 1.2.0-beta.1",
  "serde",
  "serde_json",
  "time",
