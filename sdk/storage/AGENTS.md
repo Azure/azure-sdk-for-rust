@@ -1,110 +1,61 @@
-# AGENTS.md – Storage crates guidance
+# AGENTS.md – Storage crates guidance (minimal)
 
-This file provides AI-agent guidance for work under `sdk/storage/*`.
-It complements the repository root guidance and should be read together with root-level instructions.
+Storage-specific guidance for `sdk/storage/*`.
+
+Root `AGENTS.md` is authoritative for repo-wide rules (generated code, compatibility, security, lint/test/CI, and general coding standards). Do not repeat those rules here.
 
 ## Scope
 
-- Applies to all storage crates under `sdk/storage/*`.
-- Crate-specific details should live in each crate folder's own `AGENTS.md` (for example, `sdk/storage/azure_storage_blob/AGENTS.md`).
+- Applies to all crates under `sdk/storage/*`.
+- Put crate-specific details in each crate’s local `AGENTS.md`.
 
-## Storage family map
+## Storage consistency requirements
 
-- `azure_storage_common` – shared storage primitives and common types.
-- `azure_storage_blob` – Blob Storage client library.
-- `azure_storage_queue` – Queue Storage client library.
-- `azure_storage_sas` – Shared Access Signature (SAS) builder for Azure Storage services.
-- Additional storage crates should follow the same design and testing patterns where applicable.
+- Keep API shape consistent across storage crates:
+  - Similar operations should use similar option/builder patterns.
+  - Use consistent naming for equivalent concepts.
+  - Keep pagination behavior/ergonomics consistent.
 
-## Architecture and API conventions
+- Reuse shared request-construction helpers where possible; avoid copy/paste request logic.
 
-- Keep public API style consistent across storage crates.
-  - Prefer clear builder-based option patterns for operations with optional parameters.
-  - Keep method naming aligned with service operations and existing crate naming.
-  - Preserve pagination ergonomics and predictable return types.
-- Prefer composition and reusable helpers in internal modules over duplicating request-building code.
-- Keep transport/pipeline usage aligned with `azure_core` patterns used in the repo.
+- Preserve storage auth semantics across crates (AAD, SAS, connection string, shared key where supported), including correct header/query threading and signing behavior.
 
-## Error handling
+## Tests (storage-focused)
 
-- Use `azure_core::Result<T>` for fallible public operations.
-- Map service/HTTP failures consistently to `azure_core::Error` and existing error categorization patterns.
-- Preserve retry behavior expectations; avoid introducing ad-hoc retry logic in operation methods.
+- Add unit tests for request construction and option threading.
+- Add/maintain recorded or live tests for service behavior when expected by crate patterns.
+- Guard pagination/continuation behavior with tests.
 
-## Authentication and request setup
+## Common storage pitfalls
 
-- Respect existing credential flows used by storage crates (AAD, SAS, connection string, shared key where supported).
-- Ensure new options are correctly represented in headers/query strings and signed/authenticated where required.
-- For cross-crate auth behavior changes, keep semantics consistent across storage crates.
+- Option naming drift across crates.
+- Behavior drift for equivalent operations in different crates.
+- Missing tests for newly added headers/query params.
+- Pagination regressions (continuation tokens / next-page behavior).
 
-## Generated vs hand-written code
+## Minimal playbooks
 
-- Do **not** manually edit generated code paths/files when generation is the source of truth.
-- If a change must be generated, update the source inputs and regenerate according to repo guidance.
-- Keep hand-written customization in the intended extension points.
+### Add optional header/query option
+1. Add to options/builder with default `None`.
+2. Thread into request construction once (single canonical path).
+3. Add request-construction tests.
+4. Confirm no behavior change when unset.
 
-## Testing strategy
+### Add pagination option
+1. Extend options/docs.
+2. Apply in query construction.
+3. Verify continuation behavior unchanged.
+4. Add first-page + continuation tests.
 
-- Add/maintain unit tests for isolated behavior and serialization/parsing logic.
-- Add/maintain recorded/live tests for service-integration behavior where appropriate.
-- Reuse existing test helpers and fixtures before adding new ones.
-- Keep tests deterministic and minimize time/network sensitivity.
+### Change response/deserialization
+1. Prefer additive/backward-compatible changes.
+2. Add regression tests for compatibility edge cases.
 
-## Quality bar before handoff
+### Add operation
+1. Follow neighboring storage operation structure and naming.
+2. Keep request/options/response style aligned with adjacent operations.
+3. Add unit + service-level tests per crate conventions.
 
-From repo root (or scoped to affected crates as appropriate):
+## When unsure
 
-- `cargo fmt`
-- `cargo clippy -p <crate> --all-targets --all-features`
-- `cargo test -p <crate>`
-
-When touching multiple crates, run checks for each affected crate.
-
-## Common pitfalls
-
-- Inconsistent option naming across similar operations/crates.
-- Breaking changes to public API shape for convenience-only refactors.
-- Missing tests for new optional headers/query parameters.
-- Diverging behavior between similar storage operations in different crates.
-
-## Agent task playbooks
-
-### 1) Add a new optional request header/parameter
-
-1. Locate the operation options/builder type.
-2. Add the new field with clear docs and sensible default (`None` when optional).
-3. Thread it into request construction (header/query) in one place.
-4. Add unit tests for request construction and a service-level test when required.
-5. Verify no behavioral change when option is unset.
-
-### 2) Add a new listing/pagination option
-
-1. Extend options type and docs.
-2. Apply to request query construction.
-3. Validate continuation token behavior remains unchanged.
-4. Add tests for first and continuation requests where possible.
-
-### 3) Adjust response model/deserialization
-
-1. Keep backward compatibility for public fields/types unless intentionally versioned.
-2. Prefer additive changes.
-3. Add regression tests for missing/extra/unknown fields as needed.
-
-### 4) Update retryable error classification
-
-1. Align with existing `azure_core`/pipeline strategy.
-2. Avoid operation-specific special casing unless unavoidable and documented.
-3. Add tests for representative status/error cases.
-
-### 5) Add a new operation end-to-end
-
-1. Follow existing operation module layout and naming.
-2. Define request/options/response types consistent with neighboring operations.
-3. Add docs with minimal, runnable-style usage examples when practical.
-4. Add unit tests and recorded/live tests where the crate pattern expects them.
-
-## When in doubt
-
-- Follow adjacent storage crate patterns first.
-- Prefer consistency with existing public APIs over introducing a new style.
-- Document assumptions in code comments or PR notes when behavior is service-specific.
+Prefer existing patterns in adjacent storage crates and document any service-specific deviations.
