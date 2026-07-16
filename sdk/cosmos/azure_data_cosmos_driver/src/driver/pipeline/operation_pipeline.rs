@@ -42,7 +42,7 @@ use super::{
         OperationAction, OperationRetryState, RoutingDecision, TransportMode, TransportOutcome,
         TransportRequest, TransportResult, DATA_PLANE_MAX_PER_RETRY_DELAY,
         DATA_PLANE_MAX_THROTTLE_ATTEMPTS, DATA_PLANE_MAX_THROTTLE_WAIT,
-        DEFAULT_MAX_PER_RETRY_DELAY, DEFAULT_MAX_THROTTLE_ATTEMPTS, DEFAULT_MAX_THROTTLE_WAIT,
+        METADATA_MAX_PER_RETRY_DELAY, METADATA_MAX_THROTTLE_ATTEMPTS, METADATA_MAX_THROTTLE_WAIT,
     },
     hedging_diagnostics::{HedgeDiagnostics, HedgingStrategyConfig},
     hedging_eligibility::evaluate_hedge_eligibility,
@@ -72,9 +72,9 @@ fn default_throttle_budget(pipeline_type: PipelineType) -> (u32, Duration, Durat
         )
     } else {
         (
-            DEFAULT_MAX_THROTTLE_ATTEMPTS,
-            DEFAULT_MAX_THROTTLE_WAIT,
-            DEFAULT_MAX_PER_RETRY_DELAY,
+            METADATA_MAX_THROTTLE_ATTEMPTS,
+            METADATA_MAX_THROTTLE_WAIT,
+            METADATA_MAX_PER_RETRY_DELAY,
         )
     }
 }
@@ -3954,27 +3954,6 @@ mod tests {
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "test-key",
         )
-    }
-
-    #[test]
-    fn default_throttle_budget_differs_by_pipeline_type() {
-        use crate::diagnostics::PipelineType;
-        assert_eq!(
-            super::default_throttle_budget(PipelineType::DataPlane),
-            (
-                super::DATA_PLANE_MAX_THROTTLE_ATTEMPTS,
-                super::DATA_PLANE_MAX_THROTTLE_WAIT,
-                super::DATA_PLANE_MAX_PER_RETRY_DELAY
-            )
-        );
-        assert_eq!(
-            super::default_throttle_budget(PipelineType::Metadata),
-            (
-                super::DEFAULT_MAX_THROTTLE_ATTEMPTS,
-                super::DEFAULT_MAX_THROTTLE_WAIT,
-                super::DEFAULT_MAX_PER_RETRY_DELAY
-            )
-        );
     }
 
     fn test_partition_key_definition(path: &str) -> PartitionKeyDefinition {

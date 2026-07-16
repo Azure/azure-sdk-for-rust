@@ -901,7 +901,7 @@ fn map_http_response_payload(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::driver::pipeline::components::DEFAULT_MAX_PER_RETRY_DELAY;
+    use crate::driver::pipeline::components::METADATA_MAX_PER_RETRY_DELAY;
     use std::{
         collections::VecDeque,
         sync::{Arc, Mutex},
@@ -1069,7 +1069,7 @@ mod tests {
         let state = ThrottleRetryState::with_limits(
             0,
             Duration::from_secs(30),
-            DEFAULT_MAX_PER_RETRY_DELAY,
+            METADATA_MAX_PER_RETRY_DELAY,
         );
 
         assert!(matches!(
@@ -1088,7 +1088,7 @@ mod tests {
         for attempt in 0..2 {
             let state = ThrottleRetryState {
                 attempt_count: attempt,
-                ..ThrottleRetryState::with_limits(2, max_wait, DEFAULT_MAX_PER_RETRY_DELAY)
+                ..ThrottleRetryState::with_limits(2, max_wait, METADATA_MAX_PER_RETRY_DELAY)
             };
             assert!(
                 matches!(
@@ -1102,7 +1102,7 @@ mod tests {
         // attempt_count 2 reaches the cap and propagates.
         let state = ThrottleRetryState {
             attempt_count: 2,
-            ..ThrottleRetryState::with_limits(2, max_wait, DEFAULT_MAX_PER_RETRY_DELAY)
+            ..ThrottleRetryState::with_limits(2, max_wait, METADATA_MAX_PER_RETRY_DELAY)
         };
         assert!(matches!(
             evaluate_transport_retry(&result, &state, false),
@@ -1120,7 +1120,7 @@ mod tests {
             ..ThrottleRetryState::with_limits(
                 9,
                 Duration::from_secs(1),
-                DEFAULT_MAX_PER_RETRY_DELAY,
+                METADATA_MAX_PER_RETRY_DELAY,
             )
         };
 
@@ -1304,7 +1304,7 @@ mod tests {
                 collection_rid: None,
                 max_throttle_attempts: 9,
                 max_throttle_wait_time: Duration::from_secs(30),
-                max_throttle_per_retry_delay: DEFAULT_MAX_PER_RETRY_DELAY,
+                max_throttle_per_retry_delay: METADATA_MAX_PER_RETRY_DELAY,
             },
             &mut diagnostics,
         )
@@ -1380,7 +1380,7 @@ mod tests {
                 collection_rid: None,
                 max_throttle_attempts: 0,
                 max_throttle_wait_time: Duration::from_secs(30),
-                max_throttle_per_retry_delay: DEFAULT_MAX_PER_RETRY_DELAY,
+                max_throttle_per_retry_delay: METADATA_MAX_PER_RETRY_DELAY,
             },
             &mut diagnostics,
         )
@@ -1444,7 +1444,7 @@ mod tests {
                 collection_rid: None,
                 max_throttle_attempts: 9,
                 max_throttle_wait_time: Duration::from_millis(1),
-                max_throttle_per_retry_delay: DEFAULT_MAX_PER_RETRY_DELAY,
+                max_throttle_per_retry_delay: METADATA_MAX_PER_RETRY_DELAY,
             },
             &mut diagnostics,
         )
@@ -1517,7 +1517,7 @@ mod tests {
                     // Generous budget so the cumulative-wait cap is never the
                     // limiter for these small attempt counts.
                     max_throttle_wait_time: Duration::from_secs(300),
-                    max_throttle_per_retry_delay: DEFAULT_MAX_PER_RETRY_DELAY,
+                    max_throttle_per_retry_delay: METADATA_MAX_PER_RETRY_DELAY,
                 },
                 &mut diagnostics,
             )
@@ -1594,13 +1594,13 @@ mod tests {
     async fn execute_transport_pipeline_honors_class_default_throttle_budgets() {
         use crate::driver::pipeline::components::{
             DATA_PLANE_MAX_PER_RETRY_DELAY, DATA_PLANE_MAX_THROTTLE_ATTEMPTS,
-            DATA_PLANE_MAX_THROTTLE_WAIT, DEFAULT_MAX_PER_RETRY_DELAY,
-            DEFAULT_MAX_THROTTLE_ATTEMPTS, DEFAULT_MAX_THROTTLE_WAIT,
+            DATA_PLANE_MAX_THROTTLE_WAIT, METADATA_MAX_PER_RETRY_DELAY,
+            METADATA_MAX_THROTTLE_ATTEMPTS, METADATA_MAX_THROTTLE_WAIT,
         };
 
         // The data-plane default must retry strictly more often than metadata,
         // so the two cases below can never collapse to the same wire count.
-        assert!(DATA_PLANE_MAX_THROTTLE_ATTEMPTS > DEFAULT_MAX_THROTTLE_ATTEMPTS);
+        assert!(DATA_PLANE_MAX_THROTTLE_ATTEMPTS > METADATA_MAX_THROTTLE_ATTEMPTS);
 
         for (pipeline_type, attempts, wait, per_retry) in [
             (
@@ -1611,9 +1611,9 @@ mod tests {
             ),
             (
                 PipelineType::Metadata,
-                DEFAULT_MAX_THROTTLE_ATTEMPTS,
-                DEFAULT_MAX_THROTTLE_WAIT,
-                DEFAULT_MAX_PER_RETRY_DELAY,
+                METADATA_MAX_THROTTLE_ATTEMPTS,
+                METADATA_MAX_THROTTLE_WAIT,
+                METADATA_MAX_PER_RETRY_DELAY,
             ),
         ] {
             let request_count = Arc::new(std::sync::atomic::AtomicUsize::new(0));
@@ -1905,7 +1905,7 @@ mod tests {
                 collection_rid: None,
                 max_throttle_attempts: 9,
                 max_throttle_wait_time: Duration::from_secs(30),
-                max_throttle_per_retry_delay: DEFAULT_MAX_PER_RETRY_DELAY,
+                max_throttle_per_retry_delay: METADATA_MAX_PER_RETRY_DELAY,
             },
             &mut diagnostics,
         )
@@ -1959,7 +1959,7 @@ mod tests {
                 collection_rid: None,
                 max_throttle_attempts: 9,
                 max_throttle_wait_time: Duration::from_secs(30),
-                max_throttle_per_retry_delay: DEFAULT_MAX_PER_RETRY_DELAY,
+                max_throttle_per_retry_delay: METADATA_MAX_PER_RETRY_DELAY,
             },
             &mut diagnostics,
         )
@@ -2001,7 +2001,7 @@ mod tests {
                 collection_rid: None,
                 max_throttle_attempts: 9,
                 max_throttle_wait_time: Duration::from_secs(30),
-                max_throttle_per_retry_delay: DEFAULT_MAX_PER_RETRY_DELAY,
+                max_throttle_per_retry_delay: METADATA_MAX_PER_RETRY_DELAY,
             },
             &mut diagnostics,
         )
@@ -2041,7 +2041,7 @@ mod tests {
                 collection_rid: None,
                 max_throttle_attempts: 9,
                 max_throttle_wait_time: Duration::from_secs(30),
-                max_throttle_per_retry_delay: DEFAULT_MAX_PER_RETRY_DELAY,
+                max_throttle_per_retry_delay: METADATA_MAX_PER_RETRY_DELAY,
             },
             &mut diagnostics,
         )
@@ -2155,7 +2155,7 @@ mod tests {
             collection_rid: None,
             max_throttle_attempts: 9,
             max_throttle_wait_time: Duration::from_secs(30),
-            max_throttle_per_retry_delay: DEFAULT_MAX_PER_RETRY_DELAY,
+            max_throttle_per_retry_delay: METADATA_MAX_PER_RETRY_DELAY,
         }
     }
 

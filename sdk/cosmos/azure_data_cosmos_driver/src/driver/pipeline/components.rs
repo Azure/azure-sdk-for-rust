@@ -556,12 +556,12 @@ pub(crate) struct ThrottleRetryState {
 
 /// Default throttle-retry budget for metadata requests (and the bootstrap
 /// account-properties fetch): a patient budget, since metadata is cached.
-pub(crate) const DEFAULT_MAX_THROTTLE_ATTEMPTS: u32 = 9;
-pub(crate) const DEFAULT_MAX_THROTTLE_WAIT: Duration = Duration::from_secs(30);
+pub(crate) const METADATA_MAX_THROTTLE_ATTEMPTS: u32 = 9;
+pub(crate) const METADATA_MAX_THROTTLE_WAIT: Duration = Duration::from_secs(30);
 /// Per-retry delay cap ("interval") for metadata 429 retries: caps how long a
 /// single retry may wait (the service `x-ms-retry-after-ms` value is clamped to
 /// this).
-pub(crate) const DEFAULT_MAX_PER_RETRY_DELAY: Duration = Duration::from_secs(5);
+pub(crate) const METADATA_MAX_PER_RETRY_DELAY: Duration = Duration::from_secs(5);
 /// Default throttle-retry budget for latency-sensitive data-plane (document)
 /// requests: more retries, each allowed a longer per-retry interval, with a
 /// cumulative-wait budget sized so the retry count (not the wait) is the
@@ -569,11 +569,13 @@ pub(crate) const DEFAULT_MAX_PER_RETRY_DELAY: Duration = Duration::from_secs(5);
 pub(crate) const DATA_PLANE_MAX_THROTTLE_ATTEMPTS: u32 = 18;
 /// Per-retry delay cap ("interval") for data-plane 429 retries.
 pub(crate) const DATA_PLANE_MAX_PER_RETRY_DELAY: Duration = Duration::from_secs(15);
-/// Cumulative-wait budget for data-plane 429 retries. Sized so all
-/// [`DATA_PLANE_MAX_THROTTLE_ATTEMPTS`] retries can run at the
-/// [`DATA_PLANE_MAX_PER_RETRY_DELAY`] interval (18 × 15s = 270s), i.e. the retry
-/// **count** is the effective limiter, not the wait budget.
-pub(crate) const DATA_PLANE_MAX_THROTTLE_WAIT: Duration = Duration::from_secs(270);
+/// Cumulative-wait budget for data-plane 429 retries, computed as
+/// [`DATA_PLANE_MAX_THROTTLE_ATTEMPTS`] × [`DATA_PLANE_MAX_PER_RETRY_DELAY`]
+/// (18 × 15s = 270s) so the relationship holds automatically if either constant
+/// changes. The retry **count** is the effective limiter, not the wait budget.
+pub(crate) const DATA_PLANE_MAX_THROTTLE_WAIT: Duration = DATA_PLANE_MAX_PER_RETRY_DELAY
+    .checked_mul(DATA_PLANE_MAX_THROTTLE_ATTEMPTS)
+    .expect("data-plane throttle wait budget overflows Duration");
 const DEFAULT_FALLBACK_BASE_DELAY: Duration = Duration::from_millis(5);
 const DEFAULT_BACKOFF_FACTOR: f64 = 2.0;
 const DEFAULT_BACKOFF_JITTER_RATIO: f64 = 0.25;
@@ -583,9 +585,9 @@ impl ThrottleRetryState {
     #[cfg(test)]
     pub fn new() -> Self {
         Self::with_limits(
-            DEFAULT_MAX_THROTTLE_ATTEMPTS,
-            DEFAULT_MAX_THROTTLE_WAIT,
-            DEFAULT_MAX_PER_RETRY_DELAY,
+            METADATA_MAX_THROTTLE_ATTEMPTS,
+            METADATA_MAX_THROTTLE_WAIT,
+            METADATA_MAX_PER_RETRY_DELAY,
         )
     }
 
@@ -935,7 +937,7 @@ mod tests {
         let state = ThrottleRetryState::with_limits(
             9,
             Duration::from_secs(30),
-            DEFAULT_MAX_PER_RETRY_DELAY,
+            METADATA_MAX_PER_RETRY_DELAY,
         );
         let (delay, next) = state
             .next_throttle_retry(Some(1000))
@@ -950,7 +952,7 @@ mod tests {
         let state = ThrottleRetryState::with_limits(
             9,
             Duration::from_secs(30),
-            DEFAULT_MAX_PER_RETRY_DELAY,
+            METADATA_MAX_PER_RETRY_DELAY,
         );
         // Service asks for 60s; the metadata per-retry cap (5s) must clamp it.
         let (delay, _) = state
@@ -978,7 +980,7 @@ mod tests {
         let mut state = ThrottleRetryState::with_limits(
             1,
             Duration::from_secs(30),
-            DEFAULT_MAX_PER_RETRY_DELAY,
+            METADATA_MAX_PER_RETRY_DELAY,
         );
         state.attempt_count = 1;
         assert!(state.next_throttle_retry(Some(10)).is_none());
@@ -986,8 +988,11 @@ mod tests {
 
     #[test]
     fn next_throttle_retry_stops_when_wait_budget_exceeded() {
-        let mut state =
-            ThrottleRetryState::with_limits(9, Duration::from_secs(5), DEFAULT_MAX_PER_RETRY_DELAY);
+        let mut state = ThrottleRetryState::with_limits(
+            9,
+            Duration::from_secs(5),
+            METADATA_MAX_PER_RETRY_DELAY,
+        );
         state.cumulative_delay = Duration::from_secs(4);
         // A 5s (capped) delay would push cumulative to 9s, over the 5s budget.
         assert!(state.next_throttle_retry(Some(5000)).is_none());
@@ -997,9 +1002,9 @@ mod tests {
     fn throttle_retry_state_new_matches_with_limits_defaults() {
         let from_new = ThrottleRetryState::new();
         let from_limits = ThrottleRetryState::with_limits(
-            DEFAULT_MAX_THROTTLE_ATTEMPTS,
-            DEFAULT_MAX_THROTTLE_WAIT,
-            DEFAULT_MAX_PER_RETRY_DELAY,
+            METADATA_MAX_THROTTLE_ATTEMPTS,
+            METADATA_MAX_THROTTLE_WAIT,
+            METADATA_MAX_PER_RETRY_DELAY,
         );
         assert_eq!(from_new.max_attempts, from_limits.max_attempts);
         assert_eq!(from_new.max_wait_time, from_limits.max_wait_time);
