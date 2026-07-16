@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Cosmos binary JSON **decoder** (`binary` â†’ [`serde_json::Value`]).
+//! Cosmos binary JSON **decoder** (`binary` -> [`serde_json::Value`]).
 //!
 //! Every step is bounds-checked and returns a [`BinaryError`] rather than
 //! panicking, so a malformed or truncated buffer fails gracefully. Multi-byte
@@ -12,7 +12,7 @@
 //! extended numbers, every string form (system, user, reference, encoded-length,
 //! length-prefixed, GUID, base64, and compressed), the GUID value, binary blobs,
 //! containers, and uniform number arrays. Two cases have no JSON representation
-//! and are reported as errors: user strings (`0x40`â€“`0x67`) report
+//! and are reported as errors: user strings (`0x40`-`0x67`) report
 //! [`BinaryError::UnsupportedUserString`] (they reference an external dictionary
 //! the data plane does not supply), and `Float16` (`0xCF`) plus the standalone
 //! extended `UInt8` (`0xD7`) report [`BinaryError::InvalidMarker`].
@@ -157,11 +157,11 @@ pub(super) struct Reader<'a> {
     pub(super) buf: &'a [u8],
     pub(super) pos: usize,
     /// Remaining budget, in bytes, for text materialized by **reference-string**
-    /// resolution ([`STR_R1`](super::markers::STR_R1)â€“[`STR_R4`](super::markers::STR_R4)).
+    /// resolution ([`STR_R1`](super::markers::STR_R1)-[`STR_R4`](super::markers::STR_R4)).
     ///
     /// Each reference decodes a *fresh owned copy* of its target string, so a
     /// crafted buffer (one long string plus many short references to it) can
-    /// expand to O(SÂ²) aggregate output from a size-`S` buffer even though every
+    /// expand to O(S^2) aggregate output from a size-`S` buffer even though every
     /// individual length prefix is buffer-bounded. This shared counter caps the
     /// total reference-expanded bytes for one decode; exceeding it fails with
     /// [`BinaryError::InvalidLength`]. Non-reference strings are backed 1:1 by
@@ -175,9 +175,9 @@ pub(super) struct Reader<'a> {
 ///
 /// References normally *shrink* payloads (they replace a repeated string with a
 /// few offset bytes), so a legitimate buffer never approaches this. The cap is
-/// generous â€” a multiple of the buffer size, floored at a small constant so
-/// tiny buffers still permit some expansion â€” while still bounding the
-/// adversarial O(SÂ²) blow-up to O(S).
+/// generous -- a multiple of the buffer size, floored at a small constant so
+/// tiny buffers still permit some expansion -- while still bounding the
+/// adversarial O(S^2) blow-up to O(S).
 fn reference_budget(buf_len: usize) -> usize {
     const FLOOR: usize = 64 * 1024;
     const FACTOR: usize = 16;
@@ -511,10 +511,7 @@ impl<'a> Reader<'a> {
             OBJ_LC2 => self.read_object_value(FieldWidth::Two, true, depth),
             OBJ_LC4 => self.read_object_value(FieldWidth::Four, true, depth),
 
-            // Every other (valid-but-not-yet-implemented or genuinely invalid)
-            // marker is reported as invalid. User/reference strings and the
-            // exotic string/number forms are filled in by later P1 sub-phases
-            // (see the module-level docs).
+            // Any other byte is not a valid type marker.
             other => Err(BinaryError::InvalidMarker {
                 marker: other,
                 offset,
@@ -528,8 +525,8 @@ impl<'a> Reader<'a> {
     /// Returns `Ok(Some(_))` (advancing the cursor) for `null`, booleans, every
     /// literal/fixed-width/extended number, system strings, and plain
     /// UTF-8 strings (encoded-length and `StrL1/2/4`). Returns `Ok(None)`
-    /// **without advancing** for any other marker â€” containers and the exotic
-    /// string/number forms â€” which the deserializer handles via a container
+    /// **without advancing** for any other marker -- containers and the exotic
+    /// string/number forms -- which the deserializer handles via a container
     /// stream or the [`read_value`](Self::read_value) fallback respectively.
     pub(super) fn try_read_native_scalar(&mut self) -> Result<Option<ScalarToken<'a>>> {
         let offset = self.pos;
@@ -1057,12 +1054,25 @@ impl<'a> Reader<'a> {
     /// element is just the little-endian value with no per-item marker.
     /// `marker_offset` is the offset of the array's item-type marker, used to
     /// report an unsupported item type. Mirrors the uniform-array branch of
-    /// .NET `TryGetNumberValue`. Delegates to [`read_number_value`] for the
-    /// actual little-endian payload decode.
+    /// .NET `TryGetNumberValue`.
+    ///
+    /// A uniform-array item type must be one of the **extended**
+    /// `INT*`/`UINT*`/`FLOAT*` markers. The self-describing `NUMBER_*` markers
+    /// never appear as a uniform-array item type, so they are rejected here
+    /// rather than accepted through the shared [`read_number_value`] decoder,
+    /// keeping the decoder no more permissive than the service.
     ///
     /// [`read_number_value`]: Self::read_number_value
     fn read_bare_number(&mut self, item_marker: u8, marker_offset: usize) -> Result<Value> {
-        self.read_number_value(item_marker, marker_offset)
+        match item_marker {
+            INT8 | UINT8 | INT16 | INT32 | INT64 | UINT32 | FLOAT32 | FLOAT64 => {
+                self.read_number_value(item_marker, marker_offset)
+            }
+            other => Err(BinaryError::InvalidMarker {
+                marker: other,
+                offset: marker_offset,
+            }),
+        }
     }
 
     /// Decodes the little-endian payload of a fixed-width number `marker` into a
@@ -1133,7 +1143,7 @@ impl<'a> Reader<'a> {
         Ok(Value::Array(outer))
     }
 
-    /// Resolves a reference string ([`STR_R1`]â€“[`STR_R4`]) whose `target` is an
+    /// Resolves a reference string ([`STR_R1`]-[`STR_R4`]) whose `target` is an
     /// absolute byte offset into the buffer (the same frame as [`Reader::pos`],
     /// where the [`PREAMBLE`](super::PREAMBLE) is offset `0`).
     ///
@@ -1169,7 +1179,7 @@ impl<'a> Reader<'a> {
 
         // Charge the materialized text against the shared reference-expansion
         // budget so many references to one large string cannot amplify a
-        // size-`S` buffer into O(SÂ²) aggregate output.
+        // size-`S` buffer into O(S^2) aggregate output.
         if let Value::String(s) = &value {
             let remaining = self.ref_budget.get();
             let cost = s.len();
@@ -1207,7 +1217,7 @@ fn double_value(n: f64) -> Result<Value> {
 
 /// Character lookup tables for the 4-bit table-compressed string forms.
 ///
-/// Each table maps a 4-bit nibble (`0x0`â€“`0xF`) to one ASCII byte, transcribed
+/// Each table maps a 4-bit nibble (`0x0`-`0xF`) to one ASCII byte, transcribed
 /// verbatim from the .NET `StringCompressionLookupTables` `list` arrays
 /// (`JsonBinaryEncoding.Chars.cs`).
 mod compression {
@@ -1457,6 +1467,22 @@ mod tests {
             decode(&buf(&bytes)),
             Err(BinaryError::InvalidMarker {
                 marker: markers::NULL,
+                // Marker sits at index 2: preamble (0) + ArrNumC1 (1) + item (2).
+                offset: 2,
+            }),
+        );
+    }
+
+    #[test]
+    fn rejects_uniform_array_with_self_describing_number_item_type() {
+        // A uniform-array item type must be an extended `INT*`/`UINT*`/`FLOAT*`
+        // marker. The self-describing `NUMBER_*` markers never appear in this
+        // position, so `NUMBER_UINT8` must be rejected rather than decoded.
+        let bytes = [markers::ARR_NUM_C1, markers::NUMBER_UINT8, 1, 0x00];
+        assert_eq!(
+            decode(&buf(&bytes)),
+            Err(BinaryError::InvalidMarker {
+                marker: markers::NUMBER_UINT8,
                 // Marker sits at index 2: preamble (0) + ArrNumC1 (1) + item (2).
                 offset: 2,
             }),
