@@ -40,7 +40,7 @@ use std::sync::Arc;
 
 use azure_data_cosmos_driver::CosmosDriver;
 
-use crate::diagnostics::{DiagnosticsContext, DiagnosticsHandlerChain};
+use crate::diagnostics::{CosmosOperationContext, DiagnosticsContext, DiagnosticsHandlerChain};
 use crate::models::CosmosResponse;
 
 /// Shared infrastructure threaded from [`CosmosClient`](super::CosmosClient)
@@ -67,26 +67,39 @@ impl ClientContext {
     /// This is the per-operation completion seam for the singleton
     /// (non-paginated) data- and control-plane operations: the handler chain
     /// observes the operation's finalized [`DiagnosticsContext`] exactly once.
+    ///
+    /// `make_op_context` supplies the SDK-side operation identity
+    /// ([`CosmosOperationContext`]) — operation name, database, container — that
+    /// the driver context does not carry. It is a closure so the identity is
+    /// only materialized when at least one handler is registered, preserving the
+    /// zero-overhead no-op when the chain is empty.
     pub(crate) fn complete_operation(
         &self,
         driver_response: azure_data_cosmos_driver::models::CosmosResponse,
+        make_op_context: impl FnOnce() -> CosmosOperationContext,
     ) -> CosmosResponse {
         let response = crate::driver_bridge::driver_response_to_cosmos_response(driver_response);
         let diagnostics = response.diagnostics();
-        self.dispatch_diagnostics(&diagnostics);
+        self.dispatch_diagnostics(&diagnostics, make_op_context);
         response
     }
 
-    /// Invokes the registered diagnostics handlers with a completed context.
+    /// Invokes the registered diagnostics handlers with a completed context and
+    /// the SDK-supplied operation identity.
     ///
-    /// Zero-overhead no-op when no handlers are registered: the trace
-    /// [`Context`](azure_core::http::Context) is only constructed when at least
-    /// one handler will observe it.
-    pub(crate) fn dispatch_diagnostics(&self, diagnostics: &DiagnosticsContext) {
+    /// Zero-overhead no-op when no handlers are registered: neither the trace
+    /// [`Context`](azure_core::http::Context) nor the
+    /// [`CosmosOperationContext`] is constructed unless at least one handler
+    /// will observe them.
+    pub(crate) fn dispatch_diagnostics(
+        &self,
+        diagnostics: &DiagnosticsContext,
+        make_op_context: impl FnOnce() -> CosmosOperationContext,
+    ) {
         if self.diagnostics_handlers.is_empty() {
             return;
         }
-        let cx = azure_core::http::Context::new();
+        let cx = azure_core::http::Context::new().with_value(make_op_context());
         self.diagnostics_handlers.dispatch(diagnostics, &cx);
     }
 }

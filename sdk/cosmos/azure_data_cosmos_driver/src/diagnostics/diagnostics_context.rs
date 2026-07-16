@@ -1863,10 +1863,19 @@ impl DiagnosticsContext {
         operation_name: Option<&str>,
         requests: Vec<RequestDiagnostics>,
     ) -> Self {
+        // Mirror the pipeline's exact-at-finalization rollup by summing the
+        // per-attempt charges supplied by the test.
+        let total_request_charge = RequestCharge::new(
+            requests
+                .iter()
+                .map(|r| r.request_charge().value())
+                .sum::<f64>(),
+        );
         DiagnosticsContext {
             activity_id,
             duration,
             requests: Arc::new(requests),
+            total_request_charge,
             status,
             options: Arc::new(DiagnosticsOptions::default()),
             cpu_monitor: None,
@@ -1876,6 +1885,7 @@ impl DiagnosticsContext {
             hedge_diagnostics: None,
             #[cfg(test)]
             test_system_usage: None,
+            compaction: None,
             cached_json_detailed: OnceLock::new(),
             cached_json_summary: OnceLock::new(),
         }

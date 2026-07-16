@@ -30,6 +30,7 @@ mod tests {
     use super::attributes;
     use super::handler::should_emit_span;
     use super::span_builder::emit_backdated_span_tree;
+    use crate::diagnostics::CosmosOperationContext;
 
     /// Builds a completed context: `duration` long, final `status`, and one
     /// synthetic attempt per `(offset_ms, dur_ms, status)` triple. `offset_ms` is
@@ -134,7 +135,7 @@ mod tests {
             now_instant,
         );
 
-        emit_backdated_span_tree(&tracer, &ctx, now_instant, now_system);
+        emit_backdated_span_tree(&tracer, &ctx, None, now_instant, now_system);
         provider.force_flush().unwrap();
 
         let spans = exporter.get_finished_spans().unwrap();
@@ -173,5 +174,48 @@ mod tests {
             .attributes
             .iter()
             .any(|kv| kv.key.as_str() == attributes::DB_OPERATION_NAME));
+    }
+
+    #[test]
+    fn op_context_supplies_identity_when_driver_context_lacks_it() {
+        let (provider, exporter) = exportable();
+        let tracer = provider.tracer("test");
+
+        let now_instant = Instant::now();
+        let now_system = SystemTime::now();
+        // A slow operation with NO driver-side operation name — the production
+        // case, since the driver never records one. The SDK-supplied
+        // CosmosOperationContext carries the operation identity instead.
+        let ctx = context(
+            Duration::from_millis(1500),
+            Some(CosmosStatus::new(StatusCode::Ok)),
+            None,
+            &[(1500, 1500, CosmosStatus::new(StatusCode::Ok))],
+            now_instant,
+        );
+        let op = CosmosOperationContext::new()
+            .with_operation_name("read_item")
+            .with_database_name("my_db")
+            .with_container_name("my_container");
+
+        emit_backdated_span_tree(&tracer, &ctx, Some(&op), now_instant, now_system);
+        provider.force_flush().unwrap();
+
+        let spans = exporter.get_finished_spans().unwrap();
+        // The op context names the root span and supplies db.operation.name,
+        // db.namespace, and db.collection.name.
+        let root = spans
+            .iter()
+            .find(|s| s.name == "read_item")
+            .expect("root span named from op context");
+        assert!(root.attributes.iter().any(|kv| {
+            kv.key.as_str() == attributes::DB_OPERATION_NAME && kv.value.as_str() == "read_item"
+        }));
+        assert!(root.attributes.iter().any(|kv| {
+            kv.key.as_str() == attributes::DB_NAMESPACE && kv.value.as_str() == "my_db"
+        }));
+        assert!(root.attributes.iter().any(|kv| {
+            kv.key.as_str() == attributes::DB_COLLECTION_NAME && kv.value.as_str() == "my_container"
+        }));
     }
 }

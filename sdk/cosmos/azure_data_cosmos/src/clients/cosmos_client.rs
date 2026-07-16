@@ -3,6 +3,7 @@
 
 use crate::{
     clients::{ClientContext, DatabaseClient},
+    diagnostics::CosmosOperationContext,
     feed::QueryItemIterator,
     models::DatabaseProperties,
     models::ResourceResponse,
@@ -227,9 +228,14 @@ impl CosmosClient {
             .execute_singleton_operation(operation, operation_options)
             .await?;
 
-        Ok(ResourceResponse::new(
-            self.context.complete_operation(driver_response),
-        ))
+        Ok(ResourceResponse::new(self.context.complete_operation(
+            driver_response,
+            || {
+                CosmosOperationContext::new()
+                    .with_operation_name("create_database")
+                    .with_database_name(id.to_string())
+            },
+        )))
     }
 }
 

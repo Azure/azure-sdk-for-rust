@@ -25,6 +25,7 @@ use opentelemetry::{
 use azure_data_cosmos_driver::diagnostics::{DiagnosticsContext, RequestDiagnostics};
 
 use super::attributes;
+use crate::diagnostics::CosmosOperationContext;
 
 /// Span name for the operation ("root") span when the operation name is unknown.
 const DEFAULT_OPERATION_SPAN_NAME: &str = "cosmosdb.operation";
@@ -37,12 +38,17 @@ const REQUEST_SPAN_NAME: &str = "cosmosdb.request";
 /// * `tracer` — the OpenTelemetry tracer to build spans on. Generic so tests can
 ///   pass a `SdkTracer` backed by an in-memory exporter with no global state.
 /// * `diagnostics` — the completed context to reconstruct.
+/// * `op` — the SDK-supplied operation identity (name, database, container), if
+///   present on the pipeline context. Supplies the operation name when the driver
+///   context does not carry one, and the `db.namespace` / `db.collection.name`
+///   attributes the driver context never knows.
 /// * `now_instant` / `now_system` — an anchor pair captured together at emission
 ///   time; monotonic instants in the context are converted to wall-clock times
 ///   relative to this anchor.
 pub(crate) fn emit_backdated_span_tree<T>(
     tracer: &T,
     diagnostics: &DiagnosticsContext,
+    op: Option<&CosmosOperationContext>,
     now_instant: Instant,
     now_system: SystemTime,
 ) where
@@ -60,8 +66,12 @@ pub(crate) fn emit_backdated_span_tree<T>(
     let op_failed = diagnostics.is_failure();
 
     // --- Operation (root) span ---
-    let op_name = diagnostics
+    // Prefer the driver context's operation name; fall back to the SDK-supplied
+    // operation identity when the driver did not record one.
+    let op_name_ref = diagnostics
         .operation_name()
+        .or_else(|| op.and_then(CosmosOperationContext::operation_name));
+    let op_name = op_name_ref
         .unwrap_or(DEFAULT_OPERATION_SPAN_NAME)
         .to_string();
 
@@ -69,10 +79,22 @@ pub(crate) fn emit_backdated_span_tree<T>(
         attributes::DB_SYSTEM_NAME,
         attributes::DB_SYSTEM_NAME_VALUE,
     )];
-    if let Some(name) = diagnostics.operation_name() {
+    if let Some(name) = op_name_ref {
         root_attrs.push(KeyValue::new(
             attributes::DB_OPERATION_NAME,
             name.to_string(),
+        ));
+    }
+    if let Some(namespace) = op.and_then(CosmosOperationContext::database_name) {
+        root_attrs.push(KeyValue::new(
+            attributes::DB_NAMESPACE,
+            namespace.to_string(),
+        ));
+    }
+    if let Some(collection) = op.and_then(CosmosOperationContext::container_name) {
+        root_attrs.push(KeyValue::new(
+            attributes::DB_COLLECTION_NAME,
+            collection.to_string(),
         ));
     }
     if let Some(status) = diagnostics.status() {
@@ -158,7 +180,7 @@ pub(crate) fn emit_backdated_span_tree<T>(
                 req.request_charge().value(),
             ),
         ];
-        if let Some(name) = diagnostics.operation_name() {
+        if let Some(name) = op_name_ref {
             child_attrs.push(KeyValue::new(
                 attributes::DB_OPERATION_NAME,
                 name.to_string(),

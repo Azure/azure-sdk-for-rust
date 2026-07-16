@@ -3,6 +3,7 @@
 
 use crate::{
     clients::{offers_client, ClientContext, ContainerClient},
+    diagnostics::CosmosOperationContext,
     feed::QueryItemIterator,
     models::ResourceResponse,
     models::{ContainerProperties, DatabaseProperties, ThroughputProperties},
@@ -36,6 +37,15 @@ impl DatabaseClient {
             context,
             database_ref,
         }
+    }
+
+    /// Builds the SDK-side [`CosmosOperationContext`] for this database's
+    /// operations, carrying the operation name plus the database identity the
+    /// driver context does not know.
+    fn operation_context(&self, operation_name: &'static str) -> CosmosOperationContext {
+        CosmosOperationContext::new()
+            .with_operation_name(operation_name)
+            .with_database_name(self.database_id.clone())
     }
 
     /// Gets a [`ContainerClient`] that can be used to access the collection with the specified name.
@@ -90,7 +100,8 @@ impl DatabaseClient {
             .await?;
 
         Ok(ResourceResponse::new(
-            self.context.complete_operation(driver_response),
+            self.context
+                .complete_operation(driver_response, || self.operation_context("read_database")),
         ))
     }
 
@@ -180,7 +191,9 @@ impl DatabaseClient {
             .await?;
 
         Ok(ResourceResponse::new(
-            self.context.complete_operation(driver_response),
+            self.context.complete_operation(driver_response, || {
+                self.operation_context("create_container")
+            }),
         ))
     }
 
@@ -204,7 +217,9 @@ impl DatabaseClient {
             .await?;
 
         Ok(ResourceResponse::new(
-            self.context.complete_operation(driver_response),
+            self.context.complete_operation(driver_response, || {
+                self.operation_context("delete_database")
+            }),
         ))
     }
 

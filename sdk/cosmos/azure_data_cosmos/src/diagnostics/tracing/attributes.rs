@@ -18,6 +18,12 @@ pub(crate) const DB_SYSTEM_NAME_VALUE: &str = "azure.cosmosdb";
 /// `db.operation.name` — the canonical operation name (e.g. `read_item`).
 pub(crate) const DB_OPERATION_NAME: &str = "db.operation.name";
 
+/// `db.namespace` — the database name.
+pub(crate) const DB_NAMESPACE: &str = "db.namespace";
+
+/// `db.collection.name` — the container name.
+pub(crate) const DB_COLLECTION_NAME: &str = "db.collection.name";
+
 /// `db.response.status_code` — the HTTP status code of the response, as a string.
 pub(crate) const DB_RESPONSE_STATUS_CODE: &str = "db.response.status_code";
 

@@ -42,11 +42,12 @@ pub use azure_data_cosmos_driver::diagnostics::{DiagnosticsContext, TransportKin
 pub use azure_data_cosmos_driver::DiagnosticsThresholds;
 pub use handler::{DiagnosticsHandler, DiagnosticsHandlerChain};
 pub use logging::SamplingLogHandler;
+pub use operation_context::CosmosOperationContext;
 #[cfg(feature = "otel_tracing")]
 pub use tracing::CosmosTracingHandler;
 
 #[cfg(feature = "otel_metrics")]
-pub use metrics::{CosmosMetricsHandler, CosmosOperationContext, MetricsOptions};
+pub use metrics::{CosmosMetricsHandler, MetricsOptions};
 
 // =========================================================================
 // Internal modules
@@ -54,6 +55,7 @@ pub use metrics::{CosmosMetricsHandler, CosmosOperationContext, MetricsOptions};
 
 mod handler;
 mod logging;
+mod operation_context;
 
 #[cfg(feature = "otel_metrics")]
 pub mod metrics;

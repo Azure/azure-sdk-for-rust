@@ -264,6 +264,7 @@
     "RUPM",
     "rwcache",
     "sbyte",
+    "semconv",
     "serviceunavailable",
     "serviceversion",
     "sess",

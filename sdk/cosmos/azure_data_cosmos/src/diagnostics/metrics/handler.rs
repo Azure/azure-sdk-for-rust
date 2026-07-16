@@ -13,8 +13,8 @@ use opentelemetry::{global, KeyValue};
 
 use crate::diagnostics::metrics::attributes;
 use crate::diagnostics::metrics::instruments::Instruments;
-use crate::diagnostics::metrics::{CosmosOperationContext, MetricsOptions};
-use crate::diagnostics::{DiagnosticsContext, DiagnosticsHandler};
+use crate::diagnostics::metrics::MetricsOptions;
+use crate::diagnostics::{CosmosOperationContext, DiagnosticsContext, DiagnosticsHandler};
 
 /// Instrumentation scope name used for the Cosmos [`Meter`].
 const METER_NAME: &str = "azure_data_cosmos";
@@ -287,7 +287,6 @@ fn host_of(endpoint: &str) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::diagnostics::metrics::CosmosOperationContext;
     use crate::CosmosStatus;
     use azure_core::http::StatusCode;
     use azure_data_cosmos_driver::models::ActivityId;

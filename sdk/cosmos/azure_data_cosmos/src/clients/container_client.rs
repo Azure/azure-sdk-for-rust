@@ -3,6 +3,7 @@
 
 use crate::{
     clients::{offers_client, ClientContext},
+    diagnostics::CosmosOperationContext,
     feed::{ChangeFeedPageIterator, FeedRange, FeedScope, QueryItemIterator},
     models::TransactionalBatch,
     models::{BatchResponse, ItemResponse, ResourceResponse},
@@ -62,6 +63,16 @@ impl ContainerClient {
         })
     }
 
+    /// Builds the SDK-side [`CosmosOperationContext`] for this container's
+    /// operations, carrying the operation name plus the database and container
+    /// identity the driver context does not know.
+    fn operation_context(&self, operation_name: &'static str) -> CosmosOperationContext {
+        CosmosOperationContext::new()
+            .with_operation_name(operation_name)
+            .with_database_name(self.container_ref.database_name().to_string())
+            .with_container_name(self.container_ref.name().to_string())
+    }
+
     /// Reads the properties of the container.
     ///
     /// # Arguments
@@ -92,7 +103,8 @@ impl ContainerClient {
             .await?;
 
         Ok(ResourceResponse::new(
-            self.context.complete_operation(driver_response),
+            self.context
+                .complete_operation(driver_response, || self.operation_context("read_container")),
         ))
     }
 
@@ -145,7 +157,9 @@ impl ContainerClient {
             .await?;
 
         Ok(ResourceResponse::new(
-            self.context.complete_operation(driver_response),
+            self.context.complete_operation(driver_response, || {
+                self.operation_context("replace_container")
+            }),
         ))
     }
 
@@ -231,7 +245,9 @@ impl ContainerClient {
             .await?;
 
         Ok(ResourceResponse::new(
-            self.context.complete_operation(driver_response),
+            self.context.complete_operation(driver_response, || {
+                self.operation_context("delete_container")
+            }),
         ))
     }
 
@@ -330,7 +346,8 @@ impl ContainerClient {
 
         // Bridge the driver response to the SDK response type.
         Ok(ItemResponse::new(
-            self.context.complete_operation(driver_response),
+            self.context
+                .complete_operation(driver_response, || self.operation_context("create_item")),
         ))
     }
 
@@ -428,7 +445,8 @@ impl ContainerClient {
 
         // Bridge the driver response to the SDK response type.
         Ok(ItemResponse::new(
-            self.context.complete_operation(driver_response),
+            self.context
+                .complete_operation(driver_response, || self.operation_context("replace_item")),
         ))
     }
 
@@ -534,7 +552,8 @@ impl ContainerClient {
             .await?;
 
         Ok(ItemResponse::new(
-            self.context.complete_operation(driver_response),
+            self.context
+                .complete_operation(driver_response, || self.operation_context("patch_item")),
         ))
     }
 
@@ -636,7 +655,8 @@ impl ContainerClient {
 
         // Bridge the driver response to the SDK response type.
         Ok(ItemResponse::new(
-            self.context.complete_operation(driver_response),
+            self.context
+                .complete_operation(driver_response, || self.operation_context("upsert_item")),
         ))
     }
 
@@ -696,7 +716,8 @@ impl ContainerClient {
 
         // Bridge the driver response to the SDK response type.
         Ok(ItemResponse::new(
-            self.context.complete_operation(driver_response),
+            self.context
+                .complete_operation(driver_response, || self.operation_context("read_item")),
         ))
     }
 
@@ -748,7 +769,8 @@ impl ContainerClient {
 
         // Bridge the driver response to the SDK response type.
         Ok(ItemResponse::new(
-            self.context.complete_operation(driver_response),
+            self.context
+                .complete_operation(driver_response, || self.operation_context("delete_item")),
         ))
     }
 
@@ -1007,7 +1029,9 @@ impl ContainerClient {
             .await?;
 
         Ok(BatchResponse::new(
-            self.context.complete_operation(driver_response),
+            self.context.complete_operation(driver_response, || {
+                self.operation_context("execute_transactional_batch")
+            }),
         ))
     }
 

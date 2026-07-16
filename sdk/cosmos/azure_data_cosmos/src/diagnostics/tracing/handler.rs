@@ -10,7 +10,7 @@ use azure_data_cosmos_driver::{diagnostics::DiagnosticsContext, DiagnosticsThres
 use opentelemetry::global::{self, BoxedTracer};
 
 use super::span_builder::emit_backdated_span_tree;
-use crate::diagnostics::DiagnosticsHandler;
+use crate::diagnostics::{CosmosOperationContext, DiagnosticsHandler};
 
 /// The instrumentation scope name used for the Cosmos tracer.
 const TRACER_NAME: &str = "azure_data_cosmos";
@@ -85,11 +85,18 @@ impl Default for CosmosTracingHandler {
 }
 
 impl DiagnosticsHandler for CosmosTracingHandler {
-    fn handle(&self, diagnostics: &DiagnosticsContext, _cx: &Context<'_>) {
+    fn handle(&self, diagnostics: &DiagnosticsContext, cx: &Context<'_>) {
         if !should_emit_span(diagnostics, &self.thresholds) {
             return;
         }
-        emit_backdated_span_tree(&self.tracer, diagnostics, Instant::now(), SystemTime::now());
+        let op = cx.value::<CosmosOperationContext>();
+        emit_backdated_span_tree(
+            &self.tracer,
+            diagnostics,
+            op,
+            Instant::now(),
+            SystemTime::now(),
+        );
     }
 }
 
