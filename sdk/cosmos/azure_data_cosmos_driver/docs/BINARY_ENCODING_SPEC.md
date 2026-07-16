@@ -260,8 +260,10 @@ sequenceDiagram
 
 5. **Negotiation + enablement.** The SDK sets
    `x-ms-cosmos-supported-serialization-formats: JsonText,CosmosBinary` on item
-   operations when enabled. Enablement resolves once at client construction from
-   the `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment variable.
+   operations when enabled. Enablement resolves once at client construction,
+   preferring the explicit `CosmosClientBuilder::with_binary_encoding_enabled`
+   option and falling back to the `AZURE_COSMOS_BINARY_ENCODING_ENABLED`
+   environment variable.
 
 ## 8. The codec layer in detail
 
@@ -390,11 +392,10 @@ All phases below are **done** except the noted follow-ups.
 | **P3** | Negotiation header + env-var enablement; end-to-end binary round-trip via the in-memory emulator. | ✅ done |
 | **P4** | Decoder fuzzing; text-vs-binary encode **and** decode benchmarks. | ✅ done |
 
-**Follow-ups / deferred:** query request-body encoding + negotiation; public
-builder option for enablement; patch, transactional batch, and bulk. (The
-native deserializer's exotic-form path still routes through `decode` → `Value`;
-extending native visitor coverage to those rare forms is a possible future
-optimization.)
+**Follow-ups / deferred:** query request-body encoding + negotiation; patch,
+transactional batch, and bulk. (The native deserializer's exotic-form path still
+routes through `decode` -> `Value`; extending native visitor coverage to those
+rare forms is a possible future optimization.)
 
 ## 11. Testing strategy
 
@@ -427,6 +428,15 @@ optimization.)
 2. **Codec placement** — keep the dedicated internal `binary_json` module
    (current choice) vs. a small standalone crate (e.g. `azure_data_cosmos_json`)
    if other language SDKs want to share it.
+3. **Encoder API shape (review follow-ups from PR #4671)** — two reviewer
+   suggestions on the `Value`-based reference encoder remain open:
+   - Rename `writer::encode(&Value)` to disambiguate it from the native
+     `ser::to_vec` (the reviewer suggested `to_vec`, which is already taken by
+     the serde path); needs a name decision before implementing.
+   - Change the shared emit helpers from `out: &mut Vec<u8>` to
+     `mut out: impl std::io::Write` so callers can pool/stream buffers. This
+     makes the currently-infallible helpers fallible and threads the `Write`
+     bound through `ser`, so it is sequenced as a follow-up.
 
 ## 13. Change map (as implemented)
 
@@ -442,9 +452,14 @@ optimization.)
 - `azure_data_cosmos/src/clients/container_client.rs`: `serialize_item_body`
   calls `binary_json::to_vec` on the binary write path; `apply_binary_negotiation`
   sets the header.
-- `azure_data_cosmos/src/error.rs`: `From<BinaryError>` for the SDK error type.
-- `azure_data_cosmos/src/clients/mod.rs`: `BinaryEncoding` enablement resolved
-  from `AZURE_COSMOS_BINARY_ENCODING_ENABLED`.
+- `azure_data_cosmos/src/error.rs`: `convert_binary_encode_error` maps a
+  `BinaryError` from the item-write encode path to the SDK error type (a
+  request-body error). It is a helper called via `map_err` at the single
+  call site rather than a `From` impl, so a future response-side decode error
+  cannot be mislabeled as a request-body error.
+- `azure_data_cosmos/src/clients/mod.rs`: `BinaryEncoding::resolve` prefers the
+  explicit `CosmosClientBuilder::with_binary_encoding_enabled` option and falls
+  back to the `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment variable.
 - `azure_data_cosmos_driver/src/models/cosmos_headers.rs`: the
   supported-serialization-formats header field + emission.
 - `azure_data_cosmos_benchmarks/benches/binary_encode.rs` /
