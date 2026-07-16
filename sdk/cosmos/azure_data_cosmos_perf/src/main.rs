@@ -144,6 +144,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         eprintln!("Error: --seed-count must be at least 1.");
         std::process::exit(1);
     }
+    if config.feed_range_query_max_pages == 0 {
+        eprintln!("Error: --feed-range-query-max-pages must be at least 1.");
+        std::process::exit(1);
+    }
 
     // Resolve the (optional) user-agent suffix. Composes
     // `{configured}-{first-8-chars-of-workload_id}` so a single perf
@@ -334,10 +338,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .ok()
             .and_then(|v| v.parse::<bool>().ok())
             .unwrap_or(true),
-        gateway20_allowed: std::env::var("AZURE_COSMOS_CONNECTION_POOL_IS_GATEWAY20_ALLOWED")
-            .ok()
-            .and_then(|v| v.parse::<bool>().ok())
-            .unwrap_or(false),
+        diagnostics_threshold_ms: config.diagnostics_threshold_ms,
         pyroscope_enabled: std::env::var("PYROSCOPE_SERVER_URL")
             .map(|v| !v.is_empty())
             .unwrap_or(false),
@@ -362,6 +363,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         concurrency: config.concurrency,
         target_rate: config.target_rate,
         max_in_flight: config.max_in_flight,
+        diagnostics_threshold: config.diagnostics_threshold_ms.map(Duration::from_millis),
         duration,
         report_interval: Duration::from_secs(config.report_interval),
         results_container,

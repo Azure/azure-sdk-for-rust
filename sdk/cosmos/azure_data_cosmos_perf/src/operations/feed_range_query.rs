@@ -6,8 +6,8 @@
 //! Each `execute()` runs `SELECT * FROM c` against ONE `FeedRange`,
 //! round-robin'd from a cache shared with
 //! [`FeedRangeRefresher`](super::feed_range_refresher::FeedRangeRefresher),
-//! and drains every page so the harness exercises continuation-token
-//! handling across multi-page responses per feed range.
+//! and drains a bounded number of pages so the harness exercises
+//! continuation-token handling without query work growing with the container.
 //! The harness's existing worker pool provides concurrency — N workers
 //! each issue one query at a time, naturally matching the concurrency
 //! of every other operation.
@@ -22,7 +22,7 @@ use azure_data_cosmos::{feed::FeedRange, CosmosStatus, FeedScope, Query};
 use azure_data_cosmos_driver::error::CosmosError as DriverCosmosError;
 use futures::StreamExt;
 
-use super::{extract_backend_duration, Operation};
+use super::{extract_backend_duration, Operation, OperationResult};
 
 /// Shared, swappable feed-range cache.
 ///
@@ -34,13 +34,15 @@ pub type FeedRangeCache = Arc<RwLock<Arc<Vec<FeedRange>>>>;
 pub struct FeedRangeQueryOperation {
     cache: FeedRangeCache,
     cursor: AtomicUsize,
+    max_pages: usize,
 }
 
 impl FeedRangeQueryOperation {
-    pub fn new(cache: FeedRangeCache) -> Self {
+    pub fn new(cache: FeedRangeCache, max_pages: usize) -> Self {
         Self {
             cache,
             cursor: AtomicUsize::new(0),
+            max_pages,
         }
     }
 }
@@ -54,7 +56,8 @@ impl Operation for FeedRangeQueryOperation {
     async fn execute(
         &self,
         container: &ContainerClient,
-    ) -> azure_data_cosmos::Result<Option<Duration>> {
+        capture_diagnostics: bool,
+    ) -> azure_data_cosmos::Result<OperationResult> {
         // Snapshot the current ranges; release the lock immediately.
         let snapshot = {
             let guard = self.cache.read().expect("feed-range cache lock poisoned");
@@ -80,20 +83,25 @@ impl Operation for FeedRangeQueryOperation {
         let mut stream =
             Box::pin(container.query_items::<super::PerfItem>(query, FeedScope::range(fr), None))
                 .await?
-                .into_pages();
+                .into_pages()
+                .take(self.max_pages);
 
         // Sum backend durations across pages so a multi-page response
         // reports the total server processing time, matching the
         // client-observed elapsed which wraps the entire stream drain.
         let mut backend_total: Option<Duration> = None;
+        let mut diagnostics = Vec::new();
         while let Some(result) = stream.next().await {
             let page = result?;
             if let Some(d) = extract_backend_duration(page.headers()) {
                 backend_total = Some(backend_total.unwrap_or_default() + d);
             }
+            if capture_diagnostics {
+                diagnostics.push(page.diagnostics());
+            }
         }
 
-        Ok(backend_total)
+        Ok(OperationResult::paged(backend_total, diagnostics))
     }
 }
 
@@ -108,7 +116,7 @@ mod tests {
 
     #[test]
     fn cursor_round_robins_and_wraps() {
-        let op = FeedRangeQueryOperation::new(cache_with_len(3));
+        let op = FeedRangeQueryOperation::new(cache_with_len(3), 4);
         // 6 fetches over a 3-element cache should visit each index twice
         // (0,1,2,0,1,2 modulo 3).
         let picks: Vec<usize> = (0..6)
@@ -122,7 +130,7 @@ mod tests {
         // Construct against a zero-length cache and confirm snapshot
         // is empty (execute() would surface this as an error instead
         // of dividing by zero).
-        let op = FeedRangeQueryOperation::new(cache_with_len(0));
+        let op = FeedRangeQueryOperation::new(cache_with_len(0), 4);
         let guard = op.cache.read().unwrap();
         assert!(guard.is_empty());
     }

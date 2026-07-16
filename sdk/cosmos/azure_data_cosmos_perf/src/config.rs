@@ -66,10 +66,17 @@ pub struct Config {
     /// Disable the per-feed-range query operation.
     ///
     /// When enabled (the default), the harness fans out
-    /// `SELECT VALUE COUNT(1) FROM c` across the container's physical
-    /// partitions, round-robin one range per call.
+    /// `SELECT * FROM c` across the container's physical partitions,
+    /// round-robin one range per call.
     #[arg(long, default_value_t = false)]
     pub no_feed_range_queries: bool,
+
+    /// Maximum number of pages consumed by each per-feed-range query.
+    ///
+    /// Bounds the work performed by one query as the container grows while
+    /// still exercising continuation-token handling across multiple pages.
+    #[arg(long, default_value_t = 4)]
+    pub feed_range_query_max_pages: usize,
 
     /// Interval in seconds between background refreshes of the cached feed
     /// range list. Set to 0 to disable the background refresher (the cache
@@ -122,6 +129,12 @@ pub struct Config {
     /// Stats reporting interval in seconds.
     #[arg(long, default_value_t = 300)]
     pub report_interval: u64,
+
+    /// Log detailed diagnostics for successful operations slower than this threshold in milliseconds.
+    ///
+    /// Omit to disable diagnostics logging for successful operations.
+    #[arg(long)]
+    pub diagnostics_threshold_ms: Option<u64>,
 
     /// Throughput (RU/s) to provision when creating the container.
     #[arg(long, default_value_t = 100000)]

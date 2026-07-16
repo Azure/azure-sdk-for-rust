@@ -11,7 +11,7 @@ use azure_data_cosmos::Query;
 use azure_data_cosmos::{clients::ContainerClient, feed::FeedScope};
 use futures::StreamExt;
 
-use super::{extract_backend_duration, Operation};
+use super::{extract_backend_duration, Operation, OperationResult};
 use crate::seed::SharedItems;
 
 /// Runs a single-partition query against a random seeded partition key.
@@ -35,7 +35,8 @@ impl Operation for QueryItemsOperation {
     async fn execute(
         &self,
         container: &ContainerClient,
-    ) -> azure_data_cosmos::Result<Option<Duration>> {
+        capture_diagnostics: bool,
+    ) -> azure_data_cosmos::Result<OperationResult> {
         let item = self.items.random();
         let pk = &item.partition_key;
 
@@ -54,13 +55,17 @@ impl Operation for QueryItemsOperation {
         // the total server processing time, mirroring how the client-observed
         // elapsed wraps the entire stream consumption.
         let mut backend_total: Option<Duration> = None;
+        let mut diagnostics = Vec::new();
         while let Some(result) = stream.next().await {
             let page = result?;
             if let Some(d) = extract_backend_duration(page.headers()) {
                 backend_total = Some(backend_total.unwrap_or_default() + d);
             }
+            if capture_diagnostics {
+                diagnostics.push(page.diagnostics());
+            }
         }
 
-        Ok(backend_total)
+        Ok(OperationResult::paged(backend_total, diagnostics))
     }
 }

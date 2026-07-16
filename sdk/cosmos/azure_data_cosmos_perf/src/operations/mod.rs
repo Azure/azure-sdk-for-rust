@@ -17,6 +17,7 @@ mod upsert_item;
 
 use async_trait::async_trait;
 use azure_data_cosmos::clients::ContainerClient;
+use azure_data_cosmos::diagnostics::DiagnosticsContext;
 use azure_data_cosmos::models::ResponseHeaders;
 use azure_data_cosmos::options::Region;
 use azure_data_cosmos::options::{
@@ -57,16 +58,43 @@ pub trait Operation: Send + Sync {
 
     /// Executes one instance of the operation.
     ///
-    /// Returns `Ok(Some(d))` when the server reported a processing duration
-    /// via the `x-ms-request-duration-ms` response header (this is the
-    /// backend latency surfaced separately from the client-observed
-    /// wall-clock latency). Returns `Ok(None)` when no backend duration
-    /// could be observed (multi-page query streams may aggregate, see
-    /// individual implementations).
+    /// Returns backend latency and, when `capture_diagnostics` is true,
+    /// finalized diagnostics for the response or query pages.
     async fn execute(
         &self,
         container: &ContainerClient,
-    ) -> azure_data_cosmos::Result<Option<Duration>>;
+        capture_diagnostics: bool,
+    ) -> azure_data_cosmos::Result<OperationResult>;
+}
+
+/// Successful operation data consumed by the runner.
+pub struct OperationResult {
+    /// Aggregated server-reported processing duration, when available.
+    pub backend_duration: Option<Duration>,
+    /// Finalized diagnostics captured from successful responses.
+    pub diagnostics: Vec<Arc<DiagnosticsContext>>,
+}
+
+impl OperationResult {
+    pub fn single(
+        backend_duration: Option<Duration>,
+        diagnostics: Option<Arc<DiagnosticsContext>>,
+    ) -> Self {
+        Self {
+            backend_duration,
+            diagnostics: diagnostics.into_iter().collect(),
+        }
+    }
+
+    pub fn paged(
+        backend_duration: Option<Duration>,
+        diagnostics: Vec<Arc<DiagnosticsContext>>,
+    ) -> Self {
+        Self {
+            backend_duration,
+            diagnostics,
+        }
+    }
 }
 
 /// The item type used for seeding, reading, querying, and upserting.
@@ -135,7 +163,10 @@ pub async fn create_operations(
                 .into());
         }
         let cache: FeedRangeCache = Arc::new(RwLock::new(Arc::new(initial)));
-        ops.push(Arc::new(FeedRangeQueryOperation::new(cache.clone())));
+        ops.push(Arc::new(FeedRangeQueryOperation::new(
+            cache.clone(),
+            config.feed_range_query_max_pages,
+        )));
 
         if config.feed_range_refresh_secs > 0 {
             Some(FeedRangeRefresher::new(

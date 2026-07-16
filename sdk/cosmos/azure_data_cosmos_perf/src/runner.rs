@@ -98,7 +98,7 @@ struct PerfResult {
     #[serde(skip_serializing_if = "Option::is_none")]
     config_ppcb_enabled: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    config_gateway20_allowed: Option<bool>,
+    config_diagnostics_threshold_ms: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     config_pyroscope_enabled: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -166,6 +166,9 @@ pub struct RunConfig {
     /// Maximum in-flight requests in open-loop mode. Ignored when
     /// `target_rate` is `None`.
     pub max_in_flight: usize,
+    /// Successful operations exceeding this latency emit detailed diagnostics.
+    /// `None` disables successful-operation diagnostics logging.
+    pub diagnostics_threshold: Option<Duration>,
     pub duration: Option<Duration>,
     pub report_interval: Duration,
     pub results_container: ContainerClient,
@@ -183,11 +186,21 @@ pub struct ConfigSnapshot {
     pub excluded_regions: String,
     pub tokio_threads: u64,
     pub ppcb_enabled: bool,
-    pub gateway20_allowed: bool,
+    pub diagnostics_threshold_ms: Option<u64>,
     pub pyroscope_enabled: bool,
     pub tokio_console_enabled: bool,
     pub tokio_metrics_enabled: bool,
     pub valgrind_tool: String,
+}
+
+/// Shared metadata and reporting dependencies for one operation execution.
+struct OperationRunContext<'a> {
+    stats: &'a Stats,
+    results_container: &'a ContainerClient,
+    workload_id: &'a str,
+    commit_sha: &'a str,
+    hostname: &'a str,
+    diagnostics_threshold: Option<Duration>,
 }
 
 /// Executes a single operation against `container`, recording its latency on
@@ -196,26 +209,31 @@ pub struct ConfigSnapshot {
 async fn run_one(
     op: &Arc<dyn Operation>,
     container: &ContainerClient,
-    stats: &Stats,
-    err_container: &ContainerClient,
-    workload_id: &str,
-    commit_sha: &str,
-    hostname: &str,
+    context: OperationRunContext<'_>,
 ) {
     let op_start = Instant::now();
-    match op.execute(container).await {
-        Ok(backend_duration) => {
-            stats.record_latency(op.name(), op_start.elapsed(), backend_duration);
+    match op
+        .execute(container, context.diagnostics_threshold.is_some())
+        .await
+    {
+        Ok(result) => {
+            let elapsed = op_start.elapsed();
+            context
+                .stats
+                .record_latency(op.name(), elapsed, result.backend_duration);
+            if diagnostics_threshold_exceeded(elapsed, context.diagnostics_threshold) {
+                log_slow_operation_diagnostics(op.name(), elapsed, &result.diagnostics);
+            }
         }
         Err(e) => {
-            stats.record_error(op.name());
+            context.stats.record_error(op.name());
             upsert_error(
-                err_container,
+                context.results_container,
                 op.name(),
                 &e,
-                workload_id,
-                commit_sha,
-                hostname,
+                context.workload_id,
+                context.commit_sha,
+                context.hostname,
             )
             .await;
         }
@@ -242,6 +260,7 @@ pub async fn run(config: RunConfig) {
         concurrency,
         target_rate,
         max_in_flight,
+        diagnostics_threshold,
         duration,
         report_interval,
         results_container,
@@ -403,11 +422,14 @@ pub async fn run(config: RunConfig) {
                             run_one(
                                 &op,
                                 &container,
-                                &stats,
-                                &err_container,
-                                &workload_id,
-                                &commit_sha,
-                                &hostname,
+                                OperationRunContext {
+                                    stats: &stats,
+                                    results_container: &err_container,
+                                    workload_id: &workload_id,
+                                    commit_sha: &commit_sha,
+                                    hostname: &hostname,
+                                    diagnostics_threshold,
+                                },
                             )
                             .await;
                             drop(permit);
@@ -462,11 +484,14 @@ pub async fn run(config: RunConfig) {
                     run_one(
                         &ops[op_idx],
                         &container,
-                        &stats,
-                        &err_container,
-                        &err_workload_id,
-                        &err_commit_sha,
-                        &err_hostname,
+                        OperationRunContext {
+                            stats: &stats,
+                            results_container: &err_container,
+                            workload_id: &err_workload_id,
+                            commit_sha: &err_commit_sha,
+                            hostname: &err_hostname,
+                            diagnostics_threshold,
+                        },
                     )
                     .await;
                 }
@@ -575,7 +600,7 @@ async fn upsert_results(
             },
             config_tokio_threads: Some(config.tokio_threads),
             config_ppcb_enabled: Some(config.ppcb_enabled),
-            config_gateway20_allowed: Some(config.gateway20_allowed),
+            config_diagnostics_threshold_ms: config.diagnostics_threshold_ms,
             config_pyroscope_enabled: Some(config.pyroscope_enabled),
             config_tokio_console_enabled: Some(config.tokio_console_enabled),
             config_tokio_metrics_enabled: Some(config.tokio_metrics_enabled),
@@ -647,4 +672,53 @@ fn diagnostics_to_json(diagnostics: &DiagnosticsContext) -> serde_json::Value {
     let json_str = diagnostics.to_json_string(Some(DiagnosticsVerbosity::Detailed));
     serde_json::from_str(json_str)
         .expect("DiagnosticsContext::to_json_string should always produce valid JSON")
+}
+
+fn log_slow_operation_diagnostics(
+    operation: &str,
+    elapsed: Duration,
+    diagnostics: &[Arc<DiagnosticsContext>],
+) {
+    let diagnostics: Vec<_> = diagnostics
+        .iter()
+        .map(|context| diagnostics_to_json(context))
+        .collect();
+    let entry = serde_json::json!({
+        "event": "slow_operation_diagnostics",
+        "operation": operation,
+        "elapsed_ms": elapsed.as_secs_f64() * 1000.0,
+        "diagnostics": diagnostics,
+    });
+    eprintln!("{entry}");
+}
+
+fn diagnostics_threshold_exceeded(elapsed: Duration, threshold: Option<Duration>) -> bool {
+    threshold.is_some_and(|threshold| elapsed > threshold)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::diagnostics_threshold_exceeded;
+    use std::time::Duration;
+
+    #[test]
+    fn diagnostics_logging_is_disabled_without_threshold() {
+        assert!(!diagnostics_threshold_exceeded(
+            Duration::from_secs(1),
+            None
+        ));
+    }
+
+    #[test]
+    fn diagnostics_logging_requires_latency_over_threshold() {
+        let threshold = Some(Duration::from_millis(100));
+        assert!(!diagnostics_threshold_exceeded(
+            Duration::from_millis(100),
+            threshold
+        ));
+        assert!(diagnostics_threshold_exceeded(
+            Duration::from_millis(101),
+            threshold
+        ));
+    }
 }
