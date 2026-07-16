@@ -294,7 +294,41 @@ impl DriverOptionsBuilder {
     }
 
     /// Builds the [`DriverOptions`].
+    ///
+    /// When [`with_partition_failover_options`](Self::with_partition_failover_options)
+    /// was not called, the partition-failover / PPCB options are resolved from
+    /// the `AZURE_COSMOS_PPCB_*` environment variables. Resolution is fail-soft:
+    /// an out-of-bounds value is logged and the group falls back to
+    /// [`PartitionFailoverOptions::default`], so `build` stays infallible.
     pub fn build(self) -> DriverOptions {
+        self.build_from_env(&|k| std::env::var(k).ok())
+    }
+
+    /// Builds the [`DriverOptions`], resolving any omitted environment-backed
+    /// option groups through the supplied `get_env` accessor instead of the
+    /// process environment directly.
+    ///
+    /// [`build`](Self::build) delegates here with `|k| std::env::var(k).ok()`.
+    /// The seam lets tests exercise the "caller omitted the options, so they
+    /// come from the environment" path for every override combination
+    /// deterministically, without mutating process-wide environment.
+    pub(crate) fn build_from_env(self, get_env: &dyn Fn(&str) -> Option<String>) -> DriverOptions {
+        // When the caller supplied explicit partition-failover options, honor
+        // them verbatim. Otherwise resolve them from the environment.
+        let partition_failover_options = match self.partition_failover_options {
+            Some(options) => options,
+            None => PartitionFailoverOptions::builder()
+                .build_from_env(get_env)
+                .unwrap_or_else(|e| {
+                    tracing::warn!(
+                        error = %e,
+                        "failed to resolve PartitionFailoverOptions from the environment \
+                         (AZURE_COSMOS_PPCB_*); falling back to defaults",
+                    );
+                    PartitionFailoverOptions::default()
+                }),
+        };
+
         DriverOptions {
             account: self.account,
             operation_options: Arc::new(self.operation_options.unwrap_or_default()),
@@ -303,7 +337,7 @@ impl DriverOptionsBuilder {
             #[cfg(feature = "fault_injection")]
             fault_injection_rules: self.fault_injection_rules.filter(|r| !r.is_empty()),
             throughput_control_groups: self.throughput_control_groups,
-            partition_failover_options: self.partition_failover_options.unwrap_or_default(),
+            partition_failover_options,
         }
     }
 }
@@ -312,6 +346,7 @@ impl DriverOptionsBuilder {
 mod tests {
     use super::*;
     use crate::options::OperationOptionsBuilder;
+    use std::collections::HashMap;
     use url::Url;
 
     fn test_account() -> AccountReference {
@@ -391,5 +426,206 @@ mod tests {
             .build();
 
         assert_eq!(options.preferred_regions(), &regions);
+    }
+
+    // ── Partition-failover / PPCB end-to-end env resolution ─────────────────
+    //
+    // These guard the customer-reported bug: when the caller omits
+    // `with_partition_failover_options`, `DriverOptionsBuilder::build` must
+    // resolve PPCB from `AZURE_COSMOS_PPCB_*` (rather than a bare `Default`
+    // that bypasses the environment). They drive `build_from_env` with an
+    // injected map so they don't race on process-wide `std::env`.
+
+    fn env_of(pairs: &[(&str, &str)]) -> impl Fn(&str) -> Option<String> {
+        let map: HashMap<String, String> = pairs
+            .iter()
+            .map(|(k, v)| ((*k).to_string(), (*v).to_string()))
+            .collect();
+        move |k: &str| map.get(k).cloned()
+    }
+
+    #[test]
+    fn omitted_pfo_defaults_ppcb_on_with_empty_env() {
+        let options = DriverOptionsBuilder::new(test_account()).build_from_env(&|_| None);
+        assert!(options
+            .partition_failover_options()
+            .circuit_breaker_enabled());
+        assert_eq!(
+            options
+                .partition_failover_options()
+                .circuit_breaker_enabled_override(),
+            None
+        );
+    }
+
+    #[test]
+    fn omitted_pfo_honors_env_disable() {
+        // The exact customer scenario: no explicit options, env disables PPCB.
+        // Before the fix this silently stayed enabled.
+        let options = DriverOptionsBuilder::new(test_account())
+            .build_from_env(&env_of(&[("AZURE_COSMOS_PPCB_ENABLED", "false")]));
+        assert!(!options
+            .partition_failover_options()
+            .circuit_breaker_enabled());
+    }
+
+    #[test]
+    fn omitted_pfo_honors_kill_switch_from_env() {
+        // The authoritative kill switch must be picked up on the omitted path
+        // too, so an operator can force PPCB off fleet-wide without code.
+        let options = DriverOptionsBuilder::new(test_account())
+            .build_from_env(&env_of(&[("AZURE_COSMOS_PPCB_ENABLED_OVERRIDE", "false")]));
+        assert_eq!(
+            options
+                .partition_failover_options()
+                .circuit_breaker_enabled_override(),
+            Some(false)
+        );
+    }
+
+    #[test]
+    fn omitted_pfo_env_override_wins_over_env_base_enable() {
+        use crate::driver::routing::partition_endpoint_state::PartitionEndpointState;
+
+        // Base env var enables PPCB, but the kill switch disables it. The
+        // override is authoritative, so the effective in-driver value is off.
+        let options = DriverOptionsBuilder::new(test_account()).build_from_env(&env_of(&[
+            ("AZURE_COSMOS_PPCB_ENABLED", "true"),
+            ("AZURE_COSMOS_PPCB_ENABLED_OVERRIDE", "false"),
+        ]));
+        let pfo = options.partition_failover_options();
+        // Both values are resolved from the environment as specified.
+        assert!(pfo.circuit_breaker_enabled());
+        assert_eq!(pfo.circuit_breaker_enabled_override(), Some(false));
+        // And the override wins where the value is actually applied.
+        let state = PartitionEndpointState::new(pfo.clone());
+        assert!(!state.per_partition_circuit_breaker_enabled);
+    }
+
+    #[test]
+    fn explicit_pfo_override_wins_over_base_enable() {
+        use crate::driver::routing::partition_endpoint_state::PartitionEndpointState;
+
+        // The override also wins when the options are supplied explicitly (not
+        // from the environment): base enabled, override disabled -> off.
+        let explicit = PartitionFailoverOptions::builder()
+            .with_circuit_breaker_enabled(true)
+            .with_circuit_breaker_enabled_override(false)
+            .build_from_env(&|_| None)
+            .expect("valid options");
+
+        let options = DriverOptionsBuilder::new(test_account())
+            .with_partition_failover_options(explicit)
+            // Env would say "enabled" but explicit options must be honored.
+            .build_from_env(&env_of(&[("AZURE_COSMOS_PPCB_ENABLED", "true")]));
+        let pfo = options.partition_failover_options();
+        assert!(pfo.circuit_breaker_enabled());
+        assert_eq!(pfo.circuit_breaker_enabled_override(), Some(false));
+        let state = PartitionEndpointState::new(pfo.clone());
+        assert!(!state.per_partition_circuit_breaker_enabled);
+    }
+
+    #[test]
+    fn omitted_pfo_honors_env_thresholds_and_durations() {
+        let options = DriverOptionsBuilder::new(test_account()).build_from_env(&env_of(&[
+            ("AZURE_COSMOS_PPCB_READ_FAILURE_THRESHOLD", "21"),
+            ("AZURE_COSMOS_PPCB_COUNTER_RESET_WINDOW_MS", "60000"),
+        ]));
+        let pfo = options.partition_failover_options();
+        assert_eq!(pfo.read_failure_threshold(), 21);
+        assert_eq!(
+            pfo.counter_reset_window(),
+            std::time::Duration::from_millis(60_000)
+        );
+    }
+
+    #[test]
+    fn explicit_pfo_takes_precedence_over_env() {
+        // An explicitly-supplied options value is honored verbatim and the
+        // environment is *not* consulted for that group.
+        let explicit = PartitionFailoverOptions::builder()
+            .with_circuit_breaker_enabled(true)
+            .with_read_failure_threshold(7)
+            .build()
+            .expect("valid options");
+
+        let options = DriverOptionsBuilder::new(test_account())
+            .with_partition_failover_options(explicit)
+            // Env would say "disabled / threshold 99" but must be ignored.
+            .build_from_env(&env_of(&[
+                ("AZURE_COSMOS_PPCB_ENABLED", "false"),
+                ("AZURE_COSMOS_PPCB_READ_FAILURE_THRESHOLD", "99"),
+            ]));
+        let pfo = options.partition_failover_options();
+        assert!(pfo.circuit_breaker_enabled());
+        assert_eq!(pfo.read_failure_threshold(), 7);
+    }
+
+    #[test]
+    fn omitted_pfo_out_of_bounds_env_falls_back_to_default_infallibly() {
+        // `build` is infallible: an out-of-bounds env value on the omitted
+        // path is logged and the whole group falls back to defaults rather
+        // than panicking or losing the builder's other (non-PPCB) settings.
+        let options = DriverOptionsBuilder::new(test_account()).build_from_env(&env_of(&[(
+            "AZURE_COSMOS_PPCB_READ_FAILURE_THRESHOLD",
+            "0",
+        )]));
+        let pfo = options.partition_failover_options();
+        assert_eq!(
+            pfo.read_failure_threshold(),
+            PartitionFailoverOptions::default().read_failure_threshold()
+        );
+        assert!(pfo.circuit_breaker_enabled());
+    }
+}
+
+/// Smoke tests that the bug chokepoint — [`DriverOptionsBuilder::build`]
+/// resolving omitted partition-failover options from the real process
+/// environment — is wired correctly.
+///
+/// The exhaustive matrix (precedence, kill switch, tuning knobs, fail-soft)
+/// lives in the injected-closure tests above. These two cases exist only to
+/// prove that the public `build()` actually reads `std::env::var` end to end —
+/// the exact path a customer hits when they set the env and never call
+/// `with_partition_failover_options` — a gap the injected tests cannot cover.
+/// Every case runs inside [`with_scoped_env`] (shared lock + clear/restore) so
+/// it is hermetic and parallel-safe.
+#[cfg(test)]
+mod real_env_tests {
+    use super::*;
+    use crate::options::env_parsing::test_env::{with_scoped_env, PPCB_ENV_VARS};
+    use url::Url;
+
+    fn test_account() -> AccountReference {
+        AccountReference::with_master_key(
+            Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            "test-key",
+        )
+    }
+
+    #[test]
+    fn real_env_omitted_options_honor_disable() {
+        // The exact customer scenario, end to end: env disables PPCB and the
+        // caller never supplies options, so the driver must observe `false`.
+        with_scoped_env(
+            PPCB_ENV_VARS,
+            &[("AZURE_COSMOS_PPCB_ENABLED", "false")],
+            || {
+                let options = DriverOptionsBuilder::new(test_account()).build();
+                assert!(!options
+                    .partition_failover_options()
+                    .circuit_breaker_enabled());
+            },
+        );
+    }
+
+    #[test]
+    fn real_env_omitted_options_default_enabled_when_unset() {
+        with_scoped_env(PPCB_ENV_VARS, &[], || {
+            let options = DriverOptionsBuilder::new(test_account()).build();
+            assert!(options
+                .partition_failover_options()
+                .circuit_breaker_enabled());
+        });
     }
 }

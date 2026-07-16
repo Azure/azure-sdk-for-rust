@@ -140,9 +140,16 @@ impl CosmosClientBuilder {
     /// circuit breaker and partition-level failover for the lifetime of the
     /// client. They are independent of per-request [`OperationOptions`].
     ///
-    /// When this setter is not called, the driver falls back to
-    /// [`PartitionFailoverOptions::default`], which honors the
-    /// `AZURE_COSMOS_PPCB_*` environment variables.
+    /// When this setter is **not** called, the driver resolves these options
+    /// from the `AZURE_COSMOS_PPCB_*` environment variables — including the
+    /// `AZURE_COSMOS_PPCB_ENABLED` master switch and the
+    /// `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` kill switch — falling back to
+    /// compile-time defaults for anything unset. Passing an explicit value
+    /// here takes precedence over those variables (except the
+    /// `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` kill switch, which is read from the
+    /// environment when you build the [`PartitionFailoverOptions`] and remains
+    /// authoritative). To disable PPCB regardless of the account property, set
+    /// `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE=false`.
     pub fn with_partition_failover_options(mut self, options: PartitionFailoverOptions) -> Self {
         self.partition_failover_options = Some(options);
         self
@@ -192,8 +199,6 @@ impl CosmosClientBuilder {
         Ok(self)
     }
 
-    /// Registers a per-client [`ThroughputControlGroupOptions`].
-    ///
     /// Throughput-control groups are scoped to this client's driver — the
     /// per-runtime registry has been removed, so every client owns its own
     /// set of groups. Duplicate group names supplied to the same builder are
@@ -250,7 +255,9 @@ impl CosmosClientBuilder {
     ///
     /// # Errors
     ///
-    /// Returns an error if the client cannot be constructed.
+    /// Returns an error if the client cannot be constructed. In particular, an
+    /// endpoint that uses `http://` (non-HTTPS) is rejected unless its host is a
+    /// known Cosmos DB emulator host; production accounts must use `https://`.
     pub async fn build(
         self,
         account: AccountReference,
@@ -431,6 +438,27 @@ mod tests {
         )
     }
 
+    /// `CosmosClientBuilder::build` must reject an `http://` production endpoint,
+    /// surfacing the invalid-endpoint status through the SDK error type.
+    #[cfg(feature = "key_auth")]
+    #[tokio::test]
+    async fn build_rejects_http_production_endpoint() {
+        use crate::{AccountEndpoint, AccountReference};
+        use azure_core::credentials::Secret;
+
+        let endpoint: AccountEndpoint = "http://myaccount.documents.azure.com/".parse().unwrap();
+        let account = AccountReference::with_authentication_key(endpoint, Secret::from("dGVzdA=="));
+
+        let error = CosmosClientBuilder::new()
+            .build(account, RoutingStrategy::PreferredRegions(Vec::new()))
+            .await
+            .expect_err("http production endpoint must be rejected");
+        assert_eq!(
+            error.status(),
+            crate::error::CosmosStatus::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL
+        );
+    }
+
     /// `ProximityTo` a known region produces a non-empty preferred_regions list
     /// with the source region first.
     #[test]
@@ -541,10 +569,14 @@ mod tests {
         );
     }
 
-    /// Omitting the partition-failover options on the builder must produce
-    /// driver options that carry the type's `Default` value (i.e. PPCB off).
+    /// Omitting the partition-failover options on the builder must resolve
+    /// them from the `AZURE_COSMOS_PPCB_*` environment. With none of those
+    /// variables set (the CI default), resolution falls back to the type's
+    /// compile-time defaults — i.e. PPCB enabled. This guards the wiring that
+    /// routes an omitted value through the driver's env-backed builder rather
+    /// than a bare `Default` that bypasses the environment entirely.
     #[test]
-    fn missing_partition_failover_options_uses_default() {
+    fn missing_partition_failover_options_resolves_from_env_then_default() {
         let opts = build_driver_options(
             test_account(),
             RoutingStrategy::PreferredRegions(Vec::new()),

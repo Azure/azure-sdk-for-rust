@@ -215,6 +215,10 @@ impl PipelineNode for Request {
 
 impl Request {
     fn handle_response(&mut self, response: CosmosResponse) -> PageResult {
+        if self.operation.is_change_feed() {
+            return self.handle_change_feed_response(response);
+        }
+
         let continuation = response.headers().continuation.clone();
         tracing::trace!(
             target = ?self.target,
@@ -234,6 +238,38 @@ impl Request {
         PageResult::Page {
             response,
             is_terminal,
+        }
+    }
+
+    /// Handles a change feed response.
+    ///
+    /// Change feed is an unbounded stream: the consumer polls indefinitely and
+    /// the service signals "no new changes" with `304 Not Modified` rather than
+    /// ending the feed. Two behaviors differ from a normal feed read:
+    ///
+    /// 1. The continuation token is carried by the **ETag** header (re-sent as
+    ///    `If-None-Match` on the next poll), not `x-ms-continuation`.
+    /// 2. The request must **never** transition to `Drained`. Even a `304` with
+    ///    no body advances the ETag, and the next poll resumes from there.
+    fn handle_change_feed_response(&mut self, response: CosmosResponse) -> PageResult {
+        let etag = response.headers().etag.as_ref().map(|e| e.to_string());
+        tracing::trace!(
+            target = ?self.target,
+            status = ?response.status(),
+            output_etag = ?etag,
+            "change feed request completed"
+        );
+        if let Some(token) = etag {
+            self.state = RequestState::Continuing {
+                continuation: token,
+            };
+        }
+        // If the response carried no ETag (unexpected for a change feed read),
+        // keep the prior state so the next poll can retry rather than ending
+        // the stream prematurely. The change feed is never terminal.
+        PageResult::Page {
+            response,
+            is_terminal: false,
         }
     }
 

@@ -61,6 +61,12 @@ pub enum FaultInjectionEvaluation {
         /// The ID of the rule.
         rule_id: String,
     },
+    /// Rule was skipped because the request was not carried by the transport
+    /// kind that the rule restricts itself to.
+    TransportKindMismatch {
+        /// The ID of the rule.
+        rule_id: String,
+    },
     /// Rule matched but was superseded by a higher-priority rule (first-match-wins).
     Superseded {
         /// The ID of the superseded rule.
@@ -87,6 +93,7 @@ impl FaultInjectionEvaluation {
             | Self::OperationMismatch { rule_id }
             | Self::RegionMismatch { rule_id }
             | Self::ContainerMismatch { rule_id }
+            | Self::TransportKindMismatch { rule_id }
             | Self::Superseded { rule_id } => rule_id,
         }
     }
@@ -135,6 +142,9 @@ impl std::fmt::Display for FaultInjectionEvaluation {
             }
             Self::ContainerMismatch { rule_id } => {
                 write!(f, "rule '{rule_id}': skipped (container mismatch)")
+            }
+            Self::TransportKindMismatch { rule_id } => {
+                write!(f, "rule '{rule_id}': skipped (transport kind mismatch)")
             }
             Self::Superseded { rule_id } => {
                 write!(

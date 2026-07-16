@@ -320,14 +320,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         application_region: config.application_region.clone(),
         excluded_regions: config.excluded_regions.join(", "),
         tokio_threads: tokio::runtime::Handle::current().metrics().num_workers() as u64,
-        ppcb_enabled: std::env::var("AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED")
+        ppcb_enabled: std::env::var("AZURE_COSMOS_PPCB_ENABLED")
             .ok()
             .and_then(|v| v.parse::<bool>().ok())
             .unwrap_or(true),
-        gateway20_allowed: std::env::var("AZURE_COSMOS_CONNECTION_POOL_IS_GATEWAY20_ALLOWED")
-            .ok()
-            .and_then(|v| v.parse::<bool>().ok())
-            .unwrap_or(false),
         pyroscope_enabled: std::env::var("PYROSCOPE_SERVER_URL")
             .map(|v| !v.is_empty())
             .unwrap_or(false),
