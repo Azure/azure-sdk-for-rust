@@ -10,7 +10,7 @@
 use crate::{
     driver::{pipeline::hedging_diagnostics::HedgeDiagnostics, routing::CosmosEndpoint},
     models::{ActivityId, CosmosResponseHeaders, CosmosStatus, RequestCharge, SubStatusCode},
-    options::{DiagnosticsOptions, DiagnosticsVerbosity, Region},
+    options::{DiagnosticsOptions, DiagnosticsThresholds, DiagnosticsVerbosity, Region},
     system::CpuMemoryMonitor,
 };
 use azure_core::http::StatusCode;
@@ -492,6 +492,53 @@ impl RequestDiagnostics {
             local_shard_retry_count: 0,
             timed_out: false,
             request_sent: RequestSentStatus::Unknown,
+            error: None,
+            #[cfg(feature = "fault_injection")]
+            fault_injection_evaluations: Vec::new(),
+        }
+    }
+
+    /// **Internal test helper — do not call.**
+    ///
+    /// Builds a completed [`RequestDiagnostics`] entry with explicit endpoint,
+    /// region, status, charge, and start/completion instants, so emission-layer
+    /// tests can synthesize realistic (and backdated) attempt spans. Gated
+    /// behind the `__internal_test_diagnostics_construction` Cargo feature.
+    #[cfg(feature = "__internal_test_diagnostics_construction")]
+    #[doc(hidden)]
+    pub fn for_testing(
+        endpoint: impl Into<String>,
+        region: Option<Region>,
+        status: CosmosStatus,
+        request_charge: RequestCharge,
+        started_at: Instant,
+        completed_at: Instant,
+    ) -> Self {
+        let duration_ms = completed_at
+            .saturating_duration_since(started_at)
+            .as_millis() as u64;
+        Self {
+            execution_context: ExecutionContext::Initial,
+            pipeline_type: PipelineType::DataPlane,
+            transport_security: TransportSecurity::Secure,
+            transport_kind: TransportKind::Gateway,
+            transport_http_version: TransportHttpVersion::Http2,
+            region,
+            endpoint: endpoint.into(),
+            status,
+            request_charge,
+            activity_id: None,
+            session_token: None,
+            server_duration_ms: None,
+            started_at,
+            completed_at: Some(completed_at),
+            duration_ms,
+            events: Vec::new(),
+            transport_shard: None,
+            failed_transport_shards: Vec::new(),
+            local_shard_retry_count: 0,
+            timed_out: false,
+            request_sent: RequestSentStatus::Sent,
             error: None,
             #[cfg(feature = "fault_injection")]
             fault_injection_evaluations: Vec::new(),
@@ -1570,6 +1617,7 @@ impl DiagnosticsContextBuilder {
             options: self.options,
             cpu_monitor: self.cpu_monitor,
             machine_id: self.machine_id,
+            operation_name: None,
             #[cfg(feature = "fault_injection")]
             fault_injection_enabled: self.fault_injection_enabled,
             #[cfg(not(feature = "fault_injection"))]
@@ -1644,6 +1692,16 @@ pub struct DiagnosticsContext {
     /// Machine identifier (VM ID on Azure, generated UUID otherwise).
     machine_id: Option<Arc<String>>,
 
+    /// Canonical `db.operation.name` for the operation (e.g. `read_item`,
+    /// `query_items`), when known.
+    ///
+    /// This is an optional seam for the emission layer: it feeds the
+    /// `db.operation.name` span/log attribute and lets
+    /// [`is_threshold_violated`](Self::is_threshold_violated) pick the point vs.
+    /// non-point latency threshold. It defaults to `None` — the driver pipeline
+    /// does not populate it yet, so today it is set only by test constructors.
+    operation_name: Option<Arc<str>>,
+
     /// Whether fault injection was enabled when this operation executed.
     fault_injection_enabled: bool,
 
@@ -1691,6 +1749,41 @@ impl DiagnosticsContext {
             .complete()
     }
 
+    /// **Internal test helper — do not call.**
+    ///
+    /// Builds a fully-populated [`DiagnosticsContext`] from explicit parts so
+    /// the SDK's emission-layer tests (tracing, sampled logging) can exercise
+    /// realistic operations — including backdated per-request timestamps —
+    /// without a live driver pipeline. Gated behind the
+    /// `__internal_test_diagnostics_construction` Cargo feature and
+    /// `#[doc(hidden)]`, mirroring [`for_testing`](Self::for_testing).
+    #[cfg(feature = "__internal_test_diagnostics_construction")]
+    #[doc(hidden)]
+    pub fn for_testing_with_requests(
+        activity_id: ActivityId,
+        duration: Duration,
+        status: Option<CosmosStatus>,
+        operation_name: Option<&str>,
+        requests: Vec<RequestDiagnostics>,
+    ) -> Self {
+        DiagnosticsContext {
+            activity_id,
+            duration,
+            requests: Arc::new(requests),
+            status,
+            options: Arc::new(DiagnosticsOptions::default()),
+            cpu_monitor: None,
+            machine_id: None,
+            operation_name: operation_name.map(Arc::from),
+            fault_injection_enabled: false,
+            hedge_diagnostics: None,
+            #[cfg(test)]
+            test_system_usage: None,
+            cached_json_detailed: OnceLock::new(),
+            cached_json_summary: OnceLock::new(),
+        }
+    }
+
     /// Concatenates the per-request diagnostics from a sequence of
     /// sub-operation contexts into a single aggregated [`DiagnosticsContext`].
     ///
@@ -1728,6 +1821,7 @@ impl DiagnosticsContext {
             options: Arc::clone(&last.options),
             cpu_monitor: last.cpu_monitor.clone(),
             machine_id: last.machine_id.clone(),
+            operation_name: last.operation_name.clone(),
             fault_injection_enabled: sources.iter().any(|c| c.fault_injection_enabled),
             hedge_diagnostics: None,
             #[cfg(test)]
@@ -1820,6 +1914,60 @@ impl DiagnosticsContext {
     /// Returns whether fault injection was enabled when this operation executed.
     pub fn fault_injection_enabled(&self) -> bool {
         self.fault_injection_enabled
+    }
+
+    /// Returns the canonical `db.operation.name` for this operation, if known.
+    ///
+    /// Values are the semantic-convention operation names such as `read_item`,
+    /// `create_item`, or `query_items`. Returns `None` when the operation name
+    /// was not recorded (the common case today — see the field docs).
+    pub fn operation_name(&self) -> Option<&str> {
+        self.operation_name.as_deref()
+    }
+
+    /// Returns `true` when this context represents a finished operation.
+    ///
+    /// A [`DiagnosticsContext`] is immutable and finalized at construction, so
+    /// any context with a recorded final status or at least one request is
+    /// complete. This is the gate the emission handlers check before deciding
+    /// whether to emit.
+    pub fn is_completed(&self) -> bool {
+        self.status.is_some() || !self.requests.is_empty()
+    }
+
+    /// Returns `true` when the operation completed with a non-success status.
+    ///
+    /// Derived directly from [`status`](Self::status): an operation is a failure
+    /// when its final [`CosmosStatus`] is not a success. A context with no
+    /// recorded status is not treated as a failure.
+    pub fn is_failure(&self) -> bool {
+        self.status.as_ref().is_some_and(|s| !s.is_success())
+    }
+
+    /// Returns `true` when the operation crossed one of the sampling
+    /// [`thresholds`](DiagnosticsThresholds) — the tail-based sampling signal.
+    ///
+    /// The latency check uses the point-operation threshold when
+    /// [`operation_name`](Self::operation_name) identifies a single-item
+    /// operation, the non-point threshold when it identifies a query/batch/etc.,
+    /// and — when the operation name is unknown — falls back to the (stricter)
+    /// point-operation threshold so genuinely slow operations are still caught.
+    ///
+    /// The request-charge threshold is compared against the operation's total
+    /// RU. The payload-size threshold is not evaluated yet (the context does not
+    /// carry body sizes).
+    pub fn is_threshold_violated(&self, thresholds: &DiagnosticsThresholds) -> bool {
+        let latency_threshold = match self.operation_name() {
+            Some(name) if crate::options::is_point_operation(name) => {
+                thresholds.point_operation_latency()
+            }
+            Some(_) => thresholds.non_point_operation_latency(),
+            None => thresholds.point_operation_latency(),
+        };
+        if self.duration > latency_threshold {
+            return true;
+        }
+        self.total_request_charge().value() > thresholds.request_charge()
     }
 
     /// Serializes diagnostics to a JSON string.
@@ -1943,6 +2091,7 @@ impl Clone for DiagnosticsContext {
             options: Arc::clone(&self.options),
             cpu_monitor: self.cpu_monitor.clone(),
             machine_id: self.machine_id.clone(),
+            operation_name: self.operation_name.clone(),
             fault_injection_enabled: self.fault_injection_enabled,
             hedge_diagnostics: self.hedge_diagnostics.clone(),
             #[cfg(test)]
@@ -1973,6 +2122,7 @@ impl PartialEq for DiagnosticsContext {
             && self.requests == other.requests
             && self.status == other.status
             && self.options == other.options
+            && self.operation_name == other.operation_name
             && self.hedge_diagnostics == other.hedge_diagnostics
     }
 }
@@ -3347,5 +3497,76 @@ mod tests {
         let builder = DiagnosticsContextBuilder::new(ActivityId::new_uuid(), make_options());
         let ctx = builder.complete();
         assert_eq!(ctx.machine_id(), None);
+    }
+
+    #[test]
+    fn operation_name_defaults_to_none() {
+        let ctx = make_context_with(ActivityId::new_uuid(), |_| {});
+        assert_eq!(ctx.operation_name(), None);
+    }
+
+    #[test]
+    fn is_failure_reflects_operation_status() {
+        let ok = make_context_with(ActivityId::new_uuid(), |b| {
+            b.set_operation_status(StatusCode::Ok, None);
+        });
+        assert!(!ok.is_failure());
+
+        let failed = make_context_with(ActivityId::new_uuid(), |b| {
+            b.set_operation_status(StatusCode::TooManyRequests, None);
+        });
+        assert!(failed.is_failure());
+
+        // No recorded status is not a failure.
+        let no_status = make_context_with(ActivityId::new_uuid(), |_| {});
+        assert!(!no_status.is_failure());
+    }
+
+    #[test]
+    fn is_completed_requires_status_or_request() {
+        let empty = make_context_with(ActivityId::new_uuid(), |_| {});
+        assert!(!empty.is_completed());
+
+        let with_status = make_context_with(ActivityId::new_uuid(), |b| {
+            b.set_operation_status(StatusCode::Ok, None);
+        });
+        assert!(with_status.is_completed());
+
+        let with_request = make_context_with(ActivityId::new_uuid(), |b| {
+            let handle = b.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::WEST_US_2),
+                "https://test.documents.azure.com",
+            );
+            b.complete_request(handle, StatusCode::Ok, None);
+        });
+        assert!(with_request.is_completed());
+    }
+
+    #[test]
+    fn is_threshold_violated_on_request_charge() {
+        let thresholds = DiagnosticsThresholds::default().with_request_charge(100.0);
+
+        let cheap = make_context_with(ActivityId::new_uuid(), |b| {
+            let handle = b.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::WEST_US_2),
+                "https://test.documents.azure.com",
+            );
+            b.update_request(handle, |req| req.request_charge = RequestCharge::new(10.0));
+            b.complete_request(handle, StatusCode::Ok, None);
+        });
+        assert!(!cheap.is_threshold_violated(&thresholds));
+
+        let expensive = make_context_with(ActivityId::new_uuid(), |b| {
+            let handle = b.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::WEST_US_2),
+                "https://test.documents.azure.com",
+            );
+            b.update_request(handle, |req| req.request_charge = RequestCharge::new(150.0));
+            b.complete_request(handle, StatusCode::Ok, None);
+        });
+        assert!(expensive.is_threshold_violated(&thresholds));
     }
 }

@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added `DiagnosticsThresholds` (with Java-like defaults: 1s point-operation latency, 3s non-point latency, 1000 RU request charge, 1 MiB payload size) and the completed-operation predicates `DiagnosticsContext::is_failure`, `is_completed`, and `is_threshold_violated`, plus an `operation_name` accessor. These power the SDK's tail-based sampling emission handlers.
 - Added runtime diagnostics output configuration via `CosmosDriverRuntimeBuilder::with_diagnostics_options`, including the env-backed `AZURE_COSMOS_DIAGNOSTICS_DEFAULT_VERBOSITY` option. The built-in default is now summary diagnostics JSON. ([#4733](https://github.com/Azure/azure-sdk-for-rust/pull/4733))
 - Added Gateway 2.0 transport (a regional proxy forwarding RNTBD-over-HTTP/2). Gateway 2.0 is used automatically when the account advertises thin-client endpoints, the connectivity probe confirms them, and the runtime has not opted out. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319))
 - Added `ConnectionPoolOptions::gateway_v2_disabled` and `ConnectionPoolOptionsBuilder::with_gateway_v2_disabled`, with `AZURE_COSMOS_CONNECTION_POOL_GATEWAY_V2_DISABLED` configuration and an environment-only `_OVERRIDE` incident switch. ([#4763](https://github.com/Azure/azure-sdk-for-rust/pull/4763))

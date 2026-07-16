@@ -20,6 +20,7 @@ azure_core = { workspace = true, default-features = false }
 azure_data_cosmos_driver = { version = "0.6.0", path = "../azure_data_cosmos_driver", default-features = false }
 base64.workspace = true
 futures.workspace = true
+opentelemetry = { workspace = true, optional = true }
 pin-project.workspace = true
 reqwest = { workspace = true, optional = true }
 serde.workspace = true
@@ -62,6 +63,9 @@ tokio = { workspace = true, features = [
 ] }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 uuid = { workspace = true, features = ["v4", "fast-rng"] }
+# Enabled here (dev-only) so the tracing handler's tests can drive an in-memory
+# OpenTelemetry span exporter. `testing` provides `InMemorySpanExporter`.
+opentelemetry_sdk = { workspace = true, features = ["testing"] }
 
 [lints]
 workspace = true
@@ -79,6 +83,9 @@ rustls = ["reqwest", "azure_data_cosmos_driver/rustls", "__tls"]
 native_tls = ["reqwest", "azure_data_cosmos_driver/native_tls", "__tls"]
 key_auth = [
 ] # Enables support for key-based authentication (Primary Keys and Resource Tokens)
+otel_tracing = [
+  "dep:opentelemetry",
+] # Enables the OpenTelemetry tracing diagnostics handler (off by default)
 hmac_rust = ["azure_core/hmac_rust"]
 hmac_openssl = ["azure_core/hmac_openssl"]
 fault_injection = [
@@ -100,6 +107,7 @@ features = [
   "hmac_rust",
   "key_auth",
   "native_tls",
+  "otel_tracing",
   "rustls",
 ]
 
