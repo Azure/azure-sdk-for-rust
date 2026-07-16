@@ -13,6 +13,7 @@ mod cosmos_offers;
 mod cosmos_patch;
 mod cosmos_proxy;
 mod cosmos_query;
+mod cosmos_query_features;
 mod cosmos_response_metadata;
 
 #[path = "../framework/mod.rs"]
