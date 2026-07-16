@@ -92,7 +92,7 @@ impl ContainerClient {
             .await?;
 
         Ok(ResourceResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context.complete_operation(driver_response),
         ))
     }
 
@@ -145,7 +145,7 @@ impl ContainerClient {
             .await?;
 
         Ok(ResourceResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context.complete_operation(driver_response),
         ))
     }
 
@@ -231,7 +231,7 @@ impl ContainerClient {
             .await?;
 
         Ok(ResourceResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context.complete_operation(driver_response),
         ))
     }
 
@@ -330,7 +330,7 @@ impl ContainerClient {
 
         // Bridge the driver response to the SDK response type.
         Ok(ItemResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context.complete_operation(driver_response),
         ))
     }
 
@@ -428,7 +428,7 @@ impl ContainerClient {
 
         // Bridge the driver response to the SDK response type.
         Ok(ItemResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context.complete_operation(driver_response),
         ))
     }
 
@@ -534,7 +534,7 @@ impl ContainerClient {
             .await?;
 
         Ok(ItemResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context.complete_operation(driver_response),
         ))
     }
 
@@ -636,7 +636,7 @@ impl ContainerClient {
 
         // Bridge the driver response to the SDK response type.
         Ok(ItemResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context.complete_operation(driver_response),
         ))
     }
 
@@ -696,7 +696,7 @@ impl ContainerClient {
 
         // Bridge the driver response to the SDK response type.
         Ok(ItemResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context.complete_operation(driver_response),
         ))
     }
 
@@ -748,7 +748,7 @@ impl ContainerClient {
 
         // Bridge the driver response to the SDK response type.
         Ok(ItemResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context.complete_operation(driver_response),
         ))
     }
 
@@ -1007,7 +1007,7 @@ impl ContainerClient {
             .await?;
 
         Ok(BatchResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context.complete_operation(driver_response),
         ))
     }
 

@@ -90,7 +90,7 @@ impl DatabaseClient {
             .await?;
 
         Ok(ResourceResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context.complete_operation(driver_response),
         ))
     }
 
@@ -180,7 +180,7 @@ impl DatabaseClient {
             .await?;
 
         Ok(ResourceResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context.complete_operation(driver_response),
         ))
     }
 
@@ -204,7 +204,7 @@ impl DatabaseClient {
             .await?;
 
         Ok(ResourceResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context.complete_operation(driver_response),
         ))
     }
 
