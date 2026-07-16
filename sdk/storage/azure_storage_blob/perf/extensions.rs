@@ -1,10 +1,37 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::{http::Url, Result};
-use azure_core_test::Recording;
+use azure_core::{credentials::TokenCredential, http::Url, Result};
+use azure_core_test::{Recording, TestMode};
+use azure_identity::ManagedIdentityCredential;
 use azure_storage_blob::BlobContainerClient;
-use azure_storage_blob_test::get_test_credential;
+use std::sync::Arc;
+
+/// Returns a credential suitable for storage operations.
+///
+/// In playback mode, returns the recording's mock credential immediately.
+/// Otherwise, if the environment variable `AZURE_STORAGE_USE_MANAGED_IDENTITY` is set to
+/// `"true"`, returns a [`ManagedIdentityCredential`]. Falls back to the recording's
+/// test credential via [`Recording::credential`].
+///
+/// # Arguments
+///
+/// * `recording` - A reference to a Recording instance.
+fn get_test_credential(recording: &Recording) -> Arc<dyn TokenCredential> {
+    if recording.test_mode() == TestMode::Playback {
+        return recording.credential();
+    }
+
+    let use_managed_identity = std::env::var("AZURE_STORAGE_USE_MANAGED_IDENTITY")
+        .map(|v| v.eq_ignore_ascii_case("true"))
+        .unwrap_or(false);
+
+    if use_managed_identity {
+        ManagedIdentityCredential::new(None).expect("failed to create ManagedIdentityCredential")
+    } else {
+        recording.credential()
+    }
+}
 
 pub trait OnceLockExt {
     type Output;
