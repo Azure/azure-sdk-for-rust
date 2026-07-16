@@ -766,7 +766,11 @@ impl BlobContainerClient {
                     query_builder.build();
                 }
                 let mut request = Request::new(url, Method::Get);
-                request.insert_header("accept", "application/vnd.apache.arrow.stream");
+                // Prefer the Apache Arrow stream but allow the server to fall back to XML.
+                request.insert_header(
+                    "accept",
+                    "application/vnd.apache.arrow.stream,application/xml",
+                );
                 request.insert_header("x-ms-version", &version);
                 let pipeline = pipeline.clone();
                 Box::pin(async move {
@@ -784,32 +788,49 @@ impl BlobContainerClient {
                         .await?;
                     let (status, headers, body) = rsp.deconstruct();
                     // Prototype: dump the raw wire payload before transcoding so we can
-                    // confirm the server returned an Apache Arrow IPC stream (not XML).
+                    // confirm what format the server actually returned (Arrow vs XML).
                     {
                         let preview_len = body.len().min(64);
                         let preview = &body[..preview_len];
                         println!(
                             "list_blobs raw wire body: {} bytes, content-type: {:?}",
                             body.len(),
-                            headers
-                                .get_optional_str(&azure_core::http::headers::CONTENT_TYPE)
+                            headers.get_optional_str(&azure_core::http::headers::CONTENT_TYPE)
                         );
-                        println!("list_blobs raw wire first {preview_len} bytes (hex): {preview:02x?}");
+                        println!(
+                            "list_blobs raw wire first {preview_len} bytes (hex): {preview:02x?}"
+                        );
                     }
-                    // Prototype: the server returns an Apache Arrow IPC stream, but the rest
-                    // of the pipeline (the next-marker extraction below and the caller's
-                    // `into_model()`) expects XML. Decode the Arrow response into the model,
-                    // then re-serialize it to XML so it flows through the existing pipeline.
-                    //
-                    // TODO: Need to address to actually see performance gains by supporting
-                    // arrow. Decoding Arrow and re-encoding to XML (then re-decoding
-                    // downstream in `into_model()`) does an extra encode+decode round-trip
-                    // that negates Arrow's client-side CPU benefit. Productionization should
-                    // decode the Arrow stream directly into the model without the XML
-                    // round-trip.
-                    let model = crate::arrow_decode::decode_arrow_list_blobs(&body)?;
-                    let next_marker = model.next_marker.clone();
-                    let body = xml::to_xml(&model)?;
+                    // The response format is dictated by the server's `Content-Type`, not by
+                    // what we requested: even when Arrow is requested the server may fall
+                    // back to XML. Branch on the response so both formats are handled.
+                    let is_arrow = headers
+                        .get_optional_str(&azure_core::http::headers::CONTENT_TYPE)
+                        .is_some_and(|content_type| {
+                            content_type.contains("application/vnd.apache.arrow.stream")
+                        });
+                    let (body, next_marker) = if is_arrow {
+                        // Prototype: the server returned an Apache Arrow IPC stream, but the
+                        // rest of the pipeline (the next-marker handling below and the
+                        // caller's `into_model()`) expects XML. Decode the Arrow response
+                        // into the model, then re-serialize it to XML so it flows through the
+                        // existing pipeline.
+                        //
+                        // TODO: Need to address to actually see performance gains by
+                        // supporting arrow. Decoding Arrow and re-encoding to XML (then
+                        // re-decoding downstream in `into_model()`) does an extra
+                        // encode+decode round-trip that negates Arrow's client-side CPU
+                        // benefit. Production-ready should decode the Arrow stream directly
+                        // into the model without the XML round-trip.
+                        let model = crate::arrow_decode::decode_arrow_list_blobs(&body)?;
+                        let next_marker = model.next_marker.clone();
+                        (xml::to_xml(&model)?, next_marker)
+                    } else {
+                        // The server returned XML directly; pass the body through unchanged
+                        // and extract the continuation token from it.
+                        let page: BlobContainerClientListBlobsPage = xml::from_xml(&body)?;
+                        (body.into(), page.next_marker)
+                    };
                     let rsp = RawResponse::from_bytes(status, headers, body).into();
                     Ok(match next_marker {
                         Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
