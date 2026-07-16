@@ -18,9 +18,11 @@
 //! When an operation completes, the builder is consumed to create an immutable
 //! `DiagnosticsContext` which is safe to share via `Arc` without locking.
 
+mod compaction;
 mod diagnostics_context;
 mod proxy_configuration;
 
+pub use compaction::{CompactedRun, CompactionInfo};
 pub(crate) use diagnostics_context::DiagnosticsContextBuilder;
 pub use diagnostics_context::{
     DiagnosticsContext, ExecutionContext, FailedTransportShardDiagnostics, PipelineType,
