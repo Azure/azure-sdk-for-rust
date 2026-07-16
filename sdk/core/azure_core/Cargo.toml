@@ -40,7 +40,8 @@ rustc_version.workspace = true
 [dev-dependencies]
 azure_core_examples.path = "../azure_core_examples"
 azure_core_macros.workspace = true
-azure_core_test.workspace = true
+azure_core_test.path = "../azure_core_test"
+clap = { workspace = true, features = ["derive"] }
 criterion.workspace = true
 http = "1.4.0"
 include-file.workspace = true

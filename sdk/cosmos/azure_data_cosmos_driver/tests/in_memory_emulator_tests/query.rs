@@ -58,7 +58,11 @@ async fn query_items_filters_projects_and_paginates() {
     let response = ctx.emulator.execute_request(&req).await.unwrap();
     let (status, headers, body) = collect_response(response).await;
     assert_eq!(status, StatusCode::Ok);
-    assert_eq!(headers.get_optional_str(&CONTINUATION), Some("1"));
+    let continuation = headers
+        .get_optional_str(&CONTINUATION)
+        .expect("first page should return a continuation")
+        .to_owned();
+    assert!(continuation.contains("document_feed_cursor_v1"));
     let docs = body["Documents"].as_array().unwrap();
     assert_eq!(docs.len(), 1);
     assert_eq!(docs[0], serde_json::json!({"id": "item2"}));
@@ -74,7 +78,7 @@ async fn query_items_filters_projects_and_paginates() {
     req.headers_mut()
         .insert(MAX_ITEM_COUNT.clone(), HeaderValue::from_static("1"));
     req.headers_mut()
-        .insert(CONTINUATION.clone(), HeaderValue::from_static("1"));
+        .insert(CONTINUATION.clone(), HeaderValue::from(continuation));
 
     let response = ctx.emulator.execute_request(&req).await.unwrap();
     let (status, headers, body) = collect_response(response).await;

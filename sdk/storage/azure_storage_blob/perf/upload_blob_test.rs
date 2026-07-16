@@ -8,89 +8,74 @@ use std::{
 
 use azure_core::{http::Url, Bytes};
 use azure_core_test::{
-    perf::{CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata},
+    perf::{CreatePerfTestReturn, PerfTest},
     TestContext,
 };
-
-use super::options;
 use azure_storage_blob::{models::BlobClientUploadOptions, BlobContainerClient};
-use azure_storage_blob_test::get_test_credential;
+use clap::Args;
 use futures::FutureExt;
+
+use crate::{
+    clap_parsers::non_zero_usize,
+    extensions::{OnceLockExt, RecordingExt},
+};
+
+#[derive(Args, Clone, Debug)]
+pub struct UploadBlobTestOptions {
+    // The size of each blob in bytes.
+    #[arg(long)]
+    pub size: usize,
+
+    // Number of concurrent network transfers.
+    #[arg(long, value_parser = non_zero_usize)]
+    concurrency: Option<NonZero<usize>>,
+
+    // Size in bytes to partition data into for each transfer.
+    #[arg(long, value_parser = non_zero_usize)]
+    partition_size: Option<NonZero<u64>>,
+
+    #[arg(long)]
+    endpoint: Option<Url>,
+}
 
 pub struct UploadBlobTest {
     size: usize,
     concurrency: Option<NonZero<usize>>,
     partition_size: Option<NonZero<u64>>,
     upload_buffer: OnceLock<Bytes>,
-    endpoint: Option<String>,
+    endpoint: Option<Url>,
     client: OnceLock<BlobContainerClient>,
 }
 
 impl UploadBlobTest {
-    fn create_upload_blob_test(runner: PerfRunner) -> CreatePerfTestReturn {
+    pub fn new(args: UploadBlobTestOptions) -> CreatePerfTestReturn {
         async move {
             Ok(Box::new(UploadBlobTest {
-                endpoint: runner.try_get_test_arg("endpoint")?,
+                size: args.size,
+                concurrency: args.concurrency,
+                partition_size: args.partition_size,
+                endpoint: args.endpoint,
                 client: OnceLock::new(),
-                size: runner
-                    .try_get_test_arg("size")?
-                    .expect("'size' parameter is required."),
-                concurrency: runner
-                    .try_get_test_arg::<usize>("concurrency")?
-                    .and_then(NonZero::new),
-                partition_size: runner
-                    .try_get_test_arg::<usize>("partition-size")?
-                    .and_then(|v| NonZero::new(v as u64)),
                 upload_buffer: OnceLock::new(),
             }) as Box<dyn PerfTest>)
         }
         .boxed()
-    }
-
-    pub fn test_metadata() -> PerfTestMetadata {
-        PerfTestMetadata {
-            name: "upload_blob",
-            description: "Upload blobs to a container",
-            options: vec![
-                options::size(),
-                options::concurrency(),
-                options::partition_size(),
-                options::endpoint(),
-            ],
-            create_test: Self::create_upload_blob_test,
-        }
     }
 }
 
 #[async_trait::async_trait]
 impl PerfTest for UploadBlobTest {
     async fn setup(&self, context: Arc<TestContext>) -> azure_core::Result<()> {
-        // Setup code before running the test
+        let container_client = self.client.try_get_or_init(|| {
+            context
+                .recording()
+                .get_container_client(self.endpoint.clone())
+        })?;
+        container_client.create(None).await?;
 
-        let recording = context.recording();
-        let credential = get_test_credential(recording);
-        let container_name = format!("perf-container-{}", azure_core::Uuid::new_v4());
-        let endpoint = match &self.endpoint {
-            Some(e) => e.clone(),
-            None => format!(
-                "https://{}.blob.core.windows.net",
-                recording.var("AZURE_STORAGE_ACCOUNT_NAME", None)
-            ),
-        };
-        println!("Using endpoint: {}", endpoint);
-        let mut container_url = Url::parse(&endpoint)?;
-        container_url
-            .path_segments_mut()
-            .expect("endpoint must be a valid base URL")
-            .push(&container_name);
-        let client = BlobContainerClient::new(container_url, Some(credential), None)?;
-        self.client.get_or_init(|| client);
         let data = vec![0u8; self.size];
         self.upload_buffer
             .get_or_init(|| Bytes::copy_from_slice(&data));
-
-        let container_client = self.client.get().unwrap();
-        container_client.create(None).await?;
 
         Ok(())
     }
