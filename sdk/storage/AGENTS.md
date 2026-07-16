@@ -10,9 +10,11 @@ It complements the repository root guidance and should be read together with roo
 
 ## Storage family map
 
-- `azure_storage` – shared storage primitives and common concepts.
+- `azure_storage_common` – shared storage primitives and common types.
 - `azure_storage_blob` – Blob Storage client library.
-- Other storage crates (queue/file/share/etc.) should follow the same design and testing patterns where applicable.
+- `azure_storage_queue` – Queue Storage client library.
+- `azure_storage_sas` – Shared Access Signature (SAS) builder for Azure Storage services.
+- Additional storage crates should follow the same design and testing patterns where applicable.
 
 ## Architecture and API conventions
 
