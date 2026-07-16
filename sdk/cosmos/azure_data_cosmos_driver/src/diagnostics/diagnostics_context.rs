@@ -1691,6 +1691,33 @@ impl DiagnosticsContext {
             .complete()
     }
 
+    /// **Internal escape hatch — do not call.**
+    ///
+    /// Synthesizes a completed [`DiagnosticsContext`] carrying an explicit
+    /// operation `duration` and final `status`, so the wrapper SDK
+    /// (`azure_data_cosmos`) can exercise emission-layer code paths — such as
+    /// the metrics handler — against a realistic operation-level rollup without
+    /// standing up the full driver pipeline. Per-request diagnostics remain
+    /// empty; only the operation-scope fields the emission layer reads are set.
+    ///
+    /// Gated behind the `__internal_test_diagnostics_construction` Cargo feature
+    /// (enabled only by the wrapper SDK's own test build) and `#[doc(hidden)]`,
+    /// so it never appears on the public surface. Mirrors [`for_testing`](Self::for_testing).
+    #[cfg(feature = "__internal_test_diagnostics_construction")]
+    #[doc(hidden)]
+    pub fn for_testing_completed(
+        activity_id: ActivityId,
+        duration: Duration,
+        status: Option<CosmosStatus>,
+    ) -> Self {
+        let mut context =
+            DiagnosticsContextBuilder::new(activity_id, Arc::new(DiagnosticsOptions::default()))
+                .complete();
+        context.duration = duration;
+        context.status = status;
+        context
+    }
+
     /// Concatenates the per-request diagnostics from a sequence of
     /// sub-operation contexts into a single aggregated [`DiagnosticsContext`].
     ///

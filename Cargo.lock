@@ -490,6 +490,8 @@ dependencies = [
  "base64 0.22.1",
  "clap",
  "futures",
+ "opentelemetry 0.32.0",
+ "opentelemetry_sdk 0.32.1",
  "pin-project",
  "reqwest",
  "serde",

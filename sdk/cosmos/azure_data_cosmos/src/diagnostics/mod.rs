@@ -16,6 +16,12 @@
 //! registered handlers once per operation at completion. Register handlers via
 //! [`CosmosClientBuilder::with_diagnostics_handler`](crate::CosmosClientBuilder::with_diagnostics_handler).
 //! With no handlers registered the chain is a zero-overhead no-op.
+//!
+//! A built-in OpenTelemetry metrics handler,
+//! [`CosmosMetricsHandler`](metrics::CosmosMetricsHandler), is available behind
+//! the off-by-default `otel_metrics` feature. It emits the stable
+//! `db.client.operation.duration` histogram (and, opt-in, development-tier
+//! metrics) from each completed context.
 
 // =========================================================================
 // Public API
@@ -25,8 +31,14 @@
 pub use azure_data_cosmos_driver::diagnostics::{DiagnosticsContext, TransportKind};
 pub use handler::{DiagnosticsHandler, DiagnosticsHandlerChain};
 
+#[cfg(feature = "otel_metrics")]
+pub use metrics::{CosmosMetricsHandler, CosmosOperationContext, MetricsOptions};
+
 // =========================================================================
 // Internal modules
 // =========================================================================
 
 mod handler;
+
+#[cfg(feature = "otel_metrics")]
+pub mod metrics;
