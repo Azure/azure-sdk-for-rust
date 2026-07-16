@@ -48,6 +48,38 @@ pub(crate) fn is_emulator_host(endpoint: &AccountEndpoint) -> bool {
         .any(|h| host.eq_ignore_ascii_case(h))
 }
 
+/// Ensures the endpoint's URL scheme is permitted for the given host.
+///
+/// Plaintext `http://` (non-HTTPS) endpoints are only permitted when the host is a
+/// known emulator host (see [`is_emulator_host`]). Any other scheme (notably `https`)
+/// is always permitted. This is the single source of truth for the HTTP-only-for-emulator
+/// rule so emulator detection is never duplicated.
+///
+/// # Arguments
+///
+/// * `endpoint` - The account endpoint to validate.
+///
+/// # Errors
+///
+/// Returns a [`CosmosError`](crate::error::CosmosError) with
+/// [`CosmosStatus::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL`](crate::error::CosmosStatus::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL)
+/// when the endpoint uses `http://` but does not point to an emulator host.
+pub(crate) fn ensure_endpoint_scheme_allowed(
+    endpoint: &AccountEndpoint,
+) -> crate::error::Result<()> {
+    if endpoint.url().scheme() == "http" && !is_emulator_host(endpoint) {
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL)
+            .with_message(
+                "invalid account endpoint: http:// (non-HTTPS) endpoints are only permitted \
+                 when connecting to the Cosmos DB emulator; use an https:// endpoint for \
+                 production accounts",
+            )
+            .build());
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -164,5 +196,59 @@ mod tests {
             Some(val) => env::set_var(AZURE_COSMOS_EMULATOR_HOST, val),
             None => env::remove_var(AZURE_COSMOS_EMULATOR_HOST),
         }
+    }
+
+    #[test]
+    fn https_production_endpoint_allowed() {
+        let endpoint =
+            AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
+        assert!(ensure_endpoint_scheme_allowed(&endpoint).is_ok());
+    }
+
+    #[test]
+    fn http_emulator_hosts_allowed() {
+        for url in [
+            "http://localhost:8081/",
+            "http://127.0.0.1:8081/",
+            "http://[::1]:8081/",
+        ] {
+            let endpoint = AccountEndpoint::try_from(url).unwrap();
+            assert!(
+                ensure_endpoint_scheme_allowed(&endpoint).is_ok(),
+                "expected {url} to be allowed"
+            );
+        }
+    }
+
+    #[test]
+    fn http_custom_emulator_host_via_env_allowed() {
+        let _guard = ENV_MUTEX.lock().unwrap();
+
+        let original = env::var(AZURE_COSMOS_EMULATOR_HOST).ok();
+        env::set_var(AZURE_COSMOS_EMULATOR_HOST, "my-custom-emulator.local");
+
+        let endpoint = AccountEndpoint::try_from("http://my-custom-emulator.local:8081/").unwrap();
+        assert!(ensure_endpoint_scheme_allowed(&endpoint).is_ok());
+
+        match original {
+            Some(val) => env::set_var(AZURE_COSMOS_EMULATOR_HOST, val),
+            None => env::remove_var(AZURE_COSMOS_EMULATOR_HOST),
+        }
+    }
+
+    #[test]
+    fn http_production_endpoint_rejected() {
+        let endpoint = AccountEndpoint::try_from("http://myaccount.documents.azure.com/").unwrap();
+        let error = ensure_endpoint_scheme_allowed(&endpoint).unwrap_err();
+        assert_eq!(
+            error.status(),
+            crate::error::CosmosStatus::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL
+        );
+    }
+
+    #[test]
+    fn http_non_emulator_custom_domain_rejected() {
+        let endpoint = AccountEndpoint::try_from("http://my.custom.domain/").unwrap();
+        assert!(ensure_endpoint_scheme_allowed(&endpoint).is_err());
     }
 }

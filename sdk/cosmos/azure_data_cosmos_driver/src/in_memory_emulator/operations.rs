@@ -3,7 +3,7 @@
 
 //! Point operation and control-plane operation handlers.
 
-// cspell:ignore acked llsn
+// cspell:ignore acked hexdigit llsn
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -11,7 +11,7 @@ use std::time::Instant;
 
 use azure_core::http::headers::{HeaderName, HeaderValue, Headers};
 use azure_core::http::{AsyncRawResponse, StatusCode};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use super::config::ContainerConfig;
 use super::dispatch::{OperationType, ParsedRequest};
@@ -41,6 +41,9 @@ use crate::driver::pipeline::patch_eval::apply_patch_ops;
 use crate::models::PatchInstructions;
 use crate::models::{
     EffectivePartitionKey, PartitionKeyDefinition, PartitionKeyValue as ModelPartitionKeyValue,
+};
+use crate::query::ast::{
+    SqlCollection, SqlCollectionExpression, SqlQuery, SqlScalarExpression, SqlSelectSpec,
 };
 
 static OFFER_REPLACE_PENDING: HeaderName = HeaderName::from_static("x-ms-offer-replace-pending");
@@ -2150,6 +2153,107 @@ fn paginate_values(
     Ok((page, next))
 }
 
+#[derive(Clone)]
+struct DocumentFeedItem {
+    body: serde_json::Value,
+    cursor: DocumentFeedCursor,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+struct DocumentFeedCursor {
+    epk: Epk,
+    id: String,
+}
+
+#[derive(Deserialize, Serialize)]
+struct DocumentFeedCursorToken {
+    kind: String,
+    epk: String,
+    id: String,
+}
+
+const DOCUMENT_FEED_CURSOR_TOKEN_KIND: &str = "document_feed_cursor_v1";
+
+impl DocumentFeedCursor {
+    fn to_token(&self) -> String {
+        serde_json::to_string(&DocumentFeedCursorToken {
+            kind: DOCUMENT_FEED_CURSOR_TOKEN_KIND.to_owned(),
+            epk: self.epk.to_hex(),
+            id: self.id.clone(),
+        })
+        .expect("document feed cursor token serialization cannot fail")
+    }
+
+    fn parse(token: &str, start: Instant) -> Result<Self, AsyncRawResponse> {
+        let token: DocumentFeedCursorToken = serde_json::from_str(token)
+            .map_err(|_| invalid_continuation_response("Invalid continuation token", start))?;
+        if token.kind != DOCUMENT_FEED_CURSOR_TOKEN_KIND {
+            return Err(invalid_continuation_response(
+                "Invalid continuation token kind",
+                start,
+            ));
+        }
+        if !is_even_length_hex(&token.epk) {
+            return Err(invalid_continuation_response(
+                "Invalid continuation token EPK",
+                start,
+            ));
+        }
+        Ok(Self {
+            epk: Epk::from(token.epk.as_str()),
+            id: token.id,
+        })
+    }
+}
+
+fn is_even_length_hex(value: &str) -> bool {
+    value.len().is_multiple_of(2) && value.bytes().all(|b| b.is_ascii_hexdigit())
+}
+
+fn invalid_continuation_response(message: &str, start: Instant) -> AsyncRawResponse {
+    error_response(
+        StatusCode::BadRequest,
+        None,
+        "BadRequest",
+        message,
+        0.0,
+        "",
+        start,
+    )
+    .build()
+}
+
+fn paginate_document_feed_items(
+    items: Vec<DocumentFeedItem>,
+    max_item_count: Option<i32>,
+    continuation: Option<&str>,
+    start: Instant,
+) -> Result<(Vec<serde_json::Value>, Option<String>), AsyncRawResponse> {
+    let offset = match continuation {
+        Some(token) => {
+            let cursor = DocumentFeedCursor::parse(token, start)?;
+            items.partition_point(|item| item.cursor <= cursor)
+        }
+        None => 0,
+    };
+
+    let total = items.len();
+    let limit = match max_item_count {
+        Some(n) if n > 0 => n as usize,
+        _ => total.saturating_sub(offset),
+    };
+    let end = offset.saturating_add(limit).min(total);
+    let page_items = if offset >= total {
+        Vec::new()
+    } else {
+        items[offset..end].to_vec()
+    };
+    let next = (end < total)
+        .then(|| page_items.last().map(|item| item.cursor.to_token()))
+        .flatten();
+    Ok((page_items.into_iter().map(|item| item.body).collect(), next))
+}
+
 #[derive(Clone, Copy)]
 struct FeedPageOptions<'a> {
     max_item_count: Option<i32>,
@@ -2193,6 +2297,48 @@ fn success_feed_response(
     start: Instant,
 ) -> AsyncRawResponse {
     let (page, next) = match paginate_values(
+        items,
+        page_options.max_item_count,
+        page_options.continuation,
+        start,
+    ) {
+        Ok(v) => v,
+        Err(response) => return response,
+    };
+    let item_count = page.len() as u32;
+    let body = feed_to_json(envelope_name, page, rid);
+    let mut builder = success_response(
+        StatusCode::Ok,
+        &body,
+        1.0,
+        &feed_headers.session_token,
+        start,
+    )
+    .with_item_count(item_count);
+    if let Some(lsn) = feed_headers.lsn {
+        builder = builder.with_lsn(lsn);
+    }
+    if let Some(id) = feed_headers.partition_key_range_id {
+        builder = builder.with_header_value(PARTITION_KEY_RANGE_ID.clone(), id);
+    }
+    if let Some(id) = feed_headers.internal_partition_id {
+        builder = builder.with_header_value(INTERNAL_PARTITION_ID.clone(), id);
+    }
+    if let Some(next) = next {
+        builder = builder.with_header_value(CONTINUATION.clone(), next);
+    }
+    builder.build()
+}
+
+fn success_document_feed_response(
+    envelope_name: &str,
+    rid: impl Into<String>,
+    items: Vec<DocumentFeedItem>,
+    page_options: FeedPageOptions<'_>,
+    feed_headers: FeedResponseHeaders,
+    start: Instant,
+) -> AsyncRawResponse {
+    let (page, next) = match paginate_document_feed_items(
         items,
         page_options.max_item_count,
         page_options.continuation,
@@ -2311,6 +2457,208 @@ fn execute_query_feed(
         feed_headers,
         start,
     )
+}
+
+fn execute_document_query_feed(
+    envelope_name: &str,
+    rid: impl Into<String>,
+    documents: Vec<DocumentFeedItem>,
+    parsed: &ParsedRequest,
+    request_body: &[u8],
+    feed_headers: FeedResponseHeaders,
+    start: Instant,
+) -> AsyncRawResponse {
+    let (query, parameters) = match parse_query_spec(request_body, start) {
+        Ok(v) => v,
+        Err(response) => return response,
+    };
+    match query_document_feed_items(&query, &parameters, &documents) {
+        Ok(Some(results)) => success_document_feed_response(
+            envelope_name,
+            rid,
+            results,
+            FeedPageOptions::from_request(parsed),
+            feed_headers,
+            start,
+        ),
+        Ok(None) => {
+            let values: Vec<_> = documents.into_iter().map(|doc| doc.body).collect();
+            let results = match crate::query::eval::query_documents(&query, &parameters, &values) {
+                Ok(results) => results,
+                Err(e) => {
+                    return error_response(
+                        StatusCode::BadRequest,
+                        None,
+                        "BadRequest",
+                        &e.to_string(),
+                        0.0,
+                        "",
+                        start,
+                    )
+                    .build();
+                }
+            };
+            success_feed_response(
+                envelope_name,
+                rid,
+                results,
+                FeedPageOptions::from_request(parsed),
+                feed_headers,
+                start,
+            )
+        }
+        Err(e) => error_response(
+            StatusCode::BadRequest,
+            None,
+            "BadRequest",
+            &e.to_string(),
+            0.0,
+            "",
+            start,
+        )
+        .build(),
+    }
+}
+
+fn query_document_feed_items(
+    sql: &str,
+    parameters: &[(String, serde_json::Value)],
+    documents: &[DocumentFeedItem],
+) -> crate::error::Result<Option<Vec<DocumentFeedItem>>> {
+    let program = crate::query::parse(sql).map_err(|e| {
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_message(format!("failed to parse query: {e}"))
+            .with_source(e)
+            .build()
+    })?;
+    let query = &program.query;
+    if !supports_document_cursor_continuation(query) {
+        return Ok(None);
+    }
+
+    let mut results = Vec::new();
+    for document in documents {
+        if crate::query::eval::matches_query(&document.body, query, parameters).map_err(|e| {
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(StatusCode::BadRequest))
+                .with_message(e.to_string())
+                .build()
+        })? {
+            let body =
+                crate::query::eval::project(&document.body, query, parameters).map_err(|e| {
+                    crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::new(StatusCode::BadRequest))
+                        .with_message(e.to_string())
+                        .build()
+                })?;
+            results.push(DocumentFeedItem {
+                body,
+                cursor: document.cursor.clone(),
+            });
+        }
+    }
+    Ok(Some(results))
+}
+
+fn supports_document_cursor_continuation(query: &SqlQuery) -> bool {
+    if query.select.distinct
+        || query.select.top.is_some()
+        || query.group_by.is_some()
+        || query.order_by.is_some()
+        || query.offset_limit.is_some()
+        || !is_plain_root_from(query)
+    {
+        return false;
+    }
+    match &query.select.spec {
+        SqlSelectSpec::Star => true,
+        SqlSelectSpec::List(items) => !items
+            .iter()
+            .any(|item| contains_aggregate_expression(&item.expression)),
+        SqlSelectSpec::Value(expr) => !contains_aggregate_expression(expr),
+    }
+}
+
+fn is_plain_root_from(query: &SqlQuery) -> bool {
+    match &query.from {
+        None => true,
+        Some(from) => matches!(
+            &from.collection,
+            SqlCollectionExpression::Aliased {
+                collection: SqlCollection::Path { path, .. },
+                ..
+            } if path.is_empty()
+        ),
+    }
+}
+
+fn contains_aggregate_expression(expr: &SqlScalarExpression) -> bool {
+    match expr {
+        SqlScalarExpression::FunctionCall {
+            name, is_udf, args, ..
+        } => {
+            (!is_udf
+                && matches!(
+                    name.to_ascii_uppercase().as_str(),
+                    "COUNT" | "SUM" | "AVG" | "MIN" | "MAX"
+                ))
+                || args.iter().any(contains_aggregate_expression)
+        }
+        SqlScalarExpression::Binary { left, right, .. }
+        | SqlScalarExpression::Coalesce { left, right } => {
+            contains_aggregate_expression(left) || contains_aggregate_expression(right)
+        }
+        SqlScalarExpression::Unary { operand, .. }
+        | SqlScalarExpression::IsNull {
+            expression: operand,
+            ..
+        } => contains_aggregate_expression(operand),
+        SqlScalarExpression::Conditional {
+            condition,
+            if_true,
+            if_false,
+        } => {
+            contains_aggregate_expression(condition)
+                || contains_aggregate_expression(if_true)
+                || contains_aggregate_expression(if_false)
+        }
+        SqlScalarExpression::Between {
+            expression,
+            low,
+            high,
+            ..
+        } => {
+            contains_aggregate_expression(expression)
+                || contains_aggregate_expression(low)
+                || contains_aggregate_expression(high)
+        }
+        SqlScalarExpression::In {
+            expression, items, ..
+        } => {
+            contains_aggregate_expression(expression)
+                || items.iter().any(contains_aggregate_expression)
+        }
+        SqlScalarExpression::Like {
+            expression,
+            pattern,
+            ..
+        } => contains_aggregate_expression(expression) || contains_aggregate_expression(pattern),
+        SqlScalarExpression::MemberRef { source, .. } => contains_aggregate_expression(source),
+        SqlScalarExpression::MemberIndexer { source, index } => {
+            contains_aggregate_expression(source) || contains_aggregate_expression(index)
+        }
+        SqlScalarExpression::ArrayCreate(items) => items.iter().any(contains_aggregate_expression),
+        SqlScalarExpression::ObjectCreate(props) => props
+            .iter()
+            .any(|prop| contains_aggregate_expression(&prop.expression)),
+        SqlScalarExpression::Exists(_)
+        | SqlScalarExpression::Subquery(_)
+        | SqlScalarExpression::Array(_) => true,
+        SqlScalarExpression::Literal(_)
+        | SqlScalarExpression::PropertyRef(_)
+        | SqlScalarExpression::ParameterRef(_) => false,
+    }
 }
 
 fn handle_read_feed_databases(
@@ -2600,7 +2948,7 @@ fn collect_item_documents(
     region_name: &str,
     parsed: &ParsedRequest,
     start: Instant,
-) -> Result<(String, Vec<serde_json::Value>, String, FeedResponseHeaders), AsyncRawResponse> {
+) -> Result<(String, Vec<DocumentFeedItem>, String, FeedResponseHeaders), AsyncRawResponse> {
     let db_id = parsed.db_id.as_deref().unwrap_or("");
     let coll_id = parsed.coll_id.as_deref().unwrap_or("");
     let region_ref = match store.region(region_name) {
@@ -2722,9 +3070,16 @@ fn collect_item_documents(
                 if end_epk.as_ref().is_some_and(|max| epk >= max) {
                     continue;
                 }
-                docs.extend(logical.values().map(|doc| doc.body.clone()));
+                docs.extend(logical.iter().map(|(id, doc)| DocumentFeedItem {
+                    body: doc.body.clone(),
+                    cursor: DocumentFeedCursor {
+                        epk: epk.clone(),
+                        id: id.clone(),
+                    },
+                }));
             }
         }
+        docs.sort_by(|left, right| left.cursor.cmp(&right.cursor));
         let (partition_key_range_id, internal_partition_id) = if multiple_partitions {
             (None, None)
         } else {
@@ -2762,7 +3117,7 @@ fn handle_read_feed_items(
     match collect_item_documents(store, region_name, parsed, start) {
         Ok((rid, docs, token, mut headers)) => {
             headers.session_token = token;
-            success_feed_response(
+            success_document_feed_response(
                 "Documents",
                 rid,
                 docs,
@@ -2785,7 +3140,15 @@ fn handle_query_items(
     match collect_item_documents(store, region_name, parsed, start) {
         Ok((rid, docs, token, mut headers)) => {
             headers.session_token = token;
-            execute_query_feed("Documents", rid, docs, parsed, request_body, headers, start)
+            execute_document_query_feed(
+                "Documents",
+                rid,
+                docs,
+                parsed,
+                request_body,
+                headers,
+                start,
+            )
         }
         Err(response) => response,
     }
@@ -5101,4 +5464,99 @@ fn container_not_found(db_id: &str, coll_id: &str, start: Instant) -> AsyncRawRe
         start,
     )
     .build()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn document_item(epk: &str, id: &str) -> DocumentFeedItem {
+        DocumentFeedItem {
+            body: serde_json::json!({ "id": id }),
+            cursor: DocumentFeedCursor {
+                epk: Epk::from(epk),
+                id: id.to_owned(),
+            },
+        }
+    }
+
+    fn ids(values: &[serde_json::Value]) -> Vec<&str> {
+        values
+            .iter()
+            .map(|value| value["id"].as_str().expect("test document has id"))
+            .collect()
+    }
+
+    #[test]
+    fn document_feed_cursor_skips_already_returned_low_child_prefix_after_split() {
+        let start = Instant::now();
+        let parent = vec![
+            document_item("01", "hash-a-0"),
+            document_item("02", "hash-a-1"),
+            document_item("80", "hash-e-0"),
+        ];
+        let (_page, continuation) =
+            paginate_document_feed_items(parent, Some(1), None, start).unwrap();
+
+        let low_child = vec![
+            document_item("01", "hash-a-0"),
+            document_item("02", "hash-a-1"),
+        ];
+        let (page, next) =
+            paginate_document_feed_items(low_child, Some(10), continuation.as_deref(), start)
+                .unwrap();
+
+        assert_eq!(ids(&page), vec!["hash-a-1"]);
+        assert!(next.is_none());
+    }
+
+    #[test]
+    fn document_feed_cursor_does_not_skip_high_child_after_split() {
+        let start = Instant::now();
+        let parent = vec![
+            document_item("01", "hash-a-0"),
+            document_item("02", "hash-a-1"),
+            document_item("80", "hash-e-0"),
+        ];
+        let (_page, continuation) =
+            paginate_document_feed_items(parent, Some(1), None, start).unwrap();
+
+        let high_child = vec![document_item("80", "hash-e-0")];
+        let (page, next) =
+            paginate_document_feed_items(high_child, Some(10), continuation.as_deref(), start)
+                .unwrap();
+
+        assert_eq!(ids(&page), vec!["hash-e-0"]);
+        assert!(next.is_none());
+    }
+
+    #[test]
+    fn document_feed_cursor_rejects_malformed_epk_hex() {
+        let token = serde_json::to_string(&DocumentFeedCursorToken {
+            kind: DOCUMENT_FEED_CURSOR_TOKEN_KIND.to_owned(),
+            epk: "00zz".to_owned(),
+            id: "item1".to_owned(),
+        })
+        .unwrap();
+
+        let err = DocumentFeedCursor::parse(&token, Instant::now()).unwrap_err();
+        assert_eq!(err.status(), StatusCode::BadRequest);
+    }
+
+    #[test]
+    fn document_feed_cursor_pagination_requires_cursor_sorted_items() {
+        let start = Instant::now();
+        let mut items = vec![
+            document_item("80", "hash-e-0"),
+            document_item("01", "hash-a-0"),
+            document_item("02", "hash-a-1"),
+        ];
+        items.sort_by(|left, right| left.cursor.cmp(&right.cursor));
+
+        let (page, continuation) =
+            paginate_document_feed_items(items, Some(1), None, start).unwrap();
+
+        assert_eq!(ids(&page), vec!["hash-a-0"]);
+        assert!(continuation.is_some());
+    }
 }
