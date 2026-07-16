@@ -38,7 +38,7 @@ rustc_version.workspace = true
 [dev-dependencies]
 azure_core_amqp = { path = "../../core/azure_core_amqp", version = "1.1.0", features = ["test"] }
 azure_core_test = { workspace = true, features = ["tracing"] }
-azure_identity = { path = "../../identity/azure_identity", version = "1.1.0-beta.1" }
+azure_identity.workspace = true
 azure_messaging_eventhubs = { path = ".", features = [
   "in_memory_checkpoint_store",
 ] }

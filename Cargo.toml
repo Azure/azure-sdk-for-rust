@@ -86,6 +86,7 @@ version = "0.2.0"
 
 [workspace.dependencies.azure_identity]
 # azure_identity should only ever be in dev-dependencies herein
+path = "sdk/identity/azure_identity"
 version = "1.0.0"
 
 [workspace.dependencies.azure_storage_blob]
