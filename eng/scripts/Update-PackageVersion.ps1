@@ -41,9 +41,10 @@ Param (
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
-. "$PSScriptRoot/../common/scripts/common.ps1"
+. ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
+. ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'Cargo.ps1'))
 
-$resolvedToolchain = [Channels]::Nightly()
+$resolvedToolchain = Get-ResolvedRustToolchain -Toolchain 'nightly'
 
 Write-Host "Getting package properties for $PackageName in $ServiceDirectory."
 $pkgProperties = Get-PkgProperties -PackageName $PackageName -ServiceDirectory $ServiceDirectory
@@ -54,6 +55,8 @@ Write-Host "  Version: $($pkgProperties.Version)"
 Write-Host "  Directory: $($pkgProperties.DirectoryPath)"
 Write-Host "  ChangeLogPath: $($pkgProperties.ChangeLogPath)"
 
+$releasedVersion = $pkgProperties.Version
+
 #If we're just bumping the version with no release date, we want to set the changelog entry to unreleased
 $setChangeLogEntryToUnreleased = !$ReleaseDate -and !$NewVersionString
 
@@ -61,12 +64,12 @@ if ($NewVersionString) {
   $packageSemVer = [AzureEngSemanticVersion]::new($NewVersionString)
 }
 else {
-  $packageSemVer = [AzureEngSemanticVersion]::new($pkgProperties.Version)
+  $packageSemVer = [AzureEngSemanticVersion]::new($releasedVersion)
   $packageSemVer.IncrementAndSetToPrerelease();
 }
 
 if ($packageSemVer.HasValidPrereleaseLabel() -ne $true) {
-  Write-Error "Invalid prerelease label: $packageSemVer"
+  LogError "Invalid prerelease label: $packageSemVer"
   exit 1
 }
 
@@ -77,7 +80,7 @@ if ($pkgProperties.ChangeLogPath) {
     -ReplaceLatestEntryTitle $ReplaceLatestEntryTitle -ReleaseDate $ReleaseDate
 }
 
-$tomlPath = Join-Path $pkgProperties.DirectoryPath "Cargo.toml"
+$tomlPath = ([System.IO.Path]::Combine($pkgProperties.DirectoryPath, 'Cargo.toml'))
 $content = Get-Content -Path $tomlPath -Raw
 $updated = $content -replace '(\[package\](.|\n)+?version\s*=\s*)"(.+?)"', "`$1`"$packageSemVer`""
 
@@ -87,6 +90,9 @@ if ($content -ne $updated) {
 
   Write-Host "Updating dependencies in Cargo.toml files."
   Invoke-LoggedCommand "cargo +$resolvedToolchain -Zscript '$RepoRoot/eng/scripts/update-pathversions.rs' update" | Out-Null
+
+  Write-Host "Updating sample dependency versions in Cargo.toml files."
+  Invoke-LoggedCommand "cargo +$resolvedToolchain -Zscript '$RepoRoot/eng/scripts/update-samples.rs' '$PackageName@$releasedVersion'" | Out-Null
 
   Write-Host "Updating Cargo.lock using 'cargo update --workspace'."
   Invoke-LoggedCommand "cargo update --workspace" | Out-Null

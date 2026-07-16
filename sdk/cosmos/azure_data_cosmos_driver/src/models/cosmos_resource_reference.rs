@@ -275,6 +275,18 @@ impl CosmosResourceReference {
             return ResourcePaths::empty();
         }
 
+        #[cfg(feature = "preview_dtx")]
+        if self.resource_type == ResourceType::DistributedTransactionBatch {
+            return ResourcePaths {
+                buf: "/operations/dtc".to_owned(),
+                signing_end: 1,
+                signing_override: Some(String::new()),
+                // Fixed literal endpoint with no RID or reserved characters, so
+                // it is routed like a name-based path (raw == percent-encoded).
+                rid_based: false,
+            };
+        }
+
         if self.resource_type == ResourceType::Offer {
             // Offers use a lowercase RID as the signing link, unrelated to the URL path.
             let (buf, signing_override) = if let Some(ref id) = self.id {
@@ -563,6 +575,15 @@ impl CosmosResourceReference {
                     "/offers".to_string()
                 }
             }
+            #[cfg(feature = "preview_dtx")]
+            ResourceType::DistributedTransactionBatch => {
+                if let Some(ref id) = self.id {
+                    let id_str = Self::identifier_str(id);
+                    format!("/operations/{}", id_str)
+                } else {
+                    "/operations".to_string()
+                }
+            }
         }
     }
 
@@ -576,6 +597,8 @@ impl CosmosResourceReference {
                 // Parent is the account — empty link.
                 Cow::Borrowed("")
             }
+            #[cfg(feature = "preview_dtx")]
+            ResourceType::DistributedTransactionBatch => Cow::Borrowed(""),
             ResourceType::DocumentCollection => {
                 // Parent is the database.
                 Cow::Owned(self.db_link())

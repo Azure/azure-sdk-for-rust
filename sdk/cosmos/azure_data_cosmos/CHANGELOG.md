@@ -4,9 +4,21 @@
 
 ### Features Added
 
+- Added runtime diagnostics output configuration via `CosmosRuntimeBuilder::with_diagnostics_options`, including the env-backed `AZURE_COSMOS_DIAGNOSTICS_DEFAULT_VERBOSITY` option. The built-in default is now summary diagnostics JSON. ([#4733](https://github.com/Azure/azure-sdk-for-rust/pull/4733))
+- Gateway 2.0 transport (a regional proxy forwarding RNTBD-over-HTTP/2) is selected automatically when the account advertises thin-client endpoints and the connectivity probe confirms them. Transport selection is fully server-driven, with HTTP/2 as the only client-side prerequisite. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319))
+- HTTP 449 (RetryWith) responses are now retried transparently in-region with exponential backoff, so callers no longer see spurious 449 errors from concurrent writes. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319))
+- `ReadConsistencyStrategy` is now honored across Gateway V1 and V2 reads. Adds the `LatestCommitted` variant (a quorum read independent of the account default); `GlobalStrong` is rejected with `BadRequest` unless the account default is `Strong`. Per-request strategy overrides the client default. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319))
+- Added preview distributed transaction SDK builders, patch operations, diagnostics, and response accessors behind the disabled-by-default `preview_dtx` feature. ([#4702](https://github.com/Azure/azure-sdk-for-rust/pull/4702))
+- Added change feed pull support via `ContainerClient::query_change_feed()`, which takes a required `ChangeFeedStartFrom` start position (`Beginning`, `Now`, `PointInTime`) and returns a `ChangeFeedPageIterator<T>` that streams `FeedPage<T>` results. New `feed` types `ChangeFeedPageIterator`, `FeedScope`, and `ContinuationToken`, plus `options` types `ChangeFeedOptions` and `ChangeFeedMode` (currently `LatestVersion`); supports single-partition, per-partition-key, and full-container (cross-partition fan-out) reads with continuation-token resumption that persists the original start position so never-polled partitions don't replay history on resume. ([#4621](https://github.com/Azure/azure-sdk-for-rust/pull/4621))
+- Added `TlsBackend` (re-exported) and a `tls_backend` option on `ConnectionPoolOptions` (`ConnectionPoolOptionsBuilder::with_tls_backend`), defaulting to `TlsBackend::Rustls`, available under the `rustls` feature, to pin the TLS backend used by the transport. This is additive and changes no behavior for the default (rustls) build; it only has an effect in builds that compile in multiple reqwest TLS backends, where reqwest would otherwise default to native-tls and the driver now pins rustls instead. ([#4649](https://github.com/Azure/azure-sdk-for-rust/pull/4649))
+
 ### Breaking Changes
 
 ### Bugs Fixed
+
+- `http://` (non-HTTPS) account endpoints are now rejected unless the host is a known Cosmos DB emulator host, failing fast during client construction with an "invalid account endpoint" error instead of attempting an insecure connection to a production account. This validation also covers configured backup endpoints. ([#4757](https://github.com/Azure/azure-sdk-for-rust/pull/4757))
+- Fixed hierarchical-partition-key (HPK) queries. A `FeedScope::partition` scope with only a *prefix* of the key hierarchy (e.g. `("USA", "CA")` on a `/country/state/city` container) now filters to that prefix instead of returning every item in the physical partition (issue [#4680](https://github.com/Azure/azure-sdk-for-rust/issues/4680)), and cross-partition queries over an HPK container no longer fail with `400 Bad Request` (issue [#4681](https://github.com/Azure/azure-sdk-for-rust/issues/4681)). ([#4729](https://github.com/Azure/azure-sdk-for-rust/pull/4729))
+- Fixed the `AZURE_COSMOS_PPCB_*` environment variables (including `AZURE_COSMOS_PPCB_ENABLED` and the `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` kill switch) being ignored when a `CosmosClient` was built without calling `CosmosClientBuilder::with_partition_failover_options`. The per-partition circuit breaker (PPCB) stayed enabled even with `AZURE_COSMOS_PPCB_ENABLED=false`. The client's driver now resolves these options from the environment when they are not supplied explicitly. ([#4655](https://github.com/Azure/azure-sdk-for-rust/pull/4655))
 
 ### Other Changes
 

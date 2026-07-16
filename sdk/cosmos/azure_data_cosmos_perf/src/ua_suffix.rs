@@ -51,9 +51,15 @@ pub fn compose_suffix(configured: &str, workload_id: &str) -> Option<String> {
 }
 
 /// Resolve a validated `UserAgentSuffix` from the configured and workload-id
-/// inputs, applying [`compose_suffix`] then validating via
-/// [`UserAgentSuffix::try_new`]. Falls back to the base configured value on
-/// unexpected composite-validation failure rather than blocking the run.
+/// inputs.
+///
+/// The raw `configured` value is validated up front via
+/// [`UserAgentSuffix::try_new`], so operator input errors (over-length or
+/// HTTP-unsafe) surface immediately — before any network activity — rather
+/// than being silently truncated during composition. Only an
+/// *already-valid* configured value is then composed with the workload-id
+/// tail via [`compose_suffix`], which truncates the configured portion as
+/// needed so the `-<id>` tail always fits.
 ///
 /// Returns `Ok(None)` when the user opted out (empty configured suffix).
 pub fn resolve_user_agent_suffix(
@@ -63,6 +69,17 @@ pub fn resolve_user_agent_suffix(
     if configured.is_empty() {
         return Ok(None);
     }
+
+    // Reject invalid operator input before composing (and before any network
+    // call in `main`). Silently truncating an over-length raw suffix would
+    // hide a mistake the operator almost certainly wants to know about.
+    let base = UserAgentSuffix::try_new(configured.to_string()).ok_or_else(|| {
+        format!(
+            "--user-agent-suffix {configured:?} is invalid (must be \u{2264} {} ASCII \
+             characters and HTTP-header-safe)",
+            UserAgentSuffix::MAX_LENGTH
+        )
+    })?;
 
     if let Some(composite) = compose_suffix(configured, workload_id) {
         if let Some(s) = UserAgentSuffix::try_new(composite.clone()) {
@@ -77,14 +94,7 @@ pub fn resolve_user_agent_suffix(
         );
     }
 
-    match UserAgentSuffix::try_new(configured.to_string()) {
-        Some(s) => Ok(Some(s)),
-        None => Err(format!(
-            "--user-agent-suffix {configured:?} is invalid (must be \u{2264} {} ASCII \
-             characters and HTTP-header-safe)",
-            UserAgentSuffix::MAX_LENGTH
-        )),
-    }
+    Ok(Some(base))
 }
 
 #[cfg(test)]
@@ -147,5 +157,26 @@ mod tests {
         let out = resolve_user_agent_suffix("rust-perf", "deadbeef-cafe").unwrap();
         let suffix = out.unwrap();
         assert_eq!(suffix.as_str(), "rust-perf-deadbeef");
+    }
+
+    #[test]
+    fn resolve_rejects_oversized_configured_before_compose() {
+        // A raw suffix longer than MAX must be rejected outright rather than
+        // silently truncated during composition — even with a non-empty
+        // workload_id that would otherwise let compose_suffix salvage it.
+        let too_long = "a".repeat(MAX + 1);
+        let err = resolve_user_agent_suffix(&too_long, "deadbeef-cafe")
+            .expect_err("oversized configured suffix must be rejected");
+        assert!(err.contains("--user-agent-suffix"), "got: {err}");
+        assert!(err.contains("invalid"), "got: {err}");
+    }
+
+    #[test]
+    fn resolve_rejects_http_unsafe_configured() {
+        // HTTP-unsafe characters are rejected up front as well.
+        let err = resolve_user_agent_suffix("bad suffix!", "deadbeef")
+            .expect_err("unsafe configured suffix must be rejected");
+        assert!(err.contains("--user-agent-suffix"), "got: {err}");
+        assert!(err.contains("invalid"), "got: {err}");
     }
 }

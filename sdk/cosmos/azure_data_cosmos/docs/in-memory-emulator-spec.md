@@ -2,7 +2,7 @@
 # In-Memory Emulator Specification for `azure_data_cosmos_driver`
 
 **Status**: Draft
-**Date**: 2026-03-16 (last updated 2026-03-25)
+**Date**: 2026-03-16 (last updated 2026-07-06)
 **Authors**: (team)
 
 ---
@@ -58,12 +58,11 @@ An **in-memory emulator** that intercepts requests at the `HttpClient` transport
 
 ### Non-Goals (This Phase)
 
-- Query execution (SQL queries return a hard-coded error).
-- Batch / Bulk / Patch operations (return hard-coded errors).
+- Bulk / Patch operations (return hard-coded errors).
 - Gateway 2.0 transport mode (skip for now — will come later).
 - Change feed.
 - Stored procedures / triggers / UDFs.
-- Cross-partition feed reads (`ReadFeed`).
+- Complete Cosmos SQL service parity beyond the local query evaluator and local query-plan analyzer.
 - Per-container conflict-resolution policy customisation. Every container the
   emulator surfaces (via `ReadContainer`) hard-codes
   `conflictResolutionPolicy = { mode: "LastWriterWins", conflictResolutionPath: "/_ts" }`.
@@ -479,11 +478,11 @@ BTreeMap<Epk, BTreeMap<String, StoredDocument>>
 │         │              │
 │         │              └─ item id → StoredDocument
 │         └─ Epk (logical partition)
-└─ Sorted by Epk (Ord) for future range scan support (ReadFeed, ChangeFeed, Query)
+└─ Sorted by Epk (Ord) for range scan support (ReadFeed, Query, future ChangeFeed)
 ```
 
 Using `BTreeMap` (rather than `HashMap`) preserves EPK ordering, which is necessary for
-future non-point operations like ReadFeed and ChangeFeed that iterate over EPK ranges.
+non-point operations like ReadFeed, Query, and future ChangeFeed support that iterate over EPK ranges.
 `Epk` implements `Ord` via lexicographic comparison of the underlying uppercase hex string.
 
 ### Hierarchical RID Encoding
@@ -565,35 +564,48 @@ Each physical partition is independently serialized:
 
 ### URL Path Parsing
 
-| Pattern                            | Resource Type                      |
-| ---------------------------------- | ---------------------------------- |
-| `/`                                | Account                            |
-| `/dbs`                             | DatabaseFeed (create)              |
-| `/dbs/{db}`                        | Database (read/delete)             |
-| `/dbs/{db}/colls`                  | ContainerFeed (create)             |
-| `/dbs/{db}/colls/{coll}`           | Container (read/delete)            |
-| `/dbs/{db}/colls/{coll}/pkranges`  | PartitionKeyRangeFeed (read feed)  |
-| `/dbs/{db}/colls/{coll}/docs`      | DocumentFeed (create/upsert/query) |
-| `/dbs/{db}/colls/{coll}/docs/{id}` | Document (read/replace/delete)     |
+| Pattern                            | Resource Type                                                |
+| ---------------------------------- | ------------------------------------------------------------ |
+| `/`                                | Account                                                      |
+| `/dbs`                             | DatabaseFeed (create/read/query)                             |
+| `/dbs/{db}`                        | Database (read/delete)                                       |
+| `/dbs/{db}/colls`                  | ContainerFeed (create/read/query)                            |
+| `/dbs/{db}/colls/{coll}`           | Container (read/delete)                                      |
+| `/dbs/{db}/colls/{coll}/pkranges`  | PartitionKeyRangeFeed (read feed)                            |
+| `/dbs/{db}/colls/{coll}/docs`      | DocumentFeed (create/upsert/read/query/query-plan/batch)     |
+| `/dbs/{db}/colls/{coll}/docs/{id}` | Document (read/replace/delete)                               |
+| `/offers`                          | OfferFeed (read/query)                                       |
+| `/offers/{id}`                     | Offer (read/replace)                                         |
 
 ### Operation Resolution
 
-| HTTP Method | Path                        | Headers                           | Operation       |
-| ----------- | --------------------------- | --------------------------------- | --------------- |
-| `GET`       | `/`                         | —                                 | ReadAccount     |
-| `POST`      | `/dbs`                      | —                                 | CreateDatabase  |
-| `GET`       | `/dbs/{db}`                 | —                                 | ReadDatabase    |
-| `DELETE`    | `/dbs/{db}`                 | —                                 | DeleteDatabase  |
-| `POST`      | `/dbs/{db}/colls`           | —                                 | CreateContainer |
-| `GET`       | `/dbs/{db}/colls/{coll}`    | —                                 | ReadContainer   |
-| `DELETE`    | `/dbs/{db}/colls/{coll}`    | —                                 | DeleteContainer |
-| `GET`       | `.../colls/{coll}/pkranges` | —                                 | ReadPKRanges    |
-| `POST`      | `.../docs`                  | —                                 | Create          |
-| `POST`      | `.../docs`                  | `x-ms-documentdb-is-upsert: True` | Upsert          |
-| `POST`      | `.../docs`                  | `x-ms-documentdb-query` present   | Query (→ 501)   |
-| `GET`       | `.../docs/{id}`             | —                                 | Read            |
-| `PUT`       | `.../docs/{id}`             | —                                 | Replace         |
-| `DELETE`    | `.../docs/{id}`             | —                                 | Delete          |
+| HTTP Method | Path                        | Headers                                      | Operation          |
+| ----------- | --------------------------- | -------------------------------------------- | ------------------ |
+| `GET`       | `/`                         | —                                            | ReadAccount        |
+| `POST`      | `/dbs`                      | —                                            | CreateDatabase     |
+| `GET`       | `/dbs`                      | —                                            | ReadFeedDatabases  |
+| `POST`      | `/dbs`                      | `x-ms-documentdb-isquery: True`              | QueryDatabases     |
+| `GET`       | `/dbs/{db}`                 | —                                            | ReadDatabase       |
+| `DELETE`    | `/dbs/{db}`                 | —                                            | DeleteDatabase     |
+| `POST`      | `/dbs/{db}/colls`           | —                                            | CreateContainer    |
+| `GET`       | `/dbs/{db}/colls`           | —                                            | ReadFeedContainers |
+| `POST`      | `/dbs/{db}/colls`           | `x-ms-documentdb-isquery: True`              | QueryContainers    |
+| `GET`       | `/dbs/{db}/colls/{coll}`    | —                                            | ReadContainer      |
+| `DELETE`    | `/dbs/{db}/colls/{coll}`    | —                                            | DeleteContainer    |
+| `GET`       | `.../colls/{coll}/pkranges` | —                                            | ReadPKRanges       |
+| `POST`      | `.../docs`                  | —                                            | Create             |
+| `POST`      | `.../docs`                  | `x-ms-documentdb-is-upsert: True`            | Upsert             |
+| `GET`       | `.../docs`                  | —                                            | ReadFeedItems      |
+| `POST`      | `.../docs`                  | `x-ms-documentdb-isquery: True`              | QueryItems         |
+| `POST`      | `.../docs`                  | `x-ms-cosmos-is-query-plan-request: True`    | QueryPlan          |
+| `POST`      | `.../docs`                  | `x-ms-cosmos-is-batch-request: True`         | Batch              |
+| `GET`       | `.../docs/{id}`             | —                                            | Read               |
+| `PUT`       | `.../docs/{id}`             | —                                            | Replace            |
+| `DELETE`    | `.../docs/{id}`             | —                                            | Delete             |
+| `GET`       | `/offers`                   | —                                            | ReadFeedOffers     |
+| `POST`      | `/offers`                   | `x-ms-documentdb-isquery: True`              | QueryOffers        |
+| `GET`       | `/offers/{id}`              | —                                            | ReadOffer          |
+| `PUT`       | `/offers/{id}`              | —                                            | ReplaceOffer       |
 
 ### Region Routing
 
@@ -881,18 +893,30 @@ store.merge_partitions(db_id, coll_id, partition_id_a, partition_id_b, min_lock_
 
 ## 14. Supported Control-Plane Operations
 
-The emulator fully supports database, container, and partition key range operations via HTTP:
+The emulator supports database, container, partition key range, feed/query, offer, and transactional-batch operations via HTTP:
 
 | Operation           | Method + Path                         | Notes                                                                                     |
 | ------------------- | ------------------------------------- | ----------------------------------------------------------------------------------------- |
 | Create database     | `POST /dbs`                           | Body: `{"id":"..."}`. Returns 409 if exists.                                              |
 | Read database       | `GET /dbs/{db}`                       | Returns 404 if not found.                                                                 |
+| Read databases      | `GET /dbs`                            | Supports pagination via continuation headers.                                             |
+| Query databases     | `POST /dbs`                           | Uses the local SQL evaluator against database metadata.                                   |
 | Delete database     | `DELETE /dbs/{db}`                    | Cascades: deletes all containers and documents.                                           |
 | Create container    | `POST /dbs/{db}/colls`                | Body must include `partitionKey` definition. Returns 400 if missing.                      |
 | Read container      | `GET /dbs/{db}/colls/{coll}`          | Returns partition key definition. 404 if not found.                                       |
+| Read containers     | `GET /dbs/{db}/colls`                 | Supports pagination via continuation headers.                                             |
+| Query containers    | `POST /dbs/{db}/colls`                | Uses the local SQL evaluator against container metadata.                                  |
 | Delete container    | `DELETE /dbs/{db}/colls/{coll}`       | Cascades: deletes all documents in the container.                                         |
 | Read PKRanges       | `GET /dbs/{db}/colls/{coll}/pkranges` | Returns all partition key ranges for the container.                                       |
 | ChangeFeed PKRanges | `GET /dbs/{db}/colls/{coll}/pkranges` | With `If-None-Match` and `A-IM: Incremental feed` headers. Returns changed ranges or 304. |
+| Read feed items     | `GET /dbs/{db}/colls/{coll}/docs`     | Supports pagination and partition-range headers.                                          |
+| Query items         | `POST /dbs/{db}/colls/{coll}/docs`    | Uses the local SQL evaluator against stored documents.                                    |
+| Query plan          | `POST /dbs/{db}/colls/{coll}/docs`    | Uses the local query-plan analyzer and returns gateway-shaped query-plan JSON.            |
+| Transactional batch | `POST /dbs/{db}/colls/{coll}/docs`    | Atomic within a single logical partition; one successful batch advances LSN once.         |
+| Read offers         | `GET /offers`                         | Returns manual-throughput offers created with containers.                                 |
+| Query offers        | `POST /offers`                        | Uses the local SQL evaluator against offer metadata.                                      |
+| Read offer          | `GET /offers/{id}`                    | Returns 404 if not found.                                                                 |
+| Replace offer       | `PUT /offers/{id}`                    | Supports manual throughput replacement.                                                   |
 | Read account        | `GET /`                               | Synthesized from `VirtualAccountConfig`.                                                  |
 
 ### Partition Key Enforcement
@@ -1100,7 +1124,9 @@ The `GET /dbs/{db}/colls/{coll}/pkranges` feed reflects the updated topology:
 
 ## 18. Unsupported Operations
 
-Queries, Batch, Bulk, Patch return **501 Not Implemented** with descriptive error body.
+Bulk, Patch, ChangeFeed, stored procedures, triggers, UDFs, and Gateway 2.0 transport mode remain unsupported and return **501 Not Implemented** or the closest service-shaped error for that route.
+
+Query support is intentionally scoped to the local SQL evaluator and local query-plan analyzer used by the SDK tests. Transactional batch supports document operations within one logical partition and rolls back the whole batch on failure.
 
 ---
 

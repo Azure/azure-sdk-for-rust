@@ -114,7 +114,7 @@ pub(crate) enum TransportMode {
     /// Standard gateway (HTTP/1.1 or HTTP/2, determined by per-account probe).
     Gateway,
     /// Gateway 2.0 (always HTTP/2 with prior knowledge).
-    Gateway20,
+    GatewayV2,
 }
 
 /// COMPONENT: Routing decision for the current attempt.
@@ -985,12 +985,12 @@ pub(crate) struct AccountEndpointState {
 /// - **Regional** endpoints usually use the pattern `{account}-{region}.documents.azure.com`
 ///   and resolve directly to that region.
 /// - **Gateway 2.0** endpoints are optional per-region dataplane endpoints,
-///   surfaced as `gateway20_url` instead of a separate endpoint object.
+///   surfaced as `gateway_v2_url` instead of a separate endpoint object.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub(crate) struct CosmosEndpoint {
     region: Option<RegionName>,
     gateway_url: Url,
-    gateway20_url: Option<Url>,
+    gateway_v2_url: Option<Url>,
 }
 ```
 
@@ -1012,7 +1012,7 @@ fn build_account_endpoint_state(
     properties: &AccountProperties,
     default_endpoint: CosmosEndpoint,
     previous_generation: Option<u64>,
-    gateway20_enabled: bool,
+    gateway_v2_enabled: bool,
 ) -> AccountEndpointState;
 
 // SYSTEM: Produce a new state with an endpoint marked unavailable.
@@ -1574,7 +1574,7 @@ pub(crate) enum AdaptiveTransport {
     /// HTTP/2 gateway — sharded transport, HTTP/2 PING keepalive.
     ShardedGateway(Arc<ShardedHttpTransport>),
     /// Gateway 2.0 — always HTTP/2, sharded.
-    ShardedGateway20(Arc<ShardedHttpTransport>),
+    ShardedGatewayV2(Arc<ShardedHttpTransport>),
 }
 ```
 
@@ -2195,12 +2195,12 @@ HTTP/2 just uses a single `Arc<dyn HttpClient>` like HTTP/1.1.
 **What works after Step 5**: HTTP/2 requests work (via a single connection). Gateway 2.0
 endpoints are detected and used. No sharding yet — stream limit may be hit under high load.
 
-> **Note on ALPN probing (§6.0):** The initial Step 5 implementation uses configuration flags
-> (`is_http2_allowed`, `is_gateway20_allowed`) and `AccountProperties` metadata
+> **Note on ALPN probing (§6.0):** The initial Step 5 implementation uses the
+> `is_http2_allowed` configuration flag and `AccountProperties` metadata
 > (`thinClient*Locations`) to determine the transport strategy, rather than runtime ALPN
 > negotiation against the gateway. This is sufficient because:
 > (1) reqwest with `http2` feature already performs ALPN automatically for `Http2Preferred`,
-> (2) Gateway 2.0 is definitively identified by the presence of thin-client locations in
+> (2) Gateway 2.0 is definitively identified by the presence of Gateway 2.0 locations in
 > account metadata, and (3) `http2_prior_knowledge()` for `Http2Only` skips ALPN entirely
 > (h2 is guaranteed). Runtime probing may be revisited if a use case arises where the
 > configuration-based approach is insufficient.
@@ -2271,7 +2271,7 @@ Cut over all remaining operations and remove the old pipeline code.
 | 10.7     | Move fault injection tests to driver-level APIs                                                       | `tests/`                             |
 | 10.8     | Full integration test pass                                                                            | `tests/`                             |
 
-**What works after Step 10**: `azure_data_cosmos` is a thin client layer that builds
+**What works after Step 10**: `azure_data_cosmos` is a thin SDK wrapper layer that builds
 `CosmosOperation` values and delegates all execution to the driver. Duplicate pipeline,
 retry, and routing code is removed.
 
