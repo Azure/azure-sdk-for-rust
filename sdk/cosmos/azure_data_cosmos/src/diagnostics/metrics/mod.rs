@@ -22,9 +22,8 @@
 //!
 //! - **Stable (always on):** `db.client.operation.duration` (histogram, seconds).
 //! - **Development (opt-in via [`MetricsOptions`]):**
-//!   `azure.cosmosdb.client.operation.request_charge`,
-//!   `db.client.response.returned_rows`,
-//!   `azure.cosmosdb.client.active_instance.count`.
+//!   `azure.cosmosdb.client.operation.request_charge` and
+//!   `db.client.response.returned_rows`.
 //!
 //! # Operation-scope identity
 //!

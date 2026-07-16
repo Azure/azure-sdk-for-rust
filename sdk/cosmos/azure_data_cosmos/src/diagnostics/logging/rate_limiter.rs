@@ -115,16 +115,19 @@ impl RateLimiter {
             state.suppressed = 0;
         }
 
-        let allowed = if state.emitted < self.config.max_per_window {
-            true
-        } else {
-            // Past the normal cap: a bounded number of failures may still pass.
-            is_failure && state.failures_emitted < self.config.failure_reserve
-        };
+        let within_normal_budget = state.emitted < self.config.max_per_window;
+        // Past the normal cap, a bounded number of failures may still pass from
+        // the reserve. Only reserve admissions count against `failures_emitted`,
+        // so the reserve is genuinely *in addition to* the cap (a cap filled
+        // with failures must not consume it).
+        let from_reserve = !within_normal_budget
+            && is_failure
+            && state.failures_emitted < self.config.failure_reserve;
+        let allowed = within_normal_budget || from_reserve;
 
         if allowed {
             state.emitted += 1;
-            if is_failure {
+            if from_reserve {
                 state.failures_emitted += 1;
             }
             LimitDecision {
@@ -214,6 +217,27 @@ mod tests {
         assert!(limiter.check(true, t).emit);
         assert!(limiter.check(true, t).emit);
         // Reserve exhausted: further failures are suppressed.
+        assert!(!limiter.check(true, t).emit);
+    }
+
+    #[test]
+    fn reserve_is_additional_to_a_cap_filled_with_failures() {
+        let limiter = RateLimiter::new(RateLimiterConfig {
+            max_per_window: 2,
+            window: Duration::from_secs(60),
+            failure_reserve: 3,
+        });
+        let t = Instant::now();
+
+        // Fill the normal cap with failures. These are admitted by the normal
+        // budget, so they must NOT consume the failure reserve.
+        assert!(limiter.check(true, t).emit);
+        assert!(limiter.check(true, t).emit);
+        // The full reserve of 3 is still available for post-cap failures.
+        assert!(limiter.check(true, t).emit);
+        assert!(limiter.check(true, t).emit);
+        assert!(limiter.check(true, t).emit);
+        // Reserve now exhausted.
         assert!(!limiter.check(true, t).emit);
     }
 }

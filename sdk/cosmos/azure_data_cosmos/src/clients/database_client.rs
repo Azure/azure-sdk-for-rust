@@ -93,15 +93,15 @@ impl DatabaseClient {
         let options = options.unwrap_or_default();
         let operation = CosmosOperation::read_database(self.database_ref.clone());
 
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, options.operation)
-            .await?;
+            .await;
 
         Ok(ResourceResponse::new(
             self.context
-                .complete_operation(driver_response, || self.operation_context("read_database")),
+                .complete_result(driver_result, || self.operation_context("read_database"))?,
         ))
     }
 
@@ -150,6 +150,8 @@ impl DatabaseClient {
             None,
             plan,
             operation_options,
+            self.context.diagnostics_handlers.clone(),
+            self.operation_context("query_containers"),
         ))
     }
 
@@ -184,16 +186,15 @@ impl DatabaseClient {
         operation_options.content_response_on_write =
             Some(azure_data_cosmos_driver::options::ContentResponseOnWrite::Enabled);
 
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, operation_options)
-            .await?;
+            .await;
 
         Ok(ResourceResponse::new(
-            self.context.complete_operation(driver_response, || {
-                self.operation_context("create_container")
-            }),
+            self.context
+                .complete_result(driver_result, || self.operation_context("create_container"))?,
         ))
     }
 
@@ -210,16 +211,15 @@ impl DatabaseClient {
         let options = options.unwrap_or_default();
         let operation = CosmosOperation::delete_database(self.database_ref.clone());
 
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, options.operation)
-            .await?;
+            .await;
 
         Ok(ResourceResponse::new(
-            self.context.complete_operation(driver_response, || {
-                self.operation_context("delete_database")
-            }),
+            self.context
+                .complete_result(driver_result, || self.operation_context("delete_database"))?,
         ))
     }
 

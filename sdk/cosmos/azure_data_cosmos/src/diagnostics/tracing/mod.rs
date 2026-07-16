@@ -87,7 +87,7 @@ mod tests {
             &[(5, 5, CosmosStatus::new(StatusCode::Ok))],
             now,
         );
-        assert!(!should_emit_span(&ctx, &thresholds));
+        assert!(!should_emit_span(&ctx, &thresholds, None));
     }
 
     #[test]
@@ -103,7 +103,7 @@ mod tests {
             &[(5, 5, CosmosStatus::new(StatusCode::TooManyRequests))],
             now,
         );
-        assert!(should_emit_span(&failed, &thresholds));
+        assert!(should_emit_span(&failed, &thresholds, None));
 
         // Slow point op (> 1s) → emit.
         let slow = context(
@@ -113,7 +113,33 @@ mod tests {
             &[(1500, 1500, CosmosStatus::new(StatusCode::Ok))],
             now,
         );
-        assert!(should_emit_span(&slow, &thresholds));
+        assert!(should_emit_span(&slow, &thresholds, None));
+    }
+
+    #[test]
+    fn non_point_threshold_uses_operation_name_from_context() {
+        // Production driver contexts carry no operation name, so a 2s operation
+        // would be classified as a point op (1s threshold) and wrongly sampled.
+        // Passing the SDK operation identity switches it to the non-point (3s)
+        // threshold.
+        let thresholds = DiagnosticsThresholds::default();
+        let now = Instant::now();
+        let slow_non_point = context(
+            Duration::from_millis(2000),
+            Some(CosmosStatus::new(StatusCode::Ok)),
+            None, // driver context has no operation name (the production case)
+            &[(2000, 2000, CosmosStatus::new(StatusCode::Ok))],
+            now,
+        );
+
+        // Without an operation identity: falls back to the point (1s) threshold
+        // and emits.
+        assert!(should_emit_span(&slow_non_point, &thresholds, None));
+
+        // With the SDK operation identity: a query is a non-point op (3s
+        // threshold), so a 2s operation is NOT sampled.
+        let op = CosmosOperationContext::new().with_operation_name("query_items");
+        assert!(!should_emit_span(&slow_non_point, &thresholds, Some(&op)));
     }
 
     #[test]

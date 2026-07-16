@@ -74,7 +74,7 @@ impl CosmosTracingHandler {
     /// tail-based sampling policy: emit iff the operation failed or crossed a
     /// threshold.
     pub fn should_emit(&self, diagnostics: &DiagnosticsContext) -> bool {
-        should_emit_span(diagnostics, &self.thresholds)
+        should_emit_span(diagnostics, &self.thresholds, None)
     }
 }
 
@@ -86,10 +86,10 @@ impl Default for CosmosTracingHandler {
 
 impl DiagnosticsHandler for CosmosTracingHandler {
     fn handle(&self, diagnostics: &DiagnosticsContext, cx: &Context<'_>) {
-        if !should_emit_span(diagnostics, &self.thresholds) {
+        let op = cx.value::<CosmosOperationContext>();
+        if !should_emit_span(diagnostics, &self.thresholds, op) {
             return;
         }
-        let op = cx.value::<CosmosOperationContext>();
         emit_backdated_span_tree(
             &self.tracer,
             diagnostics,
@@ -102,9 +102,18 @@ impl DiagnosticsHandler for CosmosTracingHandler {
 
 /// The tail-based sampling decision: emit a span iff the operation failed or
 /// crossed one of the sampling thresholds.
+///
+/// `op` supplies the SDK-side operation identity so the threshold classifier
+/// can distinguish point from non-point operations; production driver contexts
+/// do not carry the operation name.
 pub(crate) fn should_emit_span(
     diagnostics: &DiagnosticsContext,
     thresholds: &DiagnosticsThresholds,
+    op: Option<&CosmosOperationContext>,
 ) -> bool {
-    diagnostics.is_failure() || diagnostics.is_threshold_violated(thresholds)
+    diagnostics.is_failure()
+        || diagnostics.is_threshold_violated_for(
+            thresholds,
+            op.and_then(CosmosOperationContext::operation_name),
+        )
 }

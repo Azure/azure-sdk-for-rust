@@ -189,6 +189,8 @@ impl CosmosClient {
             None,
             plan,
             operation_options,
+            self.context.diagnostics_handlers.clone(),
+            CosmosOperationContext::new().with_operation_name("query_databases"),
         ))
     }
 
@@ -222,20 +224,20 @@ impl CosmosClient {
         operation_options.content_response_on_write =
             Some(azure_data_cosmos_driver::options::ContentResponseOnWrite::Enabled);
 
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, operation_options)
-            .await?;
+            .await;
 
-        Ok(ResourceResponse::new(self.context.complete_operation(
-            driver_response,
+        Ok(ResourceResponse::new(self.context.complete_result(
+            driver_result,
             || {
                 CosmosOperationContext::new()
                     .with_operation_name("create_database")
                     .with_database_name(id.to_string())
             },
-        )))
+        )?))
     }
 }
 

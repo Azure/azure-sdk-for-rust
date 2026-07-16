@@ -79,9 +79,46 @@ impl ClientContext {
         make_op_context: impl FnOnce() -> CosmosOperationContext,
     ) -> CosmosResponse {
         let response = crate::driver_bridge::driver_response_to_cosmos_response(driver_response);
-        let diagnostics = response.diagnostics();
-        self.dispatch_diagnostics(&diagnostics, make_op_context);
+        // Guard the diagnostics `Arc` clone behind the emptiness check so the
+        // default (no-handler) path clones nothing.
+        if !self.diagnostics_handlers.is_empty() {
+            let diagnostics = response.diagnostics();
+            self.dispatch_diagnostics(&diagnostics, make_op_context);
+        }
         response
+    }
+
+    /// Result-aware completion seam for singleton operations.
+    ///
+    /// Dispatches the handler chain exactly once for **both** outcomes: on
+    /// success from the bridged response's finalized [`DiagnosticsContext`], and
+    /// on failure from the context the driver attaches to the returned error
+    /// ([`crate::Error::diagnostics`]). The singleton call sites propagate the
+    /// error with `?` *after* this seam, so without it the failure-triggered
+    /// tracing and sampled logging would never run.
+    ///
+    /// Zero-overhead no-op when no handler is registered: neither the error's
+    /// diagnostics nor the operation context is materialized.
+    pub(crate) fn complete_result<E>(
+        &self,
+        driver_result: Result<azure_data_cosmos_driver::models::CosmosResponse, E>,
+        make_op_context: impl FnOnce() -> CosmosOperationContext,
+    ) -> crate::Result<CosmosResponse>
+    where
+        crate::CosmosError: From<E>,
+    {
+        match driver_result {
+            Ok(driver_response) => Ok(self.complete_operation(driver_response, make_op_context)),
+            Err(err) => {
+                let err = crate::CosmosError::from(err);
+                if !self.diagnostics_handlers.is_empty() {
+                    if let Some(diagnostics) = err.diagnostics() {
+                        self.dispatch_diagnostics(&diagnostics, make_op_context);
+                    }
+                }
+                Err(err)
+            }
+        }
     }
 
     /// Invokes the registered diagnostics handlers with a completed context and

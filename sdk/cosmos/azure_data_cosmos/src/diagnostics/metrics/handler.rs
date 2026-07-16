@@ -4,9 +4,6 @@
 //! [`CosmosMetricsHandler`] — emits OpenTelemetry metrics from a completed
 //! [`DiagnosticsContext`].
 
-use std::collections::HashSet;
-use std::sync::Mutex;
-
 use azure_core::http::Context;
 use opentelemetry::metrics::Meter;
 use opentelemetry::{global, KeyValue};
@@ -44,9 +41,6 @@ const METER_NAME: &str = "azure_data_cosmos";
 pub struct CosmosMetricsHandler {
     instruments: Instruments,
     options: MetricsOptions,
-    /// Client-instance ids (machine ids) already counted toward
-    /// `active_instance.count`, so each distinct instance is counted once.
-    seen_instances: Mutex<HashSet<String>>,
 }
 
 impl CosmosMetricsHandler {
@@ -81,7 +75,6 @@ impl CosmosMetricsHandler {
         Self {
             instruments: Instruments::new(meter),
             options,
-            seen_instances: Mutex::new(HashSet::new()),
         }
     }
 
@@ -203,32 +196,6 @@ impl CosmosMetricsHandler {
 
         attrs
     }
-
-    /// Counts a client instance toward `active_instance.count` the first time its
-    /// machine id is seen. This is an approximation of "active instances":
-    /// without client-lifecycle hooks (a future wiring concern) the counter does
-    /// not decrement, so it reflects the number of distinct client instances
-    /// observed over the process's lifetime.
-    fn record_active_instance(&self, machine_id: &str, server_address: Option<&str>) {
-        let mut seen = self
-            .seen_instances
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
-        if seen.insert(machine_id.to_string()) {
-            let mut attrs = Vec::with_capacity(2);
-            attrs.push(KeyValue::new(
-                attributes::ATTR_DB_SYSTEM_NAME,
-                attributes::DB_SYSTEM_NAME_VALUE,
-            ));
-            if let Some(address) = server_address {
-                attrs.push(KeyValue::new(
-                    attributes::ATTR_SERVER_ADDRESS,
-                    address.to_string(),
-                ));
-            }
-            self.instruments.active_instance_count.add(1, &attrs);
-        }
-    }
 }
 
 impl Default for CosmosMetricsHandler {
@@ -269,10 +236,6 @@ impl DiagnosticsHandler for CosmosMetricsHandler {
 
         if let Some(rows) = op.and_then(CosmosOperationContext::returned_item_count) {
             self.instruments.returned_rows.record(rows, &attributes);
-        }
-
-        if let Some(machine_id) = diagnostics.machine_id() {
-            self.record_active_instance(machine_id, server_address.as_deref());
         }
     }
 }
@@ -478,9 +441,6 @@ mod tests {
         assert!(!names
             .iter()
             .any(|n| n == attributes::METRIC_RESPONSE_RETURNED_ROWS));
-        assert!(!names
-            .iter()
-            .any(|n| n == attributes::METRIC_ACTIVE_INSTANCE_COUNT));
     }
 
     #[test]

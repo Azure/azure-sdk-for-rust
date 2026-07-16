@@ -21,7 +21,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use super::compaction::{compact_requests, CompactionInfo};
+use super::compaction::{compact_requests, CompactedRun, CompactionInfo};
 
 // =============================================================================
 // Execution Context
@@ -1925,10 +1925,67 @@ impl DiagnosticsContext {
         // concatenated records.
         let total_request_charge: RequestCharge =
             sources.iter().map(|c| c.total_request_charge).sum();
+
+        // Exact total attempts across all sub-ops. Each source's own count is
+        // already exact — even if that source was individually compacted — so
+        // summing the per-source counts keeps `request_count()` exact on the
+        // aggregate instead of collapsing to the retained-record count.
+        let original_request_count: usize = sources.iter().map(|c| c.request_count()).sum();
+        let cap = last.options.max_request_diagnostics();
+
+        // Re-bound the concatenated retained records so the aggregate artifact
+        // stays within the cap regardless of how many sub-ops contributed, and
+        // attach a `CompactionInfo` whenever the retained records under-count the
+        // true attempts (from re-bounding here or from a sub-op's own
+        // compaction) so the exact original count is never lost.
+        let (requests, compaction) = if aggregated_requests.len() > cap {
+            let compacted = compact_requests(aggregated_requests, cap);
+            let retained_request_count = compacted.retained.len();
+            let info = CompactionInfo {
+                original_request_count,
+                retained_request_count,
+                collapsed_runs: compacted.collapsed_runs,
+                total_runs: compacted.total_runs,
+                retained_truncated: compacted.retained_truncated,
+                omitted_runs: compacted.omitted_runs,
+                omitted_request_count: original_request_count
+                    .saturating_sub(retained_request_count),
+                runs: compacted.runs,
+            };
+            (compacted.retained, Some(info))
+        } else if original_request_count > aggregated_requests.len() {
+            // The concatenation fits the cap, but at least one sub-op was itself
+            // compacted, so the retained records under-count the true attempts.
+            // Attach a counts-only marker (carrying the sub-ops' per-run rollup
+            // entries) so `request_count()` stays exact and the storm shape is
+            // preserved.
+            let retained_request_count = aggregated_requests.len();
+            let source_infos = || sources.iter().filter_map(|c| c.compaction.as_ref());
+            let runs: Vec<CompactedRun> = source_infos()
+                .flat_map(|info| info.runs.iter().cloned())
+                .collect();
+            let info = CompactionInfo {
+                original_request_count,
+                retained_request_count,
+                collapsed_runs: source_infos().map(|info| info.collapsed_runs).sum(),
+                total_runs: source_infos().map(|info| info.total_runs).sum(),
+                retained_truncated: false,
+                omitted_runs: source_infos().map(|info| info.omitted_runs).sum(),
+                omitted_request_count: original_request_count
+                    .saturating_sub(retained_request_count),
+                runs,
+            };
+            (aggregated_requests, Some(info))
+        } else {
+            // No sub-op was compacted and the concatenation fits the cap: the
+            // aggregate is exact and verbatim.
+            (aggregated_requests, None)
+        };
+
         Some(DiagnosticsContext {
             activity_id: last.activity_id.clone(),
             duration: aggregated_duration,
-            requests: Arc::new(aggregated_requests),
+            requests: Arc::new(requests),
             total_request_charge,
             status: last.status,
             options: Arc::clone(&last.options),
@@ -1937,7 +1994,7 @@ impl DiagnosticsContext {
             operation_name: last.operation_name.clone(),
             fault_injection_enabled: sources.iter().any(|c| c.fault_injection_enabled),
             hedge_diagnostics: None,
-            compaction: None,
+            compaction,
             #[cfg(test)]
             test_system_usage: last.test_system_usage.clone(),
             cached_json_detailed: OnceLock::new(),
@@ -2104,7 +2161,25 @@ impl DiagnosticsContext {
     /// RU. The payload-size threshold is not evaluated yet (the context does not
     /// carry body sizes).
     pub fn is_threshold_violated(&self, thresholds: &DiagnosticsThresholds) -> bool {
-        let latency_threshold = match self.operation_name() {
+        self.is_threshold_violated_for(thresholds, None)
+    }
+
+    /// Like [`is_threshold_violated`](Self::is_threshold_violated), but takes an
+    /// explicit operation name for point/non-point latency classification.
+    ///
+    /// Production `DiagnosticsContext`s do not carry an operation name, so the
+    /// SDK's emission handlers pass the caller-facing name from the
+    /// `CosmosOperationContext` here; otherwise every operation would be
+    /// classified with the stricter 1s point-operation threshold. When
+    /// `operation_name` is `None` this falls back to
+    /// [`operation_name`](Self::operation_name), then to the point threshold.
+    pub fn is_threshold_violated_for(
+        &self,
+        thresholds: &DiagnosticsThresholds,
+        operation_name: Option<&str>,
+    ) -> bool {
+        let operation_name = operation_name.or_else(|| self.operation_name());
+        let latency_threshold = match operation_name {
             Some(name) if crate::options::is_point_operation(name) => {
                 thresholds.point_operation_latency()
             }
@@ -2269,11 +2344,14 @@ impl Clone for DiagnosticsContext {
 impl PartialEq for DiagnosticsContext {
     fn eq(&self, other: &Self) -> bool {
         // Compare semantic data only; cached JSON is derived and excluded.
-        // `total_request_charge` is derived from the attempt list and excluded
-        // for the same reason.
+        // `total_request_charge` IS compared: after compaction it is no longer
+        // derivable from `requests` (dropped runs still carry charge), so
+        // excluding it would let two contexts with a different public
+        // `total_request_charge()` result compare equal.
         self.activity_id == other.activity_id
             && self.duration == other.duration
             && self.requests == other.requests
+            && self.total_request_charge == other.total_request_charge
             && self.status == other.status
             && self.options == other.options
             && self.operation_name == other.operation_name
@@ -2711,6 +2789,76 @@ mod tests {
         let regions = aggregated.regions_contacted();
         assert!(regions.contains(&Region::WEST_US_2));
         assert!(regions.contains(&Region::EAST_US_2));
+    }
+
+    #[test]
+    fn aggregate_sub_operations_preserves_exact_counts_when_sources_compacted() {
+        // Two sub-ops, each individually compacted past a small cap (the PATCH
+        // Read + Replace shape under a retry storm). The aggregate must report
+        // the exact total attempt count — the sum of the sub-ops' true counts,
+        // not just the retained records — and keep the combined artifact within
+        // the cap, rather than dropping the compaction metadata.
+        let cap = 16;
+
+        let mut read = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("agg-read".to_string()),
+            options_with_cap(cap),
+        );
+        record_run(
+            &mut read,
+            ExecutionContext::Retry,
+            "East US",
+            "https://east/",
+            CosmosStatus::new(StatusCode::TooManyRequests),
+            2.0,
+            600,
+        );
+        read.set_operation_status(StatusCode::Ok, None);
+        let read_ctx = Arc::new(read.complete());
+        assert!(
+            read_ctx.compaction().is_some(),
+            "source must be individually compacted"
+        );
+
+        let mut replace = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("agg-replace".to_string()),
+            options_with_cap(cap),
+        );
+        record_run(
+            &mut replace,
+            ExecutionContext::Retry,
+            "West US",
+            "https://west/",
+            CosmosStatus::new(StatusCode::Gone),
+            3.0,
+            400,
+        );
+        replace.set_operation_status(StatusCode::Created, None);
+        let replace_ctx = Arc::new(replace.complete());
+
+        let aggregated =
+            DiagnosticsContext::aggregate_sub_operations(&[read_ctx.clone(), replace_ctx.clone()])
+                .expect("aggregation must succeed");
+
+        // Exact total across sub-ops, not just the retained records.
+        assert_eq!(
+            aggregated.request_count(),
+            read_ctx.request_count() + replace_ctx.request_count()
+        );
+        assert_eq!(aggregated.request_count(), 1000);
+        // The combined artifact respects the cap.
+        assert!(
+            aggregated.retained_request_count() <= cap,
+            "retained {} exceeds cap {cap}",
+            aggregated.retained_request_count()
+        );
+        // Exact total charge preserved (600*2.0 + 400*3.0).
+        assert!((aggregated.total_request_charge().value() - 2400.0).abs() < f64::EPSILON);
+        // Compaction metadata reports the exact original attempt count.
+        let info = aggregated
+            .compaction()
+            .expect("aggregate of compacted sources must carry compaction metadata");
+        assert_eq!(info.original_request_count, 1000);
     }
 
     #[test]

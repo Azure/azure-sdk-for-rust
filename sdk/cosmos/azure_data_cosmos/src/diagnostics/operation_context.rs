@@ -16,6 +16,8 @@
 
 use std::borrow::Cow;
 
+use azure_core::fmt::SafeDebug;
+
 /// SDK-supplied, operation-scope identity for a single Cosmos operation.
 ///
 /// The driver's [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext)
@@ -44,7 +46,7 @@ use std::borrow::Cow;
 /// that are set. All setters accept anything convertible into a
 /// `Cow<'static, str>`, so canonical static operation names (e.g. `"read_item"`)
 /// are stored without allocating.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Default, SafeDebug, PartialEq, Eq)]
 pub struct CosmosOperationContext {
     operation_name: Option<Cow<'static, str>>,
     database_name: Option<Cow<'static, str>>,

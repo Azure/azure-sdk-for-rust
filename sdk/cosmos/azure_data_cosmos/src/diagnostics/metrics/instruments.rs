@@ -8,7 +8,7 @@
 //! reference-counted). Building them eagerly keeps the per-operation hot path to
 //! just `record`/`add` calls with no allocation of instrument state.
 
-use opentelemetry::metrics::{Histogram, Meter, UpDownCounter};
+use opentelemetry::metrics::{Histogram, Meter};
 
 use crate::diagnostics::metrics::attributes;
 
@@ -30,9 +30,6 @@ pub(crate) struct Instruments {
 
     /// Development: `db.client.response.returned_rows` (rows).
     pub(crate) returned_rows: Histogram<u64>,
-
-    /// Development: `azure.cosmosdb.client.active_instance.count` (instances).
-    pub(crate) active_instance_count: UpDownCounter<i64>,
 }
 
 impl Instruments {
@@ -56,17 +53,10 @@ impl Instruments {
             .with_description("Number of rows/items returned by a Cosmos DB operation.")
             .build();
 
-        let active_instance_count = meter
-            .i64_up_down_counter(attributes::METRIC_ACTIVE_INSTANCE_COUNT)
-            .with_unit(attributes::UNIT_INSTANCE)
-            .with_description("Number of active Cosmos DB client instances.")
-            .build();
-
         Self {
             operation_duration,
             request_charge,
             returned_rows,
-            active_instance_count,
         }
     }
 }

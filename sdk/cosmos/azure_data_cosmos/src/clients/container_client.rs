@@ -96,15 +96,15 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
         let operation = CosmosOperation::read_container(self.container_ref.clone());
 
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, options.operation)
-            .await?;
+            .await;
 
         Ok(ResourceResponse::new(
             self.context
-                .complete_operation(driver_response, || self.operation_context("read_container")),
+                .complete_result(driver_result, || self.operation_context("read_container"))?,
         ))
     }
 
@@ -150,16 +150,16 @@ impl ContainerClient {
         operation_options.content_response_on_write =
             Some(azure_data_cosmos_driver::options::ContentResponseOnWrite::Enabled);
 
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, operation_options)
-            .await?;
+            .await;
 
         Ok(ResourceResponse::new(
-            self.context.complete_operation(driver_response, || {
+            self.context.complete_result(driver_result, || {
                 self.operation_context("replace_container")
-            }),
+            })?,
         ))
     }
 
@@ -238,16 +238,15 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
         let operation = CosmosOperation::delete_container(self.container_ref.clone());
 
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, options.operation)
-            .await?;
+            .await;
 
         Ok(ResourceResponse::new(
-            self.context.complete_operation(driver_response, || {
-                self.operation_context("delete_container")
-            }),
+            self.context
+                .complete_result(driver_result, || self.operation_context("delete_container"))?,
         ))
     }
 
@@ -338,16 +337,16 @@ impl ContainerClient {
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
         // Execute through the driver.
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, options.operation)
-            .await?;
+            .await;
 
         // Bridge the driver response to the SDK response type.
         Ok(ItemResponse::new(
             self.context
-                .complete_operation(driver_response, || self.operation_context("create_item")),
+                .complete_result(driver_result, || self.operation_context("create_item"))?,
         ))
     }
 
@@ -437,16 +436,16 @@ impl ContainerClient {
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
         // Execute through the driver.
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, options.operation)
-            .await?;
+            .await;
 
         // Bridge the driver response to the SDK response type.
         Ok(ItemResponse::new(
             self.context
-                .complete_operation(driver_response, || self.operation_context("replace_item")),
+                .complete_result(driver_result, || self.operation_context("replace_item"))?,
         ))
     }
 
@@ -545,15 +544,15 @@ impl ContainerClient {
         // session token.
         let operation = apply_item_options(operation, options.session_token, None);
 
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, options.operation)
-            .await?;
+            .await;
 
         Ok(ItemResponse::new(
             self.context
-                .complete_operation(driver_response, || self.operation_context("patch_item")),
+                .complete_result(driver_result, || self.operation_context("patch_item"))?,
         ))
     }
 
@@ -647,16 +646,16 @@ impl ContainerClient {
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
         // Execute through the driver.
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, options.operation)
-            .await?;
+            .await;
 
         // Bridge the driver response to the SDK response type.
         Ok(ItemResponse::new(
             self.context
-                .complete_operation(driver_response, || self.operation_context("upsert_item")),
+                .complete_result(driver_result, || self.operation_context("upsert_item"))?,
         ))
     }
 
@@ -708,16 +707,16 @@ impl ContainerClient {
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
         // Execute through the driver.
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, options.operation)
-            .await?;
+            .await;
 
         // Bridge the driver response to the SDK response type.
         Ok(ItemResponse::new(
             self.context
-                .complete_operation(driver_response, || self.operation_context("read_item")),
+                .complete_result(driver_result, || self.operation_context("read_item"))?,
         ))
     }
 
@@ -761,16 +760,16 @@ impl ContainerClient {
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
         // Execute through the driver.
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, options.operation)
-            .await?;
+            .await;
 
         // Bridge the driver response to the SDK response type.
         Ok(ItemResponse::new(
             self.context
-                .complete_operation(driver_response, || self.operation_context("delete_item")),
+                .complete_result(driver_result, || self.operation_context("delete_item"))?,
         ))
     }
 
@@ -880,6 +879,8 @@ impl ContainerClient {
             Some(self.container_ref.clone()),
             plan,
             options.operation,
+            self.context.diagnostics_handlers.clone(),
+            self.operation_context("query_items"),
         ))
     }
 
@@ -965,6 +966,8 @@ impl ContainerClient {
             Some(self.container_ref.clone()),
             plan,
             options.operation,
+            self.context.diagnostics_handlers.clone(),
+            self.operation_context("query_change_feed"),
         ))
     }
 
@@ -1022,16 +1025,16 @@ impl ContainerClient {
             CosmosOperation::batch(self.container_ref.clone(), driver_pk).with_body(body);
         let operation = apply_batch_options(operation, &options);
 
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, options.operation)
-            .await?;
+            .await;
 
         Ok(BatchResponse::new(
-            self.context.complete_operation(driver_response, || {
+            self.context.complete_result(driver_result, || {
                 self.operation_context("execute_transactional_batch")
-            }),
+            })?,
         ))
     }
 

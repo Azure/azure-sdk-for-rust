@@ -11,7 +11,7 @@ use azure_data_cosmos_driver::{
 };
 
 use super::rate_limiter::{RateLimiter, RateLimiterConfig};
-use crate::diagnostics::DiagnosticsHandler;
+use crate::diagnostics::{CosmosOperationContext, DiagnosticsHandler};
 
 /// `tracing` target for emitted sampled-diagnostics lines.
 const SAMPLED_TARGET: &str = "azure_data_cosmos::diagnostics::sampled";
@@ -84,7 +84,7 @@ impl SamplingLogHandler {
     /// Returns whether the given completed context should be logged, per the
     /// tail-based sampling gate (before rate limiting).
     pub fn should_log(&self, diagnostics: &DiagnosticsContext) -> bool {
-        should_log(diagnostics, &self.thresholds)
+        should_log(diagnostics, &self.thresholds, None)
     }
 }
 
@@ -95,8 +95,9 @@ impl Default for SamplingLogHandler {
 }
 
 impl DiagnosticsHandler for SamplingLogHandler {
-    fn handle(&self, diagnostics: &DiagnosticsContext, _cx: &Context<'_>) {
-        if !should_log(diagnostics, &self.thresholds) {
+    fn handle(&self, diagnostics: &DiagnosticsContext, cx: &Context<'_>) {
+        let op = cx.value::<CosmosOperationContext>();
+        if !should_log(diagnostics, &self.thresholds, op) {
             return;
         }
 
@@ -124,10 +125,19 @@ impl DiagnosticsHandler for SamplingLogHandler {
 
 /// The tail-based sampling gate: log iff the operation is completed and either
 /// failed or crossed a sampling threshold.
+///
+/// `op` supplies the SDK-side operation identity so the threshold classifier
+/// can distinguish point from non-point operations; production driver contexts
+/// do not carry the operation name.
 pub(crate) fn should_log(
     diagnostics: &DiagnosticsContext,
     thresholds: &DiagnosticsThresholds,
+    op: Option<&CosmosOperationContext>,
 ) -> bool {
     diagnostics.is_completed()
-        && (diagnostics.is_failure() || diagnostics.is_threshold_violated(thresholds))
+        && (diagnostics.is_failure()
+            || diagnostics.is_threshold_violated_for(
+                thresholds,
+                op.and_then(CosmosOperationContext::operation_name),
+            ))
 }

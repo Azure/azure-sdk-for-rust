@@ -43,9 +43,8 @@ impl MetricsOptions {
     }
 
     /// Enables (or disables) the development-tier metrics:
-    /// `azure.cosmosdb.client.operation.request_charge`,
-    /// `db.client.response.returned_rows`, and
-    /// `azure.cosmosdb.client.active_instance.count`.
+    /// `azure.cosmosdb.client.operation.request_charge` and
+    /// `db.client.response.returned_rows`.
     #[must_use]
     pub fn with_development_metrics(mut self, enabled: bool) -> Self {
         self.development_metrics = enabled;

@@ -29,7 +29,7 @@ mod tests {
 
     use super::handler::{should_log, SamplingLogHandler};
     use super::rate_limiter::RateLimiterConfig;
-    use crate::diagnostics::DiagnosticsHandler;
+    use crate::diagnostics::{CosmosOperationContext, DiagnosticsHandler};
 
     /// Builds a completed single-attempt context with the given duration, status,
     /// and request charge.
@@ -62,7 +62,7 @@ mod tests {
             CosmosStatus::new(StatusCode::Ok),
             2.0,
         );
-        assert!(!should_log(&ok, &thresholds));
+        assert!(!should_log(&ok, &thresholds, None));
 
         // Failure: log.
         let failed = context(
@@ -70,7 +70,7 @@ mod tests {
             CosmosStatus::new(StatusCode::TooManyRequests),
             2.0,
         );
-        assert!(should_log(&failed, &thresholds));
+        assert!(should_log(&failed, &thresholds, None));
 
         // Threshold breach (RU over a low threshold): log.
         let strict = DiagnosticsThresholds::default().with_request_charge(1.0);
@@ -79,7 +79,37 @@ mod tests {
             CosmosStatus::new(StatusCode::Ok),
             500.0,
         );
-        assert!(should_log(&expensive, &strict));
+        assert!(should_log(&expensive, &strict, None));
+    }
+
+    #[test]
+    fn non_point_threshold_uses_operation_name_from_context() {
+        // A production driver context carries no operation name, so a 2s
+        // operation classifies as a point op (1s) and is wrongly logged. The
+        // SDK operation identity switches it to the non-point (3s) threshold.
+        let thresholds = DiagnosticsThresholds::default();
+        let now = Instant::now();
+        let request = RequestDiagnostics::for_testing(
+            "https://acct.documents.azure.com:443/",
+            Some(Region::new("West US 2")),
+            CosmosStatus::new(StatusCode::Ok),
+            RequestCharge::new(2.0),
+            now - Duration::from_millis(2000),
+            now,
+        );
+        let slow_non_point = DiagnosticsContext::for_testing_with_requests(
+            ActivityId::new_uuid(),
+            Duration::from_millis(2000),
+            Some(CosmosStatus::new(StatusCode::Ok)),
+            None,
+            vec![request],
+        );
+
+        // No operation identity → point (1s) fallback → logged.
+        assert!(should_log(&slow_non_point, &thresholds, None));
+        // Query op identity → non-point (3s) threshold → not logged at 2s.
+        let op = CosmosOperationContext::new().with_operation_name("query_items");
+        assert!(!should_log(&slow_non_point, &thresholds, Some(&op)));
     }
 
     /// Counts sampled lines and suppression notices by `tracing` target.
