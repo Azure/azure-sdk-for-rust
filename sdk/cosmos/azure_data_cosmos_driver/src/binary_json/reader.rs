@@ -1,26 +1,21 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Cosmos binary JSON **decoder** (`binary` → [`serde_json::Value`]).
+//! Cosmos binary JSON **decoder** (`binary` â†’ [`serde_json::Value`]).
 //!
-//! The decoder parses **untrusted** service bytes, so every step is
-//! bounds-checked and returns a [`BinaryError`] rather than panicking; a
-//! malformed or truncated buffer must fail gracefully. Multi-byte integers and
-//! length prefixes are little-endian, matching the service.
+//! Every step is bounds-checked and returns a [`BinaryError`] rather than
+//! panicking, so a malformed or truncated buffer fails gracefully. Multi-byte
+//! integers and length prefixes are little-endian, matching the service.
 //!
-//! # Phase status
-//!
-//! The decoder is **complete**: it handles every value form the service can
-//! emit — [`null`](serde_json::Value::Null), booleans, all literal, fixed-width
-//! and extended numbers, every string form (system, user, reference,
-//! encoded-length, length-prefixed, GUID, base64, and compressed), the GUID
-//! value, binary blobs, containers (arrays and objects, with a nesting-depth
-//! guard), and uniform number arrays. Two cases are reported as errors rather
-//! than decoded because they have no JSON representation: user strings
-//! (`0x40`–`0x67`) report [`BinaryError::UnsupportedUserString`] (they
-//! reference an external dictionary the data plane does not supply), and
-//! `Float16` (`0xCF`) plus the standalone extended `UInt8` (`0xD7`) report
-//! [`BinaryError::InvalidMarker`] (no JSON node type).
+//! The decoder handles every value form the service can emit:
+//! [`null`](serde_json::Value::Null), booleans, all literal, fixed-width, and
+//! extended numbers, every string form (system, user, reference, encoded-length,
+//! length-prefixed, GUID, base64, and compressed), the GUID value, binary blobs,
+//! containers, and uniform number arrays. Two cases have no JSON representation
+//! and are reported as errors: user strings (`0x40`â€“`0x67`) report
+//! [`BinaryError::UnsupportedUserString`] (they reference an external dictionary
+//! the data plane does not supply), and `Float16` (`0xCF`) plus the standalone
+//! extended `UInt8` (`0xD7`) report [`BinaryError::InvalidMarker`].
 
 use base64::Engine;
 use serde_json::{Map, Value};
@@ -98,6 +93,21 @@ pub(super) enum ContainerHeader {
     Object(Frame),
 }
 
+/// Width in bytes of a little-endian length or count field.
+///
+/// Length- and count-prefixed forms encode their field in 1, 2, or 4 bytes
+/// depending on the marker; carrying this as an enum instead of a raw `usize`
+/// keeps the width total and makes the accepted set explicit.
+#[derive(Clone, Copy)]
+enum FieldWidth {
+    /// 1-byte field.
+    One,
+    /// 2-byte field.
+    Two,
+    /// 4-byte field.
+    Four,
+}
+
 /// Decodes a complete Cosmos binary JSON buffer into a [`serde_json::Value`].
 ///
 /// The buffer must begin with the [`PREAMBLE`](super::PREAMBLE) byte (`0x80`); the single
@@ -147,11 +157,11 @@ pub(super) struct Reader<'a> {
     pub(super) buf: &'a [u8],
     pub(super) pos: usize,
     /// Remaining budget, in bytes, for text materialized by **reference-string**
-    /// resolution ([`STR_R1`](super::markers::STR_R1)–[`STR_R4`](super::markers::STR_R4)).
+    /// resolution ([`STR_R1`](super::markers::STR_R1)â€“[`STR_R4`](super::markers::STR_R4)).
     ///
     /// Each reference decodes a *fresh owned copy* of its target string, so a
     /// crafted buffer (one long string plus many short references to it) can
-    /// expand to O(S²) aggregate output from a size-`S` buffer even though every
+    /// expand to O(SÂ²) aggregate output from a size-`S` buffer even though every
     /// individual length prefix is buffer-bounded. This shared counter caps the
     /// total reference-expanded bytes for one decode; exceeding it fails with
     /// [`BinaryError::InvalidLength`]. Non-reference strings are backed 1:1 by
@@ -165,9 +175,9 @@ pub(super) struct Reader<'a> {
 ///
 /// References normally *shrink* payloads (they replace a repeated string with a
 /// few offset bytes), so a legitimate buffer never approaches this. The cap is
-/// generous — a multiple of the buffer size, floored at a small constant so
-/// tiny buffers still permit some expansion — while still bounding the
-/// adversarial O(S²) blow-up to O(S).
+/// generous â€” a multiple of the buffer size, floored at a small constant so
+/// tiny buffers still permit some expansion â€” while still bounding the
+/// adversarial O(SÂ²) blow-up to O(S).
 fn reference_budget(buf_len: usize) -> usize {
     const FLOOR: usize = 64 * 1024;
     const FACTOR: usize = 16;
@@ -206,9 +216,9 @@ impl<'a> Reader<'a> {
     /// Reads exactly `N` bytes into a fixed-size array, advancing the cursor.
     fn read_array<const N: usize>(&mut self) -> Result<[u8; N]> {
         let slice = self.read_bytes(N)?;
-        let mut array = [0u8; N];
-        array.copy_from_slice(slice);
-        Ok(array)
+        Ok(slice
+            .try_into()
+            .expect("read_bytes returns exactly N bytes or fails"))
     }
 
     /// Borrows the next `len` bytes, advancing the cursor.
@@ -243,8 +253,10 @@ impl<'a> Reader<'a> {
 
     /// Reads a 3-byte little-endian unsigned integer (the `StrR3` offset width).
     fn read_u24_le(&mut self) -> Result<u32> {
-        let [b0, b1, b2] = self.read_array::<3>()?;
-        Ok(u32::from(b0) | (u32::from(b1) << 8) | (u32::from(b2) << 16))
+        let [b0, b1, b2] = self.read_bytes(3)? else {
+            unreachable!("read_bytes(3) returns exactly 3 bytes or fails")
+        };
+        Ok(u32::from(*b0) | (u32::from(*b1) << 8) | (u32::from(*b2) << 16))
     }
 
     fn read_u64_le(&mut self) -> Result<u64> {
@@ -307,28 +319,18 @@ impl<'a> Reader<'a> {
             TRUE => Ok(Value::Bool(true)),
 
             // Literal integer: the value is encoded in the marker itself.
-            m if (LITERAL_INT_MIN..LITERAL_INT_MAX).contains(&m) => Ok(int_value(i64::from(m))),
+            LITERAL_INT_MIN..LITERAL_INT_MAX => Ok(int_value(i64::from(marker))),
 
-            // Fixed-width numbers (little-endian payloads).
-            NUMBER_UINT8 => Ok(int_value(i64::from(self.read_u8()?))),
-            NUMBER_INT16 => Ok(int_value(i64::from(self.read_i16_le()?))),
-            NUMBER_INT32 => Ok(int_value(i64::from(self.read_i32_le()?))),
-            NUMBER_INT64 => Ok(int_value(self.read_i64_le()?)),
-            NUMBER_UINT64 => Ok(uint_value(self.read_u64_le()?)),
-            NUMBER_DOUBLE => double_value(self.read_f64_le()?),
-
-            // Extended fixed-width numbers (value follows the marker, no length
-            // prefix). These are part of the Cosmos extended type system; each
-            // has a natural JSON-number projection. `Float16` (0xCF) and the
-            // extended `UInt8` (0xD7) have no JSON node type in the service and
-            // therefore fall through to the catch-all as InvalidMarker.
-            INT8 => Ok(int_value(i64::from(self.read_i8()?))),
-            INT16 => Ok(int_value(i64::from(self.read_i16_le()?))),
-            INT32 => Ok(int_value(i64::from(self.read_i32_le()?))),
-            INT64 => Ok(int_value(self.read_i64_le()?)),
-            UINT32 => Ok(int_value(i64::from(self.read_u32_le()?))),
-            FLOAT32 => double_value(f64::from(self.read_f32_le()?)),
-            FLOAT64 => double_value(self.read_f64_le()?),
+            // Fixed-width numbers (little-endian payloads), both the
+            // self-describing `NUMBER_*` markers and the extended Cosmos
+            // `INT*`/`UINT*`/`FLOAT*` markers, decode through a shared helper.
+            // `Float16` (0xCF) and the extended `UInt8` (0xD7) have no JSON node
+            // type in the service and are intentionally *not* routed here, so
+            // they fall through to the catch-all as InvalidMarker.
+            NUMBER_UINT8 | NUMBER_INT16 | NUMBER_INT32 | NUMBER_INT64 | NUMBER_UINT64
+            | NUMBER_DOUBLE | INT8 | INT16 | INT32 | INT64 | UINT32 | FLOAT32 | FLOAT64 => {
+                self.read_number_value(marker, offset)
+            }
 
             // 1-byte system string: index into the fixed dictionary.
             m if (SYSTEM_STRING_1BYTE_MIN..SYSTEM_STRING_1BYTE_MAX).contains(&m) => {
@@ -372,10 +374,18 @@ impl<'a> Reader<'a> {
             // inline; decoding re-encodes them to the JSON string. The width of
             // the group-count prefix (1 vs 2 bytes) and the alphabet (standard
             // vs URL-safe) depend on the marker.
-            BASE64_STRING_LENGTH1 => Ok(Value::String(self.read_base64_string(1, false)?)),
-            BASE64_STRING_LENGTH2 => Ok(Value::String(self.read_base64_string(2, false)?)),
-            BASE64_URL_STRING_LENGTH1 => Ok(Value::String(self.read_base64_string(1, true)?)),
-            BASE64_URL_STRING_LENGTH2 => Ok(Value::String(self.read_base64_string(2, true)?)),
+            BASE64_STRING_LENGTH1 => Ok(Value::String(
+                self.read_base64_string(FieldWidth::One, false)?,
+            )),
+            BASE64_STRING_LENGTH2 => Ok(Value::String(
+                self.read_base64_string(FieldWidth::Two, false)?,
+            )),
+            BASE64_URL_STRING_LENGTH1 => Ok(Value::String(
+                self.read_base64_string(FieldWidth::One, true)?,
+            )),
+            BASE64_URL_STRING_LENGTH2 => Ok(Value::String(
+                self.read_base64_string(FieldWidth::Two, true)?,
+            )),
 
             // Compressed strings. The 4-bit table forms map each nibble through
             // a fixed character set; the packed N-bit forms unpack N-bit values
@@ -389,11 +399,31 @@ impl<'a> Reader<'a> {
             COMPRESSED_DATE_TIME_STRING => Ok(Value::String(
                 self.read_table_string(compression::DATE_TIME)?,
             )),
-            PACKED_4BIT_STRING => Ok(Value::String(self.read_packed_string(4, true, 1)?)),
-            PACKED_5BIT_STRING => Ok(Value::String(self.read_packed_string(5, true, 1)?)),
-            PACKED_6BIT_STRING => Ok(Value::String(self.read_packed_string(6, true, 1)?)),
-            PACKED_7BIT_STRING_LENGTH1 => Ok(Value::String(self.read_packed_string(7, false, 1)?)),
-            PACKED_7BIT_STRING_LENGTH2 => Ok(Value::String(self.read_packed_string(7, false, 2)?)),
+            PACKED_4BIT_STRING => Ok(Value::String(self.read_packed_string(
+                4,
+                true,
+                FieldWidth::One,
+            )?)),
+            PACKED_5BIT_STRING => Ok(Value::String(self.read_packed_string(
+                5,
+                true,
+                FieldWidth::One,
+            )?)),
+            PACKED_6BIT_STRING => Ok(Value::String(self.read_packed_string(
+                6,
+                true,
+                FieldWidth::One,
+            )?)),
+            PACKED_7BIT_STRING_LENGTH1 => Ok(Value::String(self.read_packed_string(
+                7,
+                false,
+                FieldWidth::One,
+            )?)),
+            PACKED_7BIT_STRING_LENGTH2 => Ok(Value::String(self.read_packed_string(
+                7,
+                false,
+                FieldWidth::Two,
+            )?)),
 
             // The GUID *value* is 16 bytes interpreted as a .NET `Guid`
             // (mixed-endian) and rendered as the canonical lowercase text. This
@@ -403,16 +433,16 @@ impl<'a> Reader<'a> {
 
             // Binary blobs have no JSON representation; the raw bytes are mapped
             // to a standard base64 string (the conventional JSON byte encoding).
-            BINARY_1BYTE_LENGTH => self.read_binary(1),
-            BINARY_2BYTE_LENGTH => self.read_binary(2),
-            BINARY_4BYTE_LENGTH => self.read_binary(4),
+            BINARY_1BYTE_LENGTH => self.read_binary(FieldWidth::One),
+            BINARY_2BYTE_LENGTH => self.read_binary(FieldWidth::Two),
+            BINARY_4BYTE_LENGTH => self.read_binary(FieldWidth::Four),
 
             // Uniform number arrays: a typed, marker-shared sequence of bare
             // numbers (`ArrNumC*`) or a sequence of such arrays (`ArrArrNumC*`).
-            ARR_NUM_C1 => self.read_uniform_number_array(1),
-            ARR_NUM_C2 => self.read_uniform_number_array(2),
-            ARR_ARR_NUM_C1C1 => self.read_uniform_array_of_number_arrays(1),
-            ARR_ARR_NUM_C2C2 => self.read_uniform_array_of_number_arrays(2),
+            ARR_NUM_C1 => self.read_uniform_number_array(FieldWidth::One),
+            ARR_NUM_C2 => self.read_uniform_number_array(FieldWidth::Two),
+            ARR_ARR_NUM_C1C1 => self.read_uniform_array_of_number_arrays(FieldWidth::One),
+            ARR_ARR_NUM_C2C2 => self.read_uniform_array_of_number_arrays(FieldWidth::Two),
 
             // User strings reference an external string dictionary that the
             // Cosmos data plane does not supply, so they cannot be resolved to
@@ -459,12 +489,12 @@ impl<'a> Reader<'a> {
                 let item = self.read_value(depth + 1)?;
                 Ok(Value::Array(vec![item]))
             }
-            ARR_L1 => self.read_array_value(1, false, depth),
-            ARR_L2 => self.read_array_value(2, false, depth),
-            ARR_L4 => self.read_array_value(4, false, depth),
-            ARR_LC1 => self.read_array_value(1, true, depth),
-            ARR_LC2 => self.read_array_value(2, true, depth),
-            ARR_LC4 => self.read_array_value(4, true, depth),
+            ARR_L1 => self.read_array_value(FieldWidth::One, false, depth),
+            ARR_L2 => self.read_array_value(FieldWidth::Two, false, depth),
+            ARR_L4 => self.read_array_value(FieldWidth::Four, false, depth),
+            ARR_LC1 => self.read_array_value(FieldWidth::One, true, depth),
+            ARR_LC2 => self.read_array_value(FieldWidth::Two, true, depth),
+            ARR_LC4 => self.read_array_value(FieldWidth::Four, true, depth),
 
             // Objects.
             OBJ0 => Ok(Value::Object(Map::new())),
@@ -474,12 +504,12 @@ impl<'a> Reader<'a> {
                 map.insert(name, value);
                 Ok(Value::Object(map))
             }
-            OBJ_L1 => self.read_object_value(1, false, depth),
-            OBJ_L2 => self.read_object_value(2, false, depth),
-            OBJ_L4 => self.read_object_value(4, false, depth),
-            OBJ_LC1 => self.read_object_value(1, true, depth),
-            OBJ_LC2 => self.read_object_value(2, true, depth),
-            OBJ_LC4 => self.read_object_value(4, true, depth),
+            OBJ_L1 => self.read_object_value(FieldWidth::One, false, depth),
+            OBJ_L2 => self.read_object_value(FieldWidth::Two, false, depth),
+            OBJ_L4 => self.read_object_value(FieldWidth::Four, false, depth),
+            OBJ_LC1 => self.read_object_value(FieldWidth::One, true, depth),
+            OBJ_LC2 => self.read_object_value(FieldWidth::Two, true, depth),
+            OBJ_LC4 => self.read_object_value(FieldWidth::Four, true, depth),
 
             // Every other (valid-but-not-yet-implemented or genuinely invalid)
             // marker is reported as invalid. User/reference strings and the
@@ -498,8 +528,8 @@ impl<'a> Reader<'a> {
     /// Returns `Ok(Some(_))` (advancing the cursor) for `null`, booleans, every
     /// literal/fixed-width/extended number, system strings, and plain
     /// UTF-8 strings (encoded-length and `StrL1/2/4`). Returns `Ok(None)`
-    /// **without advancing** for any other marker — containers and the exotic
-    /// string/number forms — which the deserializer handles via a container
+    /// **without advancing** for any other marker â€” containers and the exotic
+    /// string/number forms â€” which the deserializer handles via a container
     /// stream or the [`read_value`](Self::read_value) fallback respectively.
     pub(super) fn try_read_native_scalar(&mut self) -> Result<Option<ScalarToken<'a>>> {
         let offset = self.pos;
@@ -679,11 +709,11 @@ impl<'a> Reader<'a> {
     ) -> Result<(Option<usize>, usize)> {
         let [l1, l2, l4] = l_markers;
         let width = if marker == l1 || marker == l1 + 3 {
-            1
+            FieldWidth::One
         } else if marker == l2 || marker == l2 + 3 {
-            2
+            FieldWidth::Two
         } else {
-            4
+            FieldWidth::Four
         };
         let has_count = marker == l1 + 3 || marker == l2 + 3 || marker == l4 + 3;
         self.pos += 1; // consume the marker
@@ -698,12 +728,11 @@ impl<'a> Reader<'a> {
     }
 
     /// Reads a 1-, 2-, or 4-byte little-endian length or count field.
-    fn read_len(&mut self, width: usize) -> Result<usize> {
+    fn read_len(&mut self, width: FieldWidth) -> Result<usize> {
         match width {
-            1 => Ok(usize::from(self.read_u8()?)),
-            2 => Ok(usize::from(self.read_u16_le()?)),
-            // The only other width the callers pass is 4.
-            _ => Ok(self.read_u32_le()? as usize),
+            FieldWidth::One => Ok(usize::from(self.read_u8()?)),
+            FieldWidth::Two => Ok(usize::from(self.read_u16_le()?)),
+            FieldWidth::Four => Ok(self.read_u32_le()? as usize),
         }
     }
 
@@ -728,7 +757,12 @@ impl<'a> Reader<'a> {
     /// width in bytes (1, 2, or 4); when `has_count` is set, a count field of
     /// the same width follows the length and is validated against the number of
     /// items actually decoded.
-    fn read_array_value(&mut self, width: usize, has_count: bool, depth: usize) -> Result<Value> {
+    fn read_array_value(
+        &mut self,
+        width: FieldWidth,
+        has_count: bool,
+        depth: usize,
+    ) -> Result<Value> {
         let payload_len = self.read_len(width)?;
         let count = if has_count {
             Some(self.read_len(width)?)
@@ -763,7 +797,12 @@ impl<'a> Reader<'a> {
     /// the number of members, validated against the number actually decoded.
     ///
     /// [`read_array_value`]: Reader::read_array_value
-    fn read_object_value(&mut self, width: usize, has_count: bool, depth: usize) -> Result<Value> {
+    fn read_object_value(
+        &mut self,
+        width: FieldWidth,
+        has_count: bool,
+        depth: usize,
+    ) -> Result<Value> {
         let payload_len = self.read_len(width)?;
         let count = if has_count {
             Some(self.read_len(width)?)
@@ -801,15 +840,15 @@ impl<'a> Reader<'a> {
     /// non-string is not valid in a property-name position.
     fn read_member(&mut self, depth: usize) -> Result<(String, Value)> {
         let name_offset = self.pos;
+        // Capture the name's type marker before decoding so a non-string name
+        // can be reported without re-indexing the buffer.
+        let name_marker = self.peek_u8()?;
         let name = self.read_value(depth)?;
         let name = match name {
             Value::String(s) => s,
             _ => {
-                // The byte at `name_offset` was necessarily present (the
-                // `read_value` above consumed it), so this index is in bounds.
-                let marker = self.buf[name_offset];
                 return Err(BinaryError::InvalidMarker {
-                    marker,
+                    marker: name_marker,
                     offset: name_offset,
                 });
             }
@@ -829,9 +868,9 @@ impl<'a> Reader<'a> {
         const DASH_POSITIONS: [usize; 4] = [4, 6, 8, 10];
         let bytes = self.read_array::<16>()?;
         let digits = if uppercase {
-            b"0123456789ABCDEF"
+            compression::UPPERCASE_HEX
         } else {
-            b"0123456789abcdef"
+            compression::LOWERCASE_HEX
         };
 
         // 36 hex/dash chars, plus the two optional surrounding quotes.
@@ -864,7 +903,7 @@ impl<'a> Reader<'a> {
     /// original text carried (or, when greater than 2, that padding was omitted,
     /// in which case the encoded length shrinks accordingly). Mirrors .NET
     /// `ConvertBytesToBase64String`.
-    fn read_base64_string(&mut self, length_width: usize, url_safe: bool) -> Result<String> {
+    fn read_base64_string(&mut self, length_width: FieldWidth, url_safe: bool) -> Result<String> {
         let groups = self.read_len(length_width)?;
         let padding = self.read_u8()?;
 
@@ -950,7 +989,7 @@ impl<'a> Reader<'a> {
         &mut self,
         bits: u32,
         has_base: bool,
-        length_width: usize,
+        length_width: FieldWidth,
     ) -> Result<String> {
         let len = self.read_len(length_width)?;
         let base = if has_base { self.read_u8()? } else { 0 };
@@ -1005,7 +1044,7 @@ impl<'a> Reader<'a> {
     /// Reads a binary blob: a `length_width`-byte little-endian length followed
     /// by that many raw bytes, mapped to a standard base64 [`Value::String`]
     /// (JSON has no native binary type).
-    fn read_binary(&mut self, length_width: usize) -> Result<Value> {
+    fn read_binary(&mut self, length_width: FieldWidth) -> Result<Value> {
         let len = self.read_len(length_width)?;
         let bytes = self.read_bytes(len)?;
         let encoded = base64::engine::general_purpose::STANDARD.encode(bytes);
@@ -1018,17 +1057,35 @@ impl<'a> Reader<'a> {
     /// element is just the little-endian value with no per-item marker.
     /// `marker_offset` is the offset of the array's item-type marker, used to
     /// report an unsupported item type. Mirrors the uniform-array branch of
-    /// .NET `TryGetNumberValue`.
+    /// .NET `TryGetNumberValue`. Delegates to [`read_number_value`] for the
+    /// actual little-endian payload decode.
+    ///
+    /// [`read_number_value`]: Self::read_number_value
     fn read_bare_number(&mut self, item_marker: u8, marker_offset: usize) -> Result<Value> {
-        match item_marker {
-            INT8 => Ok(int_value(i64::from(self.read_i8()?))),
-            UINT8 => Ok(int_value(i64::from(self.read_u8()?))),
-            INT16 => Ok(int_value(i64::from(self.read_i16_le()?))),
-            INT32 => Ok(int_value(i64::from(self.read_i32_le()?))),
-            INT64 => Ok(int_value(self.read_i64_le()?)),
+        self.read_number_value(item_marker, marker_offset)
+    }
+
+    /// Decodes the little-endian payload of a fixed-width number `marker` into a
+    /// JSON number [`Value`]. The marker has already been consumed; the payload
+    /// is read from the current position. `marker_offset` locates the marker for
+    /// error reporting.
+    ///
+    /// Shared by [`read_value`](Self::read_value) (self-describing top-level
+    /// numbers) and [`read_bare_number`](Self::read_bare_number) (uniform-array
+    /// items using the extended `INT*`/`UINT*`/`FLOAT*` markers). Each caller
+    /// only forwards the markers valid in its context; any other marker is
+    /// reported as [`BinaryError::InvalidMarker`].
+    fn read_number_value(&mut self, marker: u8, marker_offset: usize) -> Result<Value> {
+        match marker {
+            NUMBER_UINT8 | UINT8 => Ok(int_value(i64::from(self.read_u8()?))),
+            NUMBER_INT16 | INT16 => Ok(int_value(i64::from(self.read_i16_le()?))),
+            NUMBER_INT32 | INT32 => Ok(int_value(i64::from(self.read_i32_le()?))),
+            NUMBER_INT64 | INT64 => Ok(int_value(self.read_i64_le()?)),
+            NUMBER_UINT64 => Ok(uint_value(self.read_u64_le()?)),
             UINT32 => Ok(int_value(i64::from(self.read_u32_le()?))),
+            INT8 => Ok(int_value(i64::from(self.read_i8()?))),
+            NUMBER_DOUBLE | FLOAT64 => double_value(self.read_f64_le()?),
             FLOAT32 => double_value(f64::from(self.read_f32_le()?)),
-            FLOAT64 => double_value(self.read_f64_le()?),
             other => Err(BinaryError::InvalidMarker {
                 marker: other,
                 offset: marker_offset,
@@ -1039,7 +1096,7 @@ impl<'a> Reader<'a> {
     /// Reads a uniform number array (`ArrNumC1`/`ArrNumC2`). The prefix is the
     /// shared item-type marker followed by a `count_width`-byte little-endian
     /// item count; the body is that many bare numbers of the shared type.
-    fn read_uniform_number_array(&mut self, count_width: usize) -> Result<Value> {
+    fn read_uniform_number_array(&mut self, count_width: FieldWidth) -> Result<Value> {
         let item_marker_offset = self.pos;
         let item_marker = self.read_u8()?;
         let count = self.read_len(count_width)?;
@@ -1056,7 +1113,7 @@ impl<'a> Reader<'a> {
     /// number item-type marker, the per-inner-array number count, then the outer
     /// array count (each a `count_width`-byte little-endian field). The body is
     /// `outer_count` inner arrays, each holding `inner_count` bare numbers.
-    fn read_uniform_array_of_number_arrays(&mut self, count_width: usize) -> Result<Value> {
+    fn read_uniform_array_of_number_arrays(&mut self, count_width: FieldWidth) -> Result<Value> {
         // Inner-array type marker (ArrNumC1/ArrNumC2); consumed but not needed
         // beyond confirming the structure, since the shared number type follows.
         let _inner_array_marker = self.read_u8()?;
@@ -1076,7 +1133,7 @@ impl<'a> Reader<'a> {
         Ok(Value::Array(outer))
     }
 
-    /// Resolves a reference string ([`STR_R1`]–[`STR_R4`]) whose `target` is an
+    /// Resolves a reference string ([`STR_R1`]â€“[`STR_R4`]) whose `target` is an
     /// absolute byte offset into the buffer (the same frame as [`Reader::pos`],
     /// where the [`PREAMBLE`](super::PREAMBLE) is offset `0`).
     ///
@@ -1112,7 +1169,7 @@ impl<'a> Reader<'a> {
 
         // Charge the materialized text against the shared reference-expansion
         // budget so many references to one large string cannot amplify a
-        // size-`S` buffer into O(S²) aggregate output.
+        // size-`S` buffer into O(SÂ²) aggregate output.
         if let Value::String(s) = &value {
             let remaining = self.ref_budget.get();
             let cost = s.len();
@@ -1150,7 +1207,7 @@ fn double_value(n: f64) -> Result<Value> {
 
 /// Character lookup tables for the 4-bit table-compressed string forms.
 ///
-/// Each table maps a 4-bit nibble (`0x0`–`0xF`) to one ASCII byte, transcribed
+/// Each table maps a 4-bit nibble (`0x0`â€“`0xF`) to one ASCII byte, transcribed
 /// verbatim from the .NET `StringCompressionLookupTables` `list` arrays
 /// (`JsonBinaryEncoding.Chars.cs`).
 mod compression {
@@ -1169,7 +1226,7 @@ mod compression {
 mod tests {
     use super::*;
     use crate::binary_json::markers;
-    use crate::binary_json::vectors::SCALAR_VECTORS;
+    use crate::binary_json::vectors::golden_vectors;
     use crate::binary_json::PREAMBLE;
 
     /// Helper: prepend the preamble to a value's marker+payload bytes.
@@ -1179,23 +1236,16 @@ mod tests {
         v
     }
 
-    /// The real decoder reproduces every golden scalar vector's JSON.
+    /// The decoder reproduces every golden vector's JSON.
     #[test]
-    fn decodes_golden_scalar_corpus() {
-        for vector in SCALAR_VECTORS {
-            let decoded = decode(vector.binary).unwrap_or_else(|e| {
+    fn decodes_golden_corpus() {
+        for vector in golden_vectors() {
+            let decoded = decode(&vector.binary).unwrap_or_else(|e| {
                 panic!("case {}: decode failed: {e}", vector.name);
             });
-            let expected: Value = serde_json::from_str(vector.json).unwrap();
+            let expected: Value = serde_json::from_str(&vector.json).unwrap();
             assert_eq!(decoded, expected, "case {}", vector.name);
         }
-    }
-
-    #[test]
-    fn decodes_null_and_booleans() {
-        assert_eq!(decode(&buf(&[markers::NULL])).unwrap(), Value::Null);
-        assert_eq!(decode(&buf(&[markers::FALSE])).unwrap(), Value::Bool(false));
-        assert_eq!(decode(&buf(&[markers::TRUE])).unwrap(), Value::Bool(true));
     }
 
     #[test]
@@ -1204,39 +1254,6 @@ mod tests {
             let value = decode(&buf(&[n])).unwrap();
             assert_eq!(value, serde_json::json!(n), "literal int {n}");
         }
-    }
-
-    #[test]
-    fn decodes_fixed_width_numbers() {
-        // UInt8.
-        assert_eq!(
-            decode(&buf(&[markers::NUMBER_UINT8, 200])).unwrap(),
-            serde_json::json!(200),
-        );
-        // Int16 = -1000 (little-endian).
-        let mut int16 = vec![markers::NUMBER_INT16];
-        int16.extend_from_slice(&(-1000i16).to_le_bytes());
-        assert_eq!(decode(&buf(&int16)).unwrap(), serde_json::json!(-1000));
-        // Int32 = 70000.
-        let mut int32 = vec![markers::NUMBER_INT32];
-        int32.extend_from_slice(&70_000i32.to_le_bytes());
-        assert_eq!(decode(&buf(&int32)).unwrap(), serde_json::json!(70_000));
-        // Int64 = a large negative value.
-        let mut int64 = vec![markers::NUMBER_INT64];
-        int64.extend_from_slice(&(-5_000_000_000i64).to_le_bytes());
-        assert_eq!(
-            decode(&buf(&int64)).unwrap(),
-            serde_json::json!(-5_000_000_000i64),
-        );
-        // UInt64 beyond i64::MAX must round-trip as an unsigned number.
-        let big = u64::MAX - 1;
-        let mut uint64 = vec![markers::NUMBER_UINT64];
-        uint64.extend_from_slice(&big.to_le_bytes());
-        assert_eq!(decode(&buf(&uint64)).unwrap(), serde_json::json!(big));
-        // Double.
-        let mut dbl = vec![markers::NUMBER_DOUBLE];
-        dbl.extend_from_slice(&3.5f64.to_le_bytes());
-        assert_eq!(decode(&buf(&dbl)).unwrap(), serde_json::json!(3.5));
     }
 
     #[test]
@@ -1249,35 +1266,6 @@ mod tests {
                 detail: "non-finite double (NaN or infinity)",
             }),
         );
-    }
-
-    #[test]
-    fn decodes_string_forms() {
-        // System string "id" (index 12).
-        assert_eq!(
-            decode(&buf(&[markers::SYSTEM_STRING_1BYTE_MIN + 12])).unwrap(),
-            serde_json::json!("id"),
-        );
-        // Encoded-length string "hi" (length 2 baked into the marker).
-        assert_eq!(
-            decode(&buf(&[markers::ENCODED_STRING_LENGTH_MIN | 2, b'h', b'i'])).unwrap(),
-            serde_json::json!("hi"),
-        );
-        // Empty encoded-length string (marker == ENCODED_STRING_LENGTH_MIN).
-        assert_eq!(
-            decode(&buf(&[markers::ENCODED_STRING_LENGTH_MIN])).unwrap(),
-            serde_json::json!(""),
-        );
-        // StrL1 string "hello".
-        let mut str_l1 = vec![markers::STR_L1, 5];
-        str_l1.extend_from_slice(b"hello");
-        assert_eq!(decode(&buf(&str_l1)).unwrap(), serde_json::json!("hello"));
-        // StrL2 string of length 300.
-        let long: String = "a".repeat(300);
-        let mut str_l2 = vec![markers::STR_L2];
-        str_l2.extend_from_slice(&300u16.to_le_bytes());
-        str_l2.extend_from_slice(long.as_bytes());
-        assert_eq!(decode(&buf(&str_l2)).unwrap(), serde_json::json!(long));
     }
 
     #[test]
@@ -1351,46 +1339,6 @@ mod tests {
     }
 
     #[test]
-    fn decodes_extended_integers() {
-        // Int8 = -5.
-        let mut int8 = vec![markers::INT8];
-        int8.extend_from_slice(&(-5i8).to_le_bytes());
-        assert_eq!(decode(&buf(&int8)).unwrap(), serde_json::json!(-5));
-        // Int16 = -1000.
-        let mut int16 = vec![markers::INT16];
-        int16.extend_from_slice(&(-1000i16).to_le_bytes());
-        assert_eq!(decode(&buf(&int16)).unwrap(), serde_json::json!(-1000));
-        // Int32 = -70000.
-        let mut int32 = vec![markers::INT32];
-        int32.extend_from_slice(&(-70_000i32).to_le_bytes());
-        assert_eq!(decode(&buf(&int32)).unwrap(), serde_json::json!(-70_000));
-        // Int64 = a large negative value.
-        let mut int64 = vec![markers::INT64];
-        int64.extend_from_slice(&(-5_000_000_000i64).to_le_bytes());
-        assert_eq!(
-            decode(&buf(&int64)).unwrap(),
-            serde_json::json!(-5_000_000_000i64),
-        );
-        // UInt32 near u32::MAX must round-trip as a positive number.
-        let big = u32::MAX - 1;
-        let mut uint32 = vec![markers::UINT32];
-        uint32.extend_from_slice(&big.to_le_bytes());
-        assert_eq!(decode(&buf(&uint32)).unwrap(), serde_json::json!(big));
-    }
-
-    #[test]
-    fn decodes_extended_floats() {
-        // Float32 = 1.5 (exactly representable).
-        let mut f32v = vec![markers::FLOAT32];
-        f32v.extend_from_slice(&1.5f32.to_le_bytes());
-        assert_eq!(decode(&buf(&f32v)).unwrap(), serde_json::json!(1.5));
-        // Float64 = -2.25.
-        let mut f64v = vec![markers::FLOAT64];
-        f64v.extend_from_slice(&(-2.25f64).to_le_bytes());
-        assert_eq!(decode(&buf(&f64v)).unwrap(), serde_json::json!(-2.25));
-    }
-
-    #[test]
     fn rejects_non_finite_extended_float() {
         // Float32 carrying infinity has no JSON representation.
         let mut inf = vec![markers::FLOAT32];
@@ -1433,32 +1381,6 @@ mod tests {
     }
 
     #[test]
-    fn decodes_guid_strings() {
-        // 16 encoded bytes 0x00..0x0F expand to the canonical hex text.
-        let encoded: [u8; 16] = std::array::from_fn(|i| i as u8);
-        let mut lower = vec![markers::LOWERCASE_GUID_STRING];
-        lower.extend_from_slice(&encoded);
-        assert_eq!(
-            decode(&buf(&lower)).unwrap(),
-            serde_json::json!("00010203-0405-0607-0809-0a0b0c0d0e0f"),
-        );
-        // Uppercase variant differs only in hex case.
-        let mut upper = vec![markers::UPPERCASE_GUID_STRING];
-        upper.extend_from_slice(&encoded);
-        assert_eq!(
-            decode(&buf(&upper)).unwrap(),
-            serde_json::json!("00010203-0405-0607-0809-0A0B0C0D0E0F"),
-        );
-        // Double-quoted variant wraps the text in literal quotes.
-        let mut quoted = vec![markers::DOUBLE_QUOTED_LOWERCASE_GUID_STRING];
-        quoted.extend_from_slice(&encoded);
-        assert_eq!(
-            decode(&buf(&quoted)).unwrap(),
-            serde_json::json!("\"00010203-0405-0607-0809-0a0b0c0d0e0f\""),
-        );
-    }
-
-    #[test]
     fn rejects_truncated_guid_string() {
         // GUID string marker claims 16 encoded bytes but only 4 follow.
         let mut bytes = vec![markers::LOWERCASE_GUID_STRING];
@@ -1478,92 +1400,12 @@ mod tests {
     }
 
     #[test]
-    fn decodes_base64_strings_with_literal_padding() {
-        // "foo" -> "Zm9v" (3 raw bytes, one group, no padding).
-        assert_eq!(
-            decode(&buf(&base64_len1(1, 0, b"foo"))).unwrap(),
-            serde_json::json!("Zm9v"),
-        );
-        // "fo" -> "Zm8=" (2 raw bytes, one group, one '=').
-        assert_eq!(
-            decode(&buf(&base64_len1(1, 1, b"fo"))).unwrap(),
-            serde_json::json!("Zm8="),
-        );
-        // "A" -> "QQ==" (1 raw byte, one group, two '=').
-        assert_eq!(
-            decode(&buf(&base64_len1(1, 2, b"A"))).unwrap(),
-            serde_json::json!("QQ=="),
-        );
-    }
-
-    #[test]
-    fn decodes_base64_string_with_omitted_padding() {
-        // "A" encoded without the trailing "==": padding byte is !2 (253),
-        // shrinking the final length from 4 to 2, so the text is "QQ".
-        assert_eq!(
-            decode(&buf(&base64_len1(1, !2u8, b"A"))).unwrap(),
-            serde_json::json!("QQ"),
-        );
-    }
-
-    #[test]
-    fn decodes_base64_string_length2() {
-        // "foobar" -> "Zm9vYmFy" (6 raw bytes, two groups, no padding); the
-        // group count is a 2-byte little-endian field.
-        let mut bytes = vec![markers::BASE64_STRING_LENGTH2];
-        bytes.extend_from_slice(&2u16.to_le_bytes());
-        bytes.push(0); // padding
-        bytes.extend_from_slice(b"foobar");
-        assert_eq!(decode(&buf(&bytes)).unwrap(), serde_json::json!("Zm9vYmFy"),);
-    }
-
-    #[test]
-    fn decodes_base64_url_string() {
-        // Bytes [0xFB, 0xFF, 0xFE] encode to "+//+" in standard base64 and
-        // "-__-" in the URL-safe alphabet.
-        let mut std_bytes = vec![markers::BASE64_STRING_LENGTH1, 1, 0];
-        std_bytes.extend_from_slice(&[0xFB, 0xFF, 0xFE]);
-        assert_eq!(decode(&buf(&std_bytes)).unwrap(), serde_json::json!("+//+"),);
-        let mut url_bytes = vec![markers::BASE64_URL_STRING_LENGTH1, 1, 0];
-        url_bytes.extend_from_slice(&[0xFB, 0xFF, 0xFE]);
-        assert_eq!(decode(&buf(&url_bytes)).unwrap(), serde_json::json!("-__-"),);
-    }
-
-    #[test]
     fn rejects_truncated_base64_string() {
         // Declares one group (3 raw bytes) but only one byte follows.
         assert_eq!(
             decode(&buf(&base64_len1(1, 0, b"f"))),
             Err(BinaryError::UnexpectedEof { needed: 2 }),
         );
-    }
-
-    #[test]
-    fn decodes_table_compressed_strings() {
-        // Lowercase hex "1a2b": chars [1, a, 2, b] pack low-nibble-first into
-        // bytes [0xA1, 0xB2] (len 4).
-        let lower = [markers::COMPRESSED_LOWERCASE_HEX_STRING, 4, 0xA1, 0xB2];
-        assert_eq!(decode(&buf(&lower)).unwrap(), serde_json::json!("1a2b"));
-        // Uppercase hex with the same bytes yields uppercase digits.
-        let upper = [markers::COMPRESSED_UPPERCASE_HEX_STRING, 4, 0xA1, 0xB2];
-        assert_eq!(decode(&buf(&upper)).unwrap(), serde_json::json!("1A2B"));
-        // Odd length: a single 'f' (index 15) occupies one byte's low nibble;
-        // the high nibble must be zero.
-        let odd = [markers::COMPRESSED_LOWERCASE_HEX_STRING, 1, 0x0F];
-        assert_eq!(decode(&buf(&odd)).unwrap(), serde_json::json!("f"));
-        // Date-time set: "2024-01" -> chars 2,0,2,4,-,0,1 (7 chars).
-        // Indices: '2'=3,'0'=1,'2'=3,'4'=5,'-'=12,'0'=1,'1'=2.
-        // Packed pairs (low,high): (3,1)->0x13, (3,5)->0x53, (12,1)->0x1C,
-        // then trailing '1'=2 alone -> 0x02.
-        let dt = [
-            markers::COMPRESSED_DATE_TIME_STRING,
-            7,
-            0x13,
-            0x53,
-            0x1C,
-            0x02,
-        ];
-        assert_eq!(decode(&buf(&dt)).unwrap(), serde_json::json!("2024-01"));
     }
 
     #[test]
@@ -1577,52 +1419,11 @@ mod tests {
     }
 
     #[test]
-    fn decodes_packed_compressed_strings() {
-        // 7-bit "Hi" (values 0x48, 0x69) packs to [0xC8, 0x34], no base char.
-        let p7 = [markers::PACKED_7BIT_STRING_LENGTH1, 2, 0xC8, 0x34];
-        assert_eq!(decode(&buf(&p7)).unwrap(), serde_json::json!("Hi"));
-        // 4-bit packed "0123" relative to base '0': values 0..3 pack to
-        // [0x10, 0x32].
-        let p4 = [markers::PACKED_4BIT_STRING, 4, b'0', 0x10, 0x32];
-        assert_eq!(decode(&buf(&p4)).unwrap(), serde_json::json!("0123"));
-        // 5-bit packed "abc" relative to base 'a': values 0..2 pack to
-        // [0x20, 0x08].
-        let p5 = [markers::PACKED_5BIT_STRING, 3, b'a', 0x20, 0x08];
-        assert_eq!(decode(&buf(&p5)).unwrap(), serde_json::json!("abc"));
-        // 6-bit packed "abcd" relative to base 'a': values 0..3 pack to
-        // [0x40, 0x20, 0x0C].
-        let p6 = [markers::PACKED_6BIT_STRING, 4, b'a', 0x40, 0x20, 0x0C];
-        assert_eq!(decode(&buf(&p6)).unwrap(), serde_json::json!("abcd"));
-    }
-
-    #[test]
-    fn decodes_packed_7bit_length2() {
-        // Packed7BitStringLength2 uses a 2-byte little-endian length prefix.
-        let mut bytes = vec![markers::PACKED_7BIT_STRING_LENGTH2];
-        bytes.extend_from_slice(&2u16.to_le_bytes());
-        bytes.extend_from_slice(&[0xC8, 0x34]); // "Hi"
-        assert_eq!(decode(&buf(&bytes)).unwrap(), serde_json::json!("Hi"));
-    }
-
-    #[test]
     fn rejects_truncated_compressed_string() {
         // 7-bit length 4 needs ceil(4*7/8) = 4 payload bytes; only one follows.
         assert_eq!(
             decode(&[PREAMBLE, markers::PACKED_7BIT_STRING_LENGTH1, 4, 0x00]),
             Err(BinaryError::UnexpectedEof { needed: 3 }),
-        );
-    }
-
-    #[test]
-    fn decodes_guid_value() {
-        // Bytes 0x00..0x0F as a .NET Guid (mixed-endian) render with the first
-        // three groups byte-reversed and the last eight in order.
-        let encoded: [u8; 16] = std::array::from_fn(|i| i as u8);
-        let mut bytes = vec![markers::GUID];
-        bytes.extend_from_slice(&encoded);
-        assert_eq!(
-            decode(&buf(&bytes)).unwrap(),
-            serde_json::json!("03020100-0504-0706-0809-0a0b0c0d0e0f"),
         );
     }
 
@@ -1638,25 +1439,6 @@ mod tests {
     }
 
     #[test]
-    fn decodes_binary_blobs() {
-        // cSpell:ignore AQID
-        // Binary1ByteLength: 4 bytes [0xDE,0xAD,0xBE,0xEF] -> base64 "3q2+7w==".
-        let mut bin1 = vec![markers::BINARY_1BYTE_LENGTH, 4];
-        bin1.extend_from_slice(&[0xDE, 0xAD, 0xBE, 0xEF]);
-        assert_eq!(decode(&buf(&bin1)).unwrap(), serde_json::json!("3q2+7w=="));
-        // Empty blob -> empty string.
-        assert_eq!(
-            decode(&buf(&[markers::BINARY_1BYTE_LENGTH, 0])).unwrap(),
-            serde_json::json!(""),
-        );
-        // Binary2ByteLength with a 2-byte little-endian length.
-        let mut bin2 = vec![markers::BINARY_2BYTE_LENGTH];
-        bin2.extend_from_slice(&3u16.to_le_bytes());
-        bin2.extend_from_slice(&[1, 2, 3]);
-        assert_eq!(decode(&buf(&bin2)).unwrap(), serde_json::json!("AQID"));
-    }
-
-    #[test]
     fn rejects_truncated_binary_blob() {
         // Declares 10 bytes but only 2 follow.
         let mut bytes = vec![markers::BINARY_1BYTE_LENGTH, 10];
@@ -1664,74 +1446,6 @@ mod tests {
         assert_eq!(
             decode(&buf(&bytes)),
             Err(BinaryError::UnexpectedEof { needed: 8 }),
-        );
-    }
-
-    #[test]
-    fn decodes_uniform_number_array_c1() {
-        // ArrNumC1 of three Int32 values [1, 2, 3]: shared Int32 marker, 1-byte
-        // count, then three bare little-endian i32 values.
-        let mut bytes = vec![markers::ARR_NUM_C1, markers::INT32, 3];
-        for n in [1i32, 2, 3] {
-            bytes.extend_from_slice(&n.to_le_bytes());
-        }
-        assert_eq!(decode(&buf(&bytes)).unwrap(), serde_json::json!([1, 2, 3]));
-
-        // ArrNumC1 of UInt8 values: each item is a single bare byte.
-        let bytes = [markers::ARR_NUM_C1, markers::UINT8, 3, 10, 20, 30];
-        assert_eq!(
-            decode(&buf(&bytes)).unwrap(),
-            serde_json::json!([10, 20, 30]),
-        );
-
-        // Empty uniform array.
-        let bytes = [markers::ARR_NUM_C1, markers::INT32, 0];
-        assert_eq!(decode(&buf(&bytes)).unwrap(), serde_json::json!([]));
-    }
-
-    #[test]
-    fn decodes_uniform_number_array_c2() {
-        // ArrNumC2 uses a 2-byte little-endian count; three Int16 values.
-        let mut bytes = vec![markers::ARR_NUM_C2, markers::INT16];
-        bytes.extend_from_slice(&3u16.to_le_bytes());
-        for n in [-1i16, 0, 1000] {
-            bytes.extend_from_slice(&n.to_le_bytes());
-        }
-        assert_eq!(
-            decode(&buf(&bytes)).unwrap(),
-            serde_json::json!([-1, 0, 1000]),
-        );
-    }
-
-    #[test]
-    fn decodes_uniform_float_array() {
-        // Float32 uniform array round-trips through JSON numbers.
-        let mut bytes = vec![markers::ARR_NUM_C1, markers::FLOAT32, 2];
-        bytes.extend_from_slice(&1.5f32.to_le_bytes());
-        bytes.extend_from_slice(&(-0.25f32).to_le_bytes());
-        assert_eq!(
-            decode(&buf(&bytes)).unwrap(),
-            serde_json::json!([1.5, -0.25]),
-        );
-    }
-
-    #[test]
-    fn decodes_uniform_array_of_number_arrays() {
-        // ArrArrNumC1C1: inner-array marker, shared Int32 marker, inner count 2,
-        // outer count 2, then 2x2 bare i32 values -> [[1,2],[3,4]].
-        let mut bytes = vec![
-            markers::ARR_ARR_NUM_C1C1,
-            markers::ARR_NUM_C1,
-            markers::INT32,
-            2, // numbers per inner array
-            2, // inner arrays
-        ];
-        for n in [1i32, 2, 3, 4] {
-            bytes.extend_from_slice(&n.to_le_bytes());
-        }
-        assert_eq!(
-            decode(&buf(&bytes)).unwrap(),
-            serde_json::json!([[1, 2], [3, 4]]),
         );
     }
 
@@ -1792,46 +1506,6 @@ mod tests {
     }
 
     #[test]
-    fn decodes_reference_string() {
-        // Buffer: preamble, then a StrL1 "hello" at offset 1, then a StrR1 that
-        // points back to offset 1. The top-level value is the array [<the
-        // string>, <the reference>] so both resolve to "hello".
-        //
-        // Layout (absolute offsets):
-        //   0: PREAMBLE
-        //   1: ARR_L1
-        //   2: payload length (7)
-        //   3: STR_L1, 4: len 5, 5..10: "hello"   (string token at offset 3)
-        //  10: STR_R1, 11: target offset 3
-        let mut payload = vec![markers::STR_L1, 5];
-        payload.extend_from_slice(b"hello");
-        payload.push(markers::STR_R1);
-        payload.push(3); // absolute offset of the StrL1 token
-        let mut bytes = vec![markers::ARR_L1, payload.len() as u8];
-        bytes.extend_from_slice(&payload);
-        assert_eq!(
-            decode(&buf(&bytes)).unwrap(),
-            serde_json::json!(["hello", "hello"]),
-        );
-    }
-
-    #[test]
-    fn reference_string_to_system_string_resolves() {
-        // StrR1 may target a system string. Place the 1-byte system string for
-        // "id" (idx 12) at offset 1, then reference it.
-        let id_name = markers::SYSTEM_STRING_1BYTE_MIN + 12;
-        let mut payload = vec![id_name];
-        payload.push(markers::STR_R1);
-        payload.push(3); // offset of `id_name` within the full buffer
-        let mut bytes = vec![markers::ARR_L1, payload.len() as u8];
-        bytes.extend_from_slice(&payload);
-        assert_eq!(
-            decode(&buf(&bytes)).unwrap(),
-            serde_json::json!(["id", "id"]),
-        );
-    }
-
-    #[test]
     fn rejects_out_of_range_reference() {
         // StrR1 target points past the end of the buffer.
         assert_eq!(
@@ -1869,96 +1543,6 @@ mod tests {
         assert_eq!(
             decode(&buf(&bytes)),
             Err(BinaryError::UnresolvedReference { target: 3 }),
-        );
-    }
-
-    #[test]
-    fn decodes_empty_containers() {
-        assert_eq!(
-            decode(&buf(&[markers::ARR0])).unwrap(),
-            serde_json::json!([])
-        );
-        assert_eq!(
-            decode(&buf(&[markers::OBJ0])).unwrap(),
-            serde_json::json!({}),
-        );
-    }
-
-    #[test]
-    fn decodes_single_item_containers() {
-        // [true]
-        assert_eq!(
-            decode(&buf(&[markers::ARR1, markers::TRUE])).unwrap(),
-            serde_json::json!([true]),
-        );
-        // {"id": true} — the name is the 1-byte system string for "id" (idx 12).
-        let id_name = markers::SYSTEM_STRING_1BYTE_MIN + 12;
-        assert_eq!(
-            decode(&buf(&[markers::OBJ1, id_name, markers::TRUE])).unwrap(),
-            serde_json::json!({ "id": true }),
-        );
-    }
-
-    #[test]
-    fn decodes_length_prefixed_array() {
-        // ArrL1 [0, 1, null]: three 1-byte scalar elements.
-        let payload = [0x00u8, 0x01, markers::NULL];
-        let mut bytes = vec![markers::ARR_L1, payload.len() as u8];
-        bytes.extend_from_slice(&payload);
-        assert_eq!(
-            decode(&buf(&bytes)).unwrap(),
-            serde_json::json!([0, 1, null]),
-        );
-    }
-
-    #[test]
-    fn decodes_length_and_count_array() {
-        // ArrLC1 [0, 1, null]: payload length 3, count 3.
-        let payload = [0x00u8, 0x01, markers::NULL];
-        let mut bytes = vec![markers::ARR_LC1, payload.len() as u8, 3u8];
-        bytes.extend_from_slice(&payload);
-        assert_eq!(
-            decode(&buf(&bytes)).unwrap(),
-            serde_json::json!([0, 1, null]),
-        );
-    }
-
-    #[test]
-    fn decodes_length_prefixed_object() {
-        let id_name = markers::SYSTEM_STRING_1BYTE_MIN + 12; // "id"
-        let type_name = markers::SYSTEM_STRING_1BYTE_MIN + 27; // "type"
-        let payload = [id_name, 0x00, type_name, 0x01];
-        let mut bytes = vec![markers::OBJ_L1, payload.len() as u8];
-        bytes.extend_from_slice(&payload);
-        assert_eq!(
-            decode(&buf(&bytes)).unwrap(),
-            serde_json::json!({ "id": 0, "type": 1 }),
-        );
-    }
-
-    #[test]
-    fn decodes_length_and_count_object() {
-        let id_name = markers::SYSTEM_STRING_1BYTE_MIN + 12;
-        let type_name = markers::SYSTEM_STRING_1BYTE_MIN + 27;
-        let payload = [id_name, 0x00, type_name, 0x01];
-        let mut bytes = vec![markers::OBJ_LC1, payload.len() as u8, 2u8];
-        bytes.extend_from_slice(&payload);
-        assert_eq!(
-            decode(&buf(&bytes)).unwrap(),
-            serde_json::json!({ "id": 0, "type": 1 }),
-        );
-    }
-
-    #[test]
-    fn decodes_nested_containers() {
-        let id_name = markers::SYSTEM_STRING_1BYTE_MIN + 12;
-        // Outer ArrL1 wrapping `[0]` then `{"id": 1}`.
-        let payload = [markers::ARR1, 0x00, markers::OBJ1, id_name, 0x01];
-        let mut bytes = vec![markers::ARR_L1, payload.len() as u8];
-        bytes.extend_from_slice(&payload);
-        assert_eq!(
-            decode(&buf(&bytes)).unwrap(),
-            serde_json::json!([[0], { "id": 1 }]),
         );
     }
 

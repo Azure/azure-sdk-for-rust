@@ -3,11 +3,9 @@
 
 //! Error types for the Cosmos binary JSON codec.
 //!
-//! [`BinaryError`] is the failure vocabulary the decoder (and, where relevant,
-//! the encoder) produces. The decoder parses **untrusted** service bytes, so
-//! every fallible step returns one of these variants rather than panicking —
-//! malformed, truncated, or adversarial buffers must fail gracefully (see the
-//! decoder-fuzzing requirement in the binary-encoding spec).
+//! [`BinaryError`] is the error type the decoder and encoder produce. The
+//! decoder returns one of these variants rather than panicking, so malformed or
+//! truncated buffers fail gracefully.
 
 use std::fmt;
 

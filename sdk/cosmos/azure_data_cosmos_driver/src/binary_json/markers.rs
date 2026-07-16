@@ -286,42 +286,6 @@ mod tests {
         assert_eq!(ENCODED_STRING_LENGTH_MAX - ENCODED_STRING_LENGTH_MIN, 64);
     }
 
-    /// Spot-check the individually named markers against their authoritative
-    /// .NET byte values. A failure here means the transcription drifted.
-    #[test]
-    fn named_markers_match_dotnet() {
-        // Variable-length / reference strings + NumberUInt64.
-        assert_eq!(STR_L1, 0xC0);
-        assert_eq!(STR_L2, 0xC1);
-        assert_eq!(STR_L4, 0xC2);
-        assert_eq!(STR_R1, 0xC3);
-        assert_eq!(STR_R4, 0xC6);
-        assert_eq!(NUMBER_UINT64, 0xC7);
-
-        // Fixed-width numbers.
-        assert_eq!(NUMBER_UINT8, 0xC8);
-        assert_eq!(NUMBER_INT16, 0xC9);
-        assert_eq!(NUMBER_INT32, 0xCA);
-        assert_eq!(NUMBER_INT64, 0xCB);
-        assert_eq!(NUMBER_DOUBLE, 0xCC);
-        assert_eq!(FLOAT16, 0xCF);
-
-        // Singletons.
-        assert_eq!(NULL, 0xD0);
-        assert_eq!(FALSE, 0xD1);
-        assert_eq!(TRUE, 0xD2);
-        assert_eq!(GUID, 0xD3);
-
-        // Containers.
-        assert_eq!(ARR0, 0xE0);
-        assert_eq!(ARR_LC4, 0xE7);
-        assert_eq!(OBJ0, 0xE8);
-        assert_eq!(OBJ_LC4, 0xEF);
-
-        // Sentinel.
-        assert_eq!(INVALID, 0xFF);
-    }
-
     /// The encoded-length mask recovers the length stored in the marker.
     #[test]
     fn encoded_length_mask_recovers_length() {

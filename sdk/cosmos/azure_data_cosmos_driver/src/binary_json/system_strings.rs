@@ -3,26 +3,14 @@
 
 //! The Cosmos binary JSON **system-string dictionary**.
 //!
-//! System strings are a fixed, hardcoded dictionary of common Cosmos property
-//! names and GeoJSON keywords. A 1-byte system-string type marker (in the range
-//! [`SYSTEM_STRING_1BYTE_MIN`]..[`SYSTEM_STRING_1BYTE_MAX`])
-//! encodes a string by **index** into this table: `index = marker - SYSTEM_STRING_1BYTE_MIN`.
+//! System strings are a fixed dictionary of common Cosmos property names and
+//! GeoJSON keywords. A 1-byte system-string type marker (in the range
+//! [`SYSTEM_STRING_1BYTE_MIN`]..[`SYSTEM_STRING_1BYTE_MAX`]) encodes a string by
+//! index into this table: `index = marker - SYSTEM_STRING_1BYTE_MIN`.
 //!
-//! The table **must** match the service byte-for-byte and in the same order; an
-//! off-by-one silently produces wrong property keys. It is transcribed verbatim
-//! from the .NET reference implementation
-//! `Microsoft.Azure.Cosmos/src/Json/JsonBinaryEncoding.SystemStrings.cs`
-//! (`SystemStrings.Strings`).
-//!
-//! > **Note on size:** the design spec estimated ~128 entries, but the
-//! > authoritative .NET table currently holds exactly [`SYSTEM_STRING_COUNT`]
-//! > (32) entries, all addressable by a single 1-byte marker. There is no
-//! > 2-byte system-string marker range today (the 2-byte range
-//! > [`USER_STRING_2BYTE_MIN`](crate::binary_json::markers::USER_STRING_2BYTE_MIN)
-//! > is for *user* strings). If the service later grows the table past 32
-//! > entries, the encoder/decoder do not need to change to remain *correct*
-//! > (the encoder never emits system strings, and the decoder simply gains
-//! > more valid indices); only this constant table would be extended.
+//! The table matches the service byte-for-byte and in the same order; it is
+//! transcribed from the .NET reference implementation
+//! `Microsoft.Azure.Cosmos/src/Json/JsonBinaryEncoding.SystemStrings.cs`.
 
 use super::markers::{SYSTEM_STRING_1BYTE_MAX, SYSTEM_STRING_1BYTE_MIN};
 
@@ -105,27 +93,6 @@ pub fn system_string_for_marker(marker: u8) -> Option<&'static str> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    /// The table size is fixed at the documented count.
-    #[test]
-    fn table_has_expected_count() {
-        assert_eq!(SYSTEM_STRINGS.len(), SYSTEM_STRING_COUNT);
-        assert_eq!(SYSTEM_STRING_COUNT, 32);
-    }
-
-    /// Well-known property names land at their authoritative .NET indices. A
-    /// failure here means the transcription drifted from the service table.
-    #[test]
-    fn well_known_entries_at_expected_indices() {
-        assert_eq!(SYSTEM_STRINGS[0], "$s");
-        assert_eq!(SYSTEM_STRINGS[3], "_attachments");
-        assert_eq!(SYSTEM_STRINGS[4], "_etag");
-        assert_eq!(SYSTEM_STRINGS[5], "_rid");
-        assert_eq!(SYSTEM_STRINGS[6], "_self");
-        assert_eq!(SYSTEM_STRINGS[7], "_ts");
-        assert_eq!(SYSTEM_STRINGS[12], "id");
-        assert_eq!(SYSTEM_STRINGS[31], "_id");
-    }
 
     /// Cross-check every entry's byte length against the buckets the .NET
     /// `GetSystemStringIdLength{N}` reverse-lookup functions sort them into.

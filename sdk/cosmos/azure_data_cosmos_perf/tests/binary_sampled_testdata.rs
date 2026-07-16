@@ -11,9 +11,10 @@
 //! document and reads it back — with the SDK's binary-encoding preview enabled —
 //! asserting the fields we wrote survive the binary request/response round-trip.
 //!
-//! Binary encoding is enabled through the `AZURE_COSMOS_BINARY_ENCODING_ENABLED`
-//! environment variable, which the SDK resolves **once at client-build time**.
-//! This test therefore sets it before building the client.
+//! Binary encoding is enabled explicitly on the client via
+//! `CosmosClientBuilder::with_binary_encoding_enabled`, which the SDK resolves
+//! **once at client-build time**. This test therefore sets it when building the
+//! client.
 //!
 //! # Running
 //!
@@ -50,7 +51,6 @@ use serde_json::{Map, Value};
 use uuid::Uuid;
 
 const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
-const BINARY_ENV: &str = "AZURE_COSMOS_BINARY_ENCODING_ENABLED";
 const ALLOW_INVALID_CERT_ENV_VAR: &str = "AZURE_COSMOS_ALLOW_INVALID_CERT";
 
 const DATABASE_NAME: &str = "dkunda-be-db";
@@ -134,10 +134,6 @@ fn collect_objects_from_value(value: Value, pool: &mut Vec<Map<String, Value>>) 
 
 /// Builds a Cosmos client from the connection string, enabling binary encoding.
 async fn build_client() -> Result<CosmosClient, Box<dyn Error>> {
-    // Must be set before the client is built: the SDK resolves the binary
-    // encoding flag once at build time.
-    std::env::set_var(BINARY_ENV, "true");
-
     let connection_string = std::env::var(CONNECTION_STRING_ENV_VAR).map_err(|_| {
         format!("{CONNECTION_STRING_ENV_VAR} must be set to a Cosmos DB connection string")
     })?;
@@ -149,7 +145,9 @@ async fn build_client() -> Result<CosmosClient, Box<dyn Error>> {
         connection_string.account_key().clone(),
     );
 
-    let mut builder = CosmosClient::builder();
+    // Enable binary encoding explicitly via the client option rather than the
+    // process environment, so the setting is scoped to this client.
+    let mut builder = CosmosClient::builder().with_binary_encoding_enabled(true);
 
     let allow_invalid_cert = std::env::var(ALLOW_INVALID_CERT_ENV_VAR)
         .ok()

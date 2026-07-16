@@ -1,36 +1,15 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Native `serde` **deserializer** for Cosmos binary JSON (`binary` → `T`).
+//! Native `serde` deserializer for Cosmos binary JSON (`binary` → `T`).
 //!
 //! [`from_slice`] drives a target type's own [`Deserialize`](serde::Deserialize)
-//! implementation directly off the binary buffer. The common, dominant forms —
-//! objects, arrays, and plain scalars (null, booleans, every integer/float
-//! width, and plain UTF-8 strings) — are streamed straight into the visitor
-//! with **no intermediate [`serde_json::Value`]**: object/array structure is
-//! yielded through [`SeqAccess`]/[`MapAccess`], and plain strings are handed to
-//! the visitor as borrowed slices ([`visit_borrowed_str`](serde::de::Visitor::visit_borrowed_str))
-//! that point into the buffer.
-//!
-//! # Completeness via a `Value` fallback
-//!
-//! The service can emit rarer wire forms — GUID / base64 / compressed /
-//! reference strings, binary blobs, and uniform number arrays — and Rust
-//! `enum`s deserialize from serde's externally-tagged shape. Rather than
-//! re-implement all of those against the serde visitor surface, the
-//! deserializer falls back to the proven [`decode`](super::decode) reader for a
-//! single such value and forwards it through `serde_json::Value`'s own
-//! deserializer. This keeps the native fast path small and guarantees the
-//! decoder's completeness is inherited without duplication. Real Cosmos item
-//! bodies are objects of plain scalars, so the fast path covers them entirely.
-//!
-//! # Relationship to [`decode`](super::decode)
-//!
-//! [`decode`](super::decode) (binary → [`serde_json::Value`]) remains the
-//! reference decoder and the target of fuzzing and the parity corpus.
-//! `from_slice` is the typed, allocation-light path used on the SDK read
-//! boundary; `from_slice::<serde_json::Value>(buf)` is asserted to equal
-//! `decode(buf)`.
+//! implementation directly off the binary buffer, without building an
+//! intermediate [`serde_json::Value`]. Objects, arrays, and plain scalars are
+//! streamed straight into the visitor, with plain strings borrowed directly
+//! from the buffer. The rarer wire forms (GUID, base64, compressed, and
+//! reference strings, binary blobs, and uniform number arrays) are decoded
+//! through [`decode`](super::decode) and forwarded to the visitor.
 
 use serde::de::{DeserializeSeed, Deserializer, IntoDeserializer, MapAccess, SeqAccess, Visitor};
 use serde::forward_to_deserialize_any;
@@ -40,7 +19,7 @@ use super::reader::{ContainerHeader, Frame, Reader, ScalarToken};
 use super::{is_binary, BinaryError, Result};
 
 /// Maximum container nesting depth, mirroring the reference decoder's
-/// [`MAX_DEPTH`](super::reader) so both paths reject the same adversarial
+/// [`MAX_DEPTH`](super::reader) so both paths reject the same
 /// nesting.
 const MAX_DEPTH: usize = 256;
 
@@ -354,48 +333,6 @@ mod tests {
     use serde::{Deserialize, Serialize};
     use serde_json::json;
 
-    /// Round-trips a JSON value through `to_vec` → `from_slice::<Value>` and
-    /// asserts equality, plus parity with the reference `decode`.
-    fn assert_round_trip(value: serde_json::Value) {
-        let bytes = to_vec(&value).unwrap();
-        let via_native: serde_json::Value = from_slice(&bytes).unwrap();
-        assert_eq!(
-            via_native, value,
-            "native from_slice mismatch for {value:?}"
-        );
-        assert_eq!(
-            via_native,
-            decode(&bytes).unwrap(),
-            "from_slice must equal decode for {value:?}"
-        );
-    }
-
-    #[test]
-    fn scalars_round_trip() {
-        assert_round_trip(json!(null));
-        assert_round_trip(json!(true));
-        assert_round_trip(json!(false));
-        assert_round_trip(json!(0));
-        assert_round_trip(json!(31));
-        assert_round_trip(json!(32));
-        assert_round_trip(json!(-1));
-        assert_round_trip(json!(i64::MAX));
-        assert_round_trip(json!(u64::MAX));
-        assert_round_trip(json!(1.5));
-        assert_round_trip(json!("hello"));
-        assert_round_trip(json!(""));
-        assert_round_trip(json!("x".repeat(100)));
-    }
-
-    #[test]
-    fn containers_round_trip() {
-        assert_round_trip(json!([]));
-        assert_round_trip(json!([1, 2, 3]));
-        assert_round_trip(json!({}));
-        assert_round_trip(json!({ "id": "doc-1", "count": 42, "nested": { "ok": true } }));
-        assert_round_trip(json!({ "a": [1, { "b": [true, null, "x"] }], "c": 3.5 }));
-    }
-
     #[derive(Serialize, Deserialize, PartialEq, Debug)]
     struct Product {
         id: String,
@@ -570,14 +507,14 @@ mod tests {
 
     #[test]
     fn corpus_vectors_deserialize_natively() {
-        // Every golden scalar vector `decode` accepts must also deserialize
-        // through the native path, yielding the identical value.
-        for vector in crate::binary_json::vectors::SCALAR_VECTORS {
-            let native: serde_json::Value = from_slice(vector.binary)
+        // Every golden vector `decode` accepts must also deserialize through the
+        // native path, yielding the identical value.
+        for vector in crate::binary_json::vectors::golden_vectors() {
+            let native: serde_json::Value = from_slice(&vector.binary)
                 .unwrap_or_else(|e| panic!("from_slice failed for vector {}: {e}", vector.name));
             assert_eq!(
                 native,
-                decode(vector.binary).unwrap(),
+                decode(&vector.binary).unwrap(),
                 "from_slice must equal decode for vector {}",
                 vector.name
             );

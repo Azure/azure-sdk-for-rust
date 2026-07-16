@@ -1259,7 +1259,8 @@ fn apply_item_options(
 /// request `Content-Type` stays `application/json`.
 fn serialize_item_body<T: Serialize>(item: &T, binary: bool) -> crate::Result<Vec<u8>> {
     if binary {
-        let body = azure_data_cosmos_driver::binary_json::to_vec(item)?;
+        let body = azure_data_cosmos_driver::binary_json::to_vec(item)
+            .map_err(crate::error::convert_binary_encode_error)?;
         tracing::debug!(
             binary_encoding = true,
             "binary encoding applied to item write body"

@@ -58,23 +58,25 @@ pub(crate) struct ClientContext {
 /// bodies as binary, and advertising that the client accepts binary responses
 /// via the `x-ms-cosmos-supported-serialization-formats` negotiation header.
 ///
-/// Resolved **once** at client construction from the
-/// `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment variable and disabled
-/// unless it is set to a truthy value (`1` / `true` / `yes` / `on`,
-/// case-insensitive, trimmed). This is the single source of truth for both
-/// directions. Binary encoding is in preview, so enablement is env-only for
-/// now; a public client/driver builder option (defaulting from the same
-/// variable) layers on when it ships.
+/// Resolved **once** at client construction. An explicit client option (see
+/// [`CosmosClientBuilder::with_binary_encoding_enabled`](crate::CosmosClientBuilder::with_binary_encoding_enabled))
+/// takes precedence; when the caller leaves it unset, enablement falls back to
+/// the `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment variable (truthy
+/// values `1` / `true` / `yes` / `on`, case-insensitive, trimmed). This is the
+/// single source of truth for both directions. Binary encoding is in preview.
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct BinaryEncoding {
     enabled: bool,
 }
 
 impl BinaryEncoding {
-    /// Resolves enablement from `AZURE_COSMOS_BINARY_ENCODING_ENABLED`.
-    pub(crate) fn from_env() -> Self {
+    /// Resolves enablement from an explicit client option, falling back to the
+    /// `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment variable when the
+    /// option is unset (`None`).
+    pub(crate) fn resolve(explicit: Option<bool>) -> Self {
         Self {
-            enabled: env_flag_enabled("AZURE_COSMOS_BINARY_ENCODING_ENABLED"),
+            enabled: explicit
+                .unwrap_or_else(|| env_flag_enabled("AZURE_COSMOS_BINARY_ENCODING_ENABLED")),
         }
     }
 

@@ -173,6 +173,23 @@ impl CosmosClientBuilder {
         self
     }
 
+    /// Enables or disables Cosmos binary JSON encoding for this client.
+    ///
+    /// Binary encoding governs two things together: encoding item write bodies
+    /// as binary and advertising that the client accepts binary responses via
+    /// the response-format negotiation header. It is resolved once at
+    /// [`build()`](Self::build) time.
+    ///
+    /// When this setter is **not** called, enablement falls back to the
+    /// `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment variable (truthy
+    /// values `1` / `true` / `yes` / `on`, case-insensitive, trimmed). Passing
+    /// an explicit value here takes precedence over that variable. Binary
+    /// encoding is in preview.
+    pub fn with_binary_encoding_enabled(mut self, enabled: bool) -> Self {
+        self.options.binary_encoding = Some(enabled);
+        self
+    }
+
     /// Configures fault injection for testing.
     ///
     /// Accepts a vector of [`FaultInjectionRule`](crate::fault_injection::FaultInjectionRule)
@@ -291,7 +308,7 @@ impl CosmosClientBuilder {
         Ok(CosmosClient {
             context: ClientContext {
                 driver,
-                binary_encoding: BinaryEncoding::from_env(),
+                binary_encoding: BinaryEncoding::resolve(self.options.binary_encoding),
             },
         })
     }

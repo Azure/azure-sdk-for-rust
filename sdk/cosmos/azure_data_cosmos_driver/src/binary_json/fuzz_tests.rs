@@ -3,18 +3,14 @@
 
 //! Decoder robustness ("fuzz") tests for the Cosmos binary JSON codec.
 //!
-//! The decoder parses **untrusted** service bytes, so its security contract is:
-//! for *any* input buffer it must terminate and either succeed or return a
-//! [`BinaryError`](super::BinaryError) — never panic, never hang, and never
-//! allocate based on an attacker-controlled length prefix beyond what the
-//! buffer can back. These tests assert that contract by throwing large numbers
-//! of random, truncated, corrupted, and adversarial buffers at
-//! [`decode`](super::decode).
-//!
-//! Randomness is deterministic (a seeded SplitMix64, matching the crate's
-//! dependency-free PRNG convention) so failures reproduce exactly.
+//! For any input buffer the decoder must terminate and either succeed or return
+//! a [`BinaryError`](super::BinaryError) — never panic, never hang, and never
+//! allocate based on a length prefix beyond what the buffer can back. These
+//! tests assert that by throwing random, truncated, corrupted, and adversarial
+//! buffers at [`decode`](super::decode). Randomness is deterministic so failures
+//! reproduce exactly.
 
-use super::vectors::SCALAR_VECTORS;
+use super::vectors::golden_vectors;
 use super::{decode, encode, from_slice, markers, PREAMBLE};
 use serde_json::json;
 
@@ -127,7 +123,7 @@ fn decode_never_panics_on_random_bytes() {
 fn decode_never_panics_on_truncated_valid_buffers() {
     // Every prefix of a valid buffer (golden corpus + encoder output for the
     // sample values) must decode or error without panicking.
-    let mut buffers: Vec<Vec<u8>> = SCALAR_VECTORS.iter().map(|v| v.binary.to_vec()).collect();
+    let mut buffers: Vec<Vec<u8>> = golden_vectors().into_iter().map(|v| v.binary).collect();
     buffers.extend(sample_values().iter().map(encode));
 
     for buf in &buffers {

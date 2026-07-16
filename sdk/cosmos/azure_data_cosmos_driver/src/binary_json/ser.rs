@@ -1,43 +1,18 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Native `serde` **serializer** for Cosmos binary JSON (`T` → `binary`).
+//! Native `serde` serializer for Cosmos binary JSON (`T` → `binary`).
 //!
-//! This is the "v2" encode path. Unlike [`encode`](super::encode), which walks
-//! an already-materialized [`serde_json::Value`], [`to_vec`] drives a value's
-//! own [`Serialize`] implementation straight into binary
-//! bytes — no intermediate `Value` tree, eliminating one allocation and one
-//! traversal on the write hot path.
-//!
-//! # Byte-for-byte parity with the `Value` encoder
-//!
-//! Every scalar and container is emitted through the **shared** low-level
-//! helpers in [`writer`](super::writer) (`encode_i64`, `encode_string`,
-//! `encode_container`, …). As a result `to_vec(&v)` produces the same bytes as
-//! `encode(&serde_json::to_value(&v))` for any [`serde_json::Value`] input,
-//! which the parity tests assert. (Typed structs preserve field *declaration*
-//! order like [`serde_json::to_vec`], whereas `serde_json::to_value` sorts keys,
-//! so their bytes intentionally differ from the `Value` encoder — the bar there
-//! is a faithful round-trip.)
-//!
-//! # The length-prefix problem
-//!
-//! Cosmos container markers (`ObjLC*` / `ArrLC*`) are **length-and-count
-//! prefixed**: the payload byte length and element count precede the body, but
-//! neither is known until every child has been serialized. serde drives
-//! serialization sequentially and never supplies these up front, so each
-//! compound serializer buffers its children into a scratch `Vec` and frames
-//! them on `end()`. This keeps one scratch buffer per nesting level — the same
-//! shape as the `Value` encoder's per-container `Vec` — while still avoiding the
-//! `Value` tree itself.
+//! [`to_vec`] drives a value's own [`Serialize`] implementation straight into
+//! binary bytes, without building an intermediate [`serde_json::Value`]. It
+//! produces the same bytes as [`encode`](super::encode) does for the equivalent
+//! [`serde_json::Value`].
 //!
 //! # Enum representation
 //!
-//! Enums use serde's **externally tagged** convention (matching `serde_json`):
-//! a unit variant serializes as its name string, and newtype/tuple/struct
-//! variants serialize as a single-key object `{ "Variant": <payload> }`. This
-//! keeps a `to_vec` → [`decode`](super::decode) → `serde_json::from_value`
-//! round-trip faithful.
+//! Enums use serde's externally tagged convention (matching `serde_json`): a
+//! unit variant serializes as its name string, and newtype, tuple, and struct
+//! variants serialize as a single-key object `{ "Variant": <payload> }`.
 
 use serde::{ser, Serialize};
 
@@ -277,22 +252,178 @@ impl<'a> ser::Serializer for BinarySerializer<'a> {
     }
 }
 
-/// Whether a [`ContainerBuilder`] frames its body as an array or an object.
+/// Whether a [`ContainerBuilder`] frames its contents as an array or an object.
 enum ContainerKind {
     Array,
     Object,
 }
 
-/// Buffers a compound value's body, then frames it on `end`.
+/// Serializes map keys, which must project to a string (a property name).
 ///
-/// Children are serialized into `body` (a scratch buffer); `end` emits the
+/// Mirrors `serde_json`'s map-key handling: strings, chars, and integers are
+/// accepted (integers are stringified); every other type is rejected so a
+/// non-string key surfaces at serialization time rather than producing a buffer
+/// that only fails to decode later.
+struct MapKeySerializer<'a> {
+    out: &'a mut Vec<u8>,
+}
+
+fn key_must_be_a_string() -> BinaryError {
+    BinaryError::Custom("map key must serialize to a string".to_owned())
+}
+
+impl ser::Serializer for MapKeySerializer<'_> {
+    type Ok = ();
+    type Error = BinaryError;
+
+    type SerializeSeq = ser::Impossible<(), BinaryError>;
+    type SerializeTuple = ser::Impossible<(), BinaryError>;
+    type SerializeTupleStruct = ser::Impossible<(), BinaryError>;
+    type SerializeTupleVariant = ser::Impossible<(), BinaryError>;
+    type SerializeMap = ser::Impossible<(), BinaryError>;
+    type SerializeStruct = ser::Impossible<(), BinaryError>;
+    type SerializeStructVariant = ser::Impossible<(), BinaryError>;
+
+    fn serialize_str(self, v: &str) -> Result<()> {
+        encode_string(v, self.out);
+        Ok(())
+    }
+
+    fn serialize_char(self, v: char) -> Result<()> {
+        encode_string(v.encode_utf8(&mut [0u8; 4]), self.out);
+        Ok(())
+    }
+
+    fn serialize_i8(self, v: i8) -> Result<()> {
+        self.serialize_str(&v.to_string())
+    }
+    fn serialize_i16(self, v: i16) -> Result<()> {
+        self.serialize_str(&v.to_string())
+    }
+    fn serialize_i32(self, v: i32) -> Result<()> {
+        self.serialize_str(&v.to_string())
+    }
+    fn serialize_i64(self, v: i64) -> Result<()> {
+        self.serialize_str(&v.to_string())
+    }
+    fn serialize_i128(self, v: i128) -> Result<()> {
+        self.serialize_str(&v.to_string())
+    }
+    fn serialize_u8(self, v: u8) -> Result<()> {
+        self.serialize_str(&v.to_string())
+    }
+    fn serialize_u16(self, v: u16) -> Result<()> {
+        self.serialize_str(&v.to_string())
+    }
+    fn serialize_u32(self, v: u32) -> Result<()> {
+        self.serialize_str(&v.to_string())
+    }
+    fn serialize_u64(self, v: u64) -> Result<()> {
+        self.serialize_str(&v.to_string())
+    }
+    fn serialize_u128(self, v: u128) -> Result<()> {
+        self.serialize_str(&v.to_string())
+    }
+
+    fn serialize_unit_variant(
+        self,
+        _name: &'static str,
+        _variant_index: u32,
+        variant: &'static str,
+    ) -> Result<()> {
+        self.serialize_str(variant)
+    }
+
+    fn serialize_newtype_struct<T: Serialize + ?Sized>(
+        self,
+        _name: &'static str,
+        value: &T,
+    ) -> Result<()> {
+        value.serialize(self)
+    }
+
+    fn serialize_bool(self, _v: bool) -> Result<()> {
+        Err(key_must_be_a_string())
+    }
+    fn serialize_f32(self, _v: f32) -> Result<()> {
+        Err(key_must_be_a_string())
+    }
+    fn serialize_f64(self, _v: f64) -> Result<()> {
+        Err(key_must_be_a_string())
+    }
+    fn serialize_bytes(self, _v: &[u8]) -> Result<()> {
+        Err(key_must_be_a_string())
+    }
+    fn serialize_none(self) -> Result<()> {
+        Err(key_must_be_a_string())
+    }
+    fn serialize_some<T: Serialize + ?Sized>(self, _value: &T) -> Result<()> {
+        Err(key_must_be_a_string())
+    }
+    fn serialize_unit(self) -> Result<()> {
+        Err(key_must_be_a_string())
+    }
+    fn serialize_unit_struct(self, _name: &'static str) -> Result<()> {
+        Err(key_must_be_a_string())
+    }
+    fn serialize_newtype_variant<T: Serialize + ?Sized>(
+        self,
+        _name: &'static str,
+        _variant_index: u32,
+        _variant: &'static str,
+        _value: &T,
+    ) -> Result<()> {
+        Err(key_must_be_a_string())
+    }
+    fn serialize_seq(self, _len: Option<usize>) -> Result<Self::SerializeSeq> {
+        Err(key_must_be_a_string())
+    }
+    fn serialize_tuple(self, _len: usize) -> Result<Self::SerializeTuple> {
+        Err(key_must_be_a_string())
+    }
+    fn serialize_tuple_struct(
+        self,
+        _name: &'static str,
+        _len: usize,
+    ) -> Result<Self::SerializeTupleStruct> {
+        Err(key_must_be_a_string())
+    }
+    fn serialize_tuple_variant(
+        self,
+        _name: &'static str,
+        _variant_index: u32,
+        _variant: &'static str,
+        _len: usize,
+    ) -> Result<Self::SerializeTupleVariant> {
+        Err(key_must_be_a_string())
+    }
+    fn serialize_map(self, _len: Option<usize>) -> Result<Self::SerializeMap> {
+        Err(key_must_be_a_string())
+    }
+    fn serialize_struct(self, _name: &'static str, _len: usize) -> Result<Self::SerializeStruct> {
+        Err(key_must_be_a_string())
+    }
+    fn serialize_struct_variant(
+        self,
+        _name: &'static str,
+        _variant_index: u32,
+        _variant: &'static str,
+        _len: usize,
+    ) -> Result<Self::SerializeStructVariant> {
+        Err(key_must_be_a_string())
+    }
+}
+
+/// Buffers a compound value's children, then frames them on `end`.
+///
+/// Children are serialized into `buffer` (a scratch buffer); `end` emits the
 /// appropriate `LC*` marker, byte length, and element count into the parent
-/// `out`, then appends the body. When `variant` is set, the framed container is
-/// itself wrapped in a single-key `{ "Variant": <container> }` object to realize
-/// serde's externally-tagged enum representation.
+/// `out`, then appends the buffer. When `variant` is set, the framed container
+/// is itself wrapped in a single-key `{ "Variant": <container> }` object to
+/// realize serde's externally-tagged enum representation.
 struct ContainerBuilder<'a> {
     out: &'a mut Vec<u8>,
-    body: Vec<u8>,
+    buffer: Vec<u8>,
     count: usize,
     kind: ContainerKind,
     variant: Option<&'static str>,
@@ -302,7 +433,7 @@ impl<'a> ContainerBuilder<'a> {
     fn new(out: &'a mut Vec<u8>, kind: ContainerKind) -> Self {
         Self {
             out,
-            body: Vec::new(),
+            buffer: Vec::new(),
             count: 0,
             kind,
             variant: None,
@@ -312,36 +443,39 @@ impl<'a> ContainerBuilder<'a> {
     fn new_variant(out: &'a mut Vec<u8>, kind: ContainerKind, variant: &'static str) -> Self {
         Self {
             out,
-            body: Vec::new(),
+            buffer: Vec::new(),
             count: 0,
             kind,
             variant: Some(variant),
         }
     }
 
-    /// Serializes `value` into the scratch body and bumps the element count.
+    /// Serializes `value` into the scratch buffer and bumps the element count.
     fn push_element<T: Serialize + ?Sized>(&mut self, value: &T) -> Result<()> {
         value.serialize(BinarySerializer {
-            out: &mut self.body,
+            out: &mut self.buffer,
         })?;
         self.count += 1;
         Ok(())
     }
 
-    /// Serializes `key` into the scratch body **without** bumping the count.
+    /// Serializes `key` into the scratch buffer **without** bumping the count.
     /// Object element count tracks key/value *pairs*, so only the value bumps.
+    ///
+    /// Map keys must project to a string; non-string keys are rejected via
+    /// [`MapKeySerializer`] (matching `serde_json`).
     fn push_key<T: Serialize + ?Sized>(&mut self, key: &T) -> Result<()> {
-        key.serialize(BinarySerializer {
-            out: &mut self.body,
+        key.serialize(MapKeySerializer {
+            out: &mut self.buffer,
         })
     }
 
-    /// Serializes a struct field name (a static string) into the scratch body.
+    /// Serializes a struct field name (a static string) into the scratch buffer.
     fn push_field_name(&mut self, key: &'static str) {
-        encode_string(key, &mut self.body);
+        encode_string(key, &mut self.buffer);
     }
 
-    /// Frames the buffered body into the parent buffer, wrapping it in a
+    /// Frames the buffered container into the parent buffer, wrapping it in a
     /// single-key object first when this builder represents an enum variant.
     fn finish(self) -> Result<()> {
         let markers = match self.kind {
@@ -349,11 +483,11 @@ impl<'a> ContainerBuilder<'a> {
             ContainerKind::Object => OBJECT_LC_MARKERS,
         };
         match self.variant {
-            None => encode_container(markers, self.count, &self.body, self.out),
+            None => encode_container(markers, self.count, &self.buffer, self.out),
             Some(variant) => {
                 // Build the inner container, then wrap it in `{ variant: inner }`.
                 let mut inner = Vec::new();
-                encode_container(markers, self.count, &self.body, &mut inner);
+                encode_container(markers, self.count, &self.buffer, &mut inner);
                 let mut wrapper = Vec::new();
                 encode_string(variant, &mut wrapper);
                 wrapper.extend_from_slice(&inner);
@@ -475,6 +609,7 @@ mod tests {
     use crate::binary_json::{decode, encode};
     use serde::{Deserialize, Serialize};
     use serde_json::json;
+    use std::collections::BTreeMap;
 
     /// Asserts that the native serializer produces exactly the same bytes as
     /// the `Value`-based encoder for the given JSON value.
@@ -487,6 +622,31 @@ mod tests {
         );
         // And the bytes must round-trip back to the original value.
         assert_eq!(decode(&native).unwrap(), value);
+    }
+
+    #[test]
+    fn map_with_integer_keys_stringifies_them() {
+        // serde_json stringifies integer map keys; the native serializer does
+        // the same so the container's property names stay strings on the wire.
+        let mut map = BTreeMap::new();
+        map.insert(1u32, "a");
+        map.insert(2u32, "b");
+        let bytes = to_vec(&map).unwrap();
+        assert_eq!(decode(&bytes).unwrap(), json!({ "1": "a", "2": "b" }));
+    }
+
+    #[test]
+    fn map_with_non_string_keys_is_rejected() {
+        // A bool key has no string projection and must be rejected at
+        // serialization time (matching serde_json), not silently encoded.
+        let mut map = BTreeMap::new();
+        map.insert(true, 1);
+        map.insert(false, 2);
+        let err = to_vec(&map).unwrap_err();
+        assert!(
+            matches!(err, BinaryError::Custom(ref m) if m.contains("map key")),
+            "expected a map-key error, got {err:?}"
+        );
     }
 
     #[test]

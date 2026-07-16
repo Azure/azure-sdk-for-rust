@@ -102,24 +102,6 @@ impl From<serde_json::Error> for CosmosError {
     }
 }
 
-impl From<azure_data_cosmos_driver::binary_json::BinaryError> for CosmosError {
-    fn from(error: azure_data_cosmos_driver::binary_json::BinaryError) -> Self {
-        // In the SDK this conversion is only reached on the item **write**
-        // path, where `binary_json::to_vec(item)?` encodes a caller-supplied
-        // item to Cosmos binary JSON. A failure here is therefore a
-        // request-body (encode) error, not a response-body (decode) error —
-        // binary **response** decoding is mapped inside the driver. Labeling it
-        // as request-body keeps the status accurate for the write path.
-        Self(
-            DriverCosmosError::builder()
-                .with_status(CosmosStatus::SERIALIZATION_REQUEST_BODY_INVALID)
-                .with_message("failed to serialize item to Cosmos binary JSON")
-                .with_source(error)
-                .build(),
-        )
-    }
-}
-
 impl From<url::ParseError> for CosmosError {
     fn from(error: url::ParseError) -> Self {
         Self(
@@ -130,6 +112,27 @@ impl From<url::ParseError> for CosmosError {
                 .build(),
         )
     }
+}
+
+/// Converts a binary-JSON encode error into a [`CosmosError`].
+///
+/// This is deliberately a call-site helper rather than a `From` impl: the
+/// binary codec is only ever encoded on the item **write** path
+/// (`binary_json::to_vec(item)`), so a failure is always a request-body
+/// (encode) error, never a response-body (decode) error — binary **response**
+/// decoding is mapped inside the driver. A blanket `From` would invite `?` to
+/// mislabel a future decode failure as a request-body error, so the mapping is
+/// kept explicit at the one call site that needs it.
+pub(crate) fn convert_binary_encode_error(
+    error: azure_data_cosmos_driver::binary_json::BinaryError,
+) -> CosmosError {
+    CosmosError(
+        DriverCosmosError::builder()
+            .with_status(CosmosStatus::SERIALIZATION_REQUEST_BODY_INVALID)
+            .with_message("failed to serialize item to Cosmos binary JSON")
+            .with_source(error)
+            .build(),
+    )
 }
 
 /// Per Azure SDK for Rust guideline: every service-crate error type provides a

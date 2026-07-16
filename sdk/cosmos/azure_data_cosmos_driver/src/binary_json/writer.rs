@@ -1,26 +1,20 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Cosmos binary JSON **encoder** ([`serde_json::Value`] → `binary`).
+//! Cosmos binary JSON encoder ([`serde_json::Value`] → `binary`).
 //!
-//! The encoder is **minimal-but-valid**: it produces a *correct* (not
-//! size-optimal) binary buffer that the service accepts, using the smallest set
-//! of forms needed to represent any [`serde_json::Value`]:
+//! [`encode`] produces a valid binary buffer for any [`serde_json::Value`],
+//! using a subset of the wire forms:
 //!
 //! - `null` / `false` / `true` singletons,
 //! - numbers as a literal int (`0`–`31`), `Int64`, `UInt64`, or `Double`,
 //! - strings as an encoded-length string (≤ 63 bytes) or `StrL1`/`StrL2`/`StrL4`,
 //! - arrays and objects as the length+count `ArrLC*` / `ObjLC*` forms.
 //!
-//! It deliberately **skips** the size optimizations a writer *may* apply —
-//! system/user strings, reference-string dedup, compressed strings, the compact
-//! `Arr0`/`Arr1`/`Obj0`/`Obj1` container forms, and uniform number arrays. The
-//! decoder ([`decode`](super::decode)) handles all of those, so an encode →
-//! decode round-trip reproduces the original value even though the encoder emits
-//! only the verbose forms.
-//!
-//! Encoding is the trusted in-memory direction (the input is a value the SDK
-//! constructed, not untrusted wire bytes), so it is infallible.
+//! It does not emit the more compact forms (system/user strings,
+//! reference-string dedup, compressed strings, the `Arr0`/`Arr1`/`Obj0`/`Obj1`
+//! container forms, or uniform number arrays). The decoder accepts all of
+//! those, so an encode/decode round-trip reproduces the original value.
 
 use serde_json::Value;
 
@@ -191,6 +185,13 @@ pub(super) fn encode_container(lc_markers: [u8; 3], count: usize, body: &[u8], o
         out.extend_from_slice(&(len as u16).to_le_bytes());
         out.extend_from_slice(&(count as u16).to_le_bytes());
     } else {
+        // Cosmos caps request bodies far below u32::MAX, so the widest LC4
+        // markers always suffice; guard against silently truncating a larger
+        // in-memory value into an invalid buffer.
+        debug_assert!(
+            len <= u32::MAX as usize && count <= u32::MAX as usize,
+            "container length/count exceeds u32::MAX"
+        );
         out.push(lc4);
         out.extend_from_slice(&(len as u32).to_le_bytes());
         out.extend_from_slice(&(count as u32).to_le_bytes());
@@ -201,104 +202,22 @@ pub(super) fn encode_container(lc_markers: [u8; 3], count: usize, body: &[u8], o
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::binary_json::vectors::SCALAR_VECTORS;
-    use crate::binary_json::{decode, is_binary, markers};
+    use crate::binary_json::markers;
     use serde_json::json;
 
-    /// Encodes `value`, asserts the buffer is recognized as binary, decodes it
-    /// back, and asserts the round-trip reproduces the original value.
-    fn round_trip(value: Value) {
-        let encoded = encode(&value);
-        assert!(
-            is_binary(&encoded),
-            "encoded buffer must start with the preamble: {value:?}",
-        );
-        let decoded =
-            decode(&encoded).unwrap_or_else(|e| panic!("decode failed for {value:?}: {e}"));
-        assert_eq!(decoded, value);
+    /// Builds the expected buffer: preamble, then `head`, then `payload`.
+    fn buf(head: &[u8], payload: &[u8]) -> Vec<u8> {
+        let mut v = vec![PREAMBLE];
+        v.extend_from_slice(head);
+        v.extend_from_slice(payload);
+        v
     }
 
     #[test]
-    fn round_trips_null_and_booleans() {
-        round_trip(Value::Null);
-        round_trip(json!(true));
-        round_trip(json!(false));
-    }
-
-    #[test]
-    fn round_trips_integers() {
-        for n in [0i64, 1, 30, 31, 32, 100, -1, -1000, i64::MIN, i64::MAX] {
-            round_trip(json!(n));
-        }
-        // Unsigned values beyond i64::MAX use the UInt64 form.
-        round_trip(json!(i64::MAX as u64 + 1));
-        round_trip(json!(u64::MAX));
-    }
-
-    #[test]
-    fn round_trips_floats() {
-        for f in [0.0f64, 1.5, -2.25, 123.456_789, f64::MIN, f64::MAX] {
-            round_trip(json!(f));
-        }
-    }
-
-    #[test]
-    fn round_trips_strings() {
-        round_trip(json!(""));
-        round_trip(json!("a"));
-        round_trip(json!("id"));
-        round_trip(json!("x".repeat(63))); // max encoded-length form
-        round_trip(json!("y".repeat(64))); // first StrL1
-        round_trip(json!("z".repeat(255))); // max StrL1
-        round_trip(json!("p".repeat(256))); // first StrL2
-        round_trip(json!("q".repeat(70_000))); // StrL4
-        round_trip(json!("unicode: café ☃ 𝄞 \" \\ \n"));
-    }
-
-    #[test]
-    fn round_trips_arrays() {
-        round_trip(json!([]));
-        round_trip(json!([1, 2, 3]));
-        round_trip(json!([null, true, "x", 3.5]));
-        round_trip(json!([[1, 2], [3, [4, 5]]]));
-    }
-
-    #[test]
-    fn round_trips_objects() {
-        round_trip(json!({}));
-        round_trip(json!({ "id": "7" }));
-        round_trip(json!({ "a": 1, "b": [2, 3], "c": { "d": true } }));
-    }
-
-    #[test]
-    fn round_trips_nested_document() {
-        round_trip(json!({
-            "id": "doc-1",
-            "_rid": "abc==",
-            "count": 42,
-            "ratio": 0.125,
-            "active": true,
-            "tags": ["x", "y", "z"],
-            "nested": { "deep": { "value": [1, 2, { "k": null }] } },
-        }));
-    }
-
-    #[test]
-    fn round_trips_large_array_for_two_byte_container() {
-        // 300 single-byte elements push the container past the 1-byte length and
-        // count fields, exercising the ArrLC2 width selection.
-        let value = Value::Array((0..300).map(|_| json!(0)).collect());
-        round_trip(value);
-    }
-
-    #[test]
-    fn round_trips_scalar_corpus_values() {
-        // Encoding each golden vector's JSON then decoding reproduces the value
-        // (the minimal encoder need not reproduce the exact golden bytes).
-        for vector in SCALAR_VECTORS {
-            let value: Value = serde_json::from_str(vector.json).unwrap();
-            round_trip(value);
-        }
+    fn encodes_null_and_booleans() {
+        assert_eq!(encode(&Value::Null), vec![PREAMBLE, markers::NULL]);
+        assert_eq!(encode(&json!(true)), vec![PREAMBLE, markers::TRUE]);
+        assert_eq!(encode(&json!(false)), vec![PREAMBLE, markers::FALSE]);
     }
 
     #[test]
@@ -310,14 +229,63 @@ mod tests {
     }
 
     #[test]
-    fn encodes_empty_array_as_length_count_form() {
-        // Empty array -> ArrLC1 with length 0 and count 0.
-        assert_eq!(encode(&json!([])), vec![PREAMBLE, markers::ARR_LC1, 0, 0],);
+    fn encodes_int64_and_uint64() {
+        // 32 no longer fits the literal-int range, so it becomes an Int64.
+        assert_eq!(
+            encode(&json!(32)),
+            vec![PREAMBLE, markers::NUMBER_INT64, 32, 0, 0, 0, 0, 0, 0, 0],
+        );
+        assert_eq!(
+            encode(&json!(i64::MAX)),
+            vec![
+                PREAMBLE,
+                markers::NUMBER_INT64,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0x7F
+            ],
+        );
+        // Values beyond i64::MAX use the UInt64 form.
+        assert_eq!(
+            encode(&json!(u64::MAX)),
+            vec![
+                PREAMBLE,
+                markers::NUMBER_UINT64,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF,
+                0xFF
+            ],
+        );
     }
 
     #[test]
-    fn encodes_empty_object_as_length_count_form() {
-        assert_eq!(encode(&json!({})), vec![PREAMBLE, markers::OBJ_LC1, 0, 0],);
+    fn encodes_double() {
+        // 1.5 as an IEEE-754 little-endian Double.
+        assert_eq!(
+            encode(&json!(1.5)),
+            vec![
+                PREAMBLE,
+                markers::NUMBER_DOUBLE,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0xF8,
+                0x3F
+            ],
+        );
     }
 
     #[test]
@@ -327,5 +295,96 @@ mod tests {
             encode(&json!("")),
             vec![PREAMBLE, markers::ENCODED_STRING_LENGTH_MIN],
         );
+    }
+
+    #[test]
+    fn encodes_strings_at_width_boundaries() {
+        // 63 bytes: the maximum encoded-length form (0x80 | 63 == 0xBF).
+        assert_eq!(encode(&json!("x".repeat(63))), buf(&[0xBF], &[b'x'; 63]),);
+        // 64 bytes: first StrL1 (marker 0xC0, 1-byte length 64).
+        assert_eq!(
+            encode(&json!("y".repeat(64))),
+            buf(&[markers::STR_L1, 64], &[b'y'; 64]),
+        );
+        // 256 bytes: first StrL2 (marker 0xC1, 2-byte little-endian length).
+        assert_eq!(
+            encode(&json!("p".repeat(256))),
+            buf(&[markers::STR_L2, 0x00, 0x01], &[b'p'; 256]),
+        );
+    }
+
+    #[test]
+    fn encodes_empty_array_as_length_count_form() {
+        // Empty array -> ArrLC1 with length 0 and count 0.
+        assert_eq!(encode(&json!([])), vec![PREAMBLE, markers::ARR_LC1, 0, 0]);
+    }
+
+    #[test]
+    fn encodes_mixed_array() {
+        // [null, true, "x", 3.5] -> ArrLC1, len 13, count 4, then the elements.
+        assert_eq!(
+            encode(&json!([null, true, "x", 3.5])),
+            vec![
+                PREAMBLE,
+                markers::ARR_LC1,
+                0x0D, // payload length
+                0x04, // element count
+                markers::NULL,
+                markers::TRUE,
+                0x81,
+                b'x', // encoded-length "x"
+                markers::NUMBER_DOUBLE,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0x0C,
+                0x40, // 3.5
+            ],
+        );
+    }
+
+    #[test]
+    fn encodes_empty_object_as_length_count_form() {
+        assert_eq!(encode(&json!({})), vec![PREAMBLE, markers::OBJ_LC1, 0, 0]);
+    }
+
+    #[test]
+    fn encodes_object_with_nested_array() {
+        // { "a": 1, "b": [2, 3] } -> ObjLC1, len 10, count 2, then the members.
+        assert_eq!(
+            encode(&json!({ "a": 1, "b": [2, 3] })),
+            vec![
+                PREAMBLE,
+                markers::OBJ_LC1,
+                0x0A, // payload length
+                0x02, // member count
+                0x81,
+                b'a', // key "a"
+                0x01, // value 1 (literal int)
+                0x81,
+                b'b', // key "b"
+                markers::ARR_LC1,
+                0x02,
+                0x02,
+                0x02,
+                0x03, // [2, 3]
+            ],
+        );
+    }
+
+    #[test]
+    fn encodes_large_array_with_two_byte_container() {
+        // 300 single-byte elements push the container past the 1-byte length and
+        // count fields, so ArrLC2 (2-byte length + 2-byte count) is used.
+        let value = Value::Array((0..300).map(|_| json!(0)).collect());
+        let encoded = encode(&value);
+        assert_eq!(encoded[0], PREAMBLE);
+        assert_eq!(encoded[1], markers::ARR_LC2);
+        // 2-byte little-endian length (300) then count (300).
+        assert_eq!(&encoded[2..6], &[0x2C, 0x01, 0x2C, 0x01]);
+        assert_eq!(encoded.len(), 6 + 300);
     }
 }
