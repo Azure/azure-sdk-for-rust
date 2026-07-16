@@ -931,7 +931,7 @@ impl BlockBlobClient {
 }
 
 /// Default value for [`BlockBlobClientOptions::version`].
-pub(crate) const DEFAULT_VERSION: &str = "2026-04-06";
+pub(crate) const DEFAULT_VERSION: &str = "2026-06-06";
 
 impl Default for BlockBlobClientOptions {
     fn default() -> Self {

@@ -142,6 +142,55 @@ async fn test_list_blobs(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Prototype observation test: lists blobs and dumps the raw response so we can
+/// inspect exactly what comes over the wire (e.g. when the `Accept` header is
+/// set to `application/vnd.apache.arrow.stream`). Run with `--nocapture` to see
+/// the printed output.
+#[recorded::test]
+async fn test_list_blobs_observe_raw(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, false, StorageAccount::Standard, None).await?;
+
+    container_client.create(None).await?;
+    create_test_blob(&container_client.blob_client("testblob1"), None, None).await?;
+
+    let mut list_blobs_response = container_client.list_blobs(None)?.into_pages();
+    let page = list_blobs_response
+        .try_next()
+        .await?
+        .expect("expected at least one page");
+
+    let (status, headers, body) = page.deconstruct();
+    println!("list_blobs status: {status:?}");
+    println!(
+        "list_blobs content-type: {:?}",
+        headers.get_optional_str(&azure_core::http::headers::CONTENT_TYPE)
+    );
+    println!("list_blobs body length: {} bytes", body.len());
+    let preview_len = body.len().min(64);
+    println!(
+        "list_blobs body first {preview_len} bytes (hex): {}",
+        body[..preview_len]
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect::<Vec<_>>()
+            .join(" ")
+    );
+    println!(
+        "list_blobs body first {preview_len} bytes (utf8 lossy): {}",
+        String::from_utf8_lossy(&body[..preview_len])
+    );
+
+    // Basic sanity: the request succeeded and we got some bytes back.
+    assert_eq!(StatusCode::Ok, status);
+    assert!(!body.is_empty(), "expected a non-empty response body");
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
 #[recorded::test]
 async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
