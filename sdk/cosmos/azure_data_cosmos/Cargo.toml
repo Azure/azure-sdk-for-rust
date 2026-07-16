@@ -20,6 +20,7 @@ azure_core = { workspace = true, default-features = false }
 azure_data_cosmos_driver = { version = "0.6.0", path = "../azure_data_cosmos_driver", default-features = false }
 base64.workspace = true
 futures.workspace = true
+opentelemetry = { workspace = true, optional = true, features = ["metrics"] }
 pin-project.workspace = true
 reqwest = { workspace = true, optional = true }
 serde.workspace = true
@@ -51,6 +52,7 @@ azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", default-featu
 ] }
 azure_identity.workspace = true
 clap.workspace = true
+opentelemetry_sdk = { workspace = true, features = ["testing"] }
 reqwest = { workspace = true, features = ["http2"] }
 serde = { workspace = true, features = ["derive"] }
 serde_bytes.workspace = true
@@ -84,6 +86,9 @@ hmac_openssl = ["azure_core/hmac_openssl"]
 fault_injection = [
   "azure_data_cosmos_driver/fault_injection",
 ] # Enables support for fault injection testing
+otel_metrics = [
+  "dep:opentelemetry",
+] # Enables the OpenTelemetry metrics handler (`CosmosMetricsHandler`). Off by default: with the feature disabled the metrics module is not compiled, so there is zero cost.
 preview_dtx = [
   "azure_data_cosmos_driver/preview_dtx",
 ] # Enables preview Distributed Transaction APIs. Disabled by default and not production-ready.
@@ -100,6 +105,7 @@ features = [
   "hmac_rust",
   "key_auth",
   "native_tls",
+  "otel_metrics",
   "rustls",
 ]
 
