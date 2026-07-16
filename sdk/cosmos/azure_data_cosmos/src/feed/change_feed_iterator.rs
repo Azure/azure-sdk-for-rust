@@ -157,8 +157,9 @@ impl LiveState {
 /// (`{ current, ... }`) because the SDK always sends the
 /// `x-ms-cosmos-changefeed-wire-format-version` header (see
 /// [`CosmosOperation::change_feed`]). Each entry in the feed body is
-/// deserialized directly into `T` — which callers bind to
-/// [`ChangeFeedItem<Doc>`](crate::models::ChangeFeedItem) — so the whole
+/// deserialized directly into `T` — which
+/// [`ContainerClient::query_change_feed`](crate::clients::ContainerClient::query_change_feed)
+/// binds to [`ChangeFeedItem<Doc>`](crate::models::ChangeFeedItem) — so the whole
 /// envelope is preserved rather than stripped.
 ///
 /// [`CosmosOperation::change_feed`]: azure_data_cosmos_driver::models::CosmosOperation
@@ -186,10 +187,7 @@ fn deserialize_change_feed_items<T: DeserializeOwned>(
 /// # Examples
 ///
 /// ```rust,no_run
-/// use azure_data_cosmos::{
-///     clients::ContainerClient, feed::FeedScope, models::ChangeFeedItem,
-///     options::ChangeFeedStartFrom,
-/// };
+/// use azure_data_cosmos::{clients::ContainerClient, feed::FeedScope, options::ChangeFeedStartFrom};
 /// use futures::StreamExt;
 /// use serde::Deserialize;
 ///
@@ -198,7 +196,7 @@ fn deserialize_change_feed_items<T: DeserializeOwned>(
 ///
 /// # async fn example(container: ContainerClient) -> Result<(), Box<dyn std::error::Error>> {
 /// let mut pages = container
-///     .query_change_feed::<ChangeFeedItem<MyItem>>(
+///     .query_change_feed::<MyItem>(
 ///         FeedScope::full_container(),
 ///         ChangeFeedStartFrom::Beginning,
 ///         None,
@@ -330,7 +328,10 @@ mod tests {
         assert_eq!(items[0].current(), Some(&Doc { id: "1".into() }));
         let metadata = items[0].metadata().expect("metadata should survive");
         assert!(metadata.operation_type().is_none());
-        assert_eq!(metadata.lsn(), Some(100));
+        assert_eq!(
+            metadata.lsn(),
+            Some(crate::models::LogicalSequenceNumber::from(100))
+        );
     }
 
     #[test]
@@ -347,7 +348,7 @@ mod tests {
                 {
                     "current": { "id": "2" },
                     "previous": { "id": "2" },
-                    "metadata": { "operationType": "replace", "lsn": 11, "previousImageLsn": 10 }
+                    "metadata": { "operationType": "replace", "lsn": 11, "previousImageLSN": 10 }
                 },
                 {
                     "previous": { "id": "3" },
@@ -368,7 +369,10 @@ mod tests {
         );
         assert_eq!(items[0].current(), Some(&Doc { id: "1".into() }));
         assert!(items[0].previous().is_none());
-        assert_eq!(items[0].metadata().and_then(|m| m.lsn()), Some(10));
+        assert_eq!(
+            items[0].metadata().and_then(|m| m.lsn()),
+            Some(crate::models::LogicalSequenceNumber::from(10))
+        );
 
         // Replace: both current and previous present.
         assert_eq!(
@@ -379,7 +383,7 @@ mod tests {
         assert_eq!(items[1].previous(), Some(&Doc { id: "2".into() }));
         assert_eq!(
             items[1].metadata().and_then(|m| m.previous_image_lsn()),
-            Some(10)
+            Some(crate::models::LogicalSequenceNumber::from(10))
         );
 
         // Delete: current absent, previous (pre-image) preserved, TTL flag set.

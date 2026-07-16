@@ -13,9 +13,8 @@
 //! * `query_change_feed` mode dispatch,
 //! * the `ChangeFeedStartFrom::Beginning` rejection for AllVersionsAndDeletes,
 //!   and
-//! * decoding per mode: the in-memory emulator returns flat documents for
-//!   Incremental (LatestVersion) reads, so `T` binds the plain document type,
-//!   while full-fidelity reads return [`ChangeFeedItem<T>`] envelopes.
+//! * decoding per mode: callers bind the plain document type `T` and read
+//!   `ChangeFeedItem<T>` envelopes in both modes.
 //!
 //! ## What the in-memory emulator models (and what it does not)
 //!
@@ -34,7 +33,6 @@
 
 use std::error::Error;
 
-use azure_data_cosmos::models::ChangeFeedItem;
 use azure_data_cosmos::options::{ChangeFeedMode, ChangeFeedOptions, ChangeFeedStartFrom, Region};
 use azure_data_cosmos::{
     AccountEndpoint, AccountReference, ContainerClient, CosmosClient, CosmosClientBuilder,
@@ -124,9 +122,8 @@ async fn insert_items(container: &ContainerClient, items: &[TestItem]) {
     }
 }
 
-/// LatestVersion reads against the in-memory emulator yield the plain
-/// documents: the emulator returns flat documents for Incremental reads, so the
-/// caller binds the plain document type directly.
+/// LatestVersion reads against the in-memory emulator yield envelopes whose
+/// `current` carries the full document.
 #[tokio::test]
 async fn latest_version_returns_current_documents() {
     let container = setup().await.unwrap();
@@ -152,14 +149,22 @@ async fn latest_version_returns_current_documents() {
         .expect("the change feed should yield a page")
         .expect("the page should not be an error");
 
-    let mut returned = page.items().to_vec();
+    let mut returned: Vec<TestItem> = page
+        .items()
+        .iter()
+        .map(|envelope| {
+            envelope
+                .current()
+                .cloned()
+                .expect("LatestVersion envelopes should carry current documents")
+        })
+        .collect();
     returned.sort_by(|a, b| a.id.cmp(&b.id));
     assert_eq!(returned, items);
 }
 
-/// AllVersionsAndDeletes reads yield full-fidelity [`ChangeFeedItem<T>`]
-/// envelopes: the whole document is preserved under `current` and the change
-/// metadata is populated.
+/// AllVersionsAndDeletes reads yield full-fidelity envelopes: the whole
+/// document is preserved under `current` and the change metadata is populated.
 #[tokio::test]
 async fn all_versions_and_deletes_returns_envelopes() {
     let container = setup().await.unwrap();
@@ -168,7 +173,7 @@ async fn all_versions_and_deletes_returns_envelopes() {
 
     let options = ChangeFeedOptions::default().with_mode(ChangeFeedMode::AllVersionsAndDeletes);
     let mut pages = container
-        .query_change_feed::<ChangeFeedItem<TestItem>>(
+        .query_change_feed::<TestItem>(
             FeedScope::partition(PARTITION_KEY),
             ChangeFeedStartFrom::Now,
             Some(options),
@@ -215,7 +220,7 @@ async fn all_versions_and_deletes_rejects_beginning() {
 
     let options = ChangeFeedOptions::default().with_mode(ChangeFeedMode::AllVersionsAndDeletes);
     let err = match container
-        .query_change_feed::<ChangeFeedItem<TestItem>>(
+        .query_change_feed::<TestItem>(
             FeedScope::partition(PARTITION_KEY),
             ChangeFeedStartFrom::Beginning,
             Some(options),

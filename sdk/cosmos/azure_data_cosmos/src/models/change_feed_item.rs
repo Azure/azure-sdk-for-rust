@@ -10,8 +10,9 @@
 //! returning the bare document. The envelope carries the post-change document
 //! (`current`), the pre-change document (`previous`, when the container is
 //! configured to retain pre-images), and per-change [`ChangeFeedMetadata`].
-//! Callers bind `T = ChangeFeedItem<YourDoc>` when calling
-//! [`ContainerClient::query_change_feed`](crate::clients::ContainerClient::query_change_feed).
+//! Callers pass their own document type `D` to
+//! [`ContainerClient::query_change_feed`](crate::clients::ContainerClient::query_change_feed),
+//! which yields [`ChangeFeedItem<D>`] envelopes.
 //!
 //! For [`ChangeFeedMode::LatestVersion`](crate::options::ChangeFeedMode::LatestVersion)
 //! reads the service surfaces the latest version of each created or replaced
@@ -25,11 +26,55 @@
 use azure_core::fmt::SafeDebug;
 use serde::de::{DeserializeOwned, Error as _};
 use serde::{Deserialize, Deserializer};
+use std::time::Duration;
+
+/// Deserializes an optional epoch-seconds integer into a [`Duration`].
+fn deserialize_optional_duration_secs<'de, D>(deserializer: D) -> Result<Option<Duration>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let secs = Option::<i64>::deserialize(deserializer)?;
+    Ok(secs.map(|secs| Duration::from_secs(secs.max(0) as u64)))
+}
+
+/// A logical sequence number (LSN) identifying a change's position within its
+/// partition.
+///
+/// LSNs increase monotonically within a single physical partition and order the
+/// changes in a feed. Read the underlying value with [`value`](Self::value), or
+/// convert to and from `i64` via the standard `From`/`Into` conversions.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize)]
+#[serde(transparent)]
+pub struct LogicalSequenceNumber(i64);
+
+impl LogicalSequenceNumber {
+    /// The underlying logical sequence number value.
+    pub fn value(&self) -> i64 {
+        self.0
+    }
+}
+
+impl From<i64> for LogicalSequenceNumber {
+    fn from(value: i64) -> Self {
+        Self(value)
+    }
+}
+
+impl From<LogicalSequenceNumber> for i64 {
+    fn from(value: LogicalSequenceNumber) -> Self {
+        value.0
+    }
+}
 
 /// The type of change that produced a change feed item.
 ///
 /// Parsed from the `operationType` field of the change feed metadata envelope
 /// (`"create"`, `"replace"`, or `"delete"`).
+///
+/// The wire format may add operation types in future service versions. An
+/// unrecognized value deserializes to [`Unknown`](Self::Unknown) rather than
+/// failing, so a single new operation type cannot fail the page it appears in
+/// and permanently stall the feed.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
@@ -44,6 +89,14 @@ pub enum ChangeFeedOperationType {
     /// (id and partition key only); the pre-image is available in `previous`
     /// when the container retains pre-images.
     Delete,
+
+    /// An operation type not recognized by this SDK version.
+    ///
+    /// Any `operationType` value the SDK does not know maps here instead of
+    /// failing deserialization, keeping the change feed alive across service
+    /// upgrades that introduce new operation types.
+    #[serde(other)]
+    Unknown,
 }
 
 /// Per-change metadata returned with a change feed item.
@@ -69,22 +122,44 @@ pub struct ChangeFeedMetadata {
 
     /// The logical sequence number (LSN) of the change within its partition.
     #[serde(rename = "lsn", default)]
-    lsn: Option<i64>,
+    lsn: Option<LogicalSequenceNumber>,
 
-    /// The conflict resolution timestamp (`crts`) of the change, in seconds since
+    /// The conflict resolution timestamp (`crts`) of the change, measured since
     /// the Unix epoch.
-    #[serde(rename = "crts", default)]
-    conflict_resolution_timestamp: Option<i64>,
+    #[serde(
+        rename = "crts",
+        default,
+        deserialize_with = "deserialize_optional_duration_secs"
+    )]
+    conflict_resolution_timestamp: Option<Duration>,
 
     /// The LSN of the previous image of the item, when a pre-image is available
     /// (replace and delete operations on containers that retain pre-images).
-    #[serde(rename = "previousImageLsn", default)]
-    previous_image_lsn: Option<i64>,
+    #[serde(rename = "previousImageLSN", default)]
+    previous_image_lsn: Option<LogicalSequenceNumber>,
 
     /// `Some(true)` when the change is a delete caused by the item's
     /// time-to-live (TTL) expiring, rather than an explicit delete.
     #[serde(rename = "timeToLiveExpired", default)]
     time_to_live_expired: Option<bool>,
+
+    /// The id of the deleted item.
+    ///
+    /// Populated for delete operations in full-fidelity reads (a delete
+    /// carries the removed item's identity here because `current` is empty);
+    /// absent otherwise.
+    #[serde(rename = "id", default)]
+    id: Option<String>,
+
+    /// The partition key of the deleted item, as returned on the wire.
+    ///
+    /// Populated for delete operations in full-fidelity reads; absent
+    /// otherwise. Kept as the raw JSON value because the wire representation is
+    /// an array of the partition key component values (one entry per level for
+    /// a hierarchical partition key), which has no path-name context here to
+    /// reshape into a map.
+    #[serde(rename = "partitionKey", default)]
+    partition_key: Option<serde_json::Value>,
 }
 
 impl ChangeFeedMetadata {
@@ -98,18 +173,18 @@ impl ChangeFeedMetadata {
 
     /// The logical sequence number (LSN) of the change within its partition,
     /// when reported by the service.
-    pub fn lsn(&self) -> Option<i64> {
+    pub fn lsn(&self) -> Option<LogicalSequenceNumber> {
         self.lsn
     }
 
-    /// The conflict resolution timestamp (`crts`) of the change, in seconds since
+    /// The conflict resolution timestamp (`crts`) of the change, measured since
     /// the Unix epoch, when reported by the service.
-    pub fn conflict_resolution_timestamp(&self) -> Option<i64> {
+    pub fn conflict_resolution_timestamp(&self) -> Option<Duration> {
         self.conflict_resolution_timestamp
     }
 
     /// The LSN of the previous image of the item, when a pre-image is available.
-    pub fn previous_image_lsn(&self) -> Option<i64> {
+    pub fn previous_image_lsn(&self) -> Option<LogicalSequenceNumber> {
         self.previous_image_lsn
     }
 
@@ -118,16 +193,33 @@ impl ChangeFeedMetadata {
     pub fn time_to_live_expired(&self) -> Option<bool> {
         self.time_to_live_expired
     }
+
+    /// The id of the deleted item, when reported.
+    ///
+    /// Populated for delete operations in full-fidelity reads; `None`
+    /// otherwise.
+    pub fn id(&self) -> Option<&str> {
+        self.id.as_deref()
+    }
+
+    /// The partition key of the deleted item, when reported.
+    ///
+    /// Populated for delete operations in full-fidelity reads; `None`
+    /// otherwise. Returned as the raw JSON value (an array of the partition
+    /// key component values, one per level for a hierarchical partition key).
+    pub fn partition_key(&self) -> Option<&serde_json::Value> {
+        self.partition_key.as_ref()
+    }
 }
 
 /// A single item from a Cosmos DB change feed.
 ///
-/// Each item is a wire-format envelope describing one change: the document
+/// Each item is an envelope describing one change: the document
 /// after the change ([`current`](Self::current)), the document before the
 /// change ([`previous`](Self::previous)), and the change
-/// [`metadata`](Self::metadata). Bind `T = ChangeFeedItem<YourDoc>` when calling
+/// [`metadata`](Self::metadata). Pass your document type `T` to
 /// [`ContainerClient::query_change_feed`](crate::clients::ContainerClient::query_change_feed);
-/// the SDK does not strip the envelope, so the whole wire shape is preserved.
+/// it yields `ChangeFeedItem<T>` and does not strip the envelope.
 ///
 /// For [`ChangeFeedMode::LatestVersion`](crate::options::ChangeFeedMode::LatestVersion)
 /// reads [`current`](Self::current) holds the latest version of each created or
@@ -151,18 +243,18 @@ impl ChangeFeedMetadata {
 /// caller's own document `T`, so its `Debug` output is only available when `T`
 /// itself is `Debug`.
 ///
-/// # Non-enveloped backends
+/// # Non-enveloped responses
 ///
-/// A backend that does not honor the `x-ms-cosmos-changefeed-wire-format-version`
-/// header — an older gateway, a region where the feature has not rolled out, or
-/// an emulator build without change-feed enveloping — returns the bare document
-/// (`{ "id": ... }`) instead of the `{ "current": ... }` envelope. Such an item
-/// deserializes with the whole document mapped onto [`current`](Self::current)
-/// and no [`previous`](Self::previous) / [`metadata`](Self::metadata), so a
-/// caller reading `.current()` sees the document on either wire shape rather
-/// than losing it. An item is treated as an envelope when it carries any of the
-/// reserved `current`, `previous`, or `metadata` keys; a flat document whose own
-/// top level happens to use one of those names is the one documented exception.
+/// A backend that returns the document without the change-feed envelope (for
+/// example the Cosmos emulator, which does not produce it) yields the bare
+/// document. In that case the whole document is read as
+/// [`current`](Self::current), with no [`previous`](Self::previous) or
+/// [`metadata`](Self::metadata), so `.current()` still returns it.
+///
+/// An item is treated as an envelope only when it is a non-empty object whose
+/// keys are drawn entirely from `current`, `previous`, and `metadata`; any
+/// other key marks it as a bare document. The sole ambiguous case is a
+/// document whose top level consists only of those reserved names.
 #[derive(Clone, Debug)]
 #[non_exhaustive]
 pub struct ChangeFeedItem<T> {
@@ -189,24 +281,51 @@ where
     where
         D: Deserializer<'de>,
     {
-        // The wire-format envelope is a JSON object carrying any of the
-        // reserved `current`, `previous`, or `metadata` keys. A backend that
-        // does not envelope change feed items returns the bare document
-        // instead; treat that whole document as the post-change `current` so
-        // no data is lost. See the type-level docs for the reserved-key caveat.
+        // An enveloped item is a JSON object whose top-level keys are drawn
+        // entirely from the reserved set {current, previous, metadata}. A
+        // non-enveloped (flat) document written by a caller almost always
+        // carries other keys too — its id, partition key, and fields — so
+        // requiring *every* key to be reserved keeps a flat document that
+        // merely includes a `metadata`/`previous`/`current` field from being
+        // misread as an (empty) envelope with its real contents dropped.
+        // Detecting `previous`/`metadata` (not just `current`) still lets a
+        // full-fidelity delete envelope, which has no `current`, be recognized.
+        // See the type-level docs for the sole reserved-key caveat.
+        //
+        // Buffering into `Value` first is what lets us inspect the shape at
+        // runtime and tolerate a non-enveloping backend (the vnext emulator
+        // does not honor the wire-format header). It costs one extra DOM parse
+        // per item. Once non-enveloping backends are no longer supported this
+        // whole impl collapses to a plain `#[derive(Deserialize)]` with
+        // `Option` fields, removing the buffering and the double-parse.
         let value = serde_json::Value::deserialize(deserializer)?;
         let is_envelope = value.as_object().is_some_and(|fields| {
-            fields.contains_key("current")
-                || fields.contains_key("previous")
-                || fields.contains_key("metadata")
+            !fields.is_empty()
+                && fields
+                    .keys()
+                    .all(|key| matches!(key.as_str(), "current" | "previous" | "metadata"))
         });
 
         if is_envelope {
             #[derive(Deserialize)]
-            struct Envelope<T> {
-                current: Option<T>,
-                previous: Option<T>,
+            struct Envelope {
+                current: Option<serde_json::Value>,
+                previous: Option<serde_json::Value>,
                 metadata: Option<ChangeFeedMetadata>,
+            }
+
+            // For deletes the service returns an empty `current` object (and,
+            // for pre-image containers, the removed document in `previous`).
+            // Treat an empty or null object as absent so callers with strict
+            // document types don't fail to deserialize a delete.
+            fn document<T: DeserializeOwned>(
+                value: Option<serde_json::Value>,
+            ) -> Result<Option<T>, serde_json::Error> {
+                match value {
+                    None | Some(serde_json::Value::Null) => Ok(None),
+                    Some(serde_json::Value::Object(map)) if map.is_empty() => Ok(None),
+                    Some(other) => serde_json::from_value(other).map(Some),
+                }
             }
 
             let Envelope {
@@ -215,8 +334,8 @@ where
                 metadata,
             } = serde_json::from_value(value).map_err(D::Error::custom)?;
             Ok(ChangeFeedItem {
-                current,
-                previous,
+                current: document(current).map_err(D::Error::custom)?,
+                previous: document(previous).map_err(D::Error::custom)?,
                 metadata,
             })
         } else {
@@ -302,8 +421,11 @@ mod tests {
         );
         assert!(item.previous().is_none());
         let metadata = item.metadata().expect("metadata should be present");
-        assert_eq!(metadata.lsn(), Some(100));
-        assert_eq!(metadata.conflict_resolution_timestamp(), Some(1720322460));
+        assert_eq!(metadata.lsn(), Some(LogicalSequenceNumber::from(100)));
+        assert_eq!(
+            metadata.conflict_resolution_timestamp(),
+            Some(Duration::from_secs(1720322460))
+        );
         assert!(metadata.previous_image_lsn().is_none());
         assert!(metadata.time_to_live_expired().is_none());
     }
@@ -366,6 +488,52 @@ mod tests {
     }
 
     #[test]
+    fn flat_document_with_reserved_field_name_is_not_misread_as_envelope() {
+        // Regression guard for the non-enveloped path: a flat document that
+        // happens to carry a top-level `metadata` (or `previous`) field must
+        // still be read as the document. Because it also carries its own keys
+        // (`id`/`value`), not every key is reserved, so it is a flat document —
+        // its contents must survive rather than being dropped for an empty
+        // envelope.
+        let flat = json!({
+            "id": "42",
+            "value": 7,
+            "metadata": { "author": "bob" }
+        });
+        let item: ChangeFeedItem<Doc> = serde_json::from_value(flat).unwrap();
+
+        assert_eq!(
+            item.current(),
+            Some(&Doc {
+                id: "42".into(),
+                value: Some(7)
+            })
+        );
+        assert!(item.previous().is_none());
+        assert!(item.metadata().is_none());
+
+        // The same holds for a stray top-level `previous` field.
+        let flat = json!({ "id": "43", "previous": "unrelated" });
+        let item: ChangeFeedItem<Doc> = serde_json::from_value(flat).unwrap();
+        assert_eq!(item.current().map(|d| d.id.as_str()), Some("43"));
+        assert!(item.previous().is_none());
+    }
+
+    #[test]
+    fn delete_envelope_with_only_metadata_is_treated_as_envelope() {
+        // Counterpart to the flat-document guard: an object whose keys are all
+        // reserved is an envelope even when `metadata` is the only key, so a
+        // full-fidelity delete that carries neither `current` nor `previous`
+        // still surfaces its metadata rather than being parsed as a document.
+        let envelope = json!({ "metadata": { "operationType": "delete", "lsn": 400 } });
+        let item: ChangeFeedItem<Doc> = serde_json::from_value(envelope).unwrap();
+
+        assert!(item.current().is_none());
+        assert!(item.previous().is_none());
+        assert_eq!(item.operation_type(), Some(ChangeFeedOperationType::Delete));
+    }
+
+    #[test]
     fn delete_envelope_without_current_is_treated_as_envelope() {
         // A full-fidelity delete envelope carries `previous`/`metadata` but no
         // `current`; it must be recognized as an envelope (not mistaken for a
@@ -390,7 +558,7 @@ mod tests {
                 "operationType": "replace",
                 "lsn": 200,
                 "crts": 1720322500,
-                "previousImageLsn": 199
+                "previousImageLSN": 199
             }
         });
         let item: ChangeFeedItem<Doc> = serde_json::from_value(envelope).unwrap();
@@ -404,7 +572,7 @@ mod tests {
         assert_eq!(
             item.metadata()
                 .and_then(ChangeFeedMetadata::previous_image_lsn),
-            Some(199)
+            Some(LogicalSequenceNumber::from(199))
         );
     }
 
@@ -447,8 +615,33 @@ mod tests {
         assert!(item.current().is_none());
         assert!(item.previous().is_none());
         let metadata = item.metadata().expect("metadata should be present");
-        assert_eq!(metadata.lsn(), Some(400));
+        assert_eq!(metadata.lsn(), Some(LogicalSequenceNumber::from(400)));
         assert!(metadata.time_to_live_expired().is_none());
+    }
+
+    #[test]
+    fn deserializes_delete_envelope_with_empty_current() {
+        // A full-fidelity delete returns an empty `current` object with the
+        // deleted item's identity carried in `metadata`. The empty object must
+        // map to `None` so callers with strict document types (a required `id`
+        // here) can still deserialize the delete instead of failing on `{}`.
+        let envelope = json!({
+            "current": {},
+            "metadata": {
+                "operationType": "delete",
+                "id": "item-1",
+                "partitionKey": ["tenant-a"]
+            }
+        });
+        let item: ChangeFeedItem<Doc> = serde_json::from_value(envelope).unwrap();
+
+        assert_eq!(item.operation_type(), Some(ChangeFeedOperationType::Delete));
+        assert!(item.current().is_none());
+        assert!(item.previous().is_none());
+        let metadata = item.metadata().expect("metadata should be present");
+        // The deleted item's identity is surfaced from the metadata.
+        assert_eq!(metadata.id(), Some("item-1"));
+        assert_eq!(metadata.partition_key(), Some(&json!(["tenant-a"])));
     }
 
     #[test]
@@ -471,8 +664,11 @@ mod tests {
         let metadata = item.metadata().expect("metadata should be present");
         assert!(metadata.operation_type().is_none());
         assert!(item.operation_type().is_none());
-        assert_eq!(metadata.lsn(), Some(100));
-        assert_eq!(metadata.conflict_resolution_timestamp(), Some(1720322460));
+        assert_eq!(metadata.lsn(), Some(LogicalSequenceNumber::from(100)));
+        assert_eq!(
+            metadata.conflict_resolution_timestamp(),
+            Some(Duration::from_secs(1720322460))
+        );
     }
 
     #[test]
@@ -485,5 +681,26 @@ mod tests {
             let parsed: ChangeFeedOperationType = serde_json::from_value(json!(wire)).unwrap();
             assert_eq!(parsed, expected);
         }
+    }
+
+    #[test]
+    fn unknown_operation_type_maps_to_unknown_variant() {
+        // A future/unknown `operationType` must not fail deserialization: it
+        // maps to `Unknown` so one new value cannot fail the whole page and
+        // permanently stall the feed.
+        let parsed: ChangeFeedOperationType = serde_json::from_value(json!("resurrect")).unwrap();
+        assert_eq!(parsed, ChangeFeedOperationType::Unknown);
+
+        // The same must hold when it arrives inside a full envelope.
+        let envelope = json!({
+            "current": { "id": "1", "value": 1 },
+            "metadata": { "operationType": "resurrect", "lsn": 500 }
+        });
+        let item: ChangeFeedItem<Doc> = serde_json::from_value(envelope).unwrap();
+        assert_eq!(
+            item.operation_type(),
+            Some(ChangeFeedOperationType::Unknown)
+        );
+        assert_eq!(item.current().and_then(|d| d.value), Some(1));
     }
 }

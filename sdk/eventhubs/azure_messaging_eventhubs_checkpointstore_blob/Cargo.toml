@@ -22,7 +22,7 @@ rust-version.workspace = true
 async-trait.workspace = true
 azure_core.workspace = true
 azure_messaging_eventhubs = { path = "../azure_messaging_eventhubs", version = "0.15.0" }
-azure_storage_blob = { path = "../../storage/azure_storage_blob", version = "1.1.0-beta.1" }
+azure_storage_blob = { path = "../../storage/azure_storage_blob", version = "1.1.0-beta.2" }
 futures.workspace = true
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true

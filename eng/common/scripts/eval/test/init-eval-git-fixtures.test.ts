@@ -1,4 +1,4 @@
-// Tests for init-eval-git-fixtures.js — discovery only (the dry-run path that clones nothing).
+// Tests for init-eval-git-fixtures.ts — discovery only (the dry-run path that clones nothing).
 
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -7,7 +7,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { after, before, describe, it } from "node:test";
 
-import { dedupeFixtures, getEvalGitFixtures } from "../init-eval-git-fixtures.js";
+import { dedupeFixtures, getEvalGitFixtures } from "../init-eval-git-fixtures.ts";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
@@ -111,7 +111,7 @@ describe("getEvalGitFixtures discovery", () => {
 // contain the Vally suite they skip.
 describe("Folder-level invariant for real git fixtures", () => {
   const repoRoot = path.resolve(here, "../../../../..");
-  const vallyRoot = path.join(repoRoot, "tools/azsdk-cli/Azure.Sdk.Tools.Vally");
+  const vallyRoot = path.join(repoRoot, "azsdk-evals");
   const vallyEvals = path.join(vallyRoot, "evals");
   const present = fs.existsSync(vallyEvals);
 

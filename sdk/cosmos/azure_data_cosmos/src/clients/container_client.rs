@@ -5,7 +5,7 @@ use crate::{
     clients::{offers_client, ClientContext},
     feed::{ChangeFeedPageIterator, FeedRange, FeedScope, QueryItemIterator},
     models::TransactionalBatch,
-    models::{BatchResponse, ItemResponse, ResourceResponse},
+    models::{BatchResponse, ChangeFeedItem, ItemResponse, ResourceResponse},
     models::{ContainerProperties, PatchInstructions, ThroughputProperties},
     options::{
         BatchOptions, ChangeFeedMode, ChangeFeedOptions, ChangeFeedStartFrom,
@@ -866,7 +866,7 @@ impl ContainerClient {
     /// The change feed provides an ordered list of changes made to items in the
     /// container. Every change is returned as a
     /// [`ChangeFeedItem<T>`](crate::models::ChangeFeedItem) wire-format
-    /// envelope, so bind `T = ChangeFeedItem<YourDoc>` and read the post-change
+    /// envelope, so bind `T = YourDoc` and read the post-change
     /// document via [`current()`](crate::models::ChangeFeedItem::current).
     ///
     /// The [`mode`](crate::options::ChangeFeedOptions::mode) selects what each
@@ -910,10 +910,7 @@ impl ContainerClient {
     /// Read the latest version of each change from the beginning:
     ///
     /// ```rust,no_run
-    /// use azure_data_cosmos::{
-    ///     clients::ContainerClient, feed::FeedScope, models::ChangeFeedItem,
-    ///     options::ChangeFeedStartFrom,
-    /// };
+    /// use azure_data_cosmos::{clients::ContainerClient, feed::FeedScope, options::ChangeFeedStartFrom};
     /// use futures::StreamExt;
     /// use serde::Deserialize;
     ///
@@ -923,7 +920,7 @@ impl ContainerClient {
     /// # async fn example(container: ContainerClient) -> Result<(), Box<dyn std::error::Error>> {
     /// // Read all changes from the beginning
     /// let mut pages = container
-    ///     .query_change_feed::<ChangeFeedItem<MyItem>>(
+    ///     .query_change_feed::<MyItem>(
     ///         FeedScope::full_container(),
     ///         ChangeFeedStartFrom::Beginning,
     ///         None,
@@ -948,7 +945,6 @@ impl ContainerClient {
     /// use azure_data_cosmos::{
     ///     clients::ContainerClient,
     ///     feed::FeedScope,
-    ///     models::ChangeFeedItem,
     ///     options::{ChangeFeedMode, ChangeFeedOptions, ChangeFeedStartFrom},
     /// };
     /// use futures::StreamExt;
@@ -965,7 +961,7 @@ impl ContainerClient {
     /// # async fn example(container: ContainerClient) -> Result<(), Box<dyn std::error::Error>> {
     /// let options = ChangeFeedOptions::default().with_mode(ChangeFeedMode::AllVersionsAndDeletes);
     /// let mut pages = container
-    ///     .query_change_feed::<ChangeFeedItem<MyItem>>(
+    ///     .query_change_feed::<MyItem>(
     ///         FeedScope::full_container(),
     ///         ChangeFeedStartFrom::Now,
     ///         Some(options),
@@ -986,7 +982,7 @@ impl ContainerClient {
         scope: FeedScope,
         start_from: ChangeFeedStartFrom,
         options: Option<ChangeFeedOptions>,
-    ) -> crate::Result<ChangeFeedPageIterator<T>> {
+    ) -> crate::Result<ChangeFeedPageIterator<ChangeFeedItem<T>>> {
         let options = options.unwrap_or_default();
 
         let feed_range = scope.into_feed_range(self.container_ref.partition_key_definition());

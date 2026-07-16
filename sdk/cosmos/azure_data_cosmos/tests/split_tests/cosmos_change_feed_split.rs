@@ -139,7 +139,7 @@ pub async fn change_feed_resume_across_split() -> Result<(), Box<dyn Error>> {
             // Drain the whole baseline from the beginning, then capture a resume
             // token at the caught-up position.
             let mut iterator = container_client
-                .query_change_feed::<ChangeFeedItem<MockItem>>(
+                .query_change_feed::<MockItem>(
                     FeedScope::full_container(),
                     ChangeFeedStartFrom::Beginning,
                     None,
@@ -186,7 +186,7 @@ pub async fn change_feed_resume_across_split() -> Result<(), Box<dyn Error>> {
             // Resume from the pre-split token: exactly the post-split changes
             // must surface, with no replayed baseline and no losses.
             let mut resumed = container_client
-                .query_change_feed::<ChangeFeedItem<MockItem>>(
+                .query_change_feed::<MockItem>(
                     FeedScope::full_container(),
                     // Ignored on resume: the token carries its own position.
                     ChangeFeedStartFrom::Beginning,
@@ -327,7 +327,7 @@ pub async fn change_feed_all_versions_and_deletes_resume_across_split() -> Resul
             // drain to a caught-up state to capture a resume token. `Now`
             // excludes the baseline, so nothing should be collected here.
             let mut iterator = container_client
-                .query_change_feed::<ChangeFeedItem<AvadDoc>>(
+                .query_change_feed::<AvadDoc>(
                     FeedScope::full_container(),
                     ChangeFeedStartFrom::Now,
                     Some(
@@ -379,7 +379,7 @@ pub async fn change_feed_all_versions_and_deletes_resume_across_split() -> Resul
             // Resume from the pre-split token. The mode must be re-applied so the
             // resumed request also reads full fidelity.
             let mut resumed = container_client
-                .query_change_feed::<ChangeFeedItem<AvadDoc>>(
+                .query_change_feed::<AvadDoc>(
                     FeedScope::full_container(),
                     // Ignored on resume: the token carries its own position.
                     ChangeFeedStartFrom::Now,
