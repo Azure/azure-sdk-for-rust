@@ -927,9 +927,8 @@ pub async fn all_versions_and_deletes_fans_out_creates_across_partitions(
                 .filter(|e| e.operation_type() == Some(ChangeFeedOperationType::Create))
                 .filter_map(|e| e.current().and_then(|c| c.id.clone()))
                 .collect();
-            seen_ids.sort();
-            seen_ids.dedup();
-            expected_ids.sort();
+seen_ids.sort();
+expected_ids.sort();
 
             assert_eq!(
                 seen_ids, expected_ids,
