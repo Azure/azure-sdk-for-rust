@@ -259,11 +259,15 @@ sequenceDiagram
    `binary_json::to_vec(item)` → `with_body`, chosen in `serialize_item_body`.
 
 5. **Negotiation + enablement.** The SDK sets
-   `x-ms-cosmos-supported-serialization-formats: JsonText,CosmosBinary` on item
-   operations when enabled. Enablement resolves once at client construction,
-   preferring the explicit `CosmosClientBuilder::with_binary_encoding_enabled`
-   option and falling back to the `AZURE_COSMOS_BINARY_ENCODING_ENABLED`
-   environment variable.
+   `x-ms-cosmos-supported-serialization-formats` on item operations when
+   enabled: `JsonText,CosmosBinary` by default, or `JsonText` alone when the
+   caller opts into text responses via
+   `BinaryEncodingOptions::request_text_response` (write bodies stay binary; only
+   the response comes back as text). Enablement resolves once at client
+   construction, preferring the explicit
+   `CosmosClientBuilder::with_binary_encoding_options` /
+   `with_binary_encoding_enabled` option and falling back to the
+   `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment variable.
 
 ## 8. The codec layer in detail
 
@@ -369,16 +373,22 @@ small items, where the `Value` allocation dominated the fixed overhead.
 ## 9. Negotiation and enablement
 
 - **Request.** When binary is enabled, the SDK sets
-  `x-ms-cosmos-supported-serialization-formats: JsonText,CosmosBinary` on item
-  operations. The request `Content-Type` stays `application/json` — the service
-  detects the binary form from the first byte.
+  `x-ms-cosmos-supported-serialization-formats` on item operations. The value is
+  `JsonText,CosmosBinary` by default (the service may reply with binary), or
+  `JsonText` alone when `BinaryEncodingOptions::request_text_response` is `true`
+  (the service replies with text). Either way the request body is still Cosmos
+  binary JSON, and the request `Content-Type` stays `application/json` — the
+  service detects the binary form from the first byte.
 - **Response.** Decoding does **not** depend on negotiation: the SDK auto-detects
   the `0x80` preamble. Negotiation only governs whether the service *chooses* to
-  send binary.
-- **Enablement.** Resolved once at client construction from the
+  send binary; `request_text_response` lets a caller keep binary write bodies
+  while forcing text-JSON responses (for example, to ease debugging or to bridge
+  a consumer that only reads text).
+- **Enablement.** Resolved once at client construction, preferring the explicit
+  `CosmosClientBuilder::with_binary_encoding_options` /
+  `with_binary_encoding_enabled` option and falling back to the
   `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment variable; disabled by
-  default. A public builder option layering on the same variable is a planned
-  follow-up.
+  default.
 
 ## 10. Delivery status
 
