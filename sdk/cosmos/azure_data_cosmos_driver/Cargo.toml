@@ -18,7 +18,7 @@ categories = ["api-bindings"]
 arc-swap.workspace = true
 async-lock.workspace = true
 async-trait.workspace = true
-azure_core = { workspace = true, default-features = false, features = [
+azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.1", default-features = false, features = [
   "hmac_rust",
 ] }
 azure_data_cosmos_macros = { version = "0.3.0", path = "../azure_data_cosmos_macros" }
@@ -40,7 +40,7 @@ url.workspace = true
 uuid = { workspace = true, features = ["v4", "fast-rng"] }
 
 [dev-dependencies]
-azure_identity.workspace = true
+azure_identity = { path = "../../identity/azure_identity" }
 quick-xml.workspace = true
 serde = { workspace = true, features = ["derive"] }
 tokio = { workspace = true, features = [

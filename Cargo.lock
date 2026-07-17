@@ -350,13 +350,10 @@ dependencies = [
  "azure_core_macros 1.0.0",
  "bytes",
  "futures",
- "hmac",
- "openssl",
  "pin-project",
  "rustc_version",
  "serde",
  "serde_json",
- "sha2",
  "tokio",
  "tracing",
  "typespec 1.1.0",
@@ -370,8 +367,8 @@ dependencies = [
  "async-lock",
  "async-trait",
  "azure_core_examples",
- "azure_core_macros 1.0.0",
- "azure_core_test",
+ "azure_core_macros 1.1.0-beta.1",
+ "azure_core_test 0.2.0",
  "bytes",
  "clap",
  "criterion",
@@ -391,8 +388,8 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "typespec 1.1.0",
- "typespec_client_core 1.1.0",
+ "typespec 1.2.0-beta.1",
+ "typespec_client_core 1.2.0-beta.1",
  "ureq",
 ]
 
@@ -423,7 +420,7 @@ name = "azure_core_amqp"
 version = "1.2.0-beta.1"
 dependencies = [
  "async-trait",
- "azure_core 1.1.0",
+ "azure_core 1.2.0-beta.1",
  "fe2o3-amqp",
  "fe2o3-amqp-cbs",
  "fe2o3-amqp-ext",
@@ -436,8 +433,8 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "typespec 1.1.0",
- "typespec_macros 1.0.0",
+ "typespec 1.2.0-beta.1",
+ "typespec_macros 1.1.0-beta.1",
 ]
 
 [[package]]
@@ -492,10 +489,10 @@ dependencies = [
 name = "azure_core_opentelemetry"
 version = "1.1.0-beta.1"
 dependencies = [
- "azure_core 1.1.0",
- "azure_core_test",
- "azure_core_test_macros",
- "azure_identity 1.0.0",
+ "azure_core 1.2.0-beta.1",
+ "azure_core_test 0.2.0",
+ "azure_core_test_macros 0.2.0",
+ "azure_identity 1.1.0-beta.1",
  "opentelemetry 0.32.0",
  "opentelemetry_sdk 0.32.1",
  "tokio",
@@ -508,10 +505,10 @@ name = "azure_core_test"
 version = "0.2.0"
 dependencies = [
  "async-trait",
- "azure_core 1.1.0",
+ "azure_core 1.2.0-beta.1",
  "azure_core_examples",
- "azure_core_test_macros",
- "azure_identity 1.0.0",
+ "azure_core_test_macros 0.2.0",
+ "azure_identity 1.1.0-beta.1",
  "clap",
  "dotenvy",
  "flate2",
@@ -531,14 +528,50 @@ dependencies = [
 ]
 
 [[package]]
+name = "azure_core_test"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "423811903719b761b345ab1ba1e125100d98e4aa911a676485d6d1dfce67aee5"
+dependencies = [
+ "async-trait",
+ "azure_core 1.1.0",
+ "azure_core_test_macros 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "azure_identity 1.0.0",
+ "clap",
+ "dotenvy",
+ "flate2",
+ "futures",
+ "rand 0.10.1",
+ "rand_chacha 0.10.0",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tar",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "url",
+ "zip",
+]
+
+[[package]]
 name = "azure_core_test_macros"
 version = "0.2.0"
 dependencies = [
- "azure_core_test",
  "proc-macro2",
  "quote",
  "syn 2.0.117",
- "tokio",
+]
+
+[[package]]
+name = "azure_core_test_macros"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5fe1867a46636fc240f3e136379cb498dcebc2ea9f779c5f263346a0df34389f"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
 ]
 
 [[package]]
@@ -547,10 +580,10 @@ version = "0.37.0"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 1.1.0",
- "azure_core_test",
+ "azure_core 1.2.0-beta.1",
+ "azure_core_test 0.2.0",
  "azure_data_cosmos_driver",
- "azure_identity 1.0.0",
+ "azure_identity 1.1.0-beta.1",
  "base64 0.22.1",
  "clap",
  "futures",
@@ -572,7 +605,7 @@ name = "azure_data_cosmos_benchmarks"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "azure_core 1.1.0",
+ "azure_core 1.2.0-beta.1",
  "azure_data_cosmos_driver",
  "criterion",
  "tokio",
@@ -586,9 +619,9 @@ dependencies = [
  "arc-swap",
  "async-lock",
  "async-trait",
- "azure_core 1.1.0",
+ "azure_core 1.2.0-beta.1",
  "azure_data_cosmos_macros",
- "azure_identity 1.0.0",
+ "azure_identity 1.1.0-beta.1",
  "backtrace",
  "base64 0.22.1",
  "bytes",
@@ -614,7 +647,7 @@ dependencies = [
 name = "azure_data_cosmos_driver_native"
 version = "0.1.0"
 dependencies = [
- "azure_core 1.1.0",
+ "azure_core 1.2.0-beta.1",
  "azure_data_cosmos_driver",
  "cbindgen",
  "futures",
@@ -654,10 +687,10 @@ name = "azure_data_cosmos_perf"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "azure_core 1.1.0",
+ "azure_core 1.2.0-beta.1",
  "azure_data_cosmos",
  "azure_data_cosmos_driver",
- "azure_identity 1.0.0",
+ "azure_identity 1.1.0-beta.1",
  "clap",
  "console-subscriber",
  "futures",
@@ -697,9 +730,9 @@ version = "1.1.0-beta.1"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 1.1.0",
+ "azure_core 1.2.0-beta.1",
  "azure_core_examples",
- "azure_core_test",
+ "azure_core_test 0.2.0",
  "clap",
  "futures",
  "include-file",
@@ -725,7 +758,7 @@ dependencies = [
  "async-trait",
  "azure_core 1.1.0",
  "azure_core_amqp 1.1.0",
- "azure_core_test",
+ "azure_core_test 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "azure_identity 1.0.0",
  "azure_messaging_eventhubs",
  "base64 0.22.1",
@@ -750,10 +783,10 @@ dependencies = [
  "async-trait",
  "azure_core 1.1.0",
  "azure_core_opentelemetry 1.0.0",
- "azure_core_test",
+ "azure_core_test 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "azure_identity 1.0.0",
  "azure_messaging_eventhubs",
- "azure_storage_blob",
+ "azure_storage_blob 1.0.0",
  "futures",
  "opentelemetry 0.32.0",
  "opentelemetry-appender-tracing",
@@ -776,7 +809,7 @@ dependencies = [
  "async-trait",
  "azure_core 1.1.0",
  "azure_core_amqp 1.1.0",
- "azure_core_test",
+ "azure_core_test 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "azure_identity 1.0.0",
  "futures",
  "rand 0.10.1",
@@ -795,9 +828,9 @@ version = "1.1.0-beta.2"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 1.1.0",
- "azure_core_test",
- "azure_identity 1.0.0",
+ "azure_core 1.2.0-beta.1",
+ "azure_core_test 0.2.0",
+ "azure_identity 1.1.0-beta.1",
  "azure_security_keyvault_keys",
  "azure_security_keyvault_test",
  "futures",
@@ -817,9 +850,9 @@ version = "1.1.0-beta.1"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 1.1.0",
- "azure_core_test",
- "azure_identity 1.0.0",
+ "azure_core 1.2.0-beta.1",
+ "azure_core_test 0.2.0",
+ "azure_identity 1.1.0-beta.1",
  "azure_security_keyvault_test",
  "clap",
  "criterion",
@@ -841,9 +874,9 @@ version = "1.1.0-beta.1"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 1.1.0",
- "azure_core_test",
- "azure_identity 1.0.0",
+ "azure_core 1.2.0-beta.1",
+ "azure_core_test 0.2.0",
+ "azure_identity 1.1.0-beta.1",
  "azure_security_keyvault_test",
  "clap",
  "futures",
@@ -866,13 +899,32 @@ dependencies = [
 
 [[package]]
 name = "azure_storage_blob"
-version = "1.1.0-beta.2"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1756febbcca86c862ef718b983b505d08bd65a9bc984a915b0a16af4a4c3fe5b"
 dependencies = [
  "async-stream",
  "async-trait",
  "azure_core 1.1.0",
- "azure_core_test",
- "azure_identity 1.0.0",
+ "bytes",
+ "futures",
+ "percent-encoding",
+ "pin-project",
+ "serde",
+ "serde_json",
+ "time",
+ "tokio",
+]
+
+[[package]]
+name = "azure_storage_blob"
+version = "1.1.0-beta.2"
+dependencies = [
+ "async-stream",
+ "async-trait",
+ "azure_core 1.2.0-beta.1",
+ "azure_core_test 0.2.0",
+ "azure_identity 1.1.0-beta.1",
  "azure_storage_common",
  "azure_storage_sas",
  "bytes",
@@ -905,9 +957,9 @@ name = "azure_storage_queue"
 version = "1.1.0-beta.2"
 dependencies = [
  "async-trait",
- "azure_core 1.1.0",
- "azure_core_test",
- "azure_identity 1.0.0",
+ "azure_core 1.2.0-beta.1",
+ "azure_core_test 0.2.0",
+ "azure_identity 1.1.0-beta.1",
  "azure_storage_common",
  "azure_storage_sas",
  "futures",
@@ -921,7 +973,7 @@ dependencies = [
 name = "azure_storage_sas"
 version = "0.2.0"
 dependencies = [
- "azure_core 1.1.0",
+ "azure_core 1.2.0-beta.1",
  "azure_storage_common",
  "base64 0.22.1",
  "hmac",
@@ -4315,7 +4367,6 @@ dependencies = [
  "pin-project",
  "rand 0.10.1",
  "reqwest",
- "rust_decimal",
  "serde",
  "serde_json",
  "time",
@@ -4347,8 +4398,8 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "typespec 1.1.0",
- "typespec_macros 1.0.0",
+ "typespec 1.2.0-beta.1",
+ "typespec_macros 1.1.0-beta.1",
  "url",
  "uuid",
 ]
@@ -4376,7 +4427,7 @@ dependencies = [
  "serde_json",
  "syn 2.0.117",
  "tokio",
- "typespec_client_core 1.1.0",
+ "typespec_client_core 1.2.0-beta.1",
 ]
 
 [[package]]

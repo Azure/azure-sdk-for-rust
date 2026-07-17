@@ -149,9 +149,11 @@ You are an expert Rust programmer. You write safe, efficient, maintainable, and 
 ### Dependencies
 
 - Dependencies should be defined in the root workspace's `Cargo.toml` file.
-- Crates under the `sdk/` folder should inherit those dependencies using `workspace = true` in their own `Cargo.toml` files.
-- Service crates should generally use workspace-managed internal dependencies, which typically resolve to published versions.
-- If a crate needs unreleased changes from `sdk/core`, use an explicit `path + version` dependency on that core crate instead of `workspace = true`.
+- Published dependencies should generally inherit the root workspace entry with `workspace = true`; this is the default for crates under `sdk/`.
+- When a crate needs unreleased changes, depend on the local crate with both `path` and `version`.
+- Local dev-dependencies should generally be `path`-only so `cargo package` can validate publishable crates without requiring unpublished versions from crates.io.
+- In `sdk/core`, keep dependency versions managed from the root workspace and use local `path + version` only when the core stack (`typespec -> typespec_client_core -> azure_core`) must move together on unreleased changes.
+- Outside `sdk/core`, crates should usually inherit workspace dependencies that resolve to published versions; switch to local `path + version` on `sdk/core` crates only when they require unreleased core changes.
 
 ### General
 
