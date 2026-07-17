@@ -993,22 +993,34 @@ impl ContainerClient {
         let mut initial_operation = match options.mode {
             ChangeFeedMode::AllVersionsAndDeletes => {
                 // AllVersionsAndDeletes can only read within the container's
-                // retention window, so "from the beginning of all history" is
-                // not a valid start. Reject it with a clear client error rather
-                // than issuing a request the service would refuse.
+                // retention / continuous-backup window, so it supports starting
+                // only from "now" or by resuming a continuation token. Reading
+                // from the beginning of the container or from an arbitrary point
+                // in time is not supported by the service in this mode (this
+                // mirrors the .NET/Java SDKs, which reject `Time` for all
+                // versions and deletes), so reject those starts with a clear
+                // client error rather than issuing a request the service would
+                // refuse. On resume (a continuation token is present) the
+                // persisted per-partition markers drive the read, so the start
+                // position is not re-validated here.
                 if options.feed.continuation_token.is_none()
-                    && start_from == ChangeFeedStartFrom::Beginning
+                    && matches!(
+                        start_from,
+                        ChangeFeedStartFrom::Beginning | ChangeFeedStartFrom::PointInTime(_)
+                    )
                 {
                     return Err(crate::DriverCosmosError::builder()
                         .with_status(crate::error::CosmosStatus::new(
                             azure_core::http::StatusCode::BadRequest,
                         ))
                         .with_message(
-                            "ChangeFeedStartFrom::Beginning is not supported for \
-                             ChangeFeedMode::AllVersionsAndDeletes because intermediate versions \
-                             and deletes are only retained within the container's retention / \
-                             continuous-backup window; use ChangeFeedStartFrom::Now or a \
-                             ChangeFeedStartFrom::PointInTime within the retention window",
+                            "ChangeFeedMode::AllVersionsAndDeletes only supports starting from \
+                             ChangeFeedStartFrom::Now or resuming from a continuation token. \
+                             Reading from the beginning of the container \
+                             (ChangeFeedStartFrom::Beginning) or from an arbitrary point in time \
+                             (ChangeFeedStartFrom::PointInTime) is not supported in this mode \
+                             because intermediate versions and deletes are only retained within \
+                             the container's retention / continuous-backup window.",
                         )
                         .build()
                         .into());

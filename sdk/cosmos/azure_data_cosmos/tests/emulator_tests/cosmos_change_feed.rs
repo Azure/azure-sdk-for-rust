@@ -30,6 +30,7 @@ use std::error::Error;
 use std::num::NonZeroU32;
 use std::time::Duration;
 
+use azure_core::http::StatusCode;
 use azure_data_cosmos::clients::{ContainerClient, DatabaseClient};
 use azure_data_cosmos::feed::{ChangeFeedPageIterator, ContinuationToken, FeedScope};
 use azure_data_cosmos::models::{
@@ -940,6 +941,63 @@ pub async fn all_versions_and_deletes_fans_out_creates_across_partitions(
         // fanning the creates out across every physical partition has room to
         // complete instead of being force-killed at the default 80s.
         Some(TestOptions::for_emulator().with_timeout(Duration::from_secs(210))),
+    )
+    .await
+}
+
+/// AllVersionsAndDeletes rejects a `PointInTime` start.
+///
+/// Full-fidelity reads can only start from "now" or resume from a continuation
+/// token within the container's retention / continuous-backup window; the
+/// service does not support reading from an arbitrary point in time in this
+/// mode. This mirrors the .NET and Java SDKs, which reject
+/// `ChangeFeedStartFrom.Time` for all-versions-and-deletes. The client rejects
+/// it up front with a `BadRequest` rather than issuing a request the service
+/// would refuse.
+///
+/// Gated on `test_category = "emulator"` only: full-fidelity reads are not
+/// supported by the vnext (Linux) emulator.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator' (the vnext emulator does not support full-fidelity change feed)"
+)]
+pub async fn all_versions_and_deletes_rejects_point_in_time_start() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container = create_avad_container(
+                &run_context,
+                db_client,
+                "AvadRejectPointInTime",
+                Duration::from_secs(5 * 60),
+                None,
+            )
+            .await?;
+
+            let result = container
+                .query_change_feed::<AvadItem>(
+                    FeedScope::partition("1"),
+                    ChangeFeedStartFrom::PointInTime(OffsetDateTime::now_utc()),
+                    Some(
+                        ChangeFeedOptions::default()
+                            .with_mode(ChangeFeedMode::AllVersionsAndDeletes),
+                    ),
+                )
+                .await;
+
+            let err = result
+                .err()
+                .expect("PointInTime start must be rejected for AllVersionsAndDeletes");
+            assert_eq!(
+                StatusCode::BadRequest,
+                err.status().status_code(),
+                "expected BadRequest (400) for AVAD + PointInTime, got {:?}",
+                err.status().status_code()
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::for_emulator()),
     )
     .await
 }
