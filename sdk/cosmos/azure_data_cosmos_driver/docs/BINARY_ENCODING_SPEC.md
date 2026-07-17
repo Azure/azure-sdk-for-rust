@@ -48,8 +48,8 @@ text-equivalent results.
   (see [ARCHITECTURE.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/ARCHITECTURE.md)).
 - Make decoding robust via **first-byte auto-detection**, independent of
   header negotiation.
-- Offer an opt-in **text-response** mode
-  (`BinaryEncodingOptions::request_text_response`) that keeps the wire binary in
+- Offer an opt-in **text-response** mode via
+  `BinaryEncodingOptions::request_text_response` that keeps the wire binary in
   both directions but has the **driver transcode** the binary response to text
   JSON, so an application can deal only in text while still benefiting from the
   efficient binary transport (see [§9.1](#91-driver-side-transcoding)).
@@ -208,10 +208,9 @@ Key facts (verified against the current tree):
   *parses* item bodies; its encode-side change is emitting the negotiation
   header. The one schema-agnostic transform it performs is **binary→text
   transcoding** when the operation sets `transcode_response_to_text` (for
-  `BinaryEncodingOptions::request_text_response`) — a byte-level
-  `decode → serde_json::to_vec` that needs no type knowledge (see
-  [§9.1](#91-driver-side-transcoding)). The lone body-*parsing* exception is the
-  patch handler — and patch is deferred.
+  `request_text_response`) — a byte-level `decode → serde_json::to_vec` that
+  needs no type knowledge (see [§9.1](#91-driver-side-transcoding)). The lone
+  body-*parsing* exception is the patch handler — and patch is deferred.
 
 ### 6.1 Sequence — write then read (binary enabled)
 
