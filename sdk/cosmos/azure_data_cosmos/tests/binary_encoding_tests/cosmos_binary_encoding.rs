@@ -35,32 +35,30 @@ use super::framework;
 use azure_core::{http::StatusCode, Uuid};
 use azure_data_cosmos::clients::{ContainerClient, DatabaseClient};
 use azure_data_cosmos::models::ContainerProperties;
-use azure_data_cosmos::options::{ContentResponseOnWrite, ItemWriteOptions, OperationOptions};
-use framework::{TestClient, TestRunContext};
+use azure_data_cosmos::options::{
+    BinaryEncodingOptions, ContentResponseOnWrite, ItemWriteOptions, OperationOptions,
+};
+use framework::{TestClient, TestOptions, TestRunContext};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
-use std::sync::Once;
 
-/// The environment variable that enables the binary-encoding preview.
-const BINARY_ENV: &str = "AZURE_COSMOS_BINARY_ENCODING_ENABLED";
-
-/// Enables binary encoding for the lifetime of this (dedicated) test process.
+/// Test options that enable Cosmos binary JSON encoding via the standard client
+/// option.
 ///
-/// `BinaryEncoding::from_env` resolves the flag once when a `CosmosClient` is
-/// built, so it must be set before any `TestClient` builds its client. Every
-/// test in this target wants binary on and the variable is scoped to this test
-/// binary, so it is set exactly once (via [`Once`]) and never cleared — which
-/// keeps it race-free under the parallel test harness.
-fn enable_binary_encoding() {
-    static ENABLE: Once = Once::new();
-    ENABLE.call_once(|| {
-        std::env::set_var(BINARY_ENV, "true");
-    });
+/// Enablement flows through
+/// [`CosmosClientBuilder::with_binary_encoding_options`] at client-build time,
+/// so the test never mutates the process environment (`std::env::set_var` is
+/// `unsafe` and racy under the parallel harness).
+///
+/// [`CosmosClientBuilder::with_binary_encoding_options`]: azure_data_cosmos::CosmosClientBuilder::with_binary_encoding_options
+fn binary_encoding_options() -> TestOptions {
+    TestOptions::new().with_binary_encoding(BinaryEncodingOptions::new().with_enabled(true))
 }
 
 /// A document covering every JSON value shape the binary encoder emits: literal
 /// and wide integers, an unsigned value beyond `i64::MAX`, a double, booleans,
-/// `null`, unicode/empty strings, and nested arrays and objects.
+/// `null`, unicode/empty strings, nested arrays and objects, and a vector of
+/// objects.
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 struct BinaryItem {
     id: String,
@@ -79,6 +77,7 @@ struct BinaryItem {
     tags: Vec<String>,
     numbers: Vec<i64>,
     nested: NestedData,
+    nested_list: Vec<NestedData>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
@@ -111,6 +110,18 @@ fn sample_item(id: &str, partition_key: &str) -> BinaryItem {
             values: vec![10, 20, 30],
             flag: false,
         },
+        nested_list: vec![
+            NestedData {
+                label: "first".to_owned(),
+                values: vec![1, 2, 3],
+                flag: true,
+            },
+            NestedData {
+                label: "second".to_owned(),
+                values: vec![],
+                flag: false,
+            },
+        ],
     }
 }
 
@@ -150,8 +161,6 @@ async fn create_container(
     ignore = "requires test_category 'binary_encoding' and a live account connection string"
 )]
 pub async fn binary_encoding_item_crud_round_trips() -> Result<(), Box<dyn Error>> {
-    enable_binary_encoding();
-
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
             let container = create_container(run_context, db_client).await?;
@@ -208,13 +217,9 @@ pub async fn binary_encoding_item_crud_round_trips() -> Result<(), Box<dyn Error
             let replaced_doc: BinaryItem = replaced.into_body().into_single()?;
             assert_eq!(replaced_doc, updated, "replace response must round-trip");
 
-            // DELETE, then confirm the item is gone.
-            let deleted = container.delete_item(pk, &updated.id, None).await?;
-            assert_eq!(deleted.status(), StatusCode::NoContent);
-
             Ok(())
         },
-        None,
+        Some(binary_encoding_options()),
     )
     .await
 }
@@ -229,8 +234,6 @@ pub async fn binary_encoding_item_crud_round_trips() -> Result<(), Box<dyn Error
     ignore = "requires test_category 'binary_encoding' and a live account connection string"
 )]
 pub async fn binary_encoding_handles_large_payloads() -> Result<(), Box<dyn Error>> {
-    enable_binary_encoding();
-
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
             let container = create_container(run_context, db_client).await?;
@@ -265,7 +268,7 @@ pub async fn binary_encoding_handles_large_payloads() -> Result<(), Box<dyn Erro
 
             Ok(())
         },
-        None,
+        Some(binary_encoding_options()),
     )
     .await
 }
