@@ -403,6 +403,21 @@ pub(crate) fn wrap_request_for_gateway_v2(
     })
 }
 
+// Header names consulted as an outer-HTTP fallback in
+// `unwrap_response_for_gateway_v2` below when the RNTBD response frame
+// itself doesn't carry the corresponding field. `HeaderName::from_static`
+// does no per-call work (it just wraps the `&'static str`), but there's no
+// reason to re-derive these six on every response either, so build the
+// list once as a `static` rather than as a fresh array literal per call.
+static OUTER_FALLBACK_HEADERS: [HeaderName; 6] = [
+    HeaderName::from_static(response_header_names::SERVER_DURATION_MS),
+    HeaderName::from_static(response_header_names::LSN),
+    HeaderName::from_static(response_header_names::ITEM_LSN),
+    X_MS_GLOBAL_COMMITTED_LSN,
+    HeaderName::from_static(response_header_names::QUERY_METRICS),
+    HeaderName::from_static(response_header_names::INDEX_METRICS),
+];
+
 /// Decodes a Gateway 2.0 RNTBD response body into a synthetic HTTP response.
 pub(crate) fn unwrap_response_for_gateway_v2(
     response: HttpResponse,
@@ -410,23 +425,15 @@ pub(crate) fn unwrap_response_for_gateway_v2(
     // Only these headers are ever consulted as an outer-HTTP fallback below,
     // so capture just their (at most six) values instead of cloning the
     // entire response header map up front.
-    let outer_fallbacks: Vec<(HeaderName, String)> = [
-        response_header_names::SERVER_DURATION_MS,
-        response_header_names::LSN,
-        response_header_names::ITEM_LSN,
-        response_header_names::GLOBAL_COMMITTED_LSN,
-        response_header_names::QUERY_METRICS,
-        response_header_names::INDEX_METRICS,
-    ]
-    .into_iter()
-    .filter_map(|name| {
-        let header = HeaderName::from_static(name);
-        response
-            .headers
-            .get_optional_str(&header)
-            .map(|value| (header, value.to_owned()))
-    })
-    .collect();
+    let outer_fallbacks: Vec<(HeaderName, String)> = OUTER_FALLBACK_HEADERS
+        .iter()
+        .filter_map(|header| {
+            response
+                .headers
+                .get_optional_str(header)
+                .map(|value| (header.clone(), value.to_owned()))
+        })
+        .collect();
     let response = RntbdResponse::read(&response.body)?;
     let status = u16::from(response.status.status_code());
     if !(100..=599).contains(&status) {
