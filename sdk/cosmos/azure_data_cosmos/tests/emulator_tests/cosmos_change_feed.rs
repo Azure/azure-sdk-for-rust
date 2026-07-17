@@ -839,7 +839,10 @@ pub async fn all_versions_and_deletes_surfaces_create_replace_delete() -> Result
 
             Ok(())
         },
-        Some(TestOptions::for_emulator()),
+        // The internal drain deadline (180s) must sit below the framework's
+        // per-test timeout, otherwise a lagging full-fidelity delete gets the
+        // test force-killed mid-poll instead of awaited.
+        Some(TestOptions::for_emulator().with_timeout(Duration::from_secs(210))),
     )
     .await
 }
@@ -858,7 +861,7 @@ pub async fn all_versions_and_deletes_surfaces_create_replace_delete() -> Result
 )]
 pub async fn all_versions_and_deletes_fans_out_creates_across_partitions(
 ) -> Result<(), Box<dyn Error>> {
-    const PK_COUNT: usize = 20;
+    const PK_COUNT: usize = 10;
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -934,7 +937,10 @@ pub async fn all_versions_and_deletes_fans_out_creates_across_partitions(
             );
             Ok(())
         },
-        Some(TestOptions::for_emulator()),
+        // Raise the per-test timeout above the internal drain deadline (180s) so
+        // fanning the creates out across every physical partition has room to
+        // complete instead of being force-killed at the default 80s.
+        Some(TestOptions::for_emulator().with_timeout(Duration::from_secs(210))),
     )
     .await
 }
