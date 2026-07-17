@@ -752,7 +752,7 @@ mod tests {
                     response_status: StatusCode::Ok,
                     response_headers: Headers::default(),
                     response_format: format!(r#"{{"token_type":"Bearer","expires_in":"85770","expires_on":"{}","ext_expires_in":86399,"access_token":"*","resource":"{}"}}"#, EXPIRES_ON, LIVE_TEST_RESOURCE).to_string(),
-                }
+                },
             ],
             None,
         ).await;
