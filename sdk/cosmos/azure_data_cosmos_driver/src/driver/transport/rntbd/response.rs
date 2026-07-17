@@ -48,6 +48,14 @@ pub(crate) struct RntbdResponse {
     pub(crate) transport_request_id: Option<u32>,
     /// Session token for session consistency.
     pub(crate) session_token: Option<String>,
+    /// Item count for feed-style (query/read-feed) responses.
+    pub(crate) item_count: Option<u32>,
+    /// Serialized query execution metrics.
+    pub(crate) query_metrics: Option<String>,
+    /// Serialized index utilization/advice metrics.
+    pub(crate) index_utilization: Option<String>,
+    /// Backend request duration in milliseconds.
+    pub(crate) request_duration_ms: Option<f64>,
 }
 
 impl RntbdResponse {
@@ -131,6 +139,30 @@ impl RntbdResponse {
                 TokenValue::String(value.clone()),
             ));
         }
+        if let Some(value) = self.item_count {
+            metadata.push(Token::new(
+                RntbdResponseToken::ItemCount,
+                TokenValue::ULong(value),
+            ));
+        }
+        if let Some(value) = &self.query_metrics {
+            metadata.push(Token::new(
+                RntbdResponseToken::QueryMetrics,
+                TokenValue::String(value.clone()),
+            ));
+        }
+        if let Some(value) = &self.index_utilization {
+            metadata.push(Token::new(
+                RntbdResponseToken::IndexUtilization,
+                TokenValue::String(value.clone()),
+            ));
+        }
+        if let Some(value) = self.request_duration_ms {
+            metadata.push(Token::new(
+                RntbdResponseToken::RequestDurationMilliseconds,
+                TokenValue::Double(value),
+            ));
+        }
 
         let metadata_len: usize = metadata.iter().map(Token::encoded_len).sum();
         let header_len = u32::try_from(24 + metadata_len)
@@ -195,6 +227,10 @@ impl RntbdResponse {
         let mut global_committed_lsn = None;
         let mut transport_request_id = None;
         let mut session_token = None;
+        let mut item_count = None;
+        let mut query_metrics = None;
+        let mut index_utilization = None;
+        let mut request_duration_ms = None;
 
         while !frame.is_empty() {
             let token = Token::read_from(&mut frame)?;
@@ -238,6 +274,18 @@ impl RntbdResponse {
                 Ok(RntbdResponseToken::SessionToken) => {
                     session_token = Some(expect_string(token, "SessionToken")?);
                 }
+                Ok(RntbdResponseToken::ItemCount) => {
+                    item_count = Some(expect_u32(token, "ItemCount")?);
+                }
+                Ok(RntbdResponseToken::QueryMetrics) => {
+                    query_metrics = Some(expect_string(token, "QueryMetrics")?);
+                }
+                Ok(RntbdResponseToken::IndexUtilization) => {
+                    index_utilization = Some(expect_string(token, "IndexUtilization")?);
+                }
+                Ok(RntbdResponseToken::RequestDurationMilliseconds) => {
+                    request_duration_ms = Some(expect_f64(token, "RequestDurationMilliseconds")?);
+                }
                 Err(()) => {}
             }
         }
@@ -271,6 +319,10 @@ impl RntbdResponse {
             global_committed_lsn,
             transport_request_id,
             session_token,
+            item_count,
+            query_metrics,
+            index_utilization,
+            request_duration_ms,
         })
     }
 }
@@ -325,6 +377,10 @@ mod tests {
             global_committed_lsn: Some(13),
             transport_request_id: Some(14),
             session_token: Some("1#12".to_owned()),
+            item_count: Some(15),
+            query_metrics: Some("totalExecutionTimeInMs=1.5".to_owned()),
+            index_utilization: Some("{}".to_owned()),
+            request_duration_ms: Some(2.5),
         };
         let mut bytes = Vec::new();
         response.write(&mut bytes).unwrap();

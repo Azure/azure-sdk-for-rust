@@ -671,6 +671,14 @@ pub(super) enum RntbdResponseToken {
     TransportRequestId,
     /// Session token.
     SessionToken,
+    /// Item count for feed-style (query/read-feed) responses.
+    ItemCount,
+    /// Serialized query execution metrics.
+    QueryMetrics,
+    /// Serialized index utilization/advice metrics.
+    IndexUtilization,
+    /// Backend request duration in milliseconds.
+    RequestDurationMilliseconds,
 }
 
 impl From<RntbdResponseToken> for TokenId {
@@ -681,14 +689,18 @@ impl From<RntbdResponseToken> for TokenId {
             RntbdResponseToken::ETag => 0x0004,
             RntbdResponseToken::RetryAfterMilliseconds => 0x000C,
             RntbdResponseToken::Lsn => 0x0013,
+            RntbdResponseToken::ItemCount => 0x0014,
             RntbdResponseToken::RequestCharge => 0x0015,
             RntbdResponseToken::OwnerFullName => 0x0017,
             RntbdResponseToken::SubStatus => 0x001C,
             RntbdResponseToken::PartitionKeyRangeId => 0x0021,
-            RntbdResponseToken::ItemLsn => 0x0032,
+            RntbdResponseToken::QueryMetrics => 0x0028,
             RntbdResponseToken::GlobalCommittedLsn => 0x0029,
+            RntbdResponseToken::ItemLsn => 0x0032,
             RntbdResponseToken::TransportRequestId => 0x0035,
             RntbdResponseToken::SessionToken => 0x003E,
+            RntbdResponseToken::IndexUtilization => 0x0044,
+            RntbdResponseToken::RequestDurationMilliseconds => 0x0051,
         })
     }
 }
@@ -703,14 +715,18 @@ impl TryFrom<u16> for RntbdResponseToken {
             0x0004 => Ok(Self::ETag),
             0x000C => Ok(Self::RetryAfterMilliseconds),
             0x0013 => Ok(Self::Lsn),
+            0x0014 => Ok(Self::ItemCount),
             0x0015 => Ok(Self::RequestCharge),
             0x0017 => Ok(Self::OwnerFullName),
             0x001C => Ok(Self::SubStatus),
             0x0021 => Ok(Self::PartitionKeyRangeId),
+            0x0028 => Ok(Self::QueryMetrics),
             0x0032 => Ok(Self::ItemLsn),
             0x0029 => Ok(Self::GlobalCommittedLsn),
             0x0035 => Ok(Self::TransportRequestId),
             0x003E => Ok(Self::SessionToken),
+            0x0044 => Ok(Self::IndexUtilization),
+            0x0051 => Ok(Self::RequestDurationMilliseconds),
             _ => Err(()),
         }
     }

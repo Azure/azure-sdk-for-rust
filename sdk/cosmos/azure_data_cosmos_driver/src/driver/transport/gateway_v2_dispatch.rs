@@ -422,44 +422,10 @@ pub(crate) fn wrap_request_for_gateway_v2(
     })
 }
 
-// Header names consulted as an outer-HTTP fallback in
-// `unwrap_response_for_gateway_v2` below when the RNTBD response frame
-// itself doesn't carry the corresponding field. `HeaderName::from_static`
-// does no per-call work (it just wraps the `&'static str`), but there's no
-// reason to re-derive these seven on every response either, so build the
-// list once as a `static` rather than as a fresh array literal per call.
-//
-// `ITEM_COUNT` belongs here alongside `QUERY_METRICS`/`INDEX_METRICS`: like
-// them, it is page-level query-engine metadata the RNTBD frame schema has no
-// token for (see `RntbdResponseToken`), so Gateway 2.0 surfaces it only as an
-// outer HTTP header. Omitting it here silently dropped `x-ms-item-count` on
-// every Gateway 2.0 query response.
-static OUTER_FALLBACK_HEADERS: [HeaderName; 7] = [
-    HeaderName::from_static(response_header_names::SERVER_DURATION_MS),
-    HeaderName::from_static(response_header_names::LSN),
-    HeaderName::from_static(response_header_names::ITEM_LSN),
-    X_MS_GLOBAL_COMMITTED_LSN,
-    HeaderName::from_static(response_header_names::QUERY_METRICS),
-    HeaderName::from_static(response_header_names::INDEX_METRICS),
-    HeaderName::from_static(response_header_names::ITEM_COUNT),
-];
-
 /// Decodes a Gateway 2.0 RNTBD response body into a synthetic HTTP response.
 pub(crate) fn unwrap_response_for_gateway_v2(
     response: HttpResponse,
 ) -> azure_core::Result<HttpResponse> {
-    // Only these headers are ever consulted as an outer-HTTP fallback below,
-    // so capture just their (at most seven) values instead of cloning the
-    // entire response header map up front.
-    let outer_fallbacks: Vec<(HeaderName, String)> = OUTER_FALLBACK_HEADERS
-        .iter()
-        .filter_map(|header| {
-            response
-                .headers
-                .get_optional_str(header)
-                .map(|value| (header.clone(), value.to_owned()))
-        })
-        .collect();
     let response = RntbdResponse::read(&response.body)?;
     let status = u16::from(response.status.status_code());
     if !(100..=599).contains(&status) {
@@ -528,10 +494,20 @@ pub(crate) fn unwrap_response_for_gateway_v2(
     if let Some(owner_full_name) = response.owner_full_name {
         headers.insert(response_header_names::OWNER_FULL_NAME, owner_full_name);
     }
-    for (header, value) in outer_fallbacks {
-        if headers.get_optional_str(&header).is_none() {
-            headers.insert(header, value);
-        }
+    if let Some(item_count) = response.item_count {
+        headers.insert(response_header_names::ITEM_COUNT, item_count.to_string());
+    }
+    if let Some(query_metrics) = response.query_metrics {
+        headers.insert(response_header_names::QUERY_METRICS, query_metrics);
+    }
+    if let Some(index_utilization) = response.index_utilization {
+        headers.insert(response_header_names::INDEX_METRICS, index_utilization);
+    }
+    if let Some(request_duration_ms) = response.request_duration_ms {
+        headers.insert(
+            response_header_names::SERVER_DURATION_MS,
+            request_duration_ms.to_string(),
+        );
     }
 
     Ok(HttpResponse {
@@ -2008,6 +1984,10 @@ mod tests {
                     write_i64_token(tokens, 0x0032, 43);
                     write_i64_token(tokens, 0x0029, 44);
                     write_string_token(tokens, 0x0017, "dbs/db1/colls/coll1/docs/doc1");
+                    write_u32_token(tokens, 0x0014, 5);
+                    write_string_token(tokens, 0x0028, "metrics-blob");
+                    write_string_token(tokens, 0x0044, "index-blob");
+                    write_double_token(tokens, 0x0051, 12.5);
                 },
                 b"{}",
             ),
@@ -2070,70 +2050,11 @@ mod tests {
                 .get_optional_str(&X_MS_GLOBAL_COMMITTED_LSN),
             Some("44")
         );
-    }
-
-    #[test]
-    fn unwrap_applies_outer_http_fallback_headers_missing_from_rntbd_frame() {
-        // None of these seven are ever emitted as RNTBD response tokens (see
-        // `RntbdResponseToken`), so an empty token list forces every value in
-        // the assertions below to come from the outer HTTP headers captured
-        // before the frame is parsed, not from `RntbdResponse::read`.
-        let activity_id = Uuid::parse_str(ACTIVITY_ID).unwrap();
-        let mut headers = Headers::new();
-        headers.insert(
-            HeaderName::from_static(response_header_names::SERVER_DURATION_MS),
-            "12.5",
-        );
-        headers.insert(HeaderName::from_static(response_header_names::LSN), "7");
-        headers.insert(
-            HeaderName::from_static(response_header_names::ITEM_LSN),
-            "8",
-        );
-        headers.insert(X_MS_GLOBAL_COMMITTED_LSN, "9");
-        headers.insert(
-            HeaderName::from_static(response_header_names::QUERY_METRICS),
-            "metrics-blob",
-        );
-        headers.insert(
-            HeaderName::from_static(response_header_names::INDEX_METRICS),
-            "index-blob",
-        );
-        headers.insert(
-            HeaderName::from_static(response_header_names::ITEM_COUNT),
-            "1",
-        );
-
-        let response = HttpResponse {
-            status: 200,
-            headers,
-            body: response_frame(200, activity_id, |_| {}, b"{}"),
-        };
-
-        let unwrapped = unwrap_response_for_gateway_v2(response).unwrap();
-
-        assert_eq!(
-            unwrapped.headers.get_optional_str(&HeaderName::from_static(
-                response_header_names::SERVER_DURATION_MS
-            )),
-            Some("12.5")
-        );
         assert_eq!(
             unwrapped
                 .headers
-                .get_optional_str(&HeaderName::from_static(response_header_names::LSN)),
-            Some("7")
-        );
-        assert_eq!(
-            unwrapped
-                .headers
-                .get_optional_str(&HeaderName::from_static(response_header_names::ITEM_LSN)),
-            Some("8")
-        );
-        assert_eq!(
-            unwrapped
-                .headers
-                .get_optional_str(&X_MS_GLOBAL_COMMITTED_LSN),
-            Some("9")
+                .get_optional_str(&HeaderName::from_static(response_header_names::ITEM_COUNT)),
+            Some("5")
         );
         assert_eq!(
             unwrapped.headers.get_optional_str(&HeaderName::from_static(
@@ -2147,16 +2068,11 @@ mod tests {
             )),
             Some("index-blob")
         );
-        // Regression check for the outer-fallback list silently omitting
-        // `item_count`: Gateway 2.0 query responses carry `x-ms-item-count`
-        // only as an outer HTTP header (there is no RNTBD token for it), so a
-        // missing entry here previously made the driver report `item_count`
-        // as absent even when the service returned it.
         assert_eq!(
-            unwrapped
-                .headers
-                .get_optional_str(&HeaderName::from_static(response_header_names::ITEM_COUNT)),
-            Some("1")
+            unwrapped.headers.get_optional_str(&HeaderName::from_static(
+                response_header_names::SERVER_DURATION_MS
+            )),
+            Some("12.5")
         );
     }
 

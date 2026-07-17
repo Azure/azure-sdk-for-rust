@@ -494,23 +494,15 @@ async fn encode_response(
         global_committed_lsn: header_i64(headers, "x-ms-global-committed-lsn"),
         transport_request_id: header_u32(headers, "x-ms-transport-request-id"),
         session_token: header_string(headers, "x-ms-session-token"),
+        item_count: header_u32(headers, "x-ms-item-count"),
+        query_metrics: header_string(headers, "x-ms-documentdb-query-metrics"),
+        index_utilization: header_string(headers, "x-ms-cosmos-index-utilization"),
+        request_duration_ms: header_f64(headers, "x-ms-request-duration-ms"),
     };
     let mut body = Vec::new();
     rntbd.write(&mut body).map_err(gateway_v2_internal_error)?;
     let mut outer_headers = Headers::new();
     outer_headers.insert("content-type", "application/octet-stream");
-    for name in [
-        "x-ms-request-duration-ms",
-        "lsn",
-        "x-ms-item-lsn",
-        "x-ms-global-committed-lsn",
-        "x-ms-documentdb-query-metrics",
-        "x-ms-cosmos-index-utilization",
-    ] {
-        if let Some(value) = header_string(headers, name) {
-            outer_headers.insert(name, value);
-        }
-    }
     Ok(AsyncRawResponse::from_bytes(
         status.status_code(),
         outer_headers,
