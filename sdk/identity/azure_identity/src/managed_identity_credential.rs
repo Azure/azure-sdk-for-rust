@@ -311,6 +311,7 @@ mod tests {
         options: Option<ManagedIdentityCredentialOptions>,
         expected_source: ManagedIdentitySource,
         model_request_responses: Vec<MockRequestResponse>,
+        expected_token_err: Option<azure_core::Error>,
     ) {
         let actual_source = get_source(&env);
         assert_eq!(
@@ -396,13 +397,22 @@ mod tests {
         };
         let cred = ManagedIdentityCredential::new(Some(options)).expect("credential");
         for _ in 0..4 {
-            let token = cred.get_token(LIVE_TEST_SCOPES, None).await.expect("token");
-            assert_eq!(token.expires_on.unix_timestamp(), expires_on as i64);
-            assert_eq!(token.token.secret(), "*");
-            assert_eq!(
-                token_requests.load(Ordering::SeqCst),
-                expected_token_request_count
-            );
+            let token_result = cred.get_token(LIVE_TEST_SCOPES, None).await;
+
+            if let Some(expected_token_err) = &expected_token_err {
+                let actual_token_err =
+                    token_result.expect_err("Expected get_token to return an error");
+                assert_eq!(actual_token_err.kind(), expected_token_err.kind());
+                assert_eq!(actual_token_err.to_string(), expected_token_err.to_string());
+            } else {
+                let token = token_result.expect("Expected get_token to return a token");
+                assert_eq!(token.expires_on.unix_timestamp(), expires_on as i64);
+                assert_eq!(token.token.secret(), "*");
+                assert_eq!(
+                    token_requests.load(Ordering::SeqCst),
+                    expected_token_request_count
+                );
+            }
         }
     }
 
@@ -488,6 +498,7 @@ mod tests {
                 r#"{{"access_token":"*","expires_on":"{}","resource":"{}","token_type":"Bearer"}}"#,
                 EXPIRES_ON, LIVE_TEST_RESOURCE).to_string(),
             }],
+            None,
         )
         .await;
     }
@@ -592,6 +603,7 @@ mod tests {
                     response_format: String::from(r#"{"error":"unauthorized_client","error_description":"Missing Basic Authorization header","error_codes":[401]}"#),
                 },
             ],
+            None,
         ).await;
 
         let _ = fs::remove_file(token_path); // try our best to clean up the temp file
@@ -655,6 +667,7 @@ mod tests {
                     response_format: String::from(r#"{"error":"unauthorized_client","error_description":"Missing Basic Authorization header","error_codes":[401]}"#),
                 },
             ],
+            Some(azure_core::Error::with_message(ErrorKind::Credential, "ManagedIdentityCredential authentication failed. Arc challenge token file was larger than expected\nTo troubleshoot, visit https://aka.ms/azsdk/rust/identity/troubleshoot#managed-id")),
         ).await;
 
         let _ = fs::remove_file(token_path); // try our best to clean up the temp file
@@ -737,6 +750,7 @@ mod tests {
                 response_headers: Headers::default(),
                 response_format: format!(r#"{{"token_type":"Bearer","expires_in":"85770","expires_on":"{}","ext_expires_in":86399,"access_token":"*","resource":"{}"}}"#, EXPIRES_ON, LIVE_TEST_RESOURCE).to_string(),
             }],
+            None,
         ).await;
     }
 
