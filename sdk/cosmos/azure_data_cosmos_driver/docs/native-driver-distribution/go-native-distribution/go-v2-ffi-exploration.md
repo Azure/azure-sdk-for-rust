@@ -116,7 +116,7 @@ Two practical models were discussed:
 | **Per-platform native dependency** | Customer obtains only the platform-specific binary they need | Smaller per-customer footprint, but more setup burden and more room for install mistakes |
 
 A bundle-first hybrid has industry precedent. For example,
-[`confluent-kafka-go`](https://github.com/confluentinc/confluent-kafka-go/blob/master/README.md#librdkafka)
+[`confluent-kafka-go`](https://github.com/confluentinc/confluent-kafka-go/blob/master/kafka/README.md#librdkafka)
 includes prebuilt `librdkafka` binaries for common platforms, requires
 `CGO_ENABLED` to remain enabled, and falls back to a manual dynamic install only
 when customers need unsupported platforms or special features such as
