@@ -213,29 +213,29 @@ impl AzureArcCredential {
     // This is used for Arc for server's flavour of IMDS, where a challenge-response protocol is implemented.
     fn retrieve_challenge_response(&self, challenge: &str) -> Result<String, Error> {
         let challenge_path = Path::new(challenge).canonicalize()?;
-        let expected_challenge_base = if cfg!(windows) {
-            let program_data_dir = self.env.var("PROGRAMDATA")?;
-            Path::new(&program_data_dir)
-                .join("AzureConnectedMachineAgent\\Tokens\\")
-                .canonicalize()
-                .expect("Could not determine Arc challenge token path")
-        } else {
-            Path::new("/var/opt/azcmagent/tokens/").to_path_buf()
-            // .canonicalize()
-            // .expect("Could not determine Arc challenge token path")
-        };
 
-        if !(challenge_path.starts_with(expected_challenge_base)
-            && challenge_path.extension().is_some_and(|ext| ext == "key"))
-        {
-            if !cfg!(test) {
+        if !cfg!(test) {
+            let expected_challenge_base = if cfg!(windows) {
+                let program_data_dir = self.env.var("PROGRAMDATA")?;
+                Path::new(&program_data_dir)
+                    .join("AzureConnectedMachineAgent\\Tokens\\")
+                    .canonicalize()?
+            } else {
+                Path::new("/var/opt/azcmagent/tokens/")
+                    .to_path_buf()
+                    .canonicalize()?
+            };
+
+            if !(challenge_path.starts_with(expected_challenge_base)
+                && challenge_path.extension().is_some_and(|ext| ext == "key"))
+            {
                 return Err(Error::with_message(
                     ErrorKind::Credential,
                     format!("Challenge received was invalid: {challenge}"),
                 ));
-            } else {
-                // for tests, it's okay if the challenge file is not in the expected location
             }
+        } else {
+            // for tests, it's okay if the challenge file is not in the expected location
         }
 
         let mut challenge_file = File::open(challenge_path)?;
