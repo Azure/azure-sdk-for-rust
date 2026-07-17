@@ -55,9 +55,6 @@ parameters:
 - name: AdditionalMatrixConfigs
   type: object
   default: []
-- name: BuildOnlyAdditionalMatrixConfigs
-  type: object
-  default: []
 - name: MatrixFilters
   type: object
   default: []
@@ -125,7 +122,6 @@ extends:
           MatrixConfigs:
           - ${{ parameters.MatrixConfigs }}
           - ${{ parameters.AdditionalMatrixConfigs }}
-          - ${{ parameters.BuildOnlyAdditionalMatrixConfigs }}
           MatrixFilters: ${{ parameters.MatrixFilters }}
           MatrixReplace: ${{ parameters.MatrixReplace }}
 

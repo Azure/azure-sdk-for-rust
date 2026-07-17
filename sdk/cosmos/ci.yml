@@ -61,14 +61,11 @@ extends:
         Selection: sparse
         NonSparseParameters: RustToolchainName
         GenerateVMJobs: true
-    LiveTestMatrixConfigs:
-      - Name: Cosmos_live_test
-        Path: sdk/cosmos/live-platform-matrix.json
-        Selection: sparse
-        GenerateVMJobs: true
-    # Emulator jobs run only in Build. They do not enter live stages, deploy
-    # Azure resources, or replace live-test credentials with local endpoints.
-    BuildOnlyAdditionalMatrixConfigs:
+      # Emulator jobs run only in Build. `MatrixConfigs` (unlike
+      # `AdditionalMatrixConfigs`) is never consumed by the live-test stage in
+      # archetype-sdk-client.yml, so these entries don't enter live stages,
+      # deploy Azure resources, or replace live-test credentials with local
+      # endpoints.
       - Name: Cosmos_vnext_emulator
         Path: sdk/cosmos/vnext-emulator-matrix.json
         Selection: all
@@ -79,3 +76,9 @@ extends:
         Path: sdk/cosmos/inmemory-emulator-matrix.json
         Selection: all
         GenerateVMJobs: true
+    LiveTestMatrixConfigs:
+      - Name: Cosmos_live_test
+        Path: sdk/cosmos/live-platform-matrix.json
+        Selection: sparse
+        GenerateVMJobs: true
+
