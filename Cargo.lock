@@ -661,7 +661,7 @@ name = "azure_data_cosmos_emulator"
 version = "0.1.0"
 dependencies = [
  "axum 0.8.9",
- "azure_core 1.1.0",
+ "azure_core 1.2.0-beta.1",
  "azure_data_cosmos_driver",
  "clap",
  "serde",

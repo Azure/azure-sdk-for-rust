@@ -11,7 +11,12 @@ rust-version.workspace = true
 
 [dependencies]
 axum.workspace = true
-azure_core.workspace = true
+# Path+version — `azure_data_cosmos_driver` (below) depends on the local,
+# unreleased `azure_core` (see its Cargo.toml), so this crate must resolve
+# the same local copy. Using `workspace = true` here would instead pull the
+# published crate, producing two incompatible `AsyncRawResponse` types
+# across the `data_plane`/`gateway_v2` boundary with `azure_data_cosmos_driver`.
+azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.1", default-features = false }
 azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", default-features = false, features = [
   "rustls",
   "__internal_in_memory_emulator",
