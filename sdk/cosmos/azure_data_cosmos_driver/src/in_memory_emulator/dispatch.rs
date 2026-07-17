@@ -723,4 +723,58 @@ mod tests {
         let parsed = parse_request(&req);
         assert_eq!(parsed.operation, OperationType::ReadAccount);
     }
+
+    #[test]
+    fn binary_response_true_when_cosmosbinary_advertised() {
+        // The default binary-encoding negotiation header advertises both text
+        // and binary; the emulator must reply with binary.
+        let mut req = make_request("GET", "/dbs/mydb/colls/mycoll/docs/doc1");
+        insert_header(
+            &mut req,
+            SUPPORTED_SERIALIZATION_FORMATS.clone(),
+            "JsonText,CosmosBinary",
+        );
+        assert!(parse_request(&req).binary_response);
+    }
+
+    #[test]
+    fn binary_response_false_when_only_jsontext_advertised() {
+        // `request_text_response` makes the SDK advertise only `JsonText`, so
+        // the emulator must reply with text even though the request body may be
+        // binary. This is the response-side of the `request_text_response`
+        // option.
+        let mut req = make_request("GET", "/dbs/mydb/colls/mycoll/docs/doc1");
+        insert_header(
+            &mut req,
+            SUPPORTED_SERIALIZATION_FORMATS.clone(),
+            "JsonText",
+        );
+        assert!(!parse_request(&req).binary_response);
+    }
+
+    #[test]
+    fn binary_response_false_when_header_absent() {
+        // No negotiation header (binary encoding disabled) ⇒ text response.
+        let req = make_request("GET", "/dbs/mydb/colls/mycoll/docs/doc1");
+        assert!(!parse_request(&req).binary_response);
+    }
+
+    #[test]
+    fn binary_response_detects_cosmosbinary_regardless_of_order_or_case() {
+        // The token match is case-insensitive and order-independent, matching
+        // the .NET flag-enum parse.
+        for value in [
+            "CosmosBinary",
+            "CosmosBinary,JsonText",
+            "cosmosbinary",
+            "JsonText, CosmosBinary",
+        ] {
+            let mut req = make_request("GET", "/dbs/mydb/colls/mycoll/docs/doc1");
+            insert_header(&mut req, SUPPORTED_SERIALIZATION_FORMATS.clone(), value);
+            assert!(
+                parse_request(&req).binary_response,
+                "value {value:?} should negotiate a binary response",
+            );
+        }
+    }
 }

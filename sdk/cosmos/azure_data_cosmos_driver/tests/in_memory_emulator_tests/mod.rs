@@ -5,6 +5,7 @@
 
 pub mod account_metadata_refresh;
 pub mod batch;
+pub mod binary_response_format;
 pub mod control_plane;
 #[cfg(feature = "preview_dtx")]
 pub mod distributed_transaction;
@@ -131,6 +132,11 @@ pub static IS_UPSERT: HeaderName = HeaderName::from_static("x-ms-documentdb-is-u
 pub static CONTENT_RESPONSE: HeaderName =
     HeaderName::from_static("x-ms-cosmos-populate-content-response-on-write");
 pub static IF_MATCH: HeaderName = HeaderName::from_static("if-match");
+/// The client's response-format negotiation header. When it contains a
+/// `CosmosBinary` token the emulator replies with a binary body; otherwise it
+/// replies with text.
+pub static SUPPORTED_SERIALIZATION_FORMATS: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-supported-serialization-formats");
 
 /// Helper to create a POST request to create a document.
 pub fn create_item_request(
@@ -276,4 +282,15 @@ pub async fn collect_response(
         serde_json::from_slice(body_bytes).unwrap_or(serde_json::Value::Null)
     };
     (status, headers, body)
+}
+
+/// Fully buffers a response and returns status, headers, and the **raw** body
+/// bytes (undecoded), so tests can inspect the on-the-wire serialization format
+/// (e.g. the `0x80` binary preamble vs text JSON).
+pub async fn collect_raw_response(response: AsyncRawResponse) -> (StatusCode, Headers, Vec<u8>) {
+    let raw = response.try_into_raw_response().await.unwrap();
+    let status = raw.status();
+    let headers = raw.headers().clone();
+    let body_bytes = raw.body().as_ref().to_vec();
+    (status, headers, body_bytes)
 }
