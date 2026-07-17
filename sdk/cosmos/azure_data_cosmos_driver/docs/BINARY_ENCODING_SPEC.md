@@ -259,11 +259,14 @@ sequenceDiagram
    `binary_json::to_vec(item)` → `with_body`, chosen in `serialize_item_body`.
 
 5. **Negotiation + enablement.** The SDK sets
-   `x-ms-cosmos-supported-serialization-formats` on item operations when
-   enabled: `JsonText,CosmosBinary` by default, or `JsonText` alone when the
-   caller opts into text responses via
-   `BinaryEncodingOptions::request_text_response` (write bodies stay binary; only
-   the response comes back as text). Enablement resolves once at client
+   `x-ms-cosmos-supported-serialization-formats: JsonText,CosmosBinary` on item
+   operations whenever binary encoding is enabled, so the **wire stays binary in
+   both directions**. When the caller opts into text responses via
+   `BinaryEncodingOptions::request_text_response`, the negotiation header is
+   unchanged (still `JsonText,CosmosBinary`); instead the operation carries an
+   internal `transcode_response_to_text` directive and the **driver** converts
+   the binary response to text JSON before returning it (see
+   [§9.1](#91-driver-side-transcoding)). Enablement resolves once at client
    construction, preferring the explicit
    `CosmosClientBuilder::with_binary_encoding_options` /
    `with_binary_encoding_enabled` option and falling back to the
@@ -373,22 +376,41 @@ small items, where the `Value` allocation dominated the fixed overhead.
 ## 9. Negotiation and enablement
 
 - **Request.** When binary is enabled, the SDK sets
-  `x-ms-cosmos-supported-serialization-formats` on item operations. The value is
-  `JsonText,CosmosBinary` by default (the service may reply with binary), or
-  `JsonText` alone when `BinaryEncodingOptions::request_text_response` is `true`
-  (the service replies with text). Either way the request body is still Cosmos
-  binary JSON, and the request `Content-Type` stays `application/json` — the
-  service detects the binary form from the first byte.
+  `x-ms-cosmos-supported-serialization-formats: JsonText,CosmosBinary` on item
+  operations — the same value whether or not `request_text_response` is set, so
+  the service always replies with binary and the wire stays binary in both
+  directions. The request body is Cosmos binary JSON and the request
+  `Content-Type` stays `application/json` — the service detects the binary form
+  from the first byte.
 - **Response.** Decoding does **not** depend on negotiation: the SDK auto-detects
-  the `0x80` preamble. Negotiation only governs whether the service *chooses* to
-  send binary; `request_text_response` lets a caller keep binary write bodies
-  while forcing text-JSON responses (for example, to ease debugging or to bridge
-  a consumer that only reads text).
+  the `0x80` preamble. Negotiation governs whether the service *chooses* to send
+  binary; the driver-side transcoding directive governs whether the driver hands
+  the caller text or binary (see [§9.1](#91-driver-side-transcoding)).
 - **Enablement.** Resolved once at client construction, preferring the explicit
   `CosmosClientBuilder::with_binary_encoding_options` /
   `with_binary_encoding_enabled` option and falling back to the
   `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment variable; disabled by
   default.
+
+### 9.1 Driver-side transcoding
+
+`BinaryEncodingOptions::request_text_response` lets an application deal only in
+text JSON while still keeping the efficient binary wire:
+
+- The SDK keeps advertising `CosmosBinary`, so the request body **and** the
+  service response are both binary (lower write RUs and network bandwidth than
+  text).
+- The SDK stamps the item operation with
+  `CosmosOperation::with_transcode_response_to_text(true)` — an internal driver
+  directive, not a wire header.
+- After the response is assembled, `CosmosDriver::execute_operation` converts the
+  binary response body to text JSON via `binary_json::transcode_to_text`
+  (`decode` → `serde_json::to_vec`). Text or empty bodies pass through unchanged.
+
+This matches the guidance that the **driver** (not the backend) performs the
+transcoding, so the backend rewrite/transport can stay binary. Feed (`Items`)
+responses transcode per-slice, but binary feed negotiation itself remains
+deferred (see [§6](#6-scope)).
 
 ## 10. Delivery status
 
