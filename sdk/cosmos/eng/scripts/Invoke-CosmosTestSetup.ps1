@@ -95,10 +95,10 @@ if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
                             $accountEndpoint = [string]$readyRecord.accountEndpoint
                             # V1 omits this optional property; direct access throws under strict mode.
                             $hasGateway20 = @($readyRecord.regions | Where-Object {
-                                $gateway20Endpoint = $_.PSObject.Properties['gateway20Endpoint']
-                                $null -ne $gateway20Endpoint -and
+                                    $gateway20Endpoint = $_.PSObject.Properties['gateway20Endpoint']
+                                    $null -ne $gateway20Endpoint -and
                                     -not [string]::IsNullOrWhiteSpace([string]$gateway20Endpoint.Value)
-                            }).Count -gt 0
+                                }).Count -gt 0
                             if (-not $managementEndpoint -or -not $accountEndpoint -or $hasGateway20 -ne $expectedGateway20) {
                                 throw 'Hosted emulator ready record does not match the requested gateway mode.'
                             }

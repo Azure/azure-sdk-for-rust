@@ -9,8 +9,8 @@ it over the Cosmos DB wire protocol.
 This is an **SDK engineering and test tool**, not a supported customer
 product: it provides no service compatibility, durability, performance, or
 support guarantees. See
-[`docs/adr/001_build_memory_backed_sdk_test_emulator.md`](docs/adr/001_build_memory_backed_sdk_test_emulator.md)
-for the full rationale and scope, and [`docs/plan.md`](docs/plan.md) for the
+`docs/adr/001_build_memory_backed_sdk_test_emulator.md`
+for the full rationale and scope, and `docs/plan.md` for the
 complete design (configuration schema, management REST API, Gateway 2.0
 support, and CI integration).
 
@@ -28,7 +28,7 @@ support, and CI integration).
 ## Quick start
 
 Build and run against one of the sample configs checked into
-[`config/`](config/):
+`config/`:
 
 ```sh
 cargo build -p azure_data_cosmos_emulator
@@ -61,9 +61,9 @@ curl -X POST "http://127.0.0.1:49150/databases/testdb/containers/testcoll/partit
 
 A single JSON file (`--config`) describes the account topology, the
 databases/containers to create, and optional seed items — all applied on
-startup. See [`docs/plan.md`](docs/plan.md#4-configuration-file) for the full
-field reference; [`config/ci-gateway-v1.json`](config/ci-gateway-v1.json) and
-[`config/ci-gateway-v2.json`](config/ci-gateway-v2.json) are minimal,
+startup. See `docs/plan.md#4-configuration-file` for the full field
+reference; `config/ci-gateway-v1.json` and
+`config/ci-gateway-v2.json` are minimal,
 CI-oriented examples (both use port `0` for every listener, so the OS assigns
 free ports and the resolved endpoints come from the `ready` record).
 
@@ -77,6 +77,6 @@ The hosted emulator is also exercised end-to-end by
 `azure_data_cosmos_driver`'s and `azure_data_cosmos`'s existing emulator test
 suites, gated behind `test_category = "emulator_inmemory"` (and
 `"emulator_inmemory_gateway_v2"` for Gateway 2.0-specific tests). See
-[`sdk/cosmos/eng/scripts/Invoke-CosmosTestSetup.ps1`](../eng/scripts/Invoke-CosmosTestSetup.ps1)
+`sdk/cosmos/eng/scripts/Invoke-CosmosTestSetup.ps1`
 for how CI builds, starts, and health-checks the host process before running
 those suites.
