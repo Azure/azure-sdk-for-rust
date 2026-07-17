@@ -48,6 +48,11 @@ text-equivalent results.
   (see [ARCHITECTURE.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/ARCHITECTURE.md)).
 - Make decoding robust via **first-byte auto-detection**, independent of
   header negotiation.
+- Offer an opt-in **text-response** mode
+  (`BinaryEncodingOptions::request_text_response`) that keeps the wire binary in
+  both directions but has the **driver transcode** the binary response to text
+  JSON, so an application can deal only in text while still benefiting from the
+  efficient binary transport (see [§9.1](#91-driver-side-transcoding)).
 
 ### Non-goals (deferred)
 
@@ -199,9 +204,14 @@ Key facts (verified against the current tree):
   Query parses the whole `{"Documents":[…]}` envelope as `FeedBody<T>`, which
   itself lands on the same boundary — so all three response shapes are covered
   at once.
-- **Driver stays passthrough.** The schema-agnostic driver never parses item
-  bodies; its only encode-side change is emitting the negotiation header. The
-  lone body-parsing exception is the patch handler — and patch is deferred.
+- **Driver stays (mostly) passthrough.** The schema-agnostic driver never
+  *parses* item bodies; its encode-side change is emitting the negotiation
+  header. The one schema-agnostic transform it performs is **binary→text
+  transcoding** when the operation sets `transcode_response_to_text` (for
+  `BinaryEncodingOptions::request_text_response`) — a byte-level
+  `decode → serde_json::to_vec` that needs no type knowledge (see
+  [§9.1](#91-driver-side-transcoding)). The lone body-*parsing* exception is the
+  patch handler — and patch is deferred.
 
 ### 6.1 Sequence — write then read (binary enabled)
 
@@ -410,7 +420,7 @@ text JSON while still keeping the efficient binary wire:
 This matches the guidance that the **driver** (not the backend) performs the
 transcoding, so the backend rewrite/transport can stay binary. Feed (`Items`)
 responses transcode per-slice, but binary feed negotiation itself remains
-deferred (see [§6](#6-scope)).
+deferred (see [§2](#2-scope)).
 
 ## 10. Delivery status
 
@@ -423,6 +433,7 @@ All phases below are **done** except the noted follow-ups.
 | **P2** | Native serde serializer ([`to_vec`]) wired into `create` / `upsert` / `replace`, behind the enablement flag. | ✅ done (binary writes) |
 | **P3** | Negotiation header + env-var enablement; end-to-end binary round-trip via the in-memory emulator. | ✅ done |
 | **P4** | Decoder fuzzing; text-vs-binary encode **and** decode benchmarks. | ✅ done |
+| **P5** | Driver-side binary→text transcoding for `BinaryEncodingOptions::request_text_response`: wire stays binary both ways, driver converts the response to text ([§9.1](#91-driver-side-transcoding)). | ✅ done |
 
 **Follow-ups / deferred:** query request-body encoding + negotiation; patch,
 transactional batch, and bulk. (The native deserializer's exotic-form path still
