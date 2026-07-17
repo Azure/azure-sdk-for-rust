@@ -64,7 +64,9 @@ cargo run -p azure_data_cosmos_perf -- \
 | `--application-region` | *required* | Azure region where the application is running (e.g., `"East US 2"`) |
 | `--excluded-regions` | — | Comma-separated excluded regions |
 | `--exclude-regions-for` | `both` | Scope for excluded regions: `reads`, `writes`, or `both` |
-| `--concurrency` | `50` | Number of concurrent operations |
+| `--concurrency` | `50` | Initial seeding concurrency and persistent worker count in closed-loop mode; only the benchmark worker count is ignored when `--target-rate` is set |
+| `--target-rate` | — | Target arrival rate in operations per second; enables open-loop mode when set |
+| `--max-in-flight` | `100000` | Maximum in-flight requests in open-loop mode; excess issuances are skipped |
 | `--duration` | indefinite | Run duration in seconds |
 | `--seed-count` | `1000` | Number of items to pre-seed |
 | `--throughput` | `100000` | Throughput (RU/s) when creating the container |

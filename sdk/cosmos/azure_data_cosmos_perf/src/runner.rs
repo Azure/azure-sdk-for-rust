@@ -90,6 +90,10 @@ struct PerfResult {
     #[serde(skip_serializing_if = "Option::is_none")]
     config_concurrency: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    config_target_rate: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    config_max_in_flight: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     config_application_region: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     config_excluded_regions: Option<String>,
@@ -181,7 +185,9 @@ pub struct RunConfig {
 /// Snapshot of runtime configuration emitted with each PerfResult document.
 #[derive(Clone)]
 pub struct ConfigSnapshot {
-    pub concurrency: u64,
+    pub concurrency: Option<u64>,
+    pub target_rate: Option<u64>,
+    pub max_in_flight: Option<u64>,
     pub application_region: String,
     pub excluded_regions: String,
     pub tokio_threads: u64,
@@ -591,7 +597,9 @@ async fn upsert_results(
             tokio_busy_pct: tokio_fields.map(|t| t.busy_pct),
             tokio_park_count: tokio_fields.map(|t| t.park_count),
             tokio_queue_depth: tokio_fields.map(|t| t.queue_depth),
-            config_concurrency: Some(config.concurrency),
+            config_concurrency: config.concurrency,
+            config_target_rate: config.target_rate,
+            config_max_in_flight: config.max_in_flight,
             config_application_region: Some(config.application_region.clone()),
             config_excluded_regions: if config.excluded_regions.is_empty() {
                 None

@@ -34,6 +34,19 @@ fn create_aad_credential(
         .map_err(|e| e.into())
 }
 
+fn validate_max_in_flight(max_in_flight: usize) -> Result<(), String> {
+    if max_in_flight == 0 {
+        return Err("--max-in-flight must be at least 1 when --target-rate is set.".to_string());
+    }
+    if max_in_flight > tokio::sync::Semaphore::MAX_PERMITS {
+        return Err(format!(
+            "--max-in-flight cannot exceed {}.",
+            tokio::sync::Semaphore::MAX_PERMITS
+        ));
+    }
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize tokio-console subscriber when the feature is enabled.
@@ -135,8 +148,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             eprintln!("Error: --target-rate must be at least 1.");
             std::process::exit(1);
         }
-        if config.max_in_flight == 0 {
-            eprintln!("Error: --max-in-flight must be at least 1 when --target-rate is set.");
+        if let Err(message) = validate_max_in_flight(config.max_in_flight) {
+            eprintln!("Error: {message}");
             std::process::exit(1);
         }
     }
@@ -330,7 +343,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Build config snapshot for Grafana dashboard visibility
     let config_snapshot = ConfigSnapshot {
-        concurrency: config.concurrency as u64,
+        concurrency: config
+            .target_rate
+            .is_none()
+            .then_some(config.concurrency as u64),
+        target_rate: config.target_rate,
+        max_in_flight: config
+            .target_rate
+            .is_some()
+            .then_some(config.max_in_flight as u64),
         application_region: config.application_region.clone(),
         excluded_regions: config.excluded_regions.join(", "),
         tokio_threads: tokio::runtime::Handle::current().metrics().num_workers() as u64,
@@ -375,4 +396,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     .await;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::validate_max_in_flight;
+    use tokio::sync::Semaphore;
+
+    #[test]
+    fn max_in_flight_accepts_semaphore_limit() {
+        assert!(validate_max_in_flight(Semaphore::MAX_PERMITS).is_ok());
+    }
+
+    #[test]
+    fn max_in_flight_rejects_zero_and_values_above_semaphore_limit() {
+        assert!(validate_max_in_flight(0).is_err());
+        assert!(validate_max_in_flight(Semaphore::MAX_PERMITS + 1).is_err());
+    }
 }

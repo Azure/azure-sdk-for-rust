@@ -93,8 +93,9 @@ pub struct Config {
     /// Drives the default closed-loop mode: the harness spawns this many
     /// persistent worker tasks, each serially issuing one operation at a
     /// time (so this is also the maximum number of in-flight requests).
-    /// Ignored when `--target-rate` is set, which switches to open-loop
-    /// (fixed arrival rate) issuance instead.
+    /// When `--target-rate` switches the benchmark to open-loop issuance,
+    /// this value still controls initial seeding concurrency but does not
+    /// control the benchmark worker count.
     #[arg(long, default_value_t = 50)]
     pub concurrency: usize,
 
