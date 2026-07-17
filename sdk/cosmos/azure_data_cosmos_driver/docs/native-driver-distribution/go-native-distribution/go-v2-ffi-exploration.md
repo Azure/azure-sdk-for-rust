@@ -75,8 +75,10 @@ go get github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos
 go build ./...
 ```
 
-There is no Rust compiler, C compiler, native shared library, or post-install
-step in the customer path. If Go v2 uses FFI, the packaging bar is therefore:
+There is no Rust compiler, native shared library, or post-install step in the
+customer path. If Go v2 uses FFI, prebuilt Rust artifacts can preserve that part
+of the experience, but cgo still requires a C build toolchain. The packaging bar
+is therefore:
 
 > Can the Go SDK still feel like one normal Go module across the supported
 > Windows, macOS, and Linux targets?
@@ -111,17 +113,19 @@ Two practical models were discussed:
 | **Bundle the full platform matrix in the Go package** | Closest to `go get` / `go build` just working everywhere | Larger module/package footprint; all platform binaries travel together |
 | **Per-platform native dependency** | Customer obtains only the platform-specific binary they need | Smaller per-customer footprint, but more setup burden and more room for install mistakes |
 
-The second model has industry precedent. For example,
+A bundle-first hybrid has industry precedent. For example,
 [`confluent-kafka-go`](https://github.com/confluentinc/confluent-kafka-go/blob/master/README.md#librdkafka)
-bundles prebuilt `librdkafka` binaries for common platforms, requires
-`CGO_ENABLED` to remain enabled, uses a `musl` build tag for Alpine, and asks
-customers to install `librdkafka` manually when they need unsupported platforms
-or special features such as GSSAPI/Kerberos.
+includes prebuilt `librdkafka` binaries for common platforms, requires
+`CGO_ENABLED` to remain enabled, and uses a
+[`musl` build tag](https://github.com/confluentinc/confluent-kafka-go/blob/master/kafka/README.md#build-tags)
+for Alpine. It falls back to a manual dynamic install only when customers need
+unsupported platforms or special features such as GSSAPI/Kerberos.
 
 That reference shows a viable market pattern for a Go library backed by native
 code: **bundle the common path, document unsupported/special paths clearly, and
-make native requirements explicit**. It also confirms that this is a materially
-different customer experience from a pure-Go Azure SDK.
+make native requirements explicit**. It aligns most closely with the first model,
+with a manual native dependency as an escape hatch. It also confirms that this
+is a materially different customer experience from a pure-Go Azure SDK.
 
 ## 7. Pure-Go port trade-off
 

@@ -25,8 +25,8 @@ logic in Go and carrying long-term Rust-to-Go drift risk.
   drift and implementation risk.
 - Go v2 takes a dependency on `CGO_ENABLED=1` for the native driver path.
 - The Go packaging model becomes part of the product decision: customers should
-  not manually install Rust/C toolchains or copy native libraries for the common
-  path.
+  not manually install a Rust toolchain or copy native libraries for the common
+  path, but cgo still requires an available C build toolchain.
 - Differential validation remains important so Go-visible behavior can be tested
   against the Rust driver.
 
