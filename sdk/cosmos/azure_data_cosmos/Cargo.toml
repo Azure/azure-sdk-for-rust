@@ -16,7 +16,7 @@ categories = ["api-bindings"]
 [dependencies]
 async-lock.workspace = true
 async-trait.workspace = true
-azure_core = { workspace = true, default-features = false }
+azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.1", default-features = false }
 azure_data_cosmos_driver = { version = "0.6.0", path = "../azure_data_cosmos_driver", default-features = false }
 base64.workspace = true
 futures.workspace = true
@@ -32,7 +32,7 @@ url.workspace = true
 # `tokio test-util` entries below merge into existing features and add no
 # compile-time cost.
 [dev-dependencies]
-azure_core_test = { workspace = true, features = ["tracing"] }
+azure_core_test = { path = "../../core/azure_core_test", features = ["tracing"] }
 # Re-declare the driver here with the internal test-only diagnostics-construction feature.
 # Putting it in dev-dependencies (instead of [dependencies]) means downstream consumers
 # of `azure_data_cosmos` do NOT compile with this feature enabled — the driver's
@@ -49,7 +49,7 @@ azure_core_test = { workspace = true, features = ["tracing"] }
 azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", default-features = false, features = [
   "__internal_test_diagnostics_construction",
 ] }
-azure_identity.workspace = true
+azure_identity = { path = "../../identity/azure_identity" }
 clap.workspace = true
 reqwest = { workspace = true, features = ["http2"] }
 serde = { workspace = true, features = ["derive"] }

@@ -26,12 +26,12 @@ crate-type = ["cdylib", "staticlib"]
 # HTTP client (the driver's default factory needs either `rustls` or
 # `native_tls` — `rustls` matches the driver's own default and avoids the
 # OpenSSL-on-Windows breakage that bites `native_tls`).
-azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", default-features = false, features = ["tokio", "rustls"] }
+azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", version = "0.6.0", default-features = false, features = ["tokio", "rustls"] }
 # Required at runtime for master-key auth — `Secret` lives in
 # `azure_core::credentials` and `Url::parse` is the gate for the account
 # endpoint. Both are zero-cost wrappers around existing driver deps so
 # they don't grow the closure.
-azure_core = { workspace = true, default-features = false }
+azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.1", default-features = false }
 url = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread", "sync", "time", "macros"] }
 # `FutureExt::catch_unwind` is used by the submit pipeline to keep the
@@ -43,7 +43,7 @@ tracing.workspace = true
 
 [dev-dependencies]
 # Path-only — the driver crate is not (yet) a workspace dependency.
-azure_core = { workspace = true, default-features = false }
+azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.1", default-features = false }
 tokio = { workspace = true, features = ["rt-multi-thread", "sync", "time", "macros", "test-util"] }
 
 [build-dependencies]

@@ -19,16 +19,16 @@ default = ["azure_core/default"]
 [dependencies]
 async-lock = { workspace = true }
 async-trait = { workspace = true }
-azure_core = { workspace = true }
+azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.1" }
 futures = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 
 [dev-dependencies]
-azure_core_test = { workspace = true, features = [
+azure_core_test = { path = "../../core/azure_core_test", features = [
   "tracing",
 ] }
-azure_identity.workspace = true
+azure_identity = { path = "../../identity/azure_identity" }
 azure_security_keyvault_test = { path = "../azure_security_keyvault_test" }
 clap = { workspace = true, features = ["derive"] }
 criterion.workspace = true
