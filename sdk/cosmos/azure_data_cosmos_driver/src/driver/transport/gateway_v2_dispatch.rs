@@ -423,6 +423,12 @@ pub(crate) fn unwrap_response_for_gateway_v2(
     if let Some(charge) = response.request_charge {
         headers.insert(response_header_names::REQUEST_CHARGE, charge.to_string());
     }
+    if let Some(duration_ms) = response.backend_request_duration_ms {
+        headers.insert(
+            response_header_names::SERVER_DURATION_MS,
+            duration_ms.to_string(),
+        );
+    }
     if let Some(token) = response.session_token {
         // GW2 surfaces only the vector portion of the session token, with the
         // partition key range id carried separately. Classic gateway emits
@@ -1931,6 +1937,7 @@ mod tests {
                 |tokens| {
                     write_u32_token(tokens, 0x001C, 1002);
                     write_double_token(tokens, 0x0015, 3.5);
+                    write_double_token(tokens, 0x0051, 12.75);
                     write_string_token(tokens, 0x003E, "1:2#3");
                     write_string_token(tokens, 0x0004, "\"etag\"");
                     write_string_token(tokens, 0x0003, "continuation");
@@ -1963,6 +1970,14 @@ mod tests {
                 .get_optional_str(&HeaderName::from_static("x-ms-request-charge")),
             Some("3.5")
         );
+        assert_eq!(
+            unwrapped.headers.get_optional_str(&HeaderName::from_static(
+                response_header_names::SERVER_DURATION_MS
+            )),
+            Some("12.75")
+        );
+        let parsed_headers = crate::models::CosmosResponseHeaders::from_headers(&unwrapped.headers);
+        assert_eq!(parsed_headers.server_duration_ms, Some(12.75));
         assert_eq!(
             unwrapped
                 .headers

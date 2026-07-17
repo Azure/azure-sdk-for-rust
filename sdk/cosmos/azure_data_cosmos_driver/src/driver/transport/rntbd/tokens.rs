@@ -671,6 +671,8 @@ pub(super) enum RntbdResponseToken {
     TransportRequestId,
     /// Session token.
     SessionToken,
+    /// Backend request processing duration in milliseconds.
+    BackendRequestDurationMilliseconds,
 }
 
 impl TryFrom<u16> for RntbdResponseToken {
@@ -691,6 +693,7 @@ impl TryFrom<u16> for RntbdResponseToken {
             0x0029 => Ok(Self::GlobalCommittedLsn),
             0x0035 => Ok(Self::TransportRequestId),
             0x003E => Ok(Self::SessionToken),
+            0x0051 => Ok(Self::BackendRequestDurationMilliseconds),
             _ => Err(()),
         }
     }

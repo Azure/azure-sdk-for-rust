@@ -34,6 +34,8 @@ pub(crate) struct RntbdResponse {
     pub(crate) lsn: Option<i64>,
     /// Request charge in request units.
     pub(crate) request_charge: Option<f64>,
+    /// Backend request processing duration in milliseconds.
+    pub(crate) backend_request_duration_ms: Option<f64>,
     /// Owner full name metadata.
     pub(crate) owner_full_name: Option<String>,
     /// Partition key range identifier.
@@ -87,6 +89,7 @@ impl RntbdResponse {
         let mut retry_after_ms = None;
         let mut lsn = None;
         let mut request_charge = None;
+        let mut backend_request_duration_ms = None;
         let mut owner_full_name = None;
         let mut sub_status = None;
         let mut partition_key_range_id = None;
@@ -115,6 +118,10 @@ impl RntbdResponse {
                 }
                 Ok(RntbdResponseToken::RequestCharge) => {
                     request_charge = Some(expect_f64(token, "RequestCharge")?);
+                }
+                Ok(RntbdResponseToken::BackendRequestDurationMilliseconds) => {
+                    backend_request_duration_ms =
+                        Some(expect_f64(token, "BackendRequestDurationMilliseconds")?);
                 }
                 Ok(RntbdResponseToken::OwnerFullName) => {
                     owner_full_name = Some(expect_string(token, "OwnerFullName")?);
@@ -164,6 +171,7 @@ impl RntbdResponse {
             retry_after_ms,
             lsn,
             request_charge,
+            backend_request_duration_ms,
             owner_full_name,
             partition_key_range_id,
             item_lsn,
@@ -227,6 +235,32 @@ mod tests {
         assert_eq!(response.status.sub_status().unwrap().value(), 1002);
         assert_eq!(response.request_charge, Some(1.5));
         assert!(response.body.is_empty());
+    }
+
+    #[test]
+    fn backend_request_duration_is_decoded() {
+        let mut frame = response_header(StatusCode::Ok);
+        Token::new(0x0051, TokenValue::Double(12.75))
+            .write_to(&mut frame)
+            .unwrap();
+        patch_total_len(&mut frame);
+
+        let response = RntbdResponse::read(&frame).unwrap();
+
+        assert_eq!(response.backend_request_duration_ms, Some(12.75));
+    }
+
+    #[test]
+    fn backend_request_duration_rejects_wrong_token_type() {
+        let mut frame = response_header(StatusCode::Ok);
+        Token::new(0x0051, TokenValue::ULong(12))
+            .write_to(&mut frame)
+            .unwrap();
+        patch_total_len(&mut frame);
+
+        let err = RntbdResponse::read(&frame).unwrap_err();
+
+        assert_eq!(*err.kind(), azure_core::error::ErrorKind::DataConversion);
     }
 
     #[test]
