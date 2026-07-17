@@ -123,7 +123,10 @@ impl LiveState {
                     return task::Poll::Ready(Some(Ok(page)));
                 }
 
-                match unwrap_change_feed_items::<T>(response) {
+                // Every change feed item is a wire-format envelope; deserialize
+                // each one directly into `T` (which the caller binds to
+                // `ChangeFeedItem<Doc>`) without stripping any fields.
+                match deserialize_change_feed_items::<T>(response) {
                     Ok(items) => {
                         let page = FeedPage::new(items, headers, diagnostics);
                         task::Poll::Ready(Some(Ok(page)))
@@ -148,68 +151,24 @@ impl LiveState {
     }
 }
 
-/// Deserializes a change feed response body into the caller's document type,
-/// unwrapping the structured wire-format envelope when present.
-///
-/// The change feed is always read with the
-/// `x-ms-cosmos-changefeed-wire-format-version` header set (see
-/// [`CosmosOperation::change_feed`]), so a conforming service wraps every item
-/// as `{ "current": <document>, "metadata": { ... }, ... }`. LatestVersion has
-/// no pre-image, but `current` always carries the document.
-///
-/// The unwrap is deliberately **tolerant**: it strips `current` when an item is
-/// enveloped and otherwise passes the item through unchanged. We send the
-/// header on every request, so the enveloped shape is the expected one — but
-/// the SDK cannot guarantee the service honors it. A backend that does not
-/// support the wire-format-version header (an older gateway, a region where the
-/// feature has not rolled out, or an emulator build without LatestVersion
-/// enveloping) returns the legacy flat `Documents[]` shape instead. Accepting
-/// both keeps the iterator working in either case rather than failing the read.
-/// See [`unwrap_change_feed_item`] for the one documented edge case.
-///
-/// [`CosmosOperation::change_feed`]: azure_data_cosmos_driver::models::CosmosOperation
-fn unwrap_change_feed_items<T: DeserializeOwned>(
+/// Deserializes a change feed response body into the caller's item type `T`
+/// (bound to [`ChangeFeedItem<Doc>`](crate::models::ChangeFeedItem)).
+fn deserialize_change_feed_items<T: DeserializeOwned>(
     response: CosmosResponse,
 ) -> crate::Result<Vec<T>> {
-    let body: FeedBody<serde_json::Value> = response.into_model()?;
-    body.items
-        .into_iter()
-        .map(|item| serde_json::from_value(unwrap_change_feed_item(item)).map_err(Into::into))
-        .collect()
-}
-
-/// Unwraps the `current` document from a single change feed wire-format
-/// envelope, or returns the value unchanged when it is not enveloped.
-///
-/// An item is treated as enveloped when it is a JSON object that carries a
-/// `current` field, in which case that field's value is returned. Any other
-/// item — including a flat document with no `current` field, or a non-object
-/// value — is returned as-is. This lets both the structured wire format and the
-/// legacy flat shape deserialize into the caller's type (see
-/// [`unwrap_change_feed_items`] for why both are tolerated).
-///
-/// Edge case: a flat user document that itself has a top-level field named
-/// `current` would be unwrapped to that field's value, as though it were an
-/// envelope. This is accepted as a documented limitation — the structured wire
-/// format is the contract, and tolerating the flat shape is a compatibility
-/// fallback — so a top-level `current` field is reserved by the wire format.
-fn unwrap_change_feed_item(item: serde_json::Value) -> serde_json::Value {
-    match item {
-        serde_json::Value::Object(mut fields) => match fields.remove("current") {
-            Some(current) => current,
-            None => serde_json::Value::Object(fields),
-        },
-        other => other,
-    }
+    let body: FeedBody<T> = response.into_model()?;
+    Ok(body.items)
 }
 
 /// A stream of pages from a Cosmos DB change feed operation.
 ///
-/// Yields [`FeedPage<T>`] instances, where `T` is the user's document type
-/// (for LatestVersion mode). The stream is conceptually infinite: when a
-/// partition has no new changes (304 Not Modified), an empty page is
-/// returned instead of terminating the stream. The consumer decides when
-/// to stop polling.
+/// Yields [`FeedPage<T>`] instances where `T` is
+/// [`ChangeFeedItem<YourDoc>`](crate::models::ChangeFeedItem); read the
+/// changed document via [`current()`](crate::models::ChangeFeedItem::current).
+///
+/// The stream is conceptually infinite: when a partition has no new changes
+/// (304 Not Modified), an empty page is returned instead of terminating the
+/// stream. The consumer decides when to stop polling.
 ///
 /// Use [`to_continuation_token()`](Self::to_continuation_token) to capture
 /// the current position for later resumption.
@@ -217,7 +176,9 @@ fn unwrap_change_feed_item(item: serde_json::Value) -> serde_json::Value {
 /// # Examples
 ///
 /// ```rust,no_run
-/// use azure_data_cosmos::{clients::ContainerClient, feed::FeedScope, options::ChangeFeedStartFrom};
+/// use azure_data_cosmos::{
+///     clients::ContainerClient, feed::FeedScope, options::ChangeFeedStartFrom,
+/// };
 /// use futures::StreamExt;
 /// use serde::Deserialize;
 ///
@@ -226,7 +187,11 @@ fn unwrap_change_feed_item(item: serde_json::Value) -> serde_json::Value {
 ///
 /// # async fn example(container: ContainerClient) -> Result<(), Box<dyn std::error::Error>> {
 /// let mut pages = container
-///     .query_change_feed::<MyItem>(FeedScope::full_container(), ChangeFeedStartFrom::Beginning, None)
+///     .query_change_feed::<MyItem>(
+///         FeedScope::full_container(),
+///         ChangeFeedStartFrom::Beginning,
+///         None,
+///     )
 ///     .await?;
 ///
 /// while let Some(page) = pages.next().await {
@@ -237,7 +202,7 @@ fn unwrap_change_feed_item(item: serde_json::Value) -> serde_json::Value {
 ///         break;
 ///     }
 ///     for item in page.items() {
-///         println!("changed: {:?}", item);
+///         println!("changed: {:?}", item.current());
 ///     }
 ///     // Checkpoint
 ///     let token = pages.to_continuation_token()?;
@@ -301,8 +266,8 @@ impl<T: Send + DeserializeOwned + 'static> Stream for ChangeFeedPageIterator<T> 
 
 #[cfg(test)]
 mod tests {
-    use super::{unwrap_change_feed_item, unwrap_change_feed_items};
-    use crate::models::CosmosResponse;
+    use super::deserialize_change_feed_items;
+    use crate::models::{ChangeFeedItem, CosmosResponse};
     use azure_core::http::StatusCode;
     use azure_data_cosmos_driver::diagnostics::DiagnosticsContext;
     use azure_data_cosmos_driver::models::{
@@ -318,55 +283,50 @@ mod tests {
     }
 
     #[test]
-    fn unwraps_current_from_envelope() {
-        let item = json!({
-            "current": { "id": "1" },
-            "metadata": { "operationType": "create" }
+    fn deserializes_change_feed_page() {
+        // Change feed pages carry `{ current }` envelopes; binding
+        // `ChangeFeedItem<Doc>` preserves the whole envelope so the caller
+        // reads the post-change document via `current()`.
+        let body = json!({
+             "Documents": [
+                 { "current": { "id": "1" } },
+                 { "current": { "id": "2" } }
+             ],
+             "_count": 2
         });
-        assert_eq!(unwrap_change_feed_item(item), json!({ "id": "1" }));
+        let items: Vec<ChangeFeedItem<Doc>> =
+            deserialize_change_feed_items(make_response(body)).unwrap();
+        assert_eq!(items.len(), 2);
+        assert_eq!(items[0].current(), Some(&Doc { id: "1".into() }));
+        assert_eq!(items[1].current(), Some(&Doc { id: "2".into() }));
     }
 
     #[test]
-    fn passes_through_flat_document() {
-        // A backend that does not honor the wire-format header returns flat
-        // documents; the unwrap must pass those through unchanged.
-        let item = json!({ "id": "2", "value": 7 });
+    fn preserves_envelope_metadata() {
+        // The parse-only iterator must hand the caller the whole envelope. A
+        // real LatestVersion read wraps each item with a partial `metadata`
+        // object (positional fields, no `operationType`); that metadata must
+        // survive to the caller rather than being stripped.
+        let body = json!({
+            "Documents": [
+                { "current": { "id": "1" }, "metadata": { "lsn": 100, "crts": 1720322460 } }
+            ],
+            "_count": 1
+        });
+        let items: Vec<ChangeFeedItem<Doc>> =
+            deserialize_change_feed_items(make_response(body)).unwrap();
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].current(), Some(&Doc { id: "1".into() }));
+        let metadata = items[0].metadata().expect("metadata should survive");
+        assert!(metadata.operation_type().is_none());
         assert_eq!(
-            unwrap_change_feed_item(item),
-            json!({ "id": "2", "value": 7 })
+            metadata.lsn(),
+            Some(crate::models::LogicalSequenceNumber::from(100))
         );
     }
 
-    #[test]
-    fn deserializes_enveloped_change_feed_page() {
-        let body = json!({
-             "Documents": [
-                 { "current": { "id": "1" }, "metadata": {} },
-                 { "current": { "id": "2" }, "metadata": {} }
-             ],
-             "_count": 2
-        });
-        let items: Vec<Doc> = unwrap_change_feed_items(make_response(body)).unwrap();
-        assert_eq!(items, vec![Doc { id: "1".into() }, Doc { id: "2".into() }]);
-    }
-
-    #[test]
-    fn deserializes_flat_change_feed_page() {
-        // The legacy flat shape (no envelope) still deserializes correctly,
-        // so the iterator tolerates a service that ignores the header.
-        let body = json!({
-             "Documents": [
-                 { "id": "1" },
-                 { "id": "2" }
-             ],
-             "_count": 2
-        });
-        let items: Vec<Doc> = unwrap_change_feed_items(make_response(body)).unwrap();
-        assert_eq!(items, vec![Doc { id: "1".into() }, Doc { id: "2".into() }]);
-    }
-
     /// Builds an SDK [`CosmosResponse`] wrapping the given JSON body so the
-    /// unwrap helper can be exercised end to end.
+    /// deserialize helper can be exercised end to end.
     fn make_response(body: serde_json::Value) -> CosmosResponse {
         let bytes = azure_core::Bytes::from(serde_json::to_vec(&body).unwrap());
         let driver_body = ResponseBody::Bytes(bytes);
