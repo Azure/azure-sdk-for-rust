@@ -45,8 +45,14 @@ impl CosmosResponsePayload {
     pub(crate) fn headers(&self) -> &CosmosResponseHeaders {
         &self.headers
     }
-}
 
+    /// Transcodes any binary JSON body to text JSON in place.
+    fn transcode_body_to_text(&mut self) -> crate::error::Result<()> {
+        let body = std::mem::take(&mut self.body);
+        self.body = body.transcode_to_text()?;
+        Ok(())
+    }
+}
 /// Result of a Cosmos DB operation.
 ///
 /// Contains the response body (as a [`ResponseBody`] of one or more
@@ -128,6 +134,21 @@ impl CosmosResponse {
     /// Consumes the response and returns the body.
     pub fn into_body(self) -> ResponseBody {
         self.payload.into_body()
+    }
+
+    /// Transcodes a binary JSON response body to text JSON in place.
+    ///
+    /// Applied by the driver when the operation set
+    /// [`with_transcode_response_to_text`](crate::models::CosmosOperation::with_transcode_response_to_text):
+    /// the wire stays binary in both directions, and the driver converts the
+    /// binary response payload to text before returning it. A text (or empty)
+    /// body is left unchanged.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if a binary payload is malformed.
+    pub(crate) fn transcode_body_to_text(&mut self) -> crate::error::Result<()> {
+        self.payload.transcode_body_to_text()
     }
 
     /// Returns a reference to the extracted headers.

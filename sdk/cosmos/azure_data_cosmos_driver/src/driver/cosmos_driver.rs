@@ -2112,6 +2112,11 @@ impl CosmosDriver {
         operation: CosmosOperation,
         options: OperationOptions,
     ) -> crate::error::Result<Option<crate::models::CosmosResponse>> {
+        // Capture the binary→text response directive before `operation` is
+        // consumed by the pipeline. When set, the wire stays binary in both
+        // directions and the driver converts the binary response to text below.
+        let transcode_response_to_text = operation.transcode_response_to_text();
+
         // PATCH is a virtual operation type: dispatch it to the dedicated
         // Read-Modify-Write handler before any of the standard pipeline steps
         // run, because the handler issues its own Read/Replace operations
@@ -2134,12 +2139,23 @@ impl CosmosDriver {
 
         // TODO: This boxing is a temporary fix to avoid a large future.
         // We need to do some refactoring here to shrink the future size and avoid this heap allocation if possible.
-        Box::pin(async {
+        let response = Box::pin(async {
             let container = operation.container().cloned();
             let mut plan = Box::pin(self.plan_operation(operation, &options, None)).await?;
             self.execute_plan(&mut plan, container, options).await
         })
-        .await
+        .await?;
+
+        // Driver-side transcoding: if the caller asked for a text payload while
+        // negotiating binary on the wire, convert the (binary) response body to
+        // text JSON before handing it back.
+        if transcode_response_to_text {
+            if let Some(mut response) = response {
+                response.transcode_body_to_text()?;
+                return Ok(Some(response));
+            }
+        }
+        Ok(response)
     }
 
     /// Executes a singleton operation (operations which return only a single result).

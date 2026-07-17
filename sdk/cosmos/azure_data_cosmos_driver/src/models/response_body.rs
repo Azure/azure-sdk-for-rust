@@ -162,6 +162,44 @@ impl ResponseBody {
                 .collect(),
         }
     }
+
+    /// Transcodes any Cosmos **binary** JSON payload(s) to UTF-8 **text** JSON
+    /// in place, leaving text payloads unchanged.
+    ///
+    /// Used by the driver when the operation requested a text response while
+    /// keeping the wire binary (see
+    /// [`CosmosOperation::with_transcode_response_to_text`](crate::models::CosmosOperation::with_transcode_response_to_text)).
+    /// The conversion is schema-agnostic: each buffer is decoded with
+    /// [`binary_json::decode`](crate::binary_json::decode) and re-serialized as
+    /// compact text JSON. A [`NoPayload`](Self::NoPayload) body is a no-op.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if a binary payload is malformed.
+    pub(crate) fn transcode_to_text(self) -> crate::error::Result<Self> {
+        fn convert(bytes: &Bytes) -> crate::error::Result<Bytes> {
+            let text = crate::binary_json::transcode_to_text(bytes).map_err(|e| {
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                    .with_message(format!("failed to transcode binary response to text: {e}"))
+                    .with_source(e)
+                    .build()
+            })?;
+            Ok(Bytes::from(text))
+        }
+
+        match self {
+            Self::NoPayload => Ok(Self::NoPayload),
+            Self::Bytes(b) => Ok(Self::Bytes(convert(&b)?)),
+            Self::Items(items) => {
+                let converted = items
+                    .into_iter()
+                    .map(|b| convert(&b))
+                    .collect::<crate::error::Result<Vec<_>>>()?;
+                Ok(Self::Items(converted))
+            }
+        }
+    }
 }
 
 impl From<Bytes> for ResponseBody {
@@ -491,5 +529,64 @@ mod tests {
         let body = ResponseBody::Bytes(Bytes::from_static(&[PREAMBLE]));
         let result: crate::error::Result<Item> = body.into_single();
         assert!(result.is_err());
+    }
+
+    // ── Binary → text transcoding ───────────────────────────────────────────
+
+    #[test]
+    fn transcode_bytes_binary_to_text() {
+        // A binary `{"id": 7}` body transcodes to text bytes (no `0x80`) that
+        // deserialize to the same value.
+        let body = ResponseBody::Bytes(binary(&id_object(7)));
+        let text = body.transcode_to_text().unwrap();
+        match &text {
+            ResponseBody::Bytes(b) => {
+                assert!(!crate::binary_json::is_binary(b), "must be text now");
+                let item: Item = serde_json::from_slice(b).unwrap();
+                assert_eq!(item, Item { id: 7 });
+            }
+            _ => panic!("expected Bytes variant"),
+        }
+    }
+
+    #[test]
+    fn transcode_items_binary_to_text() {
+        let body = ResponseBody::from_items(vec![binary(&id_object(1)), binary(&id_object(2))]);
+        let text = body.transcode_to_text().unwrap();
+        match &text {
+            ResponseBody::Items(items) => {
+                assert_eq!(items.len(), 2);
+                for b in items {
+                    assert!(!crate::binary_json::is_binary(b));
+                }
+            }
+            _ => panic!("expected Items variant"),
+        }
+    }
+
+    #[test]
+    fn transcode_text_body_unchanged() {
+        // Text passes through byte-for-byte.
+        let body = ResponseBody::Bytes(Bytes::from_static(br#"{"id":5}"#));
+        let text = body.transcode_to_text().unwrap();
+        match &text {
+            ResponseBody::Bytes(b) => assert_eq!(&b[..], br#"{"id":5}"#),
+            _ => panic!("expected Bytes variant"),
+        }
+    }
+
+    #[test]
+    fn transcode_no_payload_is_noop() {
+        let body = ResponseBody::NoPayload;
+        assert!(matches!(
+            body.transcode_to_text().unwrap(),
+            ResponseBody::NoPayload
+        ));
+    }
+
+    #[test]
+    fn transcode_malformed_binary_errors() {
+        let body = ResponseBody::Bytes(Bytes::from_static(&[PREAMBLE]));
+        assert!(body.transcode_to_text().is_err());
     }
 }
