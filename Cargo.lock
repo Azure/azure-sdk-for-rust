@@ -873,7 +873,6 @@ dependencies = [
  "azure_core 1.1.0",
  "azure_core_test",
  "azure_identity 1.0.0",
- "azure_storage_blob_test",
  "azure_storage_common",
  "azure_storage_sas",
  "bytes",
@@ -889,20 +888,6 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
-]
-
-[[package]]
-name = "azure_storage_blob_test"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "azure_core 1.1.0",
- "azure_core_test",
- "azure_identity 1.0.0",
- "azure_storage_blob",
- "bytes",
- "futures",
- "tokio",
 ]
 
 [[package]]
