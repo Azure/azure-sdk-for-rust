@@ -467,7 +467,7 @@ impl ChangeFeedPolicy {
     /// `retention` is truncated.
     pub fn all_versions_and_deletes(retention: Duration) -> Self {
         Self {
-retention_duration_minutes: (retention.as_secs() / 60).min(i32::MAX as u64) as i32,
+            retention_duration_minutes: (retention.as_secs() / 60).min(i32::MAX as u64) as i32,
         }
     }
 

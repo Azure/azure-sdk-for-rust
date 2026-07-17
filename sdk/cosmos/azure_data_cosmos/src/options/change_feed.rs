@@ -26,10 +26,10 @@ pub use azure_data_cosmos_driver::models::ChangeFeedStartFrom;
 /// * [`LatestVersion`](Self::LatestVersion) (default) returns the latest
 ///   version of each created or replaced item.
 /// * [`AllVersionsAndDeletes`](Self::AllVersionsAndDeletes) returns every
-///   intermediate version plus deletes ("full fidelity"). In this mode the
-///   caller binds the item type to
-///   [`ChangeFeedItem<YourDoc>`](crate::models::ChangeFeedItem) so the whole
-///   change envelope is preserved. See
+///   intermediate version plus deletes ("full fidelity"). In this mode
+///   `query_change_feed::<YourDoc>()` still yields the
+///   [`ChangeFeedItem<YourDoc>`](crate::models::ChangeFeedItem) envelope, so the
+///   whole change envelope is preserved. See
 ///   [`ContainerClient::query_change_feed()`](crate::clients::ContainerClient::query_change_feed)
 ///   for its start-position restrictions.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]

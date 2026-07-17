@@ -233,31 +233,39 @@ impl AvadDoc {
     }
 }
 
-/// Drains a full-fidelity change feed iterator until it reports a streak of
-/// empty pages or a poll cap is reached, returning every envelope seen.
-async fn drain_avad_envelopes(
+/// Polls a full-fidelity change feed, accumulating every envelope seen, until
+/// `is_complete` is satisfied by the collection so far or a deadline elapses.
+///
+/// Full-fidelity changes — deletes especially — can materialize a little while
+/// after an empty 304 page, so (unlike the incremental [`drain_changes`]
+/// helper) this keeps polling across empty pages, sleeping between them, rather
+/// than stopping at the first empty streak and finishing before post-split
+/// events arrive.
+async fn drain_avad_until<F>(
     iterator: &mut ChangeFeedPageIterator<ChangeFeedItem<AvadDoc>>,
-) -> Result<Vec<ChangeFeedItem<AvadDoc>>, Box<dyn Error>> {
+    deadline: std::time::Instant,
+    mut is_complete: F,
+) -> Result<Vec<ChangeFeedItem<AvadDoc>>, Box<dyn Error>>
+where
+    F: FnMut(&[ChangeFeedItem<AvadDoc>]) -> bool,
+{
     let mut collected = Vec::new();
-    let mut empty_streak = 0usize;
-    let mut polls = 0usize;
 
-    while let Some(page) = iterator.next().await {
-        let page = page?;
-        polls += 1;
-
-        if page.items().is_empty() {
-            empty_streak += 1;
-            if empty_streak >= EMPTY_STREAK_TO_STOP {
-                break;
-            }
-        } else {
-            empty_streak = 0;
-            collected.extend(page.into_items());
+    while std::time::Instant::now() < deadline {
+        if is_complete(&collected) {
+            break;
         }
 
-        if polls >= MAX_DRAIN_POLLS {
-            break;
+        match iterator.next().await {
+            Some(page) => {
+                let page = page?;
+                if page.items().is_empty() {
+                    tokio::time::sleep(Duration::from_secs(1)).await;
+                } else {
+                    collected.extend(page.into_items());
+                }
+            }
+            None => break,
         }
     }
 
@@ -336,7 +344,12 @@ pub async fn change_feed_all_versions_and_deletes_resume_across_split() -> Resul
                     ),
                 )
                 .await?;
-            let pre_split = drain_avad_envelopes(&mut iterator).await?;
+            let pre_split = drain_avad_until(
+                &mut iterator,
+                std::time::Instant::now() + Duration::from_secs(15),
+                |_| false,
+            )
+            .await?;
             assert!(
                 pre_split.is_empty(),
                 "AVAD StartFrom::Now must exclude the pre-existing baseline, saw {}",
@@ -390,7 +403,27 @@ pub async fn change_feed_all_versions_and_deletes_resume_across_split() -> Resul
                     ),
                 )
                 .await?;
-            let resumed_envelopes = drain_avad_envelopes(&mut resumed).await?;
+            // Resume until every post-split create and delete has surfaced (or a
+            // deadline expires), sleeping between empty pages so full-fidelity
+            // deletes that lag behind their creates are not missed.
+            let want_creates = expected_creates.len();
+            let want_deletes = expected_deletes;
+            let resumed_envelopes = drain_avad_until(
+                &mut resumed,
+                std::time::Instant::now() + Duration::from_secs(5 * 60),
+                |seen| {
+                    let creates = seen
+                        .iter()
+                        .filter(|e| e.operation_type() == Some(ChangeFeedOperationType::Create))
+                        .count();
+                    let deletes = seen
+                        .iter()
+                        .filter(|e| e.operation_type() == Some(ChangeFeedOperationType::Delete))
+                        .count();
+                    creates >= want_creates && deletes >= want_deletes
+                },
+            )
+            .await?;
 
             // Exactly the post-split creates must surface, once each.
             let mut got_creates: Vec<String> = resumed_envelopes
