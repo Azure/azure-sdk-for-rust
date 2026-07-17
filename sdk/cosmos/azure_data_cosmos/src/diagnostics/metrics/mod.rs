@@ -28,8 +28,9 @@
 //! # Operation-scope identity
 //!
 //! `db.operation.name`, `db.collection.name`, and `db.namespace` are not carried
-//! on the driver's [`DiagnosticsContext`]; they are supplied by the SDK through a
-//! [`CosmosOperationContext`] stored on the pipeline
+//! on the driver's [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext);
+//! they are supplied by the SDK through a
+//! [`CosmosOperationContext`](crate::diagnostics::CosmosOperationContext) stored on the pipeline
 //! [`Context`](azure_core::http::Context). The handler reads whichever fields are
 //! present and omits the rest, so it degrades gracefully.
 

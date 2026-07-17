@@ -36,7 +36,7 @@ pub(crate) const ERROR_TYPE: &str = "error.type";
 /// `azure.cosmosdb.operation.request_charge` — Request Units consumed.
 pub(crate) const AZURE_COSMOSDB_REQUEST_CHARGE: &str = "azure.cosmosdb.operation.request_charge";
 
-/// `azure.cosmosdb.operation.contacted_regions` — regions contacted, joined.
+/// `azure.cosmosdb.operation.contacted_regions` — regions contacted (ordered `string[]`).
 pub(crate) const AZURE_COSMOSDB_CONTACTED_REGIONS: &str =
     "azure.cosmosdb.operation.contacted_regions";
 

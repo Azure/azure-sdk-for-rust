@@ -25,7 +25,7 @@ const SUPPRESSED_TARGET: &str = "azure_data_cosmos::diagnostics::suppressed";
 /// For each completed operation the handler applies the same tail-based sampling
 /// gate as the tracing handler — log iff the operation *is completed* and *failed
 /// or breached a [`DiagnosticsThresholds`]* — and then admits the line through a
-/// [count-per-interval limiter](RateLimiter). The limiter caps how many lines are
+/// count-per-interval limiter. The limiter caps how many lines are
 /// emitted per window (≈100/min by default), always lets a bounded number of
 /// failures through, and emits exactly one "suppressed N until reset" notice per
 /// window in which anything was dropped.
@@ -69,7 +69,14 @@ impl SamplingLogHandler {
 
     /// Creates a handler with the supplied sampling thresholds and rate-limiter
     /// configuration.
-    pub fn with_config(thresholds: DiagnosticsThresholds, limiter: RateLimiterConfig) -> Self {
+    ///
+    /// Crate-internal: [`RateLimiterConfig`] is not part of the public API, so the
+    /// public constructors are [`new`](Self::new) and
+    /// [`with_thresholds`](Self::with_thresholds).
+    pub(crate) fn with_config(
+        thresholds: DiagnosticsThresholds,
+        limiter: RateLimiterConfig,
+    ) -> Self {
         Self {
             thresholds,
             limiter: RateLimiter::new(limiter),

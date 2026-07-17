@@ -19,7 +19,7 @@ use std::time::{Duration, Instant, SystemTime};
 
 use opentelemetry::{
     trace::{Span, SpanKind, Status, TraceContextExt, Tracer},
-    Context, KeyValue,
+    Array, Context, KeyValue, StringValue, Value,
 };
 
 use azure_data_cosmos_driver::diagnostics::{DiagnosticsContext, RequestDiagnostics};
@@ -115,14 +115,15 @@ pub(crate) fn emit_backdated_span_tree<T>(
     ));
     let regions = diagnostics.regions_contacted();
     if !regions.is_empty() {
-        let joined = regions
+        // Semantic conventions define contacted_regions as an ordered string[];
+        // emit an OpenTelemetry array, not a joined scalar.
+        let values: Vec<StringValue> = regions
             .iter()
-            .map(|r| r.as_str())
-            .collect::<Vec<_>>()
-            .join(",");
+            .map(|r| StringValue::from(r.as_str().to_string()))
+            .collect();
         root_attrs.push(KeyValue::new(
             attributes::AZURE_COSMOSDB_CONTACTED_REGIONS,
-            joined,
+            Value::Array(Array::String(values)),
         ));
     }
     if let Some(addr) = requests.first().and_then(server_address) {
@@ -195,7 +196,9 @@ pub(crate) fn emit_backdated_span_tree<T>(
         if let Some(region) = req.region() {
             child_attrs.push(KeyValue::new(
                 attributes::AZURE_COSMOSDB_CONTACTED_REGIONS,
-                region.as_str().to_string(),
+                Value::Array(Array::String(vec![StringValue::from(
+                    region.as_str().to_string(),
+                )])),
             ));
         }
         if let Some(addr) = server_address(req) {

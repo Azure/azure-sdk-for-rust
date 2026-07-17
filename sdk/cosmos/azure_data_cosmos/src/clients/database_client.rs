@@ -192,10 +192,13 @@ impl DatabaseClient {
             .execute_singleton_operation(operation, operation_options)
             .await;
 
-        Ok(ResourceResponse::new(
-            self.context
-                .complete_result(driver_result, || self.operation_context("create_container"))?,
-        ))
+        Ok(ResourceResponse::new(self.context.complete_result(
+            driver_result,
+            || {
+                self.operation_context("create_container")
+                    .with_container_name(properties.id.clone())
+            },
+        )?))
     }
 
     /// Deletes this database.

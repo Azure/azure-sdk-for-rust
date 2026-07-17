@@ -6,7 +6,7 @@
 
 use azure_core::http::Context;
 use opentelemetry::metrics::Meter;
-use opentelemetry::{global, KeyValue};
+use opentelemetry::{global, Array, KeyValue, StringValue, Value};
 
 use crate::diagnostics::metrics::attributes;
 use crate::diagnostics::metrics::instruments::Instruments;
@@ -185,12 +185,16 @@ impl CosmosMetricsHandler {
             }
             let regions = diagnostics.regions_contacted();
             if !regions.is_empty() {
-                let joined = regions
+                // Semantic conventions define contacted_regions as an ordered
+                // string[]; emit an OpenTelemetry array, not a joined scalar.
+                let values: Vec<StringValue> = regions
                     .iter()
-                    .map(|region| region.as_str())
-                    .collect::<Vec<_>>()
-                    .join(",");
-                attrs.push(KeyValue::new(attributes::ATTR_CONTACTED_REGIONS, joined));
+                    .map(|region| StringValue::from(region.as_str().to_string()))
+                    .collect();
+                attrs.push(KeyValue::new(
+                    attributes::ATTR_CONTACTED_REGIONS,
+                    Value::Array(Array::String(values)),
+                ));
             }
         }
 

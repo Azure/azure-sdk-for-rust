@@ -1032,9 +1032,8 @@ impl ContainerClient {
             .await;
 
         Ok(BatchResponse::new(
-            self.context.complete_result(driver_result, || {
-                self.operation_context("execute_transactional_batch")
-            })?,
+            self.context
+                .complete_result(driver_result, || self.operation_context("execute_batch"))?,
         ))
     }
 

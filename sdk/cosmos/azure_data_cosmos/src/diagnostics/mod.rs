@@ -18,7 +18,7 @@
 //! With no handlers registered the chain is a zero-overhead no-op.
 //!
 //! A built-in OpenTelemetry metrics handler,
-//! [`CosmosMetricsHandler`](metrics::CosmosMetricsHandler), is available behind
+//! [`CosmosMetricsHandler`], is available behind
 //! the off-by-default `otel_metrics` feature. It emits the stable
 //! `db.client.operation.duration` histogram (and, opt-in, development-tier
 //! metrics) from each completed context.

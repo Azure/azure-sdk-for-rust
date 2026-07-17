@@ -2141,11 +2141,21 @@ impl DiagnosticsContext {
 
     /// Returns `true` when the operation completed with a non-success status.
     ///
-    /// Derived directly from [`status`](Self::status): an operation is a failure
-    /// when its final [`CosmosStatus`] is not a success. A context with no
-    /// recorded status is not treated as a failure.
+    /// Derived from [`status`](Self::status): an operation is a failure when its
+    /// final [`CosmosStatus`] is not a success. When no operation-level status was
+    /// recorded — some driver error-finalization paths graft diagnostics onto the
+    /// returned error without first stamping the operation status — this falls
+    /// back to the terminal attempt's status, so a genuine failure still gates the
+    /// tail-sampled handlers. A context with neither a status nor any request is
+    /// not treated as a failure.
     pub fn is_failure(&self) -> bool {
-        self.status.as_ref().is_some_and(|s| !s.is_success())
+        match self.status.as_ref() {
+            Some(status) => !status.is_success(),
+            None => self
+                .requests
+                .last()
+                .is_some_and(|request| !request.status().is_success()),
+        }
     }
 
     /// Returns `true` when the operation crossed one of the sampling
@@ -4231,6 +4241,33 @@ mod tests {
         // No recorded status is not a failure.
         let no_status = make_context_with(ActivityId::new_uuid(), |_| {});
         assert!(!no_status.is_failure());
+    }
+
+    #[test]
+    fn is_failure_falls_back_to_terminal_request_status() {
+        // Some driver error-finalization paths graft diagnostics onto the error
+        // without stamping the operation status. The terminal attempt's failed
+        // status must still surface as a failure so tail-sampled handlers emit.
+        let failed = make_context_with(ActivityId::new_uuid(), |b| {
+            let handle = b.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::WEST_US_2),
+                "https://test.documents.azure.com",
+            );
+            b.complete_request(handle, StatusCode::TooManyRequests, None);
+        });
+        assert!(failed.is_failure());
+
+        // A successful terminal attempt with no operation status is not a failure.
+        let ok = make_context_with(ActivityId::new_uuid(), |b| {
+            let handle = b.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::WEST_US_2),
+                "https://test.documents.azure.com",
+            );
+            b.complete_request(handle, StatusCode::Ok, None);
+        });
+        assert!(!ok.is_failure());
     }
 
     #[test]

@@ -270,11 +270,12 @@ unbounded object, span tree, or string.
   retries collapse to **first + last of each run + a count**; an order-robust global key-bucket
   fallback holds the bound under a region ping-pong (`A→B→A→B`); the per-run rollup is itself
   bounded so a high-cardinality `410` fan-out cannot grow the artifact by topology.
-- **Per-representation, independent caps.** The 512 structured-object record cap does **not**
-  bound the span tree. A span emitter does not emit one span per retained record; following
-  §10.4 it collapses each run to a single span carrying a repeat `count`, so the span count
-  tracks the number of *runs* and applies its own **128-span** target on top. So 512 retained
-  records map to ≤ 128 spans without the two caps needing to agree.
+- **The span tree derives from the bounded record list.** The span emitter reconstructs one
+  child span per *retained* `RequestDiagnostics` attempt, so the span count is bounded by the
+  same `DiagnosticsOptions::max_request_diagnostics` cap (default **512**) — there is no
+  independent span cap or run-collapse today. Collapsing each run into a single count-bearing
+  span, with its own span-count target, is a possible future optimization and is not yet
+  implemented.
 - **Truncation is marked, never silent** — the structured object carries explicit compaction
   metadata (true vs retained count, per-run rollup, and a truncation marker when a cap is hit).
 
@@ -388,8 +389,8 @@ a metric dimension to control time-series cardinality (D7).
 
 | Attribute | Notes |
 | --- | --- |
-| `azure.cosmosdb.connection.mode` | `gateway` or `direct`. |
-| `azure.cosmosdb.consistency.level` | `Eventual` / `Session` / `Strong` / `BoundedStaleness` / `ConsistentPrefix`. |
+| `azure.cosmosdb.connection.mode` | `gateway` or `direct`. *(Deferred — not yet populated by the automatic operation path; [#4789](https://github.com/Azure/azure-sdk-for-rust/pull/4789).)* |
+| `azure.cosmosdb.consistency.level` | `Eventual` / `Session` / `Strong` / `BoundedStaleness` / `ConsistentPrefix`. *(Deferred — not yet populated by the automatic operation path; [#4789](https://github.com/Azure/azure-sdk-for-rust/pull/4789).)* |
 | `azure.cosmosdb.operation.contacted_regions` | Ordered list of contacted regions (cross-region call if > 1). |
 | `azure.cosmosdb.operation.request_charge` | RU consumed (double). |
 | `azure.cosmosdb.response.sub_status_code` | Cosmos sub-status code (int). |
@@ -431,8 +432,10 @@ Emitted by `CosmosTracingHandler` [WS4], **only when tail-sampling (§5.2) says 
   proven by the salvaged PR #4685 spike. **Ship (b) now behind one internal seam; migrate to (a)
   when it lands.**
 - **Build from the bounded list.** The emitter builds the tree from the retained attempt list
-  ([`requests()`][ctx], bounded by §8), collapsing each run to one span carrying a repeat
-  `count` — never one span per pre-compaction attempt (which could reach the record cap).
+  ([`requests()`][ctx], bounded by §8), emitting **one child span per retained attempt** — never
+  one span per pre-compaction attempt (the retained list is already bounded by
+  `max_request_diagnostics`). Collapsing each run into a single count-bearing span is a possible
+  future optimization and is not yet implemented.
 
 ### 10.5 `azure_core` attribute alignment & the two upstream gaps
 
