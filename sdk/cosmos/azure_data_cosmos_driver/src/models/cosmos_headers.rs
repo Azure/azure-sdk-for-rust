@@ -393,21 +393,27 @@ impl CosmosRequestHeaders {
         if let Some(features) = self.supported_query_features.as_ref() {
             headers.insert(
                 request_header_names::SUPPORTED_QUERY_FEATURES,
-                match features {
-                    Cow::Borrowed(s) => HeaderValue::from(*s),
-                    Cow::Owned(s) => HeaderValue::from(s.clone()),
-                },
+                header_value_from_cow(features),
             );
         }
         if let Some(formats) = self.supported_serialization_formats.as_ref() {
             headers.insert(
                 request_header_names::SUPPORTED_SERIALIZATION_FORMATS,
-                match formats {
-                    Cow::Borrowed(s) => HeaderValue::from(*s),
-                    Cow::Owned(s) => HeaderValue::from(s.clone()),
-                },
+                header_value_from_cow(formats),
             );
         }
+    }
+}
+
+/// Converts a `Cow<'static, str>` header value into a [`HeaderValue`].
+///
+/// A `Cow::Borrowed` holds a `&'static str`, so it wraps into a `HeaderValue`
+/// with no allocation; a `Cow::Owned` must clone once because `HeaderValue`
+/// owns a `Cow<'static, str>` and this borrows `&self`.
+fn header_value_from_cow(value: &Cow<'static, str>) -> HeaderValue {
+    match value {
+        Cow::Borrowed(s) => HeaderValue::from(*s),
+        Cow::Owned(s) => HeaderValue::from(s),
     }
 }
 
