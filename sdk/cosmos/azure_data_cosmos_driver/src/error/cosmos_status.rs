@@ -526,10 +526,11 @@ impl SubStatusCode {
             20304 => Some("ClientThroughputPollerIncomplete"),
             20305 => Some("ClientTopologyResolutionFailed"),
             20306 => Some("ServiceReturnedObjectWithoutRid"),
-            20307 => Some("ServiceOrderByEnvelopeInvalid"),
-            20308 => Some("ServiceQueryPlanOrderByMissingRewrittenQuery"),
-            20309 => Some("ServiceOrderByRewrittenQueryMissingFilterPlaceholder"),
-            20310 => Some("ServiceQueryPlanOrderByExpressionsMismatch"),
+            20307 => Some("ClientQueryPlanRangeNotCoveredByTopology"),
+            20308 => Some("ServiceOrderByEnvelopeInvalid"),
+            20309 => Some("ServiceQueryPlanOrderByMissingRewrittenQuery"),
+            20310 => Some("ServiceOrderByRewrittenQueryMissingFilterPlaceholder"),
+            20311 => Some("ServiceQueryPlanOrderByExpressionsMismatch"),
 
             // SDK Server-side codes (21xxx) - consistent across .NET and Java
             21001 => Some("NameCacheIsStaleExceededRetryLimit"),
@@ -1506,25 +1507,34 @@ impl SubStatusCode {
 
     /// A cross-partition streaming `ORDER BY` rewritten-query result item
     /// did not match the expected envelope shape: missing `payload`,
-    /// missing/empty RID, or a mismatched `orderByItems` length (20307).
-    pub const SERVICE_ORDER_BY_ENVELOPE_INVALID: SubStatusCode = SubStatusCode(20307);
+    /// missing/empty RID, or a mismatched `orderByItems` length (20308).
+    pub const SERVICE_ORDER_BY_ENVELOPE_INVALID: SubStatusCode = SubStatusCode(20308);
 
     /// The backend query plan reported `ORDER BY` columns but did not
-    /// supply a non-empty `rewrittenQuery` (20308).
+    /// supply a non-empty `rewrittenQuery` (20309).
     pub const SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY: SubStatusCode =
-        SubStatusCode(20308);
+        SubStatusCode(20309);
 
     /// The backend-supplied streaming `ORDER BY` `rewrittenQuery` was
     /// missing the `{documentdb-formattableorderbyquery-filter}`
-    /// placeholder where a resume filter must be injected (20309).
+    /// placeholder where a resume filter must be injected (20310).
     pub const SERVICE_ORDER_BY_REWRITTEN_QUERY_MISSING_FILTER_PLACEHOLDER: SubStatusCode =
-        SubStatusCode(20309);
+        SubStatusCode(20310);
 
     /// The backend query plan's `orderBy` and `orderByExpressions` arrays
     /// had mismatched or zero length, so sort keys can't pair with
-    /// directions (20310).
+    /// directions (20311).
     pub const SERVICE_QUERY_PLAN_ORDER_BY_EXPRESSIONS_MISMATCH: SubStatusCode =
-        SubStatusCode(20310);
+        SubStatusCode(20311);
+
+    /// A topology range resolved for a query-plan EPK range did not
+    /// overlap that range (20307). The query planner intersects each
+    /// resolved partition with the query-plan range it was resolved
+    /// for; an empty intersection means `resolve_ranges` violated its
+    /// contract of returning only overlapping ranges. Surfaced as an
+    /// error (paired with HTTP 500) instead of panicking the worker
+    /// thread, which would deadlock the caller. See issue #4574.
+    pub const CLIENT_QUERY_PLAN_RANGE_NOT_COVERED_BY_TOPOLOGY: SubStatusCode = SubStatusCode(20307);
 }
 
 impl Default for SubStatusCode {
@@ -2393,21 +2403,21 @@ impl CosmosStatus {
         sub_status: Some(SubStatusCode::CLIENT_TOPOLOGY_RESOLUTION_FAILED),
     };
 
-    /// 500 / 20307 — a rewritten-query result item didn't match the
+    /// 500 / 20308 — a rewritten-query result item didn't match the
     /// expected envelope shape.
     pub const SERVICE_ORDER_BY_ENVELOPE_INVALID: CosmosStatus = CosmosStatus {
         status_code: StatusCode::InternalServerError,
         sub_status: Some(SubStatusCode::SERVICE_ORDER_BY_ENVELOPE_INVALID),
     };
 
-    /// 500 / 20308 — the query plan reported `ORDER BY` columns but no
+    /// 500 / 20309 — the query plan reported `ORDER BY` columns but no
     /// `rewrittenQuery`.
     pub const SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY: CosmosStatus = CosmosStatus {
         status_code: StatusCode::InternalServerError,
         sub_status: Some(SubStatusCode::SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY),
     };
 
-    /// 500 / 20309 — the rewritten query was missing the resume-filter
+    /// 500 / 20310 — the rewritten query was missing the resume-filter
     /// placeholder.
     pub const SERVICE_ORDER_BY_REWRITTEN_QUERY_MISSING_FILTER_PLACEHOLDER: CosmosStatus =
         CosmosStatus {
@@ -2417,11 +2427,20 @@ impl CosmosStatus {
             ),
         };
 
-    /// 500 / 20310 — the query plan's `orderBy`/`orderByExpressions`
+    /// 500 / 20311 — the query plan's `orderBy`/`orderByExpressions`
     /// arrays had mismatched or zero length.
     pub const SERVICE_QUERY_PLAN_ORDER_BY_EXPRESSIONS_MISMATCH: CosmosStatus = CosmosStatus {
         status_code: StatusCode::InternalServerError,
         sub_status: Some(SubStatusCode::SERVICE_QUERY_PLAN_ORDER_BY_EXPRESSIONS_MISMATCH),
+    };
+
+    /// 500 / 20307 — a topology range resolved for a query-plan EPK
+    /// range did not overlap that range, a `resolve_ranges` contract
+    /// violation. Returned instead of panicking the query worker (see
+    /// issue #4574).
+    pub const CLIENT_QUERY_PLAN_RANGE_NOT_COVERED_BY_TOPOLOGY: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_QUERY_PLAN_RANGE_NOT_COVERED_BY_TOPOLOGY),
     };
 
     /// 500 / 20306 — the service returned a resource read response

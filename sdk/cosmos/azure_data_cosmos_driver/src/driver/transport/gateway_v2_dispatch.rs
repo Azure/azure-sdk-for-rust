@@ -1587,6 +1587,49 @@ mod tests {
         assert_eq!(parsed.tokens[&0x005A], ParsedTokenValue::Bytes(expected));
     }
 
+    #[test]
+    fn wrap_emits_v1_binary_effective_partition_key_for_version_less_collections() {
+        // A container definition read back from the service with no `version`
+        // field is a legacy V1 container (the service omits `version` only for
+        // V1). Gateway 2.0 routes point ops on the client-computed EPK, so a
+        // version-less container MUST emit the V1 binary EPK token (0x005A),
+        // NOT V2 — mis-detecting it as V2 was the root-cause routing bug this
+        // guards against.
+        let request = signed_request(None);
+        let auth_context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs/doc1",
+        );
+        let partition_key = PartitionKey::from("tenant1");
+        let partition_key_definition: PartitionKeyDefinition =
+            serde_json::from_str(r#"{"paths":["/tenantId"]}"#).unwrap();
+        assert_eq!(
+            partition_key_definition.version(),
+            PartitionKeyVersion::V1,
+            "sanity check: a version-less definition deserializes to V1"
+        );
+        let expected = effective_partition_key_v1_binary(partition_key.values());
+        assert_ne!(
+            expected,
+            effective_partition_key_v2_binary(partition_key.values()),
+            "sanity check: V1 and V2 EPK encodings differ for this pk value"
+        );
+
+        let wrapped = wrap_request_for_gateway_v2(
+            &request,
+            &wrap_inputs(
+                &auth_context,
+                OperationType::Read,
+                Some(&epk(&partition_key, &partition_key_definition)),
+            ),
+        )
+        .unwrap();
+        let parsed = parse_wrapped_request(&wrapped, 11);
+
+        assert_eq!(parsed.tokens[&0x005A], ParsedTokenValue::Bytes(expected));
+    }
+
     /// HPK partial-PK (prefix on a MultiHash container) emits an
     /// `EffectivePartitionKey` RNTBD token containing the per-component
     /// MultiHash V2 binary for the supplied prefix components (16 * N bytes

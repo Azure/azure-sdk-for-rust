@@ -1,21 +1,34 @@
 {
+  "version": "2.0.0",
   "tasks": [
     {
       "label": "Start docs site (requires nightly)",
+      "type": "process",
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "command": "cargo",
+      "command": "pwsh",
       "args": [
-        "watch",
-        "-s",
-        "RUSTDOCFLAGS=\"--cfg=docsrs --enable-index-page -Z unstable-options\" cargo +nightly doc --all-features --workspace --no-deps",
-        "-s",
-        "http-server --index --port 8080 ./target/doc"
+        "-NoLogo",
+        "-NoProfile",
+        "-File",
+        "${workspaceFolder}/eng/scripts/Watch-RustDocs.ps1"
       ],
       "isBackground": true,
       "problemMatcher": [
-        "$rustc"
+        "$rustc",
+        {
+          "owner": "powershell",
+          "fileLocation": [
+            "absolute"
+          ],
+          "severity": "error",
+          "pattern": {
+            "regexp": "^\\[Error in file (.+?)\\](.*)$",
+            "file": 1,
+            "message": 2
+          }
+        }
       ]
     }
   ]

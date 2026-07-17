@@ -77,7 +77,7 @@ You can find executable examples for all major SDK functions in:
 - [append_blob_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/append_blob_client.rs) - Append blob operations: create, append blocks, seal
 - [page_blob_client.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/page_blob_client.rs) - Page blob operations: create, upload/clear pages, list page ranges, resize
 - [blob_storage_upload_file.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/blob_storage_upload_file.rs) - Upload a local file with streaming support for large files
-- [blob_storage_logging.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/blob_storage_logging.rs) - Logging and OpenTelemetry distributed tracing
+- [samples/storage_blob_logging](https://github.com/Azure/azure-sdk-for-rust/tree/main/samples/storage_blob_logging) - Logging and OpenTelemetry distributed tracing
 - [storage_error.rs](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob/examples/storage_error.rs) - Structured error handling with `StorageError`
 
 ### Upload a blob

@@ -64,7 +64,7 @@ pub async fn cosmos_patch_basic_set() -> Result<(), Box<dyn Error>> {
             let initial_bytes = serde_json::to_vec(&initial)?;
 
             context
-                .create_item(&container, item_id, pk, &initial_bytes)
+                .create_seed_item(&container, item_id, pk, &initial_bytes)
                 .await?;
 
             let spec = PatchInstructions::from(vec![PatchOperation::set("/deleted", json!(true))]);
@@ -118,7 +118,7 @@ pub async fn cosmos_patch_pk_guard() -> Result<(), Box<dyn Error>> {
             let pk = "tenant-a";
             let initial = json!({ "id": item_id, "pk": pk, "name": "n" });
             context
-                .create_item(&container, item_id, pk, &serde_json::to_vec(&initial)?)
+                .create_seed_item(&container, item_id, pk, &serde_json::to_vec(&initial)?)
                 .await?;
 
             // Each op below targets the PK path directly.
@@ -204,7 +204,7 @@ pub async fn cosmos_patch_pk_guard_hierarchical() -> Result<(), Box<dyn Error>> 
             });
             let pk: PartitionKey = (tenant, user).into();
             context
-                .create_item(
+                .create_seed_item(
                     &container,
                     item_id,
                     pk.clone(),
@@ -830,19 +830,17 @@ pub async fn cosmos_patch_semantics() -> Result<(), Box<dyn Error>> {
                 let pk = format!("pk-{idx:03}");
                 let initial = seed_document(case, &item_id, &pk);
 
+                let initial_body = serde_json::to_vec(&initial)?;
                 context
-                    .create_item(
-                        &container,
-                        &item_id,
-                        pk.clone(),
-                        &serde_json::to_vec(&initial)?,
-                    )
+                    .create_seed_item(&container, &item_id, pk.clone(), &initial_body)
                     .await
                     .unwrap_or_else(|e| panic!("[{}] seed failed: {e}", case.id));
 
                 let spec = PatchInstructions::from(case.ops.clone());
                 let result = context
-                    .patch_item(&container, &item_id, pk.clone(), &spec, None)
+                    .retry_transient_transport(&format!("[{}] patch", case.id), || {
+                        context.patch_item(&container, &item_id, pk.clone(), &spec, None)
+                    })
                     .await;
 
                 match (&case.expected, result) {
@@ -982,7 +980,7 @@ pub async fn cosmos_patch_412_retry() -> Result<(), Box<dyn Error>> {
             let pk = "p1";
             let initial = json!({ "id": item_id, "pk": pk, "value": 0 });
             context
-                .create_item(&container, item_id, pk, &serde_json::to_vec(&initial)?)
+                .create_seed_item(&container, item_id, pk, &serde_json::to_vec(&initial)?)
                 .await?;
 
             let spec = PatchInstructions::from(vec![PatchOperation::increment("/value", 1i64)]);
@@ -1054,7 +1052,7 @@ pub async fn cosmos_patch_412_exhaustion() -> Result<(), Box<dyn Error>> {
             let pk = "p1";
             let initial = json!({ "id": item_id, "pk": pk, "value": 0 });
             context
-                .create_item(&container, item_id, pk, &serde_json::to_vec(&initial)?)
+                .create_seed_item(&container, item_id, pk, &serde_json::to_vec(&initial)?)
                 .await?;
 
             let max_attempts = std::num::NonZeroU8::new(2).unwrap();
