@@ -491,18 +491,37 @@ rare forms is a possible future optimization.)
   `from_slice`), `vectors`, `fuzz_tests`.
 - `azure_data_cosmos_driver/src/models/response_body.rs`:
   `deserialize_response` auto-detects the `0x80` preamble and calls
-  `binary_json::from_slice::<T>`.
+  `binary_json::from_slice::<T>`; `ResponseBody::transcode_to_text` converts a
+  binary payload to text JSON in place (for the driver-side text-response path).
+- `azure_data_cosmos_driver/src/binary_json/mod.rs`: `transcode_to_text(&[u8])`
+  converts a binary buffer to text JSON (`decode → serde_json::to_vec`);
+  text/empty input passes through unchanged.
+- `azure_data_cosmos_driver/src/models/cosmos_operation.rs`: the
+  `transcode_response_to_text` directive (accessor +
+  `with_transcode_response_to_text`), an internal driver flag (not a wire
+  header).
+- `azure_data_cosmos_driver/src/models/cosmos_response.rs`:
+  `CosmosResponse::transcode_body_to_text` applies the conversion to the
+  assembled response body.
+- `azure_data_cosmos_driver/src/driver/cosmos_driver.rs`: `execute_operation`
+  captures the `transcode_response_to_text` directive before the operation is
+  consumed and transcodes the response body when set.
 - `azure_data_cosmos/src/clients/container_client.rs`: `serialize_item_body`
   calls `binary_json::to_vec` on the binary write path; `apply_binary_negotiation`
-  sets the header.
+  sets the `JsonText,CosmosBinary` header and, for `request_text_response`, stamps
+  the operation's `transcode_response_to_text` directive.
 - `azure_data_cosmos/src/error.rs`: `convert_binary_encode_error` maps a
   `BinaryError` from the item-write encode path to the SDK error type (a
   request-body error). It is a helper called via `map_err` at the single
   call site rather than a `From` impl, so a future response-side decode error
   cannot be mislabeled as a request-body error.
-- `azure_data_cosmos/src/clients/mod.rs`: `BinaryEncoding::resolve` prefers the
-  explicit `CosmosClientBuilder::with_binary_encoding_enabled` option and falls
-  back to the `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment variable.
+- `azure_data_cosmos/src/clients/mod.rs`: `resolve_binary_encoding` prefers the
+  explicit `CosmosClientBuilder::with_binary_encoding_options` /
+  `with_binary_encoding_enabled` option and falls back to the
+  `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment variable, resolving a
+  `BinaryEncodingOptions`.
+- `azure_data_cosmos/src/options/client.rs`: the public `BinaryEncodingOptions`
+  (`enabled`, `request_text_response`) exposed through `options`.
 - `azure_data_cosmos_driver/src/models/cosmos_headers.rs`: the
   supported-serialization-formats header field + emission.
 - `azure_data_cosmos_benchmarks/benches/binary_encode.rs` /
