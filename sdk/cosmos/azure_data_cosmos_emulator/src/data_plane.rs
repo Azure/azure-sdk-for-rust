@@ -95,6 +95,12 @@ pub(crate) async fn into_cosmos_request(
         .map_err(|error| (StatusCode::PAYLOAD_TOO_LARGE, error.to_string()))?;
 
     let mut cosmos_request = CosmosRequest::new(url, method);
+    // `azure_core::http::headers::Headers` is backed by a map keyed on header
+    // name, so a repeated header name here collapses to its last value —
+    // matching `into_http_response`'s output below, which can only ever
+    // iterate a `Headers` map and therefore can never observe (or forward)
+    // more than one value per name either. Both directions of this bridge
+    // are consistently single-valued-per-header-name.
     for (name, value) in &parts.headers {
         let value = value
             .to_str()

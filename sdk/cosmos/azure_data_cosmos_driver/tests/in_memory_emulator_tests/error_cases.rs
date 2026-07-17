@@ -69,6 +69,47 @@ async fn upsert_missing_with_if_match_creates_item() {
 }
 
 #[tokio::test]
+async fn upsert_existing_with_mismatched_if_match_returns_412() {
+    let ctx = setup_single_region().await;
+    let body = serde_json::json!({"id": "existing", "pk": "pk1", "value": 1});
+    let request = create_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        &body,
+        r#"["pk1"]"#,
+        true,
+    );
+    let response = ctx.emulator.execute_request(&request).await.unwrap();
+    let (status, _headers, created) = collect_response(response).await;
+    assert_eq!(status, StatusCode::Created);
+    let etag = created["_etag"].as_str().unwrap();
+    assert_ne!(
+        etag, "\"stale\"",
+        "test fixture assumption: real etags are never literally 'stale'"
+    );
+
+    let replacement = serde_json::json!({"id": "existing", "pk": "pk1", "value": 2});
+    let mut request = create_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        &replacement,
+        r#"["pk1"]"#,
+        false,
+    );
+    request
+        .headers_mut()
+        .insert(IS_UPSERT.clone(), HeaderValue::from_static("True"));
+    request
+        .headers_mut()
+        .insert(IF_MATCH.clone(), HeaderValue::from_static("\"stale\""));
+
+    let response = ctx.emulator.execute_request(&request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::PreconditionFailed);
+}
+
+#[tokio::test]
 async fn replace_nonexistent_404() {
     let ctx = setup_single_region().await;
 

@@ -31,8 +31,17 @@ impl InMemoryEmulatorHttpClient {
         request: &Request,
     ) -> crate::error::Result<AsyncRawResponse> {
         let request_body: Bytes = request.body().into();
-        let frame =
-            RntbdRequestFrame::read(request_body.as_ref()).map_err(gateway_v2_bad_request)?;
+        // A frame that fails to parse has no usable `activityId` field, so
+        // there is nothing to echo back — but the response must still be a
+        // well-formed RNTBD frame (not a bare JSON body) so that any client
+        // speaking Gateway 2.0, not just the Rust driver, can decode the
+        // failure the same way it decodes every other error on this path.
+        let frame = match RntbdRequestFrame::read(request_body.as_ref()) {
+            Ok(frame) => frame,
+            Err(error) => {
+                return encode_error_response(gateway_v2_bad_request(error), Uuid::new_v4()).await
+            }
+        };
         let activity_id = frame.activity_id;
         let request = match decode_request(request, frame, self.store().config().consistency()) {
             Ok(request) => request,
@@ -704,6 +713,128 @@ mod tests {
         let framed = RntbdResponse::read(response.body().as_ref()).unwrap();
         assert_eq!(framed.status.status_code(), StatusCode::BadRequest);
         assert_eq!(framed.activity_id, activity_id);
+    }
+
+    #[tokio::test]
+    async fn malformed_frame_bytes_are_framed_with_matching_status() {
+        let gateway_v2_url = Url::parse("http://127.0.0.1:18444/").unwrap();
+        let region = VirtualRegion::new("East US", "http://127.0.0.1:18081/".parse().unwrap())
+            .with_gateway_v2_url(gateway_v2_url.clone());
+        let emulator =
+            InMemoryEmulatorHttpClient::new(VirtualAccountConfig::new(vec![region]).unwrap());
+        let mut request = Request::new(
+            gateway_v2_url.join("dbs/db/colls/coll/docs").unwrap(),
+            Method::Post,
+        );
+        // Not a valid RNTBD frame at all: too short to even contain a header
+        // length prefix, let alone resource/operation type and activity id.
+        // A generic h2c client that sends garbage bytes must still get back
+        // a response it can decode as RNTBD, not a bare JSON error body.
+        request.set_body(vec![0x01, 0x02, 0x03]);
+
+        let response = emulator
+            .execute_gateway_v2_request(&request)
+            .await
+            .unwrap()
+            .try_into_raw_response()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::BadRequest);
+        let framed = RntbdResponse::read(response.body().as_ref())
+            .expect("malformed-frame error response must itself be a well-formed RNTBD frame");
+        assert_eq!(framed.status.status_code(), StatusCode::BadRequest);
+    }
+
+    #[tokio::test]
+    async fn multi_region_gateway_v2_endpoints_each_serve_their_own_region() {
+        let east_gateway = Url::parse("http://127.0.0.1:18081/").unwrap();
+        let east_gateway_v2 = Url::parse("http://127.0.0.1:18444/").unwrap();
+        let west_gateway = Url::parse("http://127.0.0.1:18082/").unwrap();
+        let west_gateway_v2 = Url::parse("http://127.0.0.1:18445/").unwrap();
+        let east = VirtualRegion::new("East US", east_gateway.clone())
+            .with_gateway_v2_url(east_gateway_v2.clone());
+        let west = VirtualRegion::new("West US", west_gateway)
+            .with_gateway_v2_url(west_gateway_v2.clone());
+        let emulator =
+            InMemoryEmulatorHttpClient::new(VirtualAccountConfig::new(vec![east, west]).unwrap());
+        let store = emulator.store();
+        store.create_database("db");
+        let partition_key: PartitionKeyDefinition = serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"], "kind": "Hash", "version": 2
+        }))
+        .unwrap();
+        store.create_container_with_config(
+            "db",
+            "coll",
+            partition_key,
+            ContainerConfig::new()
+                .with_partition_count(1)
+                .build()
+                .unwrap(),
+        );
+
+        // Seed through the write region's standard gateway, then let the
+        // write replicate to the second region before reading it back
+        // through each region's own Gateway 2.0 endpoint.
+        let mut seed = Request::new(
+            east_gateway.join("dbs/db/colls/coll/docs").unwrap(),
+            Method::Post,
+        );
+        seed.headers_mut().insert(
+            "x-ms-documentdb-partitionkey",
+            HeaderValue::from_static(r#"["pk1"]"#),
+        );
+        seed.set_body(
+            serde_json::to_vec(&serde_json::json!({ "id": "item1", "pk": "pk1", "value": 42 }))
+                .unwrap(),
+        );
+        assert!(emulator
+            .execute_request(&seed)
+            .await
+            .unwrap()
+            .status()
+            .is_success());
+        store.drain_pending_replications().await;
+
+        for gateway_v2_url in [&east_gateway_v2, &west_gateway_v2] {
+            let activity_id = Uuid::new_v4();
+            let frame = RntbdRequestFrame {
+                resource_type: ResourceType::Document,
+                operation_type: OperationType::Read,
+                activity_id,
+                metadata: vec![
+                    Token::database_name("db".to_owned()),
+                    Token::collection_name("coll".to_owned()),
+                    Token::document_name("item1".to_owned()),
+                    Token::partition_key(r#"["pk1"]"#.to_owned()),
+                    Token::payload_present(false),
+                ],
+                body: None,
+            };
+            let mut bytes = Vec::new();
+            frame.write(&mut bytes).unwrap();
+            let mut request = Request::new(
+                gateway_v2_url.join("dbs/db/colls/coll/docs/item1").unwrap(),
+                Method::Post,
+            );
+            request.set_body(bytes);
+
+            let response = emulator
+                .execute_gateway_v2_request(&request)
+                .await
+                .unwrap()
+                .try_into_raw_response()
+                .await
+                .unwrap();
+            assert_eq!(
+                response.status(),
+                StatusCode::Ok,
+                "each region's Gateway 2.0 endpoint ({gateway_v2_url}) must independently serve its own replicated data"
+            );
+            let framed = RntbdResponse::read(response.body().as_ref()).unwrap();
+            assert_eq!(framed.status.status_code(), StatusCode::Ok);
+            assert_eq!(framed.activity_id, activity_id);
+        }
     }
 
     #[tokio::test]

@@ -151,7 +151,7 @@ API can further modify state at runtime. (YAML support is deferred; see ADR-006.
   "account": {
     "id": "emulator-account",
     "writeMode": "single",
-    "consistency": "Session",
+    "consistency": "session",
     "perPartitionFailover": false,
     "throttling": false,
     "regions": [
@@ -189,7 +189,7 @@ API can further modify state at runtime. (YAML support is deferred; see ADR-006.
 | Path                                      | Type                  | Notes                                                                                              |
 | ----------------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------- |
 | `account.writeMode`                       | `"single" \| "multi"` | Maps to `WriteMode`. In `single`, the first region is the hub/write region.                        |
-| `account.consistency`                     | enum                  | `Strong \| BoundedStaleness \| Session \| ConsistentPrefix \| Eventual`.                           |
+| `account.consistency`                     | enum                  | `strong \| boundedStaleness \| session \| consistentPrefix \| eventual` (camelCase, matching `writeMode`). |
 | `account.perPartitionFailover`            | bool                  | Initial `enablePerPartitionFailoverBehavior`; can be toggled at runtime.                           |
 | `account.throttling`                      | bool                  | Enables per-partition RU/s enforcement (429/3200).                                                 |
 | `account.regions[].gatewayPort`           | u16, optional         | Standard gateway port. Missing or `0` requests an OS-assigned port.                                |

@@ -2,7 +2,7 @@
   "account": {
     "id": "emulator-account",
     "writeMode": "single",
-    "consistency": "Session",
+    "consistency": "session",
     "perPartitionFailover": false,
     "throttling": false,
     "regions": [

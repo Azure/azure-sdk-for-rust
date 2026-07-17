@@ -15,8 +15,8 @@ use std::{
 
 use axum::{
     body::to_bytes,
-    extract::{Path, Request, State},
-    http::StatusCode,
+    extract::{FromRequest, FromRequestParts, Path, Request, State},
+    http::{request::Parts, StatusCode},
     response::{IntoResponse, Response},
     routing::{get, post, put},
     Json, Router,
@@ -24,7 +24,7 @@ use axum::{
 use azure_data_cosmos_driver::in_memory_emulator::{
     EmulatorStore, Epk, InMemoryEmulatorHttpClient, ManualControlPlaneOperation, WriteMode,
 };
-use serde::{Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::json;
 use tokio::{net::TcpListener, sync::Mutex};
 
@@ -32,6 +32,11 @@ use crate::{config::GatewayBinding, metrics::HostMetrics};
 
 const MAX_CONTROL_PLANE_LOCK_DURATION_MS: u64 = 60_000;
 const MAX_MANAGEMENT_BODY_SIZE: usize = 1024 * 1024;
+// Kept deliberately simple: a full scan-and-retain over a HashMap this small
+// is cheap, and 1_000 concurrently-tracked operations (most short-lived CI
+// runs will never approach this) is already a generous ceiling before we
+// bother reclaiming memory from long-terminal split/merge records.
+const OPERATION_EVICTION_THRESHOLD: usize = 1_000;
 
 #[derive(Clone)]
 struct ManagementState {
@@ -192,33 +197,85 @@ struct OperationRecord {
     action: Option<OperationAction>,
 }
 
+/// The operation-specific data for a long-running control-plane operation.
+///
+/// Deliberately separate from [`OperationAction`]'s pending/active state so
+/// that a future operation kind (e.g. PR2's region offline/online or
+/// write-region failover) only needs a new variant here — the
+/// pending/active/advance/registry machinery around it does not change.
+enum OperationKind {
+    Split {
+        database: String,
+        container: String,
+        parent: u32,
+        mode: SplitMode,
+        split_epk: Epk,
+    },
+    Merge {
+        database: String,
+        container: String,
+        partitions: [u32; 2],
+    },
+}
+
+impl OperationKind {
+    /// Locks the operation's target partition(s) and returns the handle that
+    /// completes it once released.
+    fn begin_manual(&self, store: &Arc<EmulatorStore>) -> ManualControlPlaneOperation {
+        match self {
+            Self::Split {
+                database,
+                container,
+                parent,
+                split_epk,
+                ..
+            } => {
+                store.begin_manual_split_partition(database, container, *parent, split_epk.clone())
+            }
+            Self::Merge {
+                database,
+                container,
+                partitions,
+            } => store.begin_manual_merge_partitions(
+                database,
+                container,
+                partitions[0],
+                partitions[1],
+            ),
+        }
+    }
+
+    /// Releases the manual operation's lock and reports the operation-kind-specific result.
+    async fn complete(
+        self,
+        store: &Arc<EmulatorStore>,
+        operation: ManualControlPlaneOperation,
+    ) -> Result<serde_json::Value, String> {
+        match self {
+            Self::Split {
+                database,
+                container,
+                parent,
+                mode,
+                split_epk,
+            } => {
+                complete_split(
+                    store, database, container, parent, mode, split_epk, operation,
+                )
+                .await
+            }
+            Self::Merge {
+                database,
+                container,
+                partitions,
+            } => complete_merge(store, database, container, partitions, operation).await,
+        }
+    }
+}
+
 enum OperationAction {
-    PendingSplit {
-        database: String,
-        container: String,
-        parent: u32,
-        mode: SplitMode,
-        split_epk: Epk,
-    },
-    ActiveSplit {
-        database: String,
-        container: String,
-        parent: u32,
-        mode: SplitMode,
-        split_epk: Epk,
-        operation: ManualControlPlaneOperation,
-    },
-    PendingMerge {
-        database: String,
-        container: String,
-        partitions: [u32; 2],
-    },
-    ActiveMerge {
-        database: String,
-        container: String,
-        partitions: [u32; 2],
-        operation: ManualControlPlaneOperation,
-    },
+    Pending(OperationKind),
+    Active(OperationKind, ManualControlPlaneOperation),
 }
 
 impl OperationRegistry {
@@ -226,6 +283,22 @@ impl OperationRegistry {
         let sequence = self.next_id.fetch_add(1, Ordering::Relaxed) + 1;
         format!("op-{kind}-{sequence}")
     }
+}
+
+/// Evicts terminal (`Succeeded`/`Failed`) operations once the registry grows
+/// past [`OPERATION_EVICTION_THRESHOLD`], so a long-lived host process
+/// doesn't retain every split/merge record forever. Must be called while
+/// holding the `records` lock.
+fn evict_terminal_operations_if_needed(records: &mut HashMap<String, OperationRecord>) {
+    if records.len() < OPERATION_EVICTION_THRESHOLD {
+        return;
+    }
+    records.retain(|_, record| {
+        !matches!(
+            record.status,
+            OperationStatus::Succeeded | OperationStatus::Failed
+        )
+    });
 }
 
 impl OperationRecord {
@@ -311,17 +384,9 @@ struct SplitResponse {
     split_epk: String,
 }
 
-struct SplitOperationDetails {
-    database: String,
-    container: String,
-    parent: u32,
-    mode: SplitMode,
-    split_epk: Epk,
-}
-
 async fn split_partition(
     State(state): State<ManagementState>,
-    Path((database, container, partition_id)): Path<(String, String, u32)>,
+    ApiPath((database, container, partition_id)): ApiPath<(String, String, u32)>,
     request: Request,
 ) -> ApiResult<(StatusCode, Json<serde_json::Value>)> {
     let request = parse_optional_json(request).await?;
@@ -353,28 +418,27 @@ async fn split_partition_inner(
     let operation_id = state.operations.next_id("split");
     let action = match request.progression_mode {
         ProgressionMode::Automatic => None,
-        ProgressionMode::Manual => Some(OperationAction::PendingSplit {
+        ProgressionMode::Manual => Some(OperationAction::Pending(OperationKind::Split {
             database: database.clone(),
             container: container.clone(),
             parent: partition_id,
             mode: request.mode,
             split_epk: split_epk.clone(),
-        }),
+        })),
     };
     let operation = OperationRecord::running(action);
     let response = operation_response(&operation_id, &operation);
-    state
-        .operations
-        .records
-        .lock()
-        .await
-        .insert(operation_id.clone(), operation);
+    {
+        let mut records = state.operations.records.lock().await;
+        records.insert(operation_id.clone(), operation);
+        evict_terminal_operations_if_needed(&mut records);
+    }
 
     if request.progression_mode == ProgressionMode::Automatic {
-        spawn_automatic_split(
+        spawn_automatic(
             state,
             operation_id,
-            SplitOperationDetails {
+            OperationKind::Split {
                 database,
                 container,
                 parent: partition_id,
@@ -440,35 +504,36 @@ struct MergeResponse {
 
 async fn merge_partitions(
     State(state): State<ManagementState>,
-    Path((database, container)): Path<(String, String)>,
-    Json(request): Json<MergeRequest>,
+    ApiPath((database, container)): ApiPath<(String, String)>,
+    ApiJson(request): ApiJson<MergeRequest>,
 ) -> ApiResult<(StatusCode, Json<serde_json::Value>)> {
     let lock_duration = validate_progression(request.progression_mode, request.lock_duration_ms)?;
     let operation_id = state.operations.next_id("merge");
     let action = match request.progression_mode {
         ProgressionMode::Automatic => None,
-        ProgressionMode::Manual => Some(OperationAction::PendingMerge {
+        ProgressionMode::Manual => Some(OperationAction::Pending(OperationKind::Merge {
             database: database.clone(),
             container: container.clone(),
             partitions: request.partition_ids,
-        }),
+        })),
     };
     let operation = OperationRecord::running(action);
     let response = operation_response(&operation_id, &operation);
-    state
-        .operations
-        .records
-        .lock()
-        .await
-        .insert(operation_id.clone(), operation);
+    {
+        let mut records = state.operations.records.lock().await;
+        records.insert(operation_id.clone(), operation);
+        evict_terminal_operations_if_needed(&mut records);
+    }
 
     if request.progression_mode == ProgressionMode::Automatic {
-        spawn_automatic_merge(
+        spawn_automatic(
             state,
             operation_id,
-            database,
-            container,
-            request.partition_ids,
+            OperationKind::Merge {
+                database,
+                container,
+                partitions: request.partition_ids,
+            },
             lock_duration,
         );
     }
@@ -476,29 +541,19 @@ async fn merge_partitions(
     Ok((StatusCode::ACCEPTED, Json(response)))
 }
 
-fn spawn_automatic_split(
+/// Spawns the background task that advances an `automatic`-progression
+/// operation from `Swapping` through to its terminal phase.
+fn spawn_automatic(
     state: ManagementState,
     operation_id: String,
-    details: SplitOperationDetails,
+    kind: OperationKind,
     lock_duration: Duration,
 ) {
     tokio::spawn(async move {
-        let SplitOperationDetails {
-            database,
-            container,
-            parent,
-            mode,
-            split_epk,
-        } = details;
         let store = state.emulator.store();
         let operation = {
             let mut operations = state.operations.records.lock().await;
-            let operation = store.begin_manual_split_partition(
-                &database,
-                &container,
-                parent,
-                split_epk.clone(),
-            );
+            let operation = kind.begin_manual(&store);
             if let Some(record) = operations.get_mut(&operation_id) {
                 record.phase = OperationPhase::Swapping;
             }
@@ -508,42 +563,7 @@ fn spawn_automatic_split(
             tokio::time::sleep(lock_duration).await;
         }
         let mut operations = state.operations.records.lock().await;
-        let outcome = complete_split(
-            &store, database, container, parent, mode, split_epk, operation,
-        )
-        .await;
-        finish_operation_locked(&mut operations, &operation_id, outcome);
-    });
-}
-
-fn spawn_automatic_merge(
-    state: ManagementState,
-    operation_id: String,
-    database: String,
-    container: String,
-    partitions: [u32; 2],
-    lock_duration: Duration,
-) {
-    tokio::spawn(async move {
-        let store = state.emulator.store();
-        let operation = {
-            let mut operations = state.operations.records.lock().await;
-            let operation = store.begin_manual_merge_partitions(
-                &database,
-                &container,
-                partitions[0],
-                partitions[1],
-            );
-            if let Some(record) = operations.get_mut(&operation_id) {
-                record.phase = OperationPhase::Swapping;
-            }
-            operation
-        };
-        if !lock_duration.is_zero() {
-            tokio::time::sleep(lock_duration).await;
-        }
-        let mut operations = state.operations.records.lock().await;
-        let outcome = complete_merge(&store, database, container, partitions, operation).await;
+        let outcome = kind.complete(&store, operation).await;
         finish_operation_locked(&mut operations, &operation_id, outcome);
     });
 }
@@ -616,7 +636,7 @@ async fn complete_merge(
 
 async fn get_operation(
     State(state): State<ManagementState>,
-    Path(operation_id): Path<String>,
+    ApiPath(operation_id): ApiPath<String>,
 ) -> ApiResult<Json<serde_json::Value>> {
     let operations = state.operations.records.lock().await;
     let operation = operations
@@ -625,28 +645,11 @@ async fn get_operation(
     Ok(Json(operation_response(&operation_id, operation)))
 }
 
-enum ManualCompletion {
-    Split {
-        database: String,
-        container: String,
-        parent: u32,
-        mode: SplitMode,
-        split_epk: Epk,
-        operation: ManualControlPlaneOperation,
-    },
-    Merge {
-        database: String,
-        container: String,
-        partitions: [u32; 2],
-        operation: ManualControlPlaneOperation,
-    },
-}
-
 async fn advance_operation(
     State(state): State<ManagementState>,
-    Path(operation_id): Path<String>,
+    ApiPath(operation_id): ApiPath<String>,
 ) -> ApiResult<Json<serde_json::Value>> {
-    let (completion, response) = {
+    let (kind, manual_operation, response) = {
         let mut operations = state.operations.records.lock().await;
         let operation = operations.get_mut(&operation_id).ok_or_else(|| {
             ApiError::not_found(format!("operation '{operation_id}' does not exist"))
@@ -664,82 +667,13 @@ async fn advance_operation(
             ))
         })?;
         match action {
-            OperationAction::PendingSplit {
-                database,
-                container,
-                parent,
-                mode,
-                split_epk,
-            } => {
-                let manual_operation = state.emulator.store().begin_manual_split_partition(
-                    &database,
-                    &container,
-                    parent,
-                    split_epk.clone(),
-                );
+            OperationAction::Pending(kind) => {
+                let manual_operation = kind.begin_manual(&state.emulator.store());
                 operation.phase = OperationPhase::Swapping;
-                operation.action = Some(OperationAction::ActiveSplit {
-                    database,
-                    container,
-                    parent,
-                    mode,
-                    split_epk,
-                    operation: manual_operation,
-                });
+                operation.action = Some(OperationAction::Active(kind, manual_operation));
                 return Ok(Json(operation_response(&operation_id, operation)));
             }
-            OperationAction::PendingMerge {
-                database,
-                container,
-                partitions,
-            } => {
-                let manual_operation = state.emulator.store().begin_manual_merge_partitions(
-                    &database,
-                    &container,
-                    partitions[0],
-                    partitions[1],
-                );
-                operation.phase = OperationPhase::Swapping;
-                operation.action = Some(OperationAction::ActiveMerge {
-                    database,
-                    container,
-                    partitions,
-                    operation: manual_operation,
-                });
-                return Ok(Json(operation_response(&operation_id, operation)));
-            }
-            OperationAction::ActiveSplit {
-                database,
-                container,
-                parent,
-                mode,
-                split_epk,
-                operation: manual_operation,
-            } => (
-                ManualCompletion::Split {
-                    database,
-                    container,
-                    parent,
-                    mode,
-                    split_epk,
-                    operation: manual_operation,
-                },
-                response,
-            ),
-            OperationAction::ActiveMerge {
-                database,
-                container,
-                partitions,
-                operation: manual_operation,
-            } => (
-                ManualCompletion::Merge {
-                    database,
-                    container,
-                    partitions,
-                    operation: manual_operation,
-                },
-                response,
-            ),
+            OperationAction::Active(kind, manual_operation) => (kind, manual_operation, response),
         }
     };
     let operations = state.operations.clone();
@@ -747,27 +681,7 @@ async fn advance_operation(
     let completion_id = operation_id.clone();
     tokio::spawn(async move {
         let mut records = operations.records.lock().await;
-        let outcome = match completion {
-            ManualCompletion::Split {
-                database,
-                container,
-                parent,
-                mode,
-                split_epk,
-                operation,
-            } => {
-                complete_split(
-                    &store, database, container, parent, mode, split_epk, operation,
-                )
-                .await
-            }
-            ManualCompletion::Merge {
-                database,
-                container,
-                partitions,
-                operation,
-            } => complete_merge(&store, database, container, partitions, operation).await,
-        };
+        let outcome = kind.complete(&store, manual_operation).await;
         finish_operation_locked(&mut records, &completion_id, outcome);
     });
     Ok(Json(response))
@@ -780,7 +694,7 @@ struct EnabledRequest {
 
 async fn set_per_partition_failover(
     State(state): State<ManagementState>,
-    Json(request): Json<EnabledRequest>,
+    ApiJson(request): ApiJson<EnabledRequest>,
 ) -> Json<EnabledRequest> {
     state
         .emulator
@@ -792,7 +706,7 @@ async fn set_per_partition_failover(
 
 async fn pause_replication(
     State(state): State<ManagementState>,
-    Path(region): Path<String>,
+    ApiPath(region): ApiPath<String>,
 ) -> ApiResult<Json<serde_json::Value>> {
     ensure_region(&state.emulator.store(), &region)?;
     state.emulator.store().pause_replication(&region);
@@ -801,7 +715,7 @@ async fn pause_replication(
 
 async fn resume_replication(
     State(state): State<ManagementState>,
-    Path(region): Path<String>,
+    ApiPath(region): ApiPath<String>,
 ) -> ApiResult<Json<serde_json::Value>> {
     ensure_region(&state.emulator.store(), &region)?;
     state.emulator.store().resume_replication(&region);
@@ -908,12 +822,53 @@ impl IntoResponse for ApiError {
     }
 }
 
+/// A [`Path`] extractor whose rejection is shaped like every other error this
+/// API returns (`{"error": "..."}"`), instead of axum's default plaintext
+/// rejection body.
+struct ApiPath<T>(T);
+
+impl<T, S> FromRequestParts<S> for ApiPath<T>
+where
+    T: DeserializeOwned + Send + 'static,
+    S: Send + Sync,
+{
+    type Rejection = ApiError;
+
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+        Path::<T>::from_request_parts(parts, state)
+            .await
+            .map(|Path(value)| Self(value))
+            .map_err(|rejection| ApiError::bad_request(rejection.to_string()))
+    }
+}
+
+/// A [`Json`] extractor whose rejection is shaped like every other error this
+/// API returns, instead of axum's default plaintext rejection body.
+struct ApiJson<T>(T);
+
+impl<T, S> FromRequest<S> for ApiJson<T>
+where
+    T: DeserializeOwned,
+    S: Send + Sync,
+{
+    type Rejection = ApiError;
+
+    async fn from_request(request: Request, state: &S) -> Result<Self, Self::Rejection> {
+        Json::<T>::from_request(request, state)
+            .await
+            .map(|Json(value)| Self(value))
+            .map_err(|rejection| ApiError::bad_request(rejection.to_string()))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use azure_core::http::{headers::HeaderValue, Method, Request};
     use azure_data_cosmos_driver::{
-        in_memory_emulator::{ContainerConfig, VirtualAccountConfig, VirtualRegion},
+        in_memory_emulator::{
+            ContainerConfig, ReplicationConfig, VirtualAccountConfig, VirtualRegion,
+        },
         models::PartitionKeyDefinition,
     };
     use url::Url;
@@ -962,7 +917,7 @@ mod tests {
         expected: &str,
     ) -> serde_json::Value {
         for _ in 0..100 {
-            let operation = get_operation(State(state.clone()), Path(operation_id.to_owned()))
+            let operation = get_operation(State(state.clone()), ApiPath(operation_id.to_owned()))
                 .await
                 .unwrap();
             if operation["phase"] == expected {
@@ -1040,7 +995,7 @@ mod tests {
         assert_eq!(response.1["phase"], "Preparing");
         let operation_id = response.1["operationId"].as_str().unwrap().to_owned();
 
-        let swapping = advance_operation(State(state.clone()), Path(operation_id.clone()))
+        let swapping = advance_operation(State(state.clone()), ApiPath(operation_id.clone()))
             .await
             .unwrap();
         assert_eq!(swapping["phase"], "Swapping");
@@ -1051,7 +1006,7 @@ mod tests {
             .is_empty());
 
         let completion_started =
-            advance_operation(State(state.clone()), Path(operation_id.clone()))
+            advance_operation(State(state.clone()), ApiPath(operation_id.clone()))
                 .await
                 .unwrap();
         assert_eq!(completion_started["phase"], "Swapping");
@@ -1062,7 +1017,7 @@ mod tests {
         assert_eq!(succeeded["children"].as_array().unwrap().len(), 2);
         assert!(!succeeded["splitEpk"].as_str().unwrap().is_empty());
 
-        let queried = get_operation(State(state.clone()), Path(operation_id))
+        let queried = get_operation(State(state.clone()), ApiPath(operation_id))
             .await
             .unwrap();
         assert_eq!(queried["phase"], "Succeeded");
@@ -1092,8 +1047,8 @@ mod tests {
             .collect::<Vec<_>>();
         let merge = merge_partitions(
             State(state.clone()),
-            Path(("testdb".to_owned(), "testcoll".to_owned())),
-            Json(MergeRequest {
+            ApiPath(("testdb".to_owned(), "testcoll".to_owned())),
+            ApiJson(MergeRequest {
                 partition_ids: [children[0], children[1]],
                 progression_mode: ProgressionMode::Manual,
                 lock_duration_ms: None,
@@ -1102,12 +1057,12 @@ mod tests {
         .await
         .unwrap();
         let merge_id = merge.1["operationId"].as_str().unwrap().to_owned();
-        let merge_swapping = advance_operation(State(state.clone()), Path(merge_id.clone()))
+        let merge_swapping = advance_operation(State(state.clone()), ApiPath(merge_id.clone()))
             .await
             .unwrap();
         assert_eq!(merge_swapping["phase"], "Swapping");
         let merge_completion_started =
-            advance_operation(State(state.clone()), Path(merge_id.clone()))
+            advance_operation(State(state.clone()), ApiPath(merge_id.clone()))
                 .await
                 .unwrap();
         assert_eq!(merge_completion_started["phase"], "Swapping");
@@ -1273,5 +1228,223 @@ mod tests {
         assert!(terminal["splitEpk"].is_string());
 
         server.abort();
+    }
+
+    #[tokio::test]
+    async fn storage_split_mode_round_trips_over_http() {
+        let gateway_url = Url::parse("http://127.0.0.1:18081/").unwrap();
+        let account =
+            VirtualAccountConfig::new(vec![VirtualRegion::new("East US", gateway_url.clone())])
+                .unwrap();
+        let emulator = Arc::new(InMemoryEmulatorHttpClient::new(account));
+        emulator.store().create_database("testdb");
+        let partition_key: PartitionKeyDefinition = serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"], "kind": "Hash", "version": 2
+        }))
+        .unwrap();
+        emulator.store().create_container_with_config(
+            "testdb",
+            "testcoll",
+            partition_key,
+            ContainerConfig::new()
+                .with_partition_count(1)
+                .build()
+                .unwrap(),
+        );
+        // `storage` mode requires documents in at least two distinct EPK
+        // groups to compute a balancing boundary.
+        for (id, pk) in [("1", "a"), ("2", "z")] {
+            let mut request = Request::new(
+                gateway_url.join("dbs/testdb/colls/testcoll/docs").unwrap(),
+                Method::Post,
+            );
+            request.headers_mut().insert(
+                "x-ms-documentdb-partitionkey",
+                HeaderValue::from(format!(r#"["{pk}"]"#)),
+            );
+            request
+                .set_body(serde_json::to_vec(&serde_json::json!({ "id": id, "pk": pk })).unwrap());
+            let response = emulator.execute_request(&request).await.unwrap();
+            assert_eq!(response.status(), azure_core::http::StatusCode::Created);
+        }
+
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let app = router(
+            emulator,
+            "test-account".to_owned(),
+            Vec::new(),
+            Arc::new(HostMetrics::default()),
+        );
+        let server = tokio::spawn(async move { axum::serve(listener, app).await });
+
+        let (status, created) = http_json(
+            address,
+            "POST",
+            "/databases/testdb/containers/testcoll/partitions/0/split",
+            Some(r#"{"mode":"storage"}"#),
+        )
+        .await;
+        assert_eq!(status, 202);
+        let operation_id = created["operationId"].as_str().unwrap();
+        let operation_path = format!("/operations/{operation_id}");
+
+        let mut terminal = None;
+        for _ in 0..100 {
+            let (status, operation) = http_json(address, "GET", &operation_path, None).await;
+            assert_eq!(status, 200);
+            if operation["phase"] == "Succeeded" {
+                terminal = Some(operation);
+                break;
+            }
+            tokio::task::yield_now().await;
+        }
+        let terminal = terminal.expect("storage split did not reach Succeeded");
+        assert_eq!(terminal["mode"], "storage");
+        assert_eq!(terminal["children"].as_array().unwrap().len(), 2);
+        assert!(!terminal["splitEpk"].as_str().unwrap().is_empty());
+
+        server.abort();
+    }
+
+    #[tokio::test]
+    async fn per_partition_failover_toggle_round_trips_over_http() {
+        let gateway_url = Url::parse("http://127.0.0.1:18081/").unwrap();
+        let account =
+            VirtualAccountConfig::new(vec![VirtualRegion::new("East US", gateway_url)]).unwrap();
+        let emulator = Arc::new(InMemoryEmulatorHttpClient::new(account));
+        assert!(!emulator.store().config().per_partition_failover_enabled());
+
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let app = router(
+            emulator.clone(),
+            "test-account".to_owned(),
+            Vec::new(),
+            Arc::new(HostMetrics::default()),
+        );
+        let server = tokio::spawn(async move { axum::serve(listener, app).await });
+
+        let (status, enabled) = http_json(
+            address,
+            "PUT",
+            "/config/per-partition-failover",
+            Some(r#"{"enabled":true}"#),
+        )
+        .await;
+        assert_eq!(status, 200);
+        assert_eq!(enabled["enabled"], true);
+        assert!(emulator.store().config().per_partition_failover_enabled());
+
+        let (status, disabled) = http_json(
+            address,
+            "PUT",
+            "/config/per-partition-failover",
+            Some(r#"{"enabled":false}"#),
+        )
+        .await;
+        assert_eq!(status, 200);
+        assert_eq!(disabled["enabled"], false);
+        assert!(!emulator.store().config().per_partition_failover_enabled());
+
+        server.abort();
+    }
+
+    #[tokio::test]
+    async fn replication_pause_and_resume_round_trip_through_management_api() {
+        let east_url = Url::parse("http://127.0.0.1:18081/").unwrap();
+        let west_url = Url::parse("http://127.0.0.1:18082/").unwrap();
+        let account = VirtualAccountConfig::new(vec![
+            VirtualRegion::new("East US", east_url.clone()),
+            VirtualRegion::new("West US", west_url.clone()),
+        ])
+        .unwrap()
+        .with_replication_config(ReplicationConfig::fixed(Duration::from_millis(20)));
+        let emulator = Arc::new(InMemoryEmulatorHttpClient::new(account));
+        emulator.store().create_database("testdb");
+        let partition_key: PartitionKeyDefinition = serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"], "kind": "Hash", "version": 2
+        }))
+        .unwrap();
+        emulator.store().create_container_with_config(
+            "testdb",
+            "testcoll",
+            partition_key,
+            ContainerConfig::new()
+                .with_partition_count(1)
+                .build()
+                .unwrap(),
+        );
+
+        let state = ManagementState {
+            emulator: emulator.clone(),
+            account_id: "test-account".into(),
+            bindings: Vec::<GatewayBinding>::new().into(),
+            metrics: Arc::new(HostMetrics::default()),
+            operations: Arc::new(OperationRegistry::default()),
+        };
+
+        let paused = pause_replication(State(state.clone()), ApiPath("West US".to_owned()))
+            .await
+            .unwrap();
+        assert_eq!(paused.0["replication"], "paused");
+
+        let mut create = Request::new(
+            east_url.join("dbs/testdb/colls/testcoll/docs").unwrap(),
+            Method::Post,
+        );
+        create.headers_mut().insert(
+            "x-ms-documentdb-partitionkey",
+            HeaderValue::from_static(r#"["pk1"]"#),
+        );
+        create.set_body(
+            serde_json::to_vec(&serde_json::json!({ "id": "item1", "pk": "pk1" })).unwrap(),
+        );
+        let response = emulator.execute_request(&create).await.unwrap();
+        assert_eq!(response.status(), azure_core::http::StatusCode::Created);
+
+        // Give the (very short) configured replication delay plenty of time
+        // to elapse. Because replication to West US is paused, the write
+        // must still be sitting in that region's buffer, not applied.
+        tokio::time::sleep(Duration::from_millis(200)).await;
+        let mut read_while_paused = Request::new(
+            west_url
+                .join("dbs/testdb/colls/testcoll/docs/item1")
+                .unwrap(),
+            Method::Get,
+        );
+        read_while_paused.headers_mut().insert(
+            "x-ms-documentdb-partitionkey",
+            HeaderValue::from_static(r#"["pk1"]"#),
+        );
+        let response = emulator.execute_request(&read_while_paused).await.unwrap();
+        assert_eq!(
+            response.status(),
+            azure_core::http::StatusCode::NotFound,
+            "paused replication must buffer the write instead of applying it"
+        );
+
+        let resumed = resume_replication(State(state.clone()), ApiPath("West US".to_owned()))
+            .await
+            .unwrap();
+        assert_eq!(resumed.0["replication"], "resumed");
+        emulator.store().drain_pending_replications().await;
+
+        let mut read_after_resume = Request::new(
+            west_url
+                .join("dbs/testdb/colls/testcoll/docs/item1")
+                .unwrap(),
+            Method::Get,
+        );
+        read_after_resume.headers_mut().insert(
+            "x-ms-documentdb-partitionkey",
+            HeaderValue::from_static(r#"["pk1"]"#),
+        );
+        let response = emulator.execute_request(&read_after_resume).await.unwrap();
+        assert_eq!(
+            response.status(),
+            azure_core::http::StatusCode::Ok,
+            "resuming replication must apply the buffered write"
+        );
     }
 }

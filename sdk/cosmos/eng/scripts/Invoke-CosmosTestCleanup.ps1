@@ -10,7 +10,8 @@ $ShutdownTimeout = 30
 if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
     if ($env:AZURE_COSMOS_INMEMORY_EMULATOR_PID) {
         $hostProcess = Get-Process -Id ([int]$env:AZURE_COSMOS_INMEMORY_EMULATOR_PID) -ErrorAction SilentlyContinue
-    } else {
+    }
+    else {
         $hostProcess = Get-Process azure_data_cosmos_emulator -ErrorAction SilentlyContinue
     }
     if ($hostProcess) {
@@ -23,7 +24,8 @@ elseif ($IsWindows) {
     $EmulatorPath = & "$PSScriptRoot\Get-CosmosEmulatorPath.ps1"
     if ($null -eq $EmulatorPath) {
         Write-Host "Unable to confirm Cosmos DB Emulator location, skipping shutdown."
-    } else {
+    }
+    else {
         Write-Host "Shutting down Cosmos DB Emulator at '$EmulatorPath'."
         & $EmulatorPath /shutdown
 
@@ -46,12 +48,14 @@ elseif ($IsWindows) {
             Write-Warning "Cosmos DB Emulator did not shut down within ${ShutdownTimeout} seconds."
         }
     }
-} elseif (Get-Command docker -ErrorAction SilentlyContinue) {
+}
+elseif (Get-Command docker -ErrorAction SilentlyContinue) {
     $containerName = "cosmosdb-emulator-test"
     $containerStatus = docker ps -a --filter "name=$containerName" --format "{{.Status}}"
     if (-not $containerStatus) {
         Write-Host "No Cosmos DB Emulator container found, skipping cleanup."
-    } else {
+    }
+    else {
         Write-Host "Stopping and removing Cosmos DB Emulator container '$containerName'."
         Invoke-LoggedCommand "docker rm -f $containerName"
 
@@ -74,7 +78,8 @@ elseif ($IsWindows) {
             Write-Warning "Cosmos DB Emulator did not shut down within ${ShutdownTimeout} seconds."
         }
     }
-} else {
+}
+else {
     Write-Host "No Cosmos DB Emulator found to clean up."
 }
 

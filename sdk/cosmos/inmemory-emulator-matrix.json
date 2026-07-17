@@ -10,7 +10,12 @@
         "Pool": "env:LINUXPOOL"
       }
     },
-    "RustToolchainName": ["stable"],
-    "AZURE_COSMOS_EMULATOR_FLAVOR": ["inmemory-v1", "inmemory-v2"]
+    "RustToolchainName": [
+      "stable"
+    ],
+    "AZURE_COSMOS_EMULATOR_FLAVOR": [
+      "inmemory-v1",
+      "inmemory-v2"
+    ]
   }
 }

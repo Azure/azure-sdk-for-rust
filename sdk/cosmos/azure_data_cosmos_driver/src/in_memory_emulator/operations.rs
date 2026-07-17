@@ -4587,6 +4587,7 @@ fn handle_read(
         }
 
         let lsn = partition.current_lsn();
+        drop(docs);
         let headers = Some(PointResponseHeaders::from_partition(
             partition,
             store.next_transport_request_id(),

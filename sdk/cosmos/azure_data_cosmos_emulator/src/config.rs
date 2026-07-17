@@ -121,13 +121,14 @@ struct ReplicationOverride {
 }
 
 #[derive(Clone, Copy, Debug, Deserialize)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "camelCase")]
 enum WriteModeConfig {
     Single,
     Multi,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 enum ConsistencyConfig {
     Strong,
     BoundedStaleness,
@@ -178,8 +179,15 @@ enum ListenerSlot {
 
 impl EmulatorConfig {
     pub(crate) async fn load(path: &Path) -> Result<Self> {
-        let contents = tokio::fs::read(path).await?;
-        let config: Self = serde_json::from_slice(&contents)?;
+        let contents = tokio::fs::read(path)
+            .await
+            .map_err(|error| format!("failed to read config file '{}': {error}", path.display()))?;
+        let config: Self = serde_json::from_slice(&contents).map_err(|error| {
+            format!(
+                "failed to parse config file '{}' as JSON: {error}",
+                path.display()
+            )
+        })?;
         config.validate()?;
         Ok(config)
     }
@@ -306,16 +314,11 @@ impl EmulatorConfig {
         for database in &self.databases {
             store.create_database(&database.id);
             for container in &database.containers {
-                let mut container_config =
-                    ContainerConfig::new().with_partition_count(container.partition_count);
-                if let Some(throughput) = container.throughput {
-                    container_config = container_config.with_throughput(throughput);
-                }
                 store.create_container_with_config(
                     &database.id,
                     &container.id,
                     container.partition_key.clone(),
-                    container_config.build()?,
+                    build_container_config(container)?,
                 );
 
                 for seed_item in &container.seed_items {
@@ -391,16 +394,27 @@ impl EmulatorConfig {
                     )
                     .into());
                 }
-                let mut container_config =
-                    ContainerConfig::new().with_partition_count(container.partition_count);
-                if let Some(throughput) = container.throughput {
-                    container_config = container_config.with_throughput(throughput);
-                }
-                container_config.build()?;
+                build_container_config(container)?;
             }
         }
         Ok(())
     }
+}
+
+/// Builds the driver-level [`ContainerConfig`] for a configured container.
+///
+/// Shared by [`EmulatorConfig::validate`] (which discards the built config,
+/// using it only to surface a validation error before anything is
+/// provisioned) and [`EmulatorConfig::provision`] (which uses it to actually
+/// create the container), so a future container option added to one path
+/// cannot silently be forgotten on the other.
+fn build_container_config(container: &ContainerSettings) -> Result<ContainerConfig> {
+    let mut container_config =
+        ContainerConfig::new().with_partition_count(container.partition_count);
+    if let Some(throughput) = container.throughput {
+        container_config = container_config.with_throughput(throughput);
+    }
+    Ok(container_config.build()?)
 }
 
 fn validate_resource_id(resource_type: &str, id: &str) -> Result<()> {
@@ -512,7 +526,7 @@ mod tests {
             "account": {
                 "id": "test-account",
                 "writeMode": "single",
-                "consistency": "Session",
+                "consistency": "session",
                 "regions": [{ "name": "East US", "gatewayPort": 0 }]
             },
             "management": { "port": 0 },
@@ -562,7 +576,7 @@ mod tests {
             "account": {
                 "id": "test-account",
                 "writeMode": "single",
-                "consistency": "Session",
+                "consistency": "session",
                 "regions": [{ "name": "East US", "gatewayPort": 9090 }]
             },
             "management": { "port": 9090 }
@@ -578,7 +592,7 @@ mod tests {
             "account": {
                 "id": "test-account",
                 "writeMode": "single",
-                "consistency": "Session",
+                "consistency": "session",
                 "regions": [{ "name": "East US", "gateway20Port": 0 }]
             }
         }))
@@ -624,7 +638,7 @@ mod tests {
             "account": {
                 "id": "test-account",
                 "writeMode": "single",
-                "consistency": "Session",
+                "consistency": "session",
                 "regions": [
                     { "name": "East US", "gatewayPort": 18081, "regionId": 1 },
                     { "name": "east us", "gatewayPort": 18082, "regionId": 1 }
@@ -641,7 +655,7 @@ mod tests {
             "account": {
                 "id": "test-account",
                 "writeMode": "single",
-                "consistency": "Session",
+                "consistency": "session",
                 "regions": [{ "name": "East US" }]
             },
             "databases": [{ "id": "db" }, { "id": "db" }]
@@ -653,7 +667,7 @@ mod tests {
             "account": {
                 "id": "test-account",
                 "writeMode": "single",
-                "consistency": "Session",
+                "consistency": "session",
                 "regions": [{ "name": "East US" }]
             },
             "databases": [{
@@ -674,7 +688,7 @@ mod tests {
             "account": {
                 "id": "test-account",
                 "writeMode": "single",
-                "consistency": "Session",
+                "consistency": "session",
                 "regions": [{ "name": "East US" }]
             },
             "databases": [
@@ -704,5 +718,121 @@ mod tests {
         );
         let response = emulator.execute_request(&request).await.unwrap();
         assert_eq!(response.status(), azure_core::http::StatusCode::NotFound);
+    }
+
+    #[tokio::test]
+    async fn applies_replication_overrides() {
+        let config: EmulatorConfig = serde_json::from_value(serde_json::json!({
+            "account": {
+                "id": "test-account",
+                "writeMode": "single",
+                "consistency": "session",
+                "regions": [
+                    { "name": "East US", "gatewayPort": 0 },
+                    { "name": "West US", "gatewayPort": 0 }
+                ],
+                "replication": { "minDelayMs": 0, "maxDelayMs": 0 },
+                "replicationOverrides": [
+                    { "source": "East US", "target": "West US", "minDelayMs": 5000, "maxDelayMs": 5000 }
+                ]
+            }
+        }))
+        .unwrap();
+        config.validate().unwrap();
+        let bound_host = config.bind().await.unwrap();
+        let bindings: Vec<_> = bound_host
+            .gateways
+            .iter()
+            .map(|gateway| gateway.binding())
+            .collect();
+        let east_url = bindings[0].gateway_url.clone();
+        let west_url = bindings[1].gateway_url.clone();
+        let emulator = config.create_emulator(&bindings).unwrap();
+        emulator.store().create_database("testdb");
+        let partition_key: PartitionKeyDefinition = serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"], "kind": "Hash", "version": 2
+        }))
+        .unwrap();
+        emulator.store().create_container_with_config(
+            "testdb",
+            "testcoll",
+            partition_key,
+            ContainerConfig::new()
+                .with_partition_count(1)
+                .build()
+                .unwrap(),
+        );
+
+        let mut request = Request::new(
+            east_url.join("dbs/testdb/colls/testcoll/docs").unwrap(),
+            Method::Post,
+        );
+        request.headers_mut().insert(
+            "x-ms-documentdb-partitionkey",
+            HeaderValue::from_static(r#"["pk1"]"#),
+        );
+        request.set_body(
+            serde_json::to_vec(&serde_json::json!({ "id": "item1", "pk": "pk1" })).unwrap(),
+        );
+        let response = emulator.execute_request(&request).await.unwrap();
+        assert_eq!(response.status(), azure_core::http::StatusCode::Created);
+
+        // The account-wide default (0ms) would have replicated almost
+        // instantly; the override for East US -> West US specifically is
+        // 5s, so after a much shorter wait West US must not see the write
+        // yet. This is only a meaningful assertion if the per-pair override
+        // — not the account default — is actually the one being applied.
+        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+        let mut read = Request::new(
+            west_url
+                .join("dbs/testdb/colls/testcoll/docs/item1")
+                .unwrap(),
+            Method::Get,
+        );
+        read.headers_mut().insert(
+            "x-ms-documentdb-partitionkey",
+            HeaderValue::from_static(r#"["pk1"]"#),
+        );
+        let response = emulator.execute_request(&read).await.unwrap();
+        assert_eq!(
+            response.status(),
+            azure_core::http::StatusCode::NotFound,
+            "replicationOverrides' longer delay must be applied instead of the account default"
+        );
+    }
+
+    #[tokio::test]
+    async fn load_reports_a_clean_error_naming_a_missing_config_file() {
+        let missing_path =
+            Path::new("azure-data-cosmos-emulator-this-config-file-does-not-exist.json");
+        let error = EmulatorConfig::load(missing_path)
+            .await
+            .expect_err("loading a nonexistent path must return an error, not panic");
+        assert!(
+            error
+                .to_string()
+                .contains("azure-data-cosmos-emulator-this-config-file-does-not-exist.json"),
+            "error must name the offending path, got: {error}"
+        );
+    }
+
+    #[tokio::test]
+    async fn load_reports_a_clean_error_for_malformed_json() {
+        let unique = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let path =
+            std::env::temp_dir().join(format!("azure-data-cosmos-emulator-test-{unique}.json"));
+        tokio::fs::write(&path, b"{ not valid json").await.unwrap();
+
+        let error = EmulatorConfig::load(&path).await;
+        tokio::fs::remove_file(&path).await.ok();
+
+        let error = error.expect_err("malformed JSON must return an error, not panic");
+        assert!(
+            error.to_string().contains(&path.display().to_string()),
+            "error must name the offending path, got: {error}"
+        );
     }
 }
