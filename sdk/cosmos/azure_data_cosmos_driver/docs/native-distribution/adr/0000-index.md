@@ -16,6 +16,5 @@ ADRs (Architecture Decision Records) capture **what we decided** and a brief **w
 | [0008](0008-platform-matrix.md) | A defined platform matrix; unsupported platforms error clearly | Accepted |
 | [0009](0009-build-and-signing-pipeline.md) | One build, sign binaries once, fan-out; jobs never rebuild | Accepted |
 | [0010](0010-native-version-fanout.md) | One native version fanned out to all feeds simultaneously; each SDK pins that exact version | Proposed |
-| [0011](0011-go-v2-uses-ffi.md) | Go v2 uses the Rust driver through FFI | Proposed |
 
 > These are **proposed** for the design review. "Accepted" is provisional until the review signs off.
