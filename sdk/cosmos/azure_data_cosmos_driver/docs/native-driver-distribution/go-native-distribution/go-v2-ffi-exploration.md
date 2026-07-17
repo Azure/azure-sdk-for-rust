@@ -1,3 +1,4 @@
+<!-- cspell:ignore amd64 azcosmos GSSAPI librdkafka -->
 # Go v2 FFI exploration notes
 
 > **Status:** Discussion notes for ADR review. The decision is recorded in
