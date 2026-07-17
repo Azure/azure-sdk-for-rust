@@ -1,0 +1,2078 @@
+{
+  "schemaVersion": 1,
+  "scenarios": [
+    {
+      "id": "single_column_asc_cross_partition",
+      "description": "Ascending single-column ORDER BY merges two partitions into one globally sorted stream.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/OrderByQueryTests.cs",
+          "test": "TestOrderByCrossPartitionQueryAsync"
+        },
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/OrderbyDocumentQueryTest.java",
+          "test": "queryDocumentsWithOrderBy"
+        }
+      ],
+      "layers": [
+        "comparator",
+        "mockPipeline",
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT * FROM c ORDER BY c.rank ASC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.rank",
+            "direction": "Ascending"
+          }
+        ]
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "a",
+          "rank": 1
+        },
+        {
+          "id": "d2",
+          "pk": "b",
+          "rank": 2
+        },
+        {
+          "id": "d3",
+          "pk": "a",
+          "rank": 3
+        },
+        {
+          "id": "d4",
+          "pk": "b",
+          "rank": 4
+        }
+      ],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "80"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "p0-r1",
+                    "orderByItems": [
+                      {
+                        "item": 1
+                      }
+                    ],
+                    "payload": {
+                      "id": "d1"
+                    }
+                  },
+                  {
+                    "rid": "p0-r2",
+                    "orderByItems": [
+                      {
+                        "item": 3
+                      }
+                    ],
+                    "payload": {
+                      "id": "d3"
+                    }
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          },
+          {
+            "range": {
+              "minEpk": "80",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "p1-r1",
+                    "orderByItems": [
+                      {
+                        "item": 2
+                      }
+                    ],
+                    "payload": {
+                      "id": "d2"
+                    }
+                  },
+                  {
+                    "rid": "p1-r2",
+                    "orderByItems": [
+                      {
+                        "item": 4
+                      }
+                    ],
+                    "payload": {
+                      "id": "d4"
+                    }
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        1,
+        2,
+        10
+      ],
+      "expectedIds": [
+        "d1",
+        "d2",
+        "d3",
+        "d4"
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "single_column_desc_cross_partition",
+      "description": "Descending single-column ORDER BY reverses the same-column comparator direction across partitions.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/OrderByQueryTests.cs",
+          "test": "TestOrderByCrossPartitionQueryAsync"
+        },
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/OrderbyDocumentQueryTest.java",
+          "test": "queryDocumentsWithOrderBy"
+        }
+      ],
+      "layers": [
+        "comparator",
+        "mockPipeline",
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT * FROM c ORDER BY c.rank DESC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.rank",
+            "direction": "Descending"
+          }
+        ]
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "a",
+          "rank": 1
+        },
+        {
+          "id": "d2",
+          "pk": "b",
+          "rank": 2
+        },
+        {
+          "id": "d3",
+          "pk": "a",
+          "rank": 3
+        },
+        {
+          "id": "d4",
+          "pk": "b",
+          "rank": 4
+        }
+      ],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "80"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "p0-r1",
+                    "orderByItems": [
+                      {
+                        "item": 3
+                      }
+                    ],
+                    "payload": {
+                      "id": "d3"
+                    }
+                  },
+                  {
+                    "rid": "p0-r2",
+                    "orderByItems": [
+                      {
+                        "item": 1
+                      }
+                    ],
+                    "payload": {
+                      "id": "d1"
+                    }
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          },
+          {
+            "range": {
+              "minEpk": "80",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "p1-r1",
+                    "orderByItems": [
+                      {
+                        "item": 4
+                      }
+                    ],
+                    "payload": {
+                      "id": "d4"
+                    }
+                  },
+                  {
+                    "rid": "p1-r2",
+                    "orderByItems": [
+                      {
+                        "item": 2
+                      }
+                    ],
+                    "payload": {
+                      "id": "d2"
+                    }
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        1,
+        2,
+        10
+      ],
+      "expectedIds": [
+        "d4",
+        "d3",
+        "d2",
+        "d1"
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "multi_column_mixed_direction_with_ties",
+      "description": "Validates all keys and deterministic tie breaking across two ORDER BY columns with opposite directions.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/OrderByQueryTests.cs",
+          "test": "TestMultiOrderByQueriesAsync"
+        },
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/MultiOrderByQueryTests.java",
+          "test": "queryDocumentsWithMultiOrder"
+        }
+      ],
+      "layers": [
+        "comparator",
+        "mockPipeline",
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT * FROM c ORDER BY c.rank ASC, c.name DESC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.rank",
+            "direction": "Ascending"
+          },
+          {
+            "expression": "c.name",
+            "direction": "Descending"
+          }
+        ]
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "rank": 1,
+          "name": "b"
+        },
+        {
+          "id": "d2",
+          "rank": 1,
+          "name": "a"
+        },
+        {
+          "id": "d3",
+          "rank": 2,
+          "name": "z"
+        }
+      ],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "p0-r1",
+                    "orderByItems": [
+                      {
+                        "item": 1
+                      },
+                      {
+                        "item": "b"
+                      }
+                    ],
+                    "payload": {
+                      "id": "d1"
+                    }
+                  },
+                  {
+                    "rid": "p0-r2",
+                    "orderByItems": [
+                      {
+                        "item": 1
+                      },
+                      {
+                        "item": "a"
+                      }
+                    ],
+                    "payload": {
+                      "id": "d2"
+                    }
+                  },
+                  {
+                    "rid": "p0-r3",
+                    "orderByItems": [
+                      {
+                        "item": 2
+                      },
+                      {
+                        "item": "z"
+                      }
+                    ],
+                    "payload": {
+                      "id": "d3"
+                    }
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        1,
+        2,
+        10
+      ],
+      "expectedIds": [
+        "d1",
+        "d2",
+        "d3"
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "exact_duplicate_keys_across_partitions",
+      "description": "Two partitions each contribute a row with the identical sort key; RID breaks the tie deterministically.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.Tests/Query/Pipeline/OrderByCrossPartitionQueryPipelineStageTests.cs",
+          "test": "TestDrainFully"
+        }
+      ],
+      "layers": [
+        "comparator",
+        "mockPipeline"
+      ],
+      "query": {
+        "text": "SELECT * FROM c ORDER BY c.rank ASC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.rank",
+            "direction": "Ascending"
+          }
+        ]
+      },
+      "documents": [],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "80"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "b-rid",
+                    "orderByItems": [
+                      {
+                        "item": 1
+                      }
+                    ],
+                    "payload": {
+                      "id": "left"
+                    }
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          },
+          {
+            "range": {
+              "minEpk": "80",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "a-rid",
+                    "orderByItems": [
+                      {
+                        "item": 1
+                      }
+                    ],
+                    "payload": {
+                      "id": "right"
+                    }
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        1,
+        10
+      ],
+      "expectedIds": [
+        "right",
+        "left"
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "undefined_field_single_column",
+      "description": "A document missing the sort property (Undefined) sorts before every defined value in single-column ASC order.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.Tests/Query/ContinuationTokens/OrderByQueryResultTests.cs",
+          "test": "TestOrderByUndefined"
+        }
+      ],
+      "layers": [
+        "comparator",
+        "mockPipeline",
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT * FROM c ORDER BY c.rank ASC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.rank",
+            "direction": "Ascending"
+          }
+        ]
+      },
+      "documents": [
+        {
+          "id": "has-rank",
+          "rank": 1
+        },
+        {
+          "id": "no-rank"
+        }
+      ],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "p0-r1",
+                    "orderByItems": [
+                      {}
+                    ],
+                    "payload": {
+                      "id": "no-rank"
+                    }
+                  },
+                  {
+                    "rid": "p0-r2",
+                    "orderByItems": [
+                      {
+                        "item": 1
+                      }
+                    ],
+                    "payload": {
+                      "id": "has-rank"
+                    }
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        1,
+        10
+      ],
+      "expectedIds": [
+        "no-rank",
+        "has-rank"
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "undefined_field_multi_column",
+      "description": "Undefined in the leading column sorts first regardless of the trailing column's value.",
+      "sources": [
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/MultiOrderByQueryTests.java",
+          "test": "queryDocumentsWithMultiOrder"
+        }
+      ],
+      "layers": [
+        "comparator",
+        "mockPipeline"
+      ],
+      "query": {
+        "text": "SELECT * FROM c ORDER BY c.rank ASC, c.name ASC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.rank",
+            "direction": "Ascending"
+          },
+          {
+            "expression": "c.name",
+            "direction": "Ascending"
+          }
+        ]
+      },
+      "documents": [],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "p0-r1",
+                    "orderByItems": [
+                      {},
+                      {
+                        "item": "z"
+                      }
+                    ],
+                    "payload": {
+                      "id": "undefined-rank"
+                    }
+                  },
+                  {
+                    "rid": "p0-r2",
+                    "orderByItems": [
+                      {
+                        "item": 1
+                      },
+                      {
+                        "item": "a"
+                      }
+                    ],
+                    "payload": {
+                      "id": "defined-rank"
+                    }
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        1,
+        10
+      ],
+      "expectedIds": [
+        "undefined-rank",
+        "defined-rank"
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "mixed_type_ordering",
+      "description": "One key per Cosmos type validates the full ascending type-order chain: undefined, null, false, true, number, string, array, object.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/OrderByQueryTests.cs",
+          "test": "TestOrderByCrossPartitionQueryAsync"
+        },
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/OrderbyDocumentQueryTest.java",
+          "test": "queryDocumentsWithOrderByAndMixedTypes"
+        }
+      ],
+      "layers": [
+        "comparator",
+        "mockPipeline"
+      ],
+      "query": {
+        "text": "SELECT * FROM c ORDER BY c.val ASC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.val",
+            "direction": "Ascending"
+          }
+        ]
+      },
+      "documents": [],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "r1",
+                    "orderByItems": [
+                      {}
+                    ],
+                    "payload": {
+                      "id": "v-undefined"
+                    }
+                  },
+                  {
+                    "rid": "r2",
+                    "orderByItems": [
+                      {
+                        "item": null
+                      }
+                    ],
+                    "payload": {
+                      "id": "v-null"
+                    }
+                  },
+                  {
+                    "rid": "r3",
+                    "orderByItems": [
+                      {
+                        "item": false
+                      }
+                    ],
+                    "payload": {
+                      "id": "v-false"
+                    }
+                  },
+                  {
+                    "rid": "r4",
+                    "orderByItems": [
+                      {
+                        "item": true
+                      }
+                    ],
+                    "payload": {
+                      "id": "v-true"
+                    }
+                  },
+                  {
+                    "rid": "r5",
+                    "orderByItems": [
+                      {
+                        "item": 5
+                      }
+                    ],
+                    "payload": {
+                      "id": "v-number"
+                    }
+                  },
+                  {
+                    "rid": "r6",
+                    "orderByItems": [
+                      {
+                        "item": "s"
+                      }
+                    ],
+                    "payload": {
+                      "id": "v-string"
+                    }
+                  },
+                  {
+                    "rid": "r7",
+                    "orderByItems": [
+                      {
+                        "item": [
+                          1,
+                          2
+                        ]
+                      }
+                    ],
+                    "payload": {
+                      "id": "v-array"
+                    }
+                  },
+                  {
+                    "rid": "r8",
+                    "orderByItems": [
+                      {
+                        "item": {
+                          "a": 1
+                        }
+                      }
+                    ],
+                    "payload": {
+                      "id": "v-object"
+                    }
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        1,
+        3,
+        10
+      ],
+      "expectedIds": [
+        "v-undefined",
+        "v-null",
+        "v-false",
+        "v-true",
+        "v-number",
+        "v-string",
+        "v-array",
+        "v-object"
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "array_keys_ordering_and_continuation",
+      "description": "Array-typed sort keys compare lexicographically and round-trip through a bounded complex-value continuation.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.Tests/Query/ContinuationTokens/OrderByContinuationTokenTests.cs",
+          "test": "TestRoundTripComplexKeys"
+        },
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/MultiOrderByQueryTests.java",
+          "test": "queryDocumentsWithMultiOrder"
+        }
+      ],
+      "layers": [
+        "comparator",
+        "mockPipeline"
+      ],
+      "query": {
+        "text": "SELECT * FROM c ORDER BY c.tags ASC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.tags",
+            "direction": "Ascending"
+          }
+        ]
+      },
+      "documents": [],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "r1",
+                    "orderByItems": [
+                      {
+                        "item": [
+                          1
+                        ]
+                      }
+                    ],
+                    "payload": {
+                      "id": "short"
+                    }
+                  },
+                  {
+                    "rid": "r2",
+                    "orderByItems": [
+                      {
+                        "item": [
+                          1,
+                          2
+                        ]
+                      }
+                    ],
+                    "payload": {
+                      "id": "prefix"
+                    }
+                  },
+                  {
+                    "rid": "r3",
+                    "orderByItems": [
+                      {
+                        "item": [
+                          2
+                        ]
+                      }
+                    ],
+                    "payload": {
+                      "id": "greater"
+                    }
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        1,
+        10
+      ],
+      "expectedIds": [
+        "short",
+        "prefix",
+        "greater"
+      ],
+      "checkpoint": {
+        "afterItems": 1
+      },
+      "expectedContinuation": {
+        "kind": "streaming_ordered_merge_range_boundary",
+        "resumeValueType": "complex",
+        "complexType": "array"
+      },
+      "expectedError": null
+    },
+    {
+      "id": "object_keys_ordering_and_continuation",
+      "description": "Object-typed sort keys compare by ascending key then value and round-trip through a bounded complex-value continuation.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.Tests/Query/ContinuationTokens/OrderByContinuationTokenTests.cs",
+          "test": "TestRoundTripComplexKeys"
+        },
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/MultiOrderByQueryTests.java",
+          "test": "queryDocumentsWithMultiOrder"
+        }
+      ],
+      "layers": [
+        "comparator",
+        "mockPipeline"
+      ],
+      "query": {
+        "text": "SELECT * FROM c ORDER BY c.meta ASC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.meta",
+            "direction": "Ascending"
+          }
+        ]
+      },
+      "documents": [],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "r1",
+                    "orderByItems": [
+                      {
+                        "item": {
+                          "a": 1
+                        }
+                      }
+                    ],
+                    "payload": {
+                      "id": "a-1"
+                    }
+                  },
+                  {
+                    "rid": "r2",
+                    "orderByItems": [
+                      {
+                        "item": {
+                          "a": 2
+                        }
+                      }
+                    ],
+                    "payload": {
+                      "id": "a-2"
+                    }
+                  },
+                  {
+                    "rid": "r3",
+                    "orderByItems": [
+                      {
+                        "item": {
+                          "b": 0
+                        }
+                      }
+                    ],
+                    "payload": {
+                      "id": "b-0"
+                    }
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        1,
+        10
+      ],
+      "expectedIds": [
+        "a-1",
+        "a-2",
+        "b-0"
+      ],
+      "checkpoint": {
+        "afterItems": 1
+      },
+      "expectedContinuation": {
+        "kind": "streaming_ordered_merge_range_boundary",
+        "resumeValueType": "complex",
+        "complexType": "object"
+      },
+      "expectedError": null
+    },
+    {
+      "id": "equal_key_resume_requiring_skip_count",
+      "description": "Resume boundary ties with two additional rows already emitted (last emitted RID `tied-2`); the `_rid`-aware boundary discards exactly the tied rows at or before that RID before new rows are visible.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.Tests/Query/ContinuationTokens/OrderByContinuationTokenTests.cs",
+          "test": "TestOrderByContinuationTokenWithSkipCount"
+        }
+      ],
+      "layers": [
+        "mockPipeline"
+      ],
+      "query": {
+        "text": "SELECT * FROM c ORDER BY c.rank ASC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.rank",
+            "direction": "Ascending"
+          }
+        ]
+      },
+      "documents": [],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "tied-1",
+                    "orderByItems": [
+                      {
+                        "item": 5
+                      }
+                    ],
+                    "payload": {
+                      "id": "tied-1"
+                    }
+                  },
+                  {
+                    "rid": "tied-2",
+                    "orderByItems": [
+                      {
+                        "item": 5
+                      }
+                    ],
+                    "payload": {
+                      "id": "tied-2"
+                    }
+                  },
+                  {
+                    "rid": "new",
+                    "orderByItems": [
+                      {
+                        "item": 6
+                      }
+                    ],
+                    "payload": {
+                      "id": "new"
+                    }
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        1,
+        10
+      ],
+      "expectedIds": [
+        "new"
+      ],
+      "checkpoint": {
+        "resumeValues": [
+          {
+            "type": "number",
+            "value": 5.0
+          }
+        ],
+        "lastRid": "tied-2",
+        "skipCount": 2
+      },
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "formatted_resume_filter_asc_desc_multi_column",
+      "description": "The formatted resume filter's multi-column seek predicate is correct for a mix of ASC and DESC columns.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.Tests/Query/Pipeline/OrderByCrossPartitionQueryPipelineStageTests.cs",
+          "test": "TestFormatFilter"
+        }
+      ],
+      "layers": [
+        "comparator"
+      ],
+      "query": {
+        "text": "SELECT * FROM c ORDER BY c.rank ASC, c.name DESC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.rank",
+            "direction": "Ascending"
+          },
+          {
+            "expression": "c.name",
+            "direction": "Descending"
+          }
+        ]
+      },
+      "documents": [],
+      "mock": null,
+      "pageSizes": [],
+      "expectedIds": [],
+      "checkpoint": {
+        "resumeValues": [
+          {
+            "type": "number",
+            "value": 5.0
+          },
+          {
+            "type": "string",
+            "value": "mid"
+          }
+        ]
+      },
+      "expectedContinuation": {
+        "kind": "formatted_resume_filter",
+        "mustContainFragments": [
+          "c.rank > 5",
+          "c.rank = 5",
+          "c.name < 'mid'",
+          "c.name = 'mid'"
+        ]
+      },
+      "expectedError": null
+    },
+    {
+      "id": "empty_total_result",
+      "description": "A query that matches nothing anywhere surfaces one empty, terminal page rather than an error.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/OrderByQueryTests.cs",
+          "test": "TestOrderByCrossPartitionQueryAsync"
+        }
+      ],
+      "layers": [
+        "mockPipeline",
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT * FROM c WHERE c.rank > 1000 ORDER BY c.rank ASC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.rank",
+            "direction": "Ascending"
+          }
+        ]
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "rank": 1
+        }
+      ],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "empty_backend_page_with_continuation_before_rows",
+      "description": "An empty page carrying a backend continuation must be transparently re-polled, not mistaken for drained.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.Tests/Query/Pipeline/OrderByCrossPartitionQueryPipelineStageTests.cs",
+          "test": "TestEmptyPages"
+        }
+      ],
+      "layers": [
+        "mockPipeline",
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT * FROM c ORDER BY c.rank ASC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.rank",
+            "direction": "Ascending"
+          }
+        ]
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "rank": 1
+        }
+      ],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [],
+                "continuation": "ct-empty"
+              },
+              {
+                "rows": [
+                  {
+                    "rid": "r1",
+                    "orderByItems": [
+                      {
+                        "item": 1
+                      }
+                    ],
+                    "payload": {
+                      "id": "d1"
+                    }
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [
+        "d1"
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "headers_request_charge_and_diagnostics_aggregation",
+      "description": "Request charge and diagnostics are summed across every backend page consumed to assemble one emitted page.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.Tests/Query/Pipeline/FullPipelineTests.cs",
+          "test": "TestRequestChargeAggregation"
+        }
+      ],
+      "layers": [
+        "mockPipeline"
+      ],
+      "query": {
+        "text": "SELECT * FROM c ORDER BY c.rank ASC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.rank",
+            "direction": "Ascending"
+          }
+        ]
+      },
+      "documents": [],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "80"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "l1",
+                    "orderByItems": [
+                      {
+                        "item": 1
+                      }
+                    ],
+                    "payload": {
+                      "id": "l1"
+                    }
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          },
+          {
+            "range": {
+              "minEpk": "80",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "r1",
+                    "orderByItems": [
+                      {
+                        "item": 2
+                      }
+                    ],
+                    "payload": {
+                      "id": "r1"
+                    }
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [
+        "l1",
+        "r1"
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "split_before_first_row",
+      "description": "A partition splits before it has produced any row; replacements start fresh with no resume boundary to protect.",
+      "sources": [
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/QueryValidationTests.java",
+          "test": "splitQueryContinuationToken"
+        }
+      ],
+      "layers": [
+        "mockPipeline"
+      ],
+      "query": {
+        "text": "SELECT * FROM c ORDER BY c.rank ASC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.rank",
+            "direction": "Ascending"
+          }
+        ]
+      },
+      "documents": [],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [],
+      "checkpoint": {
+        "splitBeforeRow": 0,
+        "replacementRanges": [
+          {
+            "minEpk": "",
+            "maxEpk": "80"
+          },
+          {
+            "minEpk": "80",
+            "maxEpk": "FF"
+          }
+        ]
+      },
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "split_after_resume",
+      "description": "A range resumed from a value boundary splits again before producing a row; the boundary must be forwarded to every new replacement.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.Tests/Query/OrderByQueryPartitionRangePageAsyncEnumeratorTests.cs",
+          "test": "TestSplitDuringDrain"
+        },
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/QueryValidationTests.java",
+          "test": "splitQueryContinuationToken"
+        }
+      ],
+      "layers": [
+        "mockPipeline"
+      ],
+      "query": {
+        "text": "SELECT * FROM c ORDER BY c.rank ASC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.rank",
+            "direction": "Ascending"
+          }
+        ]
+      },
+      "documents": [],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "after",
+                    "orderByItems": [
+                      {
+                        "item": 10
+                      }
+                    ],
+                    "payload": {
+                      "id": "after"
+                    }
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [
+        "after"
+      ],
+      "checkpoint": {
+        "resumeValues": [
+          {
+            "type": "number",
+            "value": 5.0
+          }
+        ],
+        "lastRid": "before-split",
+        "skipCount": 0,
+        "splitReplacementRanges": [
+          {
+            "minEpk": "",
+            "maxEpk": "80"
+          },
+          {
+            "minEpk": "80",
+            "maxEpk": "FF"
+          }
+        ]
+      },
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "invalid_rewritten_envelope_missing_payload",
+      "description": "A rewritten-envelope item missing `payload` is a service contract violation, not silently skipped.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.Tests/Query/ContinuationTokens/OrderByQueryResultTests.cs",
+          "test": "TestOrderByUndefined"
+        }
+      ],
+      "layers": [
+        "mockPipeline"
+      ],
+      "query": {
+        "text": "SELECT * FROM c ORDER BY c.rank ASC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.rank",
+            "direction": "Ascending"
+          }
+        ]
+      },
+      "documents": [],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "bad",
+                    "orderByItems": [
+                      {
+                        "item": 1
+                      }
+                    ]
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": {
+        "category": "service_order_by_envelope_invalid",
+        "messageFragment": "payload"
+      }
+    },
+    {
+      "id": "invalid_rewritten_envelope_key_count_mismatch",
+      "description": "A rewritten-envelope item whose orderByItems length disagrees with the query's ORDER BY column count is rejected.",
+      "sources": [
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/MultiOrderByQueryTests.java",
+          "test": "queryDocumentsWithMultiOrder"
+        }
+      ],
+      "layers": [
+        "mockPipeline"
+      ],
+      "query": {
+        "text": "SELECT * FROM c ORDER BY c.rank ASC, c.name ASC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.rank",
+            "direction": "Ascending"
+          },
+          {
+            "expression": "c.name",
+            "direction": "Ascending"
+          }
+        ]
+      },
+      "documents": [],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "bad",
+                    "orderByItems": [
+                      {
+                        "item": 1
+                      }
+                    ],
+                    "payload": {
+                      "id": "bad"
+                    }
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": {
+        "category": "service_order_by_envelope_invalid",
+        "messageFragment": "orderByItems"
+      }
+    },
+    {
+      "id": "malformed_token_wrong_node_kind",
+      "description": "A continuation token shaped for a different pipeline node kind must be rejected as a shape mismatch.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.Tests/Query/ContinuationTokens/OrderByContinuationTokenTests.cs",
+          "test": "TestNegativeCases"
+        }
+      ],
+      "layers": [
+        "comparator"
+      ],
+      "query": {
+        "text": "SELECT * FROM c ORDER BY c.rank ASC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.rank",
+            "direction": "Ascending"
+          }
+        ]
+      },
+      "documents": [],
+      "mock": null,
+      "pageSizes": [],
+      "expectedIds": [],
+      "checkpoint": {
+        "tokenShape": "sequential_drain"
+      },
+      "expectedContinuation": null,
+      "expectedError": {
+        "category": "client_continuation_token_shape_mismatch",
+        "messageFragment": "does not match a streaming ORDER BY operation"
+      }
+    },
+    {
+      "id": "malformed_token_query_fingerprint_mismatch",
+      "description": "A continuation token minted for a different rewritten query (different fingerprint) must be rejected.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.Tests/Query/ContinuationTokens/OrderByContinuationTokenTests.cs",
+          "test": "TestNegativeCases"
+        }
+      ],
+      "layers": [
+        "comparator"
+      ],
+      "query": {
+        "text": "SELECT * FROM c ORDER BY c.rank ASC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.rank",
+            "direction": "Ascending"
+          }
+        ]
+      },
+      "documents": [],
+      "mock": null,
+      "pageSizes": [],
+      "expectedIds": [],
+      "checkpoint": {
+        "tokenShape": "streaming_ordered_merge",
+        "queryFingerprint": "stale-fingerprint"
+      },
+      "expectedContinuation": null,
+      "expectedError": {
+        "category": "client_continuation_token_order_by_state_invalid",
+        "messageFragment": "fingerprint"
+      }
+    },
+    {
+      "id": "malformed_token_direction_count_mismatch",
+      "description": "A continuation token whose column count/direction list disagrees with the current query must be rejected.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.Tests/Query/ContinuationTokens/OrderByContinuationTokenTests.cs",
+          "test": "TestNegativeCases"
+        }
+      ],
+      "layers": [
+        "comparator"
+      ],
+      "query": {
+        "text": "SELECT * FROM c ORDER BY c.rank ASC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.rank",
+            "direction": "Ascending"
+          }
+        ]
+      },
+      "documents": [],
+      "mock": null,
+      "pageSizes": [],
+      "expectedIds": [],
+      "checkpoint": {
+        "tokenShape": "streaming_ordered_merge",
+        "directions": [
+          "Ascending",
+          "Descending"
+        ]
+      },
+      "expectedContinuation": null,
+      "expectedError": {
+        "category": "client_continuation_token_order_by_state_invalid",
+        "messageFragment": "ORDER BY column count"
+      }
+    },
+    {
+      "id": "malformed_token_invalid_range",
+      "description": "A continuation token with an invalid EPK range (min >= max) must be rejected.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.Tests/Query/ContinuationTokens/OrderByContinuationTokenTests.cs",
+          "test": "TestNegativeCases"
+        }
+      ],
+      "layers": [
+        "comparator"
+      ],
+      "query": {
+        "text": "SELECT * FROM c ORDER BY c.rank ASC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.rank",
+            "direction": "Ascending"
+          }
+        ]
+      },
+      "documents": [],
+      "mock": null,
+      "pageSizes": [],
+      "expectedIds": [],
+      "checkpoint": {
+        "tokenShape": "streaming_ordered_merge",
+        "invalidRange": {
+          "minEpk": "80",
+          "maxEpk": "40"
+        }
+      },
+      "expectedContinuation": null,
+      "expectedError": {
+        "category": "client_continuation_token_order_by_state_invalid",
+        "messageFragment": "invalid range"
+      }
+    },
+    {
+      "id": "single_logical_partition_remains_trivial_path",
+      "description": "An ORDER BY query scoped to a single, complete logical partition key stays on the trivial (server-ordered) path and never builds a StreamingOrderedMerge.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.Tests/Query/Pipeline/FullPipelineTests.cs",
+          "test": "TestSinglePartitionOrderBy"
+        }
+      ],
+      "layers": [
+        "mockPipeline"
+      ],
+      "query": {
+        "text": "SELECT * FROM c WHERE c.pk = 'a' ORDER BY c.rank ASC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.rank",
+            "direction": "Ascending"
+          }
+        ]
+      },
+      "documents": [
+        {
+          "id": "d1",
+          "pk": "a",
+          "rank": 2
+        },
+        {
+          "id": "d2",
+          "pk": "a",
+          "rank": 1
+        }
+      ],
+      "mock": null,
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [
+        "d2",
+        "d1"
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "order_by_with_filters_and_parameters",
+      "description": "A WHERE clause with a bound parameter is preserved verbatim in the rewritten per-partition request body.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/OrderByQueryTests.cs",
+          "test": "TestOrderByCrossPartitionQueryAsync"
+        },
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/OrderbyDocumentQueryTest.java",
+          "test": "queryDocumentsWithOrderBy"
+        }
+      ],
+      "layers": [
+        "mockPipeline",
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT * FROM c WHERE c.category = @category ORDER BY c.rank ASC",
+        "parameters": [
+          {
+            "name": "@category",
+            "value": "books"
+          }
+        ],
+        "columns": [
+          {
+            "expression": "c.rank",
+            "direction": "Ascending"
+          }
+        ]
+      },
+      "documents": [
+        {
+          "id": "book-1",
+          "category": "books",
+          "rank": 2
+        },
+        {
+          "id": "book-2",
+          "category": "books",
+          "rank": 1
+        },
+        {
+          "id": "toy-1",
+          "category": "toys",
+          "rank": 0
+        }
+      ],
+      "mock": {
+        "partitions": [
+          {
+            "range": {
+              "minEpk": "",
+              "maxEpk": "FF"
+            },
+            "pages": [
+              {
+                "rows": [
+                  {
+                    "rid": "r1",
+                    "orderByItems": [
+                      {
+                        "item": 1
+                      }
+                    ],
+                    "payload": {
+                      "id": "book-2"
+                    }
+                  },
+                  {
+                    "rid": "r2",
+                    "orderByItems": [
+                      {
+                        "item": 2
+                      }
+                    ],
+                    "payload": {
+                      "id": "book-1"
+                    }
+                  }
+                ],
+                "continuation": null
+              }
+            ]
+          }
+        ]
+      },
+      "pageSizes": [
+        10
+      ],
+      "expectedIds": [
+        "book-2",
+        "book-1"
+      ],
+      "checkpoint": null,
+      "expectedContinuation": null,
+      "expectedError": null
+    },
+    {
+      "id": "unsupported_combination_top_with_streaming_order_by",
+      "description": "TOP combined with streaming ORDER BY remains precisely unsupported until the TOP composition stage (#4750) lands.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.Tests/Query/Pipeline/FullPipelineTests.cs",
+          "test": "TestUnsupportedCombinations"
+        }
+      ],
+      "layers": [
+        "comparator"
+      ],
+      "query": {
+        "text": "SELECT TOP 5 * FROM c ORDER BY c.rank ASC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.rank",
+            "direction": "Ascending"
+          }
+        ]
+      },
+      "documents": [],
+      "mock": null,
+      "pageSizes": [],
+      "expectedIds": [],
+      "checkpoint": {
+        "top": 5
+      },
+      "expectedContinuation": null,
+      "expectedError": {
+        "category": "client_unsupported_query_feature",
+        "messageFragment": "TOP combined with streaming ORDER BY"
+      }
+    },
+    {
+      "id": "unsupported_combination_non_streaming_order_by",
+      "description": "A query the Gateway marks hasNonStreamingOrderBy remains rejected (issue #4755, not this issue).",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.Tests/Query/Pipeline/FullPipelineTests.cs",
+          "test": "TestUnsupportedCombinations"
+        }
+      ],
+      "layers": [
+        "comparator"
+      ],
+      "query": {
+        "text": "SELECT * FROM c ORDER BY c.rank ASC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.rank",
+            "direction": "Ascending"
+          }
+        ]
+      },
+      "documents": [],
+      "mock": null,
+      "pageSizes": [],
+      "expectedIds": [],
+      "checkpoint": {
+        "hasNonStreamingOrderBy": true
+      },
+      "expectedContinuation": null,
+      "expectedError": {
+        "category": "client_unsupported_query_feature",
+        "messageFragment": "non-streaming ORDER BY"
+      }
+    },
+    {
+      "id": "unsupported_combination_distinct_group_by_aggregates",
+      "description": "DISTINCT, GROUP BY, and aggregates combined with ORDER BY remain unsupported until their sibling issues land.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.Tests/Query/Pipeline/FullPipelineTests.cs",
+          "test": "TestUnsupportedCombinations"
+        }
+      ],
+      "layers": [
+        "comparator"
+      ],
+      "query": {
+        "text": "SELECT DISTINCT c.category FROM c ORDER BY c.category ASC",
+        "parameters": [],
+        "columns": [
+          {
+            "expression": "c.category",
+            "direction": "Ascending"
+          }
+        ]
+      },
+      "documents": [],
+      "mock": null,
+      "pageSizes": [],
+      "expectedIds": [],
+      "checkpoint": {
+        "distinctType": "Ordered"
+      },
+      "expectedContinuation": null,
+      "expectedError": {
+        "category": "client_unsupported_query_feature",
+        "messageFragment": "DISTINCT combined with ORDER BY"
+      }
+    }
+  ]
+}

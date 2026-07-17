@@ -2726,6 +2726,23 @@ impl CosmosDriver {
             |container, continuation| self.fetch_pk_ranges_from_service(container, continuation),
         );
 
+        // Route streaming ORDER BY queries to the k-way merge instead of
+        // the natural-order sequential drain.
+        if query_plan
+            .query_info
+            .as_ref()
+            .is_some_and(planner::is_streaming_order_by)
+        {
+            let pipeline = planner::build_streaming_ordered_merge(
+                &query_plan,
+                &mut topology,
+                &operation,
+                resume_state,
+            )
+            .await?;
+            return Ok(OperationPlan::new(pipeline, operation));
+        }
+
         let pipeline =
             planner::build_sequential_drain(&query_plan, &mut topology, &operation, resume_state)
                 .await?;

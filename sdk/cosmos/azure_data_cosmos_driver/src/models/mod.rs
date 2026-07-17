@@ -36,8 +36,9 @@ pub(crate) use finite_f64::FiniteF64;
 #[allow(dead_code)]
 pub mod effective_partition_key;
 mod feed_range;
-#[allow(dead_code)]
-mod murmur_hash;
+// Used by `driver::dataflow::order_by` to hash complex resume values into
+// a bounded 128-bit representation (mirrors .NET's complex-key encoding).
+pub(crate) mod murmur_hash;
 #[allow(dead_code)]
 pub mod partition_key_range;
 #[allow(dead_code)]

@@ -516,12 +516,20 @@ impl SubStatusCode {
             20211 => Some("ClientComputeRangeInvokedWithEmptyPartitionKey"),
             20212 => Some("ClientChangeFeedPipelineUnexpectedlyDrained"),
             20213 => Some("ClientContinuationTokenSavedRangeUnhonored"),
+            20214 => Some("ClientContinuationTokenOrderByStateInvalid"),
+            20215 => Some("ClientStreamingMergeSplitReplacementInvalid"),
+            20216 => Some("ClientStreamingMergeComplexBoundaryTopologyChange"),
             20300 => Some("ClientNoOverlappingFeedRangesForSessionToken"),
             20301 => Some("ClientNoThroughputOfferForResource"),
             20302 => Some("ClientQueryPlanProducedEmptyRanges"),
             20303 => Some("ServiceReturnedOfferWithoutId"),
             20304 => Some("ClientThroughputPollerIncomplete"),
             20305 => Some("ClientTopologyResolutionFailed"),
+            20306 => Some("ServiceReturnedObjectWithoutRid"),
+            20307 => Some("ServiceOrderByEnvelopeInvalid"),
+            20308 => Some("ServiceQueryPlanOrderByMissingRewrittenQuery"),
+            20309 => Some("ServiceOrderByRewrittenQueryMissingFilterPlaceholder"),
+            20310 => Some("ServiceQueryPlanOrderByExpressionsMismatch"),
 
             // SDK Server-side codes (21xxx) - consistent across .NET and Java
             21001 => Some("NameCacheIsStaleExceededRetryLimit"),
@@ -1436,6 +1444,21 @@ impl SubStatusCode {
     /// see also 20200, 20203, 20204, 20205.
     pub const CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED: SubStatusCode = SubStatusCode(20213);
 
+    /// A `StreamingOrderedMerge` continuation token is semantically invalid
+    /// (bad column/direction, fingerprint, hash, RID, or skip count) (20214).
+    pub const CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID: SubStatusCode =
+        SubStatusCode(20214);
+
+    /// `StreamingOrderedMerge` split replacement ranges do not exactly
+    /// cover the prior range (20215).
+    pub const CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID: SubStatusCode =
+        SubStatusCode(20215);
+
+    /// A complex (array/object) sort-key resume boundary crossed a
+    /// partition split, so its positional count is unattributable (20216).
+    pub const CLIENT_STREAMING_MERGE_COMPLEX_BOUNDARY_TOPOLOGY_CHANGE: SubStatusCode =
+        SubStatusCode(20216);
+
     // ----- 20300-20349: SDK-detected service contract violations -----
 
     /// The supplied session-token feed ranges contain no overlap with
@@ -1480,6 +1503,28 @@ impl SubStatusCode {
     /// has no routing information for the operation. Paired with HTTP
     /// 503 — an internal client-side condition, not a transport failure.
     pub const CLIENT_TOPOLOGY_RESOLUTION_FAILED: SubStatusCode = SubStatusCode(20305);
+
+    /// A cross-partition streaming `ORDER BY` rewritten-query result item
+    /// did not match the expected envelope shape: missing `payload`,
+    /// missing/empty RID, or a mismatched `orderByItems` length (20307).
+    pub const SERVICE_ORDER_BY_ENVELOPE_INVALID: SubStatusCode = SubStatusCode(20307);
+
+    /// The backend query plan reported `ORDER BY` columns but did not
+    /// supply a non-empty `rewrittenQuery` (20308).
+    pub const SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY: SubStatusCode =
+        SubStatusCode(20308);
+
+    /// The backend-supplied streaming `ORDER BY` `rewrittenQuery` was
+    /// missing the `{documentdb-formattableorderbyquery-filter}`
+    /// placeholder where a resume filter must be injected (20309).
+    pub const SERVICE_ORDER_BY_REWRITTEN_QUERY_MISSING_FILTER_PLACEHOLDER: SubStatusCode =
+        SubStatusCode(20309);
+
+    /// The backend query plan's `orderBy` and `orderByExpressions` arrays
+    /// had mismatched or zero length, so sort keys can't pair with
+    /// directions (20310).
+    pub const SERVICE_QUERY_PLAN_ORDER_BY_EXPRESSIONS_MISMATCH: SubStatusCode =
+        SubStatusCode(20310);
 }
 
 impl Default for SubStatusCode {
@@ -2277,6 +2322,29 @@ impl CosmosStatus {
         sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED),
     };
 
+    /// 500 / 20214 — a `StreamingOrderedMerge` continuation token is
+    /// semantically invalid (bad column/direction, fingerprint, hash, RID, or count).
+    pub const CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
+    };
+
+    /// 500 / 20215 — `StreamingOrderedMerge` split replacement ranges do
+    /// not exactly cover the prior range.
+    pub const CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID),
+    };
+
+    /// 500 / 20216 — a complex sort-key boundary crossed a partition split.
+    pub const CLIENT_STREAMING_MERGE_COMPLEX_BOUNDARY_TOPOLOGY_CHANGE: CosmosStatus =
+        CosmosStatus {
+            status_code: StatusCode::InternalServerError,
+            sub_status: Some(
+                SubStatusCode::CLIENT_STREAMING_MERGE_COMPLEX_BOUNDARY_TOPOLOGY_CHANGE,
+            ),
+        };
+
     // SDK-detected service contract violations (HTTP varies, sub-status 20300-20349)
 
     /// 410 / 20300 — the supplied session-token feed ranges contain no
@@ -2323,6 +2391,37 @@ impl CosmosStatus {
     pub const CLIENT_TOPOLOGY_RESOLUTION_FAILED: CosmosStatus = CosmosStatus {
         status_code: StatusCode::ServiceUnavailable,
         sub_status: Some(SubStatusCode::CLIENT_TOPOLOGY_RESOLUTION_FAILED),
+    };
+
+    /// 500 / 20307 — a rewritten-query result item didn't match the
+    /// expected envelope shape.
+    pub const SERVICE_ORDER_BY_ENVELOPE_INVALID: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::SERVICE_ORDER_BY_ENVELOPE_INVALID),
+    };
+
+    /// 500 / 20308 — the query plan reported `ORDER BY` columns but no
+    /// `rewrittenQuery`.
+    pub const SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY),
+    };
+
+    /// 500 / 20309 — the rewritten query was missing the resume-filter
+    /// placeholder.
+    pub const SERVICE_ORDER_BY_REWRITTEN_QUERY_MISSING_FILTER_PLACEHOLDER: CosmosStatus =
+        CosmosStatus {
+            status_code: StatusCode::InternalServerError,
+            sub_status: Some(
+                SubStatusCode::SERVICE_ORDER_BY_REWRITTEN_QUERY_MISSING_FILTER_PLACEHOLDER,
+            ),
+        };
+
+    /// 500 / 20310 — the query plan's `orderBy`/`orderByExpressions`
+    /// arrays had mismatched or zero length.
+    pub const SERVICE_QUERY_PLAN_ORDER_BY_EXPRESSIONS_MISMATCH: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::SERVICE_QUERY_PLAN_ORDER_BY_EXPRESSIONS_MISMATCH),
     };
 
     /// 500 / 20306 — the service returned a resource read response

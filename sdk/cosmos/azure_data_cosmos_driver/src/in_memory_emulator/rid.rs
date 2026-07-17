@@ -61,14 +61,19 @@ impl RidGenerator {
     }
 
     /// Generates a new document RID (16 bytes: db_id + coll_id + doc_id with type nibble 0x0).
+    ///
+    /// The document segment (bytes `[8..16)`) is little-endian with the type
+    /// nibble in its top 4 bits, matching real Cosmos DB (and
+    /// `models::resource_id::document_ordinal`, which reads it the same
+    /// way for the `ORDER BY` tie-break) — a big-endian encoding would make
+    /// that tie-break non-monotonic once `doc_id >= 16`.
     pub fn next_document_rid(&self, db_id: u32, coll_id: u32) -> (u64, String) {
         let doc_id = self.doc_counter.fetch_add(1, Ordering::SeqCst);
-        let doc_with_type = doc_id << 4; // type nibble 0x0 in the low nibble
         let coll_with_high_bit = coll_id | 0x80000000;
         let mut bytes = [0u8; 16];
         bytes[..4].copy_from_slice(&db_id.to_be_bytes());
         bytes[4..8].copy_from_slice(&coll_with_high_bit.to_be_bytes());
-        bytes[8..16].copy_from_slice(&doc_with_type.to_be_bytes());
+        bytes[8..16].copy_from_slice(&doc_id.to_le_bytes());
         (doc_id, encode_rid(&bytes))
     }
 
@@ -156,9 +161,17 @@ mod tests {
         let parent_db = u32::from_be_bytes(bytes[..4].try_into().unwrap());
         assert_eq!(parent_db, db_id);
 
-        // Type nibble should be 0x0 for documents
-        let doc_raw = u64::from_be_bytes(bytes[8..16].try_into().unwrap());
-        assert_eq!(doc_raw & 0x0F, 0x00);
+        // The document segment is little-endian (matching real Cosmos DB;
+        // see `next_document_rid`'s doc comment), so the ordinal itself
+        // round-trips via `from_le_bytes` and the type nibble is the top 4
+        // bits, not the bottom 4.
+        let doc_raw = u64::from_le_bytes(bytes[8..16].try_into().unwrap());
+        assert_eq!(doc_raw, doc_id);
+        assert_eq!(
+            doc_raw >> 60,
+            0x0,
+            "type nibble should be 0x0 for documents"
+        );
     }
 
     #[test]
@@ -185,5 +198,30 @@ mod tests {
         let (id2, _) = gen.next_database_rid();
         assert_eq!(id1, 1);
         assert_eq!(id2, 2);
+    }
+
+    /// Regression: generated document RIDs must stay in creation order under
+    /// `document_ordinal`/`compare_document_rids` (the streaming `ORDER BY`
+    /// tie-break) well past `doc_id = 16` — the point at which a big-endian
+    /// document segment (the pre-fix encoding) stopped agreeing with the
+    /// little-endian reader, since the meaningful byte spills into a second
+    /// byte there.
+    #[test]
+    fn document_rids_stay_ordinal_ordered_past_16_documents() {
+        let gen = RidGenerator::new();
+        let (db_id, _) = gen.next_database_rid();
+        let (coll_id, _) = gen.next_collection_rid(db_id);
+        let rids: Vec<String> = (0..40)
+            .map(|_| gen.next_document_rid(db_id, coll_id).1)
+            .collect();
+        for pair in rids.windows(2) {
+            assert_eq!(
+                crate::models::resource_id::compare_document_rids(&pair[0], &pair[1]),
+                std::cmp::Ordering::Less,
+                "creation order must match document-ordinal order: {:?} then {:?}",
+                pair[0],
+                pair[1]
+            );
+        }
     }
 }

@@ -27,14 +27,10 @@ pub(crate) use parser::parse;
 /// advertises to the Cosmos DB Gateway via
 /// `x-ms-cosmos-supported-query-features`.
 ///
-/// Advertised as `"None"`: the cross-partition
-/// query pipeline does not yet support any of the advanced rewrite shapes the
-/// Gateway can plan (Aggregate, CompositeAggregate, CountIf, DCount, Distinct,
-/// GroupBy, HybridSearch, MultipleAggregates, MultipleOrderBy,
-/// NonStreamingOrderBy, NonValueAggregate, OffsetAndLimit, OrderBy, Top,
-/// WeightedRankFusion); advertising any of them in production would cause the
-/// Gateway to return a plan we cannot execute. Add a feature here only after
-/// the local pipeline gains support for the corresponding rewrite shape.
+/// The production pipeline supports streaming single- and multi-column
+/// `ORDER BY` rewrites. Other advanced rewrite shapes remain unadvertised
+/// until their corresponding pipeline stages are implemented; advertising
+/// one prematurely would cause the Gateway to return a plan we cannot execute.
 ///
 /// The value must be non-empty: the Gateway V2 thin-client proxy rejects
 /// QueryPlan requests where the `x-ms-cosmos-supported-query-features` header
@@ -43,7 +39,7 @@ pub(crate) use parser::parse;
 /// Tests use [`__TEST_ONLY_SUPPORTED_QUERY_FEATURES`] (broad, matches what
 /// Java/.NET advertise) so plan-shape parity against the live Gateway is
 /// validated end-to-end across the full feature surface.
-pub(crate) const SUPPORTED_QUERY_FEATURES: &str = "None";
+pub(crate) const SUPPORTED_QUERY_FEATURES: &str = "OrderBy,MultipleOrderBy";
 
 /// Broad supported-features list used by cross-crate gateway-comparison
 /// tests. Matches what the Java and .NET SDKs send today so the Gateway

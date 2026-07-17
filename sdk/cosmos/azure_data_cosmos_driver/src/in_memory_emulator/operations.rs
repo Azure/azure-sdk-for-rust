@@ -2822,7 +2822,13 @@ fn local_sort_order_to_dataflow(
 
 fn local_query_info_to_dataflow(
     info: crate::query::plan::LocalQueryInfo,
+    original_query: &str,
 ) -> crate::driver::dataflow::query_plan::QueryInfo {
+    let rewritten_query = if info.order_by.is_empty() {
+        Some(String::new())
+    } else {
+        synthesize_order_by_rewritten_query(original_query, &info.order_by_expressions)
+    };
     crate::driver::dataflow::query_plan::QueryInfo {
         distinct_type: local_distinct_type_to_dataflow(info.distinct_type),
         top: info.top.map(|v| v as u64),
@@ -2842,10 +2848,84 @@ fn local_query_info_to_dataflow(
             .map(|a| format!("{a:?}"))
             .collect(),
         group_by_alias_to_aggregate_type: HashMap::new(),
-        rewritten_query: Some(String::new()),
+        rewritten_query,
         has_select_value: info.has_select_value,
         has_non_streaming_order_by: false,
     }
+}
+
+/// Synthesizes a single-level rewritten `ORDER BY` envelope query, mirroring
+/// what the real Gateway/native query-plan engine returns in
+/// `rewrittenQuery`:
+///
+/// ```text
+/// SELECT VALUE {"_rid": <alias>._rid, "orderByItems": [{"item": <expr0>}, ...], "payload": <alias>}
+/// <original FROM clause, sliced verbatim>
+/// WHERE [(<original predicate>) AND] {documentdb-formattableorderbyquery-filter}
+/// <original ORDER BY clause, sliced verbatim>
+/// ```
+///
+/// The placeholder is substituted in place by the client with `true`
+/// (fresh start) or a scalar `_rid`-aware resume filter (see
+/// `driver::dataflow::query_response`) — no outer subquery wrapper, so the
+/// result stays flat and directly evaluable.
+///
+/// Scoped to `SELECT *`-shaped queries (`payload` is always the whole
+/// document); returns `None` if no top-level `FROM` is found, which
+/// shouldn't happen for a query with a non-empty ORDER BY.
+fn synthesize_order_by_rewritten_query(
+    original_query: &str,
+    order_by_expressions: &[String],
+) -> Option<String> {
+    use crate::query::lexer::{Lexer, TokenKind};
+
+    // Kept in sync with `driver::dataflow::query_response`'s
+    // `ORDER_BY_FILTER_PLACEHOLDER` (this authors it; that substitutes it).
+    const ORDER_BY_FILTER_PLACEHOLDER: &str = "{documentdb-formattableorderbyquery-filter}";
+
+    let tokens = Lexer::tokenize(original_query);
+    let from_idx = tokens.iter().position(|t| t.kind == TokenKind::From)?;
+    let collection_token = tokens.get(from_idx + 1)?;
+    let alias = match tokens.get(from_idx + 2) {
+        Some(t) if t.kind == TokenKind::As => tokens.get(from_idx + 3)?.text,
+        Some(t) if t.kind == TokenKind::Identifier => t.text,
+        _ => collection_token.text,
+    };
+
+    let order_idx = tokens.iter().position(|t| t.kind == TokenKind::Order);
+    let clause_end = order_idx
+        .map(|i| tokens[i].span.start)
+        .unwrap_or(original_query.len());
+    let order_by_text = order_idx.map(|i| original_query[tokens[i].span.start..].trim())?;
+
+    // FROM is emitted verbatim; the placeholder is ANDed into WHERE
+    // (creating one if absent) — the slot every rewritten query carries.
+    let where_bound = order_idx.unwrap_or(tokens.len());
+    let where_idx = (from_idx + 1..where_bound).find(|&i| tokens[i].kind == TokenKind::Where);
+    let from_end = where_idx
+        .map(|i| tokens[i].span.start)
+        .unwrap_or(clause_end);
+    let from_text = original_query[tokens[from_idx].span.start..from_end].trim();
+    let where_clause = match where_idx {
+        Some(i) => {
+            let predicate = original_query[tokens[i].span.end..clause_end].trim();
+            format!("WHERE ({predicate}) AND {ORDER_BY_FILTER_PLACEHOLDER}")
+        }
+        None => format!("WHERE {ORDER_BY_FILTER_PLACEHOLDER}"),
+    };
+
+    let order_by_items: Vec<String> = order_by_expressions
+        .iter()
+        .map(|expr| format!(r#"{{"item": {expr}}}"#))
+        .collect();
+
+    Some(format!(
+        r#"SELECT VALUE {{"_rid": {alias}._rid, "orderByItems": [{items}], "payload": {alias}}} {from_text} {where_clause} {order_by}"#,
+        items = order_by_items.join(", "),
+        from_text = from_text,
+        where_clause = where_clause,
+        order_by = order_by_text,
+    ))
 }
 
 fn full_query_range() -> crate::driver::dataflow::query_plan::QueryRange {
@@ -3024,7 +3104,7 @@ fn handle_query_plan(
 
     let plan = crate::driver::dataflow::query_plan::QueryPlan {
         partitioned_query_execution_info_version: 2,
-        query_info: Some(local_query_info_to_dataflow(local_plan.query_info)),
+        query_info: Some(local_query_info_to_dataflow(local_plan.query_info, &query)),
         query_ranges,
         hybrid_search_query_info: None,
     };

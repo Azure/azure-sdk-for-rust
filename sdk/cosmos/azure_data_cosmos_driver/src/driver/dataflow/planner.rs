@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cspell:ignore unemitted checkpointed
+
 //! Pipeline planner for Cosmos DB operations.
 //!
 //! The planner validates an operation's target against its resource type and
@@ -18,10 +20,13 @@ use crate::{
 };
 
 use super::{
-    intersect_feed_ranges,
-    query_plan::{QueryInfo, QueryPlan},
-    DrainedLeaf, PartitionRoutingRefresh, Pipeline, PipelineNode, PipelineNodeState, RangedToken,
-    Request, RequestTarget, ResolvedRange, SequentialDrain, TopologyProvider, UnorderedMerge,
+    intersect_feed_ranges, order_by,
+    query_plan::{QueryInfo, QueryPlan, SortOrder},
+    query_response,
+    snapshot::{OrderByRangeToken, ValueBoundary},
+    streaming_ordered_merge, DrainedLeaf, PartitionRoutingRefresh, Pipeline, PipelineNode,
+    PipelineNodeState, RangedToken, Request, RequestTarget, ResolvedRange, SequentialDrain,
+    StreamingOrderedMerge, TopologyProvider, UnorderedMerge,
 };
 
 /// Builds a single-node [`Pipeline`] for a trivial operation.
@@ -199,6 +204,259 @@ pub(crate) async fn build_sequential_drain(
     // the single Request with multiple Requests.
     let root = Box::new(SequentialDrain::new(request_nodes));
     Ok(Pipeline::new(root))
+}
+
+/// `true` if `query_info` selects the streaming `ORDER BY` pipeline (one or
+/// more `ORDER BY` columns not requiring the non-streaming buffered sort).
+pub(crate) fn is_streaming_order_by(info: &QueryInfo) -> bool {
+    !info.order_by.is_empty() && !info.has_non_streaming_order_by
+}
+
+/// Builds a [`streaming_ordered_merge::StreamingOrderedMerge`] pipeline
+/// from a backend query plan whose `queryInfo.orderBy` is non-empty.
+/// Mirrors [`build_sequential_drain`]'s shape, but snapshots every
+/// still-active range explicitly since global ordering means any range
+/// may still have unemitted rows.
+///
+/// `resume` re-resolves each saved range against current topology and
+/// rebuilds it via [`streaming_ordered_merge::build_children`], the same
+/// path a live split uses.
+pub(crate) async fn build_streaming_ordered_merge(
+    query_plan: &QueryPlan,
+    topology_provider: &mut dyn TopologyProvider,
+    operation: &Arc<CosmosOperation>,
+    resume: Option<PipelineNodeState>,
+) -> crate::error::Result<Pipeline> {
+    validate_query_plan_for_streaming_order_by(query_plan)?;
+    reject_multi_row_per_document_shapes(operation)?;
+    let info = query_plan
+        .query_info
+        .as_ref()
+        .expect("is_streaming_order_by requires query_info to be Some");
+    let rewritten_query = info
+        .rewritten_query
+        .as_deref()
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| {
+            crate::error::CosmosError::builder()
+                .with_status(
+                    crate::error::CosmosStatus::SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY,
+                )
+                .with_message(
+                    "query plan reported one or more ORDER BY columns but did not supply a \
+                     non-empty rewrittenQuery",
+                )
+                .build()
+        })?;
+    let directions = info.order_by.clone();
+    let fingerprint = order_by::query_fingerprint(rewritten_query);
+
+    // Source columns so a resume/split rebuilds the filter from real columns.
+    let columns: Vec<order_by::OrderByColumn> = info
+        .order_by_expressions
+        .iter()
+        .zip(directions.iter())
+        .map(|(expression, direction)| order_by::OrderByColumn {
+            expression: expression.clone(),
+            direction: *direction,
+        })
+        .collect();
+
+    let query_from_beginning = query_response::rewritten_query_from_beginning(rewritten_query);
+    let plain_body = query_response::rewrite_query_body(operation.body(), &query_from_beginning)?;
+    let plain_operation = Arc::new((**operation).clone().with_body(plain_body));
+
+    let is_resume = resume.is_some();
+    let saved_ranges = match resume {
+        None => None,
+        Some(PipelineNodeState::Drained) => {
+            return Ok(Pipeline::new(Box::new(DrainedLeaf)));
+        }
+        Some(PipelineNodeState::StreamingOrderedMerge {
+            directions: saved_directions,
+            query_fingerprint: saved_fingerprint,
+            ranges,
+        }) => Some(validate_streaming_order_by_snapshot(
+            &directions,
+            &fingerprint,
+            &saved_directions,
+            &saved_fingerprint,
+            ranges,
+        )?),
+        Some(other) => {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+                .with_message(format!(
+                    "continuation token shape {} does not match a streaming ORDER BY operation",
+                    snapshot_kind(&other)
+                ))
+                .build());
+        }
+    };
+
+    let mut children = Vec::new();
+    let query_shape = streaming_ordered_merge::OrderByQueryShape {
+        rewritten_query,
+        columns: &columns,
+    };
+
+    if let Some(saved_ranges) = saved_ranges {
+        for saved in saved_ranges {
+            let resolved = topology_provider
+                .resolve_ranges(&saved.range, PartitionRoutingRefresh::UseCached)
+                .await?;
+            let mut range_children = streaming_ordered_merge::build_children(
+                &resolved,
+                &saved.range,
+                &plain_operation,
+                &query_shape,
+                saved.server_continuation,
+                saved.boundary.as_ref(),
+            )?;
+            children.append(&mut range_children);
+        }
+    } else {
+        // See `plan_fresh` for rationale on intersecting with the operation scope.
+        let scope_range = operation.target();
+        for query_range in &query_plan.query_ranges {
+            let plan_range = query_range_to_feed_range(query_range)?;
+            let feed_range = match scope_range {
+                Some(scope) => match intersect_feed_ranges(scope, &plan_range) {
+                    Some(r) => r,
+                    None => continue,
+                },
+                None => plan_range,
+            };
+            let resolved = topology_provider
+                .resolve_ranges(&feed_range, PartitionRoutingRefresh::UseCached)
+                .await?;
+            let mut range_children = streaming_ordered_merge::build_children(
+                &resolved,
+                &feed_range,
+                &plain_operation,
+                &query_shape,
+                None,
+                None,
+            )?;
+            children.append(&mut range_children);
+        }
+    }
+
+    if children.is_empty() {
+        if is_resume {
+            return Ok(Pipeline::new(Box::new(DrainedLeaf)));
+        }
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES)
+            .with_message("query plan produced no partition ranges to query")
+            .build());
+    }
+
+    let root = Box::new(StreamingOrderedMerge::new(
+        plain_operation,
+        rewritten_query.to_owned(),
+        columns,
+        fingerprint,
+        children,
+    ));
+    Ok(Pipeline::new(root))
+}
+
+/// A saved [`OrderByRangeToken`], parsed and validated into planner-ready
+/// types.
+struct ParsedOrderByRange {
+    range: FeedRange,
+    server_continuation: Option<String>,
+    boundary: Option<ValueBoundary>,
+}
+
+/// Validates a resumed `StreamingOrderedMerge` continuation's query-shape
+/// discriminator against the current query, then validates and parses
+/// every saved range: well-formed, sorted, non-overlapping bounds, and a
+/// boundary whose resume-value count matches the columns.
+fn validate_streaming_order_by_snapshot(
+    directions: &[SortOrder],
+    fingerprint: &str,
+    saved_directions: &[SortOrder],
+    saved_fingerprint: &str,
+    ranges: Vec<OrderByRangeToken>,
+) -> crate::error::Result<Vec<ParsedOrderByRange>> {
+    if saved_directions != directions {
+        return Err(order_by_state_invalid(format!(
+            "continuation token has {} ORDER BY column(s)/direction(s) but the current query \
+             has {}",
+            saved_directions.len(),
+            directions.len(),
+        )));
+    }
+    if saved_fingerprint != fingerprint {
+        return Err(order_by_state_invalid(
+            "continuation token's rewritten-query fingerprint does not match the current query \
+             plan; the query text (or its Gateway/native-engine rewrite) has changed since this \
+             token was issued",
+        ));
+    }
+    if ranges.is_empty() {
+        return Err(order_by_state_invalid(
+            "continuation token has an empty StreamingOrderedMerge range list; a fully-drained \
+             operation must use the Drained shape instead",
+        ));
+    }
+
+    let mut parsed = Vec::with_capacity(ranges.len());
+    let mut prev_max: Option<EffectivePartitionKey> = None;
+    for entry in ranges {
+        let min = EffectivePartitionKey::from(entry.min_epk);
+        let max = EffectivePartitionKey::from(entry.max_epk);
+        if min >= max {
+            return Err(order_by_state_invalid(format!(
+                "continuation token has an invalid range (min `{}` >= max `{}`)",
+                min.to_hex(),
+                max.to_hex(),
+            )));
+        }
+        if let Some(prev) = &prev_max {
+            if &min < prev {
+                return Err(order_by_state_invalid(
+                    "continuation token ranges must be sorted ascending and non-overlapping",
+                ));
+            }
+        }
+        prev_max = Some(max.clone());
+
+        if let Some(boundary) = &entry.boundary {
+            if boundary.resume_values.len() != directions.len() {
+                return Err(order_by_state_invalid(format!(
+                    "continuation token range boundary has {} resume value(s) but the query has \
+                     {} ORDER BY column(s)",
+                    boundary.resume_values.len(),
+                    directions.len(),
+                )));
+            }
+            if boundary.last_rid.is_empty() {
+                return Err(order_by_state_invalid(
+                    "continuation token range boundary has an empty RID",
+                ));
+            }
+        }
+
+        parsed.push(ParsedOrderByRange {
+            range: FeedRange::new(min, max)?,
+            server_continuation: entry.server_continuation,
+            boundary: entry.boundary,
+        });
+    }
+
+    Ok(parsed)
+}
+
+fn order_by_state_invalid(
+    message: impl Into<std::borrow::Cow<'static, str>>,
+) -> crate::error::CosmosError {
+    crate::error::CosmosError::builder()
+        .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID)
+        .with_message(message)
+        .build()
 }
 
 /// Builds an [`UnorderedMerge`] pipeline for change feed operations.
@@ -736,6 +994,7 @@ fn snapshot_kind(state: &PipelineNodeState) -> &'static str {
         PipelineNodeState::Request { .. } => "Request",
         PipelineNodeState::SequentialDrain { .. } => "SequentialDrain",
         PipelineNodeState::UnorderedMerge { .. } => "UnorderedMerge",
+        PipelineNodeState::StreamingOrderedMerge { .. } => "StreamingOrderedMerge",
     }
 }
 
@@ -826,11 +1085,110 @@ fn validate_query_info(info: &QueryInfo) -> crate::error::Result<()> {
     Ok(())
 }
 
+/// Validates a query plan for [`build_streaming_ordered_merge`]: `ORDER BY`
+/// is expected, but every other unsupported feature (TOP, non-streaming
+/// `ORDER BY`, DISTINCT/GROUP BY/aggregates/OFFSET/LIMIT/hybrid-search) is
+/// still rejected the same way [`validate_query_info`] rejects it.
+fn validate_query_plan_for_streaming_order_by(plan: &QueryPlan) -> crate::error::Result<()> {
+    if plan.hybrid_search_query_info.is_some() {
+        return Err(unsupported_feature("hybrid search queries"));
+    }
+    let info = plan.query_info.as_ref().ok_or_else(|| {
+        // Precondition of `is_streaming_order_by`; an internal planner bug if violated.
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE)
+            .with_message(
+                "internal error: streaming ORDER BY path selected with no queryInfo present",
+            )
+            .build()
+    })?;
+    if info.has_non_streaming_order_by {
+        return Err(unsupported_feature(
+            "non-streaming ORDER BY in cross-partition queries",
+        ));
+    }
+    if info.top.is_some() {
+        return Err(unsupported_feature(
+            "TOP combined with streaming ORDER BY (requires the TOP composition stage)",
+        ));
+    }
+    if info.offset.is_some() || info.limit.is_some() {
+        return Err(unsupported_feature(
+            "OFFSET/LIMIT combined with ORDER BY in cross-partition queries",
+        ));
+    }
+    if !info.aggregates.is_empty() {
+        return Err(unsupported_feature(
+            "aggregates combined with ORDER BY in cross-partition queries",
+        ));
+    }
+    if !info.group_by_expressions.is_empty() {
+        return Err(unsupported_feature(
+            "GROUP BY combined with ORDER BY in cross-partition queries",
+        ));
+    }
+    if info.distinct_type != DistinctType::None {
+        return Err(unsupported_feature(
+            "DISTINCT combined with ORDER BY in cross-partition queries",
+        ));
+    }
+    // Parallel arrays paired by the resume filter; must match in length.
+    if info.order_by_expressions.len() != info.order_by.len() {
+        return Err(crate::error::CosmosError::builder()
+            .with_status(
+                crate::error::CosmosStatus::SERVICE_QUERY_PLAN_ORDER_BY_EXPRESSIONS_MISMATCH,
+            )
+            .with_message(format!(
+                "query plan's ORDER BY metadata is inconsistent: {} sort direction(s) but {} \
+                 sort-key expression(s)",
+                info.order_by.len(),
+                info.order_by_expressions.len(),
+            ))
+            .build());
+    }
+    Ok(())
+}
+
 fn unsupported_feature(feature: &str) -> crate::error::CosmosError {
     crate::error::CosmosError::builder()
         .with_status(crate::error::CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE)
         .with_message(format!("unsupported query feature: {feature}"))
         .build()
+}
+
+/// Rejects a streaming `ORDER BY` operation whose SQL can emit more than one
+/// row per source document (JOIN or array iteration in FROM). The
+/// value-based resume cursor keys on `(sort-key tuple, _rid)` and assumes
+/// each `_rid` appears at most once, so a multi-row shape would make the
+/// `_rid` tiebreak ambiguous and silently drop or duplicate rows on resume.
+///
+/// The original SQL is parsed locally (the Gateway plan doesn't flag JOINs)
+/// and analyzed with [`crate::query::plan::emits_multiple_rows_per_document`].
+/// A parse failure means safety can't be established, so it is also rejected
+/// rather than risk data loss — but ordinary (including parameterized)
+/// single-source `ORDER BY` queries parse cleanly and pass.
+fn reject_multi_row_per_document_shapes(
+    operation: &Arc<CosmosOperation>,
+) -> crate::error::Result<()> {
+    let query_text = query_response::query_text(operation.body())?;
+    let program = crate::query::parse(&query_text).map_err(|source| {
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE)
+            .with_message(format!(
+                "cannot verify a cross-partition streaming ORDER BY query emits one row per \
+                 document because its SQL did not parse locally: {source}"
+            ))
+            .with_source(source)
+            .build()
+    })?;
+    if crate::query::plan::emits_multiple_rows_per_document(&program.query) {
+        return Err(unsupported_feature(
+            "JOIN or array iteration combined with cross-partition streaming ORDER BY \
+             (a single document can appear in multiple result rows, which the value-based \
+             resume cursor cannot track without dropping or duplicating rows)",
+        ));
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -2014,5 +2372,263 @@ mod tests {
                 "front grand-child {idx} must carry T1",
             );
         }
+    }
+
+    // ── Streaming ORDER BY selection and validation ───────────────────────
+
+    fn order_by_query_info(rewritten_query: Option<&str>) -> QueryInfo {
+        QueryInfo {
+            order_by: vec![SortOrder::Ascending],
+            order_by_expressions: vec!["c.rank".to_owned()],
+            rewritten_query: rewritten_query.map(str::to_owned),
+            ..Default::default()
+        }
+    }
+
+    fn order_by_plan(rewritten_query: Option<&str>, ranges: Vec<QueryRange>) -> QueryPlan {
+        QueryPlan {
+            partitioned_query_execution_info_version: 2,
+            query_info: Some(order_by_query_info(rewritten_query)),
+            query_ranges: ranges,
+            hybrid_search_query_info: None,
+        }
+    }
+
+    fn order_by_operation() -> CosmosOperation {
+        CosmosOperation::query_items(test_container(), Some(FeedRange::full()))
+            .with_body(br#"{"query":"SELECT * FROM c ORDER BY c.rank","parameters":[]}"#.to_vec())
+    }
+
+    #[test]
+    fn is_streaming_order_by_true_only_for_non_empty_streaming_order_by() {
+        assert!(!is_streaming_order_by(&QueryInfo::default()));
+        assert!(is_streaming_order_by(&order_by_query_info(Some(
+            "SELECT 1"
+        ))));
+
+        let mut non_streaming = order_by_query_info(Some("SELECT 1"));
+        non_streaming.has_non_streaming_order_by = true;
+        assert!(!is_streaming_order_by(&non_streaming));
+    }
+
+    #[test]
+    fn validate_query_plan_for_streaming_order_by_accepts_plain_order_by() {
+        let plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
+        assert!(validate_query_plan_for_streaming_order_by(&plan).is_ok());
+    }
+
+    #[test]
+    fn validate_query_plan_for_streaming_order_by_rejects_non_streaming_order_by() {
+        let mut plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
+        plan.query_info.as_mut().unwrap().has_non_streaming_order_by = true;
+        let err = validate_query_plan_for_streaming_order_by(&plan).unwrap_err();
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE
+        );
+    }
+
+    #[test]
+    fn validate_query_plan_for_streaming_order_by_rejects_top() {
+        let mut plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
+        plan.query_info.as_mut().unwrap().top = Some(5);
+        assert!(validate_query_plan_for_streaming_order_by(&plan).is_err());
+    }
+
+    #[test]
+    fn validate_query_plan_for_streaming_order_by_rejects_offset_limit() {
+        let mut plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
+        plan.query_info.as_mut().unwrap().offset = Some(1);
+        assert!(validate_query_plan_for_streaming_order_by(&plan).is_err());
+
+        let mut plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
+        plan.query_info.as_mut().unwrap().limit = Some(1);
+        assert!(validate_query_plan_for_streaming_order_by(&plan).is_err());
+    }
+
+    #[test]
+    fn validate_query_plan_for_streaming_order_by_rejects_aggregates_group_by_distinct() {
+        let mut plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
+        plan.query_info.as_mut().unwrap().aggregates = vec!["Count".to_owned()];
+        assert!(validate_query_plan_for_streaming_order_by(&plan).is_err());
+
+        let mut plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
+        plan.query_info.as_mut().unwrap().group_by_expressions = vec!["c.a".to_owned()];
+        assert!(validate_query_plan_for_streaming_order_by(&plan).is_err());
+
+        let mut plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
+        plan.query_info.as_mut().unwrap().distinct_type = DistinctType::Ordered;
+        assert!(validate_query_plan_for_streaming_order_by(&plan).is_err());
+    }
+
+    #[test]
+    fn validate_query_plan_for_streaming_order_by_rejects_hybrid_search() {
+        let mut plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
+        plan.hybrid_search_query_info =
+            Some(crate::driver::dataflow::query_plan::HybridSearchQueryInfo {
+                global_statistics_query: String::new(),
+                component_query_infos: vec![],
+                component_weights: vec![],
+                skip: None,
+                take: None,
+                requires_global_statistics: false,
+            });
+        assert!(validate_query_plan_for_streaming_order_by(&plan).is_err());
+    }
+
+    #[tokio::test]
+    async fn build_streaming_ordered_merge_rejects_missing_rewritten_query() {
+        let op = Arc::new(order_by_operation());
+        let plan = order_by_plan(None, vec![qr("", "FF")]);
+        let mut topology = MockTopologyProvider::new(vec![]);
+        let err = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
+            .await
+            .unwrap_err();
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY
+        );
+    }
+
+    #[tokio::test]
+    async fn build_streaming_ordered_merge_rejects_empty_rewritten_query() {
+        let op = Arc::new(order_by_operation());
+        let plan = order_by_plan(Some(""), vec![qr("", "FF")]);
+        let mut topology = MockTopologyProvider::new(vec![]);
+        let err = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
+            .await
+            .unwrap_err();
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY
+        );
+    }
+
+    #[tokio::test]
+    async fn build_streaming_ordered_merge_builds_one_child_per_resolved_range() {
+        let op = Arc::new(order_by_operation());
+        let plan = order_by_plan(Some("SELECT c._rid, [{\"item\":c.rank}] AS orderByItems, c AS payload FROM c ORDER BY c.rank ASC"), vec![qr("", "FF")]);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+            rr("", "80", "pk-left"),
+            rr("80", "FF", "pk-right"),
+        ])]);
+
+        let pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
+            .await
+            .unwrap();
+        let root = pipeline.into_root();
+        let merge = root
+            .downcast::<crate::driver::dataflow::StreamingOrderedMerge>()
+            .expect("root must be a StreamingOrderedMerge");
+        let children = merge.into_children();
+        assert_eq!(
+            children.len(),
+            2,
+            "one child per resolved physical partition"
+        );
+    }
+
+    #[tokio::test]
+    async fn build_streaming_ordered_merge_empty_ranges_errors_on_fresh_start() {
+        let op = Arc::new(order_by_operation());
+        // Empty `query_ranges` exercises the "produced nothing" guard.
+        let plan = order_by_plan(Some("SELECT 1"), vec![]);
+        let mut topology = MockTopologyProvider::new(vec![]);
+        let err = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
+            .await
+            .unwrap_err();
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES
+        );
+    }
+
+    /// An operation whose SQL body carries `sql` as the `query` field.
+    fn order_by_operation_with_query(sql: &str) -> CosmosOperation {
+        let body = serde_json::json!({ "query": sql, "parameters": [] });
+        CosmosOperation::query_items(test_container(), Some(FeedRange::full()))
+            .with_body(serde_json::to_vec(&body).unwrap())
+    }
+
+    #[tokio::test]
+    async fn build_streaming_ordered_merge_rejects_join_query() {
+        // A JOIN can emit multiple rows per document `_rid`, which the
+        // value-based resume cursor cannot track — reject before building.
+        let op = Arc::new(order_by_operation_with_query(
+            "SELECT * FROM c JOIN t IN c.tags ORDER BY c.rank",
+        ));
+        let plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
+        let mut topology = MockTopologyProvider::new(vec![]);
+        let err = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
+            .await
+            .unwrap_err();
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE
+        );
+        assert!(
+            err.to_string().contains("JOIN"),
+            "message must identify JOIN: {err}"
+        );
+    }
+
+    #[tokio::test]
+    async fn build_streaming_ordered_merge_rejects_array_iteration_duplicate_rid_shape() {
+        // `FROM t IN c.tags` unwinds an array: one document produces several
+        // rows sharing a `_rid` — the same duplicate-RID hazard as a JOIN.
+        let op = Arc::new(order_by_operation_with_query(
+            "SELECT VALUE t FROM t IN c.tags ORDER BY t",
+        ));
+        let plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
+        let mut topology = MockTopologyProvider::new(vec![]);
+        let err = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
+            .await
+            .unwrap_err();
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE
+        );
+    }
+
+    #[tokio::test]
+    async fn build_streaming_ordered_merge_accepts_ordinary_parameterized_order_by() {
+        // An ordinary single-source ORDER BY — even parameterized — is
+        // single-row-per-document and must not be rejected.
+        let op = Arc::new(order_by_operation_with_query(
+            "SELECT * FROM c WHERE c.tenant = @t ORDER BY c.rank",
+        ));
+        let plan = order_by_plan(
+            Some("SELECT c._rid, [{\"item\":c.rank}] AS orderByItems, c AS payload FROM c ORDER BY c.rank ASC"),
+            vec![qr("", "FF")],
+        );
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-0")])]);
+        let pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
+            .await
+            .expect("ordinary parameterized ORDER BY must build a pipeline");
+        assert!(
+            pipeline
+                .into_root()
+                .downcast::<crate::driver::dataflow::StreamingOrderedMerge>()
+                .is_some(),
+            "ordinary parameterized ORDER BY builds a StreamingOrderedMerge"
+        );
+    }
+
+    #[tokio::test]
+    async fn build_streaming_ordered_merge_rejects_unparseable_sql() {
+        // If the SQL can't be parsed locally, JOIN/multi-row can't be ruled
+        // out — reject rather than risk a data-losing resume.
+        let op = Arc::new(order_by_operation_with_query(
+            "this is not valid cosmos sql !!",
+        ));
+        let plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
+        let mut topology = MockTopologyProvider::new(vec![]);
+        let err = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
+            .await
+            .unwrap_err();
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE
+        );
     }
 }

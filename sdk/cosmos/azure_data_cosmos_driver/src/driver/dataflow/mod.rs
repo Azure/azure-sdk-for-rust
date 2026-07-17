@@ -16,10 +16,13 @@
 //! - Intermediate nodes: [`SequentialDrain`] iterates EPK-ordered children
 //!   left-to-right, draining each before advancing. [`UnorderedMerge`] polls
 //!   children round-robin without evicting them, suitable for change feed.
+//!   [`StreamingOrderedMerge`] k-way merges globally-ordered `ORDER BY`
+//!   results across children, each executing a Gateway-rewritten query.
 //! - Planner: [`planner::build_trivial_pipeline`] handles point reads and
 //!   single-partition operations; [`planner::build_sequential_drain`] handles
-//!   cross-partition queries by consuming a backend query plan and resolving
-//!   it against the current topology.
+//!   natural-order cross-partition queries; [`planner::build_streaming_ordered_merge`]
+//!   handles cross-partition `ORDER BY` queries — all by consuming a backend
+//!   query plan and resolving it against the current topology.
 //! - Serializable state: [`PipelineNodeState`] (see [`snapshot`]) is the
 //!   in-memory shape of a continuation snapshot; the wire-format token lives
 //!   in [`crate::models::ContinuationToken`].
@@ -39,11 +42,14 @@ mod integration_tests;
 #[cfg(test)]
 pub(crate) mod mocks;
 mod node;
+mod order_by;
 mod pipeline;
 pub(crate) mod planner;
 pub(crate) mod query_plan;
+mod query_response;
 mod request;
 mod snapshot;
+mod streaming_ordered_merge;
 mod topology;
 mod unordered_merge;
 
@@ -57,6 +63,7 @@ pub use pipeline::OperationPlan;
 pub(crate) use pipeline::Pipeline;
 pub(crate) use request::{intersect_feed_ranges, Request, RequestTarget};
 pub(crate) use snapshot::{PipelineNodeState, RangedToken};
+pub(crate) use streaming_ordered_merge::StreamingOrderedMerge;
 pub(crate) use topology::CachedTopologyProvider;
 pub(crate) use unordered_merge::UnorderedMerge;
 

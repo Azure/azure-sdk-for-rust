@@ -16,6 +16,7 @@ pub mod hedging;
 pub mod host_recorder;
 pub mod multi_region;
 pub mod offers;
+pub mod order_by;
 pub mod point_operations;
 pub mod ppaf_dynamic_enablement;
 pub mod query;

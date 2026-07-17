@@ -2,7 +2,7 @@
 
 **Crate:** `azure_data_cosmos_driver`
 **Scope:** Driver-internal architecture for feed operations (queries, future read-many, change feed)
-**Current focus:** `SELECT * [WHERE <predicate>]` using natural order
+**Current focus:** `SELECT * [WHERE <predicate>]` using natural order, cross-partition streaming `ORDER BY`, and change feed
 
 ---
 
@@ -22,7 +22,7 @@ All operations — point and feed — are expressed as a **Dataflow Pipeline**: 
 
 - The pipeline is a **tree**. Nodes own their children. Fan-out creates branching.
 - **Leaf nodes** issue a single Cosmos DB request via the existing operation pipeline (retry, failover, auth, transport).
-- **Intermediate nodes** orchestrate their children. The first intermediate node type is `SequentialDrain`, which iterates children in EPK order, fully draining one before advancing to the next.
+- **Intermediate nodes** orchestrate their children. `SequentialDrain` iterates children in EPK order, fully draining one before advancing to the next (natural-order queries). `UnorderedMerge` polls children round-robin without evicting them (change feed). `StreamingOrderedMerge` k-way merges globally-ordered results across children, each executing a Gateway-rewritten per-partition query (cross-partition `ORDER BY`) — see §8 and `driver::dataflow::streaming_ordered_merge` for the implementation.
 - **Trivial pipelines** (point operations, single-partition feeds) are a single leaf node with no intermediate parent. These must add near-zero overhead compared to today's direct execution path.
 
 ### Pipeline Lifecycle
@@ -34,11 +34,11 @@ All operations — point and feed — are expressed as a **Dataflow Pipeline**: 
 
 ### Future Node Types (Design For, Don't Implement Yet)
 
-- **UnorderedMerge**: concurrent fan-out, results returned in arrival order (Read Many).
-- **StreamingOrderedMerge**: k-way merge of pre-sorted partition streams (streaming ORDER BY).
-- **BufferedOrderedMerge**: collect all results, then sort (non-streaming ORDER BY).
+- **BufferedOrderedMerge**: collect all results, then sort (non-streaming `ORDER BY` — issue #4755).
 - **HybridSearch**: issues multiple distinct sub-queries (e.g., vector similarity + full-text keyword) against different child pipelines, then combines/re-ranks their results. Demonstrates that an intermediate node may have heterogeneous children with different semantics.
 - **Aggregate**: client-side aggregation across partitions.
+
+Implemented since this primer was written: **UnorderedMerge** (change feed fan-out) and **StreamingOrderedMerge** (streaming cross-partition `ORDER BY` — issue #4756; see §8).
 
 ---
 
@@ -139,6 +139,8 @@ The initial implementation targets `SELECT [...] [WHERE <predicate>]` queries:
 - Integration with the existing operation pipeline for each sub-request.
 - Pipeline repair on partition splits/merges.
 
+Since this initial milestone, change feed (`UnorderedMerge`, §2) and cross-partition streaming `ORDER BY` (`StreamingOrderedMerge`, §2, §7, §8) have landed as additional cross-partition strategies over the same pipeline model.
+
 ---
 
 ## 7. Design Boundaries
@@ -154,7 +156,9 @@ The initial implementation targets `SELECT [...] [WHERE <predicate>]` queries:
 
 For `SequentialDrain`, item bodies are fully opaque binary payloads. The pipeline does not inspect them — ordering is already established by the backend.
 
-Future node types (e.g., streaming ORDER BY, hybrid search) may require partial parsing of item bodies. The backend query plan can rewrite the query to use a standardized envelope (promoting ordering keys to top-level fields and demoting the raw user document to a `payload` field). This varied-shape pattern must be considered in the overall design direction, but does not need to be accommodated in the current implementation.
+`StreamingOrderedMerge` (cross-partition `ORDER BY`) is the first node type that parses item bodies: the backend query plan's `rewrittenQuery` reshapes each per-partition result into a standardized envelope (`{"_rid": ..., "orderByItems": [...], "payload": ...}` — sort keys promoted to top-level fields, the raw user document demoted to `payload`). The pipeline parses just enough of this envelope to compare rows and emit `payload` — see `driver::dataflow::order_by` (the value/comparator/resume-value model) and `driver::dataflow::query_response` (envelope parsing and response reassembly). Hybrid search, if implemented, would need the same pattern for its own envelope shape.
+
+Resume for streaming `ORDER BY` is per-range and topology-change-safe. Each still-active range persists its last-emitted key tuple and envelope `_rid`. On resume — including after a partition split or merge — a **scalar** boundary is turned into a key-only seek filter (`... > boundary OR ... = boundary`) that returns every row at or after the boundary, including the full-key tie run; a `_rid` predicate is deliberately not part of this SQL, since `_rid` compares as an ordinal base64 string in Cosmos SQL, not the backend's numeric document order. The already-emitted prefix of that tie run is instead discarded client-side by a numeric `_rid` comparison (see `models::resource_id::compare_document_rids`), so resume stays exact per row and splits/clips to sub-ranges without any positional row count. An **array/object** (complex) sort key is persisted only as a bounded 128-bit hash, so it cannot form a seek filter; it resumes by a whole-range positional re-scan, which is valid only while the range's topology is unchanged — a resume that would cross a split is rejected with a typed error (`CosmosStatus::CLIENT_STREAMING_MERGE_COMPLEX_BOUNDARY_TOPOLOGY_CHANGE`) rather than risk silently dropping rows.
 
 ### The Driver DOES:
 
@@ -171,10 +175,13 @@ Future node types (e.g., streaming ORDER BY, hybrid search) may require partial 
 
 These capabilities must be achievable without redesigning the pipeline model:
 
-- **Streaming ORDER BY**: k-way merge of partition streams. Requires fetching a backend query plan to determine sort keys. New intermediate node type.
-- **Buffered ORDER BY**: collect all partition results, sort client-side. Same query plan requirement. Different intermediate node.
+- **Buffered ORDER BY**: collect all partition results, sort client-side (issue #4755, non-streaming `ORDER BY`). Different intermediate node than streaming `ORDER BY` (below); same query-plan requirement.
 - **Vector / Hybrid Search**: may require preliminary requests to fetch full-text statistics before issuing the main query. Multi-phase pipeline execution.
 - **Read Many Items**: fan-out by (ID, PK) pairs grouped by partition. Concurrent leaf execution with an unordered merge intermediate node.
-- **Change Feed**: per-range continuation tokens. Different resumption semantics.
+
+Implemented since this primer was written:
+
+- **Streaming ORDER BY** (issue #4756): `StreamingOrderedMerge` k-way merges partition streams using the backend query plan's rewritten per-partition query and sort keys. See §2, §7, and `driver::dataflow::streaming_ordered_merge`.
+- **Change Feed**: `UnorderedMerge` polls per-range continuation tokens round-robin; see §2.
 
 The pipeline's tree structure, typed node hierarchy, and separation of planning from execution accommodate all of these as new node types and planning strategies without changing the core execution loop.

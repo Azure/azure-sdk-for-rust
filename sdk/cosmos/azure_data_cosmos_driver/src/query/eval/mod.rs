@@ -580,15 +580,21 @@ fn project_group(
 // ─── ORDER BY helpers ────────────────────────────────────────────────────────
 
 /// Type ordering for cross-type ORDER BY comparisons.
+///
+/// Canonical Cosmos ascending type order:
+/// `Undefined < Null < Boolean < Number < String < Array < Object`.
+/// `Undefined` sorts *before* `Null`, not last — must match
+/// `driver::dataflow::order_by`'s comparator to remain a valid ORDER BY
+/// oracle.
 fn sort_type_order(v: &CosmosValue) -> u8 {
     match v {
-        CosmosValue::Null => 0,
-        CosmosValue::Boolean(_) => 1,
-        CosmosValue::Number(_) | CosmosValue::Integer(_) => 2,
-        CosmosValue::String(_) => 3,
-        CosmosValue::Array(_) => 4,
-        CosmosValue::Object(_) => 5,
-        CosmosValue::Undefined => 6,
+        CosmosValue::Undefined => 0,
+        CosmosValue::Null => 1,
+        CosmosValue::Boolean(_) => 2,
+        CosmosValue::Number(_) | CosmosValue::Integer(_) => 3,
+        CosmosValue::String(_) => 4,
+        CosmosValue::Array(_) => 5,
+        CosmosValue::Object(_) => 6,
     }
 }
 
@@ -596,6 +602,31 @@ fn sort_type_order(v: &CosmosValue) -> u8 {
 fn total_cmp_for_sort(a: &CosmosValue, b: &CosmosValue) -> Ordering {
     a.cosmos_cmp(b)
         .unwrap_or_else(|| sort_type_order(a).cmp(&sort_type_order(b)))
+}
+
+/// Deterministic full-key tie-break for the ORDER BY oracle: orders tied
+/// rows by document `_rid` in the first sort column's direction (numeric
+/// document-ordinal order via
+/// [`crate::models::resource_id::compare_document_rids`]), matching the
+/// backend and the production streaming merge. Returns `Ordering::Equal`
+/// (leaving the stable sort untouched) when either row lacks a string
+/// `_rid`, so projections without `_rid` are undisturbed.
+fn order_by_rid_tiebreak(
+    a: &serde_json::Value,
+    b: &serde_json::Value,
+    order_by: &SqlOrderByClause,
+) -> Ordering {
+    let (Some(a_rid), Some(b_rid)) = (
+        a.get("_rid").and_then(serde_json::Value::as_str),
+        b.get("_rid").and_then(serde_json::Value::as_str),
+    ) else {
+        return Ordering::Equal;
+    };
+    let ascending = crate::models::resource_id::compare_document_rids(a_rid, b_rid);
+    match order_by.items.first().map(|item| item.order) {
+        Some(SqlSortOrder::Descending) => ascending.reverse(),
+        _ => ascending,
+    }
 }
 
 /// Compare two documents according to an ORDER BY clause.
@@ -944,7 +975,14 @@ pub fn query_documents(
                     return cmp;
                 }
             }
-            Ordering::Equal
+            // Full-key tie: order by document `_rid` to match the backend's
+            // deterministic tie order (non-grouped rows only; a group has no
+            // single `_rid`).
+            if groups.is_none() {
+                order_by_rid_tiebreak(&originals[a], &originals[b], order_by)
+            } else {
+                Ordering::Equal
+            }
         });
         results = indices.iter().map(|&i| results[i].clone()).collect();
     }
@@ -2402,11 +2440,38 @@ mod tests {
         ];
         let results = query_documents("SELECT * FROM c ORDER BY c.age ASC", &[], &docs).unwrap();
         assert_eq!(results.len(), 3);
-        // Documents with defined age sort first in ASC
-        assert_eq!(results[0]["age"], 25);
-        assert_eq!(results[1]["age"], 30);
-        // Document missing age sorts last
-        assert_eq!(results[2]["name"], "Bob");
+        // `Undefined` (missing property) sorts before every defined value.
+        assert_eq!(results[0]["name"], "Bob");
+        assert_eq!(results[1]["age"], 25);
+        assert_eq!(results[2]["age"], 30);
+    }
+
+    // Regression: pins the canonical Cosmos ascending type order so the
+    // emulator remains a valid ORDER BY oracle for `driver::dataflow::order_by`.
+    #[test]
+    fn order_by_undefined_sorts_before_null_and_every_other_type() {
+        let docs = vec![
+            serde_json::json!({"name": "has-null", "val": null}),
+            serde_json::json!({"name": "has-bool", "val": false}),
+            serde_json::json!({"name": "has-undefined"}),
+            serde_json::json!({"name": "has-number", "val": 1}),
+            serde_json::json!({"name": "has-string", "val": "s"}),
+        ];
+        let results = query_documents("SELECT * FROM c ORDER BY c.val ASC", &[], &docs).unwrap();
+        let names: Vec<&str> = results
+            .iter()
+            .map(|d| d["name"].as_str().unwrap())
+            .collect();
+        assert_eq!(
+            names,
+            vec![
+                "has-undefined",
+                "has-null",
+                "has-bool",
+                "has-number",
+                "has-string",
+            ]
+        );
     }
 
     #[test]
@@ -2440,6 +2505,78 @@ mod tests {
     }
 
     // ── GROUP BY + Aggregates tests ─────────────────────────────────────
+
+    /// Pins that the evaluator correctly executes the emulator's
+    /// synthesized rewritten `ORDER BY` envelope shape (see
+    /// `in_memory_emulator::operations::synthesize_order_by_rewritten_query`).
+    #[test]
+    fn order_by_envelope_rewrite_single_level_query_evaluates_correctly() {
+        let docs = vec![
+            serde_json::json!({"id": "a", "rank": 2}),
+            serde_json::json!({"id": "b", "rank": 1}),
+        ];
+        let query = r#"SELECT VALUE {"_rid": c._rid, "orderByItems": [{"item": c.rank}], "payload": c} FROM c WHERE true ORDER BY c.rank ASC"#;
+        let results = query_documents(query, &[], &docs).unwrap();
+        let ids: Vec<&str> = results
+            .iter()
+            .map(|r| r["payload"]["id"].as_str().unwrap())
+            .collect();
+        assert_eq!(ids, vec!["b", "a"]);
+    }
+
+    /// Regression: a full-key tie must be broken by document `_rid`
+    /// (creation order), never by whatever order the documents were handed
+    /// to the evaluator in. In the real emulator, a logical partition's
+    /// documents are stored in a `BTreeMap` keyed by id (see
+    /// `PhysicalPartition::documents`), so its iteration order is
+    /// alphabetical-by-id — deliberately different here from the rids'
+    /// creation order, proving the tie-break really re-sorts rather than
+    /// just preserving input/storage order.
+    #[test]
+    fn order_by_tie_break_uses_rid_creation_order_not_input_order() {
+        fn real_rid(doc_id: u64) -> String {
+            let mut bytes = [0u8; 16];
+            bytes[0..4].copy_from_slice(&[0x0A, 0x0B, 0x0C, 0x0D]);
+            bytes[4..8].copy_from_slice(&[0x80, 0x01, 0x02, 0x03]);
+            bytes[8..16].copy_from_slice(&doc_id.to_le_bytes());
+            crate::models::resource_id::encode_rid(&bytes)
+        }
+        // Fed in alphabetical-by-id order (matching the store's `BTreeMap`
+        // iteration), but created in a different order: "bbb" first (rid
+        // ordinal 1), "aaa" second (ordinal 2), "ccc" third (ordinal 3).
+        let docs = vec![
+            serde_json::json!({"id": "aaa", "rank": 5, "_rid": real_rid(2)}),
+            serde_json::json!({"id": "bbb", "rank": 5, "_rid": real_rid(1)}),
+            serde_json::json!({"id": "ccc", "rank": 5, "_rid": real_rid(3)}),
+        ];
+
+        let asc = query_documents("SELECT * FROM c ORDER BY c.rank ASC", &[], &docs).unwrap();
+        let asc_ids: Vec<&str> = asc.iter().map(|d| d["id"].as_str().unwrap()).collect();
+        assert_eq!(
+            asc_ids,
+            vec!["bbb", "aaa", "ccc"],
+            "ASC ties must follow creation (rid-ordinal) order, not alphabetical input order"
+        );
+
+        let desc = query_documents("SELECT * FROM c ORDER BY c.rank DESC", &[], &docs).unwrap();
+        let desc_ids: Vec<&str> = desc.iter().map(|d| d["id"].as_str().unwrap()).collect();
+        assert_eq!(
+            desc_ids,
+            vec!["ccc", "aaa", "bbb"],
+            "DESC ties must follow reverse creation (rid-ordinal) order, not input order"
+        );
+    }
+
+    /// Scope guard: `FROM (subquery)` remains unsupported. Unrelated to
+    /// ORDER BY resume, which never wraps a subquery. Remove if subquery
+    /// execution is later added.
+    #[test]
+    fn subquery_from_clause_is_not_yet_executable() {
+        let docs = vec![serde_json::json!({"id": "a", "rank": 1})];
+        let query = r#"SELECT VALUE r FROM (SELECT c.id AS id FROM c) AS r"#;
+        let err = query_documents(query, &[], &docs).unwrap_err();
+        assert!(format!("{err}").contains("FROM subqueries"));
+    }
 
     #[test]
     fn group_by_count() {

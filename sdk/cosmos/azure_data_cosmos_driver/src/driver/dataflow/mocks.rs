@@ -115,6 +115,9 @@ pub(crate) struct MockRequestExecutor {
     pub refresh_calls: Vec<PartitionRoutingRefresh>,
     pub continuation_calls: Vec<Option<String>>,
     pub target_calls: Vec<RequestTarget>,
+    /// Request body of every executed operation, in call order — lets
+    /// tests assert which query text was sent with which continuation.
+    pub query_bodies: Vec<Option<Vec<u8>>>,
 }
 
 impl MockRequestExecutor {
@@ -124,14 +127,26 @@ impl MockRequestExecutor {
             refresh_calls: Vec::new(),
             continuation_calls: Vec::new(),
             target_calls: Vec::new(),
+            query_bodies: Vec::new(),
         }
+    }
+
+    /// Returns the recorded request body at `index` as UTF-8 (lossy).
+    pub fn body_text(&self, index: usize) -> String {
+        let body = self
+            .query_bodies
+            .get(index)
+            .unwrap_or_else(|| panic!("no recorded request at index {index}"))
+            .as_deref()
+            .unwrap_or_default();
+        String::from_utf8_lossy(body).into_owned()
     }
 }
 
 impl RequestExecutor for MockRequestExecutor {
     fn execute_request<'a>(
         &'a mut self,
-        _operation: &'a CosmosOperation,
+        operation: &'a CosmosOperation,
         target: RequestTarget,
         partition_routing_refresh: PartitionRoutingRefresh,
         continuation: Option<String>,
@@ -139,6 +154,7 @@ impl RequestExecutor for MockRequestExecutor {
         self.refresh_calls.push(partition_routing_refresh);
         self.continuation_calls.push(continuation);
         self.target_calls.push(target);
+        self.query_bodies.push(operation.body().map(<[u8]>::to_vec));
         let response = self.responses.pop_front().expect("mock request response");
         Box::pin(async move { response })
     }
