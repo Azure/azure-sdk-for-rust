@@ -313,6 +313,60 @@ impl<'a> Reader<'a> {
         let offset = self.pos;
         let marker = self.read_u8()?;
 
+        // Only the container markers recurse (into `read_value`, directly or via
+        // the array/object/member helpers). Every other marker is a
+        // non-recursive leaf, decoded in `read_leaf_value` — a separate,
+        // never-inlined frame. Keeping the leaf-decoding locals out of this
+        // function keeps `read_value`'s own frame small, so descending to
+        // `MAX_DEPTH` stays well within an ordinary thread stack instead of
+        // requiring an oversized one.
+        match marker {
+            // Arrays.
+            ARR0 => Ok(Value::Array(Vec::new())),
+            ARR1 => {
+                let item = self.read_value(depth + 1)?;
+                Ok(Value::Array(vec![item]))
+            }
+            ARR_L1 => self.read_array_value(FieldWidth::One, false, depth),
+            ARR_L2 => self.read_array_value(FieldWidth::Two, false, depth),
+            ARR_L4 => self.read_array_value(FieldWidth::Four, false, depth),
+            ARR_LC1 => self.read_array_value(FieldWidth::One, true, depth),
+            ARR_LC2 => self.read_array_value(FieldWidth::Two, true, depth),
+            ARR_LC4 => self.read_array_value(FieldWidth::Four, true, depth),
+
+            // Objects.
+            OBJ0 => Ok(Value::Object(Map::new())),
+            OBJ1 => {
+                let (name, value) = self.read_member(depth + 1)?;
+                let mut map = Map::new();
+                map.insert(name, value);
+                Ok(Value::Object(map))
+            }
+            OBJ_L1 => self.read_object_value(FieldWidth::One, false, depth),
+            OBJ_L2 => self.read_object_value(FieldWidth::Two, false, depth),
+            OBJ_L4 => self.read_object_value(FieldWidth::Four, false, depth),
+            OBJ_LC1 => self.read_object_value(FieldWidth::One, true, depth),
+            OBJ_LC2 => self.read_object_value(FieldWidth::Two, true, depth),
+            OBJ_LC4 => self.read_object_value(FieldWidth::Four, true, depth),
+
+            // Every non-container marker is a leaf value.
+            _ => self.read_leaf_value(marker, offset),
+        }
+    }
+
+    /// Decodes a single non-container ("leaf") value: scalars, all string
+    /// forms, numbers, GUIDs, binary blobs, uniform number arrays, user-string
+    /// references, and back-references.
+    ///
+    /// This is deliberately **not inlined** into [`read_value`](Self::read_value)
+    /// and never recurses back into it, so its (comparatively large) stack frame
+    /// is paid only once at each leaf rather than at every level of a deeply
+    /// nested container. That is what lets the recursive descent reach
+    /// [`MAX_DEPTH`] on an ordinary thread stack.
+    ///
+    /// `offset` is the position of `marker`, used for error reporting.
+    #[inline(never)]
+    fn read_leaf_value(&mut self, marker: u8, offset: usize) -> Result<Value> {
         match marker {
             NULL => Ok(Value::Null),
             FALSE => Ok(Value::Bool(false)),
@@ -482,34 +536,6 @@ impl<'a> Reader<'a> {
                 let target = self.read_u32_le()? as usize;
                 self.resolve_reference(target)
             }
-
-            // Arrays.
-            ARR0 => Ok(Value::Array(Vec::new())),
-            ARR1 => {
-                let item = self.read_value(depth + 1)?;
-                Ok(Value::Array(vec![item]))
-            }
-            ARR_L1 => self.read_array_value(FieldWidth::One, false, depth),
-            ARR_L2 => self.read_array_value(FieldWidth::Two, false, depth),
-            ARR_L4 => self.read_array_value(FieldWidth::Four, false, depth),
-            ARR_LC1 => self.read_array_value(FieldWidth::One, true, depth),
-            ARR_LC2 => self.read_array_value(FieldWidth::Two, true, depth),
-            ARR_LC4 => self.read_array_value(FieldWidth::Four, true, depth),
-
-            // Objects.
-            OBJ0 => Ok(Value::Object(Map::new())),
-            OBJ1 => {
-                let (name, value) = self.read_member(depth + 1)?;
-                let mut map = Map::new();
-                map.insert(name, value);
-                Ok(Value::Object(map))
-            }
-            OBJ_L1 => self.read_object_value(FieldWidth::One, false, depth),
-            OBJ_L2 => self.read_object_value(FieldWidth::Two, false, depth),
-            OBJ_L4 => self.read_object_value(FieldWidth::Four, false, depth),
-            OBJ_LC1 => self.read_object_value(FieldWidth::One, true, depth),
-            OBJ_LC2 => self.read_object_value(FieldWidth::Two, true, depth),
-            OBJ_LC4 => self.read_object_value(FieldWidth::Four, true, depth),
 
             // Any other byte is not a valid type marker.
             other => Err(BinaryError::InvalidMarker {
@@ -1610,32 +1636,28 @@ mod tests {
     #[test]
     fn accepts_max_depth_nesting() {
         // MAX_DEPTH nested single-item arrays around a scalar leaf is exactly at
-        // the limit and must decode successfully. Run on a large-stack thread so
-        // the debug-build recursion does not exhaust the 2 MB test-harness stack
-        // (see `crate::binary_json::with_large_test_stack`).
-        crate::binary_json::with_large_test_stack(|| {
-            let mut bytes = vec![markers::ARR1; MAX_DEPTH];
-            bytes.push(0x00); // literal int 0 leaf
-            let mut expected = serde_json::json!(0);
-            for _ in 0..MAX_DEPTH {
-                expected = Value::Array(vec![expected]);
-            }
-            assert_eq!(decode(&buf(&bytes)).unwrap(), expected);
-        });
+        // the limit and must decode successfully. The recursive descent keeps a
+        // small per-level frame (leaf decoding lives in a separate non-inlined
+        // frame), so this stays well within an ordinary thread stack.
+        let mut bytes = vec![markers::ARR1; MAX_DEPTH];
+        bytes.push(0x00); // literal int 0 leaf
+        let mut expected = serde_json::json!(0);
+        for _ in 0..MAX_DEPTH {
+            expected = Value::Array(vec![expected]);
+        }
+        assert_eq!(decode(&buf(&bytes)).unwrap(), expected);
     }
 
     #[test]
     fn rejects_excessive_nesting() {
-        // One level beyond MAX_DEPTH trips the depth guard. Run on a large-stack
-        // thread so the debug-build recursion up to the guard does not exhaust
-        // the 2 MB test-harness stack.
-        crate::binary_json::with_large_test_stack(|| {
-            let mut bytes = vec![markers::ARR1; MAX_DEPTH + 1];
-            bytes.push(0x00);
-            assert_eq!(
-                decode(&buf(&bytes)),
-                Err(BinaryError::DepthLimitExceeded { limit: MAX_DEPTH }),
-            );
-        });
+        // One level beyond MAX_DEPTH trips the depth guard. The recursion keeps
+        // a small per-level frame, so reaching the guard does not stress the
+        // ordinary test-harness stack.
+        let mut bytes = vec![markers::ARR1; MAX_DEPTH + 1];
+        bytes.push(0x00);
+        assert_eq!(
+            decode(&buf(&bytes)),
+            Err(BinaryError::DepthLimitExceeded { limit: MAX_DEPTH }),
+        );
     }
 }

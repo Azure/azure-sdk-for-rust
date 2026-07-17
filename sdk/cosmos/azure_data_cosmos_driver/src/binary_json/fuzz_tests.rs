@@ -188,15 +188,13 @@ fn deeply_nested_input_errors_without_stack_overflow() {
     // A pathologically deep nesting of single-item arrays must hit the depth
     // guard (DepthLimitExceeded) rather than overflowing the stack. 10_000 is
     // far beyond MAX_DEPTH, so this exercises the guard, not a valid document.
-    // Run on a large-stack thread: the guard fires only after recursing to
-    // MAX_DEPTH, which alone can exhaust the 2 MB test-harness stack in debug
-    // builds (see `with_large_test_stack`).
-    super::with_large_test_stack(|| {
-        let mut buf = vec![PREAMBLE];
-        buf.extend(std::iter::repeat_n(markers::ARR1, 10_000));
-        buf.push(0x00); // a literal-int leaf (never reached past the guard)
-        assert!(decode(&buf).is_err());
-    });
+    // The recursive descent keeps a small per-level frame (leaf decoding lives
+    // in a separate non-inlined frame), so reaching the guard stays within an
+    // ordinary thread stack.
+    let mut buf = vec![PREAMBLE];
+    buf.extend(std::iter::repeat_n(markers::ARR1, 10_000));
+    buf.push(0x00); // a literal-int leaf (never reached past the guard)
+    assert!(decode(&buf).is_err());
 }
 
 #[test]
