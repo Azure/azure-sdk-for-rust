@@ -4,7 +4,7 @@
 // cspell:ignore PRNG
 //! Virtual account configuration for the in-memory emulator.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
@@ -52,14 +52,23 @@ impl VirtualAccountConfig {
                 .with_message("at least one region is required")
                 .build());
         }
-        // Auto-assign monotonically increasing region IDs by position for any
-        // region that did not have one set explicitly via `with_region_id`.
-        // Using `0` as the sentinel means callers that explicitly pass
-        // `with_region_id(0)` to the *first* region get the same effective ID
-        // they would have been auto-assigned anyway.
+        // Auto-assign monotonically increasing region IDs by position only
+        // when the caller did not set one explicitly.
         for (idx, r) in regions.iter_mut().enumerate() {
-            if r.region_id == 0 {
-                r.region_id = idx as u64;
+            r.region_id.get_or_insert(idx as u64);
+        }
+        let mut region_ids = HashSet::with_capacity(regions.len());
+        for region in &regions {
+            let region_id = region.region_id.expect("region IDs were assigned above");
+            if !region_ids.insert(region_id) {
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(
+                        azure_core::http::StatusCode::BadRequest,
+                    ))
+                    .with_message(format!(
+                        "region ID {region_id} is configured more than once"
+                    ))
+                    .build());
             }
         }
         Ok(Self {
@@ -267,7 +276,7 @@ impl VirtualAccountConfig {
                 return Some(&r.name);
             }
             #[cfg(feature = "__internal_in_memory_emulator")]
-            if r.thin_client_url.as_ref().is_some_and(matches) {
+            if r.gateway_v2_url.as_ref().is_some_and(matches) {
                 return Some(&r.name);
             }
         }
@@ -279,7 +288,7 @@ impl VirtualAccountConfig {
         self.regions
             .iter()
             .find(|r| r.name == region_name)
-            .map(|r| r.region_id)
+            .and_then(|r| r.region_id)
             .unwrap_or(0)
     }
 }
@@ -290,8 +299,8 @@ pub struct VirtualRegion {
     name: String,
     gateway_url: Url,
     #[cfg(feature = "__internal_in_memory_emulator")]
-    thin_client_url: Option<Url>,
-    region_id: u64,
+    gateway_v2_url: Option<Url>,
+    region_id: Option<u64>,
 }
 
 impl VirtualRegion {
@@ -304,22 +313,22 @@ impl VirtualRegion {
             name: name.to_string(),
             gateway_url,
             #[cfg(feature = "__internal_in_memory_emulator")]
-            thin_client_url: None,
-            region_id: 0,
+            gateway_v2_url: None,
+            region_id: None,
         }
     }
 
     /// Configures the Gateway V2 thin-client endpoint for this region.
     #[cfg(feature = "__internal_in_memory_emulator")]
     #[doc(hidden)]
-    pub fn with_thin_client_url(mut self, url: Url) -> Self {
-        self.thin_client_url = Some(url);
+    pub fn with_gateway_v2_url(mut self, url: Url) -> Self {
+        self.gateway_v2_url = Some(url);
         self
     }
 
     /// Creates a new region with an explicit region ID.
     pub fn with_region_id(mut self, id: u64) -> Self {
-        self.region_id = id;
+        self.region_id = Some(id);
         self
     }
 
@@ -334,12 +343,13 @@ impl VirtualRegion {
     /// Returns the Gateway V2 thin-client endpoint when hosted externally.
     #[cfg(feature = "__internal_in_memory_emulator")]
     #[doc(hidden)]
-    pub(crate) fn thin_client_url(&self) -> Option<&Url> {
-        self.thin_client_url.as_ref()
+    pub(crate) fn gateway_v2_url(&self) -> Option<&Url> {
+        self.gateway_v2_url.as_ref()
     }
 
     pub fn region_id(&self) -> u64 {
         self.region_id
+            .expect("VirtualAccountConfig assigns every region an ID")
     }
 }
 
@@ -676,5 +686,50 @@ impl Default for ContainerConfig {
             partition_count: 4,
             provisioned_throughput_ru: None,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn region(name: &str) -> VirtualRegion {
+        VirtualRegion::new(
+            name,
+            Url::parse(&format!(
+                "https://{}.emulator.local",
+                name.to_ascii_lowercase()
+            ))
+            .unwrap(),
+        )
+    }
+
+    #[test]
+    fn assigns_region_ids_by_position_when_omitted() {
+        let config = VirtualAccountConfig::new(vec![region("East"), region("West")]).unwrap();
+        assert_eq!(config.regions()[0].region_id(), 0);
+        assert_eq!(config.regions()[1].region_id(), 1);
+    }
+
+    #[test]
+    fn preserves_explicit_zero_for_non_first_region() {
+        let config = VirtualAccountConfig::new(vec![
+            region("East").with_region_id(1),
+            region("West").with_region_id(0),
+        ])
+        .unwrap();
+        assert_eq!(config.regions()[0].region_id(), 1);
+        assert_eq!(config.regions()[1].region_id(), 0);
+    }
+
+    #[test]
+    fn rejects_duplicate_effective_region_ids() {
+        let error =
+            VirtualAccountConfig::new(vec![region("East").with_region_id(1), region("West")])
+                .unwrap_err();
+        assert_eq!(
+            error.status().status_code(),
+            azure_core::http::StatusCode::BadRequest
+        );
     }
 }

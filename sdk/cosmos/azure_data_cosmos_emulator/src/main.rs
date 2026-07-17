@@ -9,7 +9,6 @@ mod metrics;
 
 use std::{
     io::{self, Write},
-    net::SocketAddr,
     path::PathBuf,
 };
 
@@ -17,7 +16,6 @@ use clap::Parser;
 use config::{EmulatorConfig, GatewayBinding};
 use metrics::HostMetrics;
 use serde::Serialize;
-use tokio::net::TcpListener;
 use url::Url;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
@@ -42,14 +40,13 @@ async fn main() -> Result<()> {
 
     let args = Args::parse();
     let config = EmulatorConfig::load(&args.config).await?;
-    let bound_gateways = config.bind_gateways().await?;
-    let bindings: Vec<_> = bound_gateways
+    let bound_host = config.bind().await?;
+    let bindings: Vec<_> = bound_host
+        .gateways
         .iter()
-        .map(|gateway| gateway.binding.clone())
+        .map(|gateway| gateway.binding())
         .collect();
-    let management_listener =
-        TcpListener::bind(SocketAddr::from(([127, 0, 0, 1], config.management.port))).await?;
-    let management_endpoint = loopback_url(management_listener.local_addr()?.port())?;
+    let management_endpoint = bound_host.management.url.clone();
     let account_endpoint = bindings
         .first()
         .ok_or("no emulator gateway listeners were configured")?
@@ -60,23 +57,30 @@ async fn main() -> Result<()> {
     let metrics = std::sync::Arc::new(HostMetrics::default());
 
     let mut listeners = tokio::task::JoinSet::new();
-    for bound_gateway in bound_gateways {
-        let binding = bound_gateway.binding;
+    for bound_gateway in bound_host.gateways {
+        let binding = bound_gateway.binding();
         let gateway_emulator = emulator.clone();
         let gateway_binding = binding.clone();
         listeners.spawn(async move {
             data_plane::serve(
-                bound_gateway.gateway_listener,
+                bound_gateway.gateway.listener,
                 gateway_binding,
                 gateway_emulator,
             )
             .await
         });
-        if let Some(gateway20_listener) = bound_gateway.gateway20_listener {
+        if let Some(gateway20) = bound_gateway.gateway20 {
             let gateway20_emulator = emulator.clone();
             let metrics = metrics.clone();
             listeners.spawn(async move {
-                gateway_v2::serve(gateway20_listener, binding, gateway20_emulator, metrics).await
+                gateway_v2::serve(
+                    gateway20.listener,
+                    binding.region_name,
+                    gateway20.url,
+                    gateway20_emulator,
+                    metrics,
+                )
+                .await
             });
         }
     }
@@ -84,7 +88,7 @@ async fn main() -> Result<()> {
     let management_bindings = bindings.clone();
     listeners.spawn(async move {
         management::serve(
-            management_listener,
+            bound_host.management.listener,
             emulator,
             account_id,
             management_bindings,
@@ -147,8 +151,4 @@ fn write_ready_record(
     writeln!(stdout)?;
     stdout.flush()?;
     Ok(())
-}
-
-fn loopback_url(port: u16) -> Result<Url> {
-    Ok(Url::parse(&format!("http://127.0.0.1:{port}/"))?)
 }

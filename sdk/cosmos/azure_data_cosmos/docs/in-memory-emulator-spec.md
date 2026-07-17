@@ -59,7 +59,9 @@ An **in-memory emulator** that intercepts requests at the `HttpClient` transport
 ### Non-Goals (This Phase)
 
 - Bulk / Patch operations (return hard-coded errors).
-- Gateway 2.0 transport mode (skip for now — will come later).
+- Network hosting remains outside the in-process `HttpClient` interception contract described by
+  this document. The separate `azure_data_cosmos_emulator` host supports Gateway V1 and a scoped
+  Gateway 2.0 adapter; see `sdk/cosmos/azure_data_cosmos_emulator/docs/plan.md`.
 - Change feed.
 - Stored procedures / triggers / UDFs.
 - Complete Cosmos SQL service parity beyond the local query evaluator and local query-plan analyzer.
@@ -1124,7 +1126,10 @@ The `GET /dbs/{db}/colls/{coll}/pkranges` feed reflects the updated topology:
 
 ## 18. Unsupported Operations
 
-Bulk, Patch, ChangeFeed, stored procedures, triggers, UDFs, and Gateway 2.0 transport mode remain unsupported and return **501 Not Implemented** or the closest service-shaped error for that route.
+Bulk, Patch, ChangeFeed, stored procedures, triggers, and UDFs remain unsupported and return
+**501 Not Implemented** or the closest service-shaped error for that route. The in-process client
+does not select a network transport, while the separate hosted emulator supports the documented
+subset of Gateway 2.0 over HTTP/2.
 
 Query support is intentionally scoped to the local SQL evaluator and local query-plan analyzer used by the SDK tests. Transactional batch supports document operations within one logical partition and rolls back the whole batch on failure.
 

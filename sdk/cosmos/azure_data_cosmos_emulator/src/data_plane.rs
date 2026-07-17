@@ -82,9 +82,14 @@ pub(crate) async fn into_cosmos_request(
         .path_and_query()
         .map(|value| value.as_str())
         .unwrap_or("/");
-    let url = base_url
-        .join(path_and_query.trim_start_matches('/'))
-        .map_err(internal_error)?;
+    if path_and_query.starts_with("//") {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "request paths must contain exactly one leading slash".to_owned(),
+        ));
+    }
+    let relative_path = path_and_query.strip_prefix('/').unwrap_or(path_and_query);
+    let url = base_url.join(relative_path).map_err(internal_error)?;
     let bytes = to_bytes(body, MAX_REQUEST_BODY_SIZE)
         .await
         .map_err(|error| (StatusCode::PAYLOAD_TOO_LARGE, error.to_string()))?;
@@ -146,5 +151,17 @@ mod tests {
             .unwrap();
 
         assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn rejects_multi_slash_paths_without_replacing_authority() {
+        let base_url = Url::parse("http://127.0.0.1:18081/").unwrap();
+        let request = Request::builder()
+            .uri("//attacker.example/dbs")
+            .body(Body::empty())
+            .unwrap();
+
+        let error = into_cosmos_request(request, &base_url).await.unwrap_err();
+        assert_eq!(error.0, StatusCode::BAD_REQUEST);
     }
 }

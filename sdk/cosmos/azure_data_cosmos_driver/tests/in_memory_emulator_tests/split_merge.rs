@@ -6,8 +6,37 @@
 //! Partition split and merge integration tests.
 
 use super::*;
-use azure_core::http::{Method, Request, Url};
+use azure_core::http::{headers::HeaderValue, Method, Request, Url};
 use std::time::Duration;
+
+async fn setup_delayed_multi_region() -> MultiRegionTestContext {
+    let east_url = "https://eastus.emulator.local";
+    let west_url = "https://westus.emulator.local";
+    let config = VirtualAccountConfig::new(vec![
+        VirtualRegion::new("East US", Url::parse(east_url).unwrap()),
+        VirtualRegion::new("West US", Url::parse(west_url).unwrap()),
+    ])
+    .unwrap()
+    .with_write_mode(WriteMode::Single)
+    .with_consistency(ConsistencyLevel::Session)
+    .with_replication_config(ReplicationConfig::fixed(Duration::from_millis(50)));
+    let emulator = Arc::new(InMemoryEmulatorHttpClient::new(config));
+    let store = emulator.store();
+    store.create_database("testdb");
+    store.create_container(
+        "testdb",
+        "testcoll",
+        serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"], "kind": "Hash", "version": 2
+        }))
+        .unwrap(),
+    );
+    MultiRegionTestContext {
+        emulator,
+        east_url: east_url.to_owned(),
+        west_url: west_url.to_owned(),
+    }
+}
 
 #[tokio::test]
 async fn split_creates_two_children() {
@@ -120,6 +149,107 @@ async fn split_locked_returns_410_1007() {
 }
 
 #[tokio::test]
+async fn replication_survives_manual_split_lock() {
+    let ctx = setup_delayed_multi_region().await;
+    let store = ctx.emulator.store();
+    let replicated = serde_json::json!({"id": "replicated", "pk": "locked", "value": 1});
+    let response = ctx
+        .emulator
+        .execute_request(&create_item_request(
+            &ctx.east_url,
+            "testdb",
+            "testcoll",
+            &replicated,
+            r#"["locked"]"#,
+            false,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::Created);
+    let target_partition = response
+        .headers()
+        .get_optional_str(&SESSION_TOKEN)
+        .and_then(|token| token.split(':').next())
+        .and_then(|value| value.parse::<u32>().ok())
+        .unwrap();
+    let split_epk = store
+        .midpoint_split_epk("testdb", "testcoll", target_partition)
+        .unwrap();
+    let operation =
+        store.begin_manual_split_partition("testdb", "testcoll", target_partition, split_epk);
+    store.drain_pending_replications().await;
+    operation.complete().await.unwrap();
+
+    let response = ctx
+        .emulator
+        .execute_request(&read_item_request(
+            &ctx.east_url,
+            "testdb",
+            "testcoll",
+            "replicated",
+            r#"["locked"]"#,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::Ok);
+    assert_eq!(store.dropped_replications(), 0);
+}
+
+#[tokio::test]
+async fn replication_survives_manual_merge_lock() {
+    let ctx = setup_delayed_multi_region().await;
+    let store = ctx.emulator.store();
+
+    let mut routed = None;
+    for index in 0..256 {
+        let pk = format!("merge-{index}");
+        let body = serde_json::json!({"id": "replicated", "pk": pk, "value": index});
+        let pk_header = serde_json::json!([pk]).to_string();
+        let response = ctx
+            .emulator
+            .execute_request(&create_item_request(
+                &ctx.east_url,
+                "testdb",
+                "testcoll",
+                &body,
+                &pk_header,
+                false,
+            ))
+            .await
+            .unwrap();
+        let partition_id = response
+            .headers()
+            .get_optional_str(&SESSION_TOKEN)
+            .and_then(|token| token.split(':').next())
+            .and_then(|value| value.parse::<u32>().ok())
+            .unwrap();
+        if partition_id == 0 || partition_id == 1 {
+            routed = Some((pk_header, partition_id));
+            break;
+        }
+        store.drain_pending_replications().await;
+    }
+    let (pk_header, _) = routed.expect("expected an item routed to partition 0 or 1");
+    let operation = store.begin_manual_merge_partitions("testdb", "testcoll", 0, 1);
+    store.drain_pending_replications().await;
+    operation.complete().await.unwrap();
+
+    let response = ctx
+        .emulator
+        .execute_request(&read_item_request(
+            &ctx.west_url,
+            "testdb",
+            "testcoll",
+            "replicated",
+            &pk_header,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::Ok);
+    assert_eq!(store.dropped_replications(), 0);
+}
+
+#[tokio::test]
 async fn split_preserves_vector_clock_version() {
     let ctx = setup_single_region().await;
     let store = ctx.emulator.store();
@@ -186,6 +316,56 @@ async fn merge_adjacent_partitions() {
     let parents = child["parents"].as_array().unwrap();
     assert!(parents.contains(&serde_json::json!("0")));
     assert!(parents.contains(&serde_json::json!("1")));
+}
+
+#[tokio::test]
+async fn merge_advances_pkrange_feed_etag() {
+    let ctx = setup_single_region().await;
+    let store = ctx.emulator.store();
+    let url = format!("{}/dbs/testdb/colls/testcoll/pkranges", ctx.gateway_url);
+
+    let response = ctx
+        .emulator
+        .execute_request(&Request::new(Url::parse(&url).unwrap(), Method::Get))
+        .await
+        .unwrap();
+    let (_, initial_headers, initial_body) = collect_response(response).await;
+    let initial_etag = initial_headers.get_optional_str(&ETAG).unwrap().to_owned();
+    assert_eq!(
+        initial_body["PartitionKeyRanges"].as_array().unwrap().len(),
+        4
+    );
+
+    store.merge_partitions("testdb", "testcoll", 0, 1, Duration::ZERO);
+    store.drain_pending_control_plane().await;
+
+    let mut refresh = Request::new(Url::parse(&url).unwrap(), Method::Get);
+    refresh.headers_mut().insert(
+        IF_NONE_MATCH.clone(),
+        HeaderValue::from(initial_etag.clone()),
+    );
+    let response = ctx.emulator.execute_request(&refresh).await.unwrap();
+    let (status, refreshed_headers, refreshed_body) = collect_response(response).await;
+    assert_eq!(status, StatusCode::Ok);
+    let refreshed_etag = refreshed_headers
+        .get_optional_str(&ETAG)
+        .unwrap()
+        .to_owned();
+    assert_ne!(refreshed_etag, initial_etag);
+    assert_eq!(
+        refreshed_body["PartitionKeyRanges"]
+            .as_array()
+            .unwrap()
+            .len(),
+        3
+    );
+
+    let mut not_modified = Request::new(Url::parse(&url).unwrap(), Method::Get);
+    not_modified
+        .headers_mut()
+        .insert(IF_NONE_MATCH.clone(), HeaderValue::from(refreshed_etag));
+    let response = ctx.emulator.execute_request(&not_modified).await.unwrap();
+    assert_eq!(response.status(), StatusCode::NotModified);
 }
 
 #[tokio::test]

@@ -14,7 +14,8 @@ use std::{
 };
 
 use axum::{
-    extract::{Path, State},
+    body::to_bytes,
+    extract::{Path, Request, State},
     http::StatusCode,
     response::{IntoResponse, Response},
     routing::{get, post, put},
@@ -30,6 +31,7 @@ use tokio::{net::TcpListener, sync::Mutex};
 use crate::{config::GatewayBinding, metrics::HostMetrics};
 
 const MAX_CONTROL_PLANE_LOCK_DURATION_MS: u64 = 60_000;
+const MAX_MANAGEMENT_BODY_SIZE: usize = 1024 * 1024;
 
 #[derive(Clone)]
 struct ManagementState {
@@ -264,7 +266,13 @@ fn operation_response(operation_id: &str, operation: &OperationRecord) -> serde_
         .as_object_mut()
         .expect("operation response must be an object");
     if let Some(serde_json::Value::Object(result)) = &operation.result {
-        object.extend(result.clone());
+        for (key, value) in result {
+            assert!(
+                !matches!(key.as_str(), "operationId" | "status" | "phase" | "error"),
+                "operation result field '{key}' conflicts with the response envelope"
+            );
+            object.insert(key.clone(), value.clone());
+        }
     }
     if let Some(error) = &operation.error {
         object.insert("error".to_owned(), error.clone().into());
@@ -314,9 +322,19 @@ struct SplitOperationDetails {
 async fn split_partition(
     State(state): State<ManagementState>,
     Path((database, container, partition_id)): Path<(String, String, u32)>,
-    request: Option<Json<SplitRequest>>,
+    request: Request,
 ) -> ApiResult<(StatusCode, Json<serde_json::Value>)> {
-    let request = request.map(|request| request.0).unwrap_or_default();
+    let request = parse_optional_json(request).await?;
+    split_partition_inner(state, database, container, partition_id, request).await
+}
+
+async fn split_partition_inner(
+    state: ManagementState,
+    database: String,
+    container: String,
+    partition_id: u32,
+    request: SplitRequest,
+) -> ApiResult<(StatusCode, Json<serde_json::Value>)> {
     let lock_duration = validate_progression(request.progression_mode, request.lock_duration_ms)?;
     let store = state.emulator.store();
     let split_epk = match request.mode {
@@ -326,7 +344,9 @@ async fn split_partition(
                 .epk
                 .as_deref()
                 .ok_or_else(|| ApiError::bad_request("epk is required when mode is 'epk'"))?;
-            parse_epk(value)?
+            let split_epk = parse_epk(value)?;
+            store.validate_split_epk(&database, &container, partition_id, &split_epk)?;
+            split_epk
         }
         SplitMode::Storage => store.storage_split_epk(&database, &container, partition_id)?,
     };
@@ -366,6 +386,41 @@ async fn split_partition(
     }
 
     Ok((StatusCode::ACCEPTED, Json(response)))
+}
+
+async fn parse_optional_json<T>(request: Request) -> ApiResult<T>
+where
+    T: Default + for<'de> Deserialize<'de>,
+{
+    let content_type = request
+        .headers()
+        .get(axum::http::header::CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .map(str::to_owned);
+    let body = to_bytes(request.into_body(), MAX_MANAGEMENT_BODY_SIZE)
+        .await
+        .map_err(|error| ApiError::bad_request(error.to_string()))?;
+    if body.is_empty() {
+        return Ok(T::default());
+    }
+    if !content_type.as_deref().is_some_and(is_json_content_type) {
+        return Err(ApiError::unsupported_media_type(
+            "nonempty request bodies require application/json",
+        ));
+    }
+    serde_json::from_slice(&body)
+        .map_err(|error| ApiError::bad_request(format!("invalid JSON body: {error}")))
+}
+
+fn is_json_content_type(value: &str) -> bool {
+    let media_type = value
+        .split(';')
+        .next()
+        .unwrap_or_default()
+        .trim()
+        .to_ascii_lowercase();
+    media_type == "application/json"
+        || (media_type.starts_with("application/") && media_type.ends_with("+json"))
 }
 
 #[derive(Debug, Deserialize)]
@@ -436,31 +491,28 @@ fn spawn_automatic_split(
             split_epk,
         } = details;
         let store = state.emulator.store();
-        let operation =
-            store.begin_manual_split_partition(&database, &container, parent, split_epk.clone());
-        set_operation_swapping(&state.operations, &operation_id).await;
+        let operation = {
+            let mut operations = state.operations.records.lock().await;
+            let operation = store.begin_manual_split_partition(
+                &database,
+                &container,
+                parent,
+                split_epk.clone(),
+            );
+            if let Some(record) = operations.get_mut(&operation_id) {
+                record.phase = OperationPhase::Swapping;
+            }
+            operation
+        };
         if !lock_duration.is_zero() {
             tokio::time::sleep(lock_duration).await;
         }
-        let outcome = match operation.complete().await {
-            Ok(()) => {
-                let children = store.child_partition_ids(&database, &container, &[parent]);
-                if children.len() == 2 {
-                    Ok(json!(SplitResponse {
-                        database,
-                        container,
-                        parent,
-                        children,
-                        mode,
-                        split_epk: split_epk.to_hex(),
-                    }))
-                } else {
-                    Err("split completed without producing exactly two child partitions".to_owned())
-                }
-            }
-            Err(error) => Err(error.to_string()),
-        };
-        finish_operation(&state.operations, &operation_id, outcome).await;
+        let mut operations = state.operations.records.lock().await;
+        let outcome = complete_split(
+            &store, database, container, parent, mode, split_epk, operation,
+        )
+        .await;
+        finish_operation_locked(&mut operations, &operation_id, outcome);
     });
 }
 
@@ -474,51 +526,91 @@ fn spawn_automatic_merge(
 ) {
     tokio::spawn(async move {
         let store = state.emulator.store();
-        let operation = store.begin_manual_merge_partitions(
-            &database,
-            &container,
-            partitions[0],
-            partitions[1],
-        );
-        set_operation_swapping(&state.operations, &operation_id).await;
+        let operation = {
+            let mut operations = state.operations.records.lock().await;
+            let operation = store.begin_manual_merge_partitions(
+                &database,
+                &container,
+                partitions[0],
+                partitions[1],
+            );
+            if let Some(record) = operations.get_mut(&operation_id) {
+                record.phase = OperationPhase::Swapping;
+            }
+            operation
+        };
         if !lock_duration.is_zero() {
             tokio::time::sleep(lock_duration).await;
         }
-        let outcome = match operation.complete().await {
-            Ok(()) => {
-                let children = store.child_partition_ids(&database, &container, &partitions);
-                match children.as_slice() {
-                    [merged_child] => Ok(json!(MergeResponse {
-                        merged: partitions,
-                        into: *merged_child,
-                    })),
-                    _ => Err(
-                        "merge completed without producing exactly one child partition".to_owned(),
-                    ),
-                }
-            }
-            Err(error) => Err(error.to_string()),
-        };
-        finish_operation(&state.operations, &operation_id, outcome).await;
+        let mut operations = state.operations.records.lock().await;
+        let outcome = complete_merge(&store, database, container, partitions, operation).await;
+        finish_operation_locked(&mut operations, &operation_id, outcome);
     });
 }
 
-async fn set_operation_swapping(operations: &OperationRegistry, operation_id: &str) {
-    if let Some(operation) = operations.records.lock().await.get_mut(operation_id) {
-        operation.phase = OperationPhase::Swapping;
-    }
-}
-
-async fn finish_operation(
-    operations: &OperationRegistry,
+fn finish_operation_locked(
+    operations: &mut HashMap<String, OperationRecord>,
     operation_id: &str,
     outcome: Result<serde_json::Value, String>,
 ) {
-    if let Some(operation) = operations.records.lock().await.get_mut(operation_id) {
+    if let Some(operation) = operations.get_mut(operation_id) {
         match outcome {
             Ok(result) => operation.succeed(result),
             Err(error) => operation.fail(error),
         }
+    }
+}
+
+async fn complete_split(
+    store: &Arc<EmulatorStore>,
+    database: String,
+    container: String,
+    parent: u32,
+    mode: SplitMode,
+    split_epk: Epk,
+    operation: ManualControlPlaneOperation,
+) -> Result<serde_json::Value, String> {
+    match operation.complete().await {
+        Ok(()) => {
+            let children = store.child_partition_ids(&database, &container, &[parent]);
+            if children.len() == 2 {
+                Ok(json!(SplitResponse {
+                    database,
+                    container,
+                    parent,
+                    children,
+                    mode,
+                    split_epk: split_epk.to_hex(),
+                }))
+            } else {
+                Err("split completed without producing exactly two child partitions".to_owned())
+            }
+        }
+        Err(error) => Err(error.to_string()),
+    }
+}
+
+async fn complete_merge(
+    store: &Arc<EmulatorStore>,
+    database: String,
+    container: String,
+    partitions: [u32; 2],
+    operation: ManualControlPlaneOperation,
+) -> Result<serde_json::Value, String> {
+    match operation.complete().await {
+        Ok(()) => {
+            let children = store.child_partition_ids(&database, &container, &partitions);
+            match children.as_slice() {
+                [merged_child] => Ok(json!(MergeResponse {
+                    merged: partitions,
+                    into: *merged_child,
+                })),
+                _ => {
+                    Err("merge completed without producing exactly one child partition".to_owned())
+                }
+            }
+        }
+        Err(error) => Err(error.to_string()),
     }
 }
 
@@ -554,7 +646,7 @@ async fn advance_operation(
     State(state): State<ManagementState>,
     Path(operation_id): Path<String>,
 ) -> ApiResult<Json<serde_json::Value>> {
-    let completion = {
+    let (completion, response) = {
         let mut operations = state.operations.records.lock().await;
         let operation = operations.get_mut(&operation_id).ok_or_else(|| {
             ApiError::not_found(format!("operation '{operation_id}' does not exist"))
@@ -565,6 +657,7 @@ async fn advance_operation(
                 "operation '{operation_id}' is already terminal"
             )));
         }
+        let response = operation_response(&operation_id, operation);
         let action = operation.action.take().ok_or_else(|| {
             ApiError::conflict(format!(
                 "operation '{operation_id}' is automatic or already advancing"
@@ -621,84 +714,63 @@ async fn advance_operation(
                 parent,
                 mode,
                 split_epk,
-                operation,
-            } => ManualCompletion::Split {
+                operation: manual_operation,
+            } => (
+                ManualCompletion::Split {
+                    database,
+                    container,
+                    parent,
+                    mode,
+                    split_epk,
+                    operation: manual_operation,
+                },
+                response,
+            ),
+            OperationAction::ActiveMerge {
+                database,
+                container,
+                partitions,
+                operation: manual_operation,
+            } => (
+                ManualCompletion::Merge {
+                    database,
+                    container,
+                    partitions,
+                    operation: manual_operation,
+                },
+                response,
+            ),
+        }
+    };
+    let operations = state.operations.clone();
+    let store = state.emulator.store();
+    let completion_id = operation_id.clone();
+    tokio::spawn(async move {
+        let mut records = operations.records.lock().await;
+        let outcome = match completion {
+            ManualCompletion::Split {
                 database,
                 container,
                 parent,
                 mode,
                 split_epk,
                 operation,
-            },
-            OperationAction::ActiveMerge {
+            } => {
+                complete_split(
+                    &store, database, container, parent, mode, split_epk, operation,
+                )
+                .await
+            }
+            ManualCompletion::Merge {
                 database,
                 container,
                 partitions,
                 operation,
-            } => ManualCompletion::Merge {
-                database,
-                container,
-                partitions,
-                operation,
-            },
-        }
-    };
-
-    let store = state.emulator.store();
-    let outcome = match completion {
-        ManualCompletion::Split {
-            database,
-            container,
-            parent,
-            mode,
-            split_epk,
-            operation,
-        } => match operation.complete().await {
-            Ok(()) => {
-                let children = store.child_partition_ids(&database, &container, &[parent]);
-                if children.len() == 2 {
-                    Ok(json!(SplitResponse {
-                        database,
-                        container,
-                        parent,
-                        children,
-                        mode,
-                        split_epk: split_epk.to_hex(),
-                    }))
-                } else {
-                    Err("split completed without producing exactly two child partitions".to_owned())
-                }
-            }
-            Err(error) => Err(error.to_string()),
-        },
-        ManualCompletion::Merge {
-            database,
-            container,
-            partitions,
-            operation,
-        } => match operation.complete().await {
-            Ok(()) => {
-                let children = store.child_partition_ids(&database, &container, &partitions);
-                match children.as_slice() {
-                    [merged_child] => Ok(json!(MergeResponse {
-                        merged: partitions,
-                        into: *merged_child,
-                    })),
-                    _ => Err(
-                        "merge completed without producing exactly one child partition".to_owned(),
-                    ),
-                }
-            }
-            Err(error) => Err(error.to_string()),
-        },
-    };
-    finish_operation(&state.operations, &operation_id, outcome).await;
-
-    let operations = state.operations.records.lock().await;
-    let operation = operations
-        .get(&operation_id)
-        .ok_or_else(|| ApiError::not_found(format!("operation '{operation_id}' does not exist")))?;
-    Ok(Json(operation_response(&operation_id, operation)))
+            } => complete_merge(&store, database, container, partitions, operation).await,
+        };
+        finish_operation_locked(&mut records, &completion_id, outcome);
+    });
+    Ok(Json(response))
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -810,6 +882,13 @@ impl ApiError {
             message: message.into(),
         }
     }
+
+    fn unsupported_media_type(message: impl Into<String>) -> Self {
+        Self {
+            status: StatusCode::UNSUPPORTED_MEDIA_TYPE,
+            message: message.into(),
+        }
+    }
 }
 
 impl From<azure_data_cosmos_driver::error::CosmosError> for ApiError {
@@ -838,6 +917,61 @@ mod tests {
         models::PartitionKeyDefinition,
     };
     use url::Url;
+
+    async fn http_json(
+        address: std::net::SocketAddr,
+        method: &str,
+        path: &str,
+        body: Option<&str>,
+    ) -> (u16, serde_json::Value) {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+        let mut stream = tokio::net::TcpStream::connect(address).await.unwrap();
+        let body = body.unwrap_or_default();
+        let content_headers = if body.is_empty() {
+            String::new()
+        } else {
+            format!(
+                "Content-Type: application/json\r\nContent-Length: {}\r\n",
+                body.len()
+            )
+        };
+        let request = format!(
+            "{method} {path} HTTP/1.1\r\nHost: {address}\r\n{content_headers}Connection: close\r\n\r\n{body}"
+        );
+        stream.write_all(request.as_bytes()).await.unwrap();
+        let mut response = Vec::new();
+        stream.read_to_end(&mut response).await.unwrap();
+        let response = String::from_utf8(response).unwrap();
+        let (headers, body) = response.split_once("\r\n\r\n").unwrap();
+        let status = headers
+            .lines()
+            .next()
+            .unwrap()
+            .split_whitespace()
+            .nth(1)
+            .unwrap()
+            .parse()
+            .unwrap();
+        (status, serde_json::from_str(body).unwrap())
+    }
+
+    async fn wait_for_phase(
+        state: &ManagementState,
+        operation_id: &str,
+        expected: &str,
+    ) -> serde_json::Value {
+        for _ in 0..100 {
+            let operation = get_operation(State(state.clone()), Path(operation_id.to_owned()))
+                .await
+                .unwrap();
+            if operation["phase"] == expected {
+                return operation.0;
+            }
+            tokio::task::yield_now().await;
+        }
+        panic!("operation {operation_id} did not reach phase {expected}")
+    }
 
     #[tokio::test]
     async fn manual_split_and_merge_advance_through_operation_phases() {
@@ -887,15 +1021,17 @@ mod tests {
             metrics: Arc::new(HostMetrics::default()),
             operations: Arc::new(OperationRegistry::default()),
         };
-        let response = split_partition(
-            State(state.clone()),
-            Path(("testdb".to_owned(), "testcoll".to_owned(), 0)),
-            Some(Json(SplitRequest {
+        let response = split_partition_inner(
+            state.clone(),
+            "testdb".to_owned(),
+            "testcoll".to_owned(),
+            0,
+            SplitRequest {
                 mode: SplitMode::Storage,
                 epk: None,
                 progression_mode: ProgressionMode::Manual,
                 lock_duration_ms: None,
-            })),
+            },
         )
         .await
         .unwrap();
@@ -914,9 +1050,13 @@ mod tests {
             .child_partition_ids("testdb", "testcoll", &[0])
             .is_empty());
 
-        let succeeded = advance_operation(State(state.clone()), Path(operation_id.clone()))
-            .await
-            .unwrap();
+        let completion_started =
+            advance_operation(State(state.clone()), Path(operation_id.clone()))
+                .await
+                .unwrap();
+        assert_eq!(completion_started["phase"], "Swapping");
+        drop(completion_started);
+        let succeeded = wait_for_phase(&state, &operation_id, "Succeeded").await;
         assert_eq!(succeeded["status"], "Succeeded");
         assert_eq!(succeeded["phase"], "Succeeded");
         assert_eq!(succeeded["children"].as_array().unwrap().len(), 2);
@@ -927,31 +1067,22 @@ mod tests {
             .unwrap();
         assert_eq!(queried["phase"], "Succeeded");
 
-        let repeated = split_partition(
-            State(state.clone()),
-            Path(("testdb".to_owned(), "testcoll".to_owned(), 0)),
-            Some(Json(SplitRequest {
+        let operation_count = state.operations.records.lock().await.len();
+        let repeated = split_partition_inner(
+            state.clone(),
+            "testdb".to_owned(),
+            "testcoll".to_owned(),
+            0,
+            SplitRequest {
                 mode: SplitMode::Epk,
                 epk: Some(succeeded["splitEpk"].as_str().unwrap().to_owned()),
                 progression_mode: ProgressionMode::Automatic,
                 lock_duration_ms: None,
-            })),
+            },
         )
-        .await
-        .unwrap();
-        let repeated_id = repeated.1["operationId"].as_str().unwrap().to_owned();
-        let mut repeated_phase = None;
-        for _ in 0..100 {
-            let operation = get_operation(State(state.clone()), Path(repeated_id.clone()))
-                .await
-                .unwrap();
-            repeated_phase = operation["phase"].as_str().map(str::to_owned);
-            if repeated_phase.as_deref() == Some("Failed") {
-                break;
-            }
-            tokio::task::yield_now().await;
-        }
-        assert_eq!(repeated_phase.as_deref(), Some("Failed"));
+        .await;
+        assert!(repeated.is_err());
+        assert_eq!(state.operations.records.lock().await.len(), operation_count);
 
         let children = succeeded["children"]
             .as_array()
@@ -975,30 +1106,172 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(merge_swapping["phase"], "Swapping");
-        let merge_succeeded = advance_operation(State(state.clone()), Path(merge_id))
-            .await
-            .unwrap();
+        let merge_completion_started =
+            advance_operation(State(state.clone()), Path(merge_id.clone()))
+                .await
+                .unwrap();
+        assert_eq!(merge_completion_started["phase"], "Swapping");
+        drop(merge_completion_started);
+        let merge_succeeded = wait_for_phase(&state, &merge_id, "Succeeded").await;
         assert_eq!(merge_succeeded["phase"], "Succeeded");
         assert_eq!(merge_succeeded["merged"].as_array().unwrap().len(), 2);
 
-        let invalid_duration = split_partition(
-            State(state),
-            Path(("testdb".to_owned(), "testcoll".to_owned(), 3)),
-            Some(Json(SplitRequest {
+        let invalid_duration = split_partition_inner(
+            state.clone(),
+            "testdb".to_owned(),
+            "testcoll".to_owned(),
+            3,
+            SplitRequest {
                 mode: SplitMode::Midpoint,
                 epk: None,
                 progression_mode: ProgressionMode::Manual,
                 lock_duration_ms: Some(0),
-            })),
+            },
         )
         .await
         .unwrap_err();
         assert_eq!(invalid_duration.status, StatusCode::BAD_REQUEST);
+
+        let operation_count = state.operations.records.lock().await.len();
+        let missing_partition = split_partition_inner(
+            state.clone(),
+            "testdb".to_owned(),
+            "testcoll".to_owned(),
+            999,
+            SplitRequest {
+                mode: SplitMode::Epk,
+                epk: Some("01".to_owned()),
+                progression_mode: ProgressionMode::Automatic,
+                lock_duration_ms: None,
+            },
+        )
+        .await;
+        assert!(missing_partition.is_err());
+        assert_eq!(state.operations.records.lock().await.len(), operation_count);
+
+        let boundary = split_partition_inner(
+            state.clone(),
+            "testdb".to_owned(),
+            "testcoll".to_owned(),
+            children[0],
+            SplitRequest {
+                mode: SplitMode::Epk,
+                epk: Some("".to_owned()),
+                progression_mode: ProgressionMode::Automatic,
+                lock_duration_ms: None,
+            },
+        )
+        .await;
+        assert!(boundary.is_err());
+        assert_eq!(state.operations.records.lock().await.len(), operation_count);
     }
 
     #[test]
     fn custom_epk_rejects_malformed_hex() {
         assert!(parse_epk("ABC").is_err());
         assert!(parse_epk("not-hex").is_err());
+    }
+
+    #[test]
+    #[should_panic(expected = "conflicts with the response envelope")]
+    fn operation_result_rejects_reserved_fields() {
+        let mut operation = OperationRecord::running(None);
+        operation.succeed(json!({ "status": "not-the-envelope-status" }));
+        operation_response("op-test-1", &operation);
+    }
+
+    #[tokio::test]
+    async fn optional_json_distinguishes_empty_and_rejected_bodies() {
+        let empty = axum::http::Request::builder()
+            .body(axum::body::Body::empty())
+            .unwrap();
+        let parsed: SplitRequest = parse_optional_json(empty).await.unwrap();
+        assert!(matches!(parsed.mode, SplitMode::Midpoint));
+
+        let missing_content_type = axum::http::Request::builder()
+            .body(axum::body::Body::from(r#"{"mode":"epk","epk":"01"}"#))
+            .unwrap();
+        let error = parse_optional_json::<SplitRequest>(missing_content_type)
+            .await
+            .unwrap_err();
+        assert_eq!(error.status, StatusCode::UNSUPPORTED_MEDIA_TYPE);
+
+        for body in ["{", r#"{"unknown":true}"#] {
+            let request = axum::http::Request::builder()
+                .header(axum::http::header::CONTENT_TYPE, "application/json")
+                .body(axum::body::Body::from(body))
+                .unwrap();
+            let error = parse_optional_json::<SplitRequest>(request)
+                .await
+                .unwrap_err();
+            assert_eq!(error.status, StatusCode::BAD_REQUEST);
+        }
+    }
+
+    #[tokio::test]
+    async fn split_lro_round_trips_over_http() {
+        let gateway_url = Url::parse("http://127.0.0.1:18081/").unwrap();
+        let account =
+            VirtualAccountConfig::new(vec![VirtualRegion::new("East US", gateway_url)]).unwrap();
+        let emulator = Arc::new(InMemoryEmulatorHttpClient::new(account));
+        emulator.store().create_database("testdb");
+        let partition_key: PartitionKeyDefinition = serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"], "kind": "Hash", "version": 2
+        }))
+        .unwrap();
+        emulator.store().create_container_with_config(
+            "testdb",
+            "testcoll",
+            partition_key,
+            ContainerConfig::new()
+                .with_partition_count(1)
+                .build()
+                .unwrap(),
+        );
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let app = router(
+            emulator,
+            "test-account".to_owned(),
+            Vec::new(),
+            Arc::new(HostMetrics::default()),
+        );
+        let server = tokio::spawn(async move { axum::serve(listener, app).await });
+
+        let (status, created) = http_json(
+            address,
+            "POST",
+            "/databases/testdb/containers/testcoll/partitions/0/split",
+            Some(r#"{"mode":"midpoint","progressionMode":"manual"}"#),
+        )
+        .await;
+        assert_eq!(status, 202);
+        assert_eq!(created["phase"], "Preparing");
+        let operation_id = created["operationId"].as_str().unwrap();
+
+        let operation_path = format!("/operations/{operation_id}");
+        let advance_path = format!("{operation_path}/advance");
+        let (status, swapping) = http_json(address, "POST", &advance_path, None).await;
+        assert_eq!(status, 200);
+        assert_eq!(swapping["phase"], "Swapping");
+        let (status, still_swapping) = http_json(address, "POST", &advance_path, None).await;
+        assert_eq!(status, 200);
+        assert_eq!(still_swapping["phase"], "Swapping");
+
+        let mut terminal = None;
+        for _ in 0..100 {
+            let (status, operation) = http_json(address, "GET", &operation_path, None).await;
+            assert_eq!(status, 200);
+            if operation["phase"] == "Succeeded" {
+                terminal = Some(operation);
+                break;
+            }
+            tokio::task::yield_now().await;
+        }
+        let terminal = terminal.expect("operation did not reach Succeeded");
+        assert_eq!(terminal["children"].as_array().unwrap().len(), 2);
+        assert!(terminal["splitEpk"].is_string());
+
+        server.abort();
     }
 }

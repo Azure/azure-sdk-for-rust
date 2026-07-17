@@ -16,8 +16,10 @@ provide the fine-grained, runtime topology controls required by SDK routing and 
 They also introduce platform, container, startup-time, and certificate dependencies that make
 large deterministic test matrices more expensive and less predictable.
 
-A network-accessible host is required so Rust, Java, .NET, Python, and other SDKs can exercise their
-real HTTP stacks and wire protocols against the same controllable topology model.
+A network-accessible host is required so SDKs can eventually exercise their real HTTP stacks and
+wire protocols against the same controllable topology model. Initial Gateway 2.0 support targets
+Rust and generic h2c-capable clients; stock peer-SDK compatibility requires independent validation
+and, where necessary, the deferred TLS/H2 listener.
 
 ## Decision
 
@@ -48,8 +50,8 @@ are added when they enable a concrete SDK test scenario, not to pursue general C
 parity.
 
 Tests can run quickly and deterministically without Azure resources or heavyweight emulator
-infrastructure. Cross-language SDKs can share the same network-visible behavior while retaining
-their real client pipelines.
+infrastructure. Cross-language SDKs can adopt the same network-visible behavior after validating
+their transport requirements and wire compatibility independently.
 
 The project must document supported behavior and known divergences clearly so its intentionally
 limited scope is not mistaken for customer-grade service emulation.

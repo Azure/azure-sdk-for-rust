@@ -44,9 +44,10 @@ if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
     }
 
     if (-not $ready) {
-        LogGroupStart "Building hosted Cosmos DB in-memory emulator"
+        LogGroupStart "Testing and building hosted Cosmos DB in-memory emulator"
         Push-Location $repoRoot
         try {
+            Invoke-LoggedCommand 'cargo test -p azure_data_cosmos_emulator --all-features'
             Invoke-LoggedCommand 'cargo build -p azure_data_cosmos_emulator'
         } finally {
             Pop-Location
@@ -71,7 +72,6 @@ if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
             -RedirectStandardError $stderr `
             -PassThru
         $env:AZURE_COSMOS_INMEMORY_EMULATOR_PID = $process.Id.ToString()
-        $env:AZURE_COSMOS_INMEMORY_EXPECT_GATEWAY20 = $expectedGateway20.ToString().ToLowerInvariant()
         Write-Host "Started hosted emulator process $($process.Id) using '$configuration'."
 
         $deadline = (Get-Date).AddSeconds(60)
@@ -123,8 +123,6 @@ if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
             throw 'Hosted Cosmos DB in-memory emulator did not become ready within 60 seconds.'
         }
         LogGroupEnd
-    } else {
-        $env:AZURE_COSMOS_INMEMORY_EXPECT_GATEWAY20 = $expectedGateway20.ToString().ToLowerInvariant()
     }
 
     $env:AZURE_COSMOS_INMEMORY_MANAGEMENT_ENDPOINT = $managementEndpoint
@@ -134,6 +132,9 @@ if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
     $env:AZURE_COSMOS_TEST_MODE = 'required'
     $env:RUSTFLAGS = $env:RUSTFLAGS -replace '\s*--cfg=test_category="[^"]*"', ''
     $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"emulator_inmemory`""
+    if ($expectedGateway20) {
+        $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"emulator_inmemory_gateway_v2`""
+    }
     $env:RUST_TEST_THREADS = '1'
     Write-Host "Hosted emulator is ready; RUSTFLAGS set to: $env:RUSTFLAGS"
     return

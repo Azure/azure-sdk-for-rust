@@ -71,6 +71,69 @@ async fn read_existing_item() {
 }
 
 #[tokio::test]
+async fn conditional_read_reports_item_lsn_not_partition_lsn() {
+    let ctx = setup_single_region().await;
+
+    let first = serde_json::json!({"id": "item1", "pk": "pk1", "value": 1});
+    let response = ctx
+        .emulator
+        .execute_request(&create_item_request(
+            &ctx.gateway_url,
+            "testdb",
+            "testcoll",
+            &first,
+            r#"["pk1"]"#,
+            true,
+        ))
+        .await
+        .unwrap();
+    let (_, first_headers, first_body) = collect_response(response).await;
+    let first_etag = first_body["_etag"].as_str().unwrap().to_owned();
+    let first_item_lsn = first_headers
+        .get_optional_str(&ITEM_LSN)
+        .unwrap()
+        .to_owned();
+
+    let second = serde_json::json!({"id": "item2", "pk": "pk1", "value": 2});
+    let response = ctx
+        .emulator
+        .execute_request(&create_item_request(
+            &ctx.gateway_url,
+            "testdb",
+            "testcoll",
+            &second,
+            r#"["pk1"]"#,
+            false,
+        ))
+        .await
+        .unwrap();
+    let (_, second_headers, _) = collect_response(response).await;
+    assert_ne!(
+        second_headers.get_optional_str(&LSN),
+        Some(first_item_lsn.as_str()),
+        "the second write must advance the partition LSN"
+    );
+
+    let mut request = read_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        "item1",
+        r#"["pk1"]"#,
+    );
+    request
+        .headers_mut()
+        .insert(IF_NONE_MATCH.clone(), HeaderValue::from(first_etag));
+    let response = ctx.emulator.execute_request(&request).await.unwrap();
+
+    assert_eq!(response.status(), StatusCode::NotModified);
+    assert_eq!(
+        response.headers().get_optional_str(&ITEM_LSN),
+        Some(first_item_lsn.as_str())
+    );
+}
+
+#[tokio::test]
 async fn replace_existing_item() {
     let ctx = setup_single_region().await;
 

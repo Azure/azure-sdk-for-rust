@@ -203,9 +203,14 @@ API can further modify state at runtime. (YAML support is deferred; see ADR-006.
 | `databases[].containers[].throughput`     | u32                   | Provisioned RU/s (drives throttling when enabled).                                                 |
 | `databases[].containers[].seedItems[]`    | array                 | Documents created on startup; each carries its `partitionKey` value array and the `document` body. |
 
+Region names and effective region IDs must be unique; region-name references are case-sensitive.
+Every explicit nonzero listener port must also be unique. Database IDs must be unique, container
+IDs must be unique within a database, and resource IDs may not be empty or contain `/`, `\`, `?`,
+or `#`. The host validates the complete configuration before provisioning any resource.
+
 Seed items are created through the same request path as real writes (a synthesized create-item
 request per item), so EPK routing, RU accounting, and replication behave identically to
-client-issued writes.
+client-issued writes. The host waits for all scheduled seed replication before publishing ready.
 
 After binding all listeners, the host writes one JSON `ready` record to stdout. It contains the
 resolved management endpoint, hub account endpoint, and all regional standard-gateway and
@@ -248,6 +253,10 @@ Enabled per region by setting `gateway20Port`. When enabled:
 3. Data-plane requests arrive as RNTBD frames wrapped in HTTP/2 POSTs. The listener **decodes**
    the RNTBD request frame + literal `thinclient` headers, reconstructs the logical operation, dispatches
    it through the same store, and **encodes** the result as an RNTBD response frame.
+
+PR1 validates Gateway 2.0 with the Rust SDK and generic clients that support cleartext HTTP/2
+(`h2c`). Stock Java Gateway 2.0 compatibility requires the deferred TLS/H2 listener; peer-SDK
+interoperability is a validation target, not a compatibility guarantee of this phase.
 
 The driver already owns the client-side RNTBD codec (`RntbdRequestFrame::write`,
 `RntbdResponse::read`). This work promotes the currently test-only inverse halves
@@ -295,7 +304,7 @@ POST /databases/{db}/containers/{coll}/partitions/{partitionId}/split
       "mode": "midpoint" | "epk" | "storage",   // default: "midpoint"
       "epk": "<hex EPK>",                        // required when mode = "epk"; ignored otherwise
       "progressionMode": "automatic" | "manual", // default: "automatic"
-      "lockDurationMs": 500                     // automatic only; default: 0
+      "lockDurationMs": 500                     // automatic only; default: 0; maximum: 60000
     }
     → 202 { "operationId": "op-split-123", "status": "Running", "phase": "Preparing" }
 

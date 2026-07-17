@@ -219,7 +219,7 @@ pub(crate) fn account_properties_to_json(
             .regions()
             .iter()
             .filter_map(|region| {
-                region.thin_client_url().map(|url| {
+                region.gateway_v2_url().map(|url| {
                     serde_json::json!({
                         "name": region.name(),
                         "databaseAccountEndpoint": url.as_str()
@@ -232,7 +232,7 @@ pub(crate) fn account_properties_to_json(
             .iter()
             .filter(|region| config.is_write_region(region.name()))
             .filter_map(|region| {
-                region.thin_client_url().map(|url| {
+                region.gateway_v2_url().map(|url| {
                     serde_json::json!({
                         "name": region.name(),
                         "databaseAccountEndpoint": url.as_str()

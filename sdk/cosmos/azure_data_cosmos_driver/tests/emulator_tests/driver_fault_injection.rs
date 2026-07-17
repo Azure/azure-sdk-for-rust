@@ -371,27 +371,22 @@ pub async fn fault_injection_connection_error() -> Result<(), Box<dyn Error>> {
 //
 // Each rule is scoped to `TransportKind::GatewayV2` via
 // `with_transport_kind(...)` so it only fires on Gateway 2.0 traffic. The
-// emulator does not expose Gateway 2.0 endpoints, so these tests are gated
-// behind the `gateway_v2` test category and rely on the
-// `Session SingleRegion GatewayV2` CI matrix entry pointing at a
-// pre-provisioned Gateway 2.0 account (see `sdk/cosmos/ci.yml` and the
-// `AZURE_COSMOS_GW_V2_ENDPOINT` / `AZURE_COSMOS_GW_V2_KEY` plumbing in the
-// driver test framework's `resolve_test_env`).
+// Single-region protocol behaviors also run against the hosted Gateway 2.0
+// emulator. Tests whose names promise regional movement remain on the live
+// multi-region account until the hosted CI topology includes multiple regions.
 
 /// Gateway 2.0 503 Service Unavailable should trigger regional failover.
 ///
 /// The rule is scoped to [`TransportKind::GatewayV2`] so it does not also
 /// fire on standard-gateway requests issued during account discovery. The
-/// emulator does not yet expose Gateway 2.0 endpoints, so this test is
-/// gated behind the `gateway_v2` test category until CI gains a Gateway 2.0
-/// account.
+/// This regional-failover test still requires a multi-region Gateway 2.0 account.
 #[tokio::test]
 #[cfg_attr(
     not(any(
         test_category = "gateway_v2",
         test_category = "gateway_v2_multi_region"
     )),
-    ignore = "requires test_category 'gateway_v2'"
+    ignore = "requires a live multi-region Gateway 2.0 account"
 )]
 pub async fn gateway_v2_service_unavailable_triggers_regional_failover(
 ) -> Result<(), Box<dyn Error>> {
@@ -445,15 +440,15 @@ pub async fn gateway_v2_service_unavailable_triggers_regional_failover(
 /// across regions without risking duplicates).
 ///
 /// The rule is scoped to [`TransportKind::GatewayV2`] so it does not affect
-/// standard-gateway traffic. The emulator does not yet expose Gateway 2.0
-/// endpoints, so this test is gated behind the `gateway_v2` test category.
+/// standard-gateway traffic. This cross-region test still requires a
+/// multi-region Gateway 2.0 account.
 #[tokio::test]
 #[cfg_attr(
     not(any(
         test_category = "gateway_v2",
         test_category = "gateway_v2_multi_region"
     )),
-    ignore = "requires test_category 'gateway_v2'"
+    ignore = "requires a live multi-region Gateway 2.0 account"
 )]
 pub async fn gateway_v2_request_timeout_cross_region_for_reads() -> Result<(), Box<dyn Error>> {
     let condition = FaultInjectionConditionBuilder::new()
@@ -507,16 +502,15 @@ pub async fn gateway_v2_request_timeout_cross_region_for_reads() -> Result<(), B
 /// would be a wasted metadata round-trip.
 ///
 /// The rule is scoped to [`TransportKind::GatewayV2`] so it does not also
-/// fire on standard-gateway requests. The emulator does not yet expose
-/// Gateway 2.0 endpoints, so this test is gated behind the `gateway_v2`
-/// test category until CI gains a Gateway 2.0 account.
+/// fire on standard-gateway requests. This remote-preferred test still
+/// requires a multi-region Gateway 2.0 account.
 #[tokio::test]
 #[cfg_attr(
     not(any(
         test_category = "gateway_v2",
         test_category = "gateway_v2_multi_region"
     )),
-    ignore = "requires test_category 'gateway_v2'"
+    ignore = "requires a live multi-region Gateway 2.0 account"
 )]
 pub async fn gateway_v2_read_session_not_available_remote_preferred() -> Result<(), Box<dyn Error>>
 {
@@ -584,17 +578,16 @@ pub async fn gateway_v2_read_session_not_available_remote_preferred() -> Result<
 /// (id `0x0015`, type `Double`) surfacing in `CosmosResponse::headers()`
 /// proves the parser resumed correctly after the skip.
 ///
-/// The Cosmos DB emulator does not support Gateway 2.0, so this test is
-/// gated behind the `gateway_v2` test category and requires a real
-/// Gateway 2.0-enabled account in CI; the SDK in-memory emulator does not
-/// implement Gateway 2.0 either.
+/// This protocol test runs against either the hosted emulator or a live
+/// Gateway 2.0 account.
 #[tokio::test]
 #[cfg_attr(
     not(any(
+        test_category = "emulator_inmemory_gateway_v2",
         test_category = "gateway_v2",
         test_category = "gateway_v2_multi_region"
     )),
-    ignore = "requires test_category 'gateway_v2'"
+    ignore = "requires hosted or live single-region Gateway 2.0"
 )]
 pub async fn gateway_v2_unknown_rntbd_response_token_is_silently_skipped(
 ) -> Result<(), Box<dyn Error>> {
@@ -760,10 +753,11 @@ fn build_rntbd_response_with_unknown_token(request_charge: f64, body: &[u8]) -> 
 #[tokio::test]
 #[cfg_attr(
     not(any(
+        test_category = "emulator_inmemory_gateway_v2",
         test_category = "gateway_v2",
         test_category = "gateway_v2_multi_region"
     )),
-    ignore = "requires test_category 'gateway_v2'"
+    ignore = "requires hosted or live single-region Gateway 2.0"
 )]
 pub async fn gateway_v2_server_response_delay_is_injected() -> Result<(), Box<dyn Error>> {
     const INJECTED_DELAY: Duration = Duration::from_millis(500);
@@ -828,10 +822,11 @@ pub async fn gateway_v2_server_response_delay_is_injected() -> Result<(), Box<dy
 #[tokio::test]
 #[cfg_attr(
     not(any(
+        test_category = "emulator_inmemory_gateway_v2",
         test_category = "gateway_v2",
         test_category = "gateway_v2_multi_region"
     )),
-    ignore = "requires test_category 'gateway_v2'"
+    ignore = "requires hosted or live single-region Gateway 2.0"
 )]
 pub async fn gateway_v2_hit_limit_caps_fault_count() -> Result<(), Box<dyn Error>> {
     const HIT_LIMIT: u32 = 2;
@@ -984,10 +979,11 @@ pub async fn fault_injection_449_retry_with_succeeds_after_hit_limit() -> Result
 #[tokio::test]
 #[cfg_attr(
     not(any(
+        test_category = "emulator_inmemory_gateway_v2",
         test_category = "gateway_v2",
         test_category = "gateway_v2_multi_region"
     )),
-    ignore = "requires test_category 'gateway_v2'"
+    ignore = "requires hosted or live single-region Gateway 2.0"
 )]
 pub async fn gateway_v2_449_retry_with_succeeds_after_hit_limit() -> Result<(), Box<dyn Error>> {
     let condition = FaultInjectionConditionBuilder::new()

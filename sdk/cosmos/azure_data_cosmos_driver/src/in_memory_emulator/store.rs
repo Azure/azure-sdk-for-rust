@@ -1132,89 +1132,20 @@ impl EmulatorStore {
             if let Some(state) = containers.get(&key) {
                 if let Some(partition) = state.find_partition(&doc.epk) {
                     if partition.is_locked() {
-                        // Drop the read guards before scheduling the retry so
-                        // the spawned task can re-acquire them.
-                        drop(containers);
-                        drop(regions);
-                        self.defer_replication_during_lock(
-                            target_region,
-                            source_region,
-                            db_id,
-                            coll_id,
-                            doc,
-                            is_delete,
-                        );
-                        return;
+                        let mut deferred = partition.deferred_replications.write().unwrap();
+                        // The abort path serializes with this queue before it
+                        // clears `locked`. Rechecking under the queue lock
+                        // ensures a replication either joins the topology
+                        // operation or applies to the unchanged parent.
+                        if partition.is_locked() {
+                            deferred.push((doc.clone(), is_delete));
+                            return;
+                        }
                     }
                     apply_doc_to_partition(partition, doc, is_delete);
                 }
             }
         }
-    }
-
-    /// Schedules a bounded retry of `apply_replication` while the EPK's
-    /// target partition is locked for split/merge. After the lock clears
-    /// `find_partition` returns the new child partition (split) or the
-    /// merged successor (merge), and the doc lands in the correct place.
-    /// Without this hop, late-arriving replicated writes during a split
-    /// land in the BTreeMap of the parent partition that is about to be
-    /// replaced — the doc snapshot taken inside `execute_split` misses it
-    /// and the document is silently lost.
-    fn defer_replication_during_lock(
-        self: &Arc<Self>,
-        target_region: &str,
-        source_region: &str,
-        db_id: &str,
-        coll_id: &str,
-        doc: &StoredDocument,
-        is_delete: bool,
-    ) {
-        const MAX_ATTEMPTS: u32 = 50;
-        const RETRY_DELAY: Duration = Duration::from_millis(20);
-
-        let store = Arc::clone(self);
-        let target = target_region.to_string();
-        let source = source_region.to_string();
-        let db = db_id.to_string();
-        let coll = coll_id.to_string();
-        let document = doc.clone();
-        let semaphore = Arc::clone(&self.replication_semaphore);
-        self.replication_tasks.lock().unwrap().spawn(async move {
-            let _permit = semaphore.acquire_owned().await.ok();
-            for attempt in 0..MAX_ATTEMPTS {
-                tokio::time::sleep(RETRY_DELAY).await;
-                let still_locked = {
-                    let regions = store.regions.read().unwrap();
-                    let Some(region_store) = regions.get(&target) else {
-                        return;
-                    };
-                    let containers = region_store.containers.read().unwrap();
-                    let key = (db.clone(), coll.clone());
-                    let Some(state) = containers.get(&key) else {
-                        return;
-                    };
-                    state
-                        .find_partition(&document.epk)
-                        .map(|p| p.is_locked())
-                        .unwrap_or(false)
-                };
-                if !still_locked {
-                    store.apply_replication(&target, &source, &db, &coll, &document, is_delete);
-                    return;
-                }
-                if attempt + 1 == MAX_ATTEMPTS {
-                    store.dropped_replications.fetch_add(1, Ordering::SeqCst);
-                    tracing::warn!(
-                        target_region = %target,
-                        source_region = %source,
-                        db_id = %db,
-                        coll_id = %coll,
-                        epk = %document.epk,
-                        "in-memory emulator: dropping replicated write after extended split/merge lock",
-                    );
-                }
-            }
-        });
     }
 }
 
@@ -1831,6 +1762,42 @@ impl ThroughputTracker {
 // --- Split / Merge ---
 
 impl EmulatorStore {
+    /// Validates that an explicit split EPK lies strictly inside an existing partition.
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    #[doc(hidden)]
+    pub fn validate_split_epk(
+        &self,
+        db_id: &str,
+        coll_id: &str,
+        partition_id: u32,
+        split_epk: &Epk,
+    ) -> crate::error::Result<()> {
+        let region = self
+            .region(self.config.write_region_name())
+            .ok_or_else(|| host_control_plane_error("write region does not exist"))?;
+        region
+            .with_container(db_id, coll_id, |state| {
+                let partition = state
+                    .physical_partitions
+                    .iter()
+                    .find(|partition| partition.id == partition_id)
+                    .ok_or_else(|| {
+                        host_control_plane_error(format!(
+                            "partition {partition_id} does not exist in {db_id}/{coll_id}"
+                        ))
+                    })?;
+                if *split_epk <= partition.epk_min || *split_epk >= partition.epk_max {
+                    return Err(host_control_plane_error(format!(
+                        "split EPK must lie strictly inside partition {partition_id}"
+                    )));
+                }
+                Ok(())
+            })
+            .ok_or_else(|| {
+                host_control_plane_error(format!("container {db_id}/{coll_id} does not exist"))
+            })?
+    }
+
     /// Returns the EPK boundary a midpoint split would use for a physical partition.
     #[cfg(feature = "__internal_in_memory_emulator")]
     #[doc(hidden)]
@@ -2268,20 +2235,7 @@ impl EmulatorStore {
         } = (match preview {
             Some(SplitPreview::Found { .. }) => preview.unwrap(),
             Some(SplitPreview::AbortUnlock) => {
-                // Outer `regions` read guard has been dropped here.
-                let regions = self.regions.read().unwrap();
-                for region in regions.values() {
-                    let containers = region.containers.read().unwrap();
-                    if let Some(state) = containers.get(&key) {
-                        if let Some(p) = state
-                            .physical_partitions
-                            .iter()
-                            .find(|p| p.id == partition_id)
-                        {
-                            p.locked.store(false, Ordering::SeqCst);
-                        }
-                    }
-                }
+                self.unlock_partitions(&key, &[partition_id]);
                 return false;
             }
             None => return false,
@@ -2570,7 +2524,15 @@ impl EmulatorStore {
             if let Some(state) = containers.get(key) {
                 for partition in &state.physical_partitions {
                     if partition_ids.contains(&partition.id) {
-                        partition.locked.store(false, Ordering::SeqCst);
+                        let deferred = {
+                            let mut deferred = partition.deferred_replications.write().unwrap();
+                            let entries = std::mem::take(&mut *deferred);
+                            partition.locked.store(false, Ordering::SeqCst);
+                            entries
+                        };
+                        for (doc, is_delete) in deferred {
+                            apply_doc_to_partition(partition, &doc, is_delete);
+                        }
                     }
                 }
             }
@@ -2664,6 +2626,7 @@ impl EmulatorStore {
                     return false;
                 }
             };
+        let new_container_etag = new_etag();
 
         let regions = self.regions.read().unwrap();
         for region in regions.values() {
@@ -2825,6 +2788,7 @@ impl EmulatorStore {
                 state.physical_partitions.remove(first_remove);
                 state.physical_partitions.remove(second_remove);
                 state.physical_partitions.push(child);
+                state.metadata.etag = new_container_etag.clone();
             }
         }
         true

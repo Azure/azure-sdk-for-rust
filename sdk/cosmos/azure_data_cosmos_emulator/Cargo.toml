@@ -21,6 +21,7 @@ serde.workspace = true
 serde_json.workspace = true
 tokio = { workspace = true, features = [
   "fs",
+  "io-util",
   "net",
   "rt-multi-thread",
   "signal",

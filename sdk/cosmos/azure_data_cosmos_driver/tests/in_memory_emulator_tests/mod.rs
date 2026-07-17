@@ -122,7 +122,7 @@ pub struct MultiRegionTestContext {
 // Reuse the response-builder header constants from the emulator itself so
 // tests cannot drift from production strings.
 pub use azure_data_cosmos_driver::in_memory_emulator::test_headers::{
-    ACTIVITY_ID, ETAG, REQUEST_CHARGE, SESSION_TOKEN, SUBSTATUS,
+    ACTIVITY_ID, ETAG, ITEM_LSN, LSN, REQUEST_CHARGE, SESSION_TOKEN, SUBSTATUS,
 };
 
 // Request-side headers are only set by tests, so they live here.
@@ -131,6 +131,7 @@ pub static IS_UPSERT: HeaderName = HeaderName::from_static("x-ms-documentdb-is-u
 pub static CONTENT_RESPONSE: HeaderName =
     HeaderName::from_static("x-ms-cosmos-populate-content-response-on-write");
 pub static IF_MATCH: HeaderName = HeaderName::from_static("if-match");
+pub static IF_NONE_MATCH: HeaderName = HeaderName::from_static("if-none-match");
 
 /// Helper to create a POST request to create a document.
 pub fn create_item_request(

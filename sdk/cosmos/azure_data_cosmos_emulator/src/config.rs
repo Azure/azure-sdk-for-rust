@@ -143,10 +143,37 @@ pub(crate) struct GatewayBinding {
     pub(crate) gateway20_url: Option<Url>,
 }
 
+pub(crate) struct BoundEndpoint {
+    pub(crate) url: Url,
+    pub(crate) listener: TcpListener,
+}
+
 pub(crate) struct BoundGateway {
-    pub(crate) binding: GatewayBinding,
-    pub(crate) gateway_listener: TcpListener,
-    pub(crate) gateway20_listener: Option<TcpListener>,
+    pub(crate) region_name: String,
+    pub(crate) gateway: BoundEndpoint,
+    pub(crate) gateway20: Option<BoundEndpoint>,
+}
+
+impl BoundGateway {
+    pub(crate) fn binding(&self) -> GatewayBinding {
+        GatewayBinding {
+            region_name: self.region_name.clone(),
+            gateway_url: self.gateway.url.clone(),
+            gateway20_url: self.gateway20.as_ref().map(|endpoint| endpoint.url.clone()),
+        }
+    }
+}
+
+pub(crate) struct BoundHost {
+    pub(crate) gateways: Vec<BoundGateway>,
+    pub(crate) management: BoundEndpoint,
+}
+
+#[derive(Clone, Copy)]
+enum ListenerSlot {
+    Gateway(usize),
+    Gateway20(usize),
+    Management,
 }
 
 impl EmulatorConfig {
@@ -157,33 +184,61 @@ impl EmulatorConfig {
         Ok(config)
     }
 
-    pub(crate) async fn bind_gateways(&self) -> Result<Vec<BoundGateway>> {
-        let mut gateways = Vec::with_capacity(self.account.regions.len());
-        for region in &self.account.regions {
-            let gateway_listener =
-                TcpListener::bind(SocketAddr::from(([127, 0, 0, 1], region.gateway_port))).await?;
-            let gateway_url = loopback_url(gateway_listener.local_addr()?.port())?;
-            let gateway20_listener = match region.gateway20_port {
-                Some(port) => {
-                    Some(TcpListener::bind(SocketAddr::from(([127, 0, 0, 1], port))).await?)
-                }
-                None => None,
-            };
-            let gateway20_url = gateway20_listener
-                .as_ref()
-                .map(|listener| loopback_url(listener.local_addr()?.port()))
-                .transpose()?;
-            gateways.push(BoundGateway {
-                binding: GatewayBinding {
-                    region_name: region.name.clone(),
-                    gateway_url,
-                    gateway20_url,
-                },
-                gateway_listener,
-                gateway20_listener,
-            });
+    pub(crate) async fn bind(&self) -> Result<BoundHost> {
+        let mut specifications = Vec::new();
+        for (index, region) in self.account.regions.iter().enumerate() {
+            specifications.push((ListenerSlot::Gateway(index), region.gateway_port));
+            if let Some(port) = region.gateway20_port {
+                specifications.push((ListenerSlot::Gateway20(index), port));
+            }
         }
-        Ok(gateways)
+        specifications.push((ListenerSlot::Management, self.management.port));
+        specifications.sort_by_key(|(_, port)| *port == 0);
+
+        let region_count = self.account.regions.len();
+        let mut gateways: Vec<Option<BoundEndpoint>> =
+            std::iter::repeat_with(|| None).take(region_count).collect();
+        let mut gateways20: Vec<Option<BoundEndpoint>> =
+            std::iter::repeat_with(|| None).take(region_count).collect();
+        let mut management = None;
+        for (slot, port) in specifications {
+            let listener = TcpListener::bind(SocketAddr::from(([127, 0, 0, 1], port))).await?;
+            let local_address = listener.local_addr()?;
+            if !local_address.ip().is_loopback() {
+                return Err(
+                    format!("emulator listener must bind to loopback: {local_address}").into(),
+                );
+            }
+            let endpoint = BoundEndpoint {
+                url: loopback_url(local_address.port())?,
+                listener,
+            };
+            match slot {
+                ListenerSlot::Gateway(index) => gateways[index] = Some(endpoint),
+                ListenerSlot::Gateway20(index) => gateways20[index] = Some(endpoint),
+                ListenerSlot::Management => management = Some(endpoint),
+            }
+        }
+
+        let gateways = self
+            .account
+            .regions
+            .iter()
+            .enumerate()
+            .map(|(index, region)| {
+                Ok(BoundGateway {
+                    region_name: region.name.clone(),
+                    gateway: gateways[index]
+                        .take()
+                        .ok_or("configured gateway listener was not bound")?,
+                    gateway20: gateways20[index].take(),
+                })
+            })
+            .collect::<Result<Vec<_>>>()?;
+        Ok(BoundHost {
+            gateways,
+            management: management.ok_or("management listener was not bound")?,
+        })
     }
 
     pub(crate) fn create_emulator(
@@ -202,7 +257,7 @@ impl EmulatorConfig {
                 let mut virtual_region =
                     VirtualRegion::new(&region.name, binding.gateway_url.clone());
                 if let Some(gateway20_url) = &binding.gateway20_url {
-                    virtual_region = virtual_region.with_thin_client_url(gateway20_url.clone());
+                    virtual_region = virtual_region.with_gateway_v2_url(gateway20_url.clone());
                 }
                 match region.region_id {
                     Some(region_id) => virtual_region.with_region_id(region_id),
@@ -245,6 +300,7 @@ impl EmulatorConfig {
         emulator: &Arc<InMemoryEmulatorHttpClient>,
         gateway_url: &Url,
     ) -> Result<()> {
+        self.validate()?;
         let store = emulator.store();
 
         for database in &self.databases {
@@ -274,6 +330,7 @@ impl EmulatorConfig {
                 }
             }
         }
+        store.drain_pending_replications().await;
         Ok(())
     }
 
@@ -316,8 +373,47 @@ impl EmulatorConfig {
                 }
             }
         }
+        let mut database_ids = std::collections::HashSet::new();
+        for database in &self.databases {
+            validate_resource_id("database", &database.id)?;
+            if !database_ids.insert(database.id.as_str()) {
+                return Err(
+                    format!("database '{}' is configured more than once", database.id).into(),
+                );
+            }
+            let mut container_ids = std::collections::HashSet::new();
+            for container in &database.containers {
+                validate_resource_id("container", &container.id)?;
+                if !container_ids.insert(container.id.as_str()) {
+                    return Err(format!(
+                        "container '{}/{}' is configured more than once",
+                        database.id, container.id
+                    )
+                    .into());
+                }
+                let mut container_config =
+                    ContainerConfig::new().with_partition_count(container.partition_count);
+                if let Some(throughput) = container.throughput {
+                    container_config = container_config.with_throughput(throughput);
+                }
+                container_config.build()?;
+            }
+        }
         Ok(())
     }
+}
+
+fn validate_resource_id(resource_type: &str, id: &str) -> Result<()> {
+    if id.trim().is_empty() {
+        return Err(format!("{resource_type} IDs must not be empty").into());
+    }
+    if id.contains('/') || id.contains('\\') || id.contains('?') || id.contains('#') {
+        return Err(format!(
+            "{resource_type} ID '{id}' contains a character that cannot be used in a Cosmos resource path"
+        )
+        .into());
+    }
+    Ok(())
 }
 
 async fn seed_document(
@@ -327,7 +423,10 @@ async fn seed_document(
     container_id: &str,
     seed_item: &SeedItem,
 ) -> Result<()> {
-    let url = gateway_url.join(&format!("dbs/{database_id}/colls/{container_id}/docs"))?;
+    let mut url = gateway_url.clone();
+    url.path_segments_mut()
+        .map_err(|_| "gateway URL cannot be used as a base URL")?
+        .extend(["dbs", database_id, "colls", container_id, "docs"]);
     let mut request = Request::new(url, Method::Post);
     request.headers_mut().insert(
         "x-ms-documentdb-partitionkey",
@@ -433,10 +532,11 @@ mod tests {
         }))
         .unwrap();
         config.validate().unwrap();
-        let bound_gateways = config.bind_gateways().await.unwrap();
-        let bindings: Vec<_> = bound_gateways
+        let bound_host = config.bind().await.unwrap();
+        let bindings: Vec<_> = bound_host
+            .gateways
             .iter()
-            .map(|gateway| gateway.binding.clone())
+            .map(|gateway| gateway.binding())
             .collect();
         let gateway_url = bindings[0].gateway_url.clone();
         let emulator = config.create_emulator(&bindings).unwrap();
@@ -486,19 +586,36 @@ mod tests {
         zero_port.validate().unwrap();
         assert_eq!(zero_port.management.port, 0);
 
-        let gateways = zero_port.bind_gateways().await.unwrap();
-        let gateway = &gateways[0];
-        let gateway_port = gateway.binding.gateway_url.port().unwrap();
-        let gateway20_port = gateway
-            .binding
-            .gateway20_url
-            .as_ref()
-            .unwrap()
-            .port()
-            .unwrap();
+        let host = zero_port.bind().await.unwrap();
+        let gateway = &host.gateways[0];
+        let gateway_port = gateway.gateway.url.port().unwrap();
+        let gateway20_port = gateway.gateway20.as_ref().unwrap().url.port().unwrap();
         assert_ne!(gateway_port, 0);
         assert_ne!(gateway20_port, 0);
         assert_ne!(gateway_port, gateway20_port);
+        assert!(gateway
+            .gateway
+            .listener
+            .local_addr()
+            .unwrap()
+            .ip()
+            .is_loopback());
+        assert!(gateway
+            .gateway20
+            .as_ref()
+            .unwrap()
+            .listener
+            .local_addr()
+            .unwrap()
+            .ip()
+            .is_loopback());
+        assert!(host
+            .management
+            .listener
+            .local_addr()
+            .unwrap()
+            .ip()
+            .is_loopback());
     }
 
     #[test]
@@ -516,5 +633,76 @@ mod tests {
         }))
         .unwrap();
         assert!(duplicate.validate().is_err());
+    }
+
+    #[test]
+    fn rejects_duplicate_startup_resources() {
+        let duplicate_database: EmulatorConfig = serde_json::from_value(serde_json::json!({
+            "account": {
+                "id": "test-account",
+                "writeMode": "single",
+                "consistency": "Session",
+                "regions": [{ "name": "East US" }]
+            },
+            "databases": [{ "id": "db" }, { "id": "db" }]
+        }))
+        .unwrap();
+        assert!(duplicate_database.validate().is_err());
+
+        let duplicate_container: EmulatorConfig = serde_json::from_value(serde_json::json!({
+            "account": {
+                "id": "test-account",
+                "writeMode": "single",
+                "consistency": "Session",
+                "regions": [{ "name": "East US" }]
+            },
+            "databases": [{
+                "id": "db",
+                "containers": [
+                    { "id": "coll", "partitionKey": { "paths": ["/pk"], "kind": "Hash", "version": 2 } },
+                    { "id": "coll", "partitionKey": { "paths": ["/pk"], "kind": "Hash", "version": 2 } }
+                ]
+            }]
+        }))
+        .unwrap();
+        assert!(duplicate_container.validate().is_err());
+    }
+
+    #[tokio::test]
+    async fn invalid_startup_config_does_not_partially_provision() {
+        let config: EmulatorConfig = serde_json::from_value(serde_json::json!({
+            "account": {
+                "id": "test-account",
+                "writeMode": "single",
+                "consistency": "Session",
+                "regions": [{ "name": "East US" }]
+            },
+            "databases": [
+                { "id": "valid" },
+                {
+                    "id": "invalid",
+                    "containers": [{
+                        "id": "coll",
+                        "partitionKey": { "paths": ["/pk"], "kind": "Hash", "version": 2 },
+                        "partitionCount": 0
+                    }]
+                }
+            ]
+        }))
+        .unwrap();
+        let bindings = vec![GatewayBinding {
+            region_name: "East US".to_owned(),
+            gateway_url: Url::parse("http://127.0.0.1:18081/").unwrap(),
+            gateway20_url: None,
+        }];
+        let emulator = config.create_emulator(&bindings).unwrap();
+        let result = config.provision(&emulator, &bindings[0].gateway_url).await;
+        assert!(result.is_err());
+        let request = Request::new(
+            bindings[0].gateway_url.join("dbs/valid").unwrap(),
+            Method::Get,
+        );
+        let response = emulator.execute_request(&request).await.unwrap();
+        assert_eq!(response.status(), azure_core::http::StatusCode::NotFound);
     }
 }

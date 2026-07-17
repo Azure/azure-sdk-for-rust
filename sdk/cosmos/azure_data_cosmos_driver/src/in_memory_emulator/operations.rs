@@ -4580,7 +4580,7 @@ fn handle_read(
                         .with_request_charge(charge)
                         .with_session_token(&token)
                         .with_etag(&etag);
-                    return Err(decorate_point_response(builder, headers, Some(lsn)).build());
+                    return Err(decorate_point_response(builder, headers, Some(item_lsn)).build());
                 }
                 return Ok((body, etag, token, charge, lsn, item_lsn, headers));
             }
@@ -5069,7 +5069,7 @@ async fn handle_upsert_locked(
             if let Some(if_match) = parsed.if_match.as_ref() {
                 if logical
                     .get(&doc_id)
-                    .is_none_or(|existing| *if_match != existing.etag)
+                    .is_some_and(|existing| *if_match != existing.etag)
                 {
                     return Err(error_response(
                         StatusCode::PreconditionFailed,

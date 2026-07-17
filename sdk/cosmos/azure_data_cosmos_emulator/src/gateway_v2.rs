@@ -19,7 +19,7 @@ use serde_json::json;
 use tokio::net::TcpListener;
 use url::Url;
 
-use crate::{config::GatewayBinding, data_plane, metrics::HostMetrics};
+use crate::{data_plane, metrics::HostMetrics};
 
 #[derive(Clone)]
 struct GatewayV2State {
@@ -34,15 +34,13 @@ struct GatewayV2State {
 
 pub(crate) async fn serve(
     listener: TcpListener,
-    binding: GatewayBinding,
+    region_name: String,
+    base_url: Url,
     emulator: Arc<InMemoryEmulatorHttpClient>,
     metrics: Arc<HostMetrics>,
 ) -> io::Result<()> {
-    let Some(base_url) = binding.gateway20_url else {
-        return Ok(());
-    };
     tracing::info!(
-        region = binding.region_name,
+        region = region_name,
         endpoint = %base_url,
         "Cosmos Gateway 2.0 listener ready"
     );
@@ -87,8 +85,13 @@ async fn execute(
             "Gateway 2.0 requires HTTP/2".to_owned(),
         ));
     }
-    if request.method() == axum::http::Method::POST && request.uri().path() == "/connectivity-probe"
-    {
+    if request.method() != axum::http::Method::POST {
+        return Err((
+            StatusCode::METHOD_NOT_ALLOWED,
+            "Gateway 2.0 requires POST".to_owned(),
+        ));
+    }
+    if request.uri().path() == "/connectivity-probe" {
         state.metrics.record_connectivity_probe();
         #[cfg(test)]
         if let Some(probe_count) = &state.probe_count {
@@ -99,19 +102,23 @@ async fn execute(
             .body(Body::empty())
             .map_err(data_plane::internal_error);
     }
-    state.metrics.record_gateway20_request();
-    #[cfg(test)]
-    if let Some(request_count) = &state.request_count {
-        request_count.fetch_add(1, Ordering::SeqCst);
-    }
-
     let request = data_plane::into_cosmos_request(request, &state.base_url).await?;
     let response = state
         .emulator
         .execute_gateway_v2_request(&request)
         .await
-        .map_err(data_plane::internal_error)?;
-    data_plane::into_http_response(response).await
+        .map_err(|error| {
+            let status = StatusCode::from_u16(u16::from(error.status().status_code()))
+                .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+            (status, error.to_string())
+        })?;
+    let response = data_plane::into_http_response(response).await?;
+    state.metrics.record_gateway20_request();
+    #[cfg(test)]
+    if let Some(request_count) = &state.request_count {
+        request_count.fetch_add(1, Ordering::SeqCst);
+    }
+    Ok(response)
 }
 
 #[cfg(test)]
@@ -131,7 +138,7 @@ mod tests {
     async fn connectivity_probe_requires_http2_and_returns_ok() {
         let base_url = Url::parse("http://127.0.0.1:18444/").unwrap();
         let region = VirtualRegion::new("East US", Url::parse("http://127.0.0.1:18081/").unwrap())
-            .with_thin_client_url(base_url.clone());
+            .with_gateway_v2_url(base_url.clone());
         let emulator = Arc::new(InMemoryEmulatorHttpClient::new(
             VirtualAccountConfig::new(vec![region]).unwrap(),
         ));
@@ -162,6 +169,33 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn data_requests_require_post() {
+        let base_url = Url::parse("http://127.0.0.1:18444/").unwrap();
+        let region = VirtualRegion::new("East US", Url::parse("http://127.0.0.1:18081/").unwrap())
+            .with_gateway_v2_url(base_url.clone());
+        let state = GatewayV2State {
+            emulator: Arc::new(InMemoryEmulatorHttpClient::new(
+                VirtualAccountConfig::new(vec![region]).unwrap(),
+            )),
+            base_url,
+            metrics: Arc::new(HostMetrics::default()),
+            request_count: None,
+            probe_count: None,
+        };
+
+        for method in ["GET", "PUT", "DELETE"] {
+            let mut request = Request::builder()
+                .method(method)
+                .uri("/")
+                .body(Body::empty())
+                .unwrap();
+            *request.version_mut() = Version::HTTP_2;
+            let error = execute(state.clone(), request).await.unwrap_err();
+            assert_eq!(error.0, StatusCode::METHOD_NOT_ALLOWED);
+        }
+    }
+
+    #[tokio::test]
     async fn real_driver_uses_hosted_gateway20_over_h2c() {
         let gateway_listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let thin_listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
@@ -173,7 +207,7 @@ mod tests {
         let thin_url =
             Url::parse(&format!("http://{}/", thin_listener.local_addr().unwrap())).unwrap();
         let region = VirtualRegion::new("East US", gateway_url.clone())
-            .with_thin_client_url(thin_url.clone());
+            .with_gateway_v2_url(thin_url.clone());
         let emulator = Arc::new(InMemoryEmulatorHttpClient::new(
             VirtualAccountConfig::new(vec![region]).unwrap(),
         ));

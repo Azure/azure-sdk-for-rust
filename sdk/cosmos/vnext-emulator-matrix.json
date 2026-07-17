@@ -10,7 +10,6 @@
       }
     },
     "RustToolchainName": ["stable"],
-    "AZURE_COSMOS_EMULATOR_FLAVOR": ["vnext"],
-    "ContinueOnError": ["true"]
+    "AZURE_COSMOS_EMULATOR_FLAVOR": ["vnext"]
   }
 }
