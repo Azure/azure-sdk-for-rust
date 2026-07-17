@@ -37,6 +37,17 @@ impl DefaultConsistencyLevel {
     pub(crate) fn is_session(&self) -> bool {
         matches!(self, Self::Session)
     }
+
+    /// Wire byte for the RNTBD `ConsistencyLevel` token (id `0x0007`, `Byte`).
+    pub(crate) fn rntbd_wire_byte(self) -> u8 {
+        match self {
+            Self::Strong => 0x00,
+            Self::BoundedStaleness => 0x01,
+            Self::Session => 0x02,
+            Self::Eventual => 0x03,
+            Self::ConsistentPrefix => 0x04,
+        }
+    }
 }
 
 impl std::fmt::Display for DefaultConsistencyLevel {

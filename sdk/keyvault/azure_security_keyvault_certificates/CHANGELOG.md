@@ -4,11 +4,15 @@
 
 ### Features Added
 
+- Upgraded to API service version `2026-03-01-preview`.
+
 ### Breaking Changes
 
 ### Bugs Fixed
 
 ### Other Changes
+
+- Avoided double-deserializing pager responses by using borrowed `nextLink` parsing in Key Vault certificates list operations.
 
 ## 1.1.0-beta.1 (2026-06-08)
 

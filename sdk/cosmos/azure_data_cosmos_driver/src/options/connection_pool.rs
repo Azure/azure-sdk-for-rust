@@ -10,6 +10,8 @@ use super::env_parsing::{
     ValidationBounds,
 };
 use crate::options::ServerCertificateValidation;
+#[cfg(feature = "rustls")]
+use crate::options::TlsBackend;
 
 /// Configuration for connection pooling behavior.
 ///
@@ -65,9 +67,13 @@ pub struct ConnectionPoolOptions {
 
     is_http2_allowed: bool,
 
-    is_gateway20_allowed: bool,
+    /// Effective Gateway V2 opt-out after configuration and HTTP/2 gating.
+    gateway_v2_disabled: bool,
 
     server_certificate_validation: ServerCertificateValidation,
+
+    #[cfg(feature = "rustls")]
+    tls_backend: TlsBackend,
 
     local_address: Option<IpAddr>,
 }
@@ -208,18 +214,29 @@ impl ConnectionPoolOptions {
         self.is_http2_allowed
     }
 
-    /// Returns whether Gateway 2.0 feature is allowed.
+    /// Returns whether Gateway V2 is disabled for this pool.
     ///
-    /// If `true`, the driver will use Gateway 2.0 features when communicating
-    /// with the Cosmos DB service (if the account supports it). Gateway 2.0
-    /// requires HTTP/2, so this returns `false` if HTTP/2 is disabled.
-    pub fn is_gateway20_allowed(&self) -> bool {
-        self.is_gateway20_allowed
+    /// When `true`, the driver routes every request through the standard gateway
+    /// transport even when the account advertises Gateway V2 endpoints. HTTP/2
+    /// remains a hard prerequisite, so this also returns `true` whenever HTTP/2
+    /// is disabled.
+    pub fn gateway_v2_disabled(&self) -> bool {
+        self.gateway_v2_disabled
     }
 
     /// Returns the server certificate validation setting.
     pub fn server_certificate_validation(&self) -> ServerCertificateValidation {
         self.server_certificate_validation
+    }
+
+    /// Returns the TLS backend the `reqwest` transport is configured to use.
+    ///
+    /// Only available when the `rustls` feature is enabled. With a different
+    /// TLS feature the backend is not driver-selectable, so there is no honest
+    /// value to report and this accessor is not compiled in.
+    #[cfg(feature = "rustls")]
+    pub fn tls_backend(&self) -> TlsBackend {
+        self.tls_backend
     }
 
     /// Returns the local IP address to bind to, if set.
@@ -257,8 +274,9 @@ impl ConnectionPoolOptions {
 /// - `AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_INTERVAL_MS`: TCP keepalive probe interval in milliseconds (default: `1_000`, min: `1_000` when set)
 /// - `AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_RETRIES`: TCP keepalive retry count (default: none, min: `1`, max: `255`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_IS_HTTP2_ALLOWED`: Whether HTTP/2 is allowed for gateway mode connections (default: `true`)
-/// - `AZURE_COSMOS_CONNECTION_POOL_IS_GATEWAY20_ALLOWED`: Whether Gateway 2.0 feature is allowed (default: `false`)
-/// - `AZURE_COSMOS_EMULATOR_SERVER_CERT_VALIDATION_DISABLED`: Whether server certificate validation is disabled for emulator; `true` maps to [`ServerCertificateValidation::RequiredUnlessEmulator`], `false` to [`ServerCertificateValidation::Required`] (default: `false`)
+/// - `AZURE_COSMOS_CONNECTION_POOL_GATEWAY_V2_DISABLED`: Whether Gateway V2 is disabled (default: `false`)
+/// - `AZURE_COSMOS_CONNECTION_POOL_GATEWAY_V2_DISABLED_OVERRIDE`: Environment-only incident override that takes precedence over the builder and base environment value (default: unset)
+/// - `AZURE_COSMOS_EMULATOR_SERVER_CERT_VALIDATION_DISABLED`: Whether server certificate validation is relaxed for emulator connections; `true` maps to [`ServerCertificateValidation::RequiredUnlessEmulator`], `false` to [`ServerCertificateValidation::Required`] (default: `false`)
 /// - `AZURE_COSMOS_LOCAL_ADDRESS`: Local IP address to bind to (default: none)
 ///
 /// # Example
@@ -291,6 +309,23 @@ fn parse_env_server_cert_validation(raw: &str) -> Option<ServerCertificateValida
         "false" | "0" | "no" | "off" => Some(ServerCertificateValidation::Required),
         _ => None,
     }
+}
+
+fn resolve_gateway_v2_disabled(
+    builder: Option<bool>,
+    env: Option<bool>,
+    env_override: Option<bool>,
+    is_http2_allowed: bool,
+) -> crate::error::Result<bool> {
+    let configured = resolve_from_env(
+        builder,
+        env,
+        "AZURE_COSMOS_CONNECTION_POOL_GATEWAY_V2_DISABLED",
+        false,
+        ValidationBounds::none(),
+    )?;
+
+    Ok(env_override.unwrap_or(configured) || !is_http2_allowed)
 }
 
 #[non_exhaustive]
@@ -383,13 +418,15 @@ pub struct ConnectionPoolOptionsBuilder {
     tcp_keepalive_retries: Option<u32>,
     #[option(env = "AZURE_COSMOS_CONNECTION_POOL_IS_HTTP2_ALLOWED")]
     is_http2_allowed: Option<bool>,
-    #[option(env = "AZURE_COSMOS_CONNECTION_POOL_IS_GATEWAY20_ALLOWED")]
-    is_gateway20_allowed: Option<bool>,
+    #[option(env = "AZURE_COSMOS_CONNECTION_POOL_GATEWAY_V2_DISABLED", overridable)]
+    gateway_v2_disabled: Option<bool>,
     #[option(
         env = "AZURE_COSMOS_EMULATOR_SERVER_CERT_VALIDATION_DISABLED",
         parser = parse_env_server_cert_validation
     )]
     server_certificate_validation: Option<ServerCertificateValidation>,
+    #[cfg(feature = "rustls")]
+    tls_backend: Option<TlsBackend>,
     #[option(env = "AZURE_COSMOS_LOCAL_ADDRESS")]
     local_address: Option<IpAddr>,
 }
@@ -583,9 +620,14 @@ impl ConnectionPoolOptionsBuilder {
         self
     }
 
-    /// Sets whether Gateway 2.0 feature is allowed.
-    pub fn with_is_gateway20_allowed(mut self, value: bool) -> Self {
-        self.is_gateway20_allowed = Some(value);
+    /// Sets whether Gateway V2 is disabled for this pool.
+    ///
+    /// Pass `true` to route through the standard gateway even when the account
+    /// advertises Gateway V2 endpoints. The environment-only
+    /// `AZURE_COSMOS_CONNECTION_POOL_GATEWAY_V2_DISABLED_OVERRIDE` value takes
+    /// precedence over this setting.
+    pub fn with_gateway_v2_disabled(mut self, value: bool) -> Self {
+        self.gateway_v2_disabled = Some(value);
         self
     }
 
@@ -595,6 +637,17 @@ impl ConnectionPoolOptionsBuilder {
         value: ServerCertificateValidation,
     ) -> Self {
         self.server_certificate_validation = Some(value);
+        self
+    }
+
+    /// Sets the TLS backend used by the `reqwest` transport.
+    ///
+    /// Defaults to [`TlsBackend::Rustls`] when unset. Only available when the
+    /// `rustls` feature is enabled; with a different TLS feature the backend is
+    /// not driver-selectable.
+    #[cfg(feature = "rustls")]
+    pub fn with_tls_backend(mut self, value: TlsBackend) -> Self {
+        self.tls_backend = Some(value);
         self
     }
 
@@ -624,6 +677,7 @@ impl ConnectionPoolOptionsBuilder {
         // ignored by the macro (lenient), so resolution falls back to the
         // default; bounds violations on a present value still hard-error.
         let env = Self::from_env();
+        let env_override = Self::from_env_override();
 
         let effective_is_http2_allowed = resolve_from_env(
             self.is_http2_allowed,
@@ -633,12 +687,12 @@ impl ConnectionPoolOptionsBuilder {
             ValidationBounds::none(),
         )?;
 
-        let effective_is_gateway20_allowed =
-            match self.is_gateway20_allowed.or(env.is_gateway20_allowed) {
-                // Gateway 2.0 also requires HTTP/2; gate on the resolved flag.
-                Some(gateway20) => gateway20 && effective_is_http2_allowed,
-                None => false, // TODO: Change to true before GA
-            };
+        let effective_gateway_v2_disabled = resolve_gateway_v2_disabled(
+            self.gateway_v2_disabled,
+            env.gateway_v2_disabled,
+            env_override.gateway_v2_disabled,
+            effective_is_http2_allowed,
+        )?;
 
         let max_connection_pool_size_default = if effective_is_http2_allowed {
             1_000
@@ -880,14 +934,15 @@ impl ConnectionPoolOptionsBuilder {
             tcp_keepalive_interval,
             tcp_keepalive_retries,
             is_http2_allowed: effective_is_http2_allowed,
-            is_gateway20_allowed: effective_is_gateway20_allowed,
-            // Builder value wins; otherwise the env-derived mode (the
-            // `*_DISABLED` boolean parsed into a validation mode by
-            // `parse_env_server_cert_validation`); otherwise the secure default.
+            gateway_v2_disabled: effective_gateway_v2_disabled,
             server_certificate_validation: self
                 .server_certificate_validation
                 .or(env.server_certificate_validation)
                 .unwrap_or(ServerCertificateValidation::Required),
+            // TLS backend is builder-only (not env-configurable); defaults to
+            // `TlsBackend::Rustls`. Only present under the `rustls` feature.
+            #[cfg(feature = "rustls")]
+            tls_backend: self.tls_backend.unwrap_or_default(),
             // Builder override wins; otherwise the macro-parsed env value (or
             // `None` when unset / unparseable).
             local_address: self.local_address.or(env.local_address),
@@ -908,6 +963,7 @@ mod tests {
         // duration-ms via parser, usize, u32, IpAddr).
         let cfg = ConnectionPoolOptionsBuilder::from_env_vars(|key| match key {
             "AZURE_COSMOS_CONNECTION_POOL_IS_HTTP2_ALLOWED" => Ok("false".to_string()),
+            "AZURE_COSMOS_CONNECTION_POOL_GATEWAY_V2_DISABLED" => Ok("true".to_string()),
             "AZURE_COSMOS_CONNECTION_POOL_MIN_CONNECT_TIMEOUT_MS" => Ok("250".to_string()),
             "AZURE_COSMOS_CONNECTION_POOL_MAX_IDLE_CONNECTIONS_PER_ENDPOINT" => {
                 Ok("4096".to_string())
@@ -920,6 +976,7 @@ mod tests {
         });
 
         assert_eq!(cfg.is_http2_allowed, Some(false));
+        assert_eq!(cfg.gateway_v2_disabled, Some(true));
         assert_eq!(cfg.min_connect_timeout, Some(Duration::from_millis(250)));
         assert_eq!(cfg.max_idle_connections_per_endpoint, Some(4096));
         assert_eq!(cfg.http2_consecutive_failure_threshold, Some(7));
@@ -930,6 +987,17 @@ mod tests {
         // Unset fields stay None.
         assert!(cfg.max_connect_timeout.is_none());
         assert!(cfg.proxy_allowed.is_none());
+    }
+
+    #[test]
+    fn env_config_from_override_vars_maps_gateway_v2_kill_switch() {
+        let cfg = ConnectionPoolOptionsBuilder::from_env_override_vars(|key| match key {
+            "AZURE_COSMOS_CONNECTION_POOL_GATEWAY_V2_DISABLED_OVERRIDE" => Ok("false".to_string()),
+            _ => Err(std::env::VarError::NotPresent),
+        });
+
+        assert_eq!(cfg.gateway_v2_disabled, Some(false));
+        assert!(cfg.is_http2_allowed.is_none());
     }
 
     #[test]
@@ -973,7 +1041,8 @@ mod tests {
             Duration::from_millis(65_000)
         );
         assert!(options.is_http2_allowed());
-        assert!(!options.is_gateway20_allowed());
+        // Gateway 2.0 is enabled by default whenever HTTP/2 is allowed.
+        assert!(!options.gateway_v2_disabled());
         assert_eq!(
             options.server_certificate_validation(),
             ServerCertificateValidation::Required
@@ -1030,7 +1099,6 @@ mod tests {
             .with_tcp_keepalive_interval(Duration::from_millis(5_000))
             .with_tcp_keepalive_retries(4)
             .with_is_http2_allowed(false)
-            .with_is_gateway20_allowed(true)
             .with_server_certificate_validation(ServerCertificateValidation::RequiredUnlessEmulator)
             .build()
             .unwrap();
@@ -1093,12 +1161,27 @@ mod tests {
         );
         assert_eq!(options.tcp_keepalive_retries(), Some(4));
         assert!(!options.is_http2_allowed());
-        // gateway20 is set to true but HTTP/2 is false, so it should be false
-        assert!(!options.is_gateway20_allowed());
+        // HTTP/2 is off, so the build forces gateway_v2_disabled = true.
+        assert!(options.gateway_v2_disabled());
         assert_eq!(
             options.server_certificate_validation(),
             ServerCertificateValidation::RequiredUnlessEmulator
         );
+    }
+
+    #[cfg(feature = "rustls")]
+    #[test]
+    fn tls_backend_defaults_to_rustls_and_is_settable() {
+        // Default build yields `TlsBackend::Rustls`...
+        let defaults = ConnectionPoolOptionsBuilder::new().build().unwrap();
+        assert_eq!(defaults.tls_backend(), TlsBackend::Rustls);
+
+        // ...and the builder round-trips an explicitly set backend.
+        let configured = ConnectionPoolOptionsBuilder::new()
+            .with_tls_backend(TlsBackend::Rustls)
+            .build()
+            .unwrap();
+        assert_eq!(configured.tls_backend(), TlsBackend::Rustls);
     }
 
     #[test]
@@ -1363,15 +1446,35 @@ mod tests {
     }
 
     #[test]
-    fn gateway20_requires_http2() {
+    fn gateway_v2_requires_http2() {
         let options = ConnectionPoolOptionsBuilder::new()
             .with_is_http2_allowed(false)
-            .with_is_gateway20_allowed(true)
             .build()
             .unwrap();
 
-        // Gateway 2.0 should be disabled if HTTP/2 is not allowed
-        assert!(!options.is_gateway20_allowed());
+        // Gateway 2.0 must be reported as disabled when HTTP/2 is not allowed,
+        // since HTTP/2 is a hard prerequisite for the transport.
+        assert!(options.gateway_v2_disabled());
+    }
+
+    #[test]
+    fn gateway_v2_disablement_uses_override_builder_env_default_precedence() {
+        assert!(!resolve_gateway_v2_disabled(None, None, None, true).unwrap());
+        assert!(resolve_gateway_v2_disabled(Some(true), Some(false), None, true).unwrap());
+        assert!(!resolve_gateway_v2_disabled(Some(true), Some(true), Some(false), true).unwrap());
+        assert!(resolve_gateway_v2_disabled(Some(false), Some(false), Some(true), true).unwrap());
+        assert!(resolve_gateway_v2_disabled(Some(false), Some(false), Some(false), false).unwrap());
+    }
+
+    #[test]
+    fn gateway_v2_can_be_disabled_without_disabling_http2() {
+        let options = ConnectionPoolOptionsBuilder::new()
+            .with_gateway_v2_disabled(true)
+            .build()
+            .unwrap();
+
+        assert!(options.is_http2_allowed());
+        assert!(options.gateway_v2_disabled());
     }
 
     #[test]

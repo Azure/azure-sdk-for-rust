@@ -14,10 +14,10 @@ use std::{
 
 use crate::{
     diagnostics::ProxyConfiguration,
-    models::{normalize_wrapping_sdk_identifier, UserAgent},
+    models::{normalize_wrapping_sdk_identifier, UserAgent, UserAgentFeatureFlags},
     options::{
-        parse_duration_millis_from_env, ConnectionPoolOptions, CorrelationId, DriverOptions,
-        OperationOptions, UserAgentSuffix, WorkloadId,
+        parse_duration_millis_from_env, ConnectionPoolOptions, CorrelationId, DiagnosticsOptions,
+        DriverOptions, OperationOptions, PartitionFailoverOptions, UserAgentSuffix, WorkloadId,
     },
     system::{CpuMemoryMonitor, VmMetadataService},
 };
@@ -93,6 +93,9 @@ pub struct CosmosDriverRuntime {
     /// Connection pool configuration for managing TCP connections.
     connection_pool: ConnectionPoolOptions,
 
+    /// Diagnostics output configuration captured at runtime initialization.
+    diagnostics_options: Arc<DiagnosticsOptions>,
+
     /// Bootstrap HTTP transport for initial metadata probes.
     ///
     /// Uses HTTP/2-only to detect protocol support. Individual drivers
@@ -153,6 +156,15 @@ pub struct CosmosDriverRuntime {
     /// driver's own identifier.
     wrapping_sdk_identifier: Option<String>,
 
+    /// Cross-SDK feature flags advertised in this runtime's base `User-Agent`.
+    ///
+    /// Computed from runtime-scoped client configuration (HTTP/2 transport and
+    /// the default per-partition circuit breaker setting). Drivers built from
+    /// this runtime compare their own computed flags against this value: when
+    /// they match (the common case), they share the runtime's `Arc<UserAgent>`;
+    /// otherwise they recompute their own `User-Agent`.
+    user_agent_feature_flags: UserAgentFeatureFlags,
+
     /// Shared container metadata cache used by drivers in this runtime.
     container_cache: ContainerCache,
 
@@ -194,6 +206,16 @@ impl CosmosDriverRuntime {
     /// Returns the connection pool options.
     pub fn connection_pool(&self) -> &ConnectionPoolOptions {
         &self.connection_pool
+    }
+
+    /// Returns the diagnostics output options.
+    pub fn diagnostics_options(&self) -> &DiagnosticsOptions {
+        &self.diagnostics_options
+    }
+
+    /// Returns the shared diagnostics output options.
+    pub(crate) fn diagnostics_options_arc(&self) -> &Arc<DiagnosticsOptions> {
+        &self.diagnostics_options
     }
 
     /// Returns the bootstrap transport for initial metadata probes.
@@ -305,6 +327,32 @@ impl CosmosDriverRuntime {
         self.wrapping_sdk_identifier.as_deref()
     }
 
+    /// Returns the cross-SDK feature flags advertised in this runtime's base
+    /// `User-Agent` header.
+    pub(crate) fn user_agent_feature_flags(&self) -> UserAgentFeatureFlags {
+        self.user_agent_feature_flags
+    }
+
+    /// Recomputes a `User-Agent` from this runtime's suffix source (suffix,
+    /// workload id, or correlation id, in priority order) plus the supplied
+    /// feature flags.
+    ///
+    /// Used by a driver that overrode a feature-affecting option (e.g. disabled
+    /// PPCB) without supplying its own suffix, so it cannot share the runtime's
+    /// shared `Arc<UserAgent>`.
+    pub(crate) fn user_agent_with_feature_flags(
+        &self,
+        feature_flags: UserAgentFeatureFlags,
+    ) -> UserAgent {
+        compute_user_agent(
+            self.wrapping_sdk_identifier.as_deref(),
+            self.user_agent_suffix.as_ref(),
+            self.workload_id,
+            self.correlation_id.as_ref(),
+            feature_flags,
+        )
+    }
+
     /// Returns the effective correlation dimension.
     ///
     /// Returns `correlation_id` if set, otherwise falls back to `user_agent_suffix`.
@@ -388,6 +436,7 @@ impl CosmosDriverRuntime {
 pub struct CosmosDriverRuntimeBuilder {
     client_options: Option<ClientOptions>,
     connection_pool: Option<ConnectionPoolOptions>,
+    diagnostics_options: Option<DiagnosticsOptions>,
     operation_options: Option<OperationOptions>,
     workload_id: Option<WorkloadId>,
     correlation_id: Option<CorrelationId>,
@@ -417,6 +466,15 @@ impl CosmosDriverRuntimeBuilder {
     /// Sets the connection pool options.
     pub fn with_connection_pool(mut self, options: ConnectionPoolOptions) -> Self {
         self.connection_pool = Some(options);
+        self
+    }
+
+    /// Sets diagnostics output options captured by this runtime.
+    ///
+    /// If unset, the runtime reads `AZURE_COSMOS_DIAGNOSTICS_*` environment
+    /// variables and falls back to [`DiagnosticsOptions::default`].
+    pub fn with_diagnostics_options(mut self, options: DiagnosticsOptions) -> Self {
+        self.diagnostics_options = Some(options);
         self
     }
 
@@ -532,20 +590,29 @@ impl CosmosDriverRuntimeBuilder {
     /// configuration failure).
     ///
     pub async fn build(self) -> crate::error::Result<Arc<CosmosDriverRuntime>> {
+        let connection_pool = self.connection_pool.unwrap_or_default();
+        let diagnostics_options = Arc::new(self.diagnostics_options.unwrap_or_default());
+
+        // Compute the base feature flags advertised in the User-Agent from
+        // runtime-scoped client configuration. HTTP/2 comes from the connection
+        // pool; PPCB uses the driver default (its per-driver value is folded in
+        // later by `CosmosDriver::new`). PPAF is server-driven per-partition and
+        // therefore unknown here, so it is not advertised in the shared header.
+        let user_agent_feature_flags = UserAgentFeatureFlags::from_client_config(
+            connection_pool.is_http2_allowed(),
+            PartitionFailoverOptions::default().circuit_breaker_enabled(),
+        );
+
         // Compute user agent from suffix/workloadId/correlationId (in priority order),
         // optionally prepending a wrapping-SDK identifier.
-        let wrapping = self.wrapping_sdk_identifier.as_deref();
-        let user_agent = Arc::new(if let Some(ref suffix) = self.user_agent_suffix {
-            UserAgent::from_suffix(wrapping, suffix)
-        } else if let Some(workload_id) = self.workload_id {
-            UserAgent::from_workload_id(wrapping, workload_id)
-        } else if let Some(ref correlation_id) = self.correlation_id {
-            UserAgent::from_correlation_id(wrapping, correlation_id)
-        } else {
-            UserAgent::from_wrapping_sdk_identifier(wrapping)
-        });
+        let user_agent = Arc::new(compute_user_agent(
+            self.wrapping_sdk_identifier.as_deref(),
+            self.user_agent_suffix.as_ref(),
+            self.workload_id,
+            self.correlation_id.as_ref(),
+            user_agent_feature_flags,
+        ));
 
-        let connection_pool = self.connection_pool.unwrap_or_default();
         let proxy_configuration = ProxyConfiguration::from_env(connection_pool.proxy_allowed());
         let http_client_factory: Arc<dyn HttpClientFactory> = {
             #[cfg(any(
@@ -596,6 +663,7 @@ impl CosmosDriverRuntimeBuilder {
             5_000,
             1_000,
             60_000,
+            &|k| std::env::var(k).ok(),
         )?;
         let cpu_monitor = CpuMemoryMonitor::get_or_init(refresh_interval);
         let vm_metadata = VmMetadataService::get_or_init().await;
@@ -604,6 +672,7 @@ impl CosmosDriverRuntimeBuilder {
             id: NEXT_RUNTIME_ID.fetch_add(1, Ordering::Relaxed),
             client_options: self.client_options.unwrap_or_default(),
             connection_pool,
+            diagnostics_options,
             bootstrap_transport,
             http_client_factory,
             env_operation_options: Arc::new(OperationOptions {
@@ -633,6 +702,7 @@ impl CosmosDriverRuntimeBuilder {
             correlation_id: self.correlation_id,
             user_agent_suffix: self.user_agent_suffix,
             wrapping_sdk_identifier: self.wrapping_sdk_identifier,
+            user_agent_feature_flags,
             container_cache: ContainerCache::new(),
             account_metadata_cache: Arc::new(AccountMetadataCache::new()),
             cpu_monitor,
@@ -644,10 +714,35 @@ impl CosmosDriverRuntimeBuilder {
 
 static NEXT_RUNTIME_ID: AtomicUsize = AtomicUsize::new(0);
 
+/// Builds a [`UserAgent`] from a suffix source (suffix, workload id, or
+/// correlation id, in priority order) plus the supplied feature flags.
+///
+/// Shared by [`CosmosDriverRuntimeBuilder::build`] and
+/// [`CosmosDriverRuntime::user_agent_with_feature_flags`] so the priority
+/// ordering is defined in exactly one place.
+fn compute_user_agent(
+    wrapping_sdk_identifier: Option<&str>,
+    user_agent_suffix: Option<&UserAgentSuffix>,
+    workload_id: Option<WorkloadId>,
+    correlation_id: Option<&CorrelationId>,
+    feature_flags: UserAgentFeatureFlags,
+) -> UserAgent {
+    if let Some(suffix) = user_agent_suffix {
+        UserAgent::from_suffix(wrapping_sdk_identifier, suffix, feature_flags)
+    } else if let Some(workload_id) = workload_id {
+        UserAgent::from_workload_id(wrapping_sdk_identifier, workload_id, feature_flags)
+    } else if let Some(correlation_id) = correlation_id {
+        UserAgent::from_correlation_id(wrapping_sdk_identifier, correlation_id, feature_flags)
+    } else {
+        UserAgent::from_wrapping_sdk_identifier(wrapping_sdk_identifier, feature_flags)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::models::AccountReference;
+    use crate::options::{DiagnosticsOptions, DiagnosticsVerbosity};
     use url::Url;
 
     #[tokio::test]
@@ -672,6 +767,74 @@ mod tests {
             .await
             .expect_err("subsequent attempts must also surface the failure");
         assert!(!second_error.to_string().is_empty());
+    }
+
+    #[tokio::test]
+    async fn create_driver_rejects_http_production_endpoint() {
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let account = AccountReference::with_master_key(
+            Url::parse("http://myaccount.documents.azure.com/").unwrap(),
+            "***not-base64***",
+        );
+
+        let error = runtime
+            .create_driver(DriverOptions::builder(account).build())
+            .await
+            .expect_err("http production endpoint must be rejected");
+        assert_eq!(
+            error.status(),
+            crate::error::CosmosStatus::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL
+        );
+    }
+
+    #[tokio::test]
+    async fn create_driver_rejects_http_backup_endpoint() {
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let account = AccountReference::with_master_key(
+            Url::parse("https://myaccount.documents.azure.com/").unwrap(),
+            "***not-base64***",
+        )
+        .with_backup_endpoints(vec![Url::parse(
+            "http://myaccount-backup.documents.azure.com/",
+        )
+        .unwrap()]);
+
+        let error = runtime
+            .create_driver(DriverOptions::builder(account).build())
+            .await
+            .expect_err("http backup endpoint must be rejected");
+        assert_eq!(
+            error.status(),
+            crate::error::CosmosStatus::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL
+        );
+    }
+
+    #[tokio::test]
+    async fn default_diagnostics_options_use_summary_verbosity() {
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+
+        assert_eq!(
+            runtime.diagnostics_options().default_verbosity(),
+            DiagnosticsVerbosity::Summary
+        );
+    }
+
+    #[tokio::test]
+    async fn diagnostics_options_can_be_configured_on_runtime() {
+        let diagnostics = DiagnosticsOptions::builder()
+            .with_default_verbosity(DiagnosticsVerbosity::Detailed)
+            .build()
+            .unwrap();
+        let runtime = CosmosDriverRuntimeBuilder::new()
+            .with_diagnostics_options(diagnostics)
+            .build()
+            .await
+            .unwrap();
+
+        assert_eq!(
+            runtime.diagnostics_options().default_verbosity(),
+            DiagnosticsVerbosity::Detailed
+        );
     }
 
     /// Verifies that the user-agent suffix set on the runtime appears in the

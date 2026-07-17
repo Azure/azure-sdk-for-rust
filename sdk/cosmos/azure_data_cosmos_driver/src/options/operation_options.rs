@@ -358,6 +358,32 @@ mod tests {
         assert!(view.max_session_retry_count().is_none());
     }
 
+    /// Rule 2 + Rule 3 (RCS resolution):
+    /// An explicit per-request `Default` overrides a client-level non-`Default`,
+    /// resulting in no RCS being emitted on the wire.
+    #[test]
+    fn view_request_level_default_overrides_client_level_non_default() {
+        use std::sync::Arc;
+
+        let client = Arc::new(OperationOptions {
+            read_consistency_strategy: Some(ReadConsistencyStrategy::LatestCommitted),
+            ..Default::default()
+        });
+
+        let operation = OperationOptions {
+            read_consistency_strategy: Some(ReadConsistencyStrategy::Default),
+            ..Default::default()
+        };
+
+        let view = OperationOptionsView::new(None, Some(client), None, Some(&operation));
+
+        assert_eq!(
+            view.read_consistency_strategy(),
+            Some(&ReadConsistencyStrategy::Default),
+            "explicit request-level Default must override client-level non-Default"
+        );
+    }
+
     #[test]
     fn from_env_vars_parses_known_vars() {
         let options = OperationOptions::from_env_vars(|key| match key {
@@ -690,5 +716,50 @@ mod tests {
         assert!(throughput.group_name().is_none());
         assert!(throughput.throughput_bucket().is_none());
         assert!(throughput.priority_level().is_none());
+    }
+}
+
+/// Smoke tests that the production `OperationOptions::from_env` path is wired
+/// to the real process environment.
+///
+/// The exhaustive per-field matrix lives in the injected-closure tests above.
+/// These two cases exist only to prove that the real production constructor
+/// actually reads `std::env::var` — a gap the injected tests cannot cover — by
+/// setting a real `AZURE_COSMOS_*` variable and observing it flow through. They
+/// run inside [`with_scoped_env`] (shared lock + clear/restore) so they stay
+/// hermetic.
+#[cfg(test)]
+mod real_env_tests {
+    use super::*;
+    use crate::options::env_parsing::test_env::{with_scoped_env, OPERATION_ENV_VARS};
+
+    #[test]
+    fn real_env_empty_yields_all_none() {
+        // With no variables set, the env layer contributes nothing.
+        with_scoped_env(OPERATION_ENV_VARS, &[], || {
+            let o = OperationOptions::from_env();
+            assert!(o.read_consistency_strategy.is_none());
+            assert!(o.content_response_on_write.is_none());
+            assert!(o.max_failover_retry_count.is_none());
+            assert!(o.max_session_retry_count.is_none());
+            assert!(o.hedging_enabled.is_none());
+        });
+    }
+
+    #[test]
+    fn real_env_value_flows_through() {
+        // A real `AZURE_COSMOS_READ_CONSISTENCY_STRATEGY` flows through
+        // `from_env`, proving the production accessor is connected.
+        with_scoped_env(
+            OPERATION_ENV_VARS,
+            &[("AZURE_COSMOS_READ_CONSISTENCY_STRATEGY", "Session")],
+            || {
+                let o = OperationOptions::from_env();
+                assert_eq!(
+                    o.read_consistency_strategy,
+                    Some(ReadConsistencyStrategy::Session)
+                );
+            },
+        );
     }
 }

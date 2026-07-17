@@ -1,6 +1,6 @@
 [package]
 name = "azure_core"
-version = "1.1.0-beta.1"
+version = "1.2.0-beta.1"
 description = "Rust wrappers around Microsoft Azure REST APIs - Core crate"
 readme = "README.md"
 authors.workspace = true
@@ -41,6 +41,7 @@ rustc_version.workspace = true
 azure_core_examples.path = "../azure_core_examples"
 azure_core_macros.workspace = true
 azure_core_test.path = "../azure_core_test"
+clap = { workspace = true, features = ["derive"] }
 criterion.workspace = true
 http = "1.4.0"
 include-file.workspace = true
