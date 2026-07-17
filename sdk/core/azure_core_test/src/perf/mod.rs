@@ -4,13 +4,14 @@
 use crate::TestContext;
 use azure_core::{
     error::{ErrorKind, ResultExt},
+    http::Url,
     time::Duration,
-    Error, Result,
+    Result,
 };
-use clap::ArgMatches;
+use clap::{Parser, Subcommand};
 use serde::Serialize;
 use std::{
-    fmt::Display,
+    fmt::{Debug, Display},
     future::Future,
     pin::Pin,
     sync::{
@@ -44,82 +45,22 @@ pub trait PerfTest: Send + Sync {
     async fn cleanup(&self, context: Arc<TestContext>) -> azure_core::Result<()>;
 }
 
+pub trait PerfTestFactory: Subcommand + Clone + Debug {
+    fn name(&self) -> &'static str;
+    fn create_test(&self) -> CreatePerfTestReturn;
+    fn peek(&self) -> PeekSubcommandInfo {
+        Default::default()
+    }
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct PeekSubcommandInfo {
+    // Resource size
+    pub size: Option<i64>,
+}
+
 pub type CreatePerfTestReturn =
     Pin<Box<dyn Future<Output = azure_core::Result<Box<dyn PerfTest>>>>>;
-
-/// Type alias for an async function that creates a PerfTest instance.
-/// Takes a PerfRunner reference and returns a future that resolves to a PerfTest trait object.
-pub type CreatePerfTestFn = fn(PerfRunner) -> CreatePerfTestReturn;
-
-/// Metadata about a performance test.
-#[derive(Debug, Clone)]
-pub struct PerfTestMetadata {
-    /// The name of the test suite.
-    pub name: &'static str,
-    /// A brief description of the test suite.
-    pub description: &'static str,
-    /// The set of test options supported by this test.
-    pub options: Vec<PerfTestOption>,
-
-    /// An async function used to create the performance test.
-    /// Takes a PerfRunner reference and returns a future that resolves to a PerfTest trait object.
-    pub create_test: CreatePerfTestFn,
-}
-
-/// The expected type of a test option, used in [`PerfRunner::try_get_test_arg`] and [`PerfRunner::try_get_global_arg`]
-///
-/// This allows a test author to declare the expected numeric type of the option value, which
-/// simplifies the work involved in processing a test option value and reduces the chance of errors in that processing.
-///
-/// The default option type is `String`,
-#[derive(Debug, Clone, Default)]
-pub enum PerfTestOptionKind {
-    // Note: We need this type because `clap` requires us to specify the expected type of each argument
-    // for proper parsing, and this allows us to leverage that parsing in `try_get_test_arg` and
-    // `try_get_global_arg` to get typed arguments without needing to do any additional parsing
-    // or error handling in the test code. See also get_command_for_metadata which specifies the
-    // clap parser for each option based on this type.
-    #[default]
-    String,
-    Int8,
-    Int16,
-    Int32,
-    Int64,
-    Uint8,
-    Uint16,
-    Uint32,
-    Uint64,
-    Usize,
-    Boolean,
-}
-
-/// A `PerfTestOptions` defines a set of options for the test which will be merged with the common test inputs to define the command line for the performance test.
-#[derive(Debug, Default, Clone)]
-pub struct PerfTestOption {
-    /// The name of the test option. This is used as the key in the `TestArguments` map.
-    pub name: &'static str,
-
-    /// The short form activator for this argument e.g., `-t`. Does not include the hyphen.
-    pub short_activator: Option<char>,
-
-    /// The long form activator for this argument e.g., `--test-option`. Does not include the hyphens.
-    pub long_activator: &'static str,
-
-    /// Display message - displayed in the --help message.
-    pub display_message: &'static str,
-
-    /// Expected argument count
-    pub expected_args_len: usize,
-
-    /// Required
-    pub mandatory: bool,
-
-    /// Argument value is sensitive and should be sanitized.
-    pub sensitive: bool,
-
-    /// The expected type of the argument value.
-    pub option_type: PerfTestOptionKind,
-}
 
 #[derive(Debug, Clone, Default, Serialize)]
 #[allow(dead_code)]
@@ -139,20 +80,75 @@ struct OperationResult {
     size: i64,
 }
 
-#[derive(Debug, Clone)]
-struct PerfRunnerOptions {
+#[derive(Parser, Debug, Clone)]
+struct PerfRunnerOptions<T: PerfTestFactory> {
+    // Satisfies the cargo bench command.
+    #[arg(long, global = true, default_value_t = true, hide = true)]
+    bench: bool,
+
+    // Disable test cleanup.
+    #[arg(long, global = true)]
     no_cleanup: bool,
+
+    // The number of iterations to run each test.
+    #[arg(long, default_value_t = 1, value_name = "COUNT")]
     iterations: u32,
+
+    // The number of concurrent tasks to use when running each test.
+    #[arg(short, long, default_value_t = 1, global = true, value_name = "COUNT")]
     parallel: u32,
+
+    // The duration of each test in seconds.
+    #[arg(short, long, default_value = "30", global = true, value_parser = duration_seconds, value_name = "SECONDS")]
     duration: Duration,
+
+    // The duration of the warmup period in seconds.
+    #[arg(long, default_value = "5", global = true, value_parser = duration_seconds, value_name = "SECONDS")]
     warmup: Duration,
+
+    // Disable progress reporting.
+    #[arg(long = "no-progress")]
     disable_progress: bool,
+
+    // Track and print per-operation latency statistics.
+    #[arg(short, long, global = true)]
     latency: bool,
+
+    // The file to write test results to.
+    #[arg(
+        long = "test-results",
+        default_value = "./results.json",
+        value_name = "FILE"
+    )]
     test_results_filename: String,
+
+    // File path to store per-operation latency results (requires --latency)
+    #[arg(long, default_value = "", global = true, value_name = "FILE")]
     results_file: String,
+
+    // Run synchronous tests (ignored).
+    #[arg(long, global = true)]
+    sync: bool,
+
+    // URL of test-proxy (ignored).
+    #[arg(long, global = true, value_parser = url, value_name = "URL")]
+    test_proxy: Option<Url>,
+
+    #[command(subcommand)]
+    pub subcommand: T,
 }
 
-impl Display for PerfRunnerOptions {
+fn duration_seconds(s: &str) -> std::result::Result<Duration, String> {
+    s.parse::<i64>()
+        .map(Duration::seconds)
+        .map_err(|e| format!("Failed to parse duration '{}': {}", s, e))
+}
+
+fn url(s: &str) -> std::result::Result<Url, String> {
+    Url::parse(s).map_err(|e| format!("Failed to parse URL '{}': {}", s, e))
+}
+
+impl<T: PerfTestFactory> Display for PerfRunnerOptions<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -170,50 +166,16 @@ impl Display for PerfRunnerOptions {
     }
 }
 
-impl From<&ArgMatches> for PerfRunnerOptions {
-    fn from(matches: &ArgMatches) -> Self {
-        Self {
-            no_cleanup: matches.get_flag("no-cleanup"),
-            iterations: *matches
-                .get_one::<u32>("iterations")
-                .expect("defaulted by clap"),
-            parallel: *matches
-                .get_one::<u32>("parallel")
-                .expect("defaulted by clap"),
-            disable_progress: matches.get_flag("no-progress"),
-            latency: matches.get_flag("latency"),
-            duration: Duration::seconds(
-                *matches
-                    .get_one::<i64>("duration")
-                    .expect("defaulted by clap"),
-            ),
-            warmup: Duration::seconds(
-                *matches.get_one::<i64>("warmup").expect("defaulted by clap"),
-            ),
-            test_results_filename: matches
-                .get_one::<String>("test-results")
-                .expect("defaulted by clap")
-                .to_string(),
-            results_file: matches
-                .get_one::<String>("results-file")
-                .cloned()
-                .unwrap_or_default(),
-        }
-    }
-}
-
 /// Context information required by performance tests.
 #[derive(Debug, Clone)]
-pub struct PerfRunner {
-    options: PerfRunnerOptions,
-    tests: Vec<PerfTestMetadata>,
-    arguments: ArgMatches,
+pub struct PerfRunner<T: PerfTestFactory> {
+    options: PerfRunnerOptions<T>,
     package_dir: &'static str,
     module_name: &'static str,
     progress: Arc<AtomicU64>,
 }
 
-impl PerfRunner {
+impl<T: PerfTestFactory> PerfRunner<T> {
     /// Run the performance tests in `tests` using the current process command line.
     ///
     /// # Arguments
@@ -225,21 +187,9 @@ impl PerfRunner {
     pub fn new(
         package_dir: &'static str,
         module_name: &'static str,
-        tests: Vec<PerfTestMetadata>,
-    ) -> Result<Self> {
-        let command = Self::get_command_from_metadata(&tests);
-        let arguments = command.try_get_matches();
-        let arguments = match arguments {
-            Ok(a) => a,
-            Err(e) => {
-                eprintln!("{}", e);
-                std::process::exit(1);
-            }
-        };
+    ) -> std::result::Result<Self, clap::Error> {
         Ok(Self {
-            options: PerfRunnerOptions::from(&arguments),
-            tests,
-            arguments,
+            options: PerfRunnerOptions::<T>::try_parse()?,
             package_dir,
             module_name,
             progress: Arc::new(AtomicU64::new(0)),
@@ -250,72 +200,14 @@ impl PerfRunner {
     pub fn with_command_line(
         package_dir: &'static str,
         module_name: &'static str,
-        tests: Vec<PerfTestMetadata>,
         args: Vec<&str>,
-    ) -> azure_core::Result<Self> {
-        let command = Self::get_command_from_metadata(&tests);
-        let arguments = command
-            .try_get_matches_from(args)
-            .with_context(ErrorKind::Other, "Failed to parse command line arguments.")?;
-
+    ) -> std::result::Result<Self, clap::Error> {
         Ok(Self {
-            options: PerfRunnerOptions::from(&arguments),
-            tests,
-            arguments,
+            options: PerfRunnerOptions::<T>::try_parse_from(args.iter())?,
             package_dir,
             module_name,
             progress: Arc::new(AtomicU64::new(0)),
         })
-    }
-
-    /// Gets a typed argument by its id.
-    pub fn try_get_global_arg<T>(&self, id: &str) -> Result<Option<T>>
-    where
-        T: Clone + Send + Sync + 'static,
-    {
-        self.arguments
-            .try_get_one::<T>(id)
-            .with_context(
-                ErrorKind::Other,
-                format!("Failed to get argument '{}'.", id),
-            )
-            .map(|arg| arg.cloned())
-    }
-
-    /// Gets a typed argument for the selected test by its id.
-    ///
-    /// # Arguments
-    ///
-    /// * `id` - The id of the argument to get.
-    ///
-    /// # Returns
-    ///
-    /// The argument if it exists, or None.
-    pub fn try_get_test_arg<T>(&self, id: &str) -> Result<Option<T>>
-    where
-        T: Clone + Send + Sync + 'static,
-    {
-        if let Some((_, args)) = self.arguments.subcommand() {
-            args.try_get_one::<T>(id)
-                .with_context(
-                    ErrorKind::Other,
-                    format!("Failed to get argument '{}' for test.", id),
-                )
-                .map(|arg| arg.cloned())
-        } else {
-            Ok(None)
-        }
-    }
-
-    /// Gets the name of the selected test.
-    pub fn get_selected_test_name(&self) -> Result<&str> {
-        match self.arguments.subcommand_name() {
-            Some(name) => Ok(name),
-            None => Err(Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                "No test was selected.",
-            )),
-        }
     }
 
     /// Runs the selected performance test.
@@ -329,26 +221,7 @@ impl PerfRunner {
     /// A result indicating the success or failure of the test run.
     ///
     pub async fn run(&self) -> azure_core::Result<()> {
-        // We can only run tests if there was a test selected.
-        let test_name = match self.get_selected_test_name() {
-            Ok(name) => name,
-            Err(e) => {
-                eprintln!("Error getting selected test name: {}", e);
-                return Ok(());
-            }
-        };
-
-        let test = self
-            .tests
-            .iter()
-            .find(|t| t.name == test_name)
-            .ok_or_else(|| {
-                Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    format!("Test '{}' not found.", test_name),
-                )
-            })?;
-
+        let test = &self.options.subcommand;
         let test_mode = crate::TestMode::current_opt()?.unwrap_or(crate::TestMode::Live);
 
         println!("Test Configuration: {:#}", self.options);
@@ -366,14 +239,14 @@ impl PerfRunner {
 
             println!("========== Starting test setup ==========");
             for i in 0..self.options.parallel {
-                let instance = (test.create_test)(self.clone()).await?;
+                let instance = test.create_test().await?;
                 let instance: Arc<dyn PerfTest> = Arc::from(instance);
                 let context = Arc::new(
                     crate::recorded::start(
                         test_mode,
                         self.package_dir,
                         self.module_name,
-                        test.name,
+                        test.name(),
                         None,
                     )
                     .await?,
@@ -416,12 +289,7 @@ impl PerfRunner {
                 // Still useful to print the latencies above even if we're not writing them to a file.
                 if !self.options.results_file.is_empty() {
                     // Detect size from the selected test's subcommand args, defaulting to -1.
-                    let size: i64 = self
-                        .try_get_test_arg::<usize>("size")
-                        .ok()
-                        .flatten()
-                        .map(|s| s as i64)
-                        .unwrap_or(-1);
+                    let size: i64 = self.options.subcommand.peek().size.unwrap_or(-1);
 
                     let results: Vec<OperationResult> = latencies
                         .iter()
@@ -461,7 +329,7 @@ impl PerfRunner {
                     self.options.test_results_filename
                 );
                 let results = PerfTestOutputs {
-                    test_name: test.name.to_string(),
+                    test_name: test.name().to_string(),
                     operations_per_second,
                     average_cpu_use: None,
                     average_memory_use: None,
@@ -593,123 +461,7 @@ impl PerfRunner {
         }
         println!();
     }
-
-    // Future command line switches:
-    // * Test Proxy servers.
-    // * TLS
-    //   * Allow untrusted TLS certificates
-    // * Advanced options
-    //   * Print job statistics (?)
-    //   * Target throughput (operations/second) (?)
-    // * Language specific options
-    //   * Max I/O completion threads
-    //   * Minimum number of asynchronous I/O threads in the thread pool
-    //   * Minimum number of worker threads the thread pool creates on demand
-    //   * Sync - run a synchronous version of the test
-
-    /// Constructs a `clap::Command` from the provided test metadata.
-    fn get_command_from_metadata(tests: &[PerfTestMetadata]) -> clap::Command {
-        let mut command = clap::Command::new("perf-tests")
-            .about("Run performance tests for the Azure SDK for Rust")
-            .arg(
-                clap::arg!(--iterations <COUNT> "The number of iterations to run each test")
-                    .required(false)
-                    .default_value("1")
-                    .value_parser(clap::value_parser!(u32))
-                    .global(false),
-            )
-            .arg(clap::arg!(--sync "Run synchronous tests (ignored)")
-                .global(true)
-                .required(false))
-            .arg(clap::arg!(--"test-proxy" <URL> "The URL of the test proxy, ignored.")
-                .global(true)
-                .value_parser(clap::value_parser!(String))
-                .required(false))
-            .arg(
-                clap::arg!(--parallel <COUNT> "The number of concurrent tasks to use when running each test")
-                    .required(false)
-                    .short('p')
-                    .default_value("1")
-                    .value_parser(clap::value_parser!(u32))
-                    .global(true),
-            )
-            .arg(clap::arg!(--"no-progress" "Disable progress reporting").required(false).global(false))
-            .arg(
-                clap::arg!(--duration <SECONDS> "The duration of each test in seconds")
-                    .required(false)
-                    .short('d')
-                    .default_value("30")
-                    .value_parser(clap::value_parser!(i64))
-                    .global(true),
-            )
-            .arg(
-                clap::arg!(--warmup <SECONDS> "The duration of the warmup period in seconds")
-                    .required(false)
-                    .default_value("5")
-                    .value_parser(clap::value_parser!(i64))
-                    .global(true),
-            )
-            // Cargo bench passes --bench to the test binary to instruct it to run benchmarks only.
-            .arg(clap::arg!(--bench).required(false).global(true))
-            .arg(
-                clap::arg!(--"test-results" <FILE> "The file to write test results to")
-                    .required(false)
-                    .default_value("./results.json")
-                    .global(false),
-            )
-            .arg(clap::arg!(--"no-cleanup" "Disable test cleanup")
-            .required(false).global(true))
-            .arg(clap::arg!(-l --latency "Track and print per-operation latency statistics")
-            .required(false).global(true))
-            .arg(
-                clap::arg!(--"results-file" <FILE> "File path to store per-operation latency results (requires --latency)")
-                    .required(false)
-                    .global(true),
-            )
-        ;
-        for test in tests {
-            let mut subcommand = clap::Command::new(test.name).about(test.description);
-            for option in test.options.iter() {
-                let mut arg = clap::Arg::new(option.name)
-                    .help(option.display_message)
-                    .long(option.long_activator)
-                    .num_args(option.expected_args_len..=option.expected_args_len)
-                    .required(option.mandatory)
-                    .global(false);
-                arg = match option.option_type {
-                    PerfTestOptionKind::String => arg.value_parser(clap::value_parser!(String)),
-                    PerfTestOptionKind::Usize => arg.value_parser(clap::value_parser!(usize)),
-                    PerfTestOptionKind::Int8 => arg.value_parser(clap::value_parser!(i8)),
-                    PerfTestOptionKind::Int16 => arg.value_parser(clap::value_parser!(i16)),
-                    PerfTestOptionKind::Int32 => arg.value_parser(clap::value_parser!(i32)),
-                    PerfTestOptionKind::Int64 => arg.value_parser(clap::value_parser!(i64)),
-                    PerfTestOptionKind::Uint8 => arg.value_parser(clap::value_parser!(u8)),
-                    PerfTestOptionKind::Uint16 => arg.value_parser(clap::value_parser!(u16)),
-                    PerfTestOptionKind::Uint32 => arg.value_parser(clap::value_parser!(u32)),
-                    PerfTestOptionKind::Uint64 => arg.value_parser(clap::value_parser!(u64)),
-                    PerfTestOptionKind::Boolean => {
-                        // For boolean options, we can use the presence of the flag to indicate true, and absence to indicate false.
-                        // Therefore, we don't need to specify a value parser or expect any arguments for this type.
-                        arg.action(clap::ArgAction::SetTrue).num_args(0)
-                    }
-                };
-                if let Some(short_activator) = option.short_activator {
-                    arg = arg.short(short_activator);
-                }
-                if option.sensitive {
-                    arg = arg.hide(true);
-                }
-                subcommand = subcommand.arg(arg);
-            }
-            command = command.subcommand(subcommand);
-        }
-
-        command
-    }
 }
-
-#[cfg(test)]
-mod config_tests;
 
 #[cfg(test)]
 mod framework_tests;

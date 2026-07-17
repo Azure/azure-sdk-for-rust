@@ -9,12 +9,20 @@ use azure_core::{
     Uuid,
 };
 use azure_data_cosmos::clients::ContainerClient;
-use azure_data_cosmos::models::ContainerProperties;
 use azure_data_cosmos::models::ItemResponse;
+use azure_data_cosmos::models::{ContainerProperties, PartitionKeyVersion};
 use azure_data_cosmos::options::{
     ContentResponseOnWrite, ItemWriteOptions, OperationOptions, Precondition,
 };
 use azure_data_cosmos::PartitionKey;
+use azure_data_cosmos_driver::{
+    models::{AccountReference as DriverAccountReference, CosmosOperation, DatabaseReference},
+    options::{
+        ConnectionPoolOptions, OperationOptions as DriverOperationOptions,
+        ServerCertificateValidation,
+    },
+    CosmosDriverRuntime, DriverOptions,
+};
 use framework::get_effective_hub_endpoint;
 use framework::TestRunContext;
 use framework::{TestClient, TestOptions};
@@ -139,6 +147,69 @@ async fn create_container(
     Ok(container_client)
 }
 
+/// Like [`create_container`] but provisions a legacy **partition key version
+/// 1** container by intentionally omitting `version`; the service interprets
+/// a version-less create payload as V1. This exercises the classic-gateway
+/// point-operation path for legacy V1 containers.
+async fn create_v1_container(
+    run_context: &TestRunContext,
+) -> Result<ContainerClient, Box<dyn Error>> {
+    let db_client = run_context.create_db().await?;
+    let container_id = format!("Container-V1-{}", Uuid::new_v4());
+    let connection_string = framework::resolve_connection_string()
+        .ok_or("Cosmos connection string is not configured")?;
+    let account = DriverAccountReference::with_master_key(
+        connection_string.account_endpoint().parse::<url::Url>()?,
+        connection_string.account_key().clone(),
+    );
+    let runtime = CosmosDriverRuntime::builder()
+        .with_connection_pool(
+            ConnectionPoolOptions::builder()
+                .with_server_certificate_validation(
+                    ServerCertificateValidation::RequiredUnlessEmulator,
+                )
+                .build()?,
+        )
+        .build()
+        .await?;
+    let driver = runtime
+        .create_driver(DriverOptions::builder(account.clone()).build())
+        .await?;
+    let database = DatabaseReference::from_name(account, db_client.id().to_string());
+    let body = format!(
+        r#"{{"id":"{container_id}","partitionKey":{{"paths":["/partition_key"],"kind":"Hash"}}}}"#
+    );
+    let response = driver
+        .execute_singleton_operation(
+            CosmosOperation::create_container(database).with_body(body.into_bytes()),
+            DriverOperationOptions::default(),
+        )
+        .await?;
+    if !response.status().is_success() {
+        return Err(format!(
+            "failed to create version-less V1 container: {}",
+            response.status()
+        )
+        .into());
+    }
+    let container_client = db_client.container_client(&container_id).await?;
+
+    let body = container_client.read(None).await?.into_body().single()?;
+    let raw: serde_json::Value = serde_json::from_slice(&body)?;
+    assert!(
+        raw["partitionKey"].get("version").is_none(),
+        "the service must omit partitionKey.version when reading a V1 container"
+    );
+    let properties: ContainerProperties = serde_json::from_slice(&body)?;
+    assert_eq!(
+        properties.partition_key.version(),
+        PartitionKeyVersion::V1,
+        "a version-less service response must deserialize as V1"
+    );
+
+    Ok(container_client)
+}
+
 #[tokio::test]
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
@@ -255,6 +326,113 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
             }
 
             Ok(())
+        },
+        Some(TestOptions::for_emulator()),
+    )
+    .await
+}
+
+/// Point CRUD (create → read → replace → delete) against a legacy **partition
+/// key version 1** container over the classic gateway. Companion to the
+/// Gateway 2.0 V1 test: classic gateway hashes the partition key server-side,
+/// so it was never affected by the client-side EPK version-default bug, but we
+/// pin the V1 point-op path here so both transports stay covered.
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
+)]
+pub async fn v1_container_item_crud() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_v1_container(run_context).await?;
+            let unique_id = Uuid::new_v4().to_string();
+
+            let mut item = TestItem {
+                id: format!("v1-item-{unique_id}").into(),
+                partition_key: Some(format!("v1-pk-{unique_id}").into()),
+                value: 1,
+                nested: NestedItem {
+                    nested_value: "initial".into(),
+                },
+                bool_value: true,
+            };
+            let pk = format!("v1-pk-{unique_id}");
+            let item_id = format!("v1-item-{unique_id}");
+
+            let create_resp = container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
+            assert_response(
+                &create_resp,
+                StatusCode::Created,
+                &get_effective_hub_endpoint(),
+                false,
+            );
+
+            let read_resp = container_client.read_item(&pk, &item_id, None).await?;
+            assert_response(
+                &read_resp,
+                StatusCode::Ok,
+                &get_effective_hub_endpoint(),
+                true,
+            );
+            let read_item: TestItem = read_resp.into_model()?;
+            assert_eq!(item, read_item, "V1 container read must round-trip");
+
+            item.value = 2;
+            item.nested.nested_value = "updated".into();
+            let replace_resp = container_client
+                .replace_item(&pk, &item_id, &item, None)
+                .await?;
+            assert_response(
+                &replace_resp,
+                StatusCode::Ok,
+                &get_effective_hub_endpoint(),
+                false,
+            );
+
+            let reread: TestItem = container_client
+                .read_item(&pk, &item_id, None)
+                .await?
+                .into_model()?;
+            assert_eq!(item, reread, "replace must be reflected on re-read");
+
+            let delete_resp = container_client.delete_item(&pk, &item_id, None).await?;
+            assert_response(
+                &delete_resp,
+                StatusCode::NoContent,
+                &get_effective_hub_endpoint(),
+                false,
+            );
+
+            const MAX_DELETE_POLLS: u32 = 20;
+            for attempt in 0..MAX_DELETE_POLLS {
+                match container_client.read_item(&pk, &item_id, None).await {
+                    Ok(_) if attempt + 1 < MAX_DELETE_POLLS => {
+                        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+                    }
+                    Ok(_) => {
+                        return Err(format!(
+                            "V1 item remained readable after {MAX_DELETE_POLLS} delete polls"
+                        )
+                        .into());
+                    }
+                    Err(err) if err.status().status_code() == StatusCode::NotFound => return Ok(()),
+                    Err(err) => {
+                        return Err(format!(
+                            "expected NotFound after deleting V1 item, got {}",
+                            err.status()
+                        )
+                        .into());
+                    }
+                }
+            }
+            unreachable!("delete polling loop always returns")
         },
         Some(TestOptions::for_emulator()),
     )

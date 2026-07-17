@@ -434,6 +434,12 @@ impl BlobContainerClient {
         }
         query_builder.set_pair("where", filter_expression);
         query_builder.build();
+        #[derive(serde::Deserialize)]
+        struct BlobContainerClientFindBlobsByTagsPage {
+            #[serde(rename = "NextMarker")]
+            next_marker: Option<String>,
+        }
+
         let version = self.version.clone();
         Ok(Pager::new(
             move |marker: PagerState, pager_options| {
@@ -461,7 +467,7 @@ impl BlobContainerClient {
                         )
                         .await?;
                     let (status, headers, body) = rsp.deconstruct();
-                    let res: FilteredBlobResponse = xml::from_xml(&body)?;
+                    let res: BlobContainerClientFindBlobsByTagsPage = xml::from_xml(&body)?;
                     let rsp = RawResponse::from_bytes(status, headers, body).into();
                     Ok(match res.next_marker {
                         Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
@@ -744,6 +750,12 @@ impl BlobContainerClient {
             query_builder.set_pair("timeout", timeout.to_string());
         }
         query_builder.build();
+        #[derive(serde::Deserialize)]
+        struct BlobContainerClientListBlobsPage {
+            #[serde(rename = "NextMarker")]
+            next_marker: Option<String>,
+        }
+
         let version = self.version.clone();
         Ok(Pager::new(
             move |marker: PagerState, pager_options| {
@@ -771,7 +783,7 @@ impl BlobContainerClient {
                         )
                         .await?;
                     let (status, headers, body) = rsp.deconstruct();
-                    let res: ListBlobsResponse = xml::from_xml(&body)?;
+                    let res: BlobContainerClientListBlobsPage = xml::from_xml(&body)?;
                     let rsp = RawResponse::from_bytes(status, headers, body).into();
                     Ok(match res.next_marker {
                         Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
@@ -835,6 +847,12 @@ impl BlobContainerClient {
             query_builder.set_pair("timeout", timeout.to_string());
         }
         query_builder.build();
+        #[derive(serde::Deserialize)]
+        struct BlobContainerClientListBlobsHierarchicalPage {
+            #[serde(rename = "NextMarker")]
+            next_marker: Option<String>,
+        }
+
         let version = self.version.clone();
         Ok(PageIterator::new(
             move |marker: PagerState, pager_options| {
@@ -862,7 +880,7 @@ impl BlobContainerClient {
                         )
                         .await?;
                     let (status, headers, body) = rsp.deconstruct();
-                    let res: ListBlobsHierarchicalResponse = xml::from_xml(&body)?;
+                    let res: BlobContainerClientListBlobsHierarchicalPage = xml::from_xml(&body)?;
                     let rsp = RawResponse::from_bytes(status, headers, body).into();
                     Ok(match res.next_marker {
                         Some(next_marker) if !next_marker.is_empty() => PagerResult::More {

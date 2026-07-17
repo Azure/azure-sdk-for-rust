@@ -12,6 +12,8 @@ pub use account_endpoint::AccountEndpoint;
 pub use account_reference::AccountReference;
 #[doc(inline)]
 pub use clients::{ContainerClient, CosmosClient, CosmosClientBuilder, DatabaseClient};
+#[cfg(feature = "preview_dtx")]
+pub use clients::{DistributedReadTransaction, DistributedWriteTransaction};
 pub use credential::CosmosCredential;
 pub use error::{CosmosError, CosmosStatus, Result, SubStatusCode};
 pub use feed::{FeedScope, Query};

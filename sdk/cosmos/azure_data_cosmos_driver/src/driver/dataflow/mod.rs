@@ -14,7 +14,8 @@
 //!   through continuation tokens) and [`DrainedLeaf`] (a no-op leaf used when
 //!   resuming an already-completed plan).
 //! - Intermediate nodes: [`SequentialDrain`] iterates EPK-ordered children
-//!   left-to-right, draining each before advancing.
+//!   left-to-right, draining each before advancing. [`UnorderedMerge`] polls
+//!   children round-robin without evicting them, suitable for change feed.
 //! - Planner: [`planner::build_trivial_pipeline`] handles point reads and
 //!   single-partition operations; [`planner::build_sequential_drain`] handles
 //!   cross-partition queries by consuming a backend query plan and resolving
@@ -44,6 +45,7 @@ pub(crate) mod query_plan;
 mod request;
 mod snapshot;
 mod topology;
+mod unordered_merge;
 
 pub(crate) use context::{
     PartitionRoutingRefresh, PipelineContext, RequestExecutor, ResolvedRange, TopologyProvider,
@@ -56,6 +58,7 @@ pub(crate) use pipeline::Pipeline;
 pub(crate) use request::{intersect_feed_ranges, Request, RequestTarget};
 pub(crate) use snapshot::{PipelineNodeState, RangedToken};
 pub(crate) use topology::CachedTopologyProvider;
+pub(crate) use unordered_merge::UnorderedMerge;
 
 #[cfg(test)]
 mod tests {

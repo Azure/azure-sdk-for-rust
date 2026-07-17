@@ -1,15 +1,23 @@
 # Release History
 
-## 1.1.0-beta.1 (Unreleased)
+## 1.1.0-beta.2 (Unreleased)
 
 ### Features Added
 
-- Updated the default service version to `2026-10-06`.
-- Added support for `get_user_delegation_key` to `BlobServiceClient`.
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
+## 1.1.0-beta.1 (2026-07-14)
+
+### Features Added
+
+- Added `BlobServiceClient::get_user_delegation_key()` to obtain a user delegation key for creating user delegation SAS tokens.
 - Added support for `list_blobs_hierarchical` to `BlobContainerClient`.
 - Added support for `list_page_ranges` to `PageBlobClient`.
-- Added `access_tier`, `access_tier_changed_on`, `access_tier_inferred`, and `smart_access_tier` to `BlobDownloadProperties`.
-- `BlockBlobClient::upload_blob_from_url()` now returns the `content_crc64` response header alongside `content_md5` when applicable.
+- Added support for `download_into` to `BlobClient` which enables downloads to write blob contents directly into a caller-provided buffer.
 
 ## 1.0.0 (2026-05-13)
 

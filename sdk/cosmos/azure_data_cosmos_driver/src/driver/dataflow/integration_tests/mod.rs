@@ -6,4 +6,5 @@
 //! mock executor and topology provider. Unit tests live next to the layer
 //! they cover; cross-layer scenarios live here.
 
+mod change_feed_resume;
 mod query_resume;

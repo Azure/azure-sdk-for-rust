@@ -9,6 +9,8 @@
 //! the resource. This proves the signature the SDK computes matches what the
 //! service expects.
 
+mod common;
+
 use azure_core::{
     http::{RequestContent, Url, XmlFormat},
     time::OffsetDateTime,
@@ -16,10 +18,10 @@ use azure_core::{
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{BlobClientGetPropertiesResultHeaders, KeyInfo};
 use azure_storage_blob::{BlobClient, BlobServiceClient};
-use azure_storage_blob_test::{
+use azure_storage_sas::{SasBuilder, UserDelegationKey};
+use common::{
     create_test_blob, get_blob_name, get_blob_service_client, get_container_client, StorageAccount,
 };
-use azure_storage_sas::{SasBuilder, UserDelegationKey};
 use std::error::Error;
 use time::Duration;
 

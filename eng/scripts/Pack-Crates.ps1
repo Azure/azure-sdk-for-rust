@@ -34,6 +34,10 @@ if ($ManifestDir) {
   [string[]] $script:manifestPath = Join-Path $ManifestDir 'Cargo.toml' -Resolve
 }
 
+function Test-IsPublishable($package) {
+  return $null -eq $package.publish
+}
+
 function Get-PackagesToBuild() {
   $packages = Get-CargoPackages
   [string[]] $outputPackageNames = Get-OutputPackageNames $packages
@@ -50,7 +54,11 @@ function Get-PackagesToBuild() {
     $toProcess = $toProcess -ne $package
 
     foreach ($dependency in $package.UnreleasedDependencies) {
-      if (!$packagesToBuild.Contains($dependency) -and !$toProcess.Contains($dependency)) {
+      if (
+        (Test-IsPublishable $dependency) -and
+        !$packagesToBuild.Contains($dependency) -and
+        !$toProcess.Contains($dependency)
+      ) {
         $packagesToBuild += $dependency
         $toProcess += $dependency
       }
@@ -81,13 +89,19 @@ function Get-OutputPackageNames($packages) {
 
     default {
       LogDebug "Packing all packages in workspace"
-      return $packages.name
+      return $packages.Where({ Test-IsPublishable $_ }).name
     }
   }
 
   foreach ($name in $names) {
-    if (-not $packages.name.Contains($name)) {
-      Write-Error "Package '$name' is not in the workspace or does not publish"
+    $package = $packages | Where-Object -Property name -EQ -Value $name | Select-Object -First 1
+    if (-not $package) {
+      LogError "Package '$name' is not in the workspace"
+      exit 1
+    }
+
+    if (-not (Test-IsPublishable $package)) {
+      LogError "Package '$name' has publish = false and cannot be packed for publishing"
       exit 1
     }
   }
@@ -104,6 +118,30 @@ function Create-ApiViewFile($package) {
   $packagePath = Split-Path -Path $manifestPath -Parent
 
   "$packagePath/review/$packageName.rust.json"
+}
+
+function Get-CratePath(
+  $package,
+  [bool] $ReleaseBuild
+) {
+  $crateFileName = "$($package.name)-$($package.version).crate"
+  $rootCratePath = [System.IO.Path]::Combine($RepoRoot, "target", "package", $crateFileName)
+  $tmpCratePath = [System.IO.Path]::Combine($RepoRoot, "target", "package", "tmp-crate", $crateFileName)
+  $candidatePaths = if ($ReleaseBuild) {
+    @($tmpCratePath, $rootCratePath)
+  }
+  else {
+    @($rootCratePath, $tmpCratePath)
+  }
+
+  foreach ($candidatePath in $candidatePaths) {
+    if (Test-Path -Path $candidatePath) {
+      return $candidatePath
+    }
+  }
+
+  LogError "Failed to find packaged crate for '$($package.name)'. Checked '$($candidatePaths -join "', '")'."
+  exit 1
 }
 
 $originalLocation = Get-Location
@@ -152,17 +190,10 @@ try {
     foreach ($package in $packages) {
       $sourcePath = [System.IO.Path]::Combine($RepoRoot, "target", "package", "$($package.name)-$($package.version)")
 
-      # The .crate file location depends on the Cargo subcommand. `cargo publish` (used with -Release)
-      # writes it to target/package/tmp-crate as an intermediate artifact since
-      # https://github.com/rust-lang/cargo/pull/15915 (Rust 1.93), while `cargo package` writes it
-      # directly to target/package as a final artifact.
-      $crateFileName = "$($package.name)-$($package.version).crate"
-      if ($Release) {
-        $cratePath = [System.IO.Path]::Combine($RepoRoot, "target", "package", "tmp-crate", $crateFileName)
-      }
-      else {
-        $cratePath = [System.IO.Path]::Combine($RepoRoot, "target", "package", $crateFileName)
-      }
+      # Cargo uses different .crate output locations depending on command and version.
+      # Prefer the expected layout for the current build mode, but fall back to the
+      # other known location so the pack pipeline works on both 1.92 and newer toolchains.
+      $cratePath = Get-CratePath -package $package -ReleaseBuild $Release
 
       $targetPath = [System.IO.Path]::Combine($OutputPath, $package.name)
       $targetContentsPath = [System.IO.Path]::Combine($targetPath, "contents")

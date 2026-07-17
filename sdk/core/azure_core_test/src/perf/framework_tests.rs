@@ -5,16 +5,40 @@
 //!
 //! These tests cover various scenarios for running the `PerfRunner` with different options and measurements.
 //!
+use clap::Args;
 use futures::FutureExt;
 
 use super::*;
 use std::boxed::Box;
 
-fn create_fibonacci1_test(runner: PerfRunner) -> CreatePerfTestReturn {
-    struct Fibonacci1Test {
-        count: u32,
+#[derive(Subcommand, Debug, Clone)]
+enum FrameworkTests {
+    Fibonacci1(Fibonacci1Args),
+}
+
+impl PerfTestFactory for FrameworkTests {
+    fn create_test(&self) -> CreatePerfTestReturn {
+        match self {
+            FrameworkTests::Fibonacci1(args) => create_fibonacci1_test(args.clone()),
+        }
     }
 
+    fn name(&self) -> &'static str {
+        match self {
+            FrameworkTests::Fibonacci1(_) => "fibonacci1",
+        }
+    }
+}
+#[derive(Args, Debug, Clone)]
+struct Fibonacci1Args {
+    #[arg(short, long)]
+    count: u32,
+}
+
+fn create_fibonacci1_test(args: Fibonacci1Args) -> CreatePerfTestReturn {
+    struct Fibonacci1Test {
+        args: Fibonacci1Args,
+    }
     impl Fibonacci1Test {
         fn fibonacci(n: u32) -> u32 {
             if n <= 1 {
@@ -31,7 +55,7 @@ fn create_fibonacci1_test(runner: PerfRunner) -> CreatePerfTestReturn {
             Ok(())
         }
         async fn run(&self, _context: Arc<TestContext>) -> azure_core::Result<()> {
-            let _result = Self::fibonacci(self.count);
+            let _result = Self::fibonacci(self.args.count);
             // This is a CPU bound test, so yield to allow other tasks to run. Otherwise we jam the tokio scheduler.
             // Note that this significantly reduces the performance of the test, but it is necessary to allow parallelism.
             //
@@ -45,12 +69,7 @@ fn create_fibonacci1_test(runner: PerfRunner) -> CreatePerfTestReturn {
     }
 
     // Return a pinned future that creates the test.
-    async move {
-        Ok(Box::new(Fibonacci1Test {
-            count: runner.try_get_test_arg("count")?.unwrap(),
-        }) as Box<dyn PerfTest>)
-    }
-    .boxed()
+    async move { Ok(Box::new(Fibonacci1Test { args }) as Box<dyn PerfTest>) }.boxed()
 }
 
 #[tokio::test]
@@ -71,26 +90,9 @@ async fn test_perf_runner_with_single_test() {
         "-c",
         "10",
     ];
-    let runner = PerfRunner::with_command_line(
-        env!("CARGO_MANIFEST_DIR"),
-        file!(),
-        vec![PerfTestMetadata {
-            name: "fibonacci1",
-            description: "A basic test for testing purposes",
-            options: vec![PerfTestOption {
-                name: "count",
-                mandatory: true,
-                short_activator: Some('c'),
-                expected_args_len: 1,
-                display_message: "The Fibonacci number to compute",
-                option_type: PerfTestOptionKind::Uint32,
-                ..Default::default()
-            }],
-            create_test: create_fibonacci1_test,
-        }],
-        args,
-    )
-    .unwrap();
+    let runner =
+        PerfRunner::<FrameworkTests>::with_command_line(env!("CARGO_MANIFEST_DIR"), file!(), args)
+            .unwrap();
 
     let result = runner.run().await;
     println!("Result: {:?}", result);
@@ -114,26 +116,9 @@ async fn test_latency_collection_returns_values() {
         "-c",
         "5",
     ];
-    let runner = PerfRunner::with_command_line(
-        env!("CARGO_MANIFEST_DIR"),
-        file!(),
-        vec![PerfTestMetadata {
-            name: "fibonacci1",
-            description: "A basic test for testing purposes",
-            options: vec![PerfTestOption {
-                name: "count",
-                mandatory: true,
-                short_activator: Some('c'),
-                expected_args_len: 1,
-                display_message: "The Fibonacci number to compute",
-                option_type: PerfTestOptionKind::Uint32,
-                ..Default::default()
-            }],
-            create_test: create_fibonacci1_test,
-        }],
-        args,
-    )
-    .unwrap();
+    let runner =
+        PerfRunner::<FrameworkTests>::with_command_line(env!("CARGO_MANIFEST_DIR"), file!(), args)
+            .unwrap();
 
     // Run directly via run_test_for to inspect the returned latencies.
     let test_mode = crate::TestMode::current_opt()
@@ -142,14 +127,14 @@ async fn test_latency_collection_returns_values() {
     let mut test_instances: Vec<Arc<dyn PerfTest>> = Vec::new();
     let mut test_contexts: Vec<Arc<TestContext>> = Vec::new();
     for _ in 0..runner.options.parallel {
-        let instance = (runner.tests[0].create_test)(runner.clone()).await.unwrap();
+        let instance = runner.options.subcommand.create_test().await.unwrap();
         let instance: Arc<dyn PerfTest> = Arc::from(instance);
         let context = Arc::new(
             crate::recorded::start(
                 test_mode,
                 runner.package_dir,
                 runner.module_name,
-                runner.tests[0].name,
+                runner.options.subcommand.name(),
                 None,
             )
             .await

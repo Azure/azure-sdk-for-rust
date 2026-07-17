@@ -199,8 +199,6 @@ impl CosmosClientBuilder {
         Ok(self)
     }
 
-    /// Registers a per-client [`ThroughputControlGroupOptions`].
-    ///
     /// Throughput-control groups are scoped to this client's driver — the
     /// per-runtime registry has been removed, so every client owns its own
     /// set of groups. Duplicate group names supplied to the same builder are
@@ -257,7 +255,9 @@ impl CosmosClientBuilder {
     ///
     /// # Errors
     ///
-    /// Returns an error if the client cannot be constructed.
+    /// Returns an error if the client cannot be constructed. In particular, an
+    /// endpoint that uses `http://` (non-HTTPS) is rejected unless its host is a
+    /// known Cosmos DB emulator host; production accounts must use `https://`.
     pub async fn build(
         self,
         account: AccountReference,
@@ -436,6 +436,27 @@ mod tests {
             "https://test.documents.azure.com/".parse().unwrap(),
             "dGVzdA==",
         )
+    }
+
+    /// `CosmosClientBuilder::build` must reject an `http://` production endpoint,
+    /// surfacing the invalid-endpoint status through the SDK error type.
+    #[cfg(feature = "key_auth")]
+    #[tokio::test]
+    async fn build_rejects_http_production_endpoint() {
+        use crate::{AccountEndpoint, AccountReference};
+        use azure_core::credentials::Secret;
+
+        let endpoint: AccountEndpoint = "http://myaccount.documents.azure.com/".parse().unwrap();
+        let account = AccountReference::with_authentication_key(endpoint, Secret::from("dGVzdA=="));
+
+        let error = CosmosClientBuilder::new()
+            .build(account, RoutingStrategy::PreferredRegions(Vec::new()))
+            .await
+            .expect_err("http production endpoint must be rejected");
+        assert_eq!(
+            error.status(),
+            crate::error::CosmosStatus::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL
+        );
     }
 
     /// `ProximityTo` a known region produces a non-empty preferred_regions list
