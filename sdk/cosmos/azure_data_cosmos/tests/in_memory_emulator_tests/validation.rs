@@ -233,6 +233,21 @@ impl HeaderValidationSpec {
     /// in-memory emulator cannot faithfully reproduce. Query comparison tests
     /// should log those values for diagnostics, while using this spec for basic
     /// header sanity and presence checks.
+    ///
+    /// `item_count` uses `Exists` rather than `Symmetric`: a real backend is
+    /// free to interleave empty probe pages (0 items, but a continuation) with
+    /// non-empty ones while scanning a partition/range, even when the query is
+    /// guaranteed to eventually yield a document -- e.g. R1 (0 docs, `CT1`),
+    /// R2 (2 docs, `CT2`), R3 (1 doc, no continuation). Such empty pages may
+    /// omit `x-ms-item-count` entirely. The in-memory emulator has no
+    /// equivalent scan-in-progress state and always emits exactly one item
+    /// per page, so page *count* can coincidentally match between backends
+    /// (e.g. 3 real pages vs. 3 emulator pages) while page *boundaries* don't
+    /// align at all. Since `compare_page_headers_if_aligned` zips pages by
+    /// index once counts match, a `Symmetric` rule ends up comparing
+    /// unrelated pages (e.g. empty real page 0 vs. non-empty emulator page 0)
+    /// and produces false positives (e.g. `hash_partition_scope` in
+    /// `query_comparison.rs`).
     pub fn for_query_operation() -> Self {
         Self::new()
             .with_rule("activity_id", HeaderMatch::Exists)
@@ -240,7 +255,7 @@ impl HeaderValidationSpec {
             .with_rule("session_token", HeaderMatch::Exists)
             .with_rule("etag", HeaderMatch::Symmetric)
             .with_rule("continuation", HeaderMatch::Symmetric)
-            .with_rule("item_count", HeaderMatch::Symmetric)
+            .with_rule("item_count", HeaderMatch::Exists)
             .with_rule("index_metrics", HeaderMatch::Ignore)
             .with_rule("query_metrics", HeaderMatch::Ignore)
             .with_rule("server_duration_ms", HeaderMatch::Exists)
