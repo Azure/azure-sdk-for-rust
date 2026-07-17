@@ -996,7 +996,9 @@ impl ContainerClient {
                 // retention window, so "from the beginning of all history" is
                 // not a valid start. Reject it with a clear client error rather
                 // than issuing a request the service would refuse.
-                if start_from == ChangeFeedStartFrom::Beginning {
+if options.feed.continuation_token.is_none()
+    && start_from == ChangeFeedStartFrom::Beginning
+{
                     return Err(crate::DriverCosmosError::builder()
                         .with_status(crate::error::CosmosStatus::new(
                             azure_core::http::StatusCode::BadRequest,
