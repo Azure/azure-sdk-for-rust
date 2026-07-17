@@ -17,9 +17,50 @@ pub struct CosmosClientOptions {
     /// unless overridden by per-request options.
     pub operation: OperationOptions,
     pub(crate) user_agent_suffix: Option<UserAgentSuffix>,
-    /// Explicit binary-encoding enablement. `None` (the default) falls back to
-    /// the `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment variable.
-    pub(crate) binary_encoding: Option<bool>,
+    /// Explicit binary-encoding options. `None` (the default) falls back to the
+    /// `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment variable for
+    /// enablement.
+    pub(crate) binary_encoding: Option<BinaryEncodingOptions>,
+}
+
+/// Options controlling Cosmos binary JSON encoding for a
+/// [`CosmosClient`](crate::CosmosClient).
+///
+/// Binary encoding governs two things together so they cannot drift apart:
+/// encoding item write bodies as Cosmos binary JSON, and advertising that the
+/// client accepts binary responses via the response-format negotiation header.
+/// Enablement is resolved once at client-build time.
+///
+/// Binary encoding is in preview. Additional tuning knobs (for example, ULong
+/// support or Base64 optimization) may be added here in future versions, so the
+/// struct is `#[non_exhaustive]`.
+///
+/// # Examples
+///
+/// ```rust
+/// use azure_data_cosmos::options::BinaryEncodingOptions;
+///
+/// let options = BinaryEncodingOptions::new().with_enabled(true);
+/// assert!(options.enabled);
+/// ```
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BinaryEncodingOptions {
+    /// Whether Cosmos binary JSON encoding is enabled for the client.
+    pub enabled: bool,
+}
+
+impl BinaryEncodingOptions {
+    /// Creates binary-encoding options with defaults (encoding disabled).
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Sets whether Cosmos binary JSON encoding is enabled.
+    pub fn with_enabled(mut self, enabled: bool) -> Self {
+        self.enabled = enabled;
+        self
+    }
 }
 
 impl CosmosClientOptions {

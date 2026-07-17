@@ -2,16 +2,16 @@
 // Licensed under the MIT License.
 
 use crate::{
-    clients::{offers_client, BinaryEncoding, ClientContext},
+    clients::{offers_client, ClientContext},
     feed::{ChangeFeedPageIterator, FeedRange, FeedScope, QueryItemIterator},
     models::TransactionalBatch,
     models::{BatchResponse, ChangeFeedItem, ItemResponse, ResourceResponse},
     models::{ContainerProperties, PatchInstructions, ThroughputProperties},
     options::{
-        BatchOptions, ChangeFeedOptions, ChangeFeedStartFrom, DeleteContainerOptions,
-        ItemReadOptions, ItemWriteOptions, PatchItemOptions, Precondition, QueryOptions,
-        ReadContainerOptions, ReadFeedRangesOptions, ReplaceContainerOptions, SessionToken,
-        ThroughputOptions,
+        BatchOptions, BinaryEncodingOptions, ChangeFeedOptions, ChangeFeedStartFrom,
+        DeleteContainerOptions, ItemReadOptions, ItemWriteOptions, PatchItemOptions, Precondition,
+        QueryOptions, ReadContainerOptions, ReadFeedRangesOptions, ReplaceContainerOptions,
+        SessionToken, ThroughputOptions,
     },
     PartitionKey, Query,
 };
@@ -308,7 +308,7 @@ impl ContainerClient {
         options: Option<ItemWriteOptions>,
     ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
-        let body = serialize_item_body(&item, self.context.binary_encoding.enabled())?;
+        let body = serialize_item_body(&item, self.context.binary_encoding.enabled)?;
 
         // Build the driver's item reference from our stored container metadata.
         let item_ref = ItemReference::from_name(
@@ -319,7 +319,7 @@ impl ContainerClient {
 
         // Create the driver operation and apply ItemWriteOptions fields.
         let operation = CosmosOperation::create_item(item_ref).with_body(body);
-        let operation = apply_binary_negotiation(operation, self.context.binary_encoding);
+        let operation = apply_binary_negotiation(operation, &self.context.binary_encoding);
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
         // Execute through the driver.
@@ -407,7 +407,7 @@ impl ContainerClient {
         options: Option<ItemWriteOptions>,
     ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
-        let body = serialize_item_body(&item, self.context.binary_encoding.enabled())?;
+        let body = serialize_item_body(&item, self.context.binary_encoding.enabled)?;
 
         // Build the driver's item reference from our stored container metadata.
         let item_ref = ItemReference::from_name(
@@ -418,7 +418,7 @@ impl ContainerClient {
 
         // Create the driver operation and apply ItemWriteOptions fields.
         let operation = CosmosOperation::replace_item(item_ref).with_body(body);
-        let operation = apply_binary_negotiation(operation, self.context.binary_encoding);
+        let operation = apply_binary_negotiation(operation, &self.context.binary_encoding);
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
         // Execute through the driver.
@@ -616,7 +616,7 @@ impl ContainerClient {
         options: Option<ItemWriteOptions>,
     ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
-        let body = serialize_item_body(&item, self.context.binary_encoding.enabled())?;
+        let body = serialize_item_body(&item, self.context.binary_encoding.enabled)?;
 
         // Build the driver's item reference from our stored container metadata.
         let item_ref = ItemReference::from_name(
@@ -627,7 +627,7 @@ impl ContainerClient {
 
         // Create the driver operation and apply ItemWriteOptions fields.
         let operation = CosmosOperation::upsert_item(item_ref).with_body(body);
-        let operation = apply_binary_negotiation(operation, self.context.binary_encoding);
+        let operation = apply_binary_negotiation(operation, &self.context.binary_encoding);
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
         // Execute through the driver.
@@ -688,7 +688,7 @@ impl ContainerClient {
 
         // Create the driver operation.
         let operation = CosmosOperation::read_item(item_ref);
-        let operation = apply_binary_negotiation(operation, self.context.binary_encoding);
+        let operation = apply_binary_negotiation(operation, &self.context.binary_encoding);
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
         // Execute through the driver.
@@ -1288,7 +1288,7 @@ fn serialize_item_body<T: Serialize>(item: &T, binary: bool) -> crate::Result<Ve
 /// Matches the .NET SDK's default (`string.Join(",", JsonText, CosmosBinary)`):
 /// the client accepts either text or Cosmos binary JSON, letting the service
 /// choose. The comma-separated value has no space, mirroring the reference.
-const SUPPORTED_SERIALIZATION_FORMATS: &str = "JsonText,CosmosBinary";
+const JSON_AND_BINARY_SERIALIZATION_FORMATS: &str = "JsonText,CosmosBinary";
 
 /// Advertises binary-capable response negotiation on an item operation when
 /// `binary_encoding` is enabled, by setting the
@@ -1296,10 +1296,10 @@ const SUPPORTED_SERIALIZATION_FORMATS: &str = "JsonText,CosmosBinary";
 /// the request is byte-for-byte unchanged when binary is disabled.
 fn apply_binary_negotiation(
     operation: CosmosOperation,
-    binary_encoding: BinaryEncoding,
+    binary_encoding: &BinaryEncodingOptions,
 ) -> CosmosOperation {
-    if binary_encoding.enabled() {
-        operation.with_supported_serialization_formats(SUPPORTED_SERIALIZATION_FORMATS)
+    if binary_encoding.enabled {
+        operation.with_supported_serialization_formats(JSON_AND_BINARY_SERIALIZATION_FORMATS)
     } else {
         operation
     }
@@ -1383,8 +1383,10 @@ mod tests {
 
     #[test]
     fn apply_binary_negotiation_sets_header_when_enabled() {
-        let op =
-            apply_binary_negotiation(negotiation_test_operation(), BinaryEncoding::for_test(true));
+        let op = apply_binary_negotiation(
+            negotiation_test_operation(),
+            &BinaryEncodingOptions::new().with_enabled(true),
+        );
         assert_eq!(
             op.request_headers()
                 .supported_serialization_formats
@@ -1397,7 +1399,7 @@ mod tests {
     fn apply_binary_negotiation_omits_header_when_disabled() {
         let op = apply_binary_negotiation(
             negotiation_test_operation(),
-            BinaryEncoding::for_test(false),
+            &BinaryEncodingOptions::new().with_enabled(false),
         );
         assert!(op
             .request_headers()

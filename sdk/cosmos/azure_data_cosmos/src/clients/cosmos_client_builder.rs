@@ -7,9 +7,9 @@
 use std::sync::Arc;
 
 use crate::{
-    clients::{BinaryEncoding, ClientContext},
+    clients::{resolve_binary_encoding, ClientContext},
     options::{
-        CosmosClientOptions, OperationOptions, PartitionFailoverOptions,
+        BinaryEncodingOptions, CosmosClientOptions, OperationOptions, PartitionFailoverOptions,
         ThroughputControlGroupOptions, UserAgentSuffix,
     },
     AccountReference, CosmosClient, CosmosCredential, CosmosRuntime, RoutingStrategy,
@@ -173,20 +173,31 @@ impl CosmosClientBuilder {
         self
     }
 
-    /// Enables or disables Cosmos binary JSON encoding for this client.
+    /// Sets the Cosmos binary JSON encoding options for this client.
     ///
     /// Binary encoding governs two things together: encoding item write bodies
     /// as binary and advertising that the client accepts binary responses via
-    /// the response-format negotiation header. It is resolved once at
+    /// the response-format negotiation header. The options are resolved once at
     /// [`build()`](Self::build) time.
     ///
     /// When this setter is **not** called, enablement falls back to the
     /// `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment variable (truthy
     /// values `1` / `true` / `yes` / `on`, case-insensitive, trimmed). Passing
-    /// an explicit value here takes precedence over that variable. Binary
+    /// explicit options here takes precedence over that variable. Binary
     /// encoding is in preview.
+    pub fn with_binary_encoding_options(mut self, options: BinaryEncodingOptions) -> Self {
+        self.options.binary_encoding = Some(options);
+        self
+    }
+
+    /// Enables or disables Cosmos binary JSON encoding for this client.
+    ///
+    /// This is a convenience shortcut for
+    /// [`with_binary_encoding_options`](Self::with_binary_encoding_options) with
+    /// only the enablement flag set. See that method for the full behavior and
+    /// environment-variable fallback.
     pub fn with_binary_encoding_enabled(mut self, enabled: bool) -> Self {
-        self.options.binary_encoding = Some(enabled);
+        self.options.binary_encoding = Some(BinaryEncodingOptions::new().with_enabled(enabled));
         self
     }
 
@@ -308,7 +319,7 @@ impl CosmosClientBuilder {
         Ok(CosmosClient {
             context: ClientContext {
                 driver,
-                binary_encoding: BinaryEncoding::resolve(self.options.binary_encoding),
+                binary_encoding: resolve_binary_encoding(self.options.binary_encoding),
             },
         })
     }
