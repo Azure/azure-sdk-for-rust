@@ -44,6 +44,7 @@ logic in Go and carrying long-term Rust-to-Go drift risk.
 
 ## Discussion
 
-See [`../go-v2-ffi-exploration.md`](../go-v2-ffi-exploration.md) for the
-meeting context, pure-Go spike evidence, packaging concerns, tentative platform
-matrix, and market reference points.
+See
+[`go-v2-ffi-exploration.md`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/native-driver-distribution/go-native-distribution/go-v2-ffi-exploration.md)
+for the meeting context, pure-Go spike evidence, packaging concerns, tentative
+platform matrix, and market reference points.

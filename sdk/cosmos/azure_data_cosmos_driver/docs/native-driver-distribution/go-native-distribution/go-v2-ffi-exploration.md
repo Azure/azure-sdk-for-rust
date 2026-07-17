@@ -1,7 +1,7 @@
 # Go v2 FFI exploration notes
 
 > **Status:** Discussion notes for ADR review. The decision is recorded in
-> [`adr/0001-go-v2-uses-ffi.md`](adr/0001-go-v2-uses-ffi.md).
+> [`ADR 0001`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/native-driver-distribution/go-native-distribution/adr/0001-go-v2-uses-ffi.md).
 
 ## 1. Purpose
 
@@ -86,23 +86,19 @@ is therefore:
 That means native Rust driver artifacts must be produced, versioned, selected,
 and linked for the supported Go OS/architecture matrix.
 
-The platform discussion quickly reaches roughly ten target combinations:
+The fixed platform discussion should start with the mainstream OS/architecture
+targets:
 
 | OS family | Target combinations discussed |
 |---|---|
 | Windows | x64/amd64, ARM64, possibly x86 as a consideration |
 | macOS | ARM64/Apple Silicon, x64/Intel |
 | Linux glibc | x64/amd64, ARM64 |
-| Linux musl/Alpine | x64/amd64, ARM64 |
-
-The Linux callout is especially important: supporting both glibc and musl means
-likely needing **four Linux binaries**: amd64/arm64 × glibc/musl.
 
 With an estimated **~5 MB optimized native binary per platform**, the
-all-platform packaging footprint can reach roughly **~50 MB** before compression
-or packaging refinements. This is manageable for an initial release, but it is a
-real packaging design point and should not be treated as an implementation
-detail.
+all-platform packaging footprint grows with every supported target. This is
+manageable for an initial release, but it is a real packaging design point and
+should not be treated as an implementation detail.
 
 ## 6. Packaging models to evaluate
 
@@ -116,10 +112,9 @@ Two practical models were discussed:
 A bundle-first hybrid has industry precedent. For example,
 [`confluent-kafka-go`](https://github.com/confluentinc/confluent-kafka-go/blob/master/README.md#librdkafka)
 includes prebuilt `librdkafka` binaries for common platforms, requires
-`CGO_ENABLED` to remain enabled, and uses a
-[`musl` build tag](https://github.com/confluentinc/confluent-kafka-go/blob/master/kafka/README.md#build-tags)
-for Alpine. It falls back to a manual dynamic install only when customers need
-unsupported platforms or special features such as GSSAPI/Kerberos.
+`CGO_ENABLED` to remain enabled, and falls back to a manual dynamic install only
+when customers need unsupported platforms or special features such as
+GSSAPI/Kerberos.
 
 That reference shows a viable market pattern for a Go library backed by native
 code: **bundle the common path, document unsupported/special paths clearly, and
