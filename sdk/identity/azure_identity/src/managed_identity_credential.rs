@@ -490,14 +490,16 @@ mod tests {
             ),
             options,
             ManagedIdentitySource::AppService,
-            vec![MockRequestResponse{
-                request: model_request,
-                response_status: StatusCode::Ok,
-                response_headers: Headers::default(),
-                response_format: format!(
-                r#"{{"access_token":"*","expires_on":"{}","resource":"{}","token_type":"Bearer"}}"#,
-                EXPIRES_ON, LIVE_TEST_RESOURCE).to_string(),
-            }],
+            vec![
+                MockRequestResponse{
+                    request: model_request,
+                    response_status: StatusCode::Ok,
+                    response_headers: Headers::default(),
+                    response_format: format!(
+                    r#"{{"access_token":"*","expires_on":"{}","resource":"{}","token_type":"Bearer"}}"#,
+                    EXPIRES_ON, LIVE_TEST_RESOURCE).to_string(),
+                }
+            ],
             None,
         )
         .await;
@@ -567,7 +569,7 @@ mod tests {
 
         let key_id = rand::random::<u8>();
         let token_path = env::temp_dir().join(format!("arc-{key_id}.token"));
-        let mut token_file = File::create(&token_path).unwrap();
+        let mut token_file = File::create_new(&token_path).unwrap();
         token_file.write_all("abc".as_bytes()).unwrap();
         drop(token_file);
 
@@ -629,8 +631,8 @@ mod tests {
             .extend_pairs(params);
 
         let key_id = rand::random::<u8>();
-        let token_path = env::temp_dir().join(format!("arc-{key_id}.token"));
-        let mut token_file = File::create(&token_path).unwrap();
+        let token_path = env::temp_dir().join(format!("arc-big{key_id}.token"));
+        let mut token_file = File::create_new(&token_path).unwrap();
         let large_buf: [u8; 4097] = [0; 4097]; // 4096 is the max
         token_file.write_all(&large_buf).unwrap();
         drop(token_file);
@@ -744,12 +746,14 @@ mod tests {
             Env::from(&[][..]),
             options,
             ManagedIdentitySource::Imds,
-            vec![MockRequestResponse {
-                request: model,
-                response_status: StatusCode::Ok,
-                response_headers: Headers::default(),
-                response_format: format!(r#"{{"token_type":"Bearer","expires_in":"85770","expires_on":"{}","ext_expires_in":86399,"access_token":"*","resource":"{}"}}"#, EXPIRES_ON, LIVE_TEST_RESOURCE).to_string(),
-            }],
+            vec![
+                MockRequestResponse {
+                    request: model,
+                    response_status: StatusCode::Ok,
+                    response_headers: Headers::default(),
+                    response_format: format!(r#"{{"token_type":"Bearer","expires_in":"85770","expires_on":"{}","ext_expires_in":86399,"access_token":"*","resource":"{}"}}"#, EXPIRES_ON, LIVE_TEST_RESOURCE).to_string(),
+                }
+            ],
             None,
         ).await;
     }
