@@ -22,16 +22,17 @@
 
 use azure_data_cosmos::{
     options::{
-        ContentResponseOnWrite, ItemWriteOptions, OperationOptions, Region, RoutingStrategy,
+        BinaryEncodingOptions, ContentResponseOnWrite, ItemWriteOptions, OperationOptions, Region,
+        RoutingStrategy,
     },
     AccountEndpoint, AccountReference, ContainerClient, CosmosClientBuilder, CosmosRuntimeBuilder,
 };
 use azure_data_cosmos_driver::in_memory_emulator::{
-    ConsistencyLevel, ContainerConfig, InMemoryEmulatorHttpClient, VirtualAccountConfig,
-    VirtualRegion,
+    ConsistencyLevel, ContainerConfig, InMemoryEmulatorHttpClient, RequestObserver,
+    VirtualAccountConfig, VirtualRegion,
 };
 use serde::{Deserialize, Serialize};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 const EMULATOR_GATEWAY_URL: &str = "https://eastus.emulator.local";
 const BINARY_ENV: &str = "AZURE_COSMOS_BINARY_ENCODING_ENABLED";
@@ -238,4 +239,132 @@ async fn binary_and_text_clients_interoperate() {
         .unwrap();
     let text_doc: TestItem = text_read.into_body().into_single().unwrap();
     assert_eq!(text_doc, text_item);
+}
+
+/// A [`RequestObserver`] that records the value of the
+/// `x-ms-cosmos-supported-serialization-formats` negotiation header seen on
+/// dataplane item requests, so a test can assert what the SDK advertised on the
+/// wire.
+#[derive(Debug, Default)]
+struct NegotiationHeaderRecorder {
+    formats: Mutex<Vec<Option<String>>>,
+}
+
+impl RequestObserver for NegotiationHeaderRecorder {
+    fn on_request(&self, request: &azure_core::http::Request) {
+        // Only record item (docs) requests; ignore metadata/bootstrap traffic.
+        if !request.url().path().contains("/docs") {
+            return;
+        }
+        let name = azure_core::http::headers::HeaderName::from_static(
+            "x-ms-cosmos-supported-serialization-formats",
+        );
+        let value = request
+            .headers()
+            .get_optional_str(&name)
+            .map(|s| s.to_string());
+        self.formats.lock().unwrap().push(value);
+    }
+}
+
+/// End-to-end proof of the driver-side transcoding model:
+///
+/// With `BinaryEncodingOptions { enabled: true, request_text_response: true }`,
+/// the SDK still advertises `JsonText,CosmosBinary` (so the **wire stays
+/// binary** in both directions and the transport hop is efficient), and the
+/// driver transcodes the binary response to text before returning it — so the
+/// application still gets its document back intact.
+#[tokio::test(flavor = "current_thread")]
+async fn request_text_response_keeps_wire_binary_and_returns_data() {
+    let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
+        "East US",
+        azure_core::http::Url::parse(EMULATOR_GATEWAY_URL).unwrap(),
+    )])
+    .unwrap()
+    .with_consistency(ConsistencyLevel::Session);
+
+    let recorder = Arc::new(NegotiationHeaderRecorder::default());
+    let emulator = Arc::new(
+        InMemoryEmulatorHttpClient::new(config)
+            .with_request_observer(Arc::clone(&recorder) as Arc<dyn RequestObserver>),
+    );
+    let store = emulator.store();
+    store.create_database("bin-transcode");
+    store.create_container_with_config(
+        "bin-transcode",
+        "items",
+        serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"],
+            "kind": "Hash",
+            "version": 2
+        }))
+        .unwrap(),
+        ContainerConfig::new()
+            .with_partition_count(1)
+            .with_throughput(400)
+            .build()
+            .unwrap(),
+    );
+
+    // Configure binary encoding + text responses via the standard client option
+    // (no env mutation).
+    let account = AccountReference::with_authentication_key(
+        EMULATOR_GATEWAY_URL.parse::<AccountEndpoint>().unwrap(),
+        azure_core::credentials::Secret::new("dGVzdGtleQ=="),
+    );
+    let client = CosmosClientBuilder::new()
+        .with_binary_encoding_options(
+            BinaryEncodingOptions::new()
+                .with_enabled(true)
+                .with_request_text_response(true),
+        )
+        .with_runtime(
+            CosmosRuntimeBuilder::from(emulator.runtime_builder())
+                .build()
+                .await
+                .unwrap(),
+        )
+        .build(account, RoutingStrategy::ProximityTo(Region::EAST_US))
+        .await
+        .unwrap();
+    let container = client
+        .database_client("bin-transcode")
+        .container_client("items")
+        .await
+        .unwrap();
+
+    let item = TestItem {
+        id: "doc-1".into(),
+        pk: "pk1".into(),
+        value: 4321,
+        note: "transcode ☃".into(),
+    };
+
+    // Create + read: the driver transcodes the binary response to text, and the
+    // typed value still round-trips.
+    let created = container
+        .create_item("pk1", &item.id, &item, Some(write_options_with_content()))
+        .await
+        .unwrap();
+    let created_doc: TestItem = created.into_body().into_single().unwrap();
+    assert_eq!(created_doc, item, "create must round-trip after transcoding");
+
+    let read = container.read_item("pk1", &item.id, None).await.unwrap();
+    let read_doc: TestItem = read.into_body().into_single().unwrap();
+    assert_eq!(read_doc, item, "read must round-trip after transcoding");
+
+    // Every observed item request advertised CosmosBinary — the wire stayed
+    // binary despite request_text_response being on.
+    let formats = recorder.formats.lock().unwrap();
+    assert!(
+        !formats.is_empty(),
+        "expected at least one observed item request",
+    );
+    for value in formats.iter() {
+        assert_eq!(
+            value.as_deref(),
+            Some("JsonText,CosmosBinary"),
+            "wire must stay binary (CosmosBinary advertised) even with request_text_response",
+        );
+    }
 }

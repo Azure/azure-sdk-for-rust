@@ -57,16 +57,17 @@ pub struct BinaryEncodingOptions {
     /// binary responses.
     pub enabled: bool,
 
-    /// Whether to request text-JSON response payloads even when binary encoding
+    /// Whether to receive text-JSON response payloads even when binary encoding
     /// is [`enabled`](Self::enabled).
     ///
-    /// When `false` (the default), the client advertises both text and binary
-    /// response formats (`JsonText,CosmosBinary`) and the service typically
-    /// replies with binary. When `true`, the client advertises only `JsonText`,
-    /// so the service returns text-JSON response payloads while item **write**
-    /// bodies are still sent as binary. This has no effect when
-    /// [`enabled`](Self::enabled) is `false` (no binary is used in either
-    /// direction and no negotiation header is sent).
+    /// When `false` (the default), the service replies with Cosmos binary JSON,
+    /// which the SDK decodes directly. When `true`, the **wire stays binary in
+    /// both directions** (the request body and the service response are both
+    /// binary, preserving the efficient transport) and the **driver transcodes**
+    /// the binary response to text JSON before handing it back — so the
+    /// application receives text while still benefiting from binary on the wire.
+    /// This has no effect when [`enabled`](Self::enabled) is `false` (no binary
+    /// is used in either direction and no negotiation header is sent).
     pub request_text_response: bool,
 }
 
@@ -85,8 +86,8 @@ impl BinaryEncodingOptions {
     /// Sets whether to request text-JSON response payloads even when binary
     /// encoding is enabled.
     ///
-    /// See [`request_text_response`](Self::request_text_response) for the
-    /// negotiation behavior.
+    /// See [`request_text_response`](Self::request_text_response) for the wire
+    /// and transcoding behavior.
     pub fn with_request_text_response(mut self, request_text_response: bool) -> Self {
         self.request_text_response = request_text_response;
         self

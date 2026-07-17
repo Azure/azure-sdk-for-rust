@@ -1290,34 +1290,27 @@ fn serialize_item_body<T: Serialize>(item: &T, binary: bool) -> crate::Result<Ve
 /// choose. The comma-separated value has no space, mirroring the reference.
 const JSON_AND_BINARY_SERIALIZATION_FORMATS: &str = "JsonText,CosmosBinary";
 
-/// The serialization format advertised when binary encoding is enabled but the
-/// caller requested text-JSON responses
-/// ([`BinaryEncodingOptions::request_text_response`]): the client accepts only
-/// text, so the service replies with text-JSON even though the request body is
-/// still sent as binary.
-const JSON_TEXT_SERIALIZATION_FORMAT: &str = "JsonText";
-
 /// Advertises response-format negotiation on an item operation when
 /// `binary_encoding` is enabled, by setting the
-/// `x-ms-cosmos-supported-serialization-formats` header.
+/// `x-ms-cosmos-supported-serialization-formats` header, and applies the
+/// binary→text transcoding directive when the caller requested text responses.
 ///
-/// - Enabled, default: advertises `JsonText,CosmosBinary` so the service may
-///   reply with binary.
-/// - Enabled with [`request_text_response`](BinaryEncodingOptions::request_text_response):
-///   advertises only `JsonText` so the service replies with text, while item
-///   write bodies are still binary.
-/// - Disabled: a no-op, so the request is byte-for-byte unchanged.
+/// The wire always stays binary in both directions when encoding is enabled
+/// (the header advertises `JsonText,CosmosBinary` so the service replies
+/// binary). When
+/// [`request_text_response`](BinaryEncodingOptions::request_text_response) is
+/// set, the operation additionally asks the **driver** to transcode the binary
+/// response to text JSON before returning it — the efficient binary transport is
+/// preserved and the application receives text. Disabled: a no-op, so the
+/// request is byte-for-byte unchanged.
 fn apply_binary_negotiation(
     operation: CosmosOperation,
     binary_encoding: &BinaryEncodingOptions,
 ) -> CosmosOperation {
     if binary_encoding.enabled {
-        let formats = if binary_encoding.request_text_response {
-            JSON_TEXT_SERIALIZATION_FORMAT
-        } else {
-            JSON_AND_BINARY_SERIALIZATION_FORMATS
-        };
-        operation.with_supported_serialization_formats(formats)
+        operation
+            .with_supported_serialization_formats(JSON_AND_BINARY_SERIALIZATION_FORMATS)
+            .with_transcode_response_to_text(binary_encoding.request_text_response)
     } else {
         operation
     }
@@ -1411,13 +1404,15 @@ mod tests {
                 .as_deref(),
             Some("JsonText,CosmosBinary"),
         );
+        // Default (no text-response request): no transcoding, response stays binary.
+        assert!(!op.transcode_response_to_text());
     }
 
     #[test]
     fn apply_binary_negotiation_requests_text_response_when_opted_in() {
-        // Binary encoding on, but the caller asked for text responses: advertise
-        // only JsonText so the service replies with text while write bodies stay
-        // binary.
+        // Binary encoding on with request_text_response: the wire stays binary
+        // (header still advertises CosmosBinary), and the driver is asked to
+        // transcode the binary response to text.
         let op = apply_binary_negotiation(
             negotiation_test_operation(),
             &BinaryEncodingOptions::new()
@@ -1428,7 +1423,12 @@ mod tests {
             op.request_headers()
                 .supported_serialization_formats
                 .as_deref(),
-            Some("JsonText"),
+            Some("JsonText,CosmosBinary"),
+            "wire must stay binary so the transport hop is efficient",
+        );
+        assert!(
+            op.transcode_response_to_text(),
+            "driver must be asked to transcode the binary response to text",
         );
     }
 
@@ -1442,12 +1442,13 @@ mod tests {
             .request_headers()
             .supported_serialization_formats
             .is_none());
+        assert!(!op.transcode_response_to_text());
     }
 
     #[test]
     fn apply_binary_negotiation_ignores_text_response_when_disabled() {
         // request_text_response only matters when binary is enabled; with binary
-        // off there is no negotiation header at all.
+        // off there is no negotiation header and no transcoding.
         let op = apply_binary_negotiation(
             negotiation_test_operation(),
             &BinaryEncodingOptions::new()
@@ -1458,5 +1459,6 @@ mod tests {
             .request_headers()
             .supported_serialization_formats
             .is_none());
+        assert!(!op.transcode_response_to_text());
     }
 }

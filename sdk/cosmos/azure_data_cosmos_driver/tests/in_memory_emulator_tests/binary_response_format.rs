@@ -4,16 +4,21 @@
 //! Response-format negotiation tests.
 //!
 //! These tests exercise the **response side** of Cosmos binary JSON
-//! negotiation: given a binary request body, what serialization format does the
-//! service send *back*? The answer is driven entirely by the
+//! negotiation at the emulator: given a binary request body, what serialization
+//! format does the service send *back*? The answer is driven entirely by the
 //! `x-ms-cosmos-supported-serialization-formats` request header:
 //!
-//! - `JsonText,CosmosBinary` (the SDK default when binary encoding is enabled) →
-//!   the service replies with **binary** (body begins with the `0x80` preamble).
-//! - `JsonText` (what the SDK sends when
-//!   `BinaryEncodingOptions::request_text_response` is `true`) → the service
-//!   replies with **text**, even though the request body was binary.
+//! - `JsonText,CosmosBinary` (what the SDK advertises whenever binary encoding
+//!   is enabled) → the service replies with **binary** (body begins with the
+//!   `0x80` preamble).
+//! - `JsonText` alone → the service replies with **text**, even though the
+//!   request body was binary.
 //! - no header (binary encoding disabled) → **text**.
+//!
+//! Note the SDK-level `BinaryEncodingOptions::request_text_response` does **not**
+//! send `JsonText` alone: it keeps advertising `CosmosBinary` (so the wire stays
+//! binary) and has the *driver* transcode the binary response to text. These
+//! tests cover the underlying emulator format decision that both modes rely on.
 //!
 //! The tests send a Cosmos-binary request body directly through the in-memory
 //! emulator and inspect the **raw** response bytes, so they assert on the actual
