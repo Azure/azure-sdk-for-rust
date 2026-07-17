@@ -87,8 +87,8 @@ is therefore:
 That means native Rust driver artifacts must be produced, versioned, selected,
 and linked for the supported Go OS/architecture matrix.
 
-The fixed platform discussion should start with the mainstream OS/architecture
-targets:
+This discussion scopes the initial packaging estimate to the mainstream
+OS/architecture targets:
 
 | OS family | Target combinations discussed |
 |---|---|
@@ -96,10 +96,15 @@ targets:
 | macOS | ARM64/Apple Silicon, x64/Intel |
 | Linux glibc | x64/amd64, ARM64 |
 
-With an estimated **~5 MB optimized native binary per platform**, the
-all-platform packaging footprint grows with every supported target. This is
-manageable for an initial release, but it is a real packaging design point and
-should not be treated as an implementation detail.
+That is **six firm targets**, or **seven** if Windows x86 is included. Linux
+musl/Alpine is intentionally not counted here until the Go packaging plan
+decides whether it is in scope for the initial release.
+
+With an estimated **~5 MB optimized native binary per platform**, this scoped
+matrix is roughly **~30-35 MB before compression**. Any additional targets, such
+as musl/Alpine, add to that footprint. This is manageable for an initial release,
+but it is a real packaging design point and should not be treated as an
+implementation detail.
 
 ## 6. Packaging models to evaluate
 
