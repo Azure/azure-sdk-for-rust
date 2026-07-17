@@ -1750,15 +1750,15 @@ async fn test_set_access_tier_smart_rehydrate(ctx: TestContext) -> Result<(), Bo
 }
 
 #[recorded::test]
-async fn test_upload_block_blob_smart_access_tier(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+async fn test_smart_access_tier(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
     let container_client =
         get_container_client(recording, true, StorageAccount::Standard, None).await?;
-    let blob_client = container_client.blob_client(&get_blob_name(recording));
 
     // Upload with Smart Tier
-    blob_client
+    let upload_blob_client = container_client.blob_client(&get_blob_name(recording));
+    upload_blob_client
         .upload(
             RequestContent::from(b"hello smart tier".to_vec()),
             Some(BlockBlobClientUploadOptions {
@@ -1769,27 +1769,16 @@ async fn test_upload_block_blob_smart_access_tier(ctx: TestContext) -> Result<()
         .await?;
 
     // Assert
-    let response = blob_client.get_properties(None).await?;
+    let response = upload_blob_client.get_properties(None).await?;
     assert_eq!(
         AccessTier::Smart.to_string(),
         response.access_tier()?.unwrap()
     );
     assert!(response.smart_access_tier()?.is_some());
 
-    container_client.delete(None).await?;
-    Ok(())
-}
-
-#[recorded::test]
-async fn test_commit_block_list_smart_access_tier(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let container_client =
-        get_container_client(recording, true, StorageAccount::Standard, None).await?;
-    let blob_client = container_client.blob_client(&get_blob_name(recording));
-    let block_blob_client = blob_client.block_blob_client();
-
-    // Stage Block
+    // Commit Block List with Smart Tier
+    let commit_blob_client = container_client.blob_client(&get_blob_name(recording));
+    let block_blob_client = commit_blob_client.block_blob_client();
     let block_id: Vec<u8> = b"1".to_vec();
     let data = b"smart tier block data";
     block_blob_client
@@ -1800,8 +1789,6 @@ async fn test_commit_block_list_smart_access_tier(ctx: TestContext) -> Result<()
             None,
         )
         .await?;
-
-    // Commit Block List with Smart Tier
     let block_lookup_list = block_lookup(block_id);
     block_blob_client
         .commit_block_list(
@@ -1814,41 +1801,30 @@ async fn test_commit_block_list_smart_access_tier(ctx: TestContext) -> Result<()
         .await?;
 
     // Assert
-    let response = blob_client.get_properties(None).await?;
+    let response = commit_blob_client.get_properties(None).await?;
     assert_eq!(
         AccessTier::Smart.to_string(),
         response.access_tier()?.unwrap()
     );
     assert!(response.smart_access_tier()?.is_some());
 
-    container_client.delete(None).await?;
-    Ok(())
-}
-
-#[recorded::test]
-async fn test_download_access_tier_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let container_client =
-        get_container_client(recording, true, StorageAccount::Standard, None).await?;
-    let blob_client = container_client.blob_client(&get_blob_name(recording));
-
-    // Upload Blob and Set Smart Tier
-    blob_client
+    // Set Smart Tier
+    let download_blob_client = container_client.blob_client(&get_blob_name(recording));
+    download_blob_client
         .upload(RequestContent::from(b"smart tier download".to_vec()), None)
         .await?;
-    blob_client.set_tier(AccessTier::Smart, None).await?;
+    download_blob_client
+        .set_tier(AccessTier::Smart, None)
+        .await?;
+    let response = download_blob_client.download(None).await?;
 
-    // Assert via download
-    let response = blob_client.download(None).await?;
+    // Assert
     assert_eq!(
         Some(AccessTier::Smart.to_string()),
         response.properties.access_tier
     );
     assert!(response.properties.smart_access_tier.is_some());
     assert!(response.properties.access_tier_changed_on.is_some());
-    // Service omits x-ms-access-tier-inferred when the tier is explicitly set,
-    // returning the header only when the tier is inferred.
     assert!(!response.properties.access_tier_inferred.unwrap_or(false));
 
     container_client.delete(None).await?;

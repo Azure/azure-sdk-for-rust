@@ -160,6 +160,34 @@ async fn test_upload_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
         .upload_blob_from_url(source_blob_client.url().as_str().into(), None)
         .await?;
     assert!(upload_response.content_crc64()?.is_some());
+    assert!(upload_response.content_md5()?.is_none());
+
+    // Combined MD5/CRC64 Scenario
+    let md5_source_blob_client = container_client.blob_client(&get_blob_name(recording));
+    create_test_blob(
+        &md5_source_blob_client,
+        Some(RequestContent::from(b"hello".to_vec())),
+        None,
+    )
+    .await?;
+    // MD5("hello") - well-known test vector
+    let source_md5: Vec<u8> = vec![
+        0x5d, 0x41, 0x40, 0x2a, 0xbc, 0x4b, 0x2a, 0x76, 0xb9, 0x71, 0x9d, 0x91, 0x10, 0x17, 0xc5,
+        0x92,
+    ];
+    let md5_dest_blob_client = container_client.blob_client(&get_blob_name(recording));
+    let combined_response = md5_dest_blob_client
+        .block_blob_client()
+        .upload_blob_from_url(
+            md5_source_blob_client.url().as_str().into(),
+            Some(BlockBlobClientUploadBlobFromUrlOptions {
+                source_content_md5: Some(source_md5),
+                ..Default::default()
+            }),
+        )
+        .await?;
+    assert!(combined_response.content_md5()?.is_some());
+    assert!(combined_response.content_crc64()?.is_some());
 
     let create_options = BlockBlobClientUploadBlobFromUrlOptions::default().if_not_exists();
 
@@ -239,6 +267,39 @@ async fn test_stage_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
         )
         .await?;
     assert!(stage_response.content_crc64()?.is_some());
+    assert!(stage_response.content_md5()?.is_none());
+
+    // Combined MD5/CRC64 Scenario
+    let md5_source_blob_client = container_client.blob_client(&get_blob_name(recording));
+    let md5_source_content = b"hello";
+    create_test_blob(
+        &md5_source_blob_client,
+        Some(RequestContent::from(md5_source_content.to_vec())),
+        None,
+    )
+    .await?;
+    // MD5("hello") - well-known test vector
+    let source_md5: Vec<u8> = vec![
+        0x5d, 0x41, 0x40, 0x2a, 0xbc, 0x4b, 0x2a, 0x76, 0xb9, 0x71, 0x9d, 0x91, 0x10, 0x17, 0xc5,
+        0x92,
+    ];
+    let md5_block_id: Vec<u8> = b"md5block".to_vec();
+    let md5_block_blob_client = container_client
+        .blob_client(&get_blob_name(recording))
+        .block_blob_client();
+    let combined_response = md5_block_blob_client
+        .stage_block_from_url(
+            &md5_block_id,
+            u64::try_from(md5_source_content.len())?,
+            md5_source_blob_client.url().as_str().into(),
+            Some(BlockBlobClientStageBlockFromUrlOptions {
+                source_content_md5: Some(source_md5),
+                ..Default::default()
+            }),
+        )
+        .await?;
+    assert!(combined_response.content_md5()?.is_some());
+    assert!(combined_response.content_crc64()?.is_some());
 
     // Staged Block Scenario
     let block_list = block_blob_client
