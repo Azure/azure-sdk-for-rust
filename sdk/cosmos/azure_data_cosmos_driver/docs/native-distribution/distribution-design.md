@@ -51,6 +51,7 @@ Recorded as ADRs; this is the index with one-line rationale. See [`adr/`](adr/00
 | [0008](adr/0008-platform-matrix.md) | A defined **platform matrix**; unsupported platforms fail with an actionable error. | Bounded support surface. |
 | [0009](adr/0009-build-and-signing-pipeline.md) | **One build, sign/authenticate the binaries once, fan-out** to per-language publish jobs that must consume the hand-off and never rebuild. | Provenance + trust enforced by verification, not just discipline. |
 | [0010](adr/0010-native-version-fanout.md) | **One native version fanned out to all feeds simultaneously**; each SDK pins that **exact** version. | One source of truth for "which driver"; no cross-language version skew. |
+| [0011](adr/0011-go-v2-uses-ffi.md) | **Go v2 uses the Rust driver through FFI** for the current delivery window. | Faster delivery and Rust parity, with packaging handled by the native distribution ADRs. |
 
 ## 5. The model
 
@@ -82,7 +83,7 @@ Consumer distribution is **per-language feeds**; the build-once "bundle" is an *
 
 The per-language link model, platform matrix, build/signing pipeline, ABI handshake, and compatibility posture are all **decisions** — so they live in the ADRs rather than being restated here (restating them is exactly what lets the doc and the ADRs drift). The at-a-glance table in [§4](#4-decisions-at-a-glance) links each one; in brief:
 
-> **⚠️ Go publish strategy — WIP.** The direction is firm: Go consumes a **packaged native binary via cgo** (`CGO_ENABLED=1`), linking the **FFI stubs generated from the cbindgen C header** — the driver ships **inside** the consumed artifact and is linked at `go build`. What is explicitly **ruled out** is a "pure-Go shim" that downloads the native library at build or run time: customers link a real binary through the FFI stubs, they are never handed a downloader stub. Still being pressure-tested: the *delivery shape* ([§8](#8-open-questions) Q3), the static-vs-dynamic default (Q4), and the pure-Go-port alternative (below). Recorded firmly in [ADR 0004](adr/0004-go-cgo-prebuilt.md).
+> **⚠️ Go publish strategy — WIP.** The direction is firm: Go v2 consumes the Rust driver through **FFI** ([ADR 0011](adr/0011-go-v2-uses-ffi.md)) and links a **packaged native binary via cgo** (`CGO_ENABLED=1`) using the **FFI stubs generated from the cbindgen C header** ([ADR 0004](adr/0004-go-cgo-prebuilt.md)). The driver ships **inside** the consumed artifact and is linked at `go build`. What is explicitly **ruled out** is a "pure-Go shim" that downloads the native library at build or run time: customers link a real binary through the FFI stubs, they are never handed a downloader stub. Still being pressure-tested: the *delivery shape* ([§8](#8-open-questions) Q3) and the static-vs-dynamic default (Q4).
 
 - **.NET / Go consumption** — [ADR 0003](adr/0003-dotnet-nuget-nativeassets.md) (per-RID NuGet NativeAssets + meta-package), [ADR 0004](adr/0004-go-cgo-prebuilt.md) (cgo against a prebuilt header + lib).
 - **Java** — deliberately **not finalized** (likely a JAR with bundled natives); tracked in [§8](#8-open-questions) so the build-once hand-off ([ADR 0001](adr/0001-build-once-internal-handoff.md)) stays general enough to repackage into a JAR later without redesign.

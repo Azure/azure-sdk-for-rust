@@ -2,7 +2,7 @@
 
 **Status:** Proposed for review — core model firm, **delivery shape WIP**
 
-> **WIP.** The *decision* — Go links a **packaged** prebuilt native library via cgo (`CGO_ENABLED=1`) using the `C.*` FFI stubs from the cbindgen header — is firm. Still being settled: the **delivery shape** (Universal Package vs vendored binaries module, Q3) and the static-vs-dynamic default (Q4). Explicitly **out of scope**: a pure-Go shim that downloads the native lib — the binary is packaged and linked, never fetched by a stub. The pure-Go-*port* alternative (re-implementing the driver in Go) was spiked and is discussed under *Alternatives considered* + the design doc.
+> **WIP.** The *decision* — Go links a **packaged** prebuilt native library via cgo (`CGO_ENABLED=1`) using the `C.*` FFI stubs from the cbindgen header — is firm. Still being settled: the **delivery shape** (Universal Package vs vendored binaries module, Q3) and the static-vs-dynamic default (Q4). Explicitly **out of scope**: a pure-Go shim that downloads the native lib — the binary is packaged and linked, never fetched by a stub. The Go v2 FFI direction is captured in [ADR 0011](0011-go-v2-uses-ffi.md).
 
 ## Context
 Go has no NuGet. Go links C libraries through cgo, which needs a C header and a library available at `go build` time. The Go SDK already implements the completion-queue receive loop, `cgo.Handle` correlation, and buffer copy-out; the only distribution question is how header+lib+ABI version reach the Go build.
@@ -22,4 +22,4 @@ Go has no NuGet. Go links C libraries through cgo, which needs a C header and a 
 - Wrap the lib in NuGet for Go — rejected: Go can't consume NuGet.
 - A neutral consumer bundle Go downloads — rejected (ADR 0001/0002): pulls irrelevant formats.
 - A pure-Go **shim module** that downloads the native lib at build/run time — rejected: customers can't be handed a downloader stub; the binary must be packaged and linked via cgo.
-- **Pure-Go reimplementation of the driver — rejected (for distribution).** A time-boxed spike built a working `CGO_ENABLED=0`, zero-dependency vertical slice (point read/create + retry, routing, and multi-region/transport failover) and validated it behavior-for-behavior against the real Rust driver with a differential harness. It still defeats build-once single provenance (ADR 0001): every language would re-port and re-verify, making "the driver" N hand-maintained translations that chase every Rust change. Valuable as a parity oracle / risk probe, not a shipping vehicle — see the design doc's *Alternative considered — a pure-Go port* section.
+- **Pure-Go reimplementation of the driver — not selected for Go v2.** A time-boxed spike built a working `CGO_ENABLED=0`, zero-dependency vertical slice and validated it behavior-for-behavior against the real Rust driver with a differential harness. It is valuable as a parity oracle / risk probe, but not the Go v2 delivery path; see [ADR 0011](0011-go-v2-uses-ffi.md).
