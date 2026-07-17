@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added support for Arc-connected servers managed identity auth with `ArcServerManagedIdentityCredential`
+- Added support for Arc-connected servers when using the `ManagedIdentityCredential`.
 
 ### Breaking Changes
 

@@ -6,9 +6,8 @@ use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
     error::{Error, ErrorKind},
     http::{
-        headers::{HeaderName, AUTHORIZATION, WWW_AUTHENTICATE},
-        request::Request,
-        ClientOptions, Method, Pipeline, PipelineOptions, PipelineSendOptions, StatusCode, Url,
+        headers::HeaderName, request::Request, ClientOptions, Method, Pipeline, PipelineOptions,
+        PipelineSendOptions, StatusCode, Url,
     },
     json::from_json,
     time::OffsetDateTime,
@@ -17,7 +16,7 @@ use serde::{
     de::{self, Deserializer},
     Deserialize,
 };
-use std::{any::type_name, fmt, fs::File, io::Read, path::Path, str};
+use std::{any::type_name, fmt, str};
 
 /// An identifier for the Azure Instance Metadata Service (IMDS).
 ///
@@ -54,8 +53,8 @@ pub(crate) struct ImdsManagedIdentityCredential {
     pipeline: Pipeline,
     endpoint: Url,
     api_version: String,
-    secret_header: Option<HeaderName>,
-    secret_env: Option<String>,
+    secret_header: HeaderName,
+    secret_env: String,
     id: ImdsId,
     cache: TokenCache,
     env: Env,
@@ -74,8 +73,8 @@ impl ImdsManagedIdentityCredential {
     pub fn new(
         endpoint: Url,
         api_version: &str,
-        secret_header: Option<HeaderName>,
-        secret_env: Option<&str>,
+        secret_header: HeaderName,
+        secret_env: &str,
         id: ImdsId,
         client_options: ClientOptions,
         pipeline_options: Option<PipelineOptions>,
@@ -94,7 +93,7 @@ impl ImdsManagedIdentityCredential {
             endpoint,
             api_version: api_version.to_owned(),
             secret_header: secret_header.to_owned(),
-            secret_env: secret_env.map(|env| env.to_owned()),
+            secret_env: secret_env.to_owned(),
             id,
             cache: TokenCache::new(),
             env,
@@ -127,18 +126,14 @@ impl ImdsManagedIdentityCredential {
 
         req.insert_header("metadata", "true");
 
-        if let Some(ref secret_env) = self.secret_env {
-            if let Some(ref secret_header) = self.secret_header {
-                let msi_secret = self.env.var(secret_env);
-                if let Ok(val) = msi_secret {
-                    req.insert_header(secret_header.clone(), val);
-                };
-            }
-        }
+        let msi_secret = self.env.var(&self.secret_env);
+        if let Ok(val) = msi_secret {
+            req.insert_header(self.secret_header.clone(), val);
+        };
 
         let options = options.unwrap_or_default();
         let ctx = options.method_options.context.to_borrowed();
-        let mut rsp = self
+        let rsp = self
             .pipeline
             .send(
                 &ctx,
@@ -150,35 +145,7 @@ impl ImdsManagedIdentityCredential {
             )
             .await?;
 
-        let mut status = rsp.status();
-
-        if status == StatusCode::Unauthorized {
-            if let Ok(challenge) = rsp.headers().get_str(&WWW_AUTHENTICATE) {
-                if let Some(challenge_location) = challenge
-                    .split_once('=')
-                    .map(|(_, location)| location.trim())
-                {
-                    let challenge_response =
-                        self.retrieve_challenge_response(challenge_location)?;
-                    req.insert_header(AUTHORIZATION, format!("Basic {challenge_response}"));
-
-                    // try the request again with the challenge response header. Then, drop through to the usual error handling and token extraction
-                    rsp = self
-                        .pipeline
-                        .send(
-                            &ctx,
-                            &mut req,
-                            Some(PipelineSendOptions {
-                                skip_checks: true,
-                                ..Default::default()
-                            }),
-                        )
-                        .await?;
-                    status = rsp.status();
-                }
-            }
-        }
-
+        let status = rsp.status();
         if !status.is_success() {
             let message = match status {
                 StatusCode::BadRequest => {
@@ -207,38 +174,6 @@ impl ImdsManagedIdentityCredential {
             token_response.access_token,
             token_response.expires_on,
         ))
-    }
-
-    // This is used for Arc for server's flavour of IMDS, where a challenge-response protocol is implemented.
-    fn retrieve_challenge_response(&self, challenge: &str) -> Result<String, Error> {
-        let challenge_path = Path::new(challenge).canonicalize()?;
-        let expected_challenge_base = if cfg!(windows) {
-            let program_data_dir = self.env.var("PROGRAMDATA")?;
-            Path::new(&program_data_dir).join("AzureConnectedMachineAgent\\Tokens\\")
-        } else {
-            Path::new("/var/opt/azcmagent/tokens/").to_path_buf()
-        };
-
-        if !(challenge_path.starts_with(expected_challenge_base)
-            && challenge_path.extension().is_some_and(|ext| ext == "key"))
-        {
-            if !cfg!(test) {
-                return Err(Error::with_message(
-                    ErrorKind::Credential,
-                    format!("Challenge received was invalid: {challenge}"),
-                ));
-            } else {
-                // for tests, it's okay if the challenge file is not in the expected location
-            }
-        }
-
-        let challenge_file = File::open(challenge_path)?;
-        let mut challenge_response = String::new();
-        challenge_file
-            .take(4096) // avoid slurping a huge file - the challenge response will not be > 4KiB
-            .read_to_string(&mut challenge_response)?;
-
-        Ok(challenge_response)
     }
 }
 

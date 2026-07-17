@@ -1,14 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::azure_arc_credential::AzureArcCredential;
+use crate::azure_arc_credential::{is_arc_agent_present, AzureArcCredential};
 use crate::{
     authentication_error, env::Env, AppServiceManagedIdentityCredential, ImdsId,
     VirtualMachineManagedIdentityCredential,
 };
 use azure_core::credentials::{AccessToken, TokenCredential, TokenRequestOptions};
 use azure_core::http::ClientOptions;
-use std::fs;
 use std::{any::type_name, fmt, sync::Arc};
 use tracing::info;
 
@@ -176,23 +175,7 @@ fn get_source(env: &Env) -> ManagedIdentitySource {
         return CloudShell;
     }
 
-    let arc_agent_present = if cfg!(windows) {
-        if let Ok(program_files_path) = env.var("PROGRAMFILES") {
-            !program_files_path.is_empty()
-                && fs::exists(format!(
-                    "{program_files_path}\\AzureConnectedMachineAgent\\himds.exe"
-                ))
-                .unwrap_or(false)
-        } else {
-            // %PROGRAMFILES% should exist on Windows, but if it's not there,
-            // we can't tell if we're on Arc or not, so just assume we aren't
-            false
-        }
-    } else {
-        fs::exists("/opt/azcmagent/bin/himds").unwrap_or(false)
-    };
-
-    if arc_agent_present {
+    if is_arc_agent_present(env) {
         return AzureArc;
     }
 
@@ -575,6 +558,69 @@ mod tests {
         let token_path = env::temp_dir().join(format!("arc-{key_id}.token"));
         let mut token_file = File::create(&token_path).unwrap();
         token_file.write_all("abc".as_bytes()).unwrap();
+        drop(token_file);
+
+        let mut model_challenge_response_request = model_naive_req.clone();
+        model_challenge_response_request.insert_header("authorization", "Basic abc");
+
+        let mut challenge_headers = Headers::default();
+        let response_path = token_path.to_owned();
+        let response_path_str = response_path.to_str().unwrap().to_string();
+        let response_header = HeaderValue::from(format!("Realm={response_path_str}"));
+
+        challenge_headers.insert("www-authenticate", response_header);
+
+        run_supported_source_test(
+            Env::from(
+                &[
+                    (IDENTITY_ENDPOINT, "http://localhost:40342/metadata/identity/oauth2/token"),
+                    (IMDS_ENDPOINT, "..."),
+                ][..]),
+            None,
+            ManagedIdentitySource::AzureArc,
+            vec![
+                MockRequestResponse {
+                    request: model_challenge_response_request,
+                    response_status: StatusCode::Ok,
+                    response_headers: Headers::default(),
+                    response_format: format!(r#"{{"token_type":"Bearer","expires_in":"85770","expires_on":"{}","ext_expires_in":86399,"access_token":"*","resource":"{}"}}"#, EXPIRES_ON, LIVE_TEST_RESOURCE).to_string(),
+                },
+                MockRequestResponse {
+                    request: model_naive_req,
+                    response_status: StatusCode::Unauthorized,
+                    response_headers: challenge_headers,
+                    response_format: String::from(r#"{"error":"unauthorized_client","error_description":"Missing Basic Authorization header","error_codes":[401]}"#),
+                },
+            ],
+        ).await;
+
+        let _ = fs::remove_file(token_path); // try our best to clean up the temp file
+    }
+
+    #[tokio::test]
+    async fn arc_challenge_response_too_large() {
+        let mut model_naive_req = Request::new(
+            "http://localhost:40342/metadata/identity/oauth2/token"
+                .parse()
+                .unwrap(),
+            Method::Get,
+        );
+        model_naive_req.insert_header("metadata", "true");
+
+        let params = Vec::from([
+            ("api-version", "2021-02-01"),
+            ("resource", LIVE_TEST_RESOURCE),
+        ]);
+        model_naive_req
+            .url_mut()
+            .query_pairs_mut()
+            .extend_pairs(params);
+
+        let key_id = rand::random::<u8>();
+        let token_path = env::temp_dir().join(format!("arc-{key_id}.token"));
+        let mut token_file = File::create(&token_path).unwrap();
+        let large_buf: [u8; 4097] = [0; 4097]; // 4096 is the max
+        token_file.write_all(&large_buf).unwrap();
         drop(token_file);
 
         let mut model_challenge_response_request = model_naive_req.clone();

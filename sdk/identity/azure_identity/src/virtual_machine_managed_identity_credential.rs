@@ -70,8 +70,8 @@ impl VirtualMachineManagedIdentityCredential {
             credential: ImdsManagedIdentityCredential::new(
                 endpoint,
                 API_VERSION,
-                Some(SECRET_HEADER),
-                Some(SECRET_ENV),
+                SECRET_HEADER,
+                SECRET_ENV,
                 id,
                 client_options,
                 pipeline_options,
