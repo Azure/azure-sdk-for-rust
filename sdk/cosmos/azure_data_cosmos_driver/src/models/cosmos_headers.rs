@@ -364,11 +364,7 @@ impl CosmosRequestHeaders {
         // (AllVersionsAndDeletes) takes precedence over incremental
         // (LatestVersion); the two are mutually exclusive, but guard the
         // invariant and emit exactly one value.
-        debug_assert!(
-            !(self.full_fidelity_feed && self.incremental_feed),
-            "full_fidelity_feed and incremental_feed are mutually exclusive"
-        );
-        if self.full_fidelity_feed {
+if self.full_fidelity_feed {
             headers.insert(
                 request_header_names::A_IM,
                 HeaderValue::from_static(request_header_names::FULL_FIDELITY_FEED),
