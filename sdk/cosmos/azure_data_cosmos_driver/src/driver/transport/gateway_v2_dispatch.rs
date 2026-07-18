@@ -468,15 +468,15 @@ pub(crate) fn unwrap_response_for_gateway_v2(
     if let Some(retry_after_ms) = response.retry_after_ms {
         headers.insert("x-ms-retry-after-ms", retry_after_ms.to_string());
     }
-    if let Some(lsn) = response.lsn.filter(|value| *value != 0) {
+    if let Some(lsn) = response.lsn {
         let value = lsn.to_string();
         headers.insert(response_header_names::LSN, value.clone());
         headers.insert(X_MS_LSN, value);
     }
-    if let Some(item_lsn) = response.item_lsn.filter(|value| *value != 0) {
+    if let Some(item_lsn) = response.item_lsn {
         headers.insert(response_header_names::ITEM_LSN, item_lsn.to_string());
     }
-    if let Some(global_committed_lsn) = response.global_committed_lsn.filter(|value| *value != 0) {
+    if let Some(global_committed_lsn) = response.global_committed_lsn {
         headers.insert(X_MS_GLOBAL_COMMITTED_LSN, global_committed_lsn.to_string());
     }
     if let Some(partition_key_range_id) = response.partition_key_range_id {
