@@ -225,7 +225,8 @@ fn classify_for_azure_core(err: &CosmosError) -> azure_core::error::ErrorKind {
         | Some(SubStatusCode::CLIENT_GENERATED_401) => CoreKind::Credential,
 
         // Serialization boundary
-        Some(SubStatusCode::SERIALIZATION_RESPONSE_BODY_INVALID) => CoreKind::DataConversion,
+        Some(SubStatusCode::SERIALIZATION_RESPONSE_BODY_INVALID)
+        | Some(SubStatusCode::SERIALIZATION_REQUEST_BODY_INVALID) => CoreKind::DataConversion,
 
         // Request provably NEVER reached the wire — safe to retry non-idempotent writes
         // (matches `azure_core::ErrorKind::Connection` semantics).

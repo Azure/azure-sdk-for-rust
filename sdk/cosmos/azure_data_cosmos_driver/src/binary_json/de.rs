@@ -122,7 +122,18 @@ impl<'de> Deserializer<'de> for &mut BinaryDeserializer<'de> {
                 ScalarToken::Bool(b) => visitor.visit_bool(b),
                 ScalarToken::I64(i) => visitor.visit_i64(i),
                 ScalarToken::U64(u) => visitor.visit_u64(u),
-                ScalarToken::F64(f) => visitor.visit_f64(f),
+                ScalarToken::F64(f) => {
+                    // Reject non-finite doubles (`NaN`/`±∞`) so the native
+                    // deserializer agrees with the reference `decode`, which
+                    // maps a non-finite `Double` to `BinaryError::InvalidNumber`
+                    // (JSON has no representation for these).
+                    if !f.is_finite() {
+                        return Err(BinaryError::InvalidNumber {
+                            detail: "non-finite double (NaN or infinity)",
+                        });
+                    }
+                    visitor.visit_f64(f)
+                }
                 ScalarToken::Str(s) => visitor.visit_borrowed_str(s),
             };
         }
@@ -329,7 +340,7 @@ impl<'de> MapAccess<'de> for MapStream<'_, 'de> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::binary_json::{decode, to_vec};
+    use crate::binary_json::{decode, markers, to_vec};
     use serde::{Deserialize, Serialize};
     use serde_json::json;
 
@@ -424,6 +435,31 @@ mod tests {
     fn missing_preamble_is_rejected() {
         let result: Result<serde_json::Value> = from_slice(b"{}");
         assert!(matches!(result, Err(BinaryError::MissingPreamble { .. })));
+    }
+
+    #[test]
+    fn non_finite_double_is_rejected_like_decode() {
+        // A hand-crafted buffer carrying a non-finite `Double` (NaN / +∞).
+        // JSON cannot represent these, so the native `from_slice` path must
+        // reject them with the same `InvalidNumber` error as the reference
+        // `decode`, rather than accepting a `NaN`/`inf` the way an unguarded
+        // `visit_f64` would.
+        for bits in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+            let mut bytes = vec![crate::binary_json::PREAMBLE, markers::NUMBER_DOUBLE];
+            bytes.extend_from_slice(&bits.to_le_bytes());
+
+            let decoded = decode(&bytes);
+            assert!(
+                matches!(decoded, Err(BinaryError::InvalidNumber { .. })),
+                "decode must reject non-finite double, got {decoded:?}"
+            );
+
+            let native: Result<f64> = from_slice(&bytes);
+            assert!(
+                matches!(native, Err(BinaryError::InvalidNumber { .. })),
+                "from_slice must reject non-finite double, got {native:?}"
+            );
+        }
     }
 
     /// A tiny deterministic LCG so the generative parity test needs no external

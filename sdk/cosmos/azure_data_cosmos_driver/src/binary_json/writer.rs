@@ -134,9 +134,19 @@ pub(super) fn encode_u64(u: u64, out: &mut Vec<u8>) {
 
 /// Encodes a floating-point number as an IEEE-754 `Double`.
 ///
+/// Non-finite values (`NaN`, `±∞`) have no JSON representation, so they are
+/// emitted as `null` — mirroring [`serde_json`], which serializes a non-finite
+/// float as `null`. This keeps `to_vec(item)` byte-identical to
+/// `encode(&serde_json::to_value(item))` and matches the decoder, which rejects
+/// a non-finite `Double`.
+///
 /// Shared by the [`Value`]-based [`encode`] path and the native serde
 /// serializer.
 pub(super) fn encode_f64(f: f64, out: &mut Vec<u8>) {
+    if !f.is_finite() {
+        out.push(NULL);
+        return;
+    }
     out.push(NUMBER_DOUBLE);
     out.extend_from_slice(&f.to_le_bytes());
 }
@@ -286,6 +296,29 @@ mod tests {
                 0x3F
             ],
         );
+    }
+
+    #[test]
+    fn encodes_non_finite_double_as_null() {
+        // Non-finite floats have no JSON representation. `serde_json` serializes
+        // them as `null`, so the binary encoder must do the same to keep
+        // `encode` byte-identical to `encode(&serde_json::to_value(..))` and to
+        // match the decoder (which rejects a non-finite `Double`).
+        //
+        // Note: a `serde_json::Value` cannot itself hold a non-finite number
+        // (`json!(f64::NAN)` is `Null`), so exercise the low-level helper
+        // directly to prove the encoder branch.
+        let mut nan = vec![PREAMBLE];
+        encode_f64(f64::NAN, &mut nan);
+        assert_eq!(nan, vec![PREAMBLE, markers::NULL]);
+
+        let mut inf = vec![PREAMBLE];
+        encode_f64(f64::INFINITY, &mut inf);
+        assert_eq!(inf, vec![PREAMBLE, markers::NULL]);
+
+        let mut neg_inf = vec![PREAMBLE];
+        encode_f64(f64::NEG_INFINITY, &mut neg_inf);
+        assert_eq!(neg_inf, vec![PREAMBLE, markers::NULL]);
     }
 
     #[test]
