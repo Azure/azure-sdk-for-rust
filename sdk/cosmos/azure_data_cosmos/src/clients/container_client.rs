@@ -1347,6 +1347,11 @@ fn _assert_futures_are_send() {
 
 #[cfg(test)]
 mod tests {
+    //! These are sanity checks that [`serialize_item_body`] picks the right
+    //! path (text vs binary) and that binary encoding is actually applied —
+    //! not full serialize/deserialize coverage. Byte-level codec correctness
+    //! lives in the driver's `binary_json` snapshot, golden-vector, and parity
+    //! tests.
     use super::*;
     use serde_json::json;
 

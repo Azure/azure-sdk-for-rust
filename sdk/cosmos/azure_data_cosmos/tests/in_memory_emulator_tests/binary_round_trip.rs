@@ -347,7 +347,10 @@ async fn request_text_response_keeps_wire_binary_and_returns_data() {
         .await
         .unwrap();
     let created_doc: TestItem = created.into_body().into_single().unwrap();
-    assert_eq!(created_doc, item, "create must round-trip after transcoding");
+    assert_eq!(
+        created_doc, item,
+        "create must round-trip after transcoding"
+    );
 
     let read = container.read_item("pk1", &item.id, None).await.unwrap();
     let read_doc: TestItem = read.into_body().into_single().unwrap();
