@@ -267,12 +267,13 @@ sequenceDiagram
 4. **Encode at the SDK call sites,** gated by an enablement flag. The path is
    `binary_json::to_vec(item)` → `with_body`, chosen in `serialize_item_body`.
 
-5. **Negotiation + enablement.** The SDK sets
-   `x-ms-cosmos-supported-serialization-formats: JsonText,CosmosBinary` on item
-   operations whenever binary encoding is enabled, so the **wire stays binary in
-   both directions**. When the caller opts into text responses via
-   `BinaryEncodingOptions::request_text_response`, the negotiation header is
-   unchanged (still `JsonText,CosmosBinary`); instead the operation carries an
+5. **Negotiation + enablement.** The driver advertises
+   `x-ms-cosmos-supported-serialization-formats: CosmosBinary` on point
+   operations whenever binary encoding is enabled (matching the .NET SDK's
+   point-op default), so the service is required to reply in binary and the
+   **wire stays binary in both directions**. When the caller opts into text
+   responses via `BinaryEncodingOptions::request_text_response`, the negotiation
+   header is unchanged (still `CosmosBinary`); instead the operation carries an
    internal `transcode_response_to_text` directive and the **driver** converts
    the binary response to text JSON before returning it (see
    [§9.1](#91-driver-side-binary-encoding-and-transcoding)). Enablement resolves once at client
@@ -385,12 +386,13 @@ small items, where the `Value` allocation dominated the fixed overhead.
 ## 9. Negotiation and enablement
 
 - **Request.** When binary is enabled, the **driver** sets
-  `x-ms-cosmos-supported-serialization-formats: JsonText,CosmosBinary` on item
-  operations — the same value whether or not `request_text_response` is set, so
-  the service always replies with binary and the wire stays binary in both
-  directions. The request body is Cosmos binary JSON (the driver transcodes a
-  text body to binary when needed) and the request `Content-Type` stays
-  `application/json` — the service detects the binary form from the first byte.
+  `x-ms-cosmos-supported-serialization-formats: CosmosBinary` on point
+  operations (matching the .NET SDK's point-op default) — the same value whether
+  or not `request_text_response` is set, so the service always replies with
+  binary and the wire stays binary in both directions. The request body is
+  Cosmos binary JSON (the driver transcodes a text body to binary when needed)
+  and the request `Content-Type` stays `application/json` — the service detects
+  the binary form from the first byte.
 - **Response.** Decoding does **not** depend on negotiation: the SDK auto-detects
   the `0x80` preamble. Negotiation governs whether the service *chooses* to send
   binary; the driver-side transcoding directive governs whether the driver hands
@@ -415,8 +417,9 @@ set the equivalent flat `binary_encoding_enabled` /
   enabled, the driver applies `apply_request_binary_encoding`: it transcodes a
   **text** request body to Cosmos binary JSON via
   `binary_json::transcode_to_binary` (`serde_json::from_slice` → `encode`) and
-  advertises `JsonText,CosmosBinary`. An already-binary or empty body is passed
-  through, so a caller that pre-encodes (see below) pays nothing.
+  advertises `CosmosBinary` (the .NET point-op default). An already-binary or
+  empty body is passed through, so a caller that pre-encodes (see below) pays
+  nothing.
 - `request_text_response` — **text back to the caller**. After the response is
   assembled, the driver converts the binary body to text JSON via
   `binary_json::transcode_to_text` (`decode` → `serde_json::to_vec`). The wire
@@ -525,9 +528,9 @@ rare forms is a possible future optimization.)
   captures the `transcode_response_to_text` directive before the operation is
   consumed and transcodes the response body when set.
 - `azure_data_cosmos/src/clients/container_client.rs`: `serialize_item_body`
-  calls `binary_json::to_vec` on the binary write path; `apply_binary_negotiation`
-  sets the `JsonText,CosmosBinary` header and, for `request_text_response`, stamps
-  the operation's `transcode_response_to_text` directive.
+  calls `binary_json::to_vec` on the binary write path; `with_binary_encoding`
+  sets the driver `OperationOptions::binary_encoding` so the driver negotiates
+  `CosmosBinary` and, for `request_text_response`, transcodes the response.
 - `azure_data_cosmos/src/error.rs`: `convert_binary_encode_error` maps a
   `BinaryError` from the item-write encode path to the SDK error type (a
   request-body error). It is a helper called via `map_err` at the single

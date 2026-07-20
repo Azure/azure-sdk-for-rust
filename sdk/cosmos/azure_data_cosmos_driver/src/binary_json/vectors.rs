@@ -40,8 +40,20 @@ pub(crate) fn golden_vectors() -> Vec<BinaryVector> {
                  binary: &mut Option<Vec<u8>>,
                  json: &mut Option<String>,
                  vectors: &mut Vec<BinaryVector>| {
-        if let (Some(name), Some(binary), Some(json)) = (name.take(), binary.take(), json.take()) {
-            vectors.push(BinaryVector { name, binary, json });
+        let (name, binary, json) = (name.take(), binary.take(), json.take());
+        match (name, binary, json) {
+            (Some(name), Some(binary), Some(json)) => {
+                vectors.push(BinaryVector { name, binary, json });
+            }
+            // A completely empty record (e.g. consecutive blank lines) is fine;
+            // a partial record means the corpus is malformed — fail fast so the
+            // corruption is surfaced deterministically rather than silently
+            // dropped.
+            (None, None, None) => {}
+            (name, binary, json) => panic!(
+                "incomplete corpus record: name={name:?} binary_present={} json={json:?}",
+                binary.is_some()
+            ),
         }
     };
 

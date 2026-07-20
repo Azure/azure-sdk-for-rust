@@ -8,17 +8,16 @@
 //! format does the service send *back*? The answer is driven entirely by the
 //! `x-ms-cosmos-supported-serialization-formats` request header:
 //!
-//! - `JsonText,CosmosBinary` (what the SDK advertises whenever binary encoding
-//!   is enabled) → the service replies with **binary** (body begins with the
-//!   `0x80` preamble).
+//! - `JsonText,CosmosBinary` (or `CosmosBinary` alone) → the service replies
+//!   with **binary** (body begins with the `0x80` preamble).
 //! - `JsonText` alone → the service replies with **text**, even though the
 //!   request body was binary.
 //! - no header (binary encoding disabled) → **text**.
 //!
 //! Note the SDK-level `BinaryEncodingOptions::request_text_response` does **not**
-//! send `JsonText` alone: it keeps advertising `CosmosBinary` (so the wire stays
-//! binary) and has the *driver* transcode the binary response to text. These
-//! tests cover the underlying emulator format decision that both modes rely on.
+//! send `JsonText` alone: point operations keep advertising `CosmosBinary` (so
+//! the wire stays binary) and the *driver* transcodes the binary response to
+//! text. These tests cover the underlying emulator format decision directly.
 //!
 //! The tests send a Cosmos-binary request body directly through the in-memory
 //! emulator and inspect the **raw** response bytes, so they assert on the actual
@@ -101,10 +100,16 @@ async fn enabled_default_negotiation_yields_binary_response() {
     assert_eq!(decoded["value"], 42);
 }
 
-/// `request_text_response` (advertises only `JsonText`): the response body is
-/// **text**, even though the request body was binary.
+/// Explicit `JsonText`-only negotiation: the response body is **text**, even
+/// though the request body was binary.
+///
+/// This asserts the emulator's underlying format decision when a request
+/// advertises `JsonText` alone. Note this is **not** the SDK-level
+/// `request_text_response` behavior (which keeps advertising `CosmosBinary` and
+/// has the driver transcode the binary response); it is the lower-level
+/// negotiation primitive that mode does not use.
 #[tokio::test]
-async fn request_text_response_yields_text_response_despite_binary_request() {
+async fn jsontext_only_negotiation_yields_text_response_despite_binary_request() {
     let ctx = setup_single_region().await;
     let body = serde_json::json!({ "id": "text-1", "pk": "pk1", "value": 7 });
 

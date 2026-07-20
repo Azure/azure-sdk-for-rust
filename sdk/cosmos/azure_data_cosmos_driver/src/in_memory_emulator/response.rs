@@ -229,7 +229,10 @@ impl ResponseBuilder {
         self.body = if binary {
             crate::binary_json::encode(body)
         } else {
-            serde_json::to_vec(body).unwrap_or_default()
+            // The emulator owns these `Value`s, so a serialization failure is a
+            // bug in the emulator — fail loudly rather than emit an empty body
+            // that would mask the defect downstream.
+            serde_json::to_vec(body).expect("emulator response body must serialize to JSON")
         };
         self
     }

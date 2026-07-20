@@ -67,10 +67,17 @@ const ACCOUNT_PROPERTIES_CONNECTIVITY_MAX_RETRIES: u32 = 2;
 const ACCOUNT_PROPERTIES_CONNECTIVITY_BASE_DELAY: Duration = Duration::from_millis(100);
 
 /// Serialization formats advertised (`x-ms-cosmos-supported-serialization-formats`)
-/// when binary encoding is enabled: the client accepts either text or Cosmos
-/// binary JSON, so the service may reply with binary. Matches the .NET
-/// reference value (`string.Join(",", JsonText, CosmosBinary)`, no space).
-const BINARY_NEGOTIATION_FORMATS: &str = "JsonText,CosmosBinary";
+/// on point operations when binary encoding is enabled. Point operations
+/// advertise `CosmosBinary` only — matching the .NET SDK's point-op default
+/// (`RequestInvokerHandler` sets `BinarySerializationFormat =
+/// SupportedSerializationFormats.CosmosBinary`) — so the service is required to
+/// reply in binary, preserving the read-side RU/COGS benefit the caller opted
+/// into. When the caller also asked for a text payload
+/// (`request_text_response`), the driver transcodes the guaranteed-binary
+/// response back to text after receiving it, keeping the wire binary in both
+/// directions. (The broader `JsonText,CosmosBinary` negotiation applies to
+/// query/feed, which is not yet wired.)
+const BINARY_NEGOTIATION_FORMATS: &str = "CosmosBinary";
 
 fn should_retry_account_properties_connectivity_error(
     error: &crate::error::CosmosError,
@@ -2126,6 +2133,15 @@ impl CosmosDriver {
         // so the resulting async future has a fixed size even though it can
         // recurse.
         if operation.operation_type() == crate::models::OperationType::Patch {
+            // PATCH returns before the response-transcode block at the end of
+            // this function, so a patch that requested text transcoding would
+            // hand back a still-binary body. This is inert today (no patch path
+            // enables binary), but assert the assumption so the trap surfaces
+            // the moment PATCH gains binary support.
+            debug_assert!(
+                !operation.transcode_response_to_text(),
+                "PATCH bypasses response transcoding; binary support for patch must route through the shared transcode step"
+            );
             let max_attempts = operation.patch_max_attempts();
             return Box::pin(async {
                 let result = crate::driver::pipeline::patch_handler::execute(
@@ -2190,10 +2206,11 @@ impl CosmosDriver {
     fn apply_request_binary_encoding(
         operation: CosmosOperation,
     ) -> crate::error::Result<CosmosOperation> {
-        // Transcode a non-empty text body to binary (idempotent when the body
-        // is already binary).
+        // Transcode a non-empty *text* body to binary. A body that is already
+        // binary (the SDK's typed fast path) or empty is left in place — no
+        // clone — so only genuinely text bodies pay the conversion.
         let transcoded = match operation.body() {
-            Some(body) if !body.is_empty() => {
+            Some(body) if !body.is_empty() && !crate::binary_json::is_binary(body) => {
                 Some(crate::binary_json::transcode_to_binary(body).map_err(|e| {
                     crate::error::CosmosError::builder()
                         .with_status(crate::error::CosmosStatus::SERIALIZATION_REQUEST_BODY_INVALID)
@@ -5459,7 +5476,7 @@ mod tests {
             op.request_headers()
                 .supported_serialization_formats
                 .as_deref(),
-            Some("JsonText,CosmosBinary"),
+            Some("CosmosBinary"),
         );
     }
 
@@ -5477,7 +5494,7 @@ mod tests {
             op.request_headers()
                 .supported_serialization_formats
                 .as_deref(),
-            Some("JsonText,CosmosBinary"),
+            Some("CosmosBinary"),
         );
     }
 

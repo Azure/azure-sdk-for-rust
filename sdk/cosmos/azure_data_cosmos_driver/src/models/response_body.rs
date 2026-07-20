@@ -178,6 +178,12 @@ impl ResponseBody {
     /// Returns an error if a binary payload is malformed.
     pub(crate) fn transcode_to_text(self) -> crate::error::Result<Self> {
         fn convert(bytes: &Bytes) -> crate::error::Result<Bytes> {
+            // Already-text payloads are left unchanged: return a cheap refcount
+            // clone instead of round-tripping through `transcode_to_text` (which
+            // would copy the buffer into a fresh `Vec<u8>`).
+            if !crate::binary_json::is_binary(bytes) {
+                return Ok(bytes.clone());
+            }
             let text = crate::binary_json::transcode_to_text(bytes).map_err(|e| {
                 crate::error::CosmosError::builder()
                     .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
