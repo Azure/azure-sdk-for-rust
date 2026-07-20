@@ -153,7 +153,10 @@ use azure_data_cosmos_driver::fault_injection::{
     FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
     FaultInjectionRule, FaultInjectionRuleBuilder, FaultOperationType,
 };
-use azure_data_cosmos_driver::in_memory_emulator::WriteMode;
+use azure_data_cosmos_driver::in_memory_emulator::{
+    ConsistencyLevel, InMemoryEmulatorHttpClient, ReplicationConfig, VirtualAccountConfig,
+    VirtualRegion, WriteMode,
+};
 use azure_data_cosmos_driver::models::{
     AccountReference, CosmosOperation, ItemReference, PartitionKey,
 };
@@ -245,6 +248,155 @@ async fn make_hedging_driver(
     (driver, op_options)
 }
 
+async fn setup_four_region_single_write() -> MultiRegionTestContext {
+    let east_url = "https://eastus.emulator.local";
+    let west_url = "https://westus.emulator.local";
+    let config = VirtualAccountConfig::new(vec![
+        VirtualRegion::new("East US", Url::parse(east_url).unwrap()),
+        VirtualRegion::new("West US", Url::parse(west_url).unwrap()),
+        VirtualRegion::new(
+            "Central US",
+            Url::parse("https://centralus.emulator.local").unwrap(),
+        ),
+        VirtualRegion::new(
+            "North Europe",
+            Url::parse("https://northeurope.emulator.local").unwrap(),
+        ),
+    ])
+    .unwrap()
+    .with_write_mode(WriteMode::Single)
+    .with_consistency(ConsistencyLevel::Session)
+    .with_replication_config(ReplicationConfig::immediate());
+    let emulator = Arc::new(InMemoryEmulatorHttpClient::new(config));
+    let store = emulator.store();
+    store.create_database(DB_NAME);
+    store.create_container(
+        DB_NAME,
+        COLL_NAME,
+        serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"],
+            "kind": "Hash",
+            "version": 2
+        }))
+        .unwrap(),
+    );
+    MultiRegionTestContext {
+        emulator,
+        east_url: east_url.to_string(),
+        west_url: west_url.to_string(),
+    }
+}
+
+async fn hub_discovery_hedge_reaches_fourth_region(
+    item_id: &str,
+    session_delay: Duration,
+    west_403_delay: Duration,
+) {
+    let ctx = setup_four_region_single_write().await;
+    seed_item(&ctx, item_id, "pk1").await;
+
+    let rule = |id: String,
+                region: Region,
+                error: FaultInjectionErrorType,
+                delay: Duration,
+                hit_limit: Option<u32>| {
+        let mut builder = FaultInjectionRuleBuilder::new(
+            id,
+            FaultInjectionResultBuilder::new()
+                .with_error(error)
+                .with_delay(delay)
+                .with_probability(1.0)
+                .build(),
+        )
+        .with_condition(
+            FaultInjectionConditionBuilder::new()
+                .with_operation_type(FaultOperationType::ReadItem)
+                .with_region(region)
+                .build(),
+        );
+        if let Some(limit) = hit_limit {
+            builder = builder.with_hit_limit(limit);
+        }
+        Arc::new(builder.build())
+    };
+    let session = rule(
+        format!("{item_id}-session"),
+        Region::EAST_US,
+        FaultInjectionErrorType::ReadSessionNotAvailable,
+        session_delay,
+        Some(1),
+    );
+    let west = rule(
+        format!("{item_id}-west-403"),
+        Region::WEST_US,
+        FaultInjectionErrorType::WriteForbidden,
+        west_403_delay,
+        None,
+    );
+    let central = rule(
+        format!("{item_id}-central-403"),
+        Region::CENTRAL_US,
+        FaultInjectionErrorType::WriteForbidden,
+        Duration::ZERO,
+        None,
+    );
+
+    let runtime = ctx
+        .emulator
+        .runtime_builder_with_fault_rules(vec![session, west, central])
+        .build()
+        .await
+        .unwrap();
+    let account = AccountReference::with_master_key(
+        Url::parse(ACCOUNT_ENDPOINT).unwrap(),
+        "ZW11bGF0b3JrZXk=",
+    );
+    let driver = runtime
+        .create_driver(
+            DriverOptions::builder(account)
+                .with_preferred_regions(vec![
+                    Region::EAST_US,
+                    Region::WEST_US,
+                    Region::CENTRAL_US,
+                    Region::NORTH_EUROPE,
+                ])
+                .build(),
+        )
+        .await
+        .unwrap();
+    let options = OperationOptionsBuilder::new()
+        .with_availability_strategy(AvailabilityStrategy::Hedging(HedgingStrategy::new(
+            HedgeThreshold::new(Duration::from_millis(50)).unwrap(),
+        )))
+        .build();
+
+    let response = read_item_result(&driver, options, item_id, "pk1")
+        .await
+        .expect("the same operation must discover the fourth-region hub");
+    let requests = response.diagnostics().requests();
+    let statuses: Vec<_> = requests.iter().map(|request| *request.status()).collect();
+    let regions: Vec<_> = requests
+        .iter()
+        .filter_map(|request| request.region().cloned())
+        .collect();
+    assert!(statuses
+        .iter()
+        .any(|status| status.is_read_session_not_available()));
+    assert!(
+        statuses
+            .iter()
+            .filter(|status| status.is_write_forbidden())
+            .count()
+            >= 2,
+        "expected alternate and third-region hub failures before the fourth-region success; statuses={statuses:?}, regions={regions:?}"
+    );
+    assert_eq!(regions.last(), Some(&Region::NORTH_EUROPE));
+    assert!(response
+        .diagnostics()
+        .status()
+        .is_some_and(|status| status.is_success()));
+}
+
 /// Issues a `ReadItem` for `(item_id, pk)` against `driver` with the supplied
 /// `OperationOptions`. Returns the response's optional `HedgeDiagnostics` —
 /// callers assert on whether it should be `Some(_)` (hedge race ran) or
@@ -306,9 +458,125 @@ async fn read_item_result(
         .map(|maybe| maybe.expect("read_item returns a response body"))
 }
 
+async fn mixed_1008_503_hedge_recovers_with_topology_delay(
+    item_id: &str,
+    primary_delay: Duration,
+    secondary_delay: Duration,
+) {
+    let ctx = setup_multi_region(WriteMode::Single).await;
+    seed_item(&ctx, item_id, "pk1").await;
+
+    let primary = Arc::new(
+        FaultInjectionRuleBuilder::new(
+            format!("{item_id}-primary-1008"),
+            FaultInjectionResultBuilder::new()
+                .with_error(FaultInjectionErrorType::DatabaseAccountNotFound)
+                .with_delay(primary_delay)
+                .with_probability(1.0)
+                .build(),
+        )
+        .with_condition(
+            FaultInjectionConditionBuilder::new()
+                .with_operation_type(FaultOperationType::ReadItem)
+                .with_region(Region::EAST_US)
+                .build(),
+        )
+        .with_hit_limit(1)
+        .build(),
+    );
+    let secondary = Arc::new(
+        FaultInjectionRuleBuilder::new(
+            format!("{item_id}-secondary-503"),
+            FaultInjectionResultBuilder::new()
+                .with_error(FaultInjectionErrorType::ServiceUnavailable)
+                .with_delay(secondary_delay)
+                .with_probability(1.0)
+                .build(),
+        )
+        .with_condition(
+            FaultInjectionConditionBuilder::new()
+                .with_operation_type(FaultOperationType::ReadItem)
+                .with_region(Region::WEST_US)
+                .build(),
+        )
+        .with_hit_limit(1)
+        .build(),
+    );
+    let (driver, options) = make_hedging_driver(
+        &ctx,
+        Duration::from_millis(50),
+        vec![primary.clone(), secondary.clone()],
+    )
+    .await;
+
+    let started = std::time::Instant::now();
+    let response = read_item_result(&driver, options, item_id, "pk1")
+        .await
+        .expect("mixed transient hedge must recover on the sequential retry");
+    let elapsed = started.elapsed();
+
+    assert_eq!(primary.hit_count(), 1);
+    assert_eq!(secondary.hit_count(), 1);
+    let requests = response.diagnostics().requests();
+    assert_eq!(
+        requests.len(),
+        3,
+        "initial hedge must launch two legs, followed by one sequential retry"
+    );
+    assert!(requests
+        .iter()
+        .any(|request| request.status().is_database_account_not_found()));
+    assert!(requests.iter().any(|request| request.status().status_code()
+        == azure_core::http::StatusCode::ServiceUnavailable));
+    assert!(
+        elapsed >= Duration::from_millis(750),
+        "observed 1008 must apply the minimum jittered topology delay; elapsed={elapsed:?}"
+    );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Tests
 // ─────────────────────────────────────────────────────────────────────────────
+
+#[tokio::test]
+async fn hub_discovery_hedge_403_completes_before_1002() {
+    hub_discovery_hedge_reaches_fourth_region(
+        "hub-403-first",
+        Duration::from_millis(300),
+        Duration::ZERO,
+    )
+    .await;
+}
+
+#[tokio::test]
+async fn hub_discovery_hedge_1002_completes_before_403() {
+    hub_discovery_hedge_reaches_fourth_region(
+        "hub-1002-first",
+        Duration::ZERO,
+        Duration::from_millis(300),
+    )
+    .await;
+}
+
+#[tokio::test]
+async fn mixed_hedge_secondary_503_completes_before_primary_1008() {
+    mixed_1008_503_hedge_recovers_with_topology_delay(
+        "mixed-secondary-first",
+        Duration::from_millis(300),
+        Duration::ZERO,
+    )
+    .await;
+}
+
+#[tokio::test]
+async fn mixed_hedge_primary_1008_completes_before_secondary_503() {
+    mixed_1008_503_hedge_recovers_with_topology_delay(
+        "mixed-primary-first",
+        Duration::from_millis(100),
+        Duration::from_millis(300),
+    )
+    .await;
+}
 
 /// Spec §15.2 row 2 — *primary wins pre-threshold, primary-only
 /// diagnostics attached*.

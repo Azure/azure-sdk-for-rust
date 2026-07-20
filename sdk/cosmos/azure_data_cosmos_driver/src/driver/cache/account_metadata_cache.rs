@@ -11,8 +11,44 @@
 use super::AsyncCache;
 use crate::models::{AccountEndpoint, DefaultConsistencyLevel};
 use crate::options::Region;
+use futures::lock::Mutex as AsyncMutex;
 use serde::Deserialize;
-use std::sync::Arc;
+use std::{
+    collections::{BTreeSet, HashMap},
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        Arc, Mutex,
+    },
+};
+
+#[derive(Debug)]
+struct RefreshGate {
+    lock: AsyncMutex<()>,
+    requests: Mutex<RefreshRequests>,
+    installed_sequence: AtomicU64,
+}
+
+#[derive(Debug, Default)]
+struct RefreshRequests {
+    next_sequence: u64,
+    pending: BTreeSet<u64>,
+}
+
+struct RefreshReservation {
+    gate: Arc<RefreshGate>,
+    sequence: u64,
+}
+
+impl Drop for RefreshReservation {
+    fn drop(&mut self) {
+        self.gate
+            .requests
+            .lock()
+            .unwrap()
+            .pending
+            .remove(&self.sequence);
+    }
+}
 
 // =============================================================================
 // Supporting types for the account JSON contract
@@ -277,12 +313,13 @@ impl AccountProperties {
 /// Stores account properties keyed by account endpoint. Freshness is owned
 /// by the periodic background loop in
 /// [`LocationStateStore::start_account_refresh_loop`](crate::driver::routing::LocationStateStore::start_account_refresh_loop),
-/// which atomically replaces cache entries via [`Self::get_or_refresh_with`].
+/// which atomically replaces cache entries via [`Self::refresh_with`].
 /// The per-operation hot path uses [`Self::get_or_fetch`] for a cheap
 /// fast-path lookup with no staleness check or extra locking.
 #[derive(Debug)]
 pub(crate) struct AccountMetadataCache {
     cache: AsyncCache<AccountEndpoint, AccountProperties>,
+    refresh_gates: Mutex<HashMap<AccountEndpoint, Arc<RefreshGate>>>,
 }
 
 impl AccountMetadataCache {
@@ -290,6 +327,7 @@ impl AccountMetadataCache {
     pub(crate) fn new() -> Self {
         Self {
             cache: AsyncCache::new(),
+            refresh_gates: Mutex::new(HashMap::new()),
         }
     }
 
@@ -336,30 +374,80 @@ impl AccountMetadataCache {
         self.cache.get(endpoint).await
     }
 
-    /// Atomically replaces the cached account properties for an endpoint by
-    /// running the supplied factory under the cache's single-pending-I/O
-    /// lock. Use this when the caller has already produced fresh data
-    /// (e.g. via a fallible network fetch performed outside the cache lock)
-    /// and wants to install it without risking the invalidate-then-fetch
-    /// race that would otherwise let concurrent readers re-populate the
-    /// cache with stale data in the gap.
-    ///
-    /// `should_force_refresh` is invoked with the existing value (if any);
-    /// returning `true` always triggers the factory.
-    pub(crate) async fn get_or_refresh_with<F, Fut, P>(
+    /// Serializes refresh fetch/install for one account endpoint across every
+    /// driver sharing this cache. Different account endpoints remain
+    /// independent, and operation hot paths continue reading the old value
+    /// while a refresh is in progress.
+    pub(crate) async fn refresh_with<F, Fut, C, CFut, K>(
         &self,
         endpoint: AccountEndpoint,
-        should_force_refresh: P,
-        factory: F,
-    ) -> Option<Arc<AccountProperties>>
+        refresh_fn: F,
+        consume_fn: C,
+        commit_fn: K,
+    ) -> crate::error::Result<()>
     where
-        F: FnOnce() -> Fut,
-        Fut: std::future::Future<Output = AccountProperties>,
-        P: FnOnce(Option<&AccountProperties>) -> bool,
+        F: FnOnce(Option<Arc<AccountProperties>>) -> Fut,
+        Fut: std::future::Future<Output = crate::error::Result<AccountProperties>>,
+        C: FnOnce(Arc<AccountProperties>) -> CFut,
+        CFut: std::future::Future<Output = ()>,
+        K: FnOnce(bool),
     {
-        self.cache
-            .get_or_refresh_with(endpoint, should_force_refresh, factory)
-            .await
+        let gate = {
+            let mut gates = self.refresh_gates.lock().unwrap();
+            Arc::clone(gates.entry(endpoint.clone()).or_insert_with(|| {
+                Arc::new(RefreshGate {
+                    lock: AsyncMutex::new(()),
+                    requests: Mutex::new(RefreshRequests::default()),
+                    installed_sequence: AtomicU64::new(0),
+                })
+            }))
+        };
+        let sequence = {
+            let mut requests = gate.requests.lock().unwrap();
+            requests.next_sequence += 1;
+            let sequence = requests.next_sequence;
+            requests.pending.insert(sequence);
+            sequence
+        };
+        let _reservation = RefreshReservation {
+            gate: Arc::clone(&gate),
+            sequence,
+        };
+        let _guard = gate.lock.lock().await;
+        if sequence < gate.installed_sequence.load(Ordering::Acquire) {
+            let properties = self
+                .cache
+                .get(&endpoint)
+                .await
+                .expect("a newer refresh sequence must have installed a value");
+            consume_fn(properties).await;
+            commit_fn(false);
+            return Ok(());
+        }
+        let previous = self.cache.get(&endpoint).await;
+        let properties = refresh_fn(previous).await?;
+        let properties = if sequence < gate.installed_sequence.load(Ordering::Acquire) {
+            self.cache
+                .get(&endpoint)
+                .await
+                .expect("a newer refresh sequence must have installed a value")
+        } else {
+            let properties = self
+                .cache
+                .get_or_refresh_with(endpoint, |_| true, || async { properties })
+                .await
+                .expect("refresh factory always produces account properties");
+            gate.installed_sequence.store(sequence, Ordering::Release);
+            properties
+        };
+        consume_fn(properties).await;
+        // Prevent a newer live request from being registered between this
+        // check and the caller's local timestamp commit.
+        let requests = gate.requests.lock().unwrap();
+        let latest = gate.installed_sequence.load(Ordering::Acquire) == sequence
+            && !requests.pending.iter().any(|pending| *pending > sequence);
+        commit_fn(latest);
+        Ok(())
     }
 }
 
@@ -456,6 +544,121 @@ mod tests {
 
         assert_eq!(props1.write_region().unwrap().as_str(), "westus");
         assert_eq!(props2.write_region().unwrap().as_str(), "eastus");
+    }
+
+    #[tokio::test]
+    async fn cancelled_newer_waiter_does_not_suppress_active_refresh() {
+        let cache = Arc::new(AccountMetadataCache::new());
+        let endpoint = test_endpoint("cancelled-waiter");
+        let started = Arc::new(tokio::sync::Notify::new());
+        let release = Arc::new(tokio::sync::Notify::new());
+        let active_committed = Arc::new(std::sync::atomic::AtomicBool::new(false));
+
+        let active = {
+            let cache = Arc::clone(&cache);
+            let endpoint = endpoint.clone();
+            let started = Arc::clone(&started);
+            let release = Arc::clone(&release);
+            let committed = Arc::clone(&active_committed);
+            tokio::spawn(async move {
+                cache
+                    .refresh_with(
+                        endpoint,
+                        move |_| async move {
+                            started.notify_one();
+                            release.notified().await;
+                            Ok(test_properties("westus"))
+                        },
+                        |_| async {},
+                        move |latest| committed.store(latest, Ordering::SeqCst),
+                    )
+                    .await
+            })
+        };
+        started.notified().await;
+
+        let waiter = {
+            let cache = Arc::clone(&cache);
+            let endpoint = endpoint.clone();
+            tokio::spawn(async move {
+                cache
+                    .refresh_with(
+                        endpoint,
+                        |_| async { Ok(test_properties("eastus")) },
+                        |_| async {},
+                        |_| {},
+                    )
+                    .await
+            })
+        };
+        tokio::task::yield_now().await;
+        let gate = Arc::clone(cache.refresh_gates.lock().unwrap().get(&endpoint).unwrap());
+        assert_eq!(gate.requests.lock().unwrap().next_sequence, 2);
+
+        waiter.abort();
+        let _ = waiter.await;
+
+        release.notify_one();
+        active.await.unwrap().unwrap();
+        assert!(active_committed.load(Ordering::SeqCst));
+        assert_eq!(
+            cache
+                .get(&endpoint)
+                .await
+                .unwrap()
+                .write_region()
+                .unwrap()
+                .as_str(),
+            "westus"
+        );
+    }
+
+    #[tokio::test]
+    async fn superseded_sequence_uses_cache_without_fallible_fetch() {
+        let cache = AccountMetadataCache::new();
+        let endpoint = test_endpoint("superseded");
+        cache
+            .refresh_with(
+                endpoint.clone(),
+                |_| async { Ok(test_properties("westus")) },
+                |_| async {},
+                |_| {},
+            )
+            .await
+            .unwrap();
+        let gate = Arc::clone(cache.refresh_gates.lock().unwrap().get(&endpoint).unwrap());
+        // Simulate an older waiter acquiring the non-FIFO mutex after sequence
+        // 3 already installed. Its next allocated sequence is 2.
+        gate.requests.lock().unwrap().next_sequence = 1;
+        gate.installed_sequence.store(3, Ordering::Release);
+        let fetches = Arc::new(AtomicUsize::new(0));
+        let consumed = Arc::new(AtomicUsize::new(0));
+        let committed = Arc::new(std::sync::atomic::AtomicBool::new(true));
+        let fetches_clone = Arc::clone(&fetches);
+        let consumed_clone = Arc::clone(&consumed);
+        let committed_clone = Arc::clone(&committed);
+
+        cache
+            .refresh_with(
+                endpoint,
+                move |_| async move {
+                    fetches_clone.fetch_add(1, Ordering::SeqCst);
+                    Err(crate::error::CosmosError::builder()
+                        .with_message("superseded fetch must not run")
+                        .build())
+                },
+                move |properties| async move {
+                    assert_eq!(properties.write_region().unwrap().as_str(), "westus");
+                    consumed_clone.fetch_add(1, Ordering::SeqCst);
+                },
+                move |latest| committed_clone.store(latest, Ordering::SeqCst),
+            )
+            .await
+            .unwrap();
+
+        assert!(!committed.load(Ordering::SeqCst));
+        assert_eq!(fetches.load(Ordering::SeqCst), 0);
+        assert_eq!(consumed.load(Ordering::SeqCst), 1);
     }
 
     #[tokio::test]

@@ -10,6 +10,7 @@ use std::time::Duration;
 
 use azure_core::http::Url;
 
+use azure_data_cosmos_driver::diagnostics::PipelineType;
 use azure_data_cosmos_driver::driver::CosmosDriver;
 use azure_data_cosmos_driver::fault_injection::{
     FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
@@ -362,13 +363,14 @@ async fn all_regions_403_1008_bounded_retries_then_bubble_up() {
     seed_item_via_driver(&driver, "all-stale-item").await;
     recorder.clear();
 
-    // Timeout is the runaway-loop guard for the backend-failover budget.
+    let started = std::time::Instant::now();
     let result = tokio::time::timeout(
-        Duration::from_secs(180),
+        Duration::from_secs(20),
         read_item(&driver, "all-stale-item"),
     )
     .await
-    .expect("post-fix retry budget must be bounded — operation hung past 180s");
+    .expect("five-second retry budget must complete within 20s");
+    let elapsed = started.elapsed();
 
     let err = result.expect_err("with both regions returning 1008, the read must fail");
     let status = err.status();
@@ -382,18 +384,21 @@ async fn all_regions_403_1008_bounded_retries_then_bubble_up() {
     let diagnostics = err
         .diagnostics()
         .expect("wire-response error must carry diagnostics");
-    assert!(
-        diagnostics.request_count() >= 2,
-        "post-fix: SDK must attempt ≥ 2 requests (one per region) \
-         before bubbling up 1008; observed request_count={}",
-        diagnostics.request_count(),
+    let data_attempts = diagnostics
+        .requests()
+        .iter()
+        .filter(|request| {
+            request.pipeline_type() == PipelineType::DataPlane
+                && request.status().is_database_account_not_found()
+        })
+        .count();
+    assert_eq!(
+        data_attempts, 5,
+        "five-second 1008 policy must hedge once, then make three sequential retries"
     );
-    // Sanity guardrail against an unbounded retry loop.
     assert!(
-        diagnostics.request_count() <= 250,
-        "retry budget for 1008 must be bounded; observed \
-         request_count={} which suggests an infinite-retry regression",
-        diagnostics.request_count(),
+        elapsed >= Duration::from_secs(5) && elapsed < Duration::from_secs(20),
+        "five-second 1008 policy took {elapsed:?}"
     );
 }
 
@@ -423,6 +428,74 @@ async fn read_item_403_1008_triggers_topology_refresh() {
         refresh_count >= 1,
         "post-fix: receipt of 1008 must trigger at least one \
          account-topology refresh (`GET /`); observed refresh_count={refresh_count}",
+    );
+}
+
+#[tokio::test]
+async fn failed_event_refresh_is_retried_within_same_operation() {
+    let recorder = HostRecorder::new();
+    let east_1008 = region_fault_rule(
+        "1008-east-first-leg",
+        FaultOperationType::ReadItem,
+        Region::EAST_US,
+        FaultInjectionErrorType::DatabaseAccountNotFound,
+        Some(1),
+    );
+    let west_1008 = region_fault_rule(
+        "1008-west-second-leg",
+        FaultOperationType::ReadItem,
+        Region::WEST_US,
+        FaultInjectionErrorType::DatabaseAccountNotFound,
+        Some(1),
+    );
+    // One complete refresh probes two distinct emulator endpoints. Fault
+    // exactly those requests; the second hedge-leg refresh must retry
+    // immediately rather than waiting for the five-second throttle interval.
+    let metadata_rule = Arc::new(
+        FaultInjectionRuleBuilder::new(
+            "metadata-first-refresh-fails",
+            FaultInjectionResultBuilder::new()
+                .with_error(FaultInjectionErrorType::ServiceUnavailable)
+                .with_probability(1.0)
+                .build(),
+        )
+        .with_condition(
+            FaultInjectionConditionBuilder::new()
+                .with_operation_type(FaultOperationType::MetadataReadDatabaseAccount)
+                .build(),
+        )
+        .with_hit_limit(2)
+        .build(),
+    );
+    east_1008.disable();
+    west_1008.disable();
+    metadata_rule.disable();
+
+    let (driver, _account) = build_driver_with_faults(
+        WriteMode::Multi,
+        recorder.clone(),
+        vec![east_1008.clone(), west_1008.clone(), metadata_rule.clone()],
+    )
+    .await;
+    seed_item_via_driver(&driver, "refresh-recovery-item").await;
+    recorder.clear();
+    east_1008.enable();
+    west_1008.enable();
+    metadata_rule.enable();
+
+    let response = read_item(&driver, "refresh-recovery-item")
+        .await
+        .expect("later event-driven refresh must recover the operation")
+        .expect("read returns a response");
+    assert!(response
+        .diagnostics()
+        .status()
+        .is_some_and(|s| s.is_success()));
+    assert_eq!(metadata_rule.hit_count(), 2);
+    assert!(
+        recorder.account_read_count() >= 1,
+        "expected a successful topology fetch after two injected failures; observed {}",
+        recorder.account_read_count()
     );
 }
 
@@ -516,13 +589,14 @@ async fn all_regions_403_3_bounded_retries_then_bubble_up() {
 
     recorder.clear();
 
-    // Timeout is the runaway-loop guard for the backend-failover budget.
+    let started = std::time::Instant::now();
     let result = tokio::time::timeout(
-        Duration::from_secs(180),
+        Duration::from_secs(20),
         create_item(&driver, "403-3-all-forbidden-item"),
     )
     .await
-    .expect("retry budget must be bounded — operation hung past 180s");
+    .expect("five-second retry budget must complete within 20s");
+    let elapsed = started.elapsed();
 
     let err = result.expect_err("with both regions returning 403/3, the create must fail");
     let status = err.status();
@@ -536,11 +610,21 @@ async fn all_regions_403_3_bounded_retries_then_bubble_up() {
     let diagnostics = err
         .diagnostics()
         .expect("wire-response error must carry diagnostics");
+    let data_attempts = diagnostics
+        .requests()
+        .iter()
+        .filter(|request| {
+            request.pipeline_type() == PipelineType::DataPlane
+                && request.status().is_write_forbidden()
+        })
+        .count();
+    assert_eq!(
+        data_attempts, 4,
+        "five-second 403/3 policy must produce initial + 3 retry attempts"
+    );
     assert!(
-        diagnostics.request_count() <= 250,
-        "retry budget for 403/3 must be bounded; observed \
-         request_count={} which suggests an infinite-retry regression",
-        diagnostics.request_count(),
+        elapsed >= Duration::from_secs(5) && elapsed < Duration::from_secs(20),
+        "five-second 403/3 policy took {elapsed:?}"
     );
 }
 

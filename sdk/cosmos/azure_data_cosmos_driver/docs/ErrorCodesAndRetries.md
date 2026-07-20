@@ -59,7 +59,11 @@ Both 403/3 and 403/1008 signal that the cached topology in the SDK has diverged 
 
 **Why a dedicated 5s cumulative budget?** The 3-attempt generic failover budget can be exhausted before the refreshed topology becomes usable, turning a recoverable convergence window into an application-visible failure. The dedicated policy starts at 1 s, doubles on each retry, applies ±25% jitter, and caps each delay at 15 s. The final delay is truncated to the remaining cumulative budget, and a 10-attempt cap is retained as a defensive bound. This provides fast early retries without hot-looping cross-region requests while the topology settles.
 
-Live add/remove-region experiments across 2–10 physical partitions and 8–38 GB showed the SDK-visible transition completing in 263–314 ms with no surfaced topology errors. A follow-up read experiment completed the transition in 263 ms with 0 surfaced errors across 1,257 point reads.
+Live add/remove-region experiments across 2–10 physical partitions and 8–38 GB showed the SDK-visible transition completing in 263–314 ms with no surfaced topology errors. A separate single-probe read experiment completed the transition in 263 ms with 0 surfaced errors across 1,257 point reads.
+
+An all-partition experiment mapped one logical partition key into each of 10 measured physical ranges and round-robin read all 10 probes while a region was removed. Across 8,399 reads, every partition observed 21–22 internal `403/1008` responses and surfaced 0 errors. Nine transition reads completed in 167–554 ms; the first partition triggered the shared topology refresh and completed in 1.78 s.
+
+Hedging is limited to the initial topology round. If the initial primary and alternate both return `403/1008`, subsequent delayed topology retries are sequential; the five-second policy therefore produces five physical requests (two initial hedge legs plus three retries), not a new hedge race on every round.
 
 For single-write `403/3`, a real failover with the generic three-retry policy surfaced 9 application errors during a ~4.8 s convergence window. Repeating failovers with 15s, 10s, and 5s backend budgets each surfaced 0 application errors. The 5s run observed 12 internal `403/3` responses across 401 writes; its longest operation succeeded after 6.35 s including request and refresh overhead.
 
@@ -67,9 +71,14 @@ Persistent fault injection exhausted the 5s budget in three retries (four total 
 
 #### `excluded_regions` interaction
 
-The dedicated backend-failover budget filters out `excluded_regions` on every attempt. If the only remaining valid region is excluded, the operation exhausts its budget and surfaces the original 403/3 or 403/1008 to the caller.
+The dedicated backend-failover policy filters out `excluded_regions` while selecting preferred endpoints. Exclusions are honored as long as at least one preferred endpoint remains eligible.
 
-Honoring `excluded_regions` uniformly is a deliberate choice. Customer policy is sacred — the SDK does not route into a region the caller explicitly opted out of, even under pressure (compliance boundaries, cost controls, latency floors, deliberate manual failover). The trade-off is lower availability when the excluded region is the only healthy one. An earlier prototype carried a per-operation `bypass_excluded_regions` flag on the theory that 1008 means "your view of the topology is stale" and the region list might also be stale, but the customer's `excluded_regions` value is set per-operation at call time — it is a live preference, not derived from cached topology, so conflating those two concerns surprises callers and breaks DR drills.
+Two established availability fallbacks can bypass exclusions:
+
+- If every preferred region is excluded, endpoint resolution makes one last-resort attempt against the first preferred write endpoint (the authoritative hub) rather than failing without sending a request.
+- A PPAF per-partition write override is selected from backend-directed failover state and is not re-filtered through `excluded_regions`; it persists until the backend signals another routing change.
+
+Outside these explicit exceptions, excluded regions remain a hard per-operation routing filter. Callers requiring strict “never contact this region” behavior should avoid excluding every preferred endpoint and should not enable PPAF for the affected write path.
 
 ### 404/1002 — Read Session Not Available
 

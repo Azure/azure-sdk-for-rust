@@ -13,7 +13,7 @@ use std::{
 };
 
 use crossbeam_epoch::{self as epoch, Atomic, Owned};
-use futures::future::BoxFuture;
+use futures::{future::BoxFuture, lock::Mutex as AsyncMutex};
 use url::Url;
 
 #[cfg(feature = "tokio")]
@@ -120,6 +120,7 @@ pub(crate) struct LocationStateStore {
     endpoint_unavailability_ttl: Duration,
     refresh_interval: Duration,
     last_refresh_epoch_ms: AtomicU64,
+    refresh_gate: AsyncMutex<()>,
     /// The etag of the last `AccountProperties` that was synced.
     /// Used to skip the CAS loop when the account metadata hasn't changed.
     last_synced_etag: std::sync::Mutex<String>,
@@ -217,6 +218,7 @@ impl LocationStateStore {
             // `BACKGROUND_REFRESH_INTERVAL`.
             refresh_interval: Duration::from_secs(5),
             last_refresh_epoch_ms: AtomicU64::new(0),
+            refresh_gate: AsyncMutex::new(()),
             last_synced_etag: std::sync::Mutex::new(String::new()),
             last_synced_properties: std::sync::Mutex::new(None),
             account_version: AtomicU64::new(0),
@@ -434,20 +436,23 @@ impl LocationStateStore {
     async fn refresh_account_properties_if_due(&self) {
         let now_ms = epoch_millis();
         let refresh_after_ms = self.refresh_interval.as_millis() as u64;
-        let last = self.last_refresh_epoch_ms.load(Ordering::Acquire);
+        let observed_last = self.last_refresh_epoch_ms.load(Ordering::Acquire);
 
-        if now_ms.saturating_sub(last) < refresh_after_ms {
+        if now_ms.saturating_sub(observed_last) < refresh_after_ms {
             return;
         }
 
-        if self
-            .last_refresh_epoch_ms
-            .compare_exchange(last, now_ms, Ordering::AcqRel, Ordering::Acquire)
-            .is_err()
+        let _guard = self.refresh_gate.lock().await;
+        let current_last = self.last_refresh_epoch_ms.load(Ordering::Acquire);
+        if current_last != observed_last
+            || epoch_millis().saturating_sub(current_last) < refresh_after_ms
         {
             return;
         }
 
+        // The inner refresh advances last_refresh_epoch_ms only after a
+        // successful fetch/cache update. A failed or cancelled attempt leaves
+        // the clock unchanged so the next topology retry can recover.
         self.refresh_account_properties_inner().await;
     }
 
@@ -463,6 +468,11 @@ impl LocationStateStore {
     /// event-driven path is NOT throttled and is free to retry recovery
     /// immediately.
     async fn force_refresh_account_properties(&self) {
+        let observed_last = self.last_refresh_epoch_ms.load(Ordering::Acquire);
+        let _guard = self.refresh_gate.lock().await;
+        if self.last_refresh_epoch_ms.load(Ordering::Acquire) != observed_last {
+            return;
+        }
         self.refresh_account_properties_inner().await;
     }
 
@@ -470,33 +480,38 @@ impl LocationStateStore {
     /// (rate-limited, event-driven) and `force_refresh_account_properties`
     /// (timer-driven).
     ///
-    /// Performs the fallible network fetch first (outside any cache lock),
-    /// then atomically replaces the cached value via
-    /// [`AccountMetadataCache::replace`] / `get_or_refresh_with`. This avoids
-    /// the race where a concurrent `execute_operation` thread could hit the
-    /// cache during the gap between an `invalidate` and a follow-up
-    /// `get_or_fetch` — a bug pattern present in earlier revisions of this
-    /// code. On success the routing snapshot is CAS-updated and the
-    /// rate-limit clock advances; on failure the previous snapshot and
-    /// rate-limit timestamp are left intact so the event-driven path can
-    /// retry recovery immediately.
+    /// The shared metadata cache orders concurrent refresh installations so an
+    /// earlier request completing late cannot overwrite a later result, while
+    /// operation hot paths keep reading the previous value. On success the
+    /// routing snapshot is CAS-updated and the rate-limit clock advances; on
+    /// failure the previous snapshot and timestamp remain intact.
     async fn refresh_account_properties_inner(&self) {
-        // Capture the previous properties so the refresh callback can use
-        // them for regional fallback if the primary endpoint fails. We
-        // intentionally do NOT invalidate the cache here — concurrent
-        // `execute_operation` callers should keep getting the prior value
-        // until the new one is ready, rather than seeing a hole and racing
-        // to refill it themselves.
-        let previous_props = self
+        let refresh_fn = Arc::clone(&self.account_refresh_fn);
+        let default_endpoint = self.default_endpoint.clone();
+        let completed = self
             .account_metadata_cache
-            .get(&self.account_endpoint)
+            .refresh_with(
+                self.account_endpoint.clone(),
+                move |previous| (refresh_fn)(previous),
+                |properties| async move {
+                    // Probe Gateway 2.0 proxy endpoints before syncing so the
+                    // rebuilt snapshot reflects the probe outcome.
+                    self.run_connectivity_probe(&properties).await;
+                    self.sync_account_properties(properties, &default_endpoint);
+                },
+                |latest_request| {
+                    // This callback runs while the shared endpoint gate and
+                    // request-sequence lock are still held.
+                    if latest_request {
+                        self.last_refresh_epoch_ms
+                            .store(epoch_millis(), Ordering::Release);
+                    }
+                },
+            )
             .await;
 
-        let refresh_fn = Arc::clone(&self.account_refresh_fn);
-        let fetched = (refresh_fn)(previous_props).await;
-
-        let new_properties = match fetched {
-            Ok(props) => props,
+        match completed {
+            Ok(()) => {}
             Err(e) => {
                 tracing::warn!(
                     endpoint = %self.account_endpoint,
@@ -505,44 +520,7 @@ impl LocationStateStore {
                 );
                 return;
             }
-        };
-
-        // Atomically replace the cache entry under the cache's internal
-        // single-pending-I/O lock. `_existing` is provided for the predicate
-        // but we always replace because we just produced fresh data.
-        let cached_arc = self
-            .account_metadata_cache
-            .get_or_refresh_with(
-                self.account_endpoint.clone(),
-                |_existing| true,
-                || async { new_properties },
-            )
-            .await;
-
-        // Only advance the rate-limit clock once a fresh value is in the
-        // cache — if the cache somehow returned None (logically impossible
-        // here since the factory always produces a value) we don't want to
-        // throttle the event-driven path either.
-        let Some(properties) = cached_arc else {
-            tracing::warn!(
-                endpoint = %self.account_endpoint,
-                "LocationStateStore: account metadata cache produced no value after refresh; routing snapshot not updated",
-            );
-            return;
-        };
-
-        self.last_refresh_epoch_ms
-            .store(epoch_millis(), Ordering::Release);
-
-        // Probe Gateway 2.0 proxy endpoints BEFORE syncing into the routing
-        // snapshot, so the subsequent rebuild reflects the probe outcome
-        // (via `effective_gateway_v2_enabled`). A transition in the probe
-        // gate clears `last_synced_etag` inside the helper so the same-etag
-        // fast path in `sync_account_properties` does not skip the rebuild.
-        self.run_connectivity_probe(&properties).await;
-
-        let default_endpoint = self.default_endpoint.clone();
-        self.sync_account_properties(properties, &default_endpoint);
+        }
     }
 
     /// Runs the Gateway 2.0 connectivity probe, then syncs the routing
@@ -1499,10 +1477,9 @@ mod tests {
         assert_eq!(refresh_calls.load(Ordering::SeqCst), 1);
     }
 
-    /// Regression guard: a failed timer-driven refresh must NOT advance the
-    /// rate-limit clock, so the event-driven path (`LocationEffect::RefreshAccountProperties`)
-    /// can attempt recovery immediately rather than waiting out the
-    /// 5-second `refresh_interval` window.
+    /// Regression guard: a failed event-driven refresh must NOT advance the
+    /// rate-limit clock, so the next topology retry can attempt recovery
+    /// immediately rather than waiting out the 5-second refresh interval.
     #[tokio::test]
     async fn failed_refresh_does_not_throttle_event_driven_path() {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
@@ -1545,23 +1522,172 @@ mod tests {
             None,
         );
 
-        // First refresh: fails. Should NOT advance last_refresh_epoch_ms,
-        // so the next event-driven refresh is free to retry immediately.
-        store.force_refresh_account_properties().await;
+        // First event-driven refresh fails. It must release the in-progress
+        // guard and leave last_refresh_epoch_ms unchanged.
+        store
+            .apply(&[LocationEffect::RefreshAccountProperties])
+            .await;
         assert_eq!(total_refreshes.load(Ordering::SeqCst), 1);
         assert_eq!(success_refreshes.load(Ordering::SeqCst), 0);
 
-        // Immediate event-driven refresh — must NOT be throttled by the
-        // failed timer-driven attempt above.
+        // Immediate event-driven retry must not be throttled by the failure.
         store
             .apply(&[LocationEffect::RefreshAccountProperties])
             .await;
         assert_eq!(
             total_refreshes.load(Ordering::SeqCst),
             2,
-            "event-driven refresh was incorrectly throttled by a previously-failed timer-driven refresh"
+            "failed event-driven refresh incorrectly suppressed the retry"
         );
         assert_eq!(success_refreshes.load(Ordering::SeqCst), 1);
+    }
+
+    #[tokio::test]
+    async fn periodic_and_event_refreshes_do_not_overlap() {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        let calls = Arc::new(AtomicUsize::new(0));
+        let first_started = Arc::new(tokio::sync::Notify::new());
+        let calls_clone = Arc::clone(&calls);
+        let first_started_clone = Arc::clone(&first_started);
+        let refresh = Arc::new(move |_previous: Option<Arc<AccountProperties>>| {
+            let calls = Arc::clone(&calls_clone);
+            let first_started = Arc::clone(&first_started_clone);
+            let payload = test_refresh_payload();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move {
+                    let call = calls.fetch_add(1, Ordering::SeqCst);
+                    if call == 0 {
+                        first_started.notify_one();
+                        std::future::pending::<()>().await;
+                    }
+                    Ok(payload)
+                });
+            fut
+        });
+        let store = Arc::new(LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint,
+            refresh,
+            false,
+            Duration::from_secs(60),
+            PartitionFailoverOptions::default(),
+            Vec::new(),
+            None,
+        ));
+
+        let periodic_store = Arc::clone(&store);
+        let periodic =
+            tokio::spawn(async move { periodic_store.force_refresh_account_properties().await });
+        first_started.notified().await;
+
+        // Event-driven recovery waits for the active periodic refresh instead
+        // of starting a competing fetch or returning early.
+        let event_store = Arc::clone(&store);
+        let event = tokio::spawn(async move {
+            event_store
+                .apply(&[LocationEffect::RefreshAccountProperties])
+                .await;
+        });
+        tokio::task::yield_now().await;
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+
+        periodic.abort();
+        let _ = periodic.await;
+        event.await.unwrap();
+
+        // Cancellation releases the mutex and the waiting event refresh
+        // immediately retries to completion.
+        assert_eq!(calls.load(Ordering::SeqCst), 2);
+        assert!(store.last_refresh_epoch_ms.load(Ordering::Acquire) > 0);
+    }
+
+    #[tokio::test]
+    async fn slower_refresh_cannot_overwrite_newer_shared_cache_value() {
+        let cache = Arc::new(AccountMetadataCache::new());
+        let endpoint = test_endpoint();
+        let default_endpoint = CosmosEndpoint::global(endpoint.url().clone());
+        let mut initial = test_refresh_payload();
+        initial.etag = "initial".to_string();
+        cache
+            .get_or_fetch(endpoint.clone(), || async { Ok(initial) })
+            .await
+            .unwrap();
+
+        let slow_started = Arc::new(tokio::sync::Notify::new());
+        let release_slow = Arc::new(tokio::sync::Notify::new());
+        let slow_started_clone = Arc::clone(&slow_started);
+        let release_slow_clone = Arc::clone(&release_slow);
+        let slow_refresh = Arc::new(move |_previous: Option<Arc<AccountProperties>>| {
+            let slow_started = Arc::clone(&slow_started_clone);
+            let release_slow = Arc::clone(&release_slow_clone);
+            let mut stale = test_refresh_payload();
+            stale.etag = "stale".to_string();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move {
+                    slow_started.notify_one();
+                    release_slow.notified().await;
+                    Ok(stale)
+                });
+            fut
+        });
+        let fast_refresh = Arc::new(move |_previous: Option<Arc<AccountProperties>>| {
+            let mut fresh = test_refresh_payload();
+            fresh.etag = "fresh".to_string();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move { Ok(fresh) });
+            fut
+        });
+
+        let slow_store = Arc::new(LocationStateStore::new(
+            Arc::clone(&cache),
+            endpoint.clone(),
+            default_endpoint.clone(),
+            slow_refresh,
+            false,
+            Duration::from_secs(60),
+            PartitionFailoverOptions::default(),
+            Vec::new(),
+            None,
+        ));
+        let fast_store = Arc::new(LocationStateStore::new(
+            Arc::clone(&cache),
+            endpoint.clone(),
+            default_endpoint,
+            fast_refresh,
+            false,
+            Duration::from_secs(60),
+            PartitionFailoverOptions::default(),
+            Vec::new(),
+            None,
+        ));
+
+        let slow_task = {
+            let store = Arc::clone(&slow_store);
+            tokio::spawn(async move { store.force_refresh_account_properties().await })
+        };
+        slow_started.notified().await;
+        let fast_task = {
+            let store = Arc::clone(&fast_store);
+            tokio::spawn(async move { store.force_refresh_account_properties().await })
+        };
+        tokio::task::yield_now().await;
+        release_slow.notify_one();
+        slow_task.await.unwrap();
+        fast_task.await.unwrap();
+
+        let cached = cache.get(&endpoint).await.unwrap();
+        assert_eq!(cached.etag, "fresh");
+        assert_eq!(
+            fast_store.last_synced_etag.lock().unwrap().as_str(),
+            "fresh",
+            "the later refresh must fetch and install after the earlier refresh"
+        );
+        assert_eq!(
+            slow_store.last_refresh_epoch_ms.load(Ordering::Acquire),
+            0,
+            "a store superseded by a queued refresh must remain unthrottled"
+        );
     }
 
     #[tokio::test]
@@ -2043,6 +2169,24 @@ mod tests {
         }
     }
 
+    #[derive(Debug, Default)]
+    struct CancellationProbe {
+        calls: AtomicUsize,
+        started: tokio::sync::Notify,
+    }
+
+    #[async_trait::async_trait]
+    impl ConnectivityProbe for CancellationProbe {
+        async fn probe_endpoints(&self, _: Vec<(Region, ProbeRole, Url)>) -> ProbeOutcome {
+            let call = self.calls.fetch_add(1, Ordering::SeqCst);
+            if call == 0 {
+                self.started.notify_one();
+                std::future::pending::<()>().await;
+            }
+            ProbeOutcome::AllHealthy
+        }
+    }
+
     fn refresh_payload_with_g2() -> AccountProperties {
         serde_json::from_value(serde_json::json!({
             "_self": "",
@@ -2168,6 +2312,49 @@ mod tests {
                 .is_some(),
             "successful probe must restore Gateway 2.0 write URL without a metadata change"
         );
+    }
+
+    #[cfg(feature = "tokio")]
+    #[tokio::test]
+    async fn cancelled_probe_does_not_throttle_next_event_refresh() {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
+            let payload = refresh_payload_with_g2();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move { Ok(payload) });
+            fut
+        });
+        let probe = Arc::new(CancellationProbe::default());
+        let store = Arc::new(LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint,
+            refresh,
+            true,
+            Duration::from_secs(60),
+            PartitionFailoverOptions::default(),
+            Vec::new(),
+            Some(probe.clone() as Arc<dyn ConnectivityProbe>),
+        ));
+
+        let first_store = Arc::clone(&store);
+        let first = tokio::spawn(async move {
+            first_store
+                .apply(&[LocationEffect::RefreshAccountProperties])
+                .await;
+        });
+        probe.started.notified().await;
+        first.abort();
+        let _ = first.await;
+
+        assert_eq!(store.last_refresh_epoch_ms.load(Ordering::Acquire), 0);
+        assert!(store.refresh_gate.try_lock().is_some());
+
+        store
+            .apply(&[LocationEffect::RefreshAccountProperties])
+            .await;
+        assert_eq!(probe.calls.load(Ordering::SeqCst), 2);
+        assert!(store.last_refresh_epoch_ms.load(Ordering::Acquire) > 0);
     }
 
     /// Once a region's probe succeeds it is cached permanently: a later

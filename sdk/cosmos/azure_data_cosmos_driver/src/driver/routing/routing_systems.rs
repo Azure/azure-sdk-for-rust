@@ -2188,6 +2188,51 @@ mod tests {
     }
 
     #[test]
+    fn ordered_hub_discovery_failures_reach_healthy_fourth_region() {
+        let endpoints = [
+            regional_endpoint("region-a"),
+            regional_endpoint("region-b"),
+            regional_endpoint("region-c"),
+            regional_endpoint("region-d"),
+        ];
+        let mut account = single_master_account();
+        account.preferred_read_endpoints = endpoints.to_vec().into();
+        let mut state = partition_state_ppaf_enabled();
+        state.failover_overrides.insert(
+            pk("0"),
+            PartitionFailoverEntry {
+                current_endpoint: endpoints[0].clone(),
+                first_failed_endpoint: endpoints[0].clone(),
+                failed_endpoints: Default::default(),
+                read_failure_count: 0,
+                write_failure_count: 0,
+                first_failure_time: Instant::now(),
+                last_failure_time: Instant::now(),
+                health_status: HealthStatus::Unhealthy,
+                failback_jitter: Duration::ZERO,
+            },
+        );
+
+        // The hedge reconciler applies primary A before secondary B regardless
+        // of completion order.
+        state = advance_hub_region_discovery(&state, &account, &pk("0"), &endpoints[0]);
+        state = advance_hub_region_discovery(&state, &account, &pk("0"), &endpoints[1]);
+        assert_eq!(
+            state.failover_overrides[&pk("0")].current_endpoint,
+            endpoints[2]
+        );
+
+        // If C also rejects the hub request, the remaining healthy hub D is
+        // still reachable rather than losing a retry to already-failed B.
+        state = advance_hub_region_discovery(&state, &account, &pk("0"), &endpoints[2]);
+        let entry = &state.failover_overrides[&pk("0")];
+        assert_eq!(entry.current_endpoint, endpoints[3]);
+        assert!(entry.failed_endpoints.contains(&endpoints[0]));
+        assert!(entry.failed_endpoints.contains(&endpoints[1]));
+        assert!(entry.failed_endpoints.contains(&endpoints[2]));
+    }
+
+    #[test]
     fn advance_hub_region_discovery_removes_entry_when_exhausted() {
         let mut ps = partition_state_ppaf_enabled();
         let account = single_master_account();
