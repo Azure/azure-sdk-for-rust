@@ -217,7 +217,7 @@ impl AzureArcCredential {
         let challenge_path = Path::new(challenge).canonicalize()?;
 
         #[cfg(all(windows, not(test)))]
-        fn get_expected_challenge_base() -> Result<PathBuf, io::Error> {
+        fn get_expected_challenge_base(env: &Env) -> Result<PathBuf, io::Error> {
             let program_data_dir = self.env.var("PROGRAMDATA")?;
             Path::new(&program_data_dir)
                 .join("AzureConnectedMachineAgent\\Tokens\\")
@@ -225,19 +225,19 @@ impl AzureArcCredential {
         }
 
         #[cfg(all(not(windows), not(test)))]
-        fn get_expected_challenge_base() -> Result<PathBuf, io::Error> {
+        fn get_expected_challenge_base(_: &Env) -> Result<PathBuf, io::Error> {
             Path::new("/var/opt/azcmagent/tokens/")
                 .to_path_buf()
                 .canonicalize()
         }
 
         #[cfg(test)]
-        fn get_expected_challenge_base() -> Result<PathBuf, io::Error> {
+        fn get_expected_challenge_base(_: &Env) -> Result<PathBuf, io::Error> {
             // the tests will be using temp for storing test token files
             std::env::temp_dir().canonicalize()
         }
 
-        let expected_challenge_base = get_expected_challenge_base()?;
+        let expected_challenge_base = get_expected_challenge_base(&self.env)?;
 
         if !(challenge_path.starts_with(expected_challenge_base)
             && challenge_path.extension().is_some_and(|ext| ext == "key"))
