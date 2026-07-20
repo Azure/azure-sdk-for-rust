@@ -66,6 +66,12 @@ const DTX_OUTER_JITTER_RATIO: f64 = 0.25;
 const ACCOUNT_PROPERTIES_CONNECTIVITY_MAX_RETRIES: u32 = 2;
 const ACCOUNT_PROPERTIES_CONNECTIVITY_BASE_DELAY: Duration = Duration::from_millis(100);
 
+/// Serialization formats advertised (`x-ms-cosmos-supported-serialization-formats`)
+/// when binary encoding is enabled: the client accepts either text or Cosmos
+/// binary JSON, so the service may reply with binary. Matches the .NET
+/// reference value (`string.Join(",", JsonText, CosmosBinary)`, no space).
+const BINARY_NEGOTIATION_FORMATS: &str = "JsonText,CosmosBinary";
+
 fn should_retry_account_properties_connectivity_error(
     error: &crate::error::CosmosError,
     request_sent: RequestSentStatus,
@@ -2112,16 +2118,13 @@ impl CosmosDriver {
         operation: CosmosOperation,
         options: OperationOptions,
     ) -> crate::error::Result<Option<crate::models::CosmosResponse>> {
-        // Capture the binary→text response directive before `operation` is
-        // consumed by the pipeline. When set, the wire stays binary in both
-        // directions and the driver converts the binary response to text below.
-        let transcode_response_to_text = operation.transcode_response_to_text();
-
         // PATCH is a virtual operation type: dispatch it to the dedicated
         // Read-Modify-Write handler before any of the standard pipeline steps
         // run, because the handler issues its own Read/Replace operations
-        // through this same entry point. `Box::pin` is required so the
-        // resulting async future has a fixed size even though it can recurse.
+        // through this same entry point. Binary encoding is not applied to patch
+        // (it is deferred per the binary-encoding spec). `Box::pin` is required
+        // so the resulting async future has a fixed size even though it can
+        // recurse.
         if operation.operation_type() == crate::models::OperationType::Patch {
             let max_attempts = operation.patch_max_attempts();
             return Box::pin(async {
@@ -2136,6 +2139,24 @@ impl CosmosDriver {
             })
             .await;
         }
+
+        // Resolve the schema-agnostic binary-encoding request from the
+        // operation-layer options. When enabled, the driver puts binary on the
+        // wire (transcoding a text request body to binary and advertising
+        // `CosmosBinary`) so any consumer — the Rust SDK or an FFI host — can
+        // deal in text while the wire stays binary.
+        let binary = options.binary_encoding.clone().unwrap_or_default();
+        let operation = if binary.enabled {
+            Self::apply_request_binary_encoding(operation)?
+        } else {
+            operation
+        };
+
+        // The response is transcoded to text when the resolved option asks for
+        // it, or when a caller set the operation directive directly (the SDK's
+        // typed fast path).
+        let transcode_response_to_text = operation.transcode_response_to_text()
+            || (binary.enabled && binary.request_text_response);
 
         // TODO: This boxing is a temporary fix to avoid a large future.
         // We need to do some refactoring here to shrink the future size and avoid this heap allocation if possible.
@@ -2156,6 +2177,40 @@ impl CosmosDriver {
             }
         }
         Ok(response)
+    }
+
+    /// Applies request-side binary encoding to an operation: transcodes a text
+    /// request body to Cosmos binary JSON (an already-binary or empty body is
+    /// passed through) and advertises binary responses via the
+    /// `x-ms-cosmos-supported-serialization-formats` header.
+    ///
+    /// This is schema-agnostic — it operates on the raw body bytes — so a
+    /// caller that deals only in text JSON gets a binary wire without encoding
+    /// anything itself.
+    fn apply_request_binary_encoding(
+        operation: CosmosOperation,
+    ) -> crate::error::Result<CosmosOperation> {
+        // Transcode a non-empty text body to binary (idempotent when the body
+        // is already binary).
+        let transcoded = match operation.body() {
+            Some(body) if !body.is_empty() => {
+                Some(crate::binary_json::transcode_to_binary(body).map_err(|e| {
+                    crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::SERIALIZATION_REQUEST_BODY_INVALID)
+                        .with_message(format!(
+                            "failed to transcode text request body to Cosmos binary JSON: {e}"
+                        ))
+                        .with_source(e)
+                        .build()
+                })?)
+            }
+            _ => None,
+        };
+        let operation = match transcoded {
+            Some(bytes) => operation.with_body(bytes),
+            None => operation,
+        };
+        Ok(operation.with_supported_serialization_formats(BINARY_NEGOTIATION_FORMATS))
     }
 
     /// Executes a singleton operation (operations which return only a single result).
@@ -5366,6 +5421,75 @@ mod tests {
         assert!(
             id.as_str() == "0" || id.as_str() == "1",
             "logical PK must resolve to a single owning range, got {id}",
+        );
+    }
+
+    // ── apply_request_binary_encoding (schema-agnostic request-side encode) ──
+
+    fn binary_encoding_test_operation(body: Vec<u8>) -> CosmosOperation {
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        let item =
+            crate::models::ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
+        CosmosOperation::create_item(item).with_body(body)
+    }
+
+    #[test]
+    fn apply_request_binary_encoding_transcodes_text_body_to_binary() {
+        // A caller (e.g. FFI) hands a TEXT JSON body; the driver transcodes it
+        // to Cosmos binary JSON and advertises binary responses. The caller
+        // never encoded binary itself.
+        let text = serde_json::to_vec(&serde_json::json!({ "id": "doc1", "n": 7 })).unwrap();
+        assert!(!crate::binary_json::is_binary(&text));
+
+        let op = binary_encoding_test_operation(text);
+        let op = CosmosDriver::apply_request_binary_encoding(op).unwrap();
+
+        let body = op.body().expect("body present");
+        assert!(
+            crate::binary_json::is_binary(body),
+            "text body must be transcoded to binary on the wire",
+        );
+        // Decodes back to the same value.
+        assert_eq!(
+            crate::binary_json::decode(body).unwrap(),
+            serde_json::json!({ "id": "doc1", "n": 7 }),
+        );
+        // Advertises binary responses.
+        assert_eq!(
+            op.request_headers()
+                .supported_serialization_formats
+                .as_deref(),
+            Some("JsonText,CosmosBinary"),
+        );
+    }
+
+    #[test]
+    fn apply_request_binary_encoding_passes_binary_body_through() {
+        // A typed consumer (Rust SDK) may pre-encode to binary; the driver's
+        // request-side transcode sees an already-binary body and passes it
+        // through unchanged.
+        let binary = crate::binary_json::encode(&serde_json::json!({ "id": "doc1", "n": 7 }));
+        let op = binary_encoding_test_operation(binary.clone());
+        let op = CosmosDriver::apply_request_binary_encoding(op).unwrap();
+
+        assert_eq!(op.body().unwrap(), binary.as_slice());
+        assert_eq!(
+            op.request_headers()
+                .supported_serialization_formats
+                .as_deref(),
+            Some("JsonText,CosmosBinary"),
+        );
+    }
+
+    #[test]
+    fn apply_request_binary_encoding_errors_on_invalid_text_body() {
+        // A body that is neither binary nor valid JSON surfaces as a
+        // request-body serialization error.
+        let op = binary_encoding_test_operation(b"{not json".to_vec());
+        let err = CosmosDriver::apply_request_binary_encoding(op).unwrap_err();
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::SERIALIZATION_REQUEST_BODY_INVALID),
         );
     }
 }
