@@ -1158,12 +1158,10 @@ impl<'a> Reader<'a> {
         let inner_count = self.read_len(count_width)?;
         let outer_count = self.read_len(count_width)?;
 
-        // When `inner_count == 0` each inner array reads zero body bytes, so
-        // `outer_count` (up to `u16::MAX` for the `C2C2` form) empty arrays
-        // could be produced from a handful of input bytes. Bound the produced
-        // element count by the bytes remaining, keeping decode output
-        // proportional to input for this otherwise-unbacked branch (`decode`
-        // runs on untrusted response bytes).
+        // When `inner_count == 0` each inner array reads zero body bytes, so a
+        // large `outer_count` could produce many empty arrays from a few input
+        // bytes. Bound the element count by the bytes remaining so decode output
+        // stays proportional to input (`decode` runs on untrusted bytes).
         if inner_count == 0 && outer_count > self.buf.len().saturating_sub(self.pos) {
             return Err(BinaryError::InvalidLength {
                 detail: "uniform array of empty number arrays declares more elements than remaining bytes",

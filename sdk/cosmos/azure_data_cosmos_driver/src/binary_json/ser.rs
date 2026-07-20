@@ -96,11 +96,8 @@ impl<'a> ser::Serializer for BinarySerializer<'a> {
     }
 
     fn serialize_i128(self, v: i128) -> Result<()> {
-        // Cosmos binary JSON has no 128-bit integer type. Encode through the
-        // 64-bit path when the value fits (matching `serde_json`, which keeps
-        // in-range 128-bit values as a JSON number); otherwise fail rather than
-        // silently truncate, mirroring `serde_json::to_value` which cannot
-        // represent an out-of-range 128-bit integer.
+        // Cosmos binary JSON has no 128-bit integer; encode through i64 when it
+        // fits (matching serde_json) and fail otherwise instead of truncating.
         i64::try_from(v)
             .map(|v| self.serialize_i64(v))
             .unwrap_or_else(|_| {
@@ -128,8 +125,7 @@ impl<'a> ser::Serializer for BinarySerializer<'a> {
     }
 
     fn serialize_u128(self, v: u128) -> Result<()> {
-        // See `serialize_i128`: encode through the 64-bit path when in range,
-        // otherwise fail instead of truncating.
+        // See `serialize_i128`.
         u64::try_from(v)
             .map(|v| self.serialize_u64(v))
             .unwrap_or_else(|_| {
@@ -159,19 +155,11 @@ impl<'a> ser::Serializer for BinarySerializer<'a> {
     }
 
     fn serialize_bytes(self, v: &[u8]) -> Result<()> {
-        // Mirror serde_json: a byte slice serializes as an array of the byte
-        // values. This keeps `to_vec` byte-identical to
-        // `encode(&serde_json::to_value(v))`, whose `Value` for `&[u8]` is an
-        // array of integers.
-        //
-        // Caveat: because each byte becomes a full number element (up to
-        // `NUMBER_INT64` + 8 bytes for values >= 32), a byte-heavy field is
-        // *larger* in binary than in text — the opposite of binary encoding's
-        // size goal. Emitting the `Binary*` blob form would shrink it but would
-        // break the `to_vec == encode(&serde_json::to_value(v))` parity
-        // invariant (and the decoder round-trips `Binary*` to a base64 string,
-        // not back to the array form). Keep byte-heavy items on the text path
-        // if payload size matters.
+        // Mirror serde_json: a byte slice serializes as an array of byte values,
+        // keeping `to_vec` identical to `encode(&serde_json::to_value(v))`.
+        // Note this makes byte-heavy fields larger than text (each byte becomes
+        // a number element); the `Binary*` blob form would shrink them but break
+        // that parity invariant, so keep byte-heavy items on the text path.
         use serde::ser::SerializeSeq;
         let mut seq = self.serialize_seq(Some(v.len()))?;
         for byte in v {

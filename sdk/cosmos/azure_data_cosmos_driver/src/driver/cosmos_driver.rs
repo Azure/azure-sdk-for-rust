@@ -2126,12 +2126,9 @@ impl CosmosDriver {
         options: OperationOptions,
     ) -> crate::error::Result<Option<crate::models::CosmosResponse>> {
         // PATCH is a virtual operation type: dispatch it to the dedicated
-        // Read-Modify-Write handler before any of the standard pipeline steps
-        // run, because the handler issues its own Read/Replace operations
-        // through this same entry point. Binary encoding is not applied to patch
-        // (it is deferred per the binary-encoding spec). `Box::pin` is required
-        // so the resulting async future has a fixed size even though it can
-        // recurse.
+        // Read-Modify-Write handler, which issues its own Read/Replace
+        // operations through this same entry point. `Box::pin` gives the
+        // recursive future a fixed size.
         if operation.operation_type() == crate::models::OperationType::Patch {
             let max_attempts = operation.patch_max_attempts();
             return Box::pin(async {
@@ -2147,16 +2144,9 @@ impl CosmosDriver {
             .await;
         }
 
-        // Resolve the schema-agnostic binary-encoding request through the same
-        // runtime → account → operation layered view as every other option, so
-        // a default set at the runtime/account layer (e.g. via `DriverOptions`)
-        // is honored rather than silently ignored.
-        //
-        // Binary encoding is only honored for point item operations. Query,
-        // feed, batch, and stored-procedure paths are deferred per the
-        // binary-encoding spec, so even if a caller (e.g. an FFI host) sets the
-        // flag on one of those operations the driver ignores it rather than
-        // transcoding a body the read path cannot yet handle.
+        // Resolve binary encoding through the same layered view as every other
+        // option, and only honor it for point item operations (query/feed/batch
+        // are deferred per the binary-encoding spec).
         let binary = if operation.operation_type().supports_binary_encoding() {
             self.operation_options_view(&options)
                 .binary_encoding()
@@ -2171,8 +2161,6 @@ impl CosmosDriver {
             operation
         };
 
-        // The response is transcoded to text when binary is negotiated on the
-        // wire and the caller asked for a text payload.
         let transcode_response_to_text = binary.enabled && binary.request_text_response;
 
         // TODO: This boxing is a temporary fix to avoid a large future.
@@ -2184,9 +2172,8 @@ impl CosmosDriver {
         })
         .await?;
 
-        // Driver-side transcoding: if the caller asked for a text payload while
-        // negotiating binary on the wire, convert the (binary) response body to
-        // text JSON before handing it back.
+        // Driver-side transcoding: convert the binary response body to text
+        // when the caller asked for a text payload over a binary wire.
         if transcode_response_to_text {
             if let Some(mut response) = response {
                 response.transcode_body_to_text()?;
