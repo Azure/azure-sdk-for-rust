@@ -1158,6 +1158,18 @@ impl<'a> Reader<'a> {
         let inner_count = self.read_len(count_width)?;
         let outer_count = self.read_len(count_width)?;
 
+        // When `inner_count == 0` each inner array reads zero body bytes, so
+        // `outer_count` (up to `u16::MAX` for the `C2C2` form) empty arrays
+        // could be produced from a handful of input bytes. Bound the produced
+        // element count by the bytes remaining, keeping decode output
+        // proportional to input for this otherwise-unbacked branch (`decode`
+        // runs on untrusted response bytes).
+        if inner_count == 0 && outer_count > self.buf.len().saturating_sub(self.pos) {
+            return Err(BinaryError::InvalidLength {
+                detail: "uniform array of empty number arrays declares more elements than remaining bytes",
+            });
+        }
+
         let mut outer = Vec::with_capacity(outer_count.min(1024));
         for _ in 0..outer_count {
             let mut inner = Vec::with_capacity(inner_count.min(1024));
