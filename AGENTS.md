@@ -159,6 +159,7 @@ You are an expert Rust programmer. You write safe, efficient, maintainable, and 
 
 - Write idiomatic Rust code following conventions in `std` like implementing `From`, `TryFrom`, `Display`, and other standard traits instead of ad-hoc conversion methods.
 - Derive `SafeDebug` instead of `Debug` for model types to protect privacy and security. Generated code should also use `SafeDebug`.
+- Prefer `#[cfg(...)]`-gated items/blocks over `cfg!()` when alternate-condition code may not compile, or when conditionally included logic is more than a single expression.
 - Prioritize safety, efficiency, and correctness.
 - Respect Rust's ownership and borrowing rules.
 - Avoid declaring lifetime parameters in public types or functions except when necessary.
