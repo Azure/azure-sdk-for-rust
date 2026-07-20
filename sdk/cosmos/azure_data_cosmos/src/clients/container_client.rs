@@ -873,7 +873,9 @@ impl ContainerClient {
     /// change carries:
     ///
     /// * [`ChangeFeedMode::LatestVersion`] (default) — the latest version of
-    ///   each created or replaced item. Only `current()` is populated.
+    ///   each created or replaced item. `current()` holds the item and
+    ///   `metadata()` may also be present (for example `lsn` and the commit
+    ///   timestamp), while `previous()` is not populated.
     /// * [`ChangeFeedMode::AllVersionsAndDeletes`] — every intermediate version
     ///   plus deletes. The envelope additionally exposes the
     ///   pre-change document
