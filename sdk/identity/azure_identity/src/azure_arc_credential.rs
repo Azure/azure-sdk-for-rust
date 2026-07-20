@@ -256,7 +256,9 @@ impl AzureArcCredential {
 
         let expected_challenge_base = get_expected_challenge_base(&self.env)?;
 
-        if !(challenge_path.starts_with(expected_challenge_base)
+        if !(challenge_path
+            .parent()
+            .is_some_and(|challenge_base| challenge_base == expected_challenge_base)
             && challenge_path.extension().is_some_and(|ext| ext == "key"))
         {
             return Err(Error::with_message(
