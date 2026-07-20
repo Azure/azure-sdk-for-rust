@@ -198,7 +198,6 @@ mod tests {
     use azure_core::{error::ErrorKind, http::headers::Headers};
     use azure_core_test::{http::MockHttpClient, recorded};
     use futures::FutureExt;
-    use rand;
     use std::time::{SystemTime, UNIX_EPOCH};
     use std::{env, fs::File, io::Write};
     use std::{
