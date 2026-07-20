@@ -1,4 +1,4 @@
-<!-- cspell:words pwsh yourgroup westus servicebus checkpointing  -->
+<!-- cspell:words pwsh yourgroup westus servicebus checkpointing azeventhubs  -->
 
 # Azure Event Hubs client library for Rust
 
@@ -7,6 +7,8 @@
 The Azure Event Hubs client library allows you to send single events or batches of events to an event hub and consume events from an event hub.
 
 [Source code] | [Package (crates.io)] | [API reference documentation] | [Product documentation]
+
+> Migrating from the community `azeventhubs` crate? See the [migration guide](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/eventhubs/azure_messaging_eventhubs/MIGRATION.md).
 
 ## Getting started
 
@@ -20,11 +22,11 @@ cargo add azure_messaging_eventhubs
 
 ### Prerequisites
 
-* A Rust Compiler. See [the rust compiler installation instructions](https://www.rust-lang.org/tools/install).
-* An [Azure subscription]
-* The [Azure CLI]
-* An [Event Hub namespace](https://learn.microsoft.com/azure/event-hubs/).
-* An Event Hub instance. You can create an Event Hub instance in your Event Hubs Namespace using the [Azure Portal](https://learn.microsoft.com/azure/event-hubs/event-hubs-create), or the [Azure CLI](https://learn.microsoft.com/azure/event-hubs/event-hubs-quickstart-cli).
+- A Rust Compiler. See [the rust compiler installation instructions](https://www.rust-lang.org/tools/install).
+- An [Azure subscription]
+- The [Azure CLI]
+- An [Event Hub namespace](https://learn.microsoft.com/azure/event-hubs/).
+- An Event Hub instance. You can create an Event Hub instance in your Event Hubs Namespace using the [Azure Portal](https://learn.microsoft.com/azure/event-hubs/event-hubs-create), or the [Azure CLI](https://learn.microsoft.com/azure/event-hubs/event-hubs-quickstart-cli).
 
 If you use the Azure CLI, replace `<your-resource-group-name>`, `<your-eventhubs-namespace-name>`, and `<your-eventhub-name>` with your own, unique names:
 
@@ -105,7 +107,7 @@ Consuming events is done using an `EventReceiver`, which can be opened from the 
     The Processor is useful when you want to have the partition assignment be dynamically chosen, and balanced with other Processor instances.
     -->
 
-More information about Event Hubs features and terminology can be found at the [Event Hubs features documentation]](<https://learn.microsoft.com/azure/event-hubs/event-hubs-features>)
+More information about Event Hubs features and terminology can be found in the [Event Hubs features documentation](https://learn.microsoft.com/azure/event-hubs/event-hubs-features).
 
 ## Examples
 
@@ -114,12 +116,12 @@ Additional examples for various scenarios can be found on in the examples direct
 
 <!-- no toc -->
 
-* [Open an Event Hubs message producer on an Event Hub instance](#open-an-event-hubs-message-producer-on-an-event-hub-instance)
-* [Send events](#send-events)
-  * [Send events directly to the Event Hub](#send-events-directly-to-the-event-hub)
-  * [Send events using a batch operation](#send-events-using-a-batch-operation)
-* [Open an Event Hubs message consumer on an Event Hubs instance](#open-an-event-hubs-message-consumer-on-an-event-hub-instance)
-* [Receive events](#receive-events)
+- [Open an Event Hubs message producer on an Event Hub instance](#open-an-event-hubs-message-producer-on-an-event-hub-instance)
+- [Send events](#send-events)
+  - [Send events directly to the Event Hub](#send-events-directly-to-the-event-hub)
+  - [Send events using a batch operation](#send-events-using-a-batch-operation)
+- [Open an Event Hubs message consumer on an Event Hubs instance](#open-an-event-hubs-message-consumer-on-an-event-hub-instance)
+- [Receive events](#receive-events)
 
 ### Open an Event Hubs message producer on an Event Hub instance
 
@@ -276,15 +278,15 @@ event contents are sensitive.
 
 Events follow a consistent level policy so you can pick the verbosity you need:
 
-* `error` - terminal or fatal failures that abort an operation, plus the exit of a long-lived background task.
-* `warn` - recoverable or anomalous-but-handled conditions, such as a send being rejected,
+- `error` - terminal or fatal failures that abort an operation, plus the exit of a long-lived background task.
+- `warn` - recoverable or anomalous-but-handled conditions, such as a send being rejected,
   modified, or released, attach failures, retry exhaustion, a recovery action being required, an
   etag mismatch, a missing management key, or an unauthorized fast-fail.
-* `info` - lifecycle success milestones, such as a connection or link opening, a link attaching, a
+- `info` - lifecycle success milestones, such as a connection or link opening, a link attaching, a
   receiver attaching on a partition, recovery completing, or partition ownership being claimed.
-* `debug` - per-operation bookkeeping, error classification decisions, retry chatter, and internal
+- `debug` - per-operation bookkeeping, error classification decisions, retry chatter, and internal
   map updates.
-* `trace` - very-high-frequency or per-message detail, including the hot send path.
+- `trace` - very-high-frequency or per-message detail, including the hot send path.
 
 ## Contributing
 
