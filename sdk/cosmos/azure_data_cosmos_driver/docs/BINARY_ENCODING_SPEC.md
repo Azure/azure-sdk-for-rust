@@ -52,7 +52,7 @@ text-equivalent results.
   `BinaryEncodingOptions::request_text_response` that keeps the wire binary in
   both directions but has the **driver transcode** the binary response to text
   JSON, so an application can deal only in text while still benefiting from the
-  efficient binary transport (see [§9.1](#91-driver-side-transcoding)).
+  efficient binary transport (see [§9.1](#91-driver-side-binary-encoding-and-transcoding)).
 
 ### Non-goals (deferred)
 
@@ -209,7 +209,7 @@ Key facts (verified against the current tree):
   header. The one schema-agnostic transform it performs is **binary→text
   transcoding** when the operation sets `transcode_response_to_text` (for
   `request_text_response`) — a byte-level `decode → serde_json::to_vec` that
-  needs no type knowledge (see [§9.1](#91-driver-side-transcoding)). The lone
+  needs no type knowledge (see [§9.1](#91-driver-side-binary-encoding-and-transcoding)). The lone
   body-*parsing* exception is the patch handler — and patch is deferred.
 
 ### 6.1 Sequence — write then read (binary enabled)
@@ -275,7 +275,7 @@ sequenceDiagram
    unchanged (still `JsonText,CosmosBinary`); instead the operation carries an
    internal `transcode_response_to_text` directive and the **driver** converts
    the binary response to text JSON before returning it (see
-   [§9.1](#91-driver-side-transcoding)). Enablement resolves once at client
+   [§9.1](#91-driver-side-binary-encoding-and-transcoding)). Enablement resolves once at client
    construction, preferring the explicit
    `CosmosClientBuilder::with_binary_encoding_options` /
    `with_binary_encoding_enabled` option and falling back to the
@@ -384,42 +384,60 @@ small items, where the `Value` allocation dominated the fixed overhead.
 
 ## 9. Negotiation and enablement
 
-- **Request.** When binary is enabled, the SDK sets
+- **Request.** When binary is enabled, the **driver** sets
   `x-ms-cosmos-supported-serialization-formats: JsonText,CosmosBinary` on item
   operations — the same value whether or not `request_text_response` is set, so
   the service always replies with binary and the wire stays binary in both
-  directions. The request body is Cosmos binary JSON and the request
-  `Content-Type` stays `application/json` — the service detects the binary form
-  from the first byte.
+  directions. The request body is Cosmos binary JSON (the driver transcodes a
+  text body to binary when needed) and the request `Content-Type` stays
+  `application/json` — the service detects the binary form from the first byte.
 - **Response.** Decoding does **not** depend on negotiation: the SDK auto-detects
   the `0x80` preamble. Negotiation governs whether the service *chooses* to send
   binary; the driver-side transcoding directive governs whether the driver hands
-  the caller text or binary (see [§9.1](#91-driver-side-transcoding)).
+  the caller text or binary (see [§9.1](#91-driver-side-binary-encoding-and-transcoding)).
 - **Enablement.** Resolved once at client construction, preferring the explicit
   `CosmosClientBuilder::with_binary_encoding_options` /
   `with_binary_encoding_enabled` option and falling back to the
   `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment variable; disabled by
   default.
 
-### 9.1 Driver-side transcoding
+### 9.1 Driver-side binary encoding and transcoding
 
-`BinaryEncodingOptions::request_text_response` lets an application deal only in
-text JSON while still keeping the efficient binary wire:
+Binary encoding is a **driver** capability, exposed as
+`OperationOptions::binary_encoding: Option<BinaryEncodingOptions>`. Because the
+option lives on the driver and is schema-agnostic, every consumer shares it: the
+Rust SDK re-exports `BinaryEncodingOptions`, and FFI hosts (.NET, Java, Go, …)
+set the equivalent flat `binary_encoding_enabled` /
+`binary_encoding_request_text_response` fields on the C ABI
+`cosmos_operation_options_t`. The two flags mean:
 
-- The SDK keeps advertising `CosmosBinary`, so the request body **and** the
-  service response are both binary (lower write RUs and network bandwidth than
-  text).
-- The SDK stamps the item operation with
-  `CosmosOperation::with_transcode_response_to_text(true)` — an internal driver
-  directive, not a wire header.
-- After the response is assembled, `CosmosDriver::execute_operation` converts the
-  binary response body to text JSON via `binary_json::transcode_to_text`
-  (`decode` → `serde_json::to_vec`). Text or empty bodies pass through unchanged.
+- `enabled` — **binary on the wire**. In `CosmosDriver::execute_operation`, when
+  enabled, the driver applies `apply_request_binary_encoding`: it transcodes a
+  **text** request body to Cosmos binary JSON via
+  `binary_json::transcode_to_binary` (`serde_json::from_slice` → `encode`) and
+  advertises `JsonText,CosmosBinary`. An already-binary or empty body is passed
+  through, so a caller that pre-encodes (see below) pays nothing.
+- `request_text_response` — **text back to the caller**. After the response is
+  assembled, the driver converts the binary body to text JSON via
+  `binary_json::transcode_to_text` (`decode` → `serde_json::to_vec`). The wire
+  stays binary in both directions. Text or empty bodies pass through unchanged.
+
+This means a caller that deals only in **text** — most importantly an FFI host —
+gets a fully binary wire (efficient RUs and bandwidth) **without encoding
+anything itself**: it sends text, sets the two flags, and the driver does both
+transcodes.
+
+The Rust SDK keeps a **typed fast path** as an optimization: `serialize_item_body`
+encodes `T: Serialize` straight to binary (skipping the text intermediate), and
+the driver's request-side transcode then sees an already-binary body and passes
+it through. It sets the option via a `with_binary_encoding` helper on
+`OperationOptions` rather than stamping headers directly.
 
 This matches the guidance that the **driver** (not the backend) performs the
 transcoding, so the backend rewrite/transport can stay binary. Feed (`Items`)
 responses transcode per-slice, but binary feed negotiation itself remains
-deferred (see [§2](#2-scope)).
+deferred (see [§2](#2-scope)). Patch is also excluded from binary encoding for
+now.
 
 ## 10. Delivery status
 
@@ -432,7 +450,8 @@ All phases below are **done** except the noted follow-ups.
 | **P2** | Native serde serializer ([`to_vec`]) wired into `create` / `upsert` / `replace`, behind the enablement flag. | ✅ done (binary writes) |
 | **P3** | Negotiation header + env-var enablement; end-to-end binary round-trip via the in-memory emulator. | ✅ done |
 | **P4** | Decoder fuzzing; text-vs-binary encode **and** decode benchmarks. | ✅ done |
-| **P5** | Driver-side binary→text transcoding for `BinaryEncodingOptions::request_text_response`: wire stays binary both ways, driver converts the response to text ([§9.1](#91-driver-side-transcoding)). | ✅ done |
+| **P5** | Driver-side binary→text transcoding for `BinaryEncodingOptions::request_text_response`: wire stays binary both ways, driver converts the response to text ([§9.1](#91-driver-side-binary-encoding-and-transcoding)). | ✅ done |
+| **P6** | Binary encoding moved to the driver: `OperationOptions::binary_encoding` (driver-owned `BinaryEncodingOptions`), request-side text→binary transcoding, and FFI `cosmos_operation_options_t` flags — so FFI hosts can request a binary wire + text response without encoding anything. | ✅ done |
 
 **Follow-ups / deferred:** query request-body encoding + negotiation; patch,
 transactional batch, and bulk. (The native deserializer's exotic-form path still
