@@ -12,8 +12,8 @@ use azure_data_cosmos_macros::CosmosOptions;
 use crate::{
     models::ThroughputControlGroupName,
     options::{
-        AvailabilityStrategy, ContentResponseOnWrite, EndToEndOperationLatencyPolicy,
-        ExcludedRegions, PriorityLevel, ReadConsistencyStrategy,
+        AvailabilityStrategy, BinaryEncodingOptions, ContentResponseOnWrite,
+        EndToEndOperationLatencyPolicy, ExcludedRegions, PriorityLevel, ReadConsistencyStrategy,
     },
 };
 
@@ -142,6 +142,15 @@ pub struct OperationOptions {
     // Additional headers beyond those natively supported by the driver.
     // May be removed in the future as we analyze exactly what options are needed.
     pub custom_headers: Option<HashMap<HeaderName, HeaderValue>>,
+
+    /// Cosmos binary JSON encoding for this operation.
+    ///
+    /// Controls whether the operation uses binary on the wire and whether the
+    /// driver transcodes the response back to text. Schema-agnostic, so it is
+    /// honored uniformly for the Rust SDK and FFI callers. `None` inherits from
+    /// a lower level (default: text JSON, no binary). See
+    /// [`BinaryEncodingOptions`].
+    pub binary_encoding: Option<BinaryEncodingOptions>,
 }
 
 /// Retry behavior for requests throttled by the service (HTTP 429,
@@ -503,6 +512,56 @@ mod tests {
             view_account_wins.availability_strategy(),
             Some(&account_strategy)
         );
+    }
+
+    #[test]
+    fn builder_round_trips_binary_encoding() {
+        let options = OperationOptionsBuilder::new()
+            .with_binary_encoding(
+                BinaryEncodingOptions::new()
+                    .with_enabled(true)
+                    .with_request_text_response(true),
+            )
+            .build();
+
+        assert_eq!(
+            options.binary_encoding,
+            Some(
+                BinaryEncodingOptions::new()
+                    .with_enabled(true)
+                    .with_request_text_response(true)
+            )
+        );
+    }
+
+    #[test]
+    fn binary_encoding_resolves_via_view() {
+        use std::sync::Arc;
+
+        let account_be = BinaryEncodingOptions::new().with_enabled(true);
+        let operation_be = BinaryEncodingOptions::new()
+            .with_enabled(true)
+            .with_request_text_response(true);
+
+        let account = Arc::new(OperationOptions {
+            binary_encoding: Some(account_be.clone()),
+            ..Default::default()
+        });
+
+        // Operation layer wins over account.
+        let operation = OperationOptions {
+            binary_encoding: Some(operation_be.clone()),
+            ..Default::default()
+        };
+        let view_op_overrides =
+            OperationOptionsView::new(None, None, Some(account.clone()), Some(&operation));
+        assert_eq!(view_op_overrides.binary_encoding(), Some(&operation_be));
+
+        // When the operation layer leaves it unset, the account value applies.
+        let empty_operation = OperationOptions::default();
+        let view_account_wins =
+            OperationOptionsView::new(None, None, Some(account), Some(&empty_operation));
+        assert_eq!(view_account_wins.binary_encoding(), Some(&account_be));
     }
 
     /// The nested [`ThrottlingRetryOptions`] group must participate in the
