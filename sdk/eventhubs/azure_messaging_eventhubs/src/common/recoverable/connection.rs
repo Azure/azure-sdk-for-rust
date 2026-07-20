@@ -1562,10 +1562,19 @@ mod tests {
     async fn management_build_does_not_hold_mgmt_lock() {
         let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind stalled AMQP peer");
         let port = listener.local_addr().expect("listener address").port();
-        // Hold every accepted socket open and answer nothing.
+        // Hold every accepted socket open and answer nothing. The first accept
+        // signals the test, which is the synchronization point that makes this
+        // test deterministic. A fixed sleep would not do: on a loaded runner the
+        // build task can still be pending, and the assertions below would then
+        // pass against the old implementation.
+        let (accepted_tx, accepted_rx) = tokio::sync::oneshot::channel();
         std::thread::spawn(move || {
             let mut accepted = Vec::new();
+            let mut accepted_tx = Some(accepted_tx);
             while let Ok((stream, _)) = listener.accept() {
+                if let Some(tx) = accepted_tx.take() {
+                    let _ = tx.send(());
+                }
                 accepted.push(stream);
             }
         });
@@ -1587,7 +1596,14 @@ mod tests {
             }
         });
 
-        tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+        // The old code took the `mgmt_client` guard before it opened the
+        // connection, so a completed accept proves the build is past that point
+        // and inside the region that used to be locked.
+        tokio::time::timeout(std::time::Duration::from_secs(30), accepted_rx)
+            .await
+            .expect("the build did not connect to the stalled peer within 30s")
+            .expect("the listener thread dropped the accept signal");
+
         let build_is_running = !build.is_finished();
         let lock_is_free = connection.mgmt_client.try_write().is_some();
         build.abort();
@@ -1622,10 +1638,19 @@ mod tests {
     async fn recovery_does_not_wait_for_in_flight_management_build() {
         let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind stalled AMQP peer");
         let port = listener.local_addr().expect("listener address").port();
-        // Hold every accepted socket open and answer nothing.
+        // Hold every accepted socket open and answer nothing. The first accept
+        // signals the test, which is the synchronization point that makes this
+        // test deterministic. A fixed sleep would not do: on a loaded runner the
+        // build task can still be pending, and the assertions below would then
+        // pass against the old implementation.
+        let (accepted_tx, accepted_rx) = tokio::sync::oneshot::channel();
         std::thread::spawn(move || {
             let mut accepted = Vec::new();
+            let mut accepted_tx = Some(accepted_tx);
             while let Ok((stream, _)) = listener.accept() {
+                if let Some(tx) = accepted_tx.take() {
+                    let _ = tx.send(());
+                }
                 accepted.push(stream);
             }
         });
@@ -1647,8 +1672,14 @@ mod tests {
             }
         });
 
-        // Give the build task time to enter the management-client build.
-        tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+        // Wait for the build to reach the stalled peer. The old code took the
+        // `mgmt_client` guard before it opened the connection, so a completed
+        // accept proves the build holds whatever lock the implementation takes.
+        tokio::time::timeout(std::time::Duration::from_secs(30), accepted_rx)
+            .await
+            .expect("the build did not connect to the stalled peer within 30s")
+            .expect("the listener thread dropped the accept signal");
+
         assert!(
             !build.is_finished(),
             "The management-client build finished instead of blocking on the stalled peer."
