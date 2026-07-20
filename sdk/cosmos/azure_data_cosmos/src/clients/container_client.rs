@@ -9,9 +9,9 @@ use crate::{
     models::{ContainerProperties, PatchInstructions, ThroughputProperties},
     options::{
         BatchOptions, BinaryEncodingOptions, ChangeFeedOptions, ChangeFeedStartFrom,
-        DeleteContainerOptions, ItemReadOptions, ItemWriteOptions, PatchItemOptions, Precondition,
-        QueryOptions, ReadContainerOptions, ReadFeedRangesOptions, ReplaceContainerOptions,
-        SessionToken, ThroughputOptions,
+        DeleteContainerOptions, ItemReadOptions, ItemWriteOptions, OperationOptions,
+        PatchItemOptions, Precondition, QueryOptions, ReadContainerOptions, ReadFeedRangesOptions,
+        ReplaceContainerOptions, SessionToken, ThroughputOptions,
     },
     PartitionKey, Query,
 };
@@ -319,14 +319,17 @@ impl ContainerClient {
 
         // Create the driver operation and apply ItemWriteOptions fields.
         let operation = CosmosOperation::create_item(item_ref).with_body(body);
-        let operation = apply_binary_negotiation(operation, &self.context.binary_encoding);
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
-        // Execute through the driver.
+        // Execute through the driver, with binary encoding on the operation
+        // options so the driver negotiates the wire format and transcoding.
         let driver_response = self
             .context
             .driver
-            .execute_singleton_operation(operation, options.operation)
+            .execute_singleton_operation(
+                operation,
+                with_binary_encoding(options.operation, &self.context.binary_encoding),
+            )
             .await?;
 
         // Bridge the driver response to the SDK response type.
@@ -418,14 +421,17 @@ impl ContainerClient {
 
         // Create the driver operation and apply ItemWriteOptions fields.
         let operation = CosmosOperation::replace_item(item_ref).with_body(body);
-        let operation = apply_binary_negotiation(operation, &self.context.binary_encoding);
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
-        // Execute through the driver.
+        // Execute through the driver, with binary encoding on the operation
+        // options so the driver negotiates the wire format and transcoding.
         let driver_response = self
             .context
             .driver
-            .execute_singleton_operation(operation, options.operation)
+            .execute_singleton_operation(
+                operation,
+                with_binary_encoding(options.operation, &self.context.binary_encoding),
+            )
             .await?;
 
         // Bridge the driver response to the SDK response type.
@@ -627,14 +633,17 @@ impl ContainerClient {
 
         // Create the driver operation and apply ItemWriteOptions fields.
         let operation = CosmosOperation::upsert_item(item_ref).with_body(body);
-        let operation = apply_binary_negotiation(operation, &self.context.binary_encoding);
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
-        // Execute through the driver.
+        // Execute through the driver, with binary encoding on the operation
+        // options so the driver negotiates the wire format and transcoding.
         let driver_response = self
             .context
             .driver
-            .execute_singleton_operation(operation, options.operation)
+            .execute_singleton_operation(
+                operation,
+                with_binary_encoding(options.operation, &self.context.binary_encoding),
+            )
             .await?;
 
         // Bridge the driver response to the SDK response type.
@@ -688,14 +697,17 @@ impl ContainerClient {
 
         // Create the driver operation.
         let operation = CosmosOperation::read_item(item_ref);
-        let operation = apply_binary_negotiation(operation, &self.context.binary_encoding);
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
-        // Execute through the driver.
+        // Execute through the driver, with binary encoding on the operation
+        // options so the driver negotiates the wire format and transcoding.
         let driver_response = self
             .context
             .driver
-            .execute_singleton_operation(operation, options.operation)
+            .execute_singleton_operation(
+                operation,
+                with_binary_encoding(options.operation, &self.context.binary_encoding),
+            )
             .await?;
 
         // Bridge the driver response to the SDK response type.
@@ -1283,37 +1295,26 @@ fn serialize_item_body<T: Serialize>(item: &T, binary: bool) -> crate::Result<Ve
     }
 }
 
-/// The serialization formats advertised when binary encoding is enabled.
+/// Sets Cosmos binary JSON encoding on the driver [`OperationOptions`] when it
+/// is enabled, so the **driver** negotiates a binary wire and (optionally)
+/// transcodes the response to text.
 ///
-/// Matches the .NET SDK's default (`string.Join(",", JsonText, CosmosBinary)`):
-/// the client accepts either text or Cosmos binary JSON, letting the service
-/// choose. The comma-separated value has no space, mirroring the reference.
-const JSON_AND_BINARY_SERIALIZATION_FORMATS: &str = "JsonText,CosmosBinary";
-
-/// Advertises response-format negotiation on an item operation when
-/// `binary_encoding` is enabled, by setting the
-/// `x-ms-cosmos-supported-serialization-formats` header, and applies the
-/// binary→text transcoding directive when the caller requested text responses.
-///
-/// The wire always stays binary in both directions when encoding is enabled
-/// (the header advertises `JsonText,CosmosBinary` so the service replies
-/// binary). When
+/// The SDK still pre-encodes the item write body straight from `T: Serialize`
+/// to binary as an optimization (see [`serialize_item_body`]); the driver's
+/// request-side transcode then sees an already-binary body and passes it
+/// through. When
 /// [`request_text_response`](BinaryEncodingOptions::request_text_response) is
-/// set, the operation additionally asks the **driver** to transcode the binary
-/// response to text JSON before returning it — the efficient binary transport is
-/// preserved and the application receives text. Disabled: a no-op, so the
-/// request is byte-for-byte unchanged.
-fn apply_binary_negotiation(
-    operation: CosmosOperation,
+/// set, the driver transcodes the binary response back to text while the wire
+/// stays binary in both directions. When binary is disabled this is a no-op, so
+/// the request is byte-for-byte unchanged.
+fn with_binary_encoding(
+    mut options: OperationOptions,
     binary_encoding: &BinaryEncodingOptions,
-) -> CosmosOperation {
+) -> OperationOptions {
     if binary_encoding.enabled {
-        operation
-            .with_supported_serialization_formats(JSON_AND_BINARY_SERIALIZATION_FORMATS)
-            .with_transcode_response_to_text(binary_encoding.request_text_response)
-    } else {
-        operation
+        options.binary_encoding = Some(binary_encoding.clone());
     }
+    options
 }
 
 /// Applies [`BatchOptions`] fields to a [`CosmosOperation`].
@@ -1385,85 +1386,42 @@ mod tests {
         assert_ne!(text.first(), Some(&0x80));
     }
 
-    /// Builds a publicly-constructible operation for exercising
-    /// [`apply_binary_negotiation`]. The operation type does not matter — the
-    /// helper only conditionally sets the negotiation header — so a read-offer
-    /// operation (which needs only an account) keeps the test self-contained.
-    fn negotiation_test_operation() -> CosmosOperation {
-        let account = azure_data_cosmos_driver::models::AccountReference::with_master_key(
-            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
-            "test-key",
-        );
-        CosmosOperation::read_offer(account, "offer-1")
+    #[test]
+    fn with_binary_encoding_sets_option_when_enabled() {
+        let be = BinaryEncodingOptions::new().with_enabled(true);
+        let options = with_binary_encoding(OperationOptions::default(), &be);
+        assert_eq!(options.binary_encoding, Some(be));
     }
 
     #[test]
-    fn apply_binary_negotiation_sets_header_when_enabled() {
-        let op = apply_binary_negotiation(
-            negotiation_test_operation(),
-            &BinaryEncodingOptions::new().with_enabled(true),
-        );
-        assert_eq!(
-            op.request_headers()
-                .supported_serialization_formats
-                .as_deref(),
-            Some("JsonText,CosmosBinary"),
-        );
-        // Default (no text-response request): no transcoding, response stays binary.
-        assert!(!op.transcode_response_to_text());
+    fn with_binary_encoding_carries_request_text_response() {
+        // Binary on with request_text_response: the driver keeps the wire binary
+        // and transcodes the response to text. The option carries both flags.
+        let be = BinaryEncodingOptions::new()
+            .with_enabled(true)
+            .with_request_text_response(true);
+        let options = with_binary_encoding(OperationOptions::default(), &be);
+        let resolved = options.binary_encoding.expect("binary encoding set");
+        assert!(resolved.enabled);
+        assert!(resolved.request_text_response);
     }
 
     #[test]
-    fn apply_binary_negotiation_requests_text_response_when_opted_in() {
-        // Binary encoding on with request_text_response: the wire stays binary
-        // (header still advertises CosmosBinary), and the driver is asked to
-        // transcode the binary response to text.
-        let op = apply_binary_negotiation(
-            negotiation_test_operation(),
-            &BinaryEncodingOptions::new()
-                .with_enabled(true)
-                .with_request_text_response(true),
-        );
-        assert_eq!(
-            op.request_headers()
-                .supported_serialization_formats
-                .as_deref(),
-            Some("JsonText,CosmosBinary"),
-            "wire must stay binary so the transport hop is efficient",
-        );
-        assert!(
-            op.transcode_response_to_text(),
-            "driver must be asked to transcode the binary response to text",
-        );
+    fn with_binary_encoding_omits_option_when_disabled() {
+        // Disabled ⇒ no binary-encoding option, so the request is unchanged.
+        let be = BinaryEncodingOptions::new().with_enabled(false);
+        let options = with_binary_encoding(OperationOptions::default(), &be);
+        assert!(options.binary_encoding.is_none());
     }
 
     #[test]
-    fn apply_binary_negotiation_omits_header_when_disabled() {
-        let op = apply_binary_negotiation(
-            negotiation_test_operation(),
-            &BinaryEncodingOptions::new().with_enabled(false),
-        );
-        assert!(op
-            .request_headers()
-            .supported_serialization_formats
-            .is_none());
-        assert!(!op.transcode_response_to_text());
-    }
-
-    #[test]
-    fn apply_binary_negotiation_ignores_text_response_when_disabled() {
+    fn with_binary_encoding_ignores_text_response_when_disabled() {
         // request_text_response only matters when binary is enabled; with binary
-        // off there is no negotiation header and no transcoding.
-        let op = apply_binary_negotiation(
-            negotiation_test_operation(),
-            &BinaryEncodingOptions::new()
-                .with_enabled(false)
-                .with_request_text_response(true),
-        );
-        assert!(op
-            .request_headers()
-            .supported_serialization_formats
-            .is_none());
-        assert!(!op.transcode_response_to_text());
+        // off there is no binary-encoding option at all.
+        let be = BinaryEncodingOptions::new()
+            .with_enabled(false)
+            .with_request_text_response(true);
+        let options = with_binary_encoding(OperationOptions::default(), &be);
+        assert!(options.binary_encoding.is_none());
     }
 }

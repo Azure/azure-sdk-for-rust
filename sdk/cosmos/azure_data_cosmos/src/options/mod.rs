@@ -13,20 +13,21 @@ pub use azure_data_cosmos_driver::models::{
 };
 #[doc(inline)]
 pub use azure_data_cosmos_driver::options::{
-    AvailabilityStrategy, ConnectionPoolOptions, ConnectionPoolOptionsBuilder,
-    ContentResponseOnWrite, DiagnosticsOptions, DiagnosticsOptionsBuilder, DiagnosticsVerbosity,
-    EndToEndOperationLatencyPolicy, ExcludedRegions, HedgeThreshold, HedgingStrategy,
-    OperationOptions, OperationOptionsBuilder, OperationOptionsView, PartitionFailoverOptions,
-    PartitionFailoverOptionsBuilder, PriorityLevel, ReadConsistencyStrategy, Region,
-    ServerCertificateValidation, ThrottlingRetryOptions, ThrottlingRetryOptionsBuilder,
-    ThrottlingRetryOptionsView, ThroughputControlGroupOptions, ThroughputControlOptions,
-    ThroughputControlOptionsBuilder, ThroughputControlOptionsView, TlsBackend, UserAgentSuffix,
+    AvailabilityStrategy, BinaryEncodingOptions, ConnectionPoolOptions,
+    ConnectionPoolOptionsBuilder, ContentResponseOnWrite, DiagnosticsOptions,
+    DiagnosticsOptionsBuilder, DiagnosticsVerbosity, EndToEndOperationLatencyPolicy,
+    ExcludedRegions, HedgeThreshold, HedgingStrategy, OperationOptions, OperationOptionsBuilder,
+    OperationOptionsView, PartitionFailoverOptions, PartitionFailoverOptionsBuilder, PriorityLevel,
+    ReadConsistencyStrategy, Region, ServerCertificateValidation, ThrottlingRetryOptions,
+    ThrottlingRetryOptionsBuilder, ThrottlingRetryOptionsView, ThroughputControlGroupOptions,
+    ThroughputControlOptions, ThroughputControlOptionsBuilder, ThroughputControlOptionsView,
+    TlsBackend, UserAgentSuffix,
 };
 pub use batch::{
     BatchDeleteOptions, BatchOptions, BatchReadOptions, BatchReplaceOptions, BatchUpsertOptions,
 };
 pub use change_feed::{ChangeFeedMode, ChangeFeedOptions, ChangeFeedStartFrom};
-pub use client::{BinaryEncodingOptions, CosmosClientOptions};
+pub use client::CosmosClientOptions;
 pub use consistency::ConsistencyLevel;
 pub use container::{
     CreateContainerOptions, DeleteContainerOptions, QueryContainersOptions, ReadContainerOptions,
