@@ -23,11 +23,10 @@ use std::{
     fmt,
     fs::{self, File},
     io::Read,
-    path::Path,
+    path::{Path, PathBuf},
     str,
     sync::Arc,
 };
-use std::{io, path::PathBuf};
 use time::Duration;
 
 const DEFAULT_ENDPOINT: &str = "http://localhost:40342/metadata/identity/oauth2/token";
@@ -217,24 +216,24 @@ impl AzureArcCredential {
         let challenge_path = Path::new(challenge).canonicalize()?;
 
         #[cfg(all(windows, not(test)))]
-        fn get_expected_challenge_base(env: &Env) -> Result<PathBuf, io::Error> {
-            let program_data_dir = self.env.var("PROGRAMDATA")?;
+        fn get_expected_challenge_base(e: &Env) -> Result<PathBuf, Error> {
+            let program_data_dir = e.var("PROGRAMDATA").map_err(|err| Error::with_error(ErrorKind::Io, err, "Could not find program data directory"))?;
             Path::new(&program_data_dir)
                 .join("AzureConnectedMachineAgent\\Tokens\\")
-                .canonicalize()
+                .canonicalize().map_err(|err| Error::with_error(ErrorKind::Io, err, "Could not find Azure Arc token directory"))
         }
 
         #[cfg(all(not(windows), not(test)))]
-        fn get_expected_challenge_base(_: &Env) -> Result<PathBuf, io::Error> {
+        fn get_expected_challenge_base(_: &Env) -> Result<PathBuf, Error> {
             Path::new("/var/opt/azcmagent/tokens/")
                 .to_path_buf()
-                .canonicalize()
+                .canonicalize().map_err(|err| Error::with_error(ErrorKind::Io, err, "Could not find Azure Arc token directory"))
         }
 
         #[cfg(test)]
-        fn get_expected_challenge_base(_: &Env) -> Result<PathBuf, io::Error> {
+        fn get_expected_challenge_base(_: &Env) -> Result<PathBuf, Error> {
             // the tests will be using temp for storing test token files
-            std::env::temp_dir().canonicalize()
+            std::env::temp_dir().canonicalize().map_err(|err| Error::with_error(ErrorKind::Io, err, "Could not find temp directory"))
         }
 
         let expected_challenge_base = get_expected_challenge_base(&self.env)?;
