@@ -98,7 +98,7 @@ impl HeaderValidationSpec {
     ///   metrics (no-op on point ops).
     /// - **`RequiredInEmulatorOnly`** — emulator must emit this diagnostic
     ///   header, but Gateway-backed real/emulator responses may omit it.
-    ///   Used for `internal_partition_id` on point operations.
+    ///   Used for `internal_partition_id` on point and query operations.
     /// - **`Ignore`** — emulator does not (and intentionally will not)
     ///   produce these headers, or they encode internal state that has no
     ///   public meaning for the operation under test: `item_local_lsn`,
@@ -263,7 +263,7 @@ impl HeaderValidationSpec {
             .with_rule("resource_usage", HeaderMatch::Ignore)
             .with_rule("has_tentative_writes", HeaderMatch::Symmetric)
             .with_rule("partition_key_range_id", HeaderMatch::Symmetric)
-            .with_rule("internal_partition_id", HeaderMatch::Symmetric)
+            .with_rule("internal_partition_id", HeaderMatch::RequiredInEmulatorOnly)
             .with_rule("log_results", HeaderMatch::Symmetric)
             .with_rule(
                 "collection_index_transformation_progress",
