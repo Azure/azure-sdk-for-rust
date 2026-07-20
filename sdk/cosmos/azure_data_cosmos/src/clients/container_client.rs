@@ -897,13 +897,13 @@ impl ContainerClient {
     ///   intermediate versions and deletes are only retained within the
     ///   container's retention / continuous-backup window. The service gates
     ///   this and rejects such a request with `400 Bad Request`.
-    /// * [`ChangeFeedStartFrom::Now`] is re-evaluated per range the first time a
-    ///   range is polled, so a range that is never polled before a checkpoint
-    ///   resumes from resume-time and can drop the intermediate versions and
-    ///   deletes that occurred between the original start and the resume. `Now`
-    ///   is deliberately **not** converted to a concrete `PointInTime`, because
-    ///   that would change its semantics; lossless per-range `Now` resolution is
-    ///   a future improvement.
+    /// * When starting from [`ChangeFeedStartFrom::Now`], every range is pinned
+    ///   to its concrete starting position before the first page is returned, so
+    ///   a range that is never served before a checkpoint still resumes from its
+    ///   true start rather than resume-time. No intermediate versions or deletes
+    ///   are dropped across a resume. `Now` is deliberately **not** rewritten to
+    ///   a concrete [`ChangeFeedStartFrom::PointInTime`], which would change its
+    ///   semantics; each range instead captures its own server continuation.
     /// * The feed mode is encoded in the continuation token, so a token issued in
     ///   one mode cannot be used to resume in another; attempting to do so is
     ///   rejected. Re-pass [`ChangeFeedMode::AllVersionsAndDeletes`] on resume to

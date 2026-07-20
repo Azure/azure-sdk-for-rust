@@ -343,7 +343,7 @@ mod tests {
             "Documents": [
                 {
                     "current": { "id": "1" },
-                    "metadata": { "operationType": "create", "lsn": 10 }
+                    "metadata": { "operationType": "create", "lsn": 10, "crts": 1720322460 }
                 },
                 {
                     "current": { "id": "2" },
@@ -372,6 +372,12 @@ mod tests {
         assert_eq!(
             items[0].metadata().and_then(|m| m.lsn()),
             Some(crate::models::LogicalSequenceNumber::from(10))
+        );
+        assert_eq!(
+            items[0]
+                .metadata()
+                .and_then(|m| m.conflict_resolution_timestamp()),
+            Some(std::time::Duration::from_secs(1720322460))
         );
 
         // Replace: both current and previous present.

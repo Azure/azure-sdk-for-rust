@@ -35,6 +35,22 @@ pub(crate) struct UnorderedMerge {
     /// polled re-apply it on resume instead of reading from the beginning.
     /// `None` means no start position was recorded.
     start_marker: Option<ChangeFeedStartFrom>,
+    /// When set, poll every child once before serving the first page so each
+    /// range records a concrete starting continuation (ETag) up front.
+    ///
+    /// Enabled only for a fresh AllVersionsAndDeletes feed. Without it, a range
+    /// that is never polled before the first checkpoint has no saved
+    /// continuation and resumes from the persisted `start_marker` (`Now`),
+    /// which re-evaluates "now" at resume time and silently drops the
+    /// intermediate versions and deletes that occurred in the gap. Priming
+    /// pins every range to its actual starting position so resume is lossless.
+    ///
+    /// A fresh AllVersionsAndDeletes feed can only start from `Now`
+    /// (`If-None-Match: *`; `Beginning`/`PointInTime` are rejected by the
+    /// service), whose first poll is always a `304 Not Modified` carrying no
+    /// items — only an ETag. Priming therefore captures each range's starting
+    /// ETag without dropping any change. Cleared after the priming pass runs.
+    prime_on_first_drain: bool,
 }
 
 impl UnorderedMerge {
@@ -44,6 +60,7 @@ impl UnorderedMerge {
             children: children.into(),
             cursor: 0,
             start_marker: None,
+            prime_on_first_drain: false,
         }
     }
 
@@ -51,6 +68,71 @@ impl UnorderedMerge {
     pub(crate) fn with_start_marker(mut self, start_marker: Option<ChangeFeedStartFrom>) -> Self {
         self.start_marker = start_marker;
         self
+    }
+
+    /// Enables priming every child once before the first page is served.
+    ///
+    /// See [`prime_on_first_drain`](Self::prime_on_first_drain). Set for a fresh
+    /// AllVersionsAndDeletes feed so no range can resume from a stale `Now`.
+    pub(crate) fn with_prime_on_first_drain(mut self, prime: bool) -> Self {
+        self.prime_on_first_drain = prime;
+        self
+    }
+
+    /// Polls every child once so each records its starting continuation.
+    ///
+    /// Only invoked for a fresh AllVersionsAndDeletes feed, whose first
+    /// (start-from-`Now`) poll per range is a `304` with no items. The primed
+    /// page is discarded; only the ETag it advanced — now held by the child —
+    /// is retained, so the next real poll of that range resumes from its true
+    /// starting position rather than from a resume-time `Now`.
+    async fn prime_children(
+        &mut self,
+        context: &mut PipelineContext<'_>,
+    ) -> crate::error::Result<()> {
+        let mut idx = 0;
+        while idx < self.children.len() {
+            let mut split_retries = 0;
+            loop {
+                match self.children[idx].next_page(context).await? {
+                    PageResult::Page { .. } => {
+                        // Start-from-`Now` first poll: a 304 carrying only an
+                        // ETag, which the child has now recorded. Discarding the
+                        // (item-less) page loses nothing; advance to the next
+                        // child.
+                        idx += 1;
+                        break;
+                    }
+                    PageResult::Drained => {
+                        // A fully drained child contributes nothing; drop it and
+                        // stay at the same index (the next child shifts in).
+                        self.children.remove(idx);
+                        break;
+                    }
+                    PageResult::SplitRequired { replacement_nodes } => {
+                        split_retries += 1;
+                        if split_retries > MAX_SPLIT_RETRIES {
+                            return Err(crate::error::CosmosError::builder()
+                                .with_status(
+                                    crate::error::CosmosStatus::CLIENT_SPLIT_RETRIES_EXHAUSTED,
+                                )
+                                .with_message(format!(
+                                    "exceeded maximum split retries ({MAX_SPLIT_RETRIES}) \
+                                     while priming UnorderedMerge children"
+                                ))
+                                .build());
+                        }
+                        // Splice the replacement ranges in place and re-prime
+                        // from the first replacement (same index).
+                        self.children.remove(idx);
+                        for (i, node) in replacement_nodes.into_iter().enumerate() {
+                            self.children.insert(idx + i, node);
+                        }
+                    }
+                }
+            }
+        }
+        Ok(())
     }
 }
 
@@ -62,6 +144,17 @@ impl PipelineNode for UnorderedMerge {
     ) -> crate::error::Result<PageResult> {
         if self.children.is_empty() {
             return Ok(PageResult::Drained);
+        }
+
+        // For a fresh AllVersionsAndDeletes feed, poll every range once up front
+        // so each records its concrete starting continuation before any
+        // checkpoint can be taken. This runs exactly once.
+        if self.prime_on_first_drain {
+            self.prime_on_first_drain = false;
+            self.prime_children(context).await?;
+            if self.children.is_empty() {
+                return Ok(PageResult::Drained);
+            }
         }
 
         let mut split_retries = 0;
@@ -334,6 +427,95 @@ mod tests {
         match r {
             PageResult::Page { is_terminal, .. } => {
                 assert!(!is_terminal, "UnorderedMerge must never signal terminal");
+            }
+            other => panic!("expected Page, got {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn prime_on_first_drain_polls_every_child_once() {
+        // Child 0 has a second page; children 1 and 2 have one each. Priming
+        // must poll every child once (consuming a1, b1, c1) before the
+        // round-robin serves a page, so the first served page is child 0's
+        // *second* poll (a2) rather than a1.
+        let child_a = MockLeaf::with_pages(vec![
+            Ok(PageResult::Page {
+                response: response(b"a1"),
+                is_terminal: true,
+            }),
+            Ok(PageResult::Page {
+                response: response(b"a2"),
+                is_terminal: false,
+            }),
+        ]);
+        let child_b = MockLeaf::with_pages(vec![Ok(PageResult::Page {
+            response: response(b"b1"),
+            is_terminal: true,
+        })]);
+        let child_c = MockLeaf::with_pages(vec![Ok(PageResult::Page {
+            response: response(b"c1"),
+            is_terminal: true,
+        })]);
+
+        let mut merge = UnorderedMerge::new(vec![
+            Box::new(child_a),
+            Box::new(child_b),
+            Box::new(child_c),
+        ])
+        .with_prime_on_first_drain(true);
+        let mut executor = NoopRequestExecutor;
+        let mut topology = NoopTopologyProvider;
+        let mut ctx = PipelineContext::new(&mut executor, Some(&mut topology));
+
+        let r = merge.next_page(&mut ctx).await.unwrap();
+        match r {
+            PageResult::Page { response, .. } => {
+                assert_eq!(
+                    response.body_bytes(),
+                    b"a2",
+                    "priming must consume every child's first poll before serving a page"
+                );
+            }
+            other => panic!("expected Page, got {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn prime_on_first_drain_handles_split() {
+        // A range that has split before its first poll must be primed through
+        // its replacements: priming polls each replacement once before the
+        // round-robin serves a page.
+        let split_child = MockLeaf::with_pages(vec![Ok(PageResult::SplitRequired {
+            replacement_nodes: vec![
+                Box::new(MockLeaf::with_pages(vec![
+                    Ok(PageResult::Page {
+                        response: response(b"ra1"),
+                        is_terminal: true,
+                    }),
+                    Ok(PageResult::Page {
+                        response: response(b"ra2"),
+                        is_terminal: false,
+                    }),
+                ])),
+                Box::new(MockLeaf::with_pages(vec![Ok(PageResult::Page {
+                    response: response(b"rb1"),
+                    is_terminal: true,
+                })])),
+            ],
+        })]);
+
+        let mut merge =
+            UnorderedMerge::new(vec![Box::new(split_child)]).with_prime_on_first_drain(true);
+        let mut executor = NoopRequestExecutor;
+        let mut topology = NoopTopologyProvider;
+        let mut ctx = PipelineContext::new(&mut executor, Some(&mut topology));
+
+        // Priming splices in the two replacements and polls each once (ra1,
+        // rb1); the served page is the first replacement's second poll (ra2).
+        let r = merge.next_page(&mut ctx).await.unwrap();
+        match r {
+            PageResult::Page { response, .. } => {
+                assert_eq!(response.body_bytes(), b"ra2");
             }
             other => panic!("expected Page, got {other:?}"),
         }

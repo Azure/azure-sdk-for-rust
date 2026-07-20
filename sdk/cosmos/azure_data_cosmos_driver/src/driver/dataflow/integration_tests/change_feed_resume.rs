@@ -83,6 +83,19 @@ fn change_feed_operation(start_from: Option<ChangeFeedStartFrom>) -> Arc<CosmosO
     Arc::new(op)
 }
 
+/// Builds an AllVersionsAndDeletes (full-fidelity) change feed operation over
+/// the whole container, optionally carrying an explicit start position.
+fn avad_change_feed_operation(start_from: Option<ChangeFeedStartFrom>) -> Arc<CosmosOperation> {
+    let mut op = CosmosOperation::change_feed_all_versions_and_deletes(
+        test_container(),
+        Some(FeedRange::full()),
+    );
+    if let Some(marker) = start_from {
+        op = op.with_change_feed_start(marker);
+    }
+    Arc::new(op)
+}
+
 fn resolved(min: &str, max: &str, pk_range_id: &str) -> ResolvedRange {
     ResolvedRange {
         partition_key_range_id: pk_range_id.to_string(),
@@ -318,4 +331,140 @@ async fn change_feed_resume_across_merge_reads_each_parent_subrange() {
         ],
         "each merged leaf must carry its parent's EPK sub-range",
     );
+}
+
+/// Guards the AllVersionsAndDeletes lossless-`Now` contract: a fresh
+/// full-fidelity feed must pin **every** range to a concrete starting ETag
+/// before any checkpoint, so a range that is never served before a checkpoint
+/// still resumes from its true starting position instead of a resume-time
+/// `Now` (which would silently drop the versions and deletes in the gap).
+///
+/// Two partitions exist, but session 1 pulls only a single page — round-robin
+/// alone would poll just the left range. Priming must poll the right range too,
+/// so the checkpoint carries an ETag for both. On resume both ranges re-send
+/// their pinned ETags rather than restarting.
+///
+/// The LatestVersion (incremental) feed deliberately does **not** prime: a
+/// never-polled range there simply re-reads from the persisted start on resume,
+/// which is benign because incremental only surfaces the latest version.
+#[tokio::test]
+async fn all_versions_and_deletes_pins_every_range_before_checkpoint() {
+    let op = avad_change_feed_operation(Some(ChangeFeedStartFrom::Now));
+
+    // Session 1: two partitions. Priming polls left then right (each a
+    // start-from-`Now` 304 carrying only an ETag); the round-robin then serves
+    // the left range's next poll. Three polls total for one served page.
+    let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![
+        resolved("", "80", "pk-left"),
+        resolved("80", "FF", "pk-right"),
+    ])]);
+    let mut executor1 = MockRequestExecutor::new(vec![
+        Ok(cf_page(b"", "lsn-left-0")),       // prime left
+        Ok(cf_page(b"", "lsn-right-0")),      // prime right (never served)
+        Ok(cf_page(b"left-1", "lsn-left-1")), // served page
+    ]);
+
+    let mut pipeline1 = build_unordered_merge(&FeedRange::full(), &mut topology1, &op, None)
+        .await
+        .unwrap();
+    let pages1 = drain_pages(&mut pipeline1, &mut executor1, 1).await;
+    assert_eq!(pages1, vec![b"left-1".to_vec()]);
+    assert_eq!(
+        executor1.continuation_calls,
+        vec![None, None, Some("lsn-left-0".to_owned())],
+        "priming starts both ranges fresh; the served left poll continues from its primed ETag",
+    );
+
+    // The snapshot must record an ETag for BOTH ranges — including the right
+    // range that was only primed, never served — so neither resumes from `Now`.
+    let state = pipeline1.snapshot_state().unwrap();
+    match &state {
+        PipelineNodeState::UnorderedMerge {
+            active_tokens,
+            start_from,
+        } => {
+            assert_eq!(
+                active_tokens.len(),
+                2,
+                "both ranges must be pinned, got {active_tokens:?}",
+            );
+            assert_eq!(active_tokens[0].max_epk, "80");
+            assert_eq!(active_tokens[0].server_continuation, "lsn-left-1");
+            assert_eq!(active_tokens[1].min_epk, "80");
+            assert_eq!(
+                active_tokens[1].server_continuation, "lsn-right-0",
+                "the never-served right range must still carry its primed ETag",
+            );
+            assert_eq!(*start_from, Some(ChangeFeedStartFrom::Now));
+        }
+        other => panic!("expected UnorderedMerge snapshot, got {other:?}"),
+    }
+    drop(pipeline1);
+
+    // Session 2: resume. Resume does not prime (every range already carries a
+    // saved ETag). Both ranges must re-send their pinned ETags — the right one
+    // in particular must NOT restart from `Now` and drop its gap.
+    let resumed_state = round_trip_state(state, &op);
+    let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![
+        resolved("", "80", "pk-left"),
+        resolved("80", "FF", "pk-right"),
+    ])]);
+    let mut executor2 = MockRequestExecutor::new(vec![
+        Ok(cf_page(b"left-2", "lsn-left-2")),
+        Ok(cf_page(b"right-2", "lsn-right-2")),
+    ]);
+
+    let mut pipeline2 =
+        build_unordered_merge(&FeedRange::full(), &mut topology2, &op, Some(resumed_state))
+            .await
+            .unwrap();
+    let pages2 = drain_pages(&mut pipeline2, &mut executor2, 2).await;
+    assert_eq!(pages2, vec![b"left-2".to_vec(), b"right-2".to_vec()]);
+    assert_eq!(
+        executor2.continuation_calls,
+        vec![
+            Some("lsn-left-1".to_owned()),
+            Some("lsn-right-0".to_owned())
+        ],
+        "resume must re-send each range's pinned ETag, not restart from Now",
+    );
+}
+
+/// The LatestVersion feed must **not** prime: a single page pull polls only one
+/// range, and the never-polled range relies on the persisted `start_from` on
+/// resume. This is the counterpart to
+/// [`all_versions_and_deletes_pins_every_range_before_checkpoint`] and pins the
+/// mode-gated behavior so priming can't accidentally leak into incremental.
+#[tokio::test]
+async fn latest_version_does_not_prime_ranges() {
+    let op = change_feed_operation(Some(ChangeFeedStartFrom::Now));
+
+    let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![
+        resolved("", "80", "pk-left"),
+        resolved("80", "FF", "pk-right"),
+    ])]);
+    // Only one response is available: if priming were (incorrectly) enabled the
+    // mock would be polled twice and panic on the missing second response.
+    let mut executor1 = MockRequestExecutor::new(vec![Ok(cf_page(b"left-1", "lsn-left-1"))]);
+
+    let mut pipeline1 = build_unordered_merge(&FeedRange::full(), &mut topology1, &op, None)
+        .await
+        .unwrap();
+    let pages1 = drain_pages(&mut pipeline1, &mut executor1, 1).await;
+    assert_eq!(pages1, vec![b"left-1".to_vec()]);
+    assert_eq!(
+        executor1.continuation_calls,
+        vec![None],
+        "incremental polls a single range per page — no priming",
+    );
+
+    // Only the polled range is pinned; the other relies on `start_from`.
+    let state = pipeline1.snapshot_state().unwrap();
+    match &state {
+        PipelineNodeState::UnorderedMerge { active_tokens, .. } => {
+            assert_eq!(active_tokens.len(), 1, "got {active_tokens:?}");
+            assert_eq!(active_tokens[0].server_continuation, "lsn-left-1");
+        }
+        other => panic!("expected UnorderedMerge snapshot, got {other:?}"),
+    }
 }

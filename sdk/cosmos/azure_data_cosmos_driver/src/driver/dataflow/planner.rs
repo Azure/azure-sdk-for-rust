@@ -262,6 +262,14 @@ pub(crate) async fn build_unordered_merge(
         operation.change_feed_start().cloned()
     };
 
+    // Full-fidelity (AllVersionsAndDeletes) feeds must pin every range to a
+    // concrete starting continuation on a fresh start, so a range that is never
+    // polled before the first checkpoint can't resume from a stale `Now` and
+    // drop the versions/deletes in the gap. On resume every range already
+    // carries a saved continuation (the prior session primed them), so priming
+    // is only needed on a fresh start.
+    let prime_on_first_drain = operation.request_headers().full_fidelity_feed && !is_resume;
+
     // On resume the operation rebuilt by the SDK no longer carries the original
     // start headers (the caller only passed the continuation token). Re-derive
     // them from the persisted marker so partitions with no saved continuation
@@ -345,7 +353,11 @@ pub(crate) async fn build_unordered_merge(
             .build());
     }
 
-    let root = Box::new(UnorderedMerge::new(request_nodes).with_start_marker(start_marker));
+    let root = Box::new(
+        UnorderedMerge::new(request_nodes)
+            .with_start_marker(start_marker)
+            .with_prime_on_first_drain(prime_on_first_drain),
+    );
     Ok(Pipeline::new(root))
 }
 

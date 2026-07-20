@@ -431,8 +431,8 @@ pub async fn change_feed_all_versions_and_deletes_resume_across_split() -> Resul
                 .filter(|e| e.operation_type() == Some(ChangeFeedOperationType::Create))
                 .filter_map(|e| e.current().and_then(|c| c.id.clone()))
                 .collect();
-got_creates.sort();
-expected_creates.sort();
+            got_creates.sort();
+            expected_creates.sort();
             assert_eq!(
                 got_creates, expected_creates,
                 "resume across split must deliver exactly the post-split creates once each"
