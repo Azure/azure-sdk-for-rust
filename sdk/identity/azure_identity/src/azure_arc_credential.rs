@@ -27,7 +27,6 @@ use std::{
     str,
     sync::Arc,
 };
-#[cfg(not(windows))]
 use std::{io, path::PathBuf};
 use time::Duration;
 
