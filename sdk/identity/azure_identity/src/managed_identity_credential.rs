@@ -23,7 +23,7 @@ pub enum UserAssignedId {
     ResourceId(String),
 }
 
-/// Authenticates a managed identity from Azure App Service or an Azure Virtual Machine.
+/// Authenticates a managed identity from Azure App Service, Azure Virtual Machine, or Azure Arc.
 pub struct ManagedIdentityCredential {
     credential: Arc<dyn TokenCredential>,
 }
@@ -95,7 +95,7 @@ impl ManagedIdentityCredential {
                     return Err(azure_core::Error::with_message_fn(
                         azure_core::error::ErrorKind::Credential,
                         || {
-                            "User-assigned managed identities aren't supported for Azure Arc. Only managed identity is supported.".to_string()
+                            "User-assigned managed identities aren't supported for Azure Arc. Only a system-assigned managed identity is supported.".to_string()
                         },
                     ));
                 }
