@@ -636,6 +636,25 @@ impl OperationType {
         )
     }
 
+    /// Returns true if driver-side binary encoding/transcoding is honored for
+    /// this operation type.
+    ///
+    /// Only point item operations are supported. Query, feed, batch, and
+    /// stored-procedure paths are deferred per the binary-encoding spec, so the
+    /// driver ignores the flag on those operations rather than transcoding a
+    /// body the read path cannot yet handle. `Patch` is dispatched to its own
+    /// handler before this check and is likewise unsupported.
+    pub fn supports_binary_encoding(self) -> bool {
+        matches!(
+            self,
+            OperationType::Create
+                | OperationType::Read
+                | OperationType::Replace
+                | OperationType::Upsert
+                | OperationType::Delete
+        )
+    }
+
     /// Returns the HTTP method for this operation type.
     pub fn http_method(self) -> azure_core::http::Method {
         use azure_core::http::Method;

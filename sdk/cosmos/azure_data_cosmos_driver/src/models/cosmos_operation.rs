@@ -136,12 +136,6 @@ pub struct CosmosOperation {
     /// token so never-polled partitions can re-apply it on resume. `None` for
     /// non-change-feed operations.
     change_feed_start: Option<ChangeFeedStartFrom>,
-    /// When `true`, the driver converts a Cosmos **binary** JSON response body
-    /// to UTF-8 **text** JSON before returning it, leaving the wire binary in
-    /// both directions. This is an internal driver directive — not a wire
-    /// header — set by an SDK that wants efficient binary transport but a
-    /// text-JSON payload handed back to the application.
-    transcode_response_to_text: bool,
 }
 
 impl CosmosOperation {
@@ -262,27 +256,6 @@ impl CosmosOperation {
         self
     }
 
-    /// Returns `true` if the driver should transcode a binary response body to
-    /// text JSON before returning it.
-    pub fn transcode_response_to_text(&self) -> bool {
-        self.transcode_response_to_text
-    }
-
-    /// Requests that the driver convert a Cosmos **binary** JSON response body
-    /// to UTF-8 **text** JSON before returning it.
-    ///
-    /// This keeps the wire binary in both directions (efficient request RUs and
-    /// network bandwidth) while handing the application a text-JSON payload. It
-    /// is orthogonal to
-    /// [`with_supported_serialization_formats`](Self::with_supported_serialization_formats):
-    /// the client still advertises `CosmosBinary` so the service replies with
-    /// binary, and the driver does the binary→text conversion locally. A no-op
-    /// on a response that is already text.
-    pub fn with_transcode_response_to_text(mut self, transcode: bool) -> Self {
-        self.transcode_response_to_text = transcode;
-        self
-    }
-
     /// Sets the maximum number of items the server should return per page
     /// (the `x-ms-max-item-count` request header).
     ///
@@ -387,7 +360,6 @@ impl CosmosOperation {
             patch_max_attempts: None,
             is_change_feed: false,
             change_feed_start: None,
-            transcode_response_to_text: false,
         }
     }
 

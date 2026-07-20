@@ -138,8 +138,9 @@ impl CosmosResponse {
 
     /// Transcodes a binary JSON response body to text JSON in place.
     ///
-    /// Applied by the driver when the operation set
-    /// [`with_transcode_response_to_text`](crate::models::CosmosOperation::with_transcode_response_to_text):
+    /// Applied by the driver when the operation negotiated binary on the wire
+    /// and the caller requested a text response
+    /// ([`BinaryEncodingOptions::request_text_response`](crate::options::BinaryEncodingOptions)):
     /// the wire stays binary in both directions, and the driver converts the
     /// binary response payload to text before returning it. A text (or empty)
     /// body is left unchanged.

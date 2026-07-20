@@ -2133,15 +2133,6 @@ impl CosmosDriver {
         // so the resulting async future has a fixed size even though it can
         // recurse.
         if operation.operation_type() == crate::models::OperationType::Patch {
-            // PATCH returns before the response-transcode block at the end of
-            // this function, so a patch that requested text transcoding would
-            // hand back a still-binary body. This is inert today (no patch path
-            // enables binary), but assert the assumption so the trap surfaces
-            // the moment PATCH gains binary support.
-            debug_assert!(
-                !operation.transcode_response_to_text(),
-                "PATCH bypasses response transcoding; binary support for patch must route through the shared transcode step"
-            );
             let max_attempts = operation.patch_max_attempts();
             return Box::pin(async {
                 let result = crate::driver::pipeline::patch_handler::execute(
@@ -2156,23 +2147,33 @@ impl CosmosDriver {
             .await;
         }
 
-        // Resolve the schema-agnostic binary-encoding request from the
-        // operation-layer options. When enabled, the driver puts binary on the
-        // wire (transcoding a text request body to binary and advertising
-        // `CosmosBinary`) so any consumer — the Rust SDK or an FFI host — can
-        // deal in text while the wire stays binary.
-        let binary = options.binary_encoding.clone().unwrap_or_default();
+        // Resolve the schema-agnostic binary-encoding request through the same
+        // runtime → account → operation layered view as every other option, so
+        // a default set at the runtime/account layer (e.g. via `DriverOptions`)
+        // is honored rather than silently ignored.
+        //
+        // Binary encoding is only honored for point item operations. Query,
+        // feed, batch, and stored-procedure paths are deferred per the
+        // binary-encoding spec, so even if a caller (e.g. an FFI host) sets the
+        // flag on one of those operations the driver ignores it rather than
+        // transcoding a body the read path cannot yet handle.
+        let binary = if operation.operation_type().supports_binary_encoding() {
+            self.operation_options_view(&options)
+                .binary_encoding()
+                .cloned()
+                .unwrap_or_default()
+        } else {
+            crate::options::BinaryEncodingOptions::default()
+        };
         let operation = if binary.enabled {
             Self::apply_request_binary_encoding(operation)?
         } else {
             operation
         };
 
-        // The response is transcoded to text when the resolved option asks for
-        // it, or when a caller set the operation directive directly (the SDK's
-        // typed fast path).
-        let transcode_response_to_text = operation.transcode_response_to_text()
-            || (binary.enabled && binary.request_text_response);
+        // The response is transcoded to text when binary is negotiated on the
+        // wire and the caller asked for a text payload.
+        let transcode_response_to_text = binary.enabled && binary.request_text_response;
 
         // TODO: This boxing is a temporary fix to avoid a large future.
         // We need to do some refactoring here to shrink the future size and avoid this heap allocation if possible.

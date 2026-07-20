@@ -168,7 +168,7 @@ impl ResponseBody {
     ///
     /// Used by the driver when the operation requested a text response while
     /// keeping the wire binary (see
-    /// [`CosmosOperation::with_transcode_response_to_text`](crate::models::CosmosOperation::with_transcode_response_to_text)).
+    /// [`BinaryEncodingOptions::request_text_response`](crate::options::BinaryEncodingOptions)).
     /// The conversion is schema-agnostic: each buffer is decoded with
     /// [`binary_json::decode`](crate::binary_json::decode) and re-serialized as
     /// compact text JSON. A [`NoPayload`](Self::NoPayload) body is a no-op.
