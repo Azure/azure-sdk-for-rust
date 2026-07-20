@@ -116,6 +116,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     use azure_data_cosmos::{
         AccountEndpoint, AccountReference, CosmosClientBuilder, RoutingStrategy,
     };
+    use azure_data_cosmos_driver::options::ConnectionPoolOptionsBuilder;
     use clap::Parser;
 
     use crate::config::{AuthMethod, Config};
@@ -359,6 +360,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .ok()
             .and_then(|v| v.parse::<bool>().ok())
             .unwrap_or(true),
+        gateway_v2_disabled: ConnectionPoolOptionsBuilder::new()
+            .build()?
+            .gateway_v2_disabled(),
         diagnostics_threshold_ms: config.diagnostics_threshold_ms,
         pyroscope_enabled: std::env::var("PYROSCOPE_SERVER_URL")
             .map(|v| !v.is_empty())

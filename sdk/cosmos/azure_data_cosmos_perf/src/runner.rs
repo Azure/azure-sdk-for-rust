@@ -102,6 +102,8 @@ struct PerfResult {
     #[serde(skip_serializing_if = "Option::is_none")]
     config_ppcb_enabled: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    config_gateway_v2_disabled: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     config_diagnostics_threshold_ms: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     config_pyroscope_enabled: Option<bool>,
@@ -192,6 +194,7 @@ pub struct ConfigSnapshot {
     pub excluded_regions: String,
     pub tokio_threads: u64,
     pub ppcb_enabled: bool,
+    pub gateway_v2_disabled: bool,
     pub diagnostics_threshold_ms: Option<u64>,
     pub pyroscope_enabled: bool,
     pub tokio_console_enabled: bool,
@@ -608,6 +611,7 @@ async fn upsert_results(
             },
             config_tokio_threads: Some(config.tokio_threads),
             config_ppcb_enabled: Some(config.ppcb_enabled),
+            config_gateway_v2_disabled: Some(config.gateway_v2_disabled),
             config_diagnostics_threshold_ms: config.diagnostics_threshold_ms,
             config_pyroscope_enabled: Some(config.pyroscope_enabled),
             config_tokio_console_enabled: Some(config.tokio_console_enabled),
