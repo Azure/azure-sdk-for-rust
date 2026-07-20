@@ -48,6 +48,11 @@ struct EventDataBatchState {
 pub struct EventDataBatch<'a> {
     producer: &'a ProducerClient,
     batch_state: Mutex<EventDataBatchState>,
+    /// The size the caller asked for, if any. `attach` compares it against the
+    /// maximum the link reports and keeps it when it fits. It stays separate
+    /// from `max_size_in_bytes` so that `attach` can tell "the caller asked for
+    /// this" apart from "nobody asked, use the link maximum".
+    requested_max_size_in_bytes: Option<u64>,
     max_size_in_bytes: u64,
     partition_key: Option<String>,
     partition_id: Option<String>,
@@ -65,6 +70,7 @@ impl<'a> EventDataBatch<'a> {
                 size_in_bytes: 0,
                 batch_envelope: None,
             }),
+            requested_max_size_in_bytes: options.as_ref().and_then(|o| o.max_size_in_bytes),
             max_size_in_bytes: options
                 .as_ref()
                 .map_or(u64::MAX, |o| o.max_size_in_bytes.unwrap_or(u64::MAX)),
@@ -84,7 +90,7 @@ impl<'a> EventDataBatch<'a> {
     pub(crate) async fn attach(&mut self) -> Result<()> {
         let path = self.get_batch_path()?;
         let sender = self.producer.ensure_sender(path.clone()).await?;
-        self.max_size_in_bytes = sender.max_message_size().await?.ok_or_else(|| {
+        let link_max_size = sender.max_message_size().await?.ok_or_else(|| {
             warn!(
                 path = %path,
                 "The sender link did not report a maximum message size; cannot size the batch."
@@ -94,7 +100,43 @@ impl<'a> EventDataBatch<'a> {
                 "No maximum message size available from the sender link.",
             )
         })?;
+
+        if let Some(requested) = self.requested_max_size_in_bytes {
+            if requested > link_max_size {
+                warn!(
+                    path = %path,
+                    requested,
+                    link_max_size,
+                    "The requested batch size is larger than the link allows."
+                );
+            }
+        }
+        self.max_size_in_bytes =
+            Self::resolve_max_size_in_bytes(self.requested_max_size_in_bytes, link_max_size)?;
         Ok(())
+    }
+
+    /// Decides the batch size from the size the caller asked for and the
+    /// maximum the link reports.
+    ///
+    /// A request larger than the link allows is rejected, it is not reduced.
+    /// The broker refuses the oversized transfer anyway, and a silent reduction
+    /// hides that the requested size was impossible. The other Azure SDKs for
+    /// Event Hubs (.NET, Go and Java) all report an error in this case. With no
+    /// request, the link maximum applies.
+    fn resolve_max_size_in_bytes(requested: Option<u64>, link_max_size: u64) -> Result<u64> {
+        match requested {
+            Some(requested) if requested > link_max_size => Err(Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                format!(
+                    "The requested maximum batch size ({requested} bytes) is larger than the \
+                     maximum the link allows ({link_max_size} bytes)."
+                ),
+            )
+            .into()),
+            Some(requested) => Ok(requested),
+            None => Ok(link_max_size),
+        }
     }
 
     /// Gets the size of the batch in bytes.
@@ -381,5 +423,45 @@ mod tests {
         assert_eq!(options.max_size_in_bytes, Some(1024));
         assert_eq!(options.partition_key, Some("pk".to_string()));
         assert_eq!(options.partition_id, Some("pid".to_string()));
+    }
+
+    // The size the caller asks for must reach the batch. Before this was fixed,
+    // `attach` replaced it with the link maximum, so a batch capped at 1 KiB
+    // accepted far more than 1 KiB.
+    #[test]
+    fn caller_size_is_kept_when_it_fits() {
+        let size = EventDataBatch::resolve_max_size_in_bytes(Some(1024), 1_048_576)
+            .expect("a size below the link maximum is allowed");
+        assert_eq!(size, 1024);
+    }
+
+    // With no request, the link maximum applies. This is the historical
+    // behavior and the other Azure SDKs agree on it.
+    #[test]
+    fn link_size_applies_when_the_caller_asks_for_nothing() {
+        let size = EventDataBatch::resolve_max_size_in_bytes(None, 1_048_576)
+            .expect("the link maximum is always allowed");
+        assert_eq!(size, 1_048_576);
+    }
+
+    // A request the link cannot satisfy is an error, not a smaller batch. The
+    // message must name both sizes, so the caller can see the limit.
+    #[test]
+    fn caller_size_above_the_link_maximum_is_rejected() {
+        let error = EventDataBatch::resolve_max_size_in_bytes(Some(2_097_152), 1_048_576)
+            .expect_err("a size above the link maximum must be rejected");
+        let message = error.to_string();
+        assert!(
+            message.contains("2097152") && message.contains("1048576"),
+            "the error must name the requested and the allowed size, got: {message}"
+        );
+    }
+
+    // The boundary is inclusive: a request equal to the link maximum fits.
+    #[test]
+    fn caller_size_equal_to_the_link_maximum_is_allowed() {
+        let size = EventDataBatch::resolve_max_size_in_bytes(Some(1_048_576), 1_048_576)
+            .expect("a size equal to the link maximum is allowed");
+        assert_eq!(size, 1_048_576);
     }
 }
