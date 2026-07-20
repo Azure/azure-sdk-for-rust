@@ -6,7 +6,8 @@ use crate::{
     span::{OpenTelemetrySpan, OpenTelemetrySpanKind},
 };
 
-use azure_core::tracing::{SpanKind, Tracer};
+use azure_core::time::OffsetDateTime;
+use azure_core::tracing::{SpanKind, SpanOptions, Tracer};
 use opentelemetry::{
     global::BoxedTracer,
     trace::{TraceContextExt, Tracer as OpenTelemetryTracerTrait},
@@ -34,7 +35,7 @@ impl OpenTelemetryTracer {
         name: Cow<'static, str>,
         kind: SpanKind,
         attributes: Vec<azure_core::tracing::Attribute>,
-        start_time: Option<SystemTime>,
+        start_time: Option<OffsetDateTime>,
         context: Context,
     ) -> Arc<dyn azure_core::tracing::Span> {
         let mut span_builder = opentelemetry::trace::SpanBuilder::from_name(name)
@@ -45,7 +46,7 @@ impl OpenTelemetryTracer {
                     .map(|attr| KeyValue::from(OpenTelemetryAttribute(attr.clone()))),
             );
         if let Some(start_time) = start_time {
-            span_builder = span_builder.with_start_time(start_time);
+            span_builder = span_builder.with_start_time(SystemTime::from(start_time));
         }
         let span = self.inner.build_with_context(span_builder, &context);
 
@@ -90,14 +91,20 @@ impl Tracer for OpenTelemetryTracer {
         self.build_span(name, kind, attributes, None, Context::current())
     }
 
-    fn start_span_at(
+    fn start_span_with_options(
         &self,
         name: Cow<'static, str>,
         kind: SpanKind,
         attributes: Vec<azure_core::tracing::Attribute>,
-        start_time: SystemTime,
+        options: SpanOptions,
     ) -> Arc<dyn azure_core::tracing::Span> {
-        self.build_span(name, kind, attributes, Some(start_time), Context::current())
+        self.build_span(
+            name,
+            kind,
+            attributes,
+            options.start_time,
+            Context::current(),
+        )
     }
 
     fn start_span_with_parent(
@@ -111,16 +118,16 @@ impl Tracer for OpenTelemetryTracer {
         self.build_span(name, kind, attributes, None, context)
     }
 
-    fn start_span_with_parent_at(
+    fn start_span_with_parent_and_options(
         &self,
         name: Cow<'static, str>,
         kind: SpanKind,
         attributes: Vec<azure_core::tracing::Attribute>,
         parent: Arc<dyn azure_core::tracing::Span>,
-        start_time: SystemTime,
+        options: SpanOptions,
     ) -> Arc<dyn azure_core::tracing::Span> {
         let context = Self::parent_context(&parent);
-        self.build_span(name, kind, attributes, Some(start_time), context)
+        self.build_span(name, kind, attributes, options.start_time, context)
     }
 }
 

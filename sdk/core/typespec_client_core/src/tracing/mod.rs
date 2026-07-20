@@ -4,7 +4,8 @@
 //! Distributed tracing trait definitions
 //!
 use crate::http::{Context, Request};
-use std::{borrow::Cow, fmt::Debug, sync::Arc, time::SystemTime};
+use crate::time::OffsetDateTime;
+use std::{borrow::Cow, fmt::Debug, sync::Arc};
 
 /// Overall architecture for distributed tracing in the SDK.
 ///
@@ -37,6 +38,33 @@ pub trait TracerProvider: Send + Sync + Debug {
         crate_name: &'static str,
         crate_version: Option<&'static str>,
     ) -> Arc<dyn Tracer>;
+}
+
+/// Options that customize how a span is started.
+///
+/// `SpanOptions` is passed to [`Tracer::start_span_with_options`] and
+/// [`Tracer::start_span_with_parent_and_options`]. It implements [`Default`], so new options
+/// can be added in the future without changing the [`Tracer`] method signatures. Construct it
+/// with [`Default::default`] and struct update syntax:
+///
+/// ```
+/// use typespec_client_core::tracing::SpanOptions;
+/// use typespec_client_core::time::OffsetDateTime;
+///
+/// let options = SpanOptions {
+///     start_time: Some(OffsetDateTime::now_utc()),
+///     ..Default::default()
+/// };
+/// ```
+#[derive(Debug, Clone, Default)]
+pub struct SpanOptions {
+    /// An explicit start time to record for the span.
+    ///
+    /// When `None`, the span starts at the current time. When `Some`, the span is
+    /// *backdated* to the given time, letting a caller reconstruct a span for an operation
+    /// that has *already completed* — required for tail-based (late-bound) sampling, where
+    /// the decision to emit a span is made after the operation finishes.
+    pub start_time: Option<OffsetDateTime>,
 }
 
 /// The `Tracer` trait is responsible for creating spans and managing the active span in distributed tracing.
@@ -83,72 +111,71 @@ pub trait Tracer: Send + Sync + Debug {
         parent: Arc<dyn Span>,
     ) -> Arc<dyn Span>;
 
-    /// Starts a new span with the given name and type, backdated to an explicit start time.
+    /// Starts a new span with the given name and type, customized by [`SpanOptions`].
     ///
-    /// This is the backdating variant of [`Tracer::start_span`]. It lets a caller
-    /// reconstruct a span for an operation that has *already completed* by recording the
-    /// timestamp at which the operation actually started, rather than "now". This is
-    /// required for tail-based (late-bound) sampling, where the decision to emit a span is
-    /// made after the operation finishes. The newly created span will have the "current"
-    /// span as a parent.
+    /// The newly created span will have the "current" span as a parent. [`SpanOptions`] lets
+    /// the caller, for example, *backdate* the span via [`SpanOptions::start_time`] so it can
+    /// reconstruct a span for an operation that has *already completed*. This is required for
+    /// tail-based (late-bound) sampling, where the decision to emit a span is made after the
+    /// operation finishes.
     ///
     /// # Arguments
     /// - `name`: The name of the span to start.
     /// - `kind`: The type of the span to start.
     /// - `attributes`: A vector of attributes to associate with the span.
-    /// - `start_time`: The explicit start time to record for the span.
+    /// - `options`: Additional options, such as an explicit start time, for the span.
     ///
     /// # Returns
     /// An `Arc<dyn Span>` representing the started span.
     ///
     /// # Note
-    /// The default implementation ignores `start_time` and delegates to
-    /// [`Tracer::start_span`] so that existing implementations remain source-compatible.
-    /// Implementations backed by a tracing system that supports explicit timestamps (such
-    /// as the OpenTelemetry bridge) override this to honor `start_time`.
-    fn start_span_at(
+    /// The default implementation ignores `options` and delegates to [`Tracer::start_span`]
+    /// so that existing implementations remain source-compatible. Implementations backed by a
+    /// tracing system that supports these options (such as the OpenTelemetry bridge) override
+    /// this to honor them.
+    fn start_span_with_options(
         &self,
         name: Cow<'static, str>,
         kind: SpanKind,
         attributes: Vec<Attribute>,
-        start_time: SystemTime,
+        options: SpanOptions,
     ) -> Arc<dyn Span> {
-        let _ = start_time;
+        let _ = options;
         self.start_span(name, kind, attributes)
     }
 
-    /// Starts a new child span with the given name, type, and parent span, backdated to an explicit start time.
+    /// Starts a new child span with the given name, type, and parent span, customized by [`SpanOptions`].
     ///
-    /// This is the backdating variant of [`Tracer::start_span_with_parent`]. It lets a
-    /// caller reconstruct a child span (for example, a single retry attempt) under an
-    /// explicit parent using the timestamp at which the child operation actually started.
+    /// This is the [`SpanOptions`] variant of [`Tracer::start_span_with_parent`]. It lets a
+    /// caller reconstruct a child span (for example, a single retry attempt) under an explicit
+    /// parent, optionally *backdated* via [`SpanOptions::start_time`].
     ///
     /// # Arguments
     /// - `name`: The name of the span to start.
     /// - `kind`: The type of the span to start.
     /// - `attributes`: A vector of attributes to associate with the span.
     /// - `parent`: The parent span to use for the new span.
-    /// - `start_time`: The explicit start time to record for the span.
+    /// - `options`: Additional options, such as an explicit start time, for the span.
     ///
     /// # Returns
     /// An `Arc<dyn Span>` representing the started span.
     ///
     /// # Note
-    /// The default implementation ignores `start_time` and delegates to
+    /// The default implementation ignores `options` and delegates to
     /// [`Tracer::start_span_with_parent`] so that existing implementations remain
-    /// source-compatible. Implementations backed by a tracing system that supports explicit
-    /// timestamps (such as the OpenTelemetry bridge) override this to honor `start_time`.
+    /// source-compatible. Implementations backed by a tracing system that supports these
+    /// options (such as the OpenTelemetry bridge) override this to honor them.
     ///
     /// Note: This method may panic if the parent span cannot be downcasted to the expected type.
-    fn start_span_with_parent_at(
+    fn start_span_with_parent_and_options(
         &self,
         name: Cow<'static, str>,
         kind: SpanKind,
         attributes: Vec<Attribute>,
         parent: Arc<dyn Span>,
-        start_time: SystemTime,
+        options: SpanOptions,
     ) -> Arc<dyn Span> {
-        let _ = start_time;
+        let _ = options;
         self.start_span_with_parent(name, kind, attributes, parent)
     }
 
@@ -222,7 +249,7 @@ pub trait Span: AsAny + Send + Sync {
     ///
     /// This is the backdating variant of [`Span::end`]. It lets a caller close a
     /// reconstructed span at the timestamp the operation actually finished, rather than
-    /// "now" — the counterpart to [`Tracer::start_span_at`] for late-bound (tail-sampled)
+    /// "now" — the counterpart to [`SpanOptions::start_time`] for late-bound (tail-sampled)
     /// spans.
     ///
     /// # Arguments
@@ -233,7 +260,7 @@ pub trait Span: AsAny + Send + Sync {
     /// existing implementations remain source-compatible. Implementations backed by a
     /// tracing system that supports explicit timestamps (such as the OpenTelemetry bridge)
     /// override this to honor `end_time`.
-    fn end_at(&self, end_time: SystemTime) {
+    fn end_at(&self, end_time: OffsetDateTime) {
         let _ = end_time;
         self.end();
     }
