@@ -91,6 +91,14 @@ impl ManagedIdentityCredential {
                 VirtualMachineManagedIdentityCredential::new(id, options.client_options, env)?
             }
             ManagedIdentitySource::AzureArc => {
+                if !matches!(&id, ImdsId::SystemAssigned) {
+                    return Err(azure_core::Error::with_message_fn(
+                        azure_core::error::ErrorKind::Credential,
+                        || {
+                            "User-assigned managed identities aren't supported for Azure Arc. Only managed identity is supported.".to_string()
+                        },
+                    ));
+                }
                 AzureArcCredential::new(id, options.client_options, env)?
             }
             _ => {
