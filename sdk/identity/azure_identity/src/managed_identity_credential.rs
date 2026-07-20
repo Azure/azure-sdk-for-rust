@@ -575,7 +575,7 @@ mod tests {
             .extend_pairs(params);
 
         let key_id = rand::random::<u8>();
-        let token_path = env::temp_dir().join(format!("arc-{key_id}.token"));
+        let token_path = env::temp_dir().join(format!("arc-{key_id}.key"));
         let mut token_file = File::create_new(&token_path).unwrap();
         token_file.write_all("abc".as_bytes()).unwrap();
         drop(token_file);
@@ -638,7 +638,7 @@ mod tests {
             .extend_pairs(params);
 
         let key_id = rand::random::<u8>();
-        let token_path = env::temp_dir().join(format!("arc-big{key_id}.token"));
+        let token_path = env::temp_dir().join(format!("arc-big{key_id}.key"));
         let mut token_file = File::create_new(&token_path).unwrap();
         let large_buf: [u8; 4097] = [0; 4097]; // 4096 is the max
         token_file.write_all(&large_buf).unwrap();

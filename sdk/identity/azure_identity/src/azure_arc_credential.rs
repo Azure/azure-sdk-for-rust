@@ -27,6 +27,8 @@ use std::{
     str,
     sync::Arc,
 };
+#[cfg(not(windows))]
+use std::{io, path::PathBuf};
 use time::Duration;
 
 const DEFAULT_ENDPOINT: &str = "http://localhost:40342/metadata/identity/oauth2/token";
@@ -38,6 +40,7 @@ pub(crate) struct AzureArcCredential {
     pipeline: Pipeline,
     id: ImdsId,
     cache: TokenCache,
+    #[allow(dead_code)] // this is used in windows through a #[cfg(windows)] directive
     env: Env,
 }
 
@@ -214,28 +217,36 @@ impl AzureArcCredential {
     fn retrieve_challenge_response(&self, challenge: &str) -> Result<String, Error> {
         let challenge_path = Path::new(challenge).canonicalize()?;
 
-        if !cfg!(test) {
-            let expected_challenge_base = if cfg!(windows) {
-                let program_data_dir = self.env.var("PROGRAMDATA")?;
-                Path::new(&program_data_dir)
-                    .join("AzureConnectedMachineAgent\\Tokens\\")
-                    .canonicalize()?
-            } else {
-                Path::new("/var/opt/azcmagent/tokens/")
-                    .to_path_buf()
-                    .canonicalize()?
-            };
+        #[cfg(all(windows, not(test)))]
+        fn get_expected_challenge_base() -> Result<PathBuf, io::Error> {
+            let program_data_dir = self.env.var("PROGRAMDATA")?;
+            Path::new(&program_data_dir)
+                .join("AzureConnectedMachineAgent\\Tokens\\")
+                .canonicalize()
+        }
 
-            if !(challenge_path.starts_with(expected_challenge_base)
-                && challenge_path.extension().is_some_and(|ext| ext == "key"))
-            {
-                return Err(Error::with_message(
-                    ErrorKind::Credential,
-                    format!("Challenge received was invalid: {challenge}"),
-                ));
-            }
-        } else {
-            // for tests, it's okay if the challenge file is not in the expected location
+        #[cfg(all(not(windows), not(test)))]
+        fn get_expected_challenge_base() -> Result<PathBuf, io::Error> {
+            Path::new("/var/opt/azcmagent/tokens/")
+                .to_path_buf()
+                .canonicalize()
+        }
+
+        #[cfg(test)]
+        fn get_expected_challenge_base() -> Result<PathBuf, io::Error> {
+            // the tests will be using temp for storing test token files
+            std::env::temp_dir().canonicalize()
+        }
+
+        let expected_challenge_base = get_expected_challenge_base()?;
+
+        if !(challenge_path.starts_with(expected_challenge_base)
+            && challenge_path.extension().is_some_and(|ext| ext == "key"))
+        {
+            return Err(Error::with_message(
+                ErrorKind::Credential,
+                format!("Challenge received was invalid: {challenge}"),
+            ));
         }
 
         let mut challenge_file = File::open(challenge_path)?;
