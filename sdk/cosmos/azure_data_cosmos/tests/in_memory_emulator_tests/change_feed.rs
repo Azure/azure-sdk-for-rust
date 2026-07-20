@@ -11,8 +11,9 @@
 //! * `A-IM` header emission and propagation (`Incremental Feed` vs
 //!   `Full-Fidelity Feed`),
 //! * `query_change_feed` mode dispatch,
-//! * the `ChangeFeedStartFrom::Beginning` rejection for AllVersionsAndDeletes,
-//!   and
+//! * the `ChangeFeedStartFrom::Beginning` and `ChangeFeedStartFrom::PointInTime`
+//!   rejections for AllVersionsAndDeletes (gated by the emulator, mirroring the
+//!   service), and
 //! * decoding per mode: callers bind the plain document type `T` and read
 //!   `ChangeFeedItem<T>` envelopes in both modes.
 //!
@@ -212,30 +213,68 @@ async fn all_versions_and_deletes_returns_envelopes() {
     }
 }
 
-/// AllVersionsAndDeletes rejects `ChangeFeedStartFrom::Beginning` with a
-/// client-side error before issuing any request.
+/// AllVersionsAndDeletes rejects `ChangeFeedStartFrom::Beginning`. The client
+/// no longer validates this itself; the request is issued and the emulator
+/// (standing in for the service) returns `400 Bad Request` on the first poll.
 #[tokio::test]
 async fn all_versions_and_deletes_rejects_beginning() {
     let container = setup().await.unwrap();
 
     let options = ChangeFeedOptions::default().with_mode(ChangeFeedMode::AllVersionsAndDeletes);
-    let err = match container
+    let mut pages = container
         .query_change_feed::<TestItem>(
             FeedScope::partition(PARTITION_KEY),
             ChangeFeedStartFrom::Beginning,
             Some(options),
         )
         .await
-    {
-        Ok(_) => panic!("AllVersionsAndDeletes must reject ChangeFeedStartFrom::Beginning"),
-        Err(err) => err,
-    };
+        .unwrap();
 
-    // The rejection is a client-side validation error raised before any request
-    // is issued, so it must carry a 400 BadRequest status.
+    // A `Beginning` start sends no `If-None-Match`, which the emulator rejects
+    // for a full-fidelity read with a 400 BadRequest on the first page poll.
+    let err = pages
+        .next()
+        .await
+        .expect("the change feed should yield a page")
+        .expect_err("AllVersionsAndDeletes must reject ChangeFeedStartFrom::Beginning");
+
     assert_eq!(
         u16::from(err.status().status_code()),
         400,
-        "the rejection must be a client-side 400 BadRequest, got {err:?}"
+        "the rejection must be a 400 BadRequest, got {err:?}"
+    );
+}
+
+/// AllVersionsAndDeletes rejects `ChangeFeedStartFrom::PointInTime`. As with
+/// `Beginning`, the client defers to the emulator (service stand-in), which
+/// returns `400 Bad Request` on the first poll.
+#[tokio::test]
+async fn all_versions_and_deletes_rejects_point_in_time() {
+    use time::OffsetDateTime;
+
+    let container = setup().await.unwrap();
+
+    let options = ChangeFeedOptions::default().with_mode(ChangeFeedMode::AllVersionsAndDeletes);
+    let mut pages = container
+        .query_change_feed::<TestItem>(
+            FeedScope::partition(PARTITION_KEY),
+            ChangeFeedStartFrom::PointInTime(OffsetDateTime::now_utc()),
+            Some(options),
+        )
+        .await
+        .unwrap();
+
+    // A `PointInTime` start sends `If-Modified-Since`, which the emulator
+    // rejects for a full-fidelity read with a 400 BadRequest on the first poll.
+    let err = pages
+        .next()
+        .await
+        .expect("the change feed should yield a page")
+        .expect_err("AllVersionsAndDeletes must reject ChangeFeedStartFrom::PointInTime");
+
+    assert_eq!(
+        u16::from(err.status().status_code()),
+        400,
+        "the rejection must be a 400 BadRequest, got {err:?}"
     );
 }

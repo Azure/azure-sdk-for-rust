@@ -64,10 +64,21 @@ impl ContinuationToken {
         let container = operation.container().ok_or_else(|| {
             crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)).with_message("client-side continuation tokens require a query or change feed operation targeting a container").build()
         })?;
+        // Change feed continuations are mode-specific: resuming a feed in a
+        // different mode (LatestVersion vs AllVersionsAndDeletes) is not
+        // supported, so record the mode and validate it on resume. Only the
+        // full-fidelity marker is stored; LatestVersion (and query) tokens carry
+        // no marker and are treated as LatestVersion, keeping their payload
+        // unchanged and backward-compatible.
+        let change_feed_full_fidelity = operation
+            .is_change_feed()
+            .then(|| operation.request_headers().full_fidelity_feed)
+            .filter(|&full_fidelity| full_fidelity);
         let state = TokenState {
             operation: token_operation,
             rid: container.rid().to_string(),
             root: root_state.clone(),
+            change_feed_full_fidelity,
         };
 
         let json = serde_json::to_vec(&state).map_err(|e| {
@@ -172,6 +183,14 @@ pub struct TokenState {
 
     /// The root node's state at the point of snapshotting.
     root: PipelineNodeState,
+
+    /// For change feed tokens, `true` when the feed was issued in the
+    /// AllVersionsAndDeletes (full-fidelity) mode and `false` for LatestVersion.
+    /// `None` for query tokens (and for legacy change feed tokens that predate
+    /// mode encoding, which are treated as LatestVersion). Validated on resume:
+    /// a change feed cannot switch modes across continuations.
+    #[serde(rename = "cfm", default, skip_serializing_if = "Option::is_none")]
+    change_feed_full_fidelity: Option<bool>,
 }
 
 impl TokenState {
@@ -189,6 +208,32 @@ impl TokenState {
                     op = self.operation,
                 ))
                 .build());
+        }
+        if expected == TokenOperation::ChangeFeed {
+            // Legacy tokens without an encoded mode are treated as LatestVersion.
+            let token_full_fidelity = self.change_feed_full_fidelity.unwrap_or(false);
+            let operation_full_fidelity = operation.request_headers().full_fidelity_feed;
+            if token_full_fidelity != operation_full_fidelity {
+                let mode_name = |full_fidelity| {
+                    if full_fidelity {
+                        "AllVersionsAndDeletes"
+                    } else {
+                        "LatestVersion"
+                    }
+                };
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(
+                        azure_core::http::StatusCode::BadRequest,
+                    ))
+                    .with_message(format!(
+                        "change feed continuation token was issued for {token_mode} mode but this \
+                         request uses {operation_mode} mode; a change feed cannot switch modes \
+                         across continuations. Start a new change feed to change mode.",
+                        token_mode = mode_name(token_full_fidelity),
+                        operation_mode = mode_name(operation_full_fidelity),
+                    ))
+                    .build());
+            }
         }
         let container = operation.container().ok_or_else(|| {
             crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)).with_message("client-side continuation tokens require a query operation targeting a container").build()
@@ -296,6 +341,16 @@ mod tests {
     fn change_feed_op() -> CosmosOperation {
         let def: PartitionKeyDefinition = serde_json::from_str(r#"{"paths":["/pk"]}"#).unwrap();
         CosmosOperation::change_feed(
+            test_container(),
+            Some(FeedRange::for_partition(PartitionKey::from("pk1"), &def)),
+        )
+    }
+
+    /// Builds a single-partition AllVersionsAndDeletes (full-fidelity) change
+    /// feed operation against `test_container()` (rid `coll_rid`).
+    fn change_feed_avad_op() -> CosmosOperation {
+        let def: PartitionKeyDefinition = serde_json::from_str(r#"{"paths":["/pk"]}"#).unwrap();
+        CosmosOperation::change_feed_all_versions_and_deletes(
             test_container(),
             Some(FeedRange::for_partition(PartitionKey::from("pk1"), &def)),
         )
@@ -458,6 +513,7 @@ mod tests {
             operation: TokenOperation::Query,
             rid: "coll_rid".to_string(),
             root: PipelineNodeState::Drained,
+            change_feed_full_fidelity: None,
         };
         let err = state.is_valid_for_operation(&change_feed_op()).unwrap_err();
         assert!(err.to_string().contains("ChangeFeed"));
@@ -469,9 +525,64 @@ mod tests {
             operation: TokenOperation::ChangeFeed,
             rid: "coll_rid".to_string(),
             root: PipelineNodeState::Drained,
+            change_feed_full_fidelity: None,
         };
         let err = state.is_valid_for_operation(&query_op()).unwrap_err();
         assert!(err.to_string().contains("Query"));
+    }
+
+    #[test]
+    fn is_valid_for_operation_rejects_change_feed_mode_switch() {
+        // A LatestVersion token (no mode marker) cannot resume an
+        // AllVersionsAndDeletes feed, and vice versa.
+        let latest = TokenState {
+            operation: TokenOperation::ChangeFeed,
+            rid: "coll_rid".to_string(),
+            root: PipelineNodeState::Drained,
+            change_feed_full_fidelity: None,
+        };
+        let err = latest
+            .is_valid_for_operation(&change_feed_avad_op())
+            .unwrap_err();
+        assert!(err.to_string().contains("AllVersionsAndDeletes"));
+        assert!(err.to_string().contains("LatestVersion"));
+
+        let avad = TokenState {
+            operation: TokenOperation::ChangeFeed,
+            rid: "coll_rid".to_string(),
+            root: PipelineNodeState::Drained,
+            change_feed_full_fidelity: Some(true),
+        };
+        let err = avad.is_valid_for_operation(&change_feed_op()).unwrap_err();
+        assert!(err.to_string().contains("AllVersionsAndDeletes"));
+        assert!(err.to_string().contains("LatestVersion"));
+    }
+
+    #[test]
+    fn is_valid_for_operation_accepts_matching_change_feed_mode() {
+        let avad = TokenState {
+            operation: TokenOperation::ChangeFeed,
+            rid: "coll_rid".to_string(),
+            root: PipelineNodeState::Drained,
+            change_feed_full_fidelity: Some(true),
+        };
+        avad.is_valid_for_operation(&change_feed_avad_op())
+            .expect("AllVersionsAndDeletes token resumes an AllVersionsAndDeletes operation");
+    }
+
+    #[test]
+    fn encode_v1_records_all_versions_and_deletes_mode() {
+        let token =
+            ContinuationToken::encode_v1(&change_feed_avad_op(), &PipelineNodeState::Drained)
+                .unwrap();
+        assert!(decode_v1_payload(&token).contains(r#""cfm":true"#));
+    }
+
+    #[test]
+    fn encode_v1_omits_mode_marker_for_latest_version() {
+        let token =
+            ContinuationToken::encode_v1(&change_feed_op(), &PipelineNodeState::Drained).unwrap();
+        assert!(!decode_v1_payload(&token).contains("cfm"));
     }
 
     // ── Deserialization ─────────────────────────────────────────────────
@@ -584,6 +695,7 @@ mod tests {
             operation: TokenOperation::Query,
             rid: "coll_rid".to_string(),
             root: PipelineNodeState::Drained,
+            change_feed_full_fidelity: None,
         };
         state.is_valid_for_operation(&query_op()).unwrap();
     }
@@ -594,6 +706,7 @@ mod tests {
             operation: TokenOperation::Query,
             rid: "different_rid".to_string(),
             root: PipelineNodeState::Drained,
+            change_feed_full_fidelity: None,
         };
         let err = state.is_valid_for_operation(&query_op()).unwrap_err();
         assert!(err.to_string().contains("different_rid"));
@@ -606,6 +719,7 @@ mod tests {
             operation: TokenOperation::Query,
             rid: "coll_rid".to_string(),
             root: PipelineNodeState::Drained,
+            change_feed_full_fidelity: None,
         };
         let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let read = CosmosOperation::read_item(item);

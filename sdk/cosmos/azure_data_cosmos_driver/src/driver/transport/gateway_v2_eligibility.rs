@@ -18,20 +18,13 @@ use crate::models::{OperationType, ResourceType};
 /// so the outer `Patch` operation never reaches Gateway 2.0 transport. The
 /// sub-operations the patch handler issues (`Read` / `Replace`) are each
 /// evaluated on their own merits.
-///
-/// `is_full_fidelity_change_feed` forces `false` regardless of the
-/// resource/operation pair. A full-fidelity (`AllVersionsAndDeletes`) change
-/// feed is a `Document`/`ReadFeed` operation, but Gateway 2.0 does not forward
-/// the `A-IM: Full-Fidelity Feed` header, so routing it there would silently
-/// downgrade the feed to `LatestVersion`. The Gateway 2.0 contract therefore
-/// excludes it (see `docs/GATEWAY_V2_SPEC.md`), and these requests must fall
-/// back to the standard gateway.
 pub(crate) fn is_operation_supported_by_gateway_v2(
     resource_type: ResourceType,
     operation_type: OperationType,
     is_full_fidelity_change_feed: bool,
 ) -> bool {
     if is_full_fidelity_change_feed {
+        // Excluded by the Gateway 2.0 contract; see docs/GATEWAY_V2_SPEC.md.
         return false;
     }
     // Both arms of this match are intentionally exhaustive (no wildcard `_` arm) so

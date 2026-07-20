@@ -951,9 +951,8 @@ pub async fn all_versions_and_deletes_fans_out_creates_across_partitions(
 /// token within the container's retention / continuous-backup window; the
 /// service does not support reading from an arbitrary point in time in this
 /// mode. This mirrors the .NET and Java SDKs, which reject
-/// `ChangeFeedStartFrom.Time` for all-versions-and-deletes. The client rejects
-/// it up front with a `BadRequest` rather than issuing a request the service
-/// would refuse.
+/// `ChangeFeedStartFrom.Time` for all-versions-and-deletes. The client issues
+/// the request and the service returns a `BadRequest`.
 ///
 /// Gated on `test_category = "emulator"` only: full-fidelity reads are not
 /// supported by the vnext (Linux) emulator.
@@ -974,7 +973,7 @@ pub async fn all_versions_and_deletes_rejects_point_in_time_start() -> Result<()
             )
             .await?;
 
-            let result = container
+            let mut pages = container
                 .query_change_feed::<AvadItem>(
                     FeedScope::partition("1"),
                     ChangeFeedStartFrom::PointInTime(OffsetDateTime::now_utc()),
@@ -983,11 +982,15 @@ pub async fn all_versions_and_deletes_rejects_point_in_time_start() -> Result<()
                             .with_mode(ChangeFeedMode::AllVersionsAndDeletes),
                     ),
                 )
-                .await;
+                .await?;
 
-            let err = result
-                .err()
-                .expect("PointInTime start must be rejected for AllVersionsAndDeletes");
+            // The client issues the request lazily; the service rejects the
+            // unsupported start on the first page poll.
+            let err = pages
+                .next()
+                .await
+                .expect("the change feed should yield a page")
+                .expect_err("PointInTime start must be rejected for AllVersionsAndDeletes");
             assert_eq!(
                 StatusCode::BadRequest,
                 err.status().status_code(),

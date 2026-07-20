@@ -126,7 +126,7 @@ pub struct ContainerProperties {
     ///
     /// Configure a retention duration here to enable the
     /// [`AllVersionsAndDeletes`](crate::options::ChangeFeedMode::AllVersionsAndDeletes)
-    /// ("full fidelity") change feed mode. Without it, only the default
+    /// change feed mode. Without it, only the default
     /// [`LatestVersion`](crate::options::ChangeFeedMode::LatestVersion) mode is
     /// available.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -434,14 +434,14 @@ pub enum ConflictResolutionMode {
 ///
 /// Configuring a retention duration enables the
 /// [`AllVersionsAndDeletes`](crate::options::ChangeFeedMode::AllVersionsAndDeletes)
-/// ("full fidelity") change feed mode: intermediate versions and deletes are
+/// change feed mode: intermediate versions and deletes are
 /// retained for the configured window so they can be read back. Without a
 /// retention duration only the default
 /// [`LatestVersion`](crate::options::ChangeFeedMode::LatestVersion) mode is
 /// available.
 ///
 /// The retention window has minute granularity. On the service it must fall
-/// within the supported range (currently 1 hour to 30 days) when full fidelity
+/// within the supported range (currently 1 hour to 30 days) when this mode
 /// is enabled; this type does not enforce that range, leaving the service as the
 /// source of truth.
 ///
@@ -450,9 +450,9 @@ pub enum ConflictResolutionMode {
 #[safe(true)]
 #[non_exhaustive]
 pub struct ChangeFeedPolicy {
-    /// The full-fidelity retention window, in minutes.
+    /// The all versions and deletes retention window, in minutes.
     ///
-    /// A value of `0` (the default) disables full fidelity, leaving only
+    /// A value of `0` (the default) disables all versions and deletes, leaving only
     /// `LatestVersion` reads available.
     #[serde(rename = "retentionDuration", default)]
     pub retention_duration_minutes: i32,
@@ -461,7 +461,7 @@ pub struct ChangeFeedPolicy {
 impl ChangeFeedPolicy {
     /// Creates a change feed policy that enables the
     /// [`AllVersionsAndDeletes`](crate::options::ChangeFeedMode::AllVersionsAndDeletes)
-    /// ("full fidelity") mode with the given retention window.
+    /// mode with the given retention window.
     ///
     /// The window has minute granularity; any sub-minute component of
     /// `retention` is truncated.
@@ -471,9 +471,9 @@ impl ChangeFeedPolicy {
         }
     }
 
-    /// Returns the full-fidelity retention window.
+    /// Returns the all versions and deletes retention window.
     ///
-    /// A zero duration means full fidelity is disabled.
+    /// A zero duration means all versions and deletes is disabled.
     pub fn retention_duration(&self) -> Duration {
         Duration::from_secs(self.retention_duration_minutes.max(0) as u64 * 60)
     }

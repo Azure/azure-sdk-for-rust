@@ -26,7 +26,7 @@ pub use azure_data_cosmos_driver::models::ChangeFeedStartFrom;
 /// * [`LatestVersion`](Self::LatestVersion) (default) returns the latest
 ///   version of each created or replaced item.
 /// * [`AllVersionsAndDeletes`](Self::AllVersionsAndDeletes) returns every
-///   intermediate version plus deletes ("full fidelity"). In this mode
+///   intermediate version plus deletes. In this mode
 ///   `query_change_feed::<YourDoc>()` still yields the
 ///   [`ChangeFeedItem<YourDoc>`](crate::models::ChangeFeedItem) envelope, so the
 ///   whole change envelope is preserved. See
@@ -39,7 +39,7 @@ pub enum ChangeFeedMode {
     #[default]
     LatestVersion,
 
-    /// Returns every intermediate version plus deletes ("full fidelity" feed).
+    /// Returns every intermediate version plus deletes.
     ///
     /// Each change is delivered as a
     /// [`ChangeFeedItem<YourDoc>`](crate::models::ChangeFeedItem) envelope

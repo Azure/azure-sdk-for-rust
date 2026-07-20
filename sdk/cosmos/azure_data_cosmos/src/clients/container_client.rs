@@ -875,7 +875,7 @@ impl ContainerClient {
     /// * [`ChangeFeedMode::LatestVersion`] (default) — the latest version of
     ///   each created or replaced item. Only `current()` is populated.
     /// * [`ChangeFeedMode::AllVersionsAndDeletes`] — every intermediate version
-    ///   plus deletes ("full fidelity"). The envelope additionally exposes the
+    ///   plus deletes. The envelope additionally exposes the
     ///   pre-change document
     ///   ([`previous()`](crate::models::ChangeFeedItem::previous)) and change
     ///   [`metadata()`](crate::models::ChangeFeedItem::metadata).
@@ -889,12 +889,12 @@ impl ContainerClient {
     ///
     /// # AllVersionsAndDeletes limitations
     ///
-    /// * [`ChangeFeedStartFrom::Beginning`] is **rejected** for this mode:
+    /// * Only [`ChangeFeedStartFrom::Now`] or resuming from a continuation token
+    ///   is supported. [`ChangeFeedStartFrom::Beginning`] and
+    ///   [`ChangeFeedStartFrom::PointInTime`] are **not** supported, because
     ///   intermediate versions and deletes are only retained within the
-    ///   container's retention / continuous-backup window, so there is no
-    ///   "beginning of all history" to read from. Use
-    ///   [`ChangeFeedStartFrom::Now`] or a [`ChangeFeedStartFrom::PointInTime`]
-    ///   within the retention window.
+    ///   container's retention / continuous-backup window. The service gates
+    ///   this and rejects such a request with `400 Bad Request`.
     /// * [`ChangeFeedStartFrom::Now`] is re-evaluated per range the first time a
     ///   range is polled, so a range that is never polled before a checkpoint
     ///   resumes from resume-time and can drop the intermediate versions and
@@ -902,8 +902,10 @@ impl ContainerClient {
     ///   is deliberately **not** converted to a concrete `PointInTime`, because
     ///   that would change its semantics; lossless per-range `Now` resolution is
     ///   a future improvement.
-    /// * The continuation token does not persist the feed mode, so callers must
-    ///   re-pass [`ChangeFeedMode::AllVersionsAndDeletes`] on resume.
+    /// * The feed mode is encoded in the continuation token, so a token issued in
+    ///   one mode cannot be used to resume in another; attempting to do so is
+    ///   rejected. Re-pass [`ChangeFeedMode::AllVersionsAndDeletes`] on resume to
+    ///   match the original mode.
     ///
     /// # Examples
     ///
@@ -939,7 +941,7 @@ impl ContainerClient {
     /// # }
     /// ```
     ///
-    /// Read every version and delete ("full fidelity"):
+    /// Read every version and delete:
     ///
     /// ```rust,no_run
     /// use azure_data_cosmos::{
@@ -996,35 +998,9 @@ impl ContainerClient {
                 // retention / continuous-backup window, so it supports starting
                 // only from "now" or by resuming a continuation token. Reading
                 // from the beginning of the container or from an arbitrary point
-                // in time is not supported by the service in this mode (this
-                // mirrors the .NET/Java SDKs, which reject `Time` for all
-                // versions and deletes), so reject those starts with a clear
-                // client error rather than issuing a request the service would
-                // refuse. On resume (a continuation token is present) the
-                // persisted per-partition markers drive the read, so the start
-                // position is not re-validated here.
-                if options.feed.continuation_token.is_none()
-                    && matches!(
-                        start_from,
-                        ChangeFeedStartFrom::Beginning | ChangeFeedStartFrom::PointInTime(_)
-                    )
-                {
-                    return Err(crate::DriverCosmosError::builder()
-                        .with_status(crate::error::CosmosStatus::new(
-                            azure_core::http::StatusCode::BadRequest,
-                        ))
-                        .with_message(
-                            "ChangeFeedMode::AllVersionsAndDeletes only supports starting from \
-                             ChangeFeedStartFrom::Now or resuming from a continuation token. \
-                             Reading from the beginning of the container \
-                             (ChangeFeedStartFrom::Beginning) or from an arbitrary point in time \
-                             (ChangeFeedStartFrom::PointInTime) is not supported in this mode \
-                             because intermediate versions and deletes are only retained within \
-                             the container's retention / continuous-backup window.",
-                        )
-                        .build()
-                        .into());
-                }
+                // in time is not supported in this mode; the service gates this
+                // and returns a `400 Bad Request`, so it is not re-validated
+                // client-side here.
                 CosmosOperation::change_feed_all_versions_and_deletes(
                     self.container_ref.clone(),
                     Some(feed_range),
