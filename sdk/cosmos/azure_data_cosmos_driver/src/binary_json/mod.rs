@@ -111,6 +111,35 @@ pub fn transcode_to_text(buffer: &[u8]) -> Result<Vec<u8>> {
         .map_err(|e| BinaryError::Custom(format!("failed to re-serialize decoded value: {e}")))
 }
 
+/// Transcodes a UTF-8 **text** JSON buffer to Cosmos **binary** JSON.
+///
+/// This is the mirror of [`transcode_to_text`] for the **request** path: when a
+/// schema-agnostic caller (for example an FFI host) deals only in text JSON but
+/// the driver negotiates a binary wire, the driver converts the text request
+/// body to binary before sending it. No item schema is required — the buffer is
+/// parsed to a [`serde_json::Value`] and re-encoded.
+///
+/// Behavior:
+///
+/// - If `buffer` is already Cosmos binary JSON (begins with the [`PREAMBLE`]),
+///   it is returned **unchanged** so the conversion is safe to apply
+///   unconditionally (a caller that already encoded binary is not re-encoded).
+/// - An empty buffer is returned unchanged (no body to encode).
+/// - Otherwise `buffer` is parsed as text JSON and encoded to binary.
+///
+/// # Errors
+///
+/// Returns a [`BinaryError`] if `buffer` is neither binary nor valid text JSON.
+pub fn transcode_to_binary(buffer: &[u8]) -> Result<Vec<u8>> {
+    if buffer.is_empty() || is_binary(buffer) {
+        // Empty, or already binary: nothing to convert.
+        return Ok(buffer.to_vec());
+    }
+    let value: serde_json::Value = serde_json::from_slice(buffer)
+        .map_err(|e| BinaryError::Custom(format!("failed to parse text JSON request body: {e}")))?;
+    Ok(encode(&value))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -176,5 +205,57 @@ mod tests {
     fn transcode_errors_on_malformed_binary() {
         // A lone preamble is not a complete value.
         assert!(transcode_to_text(&[PREAMBLE]).is_err());
+    }
+
+    #[test]
+    fn transcode_text_to_binary_produces_equivalent_binary() {
+        // A text buffer transcodes to binary that decodes back to the same value.
+        let value = serde_json::json!({
+            "id": "doc-1",
+            "n": 42,
+            "flag": true,
+            "nested": { "arr": [1, 2, 3], "s": "café" },
+        });
+        let text = serde_json::to_vec(&value).unwrap();
+        assert!(!is_binary(&text));
+
+        let binary = transcode_to_binary(&text).unwrap();
+        assert!(is_binary(&binary), "transcoded output must be binary");
+
+        // Bytes match the encoder oracle, and decode back to the same value.
+        assert_eq!(binary, encode(&value));
+        assert_eq!(decode(&binary).unwrap(), value);
+    }
+
+    #[test]
+    fn transcode_to_binary_passes_binary_through_unchanged() {
+        // A buffer that is already binary is returned byte-for-byte unchanged.
+        let value = serde_json::json!({ "id": "1", "n": 7 });
+        let binary = encode(&value);
+        assert_eq!(transcode_to_binary(&binary).unwrap(), binary);
+    }
+
+    #[test]
+    fn transcode_to_binary_passes_empty_through_unchanged() {
+        assert_eq!(transcode_to_binary(&[]).unwrap(), Vec::<u8>::new());
+    }
+
+    #[test]
+    fn transcode_to_binary_errors_on_invalid_text() {
+        // Not binary and not valid JSON.
+        assert!(transcode_to_binary(b"{not json").is_err());
+    }
+
+    #[test]
+    fn transcode_round_trips_text_binary_text() {
+        // text → binary → text is identity for a well-formed document.
+        let value = serde_json::json!({ "a": 1, "b": ["x", "y"], "c": null });
+        let text = serde_json::to_vec(&value).unwrap();
+        let binary = transcode_to_binary(&text).unwrap();
+        let back = transcode_to_text(&binary).unwrap();
+        assert_eq!(
+            serde_json::from_slice::<serde_json::Value>(&back).unwrap(),
+            value
+        );
     }
 }
