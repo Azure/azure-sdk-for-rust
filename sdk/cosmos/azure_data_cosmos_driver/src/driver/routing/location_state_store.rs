@@ -308,6 +308,38 @@ impl LocationStateStore {
         Arc::new(current.clone())
     }
 
+    /// **Internal test hook -- not part of the public API.**
+    ///
+    /// Marks the regional endpoint for `region` unavailable, reusing the
+    /// endpoint object from the current snapshot so the probe loop later
+    /// targets the exact URL the router uses. Returns `false` if no endpoint
+    /// for `region` exists in the current snapshot.
+    ///
+    /// Integration tests use this to seed the "unavailable" state directly
+    /// (operation-driven marking is covered elsewhere) and then exercise the
+    /// real connectivity-probe-gated failback path.
+    #[cfg(any(test, feature = "__internal_in_memory_emulator"))]
+    pub(crate) fn mark_region_endpoint_unavailable_for_testing(&self, region: &Region) -> bool {
+        let snapshot = self.account_snapshot();
+        let endpoint = snapshot
+            .preferred_read_endpoints
+            .iter()
+            .chain(snapshot.preferred_write_endpoints.iter())
+            .find(|e| e.region() == Some(region))
+            .cloned();
+        let Some(endpoint) = endpoint else {
+            return false;
+        };
+        self.apply_account(|current| {
+            mark_endpoint_unavailable(
+                current,
+                &endpoint,
+                crate::driver::routing::UnavailableReason::TransportError,
+            )
+        });
+        true
+    }
+
     /// Applies location effects (endpoint unavailability and account refresh).
     pub async fn apply(&self, effects: &[LocationEffect]) {
         for effect in effects {
