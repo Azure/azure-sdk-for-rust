@@ -1797,6 +1797,36 @@ impl EmulatorStore {
         partition_id: u32,
         min_lock_duration: Duration,
     ) {
+        self.split_partition_internal(db_id, coll_id, partition_id, None, min_lock_duration);
+    }
+
+    /// Splits a physical partition at an explicit EPK boundary. Test-only.
+    #[doc(hidden)]
+    pub fn split_partition_at_epk(
+        self: &Arc<Self>,
+        db_id: &str,
+        coll_id: &str,
+        partition_id: u32,
+        split_epk: Epk,
+        min_lock_duration: Duration,
+    ) {
+        self.split_partition_internal(
+            db_id,
+            coll_id,
+            partition_id,
+            Some(split_epk),
+            min_lock_duration,
+        );
+    }
+
+    fn split_partition_internal(
+        self: &Arc<Self>,
+        db_id: &str,
+        coll_id: &str,
+        partition_id: u32,
+        split_epk: Option<Epk>,
+        min_lock_duration: Duration,
+    ) {
         // Lock the partition in all regions
         {
             let regions = self.regions.read().unwrap();
@@ -1832,13 +1862,13 @@ impl EmulatorStore {
             }
             // execute_split does the actual doc redistribution under the lock,
             // then unlocks partitions when done
-            store.execute_split(&db, &coll, partition_id);
+            store.execute_split(&db, &coll, partition_id, split_epk);
         });
         self.control_plane_tasks.lock().unwrap().push((key, handle));
     }
 
     /// Performs the actual split after the lock period.
-    fn execute_split(&self, db_id: &str, coll_id: &str, partition_id: u32) {
+    fn execute_split(&self, db_id: &str, coll_id: &str, partition_id: u32, split_epk: Option<Epk>) {
         // Local-only enum used to ferry preview state out of a regions read
         // guard so we can drop the guard before re-acquiring it on the abort
         // path. Avoids recursive same-thread RwLock::read (unspecified in std).
@@ -1880,8 +1910,27 @@ impl EmulatorStore {
                     let parent_max = parent.epk_max.clone();
                     let pk_kind = state.metadata.partition_key.kind();
                     let pk_version = state.metadata.partition_key.version();
-                    let midpoint =
-                        match compute_epk_midpoint(&parent_min, &parent_max, pk_kind, pk_version) {
+                    let midpoint = match split_epk.as_ref() {
+                        Some(epk) if *epk > parent_min && *epk < parent_max => epk.clone(),
+                        Some(epk) => {
+                            tracing::error!(
+                                db_id = db_id,
+                                coll_id = coll_id,
+                                partition_id = partition_id,
+                                split_epk = %epk,
+                                parent_min = %parent_min,
+                                parent_max = %parent_max,
+                                "in-memory emulator: aborting split — explicit split EPK is outside parent range",
+                            );
+                            found = Some(SplitPreview::AbortUnlock);
+                            break;
+                        }
+                        None => match compute_epk_midpoint(
+                            &parent_min,
+                            &parent_max,
+                            pk_kind,
+                            pk_version,
+                        ) {
                             Ok(m) => m,
                             Err(err) => {
                                 tracing::error!(
@@ -1899,7 +1948,8 @@ impl EmulatorStore {
                                 found = Some(SplitPreview::AbortUnlock);
                                 break;
                             }
-                        };
+                        },
+                    };
                     // Both child IDs come from the shared per-container
                     // counter on `ContainerMetadata`, so they are identical
                     // across regions. Likewise RIDs go through the shared
@@ -1965,6 +2015,10 @@ impl EmulatorStore {
             unreachable!()
         };
         let child_lsn = parent_lsn + 1;
+        // One ETag for the whole split, applied to every region's container
+        // metadata below so the pkrange routing map's change-feed observes the
+        // topology change consistently across regions.
+        let new_container_etag = new_etag();
 
         let regions = self.regions.read().unwrap();
         for region in regions.values() {
@@ -2074,6 +2128,13 @@ impl EmulatorStore {
                 state.physical_partitions.remove(parent_idx);
                 state.physical_partitions.push(child1);
                 state.physical_partitions.push(child2);
+                // Bump the container ETag so the pkrange routing-map change-feed
+                // reflects the new topology. The driver refreshes its pkrange
+                // cache incrementally via `If-None-Match`; without a new ETag the
+                // emulator answers `304 Not Modified` and the driver keeps
+                // resolving to the now-gone parent range, looping until it
+                // exhausts split retries on a continuation issued before the split.
+                state.metadata.etag = new_container_etag.clone();
                 // No per-region counter to reconcile any more — the shared
                 // counter on `ContainerMetadata` was already advanced when the
                 // child IDs were allocated.

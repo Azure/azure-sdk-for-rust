@@ -36,9 +36,6 @@ extends:
     # so they finish instead of being cancelled at the agent cap.
     TestTimeoutInMinutes: 90
     RunLiveTests: ${{ or(parameters.RunLiveTests, eq(variables['Build.Reason'], 'Schedule'), endsWith(variables['Build.DefinitionName'], '- weekly')) }}
-    EnvVars:
-      RUST_TEST_THREADS: '1'
-      RUST_BACKTRACE: '1'
     Artifacts:
     - name: azure_data_cosmos_macros
       releaseInBatch: ${{ parameters.release_azure_data_cosmos_macros }}
@@ -50,6 +47,8 @@ extends:
       Public:
         ServiceConnection: azure-sdk-tests-cosmos
     EnvVars:
+      RUST_TEST_THREADS: '1'
+      RUST_BACKTRACE: '1'
       AZURE_COSMOS_GW_V2_ENDPOINT: $(thinclient-test-endpoint)
       AZURE_COSMOS_GW_V2_KEY: $(thinclient-test-key)
       AZURE_COSMOS_GW_V2_MULTI_REGION_ENDPOINT: $(thin-client-canary-multi-region-session-endpoint)

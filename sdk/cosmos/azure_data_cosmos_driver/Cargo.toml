@@ -21,7 +21,7 @@ async-trait.workspace = true
 azure_core = { workspace = true, default-features = false, features = [
   "hmac_rust",
 ] }
-azure_data_cosmos_macros = { version = "0.3.0", path = "../azure_data_cosmos_macros" }
+azure_data_cosmos_macros = "0.2.0"
 backtrace.workspace = true
 base64.workspace = true
 bytes.workspace = true
@@ -40,7 +40,7 @@ url.workspace = true
 uuid = { workspace = true, features = ["v4", "fast-rng"] }
 
 [dev-dependencies]
-azure_identity = { path = "../../identity/azure_identity", version = "1.1.0-beta.1" }
+azure_identity.workspace = true
 quick-xml.workspace = true
 serde = { workspace = true, features = ["derive"] }
 tokio = { workspace = true, features = [

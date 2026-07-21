@@ -13,6 +13,11 @@
 // This should match the version of libazurecosmosdriver you are linking against.
 #define AZURECOSMOSDRIVER_H_VERSION "0.1.0"
 
+// Packed-status sentinels (see cosmos_status_code_t). Emitted as macros so
+// they keep the SCREAMING_SNAKE_CASE spelling shared with the
+// COSMOS_SUB_STATUS_* constants instead of being double-prefixed by the
+// `cosmos_` export prefix (which would yield `cosmos_COSMOS_STATUS_SUCCESS`).
+//
 // COSMOS_STATUS_SUCCESS: value returned by every fallible function on success.
 #define COSMOS_STATUS_SUCCESS 0
 // COSMOS_STATUS_NO_SUB_STATUS: low-16-bit value meaning "no sub-status present".

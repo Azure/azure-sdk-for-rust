@@ -3,7 +3,7 @@
 
 //! Point operation and control-plane operation handlers.
 
-// cspell:ignore acked llsn
+// cspell:ignore acked hexdigit llsn
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -11,7 +11,7 @@ use std::time::Instant;
 
 use azure_core::http::headers::{HeaderName, HeaderValue, Headers};
 use azure_core::http::{AsyncRawResponse, StatusCode};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use super::config::ContainerConfig;
 use super::dispatch::{OperationType, ParsedRequest};
@@ -37,9 +37,14 @@ use super::system_properties::{
 };
 #[cfg(feature = "preview_dtx")]
 use crate::driver::pipeline::patch_eval::apply_patch_ops;
-use crate::models::PartitionKeyDefinition;
 #[cfg(feature = "preview_dtx")]
 use crate::models::PatchInstructions;
+use crate::models::{
+    EffectivePartitionKey, PartitionKeyDefinition, PartitionKeyValue as ModelPartitionKeyValue,
+};
+use crate::query::ast::{
+    SqlCollection, SqlCollectionExpression, SqlQuery, SqlScalarExpression, SqlSelectSpec,
+};
 
 static OFFER_REPLACE_PENDING: HeaderName = HeaderName::from_static("x-ms-offer-replace-pending");
 
@@ -2148,6 +2153,107 @@ fn paginate_values(
     Ok((page, next))
 }
 
+#[derive(Clone)]
+struct DocumentFeedItem {
+    body: serde_json::Value,
+    cursor: DocumentFeedCursor,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+struct DocumentFeedCursor {
+    epk: Epk,
+    id: String,
+}
+
+#[derive(Deserialize, Serialize)]
+struct DocumentFeedCursorToken {
+    kind: String,
+    epk: String,
+    id: String,
+}
+
+const DOCUMENT_FEED_CURSOR_TOKEN_KIND: &str = "document_feed_cursor_v1";
+
+impl DocumentFeedCursor {
+    fn to_token(&self) -> String {
+        serde_json::to_string(&DocumentFeedCursorToken {
+            kind: DOCUMENT_FEED_CURSOR_TOKEN_KIND.to_owned(),
+            epk: self.epk.to_hex(),
+            id: self.id.clone(),
+        })
+        .expect("document feed cursor token serialization cannot fail")
+    }
+
+    fn parse(token: &str, start: Instant) -> Result<Self, AsyncRawResponse> {
+        let token: DocumentFeedCursorToken = serde_json::from_str(token)
+            .map_err(|_| invalid_continuation_response("Invalid continuation token", start))?;
+        if token.kind != DOCUMENT_FEED_CURSOR_TOKEN_KIND {
+            return Err(invalid_continuation_response(
+                "Invalid continuation token kind",
+                start,
+            ));
+        }
+        if !is_even_length_hex(&token.epk) {
+            return Err(invalid_continuation_response(
+                "Invalid continuation token EPK",
+                start,
+            ));
+        }
+        Ok(Self {
+            epk: Epk::from(token.epk.as_str()),
+            id: token.id,
+        })
+    }
+}
+
+fn is_even_length_hex(value: &str) -> bool {
+    value.len().is_multiple_of(2) && value.bytes().all(|b| b.is_ascii_hexdigit())
+}
+
+fn invalid_continuation_response(message: &str, start: Instant) -> AsyncRawResponse {
+    error_response(
+        StatusCode::BadRequest,
+        None,
+        "BadRequest",
+        message,
+        0.0,
+        "",
+        start,
+    )
+    .build()
+}
+
+fn paginate_document_feed_items(
+    items: Vec<DocumentFeedItem>,
+    max_item_count: Option<i32>,
+    continuation: Option<&str>,
+    start: Instant,
+) -> Result<(Vec<serde_json::Value>, Option<String>), AsyncRawResponse> {
+    let offset = match continuation {
+        Some(token) => {
+            let cursor = DocumentFeedCursor::parse(token, start)?;
+            items.partition_point(|item| item.cursor <= cursor)
+        }
+        None => 0,
+    };
+
+    let total = items.len();
+    let limit = match max_item_count {
+        Some(n) if n > 0 => n as usize,
+        _ => total.saturating_sub(offset),
+    };
+    let end = offset.saturating_add(limit).min(total);
+    let page_items = if offset >= total {
+        Vec::new()
+    } else {
+        items[offset..end].to_vec()
+    };
+    let next = (end < total)
+        .then(|| page_items.last().map(|item| item.cursor.to_token()))
+        .flatten();
+    Ok((page_items.into_iter().map(|item| item.body).collect(), next))
+}
+
 #[derive(Clone, Copy)]
 struct FeedPageOptions<'a> {
     max_item_count: Option<i32>,
@@ -2163,13 +2269,31 @@ impl<'a> FeedPageOptions<'a> {
     }
 }
 
+#[derive(Clone)]
+struct FeedResponseHeaders {
+    session_token: String,
+    lsn: Option<u64>,
+    partition_key_range_id: Option<u32>,
+    internal_partition_id: Option<String>,
+}
+
+impl FeedResponseHeaders {
+    fn none() -> Self {
+        Self {
+            session_token: String::new(),
+            lsn: None,
+            partition_key_range_id: None,
+            internal_partition_id: None,
+        }
+    }
+}
+
 fn success_feed_response(
     envelope_name: &str,
     rid: impl Into<String>,
     items: Vec<serde_json::Value>,
     page_options: FeedPageOptions<'_>,
-    charge: f64,
-    session_token: &str,
+    feed_headers: FeedResponseHeaders,
     start: Instant,
 ) -> AsyncRawResponse {
     let (page, next) = match paginate_values(
@@ -2183,8 +2307,65 @@ fn success_feed_response(
     };
     let item_count = page.len() as u32;
     let body = feed_to_json(envelope_name, page, rid);
-    let mut builder = success_response(StatusCode::Ok, &body, charge, session_token, start)
-        .with_item_count(item_count);
+    let mut builder = success_response(
+        StatusCode::Ok,
+        &body,
+        1.0,
+        &feed_headers.session_token,
+        start,
+    )
+    .with_item_count(item_count);
+    if let Some(lsn) = feed_headers.lsn {
+        builder = builder.with_lsn(lsn);
+    }
+    if let Some(id) = feed_headers.partition_key_range_id {
+        builder = builder.with_header_value(PARTITION_KEY_RANGE_ID.clone(), id);
+    }
+    if let Some(id) = feed_headers.internal_partition_id {
+        builder = builder.with_header_value(INTERNAL_PARTITION_ID.clone(), id);
+    }
+    if let Some(next) = next {
+        builder = builder.with_header_value(CONTINUATION.clone(), next);
+    }
+    builder.build()
+}
+
+fn success_document_feed_response(
+    envelope_name: &str,
+    rid: impl Into<String>,
+    items: Vec<DocumentFeedItem>,
+    page_options: FeedPageOptions<'_>,
+    feed_headers: FeedResponseHeaders,
+    start: Instant,
+) -> AsyncRawResponse {
+    let (page, next) = match paginate_document_feed_items(
+        items,
+        page_options.max_item_count,
+        page_options.continuation,
+        start,
+    ) {
+        Ok(v) => v,
+        Err(response) => return response,
+    };
+    let item_count = page.len() as u32;
+    let body = feed_to_json(envelope_name, page, rid);
+    let mut builder = success_response(
+        StatusCode::Ok,
+        &body,
+        1.0,
+        &feed_headers.session_token,
+        start,
+    )
+    .with_item_count(item_count);
+    if let Some(lsn) = feed_headers.lsn {
+        builder = builder.with_lsn(lsn);
+    }
+    if let Some(id) = feed_headers.partition_key_range_id {
+        builder = builder.with_header_value(PARTITION_KEY_RANGE_ID.clone(), id);
+    }
+    if let Some(id) = feed_headers.internal_partition_id {
+        builder = builder.with_header_value(INTERNAL_PARTITION_ID.clone(), id);
+    }
     if let Some(next) = next {
         builder = builder.with_header_value(CONTINUATION.clone(), next);
     }
@@ -2246,7 +2427,7 @@ fn execute_query_feed(
     values: Vec<serde_json::Value>,
     parsed: &ParsedRequest,
     request_body: &[u8],
-    session_token: &str,
+    feed_headers: FeedResponseHeaders,
     start: Instant,
 ) -> AsyncRawResponse {
     let (query, parameters) = match parse_query_spec(request_body, start) {
@@ -2273,10 +2454,211 @@ fn execute_query_feed(
         rid,
         results,
         FeedPageOptions::from_request(parsed),
-        1.0,
-        session_token,
+        feed_headers,
         start,
     )
+}
+
+fn execute_document_query_feed(
+    envelope_name: &str,
+    rid: impl Into<String>,
+    documents: Vec<DocumentFeedItem>,
+    parsed: &ParsedRequest,
+    request_body: &[u8],
+    feed_headers: FeedResponseHeaders,
+    start: Instant,
+) -> AsyncRawResponse {
+    let (query, parameters) = match parse_query_spec(request_body, start) {
+        Ok(v) => v,
+        Err(response) => return response,
+    };
+    match query_document_feed_items(&query, &parameters, &documents) {
+        Ok(Some(results)) => success_document_feed_response(
+            envelope_name,
+            rid,
+            results,
+            FeedPageOptions::from_request(parsed),
+            feed_headers,
+            start,
+        ),
+        Ok(None) => {
+            let values: Vec<_> = documents.into_iter().map(|doc| doc.body).collect();
+            let results = match crate::query::eval::query_documents(&query, &parameters, &values) {
+                Ok(results) => results,
+                Err(e) => {
+                    return error_response(
+                        StatusCode::BadRequest,
+                        None,
+                        "BadRequest",
+                        &e.to_string(),
+                        0.0,
+                        "",
+                        start,
+                    )
+                    .build();
+                }
+            };
+            success_feed_response(
+                envelope_name,
+                rid,
+                results,
+                FeedPageOptions::from_request(parsed),
+                feed_headers,
+                start,
+            )
+        }
+        Err(e) => error_response(
+            StatusCode::BadRequest,
+            None,
+            "BadRequest",
+            &e.to_string(),
+            0.0,
+            "",
+            start,
+        )
+        .build(),
+    }
+}
+
+fn query_document_feed_items(
+    sql: &str,
+    parameters: &[(String, serde_json::Value)],
+    documents: &[DocumentFeedItem],
+) -> crate::error::Result<Option<Vec<DocumentFeedItem>>> {
+    let program = crate::query::parse(sql).map_err(|e| {
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_message(format!("failed to parse query: {e}"))
+            .with_source(e)
+            .build()
+    })?;
+    let query = &program.query;
+    if !supports_document_cursor_continuation(query) {
+        return Ok(None);
+    }
+
+    let mut results = Vec::new();
+    for document in documents {
+        if crate::query::eval::matches_query(&document.body, query, parameters).map_err(|e| {
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(StatusCode::BadRequest))
+                .with_message(e.to_string())
+                .build()
+        })? {
+            let body =
+                crate::query::eval::project(&document.body, query, parameters).map_err(|e| {
+                    crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::new(StatusCode::BadRequest))
+                        .with_message(e.to_string())
+                        .build()
+                })?;
+            results.push(DocumentFeedItem {
+                body,
+                cursor: document.cursor.clone(),
+            });
+        }
+    }
+    Ok(Some(results))
+}
+
+fn supports_document_cursor_continuation(query: &SqlQuery) -> bool {
+    if query.select.distinct
+        || query.select.top.is_some()
+        || query.group_by.is_some()
+        || query.order_by.is_some()
+        || query.offset_limit.is_some()
+        || !is_plain_root_from(query)
+    {
+        return false;
+    }
+    match &query.select.spec {
+        SqlSelectSpec::Star => true,
+        SqlSelectSpec::List(items) => !items
+            .iter()
+            .any(|item| contains_aggregate_expression(&item.expression)),
+        SqlSelectSpec::Value(expr) => !contains_aggregate_expression(expr),
+    }
+}
+
+fn is_plain_root_from(query: &SqlQuery) -> bool {
+    match &query.from {
+        None => true,
+        Some(from) => matches!(
+            &from.collection,
+            SqlCollectionExpression::Aliased {
+                collection: SqlCollection::Path { path, .. },
+                ..
+            } if path.is_empty()
+        ),
+    }
+}
+
+fn contains_aggregate_expression(expr: &SqlScalarExpression) -> bool {
+    match expr {
+        SqlScalarExpression::FunctionCall {
+            name, is_udf, args, ..
+        } => {
+            (!is_udf
+                && matches!(
+                    name.to_ascii_uppercase().as_str(),
+                    "COUNT" | "SUM" | "AVG" | "MIN" | "MAX"
+                ))
+                || args.iter().any(contains_aggregate_expression)
+        }
+        SqlScalarExpression::Binary { left, right, .. }
+        | SqlScalarExpression::Coalesce { left, right } => {
+            contains_aggregate_expression(left) || contains_aggregate_expression(right)
+        }
+        SqlScalarExpression::Unary { operand, .. }
+        | SqlScalarExpression::IsNull {
+            expression: operand,
+            ..
+        } => contains_aggregate_expression(operand),
+        SqlScalarExpression::Conditional {
+            condition,
+            if_true,
+            if_false,
+        } => {
+            contains_aggregate_expression(condition)
+                || contains_aggregate_expression(if_true)
+                || contains_aggregate_expression(if_false)
+        }
+        SqlScalarExpression::Between {
+            expression,
+            low,
+            high,
+            ..
+        } => {
+            contains_aggregate_expression(expression)
+                || contains_aggregate_expression(low)
+                || contains_aggregate_expression(high)
+        }
+        SqlScalarExpression::In {
+            expression, items, ..
+        } => {
+            contains_aggregate_expression(expression)
+                || items.iter().any(contains_aggregate_expression)
+        }
+        SqlScalarExpression::Like {
+            expression,
+            pattern,
+            ..
+        } => contains_aggregate_expression(expression) || contains_aggregate_expression(pattern),
+        SqlScalarExpression::MemberRef { source, .. } => contains_aggregate_expression(source),
+        SqlScalarExpression::MemberIndexer { source, index } => {
+            contains_aggregate_expression(source) || contains_aggregate_expression(index)
+        }
+        SqlScalarExpression::ArrayCreate(items) => items.iter().any(contains_aggregate_expression),
+        SqlScalarExpression::ObjectCreate(props) => props
+            .iter()
+            .any(|prop| contains_aggregate_expression(&prop.expression)),
+        SqlScalarExpression::Exists(_)
+        | SqlScalarExpression::Subquery(_)
+        | SqlScalarExpression::Array(_) => true,
+        SqlScalarExpression::Literal(_)
+        | SqlScalarExpression::PropertyRef(_)
+        | SqlScalarExpression::ParameterRef(_) => false,
+    }
 }
 
 fn handle_read_feed_databases(
@@ -2299,8 +2681,7 @@ fn handle_read_feed_databases(
         "",
         databases,
         FeedPageOptions::from_request(parsed),
-        1.0,
-        "",
+        FeedResponseHeaders::none(),
         start,
     )
 }
@@ -2321,7 +2702,15 @@ fn handle_query_databases(
         .iter()
         .map(database_to_json)
         .collect();
-    execute_query_feed("Databases", "", databases, parsed, request_body, "", start)
+    execute_query_feed(
+        "Databases",
+        "",
+        databases,
+        parsed,
+        request_body,
+        FeedResponseHeaders::none(),
+        start,
+    )
 }
 
 fn handle_read_feed_containers(
@@ -2357,8 +2746,7 @@ fn handle_read_feed_containers(
         db.rid,
         containers,
         FeedPageOptions::from_request(parsed),
-        1.0,
-        "",
+        FeedResponseHeaders::none(),
         start,
     )
 }
@@ -2398,7 +2786,7 @@ fn handle_query_containers(
         containers,
         parsed,
         request_body,
-        "",
+        FeedResponseHeaders::none(),
         start,
     )
 }
@@ -2419,8 +2807,7 @@ fn handle_read_feed_offers(
         "",
         offers,
         FeedPageOptions::from_request(parsed),
-        1.0,
-        "",
+        FeedResponseHeaders::none(),
         start,
     )
 }
@@ -2437,7 +2824,15 @@ fn handle_query_offers(
         None => return not_found_region(start),
     };
     let offers: Vec<_> = region_ref.list_offers().iter().map(offer_to_json).collect();
-    execute_query_feed("Offers", "", offers, parsed, request_body, "", start)
+    execute_query_feed(
+        "Offers",
+        "",
+        offers,
+        parsed,
+        request_body,
+        FeedResponseHeaders::none(),
+        start,
+    )
 }
 
 fn handle_read_offer(
@@ -2553,7 +2948,7 @@ fn collect_item_documents(
     region_name: &str,
     parsed: &ParsedRequest,
     start: Instant,
-) -> Result<(String, Vec<serde_json::Value>, String), AsyncRawResponse> {
+) -> Result<(String, Vec<DocumentFeedItem>, String, FeedResponseHeaders), AsyncRawResponse> {
     let db_id = parsed.db_id.as_deref().unwrap_or("");
     let coll_id = parsed.coll_id.as_deref().unwrap_or("");
     let region_ref = match store.region(region_name) {
@@ -2598,8 +2993,35 @@ fn collect_item_documents(
         };
         let start_epk = parsed.start_epk.as_deref().map(Epk::from);
         let end_epk = parsed.end_epk.as_deref().map(Epk::from);
+        // A query that pins an explicit physical partition key range id must fail
+        // with 410/1002 (PartitionKeyRangeGone) when that range no longer exists
+        // (e.g. it was split away). Real Cosmos surfaces PartitionKeyRangeGone here
+        // so the client refreshes its pkrange cache and re-resolves to the child
+        // ranges; returning an empty 200 instead would silently drop the remaining
+        // results of a continuation issued before the split.
+        if let Some(requested_id) = parsed.partition_key_range_id.as_deref() {
+            let exists = state
+                .physical_partitions
+                .iter()
+                .any(|partition| partition.id.to_string() == requested_id);
+            if !exists {
+                return Err(error_response(
+                    StatusCode::Gone,
+                    Some(1002),
+                    "Gone",
+                    "The partition key range specified by the request is no longer present (split/merge).",
+                    0.0,
+                    "",
+                    start,
+                )
+                .build());
+            }
+        }
         let mut docs = Vec::new();
         let mut token_parts = Vec::new();
+        let mut max_lsn = 0_u64;
+        let mut selected_partition: Option<(u32, String)> = None;
+        let mut multiple_partitions = false;
         for partition in &state.physical_partitions {
             if parsed
                 .partition_key_range_id
@@ -2608,9 +3030,26 @@ fn collect_item_documents(
             {
                 continue;
             }
+            let overlaps_scope = if let Some(requested_epk) = requested_epk.as_ref() {
+                partition.contains_epk(requested_epk)
+            } else {
+                start_epk
+                    .as_ref()
+                    .is_none_or(|min| partition.epk_max > *min)
+                    && end_epk.as_ref().is_none_or(|max| partition.epk_min < *max)
+            };
+            if !overlaps_scope {
+                continue;
+            }
             if let Some(response) = check_partition_lock(partition, start) {
                 return Err(response);
             }
+            match &selected_partition {
+                None => selected_partition = Some((partition.id, partition.rid.clone())),
+                Some((id, _)) if *id == partition.id => {}
+                Some(_) => multiple_partitions = true,
+            }
+            max_lsn = max_lsn.max(partition.current_lsn());
             let region_id = store.config().region_id_for(region_name);
             token_parts.push(session_token_for(
                 partition,
@@ -2631,10 +3070,35 @@ fn collect_item_documents(
                 if end_epk.as_ref().is_some_and(|max| epk >= max) {
                     continue;
                 }
-                docs.extend(logical.values().map(|doc| doc.body.clone()));
+                docs.extend(logical.iter().map(|(id, doc)| DocumentFeedItem {
+                    body: doc.body.clone(),
+                    cursor: DocumentFeedCursor {
+                        epk: epk.clone(),
+                        id: id.clone(),
+                    },
+                }));
             }
         }
-        Ok((state.metadata.rid.clone(), docs, token_parts.join(",")))
+        docs.sort_by(|left, right| left.cursor.cmp(&right.cursor));
+        let (partition_key_range_id, internal_partition_id) = if multiple_partitions {
+            (None, None)
+        } else {
+            match selected_partition {
+                Some((id, internal_id)) => (Some(id), Some(internal_id)),
+                None => (None, None),
+            }
+        };
+        Ok((
+            state.metadata.rid.clone(),
+            docs,
+            token_parts.join(","),
+            FeedResponseHeaders {
+                session_token: String::new(),
+                lsn: Some(max_lsn),
+                partition_key_range_id,
+                internal_partition_id,
+            },
+        ))
     });
 
     match result {
@@ -2651,15 +3115,17 @@ fn handle_read_feed_items(
     start: Instant,
 ) -> AsyncRawResponse {
     match collect_item_documents(store, region_name, parsed, start) {
-        Ok((rid, docs, token)) => success_feed_response(
-            "Documents",
-            rid,
-            docs,
-            FeedPageOptions::from_request(parsed),
-            1.0,
-            &token,
-            start,
-        ),
+        Ok((rid, docs, token, mut headers)) => {
+            headers.session_token = token;
+            success_document_feed_response(
+                "Documents",
+                rid,
+                docs,
+                FeedPageOptions::from_request(parsed),
+                headers,
+                start,
+            )
+        }
         Err(response) => response,
     }
 }
@@ -2672,8 +3138,17 @@ fn handle_query_items(
     start: Instant,
 ) -> AsyncRawResponse {
     match collect_item_documents(store, region_name, parsed, start) {
-        Ok((rid, docs, token)) => {
-            execute_query_feed("Documents", rid, docs, parsed, request_body, &token, start)
+        Ok((rid, docs, token, mut headers)) => {
+            headers.session_token = token;
+            execute_document_query_feed(
+                "Documents",
+                rid,
+                docs,
+                parsed,
+                request_body,
+                headers,
+                start,
+            )
         }
         Err(response) => response,
     }
@@ -2730,7 +3205,7 @@ fn local_query_info_to_dataflow(
             .map(|a| format!("{a:?}"))
             .collect(),
         group_by_alias_to_aggregate_type: HashMap::new(),
-        rewritten_query: None,
+        rewritten_query: Some(String::new()),
         has_select_value: info.has_select_value,
         has_non_streaming_order_by: false,
     }
@@ -2742,6 +3217,78 @@ fn full_query_range() -> crate::driver::dataflow::query_plan::QueryRange {
         max: Epk::MAX.to_hex(),
         is_min_inclusive: true,
         is_max_inclusive: false,
+    }
+}
+
+fn epk_range_to_query_range(
+    range: std::ops::Range<EffectivePartitionKey>,
+) -> crate::driver::dataflow::query_plan::QueryRange {
+    crate::driver::dataflow::query_plan::QueryRange {
+        min: range.start.to_hex(),
+        max: range.end.to_hex(),
+        is_min_inclusive: true,
+        is_max_inclusive: true,
+    }
+}
+
+fn model_partition_key_values(
+    values: &[crate::query::plan::PartitionKeyValue],
+) -> crate::error::Result<Vec<ModelPartitionKeyValue>> {
+    values
+        .iter()
+        .map(|value| match value {
+            crate::query::plan::PartitionKeyValue::String(s) => {
+                Ok(ModelPartitionKeyValue::from(s.clone()))
+            }
+            crate::query::plan::PartitionKeyValue::Number(n) => {
+                Ok(ModelPartitionKeyValue::from(*n))
+            }
+            crate::query::plan::PartitionKeyValue::Bool(b) => Ok(ModelPartitionKeyValue::from(*b)),
+            crate::query::plan::PartitionKeyValue::Null => Ok(ModelPartitionKeyValue::NULL),
+            crate::query::plan::PartitionKeyValue::Undefined => {
+                Ok(ModelPartitionKeyValue::UNDEFINED)
+            }
+            crate::query::plan::PartitionKeyValue::UnboundParameter(name) => {
+                Err(crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(StatusCode::BadRequest))
+                    .with_message(format!(
+                        "query plan partition key filter references unbound parameter @{name}"
+                    ))
+                    .build())
+            }
+            crate::query::plan::PartitionKeyValue::InvalidParameter { name, reason } => {
+                Err(crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(StatusCode::BadRequest))
+                    .with_message(format!(
+                        "query plan partition key filter parameter @{name} is invalid: {reason}"
+                    ))
+                    .build())
+            }
+        })
+        .collect()
+}
+
+fn query_ranges_from_pk_filter(
+    filter: &crate::query::plan::PartitionKeyFilter,
+    pk_definition: &PartitionKeyDefinition,
+) -> crate::error::Result<Vec<crate::driver::dataflow::query_plan::QueryRange>> {
+    match filter {
+        crate::query::plan::PartitionKeyFilter::Equality(values) => {
+            let values = model_partition_key_values(values)?;
+            let range = EffectivePartitionKey::compute_range(&values, pk_definition)?;
+            Ok(vec![epk_range_to_query_range(range)])
+        }
+        crate::query::plan::PartitionKeyFilter::InList(value_sets) => value_sets
+            .iter()
+            .map(|values| {
+                let values = model_partition_key_values(values)?;
+                EffectivePartitionKey::compute_range(&values, pk_definition)
+                    .map(epk_range_to_query_range)
+            })
+            .collect(),
+        crate::query::plan::PartitionKeyFilter::Contradictory => Ok(Vec::new()),
+        crate::query::plan::PartitionKeyFilter::Unconstrained
+        | crate::query::plan::PartitionKeyFilter::NotEvaluated => Ok(vec![full_query_range()]),
     }
 }
 
@@ -2819,13 +3366,32 @@ fn handle_query_plan(
         }
     };
 
+    let query_ranges = match query_ranges_from_pk_filter(
+        &local_plan.pk_filters,
+        &container.metadata.partition_key,
+    ) {
+        Ok(ranges) => ranges,
+        Err(e) => {
+            return error_response(
+                e.status().status_code(),
+                e.status().sub_status().map(|s| u32::from(s.value())),
+                "BadRequest",
+                &e.to_string(),
+                0.0,
+                "",
+                start,
+            )
+            .build();
+        }
+    };
+
     let plan = crate::driver::dataflow::query_plan::QueryPlan {
-        partitioned_query_execution_info_version: 1,
+        partitioned_query_execution_info_version: 2,
         query_info: Some(local_query_info_to_dataflow(local_plan.query_info)),
-        query_ranges: vec![full_query_range()],
+        query_ranges,
         hybrid_search_query_info: None,
     };
-    let body = match serde_json::to_value(plan) {
+    let mut body = match serde_json::to_value(plan) {
         Ok(body) => body,
         Err(e) => {
             return error_response(
@@ -2840,6 +3406,9 @@ fn handle_query_plan(
             .build();
         }
     };
+    if let Some(query_info) = body.get_mut("queryInfo").and_then(|v| v.as_object_mut()) {
+        query_info.insert("dCountInfo".to_owned(), serde_json::Value::Null);
+    }
     success_response(StatusCode::Ok, &body, 1.0, "", start)
         .with_item_count(1)
         .build()
@@ -4895,4 +5464,99 @@ fn container_not_found(db_id: &str, coll_id: &str, start: Instant) -> AsyncRawRe
         start,
     )
     .build()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn document_item(epk: &str, id: &str) -> DocumentFeedItem {
+        DocumentFeedItem {
+            body: serde_json::json!({ "id": id }),
+            cursor: DocumentFeedCursor {
+                epk: Epk::from(epk),
+                id: id.to_owned(),
+            },
+        }
+    }
+
+    fn ids(values: &[serde_json::Value]) -> Vec<&str> {
+        values
+            .iter()
+            .map(|value| value["id"].as_str().expect("test document has id"))
+            .collect()
+    }
+
+    #[test]
+    fn document_feed_cursor_skips_already_returned_low_child_prefix_after_split() {
+        let start = Instant::now();
+        let parent = vec![
+            document_item("01", "hash-a-0"),
+            document_item("02", "hash-a-1"),
+            document_item("80", "hash-e-0"),
+        ];
+        let (_page, continuation) =
+            paginate_document_feed_items(parent, Some(1), None, start).unwrap();
+
+        let low_child = vec![
+            document_item("01", "hash-a-0"),
+            document_item("02", "hash-a-1"),
+        ];
+        let (page, next) =
+            paginate_document_feed_items(low_child, Some(10), continuation.as_deref(), start)
+                .unwrap();
+
+        assert_eq!(ids(&page), vec!["hash-a-1"]);
+        assert!(next.is_none());
+    }
+
+    #[test]
+    fn document_feed_cursor_does_not_skip_high_child_after_split() {
+        let start = Instant::now();
+        let parent = vec![
+            document_item("01", "hash-a-0"),
+            document_item("02", "hash-a-1"),
+            document_item("80", "hash-e-0"),
+        ];
+        let (_page, continuation) =
+            paginate_document_feed_items(parent, Some(1), None, start).unwrap();
+
+        let high_child = vec![document_item("80", "hash-e-0")];
+        let (page, next) =
+            paginate_document_feed_items(high_child, Some(10), continuation.as_deref(), start)
+                .unwrap();
+
+        assert_eq!(ids(&page), vec!["hash-e-0"]);
+        assert!(next.is_none());
+    }
+
+    #[test]
+    fn document_feed_cursor_rejects_malformed_epk_hex() {
+        let token = serde_json::to_string(&DocumentFeedCursorToken {
+            kind: DOCUMENT_FEED_CURSOR_TOKEN_KIND.to_owned(),
+            epk: "00zz".to_owned(),
+            id: "item1".to_owned(),
+        })
+        .unwrap();
+
+        let err = DocumentFeedCursor::parse(&token, Instant::now()).unwrap_err();
+        assert_eq!(err.status(), StatusCode::BadRequest);
+    }
+
+    #[test]
+    fn document_feed_cursor_pagination_requires_cursor_sorted_items() {
+        let start = Instant::now();
+        let mut items = vec![
+            document_item("80", "hash-e-0"),
+            document_item("01", "hash-a-0"),
+            document_item("02", "hash-a-1"),
+        ];
+        items.sort_by(|left, right| left.cursor.cmp(&right.cursor));
+
+        let (page, continuation) =
+            paginate_document_feed_items(items, Some(1), None, start).unwrap();
+
+        assert_eq!(ids(&page), vec!["hash-a-0"]);
+        assert!(continuation.is_some());
+    }
 }

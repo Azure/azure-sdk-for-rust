@@ -149,12 +149,17 @@ You are an expert Rust programmer. You write safe, efficient, maintainable, and 
 ### Dependencies
 
 - Dependencies should be defined in the root workspace's `Cargo.toml` file.
-- Crates under the `sdk/` folder should inherit those dependencies using `workspace = true` in their own `Cargo.toml` files.
+- Published dependencies should generally inherit the root workspace entry with `workspace = true`; this is the default for crates under `sdk/`.
+- When a crate needs unreleased changes, depend on the local crate with both `path` and `version`.
+- Local dev-dependencies should generally be `path`-only so `cargo package` can validate publishable crates without requiring unpublished versions from crates.io.
+- In `sdk/core`, keep dependency versions managed from the root workspace and use local `path + version` only when the core stack (`typespec -> typespec_client_core -> azure_core`) must move together on unreleased changes.
+- Outside `sdk/core`, crates should usually inherit workspace dependencies that resolve to published versions; switch to local `path + version` on `sdk/core` crates only when they require unreleased core changes.
 
 ### General
 
 - Write idiomatic Rust code following conventions in `std` like implementing `From`, `TryFrom`, `Display`, and other standard traits instead of ad-hoc conversion methods.
 - Derive `SafeDebug` instead of `Debug` for model types to protect privacy and security. Generated code should also use `SafeDebug`.
+- Prefer `#[cfg(...)]`-gated items/blocks over `cfg!()` when alternate-condition code may not compile, or when conditionally included logic is more than a single expression.
 - Prioritize safety, efficiency, and correctness.
 - Respect Rust's ownership and borrowing rules.
 - Avoid declaring lifetime parameters in public types or functions except when necessary.

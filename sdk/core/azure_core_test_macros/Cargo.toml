@@ -22,9 +22,5 @@ proc-macro2.workspace = true
 quote.workspace = true
 syn.workspace = true
 
-[dev-dependencies]
-azure_core_test.workspace = true
-tokio.workspace = true
-
 [lints]
 workspace = true
