@@ -26,7 +26,8 @@ pub(crate) const DEFAULT_WINDOW: Duration = Duration::from_secs(60);
 /// Default number of failures always allowed per window, even past the cap.
 pub(crate) const DEFAULT_FAILURE_RESERVE: u32 = 10;
 
-/// Configuration for a [`RateLimiter`].
+/// Configuration for the rate limiting applied by
+/// [`SamplingLogHandler`](crate::diagnostics::SamplingLogHandler).
 #[derive(Clone, Copy, Debug)]
 #[non_exhaustive]
 pub struct RateLimiterConfig {

@@ -15,7 +15,8 @@
 //! [`DiagnosticsContext`], and an ordered [`DiagnosticsHandlerChain`] invokes
 //! registered handlers once per operation at completion. Register handlers via
 //! [`CosmosClientBuilder::with_diagnostics_handler`](crate::CosmosClientBuilder::with_diagnostics_handler).
-//! With no handlers registered the chain is a zero-overhead no-op.
+//! With no handlers registered the chain does nothing beyond checking whether a
+//! handler is present.
 //!
 //! A built-in OpenTelemetry metrics handler,
 //! [`CosmosMetricsHandler`], is available behind
@@ -41,7 +42,7 @@ pub use azure_data_cosmos_driver::diagnostics::{DiagnosticsContext, TransportKin
 #[doc(inline)]
 pub use azure_data_cosmos_driver::DiagnosticsThresholds;
 pub use handler::{DiagnosticsHandler, DiagnosticsHandlerChain};
-pub use logging::SamplingLogHandler;
+pub use logging::{RateLimiterConfig, SamplingLogHandler};
 pub use operation_context::CosmosOperationContext;
 #[cfg(feature = "otel_tracing")]
 pub use tracing::CosmosTracingHandler;

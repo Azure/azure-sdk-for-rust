@@ -52,7 +52,7 @@ pub struct CosmosTracingHandler {
 }
 
 impl CosmosTracingHandler {
-    /// Creates a handler using the default (Java-like) sampling thresholds.
+    /// Creates a handler using the default sampling thresholds.
     pub fn new() -> Self {
         Self::with_thresholds(DiagnosticsThresholds::default())
     }

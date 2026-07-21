@@ -178,8 +178,8 @@ impl CosmosClientBuilder {
     /// completed [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext).
     ///
     /// Handlers run in registration order; call this multiple times to build an
-    /// ordered chain. With no handler registered the completion path is a
-    /// zero-overhead no-op.
+    /// ordered chain. With no handler registered the completion path does
+    /// nothing beyond checking whether a handler is present.
     ///
     /// # Arguments
     ///

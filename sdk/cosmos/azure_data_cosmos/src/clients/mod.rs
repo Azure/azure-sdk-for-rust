@@ -54,8 +54,8 @@ pub(crate) struct ClientContext {
     pub(crate) driver: Arc<CosmosDriver>,
     /// Diagnostics emission handlers invoked once per operation at completion.
     ///
-    /// Empty by default, in which case the completion path is a zero-overhead
-    /// no-op.
+    /// Empty by default, in which case the completion path does nothing beyond
+    /// checking whether a handler is present.
     pub(crate) diagnostics_handlers: DiagnosticsHandlerChain,
 }
 
@@ -71,8 +71,8 @@ impl ClientContext {
     /// `make_op_context` supplies the SDK-side operation identity
     /// ([`CosmosOperationContext`]) — operation name, database, container — that
     /// the driver context does not carry. It is a closure so the identity is
-    /// only materialized when at least one handler is registered, preserving the
-    /// zero-overhead no-op when the chain is empty.
+    /// only materialized when at least one handler is registered, so the
+    /// completion path does no extra work when the chain is empty.
     pub(crate) fn complete_operation(
         &self,
         driver_response: azure_data_cosmos_driver::models::CosmosResponse,

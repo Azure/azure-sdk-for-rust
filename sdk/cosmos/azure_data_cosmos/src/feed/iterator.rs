@@ -140,8 +140,7 @@ impl LiveState {
                 // Successfully got a response from the driver. Convert it into a QueryFeedPage and yield it.
                 let response = driver_bridge::driver_response_to_cosmos_response(driver_response);
                 // Only take a diagnostics handle when a handler is registered: the
-                // clone is a per-page atomic op the zero-overhead empty-chain
-                // default must not pay.
+                // clone is a per-page atomic op the empty-chain default skips.
                 let page_diagnostics =
                     (!this.diagnostics.is_empty()).then(|| response.diagnostics());
                 match QueryFeedPage::from_response(response) {

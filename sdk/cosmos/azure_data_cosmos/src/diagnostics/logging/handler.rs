@@ -23,19 +23,16 @@ const SUPPRESSED_TARGET: &str = "azure_data_cosmos::diagnostics::suppressed";
 /// that fail or cross a sampling threshold, rate-limited during storms.
 ///
 /// For each completed operation the handler applies the same tail-based sampling
-/// gate as the tracing handler — log iff the operation *is completed* and *failed
-/// or breached a [`DiagnosticsThresholds`]* — and then admits the line through a
-/// count-per-interval limiter. The limiter caps how many lines are
-/// emitted per window (≈100/min by default), always lets a bounded number of
-/// failures through, and emits exactly one "suppressed N until reset" notice per
-/// window in which anything was dropped.
+/// gate as the tracing handler: the diagnostics are logged if, and only if, the
+/// operation *is completed* and *failed* or breached a [`DiagnosticsThresholds`].
+/// In addition, the handler limits how many lines are emitted during a time window
+/// (≈100/min by default). The number of diagnostics emitted is always bounded by
+/// the specified rate limit. When diagnostics are suppressed, a single warning is
+/// emitted indicating the time remaining until diagnostics are restored.
 ///
-/// Lines are emitted through the [`tracing`] ecosystem: sampled diagnostics at
-/// `WARN` (failures) or `INFO` (threshold breaches) on target
-/// `azure_data_cosmos::diagnostics::sampled`, and suppression notices at `WARN`
-/// on target `azure_data_cosmos::diagnostics::suppressed`.
+/// Diagnostics are all emitted through [`tracing`](https://docs.rs/tracing).
 ///
-/// Register it with
+/// Register this handler using
 /// [`CosmosClientBuilder::with_diagnostics_handler`](crate::CosmosClientBuilder::with_diagnostics_handler).
 ///
 /// # Examples
@@ -55,7 +52,7 @@ pub struct SamplingLogHandler {
 impl SamplingLogHandler {
     /// Creates a handler with default thresholds and rate limiting (~100/min).
     pub fn new() -> Self {
-        Self::with_config(
+        Self::with_thresholds_and_rate_limit(
             DiagnosticsThresholds::default(),
             RateLimiterConfig::default(),
         )
@@ -64,22 +61,18 @@ impl SamplingLogHandler {
     /// Creates a handler with the supplied sampling thresholds and default rate
     /// limiting.
     pub fn with_thresholds(thresholds: DiagnosticsThresholds) -> Self {
-        Self::with_config(thresholds, RateLimiterConfig::default())
+        Self::with_thresholds_and_rate_limit(thresholds, RateLimiterConfig::default())
     }
 
     /// Creates a handler with the supplied sampling thresholds and rate-limiter
     /// configuration.
-    ///
-    /// Crate-internal: [`RateLimiterConfig`] is not part of the public API, so the
-    /// public constructors are [`new`](Self::new) and
-    /// [`with_thresholds`](Self::with_thresholds).
-    pub(crate) fn with_config(
+    pub fn with_thresholds_and_rate_limit(
         thresholds: DiagnosticsThresholds,
-        limiter: RateLimiterConfig,
+        rate_limit: RateLimiterConfig,
     ) -> Self {
         Self {
             thresholds,
-            limiter: RateLimiter::new(limiter),
+            limiter: RateLimiter::new(rate_limit),
         }
     }
 
@@ -120,11 +113,14 @@ impl DiagnosticsHandler for SamplingLogHandler {
         }
 
         if decision.emit {
-            let line = diagnostics.to_json_string(Some(DiagnosticsVerbosity::Summary));
+            // Compute the JSON line inside each macro call so `to_json_string` is
+            // only evaluated when a subscriber is actually listening for the event
+            // (the `tracing` macros run an "is enabled" check before evaluating
+            // field expressions).
             if is_failure {
-                tracing::warn!(target: SAMPLED_TARGET, diagnostics = %line, "cosmos operation diagnostics");
+                tracing::warn!(target: SAMPLED_TARGET, diagnostics = %diagnostics.to_json_string(Some(DiagnosticsVerbosity::Summary)), "cosmos operation diagnostics");
             } else {
-                tracing::info!(target: SAMPLED_TARGET, diagnostics = %line, "cosmos operation diagnostics");
+                tracing::info!(target: SAMPLED_TARGET, diagnostics = %diagnostics.to_json_string(Some(DiagnosticsVerbosity::Summary)), "cosmos operation diagnostics");
             }
         }
     }

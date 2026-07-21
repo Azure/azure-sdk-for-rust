@@ -43,8 +43,8 @@ mod query_page;
 /// This is the per-page completion seam for query and change-feed pagination,
 /// mirroring the singleton completion seam on `ClientContext`: it lets metrics,
 /// tracing, and sampled-logging handlers observe each page fetch, on both
-/// success and failure. It is a zero-overhead no-op when no handler is
-/// registered, so the default paginated path allocates nothing.
+/// success and failure. It is skipped when no handler is registered, so the
+/// default paginated path does no diagnostics work per page.
 ///
 /// `returned_item_count`, when supplied, feeds the `returned_rows` development
 /// metric with the number of items the page yielded.

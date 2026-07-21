@@ -12,6 +12,7 @@ mod handler;
 mod rate_limiter;
 
 pub use handler::SamplingLogHandler;
+pub use rate_limiter::RateLimiterConfig;
 
 #[cfg(test)]
 mod tests {
@@ -144,7 +145,7 @@ mod tests {
 
         // Cap 5 per 200ms window, no failure reserve. Drive threshold-breaching
         // successes (RU 2 > 1) so they log without tapping the failure reserve.
-        let handler = SamplingLogHandler::with_config(
+        let handler = SamplingLogHandler::with_thresholds_and_rate_limit(
             DiagnosticsThresholds::default().with_request_charge(1.0),
             RateLimiterConfig {
                 max_per_window: 5,

@@ -70,7 +70,7 @@ pub trait DiagnosticsHandler: Send + Sync {
 ///
 /// The chain is the unit the SDK invokes at operation completion. Handlers run
 /// in registration order, so ordering is deterministic. An empty chain — the
-/// default when no handler is registered — is a zero-overhead no-op.
+/// default when no handler is registered — does nothing.
 ///
 /// The chain is backed by a shared, reference-counted slice, so cloning it (for
 /// example when a [`CosmosClient`](crate::CosmosClient) hands state down to a

@@ -9,14 +9,11 @@
 //! to OpenTelemetry metrics following the database-client semantic conventions.
 //!
 //! The whole module is compiled only when the `otel_metrics` Cargo feature is
-//! enabled, so with the feature off there is literally no metrics code — zero
-//! cost. With the feature on but no meter provider registered, OpenTelemetry's
-//! global meter is a no-op, so recording is still effectively free.
+//! enabled, so with the feature off there is no metrics code at all. With the
+//! feature on but no meter provider registered, OpenTelemetry's global meter is a
+//! no-op.
 //!
-//! There is no `Meter` abstraction in `azure_core` yet (design decision **D2**),
-//! so metrics are emitted through the raw [`opentelemetry`] metrics API. The
-//! handler is Cosmos-local today and a candidate for promotion once a shared
-//! `azure_core` metrics surface exists.
+//! Metrics are emitted through the [`opentelemetry`] metrics API.
 //!
 //! # Emitted metrics
 //!

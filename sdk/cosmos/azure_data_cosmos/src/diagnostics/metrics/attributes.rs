@@ -5,11 +5,10 @@
 //! metrics.
 //!
 //! The OpenTelemetry semantic conventions for database clients define the exact
-//! metric and attribute names emitted here. `azure_core`'s own attribute-name
-//! constants are module-private (see design decision **D6**), so the Cosmos SDK
-//! keeps its own single source of truth: every name a handler emits lives here
-//! and nowhere else, so a rename is a one-line change and reviewers can diff the
-//! wire contract in one place.
+//! metric and attribute names emitted here. Keeping them in one module gives the
+//! Cosmos SDK a single source of truth: every name a handler emits lives here and
+//! nowhere else, so a rename is a one-line change and reviewers can diff the wire
+//! contract in one place.
 //!
 //! Two tiers, matching the semantic conventions:
 //! - **Stable** names — emitted unconditionally (operation-scope, low cardinality).
@@ -32,8 +31,12 @@ pub const METRIC_OPERATION_REQUEST_CHARGE: &str = "azure.cosmosdb.client.operati
 pub const METRIC_RESPONSE_RETURNED_ROWS: &str = "db.client.response.returned_rows";
 
 // =========================================================================
-// Instrument units (UCUM)
+// Instrument units
 // =========================================================================
+//
+// Unit strings follow the Unified Code for Units of Measure (UCUM):
+// <https://ucum.org/ucum>. OpenTelemetry adopts UCUM for instrument units; see
+// <https://opentelemetry.io/docs/specs/semconv/general/metrics/#instrument-units>.
 
 /// Unit for [`METRIC_OPERATION_DURATION`] — seconds.
 pub const UNIT_SECONDS: &str = "s";
