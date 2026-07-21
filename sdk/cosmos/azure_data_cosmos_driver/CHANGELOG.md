@@ -10,6 +10,8 @@
 
 ### Other Changes
 
+- Changed the retry pacing for the backend topology-change signals `403/3` (WriteForbidden) and `403/1008` (DatabaseAccountNotFound) from fixed or immediate retries to exponential backoff with jitter (1s base, ×2 growth, capped at 15s per retry, ±25% jitter). Retries are bounded by a cumulative 5s delay budget, keeping fast early retries while easing pressure on the service as topology changes settle. ([#4740](https://github.com/Azure/azure-sdk-for-rust/pull/4740))
+
 ## 0.6.0 (2026-07-20)
 
 ### Features Added
@@ -35,8 +37,6 @@
 - Fixed `AZURE_COSMOS_PPCB_*` environment variables (including the `AZURE_COSMOS_PPCB_ENABLED` master switch and the `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` kill switch) being silently ignored when a caller built `DriverOptions` without calling `DriverOptionsBuilder::with_partition_failover_options`. The environment is read only by `PartitionFailoverOptionsBuilder::build`, but the omitted-options path used a bare `PartitionFailoverOptions::default()` (which hard-codes PPCB enabled and reads no environment), so PPCB stayed on even with `AZURE_COSMOS_PPCB_ENABLED=false`. `DriverOptionsBuilder::build` now resolves the partition-failover options from the environment when the caller does not supply them (falling back to defaults, fail-soft, if an environment value is out of bounds). An explicitly supplied `PartitionFailoverOptions` continues to take precedence. ([#4655](https://github.com/Azure/azure-sdk-for-rust/pull/4655))
 
 ### Other Changes
-
-- Changed the retry pacing for the backend topology-change signals `403/3` (WriteForbidden) and `403/1008` (DatabaseAccountNotFound) from fixed or immediate retries to exponential backoff with jitter (1s base, ×2 growth, capped at 15s per retry, ±25% jitter). Retries are bounded by a cumulative 5s delay budget, keeping fast early retries while easing pressure on the service as topology changes settle. ([#4740](https://github.com/Azure/azure-sdk-for-rust/pull/4740))
 
 ## 0.5.0 (2026-06-19)
 

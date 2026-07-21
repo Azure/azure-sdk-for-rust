@@ -370,6 +370,10 @@ impl AccountMetadataCache {
     /// Returns the currently cached account properties for an endpoint, if
     /// any. Does NOT trigger a fetch — callers that want to populate on miss
     /// should use [`Self::get_or_fetch`] instead.
+    #[allow(
+        dead_code,
+        reason = "used by feature-dependent query/account APIs that docs.rs does not compile"
+    )]
     pub(crate) async fn get(&self, endpoint: &AccountEndpoint) -> Option<Arc<AccountProperties>> {
         self.cache.get(endpoint).await
     }
