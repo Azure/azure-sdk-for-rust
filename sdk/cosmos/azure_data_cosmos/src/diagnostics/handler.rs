@@ -60,9 +60,12 @@ pub trait DiagnosticsHandler: Send + Sync {
     /// Consumes the completed diagnostics for one operation.
     ///
     /// * `diagnostics` - The finalized context for the just-completed operation.
-    /// * `cx` - The pipeline/trace [`Context`] associated with the operation,
-    ///   available so handlers can correlate emitted telemetry with the caller's
-    ///   trace context.
+    /// * `cx` - A [`Context`] carrying the SDK-supplied
+    ///   [`CosmosOperationContext`](crate::diagnostics::CosmosOperationContext)
+    ///   for the operation (operation name, database, container) when one is
+    ///   available. This is a diagnostics-scoped context built at completion, not
+    ///   the caller's pipeline/trace context, so read it for operation metadata
+    ///   rather than for trace-context correlation.
     fn handle(&self, diagnostics: &DiagnosticsContext, cx: &Context<'_>);
 }
 

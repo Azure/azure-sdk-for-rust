@@ -33,6 +33,10 @@ pub(crate) const SERVER_ADDRESS: &str = "server.address";
 /// `error.type` — a low-cardinality identifier of the error (the status code).
 pub(crate) const ERROR_TYPE: &str = "error.type";
 
+/// Fallback value for [`ERROR_TYPE`] when a failure carries no status anywhere
+/// (per semantic conventions).
+pub(crate) const ERROR_TYPE_OTHER: &str = "_OTHER";
+
 /// `azure.cosmosdb.operation.request_charge` — Request Units consumed.
 pub(crate) const AZURE_COSMOSDB_REQUEST_CHARGE: &str = "azure.cosmosdb.operation.request_charge";
 

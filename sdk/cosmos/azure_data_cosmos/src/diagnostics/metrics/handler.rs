@@ -137,7 +137,10 @@ impl CosmosMetricsHandler {
         }
 
         // Response status and, on failure, error.type (per semantic conventions).
-        match diagnostics.status() {
+        // Use the effective status (operation status, else the terminal attempt's)
+        // so status-less error-finalization paths still report an accurate status
+        // and error.type instead of the _OTHER catch-all.
+        match diagnostics.effective_status() {
             Some(status) => {
                 let code = u16::from(status.status_code());
                 attrs.push(KeyValue::new(
@@ -149,8 +152,8 @@ impl CosmosMetricsHandler {
                 }
             }
             None => {
-                // No status recorded — a client/transport failure with no HTTP
-                // response. Classify it as the semconv catch-all.
+                // No status anywhere — a client/transport failure with no HTTP
+                // response and no attempt. Classify it as the semconv catch-all.
                 attrs.push(KeyValue::new(
                     attributes::ATTR_ERROR_TYPE,
                     attributes::ERROR_TYPE_OTHER,
@@ -181,7 +184,7 @@ impl CosmosMetricsHandler {
                     ));
                 }
             }
-            if let Some(sub_status) = diagnostics.status().and_then(|s| s.sub_status()) {
+            if let Some(sub_status) = diagnostics.effective_status().and_then(|s| s.sub_status()) {
                 attrs.push(KeyValue::new(
                     attributes::ATTR_SUB_STATUS_CODE,
                     i64::from(sub_status.value()),

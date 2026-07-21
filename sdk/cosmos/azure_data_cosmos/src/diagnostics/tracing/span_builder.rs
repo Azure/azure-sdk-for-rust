@@ -110,7 +110,7 @@ pub(crate) fn emit_backdated_span_tree<T>(
             collection.to_string(),
         ));
     }
-    if let Some(status) = diagnostics.status() {
+    if let Some(status) = diagnostics.effective_status() {
         root_attrs.push(KeyValue::new(
             attributes::DB_RESPONSE_STATUS_CODE,
             u16::from(status.status_code()).to_string(),
@@ -156,10 +156,17 @@ pub(crate) fn emit_backdated_span_tree<T>(
         ));
     }
     if op_failed {
-        if let Some(status) = diagnostics.status() {
+        if let Some(status) = diagnostics.effective_status() {
             root_attrs.push(KeyValue::new(
                 attributes::ERROR_TYPE,
                 u16::from(status.status_code()).to_string(),
+            ));
+        } else {
+            // A failure with no status anywhere — report the semconv catch-all so
+            // the Error-marked root span still carries an error.type.
+            root_attrs.push(KeyValue::new(
+                attributes::ERROR_TYPE,
+                attributes::ERROR_TYPE_OTHER,
             ));
         }
     }

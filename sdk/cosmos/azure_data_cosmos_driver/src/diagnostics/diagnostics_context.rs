@@ -1170,9 +1170,42 @@ struct TruncatedOutput<'a> {
     request_count: usize,
     truncated: bool,
     /// Present only when the per-attempt list was compacted under a retry storm.
+    ///
+    /// Counts-only: the per-run rollup (`CompactionInfo::runs`, up to `cap`
+    /// endpoint-bearing entries) is deliberately omitted here — it is the
+    /// unbounded part that can blow the size budget, and re-serializing it in the
+    /// size-limited fallback is exactly what would keep the "truncated" summary
+    /// oversized.
     #[serde(skip_serializing_if = "Option::is_none")]
-    compaction: Option<&'a CompactionInfo>,
+    compaction: Option<CompactionSummary>,
     message: &'static str,
+}
+
+/// Counts-only projection of [`CompactionInfo`] for the size-limited truncated
+/// summary. Carries the scalar counts (always tiny) but never the per-run rollup.
+#[derive(Serialize)]
+struct CompactionSummary {
+    original_request_count: usize,
+    retained_request_count: usize,
+    collapsed_runs: usize,
+    total_runs: usize,
+    retained_truncated: bool,
+    omitted_runs: usize,
+    omitted_request_count: usize,
+}
+
+impl From<&CompactionInfo> for CompactionSummary {
+    fn from(info: &CompactionInfo) -> Self {
+        Self {
+            original_request_count: info.original_request_count,
+            retained_request_count: info.retained_request_count,
+            collapsed_runs: info.collapsed_runs,
+            total_runs: info.total_runs,
+            retained_truncated: info.retained_truncated,
+            omitted_runs: info.omitted_runs,
+            omitted_request_count: info.omitted_request_count,
+        }
+    }
 }
 
 /// Status of the CPU sample history in a [`SystemUsageSnapshot`].
@@ -2053,6 +2086,20 @@ impl DiagnosticsContext {
         self.status.as_ref()
     }
 
+    /// Returns the **effective** final status for the operation.
+    ///
+    /// This is the operation-level [`status`](Self::status) when one was recorded,
+    /// otherwise the terminal attempt's status — mirroring the fallback used by
+    /// [`is_failure`](Self::is_failure). Some driver error-finalization paths graft
+    /// diagnostics onto the returned error without stamping an operation-level
+    /// status; this accessor lets emitters (metrics/tracing) report an accurate
+    /// status/`error.type` for those failures instead of treating them as unknown.
+    /// `None` only when there is neither an operation status nor any attempt.
+    pub fn effective_status(&self) -> Option<CosmosStatus> {
+        self.status
+            .or_else(|| self.requests.last().map(|request| *request.status()))
+    }
+
     /// Returns the total request charge (RU) across all requests.
     ///
     /// This stays exact even under a retry storm: it is summed from the full
@@ -2339,7 +2386,7 @@ impl DiagnosticsContext {
                 total_duration_ms,
                 request_count: self.request_count(),
                 truncated: true,
-                compaction: self.compaction.as_ref(),
+                compaction: self.compaction.as_ref().map(CompactionSummary::from),
                 message:
                     "Output truncated to fit size limit. Use Detailed verbosity for full diagnostics.",
             };
@@ -2874,6 +2921,94 @@ mod tests {
         assert!(
             regions.contains(&dropped),
             "a region dropped from the retained list must still be reported"
+        );
+    }
+
+    #[test]
+    fn effective_status_falls_back_to_terminal_attempt() {
+        // A context with no operation-level status but a failed terminal attempt
+        // must report that attempt's status as the effective status, so metrics
+        // and tracing can classify status-less error-finalization paths
+        // accurately instead of dropping the status / using the _OTHER catch-all.
+        let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
+            let h = builder.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::WEST_US_2),
+                "https://test.westus2.documents.azure.com",
+            );
+            builder.complete_request(h, StatusCode::TooManyRequests, None);
+            // Intentionally no set_operation_status: the operation-level status
+            // stays `None`, mirroring the graft-onto-error finalization paths.
+        });
+
+        assert!(
+            ctx.status().is_none(),
+            "no operation-level status should be set"
+        );
+        assert_eq!(
+            ctx.effective_status().map(|s| s.status_code()),
+            Some(StatusCode::TooManyRequests),
+            "effective status must fall back to the terminal attempt"
+        );
+        assert!(ctx.is_failure());
+    }
+
+    #[test]
+    fn size_limited_summary_fallback_omits_run_rollup() {
+        // Under a storm whose full summary exceeds the size budget, the truncated
+        // fallback must NOT re-serialize the (large) per-run rollup — re-emitting
+        // it is exactly what would keep the "truncated" summary oversized. It
+        // keeps counts only.
+        let cap = 64;
+        let options = Arc::new(
+            DiagnosticsOptions::builder()
+                .with_max_request_diagnostics(cap)
+                .with_max_summary_size_bytes(4096)
+                .build()
+                .expect("valid options"),
+        );
+        let mut b = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("storm-size".to_string()),
+            options,
+        );
+        // Many distinct long-endpoint single-attempt buckets, so the per-run
+        // rollup (bounded to `cap`) alone is large enough that the full summary
+        // blows the size budget.
+        for i in 0..(cap + 4) {
+            let endpoint = format!(
+                "https://very-long-endpoint-{i:04}.documents.azure.com:443/padding/segment/path"
+            );
+            record_run(
+                &mut b,
+                ExecutionContext::RegionFailover,
+                &format!("Region {i:04}"),
+                &endpoint,
+                CosmosStatus::new(StatusCode::Gone),
+                1.0,
+                1,
+            );
+        }
+        b.set_operation_status(StatusCode::ServiceUnavailable, None);
+        let ctx = b.complete();
+        assert!(ctx.compaction().is_some(), "the storm must compact");
+
+        let summary = ctx.to_json_string(Some(DiagnosticsVerbosity::Summary));
+        assert!(
+            summary.contains("\"truncated\":true"),
+            "summary must have fallen back to the truncated form:\n{summary}"
+        );
+        assert!(
+            !summary.contains("\"runs\""),
+            "the truncated summary must omit the per-run rollup:\n{summary}"
+        );
+        assert!(
+            summary.contains("original_request_count"),
+            "the counts-only compaction summary must still be present:\n{summary}"
+        );
+        assert!(
+            summary.len() <= 4096,
+            "the truncated summary must respect the size budget, was {} bytes",
+            summary.len()
         );
     }
 
