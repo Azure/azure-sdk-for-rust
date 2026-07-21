@@ -5,7 +5,7 @@ Rust SDK and driver. It captures the goals, the wire/transcoding model, the
 component layout, testing, and the intentionally deferred work.
 
 For the phased implementation plan and low-level wire details, see
-[`BINARY_ENCODING_SPEC.md`](./BINARY_ENCODING_SPEC.md).
+[`BINARY_ENCODING_SPEC.md`](BINARY_ENCODING_SPEC.md).
 
 ---
 
@@ -337,5 +337,5 @@ opts.binary_encoding_request_text_response = 2;    /* 2 = true  */
 
 ## Reference
 
-* Design + phased plan: [`BINARY_ENCODING_SPEC.md`](./BINARY_ENCODING_SPEC.md)
+* Design + phased plan: [`BINARY_ENCODING_SPEC.md`](BINARY_ENCODING_SPEC.md)
 * Wire constants transcribed from .NET `Microsoft.Azure.Cosmos/src/Json/JsonBinaryEncoding.*`
