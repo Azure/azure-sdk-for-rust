@@ -207,8 +207,8 @@ Key facts (verified against the current tree):
 - **Driver stays (mostly) passthrough.** The schema-agnostic driver never
   *parses* item bodies; its encode-side change is emitting the negotiation
   header. The one schema-agnostic transform it performs is **binary→text
-  transcoding** when the operation sets `transcode_response_to_text` (for
-  `request_text_response`) — a byte-level `decode → serde_json::to_vec` that
+  transcoding** when the resolved `BinaryEncodingOptions::request_text_response`
+  is set — a byte-level `decode → serde_json::to_vec` that
   needs no type knowledge (see [§9.1](#91-driver-side-binary-encoding-and-transcoding)). The lone
   body-*parsing* exception is the patch handler — and patch is deferred.
 
@@ -273,9 +273,8 @@ sequenceDiagram
    point-op default), so the service is required to reply in binary and the
    **wire stays binary in both directions**. When the caller opts into text
    responses via `BinaryEncodingOptions::request_text_response`, the negotiation
-   header is unchanged (still `CosmosBinary`); instead the operation carries an
-   internal `transcode_response_to_text` directive and the **driver** converts
-   the binary response to text JSON before returning it (see
+   header is unchanged (still `CosmosBinary`); the **driver** converts the binary
+   response to text JSON before returning it (see
    [§9.1](#91-driver-side-binary-encoding-and-transcoding)). Enablement resolves once at client
    construction, preferring the explicit
    `CosmosClientBuilder::with_binary_encoding_options` /
@@ -436,6 +435,16 @@ the driver's request-side transcode then sees an already-binary body and passes
 it through. It sets the option via a `with_binary_encoding` helper on
 `OperationOptions` rather than stamping headers directly.
 
+**Option resolution + operation-type guard.** `execute_operation` resolves
+`binary_encoding` through the same runtime → account → operation layered view
+(`operation_options_view`) as every other option, so a default set at the
+runtime/account layer is honored. Binary encoding is honored **only for point
+item operations** (`OperationType::supports_binary_encoding`: create, read,
+replace, upsert, delete); query, feed, batch, and stored-procedure operations
+are ignored even if a caller (e.g. an FFI host) sets the flag, since those paths
+remain deferred. Patch is dispatched to its own handler before this check and is
+likewise excluded.
+
 This matches the guidance that the **driver** (not the backend) performs the
 transcoding, so the backend rewrite/transport can stay binary. Feed (`Items`)
 responses transcode per-slice, but binary feed negotiation itself remains
@@ -517,16 +526,16 @@ rare forms is a possible future optimization.)
 - `azure_data_cosmos_driver/src/binary_json/mod.rs`: `transcode_to_text(&[u8])`
   converts a binary buffer to text JSON (`decode → serde_json::to_vec`);
   text/empty input passes through unchanged.
-- `azure_data_cosmos_driver/src/models/cosmos_operation.rs`: the
-  `transcode_response_to_text` directive (accessor +
-  `with_transcode_response_to_text`), an internal driver flag (not a wire
-  header).
 - `azure_data_cosmos_driver/src/models/cosmos_response.rs`:
   `CosmosResponse::transcode_body_to_text` applies the conversion to the
   assembled response body.
+- `azure_data_cosmos_driver/src/models/mod.rs`:
+  `OperationType::supports_binary_encoding` gates binary encoding to point item
+  operations (create/read/replace/upsert/delete).
 - `azure_data_cosmos_driver/src/driver/cosmos_driver.rs`: `execute_operation`
-  captures the `transcode_response_to_text` directive before the operation is
-  consumed and transcodes the response body when set.
+  resolves `binary_encoding` via the layered `operation_options_view`, applies
+  request-side transcoding for supported operation types, and transcodes the
+  response body to text when `request_text_response` is set.
 - `azure_data_cosmos/src/clients/container_client.rs`: `serialize_item_body`
   calls `binary_json::to_vec` on the binary write path; `with_binary_encoding`
   sets the driver `OperationOptions::binary_encoding` so the driver negotiates
