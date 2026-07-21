@@ -161,10 +161,9 @@ pub enum TransportType {
     AmqpTcp,
     /// AMQP framing tunneled over secure WebSockets (`wss://`, port 443).
     ///
-    /// This variant needs a TLS backend in `azure_core_amqp`, which the
-    /// `default` feature of this crate selects. A build with
-    /// `default-features = false` can still select this variant, but the client
-    /// then returns an error when it opens the connection.
+    /// This variant needs the `native_tls` feature of `azure_core_amqp`. This
+    /// crate depends on `azure_core_amqp` with its default features, which
+    /// include `native_tls`, so the variant works in every build of this crate.
     AmqpWebSocket,
 }
 
