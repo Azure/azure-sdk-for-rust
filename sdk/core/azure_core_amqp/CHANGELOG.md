@@ -9,7 +9,7 @@
 
 ### Breaking Changes
 
-- `AmqpConnectionOptions` is now `#[non_exhaustive]`. Build it from `Default` and set the fields you need, for example `AmqpConnectionOptions { transport: Some(AmqpTransport::WebSocket), ..Default::default() }`. A struct literal that names every field no longer compiles. This makes each later field addition additive.
+- `AmqpConnectionOptions` is now `#[non_exhaustive]`, and it has a `with_` method for each field. A struct literal no longer builds it from another crate, and `..Default::default()` does not help, because functional update is also a struct expression. Start from `Default` and chain the methods, for example `AmqpConnectionOptions::default().with_transport(AmqpTransport::WebSocket)`. This makes each later field addition additive.
 
 ### Bugs Fixed
 

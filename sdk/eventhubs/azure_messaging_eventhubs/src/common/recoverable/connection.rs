@@ -811,6 +811,29 @@ impl RecoverableConnection {
         .cell
     }
 
+    /// Builds the options handed to [`AmqpConnection::open`]. Kept separate from
+    /// `create_connection` so the wiring can be asserted without a broker.
+    fn connection_options(&self) -> AmqpConnectionOptions {
+        let options = AmqpConnectionOptions::default()
+            .with_properties(
+                vec![
+                    ("user-agent", get_user_agent(&self.application_id)),
+                    ("version", get_package_version()),
+                    ("platform", get_platform_info()),
+                    ("product", get_package_name()),
+                ]
+                .into_iter()
+                .map(|(k, v)| (AmqpSymbol::from(k), AmqpValue::from(v)))
+                .collect(),
+            )
+            .with_desired_capabilities(vec![GEODR_REPLICATION_CAPABILITY.into()])
+            .with_transport(self.transport);
+        match self.custom_endpoint.clone() {
+            Some(custom_endpoint) => options.with_custom_endpoint(custom_endpoint),
+            None => options,
+        }
+    }
+
     #[instrument(
         level = "debug",
         skip_all,
@@ -828,29 +851,11 @@ impl RecoverableConnection {
         );
         let connection = Arc::new(AmqpConnection::new());
 
-        let mut options = AmqpConnectionOptions::default()
-            .with_properties(
-                vec![
-                    ("user-agent", get_user_agent(&self.application_id)),
-                    ("version", get_package_version()),
-                    ("platform", get_platform_info()),
-                    ("product", get_package_name()),
-                ]
-                .into_iter()
-                .map(|(k, v)| (AmqpSymbol::from(k), AmqpValue::from(v)))
-                .collect(),
-            )
-            .with_desired_capabilities(vec![GEODR_REPLICATION_CAPABILITY.into()])
-            .with_transport(self.transport);
-        if let Some(custom_endpoint) = self.custom_endpoint.clone() {
-            options = options.with_custom_endpoint(custom_endpoint);
-        }
-
         connection
             .open(
                 self.connection_name.clone(),
                 self.url.clone(),
-                Some(options),
+                Some(self.connection_options()),
             )
             .await?;
         info!(
@@ -2029,6 +2034,31 @@ mod tests {
         );
 
         assert_eq!(connection_manager.transport, AmqpTransport::WebSocket);
+    }
+
+    // The stored transport must also reach the options handed to
+    // `AmqpConnection::open`. Asserting on the constructor alone would still
+    // pass if `create_connection` dropped the `with_transport` call.
+    #[test]
+    fn connection_options_carry_the_transport() {
+        let url = Url::parse("amqps://example.com").unwrap();
+        let custom_endpoint = Url::parse("amqps://proxy.example.com:8081").unwrap();
+        for transport in [AmqpTransport::Tcp, AmqpTransport::WebSocket] {
+            let connection_manager = RecoverableConnection::new(
+                url.clone(),
+                None,
+                Some(custom_endpoint.clone()),
+                transport,
+                Arc::new(MockCredential),
+                Default::default(),
+                None,
+            );
+
+            let options = connection_manager.connection_options();
+            assert_eq!(options.transport, Some(transport));
+            assert_eq!(options.custom_endpoint, Some(custom_endpoint.clone()));
+            assert!(options.properties.is_some());
+        }
     }
 
     #[test]
