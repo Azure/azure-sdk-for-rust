@@ -139,25 +139,33 @@ impl LiveState {
             Ok(Some(driver_response)) => {
                 // Successfully got a response from the driver. Convert it into a QueryFeedPage and yield it.
                 let response = driver_bridge::driver_response_to_cosmos_response(driver_response);
-                let page_diagnostics = response.diagnostics();
+                // Only take a diagnostics handle when a handler is registered: the
+                // clone is a per-page atomic op the zero-overhead empty-chain
+                // default must not pay.
+                let page_diagnostics =
+                    (!this.diagnostics.is_empty()).then(|| response.diagnostics());
                 match QueryFeedPage::from_response(response) {
                     Ok(page) => {
-                        crate::feed::dispatch_page_diagnostics(
-                            this.diagnostics,
-                            this.op_context,
-                            &page_diagnostics,
-                            Some(page.items().len() as u64),
-                        );
+                        if let Some(page_diagnostics) = &page_diagnostics {
+                            crate::feed::dispatch_page_diagnostics(
+                                this.diagnostics,
+                                this.op_context,
+                                page_diagnostics,
+                                Some(page.items().len() as u64),
+                            );
+                        }
                         task::Poll::Ready(Some(Ok(page)))
                     }
                     Err(err) => {
                         *this.exhausted = true;
-                        crate::feed::dispatch_page_diagnostics(
-                            this.diagnostics,
-                            this.op_context,
-                            &page_diagnostics,
-                            None,
-                        );
+                        if let Some(page_diagnostics) = &page_diagnostics {
+                            crate::feed::dispatch_page_diagnostics(
+                                this.diagnostics,
+                                this.op_context,
+                                page_diagnostics,
+                                None,
+                            );
+                        }
                         task::Poll::Ready(Some(Err(err)))
                     }
                 }

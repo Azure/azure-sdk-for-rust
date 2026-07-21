@@ -139,4 +139,26 @@ impl ClientContext {
         let cx = azure_core::http::Context::new().with_value(make_op_context());
         self.diagnostics_handlers.dispatch(diagnostics, &cx);
     }
+
+    /// Result-aware failure completion seam for call sites that do not funnel
+    /// through [`complete_result`](Self::complete_result) — e.g. the offers
+    /// helpers, whose success path bridges the response itself.
+    ///
+    /// Dispatches the handler chain from the diagnostics the driver attached to
+    /// the returned error ([`crate::Error::diagnostics`]), so failure-triggered
+    /// tracing and sampled logging still run. Zero-overhead no-op when no handler
+    /// is registered: neither the error's diagnostics nor the operation context
+    /// is materialized.
+    pub(crate) fn dispatch_error(
+        &self,
+        err: &crate::CosmosError,
+        make_op_context: impl FnOnce() -> CosmosOperationContext,
+    ) {
+        if self.diagnostics_handlers.is_empty() {
+            return;
+        }
+        if let Some(diagnostics) = err.diagnostics() {
+            self.dispatch_diagnostics(&diagnostics, make_op_context);
+        }
+    }
 }

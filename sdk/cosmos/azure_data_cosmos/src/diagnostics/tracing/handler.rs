@@ -100,8 +100,8 @@ impl DiagnosticsHandler for CosmosTracingHandler {
     }
 }
 
-/// The tail-based sampling decision: emit a span iff the operation failed or
-/// crossed one of the sampling thresholds.
+/// The tail-based sampling decision: emit a span iff the operation completed and
+/// either failed or crossed one of the sampling thresholds.
 ///
 /// `op` supplies the SDK-side operation identity so the threshold classifier
 /// can distinguish point from non-point operations; production driver contexts
@@ -111,9 +111,10 @@ pub(crate) fn should_emit_span(
     thresholds: &DiagnosticsThresholds,
     op: Option<&CosmosOperationContext>,
 ) -> bool {
-    diagnostics.is_failure()
-        || diagnostics.is_threshold_violated_for(
-            thresholds,
-            op.and_then(CosmosOperationContext::operation_name),
-        )
+    diagnostics.is_completed()
+        && (diagnostics.is_failure()
+            || diagnostics.is_threshold_violated_for(
+                thresholds,
+                op.and_then(CosmosOperationContext::operation_name),
+            ))
 }

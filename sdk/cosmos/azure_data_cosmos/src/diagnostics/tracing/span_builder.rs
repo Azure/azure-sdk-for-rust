@@ -62,7 +62,20 @@ pub(crate) fn emit_backdated_span_tree<T>(
     let requests = diagnostics.requests();
 
     let op_end = now_system;
-    let op_start = op_end - diagnostics.duration();
+    // The root span must fully contain its backdated children. A normal
+    // operation's `duration()` already reaches back to before its first attempt,
+    // but an aggregate operation's `duration()` is the SUM of its sub-op
+    // durations (see `DiagnosticsContext::aggregate_sub_operations`) and omits
+    // the wall-clock gaps between them, so `op_end - duration()` can land AFTER
+    // the earliest child. Extend the start back to the earliest retained attempt
+    // so the reconstructed root spans first-attempt start to last-attempt end.
+    let duration_start = op_end - diagnostics.duration();
+    let op_start = requests
+        .iter()
+        .map(|req| to_system(req.started_at()))
+        .min()
+        .map(|earliest| earliest.min(duration_start))
+        .unwrap_or(duration_start);
     let op_failed = diagnostics.is_failure();
 
     // --- Operation (root) span ---
@@ -126,7 +139,14 @@ pub(crate) fn emit_backdated_span_tree<T>(
             Value::Array(Array::String(values)),
         ));
     }
-    if let Some(addr) = requests.first().and_then(server_address) {
+    // Prefer the caller-supplied server-address override (mirroring the metrics
+    // handler) before falling back to the host of the first contacted endpoint,
+    // so an override changes both the metric and the root span consistently.
+    let server_addr = op
+        .and_then(CosmosOperationContext::server_address)
+        .map(str::to_string)
+        .or_else(|| requests.first().and_then(server_address));
+    if let Some(addr) = server_addr {
         root_attrs.push(KeyValue::new(attributes::SERVER_ADDRESS, addr));
     }
     if let Some(machine_id) = diagnostics.machine_id() {

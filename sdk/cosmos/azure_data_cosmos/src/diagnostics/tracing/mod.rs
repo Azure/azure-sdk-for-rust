@@ -244,4 +244,99 @@ mod tests {
             kv.key.as_str() == attributes::DB_COLLECTION_NAME && kv.value.as_str() == "my_container"
         }));
     }
+
+    #[test]
+    fn incomplete_context_is_not_sampled_even_when_slow() {
+        // A finalized context with neither a status nor any attempts does not
+        // represent a completed operation. The tail-sampling gate must not emit
+        // for it even when its elapsed duration alone crosses a threshold.
+        let thresholds = DiagnosticsThresholds::default();
+        let ctx = DiagnosticsContext::for_testing_with_requests(
+            ActivityId::new_uuid(),
+            Duration::from_millis(5000),
+            None,
+            None,
+            Vec::new(),
+        );
+        assert!(!ctx.is_completed());
+        assert!(!should_emit_span(&ctx, &thresholds, None));
+    }
+
+    #[test]
+    fn op_context_server_address_overrides_endpoint_host() {
+        // The tracing root span must honor a caller-supplied server.address
+        // override (as the metrics handler does), not just the endpoint host.
+        let (provider, exporter) = exportable();
+        let tracer = provider.tracer("test");
+        let now_instant = Instant::now();
+        let now_system = SystemTime::now();
+        let ctx = context(
+            Duration::from_millis(1500),
+            Some(CosmosStatus::new(StatusCode::Ok)),
+            Some("read_item"),
+            &[(1500, 1500, CosmosStatus::new(StatusCode::Ok))],
+            now_instant,
+        );
+        let op = CosmosOperationContext::new()
+            .with_operation_name("read_item")
+            .with_server_address("override.example.com");
+
+        emit_backdated_span_tree(&tracer, &ctx, Some(&op), now_instant, now_system);
+        provider.force_flush().unwrap();
+
+        let spans = exporter.get_finished_spans().unwrap();
+        let root = spans
+            .iter()
+            .find(|s| s.name == "read_item")
+            .expect("root span present");
+        assert!(
+            root.attributes.iter().any(|kv| {
+                kv.key.as_str() == attributes::SERVER_ADDRESS
+                    && kv.value.as_str() == "override.example.com"
+            }),
+            "root server.address must honor the op-context override"
+        );
+    }
+
+    #[test]
+    fn root_span_contains_children_when_duration_underestimates_window() {
+        // An aggregate operation's duration() is the SUM of its sub-op durations
+        // and omits the gaps between them, so `op_end - duration()` can fall
+        // AFTER the earliest attempt. The reconstructed root must still start no
+        // later than its earliest child so the span tree stays well-formed.
+        let (provider, exporter) = exportable();
+        let tracer = provider.tracer("test");
+        let now_instant = Instant::now();
+        let now_system = SystemTime::now();
+        // duration (50ms) is far smaller than the 250ms window the attempts span.
+        let ctx = context(
+            Duration::from_millis(50),
+            Some(CosmosStatus::new(StatusCode::TooManyRequests)),
+            Some("read_item"),
+            &[
+                (250, 40, CosmosStatus::new(StatusCode::TooManyRequests)),
+                (60, 40, CosmosStatus::new(StatusCode::Ok)),
+            ],
+            now_instant,
+        );
+
+        emit_backdated_span_tree(&tracer, &ctx, None, now_instant, now_system);
+        provider.force_flush().unwrap();
+
+        let spans = exporter.get_finished_spans().unwrap();
+        let root = spans
+            .iter()
+            .find(|s| s.name == "read_item")
+            .expect("root span present");
+        let earliest_child = spans
+            .iter()
+            .filter(|s| s.name == "cosmosdb.request")
+            .map(|s| s.start_time)
+            .min()
+            .expect("attempt children present");
+        assert!(
+            root.start_time <= earliest_child,
+            "root must start no later than its earliest child"
+        );
+    }
 }

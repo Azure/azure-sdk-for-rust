@@ -1625,6 +1625,11 @@ impl DiagnosticsContextBuilder {
         let total_request_charge: RequestCharge =
             self.requests.iter().map(|r| r.request_charge).sum();
 
+        // Capture the contacted regions in first-contact order from the FULL
+        // attempt list, before compaction can drop whole buckets: a region whose
+        // only attempts are elided must still surface at the operation level.
+        let regions_contacted = ordered_unique_regions(&self.requests);
+
         // Bound the finalized per-attempt list under a retry storm.
         //
         // Common path (attempts <= cap): the list is retained verbatim, no
@@ -1665,6 +1670,7 @@ impl DiagnosticsContextBuilder {
             duration,
             requests: Arc::new(requests),
             total_request_charge,
+            regions_contacted,
             status: self.status,
             options: self.options,
             cpu_monitor: self.cpu_monitor,
@@ -1742,6 +1748,15 @@ pub struct DiagnosticsContext {
     /// compaction, so it stays exact even when `requests` was bounded under a
     /// retry storm.
     total_request_charge: RequestCharge,
+
+    /// Regions contacted during the operation, in first-contact order.
+    ///
+    /// Captured at finalization from the **full** attempt list — before any
+    /// retry-storm compaction — so a region whose only attempts were dropped
+    /// from `requests` is still reported. Duplicates are removed while
+    /// preserving the order in which each region was first contacted, which the
+    /// Cosmos semantic conventions require (it conveys failover order).
+    regions_contacted: Vec<Region>,
 
     /// Operation-level combined HTTP status and sub-status (final status after retries).
     status: Option<CosmosStatus>,
@@ -1871,11 +1886,13 @@ impl DiagnosticsContext {
                 .map(|r| r.request_charge().value())
                 .sum::<f64>(),
         );
+        let regions_contacted = ordered_unique_regions(&requests);
         DiagnosticsContext {
             activity_id,
             duration,
             requests: Arc::new(requests),
             total_request_charge,
+            regions_contacted,
             status,
             options: Arc::new(DiagnosticsOptions::default()),
             cpu_monitor: None,
@@ -1982,11 +1999,26 @@ impl DiagnosticsContext {
             (aggregated_requests, None)
         };
 
+        // First-contact-ordered union of the sub-ops' contacted regions. Each
+        // source already captured its exact ordered regions from its full
+        // attempt list, so concatenating them in sub-op order (dedup preserving
+        // order) yields the operation-level failover order without re-deriving
+        // from the possibly-compacted concatenation.
+        let mut regions_contacted: Vec<Region> = Vec::new();
+        for source in sources {
+            for region in &source.regions_contacted {
+                if !regions_contacted.contains(region) {
+                    regions_contacted.push(region.clone());
+                }
+            }
+        }
+
         Some(DiagnosticsContext {
             activity_id: last.activity_id.clone(),
             duration: aggregated_duration,
             requests: Arc::new(requests),
             total_request_charge,
+            regions_contacted,
             status: last.status,
             options: Arc::clone(&last.options),
             cpu_monitor: last.cpu_monitor.clone(),
@@ -2064,16 +2096,17 @@ impl DiagnosticsContext {
         self.compaction.as_ref()
     }
 
-    /// Returns all regions contacted during this operation.
+    /// Returns all regions contacted during this operation, in first-contact
+    /// order.
+    ///
+    /// The list is captured at finalization from the **full** attempt list —
+    /// before any retry-storm compaction — so a region whose only attempts were
+    /// dropped from [`requests`](Self::requests) is still reported here.
+    /// Duplicates are removed while preserving the order in which each region was
+    /// first contacted, as the Cosmos semantic conventions require for the
+    /// contacted-regions attribute (it conveys failover order).
     pub fn regions_contacted(&self) -> Vec<Region> {
-        let mut regions: Vec<Region> = self
-            .requests
-            .iter()
-            .filter_map(|r| r.region.clone())
-            .collect();
-        regions.sort();
-        regions.dedup();
-        regions
+        self.regions_contacted.clone()
     }
 
     /// Returns a shared reference to all request diagnostics.
@@ -2323,6 +2356,7 @@ impl Clone for DiagnosticsContext {
             duration: self.duration,
             requests: Arc::clone(&self.requests),
             total_request_charge: self.total_request_charge,
+            regions_contacted: self.regions_contacted.clone(),
             status: self.status,
             options: Arc::clone(&self.options),
             cpu_monitor: self.cpu_monitor.clone(),
@@ -2362,6 +2396,7 @@ impl PartialEq for DiagnosticsContext {
             && self.duration == other.duration
             && self.requests == other.requests
             && self.total_request_charge == other.total_request_charge
+            && self.regions_contacted == other.regions_contacted
             && self.status == other.status
             && self.options == other.options
             && self.operation_name == other.operation_name
@@ -2404,6 +2439,23 @@ impl std::fmt::Display for DiagnosticsContext {
         }
         Ok(())
     }
+}
+
+/// Collects the regions contacted across `requests` in first-contact order.
+///
+/// Duplicates are removed while preserving the order in which each region was
+/// first seen. Unlike a sort+dedup this keeps the failover order intact, which
+/// the Cosmos semantic conventions require for the contacted-regions attribute.
+fn ordered_unique_regions(requests: &[RequestDiagnostics]) -> Vec<Region> {
+    let mut regions: Vec<Region> = Vec::new();
+    for request in requests {
+        if let Some(region) = request.region() {
+            if !regions.contains(region) {
+                regions.push(region.clone());
+            }
+        }
+    }
+    regions
 }
 
 /// Builds a summary for requests in a single region.
@@ -2747,6 +2799,82 @@ mod tests {
 
         let regions = ctx.regions_contacted();
         assert_eq!(regions.len(), 2);
+    }
+
+    #[test]
+    fn regions_contacted_preserves_order_and_survives_compaction() {
+        // Regions must surface in first-contact (failover) order — not sorted —
+        // and a region contacted only by a bucket that global-bucket compaction
+        // drops from the retained per-attempt list must still be reported,
+        // because the set is captured from the full attempt list before
+        // compaction. Covers the metrics/tracing contacted-region attribute
+        // contract and the compaction bucket-drop gap.
+        let cap = 16;
+        let region_count = 20usize;
+        let mut b = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("regions-storm".to_string()),
+            options_with_cap(cap),
+        );
+        // Contact `region_count` distinct single-attempt region buckets in
+        // reverse-numeric order, so first-contact order differs from sorted
+        // order and the last-seen buckets are the ones global compaction drops.
+        for i in (0..region_count).rev() {
+            record_run(
+                &mut b,
+                ExecutionContext::RegionFailover,
+                &format!("Region {i:02}"),
+                "https://acct/",
+                CosmosStatus::new(StatusCode::Gone),
+                1.0,
+                1,
+            );
+        }
+        b.set_operation_status(StatusCode::Ok, None);
+        let ctx = b.complete();
+
+        let info = ctx
+            .compaction()
+            .expect("more distinct buckets than the cap must compact");
+        assert!(
+            info.omitted_runs >= 1,
+            "at least one whole bucket must have been dropped from the retained list"
+        );
+
+        // First-contact order across all contacted regions, none lost.
+        let expected: Vec<Region> = (0..region_count)
+            .rev()
+            .map(|i| Region::new(format!("Region {i:02}")))
+            .collect();
+        let regions = ctx.regions_contacted();
+        assert_eq!(
+            regions, expected,
+            "all contacted regions must survive compaction, in first-contact order"
+        );
+
+        // Prove the order is first-contact, not sorted.
+        let mut sorted = regions.clone();
+        sorted.sort();
+        assert_ne!(
+            regions, sorted,
+            "first-contact order must differ from a sorted list for these inputs"
+        );
+
+        // A region whose only attempt was dropped from the retained list must
+        // still appear at the operation level.
+        let retained_regions: Vec<Region> = ctx
+            .requests()
+            .iter()
+            .filter_map(|r| r.region().cloned())
+            .collect();
+        let dropped = Region::new("Region 00".to_string());
+        assert!(
+            !retained_regions.contains(&dropped),
+            "the last-seen bucket should have been dropped from the retained list"
+        );
+        assert!(
+            regions.contains(&dropped),
+            "a region dropped from the retained list must still be reported"
+        );
     }
 
     #[test]

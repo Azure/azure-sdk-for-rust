@@ -175,10 +175,11 @@ impl ContainerClient {
     ) -> crate::Result<Option<ThroughputProperties>> {
         let options = options.unwrap_or_default();
         offers_client::find_offer(
-            &self.context.driver,
+            &self.context,
             self.container_ref.account(),
             self.container_ref.rid(),
             options.operation,
+            self.operation_context("read_throughput"),
         )
         .await
     }
@@ -216,11 +217,12 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
 
         offers_client::begin_replace(
-            self.context.driver.clone(),
+            self.context.clone(),
             self.container_ref.account().clone(),
             self.container_ref.rid(),
             throughput,
             options.operation,
+            self.operation_context("replace_throughput"),
         )
         .await
     }

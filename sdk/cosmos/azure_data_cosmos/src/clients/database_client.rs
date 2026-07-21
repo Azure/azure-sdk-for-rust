@@ -242,10 +242,11 @@ impl DatabaseClient {
         let resource_id = resource_id_or_error(db.system_properties.resource_id, "database")?;
 
         offers_client::find_offer(
-            &self.context.driver,
+            &self.context,
             self.context.driver.account(),
             &resource_id,
             options.operation,
+            self.operation_context("read_throughput"),
         )
         .await
     }
@@ -286,11 +287,12 @@ impl DatabaseClient {
         let resource_id = resource_id_or_error(db.system_properties.resource_id, "database")?;
 
         offers_client::begin_replace(
-            self.context.driver.clone(),
+            self.context.clone(),
             self.context.driver.account().clone(),
             &resource_id,
             throughput,
             options.operation,
+            self.operation_context("replace_throughput"),
         )
         .await
     }

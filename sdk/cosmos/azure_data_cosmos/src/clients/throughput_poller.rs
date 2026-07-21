@@ -12,18 +12,18 @@
 
 use crate::{
     clients::offers_client,
+    clients::ClientContext,
+    diagnostics::CosmosOperationContext,
     models::ThroughputProperties,
     models::{CosmosResponse, ResourceResponse},
 };
 use azure_core::http::StatusCode;
 use azure_core::time::Duration;
 use azure_data_cosmos_driver::models::AccountReference;
-use azure_data_cosmos_driver::CosmosDriver;
 use futures::{stream::BoxStream, Stream, StreamExt};
 use std::{
     future::{Future, IntoFuture},
     pin::Pin,
-    sync::Arc,
     task,
 };
 
@@ -73,16 +73,21 @@ impl ThroughputPoller {
     ///
     /// The `offer_id` is provided by the caller (extracted before the replace request)
     /// to enable efficient single-GET polling without re-querying.
+    ///
+    /// `context` and `op_context` are threaded so each poll's offer-read reaches
+    /// the diagnostics handler chain under the operation's identity; the initial
+    /// replace response was already dispatched by the caller.
     pub(crate) fn new(
         initial_response: CosmosResponse,
-        driver: Arc<CosmosDriver>,
+        context: ClientContext,
         account: AccountReference,
         offer_id: String,
+        op_context: CosmosOperationContext,
     ) -> Self {
         let is_pending = is_offer_replace_pending(&initial_response);
 
         if is_pending {
-            Self::pending(initial_response, driver, account, offer_id)
+            Self::pending(initial_response, context, account, offer_id, op_context)
         } else {
             Self::completed(initial_response)
         }
@@ -99,18 +104,20 @@ impl ThroughputPoller {
     /// Creates a poller for an operation that is still pending.
     fn pending(
         initial_response: CosmosResponse,
-        driver: Arc<CosmosDriver>,
+        context: ClientContext,
         account: AccountReference,
         offer_id: String,
+        op_context: CosmosOperationContext,
     ) -> Self {
         let polling_interval = DEFAULT_POLLING_INTERVAL;
 
         let stream = futures::stream::unfold(
             Some(PollState::Initial(Box::new(initial_response))),
             move |state| {
-                let driver = driver.clone();
+                let context = context.clone();
                 let account = account.clone();
                 let offer_id = offer_id.clone();
+                let op_context = op_context.clone();
                 async move {
                     let state = state?;
                     match state {
@@ -119,8 +126,10 @@ impl ThroughputPoller {
                         }
                         PollState::Polling => {
                             azure_core::sleep::sleep(polling_interval).await;
-                            let result =
-                                offers_client::read_offer_by_id(&driver, &account, &offer_id).await;
+                            let result = offers_client::read_offer_by_id(
+                                &context, &account, &offer_id, op_context,
+                            )
+                            .await;
                             match result {
                                 Ok(response) => {
                                     if is_offer_replace_pending(&response) {
