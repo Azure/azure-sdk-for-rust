@@ -8,6 +8,7 @@ pub(crate) mod drains;
 pub(crate) mod error;
 pub(crate) mod extensions;
 pub(crate) mod http_ranges;
+mod list_blobs_response;
 mod method_options;
 
 pub use http_ranges::HttpRange;
@@ -18,9 +19,12 @@ pub use crate::generated::models::*;
 pub use download_result::{
     BlobClientDownloadIntoResult, BlobClientDownloadResult, BlobDownloadProperties,
 };
-pub use method_options::BlobClientDownloadOptions;
-pub use method_options::BlockBlobClientUploadOptions;
+pub use list_blobs_response::{ListBlobsPageResponse, ListBlobsResponse};
 pub use method_options::BlockBlobClientUploadOptions as BlobClientUploadOptions;
+pub use method_options::{
+    BlobClientDownloadOptions, BlobContainerClientListBlobsOptions, BlockBlobClientUploadOptions,
+    ListBlobsAcceptFormat,
+};
 pub use upload_result::BlockBlobClientUploadResult;
 pub use upload_result::BlockBlobClientUploadResult as BlobClientUploadResult;
 

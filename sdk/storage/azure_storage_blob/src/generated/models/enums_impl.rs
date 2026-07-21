@@ -709,7 +709,6 @@ impl Display for LeaseStatus {
 impl FromStr for ListBlobsAcceptFormat {
     type Err = Error;
     fn from_str(s: &str) -> ::core::result::Result<Self, <Self as FromStr>::Err> {
-        #[allow(unreachable_patterns)]
         Ok(match s {
             "application/vnd.apache.arrow.stream,application/xml" => ListBlobsAcceptFormat::Arrow,
             "application/vnd.apache.arrow.stream,application/xml" => ListBlobsAcceptFormat::Auto,

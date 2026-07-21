@@ -13,18 +13,18 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 #[serde(rename = "Blobs")]
 pub(crate) struct Blob_itemsBlobItem {
     #[serde(default)]
-    Blob: Vec<BlobItem>,
+    Blob: Option<Vec<BlobItem>>,
 }
 
 impl Blob_itemsBlobItem {
-    pub fn unwrap<'de, D>(deserializer: D) -> Result<Vec<BlobItem>, D::Error>
+    pub fn unwrap<'de, D>(deserializer: D) -> Result<Option<Vec<BlobItem>>, D::Error>
     where
         D: Deserializer<'de>,
     {
         Ok(Blob_itemsBlobItem::deserialize(deserializer)?.Blob)
     }
 
-    pub fn wrap<S>(to_serialize: &Vec<BlobItem>, serializer: S) -> Result<S::Ok, S::Error>
+    pub fn wrap<S>(to_serialize: &Option<Vec<BlobItem>>, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {

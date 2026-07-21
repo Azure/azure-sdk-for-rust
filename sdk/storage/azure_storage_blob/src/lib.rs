@@ -10,7 +10,7 @@
 mod arrow_decode;
 pub(crate) mod buffers;
 pub mod clients;
-#[allow(unused_imports)]
+#[allow(unreachable_patterns, unused_imports)]
 mod generated;
 mod parsers;
 mod partitioned_transfer;

@@ -19,13 +19,81 @@ use arrow_schema::{ArrowError, DataType, TimeUnit};
 use azure_core::{
     base64,
     error::{Error, ErrorKind},
-    http::Etag,
+    http::{
+        headers::{self, Headers},
+        Etag,
+    },
     time::OffsetDateTime,
     Result,
 };
+use serde::Deserialize;
 
 /// Metadata key on the Arrow schema holding the continuation token.
 const NEXT_MARKER_KEY: &str = "NextMarker";
+const ARROW_CONTENT_TYPE: &str = "application/vnd.apache.arrow.stream";
+const XML_CONTENT_TYPE: &str = "application/xml";
+
+#[derive(Clone, Copy)]
+enum ListBlobsWireFormat {
+    Arrow,
+    Xml,
+}
+
+pub(crate) fn decode_list_blobs(headers: &Headers, bytes: &[u8]) -> Result<ListBlobsResponse> {
+    match wire_format(headers)? {
+        ListBlobsWireFormat::Arrow => decode_arrow_list_blobs(bytes),
+        ListBlobsWireFormat::Xml => azure_core::xml::from_xml(bytes),
+    }
+}
+
+pub(crate) fn decode_next_marker(headers: &Headers, bytes: &[u8]) -> Result<Option<String>> {
+    match wire_format(headers)? {
+        ListBlobsWireFormat::Arrow => arrow_next_marker(bytes),
+        ListBlobsWireFormat::Xml => {
+            #[derive(Deserialize)]
+            struct ListBlobsPage {
+                #[serde(rename = "NextMarker")]
+                next_marker: Option<String>,
+            }
+
+            let page: ListBlobsPage = azure_core::xml::from_xml(bytes)?;
+            Ok(page.next_marker.filter(|marker| !marker.is_empty()))
+        }
+    }
+}
+
+fn wire_format(headers: &Headers) -> Result<ListBlobsWireFormat> {
+    let content_type = headers
+        .get_optional_str(&headers::CONTENT_TYPE)
+        .ok_or_else(|| {
+            Error::with_message(
+                ErrorKind::DataConversion,
+                "list blobs response did not include Content-Type",
+            )
+        })?;
+    let media_type = content_type.split(';').next().unwrap_or_default().trim();
+
+    if media_type.eq_ignore_ascii_case(ARROW_CONTENT_TYPE) {
+        Ok(ListBlobsWireFormat::Arrow)
+    } else if media_type.eq_ignore_ascii_case(XML_CONTENT_TYPE) {
+        Ok(ListBlobsWireFormat::Xml)
+    } else {
+        Err(Error::with_message(
+            ErrorKind::DataConversion,
+            format!("unsupported list blobs Content-Type: {content_type}"),
+        ))
+    }
+}
+
+fn arrow_next_marker(bytes: &[u8]) -> Result<Option<String>> {
+    let reader = StreamReader::try_new(bytes, None).map_err(to_error)?;
+    Ok(reader
+        .schema()
+        .metadata()
+        .get(NEXT_MARKER_KEY)
+        .filter(|marker| !marker.is_empty())
+        .cloned())
+}
 
 /// Decodes an Apache Arrow IPC stream (`application/vnd.apache.arrow.stream`)
 /// returned by the flat `list_blobs` API into a [`ListBlobsResponse`].

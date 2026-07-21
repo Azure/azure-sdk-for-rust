@@ -5,14 +5,84 @@ use std::{collections::HashMap, num::NonZero};
 
 use azure_core::{
     fmt::SafeDebug,
-    http::{ClientMethodOptions, Etag},
+    http::{pager::PagerOptions, ClientMethodOptions, Etag},
 };
 use time::OffsetDateTime;
 
 use crate::models::{
     AccessTier, BlobClientDownloadInternalOptions, EncryptionAlgorithmType, HttpRange,
-    ImmutabilityPolicyMode,
+    ImmutabilityPolicyMode, ListBlobsIncludeItem,
 };
+
+/// Specifies the format requested by [`BlobContainerClient::list_blobs`](crate::BlobContainerClient::list_blobs).
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum ListBlobsAcceptFormat {
+    /// Prefer Apache Arrow and allow the service to fall back to XML.
+    #[default]
+    Auto,
+
+    /// Prefer Apache Arrow and allow the service to fall back to XML.
+    Arrow,
+
+    /// Request XML.
+    Xml,
+}
+
+impl From<ListBlobsAcceptFormat> for crate::generated::models::ListBlobsAcceptFormat {
+    fn from(value: ListBlobsAcceptFormat) -> Self {
+        match value {
+            ListBlobsAcceptFormat::Auto => Self::Auto,
+            ListBlobsAcceptFormat::Arrow => Self::Arrow,
+            ListBlobsAcceptFormat::Xml => Self::Xml,
+        }
+    }
+}
+
+/// Options to be passed to [`BlobContainerClient::list_blobs`](crate::BlobContainerClient::list_blobs).
+#[derive(Clone, Default, SafeDebug)]
+pub struct BlobContainerClientListBlobsOptions<'a> {
+    /// The format in which the response should be returned.
+    pub accept: ListBlobsAcceptFormat,
+
+    /// Specify to include additional, optional information.
+    pub include: Option<Vec<ListBlobsIncludeItem>>,
+
+    /// An opaque string value that identifies the portion of the result set to return with this operation.
+    pub marker: Option<String>,
+
+    /// Specifies the maximum number of resources to return.
+    pub maxresults: Option<i32>,
+
+    /// Allows customization of the paging operation.
+    pub method_options: PagerOptions<'a>,
+
+    /// Filters the results to return only resources whose name begins with the specified prefix.
+    pub prefix: Option<String>,
+
+    /// Specifies the relative path from which to list.
+    pub start_from: Option<String>,
+
+    /// The server-side timeout, in seconds.
+    pub timeout: Option<i32>,
+}
+
+impl BlobContainerClientListBlobsOptions<'_> {
+    pub(crate) fn into_owned(self) -> BlobContainerClientListBlobsOptions<'static> {
+        BlobContainerClientListBlobsOptions {
+            accept: self.accept,
+            include: self.include,
+            marker: self.marker,
+            maxresults: self.maxresults,
+            method_options: PagerOptions {
+                context: self.method_options.context.into_owned(),
+                ..self.method_options
+            },
+            prefix: self.prefix,
+            start_from: self.start_from,
+            timeout: self.timeout,
+        }
+    }
+}
 
 /// Options to be passed to `BlobClient::download()`
 #[derive(Clone, Default, SafeDebug)]

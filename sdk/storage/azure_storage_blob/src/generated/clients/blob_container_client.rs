@@ -11,13 +11,12 @@ use crate::generated::models::{
     BlobContainerClientFindBlobsByTagsOptions, BlobContainerClientGetAccessPolicyOptions,
     BlobContainerClientGetAccountInfoOptions, BlobContainerClientGetAccountInfoResult,
     BlobContainerClientGetPropertiesOptions, BlobContainerClientGetPropertiesResult,
-    BlobContainerClientListBlobFlatSegmentApacheArrowOptions,
-    BlobContainerClientListBlobsHierarchicalOptions, BlobContainerClientListBlobsOptions,
-    BlobContainerClientReleaseLeaseOptions, BlobContainerClientReleaseLeaseResult,
-    BlobContainerClientRenewLeaseOptions, BlobContainerClientRenewLeaseResult,
-    BlobContainerClientSetAccessPolicyOptions, BlobContainerClientSetMetadataOptions,
-    FilteredBlobResponse, ListBlobsAcceptFormat, ListBlobsHierarchicalResponse, ListBlobsResponse,
-    SignedIdentifiers,
+    BlobContainerClientListBlobsArrowInternalOptions,
+    BlobContainerClientListBlobsHierarchicalOptions, BlobContainerClientReleaseLeaseOptions,
+    BlobContainerClientReleaseLeaseResult, BlobContainerClientRenewLeaseOptions,
+    BlobContainerClientRenewLeaseResult, BlobContainerClientSetAccessPolicyOptions,
+    BlobContainerClientSetMetadataOptions, FilteredBlobResponse, ListBlobsAcceptFormat,
+    ListBlobsHierarchicalResponse, ListBlobsResponse, SignedIdentifiers,
 };
 use azure_core::{
     error::CheckSuccessOptions,
@@ -716,15 +715,15 @@ impl BlobContainerClient {
     /// * `accept` - The Accept header indicating the format in which the response should be returned.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Blob.BlobContainerClient.listBlobFlatSegmentApacheArrow")]
-    pub fn list_blob_flat_segment_apache_arrow(
+    pub(crate) async fn list_blobs_arrow_internal(
         &self,
         accept: ListBlobsAcceptFormat,
-        options: Option<BlobContainerClientListBlobFlatSegmentApacheArrowOptions<'_>>,
-    ) -> Result<Pager<ListBlobsResponse, XmlFormat>> {
-        let options = options.unwrap_or_default().into_owned();
-        let pipeline = self.pipeline.clone();
-        let mut first_url = self.endpoint.clone();
-        let mut query_builder = first_url.query_builder();
+        options: Option<BlobContainerClientListBlobsArrowInternalOptions<'_>>,
+    ) -> Result<Response<ListBlobsResponse, XmlFormat>> {
+        let options = options.unwrap_or_default();
+        let ctx = options.method_options.context.to_borrowed();
+        let mut url = self.endpoint.clone();
+        let mut query_builder = url.query_builder();
         query_builder
             .append_pair("comp", "list")
             .append_pair("restype", "container");
@@ -754,161 +753,23 @@ impl BlobContainerClient {
             query_builder.set_pair("timeout", timeout.to_string());
         }
         query_builder.build();
-        #[derive(serde::Deserialize)]
-        struct BlobContainerClientListBlobFlatSegmentApacheArrowPage {
-            #[serde(rename = "NextMarker")]
-            next_marker: Option<String>,
-        }
-
-        let version = self.version.clone();
-        Ok(Pager::new(
-            move |marker: PagerState, pager_options| {
-                let mut url = first_url.clone();
-                if let PagerState::More(marker) = marker {
-                    let mut query_builder = url.query_builder();
-                    query_builder.set_pair("marker", marker.as_ref());
-                    query_builder.build();
-                }
-                let mut request = Request::new(url, Method::Get);
-                // Now allows for setting the "accept" header. For now piloting an enum with choices (auto, XML, arrow)
-                request.insert_header("accept", accept.to_string());
-                request.insert_header("x-ms-version", &version);
-                let pipeline = pipeline.clone();
-                Box::pin(async move {
-                    let rsp = pipeline
-                        .send(
-                            &pager_options.context,
-                            &mut request,
-                            Some(PipelineSendOptions {
-                                check_success: CheckSuccessOptions {
-                                    success_codes: &[200],
-                                },
-                                ..Default::default()
-                            }),
-                        )
-                        .await?;
-                    let (status, headers, body) = rsp.deconstruct();
-                    let is_arrow = headers
-                        .get_optional_str(&azure_core::http::headers::CONTENT_TYPE)
-                        .is_some_and(|content_type| {
-                            content_type.contains("application/vnd.apache.arrow.stream")
-                        });
-                    // Condition on whether we got back XML or arrow (since you can request arrow but may hit XML fallback)
-                    let (body, next_marker) = if is_arrow {
-                        // PROOF-OF-CONCEPT ONLY: This currently decodes arrow then re-encoding to XML to make the return type happy.
-                        //  (re-decoded later in `into_model()`). Therefore this adds a full round-trip, negating the benefits of adding arrow support.
-                        // Discussion point: How to smooth over the return type issue (Result<Pager<ListBlobsResponse, XmlFormat>>).
-                        let model = crate::arrow_decode::decode_arrow_list_blobs(&body)?;
-                        let next_marker = model.next_marker.clone();
-                        (xml::to_xml(&model)?, next_marker)
-                    } else {
-                        let page: BlobContainerClientListBlobFlatSegmentApacheArrowPage =
-                            xml::from_xml(&body)?;
-                        (body.into(), page.next_marker)
-                    };
-                    let rsp = RawResponse::from_bytes(status, headers, body).into();
-                    Ok(match next_marker {
-                        Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
-                            response: rsp,
-                            continuation: PagerContinuation::Token(next_marker),
-                        },
-                        _ => PagerResult::Done { response: rsp },
-                    })
-                })
-            },
-            Some(options.method_options),
-        ))
-    }
-
-    /// Returns a list of the blobs in the specified container.
-    ///
-    /// # Arguments
-    ///
-    /// * `options` - Optional parameters for the request.
-    #[tracing::function("Storage.Blob.BlobContainerClient.listBlobs")]
-    pub fn list_blobs(
-        &self,
-        options: Option<BlobContainerClientListBlobsOptions<'_>>,
-    ) -> Result<Pager<ListBlobsResponse, XmlFormat>> {
-        let options = options.unwrap_or_default().into_owned();
-        let pipeline = self.pipeline.clone();
-        let mut first_url = self.endpoint.clone();
-        let mut query_builder = first_url.query_builder();
-        query_builder
-            .append_pair("comp", "list")
-            .append_pair("restype", "container");
-        if let Some(include) = options.include.as_ref() {
-            query_builder.set_pair(
-                "include",
-                include
-                    .iter()
-                    .map(|i| i.to_string())
-                    .collect::<Vec<String>>()
-                    .join(","),
-            );
-        }
-        if let Some(marker) = options.marker.as_ref() {
-            query_builder.set_pair("marker", marker);
-        }
-        if let Some(maxresults) = options.maxresults {
-            query_builder.set_pair("maxresults", maxresults.to_string());
-        }
-        if let Some(prefix) = options.prefix.as_ref() {
-            query_builder.set_pair("prefix", prefix);
-        }
-        if let Some(start_from) = options.start_from.as_ref() {
-            query_builder.set_pair("startFrom", start_from);
-        }
-        if let Some(timeout) = options.timeout {
-            query_builder.set_pair("timeout", timeout.to_string());
-        }
-        query_builder.build();
-        #[derive(serde::Deserialize)]
-        struct BlobContainerClientListBlobsPage {
-            #[serde(rename = "NextMarker")]
-            next_marker: Option<String>,
-        }
-
-        let version = self.version.clone();
-        Ok(Pager::new(
-            move |marker: PagerState, pager_options| {
-                let mut url = first_url.clone();
-                if let PagerState::More(marker) = marker {
-                    let mut query_builder = url.query_builder();
-                    query_builder.set_pair("marker", marker.as_ref());
-                    query_builder.build();
-                }
-                let mut request = Request::new(url, Method::Get);
-                request.insert_header("accept", "application/xml");
-                request.insert_header("x-ms-version", &version);
-                let pipeline = pipeline.clone();
-                Box::pin(async move {
-                    let rsp = pipeline
-                        .send(
-                            &pager_options.context,
-                            &mut request,
-                            Some(PipelineSendOptions {
-                                check_success: CheckSuccessOptions {
-                                    success_codes: &[200],
-                                },
-                                ..Default::default()
-                            }),
-                        )
-                        .await?;
-                    let (status, headers, body) = rsp.deconstruct();
-                    let res: BlobContainerClientListBlobsPage = xml::from_xml(&body)?;
-                    let rsp = RawResponse::from_bytes(status, headers, body).into();
-                    Ok(match res.next_marker {
-                        Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
-                            response: rsp,
-                            continuation: PagerContinuation::Token(next_marker),
-                        },
-                        _ => PagerResult::Done { response: rsp },
-                    })
-                })
-            },
-            Some(options.method_options),
-        ))
+        let mut request = Request::new(url, Method::Get);
+        request.insert_header("accept", accept.to_string());
+        request.insert_header("x-ms-version", &self.version);
+        let rsp = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut request,
+                Some(PipelineSendOptions {
+                    check_success: CheckSuccessOptions {
+                        success_codes: &[200],
+                    },
+                    ..Default::default()
+                }),
+            )
+            .await?;
+        Ok(rsp.into())
     }
 
     /// Returns a list of the blobs in the specified container. A delimiter can be used to traverse a virtual hierarchy of blobs

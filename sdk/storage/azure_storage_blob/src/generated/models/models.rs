@@ -972,9 +972,10 @@ pub struct ListBlobsResponse {
         default,
         deserialize_with = "Blob_itemsBlobItem::unwrap",
         rename = "Blobs",
-        serialize_with = "Blob_itemsBlobItem::wrap"
+        serialize_with = "Blob_itemsBlobItem::wrap",
+        skip_serializing_if = "Option::is_none"
     )]
-    pub blob_items: Vec<BlobItem>,
+    pub blob_items: Option<Vec<BlobItem>>,
 
     /// The container name.
     #[serde(rename = "@ContainerName", skip_serializing_if = "Option::is_none")]

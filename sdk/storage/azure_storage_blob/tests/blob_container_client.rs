@@ -14,8 +14,7 @@ use azure_storage_blob::models::{
     BlobContainerClientBreakLeaseOptions, BlobContainerClientChangeLeaseResultHeaders,
     BlobContainerClientCreateOptions, BlobContainerClientFindBlobsByTagsOptions,
     BlobContainerClientGetAccountInfoResultHeaders, BlobContainerClientGetPropertiesResultHeaders,
-    BlobContainerClientListBlobFlatSegmentApacheArrowOptions,
-    BlobContainerClientListBlobsHierarchicalOptions,
+    BlobContainerClientListBlobsHierarchicalOptions, BlobContainerClientListBlobsOptions,
     BlobContainerClientSetMetadataOptions, BlobType, BlockBlobClientUploadOptions, LeaseState,
     ListBlobsAcceptFormat, ListBlobsIncludeItem, SignedIdentifiers, StorageErrorCode,
 };
@@ -125,7 +124,10 @@ async fn test_list_blobs(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     .await?;
 
     let mut list_blobs_response = container_client
-        .list_blob_flat_segment_apache_arrow(ListBlobsAcceptFormat::Xml, None)?
+        .list_blobs(Some(BlobContainerClientListBlobsOptions {
+            accept: ListBlobsAcceptFormat::Xml,
+            ..Default::default()
+        }))?
         .into_pages();
 
     let page = list_blobs_response.try_next().await?;
@@ -159,15 +161,13 @@ async fn test_list_blobs_observe_raw(ctx: TestContext) -> Result<(), Box<dyn Err
     container_client.create(None).await?;
     create_test_blob(&container_client.blob_client("testblob1"), None, None).await?;
 
-    let mut list_blobs_response = container_client
-        .list_blob_flat_segment_apache_arrow(ListBlobsAcceptFormat::Auto, None)?
-        .into_pages();
+    let mut list_blobs_response = container_client.list_blobs(None)?.into_pages();
     let page = list_blobs_response
         .try_next()
         .await?
         .expect("expected at least one page");
 
-    let (status, headers, body) = page.deconstruct();
+    let (status, headers, body) = page.into_raw_response().deconstruct();
     let content_type = headers.get_optional_str(&azure_core::http::headers::CONTENT_TYPE);
     let preview_len = body.len().min(64);
     let hex_preview = body[..preview_len]
@@ -235,12 +235,13 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
     .await?;
 
     // Continuation Token with Token Provided
-    let list_blobs_options = BlobContainerClientListBlobFlatSegmentApacheArrowOptions {
+    let list_blobs_options = BlobContainerClientListBlobsOptions {
+        accept: ListBlobsAcceptFormat::Xml,
         maxresults: Some(2),
         ..Default::default()
     };
     let mut list_blobs_response = container_client
-        .list_blob_flat_segment_apache_arrow(ListBlobsAcceptFormat::Xml, Some(list_blobs_options))?
+        .list_blobs(Some(list_blobs_options))?
         .into_pages();
     let first_page = list_blobs_response.try_next().await?;
     let list_blob_segment_response = first_page.unwrap().into_model()?;
@@ -253,12 +254,13 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
         assert!(blob_names.contains(&blob_name));
         assert_eq!(BlobType::BlockBlob, blob_type);
     }
-    let list_blobs_options = BlobContainerClientListBlobFlatSegmentApacheArrowOptions {
+    let list_blobs_options = BlobContainerClientListBlobsOptions {
+        accept: ListBlobsAcceptFormat::Xml,
         marker: continuation_token,
         ..Default::default()
     };
     let mut list_blobs_response = container_client
-        .list_blob_flat_segment_apache_arrow(ListBlobsAcceptFormat::Xml, Some(list_blobs_options.clone()))?
+        .list_blobs(Some(list_blobs_options.clone()))?
         .into_pages();
     let second_page = list_blobs_response.try_next().await?;
     let list_blob_segment_response = second_page.unwrap().into_model()?;
@@ -273,7 +275,7 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
 
     // Continuation Token, Automatic Paging
     let mut pager_response = container_client
-        .list_blob_flat_segment_apache_arrow(ListBlobsAcceptFormat::Xml, Some(list_blobs_options))?
+        .list_blobs(Some(list_blobs_options))?
         .into_pages();
     let mut page_count = 0;
 
@@ -336,7 +338,10 @@ async fn test_list_blobs_decodes_xml_invalid_names(ctx: TestContext) -> Result<(
 
     // List blobs and verify the names are correctly percent-decoded
     let mut list_blobs_response = container_client
-        .list_blob_flat_segment_apache_arrow(ListBlobsAcceptFormat::Xml, None)?
+        .list_blobs(Some(BlobContainerClientListBlobsOptions {
+            accept: ListBlobsAcceptFormat::Xml,
+            ..Default::default()
+        }))?
         .into_pages();
     let page = list_blobs_response.try_next().await?;
     let list_blob_segment_response = page.unwrap().into_model()?;
@@ -692,16 +697,14 @@ async fn test_list_blobs_with_include_options(ctx: TestContext) -> Result<(), Bo
 
     // List with both Metadata and Tags includes
     let page = container_client
-        .list_blob_flat_segment_apache_arrow(
-            ListBlobsAcceptFormat::Xml,
-            Some(BlobContainerClientListBlobFlatSegmentApacheArrowOptions {
-                include: Some(vec![
-                    ListBlobsIncludeItem::Metadata,
-                    ListBlobsIncludeItem::Tags,
-                ]),
-                ..Default::default()
-            }),
-        )?
+        .list_blobs(Some(BlobContainerClientListBlobsOptions {
+            accept: ListBlobsAcceptFormat::Xml,
+            include: Some(vec![
+                ListBlobsIncludeItem::Metadata,
+                ListBlobsIncludeItem::Tags,
+            ]),
+            ..Default::default()
+        }))?
         .into_pages()
         .try_next()
         .await?
@@ -751,13 +754,11 @@ async fn test_list_blobs_with_prefix(ctx: TestContext) -> Result<(), Box<dyn Err
     create_test_blob(&container_client.blob_client(&blob_no_prefix), None, None).await?;
 
     let page = container_client
-        .list_blob_flat_segment_apache_arrow(
-            ListBlobsAcceptFormat::Xml,
-            Some(BlobContainerClientListBlobFlatSegmentApacheArrowOptions {
-                prefix: Some(prefix.to_string()),
-                ..Default::default()
-            }),
-        )?
+        .list_blobs(Some(BlobContainerClientListBlobsOptions {
+            accept: ListBlobsAcceptFormat::Xml,
+            prefix: Some(prefix.to_string()),
+            ..Default::default()
+        }))?
         .into_pages()
         .try_next()
         .await?
@@ -792,7 +793,10 @@ async fn test_list_blobs_with_uncommitted_blobs_include(
 
     // Without UncommittedBlobs Include Scenario
     let page_without = container_client
-        .list_blob_flat_segment_apache_arrow(ListBlobsAcceptFormat::Xml, None)?
+        .list_blobs(Some(BlobContainerClientListBlobsOptions {
+            accept: ListBlobsAcceptFormat::Xml,
+            ..Default::default()
+        }))?
         .into_pages()
         .try_next()
         .await?
@@ -808,13 +812,11 @@ async fn test_list_blobs_with_uncommitted_blobs_include(
 
     // With UncommittedBlobs Include Scenario
     let page_with = container_client
-        .list_blob_flat_segment_apache_arrow(
-            ListBlobsAcceptFormat::Xml,
-            Some(BlobContainerClientListBlobFlatSegmentApacheArrowOptions {
-                include: Some(vec![ListBlobsIncludeItem::UncommittedBlobs]),
-                ..Default::default()
-            }),
-        )?
+        .list_blobs(Some(BlobContainerClientListBlobsOptions {
+            accept: ListBlobsAcceptFormat::Xml,
+            include: Some(vec![ListBlobsIncludeItem::UncommittedBlobs]),
+            ..Default::default()
+        }))?
         .into_pages()
         .try_next()
         .await?
@@ -852,7 +854,10 @@ async fn test_list_blobs_with_deleted_include(ctx: TestContext) -> Result<(), Bo
 
     // Without Deleted Include Scenario
     let page_without = container_client
-        .list_blob_flat_segment_apache_arrow(ListBlobsAcceptFormat::Xml, None)?
+        .list_blobs(Some(BlobContainerClientListBlobsOptions {
+            accept: ListBlobsAcceptFormat::Xml,
+            ..Default::default()
+        }))?
         .into_pages()
         .try_next()
         .await?
@@ -868,13 +873,11 @@ async fn test_list_blobs_with_deleted_include(ctx: TestContext) -> Result<(), Bo
 
     // With Deleted Include Scenario
     let page_with = container_client
-        .list_blob_flat_segment_apache_arrow(
-            ListBlobsAcceptFormat::Xml,
-            Some(BlobContainerClientListBlobFlatSegmentApacheArrowOptions {
-                include: Some(vec![ListBlobsIncludeItem::Deleted]),
-                ..Default::default()
-            }),
-        )?
+        .list_blobs(Some(BlobContainerClientListBlobsOptions {
+            accept: ListBlobsAcceptFormat::Xml,
+            include: Some(vec![ListBlobsIncludeItem::Deleted]),
+            ..Default::default()
+        }))?
         .into_pages()
         .try_next()
         .await?
@@ -916,13 +919,11 @@ async fn test_list_blobs_with_copy_include(ctx: TestContext) -> Result<(), Box<d
 
     // Copy Include Scenario
     let page = container_client
-        .list_blob_flat_segment_apache_arrow(
-            ListBlobsAcceptFormat::Xml,
-            Some(BlobContainerClientListBlobFlatSegmentApacheArrowOptions {
-                include: Some(vec![ListBlobsIncludeItem::Copy]),
-                ..Default::default()
-            }),
-        )?
+        .list_blobs(Some(BlobContainerClientListBlobsOptions {
+            accept: ListBlobsAcceptFormat::Xml,
+            include: Some(vec![ListBlobsIncludeItem::Copy]),
+            ..Default::default()
+        }))?
         .into_pages()
         .try_next()
         .await?

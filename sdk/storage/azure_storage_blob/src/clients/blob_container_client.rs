@@ -3,17 +3,29 @@
 
 pub use crate::generated::clients::{BlobContainerClient, BlobContainerClientOptions};
 
-use crate::{models::StorageErrorCode, BlobClient};
+use crate::{
+    generated::models::BlobContainerClientListBlobsArrowInternalOptions,
+    models::{BlobContainerClientListBlobsOptions, ListBlobsPageResponse, StorageErrorCode},
+    BlobClient,
+};
 use azure_core::{
     credentials::TokenCredential,
     error::ErrorKind,
     http::{
+        pager::{PagerContinuation, PagerResult, PagerState},
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        Pipeline, StatusCode, Url,
+        ClientMethodOptions, ItemIterator, Pipeline, RawResponse, StatusCode, Url,
     },
     tracing, Result,
 };
 use std::sync::Arc;
+
+/// A pager over responses returned by [`BlobContainerClient::list_blobs`].
+///
+/// This alias makes the paging API explicit. The standard `Pager<P, F>` alias cannot be used
+/// because it always wraps each page in `Response<P, F>`, while list blobs needs
+/// [`ListBlobsPageResponse`] to select XML or Apache Arrow using the response headers.
+pub type ListBlobsPager = ItemIterator<ListBlobsPageResponse>;
 
 impl BlobContainerClient {
     /// Creates a new BlobContainerClient from a container URL.
@@ -97,6 +109,72 @@ impl BlobContainerClient {
         &self.endpoint
     }
 
+    /// Returns a list of blobs in the container, preferring Apache Arrow with XML fallback by default.
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.BlobContainerClient.listBlobs")]
+    pub fn list_blobs(
+        &self,
+        options: Option<BlobContainerClientListBlobsOptions<'_>>,
+    ) -> Result<ListBlobsPager> {
+        let options = options.unwrap_or_default().into_owned();
+        let method_options = options.method_options.clone();
+        let endpoint = self.endpoint.clone();
+        let pipeline = self.pipeline.clone();
+        let version = self.version.clone();
+        let tracer = self.tracer.clone();
+
+        Ok(ItemIterator::new(
+            move |state: PagerState, pager_options| {
+                let client = BlobContainerClient {
+                    endpoint: endpoint.clone(),
+                    pipeline: pipeline.clone(),
+                    version: version.clone(),
+                    tracer: tracer.clone(),
+                };
+                let options = options.clone();
+                Box::pin(async move {
+                    let marker = match state {
+                        PagerState::Initial => options.marker.clone(),
+                        PagerState::More(continuation) => Some(continuation.into()),
+                    };
+                    let method_options = ClientMethodOptions {
+                        context: pager_options.context,
+                    };
+
+                    let accept = options.accept.into();
+                    let raw_response: RawResponse = client
+                        .list_blobs_arrow_internal(
+                            accept,
+                            Some(BlobContainerClientListBlobsArrowInternalOptions {
+                                include: options.include.clone(),
+                                marker,
+                                maxresults: options.maxresults,
+                                method_options,
+                                prefix: options.prefix.clone(),
+                                start_from: options.start_from.clone(),
+                                timeout: options.timeout,
+                            }),
+                        )
+                        .await?
+                        .into();
+
+                    let response = ListBlobsPageResponse::new(raw_response);
+                    Ok(match response.next_marker()? {
+                        Some(next_marker) => PagerResult::More {
+                            response,
+                            continuation: PagerContinuation::Token(next_marker),
+                        },
+                        None => PagerResult::Done { response },
+                    })
+                })
+            },
+            Some(method_options),
+        ))
+    }
+
     /// Checks if the container exists.
     ///
     /// Returns `true` if the container exists, `false` if the container does not exist, and propagates all other errors.
@@ -119,16 +197,20 @@ impl BlobContainerClient {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use arrow_array::{ArrayRef, RecordBatch, StringArray};
+    use arrow_ipc::writer::StreamWriter;
+    use arrow_schema::{DataType, Field, Schema};
     use azure_core::{
         http::{
-            headers::Headers, pager::PagerContinuation, AsyncRawResponse, ClientOptions,
-            StatusCode, Transport,
+            headers::{self, Headers},
+            pager::PagerContinuation,
+            AsyncRawResponse, ClientOptions, StatusCode, Transport,
         },
         Bytes,
     };
     use azure_core_test::http::MockHttpClient;
     use futures::{FutureExt as _, TryStreamExt as _};
-    use std::sync::Arc;
+    use std::{collections::HashMap, sync::Arc};
 
     const LIST_BLOBS_PAGE: &[u8] = br#"<?xml version="1.0" encoding="utf-8"?>
 <EnumerationResults ServiceEndpoint="https://example.blob.core.windows.net/" ContainerName="container">
@@ -170,14 +252,20 @@ mod tests {
     async fn list_blobs_page_keeps_body_for_into_model() -> Result<()> {
         let mock_client = Arc::new(MockHttpClient::new(|req| {
             assert_eq!(req.url().path(), "/container");
+            assert_eq!(
+                req.headers().get_str(&headers::ACCEPT).unwrap(),
+                "application/vnd.apache.arrow.stream,application/xml"
+            );
             assert!(req
                 .url()
                 .query()
                 .is_some_and(|query| query.contains("comp=list")));
             async move {
+                let mut headers = Headers::new();
+                headers.insert(azure_core::http::headers::CONTENT_TYPE, "application/xml");
                 Ok(AsyncRawResponse::from_bytes(
                     StatusCode::Ok,
-                    Headers::new(),
+                    headers,
                     Bytes::from_static(LIST_BLOBS_PAGE),
                 ))
             }
@@ -205,8 +293,75 @@ mod tests {
 
         let page = page.into_model()?;
         assert_eq!(page.next_marker.as_deref(), Some("page-2"));
-        assert_eq!(page.blob_items.len(), 1);
-        assert_eq!(page.blob_items[0].name.as_deref(), Some("blob1"));
+        let blob_items = page.blob_items;
+        assert_eq!(blob_items.len(), 1);
+        assert_eq!(blob_items[0].name.as_deref(), Some("blob1"));
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn list_blobs_decodes_arrow_page_and_continuation() -> Result<()> {
+        let mut metadata = HashMap::new();
+        metadata.insert("NextMarker".to_string(), "page-2".to_string());
+        let schema = Arc::new(Schema::new_with_metadata(
+            vec![
+                Field::new("Name", DataType::Utf8, true),
+                Field::new("BlobType", DataType::Utf8, true),
+            ],
+            metadata,
+        ));
+        let columns: Vec<ArrayRef> = vec![
+            Arc::new(StringArray::from(vec![Some("blob1")])),
+            Arc::new(StringArray::from(vec![Some("BlockBlob")])),
+        ];
+        let batch = RecordBatch::try_new(schema.clone(), columns).unwrap();
+        let mut body = Vec::new();
+        {
+            let mut writer = StreamWriter::try_new(&mut body, &schema).unwrap();
+            writer.write(&batch).unwrap();
+            writer.finish().unwrap();
+        }
+        let body = Bytes::from(body);
+
+        let mock_client = Arc::new(MockHttpClient::new(move |req| {
+            assert_eq!(
+                req.headers().get_str(&headers::ACCEPT).unwrap(),
+                "application/vnd.apache.arrow.stream,application/xml"
+            );
+            let body = body.clone();
+            async move {
+                let mut headers = Headers::new();
+                headers.insert(headers::CONTENT_TYPE, "application/vnd.apache.arrow.stream");
+                Ok(AsyncRawResponse::from_bytes(StatusCode::Ok, headers, body))
+            }
+            .boxed()
+        }));
+        let client = BlobContainerClient::new(
+            Url::parse("https://example.blob.core.windows.net/container").unwrap(),
+            None,
+            Some(BlobContainerClientOptions {
+                client_options: ClientOptions {
+                    transport: Some(Transport::new(mock_client)),
+                    ..Default::default()
+                },
+                ..Default::default()
+            }),
+        )?;
+
+        let mut pages = client.list_blobs(None)?.into_pages();
+        let page = pages.try_next().await?.expect("expected a page");
+
+        assert!(matches!(
+            pages.continuation(),
+            Some(PagerContinuation::Token(token)) if token == "page-2"
+        ));
+
+        let page = page.into_model()?;
+        assert_eq!(page.next_marker.as_deref(), Some("page-2"));
+        let blob_items = page.blob_items;
+        assert_eq!(blob_items.len(), 1);
+        assert_eq!(blob_items[0].name.as_deref(), Some("blob1"));
 
         Ok(())
     }

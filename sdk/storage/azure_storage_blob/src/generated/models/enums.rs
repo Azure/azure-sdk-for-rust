@@ -265,7 +265,7 @@ pub enum LeaseStatus {
 
 /// Specifies the format in which a blob listing should be returned.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum ListBlobsAcceptFormat {
+pub(crate) enum ListBlobsAcceptFormat {
     /// Return the listing as an Apache Arrow stream, falling back to XML if Arrow is unavailable.
     Arrow,
 
