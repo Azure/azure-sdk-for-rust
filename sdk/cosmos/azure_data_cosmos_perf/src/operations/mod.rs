@@ -8,6 +8,7 @@
 //! 2. Register it in [`create_operations`].
 //! 3. Add a CLI flag in `config.rs` to enable/disable it.
 
+mod change_feed;
 mod create_item;
 mod feed_range_query;
 mod feed_range_refresher;
@@ -28,6 +29,7 @@ use std::sync::{Arc, RwLock};
 use std::time::Duration;
 
 use crate::config::{Config, ExcludeRegionsScope};
+pub use crate::operations::change_feed::ChangeFeedOperation;
 pub use crate::operations::create_item::CreateItemOperation;
 pub use crate::operations::feed_range_query::{FeedRangeCache, FeedRangeQueryOperation};
 pub use crate::operations::feed_range_refresher::{FeedRangeRefresher, READ_FEED_RANGES_STAT};
@@ -146,8 +148,13 @@ pub async fn create_operations(
     }
     if !config.no_creates {
         ops.push(Arc::new(CreateItemOperation::new(
-            seeded_items,
+            seeded_items.clone(),
             write_options,
+        )));
+    }
+    if !config.no_change_feed {
+        ops.push(Arc::new(ChangeFeedOperation::new(
+            config.change_feed_max_pages,
         )));
     }
 

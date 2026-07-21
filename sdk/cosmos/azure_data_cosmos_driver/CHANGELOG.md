@@ -17,7 +17,6 @@
 
 ### Bugs Fixed
 
-- Fixed Gateway 2.0 responses omitting backend request duration metadata when converting RNTBD responses to standard Cosmos response headers. ([#4797](https://github.com/Azure/azure-sdk-for-rust/pull/4797))
 - Fixed a version-less `PartitionKeyDefinition` deserializing to partition key version V2 instead of V1. The Cosmos service omits the `version` field on the wire only for legacy V1 (Hash) containers, so an absent version now correctly defaults to V1, matching the .NET/Java convention. This fixes Gateway 2.0 (thin-client) point-op routing for V1 containers, where the client-computed effective partition key previously used the wrong (V2) algorithm and stalled until timeout. The create path (`PartitionKeyDefinition::new`) is unchanged and still defaults to V2. ([#4739](https://github.com/Azure/azure-sdk-for-rust/pull/4739))
 - `http://` (non-HTTPS) account endpoints are now rejected unless the host is a known Cosmos DB emulator host (as determined by the existing emulator-host detection). The check runs in `CosmosDriver::new` (reached via `CosmosDriverRuntime::create_driver`), so an invalid endpoint fails fast with a `CLIENT_INVALID_ACCOUNT_ENDPOINT_URL` error before any network I/O. Both the primary endpoint and any backup endpoints are validated. ([#4757](https://github.com/Azure/azure-sdk-for-rust/pull/4757))
 - Fixed `DiagnosticsContext` debug rendering to emit valid diagnostics JSON instead of Rust struct dumps that leaked internal timers, caches, and CPU monitor state. Debug rendering now uses the configured default diagnostics verbosity, which defaults to summary. ([#4733](https://github.com/Azure/azure-sdk-for-rust/pull/4733))
@@ -27,6 +26,8 @@
 - Fixed `AZURE_COSMOS_PPCB_*` environment variables (including the `AZURE_COSMOS_PPCB_ENABLED` master switch and the `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` kill switch) being silently ignored when a caller built `DriverOptions` without calling `DriverOptionsBuilder::with_partition_failover_options`. The environment is read only by `PartitionFailoverOptionsBuilder::build`, but the omitted-options path used a bare `PartitionFailoverOptions::default()` (which hard-codes PPCB enabled and reads no environment), so PPCB stayed on even with `AZURE_COSMOS_PPCB_ENABLED=false`. `DriverOptionsBuilder::build` now resolves the partition-failover options from the environment when the caller does not supply them (falling back to defaults, fail-soft, if an environment value is out of bounds). An explicitly supplied `PartitionFailoverOptions` continues to take precedence. ([#4655](https://github.com/Azure/azure-sdk-for-rust/pull/4655))
 
 ### Other Changes
+
+- Gateway 2.0 responses now include backend request duration metadata when converting RNTBD responses to standard Cosmos response headers. ([#4797](https://github.com/Azure/azure-sdk-for-rust/pull/4797))
 
 ## 0.5.0 (2026-06-19)
 

@@ -63,6 +63,17 @@ pub struct Config {
     #[arg(long, default_value_t = false)]
     pub no_creates: bool,
 
+    /// Disable the full-container change feed operation.
+    #[arg(long, default_value_t = false)]
+    pub no_change_feed: bool,
+
+    /// Maximum number of pages consumed by each change feed operation.
+    ///
+    /// Change feed streams are infinite, so every operation must stop after
+    /// a bounded number of page polls.
+    #[arg(long, default_value_t = 4)]
+    pub change_feed_max_pages: usize,
+
     /// Disable the per-feed-range query operation.
     ///
     /// When enabled (the default), the harness fans out

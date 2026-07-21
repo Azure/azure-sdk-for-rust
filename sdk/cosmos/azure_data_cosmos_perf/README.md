@@ -1,8 +1,8 @@
 # Azure Cosmos DB Performance Testing Tool
 
 A CLI tool for performance and scale testing the Azure Cosmos DB Rust SDK. It runs
-point reads, single-partition queries, upserts, and creates concurrently and reports
-latency statistics at configurable intervals.
+point reads, single-partition queries, bounded change feed reads, upserts, and creates
+concurrently and reports latency statistics at configurable intervals.
 
 ## Prerequisites
 
@@ -85,6 +85,8 @@ cargo run -p azure_data_cosmos_perf -- \
 | `--no-queries` | `false` | Disable query operations |
 | `--no-upserts` | `false` | Disable upsert operations |
 | `--no-creates` | `false` | Disable create operations |
+| `--no-change-feed` | `false` | Disable full-container change feed operations |
+| `--change-feed-max-pages` | `4` | Maximum pages consumed by each change feed operation |
 | `--no-feed-range-queries` | `false` | Disable per-feed-range query operations |
 | `--feed-range-query-max-pages` | `4` | Maximum pages consumed by each per-feed-range query |
 | `--feed-range-refresh-secs` | `60` | Interval between feed-range cache refreshes (0 disables refresh) |
@@ -172,6 +174,13 @@ When enabled (the default), the `CreateItem` operation generates new items with
 unique IDs and partition keys. Successfully created items are added to the
 shared item pool so they become targets for subsequent read, query, and upsert
 operations.
+
+### Change Feed Operation
+
+When enabled (the default), the `ChangeFeed` operation reads the full-container
+latest-version change feed from the beginning. Because change feed streams do
+not terminate when caught up, each execution consumes at most
+`--change-feed-max-pages` pages (default `4`).
 
 ### Multi-Process Launcher
 

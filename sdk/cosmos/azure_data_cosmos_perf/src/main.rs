@@ -131,6 +131,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         && config.no_queries
         && config.no_upserts
         && config.no_creates
+        && config.no_change_feed
         && config.no_feed_range_queries
     {
         eprintln!("Error: all operations are disabled. Enable at least one.");
@@ -160,6 +161,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     if config.feed_range_query_max_pages == 0 {
         eprintln!("Error: --feed-range-query-max-pages must be at least 1.");
+        std::process::exit(1);
+    }
+    if config.change_feed_max_pages == 0 {
+        eprintln!("Error: --change-feed-max-pages must be at least 1.");
         std::process::exit(1);
     }
 
