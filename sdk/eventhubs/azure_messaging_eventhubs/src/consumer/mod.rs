@@ -728,6 +728,12 @@ pub mod builders {
             self
         }
 
+        /// Returns the AMQP transport this builder opens the connection with.
+        /// Shared by every `open` path so they cannot drift apart.
+        pub(crate) fn transport(&self) -> AmqpTransport {
+            self.transport_type.unwrap_or_default().into()
+        }
+
         /// Opens a connection to the Event Hub.
         ///
         /// This method establishes a connection to the Event Hubs instance associated
@@ -769,6 +775,7 @@ pub mod builders {
             eventhub_name: String,
             credential: Arc<dyn azure_core::credentials::TokenCredential>,
         ) -> Result<super::ConsumerClient> {
+            let transport = self.transport();
             let custom_endpoint = match self.custom_endpoint {
                 Some(endpoint) => Some(Url::parse(&endpoint).map_err(azure_core::Error::from)?),
                 None => None,
@@ -785,7 +792,7 @@ pub mod builders {
                     retry_options: self.retry_options,
                     custom_endpoint,
                     cbs_token_type: None,
-                    transport: self.transport_type.unwrap_or_default().into(),
+                    transport,
                 },
             )?;
             consumer.ensure_connection().await?;
@@ -834,6 +841,7 @@ pub mod builders {
             connection_string: &str,
             eventhub: Option<&str>,
         ) -> Result<super::ConsumerClient> {
+            let transport = self.transport();
             let connection_string: ConnectionString = connection_string.parse()?;
             let eventhub = resolve_eventhub(&connection_string, eventhub)?;
             let credential = Arc::new(SasCredential::from_connection_string(
@@ -857,7 +865,7 @@ pub mod builders {
                     retry_options: self.retry_options,
                     custom_endpoint,
                     cbs_token_type: Some(SAS_TOKEN_TYPE),
-                    transport: self.transport_type.unwrap_or_default().into(),
+                    transport,
                 },
             )?;
             consumer.ensure_connection().await?;
@@ -868,18 +876,39 @@ pub mod builders {
 
 #[cfg(test)]
 pub(crate) mod tests {
+    use crate::models::TransportType;
     use crate::{
         common::tests::force_errors, models::EventData, ConsumerClient, EventDataBatchOptions,
         ProducerClient, Result, StartLocation, StartPosition,
     };
     use azure_core::{sleep::sleep, time::Duration};
-    use azure_core_amqp::{error::AmqpErrorKind, AmqpError};
+    use azure_core_amqp::{error::AmqpErrorKind, AmqpError, AmqpTransport};
     use azure_core_test::{recorded, TestContext};
     use futures::stream::StreamExt;
     use std::{
         sync::Arc,
         time::{SystemTime, UNIX_EPOCH},
     };
+
+    // Every `open` path on the builder reads the transport through one helper,
+    // so this covers the plumbing that the connection-string path shares.
+    #[test]
+    fn builder_maps_the_transport_type() {
+        assert_eq!(
+            ConsumerClient::builder()
+                .with_transport_type(TransportType::AmqpWebSocket)
+                .transport(),
+            AmqpTransport::WebSocket
+        );
+        assert_eq!(
+            ConsumerClient::builder()
+                .with_transport_type(TransportType::AmqpTcp)
+                .transport(),
+            AmqpTransport::Tcp
+        );
+        // An unset transport type keeps the TCP default.
+        assert_eq!(ConsumerClient::builder().transport(), AmqpTransport::Tcp);
+    }
     use tracing::info;
 
     // static INIT_LOGGING: std::sync::Once = std::sync::Once::new();
