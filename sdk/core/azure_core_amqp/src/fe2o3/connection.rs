@@ -301,4 +301,14 @@ mod tests {
             "wss://localhost:8081/$servicebus/websocket/"
         );
     }
+
+    #[test]
+    fn websocket_address_keeps_brackets_around_ipv6_host() {
+        // `Url::host_str` keeps the brackets around an IPv6 literal, so the
+        // authority stays valid when the host and the port are joined.
+        let proxy = Url::parse("amqps://[::1]:8081/").unwrap();
+        let address = websocket_address(&proxy).unwrap();
+        assert_eq!(address, "wss://[::1]:8081/$servicebus/websocket/");
+        assert!(Url::parse(&address).is_ok());
+    }
 }
