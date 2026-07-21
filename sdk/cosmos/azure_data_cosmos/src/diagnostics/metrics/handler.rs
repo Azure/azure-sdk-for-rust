@@ -35,9 +35,13 @@ const METER_NAME: &str = "azure_data_cosmos";
 /// histogram. Development-tier metrics and attributes are opt-in via
 /// [`MetricsOptions`] (see [`with_options`](CosmosMetricsHandler::with_options)).
 ///
-/// When no meter provider is registered, the global meter is a no-op, so
-/// recording is effectively free — you can register the handler unconditionally
-/// and pay nothing until an exporter is wired up.
+/// The handler captures a [`Meter`] from the globally-registered provider at
+/// construction. Install your meter provider **before** constructing the handler:
+/// a `Meter` obtained while the global provider is still the default no-op stays a
+/// no-op even after a real provider is installed later, so metrics would be
+/// silently dropped. If you need to build the handler before the global provider
+/// is ready, bind it to an explicit meter with
+/// [`with_meter`](CosmosMetricsHandler::with_meter) instead.
 pub struct CosmosMetricsHandler {
     instruments: Instruments,
     options: MetricsOptions,

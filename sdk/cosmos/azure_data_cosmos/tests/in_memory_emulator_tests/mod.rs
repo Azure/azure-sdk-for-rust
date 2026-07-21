@@ -15,6 +15,7 @@ pub mod dtx_live_comparison;
 pub mod dtx_sdk_validation;
 pub mod dual_backend;
 pub mod end_to_end;
+pub mod handler_propagation;
 pub mod hpk;
 pub mod partition_key_equality;
 pub mod query_comparison;
