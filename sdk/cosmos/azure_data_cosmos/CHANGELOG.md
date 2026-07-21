@@ -1,11 +1,23 @@
 # Release History
 
-## 0.37.0 (Unreleased)
+## 0.38.0 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
+- `ResponseHeaders::server_duration_ms()` now returns the service-reported backend request duration for Gateway 2.0 responses. ([#4797](https://github.com/Azure/azure-sdk-for-rust/pull/4797))
+
+## 0.37.0 (2026-07-20)
 
 ### Features Added
 
 - Added runtime diagnostics output configuration via `CosmosRuntimeBuilder::with_diagnostics_options`, including the env-backed `AZURE_COSMOS_DIAGNOSTICS_DEFAULT_VERBOSITY` option. The built-in default is now summary diagnostics JSON. ([#4733](https://github.com/Azure/azure-sdk-for-rust/pull/4733))
-- Gateway 2.0 transport (a regional proxy forwarding RNTBD-over-HTTP/2) is selected automatically when the account advertises thin-client endpoints, the connectivity probe confirms them, and the runtime has not opted out. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319))
+- Gateway 2.0 transport (a regional proxy forwarding RNTBD-over-HTTP/2) is selected automatically when the account advertises thin-client endpoints, the connectivity probe confirms them, and the runtime has not opted out. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319), [#4803](https://github.com/Azure/azure-sdk-for-rust/pull/4803))
 - Added the re-exported `ConnectionPoolOptions::gateway_v2_disabled` and `ConnectionPoolOptionsBuilder::with_gateway_v2_disabled`, with `AZURE_COSMOS_CONNECTION_POOL_GATEWAY_V2_DISABLED` configuration and an environment-only `_OVERRIDE` incident switch. ([#4763](https://github.com/Azure/azure-sdk-for-rust/pull/4763))
 - HTTP 449 (RetryWith) responses are now retried transparently in-region with exponential backoff, so callers no longer see spurious 449 errors from concurrent writes. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319))
 - `ReadConsistencyStrategy` is now honored across Gateway V1 and V2 reads. Adds the `LatestCommitted` variant (a quorum read independent of the account default); `GlobalStrong` is rejected with `BadRequest` unless the account default is `Strong`. Per-request strategy overrides the client default. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319))
@@ -14,17 +26,11 @@
 - Change feed items are now surfaced as an envelope. `ContainerClient::query_change_feed::<YourDoc>()` yields `ChangeFeedItem<YourDoc>`, binding the envelope into the return type so the post-change document is read via `ChangeFeedItem::current()` and cannot be silently deserialized away. The envelope also exposes the pre-change document (`previous()`) and per-change `metadata()` (populated by full-fidelity reads; absent for `LatestVersion`). A full-fidelity delete returns an empty `current` object, which maps to `None` so callers with strict document types still deserialize the delete; the deleted item's identity is available via `ChangeFeedMetadata::id()` and `ChangeFeedMetadata::partition_key()`. `ChangeFeedOperationType` includes an `Unknown` catch-all so a future operation type cannot fail a page and stall the feed. A backend that does not envelope change feed items (such as the Cosmos emulator) returns the bare document, which is mapped onto `current()` so no data is lost. Added the `models` types `ChangeFeedItem<T>`, `ChangeFeedMetadata`, `ChangeFeedOperationType`, and `LogicalSequenceNumber`. ([#4723](https://github.com/Azure/azure-sdk-for-rust/pull/4723))
 - Added `TlsBackend` (re-exported) and a `tls_backend` option on `ConnectionPoolOptions` (`ConnectionPoolOptionsBuilder::with_tls_backend`), defaulting to `TlsBackend::Rustls`, available under the `rustls` feature, to pin the TLS backend used by the transport. This is additive and changes no behavior for the default (rustls) build; it only has an effect in builds that compile in multiple reqwest TLS backends, where reqwest would otherwise default to native-tls and the driver now pins rustls instead. ([#4649](https://github.com/Azure/azure-sdk-for-rust/pull/4649))
 
-### Breaking Changes
-
 ### Bugs Fixed
 
 - `http://` (non-HTTPS) account endpoints are now rejected unless the host is a known Cosmos DB emulator host, failing fast during client construction with an "invalid account endpoint" error instead of attempting an insecure connection to a production account. This validation also covers configured backup endpoints. ([#4757](https://github.com/Azure/azure-sdk-for-rust/pull/4757))
 - Fixed hierarchical-partition-key (HPK) queries. A `FeedScope::partition` scope with only a *prefix* of the key hierarchy (e.g. `("USA", "CA")` on a `/country/state/city` container) now filters to that prefix instead of returning every item in the physical partition (issue [#4680](https://github.com/Azure/azure-sdk-for-rust/issues/4680)), and cross-partition queries over an HPK container no longer fail with `400 Bad Request` (issue [#4681](https://github.com/Azure/azure-sdk-for-rust/issues/4681)). ([#4729](https://github.com/Azure/azure-sdk-for-rust/pull/4729))
 - Fixed the `AZURE_COSMOS_PPCB_*` environment variables (including `AZURE_COSMOS_PPCB_ENABLED` and the `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` kill switch) being ignored when a `CosmosClient` was built without calling `CosmosClientBuilder::with_partition_failover_options`. The per-partition circuit breaker (PPCB) stayed enabled even with `AZURE_COSMOS_PPCB_ENABLED=false`. The client's driver now resolves these options from the environment when they are not supplied explicitly. ([#4655](https://github.com/Azure/azure-sdk-for-rust/pull/4655))
-
-### Other Changes
-
-- `ResponseHeaders::server_duration_ms()` now returns the service-reported backend request duration for Gateway 2.0 responses. ([#4797](https://github.com/Azure/azure-sdk-for-rust/pull/4797))
 
 ## 0.36.0 (2026-06-19)
 
