@@ -53,7 +53,7 @@ use self::http_client_factory::DefaultHttpClientFactory;
 
 pub(crate) use authorization_policy::generate_authorization;
 pub(crate) use authorization_policy::AuthorizationContext;
-pub(crate) use emulator::is_emulator_host;
+pub(crate) use emulator::{ensure_endpoint_scheme_allowed, is_emulator_host};
 pub(crate) use gateway_v2_dispatch::{
     unwrap_response_for_gateway_v2, wrap_request_for_gateway_v2, WrapInputs,
 };
@@ -371,6 +371,22 @@ pub(crate) mod tests {
             .get_dataplane_transport(&endpoint, TransportMode::GatewayV2)
             .unwrap();
         assert!(matches!(ctx, AdaptiveTransport::ShardedGatewayV2(_)));
+    }
+
+    #[test]
+    fn dataplane_transport_skips_gateway_v2_when_explicitly_disabled() {
+        let pool = ConnectionPoolOptionsBuilder::new()
+            .with_gateway_v2_disabled(true)
+            .build()
+            .unwrap();
+        let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http2).unwrap();
+        let endpoint =
+            AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
+
+        let ctx = transport
+            .get_dataplane_transport(&endpoint, TransportMode::GatewayV2)
+            .unwrap();
+        assert!(matches!(ctx, AdaptiveTransport::ShardedGateway(_)));
     }
 
     #[test]

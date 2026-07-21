@@ -134,14 +134,74 @@ async fn upload_stream_partitions(
 
 #[cfg(test)]
 mod tests {
-    use std::mem::discriminant;
+    use std::{mem::discriminant, slice};
 
+    use async_trait::async_trait;
     use azure_core::{http::Body, stream::BytesStream};
-    use azure_storage_blob_test::*;
-    use bytes::Bytes;
+    use bytes::{Bytes, BytesMut};
+    use futures::{AsyncRead, AsyncReadExt};
     use tokio::sync::Mutex;
 
     use super::*;
+
+    #[async_trait]
+    trait AsyncReadTestExt {
+        async fn read_into_spare_capacity(
+            &mut self,
+            buffer: &mut BytesMut,
+        ) -> futures::io::Result<usize>;
+    }
+
+    #[async_trait]
+    impl<Stream: AsyncRead + Unpin + Send> AsyncReadTestExt for Stream {
+        async fn read_into_spare_capacity(
+            &mut self,
+            buffer: &mut BytesMut,
+        ) -> futures::io::Result<usize> {
+            let spare_capacity = buffer.spare_capacity_mut();
+            let spare_capacity = unsafe {
+                // spare_capacity_mut() gives us the known remaining capacity of BytesMut.
+                // Those bytes are valid reserved memory but have had no values written
+                // to them. Those are the exact bytes we want to write into.
+                // MaybeUninit<u8> can be safely cast into u8, and so this pointer cast
+                // is safe. Since the spare capacity length is safely known, we can
+                // provide those to from_raw_parts without worry.
+                slice::from_raw_parts_mut(
+                    spare_capacity.as_mut_ptr() as *mut u8,
+                    spare_capacity.len(),
+                )
+            };
+            let bytes_read = self.read(spare_capacity).await?;
+            // read() wrote bytes_read-many bytes into the spare capacity.
+            // those values are therefore initialized and we can add them to
+            // the existing buffer length
+            unsafe { buffer.set_len(buffer.len() + bytes_read) };
+            Ok(bytes_read)
+        }
+    }
+
+    #[async_trait]
+    trait BodyTestExt {
+        async fn collect_bytes(&mut self) -> azure_core::Result<Bytes>;
+    }
+
+    #[async_trait]
+    impl BodyTestExt for Body {
+        async fn collect_bytes(&mut self) -> azure_core::Result<Bytes> {
+            match self {
+                Body::Bytes(bytes) => Ok(bytes.clone()),
+                Body::SeekableStream(seekable_stream) => {
+                    seekable_stream.reset().await?;
+                    let capacity =
+                        usize::try_from(seekable_stream.len().unwrap_or(0)).unwrap_or(usize::MAX);
+                    let mut bytes = BytesMut::with_capacity(capacity);
+                    while seekable_stream.read_into_spare_capacity(&mut bytes).await? != 0 {}
+                    seekable_stream.reset().await?;
+                    Ok(bytes.freeze())
+                }
+            }
+        }
+    }
 
     /// The possible body types for a body passed to a PartitionedUploadBehavior.
     /// For call history tracking purposes.

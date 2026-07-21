@@ -15,13 +15,13 @@ cargo run --manifest-path eng/tools/Cargo.toml -p generate_api -- \
 ### Arguments
 
 - `--manifest-path <path>`: path to the target crate's `Cargo.toml`
-- `--format <review|apiview>`: optional output format to generate; defaults to `review`
+- `--format <markdown|apiview>`: optional output format to generate; defaults to `markdown`
 - `--no-docs`: when generating `apiview`, omit documentation comment tokens
 - `--output <dir>`: directory where generated files are written
 
 ### Outputs
 
-- default `review` output writes `API.md`
+- default `markdown` output writes `API.md`
 - `--format apiview` writes `apiview.json`
 - `--format apiview --no-docs` writes `apiview.json` without doc comment tokens
 
@@ -34,6 +34,19 @@ cargo +nightly-2025-05-09 rustdoc -Z unstable-options --output-format json
 ```
 
 `rustc-dev` is included in that toolchain so the implementation can continue moving toward a more direct compiler/HIR-backed pipeline.
+
+## Pipeline entrypoints
+
+The current API review caller chain under `eng/pipelines/` is:
+
+1. `eng/pipelines/pr.yml` or `eng/pipelines/pullrequest.yml`
+2. `eng/pipelines/templates/stages/archetype-sdk-client.yml`
+3. `eng/pipelines/templates/jobs/ci.yml`
+4. `eng/pipelines/templates/jobs/pack.yml`
+5. `eng/scripts/Pack-Crates.ps1`
+
+`pack.yml` also runs the shared `create-apireview` step. Today `Pack-Crates.ps1` still invokes
+`eng/tools/generate_api_report` to produce the API review artifact consumed by that step.
 
 ## Current state
 
