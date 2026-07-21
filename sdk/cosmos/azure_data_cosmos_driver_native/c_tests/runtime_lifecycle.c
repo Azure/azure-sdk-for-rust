@@ -42,7 +42,7 @@ static int test_build_rejects_null_out_runtime(void)
     cosmos_runtime_options_t opts = cosmos_runtime_options_default();
     cosmos_error_t *err = NULL;
     int32_t rc = cosmos_runtime_build(&opts, NULL, &err);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
+    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_NULL_ARGUMENT,
            "NULL out_runtime rejected (rc=%d)", rc);
     ASSERT(err == NULL, "out_error untouched when out_runtime is NULL");
     return result;
@@ -58,7 +58,7 @@ static int test_workload_id_range_validation(void)
     cosmos_runtime_options_t opts = cosmos_runtime_options_default();
     opts.workload_id = 51;
     int32_t rc = cosmos_runtime_build(&opts, &runtime, &err);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_OPTION_VALUE,
+    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_INVALID_OPTION_VALUE,
            "workload_id=51 rejected (rc=%d)", rc);
     ASSERT(runtime == NULL, "out_runtime untouched on invalid workload_id");
     return result;
@@ -74,7 +74,7 @@ static int test_string_field_validation(void)
     cosmos_runtime_options_t opts = cosmos_runtime_options_default();
     opts.correlation_id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
     int32_t rc = cosmos_runtime_build(&opts, &runtime, &err);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_OPTION_VALUE,
+    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_INVALID_OPTION_VALUE,
            "correlation_id too-long rejected (rc=%d)", rc);
     ASSERT(runtime == NULL, "out_runtime untouched on invalid correlation_id");
 
@@ -82,7 +82,7 @@ static int test_string_field_validation(void)
     opts = cosmos_runtime_options_default();
     opts.correlation_id = "has space";
     rc = cosmos_runtime_build(&opts, &runtime, &err);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_OPTION_VALUE,
+    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_INVALID_OPTION_VALUE,
            "correlation_id invalid charset rejected (rc=%d)", rc);
     ASSERT(runtime == NULL, "out_runtime untouched on bad-charset correlation_id");
 
@@ -90,7 +90,7 @@ static int test_string_field_validation(void)
     opts = cosmos_runtime_options_default();
     opts.user_agent_suffix = "xxxxxxxxxxxxxxxxxxxxxxxxxx";
     rc = cosmos_runtime_build(&opts, &runtime, &err);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_OPTION_VALUE,
+    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_INVALID_OPTION_VALUE,
            "user_agent_suffix too-long rejected (rc=%d)", rc);
     ASSERT(runtime == NULL, "out_runtime untouched on invalid user_agent_suffix");
 
@@ -107,7 +107,7 @@ static int test_cpu_refresh_interval_range(void)
     cosmos_runtime_options_t opts = cosmos_runtime_options_default();
     opts.cpu_refresh_interval_ms = 999;
     int32_t rc = cosmos_runtime_build(&opts, &runtime, &err);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_OPTION_VALUE,
+    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_INVALID_OPTION_VALUE,
            "999 ms rejected (rc=%d)", rc);
     ASSERT(runtime == NULL, "out_runtime untouched on too-small interval");
 
@@ -115,7 +115,7 @@ static int test_cpu_refresh_interval_range(void)
     opts = cosmos_runtime_options_default();
     opts.cpu_refresh_interval_ms = 60001;
     rc = cosmos_runtime_build(&opts, &runtime, &err);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_OPTION_VALUE,
+    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_INVALID_OPTION_VALUE,
            "60001 ms rejected (rc=%d)", rc);
     ASSERT(runtime == NULL, "out_runtime untouched on too-large interval");
 
@@ -135,7 +135,7 @@ static int test_build_happy_path(void)
     opts.cpu_refresh_interval_ms = 5000;
 
     int32_t rc = cosmos_runtime_build(&opts, &runtime, &err);
-    REQUIRE(rc == COSMOS_ERROR_CODE_SUCCESS,
+    REQUIRE(rc == COSMOS_STATUS_SUCCESS,
             "cosmos_runtime_build returned SUCCESS (rc=%d)", rc);
     REQUIRE(runtime != NULL, "build produced a non-NULL runtime");
     ASSERT(err == NULL, "no rich error returned on success");
@@ -162,7 +162,7 @@ static int test_build_null_options_uses_defaults(void)
 
     // A NULL options pointer means "all driver defaults".
     int32_t rc = cosmos_runtime_build(NULL, &runtime, &err);
-    REQUIRE(rc == COSMOS_ERROR_CODE_SUCCESS,
+    REQUIRE(rc == COSMOS_STATUS_SUCCESS,
             "build(NULL options) returned SUCCESS (rc=%d)", rc);
     REQUIRE(runtime != NULL, "build produced a non-NULL runtime");
     ASSERT(err == NULL, "no rich error returned on success");

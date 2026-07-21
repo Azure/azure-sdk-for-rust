@@ -1,481 +1,468 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Error model for the C ABI boundary.
+//! Unified error / status model for the C ABI boundary.
 //!
-//! Implements the spec's two-layer error contract from
-//! [`docs/NATIVE_WRAPPER_SPEC.md`] section 3.5:
+//! Both surfaces are derived from the driver's canonical
+//! [`azure_data_cosmos_driver::error::CosmosStatus`] and
+//! [`azure_data_cosmos_driver::error::CosmosError`], so every consuming SDK
+//! learns one taxonomy instead of a parallel FFI-specific one:
 //!
-//! - **Coarse status** ([`CosmosErrorCode`] in Rust / `cosmos_error_code_t` in
-//!   C). A `#[repr(i32)]` enum whose value-range bands (`0`, `1..=999`,
-//!   `1001..=1999`, `2001..=2999`, `3001..=3999`, `4001..=4999`, `5001..=5999`)
-//!   mirror the old `azure_data_cosmos_native` ranges so callers that already
-//!   switch on the bands keep working.
-//! - **Rich payload** ([`CosmosErrorHandle`] in Rust / `cosmos_error_t *` in C).
-//!   An opaque heap-allocated handle wrapping
-//!   [`azure_data_cosmos_driver::error::CosmosError`]. Accessors mirror the
-//!   merged driver API 1:1 (per spec section 3.5.2).
-//!
-//! [`docs/NATIVE_WRAPPER_SPEC.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md
+//! - **Packed status code** ([`CosmosStatusCode`] / `cosmos_status_code_t` in
+//!   C). Every fallible C function returns this 32-bit integer. The encoding is
+//!   `(http_status << 16) | sub_status`, where a low-16-bit value of
+//!   [`COSMOS_STATUS_NO_SUB_STATUS`] (`0xFFFF`) means "no sub-status" and `0`
+//!   means success. Pure-FFI / pre-flight failures (a NULL argument, invalid
+//!   UTF-8, a shut-down completion queue, …) use a real HTTP status paired with
+//!   a driver `CLIENT_FFI_*` (or `CLIENT_*`) sub-status, so they fit the same
+//!   integer as service errors.
+//! - **Flat rich error** ([`CosmosError`] / `cosmos_error_t` in C). An owned
+//!   `#[repr(C)]` struct that carries the packed status plus the message and
+//!   wire diagnostics inline, mirroring `cosmos_completion_t`. It is produced
+//!   through the synchronous `out_error` slots and freed with
+//!   [`cosmos_error_free`].
 
 use std::ffi::{c_char, CString};
-use std::sync::Arc;
 
-use azure_data_cosmos_driver::error::CosmosError as DriverCosmosError;
+use azure_core::http::StatusCode;
+use azure_data_cosmos_driver::error::{
+    CosmosError as DriverCosmosError, CosmosStatus, SubStatusCode,
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Coarse status code
+// Packed status code
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Coarse numeric return value for every fallible C function.
+/// 32-bit packed Cosmos status returned by every fallible C function.
 ///
-/// Per spec section 3.5.1, the layout retains the FFI / Cosmos-specific bands
-/// established by the old wrapper:
+/// Layout: `(http_status << 16) | sub_status`. `0` is success. A low-16-bit
+/// value of [`COSMOS_STATUS_NO_SUB_STATUS`] (`0xFFFF`) means "no sub-status".
+/// Decode on the host with `http = code >> 16` and
+/// `sub = code & 0xFFFF` (treating `0xFFFF` as absent).
+pub type CosmosStatusCode = i32;
+
+/// Success sentinel returned by fallible C functions.
+pub const COSMOS_STATUS_SUCCESS: CosmosStatusCode = 0;
+
+/// Low-16-bit sentinel meaning "no sub-status present" in a packed
+/// [`CosmosStatusCode`].
+pub const COSMOS_STATUS_NO_SUB_STATUS: u16 = 0xFFFF;
+
+/// Packs a driver [`CosmosStatus`] into the FFI [`CosmosStatusCode`].
+pub(crate) fn status_code(status: CosmosStatus) -> CosmosStatusCode {
+    let http = u32::from(u16::from(status.status_code()));
+    let sub = status
+        .sub_status()
+        .map_or(u32::from(COSMOS_STATUS_NO_SUB_STATUS), |s| {
+            u32::from(s.value())
+        });
+    ((http << 16) | sub) as CosmosStatusCode
+}
+
+/// Packs the status of a driver [`CosmosError`] into a [`CosmosStatusCode`].
+pub(crate) fn driver_status_code(err: &DriverCosmosError) -> CosmosStatusCode {
+    status_code(err.status())
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Well-known synthetic sub-status codes (single source of truth)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Named mirror of the driver's synthetic (`2xxxx`) sub-status codes.
 ///
-/// - `0` — success.
-/// - `1..=999` — FFI / argument-validation errors.
-/// - `1001..=1999` — auth / conversion errors.
-/// - `2001..=2999` — Cosmos-specific errors mapped from wire HTTP status.
-/// - `3001..=3999` — FFI plumbing errors.
-/// - `4001..=4999` — driver-wrapper-specific fatal codes (new in this crate).
-/// - `5001..=5999` — non-fatal warnings (`out_*` populated; rich error advisory).
+/// The Cosmos service returns real sub-status codes for wire failures, but the
+/// driver also *synthesizes* sub-status codes in the `20000`–`21999` band to
+/// describe client-, transport-, serialization-, auth- and FFI-side conditions
+/// that never traveled over the wire. A C host decoding the low 16 bits of a
+/// [`CosmosStatusCode`] would otherwise see these as bare magic numbers, so this
+/// enum re-exports every one of them as a `cosmos_sub_status_t` /
+/// `COSMOS_SUB_STATUS_*` constant in the generated header.
 ///
-/// Only the codes the completion / queue / handle FFI actively produces are
-/// populated today. The rest are reserved and are added as their producing
-/// surfaces land. Consumers must treat unknown codes per
-/// their band: `4xxx` = fatal-but-recoverable, `5xxx` = warning with
-/// populated `out_*`.
+/// This enum is the **single source of truth** for those names on the C side.
+/// Each discriminant is a literal copy of the corresponding
+/// [`azure_data_cosmos_driver::error::SubStatusCode`] constant (cbindgen needs
+/// literals to emit `= N`). The `sub_status_mirror_matches_driver` unit test is
+/// CI-verified to fail the build if any value drifts from the driver, so the two
+/// tables can never disagree silently. When the driver adds a new synthetic
+/// `2xxxx` sub-status, add the matching variant here (and the test will remind
+/// you if you forget by value mismatch on an existing one).
+///
+/// The values are *not* exhaustive of the `2xxxx` range: the driver leaves gaps
+/// (e.g. `20009`, `20013`, `20103`) for future use. Do not invent variants for
+/// codes the driver does not define.
 #[repr(i32)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[non_exhaustive]
-pub enum CosmosErrorCode {
+pub enum CosmosSubStatus {
+    /// `TRANSPORT_GENERATED_503` (20003).
+    CosmosSubStatusTransportGenerated503 = 20003,
+    /// `CLIENT_CPU_OVERLOAD` (20004).
+    CosmosSubStatusClientCpuOverload = 20004,
+    /// `CLIENT_THREAD_STARVATION` (20005).
+    CosmosSubStatusClientThreadStarvation = 20005,
+    /// `CHANNEL_CLOSED` (20006).
+    CosmosSubStatusChannelClosed = 20006,
+    /// `MALFORMED_CONTINUATION_TOKEN` (20007).
+    CosmosSubStatusMalformedContinuationToken = 20007,
+    /// `CLIENT_OPERATION_TIMEOUT` (20008).
+    CosmosSubStatusClientOperationTimeout = 20008,
+    /// `TRANSPORT_CONNECTION_FAILED` (20010).
+    CosmosSubStatusTransportConnectionFailed = 20010,
+    /// `TRANSPORT_IO_FAILED` (20011).
+    CosmosSubStatusTransportIoFailed = 20011,
+    /// `TRANSPORT_DNS_FAILED` (20012).
+    CosmosSubStatusTransportDnsFailed = 20012,
+    /// `TRANSPORT_BODY_READ_FAILED` (20014).
+    CosmosSubStatusTransportBodyReadFailed = 20014,
+    /// `TRANSPORT_HTTP2_INCOMPATIBLE` (20015).
+    CosmosSubStatusTransportHttp2Incompatible = 20015,
+    /// `SERIALIZATION_RESPONSE_BODY_INVALID` (20020).
+    CosmosSubStatusSerializationResponseBodyInvalid = 20020,
+    /// `CLIENT_PARTITION_KEY_EMPTY` (20100).
+    CosmosSubStatusClientPartitionKeyEmpty = 20100,
+    /// `CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS` (20101).
+    CosmosSubStatusClientPartitionKeyTooManyComponents = 20101,
+    /// `CLIENT_PREFIX_PARTITION_KEY_REQUIRES_MULTIHASH` (20102).
+    CosmosSubStatusClientPrefixPartitionKeyRequiresMultihash = 20102,
+    /// `CLIENT_CONNECTION_STRING_EMPTY` (20104).
+    CosmosSubStatusClientConnectionStringEmpty = 20104,
+    /// `CLIENT_CONNECTION_STRING_MALFORMED_PART` (20105).
+    CosmosSubStatusClientConnectionStringMalformedPart = 20105,
+    /// `CLIENT_CONNECTION_STRING_MISSING_ACCOUNT_KEY` (20107).
+    CosmosSubStatusClientConnectionStringMissingAccountKey = 20107,
+    /// `CLIENT_INVALID_ACCOUNT_ENDPOINT_URL` (20108).
+    CosmosSubStatusClientInvalidAccountEndpointUrl = 20108,
+    /// `CLIENT_INVALID_URL` (20109).
+    CosmosSubStatusClientInvalidUrl = 20109,
+    /// `CLIENT_UNKNOWN_CONSISTENCY_LEVEL` (20110).
+    CosmosSubStatusClientUnknownConsistencyLevel = 20110,
+    /// `CLIENT_UNKNOWN_PRIORITY_LEVEL` (20111).
+    CosmosSubStatusClientUnknownPriorityLevel = 20111,
+    /// `CLIENT_FEED_RANGE_REQUIRES_FANOUT_PIPELINE` (20112).
+    CosmosSubStatusClientFeedRangeRequiresFanoutPipeline = 20112,
+    /// `CLIENT_UNSUPPORTED_QUERY_FEATURE` (20113).
+    CosmosSubStatusClientUnsupportedQueryFeature = 20113,
+    /// `CLIENT_QUERY_PLAN_INVALID_TOP_OFFSET_LIMIT` (20114).
+    CosmosSubStatusClientQueryPlanInvalidTopOffsetLimit = 20114,
+    /// `CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION` (20117).
+    CosmosSubStatusClientContinuationTokenNonQueryOperation = 20117,
+    /// `CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID` (20150).
+    CosmosSubStatusClientDuplicateFaultInjectionRuleId = 20150,
+    /// `CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED` (20152).
+    CosmosSubStatusClientThroughputControlGroupNotRegistered = 20152,
+    /// `CLIENT_HTTP_CLIENT_CONSTRUCTION_FAILED` (20153).
+    CosmosSubStatusClientHttpClientConstructionFailed = 20153,
+    /// `CLIENT_REQWEST_FEATURE_REQUIRED` (20154).
+    CosmosSubStatusClientReqwestFeatureRequired = 20154,
+    /// `CLIENT_REQUEST_URL_MISSING_HOST` (20155).
+    CosmosSubStatusClientRequestUrlMissingHost = 20155,
+    /// `CLIENT_REQUEST_URL_MISSING_KNOWN_PORT` (20156).
+    CosmosSubStatusClientRequestUrlMissingKnownPort = 20156,
+    /// `CLIENT_IMDS_HTTP_CLIENT_CONSTRUCTION_FAILED` (20157).
+    CosmosSubStatusClientImdsHttpClientConstructionFailed = 20157,
+    /// `CLIENT_IMDS_REQWEST_FEATURE_REQUIRED` (20158).
+    CosmosSubStatusClientImdsReqwestFeatureRequired = 20158,
+    /// `CLIENT_CONTINUATION_TOKEN_FETCH_IN_FLIGHT` (20200).
+    CosmosSubStatusClientContinuationTokenFetchInFlight = 20200,
+    /// `CLIENT_TOPOLOGY_PROVIDER_MISSING` (20201).
+    CosmosSubStatusClientTopologyProviderMissing = 20201,
+    /// `CLIENT_DRIVER_NOT_INITIALIZED` (20202).
+    CosmosSubStatusClientDriverNotInitialized = 20202,
+    /// `CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH` (20203).
+    CosmosSubStatusClientContinuationTokenShapeMismatch = 20203,
+    /// `CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE` (20205).
+    CosmosSubStatusClientContinuationTokenInvalidEpkRange = 20205,
+    /// `CLIENT_SPLIT_RETRIES_EXHAUSTED` (20206).
+    CosmosSubStatusClientSplitRetriesExhausted = 20206,
+    /// `CLIENT_BUILD_RESPONSE_INVOKED_ON_FAILURE` (20207).
+    CosmosSubStatusClientBuildResponseInvokedOnFailure = 20207,
+    /// `CLIENT_ROOT_NODE_CANNOT_REQUEST_SPLIT` (20208).
+    CosmosSubStatusClientRootNodeCannotRequestSplit = 20208,
+    /// `CLIENT_SINGLETON_OPERATION_RETURNED_EMPTY_PAGE` (20210).
+    CosmosSubStatusClientSingletonOperationReturnedEmptyPage = 20210,
+    /// `CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED` (20213).
+    CosmosSubStatusClientContinuationTokenSavedRangeUnhonored = 20213,
+    /// `CLIENT_NO_THROUGHPUT_OFFER_FOR_RESOURCE` (20301).
+    CosmosSubStatusClientNoThroughputOfferForResource = 20301,
+    /// `CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES` (20302).
+    CosmosSubStatusClientQueryPlanProducedEmptyRanges = 20302,
+    /// `SERVICE_RETURNED_OFFER_WITHOUT_ID` (20303).
+    CosmosSubStatusServiceReturnedOfferWithoutId = 20303,
+    /// `CLIENT_THROUGHPUT_POLLER_INCOMPLETE` (20304).
+    CosmosSubStatusClientThroughputPollerIncomplete = 20304,
+    /// `CLIENT_TOPOLOGY_RESOLUTION_FAILED` (20305).
+    CosmosSubStatusClientTopologyResolutionFailed = 20305,
+    /// `SERVICE_RETURNED_OBJECT_WITHOUT_RID` (20306).
+    CosmosSubStatusServiceReturnedObjectWithoutRid = 20306,
+    /// `CLIENT_FFI_NULL_ARGUMENT` (20350).
+    CosmosSubStatusClientFfiNullArgument = 20350,
+    /// `CLIENT_FFI_INVALID_UTF8` (20351).
+    CosmosSubStatusClientFfiInvalidUtf8 = 20351,
+    /// `CLIENT_FFI_INVALID_HEADER` (20352).
+    CosmosSubStatusClientFfiInvalidHeader = 20352,
+    /// `CLIENT_FFI_INVALID_OPTION_VALUE` (20353).
+    CosmosSubStatusClientFfiInvalidOptionValue = 20353,
+    /// `CLIENT_FFI_OPERATION_CONSUMED` (20354).
+    CosmosSubStatusClientFfiOperationConsumed = 20354,
+    /// `CLIENT_FFI_PRECONDITION_ALREADY_SET` (20355).
+    CosmosSubStatusClientFfiPreconditionAlreadySet = 20355,
+    /// `CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR` (20356).
+    CosmosSubStatusClientFfiUnsupportedOperationForMutator = 20356,
+    /// `CLIENT_FFI_FEED_EXHAUSTED` (20357).
+    CosmosSubStatusClientFfiFeedExhausted = 20357,
+    /// `CLIENT_FFI_QUEUE_SHUTDOWN` (20358).
+    CosmosSubStatusClientFfiQueueShutdown = 20358,
+    /// `CLIENT_FFI_QUEUE_FULL` (20359).
+    CosmosSubStatusClientFfiQueueFull = 20359,
+    /// `CLIENT_FFI_OPERATION_CANCELLED` (20360).
+    CosmosSubStatusClientFfiOperationCancelled = 20360,
+    /// `CLIENT_FFI_RUNTIME_BUILD_FAILED` (20361).
+    CosmosSubStatusClientFfiRuntimeBuildFailed = 20361,
+    /// `CLIENT_FFI_PANIC` (20362).
+    CosmosSubStatusClientFfiPanic = 20362,
+    /// `CLIENT_GENERATED_401` (20401).
+    CosmosSubStatusClientGenerated401 = 20401,
+    /// `AUTHENTICATION_TOKEN_ACQUISITION_FAILED` (20402).
+    CosmosSubStatusAuthenticationTokenAcquisitionFailed = 20402,
+    /// `TRANSIT_TIMEOUT` (20911).
+    CosmosSubStatusTransitTimeout = 20911,
+    /// `SERVER_BARRIER_THROTTLED` (21011).
+    CosmosSubStatusServerBarrierThrottled = 21011,
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FFI-boundary condition set
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Internal condition set for pre-flight / plumbing failures that do **not**
+/// originate from a driver [`CosmosError`].
+///
+/// This is **not** part of the C ABI (it is `pub(crate)` and never exported to
+/// the generated header). Each condition maps to a driver [`CosmosStatus`] — a
+/// real HTTP status paired with a `CLIENT_FFI_*` / `CLIENT_*` sub-status — and
+/// is returned across the boundary as a packed [`CosmosStatusCode`] via
+/// [`CosmosErrorCode::as_i32`]. Keeping the mapping here lets the whole ABI
+/// share the driver's single status taxonomy.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum CosmosErrorCode {
     /// Operation completed successfully.
-    CosmosErrorCodeSuccess = 0,
-
-    // ── 1..=999: FFI / argument-validation (reserved for incremental fill-in) ──
-    /// A required pointer argument was `NULL`. Every accessor checks for this
-    /// before dereferencing.
-    CosmosErrorCodeInvalidArgument = 1,
-
-    /// A `*const c_char` argument contained bytes that were not valid UTF-8.
-    CosmosErrorCodeInvalidUtf8 = 2,
-
-    // ── 1001..=1999: auth / conversion (reserved) ──
-
-    // ── 2001..=2999: Cosmos service errors ──
-    /// Mapped from a wire response with HTTP 404.
-    CosmosErrorCodeNotFound = 2404,
-
-    /// Mapped from a wire response with HTTP 409.
-    CosmosErrorCodeConflict = 2409,
-
-    /// Mapped from a wire response with HTTP 412.
-    CosmosErrorCodePreconditionFailed = 2412,
-
-    /// Mapped from a wire response with HTTP 429.
-    CosmosErrorCodeThrottled = 2429,
-
-    /// Mapped from a wire response with HTTP 410.
-    CosmosErrorCodeGone = 2410,
-
-    /// Mapped from a wire response with HTTP 408 (or synthetic
-    /// `CLIENT_OPERATION_TIMEOUT` substatus 20008).
-    CosmosErrorCodeTimeout = 2408,
-
-    /// Mapped from a wire response with HTTP 401.
-    CosmosErrorCodeUnauthorized = 2401,
-
-    /// Mapped from a wire response with HTTP 403.
-    CosmosErrorCodeForbidden = 2403,
-
-    /// Mapped from a wire response with HTTP 400.
-    CosmosErrorCodeBadRequest = 2400,
-
-    /// Mapped from a wire response with HTTP 503 (excluding transport-
-    /// synthesized 503, which falls under [`TransportFailure`](Self::CosmosErrorCodeTransportFailure)).
-    CosmosErrorCodeServiceUnavailable = 2503,
-
-    /// Any other wire-side error (5xx, unmapped 4xx).
-    CosmosErrorCodeServiceError = 2999,
-
-    // ── 3001..=3999: FFI plumbing ──
-    /// A driver client-side / synthetic failure with no specific 2xxx mapping.
-    CosmosErrorCodeClientError = 3001,
-
-    /// A driver transport-layer failure (connection / DNS / TLS / IO).
-    CosmosErrorCodeTransportFailure = 3002,
-
-    /// A driver client-side serialization failure.
-    CosmosErrorCodeSerializationFailed = 3003,
-
-    /// A driver client-side authentication failure (e.g. token acquisition).
-    CosmosErrorCodeAuthenticationFailed = 3004,
-
-    /// A driver client-side operation timeout
-    /// (`SubStatusCode::CLIENT_OPERATION_TIMEOUT` = 20008).
-    CosmosErrorCodeClientOperationTimeout = 3005,
-
-    // ── 4001..=4999: driver-wrapper-specific fatal codes (per spec section 3.5.1) ──
-    //
-    // Code 4001 is intentionally reserved (formerly OPTIONS_IGNORED_ON_CACHE_HIT,
-    // moved to the 5xxx warning class).
-    /// Operation issued before `initialize()` completed.
-    CosmosErrorCodeDriverNotInitialized = 4002,
-
-    /// Account endpoint URL or credential could not be parsed.
-    CosmosErrorCodeInvalidAccountReference = 4003,
-
-    /// `PartitionKey` builder produced an empty / inconsistent key.
-    CosmosErrorCodeInvalidPartitionKey = 4004,
-
-    /// A mutator or second submit was called after the operation handle was
-    /// already consumed by an earlier successful submit.
-    CosmosErrorCodeOperationConsumed = 4005,
-
-    /// Reserved. Formerly signalled a response handle consumed twice; the
-    /// response is now delivered inline on the completion, so this code is no
-    /// longer produced but its numeric slot is retained for ABI stability.
-    CosmosErrorCodeResponseConsumed = 4006,
-
-    /// Single-shot submit yielded `Ok(None)` from a feed-style operation.
-    CosmosErrorCodeFeedExhausted = 4007,
-
-    /// Second precondition setter on an operation that already has one.
-    CosmosErrorCodePreconditionAlreadySet = 4008,
-
-    /// A mutator only meaningful for a specific operation kind was rejected.
-    CosmosErrorCodeUnsupportedOperationForMutator = 4009,
-
-    /// A request header (`cosmos_header_kv_t`) on the submitted operation
-    /// request had a non-ASCII / control-character name or value.
-    CosmosErrorCodeInvalidHeader = 4010,
-
-    /// A submit targeted a `cosmos_completion_queue_t` that had already been
-    /// shut down via
-    /// `cosmos_completion_queue_shutdown`. Pre-flight rejection — no completion is posted.
-    CosmosErrorCodeQueueShutdown = 4011,
-
-    /// Surfaced via the completion's `status` field when its outcome
-    /// is `CANCELLED`. Triggered by `cosmos_operation_handle_cancel` or by
-    /// `cosmos_completion_queue_shutdown`.
-    CosmosErrorCodeOperationCancelled = 4012,
-
-    /// A submit targeted a `cosmos_completion_queue_t` whose hard capacity is already
-    /// reached. Pre-flight rejection — no completion is posted.
-    CosmosErrorCodeQueueFull = 4013,
-
-    /// A builder setter was passed a value outside the documented range.
-    CosmosErrorCodeInvalidOptionValue = 4014,
-
-    /// `cosmos_runtime_build` could not construct the underlying
-    /// `CosmosDriverRuntime`.
-    CosmosErrorCodeRuntimeBuildFailed = 4015,
-
-    // ── 5001..=5999: non-fatal warnings (per spec section 3.5.1) ──
-    /// `cosmos_driver_get_or_create` called with non-NULL options while a
-    /// driver for the same account endpoint was already cached. The cached
-    /// instance is still delivered.
-    CosmosErrorCodeOptionsIgnoredOnCacheHit = 5001,
+    CosmosErrorCodeSuccess,
+    /// A required pointer argument was `NULL`.
+    CosmosErrorCodeInvalidArgument,
+    /// A `*const c_char` argument was not valid UTF-8.
+    CosmosErrorCodeInvalidUtf8,
+    /// A builder setter was passed a value outside its documented range.
+    CosmosErrorCodeInvalidOptionValue,
+    /// A partition-key builder produced an empty / inconsistent key.
+    CosmosErrorCodeInvalidPartitionKey,
+    /// An account endpoint URL or credential could not be parsed.
+    CosmosErrorCodeInvalidAccountReference,
+    /// An operation was cancelled before it completed.
+    CosmosErrorCodeOperationCancelled,
+    /// A submit targeted a completion queue that was already shut down.
+    CosmosErrorCodeQueueShutdown,
+    /// A submit targeted a completion queue already at its hard capacity.
+    CosmosErrorCodeQueueFull,
+    /// The underlying driver runtime could not be constructed.
+    CosmosErrorCodeRuntimeBuildFailed,
+    /// A driver future spawned by the wrapper panicked; the panic firewall
+    /// synthesized a failure so the host continuation is released.
+    CosmosErrorCodeInternalError,
 }
 
 impl CosmosErrorCode {
-    /// Numeric `i32` representation; the value carried across the FFI boundary.
+    /// The driver [`CosmosStatus`] this condition maps to, or `None` for
+    /// success.
+    fn to_status(self) -> Option<CosmosStatus> {
+        let (status_code, sub_status) = match self {
+            Self::CosmosErrorCodeSuccess => return None,
+            Self::CosmosErrorCodeInvalidArgument => (
+                StatusCode::BadRequest,
+                SubStatusCode::CLIENT_FFI_NULL_ARGUMENT,
+            ),
+            Self::CosmosErrorCodeInvalidUtf8 => (
+                StatusCode::BadRequest,
+                SubStatusCode::CLIENT_FFI_INVALID_UTF8,
+            ),
+            Self::CosmosErrorCodeInvalidOptionValue => (
+                StatusCode::BadRequest,
+                SubStatusCode::CLIENT_FFI_INVALID_OPTION_VALUE,
+            ),
+            Self::CosmosErrorCodeInvalidPartitionKey => (
+                StatusCode::BadRequest,
+                SubStatusCode::CLIENT_PARTITION_KEY_EMPTY,
+            ),
+            Self::CosmosErrorCodeInvalidAccountReference => (
+                StatusCode::BadRequest,
+                SubStatusCode::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL,
+            ),
+            Self::CosmosErrorCodeOperationCancelled => (
+                StatusCode::RequestTimeout,
+                SubStatusCode::CLIENT_FFI_OPERATION_CANCELLED,
+            ),
+            Self::CosmosErrorCodeQueueShutdown => (
+                StatusCode::ServiceUnavailable,
+                SubStatusCode::CLIENT_FFI_QUEUE_SHUTDOWN,
+            ),
+            Self::CosmosErrorCodeQueueFull => (
+                StatusCode::ServiceUnavailable,
+                SubStatusCode::CLIENT_FFI_QUEUE_FULL,
+            ),
+            Self::CosmosErrorCodeRuntimeBuildFailed => (
+                StatusCode::InternalServerError,
+                SubStatusCode::CLIENT_FFI_RUNTIME_BUILD_FAILED,
+            ),
+            Self::CosmosErrorCodeInternalError => (
+                StatusCode::InternalServerError,
+                SubStatusCode::CLIENT_FFI_PANIC,
+            ),
+        };
+        Some(CosmosStatus::new(status_code).with_sub_status(sub_status.value()))
+    }
+
+    /// The packed [`CosmosStatusCode`] this condition is returned as across the
+    /// FFI boundary.
     #[inline]
-    pub const fn as_i32(self) -> i32 {
-        self as i32
+    pub(crate) fn as_i32(self) -> CosmosStatusCode {
+        self.to_status().map_or(COSMOS_STATUS_SUCCESS, status_code)
     }
+}
 
-    /// Derives the coarse code from a driver `CosmosError` per spec section 6.3.
-    ///
-    /// The routing is top-to-bottom: more specific synthetic-substatus checks
-    /// run first, then synthetic-status branches, then the HTTP-status table.
-    pub fn from_driver_error(err: &DriverCosmosError) -> Self {
+// ─────────────────────────────────────────────────────────────────────────────
+// Flat rich error (`cosmos_error_t`)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Owned, flat rich error handed back through the synchronous `out_error`
+/// slots (`cosmos_error_t`).
+///
+/// Mirrors the inline error fields of `cosmos_completion_t`. Every pointer
+/// field is **owned**; free the whole struct — and its strings — with
+/// [`cosmos_error_free`]. A `NULL` pointer field means that field was absent.
+#[repr(C)]
+pub struct CosmosError {
+    /// Packed 32-bit status (`(http << 16) | sub_status`). See
+    /// [`CosmosStatusCode`].
+    pub status: CosmosStatusCode,
+    /// Wire HTTP status code (always populated, including for synthetic
+    /// errors).
+    pub http_status_code: u16,
+    /// Cosmos sub-status code, or `-1` when absent.
+    pub sub_status: i32,
+    /// `1` iff the error originated from a service wire response.
+    pub is_from_wire: u8,
+    /// Retry-after hint in milliseconds, or `-1` when absent.
+    pub retry_after_ms: i64,
+    /// Owned NUL-terminated message (never NULL for a real error).
+    pub message: *mut c_char,
+    /// Owned activity id from the wire response headers, or NULL.
+    pub activity_id: *mut c_char,
+    /// Owned session token from the wire response headers, or NULL.
+    pub session_token: *mut c_char,
+    /// Owned ETag from the wire response headers, or NULL.
+    pub etag: *mut c_char,
+    /// Owned backtrace, or NULL when none was captured.
+    pub backtrace: *mut c_char,
+}
+
+/// Builds a NUL-terminated copy of `s`, stripping any interior NUL bytes so the
+/// conversion cannot fail.
+fn to_cstring(s: impl Into<String>) -> Option<CString> {
+    CString::new(s.into().replace('\0', "")).ok()
+}
+
+/// Consumes an optional `CString` into an owned raw pointer, or NULL.
+fn cstring_into_raw(s: Option<CString>) -> *mut c_char {
+    s.map_or(std::ptr::null_mut(), CString::into_raw)
+}
+
+/// Reclaims a raw pointer previously produced by [`cstring_into_raw`].
+///
+/// # Safety
+///
+/// `p` must be NULL or a pointer obtained from [`CString::into_raw`] that has
+/// not already been reclaimed.
+unsafe fn free_cstring(p: *mut c_char) {
+    if !p.is_null() {
+        drop(CString::from_raw(p));
+    }
+}
+
+impl CosmosError {
+    /// Builds an owned flat `cosmos_error_t` from a driver error and returns a
+    /// raw pointer suitable for handing across the C boundary. Free it with
+    /// [`cosmos_error_free`].
+    pub(crate) fn into_raw(err: DriverCosmosError) -> *mut CosmosError {
         let status = err.status();
-        let http = u16::from(status.status_code());
-        let sub = status.sub_status().map(|s| s.value());
+        let http_status_code = u16::from(status.status_code());
+        let sub_status = status.sub_status().map_or(-1, |s| i32::from(s.value()));
+        let is_from_wire = u8::from(err.is_from_wire());
+        let message = to_cstring(err.to_string());
+        let backtrace = err
+            .backtrace()
+            .and_then(|bt| to_cstring(bt.as_ref().to_string()));
 
-        if !err.is_from_wire() {
-            // Synthetic (transport / client / serialization / auth / config).
-            // Pattern-match on sub-status first, fall back to the synthetic
-            // 408 / 503 placeholders.
-            match sub {
-                Some(20402) => return Self::CosmosErrorCodeAuthenticationFailed,
-                Some(20003) | Some(20010..=20015) => return Self::CosmosErrorCodeTransportFailure,
-                Some(20008) => return Self::CosmosErrorCodeClientOperationTimeout,
-                Some(20020) => return Self::CosmosErrorCodeSerializationFailed,
-                _ => {}
+        let (activity_id, session_token, etag, retry_after_ms) = match err.response() {
+            Some(resp) => {
+                let headers = resp.headers();
+                (
+                    headers
+                        .activity_id
+                        .as_ref()
+                        .and_then(|a| to_cstring(a.as_str())),
+                    headers
+                        .session_token
+                        .as_ref()
+                        .and_then(|t| to_cstring(t.as_str())),
+                    headers
+                        .etag
+                        .as_ref()
+                        .and_then(|e| to_cstring(e.to_string())),
+                    headers
+                        .retry_after_ms
+                        .map_or(-1, |ms| i64::try_from(ms).unwrap_or(i64::MAX)),
+                )
             }
-            return Self::CosmosErrorCodeClientError;
-        }
+            None => (None, None, None, -1),
+        };
 
-        // Wire response — switch on HTTP status code.
-        match http {
-            429 => Self::CosmosErrorCodeThrottled,
-            404 => Self::CosmosErrorCodeNotFound,
-            409 => Self::CosmosErrorCodeConflict,
-            412 => Self::CosmosErrorCodePreconditionFailed,
-            408 => Self::CosmosErrorCodeTimeout,
-            410 => Self::CosmosErrorCodeGone,
-            401 => Self::CosmosErrorCodeUnauthorized,
-            403 => Self::CosmosErrorCodeForbidden,
-            400 => Self::CosmosErrorCodeBadRequest,
-            503 => Self::CosmosErrorCodeServiceUnavailable,
-            _ => Self::CosmosErrorCodeServiceError,
-        }
+        Box::into_raw(Box::new(CosmosError {
+            status: status_code(status),
+            http_status_code,
+            sub_status,
+            is_from_wire,
+            retry_after_ms,
+            message: cstring_into_raw(message),
+            activity_id: cstring_into_raw(activity_id),
+            session_token: cstring_into_raw(session_token),
+            etag: cstring_into_raw(etag),
+            backtrace: cstring_into_raw(backtrace),
+        }))
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Rich error handle
-// ─────────────────────────────────────────────────────────────────────────────
-
-/// The C ABI handle for a rich error (`cosmos_error_t`).
-///
-/// Reference-counted via `Arc` so the completion's borrow accessor and the
-/// take-ownership accessor can share the same allocation cheaply. Lazy-caches
-/// the rendered backtrace and the four header-derived convenience strings as
-/// `CString`s so the FFI accessors can hand out borrowed pointers with a
-/// stable lifetime.
-pub struct CosmosErrorHandle {
-    pub(crate) err: DriverCosmosError,
-    // Cached null-terminated copies of the strings the FFI returns by
-    // borrowed pointer. Populated lazily on first access. We use `OnceLock`
-    // because the handle may be retrieved from any thread.
-    message_cstring: std::sync::OnceLock<CString>,
-    backtrace_cstring: std::sync::OnceLock<Option<CString>>,
-    activity_id_cstring: std::sync::OnceLock<Option<CString>>,
-    session_token_cstring: std::sync::OnceLock<Option<CString>>,
-    etag_cstring: std::sync::OnceLock<Option<CString>>,
-}
-
-impl CosmosErrorHandle {
-    pub fn new(err: DriverCosmosError) -> Self {
-        Self {
-            err,
-            message_cstring: std::sync::OnceLock::new(),
-            backtrace_cstring: std::sync::OnceLock::new(),
-            activity_id_cstring: std::sync::OnceLock::new(),
-            session_token_cstring: std::sync::OnceLock::new(),
-            etag_cstring: std::sync::OnceLock::new(),
-        }
-    }
-
-    fn message(&self) -> &CString {
-        self.message_cstring.get_or_init(|| {
-            // Driver `Display` impl produces "{message}" with no NUL bytes,
-            // but be defensive — strip any NULs to satisfy CString::new.
-            let msg = self.err.to_string();
-            CString::new(msg.replace('\0', "")).unwrap_or_else(|_| CString::default())
-        })
-    }
-
-    fn backtrace_str(&self) -> Option<&CString> {
-        self.backtrace_cstring
-            .get_or_init(|| {
-                self.err
-                    .backtrace()
-                    .and_then(|bt| CString::new(bt.as_ref().replace('\0', "")).ok())
-            })
-            .as_ref()
-    }
-
-    fn activity_id_str(&self) -> Option<&CString> {
-        self.activity_id_cstring
-            .get_or_init(|| {
-                self.err
-                    .response()
-                    .and_then(|r| r.headers().activity_id.as_ref())
-                    .and_then(|aid| CString::new(aid.as_str().to_owned()).ok())
-            })
-            .as_ref()
-    }
-
-    fn session_token_str(&self) -> Option<&CString> {
-        self.session_token_cstring
-            .get_or_init(|| {
-                self.err
-                    .response()
-                    .and_then(|r| r.headers().session_token.as_ref())
-                    .and_then(|tok| CString::new(tok.as_str().to_owned()).ok())
-            })
-            .as_ref()
-    }
-
-    fn etag_str(&self) -> Option<&CString> {
-        self.etag_cstring
-            .get_or_init(|| {
-                self.err
-                    .response()
-                    .and_then(|r| r.headers().etag.as_ref())
-                    .and_then(|e| CString::new(e.to_string()).ok())
-            })
-            .as_ref()
-    }
-}
-
-/// Opaque heap-allocated handle around an error payload.
-///
-/// The FFI hands out `*mut CosmosErrorHandle` as `cosmos_error_t *` from the
-/// synchronous `out_error` slots (driver-create blocking, account-reference
-/// parsing). The completion path carries error detail inline, not as a handle.
-impl CosmosErrorHandle {
-    /// Wraps a driver error into a heap-allocated FFI handle. Returns a raw
-    /// pointer suitable for handing across the C boundary.
-    pub(crate) fn into_raw(err: DriverCosmosError) -> *mut Self {
-        Arc::into_raw(Arc::new(CosmosErrorHandle::new(err))) as *mut Self
-    }
-
-    /// Borrows the handle from a raw pointer for the duration of an FFI call.
-    fn inner_from_ptr<'a>(p: *const CosmosErrorHandle) -> Option<&'a CosmosErrorHandle> {
-        if p.is_null() {
-            None
-        } else {
-            // SAFETY: caller guarantees `p` was obtained from a library API.
-            Some(unsafe { &*p })
-        }
-    }
-
-    pub(crate) fn drop_raw(p: *mut CosmosErrorHandle) {
-        if p.is_null() {
-            return;
-        }
-        // SAFETY: caller guarantees `p` was obtained from a library API and
-        // has not already been freed.
-        unsafe {
-            drop(Arc::from_raw(p as *const CosmosErrorHandle));
-        }
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// FFI accessors (cosmos_error_*)
-//
-// Each accessor returns NULL / 0 / -1 / false when the input is NULL or when
-// the underlying field is absent. See spec section 3.5.2 for the contract per
-// accessor.
-// ─────────────────────────────────────────────────────────────────────────────
-
-/// HTTP status code (always populated, including for synthetic errors).
+/// Frees a `cosmos_error_t *` obtained from a synchronous `out_error` slot,
+/// including all of its owned strings. NULL is a no-op.
 #[no_mangle]
-pub extern "C" fn cosmos_error_status_code(e: *const CosmosErrorHandle) -> u16 {
-    let Some(inner) = CosmosErrorHandle::inner_from_ptr(e) else {
-        return 0;
-    };
-    u16::from(inner.err.status().status_code())
-}
-
-/// Sub-status code. Returns -1 when absent. Driver-side `SubStatusCode` is
-/// `u16`; widening to `i32` lets us reserve -1 for "no sub-status" without
-/// clipping any real value.
-#[no_mangle]
-pub extern "C" fn cosmos_error_sub_status(e: *const CosmosErrorHandle) -> i32 {
-    let Some(inner) = CosmosErrorHandle::inner_from_ptr(e) else {
-        return -1;
-    };
-    inner
-        .err
-        .status()
-        .sub_status()
-        .map_or(-1, |s| i32::from(s.value()))
-}
-
-/// True iff the error originated from a service wire response. Mirrors
-/// `CosmosError::is_from_wire`.
-#[no_mangle]
-pub extern "C" fn cosmos_error_is_from_wire(e: *const CosmosErrorHandle) -> bool {
-    CosmosErrorHandle::inner_from_ptr(e).is_some_and(|inner| inner.err.is_from_wire())
-}
-
-/// Borrowed message string. Returns NULL only when `e` is NULL.
-///
-/// Lifetime = until [`cosmos_error_free`].
-#[no_mangle]
-pub extern "C" fn cosmos_error_message(e: *const CosmosErrorHandle) -> *const c_char {
-    let Some(inner) = CosmosErrorHandle::inner_from_ptr(e) else {
-        return std::ptr::null();
-    };
-    inner.message().as_ptr()
-}
-
-/// Borrowed activity id from the wire response headers (or NULL when there
-/// is no wire response or no activity id was present).
-#[no_mangle]
-pub extern "C" fn cosmos_error_activity_id(e: *const CosmosErrorHandle) -> *const c_char {
-    let Some(inner) = CosmosErrorHandle::inner_from_ptr(e) else {
-        return std::ptr::null();
-    };
-    inner
-        .activity_id_str()
-        .map_or(std::ptr::null(), |s| s.as_ptr())
-}
-
-/// Borrowed session token from the wire response headers (or NULL).
-#[no_mangle]
-pub extern "C" fn cosmos_error_session_token(e: *const CosmosErrorHandle) -> *const c_char {
-    let Some(inner) = CosmosErrorHandle::inner_from_ptr(e) else {
-        return std::ptr::null();
-    };
-    inner
-        .session_token_str()
-        .map_or(std::ptr::null(), |s| s.as_ptr())
-}
-
-/// Borrowed ETag from the wire response headers (or NULL).
-#[no_mangle]
-pub extern "C" fn cosmos_error_etag(e: *const CosmosErrorHandle) -> *const c_char {
-    let Some(inner) = CosmosErrorHandle::inner_from_ptr(e) else {
-        return std::ptr::null();
-    };
-    inner.etag_str().map_or(std::ptr::null(), |s| s.as_ptr())
-}
-
-/// Retry-after duration in milliseconds, or -1 when absent / no wire response.
-#[no_mangle]
-pub extern "C" fn cosmos_error_retry_after_ms(e: *const CosmosErrorHandle) -> i64 {
-    let Some(inner) = CosmosErrorHandle::inner_from_ptr(e) else {
-        return -1;
-    };
-    inner
-        .err
-        .response()
-        .and_then(|r| r.headers().retry_after_ms)
-        .map_or(-1, |ms| i64::try_from(ms).unwrap_or(i64::MAX))
-}
-
-/// Borrowed backtrace string (rate-limited per
-/// [`cosmos_set_backtrace_options`]).
-/// Returns NULL when no backtrace was captured.
-#[no_mangle]
-pub extern "C" fn cosmos_error_backtrace(e: *const CosmosErrorHandle) -> *const c_char {
-    let Some(inner) = CosmosErrorHandle::inner_from_ptr(e) else {
-        return std::ptr::null();
-    };
-    inner
-        .backtrace_str()
-        .map_or(std::ptr::null(), |s| s.as_ptr())
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Lifecycle
-// ─────────────────────────────────────────────────────────────────────────────
-
-/// Free a `cosmos_error_t *` obtained via `cosmos_completion_take_error` or
-/// a synchronous `out_error` slot. NULL is a no-op. Calling on a borrowed
-/// pointer (e.g. `cosmos_completion_error` result) is undefined behavior.
-#[no_mangle]
-pub extern "C" fn cosmos_error_free(e: *mut CosmosErrorHandle) {
+pub extern "C" fn cosmos_error_free(e: *mut CosmosError) {
     if e.is_null() {
         return;
     }
     tracing::trace!(?e, "freeing cosmos_error_t");
-    CosmosErrorHandle::drop_raw(e);
+    // SAFETY: caller guarantees `e` was obtained from a library `out_error`
+    // slot and has not already been freed.
+    let boxed = unsafe { Box::from_raw(e) };
+    // SAFETY: each pointer field was produced by `cstring_into_raw` and is
+    // reclaimed exactly once here.
+    unsafe {
+        free_cstring(boxed.message);
+        free_cstring(boxed.activity_id);
+        free_cstring(boxed.session_token);
+        free_cstring(boxed.etag);
+        free_cstring(boxed.backtrace);
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Process-global backtrace knobs (spec section 6.4).
-//
-// Lives here rather than in lib.rs because it directly drives the optional
-// backtrace surface exposed by `cosmos_error_backtrace` above.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Sets process-global backtrace capture / resolution rate limits.
@@ -505,122 +492,441 @@ pub extern "C" fn cosmos_set_backtrace_options(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use azure_data_cosmos_driver::error::{CosmosStatus, SubStatusCode};
 
-    fn make_synthetic_error(status: CosmosStatus, message: &'static str) -> *mut CosmosErrorHandle {
-        let err = DriverCosmosError::builder()
-            .with_status(status)
-            .with_message(message)
-            .build();
-        CosmosErrorHandle::into_raw(err)
-    }
-
-    /// Helper for tests that produces a fresh client-side timeout error.
-    fn synth_client_timeout() -> *mut CosmosErrorHandle {
-        let status = CosmosStatus::new(azure_core::http::StatusCode::RequestTimeout)
-            .with_sub_status(SubStatusCode::CLIENT_OPERATION_TIMEOUT.value());
-        make_synthetic_error(status, "operation timeout")
+    /// Decodes a packed status back into `(http, Option<sub>)`.
+    fn unpack(code: CosmosStatusCode) -> (u16, Option<u16>) {
+        let http = ((code as u32) >> 16) as u16;
+        let sub = (code as u32 & 0xFFFF) as u16;
+        let sub = (sub != COSMOS_STATUS_NO_SUB_STATUS).then_some(sub);
+        (http, sub)
     }
 
     #[test]
-    fn null_handle_returns_safe_defaults() {
-        assert_eq!(cosmos_error_status_code(std::ptr::null()), 0);
-        assert_eq!(cosmos_error_sub_status(std::ptr::null()), -1);
-        assert!(!cosmos_error_is_from_wire(std::ptr::null()));
-        assert!(cosmos_error_message(std::ptr::null()).is_null());
-        assert!(cosmos_error_activity_id(std::ptr::null()).is_null());
-        assert!(cosmos_error_session_token(std::ptr::null()).is_null());
-        assert!(cosmos_error_etag(std::ptr::null()).is_null());
-        assert!(cosmos_error_backtrace(std::ptr::null()).is_null());
-        assert_eq!(cosmos_error_retry_after_ms(std::ptr::null()), -1);
-        // Freeing NULL is a no-op.
+    fn success_packs_to_zero() {
+        assert_eq!(CosmosErrorCode::CosmosErrorCodeSuccess.as_i32(), 0);
+    }
+
+    #[test]
+    fn status_code_round_trips_with_sub_status() {
+        let status = CosmosStatus::new(StatusCode::TooManyRequests).with_sub_status(3200);
+        let packed = status_code(status);
+        assert_eq!(unpack(packed), (429, Some(3200)));
+    }
+
+    #[test]
+    fn status_code_round_trips_without_sub_status() {
+        let packed = status_code(CosmosStatus::new(StatusCode::NotFound));
+        assert_eq!(unpack(packed), (404, None));
+    }
+
+    #[test]
+    fn ffi_conditions_carry_client_ffi_sub_status() {
+        // A NULL-argument pre-flight failure is a real 400 + CLIENT_FFI_*.
+        let packed = CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+        assert_eq!(
+            unpack(packed),
+            (400, Some(SubStatusCode::CLIENT_FFI_NULL_ARGUMENT.value()))
+        );
+
+        let cancelled = CosmosErrorCode::CosmosErrorCodeOperationCancelled.as_i32();
+        assert_eq!(
+            unpack(cancelled),
+            (
+                408,
+                Some(SubStatusCode::CLIENT_FFI_OPERATION_CANCELLED.value())
+            )
+        );
+    }
+
+    #[test]
+    fn driver_status_code_packs_wire_status() {
+        let err = DriverCosmosError::builder()
+            .with_status(CosmosStatus::new(StatusCode::Conflict))
+            .with_message("conflict")
+            .build();
+        assert_eq!(unpack(driver_status_code(&err)), (409, None));
+    }
+
+    #[test]
+    fn into_raw_populates_flat_fields_and_frees() {
+        let status = CosmosStatus::new(StatusCode::RequestTimeout)
+            .with_sub_status(SubStatusCode::CLIENT_OPERATION_TIMEOUT.value());
+        let err = DriverCosmosError::builder()
+            .with_status(status)
+            .with_message("operation timeout")
+            .build();
+        let raw = CosmosError::into_raw(err);
+        assert!(!raw.is_null());
+
+        // SAFETY: `raw` is a freshly-produced owned pointer.
+        let e = unsafe { &*raw };
+        assert_eq!(e.http_status_code, 408);
+        assert_eq!(
+            e.sub_status,
+            i32::from(SubStatusCode::CLIENT_OPERATION_TIMEOUT.value())
+        );
+        assert_eq!(e.is_from_wire, 0);
+        assert_eq!(unpack(e.status), (408, Some(20008)));
+        assert!(!e.message.is_null());
+        let msg = unsafe { std::ffi::CStr::from_ptr(e.message) }
+            .to_string_lossy()
+            .into_owned();
+        assert!(msg.contains("operation timeout"), "got: {msg}");
+        // Synthetic error has no wire response — the header-derived fields are
+        // NULL / -1.
+        assert!(e.activity_id.is_null());
+        assert!(e.session_token.is_null());
+        assert!(e.etag.is_null());
+        assert_eq!(e.retry_after_ms, -1);
+
+        cosmos_error_free(raw);
+    }
+
+    #[test]
+    fn free_null_is_a_no_op() {
         cosmos_error_free(std::ptr::null_mut());
     }
 
+    /// CI guard: every [`CosmosSubStatus`] variant must carry the exact value of
+    /// its canonical driver [`SubStatusCode`]. If the driver renumbers or the
+    /// mirror drifts, this fails the build so the header can never silently
+    /// disagree with the driver.
     #[test]
-    fn synthetic_client_timeout_fields() {
-        let raw = synth_client_timeout();
-        assert_eq!(cosmos_error_status_code(raw), 408);
-        assert_eq!(cosmos_error_sub_status(raw), 20008);
-        assert!(!cosmos_error_is_from_wire(raw));
-        // Message is non-null and matches.
-        let msg = unsafe { std::ffi::CStr::from_ptr(cosmos_error_message(raw)) }
-            .to_string_lossy()
-            .to_string();
-        assert!(msg.contains("operation timeout"), "got: {msg}");
-        cosmos_error_free(raw);
-    }
-
-    #[test]
-    fn synthetic_client_error_has_no_wire_headers() {
-        let status = CosmosStatus::new(azure_core::http::StatusCode::NotFound);
-        let raw = make_synthetic_error(status, "synthetic not found");
-        // is_from_wire is true only when a CosmosResponse is attached; we
-        // build with no response so it must be false.
-        assert!(!cosmos_error_is_from_wire(raw));
-        // Wire-only convenience accessors all return NULL / -1.
-        assert!(cosmos_error_activity_id(raw).is_null());
-        assert!(cosmos_error_session_token(raw).is_null());
-        assert!(cosmos_error_etag(raw).is_null());
-        assert_eq!(cosmos_error_retry_after_ms(raw), -1);
-        cosmos_error_free(raw);
-    }
-
-    #[test]
-    fn from_driver_error_routes_synthetic_codes() {
-        // Synthetic transport.
-        let transport = DriverCosmosError::builder()
-            .with_status(
-                CosmosStatus::new(azure_core::http::StatusCode::ServiceUnavailable)
-                    .with_sub_status(SubStatusCode::TRANSPORT_GENERATED_503.value()),
-            )
-            .with_message("synthetic transport failure")
-            .build();
+    fn sub_status_mirror_matches_driver() {
         assert_eq!(
-            CosmosErrorCode::from_driver_error(&transport),
-            CosmosErrorCode::CosmosErrorCodeTransportFailure
+            CosmosSubStatus::CosmosSubStatusTransportGenerated503 as u16,
+            SubStatusCode::TRANSPORT_GENERATED_503.value(),
+            "TRANSPORT_GENERATED_503"
         );
-
-        // Synthetic client timeout.
-        let timeout = DriverCosmosError::builder()
-            .with_status(
-                CosmosStatus::new(azure_core::http::StatusCode::RequestTimeout)
-                    .with_sub_status(SubStatusCode::CLIENT_OPERATION_TIMEOUT.value()),
-            )
-            .with_message("op timeout")
-            .build();
         assert_eq!(
-            CosmosErrorCode::from_driver_error(&timeout),
-            CosmosErrorCode::CosmosErrorCodeClientOperationTimeout
+            CosmosSubStatus::CosmosSubStatusClientCpuOverload as u16,
+            SubStatusCode::CLIENT_CPU_OVERLOAD.value(),
+            "CLIENT_CPU_OVERLOAD"
         );
-
-        // Synthetic generic client error.
-        let generic_client = DriverCosmosError::builder()
-            .with_status(CosmosStatus::new(azure_core::http::StatusCode::NotFound))
-            .with_message("synthetic")
-            .build();
         assert_eq!(
-            CosmosErrorCode::from_driver_error(&generic_client),
-            CosmosErrorCode::CosmosErrorCodeClientError
+            CosmosSubStatus::CosmosSubStatusClientThreadStarvation as u16,
+            SubStatusCode::CLIENT_THREAD_STARVATION.value(),
+            "CLIENT_THREAD_STARVATION"
         );
-    }
-
-    #[test]
-    fn error_code_band_assignments() {
-        // Sanity-check that every variant lands in the band the spec promises.
-        assert_eq!(CosmosErrorCode::CosmosErrorCodeSuccess.as_i32(), 0);
-        assert!((1..=999).contains(&CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()));
-        assert!((2001..=2999).contains(&CosmosErrorCode::CosmosErrorCodeNotFound.as_i32()));
-        assert!((2001..=2999).contains(&CosmosErrorCode::CosmosErrorCodeThrottled.as_i32()));
-        assert!((3001..=3999).contains(&CosmosErrorCode::CosmosErrorCodeTransportFailure.as_i32()));
-        assert!((3001..=3999)
-            .contains(&CosmosErrorCode::CosmosErrorCodeClientOperationTimeout.as_i32()));
-        assert!((4001..=4999).contains(&CosmosErrorCode::CosmosErrorCodeQueueShutdown.as_i32()));
-        assert!(
-            (4001..=4999).contains(&CosmosErrorCode::CosmosErrorCodeOperationCancelled.as_i32())
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusChannelClosed as u16,
+            SubStatusCode::CHANNEL_CLOSED.value(),
+            "CHANNEL_CLOSED"
         );
-        assert!((4001..=4999).contains(&CosmosErrorCode::CosmosErrorCodeQueueFull.as_i32()));
-        assert!((5001..=5999)
-            .contains(&CosmosErrorCode::CosmosErrorCodeOptionsIgnoredOnCacheHit.as_i32()));
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusMalformedContinuationToken as u16,
+            SubStatusCode::MALFORMED_CONTINUATION_TOKEN.value(),
+            "MALFORMED_CONTINUATION_TOKEN"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientOperationTimeout as u16,
+            SubStatusCode::CLIENT_OPERATION_TIMEOUT.value(),
+            "CLIENT_OPERATION_TIMEOUT"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusTransportConnectionFailed as u16,
+            SubStatusCode::TRANSPORT_CONNECTION_FAILED.value(),
+            "TRANSPORT_CONNECTION_FAILED"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusTransportIoFailed as u16,
+            SubStatusCode::TRANSPORT_IO_FAILED.value(),
+            "TRANSPORT_IO_FAILED"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusTransportDnsFailed as u16,
+            SubStatusCode::TRANSPORT_DNS_FAILED.value(),
+            "TRANSPORT_DNS_FAILED"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusTransportBodyReadFailed as u16,
+            SubStatusCode::TRANSPORT_BODY_READ_FAILED.value(),
+            "TRANSPORT_BODY_READ_FAILED"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusTransportHttp2Incompatible as u16,
+            SubStatusCode::TRANSPORT_HTTP2_INCOMPATIBLE.value(),
+            "TRANSPORT_HTTP2_INCOMPATIBLE"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusSerializationResponseBodyInvalid as u16,
+            SubStatusCode::SERIALIZATION_RESPONSE_BODY_INVALID.value(),
+            "SERIALIZATION_RESPONSE_BODY_INVALID"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientPartitionKeyEmpty as u16,
+            SubStatusCode::CLIENT_PARTITION_KEY_EMPTY.value(),
+            "CLIENT_PARTITION_KEY_EMPTY"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientPartitionKeyTooManyComponents as u16,
+            SubStatusCode::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS.value(),
+            "CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientPrefixPartitionKeyRequiresMultihash as u16,
+            SubStatusCode::CLIENT_PREFIX_PARTITION_KEY_REQUIRES_MULTIHASH.value(),
+            "CLIENT_PREFIX_PARTITION_KEY_REQUIRES_MULTIHASH"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientConnectionStringEmpty as u16,
+            SubStatusCode::CLIENT_CONNECTION_STRING_EMPTY.value(),
+            "CLIENT_CONNECTION_STRING_EMPTY"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientConnectionStringMalformedPart as u16,
+            SubStatusCode::CLIENT_CONNECTION_STRING_MALFORMED_PART.value(),
+            "CLIENT_CONNECTION_STRING_MALFORMED_PART"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientConnectionStringMissingAccountKey as u16,
+            SubStatusCode::CLIENT_CONNECTION_STRING_MISSING_ACCOUNT_KEY.value(),
+            "CLIENT_CONNECTION_STRING_MISSING_ACCOUNT_KEY"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientInvalidAccountEndpointUrl as u16,
+            SubStatusCode::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL.value(),
+            "CLIENT_INVALID_ACCOUNT_ENDPOINT_URL"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientInvalidUrl as u16,
+            SubStatusCode::CLIENT_INVALID_URL.value(),
+            "CLIENT_INVALID_URL"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientUnknownConsistencyLevel as u16,
+            SubStatusCode::CLIENT_UNKNOWN_CONSISTENCY_LEVEL.value(),
+            "CLIENT_UNKNOWN_CONSISTENCY_LEVEL"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientUnknownPriorityLevel as u16,
+            SubStatusCode::CLIENT_UNKNOWN_PRIORITY_LEVEL.value(),
+            "CLIENT_UNKNOWN_PRIORITY_LEVEL"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientFeedRangeRequiresFanoutPipeline as u16,
+            SubStatusCode::CLIENT_FEED_RANGE_REQUIRES_FANOUT_PIPELINE.value(),
+            "CLIENT_FEED_RANGE_REQUIRES_FANOUT_PIPELINE"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientUnsupportedQueryFeature as u16,
+            SubStatusCode::CLIENT_UNSUPPORTED_QUERY_FEATURE.value(),
+            "CLIENT_UNSUPPORTED_QUERY_FEATURE"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientQueryPlanInvalidTopOffsetLimit as u16,
+            SubStatusCode::CLIENT_QUERY_PLAN_INVALID_TOP_OFFSET_LIMIT.value(),
+            "CLIENT_QUERY_PLAN_INVALID_TOP_OFFSET_LIMIT"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientContinuationTokenNonQueryOperation as u16,
+            SubStatusCode::CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION.value(),
+            "CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientDuplicateFaultInjectionRuleId as u16,
+            SubStatusCode::CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID.value(),
+            "CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientThroughputControlGroupNotRegistered as u16,
+            SubStatusCode::CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED.value(),
+            "CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientHttpClientConstructionFailed as u16,
+            SubStatusCode::CLIENT_HTTP_CLIENT_CONSTRUCTION_FAILED.value(),
+            "CLIENT_HTTP_CLIENT_CONSTRUCTION_FAILED"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientReqwestFeatureRequired as u16,
+            SubStatusCode::CLIENT_REQWEST_FEATURE_REQUIRED.value(),
+            "CLIENT_REQWEST_FEATURE_REQUIRED"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientRequestUrlMissingHost as u16,
+            SubStatusCode::CLIENT_REQUEST_URL_MISSING_HOST.value(),
+            "CLIENT_REQUEST_URL_MISSING_HOST"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientRequestUrlMissingKnownPort as u16,
+            SubStatusCode::CLIENT_REQUEST_URL_MISSING_KNOWN_PORT.value(),
+            "CLIENT_REQUEST_URL_MISSING_KNOWN_PORT"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientImdsHttpClientConstructionFailed as u16,
+            SubStatusCode::CLIENT_IMDS_HTTP_CLIENT_CONSTRUCTION_FAILED.value(),
+            "CLIENT_IMDS_HTTP_CLIENT_CONSTRUCTION_FAILED"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientImdsReqwestFeatureRequired as u16,
+            SubStatusCode::CLIENT_IMDS_REQWEST_FEATURE_REQUIRED.value(),
+            "CLIENT_IMDS_REQWEST_FEATURE_REQUIRED"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientContinuationTokenFetchInFlight as u16,
+            SubStatusCode::CLIENT_CONTINUATION_TOKEN_FETCH_IN_FLIGHT.value(),
+            "CLIENT_CONTINUATION_TOKEN_FETCH_IN_FLIGHT"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientTopologyProviderMissing as u16,
+            SubStatusCode::CLIENT_TOPOLOGY_PROVIDER_MISSING.value(),
+            "CLIENT_TOPOLOGY_PROVIDER_MISSING"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientDriverNotInitialized as u16,
+            SubStatusCode::CLIENT_DRIVER_NOT_INITIALIZED.value(),
+            "CLIENT_DRIVER_NOT_INITIALIZED"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientContinuationTokenShapeMismatch as u16,
+            SubStatusCode::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH.value(),
+            "CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientContinuationTokenInvalidEpkRange as u16,
+            SubStatusCode::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE.value(),
+            "CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientSplitRetriesExhausted as u16,
+            SubStatusCode::CLIENT_SPLIT_RETRIES_EXHAUSTED.value(),
+            "CLIENT_SPLIT_RETRIES_EXHAUSTED"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientBuildResponseInvokedOnFailure as u16,
+            SubStatusCode::CLIENT_BUILD_RESPONSE_INVOKED_ON_FAILURE.value(),
+            "CLIENT_BUILD_RESPONSE_INVOKED_ON_FAILURE"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientRootNodeCannotRequestSplit as u16,
+            SubStatusCode::CLIENT_ROOT_NODE_CANNOT_REQUEST_SPLIT.value(),
+            "CLIENT_ROOT_NODE_CANNOT_REQUEST_SPLIT"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientSingletonOperationReturnedEmptyPage as u16,
+            SubStatusCode::CLIENT_SINGLETON_OPERATION_RETURNED_EMPTY_PAGE.value(),
+            "CLIENT_SINGLETON_OPERATION_RETURNED_EMPTY_PAGE"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientContinuationTokenSavedRangeUnhonored as u16,
+            SubStatusCode::CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED.value(),
+            "CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientNoThroughputOfferForResource as u16,
+            SubStatusCode::CLIENT_NO_THROUGHPUT_OFFER_FOR_RESOURCE.value(),
+            "CLIENT_NO_THROUGHPUT_OFFER_FOR_RESOURCE"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientQueryPlanProducedEmptyRanges as u16,
+            SubStatusCode::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES.value(),
+            "CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusServiceReturnedOfferWithoutId as u16,
+            SubStatusCode::SERVICE_RETURNED_OFFER_WITHOUT_ID.value(),
+            "SERVICE_RETURNED_OFFER_WITHOUT_ID"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientThroughputPollerIncomplete as u16,
+            SubStatusCode::CLIENT_THROUGHPUT_POLLER_INCOMPLETE.value(),
+            "CLIENT_THROUGHPUT_POLLER_INCOMPLETE"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientTopologyResolutionFailed as u16,
+            SubStatusCode::CLIENT_TOPOLOGY_RESOLUTION_FAILED.value(),
+            "CLIENT_TOPOLOGY_RESOLUTION_FAILED"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusServiceReturnedObjectWithoutRid as u16,
+            SubStatusCode::SERVICE_RETURNED_OBJECT_WITHOUT_RID.value(),
+            "SERVICE_RETURNED_OBJECT_WITHOUT_RID"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientFfiNullArgument as u16,
+            SubStatusCode::CLIENT_FFI_NULL_ARGUMENT.value(),
+            "CLIENT_FFI_NULL_ARGUMENT"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientFfiInvalidUtf8 as u16,
+            SubStatusCode::CLIENT_FFI_INVALID_UTF8.value(),
+            "CLIENT_FFI_INVALID_UTF8"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientFfiInvalidHeader as u16,
+            SubStatusCode::CLIENT_FFI_INVALID_HEADER.value(),
+            "CLIENT_FFI_INVALID_HEADER"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientFfiInvalidOptionValue as u16,
+            SubStatusCode::CLIENT_FFI_INVALID_OPTION_VALUE.value(),
+            "CLIENT_FFI_INVALID_OPTION_VALUE"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientFfiOperationConsumed as u16,
+            SubStatusCode::CLIENT_FFI_OPERATION_CONSUMED.value(),
+            "CLIENT_FFI_OPERATION_CONSUMED"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientFfiPreconditionAlreadySet as u16,
+            SubStatusCode::CLIENT_FFI_PRECONDITION_ALREADY_SET.value(),
+            "CLIENT_FFI_PRECONDITION_ALREADY_SET"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientFfiUnsupportedOperationForMutator as u16,
+            SubStatusCode::CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR.value(),
+            "CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientFfiFeedExhausted as u16,
+            SubStatusCode::CLIENT_FFI_FEED_EXHAUSTED.value(),
+            "CLIENT_FFI_FEED_EXHAUSTED"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientFfiQueueShutdown as u16,
+            SubStatusCode::CLIENT_FFI_QUEUE_SHUTDOWN.value(),
+            "CLIENT_FFI_QUEUE_SHUTDOWN"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientFfiQueueFull as u16,
+            SubStatusCode::CLIENT_FFI_QUEUE_FULL.value(),
+            "CLIENT_FFI_QUEUE_FULL"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientFfiOperationCancelled as u16,
+            SubStatusCode::CLIENT_FFI_OPERATION_CANCELLED.value(),
+            "CLIENT_FFI_OPERATION_CANCELLED"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientFfiRuntimeBuildFailed as u16,
+            SubStatusCode::CLIENT_FFI_RUNTIME_BUILD_FAILED.value(),
+            "CLIENT_FFI_RUNTIME_BUILD_FAILED"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientFfiPanic as u16,
+            SubStatusCode::CLIENT_FFI_PANIC.value(),
+            "CLIENT_FFI_PANIC"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusClientGenerated401 as u16,
+            SubStatusCode::CLIENT_GENERATED_401.value(),
+            "CLIENT_GENERATED_401"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusAuthenticationTokenAcquisitionFailed as u16,
+            SubStatusCode::AUTHENTICATION_TOKEN_ACQUISITION_FAILED.value(),
+            "AUTHENTICATION_TOKEN_ACQUISITION_FAILED"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusTransitTimeout as u16,
+            SubStatusCode::TRANSIT_TIMEOUT.value(),
+            "TRANSIT_TIMEOUT"
+        );
+        assert_eq!(
+            CosmosSubStatus::CosmosSubStatusServerBarrierThrottled as u16,
+            SubStatusCode::SERVER_BARRIER_THROTTLED.value(),
+            "SERVER_BARRIER_THROTTLED"
+        );
     }
 }

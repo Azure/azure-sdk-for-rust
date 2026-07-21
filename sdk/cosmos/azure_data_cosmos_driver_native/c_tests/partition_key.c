@@ -77,7 +77,7 @@ static int test_single_string_component(void)
 
     cosmos_partition_key_t *pk = NULL;
     int32_t rc = cosmos_partition_key_create(comps, 1, &pk);
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS,
+    ASSERT(rc == COSMOS_STATUS_SUCCESS,
            "create returned SUCCESS (rc=%d)", rc);
     REQUIRE(pk != NULL, "create produced a non-NULL handle");
     ASSERT(cosmos_partition_key_component_count(pk) == 1,
@@ -103,7 +103,7 @@ static int test_hierarchical_all_value_kinds(void)
 
     cosmos_partition_key_t *pk = NULL;
     int32_t rc = cosmos_partition_key_create(comps, 3, &pk);
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS, "create ok (rc=%d)", rc);
+    ASSERT(rc == COSMOS_STATUS_SUCCESS, "create ok (rc=%d)", rc);
     ASSERT(cosmos_partition_key_component_count(pk) == 3,
            "3-component hierarchical key");
 
@@ -121,7 +121,7 @@ static int test_null_and_undefined_components(void)
 
     cosmos_partition_key_t *pk = NULL;
     int32_t rc = cosmos_partition_key_create(comps, 2, &pk);
-    ASSERT(rc == COSMOS_ERROR_CODE_SUCCESS, "create ok (rc=%d)", rc);
+    ASSERT(rc == COSMOS_STATUS_SUCCESS, "create ok (rc=%d)", rc);
     ASSERT(cosmos_partition_key_component_count(pk) == 2,
            "(null, undefined) is a 2-component key, not EMPTY");
 
@@ -137,7 +137,7 @@ static int test_empty_create_rejected(void)
     // NULL array / zero length is rejected (use cosmos_partition_key_empty
     // for the deliberate cross-partition key).
     int32_t rc = cosmos_partition_key_create(NULL, 0, &pk);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_PARTITION_KEY,
+    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_PARTITION_KEY_EMPTY,
            "empty create rejected (rc=%d)", rc);
     ASSERT(pk == NULL, "no handle on empty-create failure");
     return result;
@@ -153,7 +153,7 @@ static int test_over_cap_rejected(void)
     }
     cosmos_partition_key_t *pk = NULL;
     int32_t rc = cosmos_partition_key_create(comps, 4, &pk);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_PARTITION_KEY,
+    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_PARTITION_KEY_EMPTY,
            "4-component create rejected (rc=%d)", rc);
     ASSERT(pk == NULL, "no handle on over-cap failure");
     return result;
@@ -169,16 +169,16 @@ static int test_number_rejects_non_finite(void)
 
     comps[0].number_value = NAN;
     int32_t rc = cosmos_partition_key_create(comps, 1, &pk);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_OPTION_VALUE, "NaN rejected (rc=%d)", rc);
+    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_INVALID_OPTION_VALUE, "NaN rejected (rc=%d)", rc);
     ASSERT(pk == NULL, "no handle on NaN");
 
     comps[0].number_value = INFINITY;
     rc = cosmos_partition_key_create(comps, 1, &pk);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_OPTION_VALUE, "+Inf rejected (rc=%d)", rc);
+    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_INVALID_OPTION_VALUE, "+Inf rejected (rc=%d)", rc);
 
     comps[0].number_value = -INFINITY;
     rc = cosmos_partition_key_create(comps, 1, &pk);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_OPTION_VALUE, "-Inf rejected (rc=%d)", rc);
+    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_INVALID_OPTION_VALUE, "-Inf rejected (rc=%d)", rc);
 
     return result;
 }
@@ -192,7 +192,7 @@ static int test_string_null_value_rejected(void)
 
     cosmos_partition_key_t *pk = NULL;
     int32_t rc = cosmos_partition_key_create(comps, 1, &pk);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
+    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_NULL_ARGUMENT,
            "string component with NULL value rejected (rc=%d)", rc);
     ASSERT(pk == NULL, "no handle on NULL string value");
     return result;
@@ -204,7 +204,7 @@ static int test_create_rejects_null_out(void)
     cosmos_partition_key_component_t comps[1];
     comps[0] = pk_component(COSMOS_PARTITION_KEY_COMPONENT_KIND_NULL);
     int32_t rc = cosmos_partition_key_create(comps, 1, NULL);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
+    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_NULL_ARGUMENT,
            "create(comps, 1, NULL) rejected (rc=%d)", rc);
     return result;
 }

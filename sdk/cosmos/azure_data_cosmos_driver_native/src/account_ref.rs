@@ -12,9 +12,10 @@
 //! deferred to a follow-up.
 //!
 //! Construction validates the endpoint URL up-front; a parse failure
-//! surfaces [`CosmosErrorCode::CosmosErrorCodeInvalidAccountReference`]
-//! (4003) and populates the optional `out_error` slot with a rich
-//! description for diagnostics.
+//! surfaces a `400 Bad Request` packed status whose sub-status is
+//! [`CosmosSubStatus::CosmosSubStatusClientInvalidAccountEndpointUrl`](crate::error::CosmosSubStatus::CosmosSubStatusClientInvalidAccountEndpointUrl) and
+//! populates the optional `out_error` slot with a rich description for
+//! diagnostics.
 //!
 //! See [`docs/NATIVE_WRAPPER_SPEC.md`] section 4.3.
 //!
@@ -26,7 +27,7 @@ use azure_core::credentials::Secret;
 use azure_data_cosmos_driver::models::AccountReference as DriverAccountReference;
 use url::Url;
 
-use crate::error::{CosmosErrorCode, CosmosErrorHandle};
+use crate::error::{CosmosError, CosmosErrorCode};
 
 /// The C ABI handle for an account reference (`cosmos_account_ref_t`).
 ///
@@ -88,16 +89,16 @@ fn try_cstr_to_str<'a>(p: *const c_char) -> Result<&'a str, CosmosErrorCode> {
 /// supplied a non-NULL slot. NULL slots silently drop the error so the
 /// `out_error` parameter remains optional from the C side.
 fn write_optional_error(
-    out_error: *mut *mut CosmosErrorHandle,
+    out_error: *mut *mut CosmosError,
     err: azure_data_cosmos_driver::error::CosmosError,
 ) {
     if out_error.is_null() {
         return;
     }
     // SAFETY: caller contract — `out_error` is writable for one `*mut
-    // CosmosErrorHandle` when non-NULL.
+    // CosmosError` when non-NULL.
     unsafe {
-        *out_error = CosmosErrorHandle::into_raw(err);
+        *out_error = CosmosError::into_raw(err);
     }
 }
 
@@ -105,7 +106,7 @@ fn write_optional_error(
 /// `Err(INVALID_ACCOUNT_REFERENCE)` so callers map directly to the C code.
 fn parse_endpoint(
     endpoint_str: &str,
-    out_error: *mut *mut CosmosErrorHandle,
+    out_error: *mut *mut CosmosError,
 ) -> Result<Url, CosmosErrorCode> {
     match Url::parse(endpoint_str) {
         Ok(u) => Ok(u),
@@ -156,7 +157,7 @@ pub extern "C" fn cosmos_account_ref_with_master_key(
     endpoint: *const c_char,
     key: *const c_char,
     out_account: *mut *mut AccountRefHandle,
-    out_error: *mut *mut CosmosErrorHandle,
+    out_error: *mut *mut CosmosError,
 ) -> i32 {
     if out_account.is_null() {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
@@ -215,7 +216,7 @@ pub(crate) mod tests {
         let ep = ok_cstr(endpoint);
         let k = ok_cstr(key);
         let mut out: *mut AccountRefHandle = ptr::null_mut();
-        let mut err: *mut CosmosErrorHandle = ptr::null_mut();
+        let mut err: *mut CosmosError = ptr::null_mut();
         let rc = cosmos_account_ref_with_master_key(ep.as_ptr(), k.as_ptr(), &mut out, &mut err);
         assert_eq!(rc, CosmosErrorCode::CosmosErrorCodeSuccess.as_i32());
         assert!(!out.is_null());
@@ -242,7 +243,7 @@ pub(crate) mod tests {
         let s = ok_cstr("https://x.documents.azure.com:443/");
         let k = ok_cstr("k");
         let mut out: *mut AccountRefHandle = ptr::null_mut();
-        let mut err: *mut CosmosErrorHandle = ptr::null_mut();
+        let mut err: *mut CosmosError = ptr::null_mut();
 
         assert_eq!(
             cosmos_account_ref_with_master_key(ptr::null(), k.as_ptr(), &mut out, &mut err),
@@ -265,7 +266,7 @@ pub(crate) mod tests {
         let bad = ok_cstr("not a url");
         let k = ok_cstr("k");
         let mut out: *mut AccountRefHandle = ptr::null_mut();
-        let mut err: *mut CosmosErrorHandle = ptr::null_mut();
+        let mut err: *mut CosmosError = ptr::null_mut();
         let rc = cosmos_account_ref_with_master_key(bad.as_ptr(), k.as_ptr(), &mut out, &mut err);
         assert_eq!(
             rc,

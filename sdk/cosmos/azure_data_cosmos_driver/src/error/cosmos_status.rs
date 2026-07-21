@@ -523,6 +523,21 @@ impl SubStatusCode {
             20304 => Some("ClientThroughputPollerIncomplete"),
             20305 => Some("ClientTopologyResolutionFailed"),
 
+            // Native FFI wrapper pre-flight / plumbing codes (20350-20399)
+            20350 => Some("ClientFfiNullArgument"),
+            20351 => Some("ClientFfiInvalidUtf8"),
+            20352 => Some("ClientFfiInvalidHeader"),
+            20353 => Some("ClientFfiInvalidOptionValue"),
+            20354 => Some("ClientFfiOperationConsumed"),
+            20355 => Some("ClientFfiPreconditionAlreadySet"),
+            20356 => Some("ClientFfiUnsupportedOperationForMutator"),
+            20357 => Some("ClientFfiFeedExhausted"),
+            20358 => Some("ClientFfiQueueShutdown"),
+            20359 => Some("ClientFfiQueueFull"),
+            20360 => Some("ClientFfiOperationCancelled"),
+            20361 => Some("ClientFfiRuntimeBuildFailed"),
+            20362 => Some("ClientFfiPanic"),
+
             // SDK Server-side codes (21xxx) - consistent across .NET and Java
             21001 => Some("NameCacheIsStaleExceededRetryLimit"),
             21002 => Some("PartitionKeyRangeGoneExceededRetryLimit"),
@@ -1480,6 +1495,70 @@ impl SubStatusCode {
     /// has no routing information for the operation. Paired with HTTP
     /// 503 — an internal client-side condition, not a transport failure.
     pub const CLIENT_TOPOLOGY_RESOLUTION_FAILED: SubStatusCode = SubStatusCode(20305);
+
+    // ----- 20350-20399: native FFI wrapper pre-flight / plumbing codes -----
+    //
+    // These are surfaced exclusively by the `azure_data_cosmos_driver_native`
+    // C ABI wrapper for failures that arise at the FFI boundary itself (bad
+    // pointer / encoding arguments, operation-lifecycle misuse, completion-queue
+    // back-pressure). They live here so the wrapper has a single canonical
+    // `(status, sub-status)` taxonomy shared with the driver instead of a
+    // parallel bespoke one. They are never produced by the driver's own
+    // request pipeline.
+
+    /// A required pointer argument to a wrapper C function was `NULL` (20350).
+    /// Paired with HTTP 400.
+    pub const CLIENT_FFI_NULL_ARGUMENT: SubStatusCode = SubStatusCode(20350);
+
+    /// A `*const c_char` argument to a wrapper C function was not valid
+    /// UTF-8 (20351). Paired with HTTP 400.
+    pub const CLIENT_FFI_INVALID_UTF8: SubStatusCode = SubStatusCode(20351);
+
+    /// A request header supplied to the wrapper had a non-ASCII / control
+    /// character name or value (20352). Paired with HTTP 400.
+    pub const CLIENT_FFI_INVALID_HEADER: SubStatusCode = SubStatusCode(20352);
+
+    /// A wrapper builder setter received a value outside its documented
+    /// range (20353). Paired with HTTP 400.
+    pub const CLIENT_FFI_INVALID_OPTION_VALUE: SubStatusCode = SubStatusCode(20353);
+
+    /// A mutator or second submit was attempted on a wrapper operation handle
+    /// already consumed by an earlier successful submit (20354). Paired with
+    /// HTTP 400.
+    pub const CLIENT_FFI_OPERATION_CONSUMED: SubStatusCode = SubStatusCode(20354);
+
+    /// A second precondition setter was called on a wrapper operation that
+    /// already had one (20355). Paired with HTTP 400.
+    pub const CLIENT_FFI_PRECONDITION_ALREADY_SET: SubStatusCode = SubStatusCode(20355);
+
+    /// A wrapper mutator only meaningful for a specific operation kind was
+    /// applied to an incompatible operation (20356). Paired with HTTP 400.
+    pub const CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR: SubStatusCode = SubStatusCode(20356);
+
+    /// A single-shot wrapper submit of a feed-style operation yielded no
+    /// further page (20357). Paired with HTTP 404.
+    pub const CLIENT_FFI_FEED_EXHAUSTED: SubStatusCode = SubStatusCode(20357);
+
+    /// A wrapper submit targeted a completion queue that had already been
+    /// shut down (20358). Paired with HTTP 503.
+    pub const CLIENT_FFI_QUEUE_SHUTDOWN: SubStatusCode = SubStatusCode(20358);
+
+    /// A wrapper submit targeted a completion queue already at its hard
+    /// capacity (20359). Paired with HTTP 503.
+    pub const CLIENT_FFI_QUEUE_FULL: SubStatusCode = SubStatusCode(20359);
+
+    /// A wrapper operation was cancelled before it completed, via an explicit
+    /// cancel or a queue shutdown (20360). Paired with HTTP 408.
+    pub const CLIENT_FFI_OPERATION_CANCELLED: SubStatusCode = SubStatusCode(20360);
+
+    /// The wrapper could not construct the underlying driver runtime (20361).
+    /// Paired with HTTP 500.
+    pub const CLIENT_FFI_RUNTIME_BUILD_FAILED: SubStatusCode = SubStatusCode(20361);
+
+    /// A driver future spawned by the wrapper panicked; the wrapper's panic
+    /// firewall synthesized a failure so the host continuation is released
+    /// rather than leaked (20362). Paired with HTTP 500.
+    pub const CLIENT_FFI_PANIC: SubStatusCode = SubStatusCode(20362);
 }
 
 impl Default for SubStatusCode {

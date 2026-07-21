@@ -15,6 +15,15 @@
 
 #include "../include/azurecosmosdriver.h"
 
+// Decode helpers for the packed `cosmos_status_code_t` returned by every
+// fallible function: `(http_status << 16) | sub_status`. A sub-status of
+// COSMOS_STATUS_NO_SUB_STATUS (0xFFFF) means "no sub-status"; a whole code of
+// COSMOS_STATUS_SUCCESS (0) means success. Tests assert on the sub-status
+// (via COSMOS_SUB_STATUS_* constants) since it uniquely identifies the
+// pre-flight / plumbing condition.
+#define COSMOS_STATUS_HTTP(code) ((int)(((uint32_t)(code) >> 16) & 0xFFFFu))
+#define COSMOS_STATUS_SUB(code) ((int)((uint32_t)(code) & 0xFFFFu))
+
 #define TEST_PASS 0
 #define TEST_FAIL 1
 #define TEST_SKIP 2

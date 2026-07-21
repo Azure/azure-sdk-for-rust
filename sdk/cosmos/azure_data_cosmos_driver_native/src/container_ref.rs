@@ -35,7 +35,7 @@ use std::sync::Arc;
 use azure_data_cosmos_driver::models::ContainerReference as DriverContainerReference;
 
 use crate::driver::DriverHandle;
-use crate::error::{CosmosErrorCode, CosmosErrorHandle};
+use crate::error::{driver_status_code, CosmosError, CosmosErrorCode};
 use crate::runtime::RuntimeContext;
 
 /// The C ABI handle for a container reference (`cosmos_container_ref_t`).
@@ -129,7 +129,7 @@ pub extern "C" fn cosmos_driver_resolve_container_blocking(
     database_id: *const c_char,
     container_id: *const c_char,
     out_container: *mut *mut ContainerRefHandle,
-    out_error: *mut *mut CosmosErrorHandle,
+    out_error: *mut *mut CosmosError,
 ) -> i32 {
     if out_container.is_null() {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
@@ -166,14 +166,14 @@ pub extern "C" fn cosmos_driver_resolve_container_blocking(
             CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
         }
         Err(err) => {
-            let coarse = CosmosErrorCode::from_driver_error(&err);
+            let status = driver_status_code(&err);
             if !out_error.is_null() {
                 // SAFETY: caller guarantees `out_error` is writable.
                 unsafe {
-                    *out_error = CosmosErrorHandle::into_raw(err);
+                    *out_error = CosmosError::into_raw(err);
                 }
             }
-            coarse.as_i32()
+            status
         }
     }
 }
@@ -191,7 +191,7 @@ mod tests {
     #[test]
     fn resolve_rejects_null_arguments() {
         let mut out: *mut ContainerRefHandle = ptr::null_mut();
-        let mut err: *mut CosmosErrorHandle = ptr::null_mut();
+        let mut err: *mut CosmosError = ptr::null_mut();
 
         // NULL runtime / driver / out_container all rejected pre-flight.
         assert_eq!(

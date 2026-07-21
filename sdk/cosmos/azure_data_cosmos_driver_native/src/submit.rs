@@ -35,7 +35,7 @@ use crate::completion::{
 };
 use crate::driver::DriverHandle;
 use crate::driver_options::DriverOptionsHandle;
-use crate::error::CosmosErrorCode;
+use crate::error::{CosmosErrorCode, CosmosStatusCode};
 use crate::op_request::{build_request, CosmosOperationRequest};
 use crate::runtime::RuntimeContext;
 
@@ -199,16 +199,12 @@ fn spawn_oneshot<Fut, R>(
                     PendingCompletion::ok_container(user_data, ctx.op_inner.clone(), *container)
                 }
             },
-            Some(Ok(Err(err))) => {
-                let coarse = CosmosErrorCode::from_driver_error(&err);
-                PendingCompletion::error(
-                    user_data,
-                    ctx.op_inner.clone(),
-                    err,
-                    coarse,
-                    ctx.include_error_details,
-                )
-            }
+            Some(Ok(Err(err))) => PendingCompletion::error(
+                user_data,
+                ctx.op_inner.clone(),
+                err,
+                ctx.include_error_details,
+            ),
             Some(Err(_panic)) => {
                 // The driver future (or success conversion) panicked. Surface it
                 // as a coarse client-side error so the host's continuation is
@@ -217,7 +213,7 @@ fn spawn_oneshot<Fut, R>(
                 PendingCompletion::error_coarse(
                     user_data,
                     ctx.op_inner.clone(),
-                    CosmosErrorCode::CosmosErrorCodeClientError,
+                    CosmosErrorCode::CosmosErrorCodeInternalError.as_i32(),
                 )
             }
         };
@@ -295,13 +291,13 @@ pub extern "C" fn cosmos_submit_operation(
     request: *const CosmosOperationRequest,
     queue: *mut CompletionQueue,
     user_data: isize,
-    out_pre_error: *mut CosmosErrorCode,
+    out_pre_error: *mut CosmosStatusCode,
 ) -> *mut OperationHandle {
     let write_err = |code: CosmosErrorCode| {
         if !out_pre_error.is_null() {
             // SAFETY: caller-supplied writable slot.
             unsafe {
-                *out_pre_error = code;
+                *out_pre_error = code.as_i32();
             }
         }
     };
@@ -400,13 +396,13 @@ pub extern "C" fn cosmos_submit_singleton_operation(
     request: *const CosmosOperationRequest,
     queue: *mut CompletionQueue,
     user_data: isize,
-    out_pre_error: *mut CosmosErrorCode,
+    out_pre_error: *mut CosmosStatusCode,
 ) -> *mut OperationHandle {
     let write_err = |code: CosmosErrorCode| {
         if !out_pre_error.is_null() {
             // SAFETY: caller-supplied writable slot.
             unsafe {
-                *out_pre_error = code;
+                *out_pre_error = code.as_i32();
             }
         }
     };
@@ -473,13 +469,13 @@ pub extern "C" fn cosmos_driver_get_or_create_submit(
     options: *const DriverOptionsHandle,
     queue: *mut CompletionQueue,
     user_data: isize,
-    out_pre_error: *mut CosmosErrorCode,
+    out_pre_error: *mut CosmosStatusCode,
 ) -> *mut OperationHandle {
     let write_err = |code: CosmosErrorCode| {
         if !out_pre_error.is_null() {
             // SAFETY: caller-supplied writable slot.
             unsafe {
-                *out_pre_error = code;
+                *out_pre_error = code.as_i32();
             }
         }
     };
@@ -550,13 +546,13 @@ pub extern "C" fn cosmos_driver_resolve_container_submit(
     container_id: *const std::os::raw::c_char,
     queue: *mut CompletionQueue,
     user_data: isize,
-    out_pre_error: *mut CosmosErrorCode,
+    out_pre_error: *mut CosmosStatusCode,
 ) -> *mut OperationHandle {
     let write_err = |code: CosmosErrorCode| {
         if !out_pre_error.is_null() {
             // SAFETY: caller-supplied writable slot.
             unsafe {
-                *out_pre_error = code;
+                *out_pre_error = code.as_i32();
             }
         }
     };
@@ -624,19 +620,23 @@ fn try_cstr_to_string(p: *const std::os::raw::c_char) -> Result<String, CosmosEr
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::error::COSMOS_STATUS_SUCCESS;
     use std::ptr;
 
     #[test]
     fn execute_operation_submit_rejects_null_driver() {
-        let mut err = CosmosErrorCode::CosmosErrorCodeSuccess;
+        let mut err: CosmosStatusCode = COSMOS_STATUS_SUCCESS;
         let h = cosmos_submit_operation(ptr::null(), ptr::null(), ptr::null_mut(), 0, &mut err);
         assert!(h.is_null());
-        assert_eq!(err, CosmosErrorCode::CosmosErrorCodeInvalidArgument);
+        assert_eq!(
+            err,
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
+        );
     }
 
     #[test]
     fn execute_singleton_operation_submit_rejects_null_driver() {
-        let mut err = CosmosErrorCode::CosmosErrorCodeSuccess;
+        let mut err: CosmosStatusCode = COSMOS_STATUS_SUCCESS;
         let h = cosmos_submit_singleton_operation(
             ptr::null(),
             ptr::null(),
@@ -645,12 +645,15 @@ mod tests {
             &mut err,
         );
         assert!(h.is_null());
-        assert_eq!(err, CosmosErrorCode::CosmosErrorCodeInvalidArgument);
+        assert_eq!(
+            err,
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
+        );
     }
 
     #[test]
     fn get_or_create_submit_rejects_null_runtime() {
-        let mut err = CosmosErrorCode::CosmosErrorCodeSuccess;
+        let mut err: CosmosStatusCode = COSMOS_STATUS_SUCCESS;
         let h = cosmos_driver_get_or_create_submit(
             ptr::null(),
             ptr::null(),
@@ -660,12 +663,15 @@ mod tests {
             &mut err,
         );
         assert!(h.is_null());
-        assert_eq!(err, CosmosErrorCode::CosmosErrorCodeInvalidArgument);
+        assert_eq!(
+            err,
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
+        );
     }
 
     #[test]
     fn resolve_container_submit_rejects_null_driver() {
-        let mut err = CosmosErrorCode::CosmosErrorCodeSuccess;
+        let mut err: CosmosStatusCode = COSMOS_STATUS_SUCCESS;
         let h = cosmos_driver_resolve_container_submit(
             ptr::null(),
             ptr::null(),
@@ -675,7 +681,10 @@ mod tests {
             &mut err,
         );
         assert!(h.is_null());
-        assert_eq!(err, CosmosErrorCode::CosmosErrorCodeInvalidArgument);
+        assert_eq!(
+            err,
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
+        );
     }
 
     #[test]

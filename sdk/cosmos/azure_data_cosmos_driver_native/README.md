@@ -76,6 +76,42 @@ at the build output (`LD_LIBRARY_PATH=…`, `[DllImport]` resolver, etc.).
 
 ---
 
+## Error & status model
+
+Every fallible C function returns a **packed 32-bit status**
+(`cosmos_status_code_t`) instead of a bespoke error enum, so hosts learn one
+taxonomy that is shared with wire responses:
+
+```text
+cosmos_status_code_t = (http_status << 16) | sub_status
+```
+
+- `COSMOS_STATUS_SUCCESS` (`0`) means success.
+- Decode with `http = code >> 16` and `sub = code & 0xFFFF`, treating a
+  `sub` of `COSMOS_STATUS_NO_SUB_STATUS` (`0xFFFF`) as "no sub-status".
+- Pre-flight / plumbing failures that never hit the wire (a NULL argument,
+  invalid UTF-8, a shut-down completion queue, …) still use a real HTTP status
+  paired with a synthetic `CLIENT_FFI_*` / `CLIENT_*` sub-status, so they fit
+  the same integer as service errors.
+
+The synthetic sub-status codes the driver can produce are re-exported as
+`cosmos_sub_status_t` / `COSMOS_SUB_STATUS_*` constants in the generated header.
+These are a **named mirror of the driver's canonical
+`azure_data_cosmos_driver::error::SubStatusCode` constants** — the
+`CosmosSubStatus` enum in `src/error.rs` is the single source of truth, and a
+CI-verified unit test (`sub_status_mirror_matches_driver`) fails the build if
+any value drifts from the driver. A host can therefore switch on
+`sub == COSMOS_SUB_STATUS_CLIENT_FFI_NULL_ARGUMENT`, etc., with stable,
+documented constant names.
+
+Synchronous entry points also hand back an owned, flat **rich error**
+(`cosmos_error_t`) through their `out_error` slot — it carries the same packed
+status plus the message and wire diagnostics inline, and is freed with
+`cosmos_error_free`. Asynchronous failures surface the same struct via
+`cosmos_completion_take_error`.
+
+---
+
 ## Usage examples — binding-language quick-starts
 
 All four examples below run the same workflow against the local Cosmos DB
@@ -535,7 +571,7 @@ type Doc struct {
 // duration of the submit call, so all the C strings allocated here are freed
 // on return via defer — no ownership crosses the boundary.
 func submit(drv *C.cosmos_driver_t, q *C.cosmos_cq_t, req *C.cosmos_operation_request_t) (*C.cosmos_completion_t, error) {
-    var pre C.cosmos_error_code_t
+    var pre C.cosmos_status_code_t
     h := C.cosmos_submit_singleton_operation(drv, req, q, nil, &pre)
     if h == nil {
         return nil, fmt.Errorf("submit pre-flight failed: %d", int32(pre))
@@ -588,7 +624,7 @@ func main() {
     C.cosmos_runtime_builder_with_user_agent_suffix(rb, ua)
     C.free(unsafe.Pointer(ua))
     var rt *C.cosmos_runtime_t
-    if rc := C.cosmos_runtime_builder_build(rb, &rt, nil); rc != C.COSMOS_ERROR_CODE_SUCCESS {
+    if rc := C.cosmos_runtime_builder_build(rb, &rt, nil); rc != C.COSMOS_STATUS_SUCCESS {
         log.Fatalf("runtime build failed: %d", int32(rc))
     }
     defer C.cosmos_runtime_free(rt)
@@ -602,13 +638,13 @@ func main() {
     rc := C.cosmos_account_ref_with_master_key(endp, key, &acct, nil)
     C.free(unsafe.Pointer(endp))
     C.free(unsafe.Pointer(key))
-    if rc != C.COSMOS_ERROR_CODE_SUCCESS {
+    if rc != C.COSMOS_STATUS_SUCCESS {
         log.Fatalf("account ref failed: %d", int32(rc))
     }
     defer C.cosmos_account_ref_free(acct)
 
     var drv *C.cosmos_driver_t
-    if rc := C.cosmos_driver_get_or_create_blocking(rt, acct, nil, &drv, nil); rc != C.COSMOS_ERROR_CODE_SUCCESS {
+    if rc := C.cosmos_driver_get_or_create_blocking(rt, acct, nil, &drv, nil); rc != C.COSMOS_STATUS_SUCCESS {
         log.Fatalf("driver create failed: %d", int32(rc))
     }
     defer C.cosmos_driver_free(drv)
@@ -619,7 +655,7 @@ func main() {
     rc = C.cosmos_driver_resolve_container_blocking(rt, drv, db, coll, &container, nil)
     C.free(unsafe.Pointer(db))
     C.free(unsafe.Pointer(coll))
-    if rc != C.COSMOS_ERROR_CODE_SUCCESS {
+    if rc != C.COSMOS_STATUS_SUCCESS {
         log.Fatalf("resolve container failed: %d", int32(rc))
     }
     defer C.cosmos_container_ref_free(container)
@@ -630,7 +666,7 @@ func main() {
     C.cosmos_partition_key_builder_add_string(pkb, pkVal)
     C.free(unsafe.Pointer(pkVal))
     var pk *C.cosmos_partition_key_t
-    if rc := C.cosmos_partition_key_builder_build(pkb, &pk); rc != C.COSMOS_ERROR_CODE_SUCCESS {
+    if rc := C.cosmos_partition_key_builder_build(pkb, &pk); rc != C.COSMOS_STATUS_SUCCESS {
         log.Fatalf("partition key build failed: %d", int32(rc))
     }
     defer C.cosmos_partition_key_free(pk)
@@ -918,7 +954,7 @@ if __name__ == "__main__":
 ## Notes that apply to all four bindings
 
 1. **Handle every return code and outcome.** The Go and Python samples above
-   show the pattern end-to-end: check the pre-flight `cosmos_error_code_t`,
+   show the pattern end-to-end: check the pre-flight `cosmos_status_code_t`,
    check `cosmos_completion_outcome` against `OK`, and on a non-OK outcome pull
    `cosmos_completion_take_error` to read the rich `cosmos_error_t` (then free
    it) before deciding whether to retry / surface / log. The C# and Java

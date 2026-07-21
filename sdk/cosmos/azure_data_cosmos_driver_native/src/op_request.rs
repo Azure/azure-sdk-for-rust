@@ -124,7 +124,7 @@ pub enum CosmosReadConsistencyStrategy {
 
 impl CosmosReadConsistencyStrategy {
     /// Validates a host-supplied `i32` discriminant and returns the matching
-    /// variant, or [`CosmosErrorCode::CosmosErrorCodeInvalidOptionValue`] for
+    /// variant, or a `CLIENT_FFI_INVALID_OPTION_VALUE` pre-flight status for
     /// an unknown value.
     ///
     /// The flat options struct stores this field as a raw `i32` (not as this
@@ -173,7 +173,7 @@ pub enum CosmosContentResponseOnWriteOpt {
 
 impl CosmosContentResponseOnWriteOpt {
     /// Validates a host-supplied `i32` discriminant and returns the matching
-    /// variant, or [`CosmosErrorCode::CosmosErrorCodeInvalidOptionValue`] for
+    /// variant, or a `CLIENT_FFI_INVALID_OPTION_VALUE` pre-flight status for
     /// an unknown value. See [`CosmosReadConsistencyStrategy::from_i32`] for
     /// why the field is read as a raw `i32`.
     fn from_i32(raw: i32) -> Result<Self, CosmosErrorCode> {
@@ -468,7 +468,7 @@ pub enum CosmosOperationKind {
 
 impl CosmosOperationKind {
     /// Validates a host-supplied `i32` discriminant and returns the matching
-    /// variant, or [`CosmosErrorCode::CosmosErrorCodeInvalidArgument`] for an
+    /// variant, or a `CLIENT_FFI_NULL_ARGUMENT` pre-flight status for an
     /// unknown value.
     ///
     /// The request struct stores `kind` as a raw `i32` (not as this enum
@@ -525,7 +525,7 @@ pub enum CosmosPreconditionKind {
 
 impl CosmosPreconditionKind {
     /// Validates a host-supplied `i32` discriminant and returns the matching
-    /// variant, or [`CosmosErrorCode::CosmosErrorCodeInvalidArgument`] for an
+    /// variant, or a `CLIENT_FFI_NULL_ARGUMENT` pre-flight status for an
     /// unknown value. See [`CosmosOperationKind::from_i32`] for why the field
     /// is read as a raw `i32`.
     fn from_i32(raw: i32) -> Result<Self, CosmosErrorCode> {

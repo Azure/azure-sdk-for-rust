@@ -34,7 +34,7 @@ use azure_data_cosmos_driver::options::DriverOptions;
 
 use crate::account_ref::AccountRefHandle;
 use crate::driver_options::DriverOptionsHandle;
-use crate::error::{CosmosErrorCode, CosmosErrorHandle};
+use crate::error::{driver_status_code, CosmosError, CosmosErrorCode};
 use crate::runtime::RuntimeContext;
 
 /// The C ABI handle for a [`CosmosDriver`] (`cosmos_driver_t`).
@@ -155,7 +155,7 @@ pub extern "C" fn cosmos_driver_get_or_create_blocking(
     account: *const AccountRefHandle,
     options: *const DriverOptionsHandle,
     out_driver: *mut *mut DriverHandle,
-    out_error: *mut *mut CosmosErrorHandle,
+    out_error: *mut *mut CosmosError,
 ) -> i32 {
     if out_driver.is_null() {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
@@ -197,15 +197,15 @@ pub extern "C" fn cosmos_driver_get_or_create_blocking(
             CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
         }
         Err(driver_err) => {
-            let coarse = CosmosErrorCode::from_driver_error(&driver_err);
+            let status = driver_status_code(&driver_err);
             if !out_error.is_null() {
                 // SAFETY: caller guarantees `out_error` is writable for
-                // one `*mut CosmosErrorHandle`.
+                // one `*mut CosmosError`.
                 unsafe {
-                    *out_error = CosmosErrorHandle::into_raw(driver_err);
+                    *out_error = CosmosError::into_raw(driver_err);
                 }
             }
-            coarse.as_i32()
+            status
         }
     }
 }
@@ -236,7 +236,7 @@ mod tests {
         let runtime = make_runtime();
         let account = make_account();
         let mut out: *mut DriverHandle = ptr::null_mut();
-        let mut err: *mut CosmosErrorHandle = ptr::null_mut();
+        let mut err: *mut CosmosError = ptr::null_mut();
         assert_eq!(
             cosmos_driver_get_or_create_blocking(
                 ptr::null(),
@@ -297,7 +297,7 @@ mod tests {
             "fake-master-key",
         );
         let mut out: *mut DriverHandle = ptr::null_mut();
-        let mut err: *mut CosmosErrorHandle = ptr::null_mut();
+        let mut err: *mut CosmosError = ptr::null_mut();
         let rc =
             cosmos_driver_get_or_create_blocking(runtime, account, ptr::null(), &mut out, &mut err);
         assert_ne!(

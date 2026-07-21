@@ -98,7 +98,7 @@ static int make_runtime_and_cq(cosmos_runtime_t **out_runtime,
     cosmos_runtime_t *runtime = NULL;
     cosmos_error_t *err = NULL;
     int32_t rc = cosmos_runtime_build(&opts, &runtime, &err);
-    if (rc != COSMOS_ERROR_CODE_SUCCESS || runtime == NULL) {
+    if (rc != COSMOS_STATUS_SUCCESS || runtime == NULL) {
         cosmos_error_free(err);
         return 1;
     }
@@ -132,17 +132,17 @@ static int test_cancel_before_drain_yields_cancelled_completion(void)
     cosmos_error_t *acct_err = NULL;
     int32_t rc = cosmos_account_ref_with_master_key(
         kBlackholeEndpoint, kEmulatorKey, &account, &acct_err);
-    REQUIRE(rc == COSMOS_ERROR_CODE_SUCCESS && account != NULL,
+    REQUIRE(rc == COSMOS_STATUS_SUCCESS && account != NULL,
             "account_ref built for black-hole endpoint (rc=%d)", rc);
     cosmos_error_free(acct_err);
 
     // Submit a bootstrap. The driver future starts trying to fetch account
     // metadata against the unroutable endpoint and will never complete on
     // its own within the test window.
-    cosmos_error_code_t pre = COSMOS_ERROR_CODE_SUCCESS;
+    cosmos_status_code_t pre = COSMOS_STATUS_SUCCESS;
     handle = cosmos_driver_get_or_create_submit(
         runtime, account, NULL, cq, kUserDataCookie, &pre);
-    REQUIRE(handle != NULL && pre == COSMOS_ERROR_CODE_SUCCESS,
+    REQUIRE(handle != NULL && pre == COSMOS_STATUS_SUCCESS,
             "get_or_create_submit returned a handle (pre=%d)", pre);
 
     // Request cancellation. Idempotent — call it twice to prove that.
@@ -158,7 +158,7 @@ static int test_cancel_before_drain_yields_cancelled_completion(void)
     // The contract: cancel won the race.
     ASSERT(completion.outcome == COSMOS_COMPLETION_OUTCOME_CANCELLED,
            "completion outcome == CANCELLED (=%d)", completion.outcome);
-    ASSERT(completion.status == COSMOS_ERROR_CODE_OPERATION_CANCELLED,
+    ASSERT(COSMOS_STATUS_SUB(completion.status) == COSMOS_SUB_STATUS_CLIENT_FFI_OPERATION_CANCELLED,
            "completion status == OPERATION_CANCELLED (=%d)", completion.status);
     ASSERT(completion.was_cancel_requested == 1,
            "was_cancel_requested == true");

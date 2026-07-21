@@ -13,6 +13,11 @@
 // This should match the version of libazurecosmosdriver you are linking against.
 #define AZURECOSMOSDRIVER_H_VERSION "0.1.0"
 
+// COSMOS_STATUS_SUCCESS: value returned by every fallible function on success.
+#define COSMOS_STATUS_SUCCESS 0
+// COSMOS_STATUS_NO_SUB_STATUS: low-16-bit value meaning "no sub-status present".
+#define COSMOS_STATUS_NO_SUB_STATUS 0xFFFF
+
 /**
  * Per spec section 3.6.1, every completion has exactly one of these outcomes.
  *
@@ -51,192 +56,6 @@ enum cosmos_completion_outcome_t
 typedef enum cosmos_completion_outcome_t cosmos_completion_outcome_t;
 #else
 typedef int32_t cosmos_completion_outcome_t;
-#endif // __STDC_VERSION__ >= 202311L
-#endif // __cplusplus
-
-/**
- * Coarse numeric return value for every fallible C function.
- *
- * Per spec section 3.5.1, the layout retains the FFI / Cosmos-specific bands
- * established by the old wrapper:
- *
- * - `0` — success.
- * - `1..=999` — FFI / argument-validation errors.
- * - `1001..=1999` — auth / conversion errors.
- * - `2001..=2999` — Cosmos-specific errors mapped from wire HTTP status.
- * - `3001..=3999` — FFI plumbing errors.
- * - `4001..=4999` — driver-wrapper-specific fatal codes (new in this crate).
- * - `5001..=5999` — non-fatal warnings (`out_*` populated; rich error advisory).
- *
- * Only the codes the completion / queue / handle FFI actively produces are
- * populated today. The rest are reserved and are added as their producing
- * surfaces land. Consumers must treat unknown codes per
- * their band: `4xxx` = fatal-but-recoverable, `5xxx` = warning with
- * populated `out_*`.
- */
-enum cosmos_error_code_t
-#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
-  : int32_t
-#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
- {
-  /**
-   * Operation completed successfully.
-   */
-  COSMOS_ERROR_CODE_SUCCESS = 0,
-  /**
-   * A required pointer argument was `NULL`. Every accessor checks for this
-   * before dereferencing.
-   */
-  COSMOS_ERROR_CODE_INVALID_ARGUMENT = 1,
-  /**
-   * A `*const c_char` argument contained bytes that were not valid UTF-8.
-   */
-  COSMOS_ERROR_CODE_INVALID_UTF8 = 2,
-  /**
-   * Mapped from a wire response with HTTP 404.
-   */
-  COSMOS_ERROR_CODE_NOT_FOUND = 2404,
-  /**
-   * Mapped from a wire response with HTTP 409.
-   */
-  COSMOS_ERROR_CODE_CONFLICT = 2409,
-  /**
-   * Mapped from a wire response with HTTP 412.
-   */
-  COSMOS_ERROR_CODE_PRECONDITION_FAILED = 2412,
-  /**
-   * Mapped from a wire response with HTTP 429.
-   */
-  COSMOS_ERROR_CODE_THROTTLED = 2429,
-  /**
-   * Mapped from a wire response with HTTP 410.
-   */
-  COSMOS_ERROR_CODE_GONE = 2410,
-  /**
-   * Mapped from a wire response with HTTP 408 (or synthetic
-   * `CLIENT_OPERATION_TIMEOUT` substatus 20008).
-   */
-  COSMOS_ERROR_CODE_TIMEOUT = 2408,
-  /**
-   * Mapped from a wire response with HTTP 401.
-   */
-  COSMOS_ERROR_CODE_UNAUTHORIZED = 2401,
-  /**
-   * Mapped from a wire response with HTTP 403.
-   */
-  COSMOS_ERROR_CODE_FORBIDDEN = 2403,
-  /**
-   * Mapped from a wire response with HTTP 400.
-   */
-  COSMOS_ERROR_CODE_BAD_REQUEST = 2400,
-  /**
-   * Mapped from a wire response with HTTP 503 (excluding transport-
-   * synthesized 503, which falls under [`TransportFailure`](Self::CosmosErrorCodeTransportFailure)).
-   */
-  COSMOS_ERROR_CODE_SERVICE_UNAVAILABLE = 2503,
-  /**
-   * Any other wire-side error (5xx, unmapped 4xx).
-   */
-  COSMOS_ERROR_CODE_SERVICE_ERROR = 2999,
-  /**
-   * A driver client-side / synthetic failure with no specific 2xxx mapping.
-   */
-  COSMOS_ERROR_CODE_CLIENT_ERROR = 3001,
-  /**
-   * A driver transport-layer failure (connection / DNS / TLS / IO).
-   */
-  COSMOS_ERROR_CODE_TRANSPORT_FAILURE = 3002,
-  /**
-   * A driver client-side serialization failure.
-   */
-  COSMOS_ERROR_CODE_SERIALIZATION_FAILED = 3003,
-  /**
-   * A driver client-side authentication failure (e.g. token acquisition).
-   */
-  COSMOS_ERROR_CODE_AUTHENTICATION_FAILED = 3004,
-  /**
-   * A driver client-side operation timeout
-   * (`SubStatusCode::CLIENT_OPERATION_TIMEOUT` = 20008).
-   */
-  COSMOS_ERROR_CODE_CLIENT_OPERATION_TIMEOUT = 3005,
-  /**
-   * Operation issued before `initialize()` completed.
-   */
-  COSMOS_ERROR_CODE_DRIVER_NOT_INITIALIZED = 4002,
-  /**
-   * Account endpoint URL or credential could not be parsed.
-   */
-  COSMOS_ERROR_CODE_INVALID_ACCOUNT_REFERENCE = 4003,
-  /**
-   * `PartitionKey` builder produced an empty / inconsistent key.
-   */
-  COSMOS_ERROR_CODE_INVALID_PARTITION_KEY = 4004,
-  /**
-   * A mutator or second submit was called after the operation handle was
-   * already consumed by an earlier successful submit.
-   */
-  COSMOS_ERROR_CODE_OPERATION_CONSUMED = 4005,
-  /**
-   * Reserved. Formerly signalled a response handle consumed twice; the
-   * response is now delivered inline on the completion, so this code is no
-   * longer produced but its numeric slot is retained for ABI stability.
-   */
-  COSMOS_ERROR_CODE_RESPONSE_CONSUMED = 4006,
-  /**
-   * Single-shot submit yielded `Ok(None)` from a feed-style operation.
-   */
-  COSMOS_ERROR_CODE_FEED_EXHAUSTED = 4007,
-  /**
-   * Second precondition setter on an operation that already has one.
-   */
-  COSMOS_ERROR_CODE_PRECONDITION_ALREADY_SET = 4008,
-  /**
-   * A mutator only meaningful for a specific operation kind was rejected.
-   */
-  COSMOS_ERROR_CODE_UNSUPPORTED_OPERATION_FOR_MUTATOR = 4009,
-  /**
-   * A request header (`cosmos_header_kv_t`) on the submitted operation
-   * request had a non-ASCII / control-character name or value.
-   */
-  COSMOS_ERROR_CODE_INVALID_HEADER = 4010,
-  /**
-   * A submit targeted a `cosmos_completion_queue_t` that had already been
-   * shut down via
-   * `cosmos_completion_queue_shutdown`. Pre-flight rejection — no completion is posted.
-   */
-  COSMOS_ERROR_CODE_QUEUE_SHUTDOWN = 4011,
-  /**
-   * Surfaced via the completion's `status` field when its outcome
-   * is `CANCELLED`. Triggered by `cosmos_operation_handle_cancel` or by
-   * `cosmos_completion_queue_shutdown`.
-   */
-  COSMOS_ERROR_CODE_OPERATION_CANCELLED = 4012,
-  /**
-   * A submit targeted a `cosmos_completion_queue_t` whose hard capacity is already
-   * reached. Pre-flight rejection — no completion is posted.
-   */
-  COSMOS_ERROR_CODE_QUEUE_FULL = 4013,
-  /**
-   * A builder setter was passed a value outside the documented range.
-   */
-  COSMOS_ERROR_CODE_INVALID_OPTION_VALUE = 4014,
-  /**
-   * `cosmos_runtime_build` could not construct the underlying
-   * `CosmosDriverRuntime`.
-   */
-  COSMOS_ERROR_CODE_RUNTIME_BUILD_FAILED = 4015,
-  /**
-   * `cosmos_driver_get_or_create` called with non-NULL options while a
-   * driver for the same account endpoint was already cached. The cached
-   * instance is still delivered.
-   */
-  COSMOS_ERROR_CODE_OPTIONS_IGNORED_ON_CACHE_HIT = 5001,
-};
-#ifndef __cplusplus
-#if __STDC_VERSION__ >= 202311L
-typedef enum cosmos_error_code_t cosmos_error_code_t;
-#else
-typedef int32_t cosmos_error_code_t;
 #endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
@@ -665,6 +484,312 @@ typedef int32_t cosmos_partition_key_component_kind_t;
 #endif // __cplusplus
 
 /**
+ * Named mirror of the driver's synthetic (`2xxxx`) sub-status codes.
+ *
+ * The Cosmos service returns real sub-status codes for wire failures, but the
+ * driver also *synthesizes* sub-status codes in the `20000`–`21999` band to
+ * describe client-, transport-, serialization-, auth- and FFI-side conditions
+ * that never traveled over the wire. A C host decoding the low 16 bits of a
+ * [`CosmosStatusCode`] would otherwise see these as bare magic numbers, so this
+ * enum re-exports every one of them as a `cosmos_sub_status_t` /
+ * `COSMOS_SUB_STATUS_*` constant in the generated header.
+ *
+ * This enum is the **single source of truth** for those names on the C side.
+ * Each discriminant is a literal copy of the corresponding
+ * [`azure_data_cosmos_driver::error::SubStatusCode`] constant (cbindgen needs
+ * literals to emit `= N`). The `sub_status_mirror_matches_driver` unit test is
+ * CI-verified to fail the build if any value drifts from the driver, so the two
+ * tables can never disagree silently. When the driver adds a new synthetic
+ * `2xxxx` sub-status, add the matching variant here (and the test will remind
+ * you if you forget by value mismatch on an existing one).
+ *
+ * The values are *not* exhaustive of the `2xxxx` range: the driver leaves gaps
+ * (e.g. `20009`, `20013`, `20103`) for future use. Do not invent variants for
+ * codes the driver does not define.
+ */
+enum cosmos_sub_status_t
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+  : int32_t
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+ {
+  /**
+   * `TRANSPORT_GENERATED_503` (20003).
+   */
+  COSMOS_SUB_STATUS_TRANSPORT_GENERATED_503 = 20003,
+  /**
+   * `CLIENT_CPU_OVERLOAD` (20004).
+   */
+  COSMOS_SUB_STATUS_CLIENT_CPU_OVERLOAD = 20004,
+  /**
+   * `CLIENT_THREAD_STARVATION` (20005).
+   */
+  COSMOS_SUB_STATUS_CLIENT_THREAD_STARVATION = 20005,
+  /**
+   * `CHANNEL_CLOSED` (20006).
+   */
+  COSMOS_SUB_STATUS_CHANNEL_CLOSED = 20006,
+  /**
+   * `MALFORMED_CONTINUATION_TOKEN` (20007).
+   */
+  COSMOS_SUB_STATUS_MALFORMED_CONTINUATION_TOKEN = 20007,
+  /**
+   * `CLIENT_OPERATION_TIMEOUT` (20008).
+   */
+  COSMOS_SUB_STATUS_CLIENT_OPERATION_TIMEOUT = 20008,
+  /**
+   * `TRANSPORT_CONNECTION_FAILED` (20010).
+   */
+  COSMOS_SUB_STATUS_TRANSPORT_CONNECTION_FAILED = 20010,
+  /**
+   * `TRANSPORT_IO_FAILED` (20011).
+   */
+  COSMOS_SUB_STATUS_TRANSPORT_IO_FAILED = 20011,
+  /**
+   * `TRANSPORT_DNS_FAILED` (20012).
+   */
+  COSMOS_SUB_STATUS_TRANSPORT_DNS_FAILED = 20012,
+  /**
+   * `TRANSPORT_BODY_READ_FAILED` (20014).
+   */
+  COSMOS_SUB_STATUS_TRANSPORT_BODY_READ_FAILED = 20014,
+  /**
+   * `TRANSPORT_HTTP2_INCOMPATIBLE` (20015).
+   */
+  COSMOS_SUB_STATUS_TRANSPORT_HTTP2_INCOMPATIBLE = 20015,
+  /**
+   * `SERIALIZATION_RESPONSE_BODY_INVALID` (20020).
+   */
+  COSMOS_SUB_STATUS_SERIALIZATION_RESPONSE_BODY_INVALID = 20020,
+  /**
+   * `CLIENT_PARTITION_KEY_EMPTY` (20100).
+   */
+  COSMOS_SUB_STATUS_CLIENT_PARTITION_KEY_EMPTY = 20100,
+  /**
+   * `CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS` (20101).
+   */
+  COSMOS_SUB_STATUS_CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS = 20101,
+  /**
+   * `CLIENT_PREFIX_PARTITION_KEY_REQUIRES_MULTIHASH` (20102).
+   */
+  COSMOS_SUB_STATUS_CLIENT_PREFIX_PARTITION_KEY_REQUIRES_MULTIHASH = 20102,
+  /**
+   * `CLIENT_CONNECTION_STRING_EMPTY` (20104).
+   */
+  COSMOS_SUB_STATUS_CLIENT_CONNECTION_STRING_EMPTY = 20104,
+  /**
+   * `CLIENT_CONNECTION_STRING_MALFORMED_PART` (20105).
+   */
+  COSMOS_SUB_STATUS_CLIENT_CONNECTION_STRING_MALFORMED_PART = 20105,
+  /**
+   * `CLIENT_CONNECTION_STRING_MISSING_ACCOUNT_KEY` (20107).
+   */
+  COSMOS_SUB_STATUS_CLIENT_CONNECTION_STRING_MISSING_ACCOUNT_KEY = 20107,
+  /**
+   * `CLIENT_INVALID_ACCOUNT_ENDPOINT_URL` (20108).
+   */
+  COSMOS_SUB_STATUS_CLIENT_INVALID_ACCOUNT_ENDPOINT_URL = 20108,
+  /**
+   * `CLIENT_INVALID_URL` (20109).
+   */
+  COSMOS_SUB_STATUS_CLIENT_INVALID_URL = 20109,
+  /**
+   * `CLIENT_UNKNOWN_CONSISTENCY_LEVEL` (20110).
+   */
+  COSMOS_SUB_STATUS_CLIENT_UNKNOWN_CONSISTENCY_LEVEL = 20110,
+  /**
+   * `CLIENT_UNKNOWN_PRIORITY_LEVEL` (20111).
+   */
+  COSMOS_SUB_STATUS_CLIENT_UNKNOWN_PRIORITY_LEVEL = 20111,
+  /**
+   * `CLIENT_FEED_RANGE_REQUIRES_FANOUT_PIPELINE` (20112).
+   */
+  COSMOS_SUB_STATUS_CLIENT_FEED_RANGE_REQUIRES_FANOUT_PIPELINE = 20112,
+  /**
+   * `CLIENT_UNSUPPORTED_QUERY_FEATURE` (20113).
+   */
+  COSMOS_SUB_STATUS_CLIENT_UNSUPPORTED_QUERY_FEATURE = 20113,
+  /**
+   * `CLIENT_QUERY_PLAN_INVALID_TOP_OFFSET_LIMIT` (20114).
+   */
+  COSMOS_SUB_STATUS_CLIENT_QUERY_PLAN_INVALID_TOP_OFFSET_LIMIT = 20114,
+  /**
+   * `CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION` (20117).
+   */
+  COSMOS_SUB_STATUS_CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION = 20117,
+  /**
+   * `CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID` (20150).
+   */
+  COSMOS_SUB_STATUS_CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID = 20150,
+  /**
+   * `CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED` (20152).
+   */
+  COSMOS_SUB_STATUS_CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED = 20152,
+  /**
+   * `CLIENT_HTTP_CLIENT_CONSTRUCTION_FAILED` (20153).
+   */
+  COSMOS_SUB_STATUS_CLIENT_HTTP_CLIENT_CONSTRUCTION_FAILED = 20153,
+  /**
+   * `CLIENT_REQWEST_FEATURE_REQUIRED` (20154).
+   */
+  COSMOS_SUB_STATUS_CLIENT_REQWEST_FEATURE_REQUIRED = 20154,
+  /**
+   * `CLIENT_REQUEST_URL_MISSING_HOST` (20155).
+   */
+  COSMOS_SUB_STATUS_CLIENT_REQUEST_URL_MISSING_HOST = 20155,
+  /**
+   * `CLIENT_REQUEST_URL_MISSING_KNOWN_PORT` (20156).
+   */
+  COSMOS_SUB_STATUS_CLIENT_REQUEST_URL_MISSING_KNOWN_PORT = 20156,
+  /**
+   * `CLIENT_IMDS_HTTP_CLIENT_CONSTRUCTION_FAILED` (20157).
+   */
+  COSMOS_SUB_STATUS_CLIENT_IMDS_HTTP_CLIENT_CONSTRUCTION_FAILED = 20157,
+  /**
+   * `CLIENT_IMDS_REQWEST_FEATURE_REQUIRED` (20158).
+   */
+  COSMOS_SUB_STATUS_CLIENT_IMDS_REQWEST_FEATURE_REQUIRED = 20158,
+  /**
+   * `CLIENT_CONTINUATION_TOKEN_FETCH_IN_FLIGHT` (20200).
+   */
+  COSMOS_SUB_STATUS_CLIENT_CONTINUATION_TOKEN_FETCH_IN_FLIGHT = 20200,
+  /**
+   * `CLIENT_TOPOLOGY_PROVIDER_MISSING` (20201).
+   */
+  COSMOS_SUB_STATUS_CLIENT_TOPOLOGY_PROVIDER_MISSING = 20201,
+  /**
+   * `CLIENT_DRIVER_NOT_INITIALIZED` (20202).
+   */
+  COSMOS_SUB_STATUS_CLIENT_DRIVER_NOT_INITIALIZED = 20202,
+  /**
+   * `CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH` (20203).
+   */
+  COSMOS_SUB_STATUS_CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH = 20203,
+  /**
+   * `CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE` (20205).
+   */
+  COSMOS_SUB_STATUS_CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE = 20205,
+  /**
+   * `CLIENT_SPLIT_RETRIES_EXHAUSTED` (20206).
+   */
+  COSMOS_SUB_STATUS_CLIENT_SPLIT_RETRIES_EXHAUSTED = 20206,
+  /**
+   * `CLIENT_BUILD_RESPONSE_INVOKED_ON_FAILURE` (20207).
+   */
+  COSMOS_SUB_STATUS_CLIENT_BUILD_RESPONSE_INVOKED_ON_FAILURE = 20207,
+  /**
+   * `CLIENT_ROOT_NODE_CANNOT_REQUEST_SPLIT` (20208).
+   */
+  COSMOS_SUB_STATUS_CLIENT_ROOT_NODE_CANNOT_REQUEST_SPLIT = 20208,
+  /**
+   * `CLIENT_SINGLETON_OPERATION_RETURNED_EMPTY_PAGE` (20210).
+   */
+  COSMOS_SUB_STATUS_CLIENT_SINGLETON_OPERATION_RETURNED_EMPTY_PAGE = 20210,
+  /**
+   * `CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED` (20213).
+   */
+  COSMOS_SUB_STATUS_CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED = 20213,
+  /**
+   * `CLIENT_NO_THROUGHPUT_OFFER_FOR_RESOURCE` (20301).
+   */
+  COSMOS_SUB_STATUS_CLIENT_NO_THROUGHPUT_OFFER_FOR_RESOURCE = 20301,
+  /**
+   * `CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES` (20302).
+   */
+  COSMOS_SUB_STATUS_CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES = 20302,
+  /**
+   * `SERVICE_RETURNED_OFFER_WITHOUT_ID` (20303).
+   */
+  COSMOS_SUB_STATUS_SERVICE_RETURNED_OFFER_WITHOUT_ID = 20303,
+  /**
+   * `CLIENT_THROUGHPUT_POLLER_INCOMPLETE` (20304).
+   */
+  COSMOS_SUB_STATUS_CLIENT_THROUGHPUT_POLLER_INCOMPLETE = 20304,
+  /**
+   * `CLIENT_TOPOLOGY_RESOLUTION_FAILED` (20305).
+   */
+  COSMOS_SUB_STATUS_CLIENT_TOPOLOGY_RESOLUTION_FAILED = 20305,
+  /**
+   * `SERVICE_RETURNED_OBJECT_WITHOUT_RID` (20306).
+   */
+  COSMOS_SUB_STATUS_SERVICE_RETURNED_OBJECT_WITHOUT_RID = 20306,
+  /**
+   * `CLIENT_FFI_NULL_ARGUMENT` (20350).
+   */
+  COSMOS_SUB_STATUS_CLIENT_FFI_NULL_ARGUMENT = 20350,
+  /**
+   * `CLIENT_FFI_INVALID_UTF8` (20351).
+   */
+  COSMOS_SUB_STATUS_CLIENT_FFI_INVALID_UTF8 = 20351,
+  /**
+   * `CLIENT_FFI_INVALID_HEADER` (20352).
+   */
+  COSMOS_SUB_STATUS_CLIENT_FFI_INVALID_HEADER = 20352,
+  /**
+   * `CLIENT_FFI_INVALID_OPTION_VALUE` (20353).
+   */
+  COSMOS_SUB_STATUS_CLIENT_FFI_INVALID_OPTION_VALUE = 20353,
+  /**
+   * `CLIENT_FFI_OPERATION_CONSUMED` (20354).
+   */
+  COSMOS_SUB_STATUS_CLIENT_FFI_OPERATION_CONSUMED = 20354,
+  /**
+   * `CLIENT_FFI_PRECONDITION_ALREADY_SET` (20355).
+   */
+  COSMOS_SUB_STATUS_CLIENT_FFI_PRECONDITION_ALREADY_SET = 20355,
+  /**
+   * `CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR` (20356).
+   */
+  COSMOS_SUB_STATUS_CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR = 20356,
+  /**
+   * `CLIENT_FFI_FEED_EXHAUSTED` (20357).
+   */
+  COSMOS_SUB_STATUS_CLIENT_FFI_FEED_EXHAUSTED = 20357,
+  /**
+   * `CLIENT_FFI_QUEUE_SHUTDOWN` (20358).
+   */
+  COSMOS_SUB_STATUS_CLIENT_FFI_QUEUE_SHUTDOWN = 20358,
+  /**
+   * `CLIENT_FFI_QUEUE_FULL` (20359).
+   */
+  COSMOS_SUB_STATUS_CLIENT_FFI_QUEUE_FULL = 20359,
+  /**
+   * `CLIENT_FFI_OPERATION_CANCELLED` (20360).
+   */
+  COSMOS_SUB_STATUS_CLIENT_FFI_OPERATION_CANCELLED = 20360,
+  /**
+   * `CLIENT_FFI_RUNTIME_BUILD_FAILED` (20361).
+   */
+  COSMOS_SUB_STATUS_CLIENT_FFI_RUNTIME_BUILD_FAILED = 20361,
+  /**
+   * `CLIENT_FFI_PANIC` (20362).
+   */
+  COSMOS_SUB_STATUS_CLIENT_FFI_PANIC = 20362,
+  /**
+   * `CLIENT_GENERATED_401` (20401).
+   */
+  COSMOS_SUB_STATUS_CLIENT_GENERATED_401 = 20401,
+  /**
+   * `AUTHENTICATION_TOKEN_ACQUISITION_FAILED` (20402).
+   */
+  COSMOS_SUB_STATUS_AUTHENTICATION_TOKEN_ACQUISITION_FAILED = 20402,
+  /**
+   * `TRANSIT_TIMEOUT` (20911).
+   */
+  COSMOS_SUB_STATUS_TRANSIT_TIMEOUT = 20911,
+  /**
+   * `SERVER_BARRIER_THROTTLED` (21011).
+   */
+  COSMOS_SUB_STATUS_SERVER_BARRIER_THROTTLED = 21011,
+};
+#ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum cosmos_sub_status_t cosmos_sub_status_t;
+#else
+typedef int32_t cosmos_sub_status_t;
+#endif // __STDC_VERSION__ >= 202311L
+#endif // __cplusplus
+
+/**
  * The C ABI handle for an account reference (`cosmos_account_ref_t`).
  *
  * Wraps the driver's account reference; the C side holds it as an opaque
@@ -699,17 +824,6 @@ typedef struct cosmos_container_ref_t cosmos_container_ref_t;
  * pointer.
  */
 typedef struct cosmos_completion_backing_t cosmos_completion_backing_t;
-
-/**
- * The C ABI handle for a rich error (`cosmos_error_t`).
- *
- * Reference-counted via `Arc` so the completion's borrow accessor and the
- * take-ownership accessor can share the same allocation cheaply. Lazy-caches
- * the rendered backtrace and the four header-derived convenience strings as
- * `CString`s so the FFI accessors can hand out borrowed pointers with a
- * stable lifetime.
- */
-typedef struct cosmos_error_t cosmos_error_t;
 
 /**
  * The C ABI handle for a database reference (`cosmos_database_ref_t`).
@@ -774,6 +888,69 @@ typedef struct cosmos_partition_key_t cosmos_partition_key_t;
  *   and is how the driver / account surfaces hand out handles.
  */
 typedef struct cosmos_runtime_t cosmos_runtime_t;
+
+/**
+ * 32-bit packed Cosmos status returned by every fallible C function.
+ *
+ * Layout: `(http_status << 16) | sub_status`. `0` is success. A low-16-bit
+ * value of [`COSMOS_STATUS_NO_SUB_STATUS`] (`0xFFFF`) means "no sub-status".
+ * Decode on the host with `http = code >> 16` and
+ * `sub = code & 0xFFFF` (treating `0xFFFF` as absent).
+ */
+typedef int32_t cosmos_status_code_t;
+
+/**
+ * Owned, flat rich error handed back through the synchronous `out_error`
+ * slots (`cosmos_error_t`).
+ *
+ * Mirrors the inline error fields of `cosmos_completion_t`. Every pointer
+ * field is **owned**; free the whole struct — and its strings — with
+ * [`cosmos_error_free`]. A `NULL` pointer field means that field was absent.
+ */
+typedef struct cosmos_error_t {
+  /**
+   * Packed 32-bit status (`(http << 16) | sub_status`). See
+   * [`CosmosStatusCode`].
+   */
+  cosmos_status_code_t status;
+  /**
+   * Wire HTTP status code (always populated, including for synthetic
+   * errors).
+   */
+  uint16_t http_status_code;
+  /**
+   * Cosmos sub-status code, or `-1` when absent.
+   */
+  int32_t sub_status;
+  /**
+   * `1` iff the error originated from a service wire response.
+   */
+  uint8_t is_from_wire;
+  /**
+   * Retry-after hint in milliseconds, or `-1` when absent.
+   */
+  int64_t retry_after_ms;
+  /**
+   * Owned NUL-terminated message (never NULL for a real error).
+   */
+  char *message;
+  /**
+   * Owned activity id from the wire response headers, or NULL.
+   */
+  char *activity_id;
+  /**
+   * Owned session token from the wire response headers, or NULL.
+   */
+  char *session_token;
+  /**
+   * Owned ETag from the wire response headers, or NULL.
+   */
+  char *etag;
+  /**
+   * Owned backtrace, or NULL when none was captured.
+   */
+  char *backtrace;
+} cosmos_error_t;
 
 /**
  * A library-owned byte buffer returned by value across the C ABI.
@@ -854,7 +1031,7 @@ typedef struct cosmos_completion_t {
   /**
    * Coarse status code (always populated).
    */
-  cosmos_error_code_t status;
+  cosmos_status_code_t status;
   /**
    * The host's opaque pointer-sized cookie, round-tripped verbatim from
    * submit; the wrapper never dereferences it.
@@ -1612,62 +1789,8 @@ int32_t cosmos_driver_options_build(const struct cosmos_account_ref_t *account,
                                     struct cosmos_driver_options_t **out_options);
 
 /**
- * HTTP status code (always populated, including for synthetic errors).
- */
-uint16_t cosmos_error_status_code(const struct cosmos_error_t *e);
-
-/**
- * Sub-status code. Returns -1 when absent. Driver-side `SubStatusCode` is
- * `u16`; widening to `i32` lets us reserve -1 for "no sub-status" without
- * clipping any real value.
- */
-int32_t cosmos_error_sub_status(const struct cosmos_error_t *e);
-
-/**
- * True iff the error originated from a service wire response. Mirrors
- * `CosmosError::is_from_wire`.
- */
-bool cosmos_error_is_from_wire(const struct cosmos_error_t *e);
-
-/**
- * Borrowed message string. Returns NULL only when `e` is NULL.
- *
- * Lifetime = until [`cosmos_error_free`].
- */
-const char *cosmos_error_message(const struct cosmos_error_t *e);
-
-/**
- * Borrowed activity id from the wire response headers (or NULL when there
- * is no wire response or no activity id was present).
- */
-const char *cosmos_error_activity_id(const struct cosmos_error_t *e);
-
-/**
- * Borrowed session token from the wire response headers (or NULL).
- */
-const char *cosmos_error_session_token(const struct cosmos_error_t *e);
-
-/**
- * Borrowed ETag from the wire response headers (or NULL).
- */
-const char *cosmos_error_etag(const struct cosmos_error_t *e);
-
-/**
- * Retry-after duration in milliseconds, or -1 when absent / no wire response.
- */
-int64_t cosmos_error_retry_after_ms(const struct cosmos_error_t *e);
-
-/**
- * Borrowed backtrace string (rate-limited per
- * [`cosmos_set_backtrace_options`]).
- * Returns NULL when no backtrace was captured.
- */
-const char *cosmos_error_backtrace(const struct cosmos_error_t *e);
-
-/**
- * Free a `cosmos_error_t *` obtained via `cosmos_completion_take_error` or
- * a synchronous `out_error` slot. NULL is a no-op. Calling on a borrowed
- * pointer (e.g. `cosmos_completion_error` result) is undefined behavior.
+ * Frees a `cosmos_error_t *` obtained from a synchronous `out_error` slot,
+ * including all of its owned strings. NULL is a no-op.
  */
 void cosmos_error_free(struct cosmos_error_t *e);
 
@@ -1898,7 +2021,7 @@ struct cosmos_operation_handle_t *cosmos_submit_operation(const struct cosmos_dr
                                                           const struct cosmos_operation_request_t *request,
                                                           struct cosmos_completion_queue_t *queue,
                                                           intptr_t user_data,
-                                                          cosmos_error_code_t *out_pre_error);
+                                                          cosmos_status_code_t *out_pre_error);
 
 /**
  * Submits a singleton (single-result) operation for asynchronous
@@ -1925,7 +2048,7 @@ struct cosmos_operation_handle_t *cosmos_submit_singleton_operation(const struct
                                                                     const struct cosmos_operation_request_t *request,
                                                                     struct cosmos_completion_queue_t *queue,
                                                                     intptr_t user_data,
-                                                                    cosmos_error_code_t *out_pre_error);
+                                                                    cosmos_status_code_t *out_pre_error);
 
 /**
  * Asynchronous variant of [`crate::driver::cosmos_driver_get_or_create_blocking`].
@@ -1940,7 +2063,7 @@ struct cosmos_operation_handle_t *cosmos_driver_get_or_create_submit(const struc
                                                                      const struct cosmos_driver_options_t *options,
                                                                      struct cosmos_completion_queue_t *queue,
                                                                      intptr_t user_data,
-                                                                     cosmos_error_code_t *out_pre_error);
+                                                                     cosmos_status_code_t *out_pre_error);
 
 /**
  * Asynchronous variant of
@@ -1955,7 +2078,7 @@ struct cosmos_operation_handle_t *cosmos_driver_resolve_container_submit(const s
                                                                          const char *container_id,
                                                                          struct cosmos_completion_queue_t *queue,
                                                                          intptr_t user_data,
-                                                                         cosmos_error_code_t *out_pre_error);
+                                                                         cosmos_status_code_t *out_pre_error);
 
 #ifdef __cplusplus
 }  // extern "C"
