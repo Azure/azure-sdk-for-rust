@@ -149,7 +149,7 @@ pub struct EventHubPartitionProperties {
 ///     let credential = DeveloperToolsCredential::new(None)?;
 ///     let producer = ProducerClient::builder()
 ///         .with_transport_type(TransportType::AmqpWebSocket)
-///         .open("my_namespace", "my_eventhub", credential)
+///         .open("my_namespace.servicebus.windows.net", "my_eventhub", credential)
 ///         .await?;
 ///     Ok(())
 /// }
