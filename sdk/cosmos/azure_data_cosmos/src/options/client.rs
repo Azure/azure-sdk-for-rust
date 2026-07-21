@@ -17,9 +17,7 @@ pub struct CosmosClientOptions {
     /// unless overridden by per-request options.
     pub operation: OperationOptions,
     pub(crate) user_agent_suffix: Option<UserAgentSuffix>,
-    /// Explicit binary-encoding options. `None` (the default) falls back to the
-    /// `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment variable for
-    /// enablement.
+    /// Options to control binary encoding.
     pub(crate) binary_encoding: Option<BinaryEncodingOptions>,
 }
 
