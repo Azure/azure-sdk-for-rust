@@ -93,8 +93,10 @@ fn forced_final_retry_delay(deadline: Option<Instant>) -> Option<Duration> {
 ///
 /// Honors the service-specified `x-ms-retry-after-ms` header when present.
 /// Falls back to exponential backoff from a small base delay (5ms) if the
-/// header is absent. Individual retry delays are capped at `max_per_retry_delay`
-/// (5s default) to avoid excessive waits from a misbehaving service response.
+/// header is absent. Individual retry delays are capped at the
+/// `max_per_retry_delay` carried by `throttle_state` — the request class's
+/// per-retry cap (5s for metadata, 15s for data-plane) — to avoid excessive
+/// waits from a misbehaving service response.
 pub(crate) fn evaluate_transport_retry(
     result: &TransportResult,
     throttle_state: &ThrottleRetryState,
