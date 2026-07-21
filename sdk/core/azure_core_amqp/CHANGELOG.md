@@ -8,6 +8,8 @@
 
 ### Breaking Changes
 
+- `AmqpConnectionOptions` has a new `transport` field. The struct is not `#[non_exhaustive]`, so code that builds it with a struct literal that names every field must add the new field. Code that uses `..Default::default()` is not affected.
+
 ### Bugs Fixed
 
 - Link properties set through `AmqpReceiverOptions::properties` and `AmqpSenderOptions::properties` now reach the Attach frame. They were discarded before the link attached.
