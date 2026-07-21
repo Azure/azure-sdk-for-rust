@@ -4,6 +4,7 @@
 //! Distributed tracing trait definitions
 //!
 use crate::http::{Context, Request};
+use crate::time::OffsetDateTime;
 use std::{borrow::Cow, fmt::Debug, sync::Arc};
 
 /// Overall architecture for distributed tracing in the SDK.
@@ -37,6 +38,33 @@ pub trait TracerProvider: Send + Sync + Debug {
         crate_name: &'static str,
         crate_version: Option<&'static str>,
     ) -> Arc<dyn Tracer>;
+}
+
+/// Options that customize how a span is started.
+///
+/// `SpanOptions` is passed to [`Tracer::start_span_with_options`] and
+/// [`Tracer::start_span_with_parent_and_options`]. It implements [`Default`], so new options
+/// can be added in the future without changing the [`Tracer`] method signatures. Construct it
+/// with [`Default::default`] and struct update syntax:
+///
+/// ```
+/// use typespec_client_core::tracing::SpanOptions;
+/// use typespec_client_core::time::OffsetDateTime;
+///
+/// let options = SpanOptions {
+///     start_time: Some(OffsetDateTime::now_utc()),
+///     ..Default::default()
+/// };
+/// ```
+#[derive(Debug, Clone, Default)]
+pub struct SpanOptions {
+    /// An explicit start time to record for the span.
+    ///
+    /// When `None`, the span starts at the current time. When `Some`, the span is
+    /// *backdated* to the given time, letting a caller reconstruct a span for an operation
+    /// that has *already completed* — required for tail-based (late-bound) sampling, where
+    /// the decision to emit a span is made after the operation finishes.
+    pub start_time: Option<OffsetDateTime>,
 }
 
 /// The `Tracer` trait is responsible for creating spans and managing the active span in distributed tracing.
@@ -82,6 +110,74 @@ pub trait Tracer: Send + Sync + Debug {
         attributes: Vec<Attribute>,
         parent: Arc<dyn Span>,
     ) -> Arc<dyn Span>;
+
+    /// Starts a new span with the given name and type, customized by [`SpanOptions`].
+    ///
+    /// The newly created span will have the "current" span as a parent. [`SpanOptions`] lets
+    /// the caller, for example, *backdate* the span via [`SpanOptions::start_time`] so it can
+    /// reconstruct a span for an operation that has *already completed*. This is required for
+    /// tail-based (late-bound) sampling, where the decision to emit a span is made after the
+    /// operation finishes.
+    ///
+    /// # Arguments
+    /// - `name`: The name of the span to start.
+    /// - `kind`: The type of the span to start.
+    /// - `attributes`: A vector of attributes to associate with the span.
+    /// - `options`: Additional options, such as an explicit start time, for the span.
+    ///
+    /// # Returns
+    /// An `Arc<dyn Span>` representing the started span.
+    ///
+    /// # Note
+    /// The default implementation ignores `options` and delegates to [`Tracer::start_span`]
+    /// so that existing implementations remain source-compatible. Implementations backed by a
+    /// tracing system that supports these options (such as the OpenTelemetry bridge) override
+    /// this to honor them.
+    fn start_span_with_options(
+        &self,
+        name: Cow<'static, str>,
+        kind: SpanKind,
+        attributes: Vec<Attribute>,
+        options: SpanOptions,
+    ) -> Arc<dyn Span> {
+        let _ = options;
+        self.start_span(name, kind, attributes)
+    }
+
+    /// Starts a new child span with the given name, type, and parent span, customized by [`SpanOptions`].
+    ///
+    /// This is the [`SpanOptions`] variant of [`Tracer::start_span_with_parent`]. It lets a
+    /// caller reconstruct a child span (for example, a single retry attempt) under an explicit
+    /// parent, optionally *backdated* via [`SpanOptions::start_time`].
+    ///
+    /// # Arguments
+    /// - `name`: The name of the span to start.
+    /// - `kind`: The type of the span to start.
+    /// - `attributes`: A vector of attributes to associate with the span.
+    /// - `parent`: The parent span to use for the new span.
+    /// - `options`: Additional options, such as an explicit start time, for the span.
+    ///
+    /// # Returns
+    /// An `Arc<dyn Span>` representing the started span.
+    ///
+    /// # Note
+    /// The default implementation ignores `options` and delegates to
+    /// [`Tracer::start_span_with_parent`] so that existing implementations remain
+    /// source-compatible. Implementations backed by a tracing system that supports these
+    /// options (such as the OpenTelemetry bridge) override this to honor them.
+    ///
+    /// Note: This method may panic if the parent span cannot be downcasted to the expected type.
+    fn start_span_with_parent_and_options(
+        &self,
+        name: Cow<'static, str>,
+        kind: SpanKind,
+        attributes: Vec<Attribute>,
+        parent: Arc<dyn Span>,
+        options: SpanOptions,
+    ) -> Arc<dyn Span> {
+        let _ = options;
+        self.start_span_with_parent(name, kind, attributes, parent)
+    }
 
     /// Returns the namespace the tracer was configured with (if any).
     ///
@@ -148,6 +244,26 @@ pub trait Span: AsAny + Send + Sync {
 
     /// Ends the current span.
     fn end(&self);
+
+    /// Ends the current span at an explicit end time.
+    ///
+    /// This is the backdating variant of [`Span::end`]. It lets a caller close a
+    /// reconstructed span at the timestamp the operation actually finished, rather than
+    /// "now" — the counterpart to [`SpanOptions::start_time`] for late-bound (tail-sampled)
+    /// spans.
+    ///
+    /// # Arguments
+    /// - `end_time`: The explicit end time to record for the span.
+    ///
+    /// # Note
+    /// The default implementation ignores `end_time` and delegates to [`Span::end`] so that
+    /// existing implementations remain source-compatible. Implementations backed by a
+    /// tracing system that supports explicit timestamps (such as the OpenTelemetry bridge)
+    /// override this to honor `end_time`.
+    fn end_at(&self, end_time: OffsetDateTime) {
+        let _ = end_time;
+        self.end();
+    }
 
     /// Sets the status of the current span.
     /// # Arguments

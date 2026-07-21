@@ -6,13 +6,14 @@ use crate::{
     span::{OpenTelemetrySpan, OpenTelemetrySpanKind},
 };
 
-use azure_core::tracing::{SpanKind, Tracer};
+use azure_core::time::OffsetDateTime;
+use azure_core::tracing::{SpanKind, SpanOptions, Tracer};
 use opentelemetry::{
     global::BoxedTracer,
     trace::{TraceContextExt, Tracer as OpenTelemetryTracerTrait},
     Context, KeyValue,
 };
-use std::{borrow::Cow, fmt::Debug, sync::Arc};
+use std::{borrow::Cow, fmt::Debug, sync::Arc, time::SystemTime};
 
 pub struct OpenTelemetryTracer {
     namespace: Option<&'static str>,
@@ -26,6 +27,45 @@ impl OpenTelemetryTracer {
             namespace,
             inner: tracer,
         }
+    }
+
+    /// Builds a span within `context`, optionally backdated to `start_time`.
+    fn build_span(
+        &self,
+        name: Cow<'static, str>,
+        kind: SpanKind,
+        attributes: Vec<azure_core::tracing::Attribute>,
+        start_time: Option<OffsetDateTime>,
+        context: Context,
+    ) -> Arc<dyn azure_core::tracing::Span> {
+        let mut span_builder = opentelemetry::trace::SpanBuilder::from_name(name)
+            .with_kind(OpenTelemetrySpanKind(kind).into())
+            .with_attributes(
+                attributes
+                    .iter()
+                    .map(|attr| KeyValue::from(OpenTelemetryAttribute(attr.clone()))),
+            );
+        if let Some(start_time) = start_time {
+            span_builder = span_builder.with_start_time(SystemTime::from(start_time));
+        }
+        let span = self.inner.build_with_context(span_builder, &context);
+
+        OpenTelemetrySpan::new(context.with_span(span))
+    }
+
+    /// Extracts the OpenTelemetry context from a parent span.
+    fn parent_context(parent: &Arc<dyn azure_core::tracing::Span>) -> Context {
+        parent
+            .as_any()
+            .downcast_ref::<OpenTelemetrySpan>()
+            .unwrap_or_else(|| {
+                panic!(
+                    "Could not downcast parent span to OpenTelemetrySpan. Actual type: {}",
+                    std::any::type_name::<dyn azure_core::tracing::Span>()
+                )
+            })
+            .context()
+            .clone()
     }
 }
 
@@ -48,17 +88,23 @@ impl Tracer for OpenTelemetryTracer {
         kind: SpanKind,
         attributes: Vec<azure_core::tracing::Attribute>,
     ) -> Arc<dyn azure_core::tracing::Span> {
-        let span_builder = opentelemetry::trace::SpanBuilder::from_name(name)
-            .with_kind(OpenTelemetrySpanKind(kind).into())
-            .with_attributes(
-                attributes
-                    .iter()
-                    .map(|attr| KeyValue::from(OpenTelemetryAttribute(attr.clone()))),
-            );
-        let context = Context::current();
-        let span = self.inner.build_with_context(span_builder, &context);
+        self.build_span(name, kind, attributes, None, Context::current())
+    }
 
-        OpenTelemetrySpan::new(context.with_span(span))
+    fn start_span_with_options(
+        &self,
+        name: Cow<'static, str>,
+        kind: SpanKind,
+        attributes: Vec<azure_core::tracing::Attribute>,
+        options: SpanOptions,
+    ) -> Arc<dyn azure_core::tracing::Span> {
+        self.build_span(
+            name,
+            kind,
+            attributes,
+            options.start_time,
+            Context::current(),
+        )
     }
 
     fn start_span_with_parent(
@@ -68,29 +114,20 @@ impl Tracer for OpenTelemetryTracer {
         attributes: Vec<azure_core::tracing::Attribute>,
         parent: Arc<dyn azure_core::tracing::Span>,
     ) -> Arc<dyn azure_core::tracing::Span> {
-        let span_builder = opentelemetry::trace::SpanBuilder::from_name(name)
-            .with_kind(OpenTelemetrySpanKind(kind).into())
-            .with_attributes(
-                attributes
-                    .iter()
-                    .map(|attr| KeyValue::from(OpenTelemetryAttribute(attr.clone()))),
-            );
+        let context = Self::parent_context(&parent);
+        self.build_span(name, kind, attributes, None, context)
+    }
 
-        // Cast the parent span to Any type
-        let context = parent
-            .as_any()
-            .downcast_ref::<OpenTelemetrySpan>()
-            .unwrap_or_else(|| {
-                panic!(
-                    "Could not downcast parent span to OpenTelemetrySpan. Actual type: {}",
-                    std::any::type_name::<dyn azure_core::tracing::Span>()
-                )
-            })
-            .context()
-            .clone();
-        let span = self.inner.build_with_context(span_builder, &context);
-
-        OpenTelemetrySpan::new(context.with_span(span))
+    fn start_span_with_parent_and_options(
+        &self,
+        name: Cow<'static, str>,
+        kind: SpanKind,
+        attributes: Vec<azure_core::tracing::Attribute>,
+        parent: Arc<dyn azure_core::tracing::Span>,
+        options: SpanOptions,
+    ) -> Arc<dyn azure_core::tracing::Span> {
+        let context = Self::parent_context(&parent);
+        self.build_span(name, kind, attributes, options.start_time, context)
     }
 }
 

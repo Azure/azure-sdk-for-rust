@@ -29,6 +29,63 @@ impl Fe2o3AmqpSender {
     }
 }
 
+/// The fe2o3 link builder for a sender, after the name, source and target are set.
+type Fe2o3SenderBuilder = fe2o3_amqp::link::builder::Builder<
+    fe2o3_amqp::link::role::SenderMarker,
+    fe2o3_amqp_types::messaging::Target,
+    fe2o3_amqp::link::builder::WithName,
+    fe2o3_amqp::link::builder::WithSource,
+    fe2o3_amqp::link::builder::WithTarget,
+>;
+
+/// Makes the fe2o3 link builder for a sender.
+///
+/// The order of the builder calls is important. In fe2o3-amqp 0.14, the
+/// `name`, `target`, `sender` and `receiver` methods change the type of the
+/// builder. They rebuild it and set `properties` back to the default value.
+/// Only `source` keeps the properties. So `name` and `target` must be called
+/// before `properties`. If they are not, the link properties are dropped and
+/// never reach the Attach frame.
+fn build_sender_link(
+    name: String,
+    target: AmqpTarget,
+    options: Option<AmqpSenderOptions>,
+) -> Fe2o3SenderBuilder {
+    let mut builder = fe2o3_amqp::Sender::builder().name(name).target(target);
+
+    if let Some(options) = options {
+        if let Some(sender_settle_mode) = options.sender_settle_mode {
+            builder = builder.sender_settle_mode(sender_settle_mode.into());
+        }
+        if let Some(receiver_settle_mode) = options.receiver_settle_mode {
+            builder = builder.receiver_settle_mode(receiver_settle_mode.into());
+        }
+        if let Some(max_message_size) = options.max_message_size {
+            builder = builder.max_message_size(max_message_size);
+        }
+        if let Some(source) = options.source {
+            builder = builder.source(source);
+        }
+        if let Some(offered_capabilities) = options.offered_capabilities {
+            builder = builder.set_offered_capabilities(
+                offered_capabilities.into_iter().map(Into::into).collect(),
+            );
+        }
+        if let Some(desired_capabilities) = options.desired_capabilities {
+            builder = builder.set_desired_capabilities(
+                desired_capabilities.into_iter().map(Into::into).collect(),
+            );
+        }
+        if let Some(properties) = options.properties {
+            builder = builder.properties(properties.into());
+        }
+        if let Some(initial_delivery_count) = options.initial_delivery_count {
+            builder = builder.initial_delivery_count(initial_delivery_count);
+        }
+    }
+    builder
+}
+
 #[async_trait::async_trait]
 impl AmqpSenderApis for Fe2o3AmqpSender {
     async fn attach(
@@ -38,45 +95,7 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
         target: impl Into<AmqpTarget> + Send,
         options: Option<AmqpSenderOptions>,
     ) -> Result<()> {
-        let mut session_builder = fe2o3_amqp::Sender::builder();
-
-        if let Some(options) = options {
-            // if let Some(link_credit) = options.link_credit {
-            //     session_builder = session_builder.link_credit(link_credit);
-            // }
-            if let Some(sender_settle_mode) = options.sender_settle_mode {
-                session_builder = session_builder.sender_settle_mode(sender_settle_mode.into());
-            }
-            if let Some(receiver_settle_mode) = options.receiver_settle_mode {
-                session_builder = session_builder.receiver_settle_mode(receiver_settle_mode.into());
-            }
-            if let Some(max_message_size) = options.max_message_size {
-                session_builder = session_builder.max_message_size(max_message_size);
-            }
-
-            if let Some(source) = options.source {
-                session_builder = session_builder.source(source);
-            }
-            if let Some(offered_capabilities) = options.offered_capabilities {
-                session_builder = session_builder.set_offered_capabilities(
-                    offered_capabilities.into_iter().map(Into::into).collect(),
-                );
-            }
-            if let Some(desired_capabilities) = options.desired_capabilities {
-                session_builder = session_builder.set_desired_capabilities(
-                    desired_capabilities.into_iter().map(Into::into).collect(),
-                );
-            }
-            if let Some(properties) = options.properties {
-                session_builder = session_builder.properties(properties.into());
-            }
-            if let Some(initial_delivery_count) = options.initial_delivery_count {
-                session_builder = session_builder.initial_delivery_count(initial_delivery_count);
-            }
-        }
-        let sender = session_builder
-            .name(name)
-            .target(target.into())
+        let sender = build_sender_link(name, target.into(), options)
             .attach(session.implementation.get()?.lock().await.borrow_mut())
             .await
             .map_err(AmqpError::from)?;
@@ -242,5 +261,40 @@ impl From<fe2o3_amqp::link::SenderAttachError> for AmqpError {
                 AmqpErrorKind::TransportImplementationError(Box::new(e)).into()
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Makes sure the link properties survive the fe2o3 builder chain. Both
+    // `name` and `target` clear the properties, so they must run before
+    // `properties`.
+    #[test]
+    fn sender_link_keeps_properties() {
+        let mut properties: AmqpOrderedMap<AmqpSymbol, AmqpValue> = AmqpOrderedMap::new();
+        properties.insert("com.microsoft:epoch".into(), AmqpValue::from(3i64));
+
+        let options = AmqpSenderOptions {
+            properties: Some(properties),
+            ..Default::default()
+        };
+        let target = AmqpTarget::builder()
+            .with_address("amqps://example.servicebus.windows.net/eh".to_string())
+            .build();
+
+        let builder = build_sender_link("test-sender".into(), target, Some(options));
+
+        assert_eq!(builder.name, "test-sender");
+        let fields = builder
+            .properties
+            .expect("link properties must survive the builder chain");
+        assert_eq!(
+            fields.get(&fe2o3_amqp_types::primitives::Symbol::from(
+                "com.microsoft:epoch"
+            )),
+            Some(&fe2o3_amqp_types::primitives::Value::Long(3))
+        );
     }
 }

@@ -8,6 +8,8 @@
 
 ### Bugs Fixed
 
+- Link properties set through `AmqpReceiverOptions::properties` and `AmqpSenderOptions::properties` now reach the Attach frame. They were discarded before the link attached.
+
 ### Other Changes
 
 ## 1.1.0 (2026-07-09)

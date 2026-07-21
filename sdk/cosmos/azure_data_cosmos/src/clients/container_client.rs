@@ -6,7 +6,7 @@ use crate::{
     diagnostics::CosmosOperationContext,
     feed::{ChangeFeedPageIterator, FeedRange, FeedScope, QueryItemIterator},
     models::TransactionalBatch,
-    models::{BatchResponse, ItemResponse, ResourceResponse},
+    models::{BatchResponse, ChangeFeedItem, ItemResponse, ResourceResponse},
     models::{ContainerProperties, PatchInstructions, ThroughputProperties},
     options::{
         BatchOptions, ChangeFeedOptions, ChangeFeedStartFrom, DeleteContainerOptions,
@@ -887,7 +887,9 @@ impl ContainerClient {
     /// Queries the change feed for a container, returning a stream of pages.
     ///
     /// The change feed provides an ordered list of changes (creates and
-    /// replaces in LatestVersion mode) made to items in the container.
+    /// replaces) made to items in the container. Each change is yielded as a
+    /// [`ChangeFeedItem<T>`](crate::models::ChangeFeedItem); see that type for
+    /// how to read the changed document.
     ///
     /// # Arguments
     /// * `scope` - Determines which partitions to read changes from.
@@ -899,7 +901,9 @@ impl ContainerClient {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// use azure_data_cosmos::{clients::ContainerClient, feed::FeedScope, options::ChangeFeedStartFrom};
+    /// use azure_data_cosmos::{
+    ///     clients::ContainerClient, feed::FeedScope, options::ChangeFeedStartFrom,
+    /// };
     /// use futures::StreamExt;
     /// use serde::Deserialize;
     ///
@@ -909,13 +913,17 @@ impl ContainerClient {
     /// # async fn example(container: ContainerClient) -> Result<(), Box<dyn std::error::Error>> {
     /// // Read all changes from the beginning
     /// let mut pages = container
-    ///     .query_change_feed::<MyItem>(FeedScope::full_container(), ChangeFeedStartFrom::Beginning, None)
+    ///     .query_change_feed::<MyItem>(
+    ///         FeedScope::full_container(),
+    ///         ChangeFeedStartFrom::Beginning,
+    ///         None,
+    ///     )
     ///     .await?;
     ///
     /// while let Some(page) = pages.next().await {
     ///     let page = page?;
     ///     for item in page.items() {
-    ///         println!("changed: {:?}", item);
+    ///         println!("changed: {:?}", item.current());
     ///     }
     ///     // Save checkpoint for resumption
     ///     let _token = pages.to_continuation_token()?;
@@ -928,7 +936,7 @@ impl ContainerClient {
         scope: FeedScope,
         start_from: ChangeFeedStartFrom,
         options: Option<ChangeFeedOptions>,
-    ) -> crate::Result<ChangeFeedPageIterator<T>> {
+    ) -> crate::Result<ChangeFeedPageIterator<ChangeFeedItem<T>>> {
         let options = options.unwrap_or_default();
 
         let mut initial_operation = CosmosOperation::change_feed(
