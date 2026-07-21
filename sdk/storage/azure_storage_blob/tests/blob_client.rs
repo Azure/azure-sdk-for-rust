@@ -1677,6 +1677,7 @@ async fn test_set_access_tier_smart(ctx: TestContext) -> Result<(), Box<dyn Erro
     let mut list_blobs_response = container_client.list_blobs(None)?.into_pages();
     let page = list_blobs_response.try_next().await?;
     let list_blob_segment_response = page.unwrap().into_model()?;
+    assert_eq!(2, list_blob_segment_response.blob_items.len());
     for blob in &list_blob_segment_response.blob_items {
         let properties = blob.properties.as_ref().unwrap();
         assert_eq!(Some(AccessTier::Smart), properties.access_tier);
@@ -1737,6 +1738,7 @@ async fn test_set_access_tier_smart_rehydrate(ctx: TestContext) -> Result<(), Bo
     let mut list_blobs_response = container_client.list_blobs(None)?.into_pages();
     let page = list_blobs_response.try_next().await?;
     let list_blob_segment_response = page.unwrap().into_model()?;
+    assert_eq!(2, list_blob_segment_response.blob_items.len());
     for blob in &list_blob_segment_response.blob_items {
         let properties = blob.properties.as_ref().unwrap();
         assert_eq!(
