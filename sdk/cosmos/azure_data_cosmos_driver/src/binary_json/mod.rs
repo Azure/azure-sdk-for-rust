@@ -26,11 +26,7 @@
 //! the service accepts the verbose form, an encode/decode round-trip preserves
 //! the original value.
 //!
-//! # Reference
-//!
-//! The wire constants in [`markers`] match the service byte-for-byte and are
-//! transcribed from the .NET reference implementation
-//! `Microsoft.Azure.Cosmos/src/Json/JsonBinaryEncoding.TypeMarker.cs`.
+//! The wire constants in [`markers`] match the service byte-for-byte.
 
 pub mod de;
 pub mod error;

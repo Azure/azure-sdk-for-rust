@@ -101,11 +101,11 @@ pub(super) enum ContainerHeader {
 #[derive(Clone, Copy)]
 enum FieldWidth {
     /// 1-byte field.
-    One,
+    U8,
     /// 2-byte field.
-    Two,
+    U16,
     /// 4-byte field.
-    Four,
+    U32,
 }
 
 /// Decodes a complete Cosmos binary JSON buffer into a [`serde_json::Value`].
@@ -327,12 +327,12 @@ impl<'a> Reader<'a> {
                 let item = self.read_value(depth + 1)?;
                 Ok(Value::Array(vec![item]))
             }
-            ARR_L1 => self.read_array_value(FieldWidth::One, false, depth),
-            ARR_L2 => self.read_array_value(FieldWidth::Two, false, depth),
-            ARR_L4 => self.read_array_value(FieldWidth::Four, false, depth),
-            ARR_LC1 => self.read_array_value(FieldWidth::One, true, depth),
-            ARR_LC2 => self.read_array_value(FieldWidth::Two, true, depth),
-            ARR_LC4 => self.read_array_value(FieldWidth::Four, true, depth),
+            ARR_L1 => self.read_array_value(FieldWidth::U8, false, depth),
+            ARR_L2 => self.read_array_value(FieldWidth::U16, false, depth),
+            ARR_L4 => self.read_array_value(FieldWidth::U32, false, depth),
+            ARR_LC1 => self.read_array_value(FieldWidth::U8, true, depth),
+            ARR_LC2 => self.read_array_value(FieldWidth::U16, true, depth),
+            ARR_LC4 => self.read_array_value(FieldWidth::U32, true, depth),
 
             // Objects.
             OBJ0 => Ok(Value::Object(Map::new())),
@@ -342,12 +342,12 @@ impl<'a> Reader<'a> {
                 map.insert(name, value);
                 Ok(Value::Object(map))
             }
-            OBJ_L1 => self.read_object_value(FieldWidth::One, false, depth),
-            OBJ_L2 => self.read_object_value(FieldWidth::Two, false, depth),
-            OBJ_L4 => self.read_object_value(FieldWidth::Four, false, depth),
-            OBJ_LC1 => self.read_object_value(FieldWidth::One, true, depth),
-            OBJ_LC2 => self.read_object_value(FieldWidth::Two, true, depth),
-            OBJ_LC4 => self.read_object_value(FieldWidth::Four, true, depth),
+            OBJ_L1 => self.read_object_value(FieldWidth::U8, false, depth),
+            OBJ_L2 => self.read_object_value(FieldWidth::U16, false, depth),
+            OBJ_L4 => self.read_object_value(FieldWidth::U32, false, depth),
+            OBJ_LC1 => self.read_object_value(FieldWidth::U8, true, depth),
+            OBJ_LC2 => self.read_object_value(FieldWidth::U16, true, depth),
+            OBJ_LC4 => self.read_object_value(FieldWidth::U32, true, depth),
 
             // Every non-container marker is a leaf value.
             _ => self.read_leaf_value(marker, offset),
@@ -429,16 +429,16 @@ impl<'a> Reader<'a> {
             // the group-count prefix (1 vs 2 bytes) and the alphabet (standard
             // vs URL-safe) depend on the marker.
             BASE64_STRING_LENGTH1 => Ok(Value::String(
-                self.read_base64_string(FieldWidth::One, false)?,
+                self.read_base64_string(FieldWidth::U8, false)?,
             )),
             BASE64_STRING_LENGTH2 => Ok(Value::String(
-                self.read_base64_string(FieldWidth::Two, false)?,
+                self.read_base64_string(FieldWidth::U16, false)?,
             )),
             BASE64_URL_STRING_LENGTH1 => Ok(Value::String(
-                self.read_base64_string(FieldWidth::One, true)?,
+                self.read_base64_string(FieldWidth::U8, true)?,
             )),
             BASE64_URL_STRING_LENGTH2 => Ok(Value::String(
-                self.read_base64_string(FieldWidth::Two, true)?,
+                self.read_base64_string(FieldWidth::U16, true)?,
             )),
 
             // Compressed strings. The 4-bit table forms map each nibble through
@@ -456,27 +456,27 @@ impl<'a> Reader<'a> {
             PACKED_4BIT_STRING => Ok(Value::String(self.read_packed_string(
                 4,
                 true,
-                FieldWidth::One,
+                FieldWidth::U8,
             )?)),
             PACKED_5BIT_STRING => Ok(Value::String(self.read_packed_string(
                 5,
                 true,
-                FieldWidth::One,
+                FieldWidth::U8,
             )?)),
             PACKED_6BIT_STRING => Ok(Value::String(self.read_packed_string(
                 6,
                 true,
-                FieldWidth::One,
+                FieldWidth::U8,
             )?)),
             PACKED_7BIT_STRING_LENGTH1 => Ok(Value::String(self.read_packed_string(
                 7,
                 false,
-                FieldWidth::One,
+                FieldWidth::U8,
             )?)),
             PACKED_7BIT_STRING_LENGTH2 => Ok(Value::String(self.read_packed_string(
                 7,
                 false,
-                FieldWidth::Two,
+                FieldWidth::U16,
             )?)),
 
             // The GUID *value* is 16 bytes interpreted as a .NET `Guid`
@@ -487,16 +487,16 @@ impl<'a> Reader<'a> {
 
             // Binary blobs have no JSON representation; the raw bytes are mapped
             // to a standard base64 string (the conventional JSON byte encoding).
-            BINARY_1BYTE_LENGTH => self.read_binary(FieldWidth::One),
-            BINARY_2BYTE_LENGTH => self.read_binary(FieldWidth::Two),
-            BINARY_4BYTE_LENGTH => self.read_binary(FieldWidth::Four),
+            BINARY_1BYTE_LENGTH => self.read_binary(FieldWidth::U8),
+            BINARY_2BYTE_LENGTH => self.read_binary(FieldWidth::U16),
+            BINARY_4BYTE_LENGTH => self.read_binary(FieldWidth::U32),
 
             // Uniform number arrays: a typed, marker-shared sequence of bare
             // numbers (`ArrNumC*`) or a sequence of such arrays (`ArrArrNumC*`).
-            ARR_NUM_C1 => self.read_uniform_number_array(FieldWidth::One),
-            ARR_NUM_C2 => self.read_uniform_number_array(FieldWidth::Two),
-            ARR_ARR_NUM_C1C1 => self.read_uniform_array_of_number_arrays(FieldWidth::One),
-            ARR_ARR_NUM_C2C2 => self.read_uniform_array_of_number_arrays(FieldWidth::Two),
+            ARR_NUM_C1 => self.read_uniform_number_array(FieldWidth::U8),
+            ARR_NUM_C2 => self.read_uniform_number_array(FieldWidth::U16),
+            ARR_ARR_NUM_C1C1 => self.read_uniform_array_of_number_arrays(FieldWidth::U8),
+            ARR_ARR_NUM_C2C2 => self.read_uniform_array_of_number_arrays(FieldWidth::U16),
 
             // User strings reference an external string dictionary that the
             // Cosmos data plane does not supply, so they cannot be resolved to
@@ -732,11 +732,11 @@ impl<'a> Reader<'a> {
     ) -> Result<(Option<usize>, usize)> {
         let [l1, l2, l4] = l_markers;
         let width = if marker == l1 || marker == l1 + 3 {
-            FieldWidth::One
+            FieldWidth::U8
         } else if marker == l2 || marker == l2 + 3 {
-            FieldWidth::Two
+            FieldWidth::U16
         } else {
-            FieldWidth::Four
+            FieldWidth::U32
         };
         let has_count = marker == l1 + 3 || marker == l2 + 3 || marker == l4 + 3;
         self.pos += 1; // consume the marker
@@ -753,9 +753,9 @@ impl<'a> Reader<'a> {
     /// Reads a 1-, 2-, or 4-byte little-endian length or count field.
     fn read_len(&mut self, width: FieldWidth) -> Result<usize> {
         match width {
-            FieldWidth::One => Ok(usize::from(self.read_u8()?)),
-            FieldWidth::Two => Ok(usize::from(self.read_u16_le()?)),
-            FieldWidth::Four => Ok(self.read_u32_le()? as usize),
+            FieldWidth::U8 => Ok(usize::from(self.read_u8()?)),
+            FieldWidth::U16 => Ok(usize::from(self.read_u16_le()?)),
+            FieldWidth::U32 => Ok(self.read_u32_le()? as usize),
         }
     }
 

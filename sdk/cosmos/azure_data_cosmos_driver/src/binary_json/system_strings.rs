@@ -8,9 +8,7 @@
 //! [`SYSTEM_STRING_1BYTE_MIN`]..[`SYSTEM_STRING_1BYTE_MAX`]) encodes a string by
 //! index into this table: `index = marker - SYSTEM_STRING_1BYTE_MIN`.
 //!
-//! The table matches the service byte-for-byte and in the same order; it is
-//! transcribed from the .NET reference implementation
-//! `Microsoft.Azure.Cosmos/src/Json/JsonBinaryEncoding.SystemStrings.cs`.
+//! The table matches the service byte-for-byte and in the same order.
 
 use super::markers::{SYSTEM_STRING_1BYTE_MAX, SYSTEM_STRING_1BYTE_MIN};
 

@@ -5,9 +5,8 @@
 
 /// Options controlling Cosmos **binary JSON** on the wire for an operation.
 ///
-/// These options are **schema-agnostic**, so they live in the driver and are
-/// shared by every consumer — the Rust SDK ([`azure_data_cosmos`]) and any
-/// FFI-based SDK (.NET, Java, Go, …) that drives the C ABI. They are set on
+/// These options are **schema-agnostic**, so they live in the driver. They are
+/// set on
 /// [`OperationOptions::binary_encoding`](crate::options::OperationOptions::binary_encoding)
 /// and participate in the standard runtime → account → operation layered
 /// resolution.
@@ -24,15 +23,9 @@
 ///   binary response to text before returning it. Has no effect unless
 ///   [`enabled`](Self::enabled) is `true`.
 ///
-/// A typed consumer (the Rust SDK) may pre-encode its request body straight from
+/// A typed consumer may pre-encode its request body straight from
 /// `T: Serialize` as an optimization; the driver's request-side transcoding then
 /// sees an already-binary body and passes it through unchanged.
-///
-/// Binary encoding is in preview. Additional tuning knobs (for example ULong
-/// support or Base64 optimization) may be added here in future versions, so the
-/// struct is `#[non_exhaustive]`.
-///
-/// [`azure_data_cosmos`]: https://docs.rs/azure_data_cosmos
 ///
 /// # Examples
 ///
