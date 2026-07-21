@@ -12,7 +12,7 @@
 //! asserting the fields we wrote survive the binary request/response round-trip.
 //!
 //! Binary encoding is enabled explicitly on the client via
-//! `CosmosClientBuilder::with_binary_encoding_enabled`, which the SDK resolves
+//! `CosmosClientBuilder::with_binary_encoding_options`, which the SDK resolves
 //! **once at client-build time**. This test therefore sets it when building the
 //! client.
 //!
@@ -39,8 +39,8 @@ use std::path::{Path, PathBuf};
 use azure_core::http::StatusCode;
 use azure_data_cosmos::models::ContainerProperties;
 use azure_data_cosmos::options::{
-    ConnectionPoolOptions, ContentResponseOnWrite, ItemWriteOptions, OperationOptions, Region,
-    ServerCertificateValidation,
+    BinaryEncodingOptions, ConnectionPoolOptions, ContentResponseOnWrite, ItemWriteOptions,
+    OperationOptions, Region, ServerCertificateValidation,
 };
 use azure_data_cosmos::{
     AccountEndpoint, AccountReference, CosmosClient, CosmosRuntime, RoutingStrategy,
@@ -147,7 +147,8 @@ async fn build_client() -> Result<CosmosClient, Box<dyn Error>> {
 
     // Enable binary encoding explicitly via the client option rather than the
     // process environment, so the setting is scoped to this client.
-    let mut builder = CosmosClient::builder().with_binary_encoding_enabled(true);
+    let mut builder = CosmosClient::builder()
+        .with_binary_encoding_options(BinaryEncodingOptions::new().with_enabled(true));
 
     let allow_invalid_cert = std::env::var(ALLOW_INVALID_CERT_ENV_VAR)
         .ok()

@@ -4,14 +4,16 @@
 //! Golden binary-JSON decode vectors (test-support).
 //!
 //! Each [`BinaryVector`] pairs a complete Cosmos binary JSON buffer with the
-//! text JSON it decodes to. The corpus lives in a shared, human-reviewable data
-//! file (`testdata/binary_json_vectors.txt`) embedded via [`include_str!`] so it
-//! can be reviewed as spaced-hex bytes and shared across language SDKs.
+//! text JSON it decodes to. The corpus lives in a shared, human-reviewable JSON
+//! data file (`testdata/binary_json_vectors.json`) embedded via [`include_str!`]
+//! so it can be reviewed and shared across language SDKs.
 //!
 //! The module is compiled only under `cfg(test)`.
 
+use serde::Deserialize;
+
 /// The embedded corpus data file (see the module docs for the format).
-const CORPUS: &str = include_str!("../../testdata/binary_json_vectors.txt");
+const CORPUS: &str = include_str!("../../testdata/binary_json_vectors.json");
 
 /// A single golden vector: a complete binary JSON buffer and the canonical text
 /// JSON it decodes to.
@@ -24,60 +26,32 @@ pub(crate) struct BinaryVector {
     pub json: String,
 }
 
-/// Parses the embedded corpus into golden vectors.
+/// The on-disk shape of a corpus record: a case name, the binary buffer as a
+/// space-separated hex string, and the expected JSON value written inline.
+#[derive(Deserialize)]
+struct RawVector {
+    name: String,
+    binary: String,
+    json: serde_json::Value,
+}
+
+/// Parses the embedded JSON corpus into golden vectors.
 ///
-/// The format is a sequence of blank-line-separated records, each with `name:`,
-/// `binary:` (space-separated hex bytes), and `json:` fields. Lines starting
-/// with `#` are comments. Panics on a malformed corpus, since it is a
-/// compile-time-embedded test fixture.
+/// The file is a JSON array of objects with `name`, `binary` (space-separated
+/// hex bytes), and `json` (the expected value inline). Panics on a malformed
+/// corpus, since it is a compile-time-embedded test fixture.
 pub(crate) fn golden_vectors() -> Vec<BinaryVector> {
-    let mut vectors = Vec::new();
-    let mut name: Option<String> = None;
-    let mut binary: Option<Vec<u8>> = None;
-    let mut json: Option<String> = None;
+    let raw: Vec<RawVector> =
+        serde_json::from_str(CORPUS).expect("corpus must be a valid JSON array of vectors");
 
-    let flush = |name: &mut Option<String>,
-                 binary: &mut Option<Vec<u8>>,
-                 json: &mut Option<String>,
-                 vectors: &mut Vec<BinaryVector>| {
-        let (name, binary, json) = (name.take(), binary.take(), json.take());
-        match (name, binary, json) {
-            (Some(name), Some(binary), Some(json)) => {
-                vectors.push(BinaryVector { name, binary, json });
-            }
-            // A completely empty record (e.g. consecutive blank lines) is fine;
-            // a partial record means the corpus is malformed — fail fast so the
-            // corruption is surfaced deterministically rather than silently
-            // dropped.
-            (None, None, None) => {}
-            (name, binary, json) => panic!(
-                "incomplete corpus record: name={name:?} binary_present={} json={json:?}",
-                binary.is_some()
-            ),
-        }
-    };
-
-    for line in CORPUS.lines() {
-        let line = line.trim();
-        if line.is_empty() {
-            flush(&mut name, &mut binary, &mut json, &mut vectors);
-            continue;
-        }
-        if line.starts_with('#') {
-            continue;
-        }
-        if let Some(value) = line.strip_prefix("name:") {
-            name = Some(value.trim().to_owned());
-        } else if let Some(value) = line.strip_prefix("binary:") {
-            binary = Some(parse_hex(value.trim()));
-        } else if let Some(value) = line.strip_prefix("json:") {
-            json = Some(value.trim().to_owned());
-        } else {
-            panic!("unrecognized corpus line: {line:?}");
-        }
-    }
-    // Flush a trailing record without a terminating blank line.
-    flush(&mut name, &mut binary, &mut json, &mut vectors);
+    let vectors: Vec<BinaryVector> = raw
+        .into_iter()
+        .map(|r| BinaryVector {
+            name: r.name,
+            binary: parse_hex(&r.binary),
+            json: r.json.to_string(),
+        })
+        .collect();
 
     assert!(!vectors.is_empty(), "corpus must not be empty");
     vectors

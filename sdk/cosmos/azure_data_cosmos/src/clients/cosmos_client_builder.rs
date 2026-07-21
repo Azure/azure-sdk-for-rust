@@ -183,21 +183,9 @@ impl CosmosClientBuilder {
     /// When this setter is **not** called, enablement falls back to the
     /// `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment variable (truthy
     /// values `1` / `true` / `yes` / `on`, case-insensitive, trimmed). Passing
-    /// explicit options here takes precedence over that variable. Binary
-    /// encoding is in preview.
+    /// explicit options here takes precedence over that variable.
     pub fn with_binary_encoding_options(mut self, options: BinaryEncodingOptions) -> Self {
         self.options.binary_encoding = Some(options);
-        self
-    }
-
-    /// Enables or disables Cosmos binary JSON encoding for this client.
-    ///
-    /// This is a convenience shortcut for
-    /// [`with_binary_encoding_options`](Self::with_binary_encoding_options) with
-    /// only the enablement flag set. See that method for the full behavior and
-    /// environment-variable fallback.
-    pub fn with_binary_encoding_enabled(mut self, enabled: bool) -> Self {
-        self.options.binary_encoding = Some(BinaryEncodingOptions::new().with_enabled(enabled));
         self
     }
 
