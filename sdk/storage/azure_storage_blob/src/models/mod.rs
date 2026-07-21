@@ -19,7 +19,7 @@ pub use crate::generated::models::*;
 pub use download_result::{
     BlobClientDownloadIntoResult, BlobClientDownloadResult, BlobDownloadProperties,
 };
-pub use list_blobs_response::{ListBlobsPageResponse, ListBlobsResponse};
+pub use list_blobs_response::ListBlobsResponse;
 pub use method_options::BlockBlobClientUploadOptions as BlobClientUploadOptions;
 pub use method_options::{
     BlobClientDownloadOptions, BlobContainerClientListBlobsOptions, BlockBlobClientUploadOptions,

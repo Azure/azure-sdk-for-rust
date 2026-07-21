@@ -167,7 +167,7 @@ async fn test_list_blobs_observe_raw(ctx: TestContext) -> Result<(), Box<dyn Err
         .await?
         .expect("expected at least one page");
 
-    let (status, headers, body) = page.into_raw_response().deconstruct();
+    let (status, headers, body) = page.deconstruct();
     let content_type = headers.get_optional_str(&azure_core::http::headers::CONTENT_TYPE);
     let preview_len = body.len().min(64);
     let hex_preview = body[..preview_len]

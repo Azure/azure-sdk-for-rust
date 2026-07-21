@@ -95,6 +95,8 @@ impl AsyncRawResponse {
 #[cfg(feature = "json")]
 pub struct Response<T, F = JsonFormat> {
     raw: RawResponse,
+    // Feature Request: Add optional, pre-deserialized model on Response.
+    model: Option<T>,
     phantom: PhantomData<(T, F)>,
 }
 
@@ -112,10 +114,21 @@ pub struct Response<T, F = JsonFormat> {
 #[cfg(not(feature = "json"))]
 pub struct Response<T, F> {
     raw: RawResponse,
+    model: Option<T>,
     phantom: PhantomData<(T, F)>,
 }
 
 impl<T, F> Response<T, F> {
+    // Feature Request: Add new constructor to provide pre-deserialized model.
+    /// Creates a typed response with an already deserialized model.
+    pub fn from_raw_response_with_model(raw: RawResponse, model: T) -> Self {
+        Self {
+            raw,
+            model: Some(model),
+            phantom: PhantomData,
+        }
+    }
+
     /// Get the status code from the response.
     pub fn status(&self) -> StatusCode {
         self.raw.status()
@@ -187,8 +200,11 @@ impl<T: DeserializeWith<F>, F: Format> Response<T, F> {
     /// # }
     /// ```
     pub fn into_model(self) -> crate::Result<T> {
-        let body = self.into_body();
-        T::deserialize_with(body)
+        // Feature Request: Return pre-deserialized model if exists, otherwise old behavior.
+        match self.model {
+            Some(model) => Ok(model),
+            None => T::deserialize_with(self.raw.into_body()),
+        }
     }
 }
 
@@ -205,6 +221,7 @@ impl<T, F> From<RawResponse> for Response<T, F> {
     fn from(raw: RawResponse) -> Self {
         Self {
             raw,
+            model: None,
             phantom: PhantomData,
         }
     }
@@ -402,6 +419,31 @@ mod tests {
     use super::*;
     use crate::http::{headers::Headers, AsyncRawResponse, RawResponse, Response, StatusCode};
     use futures::{stream, StreamExt};
+    use serde::Deserialize;
+
+    #[derive(Debug, Deserialize, PartialEq)]
+    struct CachedModel {
+        value: String,
+    }
+
+    #[test]
+    fn into_model_returns_cached_model() {
+        let raw =
+            RawResponse::from_bytes(StatusCode::Ok, Headers::new(), b"not valid json".as_slice());
+        let response: Response<CachedModel> = Response::from_raw_response_with_model(
+            raw,
+            CachedModel {
+                value: "cached".into(),
+            },
+        );
+
+        assert_eq!(
+            response.into_model().unwrap(),
+            CachedModel {
+                value: "cached".into()
+            }
+        );
+    }
 
     #[test]
     fn can_extract_raw_body() -> Result<(), Box<dyn std::error::Error>> {

@@ -4,8 +4,9 @@
 pub use crate::generated::clients::{BlobContainerClient, BlobContainerClientOptions};
 
 use crate::{
+    arrow_decode::decode_list_blobs,
     generated::models::BlobContainerClientListBlobsArrowInternalOptions,
-    models::{BlobContainerClientListBlobsOptions, ListBlobsPageResponse, StorageErrorCode},
+    models::{BlobContainerClientListBlobsOptions, ListBlobsResponse, StorageErrorCode},
     BlobClient,
 };
 use azure_core::{
@@ -14,18 +15,11 @@ use azure_core::{
     http::{
         pager::{PagerContinuation, PagerResult, PagerState},
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        ClientMethodOptions, ItemIterator, Pipeline, RawResponse, StatusCode, Url,
+        ClientMethodOptions, Pager, Pipeline, RawResponse, Response, StatusCode, Url, XmlFormat,
     },
     tracing, Result,
 };
 use std::sync::Arc;
-
-/// A pager over responses returned by [`BlobContainerClient::list_blobs`].
-///
-/// This alias makes the paging API explicit. The standard `Pager<P, F>` alias cannot be used
-/// because it always wraps each page in `Response<P, F>`, while list blobs needs
-/// [`ListBlobsPageResponse`] to select XML or Apache Arrow using the response headers.
-pub type ListBlobsPager = ItemIterator<ListBlobsPageResponse>;
 
 impl BlobContainerClient {
     /// Creates a new BlobContainerClient from a container URL.
@@ -118,7 +112,7 @@ impl BlobContainerClient {
     pub fn list_blobs(
         &self,
         options: Option<BlobContainerClientListBlobsOptions<'_>>,
-    ) -> Result<ListBlobsPager> {
+    ) -> Result<Pager<ListBlobsResponse, XmlFormat>> {
         let options = options.unwrap_or_default().into_owned();
         let method_options = options.method_options.clone();
         let endpoint = self.endpoint.clone();
@@ -126,7 +120,7 @@ impl BlobContainerClient {
         let version = self.version.clone();
         let tracer = self.tracer.clone();
 
-        Ok(ItemIterator::new(
+        Ok(Pager::new(
             move |state: PagerState, pager_options| {
                 let client = BlobContainerClient {
                     endpoint: endpoint.clone(),
@@ -161,8 +155,13 @@ impl BlobContainerClient {
                         .await?
                         .into();
 
-                    let response = ListBlobsPageResponse::new(raw_response);
-                    Ok(match response.next_marker()? {
+                    let model = decode_list_blobs(raw_response.headers(), raw_response.body())?;
+                    let next_marker = model
+                        .next_marker
+                        .clone()
+                        .filter(|marker| !marker.is_empty());
+                    let response = Response::from_raw_response_with_model(raw_response, model);
+                    Ok(match next_marker {
                         Some(next_marker) => PagerResult::More {
                             response,
                             continuation: PagerContinuation::Token(next_marker),
