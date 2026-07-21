@@ -287,10 +287,13 @@ dependencies = [
  "azure_core_macros 1.0.0",
  "bytes",
  "futures",
+ "hmac",
+ "openssl",
  "pin-project",
  "rustc_version",
  "serde",
  "serde_json",
+ "sha2",
  "tokio",
  "tracing",
  "typespec 1.1.0",
@@ -517,10 +520,10 @@ version = "0.37.0"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 1.2.0-beta.1",
- "azure_core_test 0.2.0",
+ "azure_core 1.1.0",
+ "azure_core_test 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "azure_data_cosmos_driver",
- "azure_identity 1.1.0-beta.1",
+ "azure_identity 1.0.0",
  "base64",
  "clap",
  "futures",
@@ -542,7 +545,7 @@ name = "azure_data_cosmos_benchmarks"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.1.0",
  "azure_data_cosmos_driver",
  "criterion",
  "tokio",
@@ -556,9 +559,9 @@ dependencies = [
  "arc-swap",
  "async-lock",
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.1.0",
  "azure_data_cosmos_macros 0.2.0",
- "azure_identity 1.1.0-beta.1",
+ "azure_identity 1.0.0",
  "backtrace",
  "base64",
  "bytes",
@@ -584,7 +587,7 @@ dependencies = [
 name = "azure_data_cosmos_driver_native"
 version = "0.1.0"
 dependencies = [
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.1.0",
  "azure_data_cosmos_driver",
  "cbindgen",
  "futures",
@@ -619,10 +622,10 @@ name = "azure_data_cosmos_perf"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.1.0",
  "azure_data_cosmos",
  "azure_data_cosmos_driver",
- "azure_identity 1.1.0-beta.1",
+ "azure_identity 1.0.0",
  "clap",
  "console-subscriber",
  "futures",
