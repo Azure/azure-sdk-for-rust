@@ -28,9 +28,9 @@ pub enum AmqpTransport {
     /// AMQP framing tunneled over secure WebSockets (`wss://`, port 443).
     ///
     /// This variant needs the `native_tls` feature, which the `default` feature
-    /// selects. A build with `default-features = false` and no `native_tls` can
-    /// still select this variant, but the connection then returns an error when
-    /// it opens, because the WebSocket transport has no TLS backend.
+    /// selects. A build with `fe2o3_amqp` but no `native_tls` can still select
+    /// this variant, but the connection then returns an error when it opens,
+    /// because the WebSocket transport has no TLS backend.
     WebSocket,
 }
 
