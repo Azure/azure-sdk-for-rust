@@ -39,7 +39,12 @@ serde_json.workspace = true
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 
 [features]
-default = ["fe2o3_amqp", "fe2o3-amqp/native-tls", "fe2o3-amqp-ws/native-tls"]
+default = ["fe2o3_amqp", "native_tls"]
+# TLS backend selection. The fe2o3 crates gate their TLS entry points behind
+# their own features, so this crate forwards the choice to both of them and
+# gates the WebSocket transport on it.
+native_tls = ["fe2o3-amqp/native-tls", "fe2o3-amqp-ws/native-tls"]
+rustls = ["fe2o3-amqp/rustls", "fe2o3-amqp-ws/rustls-tls-webpki-roots"]
 ffi = []
 test = []
 fe2o3_amqp = [

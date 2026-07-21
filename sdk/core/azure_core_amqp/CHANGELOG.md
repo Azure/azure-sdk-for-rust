@@ -5,10 +5,11 @@
 ### Features Added
 
 - Added `AmqpTransport` and an `AmqpConnectionOptions::transport` field to select the connection transport. `AmqpTransport::WebSocket` tunnels AMQP over secure WebSockets (`wss://`, port 443) for networks that block the native AMQP ports.
+- Added the `native_tls` and the `rustls` features, which select the TLS backend for both `fe2o3-amqp` and `fe2o3-amqp-ws`. The `default` feature selects `native_tls`. To use `rustls`, build with `--no-default-features --features fe2o3_amqp,rustls`. The `AmqpTransport::WebSocket` transport needs one of these two features and returns an error at run time without them.
 
 ### Breaking Changes
 
-- `AmqpConnectionOptions` has a new `transport` field. The struct is not `#[non_exhaustive]`, so code that builds it with a struct literal that names every field must add the new field. Code that uses `..Default::default()` is not affected.
+- `AmqpConnectionOptions` is now `#[non_exhaustive]`. Build it from `Default` and set the fields you need, for example `AmqpConnectionOptions { transport: Some(AmqpTransport::WebSocket), ..Default::default() }`. A struct literal that names every field no longer compiles. This makes each later field addition additive.
 
 ### Bugs Fixed
 
