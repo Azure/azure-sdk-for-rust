@@ -308,11 +308,12 @@ impl RecoverableConnection {
             "Closing recoverable connection."
         );
 
-        // Swap the cell out under the write lock, then detach without holding it.
-        let management_cell = std::mem::replace(
-            &mut *self.mgmt_client.write().await,
-            Arc::new(OnceCell::new()),
-        );
+        // Swap the cell out under the write lock, then detach without holding
+        // it. The guard is a separate binding so the lock scope is visible and
+        // a debugger can read it.
+        let mut cell_slot = self.mgmt_client.write().await;
+        let management_cell = std::mem::replace(&mut *cell_slot, Arc::new(OnceCell::new()));
+        drop(cell_slot);
         if let Some(Some(management_client)) = Arc::try_unwrap(management_cell)
             .ok()
             .map(OnceCell::into_inner)
