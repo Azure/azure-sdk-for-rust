@@ -828,27 +828,29 @@ impl RecoverableConnection {
         );
         let connection = Arc::new(AmqpConnection::new());
 
+        let mut options = AmqpConnectionOptions::default()
+            .with_properties(
+                vec![
+                    ("user-agent", get_user_agent(&self.application_id)),
+                    ("version", get_package_version()),
+                    ("platform", get_platform_info()),
+                    ("product", get_package_name()),
+                ]
+                .into_iter()
+                .map(|(k, v)| (AmqpSymbol::from(k), AmqpValue::from(v)))
+                .collect(),
+            )
+            .with_desired_capabilities(vec![GEODR_REPLICATION_CAPABILITY.into()])
+            .with_transport(self.transport);
+        if let Some(custom_endpoint) = self.custom_endpoint.clone() {
+            options = options.with_custom_endpoint(custom_endpoint);
+        }
+
         connection
             .open(
                 self.connection_name.clone(),
                 self.url.clone(),
-                Some(AmqpConnectionOptions {
-                    properties: Some(
-                        vec![
-                            ("user-agent", get_user_agent(&self.application_id)),
-                            ("version", get_package_version()),
-                            ("platform", get_platform_info()),
-                            ("product", get_package_name()),
-                        ]
-                        .into_iter()
-                        .map(|(k, v)| (AmqpSymbol::from(k), AmqpValue::from(v)))
-                        .collect(),
-                    ),
-                    desired_capabilities: Some(vec![GEODR_REPLICATION_CAPABILITY.into()]),
-                    custom_endpoint: self.custom_endpoint.clone(),
-                    transport: Some(self.transport),
-                    ..Default::default()
-                }),
+                Some(options),
             )
             .await?;
         info!(
