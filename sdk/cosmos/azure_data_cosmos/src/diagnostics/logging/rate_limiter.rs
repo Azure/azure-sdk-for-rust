@@ -81,7 +81,15 @@ pub(crate) struct RateLimiter {
 
 impl RateLimiter {
     /// Creates a limiter with the given configuration, anchored at "now".
-    pub(crate) fn new(config: RateLimiterConfig) -> Self {
+    ///
+    /// Because [`RateLimiterConfig`] is publicly constructible with mutable
+    /// fields, a caller can supply `window = Duration::ZERO`, which would roll the
+    /// window over on every call and bypass the cap. Normalize a zero window to
+    /// the default so the limiter always makes forward progress.
+    pub(crate) fn new(mut config: RateLimiterConfig) -> Self {
+        if config.window.is_zero() {
+            config.window = DEFAULT_WINDOW;
+        }
         Self {
             config,
             state: Mutex::new(State {

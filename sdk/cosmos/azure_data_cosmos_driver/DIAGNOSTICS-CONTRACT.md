@@ -505,5 +505,5 @@ These map to the plan's decisions D1–D10.
   upstream `Meter` (D2) and span-backdating (D3) additions are proposals pursued in parallel.
 
 [thresholds]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/src/options/diagnostics_thresholds.rs
-[ctx]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/src/models/cosmos_response.rs
+[ctx]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/src/diagnostics/diagnostics_context.rs
 [azcore]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core/azure_core/src/http/policies/instrumentation/mod.rs

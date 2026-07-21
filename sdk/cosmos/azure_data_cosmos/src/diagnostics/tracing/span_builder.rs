@@ -61,7 +61,28 @@ pub(crate) fn emit_backdated_span_tree<T>(
 
     let requests = diagnostics.requests();
 
-    let op_end = now_system;
+    // Wall-clock end of one attempt: its recorded completion, or its start plus
+    // reported duration when no completion instant was captured.
+    let child_end_of = |req: &RequestDiagnostics| -> SystemTime {
+        let start = to_system(req.started_at());
+        let end = match req.completed_at() {
+            Some(completed) => to_system(completed),
+            None => start + Duration::from_millis(req.duration_ms()),
+        };
+        end.max(start)
+    };
+
+    // Anchor the root's end to the last attempt's completion, NOT to
+    // `now_system` (the handler's invocation time). Handlers run in registration
+    // order, so using the invocation time would fold any earlier handler's delay
+    // into this span while the child timestamps stay anchored to the real request
+    // instants — inflating and shifting the reconstructed operation span. Fall
+    // back to `now_system` only when there are no retained attempts.
+    let op_end = requests
+        .iter()
+        .map(&child_end_of)
+        .max()
+        .unwrap_or(now_system);
     // The root span must fully contain its backdated children. A normal
     // operation's `duration()` already reaches back to before its first attempt,
     // but an aggregate operation's `duration()` is the SUM of its sub-op
@@ -188,11 +209,7 @@ pub(crate) fn emit_backdated_span_tree<T>(
     // --- Attempt (child) spans ---
     for req in requests.iter() {
         let child_start = to_system(req.started_at());
-        let child_end = match req.completed_at() {
-            Some(completed) => to_system(completed),
-            None => child_start + Duration::from_millis(req.duration_ms()),
-        };
-        let child_end = child_end.max(child_start);
+        let child_end = child_end_of(req);
 
         let req_status = req.status();
         let req_failed = !req_status.is_success();
