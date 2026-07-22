@@ -108,9 +108,19 @@ pub(crate) async fn execute(
 pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
     dispatcher: &D,
     operation: CosmosOperation,
-    options: OperationOptions,
+    mut options: OperationOptions,
     max_attempts: Option<NonZeroU8>,
 ) -> crate::error::Result<CosmosResponse> {
+    // PATCH is excluded from binary encoding (deferred per the binary-encoding
+    // spec). The outer patch op is gated out before reaching this handler, but
+    // the internal Read/Replace sub-ops re-enter `execute_operation` as
+    // supported operation types, so a `binary_encoding` carried on the forwarded
+    // options would put them on a binary wire — and the RMW read-back parses
+    // with raw `serde_json::from_slice`, which cannot decode a binary body.
+    // Clear it here so patch stays fully text for any caller (including generic
+    // FFI/driver-direct callers whose C ABI is operation-type-agnostic).
+    options.binary_encoding = None;
+
     // -- 1. Reject caller-set preconditions --
     //
     // PATCH manages its own `If-Match` precondition internally — the handler
@@ -1076,7 +1086,7 @@ mod tests {
 
     use crate::diagnostics::DiagnosticsContextBuilder;
     use crate::models::{ActivityId, CosmosResponseHeaders, CosmosStatus, RequestCharge};
-    use crate::options::DiagnosticsOptions;
+    use crate::options::{BinaryEncodingOptions, DiagnosticsOptions};
     use std::sync::{Arc, Mutex};
 
     /// A pre-baked response a [`ScriptedDispatcher`] returns for a single
@@ -1900,5 +1910,75 @@ mod tests {
         // The aggregated context inherits its activity_id from the LAST
         // source (the Replace), per `aggregate_sub_operations`'s contract.
         assert_eq!(returned.activity_id(), handed_out[1].activity_id());
+    }
+
+    #[tokio::test]
+    async fn rmw_clears_binary_encoding_on_forwarded_sub_ops() {
+        // PATCH is excluded from binary encoding. Even if a caller (e.g. a
+        // generic FFI/driver-direct caller whose C ABI is op-type-agnostic)
+        // sets `binary_encoding` on a patch, the handler must clear it before
+        // forwarding options to its internal Read/Replace sub-ops — otherwise
+        // those supported op types would re-enter the binary path and the RMW
+        // read-back (`serde_json::from_slice`) could not decode a binary body.
+        struct OptionsCapturingDispatcher {
+            binary_encodings: Mutex<Vec<Option<BinaryEncodingOptions>>>,
+        }
+
+        #[async_trait]
+        impl SubOperationDispatcher for OptionsCapturingDispatcher {
+            async fn execute_operation(
+                &self,
+                operation: CosmosOperation,
+                options: OperationOptions,
+            ) -> crate::error::Result<CosmosResponse> {
+                self.binary_encodings
+                    .lock()
+                    .unwrap()
+                    .push(options.binary_encoding.clone());
+                let body = match operation.operation_type() {
+                    OperationType::Read => br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                    OperationType::Replace => br#"{"id":"doc1","pk":"pk1","visits":1}"#.to_vec(),
+                    other => panic!("unexpected sub-op {other:?}"),
+                };
+                let mut headers = CosmosResponseHeaders::new();
+                headers.etag = Some(Etag::from("\"v1\""));
+                let diagnostics = Arc::new(
+                    DiagnosticsContextBuilder::new(
+                        ActivityId::new_uuid(),
+                        Arc::new(DiagnosticsOptions::default()),
+                    )
+                    .complete(),
+                );
+                Ok(from_local_body_and_driver_headers(
+                    body,
+                    headers,
+                    CosmosStatus::from_parts(StatusCode::Ok, None),
+                    diagnostics,
+                ))
+            }
+        }
+
+        let dispatcher = OptionsCapturingDispatcher {
+            binary_encodings: Mutex::new(Vec::new()),
+        };
+
+        // Caller opts a patch into binary encoding + text response.
+        let mut options = OperationOptions::default();
+        options.binary_encoding = Some(
+            BinaryEncodingOptions::new()
+                .with_enabled(true)
+                .with_request_text_response(true),
+        );
+
+        execute_with_dispatcher(&dispatcher, canonical_patch_op(), options, None)
+            .await
+            .expect("PATCH should succeed");
+
+        let captured = dispatcher.binary_encodings.lock().unwrap().clone();
+        assert_eq!(captured.len(), 2, "expected one Read + one Replace sub-op");
+        assert!(
+            captured.iter().all(|be| be.is_none()),
+            "patch must clear binary_encoding on every forwarded sub-op, got {captured:?}",
+        );
     }
 }
