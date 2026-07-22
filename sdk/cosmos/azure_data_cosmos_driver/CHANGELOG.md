@@ -1,11 +1,21 @@
 # Release History
 
-## 0.6.0 (Unreleased)
+## 0.7.0 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
+## 0.6.0 (2026-07-20)
 
 ### Features Added
 
 - Added runtime diagnostics output configuration via `CosmosDriverRuntimeBuilder::with_diagnostics_options`, including the env-backed `AZURE_COSMOS_DIAGNOSTICS_DEFAULT_VERBOSITY` option. The built-in default is now summary diagnostics JSON. ([#4733](https://github.com/Azure/azure-sdk-for-rust/pull/4733))
-- Added Gateway 2.0 transport (a regional proxy forwarding RNTBD-over-HTTP/2). Gateway 2.0 is used automatically when the account advertises thin-client endpoints, the connectivity probe confirms them, and the runtime has not opted out. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319))
+- Added Gateway 2.0 transport (a regional proxy forwarding RNTBD-over-HTTP/2). Gateway 2.0 is used automatically when the account advertises thin-client endpoints, the connectivity probe confirms them, and the runtime has not opted out. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319), [#4803](https://github.com/Azure/azure-sdk-for-rust/pull/4803))
 - Added `ConnectionPoolOptions::gateway_v2_disabled` and `ConnectionPoolOptionsBuilder::with_gateway_v2_disabled`, with `AZURE_COSMOS_CONNECTION_POOL_GATEWAY_V2_DISABLED` configuration and an environment-only `_OVERRIDE` incident switch. ([#4763](https://github.com/Azure/azure-sdk-for-rust/pull/4763))
 - Added a retry policy for HTTP 449 (RetryWith): the driver retries in-region with exponential backoff (bounded by a ~30s budget) instead of failing over. Adds `CosmosStatus::is_retry_with()` and `FaultInjectionErrorType::RetryWith`. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319))
 - Added per-partition hub region caching for read operations on PPAF-enabled single-master accounts. When the `x-ms-cosmos-hub-region-processing-only` latch is set on a retry and a partition key range ID has been resolved, the driver now consults the per-partition failover cache (`PartitionEndpointState::failover_overrides` — the same map already used by per-partition automatic failover for writes) and routes directly to the cached hub endpoint, skipping the `403/3 (WriteForbidden)` discovery chain on subsequent operations for the same partition. ([#4555](https://github.com/Azure/azure-sdk-for-rust/pull/4555))
@@ -13,10 +23,9 @@
 - Added change feed support in the dataflow pipeline: a new `UnorderedMerge` node fans a change feed read out across physical partitions and round-robins their pages, and `CosmosOperation::change_feed` builds incremental-feed operations with the appropriate wire headers. A new public `ChangeFeedStartFrom` enum (`Beginning`, `Now`, `PointInTime`) records the feed's original start position and is persisted in the continuation token so partitions never polled before a checkpoint re-apply it on resume instead of replaying history; set it via `CosmosOperation::with_change_feed_start`. ([#4621](https://github.com/Azure/azure-sdk-for-rust/pull/4621))
 - Added `TlsBackend` (currently `TlsBackend::Rustls`, the default) and a `tls_backend` option on `ConnectionPoolOptions` (`ConnectionPoolOptionsBuilder::with_tls_backend` / `ConnectionPoolOptions::tls_backend`), available under the `rustls` feature. The driver asserts the selected backend on the `reqwest` transport, giving a supported way to pin the TLS backend without direct transport access. This is additive and changes no behavior for the default (rustls-only) build, where reqwest already negotiates rustls; it only has an effect in builds that compile in multiple reqwest TLS backends (e.g. `rustls` plus `native_tls`, absent reqwest's `http3` feature), where reqwest would otherwise default to native-tls and the driver now pins rustls instead. ([#4649](https://github.com/Azure/azure-sdk-for-rust/pull/4649))
 
-### Breaking Changes
-
 ### Bugs Fixed
 
+- Improved HTTP 429 (throttle) retry handling: data-plane operations now default to 18 retries with a per-retry interval clamped to 15s (~270s cumulative, so the retry count is the limiter), previously 9 retries / 30s; metadata stays at 9 retries / 30s with a 5s per-retry interval, and the bootstrap account-properties fetch now retries 429 (previously it had none). Both remain configurable through `ThrottlingRetryOptions`. ([#4758](https://github.com/Azure/azure-sdk-for-rust/pull/4758))
 - Fixed a version-less `PartitionKeyDefinition` deserializing to partition key version V2 instead of V1. The Cosmos service omits the `version` field on the wire only for legacy V1 (Hash) containers, so an absent version now correctly defaults to V1, matching the .NET/Java convention. This fixes Gateway 2.0 (thin-client) point-op routing for V1 containers, where the client-computed effective partition key previously used the wrong (V2) algorithm and stalled until timeout. The create path (`PartitionKeyDefinition::new`) is unchanged and still defaults to V2. ([#4739](https://github.com/Azure/azure-sdk-for-rust/pull/4739))
 - `http://` (non-HTTPS) account endpoints are now rejected unless the host is a known Cosmos DB emulator host (as determined by the existing emulator-host detection). The check runs in `CosmosDriver::new` (reached via `CosmosDriverRuntime::create_driver`), so an invalid endpoint fails fast with a `CLIENT_INVALID_ACCOUNT_ENDPOINT_URL` error before any network I/O. Both the primary endpoint and any backup endpoints are validated. ([#4757](https://github.com/Azure/azure-sdk-for-rust/pull/4757))
 - Fixed `DiagnosticsContext` debug rendering to emit valid diagnostics JSON instead of Rust struct dumps that leaked internal timers, caches, and CPU monitor state. Debug rendering now uses the configured default diagnostics verbosity, which defaults to summary. ([#4733](https://github.com/Azure/azure-sdk-for-rust/pull/4733))
@@ -24,8 +33,6 @@
 - Fixed hierarchical-partition-key (HPK / MultiHash) queries emitting the wrong `x-ms-read-key-type` for effective-partition-key range-scoped requests. The driver sent the point value `EffectivePartitionKey` alongside `x-ms-start-epk`/`x-ms-end-epk`, which the gateway rejects with `400 "One of the input values is invalid"`; it now sends `EffectivePartitionKeyRange`. This enables filtered partition-key *prefix* queries (issue [#4680](https://github.com/Azure/azure-sdk-for-rust/issues/4680)) and fixes cross-partition queries over HPK containers failing with `400 Bad Request` (issue [#4681](https://github.com/Azure/azure-sdk-for-rust/issues/4681)). ([#4729](https://github.com/Azure/azure-sdk-for-rust/pull/4729))
 - Fixed session-token parsing rejecting the `-1` region-progress sentinel that multi-region accounts emit for regions with no local progress. Region LSNs in the version vector are now parsed as signed values, with `-1` (and any negative value) modeled as "no progress" instead of failing the whole token as malformed. This applies to all Session-consistency traffic (not just distributed transactions) and prevents otherwise-valid multi-region session tokens from being discarded. ([#4702](https://github.com/Azure/azure-sdk-for-rust/pull/4702))
 - Fixed `AZURE_COSMOS_PPCB_*` environment variables (including the `AZURE_COSMOS_PPCB_ENABLED` master switch and the `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` kill switch) being silently ignored when a caller built `DriverOptions` without calling `DriverOptionsBuilder::with_partition_failover_options`. The environment is read only by `PartitionFailoverOptionsBuilder::build`, but the omitted-options path used a bare `PartitionFailoverOptions::default()` (which hard-codes PPCB enabled and reads no environment), so PPCB stayed on even with `AZURE_COSMOS_PPCB_ENABLED=false`. `DriverOptionsBuilder::build` now resolves the partition-failover options from the environment when the caller does not supply them (falling back to defaults, fail-soft, if an environment value is out of bounds). An explicitly supplied `PartitionFailoverOptions` continues to take precedence. ([#4655](https://github.com/Azure/azure-sdk-for-rust/pull/4655))
-
-### Other Changes
 
 ## 0.5.0 (2026-06-19)
 

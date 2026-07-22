@@ -16,6 +16,10 @@ use crate::{
             CachedTopologyProvider, OperationPlan, PartitionRoutingRefresh, PipelineContext,
             PipelineNodeState, RequestExecutor, RequestTarget, TopologyProvider,
         },
+        pipeline::components::{
+            ThrottleRetryState, METADATA_MAX_PER_RETRY_DELAY, METADATA_MAX_THROTTLE_ATTEMPTS,
+            METADATA_MAX_THROTTLE_WAIT,
+        },
         pipeline::operation_pipeline::OperationOverrides,
         routing::{
             partition_key_range_id::PartitionKeyRangeId, session_manager::SessionManager,
@@ -202,6 +206,26 @@ impl RequestExecutor for DriverRequestExecutor<'_> {
     }
 }
 
+/// Newtype wrapping the endpoint probe closure so it can live in the
+/// `#[derive(Debug)]` [`CosmosDriver`] struct (the `dyn Fn` itself is not
+/// `Debug`). Test-only; see [`CosmosDriver::run_endpoint_probe_once_for_testing`].
+#[cfg(all(
+    feature = "tokio",
+    any(test, feature = "__internal_in_memory_emulator")
+))]
+#[derive(Clone)]
+struct TestEndpointProbeFn(super::routing::EndpointProbeFn);
+
+#[cfg(all(
+    feature = "tokio",
+    any(test, feature = "__internal_in_memory_emulator")
+))]
+impl std::fmt::Debug for TestEndpointProbeFn {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("TestEndpointProbeFn(..)")
+    }
+}
+
 /// Cosmos DB driver instance.
 ///
 /// A driver represents a connection to a specific Cosmos DB account. It is
@@ -226,6 +250,16 @@ pub struct CosmosDriver {
     transport: Arc<ArcSwap<CosmosTransport>>,
     /// Shared operation routing state for multi-region failover.
     location_state_store: Arc<LocationStateStore>,
+    /// Clone of the connectivity-probe closure that the background
+    /// endpoint-probe loop owns. Stored **only** for internal integration
+    /// tests, which use it to drive a single probe-and-failback iteration
+    /// deterministically instead of waiting for the 60-second loop interval.
+    /// Production code never reads this field.
+    #[cfg(all(
+        feature = "tokio",
+        any(test, feature = "__internal_in_memory_emulator")
+    ))]
+    endpoint_probe_fn: TestEndpointProbeFn,
     /// Cache for partition key range routing maps.
     /// Used to pre-resolve partition key range IDs for PPAF/PPCB
     /// before the first request attempt.
@@ -641,13 +675,43 @@ impl CosmosDriver {
         // `_with_version` calls record the post-negotiation value. Probing first would
         // require a separate diagnostics envelope around the probe itself; we accept the
         // pre-negotiation label on bootstrap as the lower-risk tradeoff.
+        // Bootstrap fetch runs off the normal transport pipeline, so it applies
+        // both the connectivity-retry loop and the same 429 throttle-retry
+        // budget the metadata pipeline uses (previously bootstrap had no 429
+        // retry at all).
         let mut connectivity_retry_count = 0_u32;
-        let (response, request_handle) = loop {
-            let execution_context = if connectivity_retry_count == 0 {
-                ExecutionContext::Initial
-            } else {
-                ExecutionContext::TransportRetry
-            };
+        // Resolve the caller-configured throttle limits the same way the
+        // metadata operation pipeline does, falling back to the metadata class
+        // defaults. This is a static helper that only receives the runtime, so
+        // only the runtime-level layers apply: the client-wide default set via
+        // `with_default_operation_options` (which takes precedence) and the
+        // environment (`AZURE_COSMOS_MAX_THROTTLE_RETRY_COUNT`). Without this a
+        // caller that disabled retries (`max_retry_count = 0`) would still see
+        // the nine-retry metadata default here, inconsistent with normal
+        // metadata operations. The per-retry delay cap has no caller override
+        // and stays at the metadata class default, matching the pipeline.
+        let bootstrap_options = OperationOptionsView::new(
+            Some(Arc::clone(runtime.env_operation_options())),
+            Some(runtime.default_operation_options()),
+            None,
+            None,
+        );
+        let throttling_retry_options = bootstrap_options.throttling_retry_options();
+        let max_throttle_attempts = throttling_retry_options
+            .max_retry_count()
+            .copied()
+            .unwrap_or(METADATA_MAX_THROTTLE_ATTEMPTS);
+        let max_throttle_wait_time = throttling_retry_options
+            .max_retry_wait_time()
+            .copied()
+            .unwrap_or(METADATA_MAX_THROTTLE_WAIT);
+        let mut throttle = ThrottleRetryState::with_limits(
+            max_throttle_attempts,
+            max_throttle_wait_time,
+            METADATA_MAX_PER_RETRY_DELAY,
+        );
+        let mut execution_context = ExecutionContext::Initial;
+        let (response, cosmos_headers, status_code, sub_status, cosmos_status) = loop {
             let request_handle = diagnostics.start_request(
                 execution_context,
                 PipelineType::Metadata,
@@ -701,8 +765,8 @@ impl CosmosDriver {
                     .build());
             }
 
-            match transport.send(&request).await {
-                Ok(r) => break (r, request_handle),
+            let response = match transport.send(&request).await {
+                Ok(r) => r,
                 Err(e) => {
                     if should_retry_account_properties_connectivity_error(
                         &e.error,
@@ -730,6 +794,7 @@ impl CosmosDriver {
                                 .unwrap_or(azure_core::time::Duration::ZERO),
                         )
                         .await;
+                        execution_context = ExecutionContext::TransportRetry;
                         continue;
                     }
 
@@ -747,14 +812,41 @@ impl CosmosDriver {
                         .with_diagnostics(Arc::new(diagnostics.complete()))
                         .build());
                 }
-            }
-        };
-        let cosmos_headers = crate::models::CosmosResponseHeaders::from_headers(&response.headers);
-        let status_code = azure_core::http::StatusCode::from(response.status);
-        let sub_status = cosmos_headers.substatus;
-        let cosmos_status = crate::error::CosmosStatus::from_parts(status_code, sub_status);
+            };
 
-        diagnostics.record_response(request_handle, status_code, &cosmos_headers);
+            let cosmos_headers =
+                crate::models::CosmosResponseHeaders::from_headers(&response.headers);
+            let status_code = azure_core::http::StatusCode::from(response.status);
+            let sub_status = cosmos_headers.substatus;
+            let cosmos_status = crate::error::CosmosStatus::from_parts(status_code, sub_status);
+
+            diagnostics.record_response(request_handle, status_code, &cosmos_headers);
+
+            // Retry 429s using the shared metadata throttle budget before
+            // surfacing the error.
+            if cosmos_status.is_throttled() {
+                if let Some((delay, next)) =
+                    throttle.next_throttle_retry(cosmos_headers.retry_after_ms)
+                {
+                    throttle = next;
+                    azure_core::sleep(
+                        azure_core::time::Duration::try_from(delay)
+                            .unwrap_or(azure_core::time::Duration::ZERO),
+                    )
+                    .await;
+                    execution_context = ExecutionContext::Retry;
+                    continue;
+                }
+            }
+
+            break (
+                response,
+                cosmos_headers,
+                status_code,
+                sub_status,
+                cosmos_status,
+            );
+        };
 
         // Gate parsing on HTTP status. Non-2xx bodies (5xx envelopes, AAD 401/403, proxy text)
         // would otherwise serde-fail and surface as `SERIALIZATION_RESPONSE_BODY_INVALID`.
@@ -1442,11 +1534,11 @@ impl CosmosDriver {
         // traffic routed to it, time out, and be re-marked unavailable — a
         // sustained low-throughput loop (issue #4597).
         #[cfg(feature = "tokio")]
-        {
+        let endpoint_probe_fn: EndpointProbeFn = {
             let account_for_probe = account.clone();
             let transport_for_probe = Arc::clone(&transport);
             let user_agent_for_probe = Arc::clone(&user_agent);
-            let probe_fn: EndpointProbeFn = Arc::new(move |url: Url| {
+            Arc::new(move |url: Url| {
                 let account = account_for_probe.clone();
                 let transport_holder = Arc::clone(&transport_for_probe);
                 let user_agent = Arc::clone(&user_agent_for_probe);
@@ -1461,9 +1553,20 @@ impl CosmosDriver {
                     probe_endpoint_connectivity(&metadata_transport, &probe_account, &user_agent)
                         .await
                 }) as BoxFuture<'static, bool>
-            });
-            location_state_store.start_endpoint_probe_loop(probe_fn);
-        }
+            }) as EndpointProbeFn
+        };
+
+        // Keep a clone for the internal test hook before the loop takes
+        // ownership; integration tests live outside the crate and cannot
+        // rebuild this closure themselves.
+        #[cfg(all(
+            feature = "tokio",
+            any(test, feature = "__internal_in_memory_emulator")
+        ))]
+        let endpoint_probe_fn_for_tests = Arc::clone(&endpoint_probe_fn);
+
+        #[cfg(feature = "tokio")]
+        location_state_store.start_endpoint_probe_loop(endpoint_probe_fn);
 
         // Driver-level throughput-control registry.
         //
@@ -1476,6 +1579,11 @@ impl CosmosDriver {
             options,
             transport,
             location_state_store,
+            #[cfg(all(
+                feature = "tokio",
+                any(test, feature = "__internal_in_memory_emulator")
+            ))]
+            endpoint_probe_fn: TestEndpointProbeFn(endpoint_probe_fn_for_tests),
             pk_range_cache: PartitionKeyRangeCache::new(),
             session_manager: SessionManager::new(),
             initialized: AtomicBool::new(false),
@@ -1586,6 +1694,69 @@ impl CosmosDriver {
             .snapshot()
             .partitions
             .per_partition_automatic_failover_enabled
+    }
+
+    /// **Internal test hook -- not part of the public API.**
+    ///
+    /// Returns whether any account-level endpoint whose host matches `host`
+    /// currently carries an "unavailable" mark in the live routing snapshot.
+    /// Matching by host (rather than full URL) keeps integration tests robust
+    /// to scheme/path/trailing-slash normalization of the stored key.
+    ///
+    /// Used to assert probe-gated failback transitions (marked -> still marked
+    /// after a failed probe -> cleared after a successful probe).
+    ///
+    /// **Do not call from production code.** May change or be removed at any
+    /// time without a semver bump.
+    #[cfg(any(test, feature = "__internal_in_memory_emulator"))]
+    #[doc(hidden)]
+    pub fn is_endpoint_host_marked_unavailable_for_testing(&self, host: &str) -> bool {
+        self.location_state_store
+            .account_snapshot()
+            .unavailable_endpoints
+            .keys()
+            .any(|url| url.host_str() == Some(host))
+    }
+
+    /// **Internal test hook -- not part of the public API.**
+    ///
+    /// Marks the regional endpoint for `region` unavailable (seeds the state
+    /// the probe loop later clears). Returns `false` if no endpoint for
+    /// `region` exists in the current routing snapshot.
+    ///
+    /// **Do not call from production code.** May change or be removed at any
+    /// time without a semver bump.
+    #[cfg(any(test, feature = "__internal_in_memory_emulator"))]
+    #[doc(hidden)]
+    pub fn mark_region_endpoint_unavailable_for_testing(
+        &self,
+        region: &crate::options::Region,
+    ) -> bool {
+        self.location_state_store
+            .mark_region_endpoint_unavailable_for_testing(region)
+    }
+
+    /// **Internal test hook -- not part of the public API.**
+    ///
+    /// Runs exactly one iteration of the account-level endpoint
+    /// probe-and-failback sweep using the real connectivity-probe closure (the
+    /// same one the background loop owns). Lets integration tests drive
+    /// probe-gated failback deterministically instead of waiting for the
+    /// 60-second background interval. Endpoints are only probed once their
+    /// unavailability cooldown (`endpoint_unavailability_ttl`) has elapsed, so
+    /// tests configure a short TTL via [`DriverOptions`].
+    ///
+    /// **Do not call from production code.** May change or be removed at any
+    /// time without a semver bump.
+    #[cfg(all(
+        feature = "tokio",
+        any(test, feature = "__internal_in_memory_emulator")
+    ))]
+    #[doc(hidden)]
+    pub async fn run_endpoint_probe_once_for_testing(&self) {
+        self.location_state_store
+            .probe_and_failback_unavailable_endpoints(&self.endpoint_probe_fn.0)
+            .await;
     }
 
     /// Returns the current per-account transport.
@@ -3128,7 +3299,7 @@ mod tests {
         models::AccountReference,
         options::{
             ContentResponseOnWrite, CorrelationId, DriverOptionsBuilder, OperationOptionsBuilder,
-            UserAgentSuffix, WorkloadId,
+            ThrottlingRetryOptionsBuilder, UserAgentSuffix, WorkloadId,
         },
     };
 
@@ -4389,6 +4560,141 @@ mod tests {
         assert!(
             err.response().is_some(),
             "with_response_parts + with_diagnostics must promote the error to Wire, exposing response(). Got: {err:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn fetch_account_properties_retries_on_throttle_then_succeeds() {
+        // Returns 429 (with x-ms-retry-after-ms) on the first attempt, then 200.
+        // Bootstrap must retry the throttle instead of surfacing it.
+        #[derive(Debug)]
+        struct ThrottleThenSucceedClient {
+            calls: Arc<std::sync::atomic::AtomicUsize>,
+        }
+
+        #[async_trait]
+        impl TransportClient for ThrottleThenSucceedClient {
+            async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
+                let n = self.calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                if n == 0 {
+                    let mut headers = Headers::new();
+                    headers.insert(
+                        azure_core::http::headers::HeaderName::from_static("x-ms-retry-after-ms"),
+                        azure_core::http::headers::HeaderValue::from_static("1"),
+                    );
+                    Ok(HttpResponse {
+                        status: 429,
+                        headers,
+                        body: Vec::new(),
+                    })
+                } else {
+                    Ok(HttpResponse {
+                        status: 200,
+                        headers: Headers::new(),
+                        body: ACCOUNT_PROPERTIES_PAYLOAD.as_bytes().to_vec(),
+                    })
+                }
+            }
+        }
+
+        let calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let client: Arc<dyn TransportClient> = Arc::new(ThrottleThenSucceedClient {
+            calls: Arc::clone(&calls),
+        });
+        let transport =
+            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let account = signed_test_account("https://test.documents.azure.com:443/");
+        let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
+
+        CosmosDriver::fetch_account_properties_with_transport(
+            &runtime,
+            &transport,
+            &account,
+            None,
+            &user_agent,
+            false,
+        )
+        .await
+        .expect("bootstrap must retry the 429 and then succeed");
+
+        assert_eq!(
+            calls.load(std::sync::atomic::Ordering::SeqCst),
+            2,
+            "expected one throttled attempt followed by one successful retry"
+        );
+    }
+
+    #[tokio::test]
+    async fn fetch_account_properties_honors_disabled_throttle_retries() {
+        // A caller-configured `max_retry_count = 0` disables throttle retries.
+        // The bootstrap probe must honor it the same way normal metadata
+        // operations do: surface the 429 after a single wire attempt instead of
+        // falling back to the nine-retry metadata default.
+        #[derive(Debug)]
+        struct AlwaysThrottleClient {
+            calls: Arc<std::sync::atomic::AtomicUsize>,
+        }
+
+        #[async_trait]
+        impl TransportClient for AlwaysThrottleClient {
+            async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
+                self.calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                let mut headers = Headers::new();
+                headers.insert(
+                    azure_core::http::headers::HeaderName::from_static("x-ms-retry-after-ms"),
+                    azure_core::http::headers::HeaderValue::from_static("1"),
+                );
+                Ok(HttpResponse {
+                    status: 429,
+                    headers,
+                    body: Vec::new(),
+                })
+            }
+        }
+
+        let calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let client: Arc<dyn TransportClient> = Arc::new(AlwaysThrottleClient {
+            calls: Arc::clone(&calls),
+        });
+        let transport =
+            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+
+        let opts = OperationOptionsBuilder::new()
+            .with_throttling_retry_options(
+                ThrottlingRetryOptionsBuilder::new()
+                    .with_max_retry_count(0)
+                    .build(),
+            )
+            .build();
+        let runtime = CosmosDriverRuntimeBuilder::new()
+            .with_default_operation_options(opts)
+            .build()
+            .await
+            .unwrap();
+        let account = signed_test_account("https://test.documents.azure.com:443/");
+        let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
+
+        let err = CosmosDriver::fetch_account_properties_with_transport(
+            &runtime,
+            &transport,
+            &account,
+            None,
+            &user_agent,
+            false,
+        )
+        .await
+        .expect_err("disabled throttle retries must surface the 429");
+        assert!(
+            err.status().is_throttled(),
+            "expected the 429 to propagate, got {err:?}"
+        );
+
+        assert_eq!(
+            calls.load(std::sync::atomic::Ordering::SeqCst),
+            1,
+            "max_retry_count = 0 must yield exactly one wire attempt (no retries)"
         );
     }
 

@@ -17,7 +17,7 @@ autotests = false
 
 [dependencies]
 async-trait.workspace = true
-azure_core = { path = "../azure_core", features = [
+azure_core = { path = "../azure_core", version = "1.2.0-beta.1", features = [
   "reqwest",
   "reqwest_rustls",
   "tokio",
