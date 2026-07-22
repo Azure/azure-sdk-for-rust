@@ -47,6 +47,45 @@ protocol. Those are layered above this format.
 The key words **MUST**, **MUST NOT**, **SHOULD**, **SHOULD NOT**, and **MAY** are
 to be interpreted as described in [RFC 2119](https://datatracker.ietf.org/doc/html/rfc2119).
 
+### 1.4 Relationship to the other binary-encoding artifacts
+
+This RFC is the **source of truth** for the wire format. Several other artifacts
+either derive from it or validate against it — they do not redefine it:
+
+```mermaid
+flowchart TD
+    RFC["BINARY_ENCODING_RFC.md<br/>(normative spec: what correct means)"]
+    RFC -->|"§7 canonical encoding<br/>§8 decoder conformance"| CONF["binary_json/conformance.rs<br/>(encoder byte-exactness)"]
+    RFC -->|"Appendix A golden vectors"| CORPUS["testdata/binary_json_vectors.json<br/>(fixed decode+encode oracle)"]
+    RFC -->|"value model + round-trip invariant"| FUZZ["BINARY_ENCODING_ROUNDTRIP_FUZZER<br/>(random JSON, live service, at scale)"]
+    RFC -->|"§8 decoder + §9 security"| IN_FUZZ["binary_json/fuzz_tests.rs<br/>(malformed/truncated buffers)"]
+    CORPUS --> CONF
+    CORPUS --> FUZZ
+    CORPUS --> IN_FUZZ
+```
+
+| Artifact | Role relative to this RFC | RFC sections it enforces |
+| -------- | ------------------------- | ------------------------ |
+| `testdata/binary_json_vectors.json` | Machine-readable golden corpus (this RFC's Appendix A) | Appendix A |
+| `binary_json/conformance.rs` | Encoder byte-exactness + canonical-form snapshots | §3.1, §7 |
+| `binary_json/reader.rs`, `de.rs` (tests) | Decoder conformance per form | §4–§6, §8 |
+| `binary_json/fuzz_tests.rs` | Decoder never panics/hangs/over-allocates on malformed input | §8, §9 |
+| [`BINARY_ENCODING_ROUNDTRIP_FUZZER.md`](BINARY_ENCODING_ROUNDTRIP_FUZZER.md) + harness | End-to-end **round-trip invariant** on random JSON against the live service, at volume | §7 (round-trip), value model (§2) |
+
+Two connections are worth calling out explicitly:
+
+- **The round-trip fuzzer validates this RFC's round-trip invariant (§7), but
+  end-to-end rather than byte-level.** Where `conformance.rs` checks
+  `decode(encode(v)) == v` in-process on fixed vectors, the fuzzer checks the
+  *same* invariant across the full pipeline (Rust encode → wire → backend
+  store/rewrite → wire → Rust decode) on millions of random documents.
+- **The fuzzer is the instrument that closes this RFC's open number-format
+  items.** The `[CROSS-VERIFY: .NET/C++]` tags and §7 canonical rules leave the
+  encoder-vs-backend number-normalization under-specified; the fuzzer's
+  canonicalization/calibration surface (its design doc §3.1) empirically
+  discovers the backend's actual number rewrite, and those findings feed back
+  into §7 here.
+
 ---
 
 ## 2. Notation and terminology

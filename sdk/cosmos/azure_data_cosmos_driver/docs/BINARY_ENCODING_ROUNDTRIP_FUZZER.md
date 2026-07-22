@@ -171,13 +171,21 @@ immediately reproducible and reducible.
 
 ## 8. Relationship to the other test layers
 
+The normative wire format is defined by
+[`BINARY_ENCODING_RFC.md`](BINARY_ENCODING_RFC.md); this harness is one of the
+mechanisms that **validates Rust against that spec** — specifically the RFC's §7
+round-trip invariant, exercised end-to-end at scale (see the RFC's §1.4 diagram
+for how all the artifacts relate).
+
 | Layer | Input | Checks | Location |
 | ----- | ----- | ------ | -------- |
+| RFC | — | normative wire spec (source of truth) | `docs/BINARY_ENCODING_RFC.md` |
 | Golden vectors | fixed corpus | exact byte layout, decode parity | `binary_json/vectors.rs` |
+| Encoder conformance | fixed corpus | encode byte-exactness, canonical form | `binary_json/conformance.rs` |
 | In-tree fuzz | random/truncated buffers | decoder never panics; `decode` ≡ `from_slice` | `binary_json/fuzz_tests.rs` |
 | **Round-trip fuzzer** | **random JSON** | **end-to-end value fidelity across configs** | **this harness** |
-| RFC | — | normative wire spec | `docs/BINARY_ENCODING_RFC.md` |
 
-These are complementary: golden vectors pin *the format*, fuzz hardens *the
-decoder*, and this harness validates *the whole pipeline against the live
-service*.
+These are complementary: golden vectors + conformance pin *the format*, in-tree
+fuzz hardens *the decoder*, and this harness validates *the whole pipeline
+against the live service* — and its number-canonicalization calibration (§3.1)
+feeds the backend's observed rewrite rules back into the RFC's §7.
