@@ -413,6 +413,25 @@ async fn upload(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let data: [u8; 1024] = recording.random();
     let bytes: Bytes = data.to_vec().into();
 
+    // MD5("hello") - well-known test vector
+    let content_md5 = vec![
+        0x5d, 0x41, 0x40, 0x2a, 0xbc, 0x4b, 0x2a, 0x76, 0xb9, 0x71, 0x9d, 0x91, 0x10, 0x17, 0xc5,
+        0x92,
+    ];
+    // Combined MD5/CRC64 Single-Shot Scenario
+    let combined_response = block_blob_client
+        .upload(
+            Bytes::from_static(b"hello").into(),
+            Some(BlockBlobClientUploadOptions {
+                blob_content_md5: Some(content_md5),
+                partition_size: Some(NonZero::new(2048).unwrap()),
+                ..Default::default()
+            }),
+        )
+        .await?;
+    assert!(combined_response.content_md5.is_some());
+    assert!(combined_response.content_crc64.is_some());
+
     for (parallel, partition_size, expected_stage_block_calls) in [
         (1, 2048, 0), // put blob expected
         (2, 1024, 0), // put blob expected
