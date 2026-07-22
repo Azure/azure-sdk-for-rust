@@ -1,4 +1,4 @@
-<!-- cspell:ignore amd64 arm64 azcosmos checksums glibc GOARCH GOOS libc LDFLAGS librdkafka metapackage onnxruntime riscv -->
+<!-- cspell:ignore amd64 arm64 azcosmos azcosmoscore azcosmosdriverlinuxamd64gnu checksums glibc GOARCH GOOS libc LDFLAGS libazurecosmos librdkafka metapackage musl onnxruntime riscv SRCDIR -->
 # Go FFI native-driver distribution design
 
 > **Status:** Design discussion for Go Central SDK and architecture-board review.
@@ -19,11 +19,11 @@ The native driver is built once per supported OS/architecture/libc target. If th
 initial supported set includes Windows, macOS, and Linux on x64/amd64 and ARM64,
 the SDK needs roughly this matrix:
 
-| Target family | Initial target examples |
-|---|---|
-| Windows | amd64, arm64 |
-| macOS | amd64, arm64 |
-| Linux glibc | amd64, arm64 |
+| Target family         | Initial target examples                                      |
+| --------------------- | ------------------------------------------------------------ |
+| Windows               | amd64, arm64                                                 |
+| macOS                 | amd64, arm64                                                 |
+| Linux glibc           | amd64, arm64                                                 |
 | Optional or follow-up | Windows x86, Linux musl/Alpine, additional long-tail targets |
 
 With an optimized native driver around **~5 MB per target**, a six-target matrix
@@ -71,14 +71,14 @@ import _ "github.com/Azure/azure-cosmos-go-native-drivers/azcosmos-driver-linux-
 
 ## 3. Design goals
 
-| Goal | Why it matters |
-|---|---|
-| Keep the common path close to `go get` / `go build` | Cosmos Go v1 feels like a normal Go SDK; Go v2 should not surprise mainstream customers. |
-| Avoid making every customer download every long-tail binary | The native matrix can grow over time, and module-cache footprint matters. |
-| Keep versioning safe | The Go wrapper, C header, and native driver ABI must match. |
-| Work in enterprise and offline environments | Build-time network downloads and ad-hoc install scripts are often blocked. |
-| Keep the Azure SDK for Go repository manageable | Committing many binary artifacts affects contributors who clone the repo, even if customers use module ZIPs. |
-| Make unsupported platforms fail clearly | Customers should see a direct "no driver configured for this platform" message, not an obscure linker failure. |
+| Goal                                                        | Why it matters                                                                                                 |
+| ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Keep the common path close to `go get` / `go build`         | Cosmos Go v1 feels like a normal Go SDK; Go v2 should not surprise mainstream customers.                       |
+| Avoid making every customer download every long-tail binary | The native matrix can grow over time, and module-cache footprint matters.                                      |
+| Keep versioning safe                                        | The Go wrapper, C header, and native driver ABI must match.                                                    |
+| Work in enterprise and offline environments                 | Build-time network downloads and ad-hoc install scripts are often blocked.                                     |
+| Keep the Azure SDK for Go repository manageable             | Committing many binary artifacts affects contributors who clone the repo, even if customers use module ZIPs.   |
+| Make unsupported platforms fail clearly                     | Customers should see a direct "no driver configured for this platform" message, not an obscure linker failure. |
 
 ## 4. Industry reference points
 
@@ -193,21 +193,21 @@ Application links with the Rust driver
 
 Salient features:
 
-| Area | Effect |
-|---|---|
-| Customer experience | Best. One `go get`; one module; no platform package choices. |
-| Download footprint | Worst. Every `azcosmos` customer downloads the default native matrix. |
-| Version safety | Strong. Go wrapper and native bits are versioned together. |
-| Repository impact | High if the module lives in `azure-sdk-for-go`; binaries are committed with SDK source. |
-| Long-tail targets | Adding one target increases the default module for everyone. |
+| Area                | Effect                                                                                  |
+| ------------------- | --------------------------------------------------------------------------------------- |
+| Customer experience | Best. One `go get`; one module; no platform package choices.                            |
+| Download footprint  | Worst. Every `azcosmos` customer downloads the default native matrix.                   |
+| Version safety      | Strong. Go wrapper and native bits are versioned together.                              |
+| Repository impact   | High if the module lives in `azure-sdk-for-go`; binaries are committed with SDK source. |
+| Long-tail targets   | Adding one target increases the default module for everyone.                            |
 
 This model is easiest to explain to customers and hardest to defend on module
 size.
 
 ## 6. Option B: split modules in one repository
 
-This is the multi-module model Ashley proposed. The public SDK stays zero-touch
-for default platforms, but each native binary lives in its own Go module.
+This is a multi-module model where the public SDK stays zero-touch for default
+platforms, but each native binary lives in its own Go module.
 
 ```text
 github.com/Azure/azure-sdk-for-go
@@ -308,15 +308,257 @@ require (
 )
 ```
 
+### 6.1 Concrete file example
+
+The following example shows how Option B could look if all modules live in the
+Azure SDK for Go repository.
+
+```text
+github.com/Azure/azure-sdk-for-go
+└── sdk/data/azcosmos-core/
+    ├── go.mod
+    ├── core.go
+    └── include/azurecosmos.h
+
+└── sdk/data/azcosmos-driver-linux-amd64-gnu/
+    ├── go.mod
+    ├── link_linux_amd64.go
+    └── native/libazurecosmos.a
+
+└── sdk/data/azcosmos-driver-darwin-arm64/
+    ├── go.mod
+    ├── link_darwin_arm64.go
+    └── native/libazurecosmos.a
+
+└── sdk/data/azcosmos/
+    ├── go.mod
+    ├── client.go
+    ├── default_driver_linux_amd64.go
+    ├── default_driver_darwin_arm64.go
+    └── unsupported_driver.go
+```
+
+`azcosmos-core` contains the shared Go wrapper and C ABI declarations.
+
+```go
+// sdk/data/azcosmos-core/go.mod
+module github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos-core
+
+go 1.25.0
+```
+
+```c
+/* sdk/data/azcosmos-core/include/azurecosmos.h */
+#pragma once
+
+const char* azurecosmos_abi_version(void);
+void* azurecosmos_client_new(const char* endpoint, const char* key);
+void azurecosmos_client_free(void* client);
+```
+
+```go
+// sdk/data/azcosmos-core/core.go
+package azcosmoscore
+
+/*
+#cgo CFLAGS: -I${SRCDIR}/include
+#include "azurecosmos.h"
+*/
+import "C"
+
+func ABIVersion() string {
+    return C.GoString(C.azurecosmos_abi_version())
+}
+```
+
+Each driver module contains exactly one native library and the link flags needed
+for that target.
+
+```go
+// sdk/data/azcosmos-driver-linux-amd64-gnu/go.mod
+module github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos-driver-linux-amd64-gnu
+
+go 1.25.0
+```
+
+```go
+// sdk/data/azcosmos-driver-linux-amd64-gnu/link_linux_amd64.go
+//go:build linux && amd64 && !musl
+
+package azcosmosdriverlinuxamd64gnu
+
+/*
+#cgo LDFLAGS: -L${SRCDIR}/native -lazurecosmos
+*/
+import "C"
+```
+
+The public `azcosmos` module depends on the core module and the default driver
+modules. This is what gives common-platform customers the zero-touch path.
+
+```go
+// sdk/data/azcosmos/go.mod
+module github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos
+
+go 1.25.0
+
+require (
+    github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos-core v1.2.3
+    github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos-driver-darwin-arm64 v1.2.3
+    github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos-driver-linux-amd64-gnu v1.2.3
+    github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos-driver-windows-amd64 v1.2.3
+)
+```
+
+`azcosmos` imports the active default driver through build-tagged blank imports:
+
+```go
+// sdk/data/azcosmos/default_driver_linux_amd64.go
+//go:build linux && amd64 && !musl
+
+package azcosmos
+
+import _ "github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos-driver-linux-amd64-gnu"
+```
+
+```go
+// sdk/data/azcosmos/default_driver_darwin_arm64.go
+//go:build darwin && arm64
+
+package azcosmos
+
+import _ "github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos-driver-darwin-arm64"
+```
+
+`azcosmos` can also provide a clear unsupported-platform error instead of letting
+customers hit a low-level linker failure:
+
+```go
+// sdk/data/azcosmos/unsupported_driver.go
+//go:build !(linux && amd64 && !musl) && !(darwin && arm64) && !(windows && amd64)
+
+package azcosmos
+
+import "errors"
+
+func nativeDriverAvailabilityError() error {
+    return errors.New("azcosmos: no native Cosmos driver package is configured for this target")
+}
+```
+
+The public client surface remains the package customers import:
+
+```go
+// sdk/data/azcosmos/client.go
+package azcosmos
+
+import "github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos-core"
+
+func NativeDriverVersion() string {
+    return azcosmoscore.ABIVersion()
+}
+```
+
+### 6.2 Customer usage on a default platform
+
+A Linux amd64 customer does not import the driver package directly. Their app
+only imports `azcosmos`:
+
+```go
+// customer-app/go.mod
+module example.com/customer-app
+
+go 1.25.0
+
+require github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos v1.2.3
+```
+
+```go
+// customer-app/main.go
+package main
+
+import (
+    "fmt"
+
+    "github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos"
+)
+
+func main() {
+    fmt.Println(azcosmos.NativeDriverVersion())
+}
+```
+
+The customer runs normal Go commands:
+
+```bash
+go get github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos@v1.2.3
+go build ./...
+```
+
+For `GOOS=linux GOARCH=amd64`, Go includes
+`default_driver_linux_amd64.go`, which blank-imports
+`azcosmos-driver-linux-amd64-gnu`. That driver package contributes its
+`#cgo LDFLAGS`, and the app links against
+`native/libazurecosmos.a`.
+
+```text
+customer app
+  imports azcosmos
+      │
+      ▼
+azcosmos imports azcosmos-core
+      │
+      ▼
+linux/amd64 build tag activates default_driver_linux_amd64.go
+      │
+      ▼
+azcosmos-driver-linux-amd64-gnu is imported
+      │
+      ▼
+driver module contributes -L${SRCDIR}/native -lazurecosmos
+      │
+      ▼
+customer binary links with the Rust native driver
+```
+
+The customer may still download all default driver modules required by
+`azcosmos`, depending on module proxy/cache behavior, but only the active target
+is compiled and linked.
+
+### 6.3 Customer usage for a non-default platform
+
+If a target is published but not part of the default `azcosmos` module, the
+customer needs an explicit activation path. For example, if Linux musl is
+published separately:
+
+```bash
+go get github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos@v1.2.3
+go get github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos-driver-linux-amd64-musl@v1.2.3
+```
+
+Then the app or a small Azure SDK metapackage must blank-import that driver:
+
+```go
+//go:build linux && amd64 && musl
+
+package main
+
+import _ "github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos-driver-linux-amd64-musl"
+```
+
+This is why optional targets need a documented activation story. Without an
+import, Go may know about the module version in `go.mod`, but the driver's cgo
+link flags will not participate in the final link.
+
 Salient features:
 
-| Area | Effect |
-|---|---|
-| Customer experience | Good. Common platforms still use `go get azcosmos` / `go build`. |
-| Download footprint | Better than one giant module in cache shape, but the default `azcosmos` module may still cause all default driver module ZIPs to be downloaded. |
-| Version safety | Manageable if all modules are released together and exact versions are pinned. |
-| Repository impact | Still high for `azure-sdk-for-go` contributors because the repo contains all native modules. |
-| Long-tail targets | Better. Optional targets can be extra modules not included in default `azcosmos`. |
+| Area                | Effect                                                                                                                                          |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Customer experience | Good. Common platforms still use `go get azcosmos` / `go build`.                                                                                |
+| Download footprint  | Better than one giant module in cache shape, but the default `azcosmos` module may still cause all default driver module ZIPs to be downloaded. |
+| Version safety      | Manageable if all modules are released together and exact versions are pinned.                                                                  |
+| Repository impact   | Still high for `azure-sdk-for-go` contributors because the repo contains all native modules.                                                    |
+| Long-tail targets   | Better. Optional targets can be extra modules not included in default `azcosmos`.                                                               |
 
 The subtle but critical rule is that `azcosmos` must import the selected driver
 packages. Merely listing them in `go.mod` does not make their cgo link flags
@@ -368,13 +610,13 @@ import _ "github.com/Azure/azure-cosmos-go-native-drivers/azcosmos-driver-linux-
 
 Salient features:
 
-| Area | Effect |
-|---|---|
+| Area                | Effect                                                                       |
+| ------------------- | ---------------------------------------------------------------------------- |
 | Customer experience | Good for default platforms if `azcosmos` wires driver imports automatically. |
-| Download footprint | Similar to Option B from the customer's module-cache perspective. |
-| Version safety | Requires stronger release discipline across repositories. |
-| Repository impact | Better for Azure SDK for Go contributors; binary churn lives elsewhere. |
-| Governance | Needs clear ownership, release, security, signing, and support boundaries. |
+| Download footprint  | Similar to Option B from the customer's module-cache perspective.            |
+| Version safety      | Requires stronger release discipline across repositories.                    |
+| Repository impact   | Better for Azure SDK for Go contributors; binary churn lives elsewhere.      |
+| Governance          | Needs clear ownership, release, security, signing, and support boundaries.   |
 
 This model separates two concerns:
 
@@ -417,13 +659,13 @@ go build ./...
 
 Salient features:
 
-| Area | Effect |
-|---|---|
-| Customer experience | Weaker. There is an extra step unless the customer builds custom automation. |
-| Download footprint | Best for customers who only fetch one platform. |
-| Version safety | Must validate asset version and checksum against SDK version. |
-| Enterprise/offline | Harder. Build-time downloads are often blocked; vendoring is less straightforward. |
-| Supportability | More failure modes: proxy, cache, checksum, install path, linker path. |
+| Area                | Effect                                                                             |
+| ------------------- | ---------------------------------------------------------------------------------- |
+| Customer experience | Weaker. There is an extra step unless the customer builds custom automation.       |
+| Download footprint  | Best for customers who only fetch one platform.                                    |
+| Version safety      | Must validate asset version and checksum against SDK version.                      |
+| Enterprise/offline  | Harder. Build-time downloads are often blocked; vendoring is less straightforward. |
+| Supportability      | More failure modes: proxy, cache, checksum, install path, linker path.             |
 
 This model is attractive for tools and CLIs. It is more difficult to make feel
 like a normal first-party Go SDK.
@@ -449,13 +691,13 @@ client, err := azcosmos.NewClient(endpoint, credential, nil)
 
 Salient features:
 
-| Area | Effect |
-|---|---|
-| Customer experience | Weak for the default Azure SDK path. |
-| Download footprint | Minimal Go module footprint. |
-| Version safety | Customer can accidentally mix incompatible SDK/native versions. |
-| Enterprise/offline | Predictable for customers with strict packaging systems. |
-| Supportability | Native setup becomes a customer-owned prerequisite. |
+| Area                | Effect                                                          |
+| ------------------- | --------------------------------------------------------------- |
+| Customer experience | Weak for the default Azure SDK path.                            |
+| Download footprint  | Minimal Go module footprint.                                    |
+| Version safety      | Customer can accidentally mix incompatible SDK/native versions. |
+| Enterprise/offline  | Predictable for customers with strict packaging systems.        |
+| Supportability      | Native setup becomes a customer-owned prerequisite.             |
 
 This is useful as an advanced fallback but should be treated carefully if the
 goal is a normal SDK experience.
@@ -478,13 +720,13 @@ github.com/Azure/azure-cosmos-go-native/azcosmos
 
 Salient features:
 
-| Area | Effect |
-|---|---|
-| Customer experience | Honest about native requirements, but splits product identity. |
-| Download footprint | Existing `azcosmos` users are unaffected. |
-| Migration | Requires guidance on which SDK to choose. |
-| Supportability | Clearer native boundary, but more docs/samples/support surface. |
-| Governance | Requires Azure SDK board alignment because it changes package identity. |
+| Area                | Effect                                                                  |
+| ------------------- | ----------------------------------------------------------------------- |
+| Customer experience | Honest about native requirements, but splits product identity.          |
+| Download footprint  | Existing `azcosmos` users are unaffected.                               |
+| Migration           | Requires guidance on which SDK to choose.                               |
+| Supportability      | Clearer native boundary, but more docs/samples/support surface.         |
+| Governance          | Requires Azure SDK board alignment because it changes package identity. |
 
 This model is less a packaging trick and more a product-positioning decision.
 
@@ -589,25 +831,25 @@ is still useful for bundled paths because it catches packaging mistakes.
 
 ## 13. Customer experience comparison
 
-| Model | Common-platform customer flow | Customer-visible native setup | Download behavior |
-|---|---|---|---|
-| A. Single bundled module | `go get azcosmos`; `go build` | cgo toolchain only | Downloads whole default matrix in one module |
-| B. Split modules, same repo | `go get azcosmos`; `go build` | cgo toolchain only | Downloads default driver modules as dependencies; links only the active target |
-| C. Split modules, separate repo | `go get azcosmos`; `go build` | cgo toolchain only | Downloads driver modules from a second repo through Go module system |
-| D. Release assets/download | `go get`; install native asset; `go build` | explicit download/install step | Downloads only target asset |
-| E. Wrapper-only/manual native | `go get`; install/configure native lib | explicit customer-managed native dependency | Minimal Go module, external native payload |
-| F. Standalone native SDK | depends on package identity | depends on chosen submodel | isolates impact from existing SDK |
+| Model                           | Common-platform customer flow              | Customer-visible native setup               | Download behavior                                                              |
+| ------------------------------- | ------------------------------------------ | ------------------------------------------- | ------------------------------------------------------------------------------ |
+| A. Single bundled module        | `go get azcosmos`; `go build`              | cgo toolchain only                          | Downloads whole default matrix in one module                                   |
+| B. Split modules, same repo     | `go get azcosmos`; `go build`              | cgo toolchain only                          | Downloads default driver modules as dependencies; links only the active target |
+| C. Split modules, separate repo | `go get azcosmos`; `go build`              | cgo toolchain only                          | Downloads driver modules from a second repo through Go module system           |
+| D. Release assets/download      | `go get`; install native asset; `go build` | explicit download/install step              | Downloads only target asset                                                    |
+| E. Wrapper-only/manual native   | `go get`; install/configure native lib     | explicit customer-managed native dependency | Minimal Go module, external native payload                                     |
+| F. Standalone native SDK        | depends on package identity                | depends on chosen submodel                  | isolates impact from existing SDK                                              |
 
 ## 14. Repository and release comparison
 
-| Model | Azure SDK for Go repo impact | Release coordination | Reviewability |
-|---|---|---|---|
-| A. Single bundled module | Highest; all binaries live under one module | Simple, one module version | Large binary diffs in SDK PRs |
-| B. Split modules, same repo | High; binaries still live in repo, but module payloads are separated | Moderate; many modules, same repo | Binary PRs still affect SDK repo |
-| C. Split modules, separate repo | Lower; native payload outside main SDK repo | Higher; cross-repo version alignment | Cleaner SDK PRs, separate native PRs |
-| D. Release assets/download | Low source impact | Higher; release assets must match SDK | Asset publishing/reproducibility must be reviewed |
-| E. Wrapper-only/manual native | Lowest source impact | Lower for SDK, higher for customers | Native setup mostly outside SDK PRs |
-| F. Standalone native SDK | Depends on repository choice | Product-level coordination | Clearer separation, more product surface |
+| Model                           | Azure SDK for Go repo impact                                         | Release coordination                  | Reviewability                                     |
+| ------------------------------- | -------------------------------------------------------------------- | ------------------------------------- | ------------------------------------------------- |
+| A. Single bundled module        | Highest; all binaries live under one module                          | Simple, one module version            | Large binary diffs in SDK PRs                     |
+| B. Split modules, same repo     | High; binaries still live in repo, but module payloads are separated | Moderate; many modules, same repo     | Binary PRs still affect SDK repo                  |
+| C. Split modules, separate repo | Lower; native payload outside main SDK repo                          | Higher; cross-repo version alignment  | Cleaner SDK PRs, separate native PRs              |
+| D. Release assets/download      | Low source impact                                                    | Higher; release assets must match SDK | Asset publishing/reproducibility must be reviewed |
+| E. Wrapper-only/manual native   | Lowest source impact                                                 | Lower for SDK, higher for customers   | Native setup mostly outside SDK PRs               |
+| F. Standalone native SDK        | Depends on repository choice                                         | Product-level coordination            | Clearer separation, more product surface          |
 
 ## 15. Discussion checkpoints for Go Central SDK review
 
