@@ -358,6 +358,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .target_rate
             .is_some()
             .then_some(config.max_in_flight as u64),
+        skipped_issuances: None,
+        skipped_postprocessing: None,
         application_region: config.application_region.clone(),
         excluded_regions: config.excluded_regions.join(", "),
         tokio_threads: tokio::runtime::Handle::current().metrics().num_workers() as u64,
