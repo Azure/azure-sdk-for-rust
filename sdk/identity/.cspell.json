@@ -6,6 +6,7 @@
     "AADSTS",
     "adfs",
     "appservice",
+    "azcmagent",
     "azureauth",
     "clientcertificate",
     "clientsecret",
@@ -15,6 +16,7 @@
     "LINUXVMIMAGE",
     "managedidentity",
     "msal",
+    "programdata",
     "replacen",
     "SYSTEMROOT",
     "workloadidentity"

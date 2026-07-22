@@ -3,14 +3,14 @@
 
 use crate::{
     common::recoverable::RecoverableConnection,
-    error::{ErrorKind, EventHubsError, Result},
+    error::{find_link_stolen, ErrorKind, EventHubsError, Result},
     models::ReceivedEventData,
 };
 use async_stream::try_stream;
 use azure_core::{http::Url, time::Duration};
 use azure_core_amqp::{
-    error::{AmqpErrorCondition, AmqpErrorKind},
-    AmqpDeliveryApis as _, AmqpError, AmqpReceiverApis as _, AmqpReceiverOptions, AmqpSource,
+    error::AmqpErrorKind, AmqpDeliveryApis as _, AmqpError, AmqpReceiverApis as _,
+    AmqpReceiverOptions, AmqpSource,
 };
 use futures::Stream;
 use std::sync::{
@@ -31,18 +31,21 @@ fn translate_receive_error(
     partition_id: &str,
     source_url: &Url,
 ) -> EventHubsError {
+    // The condition can be wrapped: a re-attach rejected with `amqp:link:stolen`
+    // reaches this point inside the `ensure_receiver` wrapper, so look at the
+    // whole source chain and not only the top-level kind.
+    if let Some(described) = find_link_stolen(&error) {
+        // Broker displaced this consumer (a higher epoch/owner attached).
+        // Recoverable on the processor path, so warn rather than error.
+        warn!(
+            partition_id = %partition_id,
+            source_url = %source_url,
+            condition = ?described.condition,
+            "Receiver link stolen by the broker (epoch displacement); mapping to ConsumerDisconnected."
+        );
+        return EventHubsError::from(ErrorKind::ConsumerDisconnected(Some(described.clone())));
+    }
     if let AmqpErrorKind::AmqpDescribedError(described) = error.kind() {
-        if matches!(described.condition, AmqpErrorCondition::LinkStolen) {
-            // Broker displaced this consumer (a higher epoch/owner attached).
-            // Recoverable on the processor path, so warn rather than error.
-            warn!(
-                partition_id = %partition_id,
-                source_url = %source_url,
-                condition = ?described.condition,
-                "Receiver link stolen by the broker (epoch displacement); mapping to ConsumerDisconnected."
-            );
-            return EventHubsError::from(ErrorKind::ConsumerDisconnected(Some(described.clone())));
-        }
         warn!(
             partition_id = %partition_id,
             source_url = %source_url,
@@ -58,6 +61,34 @@ fn translate_receive_error(
         );
     }
     EventHubsError::from(error)
+}
+
+/// Maps `amqp:link:stolen` on the attach path to `ConsumerDisconnected`.
+///
+/// The stream re-attaches on every loop iteration, so the broker can reject the
+/// attach itself with `amqp:link:stolen` rather than failing an in-flight
+/// receive. Without this, the same displacement would surface as a plain
+/// `ErrorKind::AmqpError` only because it took the attach path.
+fn translate_attach_error(
+    error: EventHubsError,
+    partition_id: &str,
+    source_url: &Url,
+) -> EventHubsError {
+    let ErrorKind::AmqpError(amqp_error) = &error.kind else {
+        return error;
+    };
+    match find_link_stolen(amqp_error) {
+        Some(described) => {
+            warn!(
+                partition_id = %partition_id,
+                source_url = %source_url,
+                condition = ?described.condition,
+                "Receiver attach rejected by the broker (epoch displacement); mapping to ConsumerDisconnected."
+            );
+            EventHubsError::from(ErrorKind::ConsumerDisconnected(Some(described.clone())))
+        }
+        None => error,
+    }
 }
 
 /// A message receiver that can be used to receive messages from an Event Hub.
@@ -203,7 +234,8 @@ impl EventReceiver {
                     self.message_source.clone(),
                     self.receiver_options.clone(),
                     self.timeout
-                ).instrument(span.clone()).await?;
+                ).instrument(span.clone()).await
+                    .map_err(|e| translate_attach_error(e, &self.partition_id, &self.source_url))?;
 
                 let delivery = receiver
                     .receive_delivery()
@@ -247,5 +279,183 @@ impl EventReceiver {
 impl Drop for EventReceiver {
     fn drop(&mut self) {
         trace!("Dropping EventReceiver for partition {}", self.partition_id);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use azure_core_amqp::{error::AmqpErrorCondition, AmqpDescribedError};
+
+    fn source_url() -> Url {
+        Url::parse("amqps://example.servicebus.windows.net/eh/Partitions/0").unwrap()
+    }
+
+    fn stolen() -> AmqpError {
+        AmqpError::from(AmqpErrorKind::AmqpDescribedError(AmqpDescribedError::new(
+            AmqpErrorCondition::LinkStolen,
+            Some("New receiver with higher epoch of '1' is created".to_string()),
+            Default::default(),
+        )))
+    }
+
+    /// Wraps an error exactly as the receive retry loop does for an attach
+    /// failure. This calls the production wrapper rather than copying its
+    /// shape, so a change to the wrapper cannot leave these tests passing
+    /// against a shape that no longer exists.
+    fn wrapped_in_ensure_receiver(inner: AmqpError) -> AmqpError {
+        crate::common::recoverable::receiver::RecoverableReceiver::ensure_receiver_error(inner)
+    }
+
+    // A stolen link reported directly on the receive path is the case the
+    // 0.15.0 CHANGELOG documents.
+    #[test]
+    fn translate_receive_error_maps_top_level_link_stolen() {
+        let translated = translate_receive_error(stolen(), "0", &source_url());
+        assert!(matches!(
+            translated.kind,
+            ErrorKind::ConsumerDisconnected(Some(_))
+        ));
+    }
+
+    // The broker can reject the re-attach instead of the in-flight receive. The
+    // condition then reaches the stream wrapped by `ensure_receiver`. Before the
+    // fix this wrapper was a message string, so the condition was lost and the
+    // caller saw `ErrorKind::AmqpError`.
+    #[test]
+    fn translate_receive_error_maps_link_stolen_wrapped_by_ensure_receiver() {
+        let translated =
+            translate_receive_error(wrapped_in_ensure_receiver(stolen()), "0", &source_url());
+        assert!(
+            matches!(translated.kind, ErrorKind::ConsumerDisconnected(Some(_))),
+            "expected ConsumerDisconnected, got {:?}",
+            translated.kind
+        );
+    }
+
+    // Other conditions must keep their existing shape.
+    #[test]
+    fn translate_receive_error_passes_other_conditions_through() {
+        let other = AmqpError::from(AmqpErrorKind::AmqpDescribedError(AmqpDescribedError::new(
+            AmqpErrorCondition::ServerBusyError,
+            None,
+            Default::default(),
+        )));
+        let translated = translate_receive_error(other, "0", &source_url());
+        assert!(matches!(translated.kind, ErrorKind::AmqpError(_)));
+    }
+
+    #[test]
+    fn translate_receive_error_passes_non_described_errors_through() {
+        let translated =
+            translate_receive_error(AmqpError::with_message("boom"), "0", &source_url());
+        assert!(matches!(translated.kind, ErrorKind::AmqpError(_)));
+    }
+
+    // The stream re-attaches on every loop iteration, so a displacement can be
+    // reported by `get_receiver` and never touch the receive path at all.
+    #[test]
+    fn translate_attach_error_maps_link_stolen() {
+        let attach_error = EventHubsError::from(stolen());
+        let translated = translate_attach_error(attach_error, "0", &source_url());
+        assert!(
+            matches!(translated.kind, ErrorKind::ConsumerDisconnected(Some(_))),
+            "expected ConsumerDisconnected, got {:?}",
+            translated.kind
+        );
+    }
+
+    #[test]
+    fn translate_attach_error_maps_link_stolen_wrapped_in_azure_core() {
+        let attach_error = EventHubsError::from(wrapped_in_ensure_receiver(stolen()));
+        let translated = translate_attach_error(attach_error, "0", &source_url());
+        assert!(
+            matches!(translated.kind, ErrorKind::ConsumerDisconnected(Some(_))),
+            "expected ConsumerDisconnected, got {:?}",
+            translated.kind
+        );
+    }
+
+    /// Builds an `EventReceiver` over a real `RecoverableConnection` whose
+    /// next receiver attach fails with `attach_error`. No network activity
+    /// happens: the injected error stops `ensure_receiver` before it opens
+    /// a connection.
+    fn receiver_with_failing_attach(attach_error: AmqpError) -> EventReceiver {
+        let connection = RecoverableConnection::new(
+            Url::parse("amqps://example.servicebus.windows.net").unwrap(),
+            None,
+            None,
+            Arc::new(azure_core_test::credentials::MockCredential),
+            Default::default(),
+            None,
+        );
+        connection.force_attach_error(attach_error).unwrap();
+        EventReceiver::new(
+            connection,
+            AmqpReceiverOptions::default(),
+            AmqpSource::builder()
+                .with_address(source_url().to_string())
+                .build(),
+            source_url(),
+            "0".to_string(),
+            None,
+        )
+    }
+
+    // Drives the real stream. The function-level tests above prove what
+    // `translate_attach_error` does when it is called; only this test proves
+    // that `stream_events` calls it on the `get_receiver` failure path. If
+    // the `map_err` at that call site is removed, the error surfaces as
+    // `ErrorKind::AmqpError` and this test fails.
+    #[tokio::test]
+    async fn stream_events_maps_stolen_attach_to_consumer_disconnected() {
+        use futures::StreamExt;
+
+        let receiver = receiver_with_failing_attach(stolen());
+        let mut stream = std::pin::pin!(receiver.stream_events());
+        let error = stream
+            .next()
+            .await
+            .expect("the stream yields the attach failure")
+            .expect_err("the injected attach error must surface");
+        assert!(
+            matches!(error.kind, ErrorKind::ConsumerDisconnected(Some(_))),
+            "expected ConsumerDisconnected, got {:?}",
+            error.kind
+        );
+    }
+
+    // A non-stolen attach failure must keep its kind through the same path,
+    // so callers cannot mistake a transport failure for a stolen partition.
+    #[tokio::test]
+    async fn stream_events_passes_other_attach_errors_through() {
+        use futures::StreamExt;
+
+        let receiver = receiver_with_failing_attach(AmqpError::with_message("attach failed"));
+        let mut stream = std::pin::pin!(receiver.stream_events());
+        let error = stream
+            .next()
+            .await
+            .expect("the stream yields the attach failure")
+            .expect_err("the injected attach error must surface");
+        assert!(
+            matches!(error.kind, ErrorKind::AmqpError(_)),
+            "expected AmqpError, got {:?}",
+            error.kind
+        );
+    }
+
+    // An attach that fails for any other reason keeps its kind, so callers that
+    // match on `ConsumerDisconnected` do not treat a transport failure as a
+    // stolen partition.
+    #[test]
+    fn translate_attach_error_passes_other_errors_through() {
+        let attach_error = EventHubsError::from(AmqpError::with_message("attach failed"));
+        let translated = translate_attach_error(attach_error, "0", &source_url());
+        assert!(matches!(translated.kind, ErrorKind::AmqpError(_)));
+
+        let attach_error = EventHubsError::with_message("not an AMQP error");
+        let translated = translate_attach_error(attach_error, "0", &source_url());
+        assert!(matches!(translated.kind, ErrorKind::SimpleMessage(_)));
     }
 }
