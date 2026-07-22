@@ -111,14 +111,7 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
     mut options: OperationOptions,
     max_attempts: Option<NonZeroU8>,
 ) -> crate::error::Result<CosmosResponse> {
-    // PATCH is excluded from binary encoding (deferred per the binary-encoding
-    // spec). The outer patch op is gated out before reaching this handler, but
-    // the internal Read/Replace sub-ops re-enter `execute_operation` as
-    // supported operation types, so a `binary_encoding` carried on the forwarded
-    // options would put them on a binary wire — and the RMW read-back parses
-    // with raw `serde_json::from_slice`, which cannot decode a binary body.
-    // Clear it here so patch stays fully text for any caller (including generic
-    // FFI/driver-direct callers whose C ABI is operation-type-agnostic).
+    // PATCH is excluded from binary encoding.
     options.binary_encoding = None;
 
     // -- 1. Reject caller-set preconditions --
@@ -1914,12 +1907,8 @@ mod tests {
 
     #[tokio::test]
     async fn rmw_clears_binary_encoding_on_forwarded_sub_ops() {
-        // PATCH is excluded from binary encoding. Even if a caller (e.g. a
-        // generic FFI/driver-direct caller whose C ABI is op-type-agnostic)
-        // sets `binary_encoding` on a patch, the handler must clear it before
-        // forwarding options to its internal Read/Replace sub-ops — otherwise
-        // those supported op types would re-enter the binary path and the RMW
-        // read-back (`serde_json::from_slice`) could not decode a binary body.
+        // A caller may set `binary_encoding` on a patch; the handler must clear
+        // it so the forwarded Read/Replace sub-ops stay text (see the handler).
         struct OptionsCapturingDispatcher {
             binary_encodings: Mutex<Vec<Option<BinaryEncodingOptions>>>,
         }
