@@ -36,6 +36,14 @@ uuid.workspace = true
 # Optional: tokio runtime metrics (scheduling delay, poll times, worker utilization)
 tokio-metrics = { workspace = true, optional = true }
 
+[dev-dependencies]
+# Test-only: the binary round-trip fuzzer generates arbitrary JSON, canonicalizes
+# it (RFC 8785), and hashes the canonical form for differential comparison.
+arbitrary = { workspace = true }
+arbitrary-json = { workspace = true }
+json-canon = { workspace = true }
+sha2 = { workspace = true }
+
 [features]
 default = []
 tokio-console = ["dep:console-subscriber", "tokio/tracing"]
