@@ -10,7 +10,7 @@
 
 ### Other Changes
 
-- `ResponseHeaders` now exposes Gateway 2.0 backend duration, quota, item-count, quorum, replica, query, and physical-partition response metadata. ([#4797](https://github.com/Azure/azure-sdk-for-rust/pull/4797))
+- Existing `ResponseHeaders` accessors now return Gateway 2.0 backend duration, quota, item-count, and local-LSN response metadata. ([#4797](https://github.com/Azure/azure-sdk-for-rust/pull/4797))
 
 ## 0.37.0 (2026-07-20)
 

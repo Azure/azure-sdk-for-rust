@@ -514,7 +514,8 @@ pub struct CosmosResponseHeaders {
     ///
     /// Contains the RID of the owning collection. Will be used for
     /// RID mismatch validation in container-recreate detection.
-    pub owner_id: Option<String>,
+    #[allow(dead_code)] // Used in follow-up PR for RID validation
+    pub(crate) owner_id: Option<String>,
 
     /// Indicates whether an offer replace is still pending (`x-ms-offer-replace-pending`).
     ///
@@ -569,28 +570,28 @@ pub struct CosmosResponseHeaders {
     pub resource_usage: Option<String>,
 
     /// Resource schema version (`x-ms-schemaversion`).
-    pub schema_version: Option<String>,
+    pub(crate) schema_version: Option<String>,
 
     /// Current write quorum (`x-ms-current-write-quorum`).
-    pub current_write_quorum: Option<u32>,
+    pub(crate) current_write_quorum: Option<u32>,
 
     /// Current replica set size (`x-ms-current-replica-set-size`).
-    pub current_replica_set_size: Option<u32>,
+    pub(crate) current_replica_set_size: Option<u32>,
 
     /// Cross-partition role (`x-ms-xp-role`).
-    pub xp_role: Option<u32>,
+    pub(crate) xp_role: Option<u32>,
 
     /// Query execution metadata (`x-ms-cosmos-query-execution-info`).
-    pub query_execution_info: Option<String>,
+    pub(crate) query_execution_info: Option<String>,
 
     /// Whether partition-key deletion is pending (`x-ms-cosmos-is-partition-key-delete-pending`).
-    pub pending_pk_delete: Option<bool>,
+    pub(crate) pending_pk_delete: Option<bool>,
 
     /// Physical partition identifier (`x-ms-cosmos-physical-partition-id`).
-    pub physical_partition_id: Option<String>,
+    pub(crate) physical_partition_id: Option<String>,
 
     /// Conflict resolution timestamp (`x-ms-cosmos-conflict-resolved-timestamp`).
-    pub conflict_resolved_timestamp: Option<u64>,
+    pub(crate) conflict_resolved_timestamp: Option<u64>,
 
     /// Whether the region has tentative (not yet committed) writes (`x-ms-cosmos-allow-tentative-writes`).
     pub has_tentative_writes: Option<bool>,
