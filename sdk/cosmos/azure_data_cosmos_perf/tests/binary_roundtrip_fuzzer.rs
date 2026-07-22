@@ -60,6 +60,7 @@ const SEED_ENV_VAR: &str = "AZURE_COSMOS_FUZZ_SEED";
 const MAX_DEPTH_ENV_VAR: &str = "AZURE_COSMOS_FUZZ_MAX_DEPTH";
 const WIDE_NUMBERS_ENV_VAR: &str = "AZURE_COSMOS_FUZZ_WIDE_NUMBERS";
 const UNICODE_ENV_VAR: &str = "AZURE_COSMOS_FUZZ_UNICODE";
+const CALIBRATE_ENV_VAR: &str = "AZURE_COSMOS_FUZZ_CALIBRATE";
 
 const DEFAULT_DATABASE_NAME: &str = "binary-fuzz-db";
 const DEFAULT_CONTAINER_NAME: &str = "binary-fuzz-ct";
@@ -116,6 +117,7 @@ struct FuzzConfig {
     max_depth: u32,
     wide_numbers: bool,
     unicode: bool,
+    calibrate: bool,
 }
 
 impl FuzzConfig {
@@ -136,6 +138,7 @@ impl FuzzConfig {
             max_depth: env_u64(MAX_DEPTH_ENV_VAR, DEFAULT_MAX_DEPTH as u64) as u32,
             wide_numbers: env_bool(WIDE_NUMBERS_ENV_VAR, false),
             unicode: env_bool(UNICODE_ENV_VAR, true),
+            calibrate: env_bool(CALIBRATE_ENV_VAR, false),
         }
     }
 }
@@ -475,6 +478,11 @@ fn write_options_with_content() -> ItemWriteOptions {
 )]
 async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
     let cfg = FuzzConfig::from_env();
+
+    if cfg.calibrate {
+        return run_calibration().await;
+    }
+
     println!(
         "binary_roundtrip_fuzzer: seed={} iterations={} max_depth={} wide_numbers={} unicode={}",
         cfg.seed, cfg.iterations, cfg.max_depth, cfg.wide_numbers, cfg.unicode
@@ -576,6 +584,190 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Calibration mode
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// A numeric edge case: a human label and the **exact JSON literal** to store.
+/// The literal is parsed with `serde_json` so its precise form is preserved.
+struct NumberProbe {
+    label: &'static str,
+    literal: &'static str,
+}
+
+/// The spread of numeric forms whose backend rewrite we want to learn. These are
+/// the cases the design doc (§3.1) flags as `[CALIBRATE]`.
+const NUMBER_PROBES: &[NumberProbe] = &[
+    NumberProbe {
+        label: "integer_zero",
+        literal: "0",
+    },
+    NumberProbe {
+        label: "negative_zero",
+        literal: "-0",
+    },
+    NumberProbe {
+        label: "integral_float_1.0",
+        literal: "1.0",
+    },
+    NumberProbe {
+        label: "integral_float_20.0",
+        literal: "20.0",
+    },
+    NumberProbe {
+        label: "integral_float_exp_2e1",
+        literal: "2e1",
+    },
+    NumberProbe {
+        label: "small_fraction_0.5",
+        literal: "0.5",
+    },
+    NumberProbe {
+        label: "repeating_0.1",
+        literal: "0.1",
+    },
+    NumberProbe {
+        label: "sum_0.1_plus_0.2",
+        literal: "0.30000000000000004",
+    },
+    NumberProbe {
+        label: "high_precision_pi",
+        literal: "3.141592653589793",
+    },
+    NumberProbe {
+        label: "large_exponent",
+        literal: "1e20",
+    },
+    NumberProbe {
+        label: "small_exponent",
+        literal: "1e-20",
+    },
+    NumberProbe {
+        label: "negative_large_exp",
+        literal: "-1.5e18",
+    },
+    NumberProbe {
+        label: "i64_max",
+        literal: "9223372036854775807",
+    },
+    NumberProbe {
+        label: "i64_min",
+        literal: "-9223372036854775808",
+    },
+    NumberProbe {
+        label: "u64_max_minus_1",
+        literal: "18446744073709551614",
+    },
+    NumberProbe {
+        label: "just_above_i64",
+        literal: "9223372036854775808",
+    },
+    NumberProbe {
+        label: "trailing_zeros_1.2300",
+        literal: "1.2300",
+    },
+    NumberProbe {
+        label: "leading_int_0e0",
+        literal: "0e0",
+    },
+];
+
+/// **Calibration mode** (design doc §3.1): stores each numeric probe through the
+/// binary path, reads it back, and prints how the backend rewrote it alongside
+/// how `canonicalize_number` currently renders it. Any `DIFF` row is a number
+/// form the canonicalizer does not yet model — tune `canonicalize_number` (or
+/// narrow the generator) until the calibration table is all `MATCH`.
+///
+/// This is a **diagnostic** that prints a table; it does not assert (a `DIFF` is
+/// expected the first time and is the signal to tune, not a test failure). Run
+/// it with `AZURE_COSMOS_FUZZ_CALIBRATE=true` against a live account.
+async fn run_calibration() -> Result<(), Box<dyn Error>> {
+    println!("binary_roundtrip_fuzzer: CALIBRATION MODE — learning the backend's number rewrite");
+    println!("(store each probe via binary encoding, read back, compare canonical forms)\n");
+
+    // Use the binary config so the full encode→store→decode path is exercised.
+    let client = build_client(&Some(BinaryEncodingOptions::new().with_enabled(true))).await?;
+
+    let database_name =
+        std::env::var(DATABASE_NAME_ENV_VAR).unwrap_or_else(|_| DEFAULT_DATABASE_NAME.to_string());
+    let container_name = std::env::var(CONTAINER_NAME_ENV_VAR)
+        .unwrap_or_else(|_| DEFAULT_CONTAINER_NAME.to_string());
+
+    ignore_conflict(client.create_database(&database_name, None).await)?;
+    let db = client.database_client(&database_name);
+    ignore_conflict(
+        db.create_container(
+            ContainerProperties::new(container_name.clone(), PARTITION_KEY_PATH.into()),
+            None,
+        )
+        .await,
+    )?;
+    let container = db.container_client(&container_name).await?;
+
+    println!(
+        "{:<26} {:<24} {:<24} {:<24} {}",
+        "probe", "sent-literal", "our-canonical", "backend-returned", "status"
+    );
+    println!("{}", "-".repeat(120));
+
+    let mut diffs = 0u32;
+    for probe in NUMBER_PROBES {
+        // Parse the exact literal (skip probes serde_json cannot represent).
+        let Ok(number_value) = serde_json::from_str::<Value>(probe.literal) else {
+            println!(
+                "{:<26} {:<24} (serde_json cannot parse this literal)",
+                probe.label, probe.literal
+            );
+            continue;
+        };
+
+        let id = Uuid::new_v4().to_string();
+        let pk = "calibration".to_string();
+        let doc = serde_json::json!({ "id": id, "pk": pk, "n": number_value });
+
+        container
+            .create_item(&pk, &id, &doc, Some(write_options_with_content()))
+            .await
+            .map_err(|e| format!("{}: create failed: {e}", probe.label))?;
+        let read = container
+            .read_item(&pk, &id, None)
+            .await
+            .map_err(|e| format!("{}: read failed: {e}", probe.label))?;
+        let read_doc: Value = read
+            .into_model()
+            .map_err(|e| format!("{}: read decode failed: {e}", probe.label))?;
+
+        let returned_n = read_doc.get("n").cloned().unwrap_or(Value::Null);
+        // The backend's raw JSON text rendering of the number.
+        let backend_returned = serde_json::to_string(&returned_n).unwrap_or_default();
+        // How our canonicalizer renders the sent value vs the returned value.
+        let (our_canonical, _) = canonical_hash(&number_value);
+        let (returned_canonical, _) = canonical_hash(&returned_n);
+
+        let status = if our_canonical == returned_canonical {
+            "MATCH"
+        } else {
+            diffs += 1;
+            "DIFF  <-- tune canonicalize_number"
+        };
+
+        println!(
+            "{:<26} {:<24} {:<24} {:<24} {}",
+            probe.label, probe.literal, our_canonical, backend_returned, status
+        );
+    }
+
+    println!("{}", "-".repeat(120));
+    if diffs == 0 {
+        println!("CALIBRATION: all probes MATCH — canonicalize_number models the backend rewrite.");
+    } else {
+        println!(
+            "CALIBRATION: {diffs} probe(s) DIFF — update `canonicalize_number` to match the backend-returned column above."
+        );
+    }
+    Ok(())
+}
+
 /// Asserts the returned document, projected to the sent keys, canonicalizes to
 /// the same form (and hash) as what was sent. On mismatch, prints both canonical
 /// forms and the reproduction seed.
@@ -668,6 +860,7 @@ mod tests {
             max_depth: 4,
             wide_numbers: false,
             unicode: true,
+            calibrate: false,
         };
         let mut a = SplitMix64::new(cfg.seed);
         let mut b = SplitMix64::new(cfg.seed);
@@ -688,6 +881,7 @@ mod tests {
             max_depth: 5,
             wide_numbers: true,
             unicode: true,
+            calibrate: false,
         };
         let mut rng = SplitMix64::new(cfg.seed);
         for _ in 0..500 {
@@ -701,5 +895,31 @@ mod tests {
                 serde_json::to_string(&doc).unwrap()
             );
         }
+    }
+
+    #[test]
+    fn calibration_probes_are_valid_and_unique() {
+        // Every calibration probe literal must parse as a JSON number, and the
+        // labels must be unique (they key the printed calibration table).
+        let mut labels: Vec<&str> = Vec::new();
+        for probe in NUMBER_PROBES {
+            let value: Value = serde_json::from_str(probe.literal).unwrap_or_else(|e| {
+                panic!(
+                    "probe {} literal {:?} invalid: {e}",
+                    probe.label, probe.literal
+                )
+            });
+            assert!(
+                value.is_number(),
+                "probe {} literal {:?} is not a JSON number",
+                probe.label,
+                probe.literal
+            );
+            labels.push(probe.label);
+        }
+        labels.sort_unstable();
+        let count = labels.len();
+        labels.dedup();
+        assert_eq!(labels.len(), count, "duplicate calibration probe label");
     }
 }

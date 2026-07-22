@@ -74,11 +74,18 @@ The harness therefore uses a **Cosmos-compatible** number canonicalizer, not JCS
   `serde_json`'s `f64` formatting).
 
 > **This rule set is a starting point and MUST be calibrated against a real
-> account.** Run the harness with `--calibrate` (see §6) to have it store a
-> spread of numeric edge cases and print the backend's actual rendering, then
-> tune `canonicalize_number` to match. Known open questions:
-> `[CALIBRATE]` high-precision floats (`0.1 + 0.2`), large exponents,
-> very large integers near `2^63`/`2^64`, negative zero.
+> account.** Run the harness in calibration mode
+> (`AZURE_COSMOS_FUZZ_CALIBRATE=true`, see §6) to have it store a fixed spread of
+> numeric edge cases through the binary path, read them back, and print a table
+> comparing how `canonicalize_number` renders each value against the backend's
+> actual returned form. Every `DIFF` row is a form the canonicalizer does not yet
+> model — tune `canonicalize_number` until the table is all `MATCH`. The probe
+> set (`NUMBER_PROBES` in the harness) covers: integral floats (`1.0`, `2e1`),
+> repeating/high-precision floats (`0.1`, `0.1 + 0.2`, π), large/small exponents
+> (`1e20`, `1e-20`), integers near `2^63`/`2^64`, negative zero, and trailing
+> zeros (`1.2300`). Calibration is a **diagnostic** — it prints the table and
+> does not assert, since a `DIFF` on the first run is the expected signal to
+> tune, not a failure.
 
 ### 3.2 Generator stays inside the calibrated envelope
 
@@ -136,8 +143,10 @@ RUSTFLAGS='--cfg test_category="binary_encoding"' \
 # Reproduce a failure:
 AZURE_COSMOS_FUZZ_SEED=12345678901234567890 ... cargo test ...
 
-# Calibrate number canonicalization against the account:
-AZURE_COSMOS_FUZZ_CALIBRATE=true ... cargo test ...
+# Calibrate number canonicalization against the account (prints a table, no assert):
+AZURE_COSMOS_CONNECTION_STRING='...' AZURE_COSMOS_FUZZ_CALIBRATE=true \
+RUSTFLAGS='--cfg test_category="binary_encoding"' \
+  cargo test -p azure_data_cosmos_perf --test binary_roundtrip_fuzzer -- --nocapture
 ```
 
 ### Environment knobs
