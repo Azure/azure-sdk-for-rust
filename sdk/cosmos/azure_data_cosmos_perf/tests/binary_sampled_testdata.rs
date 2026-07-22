@@ -27,9 +27,11 @@
 //!     cargo test -p azure_data_cosmos_perf --test binary_sampled_testdata
 //! ```
 //!
-//! The test targets the `dkunda-be-db` database and `dkunda-be-ct` container
-//! (partition key `/pk`), creating them if they do not already exist. To run
-//! against a local emulator, also set `AZURE_COSMOS_ALLOW_INVALID_CERT=true`.
+//! The test targets the `binary-encoding-perf-db` database and
+//! `binary-encoding-perf-ct` container (partition key `/pk`) by default,
+//! creating them if they do not already exist. Override the names with
+//! `AZURE_COSMOS_BINARY_TEST_DATABASE` / `AZURE_COSMOS_BINARY_TEST_CONTAINER`.
+//! To run against a local emulator, also set `AZURE_COSMOS_ALLOW_INVALID_CERT=true`.
 
 #![allow(clippy::large_futures)]
 
@@ -52,9 +54,11 @@ use uuid::Uuid;
 
 const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
 const ALLOW_INVALID_CERT_ENV_VAR: &str = "AZURE_COSMOS_ALLOW_INVALID_CERT";
+const DATABASE_NAME_ENV_VAR: &str = "AZURE_COSMOS_BINARY_TEST_DATABASE";
+const CONTAINER_NAME_ENV_VAR: &str = "AZURE_COSMOS_BINARY_TEST_CONTAINER";
 
-const DATABASE_NAME: &str = "dkunda-be-db";
-const CONTAINER_NAME: &str = "dkunda-be-ct";
+const DEFAULT_DATABASE_NAME: &str = "binary-encoding-perf-db";
+const DEFAULT_CONTAINER_NAME: &str = "binary-encoding-perf-ct";
 const PARTITION_KEY_PATH: &str = "/pk";
 
 /// Number of documents sampled from the corpus per test run.
@@ -224,19 +228,27 @@ async fn binary_round_trips_sampled_testdata() -> Result<(), Box<dyn Error>> {
 
     let client = build_client().await?;
 
+    // Target database/container names default to generic values but can be
+    // overridden via env vars so the test can run against caller-owned
+    // resources.
+    let database_name =
+        std::env::var(DATABASE_NAME_ENV_VAR).unwrap_or_else(|_| DEFAULT_DATABASE_NAME.to_string());
+    let container_name = std::env::var(CONTAINER_NAME_ENV_VAR)
+        .unwrap_or_else(|_| DEFAULT_CONTAINER_NAME.to_string());
+
     // Ensure the target database and container (partitioned on /pk) exist,
     // treating a 409 Conflict as "already created".
-    ignore_conflict(client.create_database(DATABASE_NAME, None).await)?;
-    let db_client = client.database_client(DATABASE_NAME);
+    ignore_conflict(client.create_database(&database_name, None).await)?;
+    let db_client = client.database_client(&database_name);
     ignore_conflict(
         db_client
             .create_container(
-                ContainerProperties::new(CONTAINER_NAME.to_string(), PARTITION_KEY_PATH.into()),
+                ContainerProperties::new(container_name.clone(), PARTITION_KEY_PATH.into()),
                 None,
             )
             .await,
     )?;
-    let container = db_client.container_client(CONTAINER_NAME).await?;
+    let container = db_client.container_client(&container_name).await?;
 
     let mut rng = rand::rng();
     let sampled: Vec<Map<String, Value>> = (0..SAMPLE_COUNT)
