@@ -639,7 +639,7 @@ impl OperationType {
     /// Returns true if driver-side binary encoding/transcoding is honored for
     /// this operation type.
     ///
-    /// Only point item operations are supported; query, feed, batch, and
+    /// Only point item operations (excluding delete) are supported; query, feed, batch, and
     /// stored-procedure paths are deferred per the binary-encoding spec.
     pub fn supports_binary_encoding(self) -> bool {
         matches!(
@@ -648,7 +648,6 @@ impl OperationType {
                 | OperationType::Read
                 | OperationType::Replace
                 | OperationType::Upsert
-                | OperationType::Delete
         )
     }
 
@@ -892,6 +891,35 @@ impl std::fmt::Display for ThroughputControlGroupName {
 mod tests {
     use super::*;
     use serde::{Deserialize, Serialize};
+
+    #[test]
+    fn supports_binary_encoding_covers_only_bodied_point_ops() {
+        // Matches the binary-encoding spec §2 scope table: create/read/replace/
+        // upsert. `delete` is excluded (no request or response body); query,
+        // feed, batch, and stored-procedure paths are deferred.
+        for op in [
+            OperationType::Create,
+            OperationType::Read,
+            OperationType::Replace,
+            OperationType::Upsert,
+        ] {
+            assert!(op.supports_binary_encoding(), "{op:?} should be supported");
+        }
+        for op in [
+            OperationType::Delete,
+            OperationType::Query,
+            OperationType::SqlQuery,
+            OperationType::ReadFeed,
+            OperationType::Batch,
+            OperationType::Execute,
+            OperationType::Patch,
+        ] {
+            assert!(
+                !op.supports_binary_encoding(),
+                "{op:?} should not be supported"
+            );
+        }
+    }
 
     #[test]
     fn partition_key_version_numeric_mapping() {
