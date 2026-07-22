@@ -127,6 +127,16 @@ impl ResponseHeaders {
         self.0.global_committed_lsn
     }
 
+    /// Quorum-acknowledged LSN (`x-ms-quorum-acked-lsn`).
+    pub fn quorum_acked_lsn(&self) -> Option<i64> {
+        self.0.quorum_acked_lsn
+    }
+
+    /// Quorum-acknowledged local LSN (`x-ms-cosmos-quorum-acked-llsn`).
+    pub fn quorum_acked_local_lsn(&self) -> Option<i64> {
+        self.0.quorum_acked_local_lsn
+    }
+
     /// Local (per-replica) LSN that served the request (`x-ms-cosmos-llsn`).
     pub fn local_lsn(&self) -> Option<u64> {
         self.0.local_lsn
@@ -136,6 +146,16 @@ impl ResponseHeaders {
     /// (`x-ms-cosmos-item-llsn`).
     pub fn item_local_lsn(&self) -> Option<u64> {
         self.0.item_local_lsn
+    }
+
+    /// Number of read regions (`x-ms-number-of-read-regions`).
+    pub fn number_of_read_regions(&self) -> Option<u32> {
+        self.0.number_of_read_regions
+    }
+
+    /// Timestamp of the last replica state change (`x-ms-last-state-change-utc`).
+    pub fn last_state_change_utc(&self) -> Option<&str> {
+        self.0.last_state_change_utc.as_deref()
     }
 
     /// Gateway version that served the request (`x-ms-gatewayversion`).
@@ -153,6 +173,51 @@ impl ResponseHeaders {
     /// delimited `key=value` pairs, paired with `resource_quota`.
     pub fn resource_usage(&self) -> Option<&str> {
         self.0.resource_usage.as_deref()
+    }
+
+    /// Resource schema version (`x-ms-schemaversion`).
+    pub fn schema_version(&self) -> Option<&str> {
+        self.0.schema_version.as_deref()
+    }
+
+    /// Owner resource ID (`x-ms-content-path`).
+    pub fn owner_id(&self) -> Option<&str> {
+        self.0.owner_id.as_deref()
+    }
+
+    /// Current write quorum (`x-ms-current-write-quorum`).
+    pub fn current_write_quorum(&self) -> Option<u32> {
+        self.0.current_write_quorum
+    }
+
+    /// Current replica set size (`x-ms-current-replica-set-size`).
+    pub fn current_replica_set_size(&self) -> Option<u32> {
+        self.0.current_replica_set_size
+    }
+
+    /// Cross-partition role (`x-ms-xp-role`).
+    pub fn xp_role(&self) -> Option<u32> {
+        self.0.xp_role
+    }
+
+    /// Query execution metadata (`x-ms-cosmos-query-execution-info`).
+    pub fn query_execution_info(&self) -> Option<&str> {
+        self.0.query_execution_info.as_deref()
+    }
+
+    /// Whether partition-key deletion is pending.
+    pub fn pending_pk_delete(&self) -> Option<bool> {
+        self.0.pending_pk_delete
+    }
+
+    /// Physical partition identifier (`x-ms-cosmos-physical-partition-id`).
+    pub fn physical_partition_id(&self) -> Option<&str> {
+        self.0.physical_partition_id.as_deref()
+    }
+
+    /// Conflict resolution timestamp (`x-ms-cosmos-conflict-resolved-timestamp`).
+    pub fn conflict_resolved_timestamp(&self) -> Option<u64> {
+        self.0.conflict_resolved_timestamp
     }
 
     /// Partition key range that served the request
@@ -209,4 +274,53 @@ impl From<DriverCosmosResponseHeaders> for ResponseHeaders {
 /// callers must go through the typed accessors.
 pub(crate) fn into_driver_headers(h: ResponseHeaders) -> DriverCosmosResponseHeaders {
     h.0
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use azure_core::http::headers::Headers;
+
+    #[test]
+    fn exposes_gateway_v2_response_metadata() {
+        let mut raw = Headers::new();
+        raw.insert("x-ms-quorum-acked-lsn", "10");
+        raw.insert("x-ms-cosmos-quorum-acked-llsn", "-1");
+        raw.insert("x-ms-number-of-read-regions", "2");
+        raw.insert("x-ms-last-state-change-utc", "2026-07-21T00:00:00Z");
+        raw.insert("x-ms-schemaversion", "1.0");
+        raw.insert("x-ms-content-path", "owner-rid");
+        raw.insert("x-ms-current-write-quorum", "3");
+        raw.insert("x-ms-current-replica-set-size", "4");
+        raw.insert("x-ms-xp-role", "1");
+        raw.insert(
+            "x-ms-cosmos-query-execution-info",
+            "{\"reverseRidEnabled\":false}",
+        );
+        raw.insert("x-ms-cosmos-is-partition-key-delete-pending", "False");
+        raw.insert("x-ms-cosmos-physical-partition-id", "physical-0");
+        raw.insert("x-ms-cosmos-conflict-resolved-timestamp", "1234567");
+
+        let headers = ResponseHeaders::from(DriverCosmosResponseHeaders::from_headers(&raw));
+
+        assert_eq!(headers.quorum_acked_lsn(), Some(10));
+        assert_eq!(headers.quorum_acked_local_lsn(), Some(-1));
+        assert_eq!(headers.number_of_read_regions(), Some(2));
+        assert_eq!(
+            headers.last_state_change_utc(),
+            Some("2026-07-21T00:00:00Z")
+        );
+        assert_eq!(headers.schema_version(), Some("1.0"));
+        assert_eq!(headers.owner_id(), Some("owner-rid"));
+        assert_eq!(headers.current_write_quorum(), Some(3));
+        assert_eq!(headers.current_replica_set_size(), Some(4));
+        assert_eq!(headers.xp_role(), Some(1));
+        assert_eq!(
+            headers.query_execution_info(),
+            Some("{\"reverseRidEnabled\":false}")
+        );
+        assert_eq!(headers.pending_pk_delete(), Some(false));
+        assert_eq!(headers.physical_partition_id(), Some("physical-0"));
+        assert_eq!(headers.conflict_resolved_timestamp(), Some(1_234_567));
+    }
 }

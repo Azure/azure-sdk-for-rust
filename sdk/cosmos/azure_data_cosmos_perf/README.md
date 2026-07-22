@@ -100,6 +100,7 @@ cargo run -p azure_data_cosmos_perf -- \
   --endpoint https://myaccount.documents.azure.com:443/ \
   --auth key --key "$AZURE_COSMOS_KEY" \
   --no-queries --no-upserts --no-creates \
+  --no-change-feed --no-feed-range-queries \
   --concurrency 100 --duration 60 --report-interval 10
 ```
 

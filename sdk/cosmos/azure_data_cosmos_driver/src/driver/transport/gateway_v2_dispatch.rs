@@ -416,6 +416,78 @@ pub(crate) fn unwrap_response_for_gateway_v2(
             duration_ms.to_string(),
         );
     }
+    if let Some(value) = response.last_state_change_date_time {
+        headers.insert(response_header_names::LAST_STATE_CHANGE_UTC, value);
+    }
+    if let Some(value) = response.storage_max_resource_quota {
+        headers.insert(response_header_names::RESOURCE_QUOTA, value);
+    }
+    if let Some(value) = response.storage_resource_quota_usage {
+        headers.insert(response_header_names::RESOURCE_USAGE, value);
+    }
+    if let Some(value) = response.schema_version {
+        headers.insert(response_header_names::SCHEMA_VERSION, value);
+    }
+    if let Some(value) = response.item_count {
+        headers.insert(response_header_names::ITEM_COUNT, value.to_string());
+    }
+    if let Some(value) = response.owner_id {
+        headers.insert(response_header_names::OWNER_ID, value);
+    }
+    if let Some(value) = response.quorum_acked_lsn {
+        headers.insert(response_header_names::QUORUM_ACKED_LSN, value.to_string());
+    }
+    if let Some(value) = response.current_write_quorum {
+        headers.insert(
+            response_header_names::CURRENT_WRITE_QUORUM,
+            value.to_string(),
+        );
+    }
+    if let Some(value) = response.current_replica_set_size {
+        headers.insert(
+            response_header_names::CURRENT_REPLICA_SET_SIZE,
+            value.to_string(),
+        );
+    }
+    if let Some(value) = response.xp_role {
+        headers.insert(response_header_names::XP_ROLE, value.to_string());
+    }
+    if let Some(value) = response.number_of_read_regions {
+        headers.insert(
+            response_header_names::NUMBER_OF_READ_REGIONS,
+            value.to_string(),
+        );
+    }
+    if let Some(value) = response.local_lsn.filter(|value| *value >= 0) {
+        headers.insert(response_header_names::LOCAL_LSN, value.to_string());
+    }
+    if let Some(value) = response.quorum_acked_local_lsn {
+        headers.insert(
+            response_header_names::QUORUM_ACKED_LOCAL_LSN,
+            value.to_string(),
+        );
+    }
+    if let Some(value) = response.item_local_lsn.filter(|value| *value >= 0) {
+        headers.insert(response_header_names::ITEM_LOCAL_LSN, value.to_string());
+    }
+    if let Some(value) = response.query_execution_info {
+        headers.insert(response_header_names::QUERY_EXECUTION_INFO, value);
+    }
+    if let Some(value) = response.pending_pk_delete {
+        headers.insert(
+            response_header_names::PENDING_PK_DELETE,
+            if value { "True" } else { "False" },
+        );
+    }
+    if let Some(value) = response.physical_partition_id {
+        headers.insert(response_header_names::PHYSICAL_PARTITION_ID, value);
+    }
+    if let Some(value) = response.conflict_resolved_timestamp {
+        headers.insert(
+            response_header_names::CONFLICT_RESOLVED_TIMESTAMP,
+            value.to_string(),
+        );
+    }
     if let Some(token) = response.session_token {
         // GW2 surfaces only the vector portion of the session token, with the
         // partition key range id carried separately. Classic gateway emits
@@ -1939,9 +2011,27 @@ mod tests {
                 404,
                 activity_id,
                 |tokens| {
+                    write_small_string_token(tokens, 0x0002, "2026-07-21T00:00:00Z");
+                    write_string_token(tokens, 0x000E, "documentSize=10240;");
+                    write_string_token(tokens, 0x000F, "documentSize=1;");
+                    write_small_string_token(tokens, 0x0010, "1.0");
                     write_u32_token(tokens, 0x001C, 1002);
+                    write_u32_token(tokens, 0x0014, 1);
                     write_double_token(tokens, 0x0015, 3.5);
+                    write_string_token(tokens, 0x0018, "owner-rid");
+                    write_i64_token(tokens, 0x001A, 40);
+                    write_u32_token(tokens, 0x001E, 3);
+                    write_u32_token(tokens, 0x001F, 4);
+                    write_u32_token(tokens, 0x0026, 1);
+                    write_u32_token(tokens, 0x0030, 2);
+                    write_i64_token(tokens, 0x003A, 41);
+                    write_i64_token(tokens, 0x003B, 40);
+                    write_i64_token(tokens, 0x003C, 39);
+                    write_string_token(tokens, 0x0045, "{\"reverseRidEnabled\":false}");
                     write_double_token(tokens, 0x0051, 12.75);
+                    write_byte_token(tokens, 0x0055, 0);
+                    write_string_token(tokens, 0x0063, "physical-0");
+                    write_u64_token(tokens, 0x0087, 1_234_567);
                     write_string_token(tokens, 0x003E, "1:2#3");
                     write_string_token(tokens, 0x0004, "\"etag\"");
                     write_string_token(tokens, 0x0003, "continuation");
@@ -1982,6 +2072,39 @@ mod tests {
         );
         let parsed_headers = crate::models::CosmosResponseHeaders::from_headers(&unwrapped.headers);
         assert_eq!(parsed_headers.server_duration_ms, Some(12.75));
+        assert_eq!(
+            parsed_headers.last_state_change_utc.as_deref(),
+            Some("2026-07-21T00:00:00Z")
+        );
+        assert_eq!(
+            parsed_headers.resource_quota.as_deref(),
+            Some("documentSize=10240;")
+        );
+        assert_eq!(
+            parsed_headers.resource_usage.as_deref(),
+            Some("documentSize=1;")
+        );
+        assert_eq!(parsed_headers.schema_version.as_deref(), Some("1.0"));
+        assert_eq!(parsed_headers.item_count, Some(1));
+        assert_eq!(parsed_headers.owner_id.as_deref(), Some("owner-rid"));
+        assert_eq!(parsed_headers.quorum_acked_lsn, Some(40));
+        assert_eq!(parsed_headers.current_write_quorum, Some(3));
+        assert_eq!(parsed_headers.current_replica_set_size, Some(4));
+        assert_eq!(parsed_headers.xp_role, Some(1));
+        assert_eq!(parsed_headers.number_of_read_regions, Some(2));
+        assert_eq!(parsed_headers.local_lsn, Some(41));
+        assert_eq!(parsed_headers.quorum_acked_local_lsn, Some(40));
+        assert_eq!(parsed_headers.item_local_lsn, Some(39));
+        assert_eq!(
+            parsed_headers.query_execution_info.as_deref(),
+            Some("{\"reverseRidEnabled\":false}")
+        );
+        assert_eq!(parsed_headers.pending_pk_delete, Some(false));
+        assert_eq!(
+            parsed_headers.physical_partition_id.as_deref(),
+            Some("physical-0")
+        );
+        assert_eq!(parsed_headers.conflict_resolved_timestamp, Some(1_234_567));
         assert_eq!(
             unwrapped
                 .headers
@@ -2157,6 +2280,19 @@ mod tests {
         bytes.extend_from_slice(value.as_bytes());
     }
 
+    fn write_small_string_token(bytes: &mut Vec<u8>, id: u16, value: &str) {
+        bytes.extend_from_slice(&id.to_le_bytes());
+        bytes.push(0x07);
+        bytes.push(u8::try_from(value.len()).unwrap());
+        bytes.extend_from_slice(value.as_bytes());
+    }
+
+    fn write_byte_token(bytes: &mut Vec<u8>, id: u16, value: u8) {
+        bytes.extend_from_slice(&id.to_le_bytes());
+        bytes.push(0x00);
+        bytes.push(value);
+    }
+
     fn write_u32_token(bytes: &mut Vec<u8>, id: u16, value: u32) {
         bytes.extend_from_slice(&id.to_le_bytes());
         bytes.push(0x02);
@@ -2166,6 +2302,12 @@ mod tests {
     fn write_i64_token(bytes: &mut Vec<u8>, id: u16, value: i64) {
         bytes.extend_from_slice(&id.to_le_bytes());
         bytes.push(0x05);
+        bytes.extend_from_slice(&value.to_le_bytes());
+    }
+
+    fn write_u64_token(bytes: &mut Vec<u8>, id: u16, value: u64) {
+        bytes.extend_from_slice(&id.to_le_bytes());
+        bytes.push(0x04);
         bytes.extend_from_slice(&value.to_le_bytes());
     }
 

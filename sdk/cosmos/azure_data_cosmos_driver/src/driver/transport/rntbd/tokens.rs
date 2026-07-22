@@ -492,6 +492,14 @@ impl Token {
         }
     }
 
+    /// Returns the `ULongLong` (`u64`) value, or `None` if the token holds a different type.
+    pub(crate) fn as_u64(&self) -> Option<u64> {
+        match self.value {
+            TokenValue::ULongLong(value) => Some(value),
+            _ => None,
+        }
+    }
+
     /// Returns the `Double` (`f64`) value, or `None` if the token holds a different type.
     pub(crate) fn as_f64(&self) -> Option<f64> {
         match self.value {
@@ -505,6 +513,15 @@ impl Token {
     pub(crate) fn into_string(self) -> Option<String> {
         match self.value {
             TokenValue::String(value) => Some(value),
+            _ => None,
+        }
+    }
+
+    /// Returns the owned `SmallString` value, consuming the token, or `None`
+    /// if the token holds a different type.
+    pub(crate) fn into_small_string(self) -> Option<String> {
+        match self.value {
+            TokenValue::SmallString(value) => Some(value),
             _ => None,
         }
     }
@@ -647,32 +664,68 @@ pub(super) enum RntbdResponseToken {
     /// Payload-present flag. When true, a u32 LE body-length prefix and that
     /// many body bytes follow the metadata section.
     PayloadPresent,
+    /// Timestamp of the last replica state change.
+    LastStateChangeDateTime,
     /// Continuation token.
     ContinuationToken,
     /// Entity tag.
     ETag,
     /// Retry-after delay in milliseconds.
     RetryAfterMilliseconds,
+    /// Maximum resource quota values.
+    StorageMaxResourceQuota,
+    /// Current resource quota usage.
+    StorageResourceQuotaUsage,
+    /// Resource schema version.
+    SchemaVersion,
     /// Logical sequence number.
     Lsn,
+    /// Number of items returned.
+    ItemCount,
     /// Request charge in request units.
     RequestCharge,
     /// Owner full name.
     OwnerFullName,
+    /// Owner resource identifier.
+    OwnerId,
+    /// Quorum-acknowledged logical sequence number.
+    QuorumAckedLsn,
     /// Cosmos DB sub-status code.
     SubStatus,
+    /// Current write quorum.
+    CurrentWriteQuorum,
+    /// Current replica set size.
+    CurrentReplicaSetSize,
     /// Partition key range identifier.
     PartitionKeyRangeId,
+    /// Cross-partition role.
+    XpRole,
+    /// Number of read regions.
+    NumberOfReadRegions,
     /// Item logical sequence number.
     ItemLsn,
     /// Global committed logical sequence number.
     GlobalCommittedLsn,
+    /// Local logical sequence number.
+    LocalLsn,
+    /// Quorum-acknowledged local logical sequence number.
+    QuorumAckedLocalLsn,
+    /// Item local logical sequence number.
+    ItemLocalLsn,
     /// Transport request identifier.
     TransportRequestId,
     /// Session token.
     SessionToken,
+    /// Query execution metadata.
+    QueryExecutionInfo,
     /// Backend request processing duration in milliseconds.
     BackendRequestDurationMilliseconds,
+    /// Whether partition-key deletion is pending.
+    PendingPkDelete,
+    /// Physical partition identifier.
+    PhysicalPartitionId,
+    /// Conflict resolution timestamp.
+    ConflictResolvedTimestamp,
 }
 
 impl TryFrom<u16> for RntbdResponseToken {
@@ -681,19 +734,37 @@ impl TryFrom<u16> for RntbdResponseToken {
     fn try_from(value: u16) -> Result<Self, Self::Error> {
         match value {
             0x0000 => Ok(Self::PayloadPresent),
+            0x0002 => Ok(Self::LastStateChangeDateTime),
             0x0003 => Ok(Self::ContinuationToken),
             0x0004 => Ok(Self::ETag),
             0x000C => Ok(Self::RetryAfterMilliseconds),
+            0x000E => Ok(Self::StorageMaxResourceQuota),
+            0x000F => Ok(Self::StorageResourceQuotaUsage),
+            0x0010 => Ok(Self::SchemaVersion),
             0x0013 => Ok(Self::Lsn),
+            0x0014 => Ok(Self::ItemCount),
             0x0015 => Ok(Self::RequestCharge),
             0x0017 => Ok(Self::OwnerFullName),
+            0x0018 => Ok(Self::OwnerId),
+            0x001A => Ok(Self::QuorumAckedLsn),
             0x001C => Ok(Self::SubStatus),
+            0x001E => Ok(Self::CurrentWriteQuorum),
+            0x001F => Ok(Self::CurrentReplicaSetSize),
             0x0021 => Ok(Self::PartitionKeyRangeId),
+            0x0026 => Ok(Self::XpRole),
             0x0032 => Ok(Self::ItemLsn),
             0x0029 => Ok(Self::GlobalCommittedLsn),
+            0x0030 => Ok(Self::NumberOfReadRegions),
             0x0035 => Ok(Self::TransportRequestId),
+            0x003A => Ok(Self::LocalLsn),
+            0x003B => Ok(Self::QuorumAckedLocalLsn),
+            0x003C => Ok(Self::ItemLocalLsn),
             0x003E => Ok(Self::SessionToken),
+            0x0045 => Ok(Self::QueryExecutionInfo),
             0x0051 => Ok(Self::BackendRequestDurationMilliseconds),
+            0x0055 => Ok(Self::PendingPkDelete),
+            0x0063 => Ok(Self::PhysicalPartitionId),
+            0x0087 => Ok(Self::ConflictResolvedTimestamp),
             _ => Err(()),
         }
     }

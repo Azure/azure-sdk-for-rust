@@ -13,7 +13,7 @@ use azure_data_cosmos_driver::DiagnosticsVerbosity;
 use rand::RngExt;
 use serde::Serialize;
 use sysinfo::System;
-use tokio::sync::Semaphore;
+use tokio::sync::{OwnedSemaphorePermit, Semaphore};
 use tokio::task::JoinSet;
 use tokio::time::MissedTickBehavior;
 use uuid::Uuid;
@@ -93,6 +93,10 @@ struct PerfResult {
     config_target_rate: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     config_max_in_flight: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    config_skipped_issuances: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    config_skipped_postprocessing: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     config_application_region: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -190,6 +194,8 @@ pub struct ConfigSnapshot {
     pub concurrency: Option<u64>,
     pub target_rate: Option<u64>,
     pub max_in_flight: Option<u64>,
+    pub skipped_issuances: Option<Arc<AtomicU64>>,
+    pub skipped_postprocessing: Option<Arc<AtomicU64>>,
     pub application_region: String,
     pub excluded_regions: String,
     pub tokio_threads: u64,
@@ -210,6 +216,8 @@ struct OperationRunContext<'a> {
     commit_sha: &'a str,
     hostname: &'a str,
     diagnostics_threshold: Option<Duration>,
+    postprocessing_slots: Option<Arc<Semaphore>>,
+    postprocessing_skipped: Option<Arc<AtomicU64>>,
 }
 
 /// Executes a single operation against `container`, recording its latency on
@@ -219,33 +227,63 @@ async fn run_one(
     op: &Arc<dyn Operation>,
     container: &ContainerClient,
     context: OperationRunContext<'_>,
+    permit: Option<OwnedSemaphorePermit>,
 ) {
     let op_start = Instant::now();
-    match op
+    let result = op
         .execute(container, context.diagnostics_threshold.is_some())
-        .await
-    {
+        .await;
+    drop(permit);
+
+    match result {
         Ok(result) => {
             let elapsed = op_start.elapsed();
             context
                 .stats
                 .record_latency(op.name(), elapsed, result.backend_duration);
             if diagnostics_threshold_exceeded(elapsed, context.diagnostics_threshold) {
-                log_slow_operation_diagnostics(op.name(), elapsed, &result.diagnostics);
+                if let Some(_postprocessing_permit) =
+                    try_acquire_postprocessing_slot(&context.postprocessing_slots)
+                {
+                    log_slow_operation_diagnostics(op.name(), elapsed, &result.diagnostics);
+                } else {
+                    record_skipped_postprocessing(&context.postprocessing_skipped);
+                }
             }
         }
         Err(e) => {
             context.stats.record_error(op.name());
-            upsert_error(
-                context.results_container,
-                op.name(),
-                &e,
-                context.workload_id,
-                context.commit_sha,
-                context.hostname,
-            )
-            .await;
+            if let Some(_postprocessing_permit) =
+                try_acquire_postprocessing_slot(&context.postprocessing_slots)
+            {
+                upsert_error(
+                    context.results_container,
+                    op.name(),
+                    &e,
+                    context.workload_id,
+                    context.commit_sha,
+                    context.hostname,
+                )
+                .await;
+            } else {
+                record_skipped_postprocessing(&context.postprocessing_skipped);
+            }
         }
+    }
+}
+
+fn record_skipped_postprocessing(skipped: &Option<Arc<AtomicU64>>) {
+    if let Some(skipped) = skipped {
+        skipped.fetch_add(1, Ordering::Relaxed);
+    }
+}
+
+fn try_acquire_postprocessing_slot(
+    slots: &Option<Arc<Semaphore>>,
+) -> Option<Option<OwnedSemaphorePermit>> {
+    match slots {
+        Some(slots) => Arc::clone(slots).try_acquire_owned().ok().map(Some),
+        None => Some(None),
     }
 }
 
@@ -255,7 +293,7 @@ async fn run_one(
 /// continuously picking a random operation and executing it serially. When
 /// `target_rate` is set, switches to open-loop mode: operations are issued at
 /// a fixed arrival rate (bounded by `max_in_flight` concurrent requests),
-/// decoupling issuance from completion to avoid coordinated-omission bias.
+/// decoupling issuance from completion to reduce coordinated-omission bias.
 ///
 /// Latency and errors are recorded in `stats`. A background reporter prints
 /// summaries at the given `report_interval` and upserts results into
@@ -276,9 +314,13 @@ pub async fn run(config: RunConfig) {
         workload_id,
         commit_sha,
         hostname,
-        config_snapshot,
+        mut config_snapshot,
     } = config;
     let cancelled = Arc::new(AtomicBool::new(false));
+    let skipped = target_rate.map(|_| Arc::new(AtomicU64::new(0)));
+    let postprocessing_skipped = target_rate.map(|_| Arc::new(AtomicU64::new(0)));
+    config_snapshot.skipped_issuances = skipped.clone();
+    config_snapshot.skipped_postprocessing = postprocessing_skipped.clone();
 
     // Spawn the optional feed-range refresher BEFORE workers so its
     // first refresh has a head start on warming the cache.
@@ -396,7 +438,11 @@ pub async fn run(config: RunConfig) {
         let commit_sha: Arc<str> = Arc::from(commit_sha.as_str());
         let hostname: Arc<str> = Arc::from(hostname.as_str());
         let semaphore = Arc::new(Semaphore::new(max_in_flight));
-        let skipped = Arc::new(AtomicU64::new(0));
+        let postprocessing_slots = Arc::new(Semaphore::new(max_in_flight));
+        let postprocessing_skipped =
+            postprocessing_skipped.expect("open-loop postprocessing counter exists");
+        let skipped = skipped.expect("open-loop skipped-issuance counter exists");
+        let mut issued_tasks = JoinSet::new();
 
         println!("Open-loop mode: target_rate={rate} ops/s, max_in_flight={max_in_flight}");
 
@@ -408,6 +454,11 @@ pub async fn run(config: RunConfig) {
 
         while !cancelled.load(Ordering::Relaxed) {
             ticker.tick().await;
+            while let Some(result) = issued_tasks.try_join_next() {
+                if let Err(error) = result {
+                    eprintln!("Warning: open-loop operation task failed: {error}");
+                }
+            }
             let elapsed_secs = start.elapsed().as_secs_f64();
             let target = (elapsed_secs * rate as f64) as u64;
             while issued < target {
@@ -427,7 +478,9 @@ pub async fn run(config: RunConfig) {
                         let workload_id = workload_id.clone();
                         let commit_sha = commit_sha.clone();
                         let hostname = hostname.clone();
-                        tokio::spawn(async move {
+                        let postprocessing_slots = postprocessing_slots.clone();
+                        let postprocessing_skipped = postprocessing_skipped.clone();
+                        issued_tasks.spawn(async move {
                             run_one(
                                 &op,
                                 &container,
@@ -438,10 +491,12 @@ pub async fn run(config: RunConfig) {
                                     commit_sha: &commit_sha,
                                     hostname: &hostname,
                                     diagnostics_threshold,
+                                    postprocessing_slots: Some(postprocessing_slots),
+                                    postprocessing_skipped: Some(postprocessing_skipped),
                                 },
+                                Some(permit),
                             )
                             .await;
-                            drop(permit);
                         });
                     }
                     Err(_) => {
@@ -457,13 +512,21 @@ pub async fn run(config: RunConfig) {
             }
         }
 
-        // Best-effort drain: wait up to 30s for in-flight requests to finish
-        // so their latency/error stats land before the final report. A permit
-        // is returned only after `run_one` fully records its result, so
-        // `available_permits == max_in_flight` means all stats are recorded.
+        // Best-effort drain: permits track only the tested requests, while task
+        // completion also includes stats, diagnostics, and error persistence.
         let drain_deadline = Instant::now() + Duration::from_secs(30);
-        while semaphore.available_permits() < max_in_flight && Instant::now() < drain_deadline {
-            tokio::time::sleep(Duration::from_millis(50)).await;
+        while !issued_tasks.is_empty() && Instant::now() < drain_deadline {
+            match tokio::time::timeout(Duration::from_millis(50), issued_tasks.join_next()).await {
+                Ok(Some(Err(error))) => {
+                    eprintln!("Warning: open-loop operation task failed: {error}");
+                }
+                Ok(Some(Ok(()))) | Err(_) => {}
+                Ok(None) => break,
+            }
+        }
+        if !issued_tasks.is_empty() {
+            issued_tasks.abort_all();
+            issued_tasks.join_all().await;
         }
 
         let total_skipped = skipped.load(Ordering::Relaxed);
@@ -471,6 +534,13 @@ pub async fn run(config: RunConfig) {
             println!(
                 "Open-loop summary: skipped {total_skipped} issuance(s) due to \
                  max_in_flight saturation"
+            );
+        }
+        let total_postprocessing_skipped = postprocessing_skipped.load(Ordering::Relaxed);
+        if total_postprocessing_skipped > 0 {
+            eprintln!(
+                "Open-loop summary: skipped {total_postprocessing_skipped} diagnostics/error \
+                 persistence operation(s) due to postprocessing saturation"
             );
         }
     } else {
@@ -500,7 +570,10 @@ pub async fn run(config: RunConfig) {
                             commit_sha: &err_commit_sha,
                             hostname: &err_hostname,
                             diagnostics_threshold,
+                            postprocessing_slots: None,
+                            postprocessing_skipped: None,
                         },
+                        None,
                     )
                     .await;
                 }
@@ -603,6 +676,14 @@ async fn upsert_results(
             config_concurrency: config.concurrency,
             config_target_rate: config.target_rate,
             config_max_in_flight: config.max_in_flight,
+            config_skipped_issuances: config
+                .skipped_issuances
+                .as_ref()
+                .map(|value| value.load(Ordering::Relaxed)),
+            config_skipped_postprocessing: config
+                .skipped_postprocessing
+                .as_ref()
+                .map(|value| value.load(Ordering::Relaxed)),
             config_application_region: Some(config.application_region.clone()),
             config_excluded_regions: if config.excluded_regions.is_empty() {
                 None

@@ -35,16 +35,13 @@ impl Operation for ChangeFeedOperation {
         container: &ContainerClient,
         capture_diagnostics: bool,
     ) -> azure_data_cosmos::Result<OperationResult> {
-        let mut stream = Box::pin(
-            container
-                .query_change_feed::<PerfItem>(
-                    FeedScope::full_container(),
-                    ChangeFeedStartFrom::Beginning,
-                    None,
-                )
-                .await?
-                .take(self.max_pages),
-        );
+        let iterator = Box::pin(container.query_change_feed::<PerfItem>(
+            FeedScope::full_container(),
+            ChangeFeedStartFrom::Beginning,
+            None,
+        ))
+        .await?;
+        let mut stream = Box::pin(iterator.take(self.max_pages));
 
         let mut backend_total: Option<Duration> = None;
         let mut diagnostics = Vec::new();

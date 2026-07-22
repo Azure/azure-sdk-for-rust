@@ -10,7 +10,7 @@
 
 ### Other Changes
 
-- `ResponseHeaders::server_duration_ms()` now returns the service-reported backend request duration for Gateway 2.0 responses. ([#4797](https://github.com/Azure/azure-sdk-for-rust/pull/4797))
+- `ResponseHeaders` now exposes Gateway 2.0 backend duration, quota, item-count, quorum, replica, query, and physical-partition response metadata. ([#4797](https://github.com/Azure/azure-sdk-for-rust/pull/4797))
 
 ## 0.37.0 (2026-07-20)
 

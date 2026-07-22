@@ -179,6 +179,16 @@ pub(crate) mod response_header_names {
     pub const SERVICE_VERSION: &str = "x-ms-serviceversion";
     pub const RESOURCE_QUOTA: &str = "x-ms-resource-quota";
     pub const RESOURCE_USAGE: &str = "x-ms-resource-usage";
+    pub const SCHEMA_VERSION: &str = "x-ms-schemaversion";
+    pub const CURRENT_WRITE_QUORUM: &str = "x-ms-current-write-quorum";
+    pub const CURRENT_REPLICA_SET_SIZE: &str = "x-ms-current-replica-set-size";
+    pub const XP_ROLE: &str = "x-ms-xp-role";
+    pub const QUERY_EXECUTION_INFO: &str = "x-ms-cosmos-query-execution-info";
+    pub const PENDING_PK_DELETE: &str = "x-ms-cosmos-is-partition-key-delete-pending";
+    pub const PHYSICAL_PARTITION_ID: &str = "x-ms-cosmos-physical-partition-id";
+    /// Synthetic header matching .NET Direct's `WFConstants.BackendHeaders`
+    /// name for the RNTBD-only conflict resolution timestamp.
+    pub const CONFLICT_RESOLVED_TIMESTAMP: &str = "x-ms-cosmos-conflict-resolved-timestamp";
     pub const HAS_TENTATIVE_WRITES: &str = "x-ms-cosmos-allow-tentative-writes";
     pub const PARTITION_KEY_RANGE_ID: &str = "x-ms-documentdb-partitionkeyrangeid";
     pub const INTERNAL_PARTITION_ID: &str = "x-ms-cosmos-internal-partition-id";
@@ -504,8 +514,7 @@ pub struct CosmosResponseHeaders {
     ///
     /// Contains the RID of the owning collection. Will be used for
     /// RID mismatch validation in container-recreate detection.
-    #[allow(dead_code)] // Used in follow-up PR for RID validation
-    pub(crate) owner_id: Option<String>,
+    pub owner_id: Option<String>,
 
     /// Indicates whether an offer replace is still pending (`x-ms-offer-replace-pending`).
     ///
@@ -558,6 +567,30 @@ pub struct CosmosResponseHeaders {
 
     /// Resource usage information (`x-ms-resource-usage`).
     pub resource_usage: Option<String>,
+
+    /// Resource schema version (`x-ms-schemaversion`).
+    pub schema_version: Option<String>,
+
+    /// Current write quorum (`x-ms-current-write-quorum`).
+    pub current_write_quorum: Option<u32>,
+
+    /// Current replica set size (`x-ms-current-replica-set-size`).
+    pub current_replica_set_size: Option<u32>,
+
+    /// Cross-partition role (`x-ms-xp-role`).
+    pub xp_role: Option<u32>,
+
+    /// Query execution metadata (`x-ms-cosmos-query-execution-info`).
+    pub query_execution_info: Option<String>,
+
+    /// Whether partition-key deletion is pending (`x-ms-cosmos-is-partition-key-delete-pending`).
+    pub pending_pk_delete: Option<bool>,
+
+    /// Physical partition identifier (`x-ms-cosmos-physical-partition-id`).
+    pub physical_partition_id: Option<String>,
+
+    /// Conflict resolution timestamp (`x-ms-cosmos-conflict-resolved-timestamp`).
+    pub conflict_resolved_timestamp: Option<u64>,
 
     /// Whether the region has tentative (not yet committed) writes (`x-ms-cosmos-allow-tentative-writes`).
     pub has_tentative_writes: Option<bool>,
@@ -719,6 +752,30 @@ impl CosmosResponseHeaders {
                 }
                 response_header_names::RESOURCE_USAGE => {
                     result.resource_usage = Some(value.as_str().to_owned());
+                }
+                response_header_names::SCHEMA_VERSION => {
+                    result.schema_version = Some(value.as_str().to_owned());
+                }
+                response_header_names::CURRENT_WRITE_QUORUM => {
+                    result.current_write_quorum = value.as_str().parse().ok();
+                }
+                response_header_names::CURRENT_REPLICA_SET_SIZE => {
+                    result.current_replica_set_size = value.as_str().parse().ok();
+                }
+                response_header_names::XP_ROLE => {
+                    result.xp_role = value.as_str().parse().ok();
+                }
+                response_header_names::QUERY_EXECUTION_INFO => {
+                    result.query_execution_info = Some(value.as_str().to_owned());
+                }
+                response_header_names::PENDING_PK_DELETE => {
+                    result.pending_pk_delete = parse_bool_ci(value.as_str());
+                }
+                response_header_names::PHYSICAL_PARTITION_ID => {
+                    result.physical_partition_id = Some(value.as_str().to_owned());
+                }
+                response_header_names::CONFLICT_RESOLVED_TIMESTAMP => {
+                    result.conflict_resolved_timestamp = value.as_str().parse().ok();
                 }
                 response_header_names::HAS_TENTATIVE_WRITES => {
                     result.has_tentative_writes = parse_bool_ci(value.as_str());
@@ -897,6 +954,38 @@ impl CosmosResponseHeaders {
         put_str(
             response_header_names::RESOURCE_USAGE,
             self.resource_usage.clone(),
+        );
+        put_str(
+            response_header_names::SCHEMA_VERSION,
+            self.schema_version.clone(),
+        );
+        put_str(
+            response_header_names::CURRENT_WRITE_QUORUM,
+            self.current_write_quorum.map(|v| v.to_string()),
+        );
+        put_str(
+            response_header_names::CURRENT_REPLICA_SET_SIZE,
+            self.current_replica_set_size.map(|v| v.to_string()),
+        );
+        put_str(
+            response_header_names::XP_ROLE,
+            self.xp_role.map(|v| v.to_string()),
+        );
+        put_str(
+            response_header_names::QUERY_EXECUTION_INFO,
+            self.query_execution_info.clone(),
+        );
+        put_str(
+            response_header_names::PENDING_PK_DELETE,
+            self.pending_pk_delete.map(|b| bool_to_wire(b).to_owned()),
+        );
+        put_str(
+            response_header_names::PHYSICAL_PARTITION_ID,
+            self.physical_partition_id.clone(),
+        );
+        put_str(
+            response_header_names::CONFLICT_RESOLVED_TIMESTAMP,
+            self.conflict_resolved_timestamp.map(|v| v.to_string()),
         );
         put_str(
             response_header_names::HAS_TENTATIVE_WRITES,
@@ -1089,6 +1178,16 @@ mod tests {
                 "Expected None for '{value}'"
             );
         }
+    }
+
+    #[test]
+    fn parses_canonical_schema_version_header() {
+        let mut headers = Headers::new();
+        headers.insert("x-ms-schemaversion", "1.0");
+
+        let cosmos_headers = CosmosResponseHeaders::from_headers(&headers);
+
+        assert_eq!(cosmos_headers.schema_version.as_deref(), Some("1.0"));
     }
 
     #[test]
@@ -1401,6 +1500,14 @@ mod tests {
             service_version: Some("version 2.18.0".into()),
             resource_quota: Some("documentSize=10240;".into()),
             resource_usage: Some("documentSize=0;".into()),
+            schema_version: Some("1.0".into()),
+            current_write_quorum: Some(3),
+            current_replica_set_size: Some(4),
+            xp_role: Some(1),
+            query_execution_info: Some("{\"reverseRidEnabled\":false}".into()),
+            pending_pk_delete: Some(false),
+            physical_partition_id: Some("physical-0".into()),
+            conflict_resolved_timestamp: Some(1_234_567),
             has_tentative_writes: Some(false),
             partition_key_range_id: Some("0".into()),
             internal_partition_id: Some("internal-xyz".into()),
@@ -1423,6 +1530,12 @@ mod tests {
         assert_eq!(
             raw.get_optional_str(&HeaderName::from_static(
                 response_header_names::HAS_TENTATIVE_WRITES
+            )),
+            Some("False")
+        );
+        assert_eq!(
+            raw.get_optional_str(&HeaderName::from_static(
+                response_header_names::PENDING_PK_DELETE
             )),
             Some("False")
         );
@@ -1510,6 +1623,29 @@ mod tests {
         assert_eq!(round_tripped.service_version, original.service_version);
         assert_eq!(round_tripped.resource_quota, original.resource_quota);
         assert_eq!(round_tripped.resource_usage, original.resource_usage);
+        assert_eq!(round_tripped.schema_version, original.schema_version);
+        assert_eq!(
+            round_tripped.current_write_quorum,
+            original.current_write_quorum
+        );
+        assert_eq!(
+            round_tripped.current_replica_set_size,
+            original.current_replica_set_size
+        );
+        assert_eq!(round_tripped.xp_role, original.xp_role);
+        assert_eq!(
+            round_tripped.query_execution_info,
+            original.query_execution_info
+        );
+        assert_eq!(round_tripped.pending_pk_delete, original.pending_pk_delete);
+        assert_eq!(
+            round_tripped.physical_partition_id,
+            original.physical_partition_id
+        );
+        assert_eq!(
+            round_tripped.conflict_resolved_timestamp,
+            original.conflict_resolved_timestamp
+        );
         assert_eq!(
             round_tripped.has_tentative_writes,
             original.has_tentative_writes

@@ -113,7 +113,7 @@ pub struct Config {
     /// Target arrival rate in operations per second (open-loop mode).
     ///
     /// When set, requests are issued at this fixed rate regardless of how
-    /// fast prior requests complete, eliminating the coordinated-omission
+    /// fast prior requests complete, reducing the coordinated-omission
     /// bias of the closed-loop `--concurrency` model. In-flight requests
     /// are bounded by `--max-in-flight`; once that bound is hit, excess
     /// issuances are skipped and counted (not buffered) so a slow backend

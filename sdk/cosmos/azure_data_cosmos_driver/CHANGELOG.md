@@ -10,7 +10,7 @@
 
 ### Other Changes
 
-- Gateway 2.0 responses now include backend request duration metadata when converting RNTBD responses to standard Cosmos response headers. ([#4797](https://github.com/Azure/azure-sdk-for-rust/pull/4797))
+- Gateway 2.0 responses now preserve backend duration, quota, item-count, quorum, replica, query, and physical-partition RNTBD metadata when converting to standard Cosmos response headers. ([#4797](https://github.com/Azure/azure-sdk-for-rust/pull/4797))
 
 ## 0.6.0 (2026-07-20)
 
