@@ -113,9 +113,9 @@ flowchart TD
     EX["execute_operation<br/>binary_encoding.enabled?"] -->|no| PASS["pass through — text wire, unchanged"]
     EX -->|yes| REQ{"request body is_binary?"}
     REQ -->|"no (text, e.g. FFI)"| RT["transcode_to_binary<br/>(from_slice &rarr; encode)"]
-    REQ -->|"yes (SDK pre-encoded)"| PASSB["pass through"]
+    REQ -->|"yes (SDK pre-encoded)"| PASS_BIN["pass through"]
     RT --> HDR
-    PASSB --> HDR["advertise JsonText,CosmosBinary"]
+    PASS_BIN --> HDR["advertise JsonText,CosmosBinary"]
     HDR --> WIRE["binary body on the wire"]
     WIRE --> SVC[("Cosmos DB")]
     SVC --> RESP["binary response (0x80)"]
