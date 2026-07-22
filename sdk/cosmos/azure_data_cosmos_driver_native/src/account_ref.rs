@@ -27,7 +27,7 @@ use azure_core::credentials::Secret;
 use azure_data_cosmos_driver::models::AccountReference as DriverAccountReference;
 use url::Url;
 
-use crate::error::{CosmosError, CosmosErrorCode};
+use crate::error::{CosmosError, CosmosErrorCode, CosmosStatusCode};
 
 /// The C ABI handle for an account reference (`cosmos_account_ref_t`).
 ///
@@ -158,7 +158,7 @@ pub extern "C" fn cosmos_account_ref_with_master_key(
     key: *const c_char,
     out_account: *mut *mut AccountRefHandle,
     out_error: *mut *mut CosmosError,
-) -> i32 {
+) -> CosmosStatusCode {
     if out_account.is_null() {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
     }

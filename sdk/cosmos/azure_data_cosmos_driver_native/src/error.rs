@@ -82,10 +82,15 @@ pub(crate) fn driver_status_code(err: &DriverCosmosError) -> CosmosStatusCode {
 /// Each discriminant is a literal copy of the corresponding
 /// [`azure_data_cosmos_driver::error::SubStatusCode`] constant (cbindgen needs
 /// literals to emit `= N`). The `sub_status_mirror_matches_driver` unit test is
-/// CI-verified to fail the build if any value drifts from the driver, so the two
-/// tables can never disagree silently. When the driver adds a new synthetic
-/// `2xxxx` sub-status, add the matching variant here (and the test will remind
-/// you if you forget by value mismatch on an existing one).
+/// CI-verified to fail the build if any *mirrored* value drifts from the driver
+/// constant it copies, so an existing variant can never silently disagree.
+///
+/// The test can **not**, however, detect a driver constant that has *no* mirror
+/// here — [`SubStatusCode`] is a set of associated `pub const`s, not an
+/// enumerable type, so there is nothing to iterate over to prove completeness.
+/// Keeping this enum in sync when the driver adds a new synthetic `2xxxx`
+/// sub-status is therefore a **manual** step: add the matching variant here
+/// (the test will still catch a wrong value on any variant you do add).
 ///
 /// The values are *not* exhaustive of the `2xxxx` range: the driver leaves gaps
 /// (e.g. `20009`, `20013`, `20103`) for future use. Do not invent variants for
@@ -250,10 +255,16 @@ pub(crate) enum CosmosErrorCode {
     CosmosErrorCodeInvalidArgument,
     /// A `*const c_char` argument was not valid UTF-8.
     CosmosErrorCodeInvalidUtf8,
+    /// A request header name or value contained non-ASCII or control
+    /// characters.
+    CosmosErrorCodeInvalidHeader,
     /// A builder setter was passed a value outside its documented range.
     CosmosErrorCodeInvalidOptionValue,
     /// A partition-key builder produced an empty / inconsistent key.
     CosmosErrorCodeInvalidPartitionKey,
+    /// A partition key was supplied with more components than the driver's
+    /// hierarchical-key cap allows.
+    CosmosErrorCodeTooManyPartitionKeyComponents,
     /// An account endpoint URL or credential could not be parsed.
     CosmosErrorCodeInvalidAccountReference,
     /// An operation was cancelled before it completed.
@@ -272,7 +283,7 @@ pub(crate) enum CosmosErrorCode {
 impl CosmosErrorCode {
     /// The driver [`CosmosStatus`] this condition maps to, or `None` for
     /// success.
-    fn to_status(self) -> Option<CosmosStatus> {
+    pub(crate) fn to_status(self) -> Option<CosmosStatus> {
         let (status_code, sub_status) = match self {
             Self::CosmosErrorCodeSuccess => return None,
             Self::CosmosErrorCodeInvalidArgument => (
@@ -283,6 +294,10 @@ impl CosmosErrorCode {
                 StatusCode::BadRequest,
                 SubStatusCode::CLIENT_FFI_INVALID_UTF8,
             ),
+            Self::CosmosErrorCodeInvalidHeader => (
+                StatusCode::BadRequest,
+                SubStatusCode::CLIENT_FFI_INVALID_HEADER,
+            ),
             Self::CosmosErrorCodeInvalidOptionValue => (
                 StatusCode::BadRequest,
                 SubStatusCode::CLIENT_FFI_INVALID_OPTION_VALUE,
@@ -290,6 +305,10 @@ impl CosmosErrorCode {
             Self::CosmosErrorCodeInvalidPartitionKey => (
                 StatusCode::BadRequest,
                 SubStatusCode::CLIENT_PARTITION_KEY_EMPTY,
+            ),
+            Self::CosmosErrorCodeTooManyPartitionKeyComponents => (
+                StatusCode::BadRequest,
+                SubStatusCode::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS,
             ),
             Self::CosmosErrorCodeInvalidAccountReference => (
                 StatusCode::BadRequest,

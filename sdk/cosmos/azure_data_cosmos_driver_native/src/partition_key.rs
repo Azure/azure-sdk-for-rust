@@ -30,7 +30,7 @@ use std::ffi::{c_char, CStr};
 
 use azure_data_cosmos_driver::models::{PartitionKey as DriverPartitionKey, PartitionKeyValue};
 
-use crate::error::CosmosErrorCode;
+use crate::error::{CosmosErrorCode, CosmosStatusCode};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -118,7 +118,7 @@ pub(crate) unsafe fn partition_key_from_components(
     if len > MAX_COMPONENTS {
         // Cosmos DB caps hierarchical keys at 3 levels; reject before
         // `From<Vec<...>>` (which panics above 3 levels) is reached.
-        return Err(CosmosErrorCode::CosmosErrorCodeInvalidPartitionKey);
+        return Err(CosmosErrorCode::CosmosErrorCodeTooManyPartitionKeyComponents);
     }
     // SAFETY: caller guarantees `components` points to `len` initialized values.
     let slice = unsafe { std::slice::from_raw_parts(components, len) };
@@ -247,7 +247,7 @@ pub extern "C" fn cosmos_partition_key_create(
     components: *const CosmosPartitionKeyComponent,
     len: usize,
     out_pk: *mut *mut PartitionKeyHandle,
-) -> i32 {
+) -> CosmosStatusCode {
     if out_pk.is_null() {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
     }
@@ -425,7 +425,10 @@ mod tests {
         // SAFETY: live 4-element array; the cap check rejects before any
         // driver call.
         let rc = unsafe { partition_key_from_components(comps.as_ptr(), comps.len()) };
-        assert_eq!(rc, Err(CosmosErrorCode::CosmosErrorCodeInvalidPartitionKey));
+        assert_eq!(
+            rc,
+            Err(CosmosErrorCode::CosmosErrorCodeTooManyPartitionKeyComponents)
+        );
     }
 
     #[test]
@@ -517,7 +520,7 @@ mod tests {
         ];
         assert_eq!(
             cosmos_partition_key_create(comps.as_ptr(), comps.len(), &mut out),
-            CosmosErrorCode::CosmosErrorCodeInvalidPartitionKey.as_i32()
+            CosmosErrorCode::CosmosErrorCodeTooManyPartitionKeyComponents.as_i32()
         );
         assert!(out.is_null());
     }

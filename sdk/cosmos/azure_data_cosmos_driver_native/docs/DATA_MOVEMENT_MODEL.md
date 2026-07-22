@@ -387,14 +387,19 @@ pub struct CosmosCompletion {
 
     // ── Response scalars (0 / default on non-OK / degenerate) ────
     http_status_code: u16,                // wire HTTP status (0 when none)
+    sub_status: i32,                      // Cosmos sub-status (-1 when absent)
     request_charge: f64,                  // RU (0.0 when absent)
+    retry_after_ms: i64,                  // retry-after hint (-1 when absent)
+    is_from_wire: u8,                     // 0/1: error came from a wire response
 
     // ── Borrowed strings — valid until cosmos_cq_free_completions ─
+    message: *const c_char,               // error message; NULL on non-error
     activity_id: *const c_char,           // NULL when absent
     session_token: *const c_char,
     etag: *const c_char,
     continuation: *const c_char,          // server header continuation
     next_continuation: *const c_char,     // planner-derived next-page token
+    backtrace: *const c_char,             // error backtrace; NULL when none
 
     // ── Borrowed header list (net-new) ───────────────────────────
     headers: *const CosmosHeaderKv,       // NULL/0 when none
@@ -405,7 +410,6 @@ pub struct CosmosCompletion {
     body_len: usize,
 
     // ── Owned payloads the SDK takes / the free reclaims ─────────
-    error: *mut CosmosError,              // owned; non-NULL only on Error (+ details on)
     diagnostics: *mut c_void,             // deferred — always NULL for now
     driver: *mut DriverHandle,            // owned; degenerate get_or_create completion
     container: *mut ContainerRefHandle,   // owned; degenerate resolve_container completion

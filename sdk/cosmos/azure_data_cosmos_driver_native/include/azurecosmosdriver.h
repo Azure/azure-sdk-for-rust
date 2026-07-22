@@ -23,6 +23,12 @@
 // COSMOS_STATUS_NO_SUB_STATUS: low-16-bit value meaning "no sub-status present".
 #define COSMOS_STATUS_NO_SUB_STATUS 0xFFFF
 
+// Decode helpers for the packed cosmos_status_code_t. COSMOS_STATUS_HTTP
+// extracts the HTTP status (high 16 bits); COSMOS_STATUS_SUB extracts the
+// sub-status (low 16 bits, COSMOS_STATUS_NO_SUB_STATUS when absent).
+#define COSMOS_STATUS_HTTP(code) ((int)(((uint32_t)(code) >> 16) & 0xFFFFu))
+#define COSMOS_STATUS_SUB(code) ((int)((uint32_t)(code) & 0xFFFFu))
+
 /**
  * Per spec section 3.6.1, every completion has exactly one of these outcomes.
  *
@@ -503,10 +509,15 @@ typedef int32_t cosmos_partition_key_component_kind_t;
  * Each discriminant is a literal copy of the corresponding
  * [`azure_data_cosmos_driver::error::SubStatusCode`] constant (cbindgen needs
  * literals to emit `= N`). The `sub_status_mirror_matches_driver` unit test is
- * CI-verified to fail the build if any value drifts from the driver, so the two
- * tables can never disagree silently. When the driver adds a new synthetic
- * `2xxxx` sub-status, add the matching variant here (and the test will remind
- * you if you forget by value mismatch on an existing one).
+ * CI-verified to fail the build if any *mirrored* value drifts from the driver
+ * constant it copies, so an existing variant can never silently disagree.
+ *
+ * The test can **not**, however, detect a driver constant that has *no* mirror
+ * here — [`SubStatusCode`] is a set of associated `pub const`s, not an
+ * enumerable type, so there is nothing to iterate over to prove completeness.
+ * Keeping this enum in sync when the driver adds a new synthetic `2xxxx`
+ * sub-status is therefore a **manual** step: add the matching variant here
+ * (the test will still catch a wrong value on any variant you do add).
  *
  * The values are *not* exhaustive of the `2xxxx` range: the driver leaves gaps
  * (e.g. `20009`, `20013`, `20103`) for future use. Do not invent variants for
@@ -1499,10 +1510,10 @@ void cosmos_string_free(const char *s);
  * - `INVALID_ACCOUNT_REFERENCE` (4003) when `endpoint` is not a parsable
  *   URL. `*out_error` is populated when non-NULL.
  */
-int32_t cosmos_account_ref_with_master_key(const char *endpoint,
-                                           const char *key,
-                                           struct cosmos_account_ref_t **out_account,
-                                           struct cosmos_error_t **out_error);
+cosmos_status_code_t cosmos_account_ref_with_master_key(const char *endpoint,
+                                                        const char *key,
+                                                        struct cosmos_account_ref_t **out_account,
+                                                        struct cosmos_error_t **out_error);
 
 /**
  * Frees an account-reference handle. NULL is a no-op.
@@ -1658,12 +1669,12 @@ void cosmos_container_ref_free(struct cosmos_container_ref_t *container);
  * `SUCCESS` (0) on success, the standard coarse codes on failure
  * derived from the driver-side error.
  */
-int32_t cosmos_driver_resolve_container_blocking(const struct cosmos_runtime_t *runtime,
-                                                 const struct cosmos_driver_t *driver,
-                                                 const char *database_id,
-                                                 const char *container_id,
-                                                 struct cosmos_container_ref_t **out_container,
-                                                 struct cosmos_error_t **out_error);
+cosmos_status_code_t cosmos_driver_resolve_container_blocking(const struct cosmos_runtime_t *runtime,
+                                                              const struct cosmos_driver_t *driver,
+                                                              const char *database_id,
+                                                              const char *container_id,
+                                                              struct cosmos_container_ref_t **out_container,
+                                                              struct cosmos_error_t **out_error);
 
 /**
  * Creates a name-based database reference parented to `account`.
@@ -1688,9 +1699,9 @@ int32_t cosmos_driver_resolve_container_blocking(const struct cosmos_runtime_t *
  *   `out_database` is NULL.
  * - `INVALID_UTF8` (2) when `database_id` is not valid UTF-8.
  */
-int32_t cosmos_database_ref_create(const struct cosmos_account_ref_t *account,
-                                   const char *database_id,
-                                   struct cosmos_database_ref_t **out_database);
+cosmos_status_code_t cosmos_database_ref_create(const struct cosmos_account_ref_t *account,
+                                                const char *database_id,
+                                                struct cosmos_database_ref_t **out_database);
 
 /**
  * Frees a database-reference handle. NULL is a no-op.
@@ -1748,11 +1759,11 @@ void cosmos_driver_free(struct cosmos_driver_t *driver);
  *   error per spec section 3.5.1 when the underlying
  *   `get_or_create_driver` returns an error.
  */
-int32_t cosmos_driver_get_or_create_blocking(const struct cosmos_runtime_t *runtime,
-                                             const struct cosmos_account_ref_t *account,
-                                             const struct cosmos_driver_options_t *options,
-                                             struct cosmos_driver_t **out_driver,
-                                             struct cosmos_error_t **out_error);
+cosmos_status_code_t cosmos_driver_get_or_create_blocking(const struct cosmos_runtime_t *runtime,
+                                                          const struct cosmos_account_ref_t *account,
+                                                          const struct cosmos_driver_options_t *options,
+                                                          struct cosmos_driver_t **out_driver,
+                                                          struct cosmos_error_t **out_error);
 
 /**
  * Frees a built `cosmos_driver_options_t *`. NULL is a no-op.
@@ -1789,9 +1800,9 @@ struct cosmos_driver_options_config_t cosmos_driver_options_config_default(void)
  * - `INVALID_OPTION_VALUE` (4014) when an operation-option value is out of
  *   range.
  */
-int32_t cosmos_driver_options_build(const struct cosmos_account_ref_t *account,
-                                    const struct cosmos_driver_options_config_t *config,
-                                    struct cosmos_driver_options_t **out_options);
+cosmos_status_code_t cosmos_driver_options_build(const struct cosmos_account_ref_t *account,
+                                                 const struct cosmos_driver_options_config_t *config,
+                                                 struct cosmos_driver_options_t **out_options);
 
 /**
  * Frees a `cosmos_error_t *` obtained from a synchronous `out_error` slot,
@@ -1819,7 +1830,7 @@ void cosmos_set_backtrace_options(uint32_t max_captures_per_second,
  * - `SUCCESS` (0) with `*out_fr` populated.
  * - `INVALID_ARGUMENT` (1) when `out_fr` is NULL.
  */
-int32_t cosmos_feed_range_full(struct cosmos_feed_range_t **out_fr);
+cosmos_status_code_t cosmos_feed_range_full(struct cosmos_feed_range_t **out_fr);
 
 /**
  * Constructs a feed range that targets a single logical partition
@@ -1833,9 +1844,9 @@ int32_t cosmos_feed_range_full(struct cosmos_feed_range_t **out_fr);
  * - `SUCCESS` (0) with `*out_fr` populated.
  * - `INVALID_ARGUMENT` (1) when any pointer is NULL.
  */
-int32_t cosmos_feed_range_for_partition_key(const struct cosmos_container_ref_t *container,
-                                            const struct cosmos_partition_key_t *pk,
-                                            struct cosmos_feed_range_t **out_fr);
+cosmos_status_code_t cosmos_feed_range_for_partition_key(const struct cosmos_container_ref_t *container,
+                                                         const struct cosmos_partition_key_t *pk,
+                                                         struct cosmos_feed_range_t **out_fr);
 
 /**
  * Frees a feed-range handle. NULL is a no-op.
@@ -1879,9 +1890,9 @@ struct cosmos_operation_options_t cosmos_operation_options_default(void);
  *   component `kind` is out of range.
  * - `INVALID_UTF8` (2) when a `String` component is not valid UTF-8.
  */
-int32_t cosmos_partition_key_create(const struct cosmos_partition_key_component_t *components,
-                                    uintptr_t len,
-                                    struct cosmos_partition_key_t **out_pk);
+cosmos_status_code_t cosmos_partition_key_create(const struct cosmos_partition_key_component_t *components,
+                                                 uintptr_t len,
+                                                 struct cosmos_partition_key_t **out_pk);
 
 /**
  * Returns a fresh handle for the special cross-partition / "empty"
@@ -1957,23 +1968,27 @@ struct cosmos_runtime_options_t cosmos_runtime_options_default(void);
  *   every field (equivalent to [`cosmos_runtime_options_default`]).
  * - `out_runtime` — on success, receives the new runtime handle. Must be
  *   non-NULL.
- * - `out_error` — optional. On `RUNTIME_BUILD_FAILED`, receives a rich
- *   `cosmos_error_t *` describing the driver-side failure. If NULL the rich
- *   error is dropped. Never populated on success.
+ * - `out_error` — optional. On any failure, receives a rich `cosmos_error_t *`
+ *   whose `status` field equals the returned packed status code. If NULL the
+ *   rich error is dropped. Never populated on success.
  *
  * # Returns
  *
- * - `SUCCESS` (0) with `*out_runtime` populated.
- * - `INVALID_ARGUMENT` (1) when `out_runtime` is NULL.
- * - `INVALID_UTF8` (2) when a string field is not valid UTF-8.
- * - `INVALID_OPTION_VALUE` (4014) when a field is outside its documented
- *   range.
- * - `RUNTIME_BUILD_FAILED` (4015) when the underlying build failed;
- *   `*out_error` is populated when non-NULL.
+ * A packed [`crate::error::CosmosStatusCode`] (`(http << 16) | sub_status`;
+ * decode with `COSMOS_STATUS_HTTP` / `COSMOS_STATUS_SUB`):
+ *
+ * - `COSMOS_STATUS_SUCCESS` (`0`) with `*out_runtime` populated.
+ * - `400` / `CLIENT_FFI_NULL_ARGUMENT` when `out_runtime` is NULL.
+ * - `400` / `CLIENT_FFI_INVALID_UTF8` when a string field is not valid UTF-8.
+ * - `400` / `CLIENT_FFI_INVALID_OPTION_VALUE` when a field is outside its
+ *   documented range.
+ * - `500` / `CLIENT_FFI_RUNTIME_BUILD_FAILED` when the wrapper-side Tokio
+ *   runtime could not be built, or the driver's own status verbatim when the
+ *   driver-side build failed; `*out_error` is populated when non-NULL.
  */
-int32_t cosmos_runtime_build(const struct cosmos_runtime_options_t *options,
-                             struct cosmos_runtime_t **out_runtime,
-                             struct cosmos_error_t **out_error);
+cosmos_status_code_t cosmos_runtime_build(const struct cosmos_runtime_options_t *options,
+                                          struct cosmos_runtime_t **out_runtime,
+                                          struct cosmos_error_t **out_error);
 
 /**
  * Submits a feed-capable operation for asynchronous execution, binding to

@@ -19,7 +19,7 @@
 use azure_data_cosmos_driver::models::FeedRange as DriverFeedRange;
 
 use crate::container_ref::ContainerRefHandle;
-use crate::error::CosmosErrorCode;
+use crate::error::{CosmosErrorCode, CosmosStatusCode};
 use crate::partition_key::PartitionKeyHandle;
 
 /// The C ABI handle for a feed range (`cosmos_feed_range_t`).
@@ -65,7 +65,7 @@ impl FeedRangeHandle {
 /// - `SUCCESS` (0) with `*out_fr` populated.
 /// - `INVALID_ARGUMENT` (1) when `out_fr` is NULL.
 #[no_mangle]
-pub extern "C" fn cosmos_feed_range_full(out_fr: *mut *mut FeedRangeHandle) -> i32 {
+pub extern "C" fn cosmos_feed_range_full(out_fr: *mut *mut FeedRangeHandle) -> CosmosStatusCode {
     if out_fr.is_null() {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
     }
@@ -92,7 +92,7 @@ pub extern "C" fn cosmos_feed_range_for_partition_key(
     container: *const ContainerRefHandle,
     pk: *const PartitionKeyHandle,
     out_fr: *mut *mut FeedRangeHandle,
-) -> i32 {
+) -> CosmosStatusCode {
     if out_fr.is_null() {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
     }

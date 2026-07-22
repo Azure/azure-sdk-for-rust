@@ -212,6 +212,12 @@ pub struct CosmosHeaderKv {
 /// Decodes a `(ptr, len)` header array into a driver `HashMap`. NULL / `0`
 /// length yields `None`; an empty-but-non-NULL slice yields `Some(empty)`.
 ///
+/// Each header name/value is validated to contain only visible ASCII (names)
+/// or visible ASCII plus spaces (values); a name/value carrying non-ASCII or
+/// control characters is rejected with
+/// [`CosmosErrorCode::CosmosErrorCodeInvalidHeader`] before it can reach
+/// transport processing.
+///
 /// # Safety
 ///
 /// `headers` must either be NULL or point at `len` initialized
@@ -230,12 +236,27 @@ unsafe fn decode_headers(
     for kv in slice {
         let name = cstr_to_str(kv.name)?;
         let value = cstr_to_str(kv.value)?;
+        if !header_name_is_valid(name) || !header_value_is_valid(value) {
+            return Err(CosmosErrorCode::CosmosErrorCodeInvalidHeader);
+        }
         map.insert(
             HeaderName::from(name.to_owned()),
             HeaderValue::from(value.to_owned()),
         );
     }
     Ok(Some(map))
+}
+
+/// A valid header name is non-empty and contains only visible ASCII
+/// characters (no spaces, control characters, or non-ASCII bytes).
+fn header_name_is_valid(name: &str) -> bool {
+    !name.is_empty() && name.bytes().all(|b| b.is_ascii_graphic())
+}
+
+/// A valid header value contains only visible ASCII characters and spaces
+/// (no control characters or non-ASCII bytes).
+fn header_value_is_valid(value: &str) -> bool {
+    value.bytes().all(|b| b == b' ' || b.is_ascii_graphic())
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -468,7 +489,7 @@ pub enum CosmosOperationKind {
 
 impl CosmosOperationKind {
     /// Validates a host-supplied `i32` discriminant and returns the matching
-    /// variant, or a `CLIENT_FFI_NULL_ARGUMENT` pre-flight status for an
+    /// variant, or a `CLIENT_FFI_INVALID_OPTION_VALUE` pre-flight status for an
     /// unknown value.
     ///
     /// The request struct stores `kind` as a raw `i32` (not as this enum
@@ -502,7 +523,7 @@ impl CosmosOperationKind {
             22 => Self::CosmosOperationKindReplaceItem,
             23 => Self::CosmosOperationKindDeleteItem,
             24 => Self::CosmosOperationKindPatchItem,
-            _ => return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument),
+            _ => return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue),
         })
     }
 }
@@ -525,7 +546,7 @@ pub enum CosmosPreconditionKind {
 
 impl CosmosPreconditionKind {
     /// Validates a host-supplied `i32` discriminant and returns the matching
-    /// variant, or a `CLIENT_FFI_NULL_ARGUMENT` pre-flight status for an
+    /// variant, or a `CLIENT_FFI_INVALID_OPTION_VALUE` pre-flight status for an
     /// unknown value. See [`CosmosOperationKind::from_i32`] for why the field
     /// is read as a raw `i32`.
     fn from_i32(raw: i32) -> Result<Self, CosmosErrorCode> {
@@ -533,7 +554,7 @@ impl CosmosPreconditionKind {
             0 => Self::CosmosPreconditionKindNone,
             1 => Self::CosmosPreconditionKindIfMatch,
             2 => Self::CosmosPreconditionKindIfNoneMatch,
-            _ => return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument),
+            _ => return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue),
         })
     }
 }
@@ -972,6 +993,26 @@ mod tests {
     }
 
     #[test]
+    fn header_validation_accepts_visible_ascii() {
+        assert!(header_name_is_valid("x-ms-custom"));
+        assert!(header_value_is_valid("some value 123"));
+    }
+
+    #[test]
+    fn header_validation_rejects_empty_or_control_or_non_ascii() {
+        // Empty / space-bearing names are rejected.
+        assert!(!header_name_is_valid(""));
+        assert!(!header_name_is_valid("bad name"));
+        // Control characters are rejected in names and values.
+        assert!(!header_name_is_valid("bad\nname"));
+        assert!(!header_value_is_valid("bad\tvalue"));
+        assert!(!header_value_is_valid("line\nbreak"));
+        // Non-ASCII bytes are rejected in names and values.
+        assert!(!header_name_is_valid("naïve"));
+        assert!(!header_value_is_valid("café"));
+    }
+
+    #[test]
     fn opt_u32_treats_negative_as_unset() {
         assert_eq!(decode_opt_u32(-1), None);
         assert_eq!(decode_opt_u32(i32::MIN), None);
@@ -1058,11 +1099,11 @@ mod tests {
         assert_eq!(K::from_i32(24), Ok(K::CosmosOperationKindPatchItem));
         assert_eq!(
             K::from_i32(25),
-            Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument)
+            Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue)
         );
         assert_eq!(
             K::from_i32(-1),
-            Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument)
+            Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue)
         );
     }
 
@@ -1073,7 +1114,7 @@ mod tests {
         assert_eq!(P::from_i32(2), Ok(P::CosmosPreconditionKindIfNoneMatch));
         assert_eq!(
             P::from_i32(3),
-            Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument)
+            Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue)
         );
     }
 

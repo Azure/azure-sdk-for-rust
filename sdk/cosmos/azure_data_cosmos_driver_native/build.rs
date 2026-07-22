@@ -55,7 +55,13 @@ fn generate_c_header() {
          // COSMOS_STATUS_SUCCESS: value returned by every fallible function on success.\n\
          #define COSMOS_STATUS_SUCCESS 0\n\
          // COSMOS_STATUS_NO_SUB_STATUS: low-16-bit value meaning \"no sub-status present\".\n\
-         #define COSMOS_STATUS_NO_SUB_STATUS 0xFFFF",
+         #define COSMOS_STATUS_NO_SUB_STATUS 0xFFFF\n\
+         \n\
+         // Decode helpers for the packed cosmos_status_code_t. COSMOS_STATUS_HTTP\n\
+         // extracts the HTTP status (high 16 bits); COSMOS_STATUS_SUB extracts the\n\
+         // sub-status (low 16 bits, COSMOS_STATUS_NO_SUB_STATUS when absent).\n\
+         #define COSMOS_STATUS_HTTP(code) ((int)(((uint32_t)(code) >> 16) & 0xFFFFu))\n\
+         #define COSMOS_STATUS_SUB(code) ((int)((uint32_t)(code) & 0xFFFFu))",
         env!("CARGO_PKG_VERSION")
     );
 

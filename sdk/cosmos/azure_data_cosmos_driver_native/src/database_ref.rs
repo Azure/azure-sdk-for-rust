@@ -25,7 +25,7 @@ use std::ffi::{c_char, CStr};
 use azure_data_cosmos_driver::models::DatabaseReference as DriverDatabaseReference;
 
 use crate::account_ref::AccountRefHandle;
-use crate::error::CosmosErrorCode;
+use crate::error::{CosmosErrorCode, CosmosStatusCode};
 
 /// The C ABI handle for a database reference (`cosmos_database_ref_t`).
 ///
@@ -102,7 +102,7 @@ pub extern "C" fn cosmos_database_ref_create(
     account: *const AccountRefHandle,
     database_id: *const c_char,
     out_database: *mut *mut DatabaseRefHandle,
-) -> i32 {
+) -> CosmosStatusCode {
     if out_database.is_null() {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
     }

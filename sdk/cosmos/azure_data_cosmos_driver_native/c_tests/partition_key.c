@@ -153,7 +153,7 @@ static int test_over_cap_rejected(void)
     }
     cosmos_partition_key_t *pk = NULL;
     int32_t rc = cosmos_partition_key_create(comps, 4, &pk);
-    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_PARTITION_KEY_EMPTY,
+    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS,
            "4-component create rejected (rc=%d)", rc);
     ASSERT(pk == NULL, "no handle on over-cap failure");
     return result;

@@ -107,8 +107,10 @@ documented constant names.
 Synchronous entry points also hand back an owned, flat **rich error**
 (`cosmos_error_t`) through their `out_error` slot — it carries the same packed
 status plus the message and wire diagnostics inline, and is freed with
-`cosmos_error_free`. Asynchronous failures surface the same struct via
-`cosmos_completion_take_error`.
+`cosmos_error_free`. Asynchronous failures surface the same information as
+inline fields on `cosmos_completion_t` (`status`, `http_status_code`,
+`sub_status`, `message`, `activity_id`, and the other diagnostic fields), so no
+separate error object needs to be taken or freed.
 
 ---
 

@@ -32,7 +32,7 @@ use std::sync::Arc;
 use azure_data_cosmos_driver::options::{DriverOptions, DriverOptionsBuilder, Region};
 
 use crate::account_ref::AccountRefHandle;
-use crate::error::CosmosErrorCode;
+use crate::error::{CosmosErrorCode, CosmosStatusCode};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Built options handle
@@ -210,7 +210,7 @@ pub extern "C" fn cosmos_driver_options_build(
     account: *const AccountRefHandle,
     config: *const CosmosDriverOptionsConfig,
     out_options: *mut *mut DriverOptionsHandle,
-) -> i32 {
+) -> CosmosStatusCode {
     if out_options.is_null() {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
     }

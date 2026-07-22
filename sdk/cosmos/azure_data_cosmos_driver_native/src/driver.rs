@@ -34,7 +34,7 @@ use azure_data_cosmos_driver::options::DriverOptions;
 
 use crate::account_ref::AccountRefHandle;
 use crate::driver_options::DriverOptionsHandle;
-use crate::error::{driver_status_code, CosmosError, CosmosErrorCode};
+use crate::error::{driver_status_code, CosmosError, CosmosErrorCode, CosmosStatusCode};
 use crate::runtime::RuntimeContext;
 
 /// The C ABI handle for a [`CosmosDriver`] (`cosmos_driver_t`).
@@ -156,7 +156,7 @@ pub extern "C" fn cosmos_driver_get_or_create_blocking(
     options: *const DriverOptionsHandle,
     out_driver: *mut *mut DriverHandle,
     out_error: *mut *mut CosmosError,
-) -> i32 {
+) -> CosmosStatusCode {
     if out_driver.is_null() {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
     }

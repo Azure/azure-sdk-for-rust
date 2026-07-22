@@ -35,7 +35,7 @@ use std::sync::Arc;
 use azure_data_cosmos_driver::models::ContainerReference as DriverContainerReference;
 
 use crate::driver::DriverHandle;
-use crate::error::{driver_status_code, CosmosError, CosmosErrorCode};
+use crate::error::{driver_status_code, CosmosError, CosmosErrorCode, CosmosStatusCode};
 use crate::runtime::RuntimeContext;
 
 /// The C ABI handle for a container reference (`cosmos_container_ref_t`).
@@ -130,7 +130,7 @@ pub extern "C" fn cosmos_driver_resolve_container_blocking(
     container_id: *const c_char,
     out_container: *mut *mut ContainerRefHandle,
     out_error: *mut *mut CosmosError,
-) -> i32 {
+) -> CosmosStatusCode {
     if out_container.is_null() {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
     }
