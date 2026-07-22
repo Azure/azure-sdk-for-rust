@@ -204,114 +204,18 @@ Salient features:
 This model is easiest to explain to customers and hardest to defend on module
 size.
 
+**Size gist:** customers download/cache the whole default native matrix as part
+of one `azcosmos` module. A six-target default set is roughly ~30 MB before
+compression; a ten-target set approaches ~50 MB. The final app links only the
+current platform's native driver.
+
 ## 6. Option B: split modules in one repository
 
 This is a multi-module model where the public SDK stays zero-touch for default
 platforms, but each native binary lives in its own Go module.
 
-```text
-github.com/Azure/azure-sdk-for-go
-└── sdk/data/azcosmos-core/
-    ├── go.mod
-    ├── core.go
-    └── include/azurecosmos.h
-
-└── sdk/data/azcosmos-driver-windows-amd64/
-    ├── go.mod
-    ├── driver_windows_amd64.go
-    └── native/azurecosmos.lib
-
-└── sdk/data/azcosmos-driver-darwin-arm64/
-    ├── go.mod
-    ├── driver_darwin_arm64.go
-    └── native/libazurecosmos.a
-
-└── sdk/data/azcosmos/
-    ├── go.mod
-    ├── client.go
-    ├── default_driver_windows_amd64.go
-    └── default_driver_darwin_arm64.go
-```
-
-The `azcosmos-core` module owns the Go wrapper and cgo declarations:
-
-```go
-package azcosmoscore
-
-/*
-#include "azurecosmos.h"
-*/
-import "C"
-```
-
-Each driver module owns only one target's library and link flags:
-
-```go
-//go:build darwin && arm64
-
-package azcosmosdriverdarwinarm64
-
-/*
-#cgo LDFLAGS: -L${SRCDIR}/native -lazurecosmos
-*/
-import "C"
-```
-
-The public `azcosmos` module chooses the default target set by build-tagged blank
-imports:
-
-```go
-//go:build darwin && arm64
-
-package azcosmos
-
-import _ "github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos-driver-darwin-arm64"
-```
-
-Customer flow on a default platform:
-
-```text
-Customer app
-  imports azcosmos
-       │
-       ▼
-azcosmos imports azcosmos-core
-       │
-       ▼
-azcosmos has build-tagged blank imports for default drivers
-       │
-       ▼
-Current GOOS/GOARCH activates exactly one driver import
-       │
-       ▼
-That driver contributes #cgo LDFLAGS at link time
-```
-
-For libc variants, Go does not provide a built-in `glibc` versus `musl` target
-dimension. If both are supported, the design needs an explicit convention such
-as a custom `musl` build tag, a separate opt-in package, or a default Linux
-choice with the other variant documented as optional.
-
-The default module dependencies might look like:
-
-```go
-module github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos
-
-require (
-    github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos-core v1.2.3
-    github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos-driver-windows-amd64 v1.2.3
-    github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos-driver-windows-arm64 v1.2.3
-    github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos-driver-darwin-amd64 v1.2.3
-    github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos-driver-darwin-arm64 v1.2.3
-    github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos-driver-linux-amd64-gnu v1.2.3
-    github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos-driver-linux-arm64-gnu v1.2.3
-)
-```
-
-### 6.1 Concrete file example
-
-The following example shows how Option B could look if all modules live in the
-Azure SDK for Go repository.
+The concrete shape would look like this if all modules live in the Azure SDK for
+Go repository:
 
 ```text
 github.com/Azure/azure-sdk-for-go
@@ -338,7 +242,7 @@ github.com/Azure/azure-sdk-for-go
     └── unsupported_driver.go
 ```
 
-`azcosmos-core` contains the shared Go wrapper and C ABI declarations.
+`azcosmos-core` contains the shared Go wrapper and C ABI declarations:
 
 ```go
 // sdk/data/azcosmos-core/go.mod
@@ -371,8 +275,8 @@ func ABIVersion() string {
 }
 ```
 
-Each driver module contains exactly one native library and the link flags needed
-for that target.
+Each driver module contains exactly one native library and the link flags for
+that target:
 
 ```go
 // sdk/data/azcosmos-driver-linux-amd64-gnu/go.mod
@@ -394,7 +298,7 @@ import "C"
 ```
 
 The public `azcosmos` module depends on the core module and the default driver
-modules. This is what gives common-platform customers the zero-touch path.
+modules. That keeps common platforms on the normal `go get` / `go build` path:
 
 ```go
 // sdk/data/azcosmos/go.mod
@@ -410,7 +314,9 @@ require (
 )
 ```
 
-`azcosmos` imports the active default driver through build-tagged blank imports:
+`azcosmos` imports the active default driver through build-tagged blank imports.
+This import is important: a `require` entry alone does not make the driver's
+cgo link flags participate in the final link.
 
 ```go
 // sdk/data/azcosmos/default_driver_linux_amd64.go
@@ -459,10 +365,8 @@ func NativeDriverVersion() string {
 }
 ```
 
-### 6.2 Customer usage on a default platform
-
-A Linux amd64 customer does not import the driver package directly. Their app
-only imports `azcosmos`:
+A customer on a default platform still writes ordinary Go application code. They
+do not import the driver package directly:
 
 ```go
 // customer-app/go.mod
@@ -495,11 +399,10 @@ go get github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos@v1.2.3
 go build ./...
 ```
 
-For `GOOS=linux GOARCH=amd64`, Go includes
-`default_driver_linux_amd64.go`, which blank-imports
-`azcosmos-driver-linux-amd64-gnu`. That driver package contributes its
-`#cgo LDFLAGS`, and the app links against
-`native/libazurecosmos.a`.
+For `GOOS=linux GOARCH=amd64`, Go includes `default_driver_linux_amd64.go`.
+That file blank-imports `azcosmos-driver-linux-amd64-gnu`, so the driver module
+contributes `#cgo LDFLAGS` and the app links against
+`native/libazurecosmos.a`:
 
 ```text
 customer app
@@ -521,22 +424,18 @@ driver module contributes -L${SRCDIR}/native -lazurecosmos
 customer binary links with the Rust native driver
 ```
 
-The customer may still download all default driver modules required by
-`azcosmos`, depending on module proxy/cache behavior, but only the active target
-is compiled and linked.
-
-### 6.3 Customer usage for a non-default platform
-
-If a target is published but not part of the default `azcosmos` module, the
-customer needs an explicit activation path. For example, if Linux musl is
-published separately:
+For libc variants, Go does not provide a built-in `glibc` versus `musl` target
+dimension. If both are supported, the design needs an explicit convention such
+as a custom `musl` build tag, a separate opt-in package, or a default Linux
+choice with the other variant documented as optional. For example, if Linux musl
+is published but not included in the default `azcosmos` module, the customer
+would add the optional driver and activate it with a blank import or small Azure
+SDK metapackage:
 
 ```bash
 go get github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos@v1.2.3
 go get github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos-driver-linux-amd64-musl@v1.2.3
 ```
-
-Then the app or a small Azure SDK metapackage must blank-import that driver:
 
 ```go
 //go:build linux && amd64 && musl
@@ -545,10 +444,6 @@ package main
 
 import _ "github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos-driver-linux-amd64-musl"
 ```
-
-This is why optional targets need a documented activation story. Without an
-import, Go may know about the module version in `go.mod`, but the driver's cgo
-link flags will not participate in the final link.
 
 Salient features:
 
@@ -563,6 +458,12 @@ Salient features:
 The subtle but critical rule is that `azcosmos` must import the selected driver
 packages. Merely listing them in `go.mod` does not make their cgo link flags
 participate.
+
+**Size gist:** if the default `azcosmos` module requires six default driver
+modules, customers may still download/cache roughly the same ~30 MB matrix
+before compression. The difference is that the payload is split into separate
+module ZIPs, optional targets can stay out of the default path, and the final app
+still links only the current platform's native driver.
 
 ## 7. Option C: split modules, native drivers in a separate repository
 
@@ -628,6 +529,11 @@ Azure SDK contributors care about repositories.
 Separate modules help customer download granularity. A separate repository helps
 the Azure SDK for Go repository avoid carrying binary payloads in its Git history.
 
+**Size gist:** for customers, this is similar to Option B if `azcosmos` still
+depends on the default driver modules. The default download/cache can still be
+the default matrix, but the binary modules come from a separate repository and
+the final app links only one target.
+
 ## 8. Option D: small SDK module plus GitHub release assets
 
 In this model, the Go SDK module does not carry native binaries. Native drivers
@@ -670,6 +576,11 @@ Salient features:
 This model is attractive for tools and CLIs. It is more difficult to make feel
 like a normal first-party Go SDK.
 
+**Size gist:** customers download only their platform's native asset, so the
+native payload is closer to ~5 MB before compression instead of the whole
+matrix. The trade-off is an explicit install/download step and more failure
+modes.
+
 ## 9. Option E: wrapper-only SDK; customer supplies native driver
 
 This is the ONNX Runtime-style model. The SDK contains the Go wrapper and header,
@@ -702,6 +613,10 @@ Salient features:
 This is useful as an advanced fallback but should be treated carefully if the
 goal is a normal SDK experience.
 
+**Size gist:** the Go module stays small because it carries no native matrix.
+Customers still need one native driver for their platform, but they acquire and
+place it themselves.
+
 ## 10. Option F: standalone native-backed Go SDK
 
 This model creates a separate public SDK identity for the FFI-backed package,
@@ -729,6 +644,10 @@ Salient features:
 | Governance          | Requires Azure SDK board alignment because it changes package identity. |
 
 This model is less a packaging trick and more a product-positioning decision.
+
+**Size gist:** existing `azcosmos` customers avoid the native payload entirely.
+Customers who opt into the native-backed SDK pay whatever distribution model
+that SDK chooses: bundled matrix, split driver modules, or per-platform asset.
 
 ## 11. Default driver set selection
 
