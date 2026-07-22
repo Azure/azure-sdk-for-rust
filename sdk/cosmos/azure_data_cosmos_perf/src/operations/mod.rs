@@ -152,13 +152,7 @@ pub async fn create_operations(
             write_options,
         )));
     }
-    if !config.no_change_feed {
-        ops.push(Arc::new(ChangeFeedOperation::new(
-            config.change_feed_max_pages,
-        )));
-    }
-
-    let feed_range_refresher = if config.no_feed_range_queries {
+    let feed_range_refresher = if config.no_feed_range_queries && config.no_change_feed {
         None
     } else {
         let initial = container.read_feed_ranges(None).await?;
@@ -170,10 +164,18 @@ pub async fn create_operations(
                 .into());
         }
         let cache: FeedRangeCache = Arc::new(RwLock::new(Arc::new(initial)));
-        ops.push(Arc::new(FeedRangeQueryOperation::new(
-            cache.clone(),
-            config.feed_range_query_max_pages,
-        )));
+        if !config.no_feed_range_queries {
+            ops.push(Arc::new(FeedRangeQueryOperation::new(
+                cache.clone(),
+                config.feed_range_query_max_pages,
+            )));
+        }
+        if !config.no_change_feed {
+            ops.push(Arc::new(ChangeFeedOperation::new(
+                cache.clone(),
+                config.change_feed_max_pages,
+            )));
+        }
 
         if config.feed_range_refresh_secs > 0 {
             Some(FeedRangeRefresher::new(

@@ -63,7 +63,7 @@ pub struct Config {
     #[arg(long, default_value_t = false)]
     pub no_creates: bool,
 
-    /// Disable the full-container change feed operation.
+    /// Disable the per-feed-range change feed operation.
     #[arg(long, default_value_t = false)]
     pub no_change_feed: bool,
 

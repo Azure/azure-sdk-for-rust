@@ -85,7 +85,7 @@ cargo run -p azure_data_cosmos_perf -- \
 | `--no-queries` | `false` | Disable query operations |
 | `--no-upserts` | `false` | Disable upsert operations |
 | `--no-creates` | `false` | Disable create operations |
-| `--no-change-feed` | `false` | Disable full-container change feed operations |
+| `--no-change-feed` | `false` | Disable per-feed-range change feed operations |
 | `--change-feed-max-pages` | `4` | Maximum pages consumed by each change feed operation |
 | `--no-feed-range-queries` | `false` | Disable per-feed-range query operations |
 | `--feed-range-query-max-pages` | `4` | Maximum pages consumed by each per-feed-range query |
@@ -178,7 +178,8 @@ operations.
 
 ### Change Feed Operation
 
-When enabled (the default), the `ChangeFeed` operation reads the full-container
+When enabled (the default), the `ChangeFeed` operation rotates round-robin
+through the container's physical feed ranges and reads each range's
 latest-version change feed from the beginning. Because change feed streams do
 not terminate when caught up, each execution consumes at most
 `--change-feed-max-pages` pages (default `4`).
