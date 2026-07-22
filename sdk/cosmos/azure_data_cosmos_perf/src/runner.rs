@@ -500,13 +500,17 @@ pub async fn run(config: RunConfig) {
                         });
                     }
                     Err(_) => {
-                        let n = skipped.fetch_add(1, Ordering::Relaxed) + 1;
-                        if n.is_multiple_of(10_000) {
+                        let skipped_now = saturated_skip_count(issued, target);
+                        issued = target;
+                        let previous = skipped.fetch_add(skipped_now, Ordering::Relaxed);
+                        let total = previous + skipped_now;
+                        if previous / 10_000 != total / 10_000 {
                             println!(
-                                "WARN: max_in_flight={max_in_flight} saturated, skipped {n} \
+                                "WARN: max_in_flight={max_in_flight} saturated, skipped {total} \
                                  issuance(s) (requests completing slower than target_rate)"
                             );
                         }
+                        break;
                     }
                 }
             }
@@ -789,9 +793,14 @@ fn diagnostics_threshold_exceeded(elapsed: Duration, threshold: Option<Duration>
     threshold.is_some_and(|threshold| elapsed > threshold)
 }
 
+fn saturated_skip_count(issued_after_increment: u64, target: u64) -> u64 {
+    debug_assert!(issued_after_increment <= target);
+    target - issued_after_increment + 1
+}
+
 #[cfg(test)]
 mod tests {
-    use super::diagnostics_threshold_exceeded;
+    use super::{diagnostics_threshold_exceeded, saturated_skip_count};
     use std::time::Duration;
 
     #[test]
@@ -813,5 +822,11 @@ mod tests {
             Duration::from_millis(101),
             threshold
         ));
+    }
+
+    #[test]
+    fn saturation_batches_current_and_remaining_arrivals() {
+        assert_eq!(saturated_skip_count(10, 10), 1);
+        assert_eq!(saturated_skip_count(10, 1_000_000), 999_991);
     }
 }
