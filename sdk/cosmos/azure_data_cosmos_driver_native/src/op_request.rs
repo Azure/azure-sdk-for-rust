@@ -212,9 +212,10 @@ pub struct CosmosHeaderKv {
 /// Decodes a `(ptr, len)` header array into a driver `HashMap`. NULL / `0`
 /// length yields `None`; an empty-but-non-NULL slice yields `Some(empty)`.
 ///
-/// Each header name/value is validated to contain only visible ASCII (names)
-/// or visible ASCII plus spaces (values); a name/value carrying non-ASCII or
-/// control characters is rejected with
+/// Each header name is validated against the RFC 7230 `token` grammar and each
+/// value against visible ASCII plus space; a name/value carrying disallowed
+/// bytes (separators or non-`tchar` in names, control or non-ASCII bytes in
+/// either) is rejected with
 /// [`CosmosErrorCode::CosmosErrorCodeInvalidHeader`] before it can reach
 /// transport processing.
 ///
@@ -247,10 +248,35 @@ unsafe fn decode_headers(
     Ok(Some(map))
 }
 
-/// A valid header name is non-empty and contains only visible ASCII
-/// characters (no spaces, control characters, or non-ASCII bytes).
+/// A valid header name is a non-empty RFC 7230 `token`: every byte must be a
+/// `tchar` (visible ASCII excluding separators). This rejects field-name
+/// separators such as `:`, `/`, `(`, `)`, `,`, and `@` up front rather than
+/// letting them fail later while building the request.
 fn header_name_is_valid(name: &str) -> bool {
-    !name.is_empty() && name.bytes().all(|b| b.is_ascii_graphic())
+    !name.is_empty() && name.bytes().all(is_tchar)
+}
+
+/// RFC 7230 `tchar`: `"!" / "#" / "$" / "%" / "&" / "'" / "*" / "+" / "-" /
+/// "." / "^" / "_" / "`" / "|" / "~" / DIGIT / ALPHA`.
+fn is_tchar(b: u8) -> bool {
+    b.is_ascii_alphanumeric()
+        || matches!(
+            b,
+            b'!' | b'#'
+                | b'$'
+                | b'%'
+                | b'&'
+                | b'\''
+                | b'*'
+                | b'+'
+                | b'-'
+                | b'.'
+                | b'^'
+                | b'_'
+                | b'`'
+                | b'|'
+                | b'~'
+        )
 }
 
 /// A valid header value contains only visible ASCII characters and spaces
@@ -996,6 +1022,8 @@ mod tests {
     fn header_validation_accepts_visible_ascii() {
         assert!(header_name_is_valid("x-ms-custom"));
         assert!(header_value_is_valid("some value 123"));
+        // Non-separator tchar punctuation is a valid token.
+        assert!(header_name_is_valid("X-Foo_Bar.Baz!~"));
     }
 
     #[test]
@@ -1003,6 +1031,12 @@ mod tests {
         // Empty / space-bearing names are rejected.
         assert!(!header_name_is_valid(""));
         assert!(!header_name_is_valid("bad name"));
+        // RFC 7230 separators are not valid tchar and are rejected in names.
+        assert!(!header_name_is_valid("bad:name"));
+        assert!(!header_name_is_valid("bad/name"));
+        assert!(!header_name_is_valid("bad(name)"));
+        assert!(!header_name_is_valid("bad,name"));
+        assert!(!header_name_is_valid("bad@name"));
         // Control characters are rejected in names and values.
         assert!(!header_name_is_valid("bad\nname"));
         assert!(!header_value_is_valid("bad\tvalue"));

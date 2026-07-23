@@ -947,25 +947,27 @@ typedef struct cosmos_error_t {
    */
   int64_t retry_after_ms;
   /**
-   * Owned NUL-terminated message (never NULL for a real error).
+   * Owned NUL-terminated message (never NULL for a real error). Exposed as
+   * `*const c_char`: the buffer is library-owned until [`cosmos_error_free`]
+   * and callers must not mutate it.
    */
-  char *message;
+  const char *message;
   /**
    * Owned activity id from the wire response headers, or NULL.
    */
-  char *activity_id;
+  const char *activity_id;
   /**
    * Owned session token from the wire response headers, or NULL.
    */
-  char *session_token;
+  const char *session_token;
   /**
    * Owned ETag from the wire response headers, or NULL.
    */
-  char *etag;
+  const char *etag;
   /**
    * Owned backtrace, or NULL when none was captured.
    */
-  char *backtrace;
+  const char *backtrace;
 } cosmos_error_t;
 
 /**
@@ -1734,9 +1736,8 @@ void cosmos_driver_free(struct cosmos_driver_t *driver);
  * - Cache eviction happens only when the owning `cosmos_runtime_t` is
  *   freed; freeing a `cosmos_driver_t` does not evict.
  *
- * The `5001` `OPTIONS_IGNORED_ON_CACHE_HIT` advisory described in spec
- * Section 4.4.1 is not emitted today — see the module-level
- * `Cache-hit advisory` note for the rationale.
+ * The cache-hit advisory described in spec Section 4.4.1 is not emitted
+ * today — see the module-level `Cache-hit advisory` note for the rationale.
  *
  * # Parameters
  *
@@ -1968,8 +1969,12 @@ struct cosmos_runtime_options_t cosmos_runtime_options_default(void);
  *   every field (equivalent to [`cosmos_runtime_options_default`]).
  * - `out_runtime` — on success, receives the new runtime handle. Must be
  *   non-NULL.
- * - `out_error` — optional. On any failure, receives a rich `cosmos_error_t *`
- *   whose `status` field equals the returned packed status code. If NULL the
+ * - `out_error` — optional, and populated **only for runtime-construction
+ *   failures** (the wrapper-side Tokio runtime or the driver-side build). On
+ *   those paths it receives a rich `cosmos_error_t *` whose `status` field
+ *   equals the returned packed status code. Pre-flight rejections (NULL
+ *   `out_runtime`, invalid UTF-8, out-of-range option values) return the
+ *   packed status code alone and do **not** write `out_error`. If NULL the
  *   rich error is dropped. Never populated on success.
  *
  * # Returns

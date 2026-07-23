@@ -206,14 +206,25 @@ fn spawn_oneshot<Fut, R>(
                 ctx.include_error_details,
             ),
             Some(Err(_panic)) => {
-                // The driver future (or success conversion) panicked. Surface it
-                // as a coarse client-side error so the host's continuation is
-                // released with a definitive failure instead of hanging.
+                // The driver future (or success conversion) panicked. Synthesize
+                // a driver error carrying the CLIENT_FFI_PANIC status and route
+                // it through the normal rich-error path so the completion's
+                // inline fields (http_status_code / sub_status / message) stay
+                // consistent with every other ERROR completion and honor
+                // `include_error_details`.
                 tracing::error!("submit: driver future panicked; synthesizing ERROR completion",);
-                PendingCompletion::error_coarse(
+                let status = CosmosErrorCode::CosmosErrorCodeInternalError
+                    .to_status()
+                    .expect("panic code always has a status");
+                let panic_err = azure_data_cosmos_driver::error::CosmosError::builder()
+                    .with_status(status)
+                    .with_message("driver future panicked inside the wrapper (panic firewall)")
+                    .build();
+                PendingCompletion::error(
                     user_data,
                     ctx.op_inner.clone(),
-                    CosmosErrorCode::CosmosErrorCodeInternalError.as_i32(),
+                    panic_err,
+                    ctx.include_error_details,
                 )
             }
         };

@@ -370,16 +370,18 @@ pub struct CosmosError {
     pub is_from_wire: u8,
     /// Retry-after hint in milliseconds, or `-1` when absent.
     pub retry_after_ms: i64,
-    /// Owned NUL-terminated message (never NULL for a real error).
-    pub message: *mut c_char,
+    /// Owned NUL-terminated message (never NULL for a real error). Exposed as
+    /// `*const c_char`: the buffer is library-owned until [`cosmos_error_free`]
+    /// and callers must not mutate it.
+    pub message: *const c_char,
     /// Owned activity id from the wire response headers, or NULL.
-    pub activity_id: *mut c_char,
+    pub activity_id: *const c_char,
     /// Owned session token from the wire response headers, or NULL.
-    pub session_token: *mut c_char,
+    pub session_token: *const c_char,
     /// Owned ETag from the wire response headers, or NULL.
-    pub etag: *mut c_char,
+    pub etag: *const c_char,
     /// Owned backtrace, or NULL when none was captured.
-    pub backtrace: *mut c_char,
+    pub backtrace: *const c_char,
 }
 
 /// Builds a NUL-terminated copy of `s`, stripping any interior NUL bytes so the
@@ -388,20 +390,22 @@ fn to_cstring(s: impl Into<String>) -> Option<CString> {
     CString::new(s.into().replace('\0', "")).ok()
 }
 
-/// Consumes an optional `CString` into an owned raw pointer, or NULL.
-fn cstring_into_raw(s: Option<CString>) -> *mut c_char {
-    s.map_or(std::ptr::null_mut(), CString::into_raw)
+/// Consumes an optional `CString` into an owned raw pointer, or NULL. The
+/// pointer is exposed as `*const c_char`; ownership is reclaimed by
+/// [`free_cstring`] inside [`cosmos_error_free`].
+fn cstring_into_raw(s: Option<CString>) -> *const c_char {
+    s.map_or(std::ptr::null(), |c| CString::into_raw(c).cast_const())
 }
 
 /// Reclaims a raw pointer previously produced by [`cstring_into_raw`].
 ///
 /// # Safety
 ///
-/// `p` must be NULL or a pointer obtained from [`CString::into_raw`] that has
-/// not already been reclaimed.
-unsafe fn free_cstring(p: *mut c_char) {
+/// `p` must be NULL or a pointer obtained from [`CString::into_raw`] (via
+/// [`cstring_into_raw`]) that has not already been reclaimed.
+unsafe fn free_cstring(p: *const c_char) {
     if !p.is_null() {
-        drop(CString::from_raw(p));
+        drop(CString::from_raw(p.cast_mut()));
     }
 }
 

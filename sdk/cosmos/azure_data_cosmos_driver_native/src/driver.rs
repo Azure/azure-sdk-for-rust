@@ -11,12 +11,11 @@
 //! wrapper's generic `tokio::spawn` → `cq_enqueue` plumbing lands once,
 //! with the operation submit pipeline.
 //!
-//! ## Cache-hit advisory (`OPTIONS_IGNORED_ON_CACHE_HIT`)
+//! ## Cache-hit advisory
 //!
-//! Spec section 4.4.1 requires the wrapper to detect when the driver returns a
-//! cached driver for an endpoint that already has an entry, and surface
-//! a `5001` warning. The merged
-//! `CosmosDriverRuntime::get_or_create_driver` API does not expose a
+//! Spec section 4.4.1 describes an optional advisory for when the driver
+//! returns a cached driver for an endpoint that already has an entry. The
+//! merged `CosmosDriverRuntime::get_or_create_driver` API does not expose a
 //! "was cached" signal, so detecting cache hits requires either a
 //! driver-side enhancement (preferred) or wrapper-side cache shadowing
 //! (hacky). The advisory is intentionally **not** implemented today
@@ -125,9 +124,8 @@ pub extern "C" fn cosmos_driver_free(driver: *mut DriverHandle) {
 /// - Cache eviction happens only when the owning `cosmos_runtime_t` is
 ///   freed; freeing a `cosmos_driver_t` does not evict.
 ///
-/// The `5001` `OPTIONS_IGNORED_ON_CACHE_HIT` advisory described in spec
-/// Section 4.4.1 is not emitted today — see the module-level
-/// `Cache-hit advisory` note for the rationale.
+/// The cache-hit advisory described in spec Section 4.4.1 is not emitted
+/// today — see the module-level `Cache-hit advisory` note for the rationale.
 ///
 /// # Parameters
 ///

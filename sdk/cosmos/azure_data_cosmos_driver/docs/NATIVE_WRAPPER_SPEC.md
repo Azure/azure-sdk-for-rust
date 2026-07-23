@@ -470,7 +470,7 @@ cosmos_status_code_t cosmos_<noun>_<verb>(
 );
 ```
 
-Used by: account / database / container / partition-key / feed-range / operation **builders** (no network), response and diagnostics **accessors** (in-memory only), `_free` functions, `_clone` functions. Same contract as the old wrapper: return value is a coarse status code, outputs go through `out_*` pointers, `options == NULL` means "use defaults". There is no `cosmos_call_context_t` argument — pre-flight rejections (NULL handle, bad UTF-8, etc.) are returned directly via the status code, and any rich error is written into an optional `cosmos_error_t *out_error` slot the function lists explicitly.
+Used by: account / database / container / partition-key / feed-range / operation **builders** (no network), response and diagnostics **accessors** (in-memory only), `_free` functions, `_clone` functions. Same contract as the old wrapper: return value is a coarse status code, outputs go through `out_*` pointers, `options == NULL` means "use defaults". There is no `cosmos_call_context_t` argument — pre-flight rejections (NULL handle, bad UTF-8, etc.) are returned directly via the status code, and any rich error is written into an optional `cosmos_error_t **out_error` slot the function lists explicitly.
 
 **Pattern B — asynchronous submit (network-touching APIs):**
 
@@ -703,7 +703,7 @@ void cosmos_error_free(cosmos_error_t *e);
 **Where `cosmos_error_t` is populated.** Errors flow through two paths depending on the call shape that produced them:
 
 - **Async submit (Pattern B in §3.2).** Runtime / service / transport / authentication failures are delivered as a completion record with `cosmos_completion_outcome == ERROR`. The rich payload is retrieved via `cosmos_completion_take_error(c)` (transfers ownership; caller must `cosmos_error_free`) or borrowed via `cosmos_completion_error(c)` (lifetime = until `cosmos_completion_free`). Population is controlled **per queue** by `cosmos_cq_options.include_error_details` (default `true`); host SDKs that only care about the coarse code can disable rich capture for a small per-completion allocation saving.
-- **Pre-flight / synchronous (Pattern A in §3.2).** For non-network APIs (factories in §4.3 / §4.5, accessors, builders) the caller passes an `cosmos_error_t *out_error` slot. For submit Pattern B's `*out_pre_error`, only the packed `cosmos_status_code_t` is written — rich detail for pre-flight rejections is intentionally minimal and surfaces via `cosmos_error_message` if at all.
+- **Pre-flight / synchronous (Pattern A in §3.2).** For non-network APIs (factories in §4.3 / §4.5, accessors, builders) the caller passes a `cosmos_error_t **out_error` slot (a pointer to their `cosmos_error_t *`, which the wrapper allocates and writes on failure; free with `cosmos_error_free`). For submit Pattern B's `out_pre_error`, only the packed `cosmos_status_code_t` is written — rich detail for pre-flight rejections is intentionally minimal and read via the flat `cosmos_error_t` fields directly.
 
 **Wrapper does NOT construct `cosmos_error_t`.** Errors are only ever *received* from the driver; no `cosmos_error_create_*` API is exposed.
 
@@ -1015,7 +1015,7 @@ cosmos_status_code_t cosmos_runtime_builder_with_allow_emulator_invalid_certs(
 cosmos_status_code_t cosmos_runtime_builder_build(
     cosmos_runtime_builder_t *b,
     cosmos_runtime_t **out_runtime,
-    cosmos_error_t *out_error);
+    cosmos_error_t **out_error);
 
 void cosmos_runtime_free(cosmos_runtime_t *runtime);
 ```
@@ -1085,7 +1085,7 @@ cosmos_status_code_t cosmos_account_ref_with_master_key(
     const char *endpoint,
     const char *key,
     cosmos_account_ref_t **out_account,
-    cosmos_error_t *out_error);
+    cosmos_error_t **out_error);
 
 /* Mirrors AccountReference::with_credential(endpoint, Arc<dyn TokenCredential>)
  * at src/models/account_reference.rs:216. The credential is supplied by a C
@@ -1097,7 +1097,7 @@ cosmos_status_code_t cosmos_account_ref_with_credential(
     void *user_data,
     void (*user_data_free)(void *user_data),
     cosmos_account_ref_t **out_account,
-    cosmos_error_t *out_error);
+    cosmos_error_t **out_error);
 
 /* Resource-token authentication. The driver does NOT have a dedicated
  * AccountReference::with_resource_token constructor — resource tokens are
@@ -1110,7 +1110,7 @@ cosmos_status_code_t cosmos_account_ref_with_resource_token(
     const char *endpoint,
     const char *token,
     cosmos_account_ref_t **out_account,
-    cosmos_error_t *out_error);
+    cosmos_error_t **out_error);
 
 /* Cheap clone — produces an independent FFI handle aliasing the same
  * Arc<AccountReferenceInner>. Never touches the network. */
@@ -1170,7 +1170,7 @@ cosmos_status_code_t cosmos_driver_get_or_create_blocking(
     const cosmos_account_ref_t *account,
     const cosmos_driver_options_t *options,  /* nullable */
     cosmos_driver_t **out_driver,
-    cosmos_error_t *out_error);
+    cosmos_error_t **out_error);
 
 void cosmos_driver_free(cosmos_driver_t *driver);
 
@@ -1939,7 +1939,7 @@ Each item below is independent; ship as feature-gated when ready.
         const cosmos_driver_t *driver,
         size_t min_capacity,
         cosmos_request_buffer_t **out_buffer,
-        cosmos_error_t *out_error);
+        cosmos_error_t **out_error);
 
     /* Borrow the writable region. Lifetime = until cosmos_operation_with_body_pooled
      * consumes the buffer, OR cosmos_request_buffer_release returns it to the pool

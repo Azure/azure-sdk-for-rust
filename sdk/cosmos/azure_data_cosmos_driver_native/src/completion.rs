@@ -542,21 +542,6 @@ impl PendingCompletion {
         p
     }
 
-    /// Error completion carrying only a coarse code (no rich detail) — used for
-    /// the submit panic firewall.
-    pub(crate) fn error_coarse(
-        user_data: isize,
-        op_inner: Arc<OperationInner>,
-        status: CosmosStatusCode,
-    ) -> Self {
-        Self::base(
-            CosmosCompletionOutcome::CosmosCompletionOutcomeError,
-            status,
-            user_data,
-            op_inner,
-        )
-    }
-
     /// Cancelled completion.
     pub(crate) fn cancelled(user_data: isize, op_inner: Arc<OperationInner>) -> Self {
         Self::base(
@@ -1876,6 +1861,50 @@ mod tests {
         // Rich detail suppressed.
         assert!(c.message.is_null());
         assert_eq!(c.http_status_code, 0);
+        free_one(c);
+        cosmos_operation_handle_free(op);
+        cosmos_completion_queue_free(q);
+    }
+
+    #[test]
+    fn panic_firewall_completion_carries_inline_panic_status() {
+        use azure_data_cosmos_driver::error::{CosmosError, SubStatusCode};
+        // Build the error exactly as the submit-path panic firewall does.
+        let status = crate::error::CosmosErrorCode::CosmosErrorCodeInternalError
+            .to_status()
+            .expect("panic code always has a status");
+        let err = CosmosError::builder()
+            .with_status(status)
+            .with_message("driver future panicked inside the wrapper (panic firewall)")
+            .build();
+
+        let q = fresh_queue(0, /* include_error_details = */ true);
+        let op = __test_only_create_operation_handle();
+        __test_only_enqueue_completion(
+            q,
+            op,
+            CosmosCompletionOutcome::CosmosCompletionOutcomeError,
+            crate::error::status_code(status),
+            std::ptr::null_mut(),
+            Some(err),
+        );
+
+        let c = wait_one_ffi(q, 100).expect("completion delivered");
+        // Coarse packed status decodes to 500 / CLIENT_FFI_PANIC (20362) ...
+        assert_eq!(c.status, crate::error::status_code(status));
+        // ... and every inline field agrees with it, unlike the old coarse path.
+        assert_eq!(c.http_status_code, 500);
+        assert_eq!(
+            c.sub_status,
+            i32::from(SubStatusCode::CLIENT_FFI_PANIC.value())
+        );
+        assert!(!c.message.is_null());
+        // SAFETY: `message` is a NUL-terminated string owned by the completion.
+        let msg = unsafe { std::ffi::CStr::from_ptr(c.message) }
+            .to_string_lossy()
+            .into_owned();
+        assert!(msg.contains("panicked"), "got: {msg}");
+
         free_one(c);
         cosmos_operation_handle_free(op);
         cosmos_completion_queue_free(q);

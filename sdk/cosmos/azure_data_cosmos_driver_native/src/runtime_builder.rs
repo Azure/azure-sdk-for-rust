@@ -241,8 +241,12 @@ pub extern "C" fn cosmos_runtime_options_default() -> CosmosRuntimeOptions {
 ///   every field (equivalent to [`cosmos_runtime_options_default`]).
 /// - `out_runtime` — on success, receives the new runtime handle. Must be
 ///   non-NULL.
-/// - `out_error` — optional. On any failure, receives a rich `cosmos_error_t *`
-///   whose `status` field equals the returned packed status code. If NULL the
+/// - `out_error` — optional, and populated **only for runtime-construction
+///   failures** (the wrapper-side Tokio runtime or the driver-side build). On
+///   those paths it receives a rich `cosmos_error_t *` whose `status` field
+///   equals the returned packed status code. Pre-flight rejections (NULL
+///   `out_runtime`, invalid UTF-8, out-of-range option values) return the
+///   packed status code alone and do **not** write `out_error`. If NULL the
 ///   rich error is dropped. Never populated on success.
 ///
 /// # Returns
