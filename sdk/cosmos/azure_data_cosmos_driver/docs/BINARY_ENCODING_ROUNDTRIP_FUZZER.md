@@ -43,6 +43,52 @@ later" workflow is available for a persistent corpus. The hash is
 defending against adversarial collisions, so a cryptographic digest is
 unnecessary. Swap in SHA-256 if a durable cross-run corpus is later desired.
 
+### 2.1 How this detects codec gaps
+
+The fuzzer needs no knowledge of *correct bytes* — it exploits one invariant:
+**a value stored and read back must be identical.** It runs each generated
+document through **three configs** (text control, binary, binary+text-response),
+which is what lets a mismatch **localize the broken layer**:
+
+| Symptom in the mismatch dump | Where the bug is |
+| ---------------------------- | ---------------- |
+| Text config passes, **binary** config fails | The **encoder** (`ser.rs` / `writer.rs`) emitted wrong bytes for some value. |
+| Binary write succeeds but the **read decodes wrong** | The **decoder** (`de.rs` / `reader.rs`) mishandles a wire form. |
+| **binary+text-response** fails but plain binary passes | The **driver transcode** (`transcode_to_text`) loses something on binary→text. |
+| **All configs fail identically** | Likely a backend rewrite the canonicalizer doesn't model yet → a calibration gap (tune `canonicalize_number`, §3.1), or a genuine service behavior to escalate. |
+
+The specific classes of gap it is built to surface — the ones curated tests miss
+because no human authored the triggering input:
+
+- **Encoder ↔ decoder disagreement on a wire form the *backend* emits.** The Rust
+  encoder emits only a *subset* of wire forms; the decoder accepts *all* of them
+  (system strings, compressed 4/5/6/7-bit strings, GUID/base64 forms, uniform
+  number arrays, reference strings). If the decoder mishandles a compact form the
+  **backend** produces but the Rust encoder never does, no unit test exercises
+  it — only a live round-trip does.
+- **Number precision/representation edges** — exactly what calibration surfaces:
+  non-finite handling, `-0`, integers above `i64::MAX` (backend stores as
+  doubles), high-precision floats.
+- **Unicode / string escaping** — astral code points, control characters,
+  characters needing JSON escaping; a mismatch here is an encoder/decoder
+  UTF-8/length bug.
+- **Container framing** — deep nesting, mixed vs. uniform arrays, empty
+  containers, arrays-of-objects; catches off-by-one length/count bugs.
+- **The transcode path specifically** — the `binary+text-response` config is the
+  *only* end-to-end exercise of `transcode_to_text` against real binary the
+  backend produced.
+
+**The debugging loop:** a failure prints the exact document, the config, and the
+seed. Re-run with `AZURE_COSMOS_FUZZ_SEED=<n>` to reproduce deterministically,
+reduce to the minimal triggering value, add it as a golden vector, and fix the
+codec — then the new vector guards against regression.
+
+**Limitations to keep in mind:** the fuzzer is only as good as its calibration
+and its generator's range. Under-calibrated `canonicalize_number` → false
+positives (noise); a form the generator never emits → false negatives (blind
+spots). Calibrate first (§3.1), then widen coverage progressively with
+`--wide-numbers` / `max_depth` / `unicode`.
+
 ## 3. Canonicalization (the hard part)
 
 Two JSON texts are "the same value" if they canonicalize identically. Rules:
