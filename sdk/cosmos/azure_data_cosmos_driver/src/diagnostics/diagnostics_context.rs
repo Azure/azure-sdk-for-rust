@@ -24,6 +24,27 @@ use std::{
 use super::compaction::{compact_requests, CompactedRun, CompactionInfo};
 
 // =============================================================================
+// Threshold breach classification
+// =============================================================================
+
+/// The specific sampling threshold a completed operation crossed.
+///
+/// Returned by
+/// [`DiagnosticsContext::threshold_breach_for`](DiagnosticsContext::threshold_breach_for)
+/// so emission handlers can record *why* a diagnostic was sampled (which bound
+/// was breached), not just that one was.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum ThresholdBreach {
+    /// Latency exceeded the point-operation latency threshold.
+    PointLatency,
+    /// Latency exceeded the non-point-operation latency threshold.
+    NonPointLatency,
+    /// Total request charge exceeded the request-charge (RU) threshold.
+    RequestCharge,
+}
+
+// =============================================================================
 // Execution Context
 // =============================================================================
 
@@ -2268,18 +2289,45 @@ impl DiagnosticsContext {
         thresholds: &DiagnosticsThresholds,
         operation_name: Option<&str>,
     ) -> bool {
+        self.threshold_breach_for(thresholds, operation_name)
+            .is_some()
+    }
+
+    /// Like [`is_threshold_violated_for`](Self::is_threshold_violated_for), but
+    /// reports *which* threshold was crossed rather than just whether one was.
+    ///
+    /// Latency is checked before request charge, so when an operation is both
+    /// slow and expensive the latency breach is reported. Returns `None` when no
+    /// threshold was crossed. The point/non-point latency threshold is chosen
+    /// from `operation_name` exactly as in
+    /// [`is_threshold_violated_for`](Self::is_threshold_violated_for).
+    pub fn threshold_breach_for(
+        &self,
+        thresholds: &DiagnosticsThresholds,
+        operation_name: Option<&str>,
+    ) -> Option<ThresholdBreach> {
         let operation_name = operation_name.or_else(|| self.operation_name());
-        let latency_threshold = match operation_name {
-            Some(name) if crate::options::is_point_operation(name) => {
-                thresholds.point_operation_latency()
-            }
-            Some(_) => thresholds.non_point_operation_latency(),
-            None => thresholds.point_operation_latency(),
+        let (latency_threshold, latency_breach) = match operation_name {
+            Some(name) if crate::options::is_point_operation(name) => (
+                thresholds.point_operation_latency(),
+                ThresholdBreach::PointLatency,
+            ),
+            Some(_) => (
+                thresholds.non_point_operation_latency(),
+                ThresholdBreach::NonPointLatency,
+            ),
+            None => (
+                thresholds.point_operation_latency(),
+                ThresholdBreach::PointLatency,
+            ),
         };
         if self.duration > latency_threshold {
-            return true;
+            return Some(latency_breach);
         }
-        self.total_request_charge().value() > thresholds.request_charge()
+        if self.total_request_charge().value() > thresholds.request_charge() {
+            return Some(ThresholdBreach::RequestCharge);
+        }
+        None
     }
 
     /// Serializes diagnostics to a JSON string.
@@ -2864,7 +2912,8 @@ mod tests {
         );
         // Contact `region_count` distinct single-attempt region buckets in
         // reverse-numeric order, so first-contact order differs from sorted
-        // order and the last-seen buckets are the ones global compaction drops.
+        // order. Global compaction reserves the operation-wide first ("Region
+        // 19") and terminal ("Region 00") buckets and drops middle ones.
         for i in (0..region_count).rev() {
             record_run(
                 &mut b,
@@ -2906,21 +2955,39 @@ mod tests {
             "first-contact order must differ from a sorted list for these inputs"
         );
 
-        // A region whose only attempt was dropped from the retained list must
-        // still appear at the operation level.
+        // A region whose only attempt was a dropped MIDDLE bucket must still
+        // appear at the operation level even though it's gone from the retained
+        // list. "Region 01" is neither the first nor the last attempt, so it is
+        // eligible to be ranked out.
         let retained_regions: Vec<Region> = ctx
             .requests()
             .iter()
             .filter_map(|r| r.region().cloned())
             .collect();
-        let dropped = Region::new("Region 00".to_string());
+        let dropped = Region::new("Region 01".to_string());
         assert!(
             !retained_regions.contains(&dropped),
-            "the last-seen bucket should have been dropped from the retained list"
+            "a low-ranked middle bucket should have been dropped from the retained list"
         );
         assert!(
             regions.contains(&dropped),
             "a region dropped from the retained list must still be reported"
+        );
+
+        // The operation-wide first and terminal attempts are reserved regardless
+        // of bucket ranking: their regions must survive in the retained list, and
+        // the terminal attempt ("Region 00") must be the LAST retained record so
+        // downstream status/span-end fallbacks see the true terminal.
+        let first = Region::new("Region 19".to_string());
+        let terminal = Region::new("Region 00".to_string());
+        assert!(
+            retained_regions.contains(&first),
+            "the operation-wide first attempt's bucket must be retained"
+        );
+        assert_eq!(
+            retained_regions.last(),
+            Some(&terminal),
+            "the operation-wide terminal attempt must be the last retained record"
         );
     }
 
@@ -4579,5 +4646,40 @@ mod tests {
             b.complete_request(handle, StatusCode::Ok, None);
         });
         assert!(expensive.is_threshold_violated(&thresholds));
+    }
+
+    #[test]
+    fn threshold_breach_reports_the_specific_bound() {
+        let thresholds = DiagnosticsThresholds::default().with_request_charge(100.0);
+
+        // Cheap, fast success: no breach.
+        let cheap = make_context_with(ActivityId::new_uuid(), |b| {
+            let handle = b.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::WEST_US_2),
+                "https://test.documents.azure.com",
+            );
+            b.update_request(handle, |req| req.request_charge = RequestCharge::new(10.0));
+            b.complete_request(handle, StatusCode::Ok, None);
+        });
+        assert_eq!(
+            cheap.threshold_breach_for(&thresholds, Some("read_item")),
+            None
+        );
+
+        // Over the RU bound: the breach names the request charge.
+        let expensive = make_context_with(ActivityId::new_uuid(), |b| {
+            let handle = b.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::WEST_US_2),
+                "https://test.documents.azure.com",
+            );
+            b.update_request(handle, |req| req.request_charge = RequestCharge::new(150.0));
+            b.complete_request(handle, StatusCode::Ok, None);
+        });
+        assert_eq!(
+            expensive.threshold_breach_for(&thresholds, Some("read_item")),
+            Some(ThresholdBreach::RequestCharge)
+        );
     }
 }

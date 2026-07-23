@@ -3,16 +3,20 @@
 
 //! Rate-limited, tail-sampled diagnostics logging for Cosmos DB operations.
 //!
-//! Provides [`SamplingLogHandler`], a [`DiagnosticsHandler`](crate::diagnostics::DiagnosticsHandler)
-//! that logs a compact diagnostics line for interesting operations (failures and
-//! threshold breaches) while capping the emission rate during storms via a
-//! reusable [count-per-interval limiter](rate_limiter::RateLimiter).
+//! Provides two composable [`DiagnosticsHandler`](crate::diagnostics::DiagnosticsHandler)s:
+//!
+//! - [`TracingLogHandler`] — a leaf that writes a compact diagnostics line
+//!   through the [`tracing`] ecosystem for whatever context it is handed.
+//! - [`SamplingLogHandler`] — a wrapper that applies tail-based sampling (only
+//!   failures and threshold breaches) plus a per-window rate limit, delegating
+//!   the actual emission to an inner handler (a [`TracingLogHandler`] by
+//!   default).
+//!
+//! [`tracing`]: https://docs.rs/tracing
 
 mod handler;
-mod rate_limiter;
 
-pub use handler::SamplingLogHandler;
-pub use rate_limiter::RateLimiterConfig;
+pub use handler::{SamplingLogHandler, TracingLogHandler};
 
 #[cfg(test)]
 mod tests {
@@ -29,7 +33,7 @@ mod tests {
     use tracing_subscriber::Layer;
 
     use super::handler::{should_log, SamplingLogHandler};
-    use super::rate_limiter::RateLimiterConfig;
+    use crate::diagnostics::rate_limiter::RateLimiterConfig;
     use crate::diagnostics::{CosmosOperationContext, DiagnosticsHandler};
 
     /// Builds a completed single-attempt context with the given duration, status,
@@ -172,5 +176,103 @@ mod tests {
         // 5 (window 1) + 1 (window 2) sampled lines, and exactly one notice.
         assert_eq!(sampled.load(Ordering::SeqCst), 6);
         assert_eq!(suppressed.load(Ordering::SeqCst), 1);
+    }
+
+    /// Counts how many times it is invoked, standing in for an arbitrary inner
+    /// sink wrapped by `SamplingLogHandler`.
+    #[derive(Default)]
+    struct CountingInner(AtomicUsize);
+
+    impl DiagnosticsHandler for CountingInner {
+        fn handle(&self, _diagnostics: &DiagnosticsContext, _cx: &Context<'_>) {
+            self.0.fetch_add(1, Ordering::SeqCst);
+        }
+    }
+
+    #[test]
+    fn wrapper_delegates_to_inner_only_when_sampled() {
+        let inner = Arc::new(CountingInner::default());
+        let handler = SamplingLogHandler::with_handler(inner.clone());
+
+        // A fast, cheap success is not "interesting": the wrapper must NOT call
+        // the inner handler.
+        let ok = context(
+            Duration::from_millis(5),
+            CosmosStatus::new(StatusCode::Ok),
+            2.0,
+        );
+        handler.handle(&ok, &Context::new());
+        assert_eq!(inner.0.load(Ordering::SeqCst), 0);
+
+        // A failure passes the sampling gate: the inner handler is invoked once.
+        let failed = context(
+            Duration::from_millis(5),
+            CosmosStatus::new(StatusCode::TooManyRequests),
+            2.0,
+        );
+        handler.handle(&failed, &Context::new());
+        assert_eq!(inner.0.load(Ordering::SeqCst), 1);
+    }
+
+    /// Captures the `reason` field value of the most recent sampled log event.
+    struct ReasonCapture(Arc<std::sync::Mutex<Option<String>>>);
+
+    impl<S: tracing::Subscriber> Layer<S> for ReasonCapture {
+        fn on_event(&self, event: &tracing::Event<'_>, _cx: LayerContext<'_, S>) {
+            if event.metadata().target() != "azure_data_cosmos::diagnostics::sampled" {
+                return;
+            }
+            struct Visitor<'a>(&'a mut Option<String>);
+            impl tracing::field::Visit for Visitor<'_> {
+                fn record_str(&mut self, field: &tracing::field::Field, value: &str) {
+                    if field.name() == "reason" {
+                        *self.0 = Some(value.to_string());
+                    }
+                }
+                fn record_debug(
+                    &mut self,
+                    field: &tracing::field::Field,
+                    value: &dyn std::fmt::Debug,
+                ) {
+                    if field.name() == "reason" {
+                        *self.0 = Some(format!("{value:?}"));
+                    }
+                }
+            }
+            let mut slot = self.0.lock().unwrap();
+            event.record(&mut Visitor(&mut slot));
+        }
+    }
+
+    #[test]
+    fn sampled_line_carries_the_emit_reason() {
+        let captured = Arc::new(std::sync::Mutex::new(None));
+        let layer = ReasonCapture(Arc::clone(&captured));
+        let subscriber = tracing_subscriber::registry().with(layer);
+
+        // Threshold breaches log at info, so the info level must be enabled.
+        let strict = DiagnosticsThresholds::default().with_request_charge(1.0);
+        let handler = SamplingLogHandler::with_thresholds(strict);
+
+        tracing::subscriber::with_default(subscriber, || {
+            // A failure is reported with reason "failure".
+            let failed = context(
+                Duration::from_millis(5),
+                CosmosStatus::new(StatusCode::TooManyRequests),
+                2.0,
+            );
+            handler.handle(&failed, &Context::new());
+            assert_eq!(captured.lock().unwrap().as_deref(), Some("failure"));
+
+            // A successful-but-expensive operation is reported with the specific
+            // threshold it crossed.
+            let expensive = context(
+                Duration::from_millis(5),
+                CosmosStatus::new(StatusCode::Ok),
+                500.0,
+            );
+            handler.handle(&expensive, &Context::new());
+            assert_eq!(captured.lock().unwrap().as_deref(), Some("request_charge"));
+        });
     }
 }

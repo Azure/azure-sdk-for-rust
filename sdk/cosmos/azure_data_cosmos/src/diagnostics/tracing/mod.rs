@@ -9,7 +9,6 @@
 //! per retained attempt — for operations selected by tail-based sampling (failures
 //! and threshold breaches). Fast, successful operations emit nothing.
 
-mod attributes;
 mod handler;
 mod span_builder;
 
@@ -27,9 +26,9 @@ mod tests {
     use opentelemetry::trace::{SpanId, TracerProvider};
     use opentelemetry_sdk::trace::{in_memory_exporter::InMemorySpanExporter, SdkTracerProvider};
 
-    use super::attributes;
     use super::handler::should_emit_span;
     use super::span_builder::emit_backdated_span_tree;
+    use crate::diagnostics::attributes;
     use crate::diagnostics::CosmosOperationContext;
 
     /// Builds a completed context: `duration` long, final `status`, and one
@@ -161,7 +160,7 @@ mod tests {
             now_instant,
         );
 
-        emit_backdated_span_tree(&tracer, &ctx, None, now_instant, now_system);
+        emit_backdated_span_tree(&tracer, &ctx, None, None, now_instant, now_system);
         provider.force_flush().unwrap();
 
         let spans = exporter.get_finished_spans().unwrap();
@@ -224,7 +223,7 @@ mod tests {
             .with_database_name("my_db")
             .with_container_name("my_container");
 
-        emit_backdated_span_tree(&tracer, &ctx, Some(&op), now_instant, now_system);
+        emit_backdated_span_tree(&tracer, &ctx, Some(&op), None, now_instant, now_system);
         provider.force_flush().unwrap();
 
         let spans = exporter.get_finished_spans().unwrap();
@@ -281,7 +280,7 @@ mod tests {
             .with_operation_name("read_item")
             .with_server_address("override.example.com");
 
-        emit_backdated_span_tree(&tracer, &ctx, Some(&op), now_instant, now_system);
+        emit_backdated_span_tree(&tracer, &ctx, Some(&op), None, now_instant, now_system);
         provider.force_flush().unwrap();
 
         let spans = exporter.get_finished_spans().unwrap();
@@ -320,7 +319,7 @@ mod tests {
             now_instant,
         );
 
-        emit_backdated_span_tree(&tracer, &ctx, None, now_instant, now_system);
+        emit_backdated_span_tree(&tracer, &ctx, None, None, now_instant, now_system);
         provider.force_flush().unwrap();
 
         let spans = exporter.get_finished_spans().unwrap();

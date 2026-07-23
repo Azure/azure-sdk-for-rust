@@ -18,7 +18,7 @@
 //! # Emitted metrics
 //!
 //! - **Stable (always on):** `db.client.operation.duration` (histogram, seconds).
-//! - **Development (opt-in via [`MetricsOptions`]):**
+//! - **Optional (each opt-in via [`MetricsOptions`]):**
 //!   `azure.cosmosdb.client.operation.request_charge` and
 //!   `db.client.response.returned_rows`.
 //!

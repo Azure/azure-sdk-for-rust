@@ -1,8 +1,18 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! The [`SamplingLogHandler`]: a rate-limited, tail-sampled diagnostics logger.
+//! Composable, tail-sampled diagnostics logging.
+//!
+//! [`SamplingLogHandler`] is a **wrapper**: it applies tail-based sampling and a
+//! per-window rate limit, then delegates the actual emission to an inner
+//! [`DiagnosticsHandler`]. [`TracingLogHandler`] is the default **leaf**: it
+//! writes a compact diagnostics line through [`tracing`]. Composing them
+//! (`SamplingLogHandler` around `TracingLogHandler`) reproduces the built-in
+//! "sampled log" behavior, while letting callers swap in any inner handler.
+//!
+//! [`tracing`]: https://docs.rs/tracing
 
+use std::sync::Arc;
 use std::time::Instant;
 
 use azure_core::http::Context;
@@ -10,7 +20,8 @@ use azure_data_cosmos_driver::{
     diagnostics::DiagnosticsContext, DiagnosticsThresholds, DiagnosticsVerbosity,
 };
 
-use super::rate_limiter::{RateLimiter, RateLimiterConfig};
+use crate::diagnostics::rate_limiter::{RateLimiter, RateLimiterConfig};
+use crate::diagnostics::reason::EmitReason;
 use crate::diagnostics::{CosmosOperationContext, DiagnosticsHandler};
 
 /// `tracing` target for emitted sampled-diagnostics lines.
@@ -19,20 +30,79 @@ const SAMPLED_TARGET: &str = "azure_data_cosmos::diagnostics::sampled";
 /// `tracing` target for the "suppressed N until reset" notice.
 const SUPPRESSED_TARGET: &str = "azure_data_cosmos::diagnostics::suppressed";
 
-/// A [`DiagnosticsHandler`] that logs a compact diagnostics line for operations
-/// that fail or cross a sampling threshold, rate-limited during storms.
+/// A leaf [`DiagnosticsHandler`] that writes a compact diagnostics line for the
+/// context it is handed, through the [`tracing`](https://docs.rs/tracing)
+/// ecosystem.
 ///
-/// For each completed operation the handler applies the same tail-based sampling
-/// gate as the tracing handler: the diagnostics are logged if, and only if, the
-/// operation *is completed* and *failed* or breached a [`DiagnosticsThresholds`].
-/// In addition, the handler limits how many lines are emitted during a time window
-/// (≈100/min by default). The number of diagnostics emitted is always bounded by
-/// the specified rate limit. When diagnostics are suppressed, a single warning is
-/// emitted indicating the time remaining until diagnostics are restored.
+/// It performs **no** sampling or rate limiting of its own — it emits for every
+/// context passed to [`handle`](DiagnosticsHandler::handle). Wrap it in a
+/// [`SamplingLogHandler`] (the default composition) to gate emission on failures
+/// / threshold breaches and cap the rate under a storm, or register it directly
+/// to log every completed operation.
 ///
-/// Diagnostics are all emitted through [`tracing`](https://docs.rs/tracing).
+/// Failed operations are logged at `warn`, everything else at `info`; both use
+/// the `azure_data_cosmos::diagnostics::sampled` target.
 ///
-/// Register this handler using
+/// # Examples
+///
+/// ```
+/// use std::sync::Arc;
+/// use azure_data_cosmos::diagnostics::TracingLogHandler;
+///
+/// let handler = Arc::new(TracingLogHandler::new());
+/// # let _ = handler;
+/// ```
+#[derive(Clone, Copy, Debug, Default)]
+pub struct TracingLogHandler;
+
+impl TracingLogHandler {
+    /// Creates a `TracingLogHandler`.
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+impl DiagnosticsHandler for TracingLogHandler {
+    fn handle(&self, diagnostics: &DiagnosticsContext, cx: &Context<'_>) {
+        // The sampling wrapper stamps *why* the operation was sampled onto the
+        // context; when this handler is used directly (unsampled), fall back to a
+        // stable marker so the field is always present.
+        let reason = cx
+            .value::<EmitReason>()
+            .copied()
+            .map(EmitReason::as_str)
+            .unwrap_or("unsampled");
+
+        // Compute the JSON line inside each macro call so `to_json_string` is
+        // only evaluated when a subscriber is actually listening for the event
+        // (the `tracing` macros run an "is enabled" check before evaluating
+        // field expressions).
+        if diagnostics.is_failure() {
+            tracing::warn!(target: SAMPLED_TARGET, reason, diagnostics = %diagnostics.to_json_string(Some(DiagnosticsVerbosity::Summary)), "cosmos operation diagnostics");
+        } else {
+            tracing::info!(target: SAMPLED_TARGET, reason, diagnostics = %diagnostics.to_json_string(Some(DiagnosticsVerbosity::Summary)), "cosmos operation diagnostics");
+        }
+    }
+}
+
+/// A wrapping [`DiagnosticsHandler`] that applies tail-based sampling and a
+/// per-window rate limit, delegating emission to an inner handler.
+///
+/// For each completed operation it first applies the same tail-based sampling
+/// gate the tracing handler uses — emit if, and only if, the operation *is
+/// completed* and *failed* or breached a [`DiagnosticsThresholds`]. It then
+/// limits how many emissions are dispatched during a time window (≈100/min by
+/// default); when emissions are suppressed a single "suppressed N until reset"
+/// warning is emitted per window. Only when both gates allow does it call the
+/// inner handler.
+///
+/// The inner handler defaults to a [`TracingLogHandler`], so a bare
+/// `SamplingLogHandler::new()` reproduces the built-in sampled-log behavior. Pass
+/// your own inner handler with [`with_handler`](Self::with_handler) (or the
+/// `*_and_handler` constructors) to feed sampled, rate-limited contexts to any
+/// other sink.
+///
+/// Register it with
 /// [`CosmosClientBuilder::with_diagnostics_handler`](crate::CosmosClientBuilder::with_diagnostics_handler).
 ///
 /// # Examples
@@ -41,38 +111,76 @@ const SUPPRESSED_TARGET: &str = "azure_data_cosmos::diagnostics::suppressed";
 /// use std::sync::Arc;
 /// use azure_data_cosmos::diagnostics::SamplingLogHandler;
 ///
+/// // Default: samples + rate-limits, then logs via `tracing`.
 /// let handler = Arc::new(SamplingLogHandler::new());
 /// # let _ = handler;
 /// ```
 pub struct SamplingLogHandler {
     thresholds: DiagnosticsThresholds,
     limiter: RateLimiter,
+    inner: Arc<dyn DiagnosticsHandler>,
 }
 
 impl SamplingLogHandler {
-    /// Creates a handler with default thresholds and rate limiting (~100/min).
+    /// Creates a handler with default thresholds and rate limiting (~100/min)
+    /// wrapping a default [`TracingLogHandler`].
     pub fn new() -> Self {
-        Self::with_thresholds_and_rate_limit(
-            DiagnosticsThresholds::default(),
-            RateLimiterConfig::default(),
-        )
+        Self::with_thresholds(DiagnosticsThresholds::default())
     }
 
-    /// Creates a handler with the supplied sampling thresholds and default rate
-    /// limiting.
+    /// Creates a handler with the supplied sampling thresholds, default rate
+    /// limiting, and a default [`TracingLogHandler`] inner.
     pub fn with_thresholds(thresholds: DiagnosticsThresholds) -> Self {
         Self::with_thresholds_and_rate_limit(thresholds, RateLimiterConfig::default())
     }
 
     /// Creates a handler with the supplied sampling thresholds and rate-limiter
-    /// configuration.
+    /// configuration, wrapping a default [`TracingLogHandler`] inner.
     pub fn with_thresholds_and_rate_limit(
         thresholds: DiagnosticsThresholds,
         rate_limit: RateLimiterConfig,
     ) -> Self {
+        Self::with_thresholds_rate_limit_and_handler(
+            thresholds,
+            rate_limit,
+            Arc::new(TracingLogHandler::new()),
+        )
+    }
+
+    /// Creates a handler that samples and rate-limits with the defaults, then
+    /// delegates emission to `inner`.
+    pub fn with_handler(inner: Arc<dyn DiagnosticsHandler>) -> Self {
+        Self::with_thresholds_rate_limit_and_handler(
+            DiagnosticsThresholds::default(),
+            RateLimiterConfig::default(),
+            inner,
+        )
+    }
+
+    /// Creates a handler with the supplied thresholds and default rate limiting,
+    /// delegating emission to `inner`.
+    pub fn with_thresholds_and_handler(
+        thresholds: DiagnosticsThresholds,
+        inner: Arc<dyn DiagnosticsHandler>,
+    ) -> Self {
+        Self::with_thresholds_rate_limit_and_handler(
+            thresholds,
+            RateLimiterConfig::default(),
+            inner,
+        )
+    }
+
+    /// Creates a handler with the supplied thresholds and rate-limiter
+    /// configuration, delegating emission to `inner`.
+    pub fn with_thresholds_rate_limit_and_handler(
+        thresholds: DiagnosticsThresholds,
+        rate_limit: RateLimiterConfig,
+        inner: Arc<dyn DiagnosticsHandler>,
+    ) -> Self {
         Self {
             thresholds,
             limiter: RateLimiter::new(rate_limit),
+            inner,
         }
     }
 
@@ -81,8 +189,8 @@ impl SamplingLogHandler {
         &self.thresholds
     }
 
-    /// Returns whether the given completed context should be logged, per the
-    /// tail-based sampling gate (before rate limiting).
+    /// Returns whether the given completed context would pass the tail-based
+    /// sampling gate (before rate limiting).
     pub fn should_log(&self, diagnostics: &DiagnosticsContext) -> bool {
         should_log(diagnostics, &self.thresholds, None)
     }
@@ -101,8 +209,7 @@ impl DiagnosticsHandler for SamplingLogHandler {
             return;
         }
 
-        let is_failure = diagnostics.is_failure();
-        let decision = self.limiter.check(is_failure, Instant::now());
+        let decision = self.limiter.check(diagnostics.is_failure(), Instant::now());
 
         if let Some(suppressed) = decision.suppression_notice {
             tracing::warn!(
@@ -113,14 +220,14 @@ impl DiagnosticsHandler for SamplingLogHandler {
         }
 
         if decision.emit {
-            // Compute the JSON line inside each macro call so `to_json_string` is
-            // only evaluated when a subscriber is actually listening for the event
-            // (the `tracing` macros run an "is enabled" check before evaluating
-            // field expressions).
-            if is_failure {
-                tracing::warn!(target: SAMPLED_TARGET, diagnostics = %diagnostics.to_json_string(Some(DiagnosticsVerbosity::Summary)), "cosmos operation diagnostics");
-            } else {
-                tracing::info!(target: SAMPLED_TARGET, diagnostics = %diagnostics.to_json_string(Some(DiagnosticsVerbosity::Summary)), "cosmos operation diagnostics");
+            // Stamp *why* the operation was sampled onto the context so the inner
+            // handler can surface it. `should_log` passed, so a reason exists.
+            match EmitReason::of(diagnostics, &self.thresholds, op) {
+                Some(reason) => {
+                    let cx = cx.clone().with_value(reason);
+                    self.inner.handle(diagnostics, &cx);
+                }
+                None => self.inner.handle(diagnostics, cx),
             }
         }
     }

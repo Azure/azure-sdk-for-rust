@@ -13,7 +13,22 @@
 //! The limiter is deterministic and clock-injectable ([`RateLimiter::check`]
 //! takes the current [`Instant`]), so its behavior can be unit-tested without
 //! sleeping.
+//!
+//! It is shared by the built-in emission handlers (sampled logging and, when
+//! enabled, distributed tracing) so they can all bound their output under an
+//! error storm.
+//!
+//! ## Storm fast path
+//!
+//! Once a window is fully saturated — the normal budget *and* the failure
+//! reserve are both exhausted — no further emission can be admitted until the
+//! window rolls over. In that state [`RateLimiter::check`] takes a lock-free fast
+//! path (relaxed atomics) that returns "suppress" without contending the mutex,
+//! so a 10k-errors/sec storm doesn't serialize every operation task on one lock.
+//! The fast path's suppressed count is folded back into the exact total on the
+//! next locked call, so the once-per-window notice stays accurate.
 
+use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
@@ -26,8 +41,9 @@ pub(crate) const DEFAULT_WINDOW: Duration = Duration::from_secs(60);
 /// Default number of failures always allowed per window, even past the cap.
 pub(crate) const DEFAULT_FAILURE_RESERVE: u32 = 10;
 
-/// Configuration for the rate limiting applied by
-/// [`SamplingLogHandler`](crate::diagnostics::SamplingLogHandler).
+/// Configuration for the rate limiting applied by the built-in sampling handlers
+/// ([`SamplingLogHandler`](crate::diagnostics::SamplingLogHandler) and the
+/// distributed-tracing handler).
 #[derive(Clone, Copy, Debug)]
 #[non_exhaustive]
 pub struct RateLimiterConfig {
@@ -36,7 +52,7 @@ pub struct RateLimiterConfig {
     /// Length of a rate-limiting window.
     pub window: Duration,
     /// Number of failures permitted per window *in addition to* the normal cap,
-    /// so a bounded number of failures is always logged during a storm.
+    /// so a bounded number of failures is always emitted during a storm.
     pub failure_reserve: u32,
 }
 
@@ -67,7 +83,7 @@ struct State {
     emitted: u32,
     /// Failures emitted this window (counts toward the failure reserve).
     failures_emitted: u32,
-    /// Emissions suppressed this window.
+    /// Emissions suppressed this window (exact; includes folded fast-path counts).
     suppressed: u32,
 }
 
@@ -77,6 +93,20 @@ struct State {
 pub(crate) struct RateLimiter {
     config: RateLimiterConfig,
     state: Mutex<State>,
+    /// Monotonic anchor for converting `Instant`s to the `u64` nanos used by the
+    /// lock-free fast path.
+    base: Instant,
+    /// `true` when the current window is fully saturated (normal budget and
+    /// failure reserve both exhausted), so nothing more can be admitted until it
+    /// rolls over. Read on the fast path with relaxed ordering.
+    over_budget: AtomicBool,
+    /// Nanoseconds-since-[`base`](Self::base) at which the current window ends.
+    /// The fast path only trusts [`over_budget`](Self::over_budget) while `now`
+    /// is still before this instant.
+    window_end_nanos: AtomicU64,
+    /// Suppressions taken on the lock-free fast path, folded into
+    /// [`State::suppressed`] on the next locked call so the notice stays exact.
+    suppressed_fast: AtomicU32,
 }
 
 impl RateLimiter {
@@ -90,14 +120,19 @@ impl RateLimiter {
         if config.window.is_zero() {
             config.window = DEFAULT_WINDOW;
         }
+        let base = Instant::now();
         Self {
             config,
             state: Mutex::new(State {
-                window_start: Instant::now(),
+                window_start: base,
                 emitted: 0,
                 failures_emitted: 0,
                 suppressed: 0,
             }),
+            base,
+            over_budget: AtomicBool::new(false),
+            window_end_nanos: AtomicU64::new(config.window.as_nanos() as u64),
+            suppressed_fast: AtomicU32::new(0),
         }
     }
 
@@ -111,7 +146,28 @@ impl RateLimiter {
     /// carries that window's suppressed count so the caller can emit a single
     /// notice.
     pub(crate) fn check(&self, is_failure: bool, now: Instant) -> LimitDecision {
+        // Lock-free fast path: if the window is known-saturated and we're still
+        // inside it, suppress without taking the mutex. Relaxed ordering is fine
+        // — a storm only needs a definitive "skip", and the exact accounting is
+        // reconciled on the next locked call.
+        let now_nanos = now.saturating_duration_since(self.base).as_nanos() as u64;
+        if self.over_budget.load(Ordering::Relaxed)
+            && now_nanos < self.window_end_nanos.load(Ordering::Relaxed)
+        {
+            self.suppressed_fast.fetch_add(1, Ordering::Relaxed);
+            return LimitDecision {
+                emit: false,
+                suppression_notice: None,
+            };
+        }
+
         let mut state = self.state.lock().unwrap();
+
+        // Reconcile any fast-path suppressions into the exact per-window count
+        // before we might roll the window over (so they are reflected in the
+        // notice for the window they belonged to).
+        let fast = self.suppressed_fast.swap(0, Ordering::Relaxed);
+        state.suppressed = state.suppressed.saturating_add(fast);
 
         let mut suppression_notice = None;
         if now.saturating_duration_since(state.window_start) >= self.config.window {
@@ -134,7 +190,7 @@ impl RateLimiter {
             && state.failures_emitted < self.config.failure_reserve;
         let allowed = within_normal_budget || from_reserve;
 
-        if allowed {
+        let decision = if allowed {
             state.emitted += 1;
             if from_reserve {
                 state.failures_emitted += 1;
@@ -149,7 +205,22 @@ impl RateLimiter {
                 emit: false,
                 suppression_notice,
             }
-        }
+        };
+
+        // Refresh the fast-path atomics from the authoritative state. The window
+        // is saturated only when neither the normal budget nor the failure
+        // reserve can admit anything more.
+        let saturated = state.emitted >= self.config.max_per_window
+            && state.failures_emitted >= self.config.failure_reserve;
+        self.over_budget.store(saturated, Ordering::Relaxed);
+        let window_end = state
+            .window_start
+            .saturating_duration_since(self.base)
+            .saturating_add(self.config.window)
+            .as_nanos() as u64;
+        self.window_end_nanos.store(window_end, Ordering::Relaxed);
+
+        decision
     }
 }
 
@@ -248,5 +319,28 @@ mod tests {
         assert!(limiter.check(true, t).emit);
         // Reserve now exhausted.
         assert!(!limiter.check(true, t).emit);
+    }
+
+    #[test]
+    fn fast_path_suppressions_are_counted_in_the_window_notice() {
+        // Once saturated, the lock-free fast path suppresses without the mutex;
+        // those suppressions must still be reflected in the next window's notice.
+        let limiter = RateLimiter::new(RateLimiterConfig {
+            max_per_window: 2,
+            window: Duration::from_millis(100),
+            failure_reserve: 0,
+        });
+        let t0 = Instant::now();
+
+        // Two admitted, then the window is saturated (reserve 0) and the fast
+        // path suppresses the remaining 18.
+        for _ in 0..20 {
+            limiter.check(false, t0);
+        }
+
+        // Roll over: the notice must count all 18 suppressed (fast path + locked).
+        let t1 = t0 + Duration::from_millis(150);
+        let rolled = limiter.check(false, t1);
+        assert_eq!(rolled.suppression_notice, Some(18), "20 - 2 admitted");
     }
 }

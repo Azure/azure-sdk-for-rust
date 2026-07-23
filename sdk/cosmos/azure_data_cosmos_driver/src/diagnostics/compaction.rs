@@ -265,14 +265,21 @@ fn run_length_compact(requests: &[RequestDiagnostics]) -> CompactionResult {
 /// output), then bounds BOTH the retained records and the per-run rollup with a
 /// single ranking so they stay coherent. When there are more than `cap` distinct
 /// keys (a high-cardinality `410` fan-out across physical-partition endpoints),
-/// only the `cap` buckets with the highest attempt count are kept (tie-break
-/// first-seen order); the rest are rolled into an explicit
-/// `(omitted_runs, omitted_request_count)` marker. Both the per-run rollup and
-/// the retained first+last records are drawn from that SAME kept set, so every
-/// retained record has a matching run in the rollup — a downstream span emitter
-/// never sees an attempt whose run was omitted. A final truncation keeps
-/// `retained.len() <= cap` (marked via `retained_truncated`, never silent) when
-/// the kept buckets' first+last records still exceed the cap.
+/// the buckets holding the operation-wide **first** and **final** attempts are
+/// reserved first, then the remaining slots go to the buckets with the highest
+/// attempt count (tie-break first-seen order); the rest are rolled into an
+/// explicit `(omitted_runs, omitted_request_count)` marker. Both the per-run
+/// rollup and the retained first+last records are drawn from that SAME kept set,
+/// so every retained record has a matching run in the rollup — a downstream span
+/// emitter never sees an attempt whose run was omitted.
+///
+/// The operation-wide first attempt is emitted as the first retained record and
+/// the operation-wide terminal attempt as the last, and both are preserved
+/// through the final truncation that keeps `retained.len() <= cap` (marked via
+/// `retained_truncated`, never silent). This matters because downstream fallbacks
+/// treat the last retained request as terminal — `effective_status()` /
+/// `is_failure()` when no operation status was stamped, and the reconstructed
+/// span's end time — so the true terminal must never be ranked or truncated out.
 fn global_bucket_compact(requests: &[RequestDiagnostics], cap: usize) -> CompactionResult {
     let mut order: Vec<CompactionKey> = Vec::new();
     let mut groups: HashMap<CompactionKey, Vec<&RequestDiagnostics>> = HashMap::new();
@@ -294,15 +301,36 @@ fn global_bucket_compact(requests: &[RequestDiagnostics], cap: usize) -> Compact
     // whether or not it survives the rollup bound.
     let collapsed_runs = counts.iter().filter(|&&c| c > 2).count();
 
-    // One ranking drives BOTH the kept records and the kept rollup so they stay
-    // coherent. Keep the `cap` buckets with the highest attempt count (tie-break
-    // first-seen index); `keep[i]` marks whether `order[i]` survives.
+    // The buckets holding the operation-wide FIRST and FINAL attempts must always
+    // survive, independent of bucket ranking: downstream fallbacks treat the last
+    // retained request as terminal — `effective_status()` / `is_failure()` fall
+    // back to it when no operation status was stamped, and the reconstructed
+    // span's end time is anchored to it. The first-seen key `order[0]` owns the
+    // first attempt; the globally-last attempt's key owns the final attempt.
+    let last_key = CompactionKey::of(requests.last().expect("requests is non-empty"));
+    let last_index = order
+        .iter()
+        .position(|key| *key == last_key)
+        .expect("last attempt's key is present in first-seen order");
+
+    // One ranking drives the kept records and the kept rollup so they stay
+    // coherent, but the first and final buckets are reserved first so the op-wide
+    // first/terminal attempts are never ranked out. `keep[i]` marks whether
+    // `order[i]` survives.
     let keep: Vec<bool> = if total_runs > cap {
-        let mut ranked: Vec<usize> = (0..total_runs).collect();
-        ranked.sort_by(|&a, &b| counts[b].cmp(&counts[a]).then(a.cmp(&b)));
         let mut kept = vec![false; total_runs];
-        for &i in ranked.iter().take(cap) {
-            kept[i] = true;
+        kept[0] = true;
+        kept[last_index] = true;
+        let reserved = kept.iter().filter(|k| **k).count();
+        // Fill the remaining slots with the largest non-reserved buckets
+        // (tie-break first-seen index), staying within `cap`.
+        let remaining = cap.saturating_sub(reserved);
+        if remaining > 0 {
+            let mut ranked: Vec<usize> = (0..total_runs).filter(|&i| !kept[i]).collect();
+            ranked.sort_by(|&a, &b| counts[b].cmp(&counts[a]).then(a.cmp(&b)));
+            for &i in ranked.iter().take(remaining) {
+                kept[i] = true;
+            }
         }
         kept
     } else {
@@ -318,28 +346,49 @@ fn global_bucket_compact(requests: &[RequestDiagnostics], cap: usize) -> Compact
         }
     }
 
-    // Emit the kept runs and their first+last exemplars in first-seen order.
-    // Because `retained` is built only from kept buckets, its keys are a subset
-    // of the run rollup keys (coherent by construction).
-    let mut retained = Vec::new();
+    // Per-run rollup for every kept bucket, in first-seen order. Because
+    // `retained` is drawn only from kept buckets, its keys are a subset of the
+    // run rollup keys (coherent by construction).
     let mut runs = Vec::new();
+    for (i, key) in order.iter().enumerate() {
+        if keep[i] {
+            runs.push(compacted_run(&groups[key]));
+        }
+    }
+
+    // Retained first+last records for kept buckets, in first-seen order — but
+    // hold the operation-wide terminal attempt back so it can be appended as the
+    // final record. That keeps it terminal even when its bucket isn't the last in
+    // first-seen order, and even after the truncation below.
+    let mut retained = Vec::new();
     for (i, key) in order.iter().enumerate() {
         if !keep[i] {
             continue;
         }
         let bucket = &groups[key];
-        runs.push(compacted_run(bucket));
-        push_first_last(&mut retained, bucket);
+        if *key == last_key {
+            // Push the bucket's first record (when the run has more than one
+            // attempt); its last record is the deferred terminal, appended below.
+            if bucket.len() > 1 {
+                if let Some(first) = bucket.first() {
+                    retained.push((*first).clone());
+                }
+            }
+        } else {
+            push_first_last(&mut retained, bucket);
+        }
     }
+    let terminal = requests.last().expect("requests is non-empty").clone();
 
-    // Even limited to kept buckets, first+last (up to 2 per run) can exceed the
-    // record cap. Truncate to `cap`, keeping the earliest kept buckets' records;
-    // the drop is surfaced via `retained_truncated` and the omitted attempts stay
-    // exact in `CompactionInfo`.
-    let retained_truncated = retained.len() > cap;
+    // Even limited to kept buckets, first+last records (plus the terminal) can
+    // exceed the record cap. Truncate the middle, always preserving the op-wide
+    // first (index 0) and the terminal (appended last); the drop is surfaced via
+    // `retained_truncated` and the omitted attempts stay exact in `CompactionInfo`.
+    let retained_truncated = retained.len() + 1 > cap;
     if retained_truncated {
-        retained.truncate(cap);
+        retained.truncate(cap.saturating_sub(1));
     }
+    retained.push(terminal);
 
     CompactionResult {
         retained,

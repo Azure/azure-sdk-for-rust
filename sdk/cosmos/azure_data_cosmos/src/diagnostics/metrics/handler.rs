@@ -32,8 +32,8 @@ const METER_NAME: &str = "azure_data_cosmos";
 /// ```
 ///
 /// The handler always records the stable `db.client.operation.duration`
-/// histogram. Development-tier metrics and attributes are opt-in via
-/// [`MetricsOptions`] (see [`with_options`](CosmosMetricsHandler::with_options)).
+/// histogram. The optional per-signal metrics and the extended attribute set are
+/// opt-in via [`MetricsOptions`] (see [`with_options`](CosmosMetricsHandler::with_options)).
 ///
 /// The handler captures a [`Meter`] from the globally-registered provider at
 /// construction. Install your meter provider **before** constructing the handler:
@@ -99,7 +99,7 @@ impl CosmosMetricsHandler {
     }
 
     /// Builds the operation-scope attribute set shared by the duration and
-    /// per-operation development histograms.
+    /// per-operation optional histograms.
     fn build_attributes(
         &self,
         diagnostics: &DiagnosticsContext,
@@ -168,8 +168,8 @@ impl CosmosMetricsHandler {
             ));
         }
 
-        // Development attributes are opt-in (higher cardinality; D7).
-        if self.options.development_attributes_enabled() {
+        // Extended attributes are opt-in (higher cardinality; D7).
+        if self.options.extended_attributes_enabled() {
             if let Some(op) = op {
                 if let Some(level) = op.consistency_level() {
                     attrs.push(KeyValue::new(
@@ -236,17 +236,17 @@ impl DiagnosticsHandler for CosmosMetricsHandler {
             .operation_duration
             .record(diagnostics.duration().as_secs_f64(), &attributes);
 
-        if !self.options.development_metrics_enabled() {
-            return;
+        // Optional per-signal metrics (each opt-in).
+        if self.options.request_charge_metric_enabled() {
+            self.instruments
+                .request_charge
+                .record(diagnostics.total_request_charge().value(), &attributes);
         }
 
-        // Development metrics (opt-in).
-        self.instruments
-            .request_charge
-            .record(diagnostics.total_request_charge().value(), &attributes);
-
-        if let Some(rows) = op.and_then(CosmosOperationContext::returned_item_count) {
-            self.instruments.returned_rows.record(rows, &attributes);
+        if self.options.returned_rows_metric_enabled() {
+            if let Some(rows) = op.and_then(CosmosOperationContext::returned_item_count) {
+                self.instruments.returned_rows.record(rows, &attributes);
+            }
         }
     }
 }
@@ -404,7 +404,7 @@ mod tests {
             Some("my-account.documents.azure.com")
         );
 
-        // Success => no error.type, and no development attributes by default.
+        // Success => no error.type, and no extended attributes by default.
         assert!(!attrs.contains_key(attributes::ATTR_ERROR_TYPE));
         assert!(!attrs.contains_key(attributes::ATTR_CONSISTENCY_LEVEL));
         assert!(!attrs.contains_key(attributes::ATTR_SUB_STATUS_CODE));
@@ -458,8 +458,9 @@ mod tests {
     fn development_metrics_emitted_when_enabled() {
         let harness = test_meter();
         let options = MetricsOptions::default()
-            .with_development_metrics(true)
-            .with_development_attributes(true);
+            .with_request_charge_metric(true)
+            .with_returned_rows_metric(true)
+            .with_extended_attributes(true);
         let handler = CosmosMetricsHandler::with_meter_and_options(harness.meter.clone(), options);
 
         let cx = Context::new().with_value(operation_context().with_returned_item_count(7));
@@ -473,6 +474,29 @@ mod tests {
             .iter()
             .any(|n| n == attributes::METRIC_OPERATION_REQUEST_CHARGE));
         assert!(names
+            .iter()
+            .any(|n| n == attributes::METRIC_RESPONSE_RETURNED_ROWS));
+    }
+
+    #[test]
+    fn optional_metrics_toggle_independently() {
+        // Enabling only the request-charge signal emits it — and NOT returned_rows —
+        // proving the per-signal toggles are independent.
+        let harness = test_meter();
+        let options = MetricsOptions::default().with_request_charge_metric(true);
+        let handler = CosmosMetricsHandler::with_meter_and_options(harness.meter.clone(), options);
+
+        let cx = Context::new().with_value(operation_context().with_returned_item_count(7));
+        handler.handle(&completed(200), &cx);
+
+        let names = metric_names(&harness.collect());
+        assert!(names
+            .iter()
+            .any(|n| n == attributes::METRIC_OPERATION_DURATION));
+        assert!(names
+            .iter()
+            .any(|n| n == attributes::METRIC_OPERATION_REQUEST_CHARGE));
+        assert!(!names
             .iter()
             .any(|n| n == attributes::METRIC_RESPONSE_RETURNED_ROWS));
     }

@@ -15,11 +15,12 @@ use crate::diagnostics::metrics::attributes;
 /// The full set of Cosmos metric instruments, created from one [`Meter`].
 ///
 /// The stable operation-duration histogram is always recorded; the remaining
-/// development instruments are recorded only when
-/// [`MetricsOptions::development_metrics_enabled`](super::MetricsOptions::development_metrics_enabled)
-/// is set. They are still created unconditionally because instrument creation is
-/// cheap and idempotent, and doing so keeps the handler's record path branch-free
-/// per instrument.
+/// per-signal instruments are recorded only when the matching
+/// [`MetricsOptions`](super::MetricsOptions) toggle
+/// (`request_charge_metric_enabled` / `returned_rows_metric_enabled`) is set.
+/// They are still created unconditionally because instrument creation is cheap
+/// and idempotent, and doing so keeps the handler's record path branch-free per
+/// instrument.
 #[derive(Clone)]
 pub(crate) struct Instruments {
     /// Stable: `db.client.operation.duration` (seconds).

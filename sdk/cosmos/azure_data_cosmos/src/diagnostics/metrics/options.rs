@@ -6,11 +6,12 @@
 /// Controls which optional metrics and attributes the
 /// [`CosmosMetricsHandler`](super::CosmosMetricsHandler) emits.
 ///
-/// Defaults follow design decision **D7**: only the stable, low-cardinality
-/// operation-scope signal is on. The development-tier metrics and the
-/// higher-cardinality development attributes are **off by default** and must be
-/// opted into explicitly, so enabling metrics never silently multiplies a
-/// backend's time-series count.
+/// The options are per-signal: each optional metric and the extended attribute
+/// set is toggled on its own, focused on *what* is emitted rather than on a
+/// "preview/development" tier. Everything optional is **off by default** — only
+/// the stable, low-cardinality operation-duration metric is emitted — so enabling
+/// metrics never silently multiplies a backend's time-series count (design
+/// decision **D7**); each additional signal is an explicit opt-in.
 ///
 /// # Examples
 ///
@@ -19,54 +20,76 @@
 ///
 /// // Stable metric only (default).
 /// let stable = MetricsOptions::default();
-/// assert!(!stable.development_metrics_enabled());
-/// assert!(!stable.development_attributes_enabled());
+/// assert!(!stable.request_charge_metric_enabled());
+/// assert!(!stable.returned_rows_metric_enabled());
+/// assert!(!stable.extended_attributes_enabled());
 ///
-/// // Opt into the full development tier.
-/// let dev = MetricsOptions::default()
-///     .with_development_metrics(true)
-///     .with_development_attributes(true);
-/// assert!(dev.development_metrics_enabled());
-/// assert!(dev.development_attributes_enabled());
+/// // Opt into just the request-charge metric.
+/// let charge = MetricsOptions::default().with_request_charge_metric(true);
+/// assert!(charge.request_charge_metric_enabled());
+/// assert!(!charge.returned_rows_metric_enabled());
+///
+/// // Opt into everything.
+/// let full = MetricsOptions::default()
+///     .with_request_charge_metric(true)
+///     .with_returned_rows_metric(true)
+///     .with_extended_attributes(true);
+/// assert!(full.request_charge_metric_enabled());
+/// assert!(full.returned_rows_metric_enabled());
+/// assert!(full.extended_attributes_enabled());
 /// ```
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct MetricsOptions {
-    development_metrics: bool,
-    development_attributes: bool,
+    request_charge_metric: bool,
+    returned_rows_metric: bool,
+    extended_attributes: bool,
 }
 
 impl MetricsOptions {
-    /// Returns options with every development signal disabled — the stable
+    /// Returns options with every optional signal disabled — the stable
     /// operation-duration metric only.
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Enables (or disables) the development-tier metrics:
-    /// `azure.cosmosdb.client.operation.request_charge` and
-    /// `db.client.response.returned_rows`.
+    /// Enables (or disables) the `azure.cosmosdb.client.operation.request_charge`
+    /// histogram (request units consumed per operation). Off by default.
     #[must_use]
-    pub fn with_development_metrics(mut self, enabled: bool) -> Self {
-        self.development_metrics = enabled;
+    pub fn with_request_charge_metric(mut self, enabled: bool) -> Self {
+        self.request_charge_metric = enabled;
         self
     }
 
-    /// Enables (or disables) the development-tier attributes on every emitted
-    /// metric: consistency level, contacted regions, sub-status code, and
-    /// connection mode. These can be higher cardinality, so they are opt-in.
+    /// Enables (or disables) the `db.client.response.returned_rows` histogram
+    /// (rows/items returned per operation). Off by default.
     #[must_use]
-    pub fn with_development_attributes(mut self, enabled: bool) -> Self {
-        self.development_attributes = enabled;
+    pub fn with_returned_rows_metric(mut self, enabled: bool) -> Self {
+        self.returned_rows_metric = enabled;
         self
     }
 
-    /// Whether the development-tier metrics are emitted.
-    pub fn development_metrics_enabled(&self) -> bool {
-        self.development_metrics
+    /// Enables (or disables) the extended attribute set on every emitted metric:
+    /// consistency level, contacted regions, sub-status code, and connection
+    /// mode. These can be higher cardinality, so they are opt-in and off by
+    /// default.
+    #[must_use]
+    pub fn with_extended_attributes(mut self, enabled: bool) -> Self {
+        self.extended_attributes = enabled;
+        self
     }
 
-    /// Whether the development-tier attributes are attached to metrics.
-    pub fn development_attributes_enabled(&self) -> bool {
-        self.development_attributes
+    /// Whether the request-charge histogram is emitted.
+    pub fn request_charge_metric_enabled(&self) -> bool {
+        self.request_charge_metric
+    }
+
+    /// Whether the returned-rows histogram is emitted.
+    pub fn returned_rows_metric_enabled(&self) -> bool {
+        self.returned_rows_metric
+    }
+
+    /// Whether the extended attribute set is attached to emitted metrics.
+    pub fn extended_attributes_enabled(&self) -> bool {
+        self.extended_attributes
     }
 }

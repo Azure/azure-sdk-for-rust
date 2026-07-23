@@ -24,7 +24,7 @@ use opentelemetry::{
 
 use azure_data_cosmos_driver::diagnostics::{DiagnosticsContext, RequestDiagnostics};
 
-use super::attributes;
+use crate::diagnostics::attributes;
 use crate::diagnostics::CosmosOperationContext;
 
 /// Span name for the operation ("root") span when the operation name is unknown.
@@ -49,6 +49,7 @@ pub(crate) fn emit_backdated_span_tree<T>(
     tracer: &T,
     diagnostics: &DiagnosticsContext,
     op: Option<&CosmosOperationContext>,
+    reason: Option<&str>,
     now_instant: Instant,
     now_system: SystemTime,
 ) where
@@ -138,13 +139,13 @@ pub(crate) fn emit_backdated_span_tree<T>(
         ));
         if let Some(sub) = status.sub_status() {
             root_attrs.push(KeyValue::new(
-                attributes::AZURE_COSMOSDB_SUB_STATUS_CODE,
+                attributes::SUB_STATUS_CODE,
                 i64::from(u16::from(sub)),
             ));
         }
     }
     root_attrs.push(KeyValue::new(
-        attributes::AZURE_COSMOSDB_REQUEST_CHARGE,
+        attributes::REQUEST_CHARGE,
         diagnostics.total_request_charge().value(),
     ));
     let regions = diagnostics.regions_contacted();
@@ -156,7 +157,7 @@ pub(crate) fn emit_backdated_span_tree<T>(
             .map(|r| StringValue::from(r.as_str().to_string()))
             .collect();
         root_attrs.push(KeyValue::new(
-            attributes::AZURE_COSMOSDB_CONTACTED_REGIONS,
+            attributes::CONTACTED_REGIONS,
             Value::Array(Array::String(values)),
         ));
     }
@@ -172,8 +173,16 @@ pub(crate) fn emit_backdated_span_tree<T>(
     }
     if let Some(machine_id) = diagnostics.machine_id() {
         root_attrs.push(KeyValue::new(
-            attributes::AZURE_COSMOSDB_MACHINE_ID,
+            attributes::MACHINE_ID,
             machine_id.to_string(),
+        ));
+    }
+    // Record why the operation was sampled (failure, or which threshold), so the
+    // root span carries the same reason the sampled log line does.
+    if let Some(reason) = reason {
+        root_attrs.push(KeyValue::new(
+            attributes::SAMPLING_REASON,
+            reason.to_string(),
         ));
     }
     if op_failed {
@@ -220,10 +229,7 @@ pub(crate) fn emit_backdated_span_tree<T>(
                 attributes::DB_RESPONSE_STATUS_CODE,
                 u16::from(req_status.status_code()).to_string(),
             ),
-            KeyValue::new(
-                attributes::AZURE_COSMOSDB_REQUEST_CHARGE,
-                req.request_charge().value(),
-            ),
+            KeyValue::new(attributes::REQUEST_CHARGE, req.request_charge().value()),
         ];
         if let Some(name) = op_name_ref {
             child_attrs.push(KeyValue::new(
@@ -233,13 +239,13 @@ pub(crate) fn emit_backdated_span_tree<T>(
         }
         if let Some(sub) = req_status.sub_status() {
             child_attrs.push(KeyValue::new(
-                attributes::AZURE_COSMOSDB_SUB_STATUS_CODE,
+                attributes::SUB_STATUS_CODE,
                 i64::from(u16::from(sub)),
             ));
         }
         if let Some(region) = req.region() {
             child_attrs.push(KeyValue::new(
-                attributes::AZURE_COSMOSDB_CONTACTED_REGIONS,
+                attributes::CONTACTED_REGIONS,
                 Value::Array(Array::String(vec![StringValue::from(
                     region.as_str().to_string(),
                 )])),
@@ -250,7 +256,7 @@ pub(crate) fn emit_backdated_span_tree<T>(
         }
         if let Some(activity_id) = req.activity_id() {
             child_attrs.push(KeyValue::new(
-                attributes::AZURE_COSMOSDB_ACTIVITY_ID,
+                attributes::ACTIVITY_ID,
                 activity_id.as_str().to_string(),
             ));
         }
