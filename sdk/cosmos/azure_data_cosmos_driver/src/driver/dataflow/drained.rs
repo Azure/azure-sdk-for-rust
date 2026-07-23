@@ -37,4 +37,10 @@ impl PipelineNode for DrainedLeaf {
         // A DrainedLeaf is already done and doesn't represent an active request, so it can't be the target of a topology change error that requires splitting or merging.
         false
     }
+
+    fn fan_out_width(&self) -> usize {
+        // A DrainedLeaf issues no request — it represents already-completed
+        // work — so it contributes nothing to the fan-out.
+        0
+    }
 }

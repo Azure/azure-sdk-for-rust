@@ -83,6 +83,11 @@ impl PipelineNode for MockLeaf {
         // A MockLeaf is just a test stub and doesn't represent a real request, so it can't be the target of a topology change error that requires splitting or merging.
         false
     }
+
+    fn fan_out_width(&self) -> usize {
+        // A MockLeaf stands in for a single request leaf.
+        1
+    }
 }
 
 // ── Request executors ───────────────────────────────────────────────────────
