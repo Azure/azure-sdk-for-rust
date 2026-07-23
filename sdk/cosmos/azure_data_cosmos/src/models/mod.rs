@@ -22,6 +22,7 @@ pub use container_properties::{
     TimeToLive, UniqueKey, UniqueKeyPolicy, VectorDataType, VectorDistanceFunction,
     VectorEmbedding, VectorEmbeddingPolicy,
 };
+#[cfg(feature = "control_plane")]
 pub use database_properties::DatabaseProperties;
 pub use indexing_policy::{
     CompositeIndex, CompositeIndexOrder, CompositeIndexProperty, IndexingMode, IndexingPolicy,
@@ -32,6 +33,7 @@ pub use resource_response::ResourceResponse;
 pub use response_body::ResponseBody;
 pub use response_headers::ResponseHeaders;
 pub use system_properties::SystemProperties;
+#[cfg(feature = "control_plane")]
 pub use throughput_properties::ThroughputProperties;
 pub use transactional_batch::{
     TransactionalBatch, TransactionalBatchOperationResult, TransactionalBatchResponse,
@@ -52,6 +54,7 @@ mod batch_response;
 mod change_feed_item;
 mod container_properties;
 mod cosmos_response;
+#[cfg(feature = "control_plane")]
 mod database_properties;
 mod indexing_policy;
 mod item_response;
@@ -59,5 +62,6 @@ mod resource_response;
 mod response_body;
 mod response_headers;
 mod system_properties;
+#[cfg(feature = "control_plane")]
 mod throughput_properties;
 mod transactional_batch;
