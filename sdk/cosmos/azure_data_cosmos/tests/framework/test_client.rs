@@ -113,6 +113,7 @@ pub fn assert_region_not_contacted(
 pub const DEFAULT_TEST_TIMEOUT: Duration = Duration::from_secs(80);
 const CONTAINER_READINESS_ATTEMPT_TIMEOUT: Duration = Duration::from_secs(5);
 const CONTAINER_READINESS_RETRY_DELAY: Duration = Duration::from_secs(1);
+const FAULT_INJECTION_READINESS_MAX_ATTEMPTS: usize = 20;
 
 async fn retry_container_readiness<T, E, F, Fut, TimeoutError>(
     region: &str,
@@ -930,6 +931,76 @@ impl TestRunContext {
                 Err(e) => return Err(e),
             }
         }
+    }
+
+    /// Creates a container and waits until both the normal and fault-injection
+    /// clients can read it in their configured region.
+    pub fn create_container_for_fault_injection<'a>(
+        &'a self,
+        db_client: &'a DatabaseClient,
+        properties: azure_data_cosmos::models::ContainerProperties,
+        throughput: ThroughputProperties,
+    ) -> Pin<Box<dyn Future<Output = azure_data_cosmos::Result<ContainerClient>> + Send + 'a>> {
+        let fault_client = self
+            .fault_client
+            .clone()
+            .expect("fault-injection client must be configured");
+
+        Box::pin(async move {
+            let created = db_client
+                .create_container(
+                    properties,
+                    Some(CreateContainerOptions::default().with_throughput(throughput)),
+                )
+                .await?
+                .into_model()?;
+            let container_id = created.id;
+
+            let original_db_client = db_client;
+            let original_container_id = container_id.clone();
+            let original_readiness = retry_container_readiness(
+                "original client",
+                CONTAINER_READINESS_ATTEMPT_TIMEOUT,
+                CONTAINER_READINESS_RETRY_DELAY,
+                Some(FAULT_INJECTION_READINESS_MAX_ATTEMPTS),
+                container_readiness_timeout_error,
+                move || {
+                    let db_client = original_db_client;
+                    let container_id = original_container_id.clone();
+                    async move {
+                        let container = db_client.container_client(&container_id).await?;
+                        container.read(None).await?;
+                        Ok::<_, azure_data_cosmos::CosmosError>(container)
+                    }
+                },
+            );
+
+            let fault_db_id = db_client.id().to_owned();
+            let fault_container_id = container_id;
+            let fault_readiness = retry_container_readiness(
+                "fault-injection client",
+                CONTAINER_READINESS_ATTEMPT_TIMEOUT,
+                CONTAINER_READINESS_RETRY_DELAY,
+                Some(FAULT_INJECTION_READINESS_MAX_ATTEMPTS),
+                container_readiness_timeout_error,
+                move || {
+                    let fault_client = fault_client.clone();
+                    let db_id = fault_db_id.clone();
+                    let container_id = fault_container_id.clone();
+                    async move {
+                        let container = fault_client
+                            .database_client(&db_id)
+                            .container_client(&container_id)
+                            .await?;
+                        container.read(None).await?;
+                        Ok::<_, azure_data_cosmos::CosmosError>(container)
+                    }
+                },
+            );
+
+            let (container, _) = tokio::try_join!(original_readiness, fault_readiness)?;
+            Ok(container)
+        })
     }
 
     /// Creates a container with specified throughput and waits for it to be fully created.

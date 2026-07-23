@@ -360,14 +360,14 @@ On the first request for a container:
 ```mermaid
 flowchart TD
     Start["fetch_and_build_routing_map(container, previous=None, fetch_fn)"]
-    Init["continuation = None"]
+    Init["continuation = None<br/>all_ranges = HashMap&lt;id, range&gt;"]
     Trace1["trace!(iteration, has_continuation)"]
     Fetch["result = fetch_fn(container, continuation)?"]
     Update["continuation = result.continuation"]
     NM{"result.not_modified?"}
     Break["trace! + break"]
-    Extend["trace!(range_count) + all_ranges.extend(result.ranges)"]
-    Done["debug!(iterations, total_ranges)<br/>ContainerRoutingMap::try_create(all_ranges, None, continuation) → map"]
+    Extend["trace!(range_count) + insert ranges by ID"]
+    Done["debug!(iterations, total_ranges)<br/>try_create(all_ranges.into_values(), continuation) → map"]
     Start --> Init --> Trace1
     Trace1 --> Fetch --> Update --> NM
     NM -- yes --> Break --> Done

@@ -57,7 +57,7 @@ async fn verify_read_fails_with_injected_error(
         async |run_context, db_client| {
             let container_id = format!("Container-{}", Uuid::new_v4());
             let container_client = run_context
-                .create_container_with_throughput(
+                .create_container_for_fault_injection(
                     db_client,
                     ContainerProperties::new(container_id.clone(), "/partition_key".into()),
                     ThroughputProperties::manual(400),
@@ -213,7 +213,7 @@ pub async fn item_read_succeeds_when_fault_targets_create_item() -> Result<(), B
             // Create a container using the normal client
             let container_id = format!("Container-{}", Uuid::new_v4());
             let container_client = run_context
-                .create_container_with_throughput(
+                .create_container_for_fault_injection(
                     db_client,
                     ContainerProperties::new(container_id.clone(), "/partition_key".into()),
                     ThroughputProperties::manual(400),
@@ -263,7 +263,11 @@ pub async fn item_read_succeeds_when_fault_targets_create_item() -> Result<(), B
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
+        Some(
+            TestOptions::new()
+                .with_fault_injection_rules(fault_builder)
+                .with_timeout(Duration::from_secs(180)),
+        ),
     )
     .await
 }
