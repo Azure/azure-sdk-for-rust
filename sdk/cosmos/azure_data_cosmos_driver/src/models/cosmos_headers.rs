@@ -103,6 +103,7 @@ pub(crate) mod request_header_names {
     pub const ALLOW_TENTATIVE_WRITES: &str = "x-ms-cosmos-allow-tentative-writes";
 
     pub const DATE: &str = "x-ms-date";
+    pub const CLIENT_ID: &str = "x-ms-client-id";
     pub const VERSION: &str = "x-ms-version";
     pub const CACHE_CONTROL: &str = "cache-control";
     pub const COLLECTION_RID: &str = "x-ms-documentdb-collection-rid";

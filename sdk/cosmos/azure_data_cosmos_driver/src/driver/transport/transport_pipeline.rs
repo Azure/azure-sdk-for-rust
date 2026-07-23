@@ -36,7 +36,7 @@ use super::{
     infer_request_sent_status,
     request_signing::sign_request,
     sharded_transport::EndpointKey,
-    unwrap_response_for_gateway_v2, wrap_request_for_gateway_v2, WrapInputs,
+    unwrap_response_for_gateway_v2, wrap_request_for_gateway_v2_moving_client_id, WrapInputs,
 };
 
 use crate::driver::pipeline::components::{
@@ -148,6 +148,7 @@ pub(crate) struct TransportPipelineContext<'a> {
     pub allow_sent_transport_retry: bool,
     pub credential: &'a Credential,
     pub user_agent: &'a azure_core::http::headers::HeaderValue,
+    pub client_id: &'a azure_core::http::headers::HeaderValue,
     pub pipeline_type: PipelineType,
     pub transport_security: TransportSecurity,
     /// Pre-computed `host:port` key for the target endpoint.
@@ -271,7 +272,7 @@ pub(crate) async fn execute_transport_pipeline(
         );
 
         // Apply standard Cosmos headers
-        apply_cosmos_headers(&mut http_request, ctx.user_agent);
+        apply_cosmos_headers(&mut http_request, ctx.user_agent, ctx.client_id);
         // V1 RCS emission: when RCS is non-Default on a read,
         // set `x-ms-cosmos-read-consistency-strategy` and strip any
         // `x-ms-consistency-level` header. GatewayV2 emits the equivalent via
@@ -323,7 +324,7 @@ pub(crate) async fn execute_transport_pipeline(
                 account_name: ctx.account_name.as_deref(),
                 collection_rid: ctx.collection_rid.as_deref(),
             };
-            match wrap_request_for_gateway_v2(&http_request, &wrap_inputs) {
+            match wrap_request_for_gateway_v2_moving_client_id(&mut http_request, &wrap_inputs) {
                 Ok(wrapped_request) => http_request = wrapped_request,
                 Err(e) => {
                     let cosmos_err = crate::error::CosmosError::builder()
@@ -928,6 +929,11 @@ mod tests {
         options::DiagnosticsOptions,
     };
 
+    static TEST_CLIENT_ID: azure_core::http::headers::HeaderValue =
+        azure_core::http::headers::HeaderValue::from_static("00000000-0000-4000-8000-000000000000");
+    static TEST_CLIENT_ID_HEADER: azure_core::http::headers::HeaderName =
+        azure_core::http::headers::HeaderName::from_static("x-ms-client-id");
+
     #[derive(Debug)]
     struct HangingTransportClient {
         delay: Duration,
@@ -948,6 +954,44 @@ mod tests {
                     .build(),
                 crate::diagnostics::RequestSentStatus::Unknown,
             ))
+        }
+    }
+
+    #[derive(Debug, Default)]
+    struct ClientIdRecordingRetryTransport {
+        attempts: std::sync::atomic::AtomicUsize,
+        client_ids: Mutex<Vec<Option<String>>>,
+    }
+
+    #[async_trait]
+    impl TransportClient for ClientIdRecordingRetryTransport {
+        async fn send(&self, request: &HttpRequest) -> Result<HttpResponse, TransportError> {
+            self.client_ids.lock().unwrap().push(
+                request
+                    .headers
+                    .get_optional_str(&TEST_CLIENT_ID_HEADER)
+                    .map(str::to_owned),
+            );
+
+            if self
+                .attempts
+                .fetch_add(1, std::sync::atomic::Ordering::SeqCst)
+                == 0
+            {
+                let mut headers = azure_core::http::headers::Headers::new();
+                headers.insert("x-ms-retry-after-ms", "0");
+                Ok(HttpResponse {
+                    status: 429,
+                    headers,
+                    body: Vec::new(),
+                })
+            } else {
+                Ok(HttpResponse {
+                    status: 200,
+                    headers: azure_core::http::headers::Headers::new(),
+                    body: Vec::new(),
+                })
+            }
         }
     }
 
@@ -1299,6 +1343,7 @@ mod tests {
                 allow_sent_transport_retry: false,
                 credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
                 user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
+                client_id: &TEST_CLIENT_ID,
                 pipeline_type: PipelineType::Metadata,
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: endpoint.endpoint_key(),
@@ -1321,6 +1366,54 @@ mod tests {
         let requests = completed.requests();
         assert_eq!(requests.len(), 1);
         assert!(requests[0].timed_out());
+    }
+
+    #[tokio::test]
+    async fn client_id_is_stable_across_retry_and_overrides_caller_header() {
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+        let mut request = test_request(None);
+        request
+            .headers
+            .insert(TEST_CLIENT_ID_HEADER.clone(), "caller-supplied");
+
+        let recording = Arc::new(ClientIdRecordingRetryTransport::default());
+        let client = AdaptiveTransport::Gateway(recording.clone());
+        let mut diagnostics = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("client-id-retry".to_owned()),
+            Arc::new(DiagnosticsOptions::default()),
+        );
+
+        let result = execute_transport_pipeline(
+            request,
+            &TransportPipelineContext {
+                transport: &client,
+                allow_sent_transport_retry: false,
+                credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
+                user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
+                client_id: &TEST_CLIENT_ID,
+                pipeline_type: PipelineType::DataPlane,
+                transport_security: TransportSecurity::Secure,
+                endpoint_key: endpoint.endpoint_key(),
+                account_name: None,
+                collection_rid: None,
+                max_throttle_attempts: 1,
+                max_throttle_wait_time: Duration::from_secs(1),
+                max_throttle_per_retry_delay: METADATA_MAX_PER_RETRY_DELAY,
+            },
+            &mut diagnostics,
+        )
+        .await;
+
+        assert!(matches!(result.outcome, TransportOutcome::Success { .. }));
+        assert_eq!(
+            *recording.client_ids.lock().unwrap(),
+            vec![
+                Some(TEST_CLIENT_ID.as_str().to_owned()),
+                Some(TEST_CLIENT_ID.as_str().to_owned()),
+            ]
+        );
     }
 
     /// Always returns an HTTP 429 response and counts how many times it was
@@ -1375,6 +1468,7 @@ mod tests {
                 allow_sent_transport_retry: false,
                 credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
                 user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
+                client_id: &TEST_CLIENT_ID,
                 pipeline_type: PipelineType::DataPlane,
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: test_endpoint_key(),
@@ -1439,6 +1533,7 @@ mod tests {
                 allow_sent_transport_retry: false,
                 credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
                 user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
+                client_id: &TEST_CLIENT_ID,
                 pipeline_type: PipelineType::DataPlane,
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: test_endpoint_key(),
@@ -1510,6 +1605,7 @@ mod tests {
                     allow_sent_transport_retry: false,
                     credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
                     user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
+                    client_id: &TEST_CLIENT_ID,
                     pipeline_type: PipelineType::DataPlane,
                     transport_security: TransportSecurity::Secure,
                     endpoint_key: test_endpoint_key(),
@@ -1634,6 +1730,7 @@ mod tests {
                     allow_sent_transport_retry: false,
                     credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
                     user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
+                    client_id: &TEST_CLIENT_ID,
                     pipeline_type,
                     transport_security: TransportSecurity::Secure,
                     endpoint_key: test_endpoint_key(),
@@ -1900,6 +1997,7 @@ mod tests {
                 allow_sent_transport_retry: false,
                 credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
                 user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
+                client_id: &TEST_CLIENT_ID,
                 pipeline_type: PipelineType::DataPlane,
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: test_endpoint_key(),
@@ -1954,6 +2052,7 @@ mod tests {
                 allow_sent_transport_retry: false,
                 credential: &credential,
                 user_agent: &user_agent,
+                client_id: &TEST_CLIENT_ID,
                 pipeline_type: PipelineType::DataPlane,
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: test_endpoint_key(),
@@ -1996,6 +2095,7 @@ mod tests {
                 allow_sent_transport_retry: true,
                 credential: &credential,
                 user_agent: &user_agent,
+                client_id: &TEST_CLIENT_ID,
                 pipeline_type: PipelineType::DataPlane,
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: test_endpoint_key(),
@@ -2036,6 +2136,7 @@ mod tests {
                     "***not-base64***",
                 )),
                 user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
+                client_id: &TEST_CLIENT_ID,
                 pipeline_type: PipelineType::DataPlane,
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: test_endpoint_key(),
@@ -2150,6 +2251,7 @@ mod tests {
             allow_sent_transport_retry: false,
             credential,
             user_agent,
+            client_id: &TEST_CLIENT_ID,
             pipeline_type: PipelineType::DataPlane,
             transport_security: TransportSecurity::Secure,
             endpoint_key,

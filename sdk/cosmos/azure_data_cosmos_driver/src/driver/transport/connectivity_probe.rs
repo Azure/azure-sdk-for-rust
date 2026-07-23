@@ -44,13 +44,19 @@ use std::{
     time::{Duration, Instant},
 };
 
-use azure_core::http::{headers::Headers, Method};
+use azure_core::http::{
+    headers::{HeaderValue, Headers},
+    Method,
+};
 use futures::future::join_all;
 use url::Url;
 
 use crate::options::Region;
 
-use super::cosmos_transport_client::{HttpRequest, HttpResponse, TransportClient, TransportError};
+use super::{
+    cosmos_headers::CLIENT_ID,
+    cosmos_transport_client::{HttpRequest, HttpResponse, TransportClient, TransportError},
+};
 
 /// Wire path used for the connectivity probe POST request. Defined on the
 /// proxy side in `Nghttp2ProxyProtocolHandler.h::ConnectivityProbePath`.
@@ -140,6 +146,7 @@ impl std::fmt::Display for ProbeRole {
 /// against the proxy.
 pub(crate) struct Http2ConnectivityProbe {
     transport: Arc<dyn TransportClient>,
+    client_id: HeaderValue,
     timeout: Duration,
 }
 
@@ -152,9 +159,10 @@ impl std::fmt::Debug for Http2ConnectivityProbe {
 }
 
 impl Http2ConnectivityProbe {
-    pub(crate) fn new(transport: Arc<dyn TransportClient>) -> Self {
+    pub(crate) fn new(transport: Arc<dyn TransportClient>, client_id: HeaderValue) -> Self {
         Self {
             transport,
+            client_id,
             timeout: DEFAULT_PROBE_TIMEOUT,
         }
     }
@@ -173,10 +181,12 @@ impl Http2ConnectivityProbe {
     }
 
     async fn probe_one(&self, url: Url) -> Result<(), ProbeFailure> {
+        let mut headers = Headers::new();
+        headers.insert(CLIENT_ID, self.client_id.clone());
         let request = HttpRequest {
             url,
             method: Method::Post,
-            headers: Headers::new(),
+            headers,
             body: None,
             timeout: Some(self.timeout),
             #[cfg(feature = "fault_injection")]
@@ -290,7 +300,7 @@ mod tests {
     #[derive(Debug)]
     struct MockTransport {
         responses: Mutex<HashMap<String, Result<u16, String>>>,
-        calls: Mutex<Vec<Url>>,
+        calls: Mutex<Vec<HttpRequest>>,
     }
 
     impl MockTransport {
@@ -322,14 +332,33 @@ mod tests {
         }
 
         fn called_urls(&self) -> Vec<Url> {
-            self.calls.lock().unwrap().clone()
+            self.calls
+                .lock()
+                .unwrap()
+                .iter()
+                .map(|request| request.url.clone())
+                .collect()
+        }
+
+        fn called_client_ids(&self) -> Vec<Option<String>> {
+            self.calls
+                .lock()
+                .unwrap()
+                .iter()
+                .map(|request| {
+                    request
+                        .headers
+                        .get_optional_str(&CLIENT_ID)
+                        .map(str::to_owned)
+                })
+                .collect()
         }
     }
 
     #[async_trait]
     impl TransportClient for MockTransport {
         async fn send(&self, request: &HttpRequest) -> Result<HttpResponse, TransportError> {
-            self.calls.lock().unwrap().push(request.url.clone());
+            self.calls.lock().unwrap().push(request.clone());
             let host = request.url.host_str().unwrap_or_default().to_owned();
             match self.responses.lock().unwrap().get(&host).cloned() {
                 Some(Ok(status)) => Ok(HttpResponse {
@@ -357,22 +386,26 @@ mod tests {
         Url::parse(&format!("https://{host}:444/")).unwrap()
     }
 
+    fn test_client_id() -> HeaderValue {
+        HeaderValue::from_static("00000000-0000-4000-8000-000000000000")
+    }
+
     #[tokio::test]
     async fn empty_endpoint_list_is_healthy() {
         let transport: Arc<dyn TransportClient> = Arc::new(MockTransport::new());
-        let probe = Http2ConnectivityProbe::new(transport);
+        let probe = Http2ConnectivityProbe::new(transport, test_client_id());
         let outcome = probe.probe_endpoints(Vec::new()).await;
         assert_eq!(outcome, ProbeOutcome::AllHealthy);
     }
 
     #[tokio::test]
-    async fn all_200s_is_healthy() {
+    async fn all_200s_include_client_id_and_are_healthy() {
         let mock = Arc::new(
             MockTransport::new()
                 .with_status("eastus-thin", 200)
                 .with_status("westus-thin", 200),
         );
-        let probe = Http2ConnectivityProbe::new(mock.clone());
+        let probe = Http2ConnectivityProbe::new(mock.clone(), test_client_id());
 
         let outcome = probe
             .probe_endpoints(vec![
@@ -387,6 +420,13 @@ mod tests {
             assert_eq!(url.path(), CONNECTIVITY_PROBE_PATH);
             assert!(url.query().is_none());
         }
+        assert_eq!(
+            mock.called_client_ids(),
+            vec![
+                Some("00000000-0000-4000-8000-000000000000".to_owned()),
+                Some("00000000-0000-4000-8000-000000000000".to_owned()),
+            ]
+        );
     }
 
     #[tokio::test]
@@ -399,7 +439,7 @@ mod tests {
                 .with_status("eastus-thin", 200)
                 .with_status("westus-thin", 503),
         );
-        let probe = Http2ConnectivityProbe::new(mock);
+        let probe = Http2ConnectivityProbe::new(mock, test_client_id());
 
         let outcome = probe
             .probe_endpoints(vec![
@@ -425,7 +465,7 @@ mod tests {
                 .with_status("eastus-thin", 200)
                 .with_network_error("westus-thin", "connection refused"),
         );
-        let probe = Http2ConnectivityProbe::new(mock);
+        let probe = Http2ConnectivityProbe::new(mock, test_client_id());
 
         let outcome = probe
             .probe_endpoints(vec![
@@ -452,7 +492,7 @@ mod tests {
                 .with_status("westus-thin", 503)
                 .with_status("centralus-thin", 200),
         );
-        let probe = Http2ConnectivityProbe::new(mock);
+        let probe = Http2ConnectivityProbe::new(mock, test_client_id());
 
         let outcome = probe
             .probe_endpoints(vec![
@@ -489,7 +529,7 @@ mod tests {
         // mock asserts only one network call is made, but a failure is
         // attributed to both (region, role) pairs.
         let mock = Arc::new(MockTransport::new().with_status("eastus-thin", 503));
-        let probe = Http2ConnectivityProbe::new(mock.clone());
+        let probe = Http2ConnectivityProbe::new(mock.clone(), test_client_id());
 
         let url = endpoint("eastus-thin");
         let outcome = probe

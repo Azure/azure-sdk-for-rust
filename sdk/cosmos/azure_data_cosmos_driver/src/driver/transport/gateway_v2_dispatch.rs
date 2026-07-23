@@ -23,7 +23,7 @@ use crate::{
 };
 
 use super::{
-    cosmos_headers::SUPPORTED_CAPABILITIES_BITS,
+    cosmos_headers::{CLIENT_ID, SUPPORTED_CAPABILITIES_BITS},
     cosmos_transport_client::{HttpRequest, HttpResponse},
     rntbd::{RntbdRequestFrame, RntbdResponse, Token},
     AuthorizationContext,
@@ -81,9 +81,31 @@ pub(crate) struct WrapInputs<'a> {
 }
 
 /// Wraps a signed Cosmos HTTP request into a Gateway 2.0 RNTBD request frame.
+#[cfg(test)]
 pub(crate) fn wrap_request_for_gateway_v2(
     request: &HttpRequest,
     inputs: &WrapInputs<'_>,
+) -> azure_core::Result<HttpRequest> {
+    let client_id = request
+        .headers
+        .iter()
+        .find_map(|(name, value)| (name == &CLIENT_ID).then(|| value.clone()));
+    wrap_request_for_gateway_v2_inner(request, inputs, client_id)
+}
+
+/// Wraps a request while moving the client ID into the proxy-facing headers.
+pub(crate) fn wrap_request_for_gateway_v2_moving_client_id(
+    request: &mut HttpRequest,
+    inputs: &WrapInputs<'_>,
+) -> azure_core::Result<HttpRequest> {
+    let client_id = request.headers.remove(CLIENT_ID);
+    wrap_request_for_gateway_v2_inner(request, inputs, client_id)
+}
+
+fn wrap_request_for_gateway_v2_inner(
+    request: &HttpRequest,
+    inputs: &WrapInputs<'_>,
+    client_id: Option<HeaderValue>,
 ) -> azure_core::Result<HttpRequest> {
     let authorization = required_header(request, &AUTHORIZATION, "authorization")?;
     let date = required_header(request, &X_MS_DATE, "x-ms-date")?;
@@ -322,6 +344,9 @@ pub(crate) fn wrap_request_for_gateway_v2(
     let mut headers = Headers::new();
     if let Some(user_agent) = request.headers.get_optional_str(&USER_AGENT) {
         headers.insert(USER_AGENT, HeaderValue::from(user_agent.to_owned()));
+    }
+    if let Some(client_id) = client_id {
+        headers.insert(CLIENT_ID, client_id);
     }
     headers.insert(X_MS_ACTIVITY_ID, HeaderValue::from(activity_id.to_string()));
     // Forward x-ms-version (defaults to CURRENT_VERSION = 2020-07-15)
@@ -1838,16 +1863,20 @@ mod tests {
     }
 
     #[test]
-    fn wrap_only_keeps_user_agent_and_activity_id_headers() {
-        let request = signed_request(None);
+    fn wrap_preserves_client_id_proxy_header_and_drops_inner_headers() {
+        let mut request = signed_request(None);
+        request.headers.insert(
+            CLIENT_ID,
+            HeaderValue::from_static("00000000-0000-4000-8000-000000000000"),
+        );
         let auth_context = AuthorizationContext::new(
             Method::Get,
             ResourceType::Document,
             "dbs/db1/colls/coll1/docs/doc1",
         );
 
-        let wrapped = wrap_request_for_gateway_v2(
-            &request,
+        let wrapped = wrap_request_for_gateway_v2_moving_client_id(
+            &mut request,
             &wrap_inputs(&auth_context, OperationType::Read, None),
         )
         .unwrap();
@@ -1860,6 +1889,11 @@ mod tests {
             wrapped.headers.get_optional_str(&X_MS_ACTIVITY_ID),
             Some(ACTIVITY_ID)
         );
+        assert_eq!(
+            wrapped.headers.get_optional_str(&CLIENT_ID),
+            Some("00000000-0000-4000-8000-000000000000")
+        );
+        assert!(request.headers.get_optional_str(&CLIENT_ID).is_none());
         assert!(wrapped.headers.get_optional_str(&AUTHORIZATION).is_none());
         assert!(wrapped.headers.get_optional_str(&X_MS_DATE).is_none());
         assert!(wrapped.headers.get_optional_str(&CONTENT_TYPE).is_none());

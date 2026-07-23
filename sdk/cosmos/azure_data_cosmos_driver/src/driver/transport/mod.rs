@@ -55,7 +55,7 @@ pub(crate) use authorization_policy::generate_authorization;
 pub(crate) use authorization_policy::AuthorizationContext;
 pub(crate) use emulator::{ensure_endpoint_scheme_allowed, is_emulator_host};
 pub(crate) use gateway_v2_dispatch::{
-    unwrap_response_for_gateway_v2, wrap_request_for_gateway_v2, WrapInputs,
+    unwrap_response_for_gateway_v2, wrap_request_for_gateway_v2_moving_client_id, WrapInputs,
 };
 pub(crate) use tracked_transport::infer_request_sent_status;
 

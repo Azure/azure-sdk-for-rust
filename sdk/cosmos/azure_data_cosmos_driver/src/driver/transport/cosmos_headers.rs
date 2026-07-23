@@ -8,7 +8,7 @@
 use azure_core::http::headers::{HeaderName, HeaderValue, ACCEPT, CONTENT_TYPE, USER_AGENT};
 
 use super::{cosmos_transport_client::HttpRequest, COSMOS_API_VERSION};
-use crate::options::ReadConsistencyStrategy;
+use crate::{models::cosmos_headers::request_header_names, options::ReadConsistencyStrategy};
 
 const APPLICATION_JSON: HeaderValue = HeaderValue::from_static("application/json");
 const VERSION: HeaderName = HeaderName::from_static("x-ms-version");
@@ -23,6 +23,7 @@ const _: () = assert!(SUPPORTED_CAPABILITIES_BITS == 8);
 /// will be added in a follow-up once their handling is wired through.
 const SUPPORTED_CAPABILITIES_VALUE: &str = "8";
 const CACHE_CONTROL: HeaderName = HeaderName::from_static("cache-control");
+pub(crate) const CLIENT_ID: HeaderName = HeaderName::from_static(request_header_names::CLIENT_ID);
 const NO_CACHE: HeaderValue = HeaderValue::from_static("no-cache");
 pub(crate) const CONSISTENCY_LEVEL: HeaderName = HeaderName::from_static("x-ms-consistency-level");
 pub(crate) const READ_CONSISTENCY_STRATEGY: HeaderName =
@@ -35,9 +36,13 @@ pub(crate) const NO_RETRY_449: HeaderName = HeaderName::from_static("x-ms-noretr
 
 /// Applies standard Cosmos DB headers to an outgoing HTTP request.
 ///
-/// Sets `x-ms-version`, `x-ms-cosmos-sdk-supportedcapabilities`, `Content-Type`,
-/// `Accept`, `Cache-Control`, and `User-Agent`.
-pub(crate) fn apply_cosmos_headers(request: &mut HttpRequest, user_agent: &HeaderValue) {
+/// Sets `x-ms-version`, `x-ms-client-id`, `x-ms-cosmos-sdk-supportedcapabilities`,
+/// `Content-Type`, `Accept`, `Cache-Control`, and `User-Agent`.
+pub(crate) fn apply_cosmos_headers(
+    request: &mut HttpRequest,
+    user_agent: &HeaderValue,
+    client_id: &HeaderValue,
+) {
     request
         .headers
         .insert(VERSION, HeaderValue::from_static(COSMOS_API_VERSION));
@@ -55,6 +60,7 @@ pub(crate) fn apply_cosmos_headers(request: &mut HttpRequest, user_agent: &Heade
     request.headers.insert(ACCEPT, APPLICATION_JSON.clone());
     request.headers.insert(CACHE_CONTROL, NO_CACHE.clone());
     request.headers.insert(USER_AGENT, user_agent.clone());
+    request.headers.insert(CLIENT_ID, client_id.clone());
 }
 
 /// Apply the `ReadConsistencyStrategy` to an outgoing V1 HTTP request.
@@ -105,7 +111,7 @@ mod tests {
     use url::Url;
 
     #[test]
-    fn applies_supported_capabilities_bitmask() {
+    fn applies_supported_capabilities_and_client_id() {
         let mut request = HttpRequest {
             url: Url::parse("https://example.documents.azure.com/").unwrap(),
             method: Method::Get,
@@ -116,8 +122,10 @@ mod tests {
             evaluation_collector: None,
         };
         let user_agent = HeaderValue::from_static("test-agent");
+        let client_id = HeaderValue::from_static("00000000-0000-4000-8000-000000000000");
+        request.headers.insert(CLIENT_ID, "caller-supplied");
 
-        apply_cosmos_headers(&mut request, &user_agent);
+        apply_cosmos_headers(&mut request, &user_agent, &client_id);
 
         assert_eq!(
             SUPPORTED_CAPABILITIES_VALUE.parse::<u32>().unwrap(),
@@ -128,6 +136,10 @@ mod tests {
                 .headers
                 .get_optional_str(&SDK_SUPPORTED_CAPABILITIES),
             Some(SUPPORTED_CAPABILITIES_VALUE)
+        );
+        assert_eq!(
+            request.headers.get_optional_str(&CLIENT_ID),
+            Some("00000000-0000-4000-8000-000000000000")
         );
     }
 

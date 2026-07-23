@@ -20,7 +20,10 @@
 
 use std::sync::{Arc, Mutex};
 
-use azure_core::http::{headers::USER_AGENT, Method, Request, Url};
+use azure_core::http::{
+    headers::{HeaderName, USER_AGENT},
+    Method, Request, Url,
+};
 use azure_data_cosmos::{
     options::{Region, UserAgentSuffix},
     AccountEndpoint, AccountReference, CosmosClientBuilder, CosmosRuntimeBuilder, RoutingStrategy,
@@ -30,9 +33,11 @@ use azure_data_cosmos_driver::in_memory_emulator::{
     VirtualRegion,
 };
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 const EMULATOR_GATEWAY_URL: &str = "https://eastus.emulator.local";
 const EMULATOR_KEY: &str = "dGVzdGtleQ==";
+const CLIENT_ID: HeaderName = HeaderName::from_static("x-ms-client-id");
 
 #[derive(Debug, Serialize, Deserialize)]
 struct TestItem {
@@ -49,6 +54,7 @@ struct RequestSnapshot {
     method: Method,
     url: Url,
     user_agent: Option<String>,
+    client_id: Option<String>,
 }
 
 /// Minimal [`RequestObserver`] that records every request the emulator sees,
@@ -80,6 +86,10 @@ impl RequestObserver for RecordingObserver {
                 .headers()
                 .get_optional_str(&USER_AGENT)
                 .map(|s| s.to_owned()),
+            client_id: request
+                .headers()
+                .get_optional_str(&CLIENT_ID)
+                .map(str::to_owned),
         };
         self.snapshots
             .lock()
@@ -241,6 +251,67 @@ fn is_metadata_read_request(snap: &RequestSnapshot) -> bool {
     };
     let segments: Vec<&str> = segments.filter(|s| !s.is_empty()).collect();
     matches!(segments.as_slice(), ["dbs", _] | ["dbs", _, "colls", _])
+}
+
+fn is_account_properties_request(snap: &RequestSnapshot) -> bool {
+    snap.method == Method::Get && snap.url.path() == "/"
+}
+
+#[tokio::test]
+async fn client_id_is_stable_across_observed_request_paths() {
+    let observer = RecordingObserver::new();
+    let emulator = build_emulator(observer.clone());
+
+    perform_create_and_read(emulator, None).await;
+
+    let snapshots = observer.snapshots();
+    let bootstrap: Vec<_> = snapshots
+        .iter()
+        .filter(|snapshot| is_account_properties_request(snapshot))
+        .collect();
+    let metadata: Vec<_> = snapshots
+        .iter()
+        .filter(|snapshot| is_metadata_read_request(snapshot))
+        .collect();
+    let data_plane: Vec<_> = snapshots
+        .iter()
+        .filter(|snapshot| is_item_data_plane_request(snapshot))
+        .collect();
+    assert!(
+        !bootstrap.is_empty(),
+        "expected an account-properties bootstrap request; captured: {snapshots:?}"
+    );
+    assert!(
+        !metadata.is_empty(),
+        "expected a metadata request; captured: {snapshots:?}"
+    );
+    assert!(
+        data_plane.len() >= 2,
+        "expected create and read item requests; captured: {snapshots:?}"
+    );
+
+    let client_id = bootstrap[0]
+        .client_id
+        .as_deref()
+        .expect("bootstrap request must carry x-ms-client-id");
+    let parsed = Uuid::parse_str(client_id).expect("x-ms-client-id must be a UUID");
+    assert_eq!(parsed.get_version(), Some(uuid::Version::Random));
+
+    let mismatched: Vec<_> = snapshots
+        .iter()
+        .filter(|snapshot| snapshot.client_id.as_deref() != Some(client_id))
+        .map(|snapshot| {
+            (
+                snapshot.method,
+                snapshot.url.as_str(),
+                snapshot.client_id.as_deref(),
+            )
+        })
+        .collect();
+    assert!(
+        mismatched.is_empty(),
+        "every request from one CosmosClient must carry the same client ID; mismatched: {mismatched:?}"
+    );
 }
 
 /// Verifies that a configured [`UserAgentSuffix`] actually appears in the
