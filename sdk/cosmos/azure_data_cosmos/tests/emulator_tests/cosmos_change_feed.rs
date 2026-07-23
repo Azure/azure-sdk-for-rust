@@ -22,7 +22,10 @@
 //! replace, and delete each surface as a distinct [`ChangeFeedItem`] envelope,
 //! and the mode reads correctly across a cross-partition fan-out. These AVAD
 //! tests are gated on `test_category = "emulator"` only — the vnext (Linux)
-//! emulator does not yet support full-fidelity reads.
+//! emulator does not yet support full-fidelity reads. Full-fidelity also
+//! requires the account to be provisioned for continuous backup, which the
+//! weekly live-test public accounts are not; against those the AVAD tests
+//! soft-skip (see [`create_avad_container`]) rather than fail.
 
 use super::framework;
 
@@ -662,20 +665,41 @@ impl AvadItem {
 
 /// Creates a container whose change feed policy enables full-fidelity
 /// (`AllVersionsAndDeletes`) reads with the given retention window.
+///
+/// Returns `Ok(None)` when the target account does not support full-fidelity
+/// change feed. Full-fidelity requires the account to be provisioned for
+/// continuous backup; accounts without it reject a container carrying a
+/// full-fidelity change feed policy at creation time with `400 BadRequest`.
+/// The weekly live-test pipeline runs against standard (periodic-backup)
+/// public accounts, so on those the AVAD tests soft-skip rather than fail. The
+/// policy's wire format is still verified unconditionally by the
+/// `container_properties_serialize_change_feed_policy` unit test in the
+/// required PR gate, so this skip cannot mask a serialization regression.
 async fn create_avad_container(
     run_context: &TestRunContext,
     db_client: &DatabaseClient,
     name: &str,
     retention: Duration,
     throughput: Option<ThroughputProperties>,
-) -> azure_data_cosmos::Result<ContainerClient> {
+) -> azure_data_cosmos::Result<Option<ContainerClient>> {
     let properties = ContainerProperties::new(name.to_string(), "/partitionKey".into())
         .with_change_feed_policy(ChangeFeedPolicy::all_versions_and_deletes(retention));
     let options = throughput.map(|t| CreateContainerOptions::default().with_throughput(t));
-    run_context
+    match run_context
         .create_container(db_client, properties, options)
         .await
+    {
+        Ok(container) => Ok(Some(container)),
+        Err(err) if err.status().status_code() == StatusCode::BadRequest => Ok(None),
+        Err(err) => Err(err),
+    }
 }
+
+/// Message logged when an AVAD test soft-skips because the target account does
+/// not support full-fidelity change feed (no continuous backup).
+const AVAD_UNSUPPORTED_SKIP: &str =
+    "skipping AllVersionsAndDeletes test: account does not support full-fidelity \
+     change feed (continuous backup not enabled)";
 
 /// Polls an AVAD change feed, accumulating every envelope seen, until
 /// `is_complete` is satisfied by the collection so far or a deadline elapses.
@@ -744,6 +768,10 @@ pub async fn all_versions_and_deletes_surfaces_create_replace_delete() -> Result
                 None,
             )
             .await?;
+            let Some(container) = container else {
+                eprintln!("{AVAD_UNSUPPORTED_SKIP}");
+                return Ok(());
+            };
             let pk = "1";
 
             let mut iterator = container
@@ -876,7 +904,10 @@ pub async fn all_versions_and_deletes_fans_out_creates_across_partitions(
                 Some(ThroughputProperties::manual(11000)),
             )
             .await?;
-
+            let Some(container) = container else {
+                eprintln!("{AVAD_UNSUPPORTED_SKIP}");
+                return Ok(());
+            };
             let mut iterator = container
                 .query_change_feed::<AvadItem>(
                     FeedScope::full_container(),
@@ -972,7 +1003,10 @@ pub async fn all_versions_and_deletes_rejects_point_in_time_start() -> Result<()
                 None,
             )
             .await?;
-
+            let Some(container) = container else {
+                eprintln!("{AVAD_UNSUPPORTED_SKIP}");
+                return Ok(());
+            };
             let mut pages = container
                 .query_change_feed::<AvadItem>(
                     FeedScope::partition("1"),
