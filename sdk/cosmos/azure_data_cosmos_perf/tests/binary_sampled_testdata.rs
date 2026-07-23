@@ -11,6 +11,21 @@
 //! document and reads it back — with the SDK's binary-encoding preview enabled —
 //! asserting the fields we wrote survive the binary request/response round-trip.
 //!
+//! # Test data dependency
+//!
+//! This test reads the `testdata/*.json` corpus **at runtime** (via
+//! [`load_sample_pool`], `std::fs::read_dir`), so the files must be present on
+//! disk under `azure_data_cosmos_perf/testdata/` when the test runs. That corpus
+//! (~500 MB) is intentionally **not tracked in the source repo** to keep the
+//! repository small; it is kept as a local copy. If the directory is missing or
+//! empty, [`load_sample_pool`] returns an error telling you to restore it.
+//!
+//! Nothing in the build or the CI gates depends on this corpus: the test is
+//! gated behind `test_category = "binary_encoding"` (ignored otherwise) and
+//! requires a live account, and the benchmarks generate their own synthetic
+//! data — so removing the files from source control does not affect compilation
+//! or any gate.
+//!
 //! Binary encoding is enabled explicitly on the client via
 //! `CosmosClientBuilder::with_binary_encoding_options`, which the SDK resolves
 //! **once at client-build time**. This test therefore sets it when building the
@@ -67,11 +82,24 @@ const SAMPLE_COUNT: usize = 25;
 /// Reads all bundled `testdata/*.json` files and flattens them into a pool of
 /// candidate JSON **objects** (non-object top-level values and array elements
 /// are skipped, since only objects can carry the injected `id`/`pk` fields).
+///
+/// The `testdata/` corpus is a local copy that is intentionally not tracked in
+/// the source repo (see the module docs). If the directory is missing or holds
+/// no usable objects, this returns an error explaining how to restore it.
 fn load_sample_pool() -> Result<Vec<Map<String, Value>>, Box<dyn Error>> {
     let testdata_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("testdata");
-    let mut pool = Vec::new();
 
-    for entry in std::fs::read_dir(&testdata_dir)? {
+    let entries = std::fs::read_dir(&testdata_dir).map_err(|e| {
+        format!(
+            "failed to read the test-data corpus under {} ({e}). This corpus is a \
+             local copy (not tracked in source control); restore the \
+             `testdata/*.json` files before running this test.",
+            testdata_dir.display()
+        )
+    })?;
+
+    let mut pool = Vec::new();
+    for entry in entries {
         let path = entry?.path();
         if path
             .extension()
@@ -86,7 +114,8 @@ fn load_sample_pool() -> Result<Vec<Map<String, Value>>, Box<dyn Error>> {
 
     if pool.is_empty() {
         return Err(format!(
-            "no candidate JSON objects found under {}",
+            "no candidate JSON objects found under {} — the local test-data corpus \
+             is missing or empty; restore the `testdata/*.json` files.",
             testdata_dir.display()
         )
         .into());
