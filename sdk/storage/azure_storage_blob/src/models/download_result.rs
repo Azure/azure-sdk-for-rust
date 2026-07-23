@@ -56,6 +56,7 @@ pub struct BlobClientDownloadIntoResult {
 
 /// Blob properties parsed from the initial response headers of a `BlobClient::download()` operation.
 #[derive(SafeDebug)]
+#[non_exhaustive]
 pub struct BlobDownloadProperties {
     /// The blob's ETag (`ETag` header).
     pub etag: Option<Etag>,

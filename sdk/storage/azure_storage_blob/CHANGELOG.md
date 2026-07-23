@@ -5,11 +5,12 @@
 ### Features Added
 
 - Updated the default service version to `2026-10-06`.
-- Added support for `Smart` access tier.
-- Added `access_tier`, `access_tier_changed_on`, `access_tier_inferred`, and `smart_access_tier` to `BlobDownloadProperties`.
 - The service-calculated CRC64 is now surfaced as `content_crc64` on upload responses, alongside `content_md5`, when a content MD5 is provided with the request. This applies to `stage_block`, `stage_block_from_url`, `upload_pages`, `upload_pages_from_url`, `append_block`, `append_block_from_url`, `upload` and `upload_blob_from_url`.
 
 ### Breaking Changes
+
+- Added the `AccessTier::Smart` and `ArchiveStatus::RehydratePendingToSmart` enum variants.
+- Added `access_tier`, `access_tier_changed_on`, `access_tier_inferred`, and `smart_access_tier` to `BlobDownloadProperties` and marked the struct as non-exhaustive.
 
 ### Bugs Fixed
 
