@@ -308,7 +308,9 @@ impl ContainerClient {
         options: Option<ItemWriteOptions>,
     ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
-        let body = serialize_item_body(&item, self.context.binary_encoding.enabled)?;
+        let (operation_options, binary) =
+            resolve_binary_encoding(options.operation, &self.context.binary_encoding);
+        let body = serialize_item_body(&item, binary.enabled)?;
 
         // Build the driver's item reference from our stored container metadata.
         let item_ref = ItemReference::from_name(
@@ -326,10 +328,7 @@ impl ContainerClient {
         let driver_response = self
             .context
             .driver
-            .execute_singleton_operation(
-                operation,
-                with_binary_encoding(options.operation, &self.context.binary_encoding),
-            )
+            .execute_singleton_operation(operation, operation_options)
             .await?;
 
         // Bridge the driver response to the SDK response type.
@@ -410,7 +409,9 @@ impl ContainerClient {
         options: Option<ItemWriteOptions>,
     ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
-        let body = serialize_item_body(&item, self.context.binary_encoding.enabled)?;
+        let (operation_options, binary) =
+            resolve_binary_encoding(options.operation, &self.context.binary_encoding);
+        let body = serialize_item_body(&item, binary.enabled)?;
 
         // Build the driver's item reference from our stored container metadata.
         let item_ref = ItemReference::from_name(
@@ -428,10 +429,7 @@ impl ContainerClient {
         let driver_response = self
             .context
             .driver
-            .execute_singleton_operation(
-                operation,
-                with_binary_encoding(options.operation, &self.context.binary_encoding),
-            )
+            .execute_singleton_operation(operation, operation_options)
             .await?;
 
         // Bridge the driver response to the SDK response type.
@@ -622,7 +620,9 @@ impl ContainerClient {
         options: Option<ItemWriteOptions>,
     ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
-        let body = serialize_item_body(&item, self.context.binary_encoding.enabled)?;
+        let (operation_options, binary) =
+            resolve_binary_encoding(options.operation, &self.context.binary_encoding);
+        let body = serialize_item_body(&item, binary.enabled)?;
 
         // Build the driver's item reference from our stored container metadata.
         let item_ref = ItemReference::from_name(
@@ -640,10 +640,7 @@ impl ContainerClient {
         let driver_response = self
             .context
             .driver
-            .execute_singleton_operation(
-                operation,
-                with_binary_encoding(options.operation, &self.context.binary_encoding),
-            )
+            .execute_singleton_operation(operation, operation_options)
             .await?;
 
         // Bridge the driver response to the SDK response type.
@@ -687,6 +684,8 @@ impl ContainerClient {
         options: Option<ItemReadOptions>,
     ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
+        let (operation_options, _binary) =
+            resolve_binary_encoding(options.operation, &self.context.binary_encoding);
 
         // Build the driver's item reference from our stored container metadata.
         let item_ref = ItemReference::from_name(
@@ -704,10 +703,7 @@ impl ContainerClient {
         let driver_response = self
             .context
             .driver
-            .execute_singleton_operation(
-                operation,
-                with_binary_encoding(options.operation, &self.context.binary_encoding),
-            )
+            .execute_singleton_operation(operation, operation_options)
             .await?;
 
         // Bridge the driver response to the SDK response type.
@@ -1295,26 +1291,23 @@ fn serialize_item_body<T: Serialize>(item: &T, binary: bool) -> crate::Result<Ve
     }
 }
 
-/// Sets Cosmos binary JSON encoding on the driver [`OperationOptions`] when it
-/// is enabled, so the **driver** negotiates a binary wire and (optionally)
-/// transcodes the response to text.
+/// Resolves the effective binary encoding for an item operation, preferring a
+/// caller-set per-operation value over the client-level default.
 ///
-/// The SDK still pre-encodes the item write body straight from `T: Serialize`
-/// to binary as an optimization (see [`serialize_item_body`]); the driver's
-/// request-side transcode then sees an already-binary body and passes it
-/// through. When
-/// [`request_text_response`](BinaryEncodingOptions::request_text_response) is
-/// set, the driver transcodes the binary response back to text while the wire
-/// stays binary in both directions. When binary is disabled this is a no-op, so
-/// the request is byte-for-byte unchanged.
-fn with_binary_encoding(
+/// Returns the resolved options alongside the updated [`OperationOptions`] so
+/// the caller drives body serialization from the same decision. The operation
+/// field is normalized to `Some(effective)` when enabled (the driver negotiates
+/// the binary wire) and `None` when disabled (byte-for-byte unchanged).
+fn resolve_binary_encoding(
     mut options: OperationOptions,
-    binary_encoding: &BinaryEncodingOptions,
-) -> OperationOptions {
-    if binary_encoding.enabled {
-        options.binary_encoding = Some(binary_encoding.clone());
-    }
-    options
+    client_default: &BinaryEncodingOptions,
+) -> (OperationOptions, BinaryEncodingOptions) {
+    let effective = options
+        .binary_encoding
+        .take()
+        .unwrap_or_else(|| client_default.clone());
+    options.binary_encoding = effective.enabled.then(|| effective.clone());
+    (options, effective)
 }
 
 /// Applies [`BatchOptions`] fields to a [`CosmosOperation`].
@@ -1387,41 +1380,64 @@ mod tests {
     }
 
     #[test]
-    fn with_binary_encoding_sets_option_when_enabled() {
-        let be = BinaryEncodingOptions::new().with_enabled(true);
-        let options = with_binary_encoding(OperationOptions::default(), &be);
-        assert_eq!(options.binary_encoding, Some(be));
+    fn resolve_binary_encoding_uses_client_default_when_operation_unset() {
+        // No per-operation value: the client-level default applies. Enabled ⇒
+        // the driver option is set.
+        let client = BinaryEncodingOptions::new().with_enabled(true);
+        let (options, effective) = resolve_binary_encoding(OperationOptions::default(), &client);
+        assert!(effective.enabled);
+        assert_eq!(options.binary_encoding, Some(client));
     }
 
     #[test]
-    fn with_binary_encoding_carries_request_text_response() {
+    fn resolve_binary_encoding_carries_request_text_response() {
         // Binary on with request_text_response: the driver keeps the wire binary
-        // and transcodes the response to text. The option carries both flags.
-        let be = BinaryEncodingOptions::new()
+        // and transcodes the response to text. Both flags carry through.
+        let client = BinaryEncodingOptions::new()
             .with_enabled(true)
             .with_request_text_response(true);
-        let options = with_binary_encoding(OperationOptions::default(), &be);
+        let (options, effective) = resolve_binary_encoding(OperationOptions::default(), &client);
+        assert!(effective.enabled);
+        assert!(effective.request_text_response);
         let resolved = options.binary_encoding.expect("binary encoding set");
         assert!(resolved.enabled);
         assert!(resolved.request_text_response);
     }
 
     #[test]
-    fn with_binary_encoding_omits_option_when_disabled() {
-        // Disabled ⇒ no binary-encoding option, so the request is unchanged.
-        let be = BinaryEncodingOptions::new().with_enabled(false);
-        let options = with_binary_encoding(OperationOptions::default(), &be);
+    fn resolve_binary_encoding_omits_option_when_disabled() {
+        // Disabled client default and no per-op value ⇒ no binary-encoding
+        // option, so the request is byte-for-byte unchanged.
+        let client = BinaryEncodingOptions::new().with_enabled(false);
+        let (options, effective) = resolve_binary_encoding(OperationOptions::default(), &client);
+        assert!(!effective.enabled);
         assert!(options.binary_encoding.is_none());
     }
 
     #[test]
-    fn with_binary_encoding_ignores_text_response_when_disabled() {
-        // request_text_response only matters when binary is enabled; with binary
-        // off there is no binary-encoding option at all.
-        let be = BinaryEncodingOptions::new()
-            .with_enabled(false)
-            .with_request_text_response(true);
-        let options = with_binary_encoding(OperationOptions::default(), &be);
+    fn resolve_binary_encoding_operation_disable_overrides_enabled_client() {
+        // Client enabled, but the caller disabled binary for this operation:
+        // the per-operation value wins, so the request stays text (no option).
+        let client = BinaryEncodingOptions::new().with_enabled(true);
+        let mut operation = OperationOptions::default();
+        operation.binary_encoding = Some(BinaryEncodingOptions::new().with_enabled(false));
+        let (options, effective) = resolve_binary_encoding(operation, &client);
+        assert!(!effective.enabled);
         assert!(options.binary_encoding.is_none());
+    }
+
+    #[test]
+    fn resolve_binary_encoding_operation_enable_overrides_disabled_client() {
+        // Client disabled, but the caller enabled binary for this operation:
+        // the per-operation value wins, so binary is negotiated for this request.
+        let client = BinaryEncodingOptions::new().with_enabled(false);
+        let operation_be = BinaryEncodingOptions::new()
+            .with_enabled(true)
+            .with_request_text_response(true);
+        let mut operation = OperationOptions::default();
+        operation.binary_encoding = Some(operation_be.clone());
+        let (options, effective) = resolve_binary_encoding(operation, &client);
+        assert!(effective.enabled);
+        assert_eq!(options.binary_encoding, Some(operation_be));
     }
 }
