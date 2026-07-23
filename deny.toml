@@ -25,6 +25,15 @@ expression = "MIT AND ISC AND OpenSSL"
 license-files = [
   { path = "LICENSE", hash = 0xbd0eed23 },
 ]
+# Question:
+# tiny-keccak (CC0-1.0) is pulled in transitively via arrow-array -> ahash's
+# compile-time-rng feature -> const-random. arrow-array enables that feature
+# directly, so the dependency can't be removed without patching arrow. CC0-1.0
+# is a public-domain dedication (FSF Free/Libre), so scope the allowance to just
+# this crate rather than allowing CC0-1.0 graph-wide.
+[[licenses.exceptions]]
+name = "tiny-keccak"
+allow = ["CC0-1.0"]
 
 [bans]
 multiple-versions = "allow"
