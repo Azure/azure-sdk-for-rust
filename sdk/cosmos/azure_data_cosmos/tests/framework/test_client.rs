@@ -111,6 +111,7 @@ pub fn assert_region_not_contacted(
 
 /// Default timeout for tests (80 seconds).
 pub const DEFAULT_TEST_TIMEOUT: Duration = Duration::from_secs(80);
+const CONTAINER_READINESS_ATTEMPT_TIMEOUT: Duration = Duration::from_secs(5);
 
 /// Options for configuring test execution.
 #[derive(Default)]
@@ -918,50 +919,58 @@ impl TestRunContext {
             // Both `container_client()` (which resolves metadata via the driver) and
             // `read()` can fail with 404 while the container replicates.
             loop {
-                let result = async {
+                let result = tokio::time::timeout(CONTAINER_READINESS_ATTEMPT_TIMEOUT, async {
                     hub_client
                         .database_client(db_client.id())
                         .container_client(container_id)
                         .await?
                         .read(None)
                         .await
-                }
+                })
                 .await;
                 match result {
-                    Ok(_) => break,
-                    Err(e) => {
+                    Ok(Ok(_)) => break,
+                    Ok(Err(e)) => {
                         println!(
                             "waiting for container to be created in hub region ({}): {}",
                             HUB_REGION.as_str(),
                             e
                         );
-                        tokio::time::sleep(Duration::from_secs(1)).await;
                     }
+                    Err(_) => println!(
+                        "container readiness probe timed out in hub region ({})",
+                        HUB_REGION.as_str()
+                    ),
                 }
+                tokio::time::sleep(Duration::from_secs(1)).await;
             }
 
             // Wait for satellite region client to successfully resolve and read the container.
             loop {
-                let result = async {
+                let result = tokio::time::timeout(CONTAINER_READINESS_ATTEMPT_TIMEOUT, async {
                     satellite_client
                         .database_client(db_client.id())
                         .container_client(container_id)
                         .await?
                         .read(None)
                         .await
-                }
+                })
                 .await;
                 match result {
-                    Ok(_) => break,
-                    Err(e) => {
+                    Ok(Ok(_)) => break,
+                    Ok(Err(e)) => {
                         println!(
                             "waiting for container to be created in satellite region ({}): {}",
                             SATELLITE_REGION.as_str(),
                             e
                         );
-                        tokio::time::sleep(Duration::from_secs(1)).await;
                     }
+                    Err(_) => println!(
+                        "container readiness probe timed out in satellite region ({})",
+                        SATELLITE_REGION.as_str()
+                    ),
                 }
+                tokio::time::sleep(Duration::from_secs(1)).await;
             }
 
             db_client.container_client(container_id).await

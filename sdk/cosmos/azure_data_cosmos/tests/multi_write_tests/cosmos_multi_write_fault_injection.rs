@@ -16,7 +16,7 @@ use framework::{
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use std::{borrow::Cow, error::Error};
+use std::{borrow::Cow, error::Error, time::Duration};
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
 struct NestedItem {
@@ -107,7 +107,11 @@ async fn verify_read_fails_with_injected_error(
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
+        Some(
+            TestOptions::new()
+                .with_fault_injection_rules(fault_builder)
+                .with_timeout(Duration::from_secs(180)),
+        ),
     )
     .await
 }

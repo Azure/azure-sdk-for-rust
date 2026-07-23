@@ -308,8 +308,8 @@ impl PartitionKeyRangeCache {
 /// This mirrors the SDK's routing-map-for-container pattern:
 ///
 /// 1. Start from the previous map's continuation token (or `None` for fresh fetch).
-/// 2. Loop calling `fetch_pk_ranges(container, continuation)` until the
-///    service returns 304 Not Modified.
+/// 2. Continue fetching without a client-side iteration cap until the service
+///    returns 304 Not Modified.
 /// 3. Accumulate all fetched ranges.
 /// 4. If a previous map exists, merge via [`ContainerRoutingMap::try_combine`];
 ///    otherwise create a fresh routing map.
