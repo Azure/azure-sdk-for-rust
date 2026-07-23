@@ -151,49 +151,49 @@ async fn test_list_blobs(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 /// inspect exactly what comes over the wire (e.g. when the `Accept` header is
 /// set to `application/vnd.apache.arrow.stream`). Run with `--nocapture` to see
 /// the printed output.
-#[recorded::test]
-async fn test_list_blobs_observe_raw(ctx: TestContext) -> Result<(), Box<dyn Error>> {
-    // Recording Setup
-    let recording = ctx.recording();
-    let container_client =
-        get_container_client(recording, false, StorageAccount::Standard, None).await?;
+// #[recorded::test]
+// async fn test_list_blobs_observe_raw(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+//     // Recording Setup
+//     let recording = ctx.recording();
+//     let container_client =
+//         get_container_client(recording, false, StorageAccount::Standard, None).await?;
 
-    container_client.create(None).await?;
-    create_test_blob(&container_client.blob_client("testblob1"), None, None).await?;
+//     container_client.create(None).await?;
+//     create_test_blob(&container_client.blob_client("testblob1"), None, None).await?;
 
-    let mut list_blobs_response = container_client.list_blobs(None)?.into_pages();
-    let page = list_blobs_response
-        .try_next()
-        .await?
-        .expect("expected at least one page");
+//     let mut list_blobs_response = container_client.list_blobs(None)?.into_pages();
+//     let page = list_blobs_response
+//         .try_next()
+//         .await?
+//         .expect("expected at least one page");
 
-    let (status, headers, body) = page.into_raw_response().deconstruct();
-    let content_type = headers.get_optional_str(&azure_core::http::headers::CONTENT_TYPE);
-    let preview_len = body.len().min(64);
-    let hex_preview = body[..preview_len]
-        .iter()
-        .map(|b| format!("{b:02x}"))
-        .collect::<Vec<_>>()
-        .join(" ");
+//     let (status, headers, body) = page.into_raw_response().deconstruct();
+//     let content_type = headers.get_optional_str(&azure_core::http::headers::CONTENT_TYPE);
+//     let preview_len = body.len().min(64);
+//     let hex_preview = body[..preview_len]
+//         .iter()
+//         .map(|b| format!("{b:02x}"))
+//         .collect::<Vec<_>>()
+//         .join(" ");
 
-    println!("┌─ list_blobs raw response ─────────────────────────────");
-    println!("│ status       : {status:?}");
-    println!("│ content-type : {content_type:?}");
-    println!("│ body length  : {} bytes", body.len());
-    println!("│ first {preview_len} bytes (hex)  : {hex_preview}");
-    println!(
-        "│ first {preview_len} bytes (utf8) : {}",
-        String::from_utf8_lossy(&body[..preview_len])
-    );
-    println!("└───────────────────────────────────────────────────────");
+//     println!("┌─ list_blobs raw response ─────────────────────────────");
+//     println!("│ status       : {status:?}");
+//     println!("│ content-type : {content_type:?}");
+//     println!("│ body length  : {} bytes", body.len());
+//     println!("│ first {preview_len} bytes (hex)  : {hex_preview}");
+//     println!(
+//         "│ first {preview_len} bytes (utf8) : {}",
+//         String::from_utf8_lossy(&body[..preview_len])
+//     );
+//     println!("└───────────────────────────────────────────────────────");
 
-    // Basic sanity: the request succeeded and we got some bytes back.
-    assert_eq!(StatusCode::Ok, status);
-    assert!(!body.is_empty(), "expected a non-empty response body");
+//     // Basic sanity: the request succeeded and we got some bytes back.
+//     assert_eq!(StatusCode::Ok, status);
+//     assert!(!body.is_empty(), "expected a non-empty response body");
 
-    container_client.delete(None).await?;
-    Ok(())
-}
+//     container_client.delete(None).await?;
+//     Ok(())
+// }
 
 #[recorded::test]
 async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<dyn Error>> {

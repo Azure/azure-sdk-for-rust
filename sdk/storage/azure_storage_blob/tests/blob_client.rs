@@ -17,8 +17,9 @@ use azure_storage_blob::{
         BlobClientDownloadOptions, BlobClientGetAccountInfoResultHeaders,
         BlobClientGetPropertiesOptions, BlobClientGetPropertiesResultHeaders,
         BlobClientSetImmutabilityPolicyOptions, BlobClientSetMetadataOptions,
-        BlobClientSetPropertiesOptions, BlobClientSetTierOptions, BlobTags,
-        BlockBlobClientUploadOptions, ImmutabilityPolicyMode, LeaseState, RehydratePriority,
+        BlobClientSetPropertiesOptions, BlobClientSetTierOptions,
+        BlobContainerClientListBlobsOptions, BlobTags, BlockBlobClientUploadOptions,
+        ImmutabilityPolicyMode, LeaseState, ListBlobsAcceptFormat, RehydratePriority,
         StorageErrorCode,
     },
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions, StorageError,
@@ -615,7 +616,12 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
     }
 
     // Check name equality for all test cases
-    let mut list_blobs_response = container_client.list_blobs(None)?.into_pages();
+    let mut list_blobs_response = container_client
+        .list_blobs(Some(BlobContainerClientListBlobsOptions {
+            accept: ListBlobsAcceptFormat::Xml,
+            ..Default::default()
+        }))?
+        .into_pages();
     let page = list_blobs_response.try_next().await?;
     let list_blob_segment_response = page.unwrap().into_model()?;
     let blob_items = list_blob_segment_response.blob_items;
