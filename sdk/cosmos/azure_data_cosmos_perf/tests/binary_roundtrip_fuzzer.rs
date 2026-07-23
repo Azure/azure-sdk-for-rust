@@ -527,23 +527,29 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
     let mut checked: u64 = 0;
 
     for iter in 0..cfg.iterations {
-        // Generate a document and stamp id + pk.
-        let mut doc = gen_object(&mut rng, &cfg, 0);
-        let id = Uuid::new_v4().to_string();
+        // Generate the document body once per iteration so all three configs
+        // test the *same value* three ways. Each config gets a distinct `id`
+        // below — the same document stored under multiple configs would
+        // otherwise collide on the `(pk, id)` key and fail with 409 Conflict.
+        let base_doc = gen_object(&mut rng, &cfg, 0);
         let pk = format!("pk-{}", rng.below(16));
-        doc.insert("id".to_string(), Value::String(id.clone()));
-        doc.insert("pk".to_string(), Value::String(pk.clone()));
-
-        let sent_value = Value::Object(doc.clone());
-        // Compute the sent canonical form from a normalized copy so it matches
-        // documents that have been through the backend's serialize→parse.
-        let (sent_canon, sent_hash) = canonical_hash(&normalize(&sent_value));
 
         for (label, client) in &clients {
             let container = client
                 .database_client(&database_name)
                 .container_client(&container_name)
                 .await?;
+
+            // Distinct id per config so the three stores don't conflict.
+            let id = Uuid::new_v4().to_string();
+            let mut doc = base_doc.clone();
+            doc.insert("id".to_string(), Value::String(id.clone()));
+            doc.insert("pk".to_string(), Value::String(pk.clone()));
+
+            // Compute the sent canonical form from a normalized copy so it
+            // matches documents that have been through the backend's
+            // serialize→parse.
+            let (sent_canon, sent_hash) = canonical_hash(&normalize(&Value::Object(doc.clone())));
 
             let context = format!("iter={iter} config={label} id={id} seed={}", cfg.seed);
 
