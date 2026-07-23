@@ -36,3 +36,6 @@ tokio = { workspace = true, features = ["macros"] }
 
 [package.metadata.docs.rs]
 all-features = true
+
+[package.metadata.cargo-semver-checks.lints]
+enum_variant_added = "allow"
