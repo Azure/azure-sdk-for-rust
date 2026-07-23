@@ -1,16 +1,10 @@
 # Release History
 
-## 0.38.0 (Unreleased)
-
-### Features Added
-
-### Breaking Changes
+## 0.37.1 (2026-07-23)
 
 ### Bugs Fixed
 
 - Fixed `ContainerClient::read_feed_ranges` failing on containers with large partition counts by fully draining routing metadata and retrying missing cache results with a forced refresh. ([#4845](https://github.com/Azure/azure-sdk-for-rust/pull/4845))
-
-### Other Changes
 
 ## 0.37.0 (2026-07-20)
 
