@@ -1,7 +1,10 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved.
 // Licensed under the MIT License.
 
-use azure_core_amqp::{AmqpDescribedError, AmqpError};
+use azure_core_amqp::{
+    error::{AmqpErrorCondition, AmqpErrorKind},
+    AmqpDescribedError, AmqpError,
+};
 use std::borrow::Cow;
 
 /// A specialized `Result` type for Event Hubs operations.
@@ -90,6 +93,45 @@ impl From<ErrorKind> for EventHubsError {
     fn from(kind: ErrorKind) -> Self {
         Self { kind }
     }
+}
+
+/// Maximum number of links to follow in an error source chain. It stops a
+/// pathological self-referential chain from looping forever.
+const MAX_ERROR_CHAIN_DEPTH: usize = 16;
+
+/// Returns the `amqp:link:stolen` described error if `error` is one, or wraps
+/// one in its [`std::error::Error::source`] chain.
+///
+/// The condition can arrive at the top level (an in-flight receive, or a
+/// re-attach that the broker rejected) or wrapped through `azure_core::Error`
+/// by the `ensure_*` wrappers. Both must be recognized, so the whole chain is
+/// walked instead of only the top-level kind.
+pub(crate) fn find_link_stolen(error: &AmqpError) -> Option<&AmqpDescribedError> {
+    use std::error::Error as _;
+    fn described(e: &AmqpError) -> Option<&AmqpDescribedError> {
+        match e.kind() {
+            AmqpErrorKind::AmqpDescribedError(d)
+                if matches!(d.condition, AmqpErrorCondition::LinkStolen) =>
+            {
+                Some(d)
+            }
+            _ => None,
+        }
+    }
+    if let Some(d) = described(error) {
+        return Some(d);
+    }
+    let mut cause: Option<&(dyn std::error::Error + 'static)> = error.source();
+    for _ in 0..MAX_ERROR_CHAIN_DEPTH {
+        let c = cause?;
+        if let Some(amqp) = c.downcast_ref::<AmqpError>() {
+            if let Some(d) = described(amqp) {
+                return Some(d);
+            }
+        }
+        cause = c.source();
+    }
+    None
 }
 
 impl From<AmqpError> for EventHubsError {

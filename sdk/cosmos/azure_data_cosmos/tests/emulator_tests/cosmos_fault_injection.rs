@@ -12,6 +12,9 @@ use azure_data_cosmos::fault_injection::{
     FaultInjectionRule, FaultInjectionRuleBuilder, FaultOperationType, TransportKind,
 };
 use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
+use azure_data_cosmos::options::{
+    ItemReadOptions, OperationOptionsBuilder, ThrottlingRetryOptionsBuilder,
+};
 use framework::{TestClient, TestOptions};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -483,7 +486,18 @@ pub async fn fault_injection_multiple_rules_priority() -> Result<(), Box<dyn Err
             let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
-            let result = fault_container_client.read_item(&pk, &item_id, None).await;
+            let read_options = ItemReadOptions::default().with_operation_options(
+                OperationOptionsBuilder::new()
+                    .with_throttling_retry_options(
+                        ThrottlingRetryOptionsBuilder::new()
+                            .with_max_retry_count(0)
+                            .build(),
+                    )
+                    .build(),
+            );
+            let result = fault_container_client
+                .read_item(&pk, &item_id, Some(read_options))
+                .await;
 
             // Should get 429 (first rule), not 503 (second rule)
             let err = result.expect_err("expected first rule (429) to apply");
