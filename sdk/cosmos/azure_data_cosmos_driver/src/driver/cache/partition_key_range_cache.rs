@@ -6,12 +6,7 @@
 //! Uses the driver's operation pipeline to fetch `/pkranges` from the service
 //! and caches the resulting [`ContainerRoutingMap`] per container RID.
 
-use std::{
-    collections::{HashMap, HashSet},
-    hash::{DefaultHasher, Hash, Hasher},
-    sync::Arc,
-    time::{Duration, Instant},
-};
+use std::{collections::HashMap, sync::Arc};
 
 use crate::models::{
     effective_partition_key::EffectivePartitionKey, partition_key_range::PkRangesResponse,
@@ -19,8 +14,6 @@ use crate::models::{
 };
 
 use super::{container_routing_map::ContainerRoutingMap, AsyncCache};
-
-const MAX_FETCH_DURATION: Duration = Duration::from_secs(5 * 60);
 
 /// Result of a single partition key range fetch from the service.
 ///
@@ -333,22 +326,10 @@ where
     let mut continuation = previous_routing_map
         .as_ref()
         .and_then(|m| m.change_feed_next_if_none_match.clone());
-    let mut seen_pages = HashSet::new();
-    let started = Instant::now();
-
     let mut iterations_completed = 0;
     loop {
         let iteration = iterations_completed;
         iterations_completed += 1;
-        if started.elapsed() >= MAX_FETCH_DURATION {
-            tracing::warn!(
-                iterations = iterations_completed,
-                "Partition key range fetch exceeded its overall deadline"
-            );
-            return previous_routing_map
-                .map(|p| (*p).clone())
-                .unwrap_or_else(ContainerRoutingMap::empty);
-        }
 
         tracing::trace!(
             iteration,
@@ -379,23 +360,6 @@ where
             break;
         }
 
-        let mut page_hasher = DefaultHasher::new();
-        for range in &result.ranges {
-            range.id.hash(&mut page_hasher);
-            range.min_inclusive.hash(&mut page_hasher);
-            range.max_exclusive.hash(&mut page_hasher);
-            range.parents.hash(&mut page_hasher);
-        }
-        let page_key = (result.continuation.clone(), page_hasher.finish());
-        if !seen_pages.insert(page_key) {
-            tracing::warn!(
-                iteration,
-                "Partition key range fetch repeated the same page"
-            );
-            return previous_routing_map
-                .map(|p| (*p).clone())
-                .unwrap_or_else(ContainerRoutingMap::empty);
-        }
         continuation = result.continuation.or(continuation);
 
         tracing::trace!(
@@ -1525,36 +1489,6 @@ mod tests {
             .is_none());
         assert!(cache
             .try_lookup(&container, false, empty_fetch)
-            .await
-            .is_none());
-        assert_eq!(call_count.load(Ordering::SeqCst), 2);
-    }
-
-    #[tokio::test]
-    async fn repeated_continuation_terminates_without_caching_partial_map() {
-        use std::sync::{
-            atomic::{AtomicUsize, Ordering},
-            Arc,
-        };
-
-        let cache = PartitionKeyRangeCache::new();
-        let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
-        let call_count = Arc::new(AtomicUsize::new(0));
-        let count = call_count.clone();
-        let stalled_fetch = move |_container: ContainerReference, _continuation: Option<String>| {
-            let count = count.clone();
-            async move {
-                count.fetch_add(1, Ordering::SeqCst);
-                Some(PkRangeFetchResult {
-                    ranges: vec![PkRange::new("same-page".into(), "", "80")],
-                    continuation: Some("unchanged-etag".to_string()),
-                    not_modified: false,
-                })
-            }
-        };
-
-        assert!(cache
-            .try_lookup(&container, false, stalled_fetch)
             .await
             .is_none());
         assert_eq!(call_count.load(Ordering::SeqCst), 2);
