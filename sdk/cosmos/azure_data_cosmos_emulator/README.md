@@ -11,8 +11,8 @@ it over the Cosmos DB wire protocol.
 > guarantees.
 
 For the full design — rationale and scope, configuration schema, management
-REST API, Gateway 2.0 support, and CI integration — see [`AGENTS.md`](AGENTS.md)
-and the architecture decision records under [`docs/adr/`](docs/adr/).
+REST API, Gateway 2.0 support, and CI integration — see `AGENTS.md`
+and the architecture decision records under `docs/adr/`.
 
 ## What it hosts
 
