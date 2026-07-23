@@ -7,7 +7,8 @@
 //! The OpenTelemetry semantic conventions for database clients define the exact
 //! metric and attribute names emitted here. Metric names and instrument units are
 //! metrics-specific and defined here; the shared **attribute** names are re-exported
-//! from [`crate::diagnostics::attributes`] so metrics and tracing can't drift.
+//! from the crate-internal `diagnostics::attributes` module so metrics and tracing
+//! can't drift.
 //!
 //! Two tiers, matching the semantic conventions:
 //! - **Stable** names — emitted unconditionally (operation-scope, low cardinality).
