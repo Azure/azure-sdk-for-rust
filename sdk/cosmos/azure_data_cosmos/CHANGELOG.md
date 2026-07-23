@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added an SDK-generated `x-ms-client-id` header that remains stable for each `CosmosClient`, enabling service-side client-aware load balancing across gateway and probe requests. ([#4844](https://github.com/Azure/azure-sdk-for-rust/pull/4844))
+
 ### Breaking Changes
 
 ### Bugs Fixed
@@ -69,7 +71,6 @@
   - `with_driver_runtime_builder` — replaced by `with_runtime(CosmosRuntime)`. The `__internal_in_memory_emulator` harness builds its runtime via `CosmosRuntimeBuilder::from(driver_builder)` (the `From<CosmosDriverRuntimeBuilder>` escape hatch).
   - The `allow_invalid_certificates` Cargo feature has been removed. The capability is now in the default feature set but requires explicit opt-in via `CosmosRuntimeBuilder::with_connection_pool(ConnectionPoolOptionsBuilder::new().with_server_certificate_validation(ServerCertificateValidation::RequiredUnlessEmulator).build())`. The new `RequiredUnlessEmulator` policy is not a blanket "disable validation" knob — it validates the server certificate normally and only relaxes validation for detected Cosmos DB emulator hosts (via `AccountEndpoint` + `Region` heuristics, or the `AZURE_COSMOS_EMULATOR_HOST` environment variable). See the driver CHANGELOG for the underlying `EmulatorServerCertValidation` → `ServerCertificateValidation` rename.
 - Per-account driver caching has been removed from the underlying runtime — each `CosmosClient::build(...)` now constructs a fresh `CosmosDriver`. Clients sharing the same `CosmosRuntime` continue to share transport pools, sampler, account cache, etc.; only the per-account `CosmosDriver` instance is no longer reused. ([#4588](https://github.com/Azure/azure-sdk-for-rust/pull/4588))
-
 
 ### Bugs Fixed
 
