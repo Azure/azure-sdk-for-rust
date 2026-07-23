@@ -9,14 +9,16 @@ use azure_data_cosmos::fault_injection::{
     FaultInjectionRuleBuilder, FaultOperationType,
 };
 use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
-use azure_data_cosmos::options::{ExcludedRegions, ItemReadOptions, OperationOptions};
+use azure_data_cosmos::options::{
+    ExcludedRegions, ItemReadOptions, OperationOptions, OperationOptionsBuilder,
+    ThrottlingRetryOptionsBuilder,
+};
 use framework::{
     assert_local_retry_attempted_on_region, assert_region_contacted_with_retry,
     assert_region_not_contacted, TestClient, TestOptions, HUB_REGION, SATELLITE_REGION,
 };
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
-use std::{borrow::Cow, error::Error};
+use std::{borrow::Cow, error::Error, sync::Arc, time::Duration};
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
 struct NestedItem {
@@ -88,9 +90,20 @@ async fn verify_read_fails_with_injected_error(
                 .expect("fault client should be available");
             let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
+            let read_options = (expected_status == StatusCode::TooManyRequests).then(|| {
+                ItemReadOptions::default().with_operation_options(
+                    OperationOptionsBuilder::new()
+                        .with_throttling_retry_options(
+                            ThrottlingRetryOptionsBuilder::new()
+                                .with_max_retry_count(0)
+                                .build(),
+                        )
+                        .build(),
+                )
+            });
 
             let result = run_context
-                .read_item(&fault_container_client, &pk, &item_id, None)
+                .read_item(&fault_container_client, &pk, &item_id, read_options)
                 .await;
 
             let err = result.expect_err(&format!(
@@ -107,7 +120,11 @@ async fn verify_read_fails_with_injected_error(
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
+        Some(
+            TestOptions::new()
+                .with_fault_injection_rules(fault_builder)
+                .with_timeout(Duration::from_secs(180)),
+        ),
     )
     .await
 }

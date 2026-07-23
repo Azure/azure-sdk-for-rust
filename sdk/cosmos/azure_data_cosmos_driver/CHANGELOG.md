@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added an SDK-generated `x-ms-client-id` header that remains stable for each `CosmosDriver`, including metadata, retry, hedge, probe, and Gateway V2 outer HTTP requests. ([#4844](https://github.com/Azure/azure-sdk-for-rust/pull/4844))
+- Added an SDK-generated `x-ms-client-id` header that remains stable for each `CosmosDriverRuntime` and is shared by drivers using that runtime, including metadata, retry, hedge, probe, and Gateway V2 outer HTTP requests. ([#4844](https://github.com/Azure/azure-sdk-for-rust/pull/4844))
 
 ### Breaking Changes
 

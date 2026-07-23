@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added an SDK-generated `x-ms-client-id` header that remains stable for each `CosmosClient`, enabling service-side client-aware load balancing across gateway and probe requests. ([#4844](https://github.com/Azure/azure-sdk-for-rust/pull/4844))
+- Added an SDK-generated `x-ms-client-id` header that remains stable for each `CosmosRuntime` and is shared by clients using that runtime. ([#4844](https://github.com/Azure/azure-sdk-for-rust/pull/4844))
 
 ### Breaking Changes
 

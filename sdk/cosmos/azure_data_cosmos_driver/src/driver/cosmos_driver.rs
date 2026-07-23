@@ -47,7 +47,6 @@ use std::time::Duration;
 #[cfg(feature = "preview_dtx")]
 use std::time::Instant;
 use url::Url;
-use uuid::Uuid;
 
 /// Gateway 2.0 endpoint-discovery opt-in header, sent on every
 /// `getDatabaseAccount` request. Aliases the canonical wire string in
@@ -267,8 +266,6 @@ pub struct CosmosDriver {
     /// runtime). When the suffix is `Some`, this is a freshly-computed
     /// `UserAgent` wrapped in its own `Arc`.
     user_agent: Arc<UserAgent>,
-    /// Stable SDK-generated identifier stamped on every request from this driver.
-    client_id: azure_core::http::headers::HeaderValue,
     /// HTTP client factory used by every per-account transport this driver
     /// builds.
     ///
@@ -988,7 +985,7 @@ impl CosmosDriver {
             account,
             &self.transport,
             &self.user_agent,
-            &self.client_id,
+            self.runtime.client_id(),
             None,
             fault_injection_enabled,
         )
@@ -1420,7 +1417,7 @@ impl CosmosDriver {
             }
             None => Arc::new(runtime.user_agent_with_feature_flags(feature_flags)),
         };
-        let client_id = azure_core::http::headers::HeaderValue::from(Uuid::new_v4().to_string());
+        let client_id = runtime.client_id().clone();
 
         // Per-driver HTTP client factory: wrap with fault injection if rules
         // are installed on this driver's options; otherwise share the
@@ -1626,7 +1623,6 @@ impl CosmosDriver {
             session_manager: SessionManager::new(),
             initialized: AtomicBool::new(false),
             user_agent,
-            client_id,
             http_client_factory,
             #[cfg(feature = "fault_injection")]
             fault_injection_enabled,
@@ -1869,7 +1865,7 @@ impl CosmosDriver {
             &self.runtime,
             &self.http_client_factory,
             account,
-            &self.client_id,
+            self.runtime.client_id(),
             fault_injection_enabled,
         )
         .await?;
@@ -2729,7 +2725,7 @@ impl CosmosDriver {
             &endpoint,
             auth,
             &user_agent,
-            &self.client_id,
+            self.runtime.client_id(),
             &activity_id,
             pipeline_type,
             transport_security,
@@ -5498,21 +5494,26 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn drivers_generate_stable_unique_client_ids() {
-        let factory = Arc::new(ScriptedFactory::new(std::iter::repeat_n(
-            ResponsePlan::Success,
-            10,
-        )));
-        let runtime = Arc::new(
-            CosmosDriverRuntimeBuilder::new()
-                .with_http_client_factory(factory)
-                .build()
-                .await
-                .unwrap(),
-        );
+    async fn drivers_share_runtime_client_id_and_runtimes_are_unique() {
+        let runtime_a = CosmosDriverRuntimeBuilder::new()
+            .with_http_client_factory(Arc::new(ScriptedFactory::new(std::iter::repeat_n(
+                ResponsePlan::Success,
+                10,
+            ))))
+            .build()
+            .await
+            .unwrap();
+        let runtime_b = CosmosDriverRuntimeBuilder::new()
+            .with_http_client_factory(Arc::new(ScriptedFactory::new(std::iter::repeat_n(
+                ResponsePlan::Success,
+                10,
+            ))))
+            .build()
+            .await
+            .unwrap();
 
         let driver_a = CosmosDriver::new(
-            Arc::clone(&runtime),
+            Arc::clone(&runtime_a),
             DriverOptionsBuilder::new(signed_test_account(
                 "https://account-a.documents.azure.com:443/",
             ))
@@ -5520,7 +5521,7 @@ mod tests {
         )
         .expect("CosmosDriver::new should succeed in tests");
         let driver_b = CosmosDriver::new(
-            Arc::clone(&runtime),
+            Arc::clone(&runtime_a),
             DriverOptionsBuilder::new(signed_test_account(
                 "https://account-b.documents.azure.com:443/",
             ))
@@ -5528,17 +5529,23 @@ mod tests {
         )
         .expect("CosmosDriver::new should succeed in tests");
 
-        let client_id_a = driver_a.client_id.as_str();
-        let parsed = Uuid::parse_str(client_id_a).expect("client ID must be a UUID");
+        let client_id_a = runtime_a.client_id().as_str();
+        let parsed = uuid::Uuid::parse_str(client_id_a).expect("client ID must be a UUID");
         assert_eq!(parsed.get_version(), Some(uuid::Version::Random));
         assert_eq!(
-            driver_a.client_id.as_str(),
+            driver_a.runtime.client_id().as_str(),
             client_id_a,
-            "a driver must retain one client ID for its lifetime"
+            "driver A must use its runtime's client ID"
+        );
+        assert_eq!(
+            driver_b.runtime.client_id().as_str(),
+            client_id_a,
+            "drivers sharing a runtime must share its client ID"
         );
         assert_ne!(
-            driver_a.client_id, driver_b.client_id,
-            "independently-created drivers must have distinct client IDs"
+            runtime_a.client_id(),
+            runtime_b.client_id(),
+            "independently-created runtimes must have distinct client IDs"
         );
     }
 

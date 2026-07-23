@@ -47,8 +47,8 @@ struct TestItem {
 }
 
 /// Snapshot of a single request observed by the in-memory emulator. Captures
-/// only what these tests assert on (method, URL, `User-Agent`) to keep the
-/// helper minimal.
+/// only what these tests assert on (method, URL, `User-Agent`, and
+/// `x-ms-client-id`) to keep the helper minimal.
 #[derive(Clone, Debug)]
 struct RequestSnapshot {
     method: Method,
@@ -258,7 +258,7 @@ fn is_account_properties_request(snap: &RequestSnapshot) -> bool {
 }
 
 #[tokio::test]
-async fn client_id_is_stable_across_observed_request_paths() {
+async fn runtime_client_id_is_stable_across_observed_request_paths() {
     let observer = RecordingObserver::new();
     let emulator = build_emulator(observer.clone());
 
@@ -310,7 +310,7 @@ async fn client_id_is_stable_across_observed_request_paths() {
         .collect();
     assert!(
         mismatched.is_empty(),
-        "every request from one CosmosClient must carry the same client ID; mismatched: {mismatched:?}"
+        "every request from one CosmosRuntime must carry the same client ID; mismatched: {mismatched:?}"
     );
 }
 
