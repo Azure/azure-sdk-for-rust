@@ -20,13 +20,6 @@ use azure_core::{
 };
 use std::sync::Arc;
 
-/// A pager over responses returned by [`BlobContainerClient::list_blobs`].
-///
-/// This alias makes the paging API explicit. The standard `Pager<P, F>` alias cannot be used
-/// because it always wraps each page in `Response<P, F>`, while list blobs needs
-/// [`ListBlobsPageResponse`] to select XML or Apache Arrow using the response headers.
-pub type ListBlobsPager = ItemIterator<ListBlobsPageResponse>;
-
 impl BlobContainerClient {
     /// Creates a new BlobContainerClient from a container URL.
     ///
@@ -118,7 +111,7 @@ impl BlobContainerClient {
     pub fn list_blobs(
         &self,
         options: Option<BlobContainerClientListBlobsOptions<'_>>,
-    ) -> Result<ListBlobsPager> {
+    ) -> Result<ItemIterator<ListBlobsPageResponse>> {
         let options = options.unwrap_or_default().into_owned();
         let method_options = options.method_options.clone();
         let endpoint = self.endpoint.clone();
