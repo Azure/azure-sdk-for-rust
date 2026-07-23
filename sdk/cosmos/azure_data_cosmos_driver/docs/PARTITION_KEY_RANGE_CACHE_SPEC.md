@@ -682,8 +682,8 @@ obtain:
 | Empty partition key (`PartitionKey::EMPTY`) | Returns `None` immediately — cross-partition request, no range resolution needed. |
 | `fetch_fn` returns `None` (initial fetch) | Returns `None`; the empty fallback is evicted. Warning logged. |
 | `fetch_fn` returns `None` (incremental refresh) | Falls back to previous routing map. Warning logged. |
-| Incomplete range set (gaps in coverage) | `try_create` returns `Err(IncompleteRanges)`. Falls back to empty map + warning. |
-| Overlapping ranges (data corruption) | `try_create` returns `Err(OverlappingRanges)`. Falls back to empty map + warning. |
+| Incomplete range set (gaps in coverage) | `try_create` returns `Err(IncompleteRanges)`; the empty fallback is evicted and the lookup returns `None`. Warning logged. |
+| Overlapping ranges (data corruption) | `try_create` returns `Err(OverlappingRanges)`; the empty fallback is evicted and the lookup returns `None`. Warning logged. |
 | Partition split (gone parent ranges) | Parent ranges filtered out by `try_create`. Only child ranges kept. |
 | `try_combine` fails (incomplete merge) | Performs a full refresh; preserves the previous map if recovery fails. |
 | EPK not found in routing map | `get_range_by_effective_partition_key` returns `None` (should not happen for a valid map). |
