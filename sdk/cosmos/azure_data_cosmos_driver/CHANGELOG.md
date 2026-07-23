@@ -8,6 +8,8 @@
 
 ### Bugs Fixed
 
+- Fixed partition-range discovery for containers whose routing metadata spans more than ten pages, added full-refresh recovery for invalid incremental maps, and prevented empty routing maps from remaining cached.
+
 ### Other Changes
 
 ## 0.6.0 (2026-07-20)

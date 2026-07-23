@@ -2080,14 +2080,6 @@ fn handle_read_pkranges(
 
     region_ref
         .with_container(db_id, coll_id, |state| {
-            // Honor If-None-Match for change-feed-style routing-map refreshes.
-            // The driver's `fetch_and_build_routing_map` loops calling
-            // `fetch_pk_ranges` with the previous etag as `If-None-Match` until
-            // the service returns 304 (or hits `MAX_FETCH_ITERATIONS`).
-            // Without 304 support the loop runs the maximum number of iterations,
-            // accumulates duplicate ranges, and `ContainerRoutingMap::try_create`
-            // produces an empty map — defeating PK-range pre-resolution and
-            // any feature that depends on it (PPCB, PPAF).
             if let Some(client_etag) = if_none_match {
                 if client_etag == state.metadata.etag {
                     return ResponseBuilder::new(StatusCode::NotModified, start)
@@ -2096,10 +2088,27 @@ fn handle_read_pkranges(
                         .build();
                 }
             }
-            let body = pkranges_to_json(state);
+
+            let total = state.physical_partitions.len();
+            let page_start = if_none_match
+                .and_then(|token| parse_pkrange_page_token(token, &state.metadata.etag))
+                .unwrap_or(0)
+                .min(total);
+            let page_size = state
+                .metadata
+                .partition_key_range_page_size
+                .map(|size| size as usize)
+                .unwrap_or(total.max(1));
+            let page_end = page_start.saturating_add(page_size).min(total);
+            let next_etag = if page_end < total {
+                pkrange_page_token(page_end, &state.metadata.etag)
+            } else {
+                state.metadata.etag.clone()
+            };
+            let body = pkranges_to_json(state, page_start, page_end);
             success_response(StatusCode::Ok, &body, 1.0, "", start)
-                .with_etag(&state.metadata.etag)
-                .with_item_count(state.physical_partitions.len() as u32)
+                .with_etag(&next_etag)
+                .with_item_count((page_end - page_start) as u32)
                 .build()
         })
         .unwrap_or_else(|| {
@@ -2114,6 +2123,18 @@ fn handle_read_pkranges(
             )
             .build()
         })
+}
+
+fn pkrange_page_token(offset: usize, etag: &str) -> String {
+    format!("pkranges/{offset}/{etag}")
+}
+
+fn parse_pkrange_page_token(token: &str, expected_etag: &str) -> Option<usize> {
+    let token = token.strip_prefix("pkranges/")?;
+    let (offset, etag) = token.split_once('/')?;
+    (etag == expected_etag)
+        .then(|| offset.parse::<usize>().ok())
+        .flatten()
 }
 
 fn paginate_values(
@@ -5469,6 +5490,17 @@ fn container_not_found(db_id: &str, coll_id: &str, start: Instant) -> AsyncRawRe
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn pkrange_page_token_round_trips_offset_and_etag() {
+        let token = pkrange_page_token(1_000, "\"etag/with/slashes\"");
+
+        assert_eq!(
+            parse_pkrange_page_token(&token, "\"etag/with/slashes\""),
+            Some(1_000)
+        );
+        assert_eq!(parse_pkrange_page_token(&token, "\"other-etag\""), None);
+    }
 
     fn document_item(epk: &str, id: &str) -> DocumentFeedItem {
         DocumentFeedItem {
