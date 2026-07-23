@@ -86,6 +86,18 @@ impl UnorderedMerge {
     /// page is discarded; only the ETag it advanced — now held by the child —
     /// is retained, so the next real poll of that range resumes from its true
     /// starting position rather than from a resume-time `Now`.
+    ///
+    /// # Cost
+    ///
+    /// Priming front-loads one poll per range before the first page is served,
+    /// so a wide fan-out AVAD feed pays N sequential round-trips (and N request
+    /// units) of extra first-page latency. This is the price of the lossless-
+    /// `Now` guarantee; LatestVersion feeds don't prime and don't pay it. Each
+    /// priming poll goes through the same per-request path as a normal poll, so
+    /// transient failures are retried by the pipeline's retry policy beneath
+    /// this call. A non-retryable error on any single range aborts the whole
+    /// first page (the `?` below) rather than starting the feed with an
+    /// unpinned range, keeping the lossless guarantee all-or-nothing.
     async fn prime_children(
         &mut self,
         context: &mut PipelineContext<'_>,
@@ -95,11 +107,20 @@ impl UnorderedMerge {
             let mut split_retries = 0;
             loop {
                 match self.children[idx].next_page(context).await? {
-                    PageResult::Page { .. } => {
+                    PageResult::Page { response, .. } => {
                         // Start-from-`Now` first poll: a 304 carrying only an
                         // ETag, which the child has now recorded. Discarding the
                         // (item-less) page loses nothing; advance to the next
-                        // child.
+                        // child. The ETag is what makes priming worthwhile — a
+                        // 304 with no ETag would leave the child unpinned and
+                        // silently resume from `Now`, so assert its presence to
+                        // catch a service/transport contract violation in debug
+                        // builds.
+                        debug_assert!(
+                            response.headers().etag.is_some(),
+                            "priming poll returned a page without an ETag; the range \
+                             cannot record its start position and would resume from `Now`"
+                        );
                         idx += 1;
                         break;
                     }
@@ -440,7 +461,7 @@ mod tests {
         // *second* poll (a2) rather than a1.
         let child_a = MockLeaf::with_pages(vec![
             Ok(PageResult::Page {
-                response: response(b"a1"),
+                response: response_with_etag(b"a1", "etag-a1"),
                 is_terminal: true,
             }),
             Ok(PageResult::Page {
@@ -449,11 +470,11 @@ mod tests {
             }),
         ]);
         let child_b = MockLeaf::with_pages(vec![Ok(PageResult::Page {
-            response: response(b"b1"),
+            response: response_with_etag(b"b1", "etag-b1"),
             is_terminal: true,
         })]);
         let child_c = MockLeaf::with_pages(vec![Ok(PageResult::Page {
-            response: response(b"c1"),
+            response: response_with_etag(b"c1", "etag-c1"),
             is_terminal: true,
         })]);
 
@@ -489,7 +510,7 @@ mod tests {
             replacement_nodes: vec![
                 Box::new(MockLeaf::with_pages(vec![
                     Ok(PageResult::Page {
-                        response: response(b"ra1"),
+                        response: response_with_etag(b"ra1", "etag-ra1"),
                         is_terminal: true,
                     }),
                     Ok(PageResult::Page {
@@ -498,7 +519,7 @@ mod tests {
                     }),
                 ])),
                 Box::new(MockLeaf::with_pages(vec![Ok(PageResult::Page {
-                    response: response(b"rb1"),
+                    response: response_with_etag(b"rb1", "etag-rb1"),
                     is_terminal: true,
                 })])),
             ],

@@ -468,3 +468,84 @@ async fn latest_version_does_not_prime_ranges() {
         other => panic!("expected UnorderedMerge snapshot, got {other:?}"),
     }
 }
+
+/// Guards the pre-first-page window of the AllVersionsAndDeletes lossless-`Now`
+/// contract: a checkpoint taken **before** the first page is pulled snapshots an
+/// empty token set (nothing has been polled yet). Resuming from that empty set
+/// must still prime every range, otherwise every range would fall back to a
+/// resume-time `Now` and drop the versions/deletes in the gap — the same data
+/// loss the priming fix closes, relocated to the pre-first-page window.
+///
+/// A fully drained feed instead snapshots `PipelineNodeState::Drained`, so an
+/// empty `UnorderedMerge` token set unambiguously means "not yet polled" and is
+/// safe to treat as still-needs-priming.
+#[tokio::test]
+async fn all_versions_and_deletes_pins_ranges_when_resumed_before_first_page() {
+    let op = avad_change_feed_operation(Some(ChangeFeedStartFrom::Now));
+
+    // Session 1: build the pipeline and checkpoint immediately, before pulling
+    // any page. No range has been polled, so the snapshot carries no tokens.
+    let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![
+        resolved("", "80", "pk-left"),
+        resolved("80", "FF", "pk-right"),
+    ])]);
+    let pipeline1 = build_unordered_merge(&FeedRange::full(), &mut topology1, &op, None)
+        .await
+        .unwrap();
+    let state = pipeline1.snapshot_state().unwrap();
+    match &state {
+        PipelineNodeState::UnorderedMerge {
+            active_tokens,
+            start_from,
+        } => {
+            assert!(
+                active_tokens.is_empty(),
+                "no range polled yet, expected no tokens, got {active_tokens:?}",
+            );
+            assert_eq!(*start_from, Some(ChangeFeedStartFrom::Now));
+        }
+        other => panic!("expected UnorderedMerge snapshot, got {other:?}"),
+    }
+    drop(pipeline1);
+
+    // Session 2: resume from the empty-token checkpoint. Priming must still run
+    // (the token set is empty), pinning BOTH ranges before the first page.
+    let resumed_state = round_trip_state(state, &op);
+    let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![
+        resolved("", "80", "pk-left"),
+        resolved("80", "FF", "pk-right"),
+    ])]);
+    let mut executor2 = MockRequestExecutor::new(vec![
+        Ok(cf_page(b"", "lsn-left-0")),       // prime left
+        Ok(cf_page(b"", "lsn-right-0")),      // prime right (never served)
+        Ok(cf_page(b"left-1", "lsn-left-1")), // served page
+    ]);
+
+    let mut pipeline2 =
+        build_unordered_merge(&FeedRange::full(), &mut topology2, &op, Some(resumed_state))
+            .await
+            .unwrap();
+    let pages2 = drain_pages(&mut pipeline2, &mut executor2, 1).await;
+    assert_eq!(pages2, vec![b"left-1".to_vec()]);
+    assert_eq!(
+        executor2.continuation_calls,
+        vec![None, None, Some("lsn-left-0".to_owned())],
+        "resume-before-first-page must prime both ranges fresh, not skip priming",
+    );
+
+    // The follow-up checkpoint now pins both ranges — including the right range
+    // that was only primed — so a subsequent resume is lossless.
+    let state2 = pipeline2.snapshot_state().unwrap();
+    match &state2 {
+        PipelineNodeState::UnorderedMerge { active_tokens, .. } => {
+            assert_eq!(
+                active_tokens.len(),
+                2,
+                "both ranges must be pinned after priming, got {active_tokens:?}",
+            );
+            assert_eq!(active_tokens[1].min_epk, "80");
+            assert_eq!(active_tokens[1].server_continuation, "lsn-right-0");
+        }
+        other => panic!("expected UnorderedMerge snapshot, got {other:?}"),
+    }
+}
