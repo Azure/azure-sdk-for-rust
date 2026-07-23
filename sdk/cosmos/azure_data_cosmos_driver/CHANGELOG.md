@@ -8,7 +8,7 @@
 
 ### Bugs Fixed
 
-- Fixed partition-range discovery for containers whose routing metadata spans more than ten pages, added full-refresh recovery for invalid incremental maps, and prevented empty routing maps from remaining cached. ([#14](https://github.com/tvaron3/azure-sdk-for-rust/pull/14))
+- Fixed partition-range discovery for containers whose routing metadata spans more than ten pages, added full-refresh recovery for invalid incremental maps, and prevented empty routing maps from remaining cached. ([#4845](https://github.com/Azure/azure-sdk-for-rust/pull/4845))
 
 ### Other Changes
 

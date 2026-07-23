@@ -8,7 +8,7 @@
 
 ### Bugs Fixed
 
-- Fixed `ContainerClient::read_feed_ranges` failing on containers with large partition counts by fully draining routing metadata and retrying missing cache results with a forced refresh. ([#14](https://github.com/tvaron3/azure-sdk-for-rust/pull/14))
+- Fixed `ContainerClient::read_feed_ranges` failing on containers with large partition counts by fully draining routing metadata and retrying missing cache results with a forced refresh. ([#4845](https://github.com/Azure/azure-sdk-for-rust/pull/4845))
 
 ### Other Changes
 
