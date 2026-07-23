@@ -1821,10 +1821,7 @@ async fn test_smart_access_tier(ctx: TestContext) -> Result<(), Box<dyn Error>> 
     let response = download_blob_client.download(None).await?;
 
     // Assert
-    assert_eq!(
-        Some(AccessTier::Smart.to_string()),
-        response.properties.access_tier
-    );
+    assert_eq!(Some(AccessTier::Smart), response.properties.access_tier);
     assert!(response.properties.smart_access_tier.is_some());
     assert!(response.properties.access_tier_changed_on.is_some());
     assert!(!response.properties.access_tier_inferred.unwrap_or(false));

@@ -15,7 +15,8 @@ use std::collections::HashMap;
 use time::OffsetDateTime;
 
 use crate::generated::models::{
-    BlobType, CopyStatus, ImmutabilityPolicyMode, LeaseDuration, LeaseState, LeaseStatus,
+    AccessTier, BlobType, CopyStatus, ImmutabilityPolicyMode, LeaseDuration, LeaseState,
+    LeaseStatus,
 };
 
 /// Result of a `BlobClient::download()` operation.
@@ -183,7 +184,7 @@ pub struct BlobDownloadProperties {
     pub encryption_key_sha256: Option<String>,
 
     /// The access tier of the blob (`x-ms-access-tier` header).
-    pub access_tier: Option<String>,
+    pub access_tier: Option<AccessTier>,
 
     /// Date/time the access tier was last changed (`x-ms-access-tier-change-time` header).
     ///
@@ -197,7 +198,7 @@ pub struct BlobDownloadProperties {
     /// The underlying tier of a smart tier blob (`x-ms-smart-access-tier` header).
     ///
     /// Only returned if the blob is in the Smart tier.
-    pub smart_access_tier: Option<String>,
+    pub smart_access_tier: Option<AccessTier>,
 }
 
 impl BlobClientDownloadResult {
