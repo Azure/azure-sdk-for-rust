@@ -20,7 +20,7 @@
 //!
 //! A built-in OpenTelemetry metrics handler,
 //! [`CosmosMetricsHandler`], is available behind
-//! the off-by-default `otel_metrics` feature. It emits the stable
+//! the off-by-default `metrics` feature. It emits the stable
 //! `db.client.operation.duration` histogram (and, opt-in, development-tier
 //! metrics) from each completed context.
 //!
@@ -31,7 +31,7 @@
 //! - [`SamplingLogHandler`] — logs a compact, rate-limited diagnostics line
 //!   through the [`tracing`](https://docs.rs/tracing) ecosystem.
 //! - [`CosmosTracingHandler`] — emits a backdated OpenTelemetry span tree
-//!   (behind the off-by-default `otel_tracing` feature).
+//!   (behind the off-by-default `distributed_tracing` feature).
 
 // =========================================================================
 // Public API
@@ -44,10 +44,10 @@ pub use azure_data_cosmos_driver::DiagnosticsThresholds;
 pub use handler::{DiagnosticsHandler, DiagnosticsHandlerChain};
 pub use logging::{RateLimiterConfig, SamplingLogHandler};
 pub use operation_context::CosmosOperationContext;
-#[cfg(feature = "otel_tracing")]
+#[cfg(feature = "distributed_tracing")]
 pub use tracing::CosmosTracingHandler;
 
-#[cfg(feature = "otel_metrics")]
+#[cfg(feature = "metrics")]
 pub use metrics::{CosmosMetricsHandler, MetricsOptions};
 
 // =========================================================================
@@ -58,8 +58,8 @@ mod handler;
 mod logging;
 mod operation_context;
 
-#[cfg(feature = "otel_metrics")]
+#[cfg(feature = "metrics")]
 pub mod metrics;
 
-#[cfg(feature = "otel_tracing")]
+#[cfg(feature = "distributed_tracing")]
 mod tracing;

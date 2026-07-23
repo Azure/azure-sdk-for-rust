@@ -1,14 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! OpenTelemetry metrics for Cosmos DB operations (feature `otel_metrics`).
+//! OpenTelemetry metrics for Cosmos DB operations (feature `metrics`).
 //!
 //! This module provides [`CosmosMetricsHandler`], a
 //! [`DiagnosticsHandler`](crate::diagnostics::DiagnosticsHandler) that maps each
 //! completed operation's [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext)
 //! to OpenTelemetry metrics following the database-client semantic conventions.
 //!
-//! The whole module is compiled only when the `otel_metrics` Cargo feature is
+//! The whole module is compiled only when the `metrics` Cargo feature is
 //! enabled, so with the feature off there is no metrics code at all. With the
 //! feature on but no meter provider registered, OpenTelemetry's global meter is a
 //! no-op.

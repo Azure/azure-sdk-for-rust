@@ -62,7 +62,7 @@ implying everything already exists:
 
 > **[WS2]–[WS8] all ship together in one combined observability PR (#4789)** — this contract doc
 > is folded into it. They are additive and off-by-default (the OTel handlers are behind the
-> `otel_metrics` / `otel_tracing` features) and are built entirely on the existing [main]
+> `metrics` / `distributed_tracing` features) and are built entirely on the existing [main]
 > foundation.
 >
 > ⚠ **Correction to the earlier draft of this doc (PR #4684).** An earlier draft assumed the

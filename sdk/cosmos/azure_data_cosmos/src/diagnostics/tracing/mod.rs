@@ -3,7 +3,7 @@
 
 //! Tail-sampled OpenTelemetry tracing for Cosmos DB operations.
 //!
-//! This module is gated behind the off-by-default `otel_tracing` feature. It
+//! This module is gated behind the off-by-default `distributed_tracing` feature. It
 //! provides [`CosmosTracingHandler`], a [`DiagnosticsHandler`](crate::diagnostics::DiagnosticsHandler)
 //! that reconstructs a **backdated** span tree — one operation span plus one child
 //! per retained attempt — for operations selected by tail-based sampling (failures

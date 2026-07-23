@@ -10,8 +10,8 @@
 //! the pipeline [`Context`](azure_core::http::Context), so both the metrics and
 //! tracing handlers can emit correct operation-scope attributes.
 //!
-//! This type is always compiled (independent of the `otel_metrics` /
-//! `otel_tracing` features) because the SDK populates it on every completed
+//! This type is always compiled (independent of the `metrics` /
+//! `distributed_tracing` features) because the SDK populates it on every completed
 //! operation; the feature-gated handlers simply read whichever fields are set.
 
 use std::borrow::Cow;

@@ -7,7 +7,7 @@ use std::time::{Instant, SystemTime};
 
 use azure_core::http::Context;
 use azure_data_cosmos_driver::{diagnostics::DiagnosticsContext, DiagnosticsThresholds};
-use opentelemetry::global::{self, BoxedTracer};
+use opentelemetry::global;
 
 use super::span_builder::emit_backdated_span_tree;
 use crate::diagnostics::{CosmosOperationContext, DiagnosticsHandler};
@@ -31,8 +31,10 @@ const TRACER_NAME: &str = "azure_data_cosmos";
 ///
 /// Register it with
 /// [`CosmosClientBuilder::with_diagnostics_handler`](crate::CosmosClientBuilder::with_diagnostics_handler).
-/// Spans are emitted through the globally-installed OpenTelemetry tracer provider;
-/// with no provider installed, emission is a no-op.
+/// Spans are emitted through the globally-installed OpenTelemetry tracer provider,
+/// resolved lazily on each sampled emission — so a provider installed *after* the
+/// handler (or client) is constructed is still picked up. With no provider
+/// installed, emission is a no-op.
 ///
 /// # Examples
 ///
@@ -48,7 +50,6 @@ const TRACER_NAME: &str = "azure_data_cosmos";
 /// ```
 pub struct CosmosTracingHandler {
     thresholds: DiagnosticsThresholds,
-    tracer: BoxedTracer,
 }
 
 impl CosmosTracingHandler {
@@ -59,10 +60,7 @@ impl CosmosTracingHandler {
 
     /// Creates a handler using the supplied sampling thresholds.
     pub fn with_thresholds(thresholds: DiagnosticsThresholds) -> Self {
-        Self {
-            thresholds,
-            tracer: global::tracer(TRACER_NAME),
-        }
+        Self { thresholds }
     }
 
     /// Returns the sampling thresholds this handler applies.
@@ -90,13 +88,14 @@ impl DiagnosticsHandler for CosmosTracingHandler {
         if !should_emit_span(diagnostics, &self.thresholds, op) {
             return;
         }
-        emit_backdated_span_tree(
-            &self.tracer,
-            diagnostics,
-            op,
-            Instant::now(),
-            SystemTime::now(),
-        );
+        // Resolve the global tracer lazily, on the (rare) sampled emission path,
+        // rather than caching it at construction. `global::tracer` binds to
+        // whatever provider is installed *now*; caching it in the handler would
+        // permanently capture the no-op default whenever the handler is built
+        // before `global::set_tracer_provider`, silently dropping every sampled
+        // span even after a provider is installed later.
+        let tracer = global::tracer(TRACER_NAME);
+        emit_backdated_span_tree(&tracer, diagnostics, op, Instant::now(), SystemTime::now());
     }
 }
 

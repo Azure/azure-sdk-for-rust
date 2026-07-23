@@ -7,10 +7,12 @@
 //! paginated success) against wiring regressions that still compile.
 
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use azure_core::http::Context;
-use azure_data_cosmos::diagnostics::{DiagnosticsContext, DiagnosticsHandler};
+use azure_data_cosmos::diagnostics::{
+    CosmosOperationContext, DiagnosticsContext, DiagnosticsHandler,
+};
 use azure_data_cosmos::options::Region;
 use azure_data_cosmos::{
     AccountEndpoint, AccountReference, CosmosClient, CosmosClientBuilder, CosmosRuntimeBuilder,
@@ -32,12 +34,24 @@ struct TestDoc {
     value: i64,
 }
 
-/// A [`DiagnosticsHandler`] that counts invocations and how many carried a failed
-/// context, so a test can assert the chain fired on both success and failure.
+/// The operation-scope identity (`CosmosOperationContext`) a handler observed on
+/// its most recent invocation.
+#[derive(Clone, Debug, Default, PartialEq)]
+struct ObservedOp {
+    operation_name: Option<String>,
+    database_name: Option<String>,
+    container_name: Option<String>,
+}
+
+/// A [`DiagnosticsHandler`] that counts invocations, how many carried a failed
+/// context, and the operation-scope identity of the latest invocation — so a test
+/// can assert the chain fired on both success and failure *and* that the correct
+/// operation/database/container identity (WS8) was propagated.
 #[derive(Default)]
 struct CountingHandler {
     total: AtomicUsize,
     failures: AtomicUsize,
+    last_op: Mutex<Option<ObservedOp>>,
 }
 
 impl CountingHandler {
@@ -48,14 +62,30 @@ impl CountingHandler {
     fn failures(&self) -> usize {
         self.failures.load(Ordering::SeqCst)
     }
+
+    /// The operation identity observed on the most recent invocation, or `None`
+    /// when the handler was invoked without a `CosmosOperationContext`.
+    fn last_op(&self) -> Option<ObservedOp> {
+        self.last_op.lock().unwrap().clone()
+    }
 }
 
 impl DiagnosticsHandler for CountingHandler {
-    fn handle(&self, diagnostics: &DiagnosticsContext, _cx: &Context<'_>) {
+    fn handle(&self, diagnostics: &DiagnosticsContext, cx: &Context<'_>) {
         self.total.fetch_add(1, Ordering::SeqCst);
         if diagnostics.is_failure() {
             self.failures.fetch_add(1, Ordering::SeqCst);
         }
+        // Capture the SDK-supplied operation identity carried on the pipeline
+        // context so a test can assert the WS8 `db.*` wiring (operation name,
+        // database, container) actually reaches handlers. Store the observed
+        // value verbatim (including `None`) so missing wiring is detectable.
+        let observed = cx.value::<CosmosOperationContext>().map(|op| ObservedOp {
+            operation_name: op.operation_name().map(str::to_owned),
+            database_name: op.database_name().map(str::to_owned),
+            container_name: op.container_name().map(str::to_owned),
+        });
+        *self.last_op.lock().unwrap() = observed;
     }
 }
 
@@ -130,9 +160,19 @@ async fn handler_receives_singleton_success() {
     .await
     .unwrap();
 
-    assert!(
-        handler.total() > before,
-        "the handler chain must fire on a singleton success"
+    assert_eq!(
+        handler.total(),
+        before + 1,
+        "a singleton success must dispatch exactly one completion callback"
+    );
+    assert_eq!(
+        handler.last_op(),
+        Some(ObservedOp {
+            operation_name: Some("create_item".to_string()),
+            database_name: Some(db.clone()),
+            container_name: Some(container.clone()),
+        }),
+        "the create_item operation must propagate its db.* identity to handlers"
     );
 }
 
@@ -151,13 +191,20 @@ async fn handler_receives_singleton_failure() {
     let result = c.read_item("pkMissing", "does-not-exist", None).await;
     assert!(result.is_err(), "reading a missing item must fail");
 
-    assert!(
-        handler.total() > before_total,
-        "the handler chain must fire on a singleton failure"
+    assert_eq!(
+        handler.total(),
+        before_total + 1,
+        "a singleton failure must dispatch exactly one completion callback"
     );
-    assert!(
-        handler.failures() > before_failures,
-        "the failed operation must be dispatched with a failed context"
+    assert_eq!(
+        handler.failures(),
+        before_failures + 1,
+        "the failed operation must be dispatched exactly once with a failed context"
+    );
+    assert_eq!(
+        handler.last_op().and_then(|op| op.operation_name),
+        Some("read_item".to_string()),
+        "the failed read_item must still propagate its operation identity"
     );
 }
 
@@ -200,8 +247,64 @@ async fn handler_receives_paginated_success() {
         .unwrap();
 
     assert_eq!(items.len(), 3);
+    assert_eq!(
+        handler.total(),
+        before + 1,
+        "a single query page must dispatch exactly one completion callback"
+    );
+    assert_eq!(
+        handler.last_op(),
+        Some(ObservedOp {
+            operation_name: Some("query_items".to_string()),
+            database_name: Some(db.clone()),
+            container_name: Some(container.clone()),
+        }),
+        "the query_items operation must propagate its db.* identity to handlers"
+    );
+}
+
+/// The paginated **failure** dispatch seam — a page fetch that errors — must fire
+/// the handler exactly once with a failed context. This is a distinct completion
+/// seam from the paginated-success and singleton paths and can regress
+/// independently, so it gets its own emulator-driven coverage.
+#[tokio::test]
+async fn handler_receives_paginated_failure() {
+    let (client, handler, db, container) = setup().await;
+    let c = client
+        .database_client(&db)
+        .container_client(&container)
+        .await
+        .unwrap();
+
+    let before_total = handler.total();
+    let before_failures = handler.failures();
+
+    // A syntactically invalid query is rejected by the emulator with a terminal
+    // (non-retryable) 400 BadRequest, so the first page fetch errors instead of
+    // returning a page — exercising the iterator's failure dispatch branch.
+    let result: Result<Vec<TestDoc>, _> = c
+        .query_items(
+            Query::from("SELECT * FROM c WHERE"),
+            FeedScope::partition("pkFail"),
+            None,
+        )
+        .await
+        .unwrap()
+        .try_collect()
+        .await;
     assert!(
-        handler.total() > before,
-        "the handler chain must fire for query pages"
+        result.is_err(),
+        "the invalid query must surface as a terminal page-fetch error"
+    );
+
+    assert_eq!(
+        handler.total(),
+        before_total + 1,
+        "a failed query page must dispatch exactly one completion callback"
+    );
+    assert_eq!(
+        handler.failures(),
+        before_failures + 1,
+        "the failed page fetch must be dispatched exactly once with a failed context"
     );
 }

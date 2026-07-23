@@ -5,8 +5,8 @@
 ### Features Added
 
 - Added a pluggable client-side diagnostics emission layer — the `DiagnosticsHandler` trait and ordered `DiagnosticsHandlerChain` (registered via `CosmosClientBuilder::with_diagnostics_handler`) — invoked once per operation (singleton and paginated, on success and failure) with the completed `DiagnosticsContext` plus an SDK-supplied `CosmosOperationContext`; the empty default chain is a zero-overhead no-op. ([#4789](https://github.com/Azure/azure-sdk-for-rust/pull/4789))
-- Added the `otel_metrics`-gated `CosmosMetricsHandler` (with `MetricsOptions`), emitting the stable `db.client.operation.duration` histogram plus opt-in development metrics (`operation.request_charge`, `response.returned_rows`); a no-op when no meter provider is registered. ([#4789](https://github.com/Azure/azure-sdk-for-rust/pull/4789))
-- Added tail-sampled emission handlers — `SamplingLogHandler` (rate-limited `tracing` line) and the `otel_tracing`-gated `CosmosTracingHandler` (backdated span tree) — that emit only for operations which fail or breach a configurable `DiagnosticsThresholds`. ([#4789](https://github.com/Azure/azure-sdk-for-rust/pull/4789))
+- Added the `metrics`-gated `CosmosMetricsHandler` (with `MetricsOptions`), emitting the stable `db.client.operation.duration` histogram plus opt-in development metrics (`operation.request_charge`, `response.returned_rows`); a no-op when no meter provider is registered. ([#4789](https://github.com/Azure/azure-sdk-for-rust/pull/4789))
+- Added tail-sampled emission handlers — `SamplingLogHandler` (rate-limited `tracing` line) and the `distributed_tracing`-gated `CosmosTracingHandler` (backdated span tree) — that emit only for operations which fail or breach a configurable `DiagnosticsThresholds`. ([#4789](https://github.com/Azure/azure-sdk-for-rust/pull/4789))
 
 ### Breaking Changes
 

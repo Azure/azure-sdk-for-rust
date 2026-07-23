@@ -104,9 +104,17 @@ impl DiagnosticsThresholds {
     ///
     /// Operations charging more than this are eligible for emission.
     /// Default: 1000 RU.
+    ///
+    /// Non-finite (`NaN`/±∞) or negative values are **ignored** and leave the
+    /// current threshold unchanged. Such values would otherwise corrupt
+    /// RU-based sampling: `NaN` makes every `charge > threshold` comparison
+    /// false (silently disabling RU sampling), and a negative bound makes it
+    /// always true (sampling every operation).
     #[must_use]
     pub fn with_request_charge(mut self, request_charge: f64) -> Self {
-        self.request_charge = request_charge;
+        if request_charge.is_finite() && request_charge >= 0.0 {
+            self.request_charge = request_charge;
+        }
         self
     }
 
@@ -204,5 +212,26 @@ mod tests {
         assert!(!is_point_operation("query_items"));
         assert!(!is_point_operation("execute_batch"));
         assert!(!is_point_operation("unknown"));
+    }
+
+    #[test]
+    fn request_charge_ignores_non_finite_and_negative() {
+        // A valid override applies.
+        let base = DiagnosticsThresholds::default().with_request_charge(250.0);
+        assert_eq!(base.request_charge(), 250.0);
+
+        // NaN would make `charge > threshold` false for every operation,
+        // silently disabling RU sampling; it must be ignored and leave the
+        // prior value intact.
+        assert_eq!(base.with_request_charge(f64::NAN).request_charge(), 250.0);
+        // A negative bound would sample every operation; ignored.
+        assert_eq!(base.with_request_charge(-1.0).request_charge(), 250.0);
+        // Infinities are non-finite; ignored.
+        assert_eq!(
+            base.with_request_charge(f64::INFINITY).request_charge(),
+            250.0
+        );
+        // Zero is a valid (finite, non-negative) threshold.
+        assert_eq!(base.with_request_charge(0.0).request_charge(), 0.0);
     }
 }
