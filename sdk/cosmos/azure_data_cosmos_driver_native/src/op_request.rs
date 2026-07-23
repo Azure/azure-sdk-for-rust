@@ -292,7 +292,9 @@ pub struct CosmosOperationOptions {
     /// When true, the driver transcodes a **text** request body to binary
     /// before sending it (an already-binary body is passed through) and
     /// advertises `CosmosBinary`, so the caller never encodes binary itself.
-    /// `unset` / `false` leaves the wire as text.
+    /// An explicit `false` forces binary **off** for this operation regardless
+    /// of any account/runtime default; `unset` inherits a lower layer (text by
+    /// default).
     pub binary_encoding_enabled: i8,
     /// Whether the driver transcodes the binary response back to **text** JSON.
     /// Tri-state bool (`0` unset / `1` false / `2` true).
@@ -355,15 +357,17 @@ impl CosmosOperationOptions {
             opts.custom_headers = Some(headers);
         }
 
-        // Binary encoding is a whole-value option: only build it when the host
-        // enabled it. The `request_text_response` flag is honored only in that
-        // case (it is a no-op when binary is off).
-        if let Some(true) = decode_tristate_bool(self.binary_encoding_enabled)? {
+        // Binary encoding is a whole-value option. It is tri-state: `unset`
+        // leaves `binary_encoding` as `None` (inherit a lower layer), while an
+        // explicit `true`/`false` is honored as `Some(..)` so a host can force
+        // binary off regardless of any account/runtime default. The
+        // `request_text_response` flag is only meaningful when binary is on.
+        if let Some(enabled) = decode_tristate_bool(self.binary_encoding_enabled)? {
             let request_text_response =
                 decode_tristate_bool(self.binary_encoding_request_text_response)?.unwrap_or(false);
             opts.binary_encoding = Some(
                 BinaryEncodingOptions::new()
-                    .with_enabled(true)
+                    .with_enabled(enabled)
                     .with_request_text_response(request_text_response),
             );
         }
@@ -1179,14 +1183,31 @@ mod tests {
     }
 
     #[test]
-    fn binary_encoding_disabled_yields_no_option() {
-        // enabled unset/false → no binary-encoding option at all, even if the
-        // text-response flag is set (it is a no-op when binary is off).
+    fn binary_encoding_unset_yields_no_option() {
+        // enabled unset → no binary-encoding option at all (inherit a lower
+        // layer), even if the text-response flag is set (a no-op when unset).
         let mut o = cosmos_operation_options_default();
         o.binary_encoding_request_text_response = TRISTATE_TRUE;
         // SAFETY: all pointer fields are NULL / len 0.
         let driver = unsafe { o.to_driver() }.expect("options convert");
         assert!(driver.binary_encoding.is_none());
+    }
+
+    #[test]
+    fn binary_encoding_explicit_false_is_honored() {
+        // enabled = false is an *explicit* opt-out: it must produce
+        // `Some(disabled)` so the driver forces binary off for this operation
+        // rather than inheriting an account/runtime default (which `None` does).
+        let mut o = cosmos_operation_options_default();
+        o.binary_encoding_enabled = TRISTATE_FALSE;
+        // request_text_response set but irrelevant when binary is off.
+        o.binary_encoding_request_text_response = TRISTATE_TRUE;
+        // SAFETY: all pointer fields are NULL / len 0.
+        let driver = unsafe { o.to_driver() }.expect("options convert");
+        let be = driver
+            .binary_encoding
+            .expect("explicit false must be honored as Some(disabled)");
+        assert!(!be.enabled);
     }
 
     #[test]

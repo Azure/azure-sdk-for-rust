@@ -1044,7 +1044,9 @@ typedef struct cosmos_operation_options_t {
    * When true, the driver transcodes a **text** request body to binary
    * before sending it (an already-binary body is passed through) and
    * advertises `CosmosBinary`, so the caller never encodes binary itself.
-   * `unset` / `false` leaves the wire as text.
+   * An explicit `false` forces binary **off** for this operation regardless
+   * of any account/runtime default; `unset` inherits a lower layer (text by
+   * default).
    */
   int8_t binary_encoding_enabled;
   /**

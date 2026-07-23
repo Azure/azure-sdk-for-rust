@@ -44,7 +44,7 @@ use crate::models::{
     CosmosOperation, CosmosResponse, PartitionKeyKind, PatchInstructions, PatchOperation,
     Precondition, SessionToken,
 };
-use crate::options::OperationOptions;
+use crate::options::{BinaryEncodingOptions, OperationOptions};
 use async_trait::async_trait;
 use azure_core::http::{Etag, StatusCode};
 use std::num::NonZeroU8;
@@ -111,8 +111,10 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
     mut options: OperationOptions,
     max_attempts: Option<NonZeroU8>,
 ) -> crate::error::Result<CosmosResponse> {
-    // PATCH is excluded from binary encoding.
-    options.binary_encoding = None;
+    // PATCH is excluded from binary encoding. Force it off *explicitly*:
+    // `None` would inherit a lower layer (e.g. an account/client that enabled
+    // binary), which would then flow into the internal Read/Replace sub-ops.
+    options.binary_encoding = Some(BinaryEncodingOptions::new().with_enabled(false));
 
     // -- 1. Reject caller-set preconditions --
     //
@@ -1906,9 +1908,10 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn rmw_clears_binary_encoding_on_forwarded_sub_ops() {
-        // A caller may set `binary_encoding` on a patch; the handler must clear
-        // it so the forwarded Read/Replace sub-ops stay text (see the handler).
+    async fn rmw_forces_binary_encoding_off_on_forwarded_sub_ops() {
+        // A caller may set `binary_encoding` on a patch; the handler must force
+        // it OFF explicitly (not `None`, which would inherit an account/client
+        // default) so the forwarded Read/Replace sub-ops stay text.
         struct OptionsCapturingDispatcher {
             binary_encodings: Mutex<Vec<Option<BinaryEncodingOptions>>>,
         }
@@ -1965,9 +1968,11 @@ mod tests {
 
         let captured = dispatcher.binary_encodings.lock().unwrap().clone();
         assert_eq!(captured.len(), 2, "expected one Read + one Replace sub-op");
+        let disabled = Some(BinaryEncodingOptions::new().with_enabled(false));
         assert!(
-            captured.iter().all(|be| be.is_none()),
-            "patch must clear binary_encoding on every forwarded sub-op, got {captured:?}",
+            captured.iter().all(|be| *be == disabled),
+            "patch must force binary_encoding OFF (explicit disabled, not inherit) \
+             on every forwarded sub-op, got {captured:?}",
         );
     }
 }

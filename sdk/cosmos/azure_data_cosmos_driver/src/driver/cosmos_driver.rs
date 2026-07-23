@@ -2316,16 +2316,19 @@ impl CosmosDriver {
         }
 
         // Resolve binary encoding through the same layered view as every other
-        // option, and only honor it for point item operations (query/feed/batch
-        // are deferred per the binary-encoding spec).
-        let binary = if operation.operation_type().supports_binary_encoding() {
-            self.operation_options_view(&options)
-                .binary_encoding()
-                .cloned()
-                .unwrap_or_default()
-        } else {
-            crate::options::BinaryEncodingOptions::default()
-        };
+        // option, and only honor it for point **item** operations (the resource
+        // must be a `Document`; query/feed/batch and every control-plane
+        // resource are deferred per the binary-encoding spec).
+        let binary =
+            if Self::binary_encoding_applies(operation.resource_type(), operation.operation_type())
+            {
+                self.operation_options_view(&options)
+                    .binary_encoding()
+                    .cloned()
+                    .unwrap_or_default()
+            } else {
+                crate::options::BinaryEncodingOptions::default()
+            };
         let operation = if binary.enabled {
             Self::apply_request_binary_encoding(operation)?
         } else {
@@ -2352,6 +2355,20 @@ impl CosmosDriver {
             }
         }
         Ok(response)
+    }
+
+    /// Whether binary encoding applies to an operation.
+    ///
+    /// Honored only for point item operations: the resource must be a
+    /// [`ResourceType::Document`] and the operation one of create/read/replace/
+    /// upsert. Control-plane resources share those operation types but must
+    /// never be binary encoded (some carry JSON bodies).
+    fn binary_encoding_applies(
+        resource_type: crate::models::ResourceType,
+        operation_type: crate::models::OperationType,
+    ) -> bool {
+        resource_type == crate::models::ResourceType::Document
+            && operation_type.supports_binary_encoding()
     }
 
     /// Applies request-side binary encoding to an operation: transcodes a text
@@ -5736,6 +5753,60 @@ mod tests {
     }
 
     // ── apply_request_binary_encoding (schema-agnostic request-side encode) ──
+
+    #[test]
+    fn binary_encoding_applies_only_to_document_item_ops() {
+        use crate::models::{OperationType, ResourceType};
+
+        // Point item ops on `Document` are the only combinations that qualify.
+        for op in [
+            OperationType::Create,
+            OperationType::Read,
+            OperationType::Replace,
+            OperationType::Upsert,
+        ] {
+            assert!(
+                CosmosDriver::binary_encoding_applies(ResourceType::Document, op),
+                "Document + {op:?} should be binary-encodable",
+            );
+        }
+
+        // Non-item operation types on `Document` are excluded (query/feed/delete/patch).
+        for op in [
+            OperationType::Delete,
+            OperationType::Query,
+            OperationType::ReadFeed,
+            OperationType::Patch,
+        ] {
+            assert!(
+                !CosmosDriver::binary_encoding_applies(ResourceType::Document, op),
+                "Document + {op:?} must not be binary-encoded",
+            );
+        }
+
+        // Control-plane resources share the create/read/replace/upsert operation
+        // types but must NEVER be binary encoded — some carry JSON bodies.
+        for rt in [
+            ResourceType::Database,
+            ResourceType::DocumentCollection,
+            ResourceType::Offer,
+            ResourceType::StoredProcedure,
+            ResourceType::Trigger,
+            ResourceType::UserDefinedFunction,
+        ] {
+            for op in [
+                OperationType::Create,
+                OperationType::Read,
+                OperationType::Replace,
+                OperationType::Upsert,
+            ] {
+                assert!(
+                    !CosmosDriver::binary_encoding_applies(rt, op),
+                    "{rt:?} + {op:?} must not be binary-encoded (control plane)",
+                );
+            }
+        }
+    }
 
     fn binary_encoding_test_operation(body: Vec<u8>) -> CosmosOperation {
         let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);

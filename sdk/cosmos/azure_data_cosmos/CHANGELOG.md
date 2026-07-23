@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added opt-in Cosmos binary JSON encoding for item operations (`create`/`read`/`replace`/`upsert`). Enable it via `CosmosClientBuilder::with_binary_encoding_options` (or the `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment-variable fallback). Off by default; when disabled, requests and responses are byte-for-byte unchanged. ([#4671](https://github.com/Azure/azure-sdk-for-rust/pull/4671))
+
 ### Breaking Changes
 
 ### Bugs Fixed
