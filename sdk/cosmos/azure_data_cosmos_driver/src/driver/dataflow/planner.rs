@@ -23,7 +23,7 @@ use crate::{
 };
 
 use super::{
-    intersect_feed_ranges, order_by,
+    intersect_feed_ranges,
     query_plan::{QueryInfo, QueryPlan, SortOrder},
     query_response,
     snapshot::{OrderByRangeToken, ValueBoundary},
@@ -231,7 +231,6 @@ pub(crate) async fn build_streaming_ordered_merge(
     resume: Option<PipelineNodeState>,
 ) -> crate::error::Result<Pipeline> {
     validate_query_plan_for_streaming_order_by(query_plan)?;
-    reject_multi_row_per_document_shapes(operation)?;
     let info = query_plan
         .query_info
         .as_ref()
@@ -252,18 +251,6 @@ pub(crate) async fn build_streaming_ordered_merge(
                 .build()
         })?;
     let directions = info.order_by.clone();
-    let fingerprint = order_by::query_fingerprint(rewritten_query);
-
-    // Source columns so a resume/split rebuilds the filter from real columns.
-    let columns: Vec<order_by::OrderByColumn> = info
-        .order_by_expressions
-        .iter()
-        .zip(directions.iter())
-        .map(|(expression, direction)| order_by::OrderByColumn {
-            expression: expression.clone(),
-            direction: *direction,
-        })
-        .collect();
 
     let query_from_beginning = query_response::rewritten_query_from_beginning(rewritten_query);
     let plain_body = query_response::rewrite_query_body(operation.body(), &query_from_beginning)?;
@@ -277,13 +264,10 @@ pub(crate) async fn build_streaming_ordered_merge(
         }
         Some(PipelineNodeState::StreamingOrderedMerge {
             directions: saved_directions,
-            query_fingerprint: saved_fingerprint,
             ranges,
         }) => Some(validate_streaming_order_by_snapshot(
             &directions,
-            &fingerprint,
             &saved_directions,
-            &saved_fingerprint,
             ranges,
         )?),
         Some(other) => {
@@ -298,10 +282,6 @@ pub(crate) async fn build_streaming_ordered_merge(
     };
 
     let mut children = Vec::new();
-    let query_shape = streaming_ordered_merge::OrderByQueryShape {
-        rewritten_query,
-        columns: &columns,
-    };
 
     if let Some(saved_ranges) = saved_ranges {
         for saved in saved_ranges {
@@ -312,7 +292,7 @@ pub(crate) async fn build_streaming_ordered_merge(
                 &resolved,
                 &saved.range,
                 &plain_operation,
-                &query_shape,
+                &directions,
                 saved.server_continuation,
                 saved.boundary.as_ref(),
             )?;
@@ -340,7 +320,7 @@ pub(crate) async fn build_streaming_ordered_merge(
                 &resolved,
                 &feed_range,
                 &plain_operation,
-                &query_shape,
+                &directions,
                 None,
                 None,
             )?;
@@ -360,9 +340,7 @@ pub(crate) async fn build_streaming_ordered_merge(
 
     let root = Box::new(StreamingOrderedMerge::new(
         plain_operation,
-        rewritten_query.to_owned(),
-        columns,
-        fingerprint,
+        directions,
         children,
     ));
     Ok(Pipeline::new(root))
@@ -376,15 +354,13 @@ struct ParsedOrderByRange {
     boundary: Option<ValueBoundary>,
 }
 
-/// Validates a resumed `StreamingOrderedMerge` continuation's query-shape
-/// discriminator against the current query, then validates and parses
-/// every saved range: well-formed, sorted, non-overlapping bounds, and a
-/// boundary whose resume-value count matches the columns.
+/// Validates a resumed `StreamingOrderedMerge` continuation's `ORDER BY`
+/// direction discriminator against the current query, then validates and
+/// parses every saved range: well-formed, sorted, non-overlapping bounds,
+/// and a boundary whose resume-value count matches the columns.
 fn validate_streaming_order_by_snapshot(
     directions: &[SortOrder],
-    fingerprint: &str,
     saved_directions: &[SortOrder],
-    saved_fingerprint: &str,
     ranges: Vec<OrderByRangeToken>,
 ) -> crate::error::Result<Vec<ParsedOrderByRange>> {
     if saved_directions != directions {
@@ -394,13 +370,6 @@ fn validate_streaming_order_by_snapshot(
             saved_directions.len(),
             directions.len(),
         )));
-    }
-    if saved_fingerprint != fingerprint {
-        return Err(order_by_state_invalid(
-            "continuation token's rewritten-query fingerprint does not match the current query \
-             plan; the query text (or its Gateway/native-engine rewrite) has changed since this \
-             token was issued",
-        ));
     }
     if ranges.is_empty() {
         return Err(order_by_state_invalid(
@@ -442,6 +411,15 @@ fn validate_streaming_order_by_snapshot(
             if boundary.last_rid.is_empty() {
                 return Err(order_by_state_invalid(
                     "continuation token range boundary has an empty RID",
+                ));
+            }
+            // A well-formed boundary counts at least its own boundary row, so
+            // `skip_count` is always >= 1. An explicit 0 is corrupt (a legacy
+            // token that omits the field is read back as 1 by serde default,
+            // not 0, so this only rejects a genuinely malformed value).
+            if boundary.skip_count == 0 {
+                return Err(order_by_state_invalid(
+                    "continuation token range boundary has a skip count of 0 (must be >= 1)",
                 ));
             }
         }
@@ -1230,41 +1208,6 @@ fn unsupported_feature(feature: &str) -> crate::error::CosmosError {
         .with_status(crate::error::CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE)
         .with_message(format!("unsupported query feature: {feature}"))
         .build()
-}
-
-/// Rejects a streaming `ORDER BY` operation whose SQL can emit more than one
-/// row per source document (JOIN or array iteration in FROM). The
-/// value-based resume cursor keys on `(sort-key tuple, _rid)` and assumes
-/// each `_rid` appears at most once, so a multi-row shape would make the
-/// `_rid` tiebreak ambiguous and silently drop or duplicate rows on resume.
-///
-/// The original SQL is parsed locally (the Gateway plan doesn't flag JOINs)
-/// and analyzed with [`crate::query::plan::emits_multiple_rows_per_document`].
-/// A parse failure means safety can't be established, so it is also rejected
-/// rather than risk data loss — but ordinary (including parameterized)
-/// single-source `ORDER BY` queries parse cleanly and pass.
-fn reject_multi_row_per_document_shapes(
-    operation: &Arc<CosmosOperation>,
-) -> crate::error::Result<()> {
-    let query_text = query_response::query_text(operation.body())?;
-    let program = crate::query::parse(&query_text).map_err(|source| {
-        crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE)
-            .with_message(format!(
-                "cannot verify a cross-partition streaming ORDER BY query emits one row per \
-                 document because its SQL did not parse locally: {source}"
-            ))
-            .with_source(source)
-            .build()
-    })?;
-    if crate::query::plan::emits_multiple_rows_per_document(&program.query) {
-        return Err(unsupported_feature(
-            "JOIN or array iteration combined with cross-partition streaming ORDER BY \
-             (a single document can appear in multiple result rows, which the value-based \
-             resume cursor cannot track without dropping or duplicating rows)",
-        ));
-    }
-    Ok(())
 }
 
 /// Builds the error returned when a topology range resolved for a query-plan
@@ -3012,49 +2955,34 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn build_streaming_ordered_merge_rejects_join_query() {
-        // A JOIN can emit multiple rows per document `_rid`, which the
-        // value-based resume cursor cannot track — reject before building.
+    async fn build_streaming_ordered_merge_accepts_join_query() {
+        // A JOIN can emit multiple rows per document `_rid`; the resume cursor
+        // now tracks that with a `_rid`-tie skip count (mirroring .NET), so a
+        // JOIN-shaped ORDER BY builds instead of being rejected up front.
         let op = Arc::new(order_by_operation_with_query(
             "SELECT * FROM c JOIN t IN c.tags ORDER BY c.rank",
         ));
-        let plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
-        let mut topology = MockTopologyProvider::new(vec![]);
-        let err = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
-            .await
-            .unwrap_err();
-        assert_eq!(
-            err.status(),
-            crate::error::CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE
+        let plan = order_by_plan(
+            Some("SELECT c._rid, [{\"item\":c.rank}] AS orderByItems, c AS payload FROM c JOIN t IN c.tags ORDER BY c.rank ASC"),
+            vec![qr("", "FF")],
         );
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-0")])]);
+        let pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
+            .await
+            .expect("a JOIN-shaped ORDER BY must build a pipeline");
         assert!(
-            err.to_string().contains("JOIN"),
-            "message must identify JOIN: {err}"
-        );
-    }
-
-    #[tokio::test]
-    async fn build_streaming_ordered_merge_rejects_array_iteration_duplicate_rid_shape() {
-        // `FROM t IN c.tags` unwinds an array: one document produces several
-        // rows sharing a `_rid` — the same duplicate-RID hazard as a JOIN.
-        let op = Arc::new(order_by_operation_with_query(
-            "SELECT VALUE t FROM t IN c.tags ORDER BY t",
-        ));
-        let plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
-        let mut topology = MockTopologyProvider::new(vec![]);
-        let err = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
-            .await
-            .unwrap_err();
-        assert_eq!(
-            err.status(),
-            crate::error::CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE
+            pipeline
+                .into_root()
+                .downcast::<crate::driver::dataflow::StreamingOrderedMerge>()
+                .is_some(),
+            "a JOIN-shaped ORDER BY builds a StreamingOrderedMerge"
         );
     }
 
     #[tokio::test]
     async fn build_streaming_ordered_merge_accepts_ordinary_parameterized_order_by() {
-        // An ordinary single-source ORDER BY — even parameterized — is
-        // single-row-per-document and must not be rejected.
+        // An ordinary single-source, parameterized ORDER BY builds normally
+        // (no local SQL parsing gate stands in the way).
         let op = Arc::new(order_by_operation_with_query(
             "SELECT * FROM c WHERE c.tenant = @t ORDER BY c.rank",
         ));
@@ -3075,21 +3003,83 @@ mod tests {
         );
     }
 
-    #[tokio::test]
-    async fn build_streaming_ordered_merge_rejects_unparseable_sql() {
-        // If the SQL can't be parsed locally, JOIN/multi-row can't be ruled
-        // out — reject rather than risk a data-losing resume.
-        let op = Arc::new(order_by_operation_with_query(
-            "this is not valid cosmos sql !!",
-        ));
-        let plan = order_by_plan(Some("SELECT 1"), vec![qr("", "FF")]);
-        let mut topology = MockTopologyProvider::new(vec![]);
-        let err = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
-            .await
-            .unwrap_err();
+    /// A boundary in a resumed `StreamingOrderedMerge` snapshot always counts
+    /// at least its own boundary row, so an explicit `skip_count` of 0 is a
+    /// corrupt token and must be rejected.
+    #[test]
+    fn streaming_order_by_snapshot_rejects_zero_skip_count() {
+        let ranges = vec![OrderByRangeToken {
+            min_epk: String::new(),
+            max_epk: "FF".to_owned(),
+            server_continuation: None,
+            boundary: Some(ValueBoundary {
+                resume_values: vec![
+                    crate::driver::dataflow::order_by::OrderByResumeValue::Number {
+                        value: 5.0.into(),
+                    },
+                ],
+                last_rid: "rid-1".to_owned(),
+                skip_count: 0,
+            }),
+        }];
+        let err = validate_streaming_order_by_snapshot(
+            &[SortOrder::Ascending],
+            &[SortOrder::Ascending],
+            ranges,
+        )
+        .err()
+        .expect("a boundary skip_count of 0 must be rejected");
         assert_eq!(
-            err.status(),
-            crate::error::CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
+            "a boundary skip_count of 0 must be rejected, got: {err}"
         );
+    }
+
+    /// The smallest well-formed boundary carries `skip_count == 1` (just the
+    /// boundary row) and validates.
+    #[test]
+    fn streaming_order_by_snapshot_accepts_skip_count_one() {
+        let ranges = vec![OrderByRangeToken {
+            min_epk: String::new(),
+            max_epk: "FF".to_owned(),
+            server_continuation: None,
+            boundary: Some(ValueBoundary {
+                resume_values: vec![
+                    crate::driver::dataflow::order_by::OrderByResumeValue::Number {
+                        value: 5.0.into(),
+                    },
+                ],
+                last_rid: "rid-1".to_owned(),
+                skip_count: 1,
+            }),
+        }];
+        let parsed = validate_streaming_order_by_snapshot(
+            &[SortOrder::Ascending],
+            &[SortOrder::Ascending],
+            ranges,
+        )
+        .expect("a well-formed boundary with skip_count 1 is valid");
+        assert_eq!(parsed.len(), 1);
+        assert_eq!(parsed[0].boundary.as_ref().unwrap().skip_count, 1);
+    }
+
+    /// A legacy token that omits `skip_count` deserializes as 1 (not 0), so it
+    /// still validates — its boundary row is discarded on resume, never
+    /// re-emitted.
+    #[test]
+    fn streaming_order_by_snapshot_defaults_missing_skip_count_to_one() {
+        let token: OrderByRangeToken = serde_json::from_str(
+            r#"{"min_epk":"","max_epk":"FF","boundary":{"resume_values":[{"type":"number","value":5.0}],"last_rid":"rid-1"}}"#,
+        )
+        .unwrap();
+        assert_eq!(token.boundary.as_ref().unwrap().skip_count, 1);
+        let parsed = validate_streaming_order_by_snapshot(
+            &[SortOrder::Ascending],
+            &[SortOrder::Ascending],
+            vec![token],
+        )
+        .expect("a legacy boundary missing skip_count defaults to 1 and is valid");
+        assert_eq!(parsed[0].boundary.as_ref().unwrap().skip_count, 1);
     }
 }

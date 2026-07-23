@@ -35,6 +35,7 @@
 //! cross-partition strategies).
 
 mod context;
+mod distinct_hash;
 mod drain;
 mod drained;
 #[cfg(test)]

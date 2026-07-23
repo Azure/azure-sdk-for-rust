@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// cspell:ignore rescan
-
 //! Cross-partition streaming `ORDER BY` value model.
 //!
 //! Shared vocabulary between [`StreamingOrderedMerge`] and the
@@ -11,10 +9,10 @@
 //! [`compare_key_tuples`] is the shared Cosmos-ordered comparator;
 //! [`OrderByResumeValue`] is the bounded "last emitted" value persisted in
 //! a token (arrays/objects hashed to 128 bits so a token never grows with
-//! document size); [`ResumeFilter`] builds the per-range seek predicate
-//! used to skip already-emitted rows on re-query — scalar boundaries stay
-//! correct across a split, complex ones fall back to
-//! [`ResumeFilter::PositionalRescan`] (topology-unchanged only).
+//! document size). On resume, a range's boundary is sent to the backend as
+//! a structured [`resume_filter_json`] — the .NET-compatible `resumeFilter`
+//! field of the query body — and the already-emitted prefix of the boundary
+//! tie run is trimmed client-side via [`classify_row_vs_boundary`].
 //!
 //! # Type order
 //!
@@ -26,33 +24,25 @@ use std::cmp::Ordering;
 
 use serde::{Deserialize, Serialize};
 
-use crate::models::murmur_hash::murmurhash3_128;
-
+use super::distinct_hash::distinct_hash;
 use super::query_plan::SortOrder;
 
-/// One `ORDER BY` column: an expression addressing this column's value,
-/// plus sort direction. Built from the query's source expressions (e.g.
-/// `c.rank`), since the resume filter is injected into the rewritten
-/// query and must reference original source columns, not envelope fields.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) struct OrderByColumn {
-    pub(crate) expression: String,
-    pub(crate) direction: SortOrder,
-}
-
-/// A stable fingerprint of a rewritten query's text, used as a
-/// continuation token's query-shape discriminator: resume with a
-/// structurally different query is rejected, never conflated.
-pub(crate) fn query_fingerprint(rewritten_query: &str) -> String {
-    let hash = murmurhash3_128(rewritten_query.as_bytes(), 0);
-    format!("{hash:032x}")
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+enum CosmosType {
+    Undefined,
+    Null,
+    Boolean,
+    Number,
+    String,
+    Array,
+    Object,
 }
 
 /// A single `ORDER BY` key value parsed from a rewritten envelope's
 /// `orderByItems[i]`. Distinguishes `Undefined` (no `item` field) from
 /// every JSON value, including `null` — load-bearing, since Cosmos ranks
 /// `Undefined` before `Null`.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub(crate) enum OrderByItem {
     Undefined,
     Null,
@@ -63,20 +53,6 @@ pub(crate) enum OrderByItem {
     /// Key/value pairs in wire order; comparison sorts by key internally
     /// so differently-ordered wire keys still compare equal.
     Object(Vec<(String, OrderByItem)>),
-}
-
-/// Ascending Cosmos type rank. Must match
-/// `crate::query::eval::sort_type_order`.
-fn type_rank(item: &OrderByItem) -> u8 {
-    match item {
-        OrderByItem::Undefined => 0,
-        OrderByItem::Null => 1,
-        OrderByItem::Boolean(_) => 2,
-        OrderByItem::Number(_) => 3,
-        OrderByItem::String(_) => 4,
-        OrderByItem::Array(_) => 5,
-        OrderByItem::Object(_) => 6,
-    }
 }
 
 /// Total-ordering comparison for `f64` (`-0.0 == 0.0`, matching IEEE/Cosmos
@@ -97,11 +73,24 @@ fn cmp_i64_u64(a: i64, b: u64) -> Ordering {
     }
 }
 
-/// Compares an `i64` with a finite `f64` exactly. `2^63` is exactly
+/// Compares an `i64` with an `f64` for a *total* order. A finite `f64` is
+/// compared exactly (see below); a `NaN` is ordered by `f64::total_cmp`
+/// convention so the comparator stays a strict total order even if a test or
+/// internal construction slips a `NaN` in — negative `NaN` sorts before every
+/// finite value, positive `NaN` after (production deserialization rejects
+/// non-finite values, so this never arises from real data). `2^63` is exactly
 /// representable, so it bounds the range where `floor` fits an `i64`; the
 /// fractional part then breaks a floor-tie without any lossy cast.
 fn cmp_i64_f64(a: i64, b: f64) -> Ordering {
     const TWO_POW_63: f64 = 9_223_372_036_854_775_808.0;
+    if b.is_nan() {
+        // `a` is finite: below +NaN, above -NaN (matches `f64::total_cmp`).
+        return if b.is_sign_negative() {
+            Ordering::Greater
+        } else {
+            Ordering::Less
+        };
+    }
     if b >= TWO_POW_63 {
         return Ordering::Less; // a <= i64::MAX < 2^63 <= b
     }
@@ -116,10 +105,19 @@ fn cmp_i64_f64(a: i64, b: f64) -> Ordering {
     }
 }
 
-/// Compares a `u64` with a finite `f64` exactly (see [`cmp_i64_f64`];
-/// `2^64` is exactly representable and bounds the `u64` range).
+/// Compares a `u64` with an `f64` for a *total* order (see [`cmp_i64_f64`] for
+/// the `NaN` convention; `2^64` is exactly representable and bounds the `u64`
+/// range).
 fn cmp_u64_f64(a: u64, b: f64) -> Ordering {
     const TWO_POW_64: f64 = 18_446_744_073_709_551_616.0;
+    if b.is_nan() {
+        // `a` is finite: below +NaN, above -NaN (matches `f64::total_cmp`).
+        return if b.is_sign_negative() {
+            Ordering::Greater
+        } else {
+            Ordering::Less
+        };
+    }
     if b < 0.0 {
         return Ordering::Greater; // a >= 0 > b
     }
@@ -161,9 +159,50 @@ impl OrderByNumber {
         }
     }
 
-    /// Mathematically-correct comparison across all variant pairs, with no
-    /// lossy cast or overflow (`-0.0 == 0.0`, `5i64 == 5.0f64`).
+    /// Renders the exact JSON value (integers stay integers) for the wire
+    /// form of a scalar resume boundary (its `resumeFilter.value` entry).
+    fn to_json_value(self) -> serde_json::Value {
+        match self {
+            Self::I64(i) => serde_json::Value::Number(i.into()),
+            Self::U64(u) => serde_json::Value::Number(u.into()),
+            Self::F64(f) => serde_json::Number::from_f64(f)
+                .map(serde_json::Value::Number)
+                .unwrap_or(serde_json::Value::Null),
+        }
+    }
+
+    #[cfg(test)]
     fn cosmos_cmp(&self, other: &Self) -> Ordering {
+        self.cmp(other)
+    }
+}
+
+/// Numeric equality is value-based across variants (`I64(5) == F64(5.0)`),
+/// matching Cosmos, so representation never changes an equality result.
+impl PartialEq for OrderByNumber {
+    fn eq(&self, other: &Self) -> bool {
+        self.cmp(other) == Ordering::Equal
+    }
+}
+
+// `Eq` soundness: `cmp` is a strict total order for *every* `OrderByNumber`,
+// including `NaN` (the cross-variant helpers order `NaN` by `f64::total_cmp`
+// convention, and `F64`/`F64` already does), so the `cmp`-derived `PartialEq`
+// is a proper equivalence relation — reflexive, symmetric, and transitive —
+// even if a test or internal construction introduces a `NaN`. Production never
+// does: the only production constructor is `from_json_number` (a
+// `serde_json::Number` is always finite), `deserialize` rejects non-finite
+// floats below, and the `From<f64>` convenience is `#[cfg(test)]`-only.
+impl Eq for OrderByNumber {}
+
+impl PartialOrd for OrderByNumber {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for OrderByNumber {
+    fn cmp(&self, other: &Self) -> Ordering {
         use OrderByNumber::{F64, I64, U64};
         match (self, other) {
             (I64(a), I64(b)) => a.cmp(b),
@@ -177,37 +216,7 @@ impl OrderByNumber {
             (F64(a), U64(b)) => cmp_u64_f64(*b, *a).reverse(),
         }
     }
-
-    /// Renders the exact JSON value (integers stay integers) for canonical
-    /// hashing of complex keys and for binding a scalar resume boundary as a
-    /// query parameter.
-    fn to_json_value(self) -> serde_json::Value {
-        match self {
-            Self::I64(i) => serde_json::Value::Number(i.into()),
-            Self::U64(u) => serde_json::Value::Number(u.into()),
-            Self::F64(f) => serde_json::Number::from_f64(f)
-                .map(serde_json::Value::Number)
-                .unwrap_or(serde_json::Value::Null),
-        }
-    }
 }
-
-/// Numeric equality is value-based across variants (`I64(5) == F64(5.0)`),
-/// matching Cosmos, so representation never changes an equality result.
-impl PartialEq for OrderByNumber {
-    fn eq(&self, other: &Self) -> bool {
-        self.cosmos_cmp(other) == Ordering::Equal
-    }
-}
-
-// `Eq` soundness: in production an `OrderByNumber` is always finite, so the
-// value-based `PartialEq` is a proper equivalence relation. The only
-// production constructor is `from_json_number` (a `serde_json::Number` is
-// always finite), and `deserialize` rejects non-finite floats below; the
-// `From<f64>` convenience is `#[cfg(test)]`-only. Restricting to finite
-// values keeps `==` reflexive, symmetric, and transitive (a `NaN` would
-// otherwise break transitivity across variants, e.g. `I64(0) == F64(NaN)`).
-impl Eq for OrderByNumber {}
 
 impl From<i64> for OrderByNumber {
     fn from(value: i64) -> Self {
@@ -261,6 +270,18 @@ impl<'de> serde::Deserialize<'de> for OrderByNumber {
 }
 
 impl OrderByItem {
+    fn cosmos_type(&self) -> CosmosType {
+        match self {
+            Self::Undefined => CosmosType::Undefined,
+            Self::Null => CosmosType::Null,
+            Self::Boolean(_) => CosmosType::Boolean,
+            Self::Number(_) => CosmosType::Number,
+            Self::String(_) => CosmosType::String,
+            Self::Array(_) => CosmosType::Array,
+            Self::Object(_) => CosmosType::Object,
+        }
+    }
+
     /// Converts a JSON value into an `OrderByItem`. Never produces
     /// `Undefined` — only the wire-envelope parser does, for a missing
     /// `item` key.
@@ -280,13 +301,25 @@ impl OrderByItem {
             ),
         }
     }
+}
 
-    /// Cosmos-compatible ascending comparison: cross-type via [`type_rank`];
-    /// arrays compare lexicographically; objects by key, value, then
-    /// length. No canonical intra-type order is documented for
-    /// arrays/objects — only internal determinism is promised.
-    pub(crate) fn cosmos_cmp(&self, other: &Self) -> Ordering {
-        let rank_cmp = type_rank(self).cmp(&type_rank(other));
+impl PartialEq for OrderByItem {
+    fn eq(&self, other: &Self) -> bool {
+        self.cmp(other) == Ordering::Equal
+    }
+}
+
+impl Eq for OrderByItem {}
+
+impl PartialOrd for OrderByItem {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for OrderByItem {
+    fn cmp(&self, other: &Self) -> Ordering {
+        let rank_cmp = self.cosmos_type().cmp(&other.cosmos_type());
         if rank_cmp != Ordering::Equal {
             return rank_cmp;
         }
@@ -294,11 +327,11 @@ impl OrderByItem {
             (Self::Undefined, Self::Undefined) => Ordering::Equal,
             (Self::Null, Self::Null) => Ordering::Equal,
             (Self::Boolean(a), Self::Boolean(b)) => a.cmp(b),
-            (Self::Number(a), Self::Number(b)) => a.cosmos_cmp(b),
+            (Self::Number(a), Self::Number(b)) => a.cmp(b),
             (Self::String(a), Self::String(b)) => a.cmp(b),
             (Self::Array(a), Self::Array(b)) => {
                 for (x, y) in a.iter().zip(b.iter()) {
-                    let c = x.cosmos_cmp(y);
+                    let c = x.cmp(y);
                     if c != Ordering::Equal {
                         return c;
                     }
@@ -315,7 +348,7 @@ impl OrderByItem {
                     if key_cmp != Ordering::Equal {
                         return key_cmp;
                     }
-                    let val_cmp = x.1.cosmos_cmp(&y.1);
+                    let val_cmp = x.1.cmp(&y.1);
                     if val_cmp != Ordering::Equal {
                         return val_cmp;
                     }
@@ -325,7 +358,9 @@ impl OrderByItem {
             _ => unreachable!("rank_cmp already distinguished differing variants"),
         }
     }
+}
 
+impl OrderByItem {
     /// Converts this item to its bounded, serializable resume-value form.
     pub(crate) fn to_resume_value(&self) -> OrderByResumeValue {
         match self {
@@ -343,6 +378,11 @@ impl OrderByItem {
                 hash: ComplexHash::of(self),
             },
         }
+    }
+
+    #[cfg(test)]
+    fn cosmos_cmp(&self, other: &Self) -> Ordering {
+        self.cmp(other)
     }
 }
 
@@ -415,7 +455,7 @@ pub(crate) fn compare_key_tuples(
     debug_assert_eq!(a.len(), directions.len());
     debug_assert_eq!(b.len(), directions.len());
     for (i, direction) in directions.iter().enumerate() {
-        let c = a[i].cosmos_cmp(&b[i]);
+        let c = a[i].cmp(&b[i]);
         let c = match direction {
             SortOrder::Ascending => c,
             SortOrder::Descending => c.reverse(),
@@ -452,9 +492,19 @@ pub(crate) enum ComplexTypeTag {
 }
 
 /// A bounded 128-bit hash of a complex (array/object) `ORDER BY` value,
-/// split into low/high halves for JSON round-tripping (mirrors .NET's
-/// complex-key encoding); hashes a canonical encoding so key order doesn't
-/// affect the result.
+/// split into low/high halves for JSON round-tripping.
+///
+/// This is the backend / .NET SDK structural `DistinctHash` (see
+/// [`super::distinct_hash`]), so it is byte-identical to the hash the
+/// backend derives for the same array/object value. That is what makes a
+/// structured `resumeFilter` seek correctly from a complex boundary,
+/// including across a partition split or merge. Structurally-equal values
+/// hash equal regardless of object property order.
+///
+/// Its *ordering* of distinct values is still not Cosmos sort order —
+/// MurmurHash output is not monotonic — so the client-side discard treats
+/// only an exact-hash tie as already-emitted and never infers less/greater
+/// between two distinct complex hashes (see [`classify_row_vs_boundary`]).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) struct ComplexHash {
     pub(crate) low64: u64,
@@ -463,35 +513,10 @@ pub(crate) struct ComplexHash {
 
 impl ComplexHash {
     fn of(item: &OrderByItem) -> Self {
-        let canonical = canonical_json(item);
-        let bytes = serde_json::to_vec(&canonical)
-            .expect("canonical_json output is always representable as JSON");
-        let hash = murmurhash3_128(&bytes, 0);
+        let hash = distinct_hash(item);
         Self {
             low64: hash as u64,
             high64: (hash >> 64) as u64,
-        }
-    }
-}
-
-/// Renders an `OrderByItem` as a canonical JSON value for hashing
-/// (sorted object keys) so structurally-equal values hash identically.
-fn canonical_json(item: &OrderByItem) -> serde_json::Value {
-    match item {
-        OrderByItem::Undefined => serde_json::Value::Null, // unreachable for array/object elements
-        OrderByItem::Null => serde_json::Value::Null,
-        OrderByItem::Boolean(b) => serde_json::Value::Bool(*b),
-        OrderByItem::Number(n) => n.to_json_value(),
-        OrderByItem::String(s) => serde_json::Value::String(s.clone()),
-        OrderByItem::Array(items) => {
-            serde_json::Value::Array(items.iter().map(canonical_json).collect())
-        }
-        OrderByItem::Object(props) => {
-            let sorted: std::collections::BTreeMap<&str, serde_json::Value> = props
-                .iter()
-                .map(|(k, v)| (k.as_str(), canonical_json(v)))
-                .collect();
-            serde_json::Value::Object(sorted.into_iter().map(|(k, v)| (k.to_owned(), v)).collect())
         }
     }
 }
@@ -521,12 +546,16 @@ pub(crate) enum OrderByResumeValue {
 }
 
 impl OrderByResumeValue {
+    /// Whether this boundary column is a complex (array/object) value,
+    /// represented only by its bounded [`ComplexHash`].
+    #[cfg(test)]
     pub(crate) fn is_complex(&self) -> bool {
         matches!(self, Self::Complex { .. })
     }
 
     /// Reconstructs the [`OrderByItem`] this came from, or `None` for
     /// [`Self::Complex`] (bytes aren't recoverable from the hash).
+    #[cfg(test)]
     pub(crate) fn to_scalar_order_by_item(&self) -> Option<OrderByItem> {
         match self {
             Self::Undefined => Some(OrderByItem::Undefined),
@@ -538,274 +567,188 @@ impl OrderByResumeValue {
         }
     }
 
-    /// The JSON value to bind when this resume value is parameterized, or
-    /// `None` for `Undefined`/`Null` (rendered as type-check builtins) and
-    /// `Complex` (no scalar value). Integer variants keep exact i64/u64
-    /// precision so a boundary never loses precision through the query body.
-    fn to_parameter_value(&self) -> Option<serde_json::Value> {
+    /// The .NET-compatible wire form of this resume value for a query
+    /// body's `resumeFilter.value` array (distinct from the token/snapshot
+    /// serde form): `Undefined` -> `[]`; `Null`/`Boolean`/`Number`/`String`
+    /// -> the raw JSON value (integers keep exact i64/u64 precision); a
+    /// complex (array/object) value -> `{"type":..,"low":<i64>,"high":<i64>}`
+    /// where `low`/`high` reinterpret the 64-bit hash halves' bit patterns
+    /// as signed integers (matching .NET's `(long)ulong` cast).
+    fn to_wire_value(&self) -> serde_json::Value {
         match self {
-            Self::Boolean { value } => Some(serde_json::Value::Bool(*value)),
-            Self::Number { value } => Some(value.to_json_value()),
-            Self::String { value } => Some(serde_json::Value::String(value.clone())),
-            Self::Undefined | Self::Null | Self::Complex { .. } => None,
+            Self::Undefined => serde_json::Value::Array(Vec::new()),
+            Self::Null => serde_json::Value::Null,
+            Self::Boolean { value } => serde_json::Value::Bool(*value),
+            Self::Number { value } => value.to_json_value(),
+            Self::String { value } => serde_json::Value::String(value.clone()),
+            Self::Complex { complex_type, hash } => {
+                let type_name = match complex_type {
+                    ComplexTypeTag::Array => "array",
+                    ComplexTypeTag::Object => "object",
+                };
+                serde_json::json!({
+                    "type": type_name,
+                    "low": hash.low64 as i64,
+                    "high": hash.high64 as i64,
+                })
+            }
         }
     }
 
-    /// Ascending Cosmos type rank, matching [`type_rank`]. Used to
-    /// validate a resume value's `Complex::complex_type` and to build the
-    /// cross-type resume filter.
-    fn type_rank(&self) -> u8 {
+    fn cosmos_type(&self) -> CosmosType {
         match self {
-            Self::Undefined => 0,
-            Self::Null => 1,
-            Self::Boolean { .. } => 2,
-            Self::Number { .. } => 3,
-            Self::String { .. } => 4,
+            Self::Undefined => CosmosType::Undefined,
+            Self::Null => CosmosType::Null,
+            Self::Boolean { .. } => CosmosType::Boolean,
+            Self::Number { .. } => CosmosType::Number,
+            Self::String { .. } => CosmosType::String,
             Self::Complex { complex_type, .. } => match complex_type {
-                ComplexTypeTag::Array => 5,
-                ComplexTypeTag::Object => 6,
+                ComplexTypeTag::Array => CosmosType::Array,
+                ComplexTypeTag::Object => CosmosType::Object,
             },
         }
     }
 }
 
-/// One of the seven Cosmos type-rank buckets, used to render `IS_*`
-/// builtin guards for cross-type-aware resume filters.
-fn type_check_builtin(rank: u8) -> &'static str {
-    match rank {
-        0 => "NOT IS_DEFINED",
-        1 => "IS_NULL",
-        2 => "IS_BOOLEAN",
-        3 => "IS_NUMBER",
-        4 => "IS_STRING",
-        5 => "IS_ARRAY",
-        6 => "IS_OBJECT",
-        _ => unreachable!("rank is always 0..=6"),
-    }
-}
-
-/// One `@name`/value binding the resume filter contributes to the query
-/// body's `parameters` array. A scalar boundary value is bound as a
-/// parameter — never interpolated as SQL text — so the service parses and
-/// escapes it and integer precision is preserved through the JSON value.
-#[derive(Debug, Clone, PartialEq)]
-pub(crate) struct ResumeParameter {
-    /// Parameter name including the leading `@`.
-    pub(crate) name: String,
-    pub(crate) value: serde_json::Value,
-}
-
-/// A parameter-name prefix that no existing query parameter starts with, so
-/// the generated names (`<prefix>0`, `<prefix>1`, …) can never equal — and
-/// thus never overwrite — a caller's binding. Deterministic: the same set of
-/// existing names always yields the same prefix.
-fn collision_free_prefix(existing_parameter_names: &[String]) -> String {
-    let mut prefix = String::from("@cosmosResumeFilter");
-    while existing_parameter_names
-        .iter()
-        .any(|name| name.starts_with(&prefix))
-    {
-        prefix.push('_');
-    }
-    prefix
-}
-
-/// Renders `"<expr> == <boundary>"`. `Undefined`/`Null` need only a
-/// type-check builtin; every other type also compares `expr` against the
-/// bound parameter `param` — never an inline literal, so no boundary text
-/// ever reaches the query SQL.
-fn equals_boundary(expression: &str, value: &OrderByResumeValue, param: Option<&str>) -> String {
-    match value {
-        OrderByResumeValue::Undefined => format!("(NOT IS_DEFINED({expression}))"),
-        OrderByResumeValue::Null => format!("IS_NULL({expression})"),
-        _ => format!(
-            "({check}({expression}) AND {expression} = {param})",
-            check = type_check_builtin(value.type_rank()),
-            param = param.expect("a scalar boundary value is always bound to a parameter"),
+/// Builds the .NET-compatible `resumeFilter` object inserted into a
+/// resumed query body, mirroring
+/// `Microsoft.Azure.Cosmos.Query.Core.SqlQueryResumeFilter`:
+/// `{"value":[<wire values>],"rid":<rid?>,"exclude":<bool>}`.
+///
+/// `rid` is omitted when `None`. Rust persists a last-emitted boundary per
+/// range and always resumes a range with its own boundary as the .NET
+/// "target" partition does — `rid` present and `exclude:false` — then trims
+/// the already-emitted prefix of the boundary tie run client-side (see
+/// [`classify_row_vs_boundary`]).
+pub(crate) fn resume_filter_json(
+    resume_values: &[OrderByResumeValue],
+    rid: Option<&str>,
+    exclude: bool,
+) -> serde_json::Value {
+    let mut obj = serde_json::Map::new();
+    obj.insert(
+        "value".to_owned(),
+        serde_json::Value::Array(
+            resume_values
+                .iter()
+                .map(OrderByResumeValue::to_wire_value)
+                .collect(),
         ),
+    );
+    if let Some(rid) = rid {
+        obj.insert("rid".to_owned(), serde_json::Value::String(rid.to_owned()));
     }
+    obj.insert("exclude".to_owned(), serde_json::Value::Bool(exclude));
+    serde_json::Value::Object(obj)
 }
 
-/// Renders `"<expr> is strictly after <boundary>"` in `direction`, or
-/// `None` if there's no possible "after" (boundary is the extreme value).
-/// Any value comparison references the bound parameter `param`, never a
-/// literal.
-fn strictly_after_boundary(
-    expression: &str,
-    value: &OrderByResumeValue,
-    direction: SortOrder,
-    param: Option<&str>,
-) -> Option<String> {
-    let rank = value.type_rank();
-    let higher_ranks: Vec<u8> = match direction {
-        SortOrder::Ascending => ((rank + 1)..=6).collect(),
-        SortOrder::Descending => (0..rank).collect(),
-    };
-    let mut terms: Vec<String> = higher_ranks
-        .into_iter()
-        .map(|r| format!("{}({expression})", type_check_builtin(r)))
-        .collect();
-    if !matches!(
-        value,
-        OrderByResumeValue::Undefined | OrderByResumeValue::Null
-    ) {
-        let op = match direction {
-            SortOrder::Ascending => ">",
-            SortOrder::Descending => "<",
-        };
-        terms.push(format!(
-            "({check}({expression}) AND {expression} {op} {param})",
-            check = type_check_builtin(rank),
-            param = param.expect("a scalar boundary value is always bound to a parameter"),
-        ));
-    }
-    if terms.is_empty() {
-        None
-    } else {
-        Some(format!("({})", terms.join(" OR ")))
-    }
+/// One column's comparison of a returned row's value against a persisted
+/// resume value. `Ordered` is a reliable Cosmos-sort-order comparison
+/// (scalars by value, cross-type by Cosmos type rank); `Indeterminate`
+/// means both sides are the same complex (array/object) type but their
+/// bounded [`ComplexHash`]es differ. That hash is now the backend's exact
+/// structural `DistinctHash`, yet its *ordering* is still not Cosmos sort
+/// order (MurmurHash output is not monotonic), so a differing hash can't
+/// place the row relative to the boundary — only an exact-hash tie is
+/// meaningful.
+enum ColumnCmp {
+    Ordered(Ordering),
+    Indeterminate,
 }
 
-/// The result of attempting to build a value-based resume filter for one
-/// range's `ORDER BY` boundary.
-pub(crate) enum ResumeFilter {
-    /// A `WHERE`-clause fragment returning every row at or after the resume
-    /// boundary *key* (a per-row predicate that stays correct across a
-    /// split), plus the `parameters` its `@name` placeholders bind. Scalar
-    /// boundary values are always bound as parameters, never interpolated
-    /// as SQL text, so the service parses/escapes them and no boundary
-    /// string ever reaches the query SQL.
-    ///
-    /// The full-tie `_rid` tie-break is deliberately **not** in the SQL:
-    /// `c._rid` compares as an ordinal base64 string in Cosmos SQL, which
-    /// does not match the backend's numeric document-id ordering, so a SQL
-    /// `_rid` bound could drop not-yet-emitted rows. The exact rid cut-off
-    /// is applied client-side by [`super::streaming_ordered_merge`]'s
-    /// numeric discard, matching .NET's `FilterNextAsync`.
-    Exact {
-        where_fragment: String,
-        parameters: Vec<ResumeParameter>,
-    },
-    /// At least one column's value is [`OrderByResumeValue::Complex`],
-    /// which can't be reconstructed from its bounded hash. The caller must
-    /// reissue the query unfiltered and discard the first `rows_emitted`
-    /// rows positionally — correct only while topology is unchanged (see
-    /// [`super::streaming_ordered_merge::build_children`]). A row *count*
-    /// is not a value-based cursor, so concurrent writes to the range
-    /// between the original and resumed query can also silently shift what
-    /// lands at a given position; this is a known, undetectable limitation.
-    PositionalRescan,
-}
-
-impl ResumeFilter {
-    /// Builds the resume filter for a range whose last-emitted key tuple is
-    /// `resume_values`. `columns` are the query's source expressions, so the
-    /// returned [`ResumeFilter::Exact`] fragment substitutes into the
-    /// Gateway's placeholder (see
-    /// [`super::query_response::rewritten_query_with_resume_filter`]) and its
-    /// `parameters` append to the query body (see
-    /// [`super::query_response::rewrite_query_body_with_parameters`]).
-    ///
-    /// Each column carrying a bound value (Boolean/Number/String) gets one
-    /// parameter, reused across every equality and strict-after term for
-    /// that column; `Undefined`/`Null` render as type-check builtins and
-    /// need none. `existing_parameter_names` (the caller's query-body
-    /// parameter names, `@`-prefixed) seed a collision-free prefix so a
-    /// resume binding can never overwrite a caller's.
-    ///
-    /// The fragment returns all rows whose key is at or after the boundary
-    /// (strictly-after on any prefix column, plus a full-key-equality
-    /// disjunct). It carries no `_rid` predicate — the rid tie-break is
-    /// numeric and applied client-side (see [`ResumeFilter::Exact`]).
-    pub(crate) fn build(
-        columns: &[OrderByColumn],
-        resume_values: &[OrderByResumeValue],
-        existing_parameter_names: &[String],
-    ) -> Self {
-        debug_assert_eq!(columns.len(), resume_values.len());
-        if resume_values.iter().any(OrderByResumeValue::is_complex) {
-            return Self::PositionalRescan;
+/// Ascending Cosmos comparison of a returned row's `item` against a
+/// persisted resume-boundary `value` for one column. Cross-type pairs order
+/// by Cosmos type rank; same-type scalars by value; same-type complex
+/// values compare **only** for hash-equality (a differing hash is
+/// [`ColumnCmp::Indeterminate`], never a spurious `Less`/`Greater`).
+fn column_cmp(item: &OrderByItem, value: &OrderByResumeValue) -> ColumnCmp {
+    let rank_cmp = item.cosmos_type().cmp(&value.cosmos_type());
+    if rank_cmp != Ordering::Equal {
+        return ColumnCmp::Ordered(rank_cmp);
+    }
+    match (item, value) {
+        (OrderByItem::Undefined, OrderByResumeValue::Undefined) => {
+            ColumnCmp::Ordered(Ordering::Equal)
         }
-
-        // One collision-safe parameter per column carrying a bound value;
-        // `Undefined`/`Null` need none. Names share a prefix no caller
-        // parameter starts with, so a resume binding can't overwrite one.
-        let prefix = collision_free_prefix(existing_parameter_names);
-        let mut parameters: Vec<ResumeParameter> = Vec::new();
-        let param_names: Vec<Option<String>> = resume_values
-            .iter()
-            .enumerate()
-            .map(|(k, value)| {
-                value.to_parameter_value().map(|json| {
-                    let name = format!("{prefix}{k}");
-                    parameters.push(ResumeParameter {
-                        name: name.clone(),
-                        value: json,
-                    });
-                    name
-                })
-            })
-            .collect();
-
-        let mut or_terms: Vec<String> = Vec::with_capacity(columns.len() + 1);
-        for k in 0..columns.len() {
-            let mut and_terms: Vec<String> = Vec::with_capacity(k + 1);
-            for i in 0..k {
-                and_terms.push(equals_boundary(
-                    &columns[i].expression,
-                    &resume_values[i],
-                    param_names[i].as_deref(),
-                ));
+        (OrderByItem::Null, OrderByResumeValue::Null) => ColumnCmp::Ordered(Ordering::Equal),
+        (OrderByItem::Boolean(a), OrderByResumeValue::Boolean { value }) => {
+            ColumnCmp::Ordered(a.cmp(value))
+        }
+        (OrderByItem::Number(a), OrderByResumeValue::Number { value }) => {
+            ColumnCmp::Ordered(a.cmp(value))
+        }
+        (OrderByItem::String(a), OrderByResumeValue::String { value }) => {
+            ColumnCmp::Ordered(a.as_str().cmp(value.as_str()))
+        }
+        (
+            OrderByItem::Array(_) | OrderByItem::Object(_),
+            OrderByResumeValue::Complex { hash, .. },
+        ) => {
+            if ComplexHash::of(item) == *hash {
+                ColumnCmp::Ordered(Ordering::Equal)
+            } else {
+                ColumnCmp::Indeterminate
             }
-            if let Some(after) = strictly_after_boundary(
-                &columns[k].expression,
-                &resume_values[k],
-                columns[k].direction,
-                param_names[k].as_deref(),
-            ) {
-                and_terms.push(after);
-                or_terms.push(format!("({})", and_terms.join(" AND ")));
-            }
-            // A `None` here means this column can never be the first point
-            // of difference after the boundary; correctly contributes nothing.
         }
-        // Exact tie on every key column returns the whole tie run; the
-        // client-side numeric `_rid` discard then drops the already-emitted
-        // prefix (a SQL `_rid` bound would be string-ordered, not numeric).
-        let full_tie: Vec<String> = columns
-            .iter()
-            .zip(resume_values.iter())
-            .enumerate()
-            .map(|(k, (column, value))| {
-                equals_boundary(&column.expression, value, param_names[k].as_deref())
-            })
-            .collect();
-        or_terms.push(format!("({})", full_tie.join(" AND ")));
+        _ => unreachable!("type rank already distinguished differing variants"),
+    }
+}
 
-        Self::Exact {
-            where_fragment: format!("({})", or_terms.join(" OR ")),
-            parameters,
+/// Where a returned row's key tuple sits relative to a persisted resume
+/// boundary, for the client-side discard.
+pub(crate) enum RowVsBoundary {
+    /// The row sorts reliably strictly before the boundary — already emitted.
+    Before,
+    /// Exact full-key tie; the caller breaks it by `_rid`.
+    Tie,
+    /// The row sorts at or after the boundary, or its position cannot be
+    /// determined (a differing complex column, whose hash order is not sort
+    /// order). Never treated as already-emitted, so the discard can never
+    /// drop an un-emitted row.
+    AfterOrIndeterminate,
+}
+
+/// Classifies a returned row's key tuple against a persisted resume boundary
+/// (bounded [`OrderByResumeValue`]s), applying each column's direction and
+/// stopping at the first non-equal column — the mixed-scalar/complex
+/// counterpart of [`compare_key_tuples`], used by the client-side discard.
+///
+/// A row is reported [`RowVsBoundary::Before`] (droppable) only when a
+/// scalar (or cross-type) prefix column proves it; a differing complex
+/// column yields [`RowVsBoundary::AfterOrIndeterminate`] so the discard
+/// keeps it rather than risk dropping an un-emitted row. Panics on a length
+/// mismatch; callers validate column-count agreement first.
+pub(crate) fn classify_row_vs_boundary(
+    keys: &[OrderByItem],
+    resume_values: &[OrderByResumeValue],
+    directions: &[SortOrder],
+) -> RowVsBoundary {
+    debug_assert_eq!(keys.len(), directions.len());
+    debug_assert_eq!(resume_values.len(), directions.len());
+    for (i, direction) in directions.iter().enumerate() {
+        match column_cmp(&keys[i], &resume_values[i]) {
+            ColumnCmp::Ordered(ord) => {
+                let ord = match direction {
+                    SortOrder::Ascending => ord,
+                    SortOrder::Descending => ord.reverse(),
+                };
+                match ord {
+                    Ordering::Less => return RowVsBoundary::Before,
+                    Ordering::Greater => return RowVsBoundary::AfterOrIndeterminate,
+                    Ordering::Equal => {}
+                }
+            }
+            // A complex column that differs from the boundary by hash: its
+            // true sort position is unknown, so never infer "before".
+            ColumnCmp::Indeterminate => return RowVsBoundary::AfterOrIndeterminate,
         }
     }
+    RowVsBoundary::Tie
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn asc(expression: &str) -> OrderByColumn {
-        OrderByColumn {
-            expression: expression.to_owned(),
-            direction: SortOrder::Ascending,
-        }
-    }
-
-    fn desc(expression: &str) -> OrderByColumn {
-        OrderByColumn {
-            expression: expression.to_owned(),
-            direction: SortOrder::Descending,
-        }
-    }
 
     // ── Type order ───────────────────────────────────────────────────────
 
@@ -998,29 +941,109 @@ mod tests {
     }
 
     #[test]
-    fn scalar_number_parameter_value_preserves_exact_integer_precision() {
-        // The resume boundary binds the number as a JSON parameter value;
-        // integers must keep full precision (never degrade through f64).
-        let param = |n: OrderByNumber| {
-            OrderByResumeValue::Number { value: n }
-                .to_parameter_value()
-                .unwrap()
-        };
+    fn nan_orders_totally_against_finite_ints_and_floats() {
+        // `cmp` must stay a strict total order even if a `NaN` slips in via a
+        // test/internal construction. `f64::total_cmp` convention: `-NaN`
+        // sorts before every finite value, `+NaN` after. (Production rejects
+        // non-finite — see `deserialize_rejects_non_finite_numbers`.)
+        let neg_nan = OrderByNumber::from(f64::NAN.copysign(-1.0));
+        let pos_nan = OrderByNumber::from(f64::NAN);
+        for finite in [
+            OrderByNumber::from(i64::MIN),
+            OrderByNumber::from(-1_i64),
+            OrderByNumber::from(0_u64),
+            OrderByNumber::from(3.5_f64),
+            OrderByNumber::from(u64::MAX),
+            OrderByNumber::from(f64::INFINITY),
+        ] {
+            assert_eq!(
+                neg_nan.cosmos_cmp(&finite),
+                Ordering::Less,
+                "-NaN < {finite:?}"
+            );
+            assert_eq!(
+                finite.cosmos_cmp(&neg_nan),
+                Ordering::Greater,
+                "{finite:?} > -NaN"
+            );
+            assert_eq!(
+                pos_nan.cosmos_cmp(&finite),
+                Ordering::Greater,
+                "+NaN > {finite:?}"
+            );
+            assert_eq!(
+                finite.cosmos_cmp(&pos_nan),
+                Ordering::Less,
+                "{finite:?} < +NaN"
+            );
+        }
+        assert_eq!(neg_nan.cosmos_cmp(&pos_nan), Ordering::Less);
+        assert_eq!(pos_nan.cosmos_cmp(&neg_nan), Ordering::Greater);
+        // Reflexive on identical bit patterns.
+        assert_eq!(pos_nan.cosmos_cmp(&pos_nan), Ordering::Equal);
+        assert_eq!(neg_nan.cosmos_cmp(&neg_nan), Ordering::Equal);
+    }
+
+    #[test]
+    fn cmp_is_transitive_and_antisymmetric_with_nan_and_finite_values() {
+        // A single intransitive triple would make sorting / `BTreeMap`
+        // undefined. Exhaustively verify antisymmetry and `a <= b <= c =>
+        // a <= c` over a set spanning -NaN, finite ints/floats across every
+        // variant, and +NaN.
+        let values = [
+            OrderByNumber::from(f64::NAN.copysign(-1.0)),
+            OrderByNumber::from(i64::MIN),
+            OrderByNumber::from(-2.5_f64),
+            OrderByNumber::from(-1_i64),
+            OrderByNumber::from(0_u64),
+            OrderByNumber::from(0.0_f64),
+            OrderByNumber::from(1_i64),
+            OrderByNumber::from(9_007_199_254_740_993_i64), // 2^53 + 1
+            OrderByNumber::from(u64::MAX),
+            OrderByNumber::from(f64::INFINITY),
+            OrderByNumber::from(f64::NAN),
+        ];
+        for a in &values {
+            for b in &values {
+                assert_eq!(
+                    a.cosmos_cmp(b),
+                    b.cosmos_cmp(a).reverse(),
+                    "antisymmetry: {a:?} vs {b:?}"
+                );
+                for c in &values {
+                    if a.cosmos_cmp(b) != Ordering::Greater && b.cosmos_cmp(c) != Ordering::Greater
+                    {
+                        assert_ne!(
+                            a.cosmos_cmp(c),
+                            Ordering::Greater,
+                            "transitivity: {a:?} <= {b:?} <= {c:?} but a > c"
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn scalar_number_wire_value_preserves_exact_integer_precision() {
+        // The resume boundary sends the number as the raw JSON `resumeFilter`
+        // value; integers must keep full precision (never degrade through f64).
+        let wire = |n: OrderByNumber| OrderByResumeValue::Number { value: n }.to_wire_value();
         assert_eq!(
-            param(OrderByNumber::from(i64::MIN)),
+            wire(OrderByNumber::from(i64::MIN)),
             serde_json::json!(i64::MIN)
         );
         assert_eq!(
-            param(OrderByNumber::from(u64::MAX)),
+            wire(OrderByNumber::from(u64::MAX)),
             serde_json::json!(u64::MAX)
         );
         assert_eq!(
-            serde_json::to_string(&param(OrderByNumber::from(9_007_199_254_740_993_i64))).unwrap(),
+            serde_json::to_string(&wire(OrderByNumber::from(9_007_199_254_740_993_i64))).unwrap(),
             "9007199254740993",
             "must not degrade to float notation and lose precision"
         );
         assert_eq!(
-            param(OrderByNumber::from(5.5_f64)),
+            wire(OrderByNumber::from(5.5_f64)),
             serde_json::json!(5.5_f64)
         );
     }
@@ -1083,19 +1106,32 @@ mod tests {
 
     #[test]
     fn complex_hash_distinguishes_adjacent_large_integers() {
-        // If the hash ever cast through `f64`, these two would collide
-        // (both round to the same nearest-representable float).
+        // Integers within `i64` range take the exact `Number64` long path
+        // (mantissa + `extraBits`), so adjacent values beyond 2^53 never
+        // collide the way a lossy `f64` cast would.
         let a = OrderByItem::Array(vec![OrderByItem::Number(9_007_199_254_740_992_i64.into())]);
         let b = OrderByItem::Array(vec![OrderByItem::Number(9_007_199_254_740_993_i64.into())]);
         assert_ne!(a.to_resume_value(), b.to_resume_value());
 
-        // Same at the very top of the `u64` range.
+        // Even at the very top of the `i64` range the `extraBits` keep
+        // adjacent values distinct.
         let c = OrderByItem::Object(vec![(
+            "n".to_owned(),
+            OrderByItem::Number((i64::MAX - 1).into()),
+        )]);
+        let d = OrderByItem::Object(vec![("n".to_owned(), OrderByItem::Number(i64::MAX.into()))]);
+        assert_ne!(c.to_resume_value(), d.to_resume_value());
+
+        // Above `i64::MAX`, `Number64` can only carry the value as a `double`
+        // (matching the backend), so `u64::MAX` and `u64::MAX - 1` both round
+        // to 2^64 and intentionally share a hash — the client must agree with
+        // the backend's lossy representation, not out-precision it.
+        let e = OrderByItem::Object(vec![(
             "n".to_owned(),
             OrderByItem::Number((u64::MAX - 1).into()),
         )]);
-        let d = OrderByItem::Object(vec![("n".to_owned(), OrderByItem::Number(u64::MAX.into()))]);
-        assert_ne!(c.to_resume_value(), d.to_resume_value());
+        let f = OrderByItem::Object(vec![("n".to_owned(), OrderByItem::Number(u64::MAX.into()))]);
+        assert_eq!(e.to_resume_value(), f.to_resume_value());
     }
 
     // ── Envelope parsing ─────────────────────────────────────────────────
@@ -1210,162 +1246,221 @@ mod tests {
         assert_ne!(a.to_resume_value(), b.to_resume_value());
     }
 
-    // ── Resume filter ────────────────────────────────────────────────────
+    // ── Resume filter wire model ─────────────────────────────────────────
 
     #[test]
-    fn single_column_ascending_filter_is_strict_greater_than_with_full_tie_fallback() {
-        let columns = vec![asc("c.rank")];
-        let resume = vec![OrderByResumeValue::Number { value: 5.0.into() }];
-        let filter = ResumeFilter::build(&columns, &resume, &[]);
-        let (text, parameters) = exact(&filter).expect("expected Exact filter");
-        // The boundary value is bound as a parameter, never inlined as SQL.
-        assert!(text.contains("c.rank > @cosmosResumeFilter0"), "{text}");
-        assert!(
-            text.contains("IS_NUMBER(c.rank) AND c.rank = @cosmosResumeFilter0"),
-            "{text}"
-        );
-        assert!(!text.contains("_rid"), "{text}: rid stays client-side");
+    fn wire_value_matches_dotnet_serialization_contract() {
+        // Undefined -> `[]`; Null/Bool/Number/String -> raw JSON value.
         assert_eq!(
-            parameters,
-            &[ResumeParameter {
-                name: "@cosmosResumeFilter0".to_owned(),
-                value: serde_json::json!(5.0),
-            }]
+            OrderByResumeValue::Undefined.to_wire_value(),
+            serde_json::json!([])
         );
-    }
-
-    #[test]
-    fn single_column_descending_filter_uses_less_than() {
-        let columns = vec![desc("c.rank")];
-        let resume = vec![OrderByResumeValue::Number { value: 5.0.into() }];
-        let filter = ResumeFilter::build(&columns, &resume, &[]);
-        let (text, _) = exact(&filter).unwrap();
-        assert!(text.contains("c.rank < @cosmosResumeFilter0"), "{text}");
-    }
-
-    #[test]
-    fn multi_column_filter_builds_seek_predicate_prefix() {
-        let columns = vec![asc("c.rank"), desc("c.name")];
-        let resume = vec![
-            OrderByResumeValue::Number { value: 5.0.into() },
+        assert_eq!(
+            OrderByResumeValue::Null.to_wire_value(),
+            serde_json::Value::Null
+        );
+        assert_eq!(
+            OrderByResumeValue::Boolean { value: true }.to_wire_value(),
+            serde_json::json!(true)
+        );
+        assert_eq!(
+            OrderByResumeValue::Number {
+                value: 5_i64.into()
+            }
+            .to_wire_value(),
+            serde_json::json!(5)
+        );
+        assert_eq!(
             OrderByResumeValue::String {
                 value: "mid".to_owned(),
-            },
-        ];
-        let filter = ResumeFilter::build(&columns, &resume, &[]);
-        let (text, parameters) = exact(&filter).unwrap();
-        // First disjunct: strictly after on column 0 alone.
-        assert!(text.contains("c.rank > @cosmosResumeFilter0"), "{text}");
-        // Second disjunct: tie on column 0, strictly after (DESC => <) on column 1.
-        assert!(
-            text.contains("c.rank = @cosmosResumeFilter0")
-                && text.contains("c.name < @cosmosResumeFilter1"),
-            "{text}"
+            }
+            .to_wire_value(),
+            serde_json::json!("mid")
         );
-        // Final disjunct: exact tie on both key columns (no `_rid` clause;
-        // the numeric rid cut-off is applied client-side).
-        assert!(text.contains("c.name = @cosmosResumeFilter1"), "{text}");
-        assert!(!text.contains("_rid"), "{text}: rid stays client-side");
-        // The string boundary is never inlined; it's bound as a parameter.
-        assert!(!text.contains("'mid'"), "{text}: no raw string literal");
+    }
+
+    #[test]
+    fn wire_value_number_keeps_exact_i64_u64_f64() {
+        for (n, expected) in [
+            (OrderByNumber::from(i64::MIN), serde_json::json!(i64::MIN)),
+            (OrderByNumber::from(u64::MAX), serde_json::json!(u64::MAX)),
+            // 2^53 + 1 is not exactly representable as f64; must stay integer.
+            (
+                OrderByNumber::from(9_007_199_254_740_993_i64),
+                serde_json::json!(9_007_199_254_740_993_i64),
+            ),
+            (OrderByNumber::from(1.5_f64), serde_json::json!(1.5_f64)),
+        ] {
+            assert_eq!(
+                OrderByResumeValue::Number { value: n }.to_wire_value(),
+                expected
+            );
+        }
         assert_eq!(
-            parameters,
+            serde_json::to_string(
+                &OrderByResumeValue::Number {
+                    value: OrderByNumber::from(9_007_199_254_740_993_i64),
+                }
+                .to_wire_value()
+            )
+            .unwrap(),
+            "9007199254740993",
+            "an exact integer beyond 2^53 must not degrade to float notation"
+        );
+    }
+
+    #[test]
+    fn complex_wire_value_reinterprets_hash_halves_as_signed_i64() {
+        // The `low`/`high` halves are the 64-bit hash bits cast to signed
+        // i64 (matching .NET's `(long)ulong`): the top-bit-set half is
+        // negative, the other stays positive.
+        let value = OrderByResumeValue::Complex {
+            complex_type: ComplexTypeTag::Array,
+            hash: ComplexHash {
+                low64: u64::MAX,
+                high64: 1,
+            },
+        };
+        assert_eq!(
+            value.to_wire_value(),
+            serde_json::json!({"type": "array", "low": -1_i64, "high": 1_i64})
+        );
+
+        let object = OrderByResumeValue::Complex {
+            complex_type: ComplexTypeTag::Object,
+            hash: ComplexHash {
+                low64: 0x8000_0000_0000_0000,
+                high64: 0x7fff_ffff_ffff_ffff,
+            },
+        };
+        assert_eq!(
+            object.to_wire_value(),
+            serde_json::json!({"type": "object", "low": i64::MIN, "high": i64::MAX})
+        );
+    }
+
+    #[test]
+    fn complex_wire_value_round_trips_the_real_hash_bits() {
+        let array = OrderByItem::Array(vec![OrderByItem::Number(1.0.into())]).to_resume_value();
+        let OrderByResumeValue::Complex { hash, .. } = array else {
+            panic!("array resume value must be complex");
+        };
+        assert_eq!(
+            array.to_wire_value(),
+            serde_json::json!({
+                "type": "array",
+                "low": hash.low64 as i64,
+                "high": hash.high64 as i64,
+            })
+        );
+    }
+
+    #[test]
+    fn resume_filter_json_is_target_style_with_rid_and_exclude_false() {
+        let filter = resume_filter_json(
             &[
-                ResumeParameter {
-                    name: "@cosmosResumeFilter0".to_owned(),
-                    value: serde_json::json!(5.0),
+                OrderByResumeValue::Number { value: 5.0.into() },
+                OrderByResumeValue::String {
+                    value: "mid".to_owned(),
                 },
-                ResumeParameter {
-                    name: "@cosmosResumeFilter1".to_owned(),
-                    value: serde_json::json!("mid"),
-                },
-            ]
+            ],
+            Some("rid-1"),
+            false,
         );
-    }
-
-    #[test]
-    fn string_boundary_binds_parameter_and_never_inlines_text() {
-        // A boundary string with a quote, backslash, newline, tab, and a
-        // non-ASCII symbol must never leak into the SQL text — it's bound
-        // verbatim as a parameter value, so escaping is the service's job.
-        let nasty = "a' OR 1=1 -- \\ \n\t\u{2713}\u{7}";
-        let columns = vec![asc("c.name")];
-        let resume = vec![OrderByResumeValue::String {
-            value: nasty.to_owned(),
-        }];
-        let filter = ResumeFilter::build(&columns, &resume, &[]);
-        let (text, parameters) = exact(&filter).unwrap();
-        assert!(text.contains("c.name > @cosmosResumeFilter0"), "{text}");
-        assert!(text.contains("c.name = @cosmosResumeFilter0"), "{text}");
-        // None of the adversarial characters may appear in the SQL text.
-        for needle in ["OR 1=1", "'", "\\", "\n", "\t", "\u{2713}"] {
-            assert!(
-                !text.contains(needle),
-                "boundary text {needle:?} must not appear in SQL: {text}"
-            );
-        }
         assert_eq!(
-            parameters,
-            &[ResumeParameter {
-                name: "@cosmosResumeFilter0".to_owned(),
-                value: serde_json::Value::String(nasty.to_owned()),
-            }],
-            "the exact boundary string round-trips as the parameter value"
+            filter,
+            serde_json::json!({
+                "value": [5.0, "mid"],
+                "rid": "rid-1",
+                "exclude": false,
+            })
         );
     }
 
     #[test]
-    fn parameter_names_avoid_collision_with_existing_parameters() {
-        // A caller already using names that start with the default prefix
-        // must not be silently overwritten: the generated prefix extends
-        // until no existing name shares it.
-        let columns = vec![asc("c.rank"), asc("c.name")];
-        let resume = vec![
-            OrderByResumeValue::Number { value: 1.0.into() },
-            OrderByResumeValue::String {
-                value: "x".to_owned(),
-            },
-        ];
-        let existing = vec![
-            "@cosmosResumeFilter0".to_owned(),
-            "@cosmosResumeFilter1".to_owned(),
-        ];
-        let filter = ResumeFilter::build(&columns, &resume, &existing);
-        let (text, parameters) = exact(&filter).unwrap();
-        for p in parameters {
-            assert!(
-                !existing.contains(&p.name),
-                "generated parameter {} collides with an existing caller parameter",
-                p.name
-            );
-            assert!(text.contains(&p.name), "{text} must reference {}", p.name);
-        }
-        // Deterministic extension: one extra underscore clears the collision.
-        assert_eq!(parameters[0].name, "@cosmosResumeFilter_0");
-        assert_eq!(parameters[1].name, "@cosmosResumeFilter_1");
-    }
-
-    #[test]
-    fn complex_resume_value_forces_positional_rescan() {
-        let columns = vec![asc("c.tags")];
-        let resume =
-            vec![OrderByItem::Array(vec![OrderByItem::Number(1.0.into())]).to_resume_value()];
-        let filter = ResumeFilter::build(&columns, &resume, &[]);
-        assert!(matches!(filter, ResumeFilter::PositionalRescan));
-    }
-
-    #[test]
-    fn undefined_boundary_ascending_uses_is_defined_guard_and_no_parameter() {
-        let columns = vec![asc("c.rank")];
-        let resume = vec![OrderByResumeValue::Undefined];
-        let filter = ResumeFilter::build(&columns, &resume, &[]);
-        let (text, parameters) = exact(&filter).unwrap();
-        assert!(text.contains("IS_DEFINED(c.rank)"), "{text}");
-        assert!(text.contains("NOT IS_DEFINED(c.rank)"), "{text}: tie term");
+    fn resume_filter_json_omits_rid_when_absent() {
+        let filter = resume_filter_json(&[OrderByResumeValue::Null], None, true);
+        assert_eq!(
+            filter,
+            serde_json::json!({"value": [null], "exclude": true})
+        );
         assert!(
-            parameters.is_empty(),
-            "undefined boundaries render as type-check builtins, binding no parameter"
+            filter.get("rid").is_none(),
+            "an absent rid must be omitted, not serialized as null"
         );
+    }
+
+    #[test]
+    fn classify_row_vs_boundary_scalar_ascending() {
+        let directions = [SortOrder::Ascending];
+        let boundary = [OrderByResumeValue::Number { value: 5.0.into() }];
+        let classify = |v: f64| {
+            classify_row_vs_boundary(&[OrderByItem::Number(v.into())], &boundary, &directions)
+        };
+        assert!(matches!(classify(4.0), RowVsBoundary::Before));
+        assert!(matches!(classify(5.0), RowVsBoundary::Tie));
+        assert!(matches!(classify(6.0), RowVsBoundary::AfterOrIndeterminate));
+    }
+
+    #[test]
+    fn classify_row_vs_boundary_applies_descending_direction() {
+        let directions = [SortOrder::Descending];
+        let boundary = [OrderByResumeValue::Number { value: 5.0.into() }];
+        // Under DESC, a larger value sorts *before* the boundary.
+        assert!(matches!(
+            classify_row_vs_boundary(&[OrderByItem::Number(6.0.into())], &boundary, &directions,),
+            RowVsBoundary::Before
+        ));
+    }
+
+    #[test]
+    fn classify_row_vs_boundary_complex_ties_by_hash_never_infers_order() {
+        let array = OrderByItem::Array(vec![
+            OrderByItem::Number(1.0.into()),
+            OrderByItem::Number(2.0.into()),
+        ]);
+        let boundary = [array.to_resume_value()];
+        let directions = [SortOrder::Ascending];
+        // The same structural array ties the complex boundary (equal hash).
+        assert!(matches!(
+            classify_row_vs_boundary(&[array], &boundary, &directions),
+            RowVsBoundary::Tie
+        ));
+        // A *different* array is never inferred as "before" (its hash order
+        // is not sort order); it is kept, not dropped.
+        assert!(matches!(
+            classify_row_vs_boundary(
+                &[OrderByItem::Array(vec![OrderByItem::Number(9.0.into())])],
+                &boundary,
+                &directions,
+            ),
+            RowVsBoundary::AfterOrIndeterminate
+        ));
+    }
+
+    #[test]
+    fn classify_row_vs_boundary_orders_across_types() {
+        // A String row is always after a Number boundary (type rank).
+        assert!(matches!(
+            classify_row_vs_boundary(
+                &[OrderByItem::String("x".into())],
+                &[OrderByResumeValue::Number { value: 5.0.into() }],
+                &[SortOrder::Ascending],
+            ),
+            RowVsBoundary::AfterOrIndeterminate
+        ));
+        // A Number row is reliably *before* a String boundary (lower rank),
+        // even though the boundary column is not the row's own type.
+        assert!(matches!(
+            classify_row_vs_boundary(
+                &[OrderByItem::Number(5.0.into())],
+                &[OrderByResumeValue::String {
+                    value: "x".to_owned()
+                }],
+                &[SortOrder::Ascending],
+            ),
+            RowVsBoundary::Before
+        ));
     }
 
     #[test]
@@ -1382,24 +1477,5 @@ mod tests {
         }
         let complex = OrderByItem::Array(vec![OrderByItem::Number(1.0.into())]).to_resume_value();
         assert_eq!(complex.to_scalar_order_by_item(), None);
-    }
-
-    #[test]
-    fn query_fingerprint_is_deterministic_and_distinguishes_text() {
-        let a = query_fingerprint("SELECT * FROM c ORDER BY c.rank");
-        let b = query_fingerprint("SELECT * FROM c ORDER BY c.rank");
-        let c = query_fingerprint("SELECT * FROM c ORDER BY c.name");
-        assert_eq!(a, b);
-        assert_ne!(a, c);
-    }
-
-    fn exact(filter: &ResumeFilter) -> Option<(&str, &[ResumeParameter])> {
-        match filter {
-            ResumeFilter::Exact {
-                where_fragment,
-                parameters,
-            } => Some((where_fragment.as_str(), parameters.as_slice())),
-            ResumeFilter::PositionalRescan => None,
-        }
     }
 }

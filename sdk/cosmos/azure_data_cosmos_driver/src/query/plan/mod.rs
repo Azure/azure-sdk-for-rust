@@ -13,8 +13,8 @@ use azure_core::fmt::SafeDebug;
 use serde::{Deserialize, Serialize};
 
 use crate::query::ast::{
-    SqlBinaryOp, SqlCollection, SqlCollectionExpression, SqlLimitSpec, SqlLiteral, SqlOffsetSpec,
-    SqlQuery, SqlScalarExpression, SqlSelectClause, SqlSelectSpec, SqlSortOrder, SqlTopSpec,
+    SqlBinaryOp, SqlCollectionExpression, SqlLimitSpec, SqlLiteral, SqlOffsetSpec, SqlQuery,
+    SqlScalarExpression, SqlSelectClause, SqlSelectSpec, SqlSortOrder, SqlTopSpec,
 };
 use crate::query::common::get_root_alias;
 
@@ -563,37 +563,6 @@ fn collect_path_parts(expr: &SqlScalarExpression, parts: &mut Vec<String>) -> bo
 
 fn has_join(coll: &SqlCollectionExpression) -> bool {
     matches!(coll, SqlCollectionExpression::Join { .. })
-}
-
-/// Whether `query`'s FROM clause can emit more than one result row per
-/// source document — a JOIN or an array iteration (`x IN c.array`), at any
-/// nesting depth, including inside a FROM subquery.
-///
-/// Load-bearing safety contract: the cross-partition streaming `ORDER BY`
-/// resume cursor keys on `(sort-key tuple, _rid)` and assumes each `_rid`
-/// appears at most once in the output. A multi-row-per-document shape breaks
-/// that assumption — the `_rid` tiebreak can no longer identify a unique
-/// emitted row — so the planner must reject such queries up front rather
-/// than risk silently dropping or duplicating rows on resume.
-pub(crate) fn emits_multiple_rows_per_document(query: &SqlQuery) -> bool {
-    query
-        .from
-        .as_ref()
-        .is_some_and(|from| collection_is_multi_row(&from.collection))
-}
-
-fn collection_is_multi_row(coll: &SqlCollectionExpression) -> bool {
-    match coll {
-        // A JOIN cross-products its sides: one document → many rows.
-        SqlCollectionExpression::Join { .. } => true,
-        // `x IN c.array` unwinds an array: one document → one row per element.
-        SqlCollectionExpression::ArrayIterator { .. } => true,
-        // An aliased source is multi-row only if it's a subquery that is.
-        SqlCollectionExpression::Aliased { collection, .. } => match collection {
-            SqlCollection::Path { .. } => false,
-            SqlCollection::Subquery(inner) => emits_multiple_rows_per_document(inner),
-        },
-    }
 }
 
 fn visit_select_for_info(select: &SqlSelectClause, info: &mut LocalQueryInfo) {
@@ -1640,33 +1609,6 @@ mod tests {
     #[test]
     fn no_join() {
         assert!(!plan("SELECT * FROM c").query_info.has_join);
-    }
-
-    #[test]
-    fn emits_multiple_rows_per_document_detects_multi_row_shapes() {
-        let multi_row = |sql: &str| emits_multiple_rows_per_document(&parse(sql).unwrap().query);
-        // JOIN (including array-iteration joins) and bare array iteration
-        // each fan one document out to several rows.
-        assert!(multi_row(
-            "SELECT * FROM c JOIN t IN c.tags ORDER BY c.rank"
-        ));
-        assert!(multi_row(
-            "SELECT * FROM c JOIN t IN c.tags JOIN s IN c.skills ORDER BY c.rank"
-        ));
-        assert!(multi_row("SELECT VALUE t FROM t IN c.tags ORDER BY t"));
-        // A FROM subquery inherits its inner query's multiplicity.
-        assert!(multi_row(
-            "SELECT * FROM (SELECT VALUE t FROM r JOIN t IN r.tags) AS x ORDER BY x"
-        ));
-        // Ordinary single-source queries stay single-row per document, even
-        // with WHERE / ORDER BY / a scalar subquery in the projection.
-        assert!(!multi_row("SELECT * FROM c ORDER BY c.rank"));
-        assert!(!multi_row(
-            "SELECT * FROM c WHERE c.pk = 'x' ORDER BY c.rank DESC"
-        ));
-        assert!(!multi_row(
-            "SELECT * FROM (SELECT VALUE r FROM r WHERE r.n > 0) AS x ORDER BY x"
-        ));
     }
 
     // ── LocalQueryInfo: Subqueries ────────────────────────────────────────────

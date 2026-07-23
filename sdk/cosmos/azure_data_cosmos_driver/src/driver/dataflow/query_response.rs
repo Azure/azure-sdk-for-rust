@@ -5,7 +5,11 @@
 //! cross-partition streaming `ORDER BY` pipeline.
 //!
 //! - **Request**: [`rewrite_query_body`] swaps only the `"query"` text for
-//!   the Gateway's `QueryInfo::rewritten_query`, preserving `"parameters"`.
+//!   the Gateway's `QueryInfo::rewritten_query` (its resume-filter
+//!   placeholder replaced with `true`), preserving `"parameters"`. On
+//!   resume, [`with_resume_filter`] additionally inserts the .NET-compatible
+//!   structured `"resumeFilter"` field — never rewriting the SQL or the
+//!   caller's parameters.
 //! - **Response**: [`parse_envelope_page`] parses a backend page into
 //!   strict [`EnvelopeRow`]s (envelope shape `{"_rid", "orderByItems",
 //!   "payload"}`), retaining `payload` as raw JSON bytes.
@@ -29,7 +33,7 @@ use crate::models::{
 };
 use crate::options::DiagnosticsOptions;
 
-use super::order_by::{self, OrderByItem, ResumeParameter};
+use super::order_by::{self, OrderByItem, OrderByResumeValue};
 
 /// Placeholder emitted by the Gateway in rewritten streaming `ORDER BY`
 /// queries so SDKs can inject a continuation resume filter.
@@ -40,33 +44,6 @@ const ORDER_BY_FILTER_PLACEHOLDER: &str = "{documentdb-formattableorderbyquery-f
 /// .NET/Java), or left as-is if the placeholder is absent.
 pub(crate) fn rewritten_query_from_beginning(rewritten_query: &str) -> String {
     rewritten_query.replace(ORDER_BY_FILTER_PLACEHOLDER, "true")
-}
-
-/// Produces the executable rewritten query for a *resumed* range,
-/// substituting `where_fragment` (built by
-/// [`super::order_by::ResumeFilter::Exact`]) for the Gateway's resume
-/// placeholder. Unlike a fresh start, the placeholder is required here — a
-/// missing one means the query has no seek predicate and would silently
-/// re-emit delivered rows.
-///
-/// # Errors
-///
-/// Returns [`CosmosStatus::SERVICE_ORDER_BY_REWRITTEN_QUERY_MISSING_FILTER_PLACEHOLDER`]
-/// if `rewritten_query` does not contain the placeholder.
-pub(crate) fn rewritten_query_with_resume_filter(
-    rewritten_query: &str,
-    where_fragment: &str,
-) -> crate::error::Result<String> {
-    if !rewritten_query.contains(ORDER_BY_FILTER_PLACEHOLDER) {
-        return Err(crate::error::CosmosError::builder()
-            .with_status(CosmosStatus::SERVICE_ORDER_BY_REWRITTEN_QUERY_MISSING_FILTER_PLACEHOLDER)
-            .with_message(format!(
-                "streaming ORDER BY rewritten query is missing the required \
-                 `{ORDER_BY_FILTER_PLACEHOLDER}` placeholder needed to inject a resume filter"
-            ))
-            .build());
-    }
-    Ok(rewritten_query.replace(ORDER_BY_FILTER_PLACEHOLDER, where_fragment))
 }
 
 /// Replaces only the `"query"` field of a query operation's JSON body with
@@ -82,30 +59,7 @@ pub(crate) fn rewrite_query_body(
     original_body: Option<&[u8]>,
     rewritten_query: &str,
 ) -> crate::error::Result<Vec<u8>> {
-    rewrite_query_body_with_parameters(original_body, rewritten_query, &[])
-}
-
-/// Like [`rewrite_query_body`], but also appends `resume_parameters` to the
-/// body's `"parameters"` array (creating it if absent). Every caller field
-/// and existing parameter is preserved; the resume filter's `@name`
-/// bindings are added after them. Names are collision-free (see
-/// [`super::order_by::ResumeFilter::build`]), so no caller binding is
-/// overwritten.
-///
-/// # Errors
-///
-/// Returns a typed error if `original_body` is missing, is not valid JSON,
-/// is not a JSON object, or already has a non-array `"parameters"` field.
-pub(crate) fn rewrite_query_body_with_parameters(
-    original_body: Option<&[u8]>,
-    rewritten_query: &str,
-    resume_parameters: &[ResumeParameter],
-) -> crate::error::Result<Vec<u8>> {
-    let original_body = original_body.ok_or_else(|| {
-        body_error_msg("cannot rewrite an ORDER BY query operation with no request body")
-    })?;
-    let mut value: serde_json::Value = serde_json::from_slice(original_body)
-        .map_err(|e| body_error("failed to parse original query body as JSON", e))?;
+    let mut value = parse_query_body(original_body)?;
     let obj = value
         .as_object_mut()
         .ok_or_else(|| body_error_msg("original query body is not a JSON object"))?;
@@ -113,73 +67,52 @@ pub(crate) fn rewrite_query_body_with_parameters(
         "query".to_owned(),
         serde_json::Value::String(rewritten_query.to_owned()),
     );
-    if !resume_parameters.is_empty() {
-        let params = obj
-            .entry("parameters")
-            .or_insert_with(|| serde_json::Value::Array(Vec::new()))
-            .as_array_mut()
-            .ok_or_else(|| {
-                body_error_msg("original query body's `parameters` field is not an array")
-            })?;
-        for parameter in resume_parameters {
-            params.push(serde_json::json!({
-                "name": parameter.name,
-                "value": parameter.value,
-            }));
-        }
-    }
     serde_json::to_vec(&value)
         .map_err(|e| body_error("failed to serialize rewritten query body", e))
 }
 
-/// Extracts the original `"query"` SQL text from a query operation's JSON
-/// body, used to locally analyze the query shape (see the planner's
-/// multi-row-per-document rejection).
+/// Inserts the .NET-compatible structured `"resumeFilter"` field into an
+/// already-rewritten query `body` (its `"query"` text already
+/// placeholder-substituted with `true` by [`rewrite_query_body`]),
+/// preserving `"query"`, the caller's `"parameters"`, and every other field
+/// verbatim. Mirrors `SqlQuerySpec.resumeFilter`: the backend seeks to the
+/// resume point with no SDK-side SQL rewriting and no generated parameters.
+///
+/// Rust persists one boundary per range and resumes each with `rid` present
+/// and `exclude:false` (the .NET "target" partition style); the
+/// already-emitted prefix of the boundary tie run is trimmed client-side
+/// (see [`super::order_by::classify_row_vs_boundary`]).
 ///
 /// # Errors
 ///
-/// Returns a typed error if the body is missing, is not valid JSON, is not
-/// a JSON object, or has no string `"query"` field.
-pub(crate) fn query_text(original_body: Option<&[u8]>) -> crate::error::Result<String> {
-    let original_body = original_body
-        .ok_or_else(|| body_error_msg("cannot read query text from an operation with no body"))?;
-    let value: serde_json::Value = serde_json::from_slice(original_body)
-        .map_err(|e| body_error("failed to parse query body as JSON", e))?;
-    value
-        .get("query")
-        .and_then(serde_json::Value::as_str)
-        .map(str::to_owned)
-        .ok_or_else(|| body_error_msg("query body is missing a string `query` field"))
+/// Returns a typed error if `body` is missing, is not valid JSON, or is not
+/// a JSON object.
+pub(crate) fn with_resume_filter(
+    body: Option<&[u8]>,
+    resume_values: &[OrderByResumeValue],
+    rid: Option<&str>,
+    exclude: bool,
+) -> crate::error::Result<Vec<u8>> {
+    let mut value = parse_query_body(body)?;
+    let obj = value
+        .as_object_mut()
+        .ok_or_else(|| body_error_msg("query body is not a JSON object"))?;
+    obj.insert(
+        "resumeFilter".to_owned(),
+        order_by::resume_filter_json(resume_values, rid, exclude),
+    );
+    serde_json::to_vec(&value)
+        .map_err(|e| body_error("failed to serialize query body with resume filter", e))
 }
 
-/// Returns the `@`-prefixed names of every parameter already bound in a
-/// query operation's body, used to pick collision-free resume-parameter
-/// names. A missing or empty `"parameters"` field yields an empty list; a
-/// missing body also yields an empty list (there's nothing to collide with).
-///
-/// # Errors
-///
-/// Returns a typed error only if a present body is not valid JSON.
-pub(crate) fn query_parameter_names(
-    original_body: Option<&[u8]>,
-) -> crate::error::Result<Vec<String>> {
-    let Some(original_body) = original_body else {
-        return Ok(Vec::new());
-    };
-    let value: serde_json::Value = serde_json::from_slice(original_body)
-        .map_err(|e| body_error("failed to parse query body as JSON", e))?;
-    let names = value
-        .get("parameters")
-        .and_then(serde_json::Value::as_array)
-        .map(|entries| {
-            entries
-                .iter()
-                .filter_map(|entry| entry.get("name").and_then(serde_json::Value::as_str))
-                .map(str::to_owned)
-                .collect()
-        })
-        .unwrap_or_default();
-    Ok(names)
+/// Parses a query operation's JSON body, erroring on a missing body or
+/// invalid JSON.
+fn parse_query_body(body: Option<&[u8]>) -> crate::error::Result<serde_json::Value> {
+    let body = body.ok_or_else(|| {
+        body_error_msg("cannot rewrite an ORDER BY query operation with no request body")
+    })?;
+    serde_json::from_slice(body)
+        .map_err(|e| body_error("failed to parse original query body as JSON", e))
 }
 
 /// One row parsed from a rewritten-envelope backend page, ready for the
@@ -411,78 +344,59 @@ mod tests {
     }
 
     #[test]
-    fn rewrite_query_body_with_parameters_appends_after_caller_parameters() {
-        let original = br#"{"query":"SELECT * FROM c","parameters":[{"name":"@p","value":1}]}"#;
+    fn with_resume_filter_inserts_target_style_filter_and_preserves_caller_parameters() {
+        // The caller's query text and parameters are untouched; the resume
+        // point is a top-level structured `resumeFilter` (rid present,
+        // exclude false), never SDK-generated SQL or parameters.
+        let plain = br#"{"query":"SELECT c._rid FROM c WHERE true","parameters":[{"name":"@p","value":1}]}"#;
         let resume = [
-            ResumeParameter {
-                name: "@r0".to_owned(),
-                value: serde_json::json!(9_007_199_254_740_993_i64),
+            OrderByResumeValue::Number {
+                value: 9_007_199_254_740_993_i64.into(),
             },
-            ResumeParameter {
-                name: "@r1".to_owned(),
-                value: serde_json::Value::String("a' OR 1=1".to_owned()),
+            OrderByResumeValue::String {
+                value: "a' OR 1=1".to_owned(),
             },
         ];
-        let rewritten =
-            rewrite_query_body_with_parameters(Some(original), "SELECT c._rid FROM c", &resume)
-                .unwrap();
-        let value: serde_json::Value = serde_json::from_slice(&rewritten).unwrap();
-        // Caller's parameter is preserved first; resume params append after.
-        assert_eq!(value["parameters"][0]["name"], "@p");
-        assert_eq!(value["parameters"][1]["name"], "@r0");
-        // Exact integer precision survives the JSON round-trip (no f64 drift).
+        let body = with_resume_filter(Some(plain), &resume, Some("rid-1"), false).unwrap();
+        let value: serde_json::Value = serde_json::from_slice(&body).unwrap();
+        // Caller query and parameters are byte-for-byte preserved.
+        assert_eq!(value["query"], "SELECT c._rid FROM c WHERE true");
         assert_eq!(
-            value["parameters"][1]["value"],
-            serde_json::json!(9_007_199_254_740_993_i64)
+            value["parameters"],
+            serde_json::json!([{"name": "@p", "value": 1}]),
+            "caller parameters must be preserved with nothing appended"
         );
-        assert_eq!(value["parameters"][2]["name"], "@r1");
-        assert_eq!(value["parameters"][2]["value"], "a' OR 1=1");
-        // The adversarial string is only in the parameter value, not the SQL.
-        assert_eq!(value["query"], "SELECT c._rid FROM c");
-    }
-
-    #[test]
-    fn rewrite_query_body_with_parameters_creates_parameters_array_when_absent() {
-        let original = br#"{"query":"SELECT * FROM c"}"#;
-        let resume = [ResumeParameter {
-            name: "@r0".to_owned(),
-            value: serde_json::json!(true),
-        }];
-        let rewritten =
-            rewrite_query_body_with_parameters(Some(original), "SELECT 1", &resume).unwrap();
-        let value: serde_json::Value = serde_json::from_slice(&rewritten).unwrap();
-        assert_eq!(value["parameters"][0]["name"], "@r0");
-        assert_eq!(value["parameters"][0]["value"], true);
-    }
-
-    #[test]
-    fn query_text_extracts_original_sql() {
-        let body = br#"{"query":"SELECT * FROM c JOIN t IN c.tags","parameters":[]}"#;
+        // The resume filter is the .NET structured shape; the exact integer
+        // survives the JSON round-trip and the adversarial string is a plain
+        // value (never interpolated into SQL).
         assert_eq!(
-            query_text(Some(body)).unwrap(),
-            "SELECT * FROM c JOIN t IN c.tags"
+            value["resumeFilter"],
+            serde_json::json!({
+                "value": [9_007_199_254_740_993_i64, "a' OR 1=1"],
+                "rid": "rid-1",
+                "exclude": false,
+            })
         );
     }
 
     #[test]
-    fn query_text_rejects_missing_or_malformed_body() {
-        assert!(query_text(None).is_err());
-        assert!(query_text(Some(b"not json")).is_err());
-        assert!(query_text(Some(br#"{"parameters":[]}"#)).is_err());
-    }
-
-    #[test]
-    fn query_parameter_names_reads_existing_names() {
-        let body = br#"{"query":"SELECT * FROM c WHERE c.a=@a","parameters":[{"name":"@a","value":1},{"name":"@b","value":2}]}"#;
-        assert_eq!(
-            query_parameter_names(Some(body)).unwrap(),
-            vec!["@a".to_owned(), "@b".to_owned()]
+    fn with_resume_filter_creates_no_parameters_array_and_omits_absent_rid() {
+        let plain = br#"{"query":"SELECT 1"}"#;
+        let body =
+            with_resume_filter(Some(plain), &[OrderByResumeValue::Null], None, true).unwrap();
+        let value: serde_json::Value = serde_json::from_slice(&body).unwrap();
+        assert!(
+            value.get("parameters").is_none(),
+            "no parameters must be synthesized when the caller had none"
         );
-        // No body / no parameters field => nothing to collide with.
-        assert!(query_parameter_names(None).unwrap().is_empty());
-        assert!(query_parameter_names(Some(br#"{"query":"SELECT 1"}"#))
-            .unwrap()
-            .is_empty());
+        assert_eq!(
+            value["resumeFilter"],
+            serde_json::json!({"value": [null], "exclude": true})
+        );
+        assert!(
+            value["resumeFilter"].get("rid").is_none(),
+            "an absent rid must be omitted from the wire filter"
+        );
     }
 
     #[test]
@@ -569,44 +483,6 @@ mod tests {
         assert_eq!(
             err.status(),
             CosmosStatus::SERVICE_ORDER_BY_ENVELOPE_INVALID
-        );
-    }
-
-    #[test]
-    fn rewritten_query_with_resume_filter_replaces_placeholder_in_place() {
-        let rewritten = "SELECT c._rid, [{\"item\":c.rank}] AS orderByItems, c AS payload \
-             FROM c WHERE {documentdb-formattableorderbyquery-filter} ORDER BY c.rank ASC";
-        // The full-tie disjunct carries no `_rid` clause; the rid cut-off is
-        // applied client-side (see `order_by::ResumeFilter`).
-        let where_fragment = "((IS_NUMBER(c.rank) AND c.rank > 5) OR \
-             (IS_NUMBER(c.rank) AND c.rank = 5))";
-        let filtered = rewritten_query_with_resume_filter(rewritten, where_fragment).unwrap();
-        // Placeholder gone, seek predicate spliced in place, no outer wrapper.
-        assert!(
-            !filtered.contains("{documentdb-formattableorderbyquery-filter}"),
-            "{filtered}"
-        );
-        assert!(!filtered.contains("SELECT VALUE r FROM ("), "{filtered}");
-        assert!(filtered.contains("c.rank > 5"), "{filtered}");
-        // `c._rid` still appears once, in the envelope's `SELECT` projection
-        // (needed for the client-side numeric discard) — but never as part
-        // of the substituted filter itself, which carries no `_rid` clause.
-        assert_eq!(
-            filtered.matches("_rid").count(),
-            1,
-            "{filtered}: rid stays client-side, not in the filter"
-        );
-        assert!(filtered.contains("ORDER BY c.rank ASC"), "{filtered}");
-    }
-
-    #[test]
-    fn rewritten_query_with_resume_filter_rejects_missing_placeholder() {
-        let err =
-            rewritten_query_with_resume_filter("SELECT * FROM c ORDER BY c.rank ASC", "(true)")
-                .unwrap_err();
-        assert_eq!(
-            err.status(),
-            CosmosStatus::SERVICE_ORDER_BY_REWRITTEN_QUERY_MISSING_FILTER_PLACEHOLDER
         );
     }
 

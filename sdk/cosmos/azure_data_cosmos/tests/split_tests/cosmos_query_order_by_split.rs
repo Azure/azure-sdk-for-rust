@@ -70,6 +70,23 @@ struct StringKeyItem {
     sort_text: String,
 }
 
+/// A seeded document carrying an array-valued sort key, for the dedicated
+/// array-keyed `ORDER BY` split-resume test.
+#[derive(Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+struct ArraySeedItem {
+    id: String,
+    partition_key: String,
+    array_key: Vec<i64>,
+}
+
+/// Projection for the array-keyed `ORDER BY` (reads only `id`).
+#[derive(Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+struct ArrayKeyItem {
+    id: String,
+}
+
 /// A string sort key for tie group `i`: ordered by the zero-padded index
 /// prefix, with a constant suffix carrying a quote, backslash, and tab so
 /// the resume boundary contains SQL special characters the parameterized filter
@@ -479,6 +496,126 @@ pub async fn order_by_query_resume_across_split_preserves_global_order(
                  pre-split drain order (full tuple ties broken only by `_rid`)"
             );
 
+            Ok(())
+        },
+        Some(TestOptions::new().with_timeout(Duration::from_secs(40 * 60))),
+    )
+    .await
+}
+
+/// A dedicated live check that a cross-partition streaming `ORDER BY` on an
+/// **array-valued** sort key resumes across a real split with no omissions
+/// or duplicates.
+///
+/// Array/object sort values are ordered by the backend's bounded hash (there
+/// is no documented structural order), and Rust sends that boundary to the
+/// backend as the structured `resumeFilter` (its complex value serialized as
+/// `{"type":"array","low":..,"high":..}`). This asserts the resume-correctness
+/// invariant — every seeded id returned exactly once across the split — rather
+/// than an exact global sequence (which is undefined for complex keys).
+///
+/// By design this exercises the **saved-token** resume path: the first page is
+/// drained and its continuation token captured, the split is then forced while
+/// *no query is active*, and the query is reissued from the saved token. That
+/// token's complex boundary replays through the structured `resumeFilter`,
+/// whose backend `DistinctHash` seek excludes already-emitted rows across the
+/// new topology — so the test is expected to pass. Live in-process splits —
+/// where the split child forwards its own backend continuation into each
+/// replacement, so no client-side discard is needed — are covered exhaustively
+/// by the `streaming_ordered_merge` unit tests.
+///
+/// Kept separate from `order_by_query_resume_across_split_preserves_global_order`
+/// so its default (index-everything) container can serve an array-path
+/// `ORDER BY` without a hand-tuned composite index, and so a service that does
+/// not support ordering by an array value surfaces here without destabilizing
+/// the scalar coverage. Gated on `test_category = "split"`.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "split"),
+    ignore = "requires test_category 'split'"
+)]
+pub async fn order_by_array_key_resume_across_split_has_no_omissions() -> Result<(), Box<dyn Error>>
+{
+    const PK_COUNT: usize = 30;
+    const TIE_GROUP_COUNT: usize = 5;
+    const PAGE_SIZE: u32 = 10;
+    const ARRAY_QUERY: &str = "SELECT * FROM c ORDER BY c.arrayKey ASC";
+
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            // Default (index-everything) indexing so the array sort path is
+            // servable without a hand-tuned composite index.
+            let properties = ContainerProperties::new(
+                "OrderByArrayKeyResumeAcrossSplit",
+                "/partitionKey".into(),
+            );
+            let throughput = ThroughputProperties::manual(1000);
+            let container_client = std::sync::Arc::new(
+                run_context
+                    .create_container(
+                        db_client,
+                        properties,
+                        Some(CreateContainerOptions::default().with_throughput(throughput)),
+                    )
+                    .await?,
+            );
+
+            // Each group's array value `[i]` ties across every partition key,
+            // so a tie run spreads across both post-split physical partitions.
+            for p in 0..PK_COUNT {
+                let partition_key = format!("pk{p}");
+                for i in 0..TIE_GROUP_COUNT {
+                    let item = ArraySeedItem {
+                        id: format!("{p}-{i}"),
+                        partition_key: partition_key.clone(),
+                        array_key: vec![i as i64],
+                    };
+                    match container_client
+                        .create_item(item.partition_key.clone(), &item.id.clone(), item, None)
+                        .await
+                    {
+                        Ok(_) => {}
+                        Err(error) if error.status().status_code() == StatusCode::Conflict => {}
+                        Err(error) => return Err(error.into()),
+                    }
+                }
+            }
+
+            let ranges_before = container_client.read_feed_ranges(None).await?;
+            let partitions_before = ranges_before.len();
+
+            let (array_first, array_token) =
+                capture_first_page::<ArrayKeyItem>(&container_client, ARRAY_QUERY, PAGE_SIZE)
+                    .await?;
+
+            let partitions_after =
+                force_split_and_wait(&container_client, partitions_before).await?;
+            assert!(
+                partitions_after > partitions_before,
+                "split must increase partition count: before={partitions_before}, \
+                 after={partitions_after}"
+            );
+
+            let array_all = drain_resumed::<ArrayKeyItem>(
+                &container_client,
+                ARRAY_QUERY,
+                PAGE_SIZE,
+                array_first,
+                Some(array_token),
+            )
+            .await?;
+
+            let mut expected_ids: Vec<String> = (0..PK_COUNT)
+                .flat_map(|p| (0..TIE_GROUP_COUNT).map(move |i| format!("{p}-{i}")))
+                .collect();
+            expected_ids.sort();
+            let mut array_ids: Vec<String> = array_all.iter().map(|item| item.id.clone()).collect();
+            array_ids.sort();
+            assert_eq!(
+                array_ids, expected_ids,
+                "array-keyed ORDER BY resume across the split must return every seeded id \
+                 exactly once (no omissions or duplicates)"
+            );
             Ok(())
         },
         Some(TestOptions::new().with_timeout(Duration::from_secs(40 * 60))),

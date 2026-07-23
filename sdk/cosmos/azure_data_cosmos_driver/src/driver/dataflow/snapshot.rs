@@ -86,15 +86,14 @@ pub(crate) enum PipelineNodeState {
 
     /// A streaming cross-partition `ORDER BY` k-way merge.
     ///
-    /// `directions`/`query_fingerprint` are a query-shape discriminator
-    /// validated on resume, so a token can never resume a structurally
-    /// different query. `ranges` lists every still-active EPK range
-    /// explicitly (unlike `SequentialDrain`'s sparse cursor, since any
-    /// range may still have unemitted rows), sorted ascending by
+    /// `directions` is a query-shape discriminator validated on resume
+    /// alongside range/boundary compatibility, so a token can never resume
+    /// a structurally incompatible query. `ranges` lists every still-active
+    /// EPK range explicitly (unlike `SequentialDrain`'s sparse cursor, since
+    /// any range may still have unemitted rows), sorted ascending by
     /// `min_epk`; a fully-drained range is omitted.
     StreamingOrderedMerge {
         directions: Vec<SortOrder>,
-        query_fingerprint: String,
         ranges: Vec<OrderByRangeToken>,
     },
 }
@@ -105,12 +104,12 @@ pub(crate) enum PipelineNodeState {
 /// - `server_continuation` is present only when the buffer was empty and
 ///   the range ran the plain query — resumable like
 ///   [`PipelineNodeState::Request`]. A resume-filtered range's token is
-///   opaque and bound to that filtered text, so it's never recorded here;
-///   such a range carries only its `boundary`.
+///   opaque and bound to that filtered request body, so it's never recorded
+///   here; such a range carries only its `boundary`.
 /// - `boundary` is present once a row has been emitted; it's the required
 ///   resume path whenever `server_continuation` is absent or untrusted:
-///   reissue with a value-based filter, or — for a complex key — a
-///   positional rescan (see `super::order_by::ResumeFilter`).
+///   reissue with the structured `resumeFilter` (scalar or complex keys
+///   alike — see `super::order_by::resume_filter_json`).
 ///
 /// Both absent means this range has never been touched.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -123,19 +122,38 @@ pub(crate) struct OrderByRangeToken {
     pub(crate) boundary: Option<ValueBoundary>,
 }
 
-/// The last-emitted row's key tuple + RID for one range, plus rows emitted.
+/// The last-emitted row's key tuple + RID for one range, plus a `_rid`-tie
+/// `skip_count`.
 ///
-/// Resumes as a `_rid`-aware seek predicate (scalar keys) or positional
-/// rescan (complex keys). No tie "skip count": the `_rid` tiebreak stays
-/// correct across a split, unlike a positional count.
+/// Resumes by sending the boundary to the backend as a structured
+/// `resumeFilter` (see `super::order_by::resume_filter_json`), with the
+/// already-emitted prefix of the boundary tie run trimmed client-side.
+///
+/// `skip_count` mirrors .NET's `OrderByContinuationToken.SkipCount`: a JOIN
+/// (or array-unwind) query can emit several result rows from a single
+/// document, all sharing the same `_rid` and the same sort key, so the
+/// `(sort key, _rid)` cursor alone cannot say how many of that group were
+/// already emitted. `skip_count` records exactly that — the number of
+/// already-emitted rows sharing the boundary's `(resume_values, last_rid)` —
+/// so resume skips precisely those duplicates and no more. A well-formed
+/// boundary always carries `skip_count >= 1` (it counts at least the boundary
+/// row itself); a token predating the field is read back as `1`
+/// (`default_boundary_skip_count`) so its boundary row is still discarded and
+/// never re-emitted. Tokens minted by earlier builds may also carry a
+/// now-ignored `rows_emitted` field; serde skips it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) struct ValueBoundary {
     pub(crate) resume_values: Vec<OrderByResumeValue>,
     pub(crate) last_rid: String,
-    /// Rows emitted for this range, or `None` if not attributable (carved
-    /// from a split). Only the complex-key positional rescan consults it.
-    #[serde(default)]
-    pub(crate) rows_emitted: Option<u64>,
+    #[serde(default = "default_boundary_skip_count")]
+    pub(crate) skip_count: u32,
+}
+
+/// A well-formed value boundary always emitted at least its boundary row, so a
+/// token predating the `skip_count` field resumes as if that one row was
+/// counted — the discard drops it rather than re-emitting it.
+fn default_boundary_skip_count() -> u32 {
+    1
 }
 
 /// One entry in a [`PipelineNodeState::SequentialDrain`] `active_tokens`
@@ -391,7 +409,6 @@ mod tests {
     fn into_child_contribution_rejects_nested_streaming_ordered_merge() {
         let err = PipelineNodeState::StreamingOrderedMerge {
             directions: vec![SortOrder::Ascending],
-            query_fingerprint: "fp".to_owned(),
             ranges: vec![],
         }
         .into_child_contribution("Parent", 0, 1)
@@ -407,7 +424,6 @@ mod tests {
     fn streaming_ordered_merge_round_trips_untouched_range() {
         let state = PipelineNodeState::StreamingOrderedMerge {
             directions: vec![SortOrder::Ascending, SortOrder::Descending],
-            query_fingerprint: "abc123".to_owned(),
             ranges: vec![OrderByRangeToken {
                 min_epk: "".to_owned(),
                 max_epk: "FF".to_owned(),
@@ -420,11 +436,45 @@ mod tests {
         assert_eq!(parsed, state);
     }
 
+    /// An older token carrying the retired `query_fingerprint` field must
+    /// still deserialize (serde ignores unknown fields), and a freshly
+    /// serialized token must omit it.
+    #[test]
+    fn streaming_ordered_merge_ignores_legacy_query_fingerprint_field() {
+        let json = r#"{
+            "kind": "streaming_ordered_merge",
+            "directions": ["Ascending"],
+            "query_fingerprint": "deadbeef",
+            "ranges": [{
+                "min_epk": "",
+                "max_epk": "FF"
+            }]
+        }"#;
+        let parsed: PipelineNodeState = serde_json::from_str(json).unwrap();
+        assert_eq!(
+            parsed,
+            PipelineNodeState::StreamingOrderedMerge {
+                directions: vec![SortOrder::Ascending],
+                ranges: vec![OrderByRangeToken {
+                    min_epk: "".to_owned(),
+                    max_epk: "FF".to_owned(),
+                    server_continuation: None,
+                    boundary: None,
+                }],
+            }
+        );
+
+        let new_json = serde_json::to_string(&parsed).unwrap();
+        assert!(
+            !new_json.contains("query_fingerprint"),
+            "new tokens must not emit the retired field: {new_json}"
+        );
+    }
+
     #[test]
     fn streaming_ordered_merge_round_trips_clean_page_boundary() {
         let state = PipelineNodeState::StreamingOrderedMerge {
             directions: vec![SortOrder::Ascending],
-            query_fingerprint: "fp".to_owned(),
             ranges: vec![OrderByRangeToken {
                 min_epk: "".to_owned(),
                 max_epk: "FF".to_owned(),
@@ -432,7 +482,7 @@ mod tests {
                 boundary: Some(ValueBoundary {
                     resume_values: vec![OrderByResumeValue::Number { value: 5.0.into() }],
                     last_rid: "rid-1".to_owned(),
-                    rows_emitted: Some(12),
+                    skip_count: 1,
                 }),
             }],
         };
@@ -445,7 +495,6 @@ mod tests {
     fn streaming_ordered_merge_round_trips_complex_value_boundary() {
         let state = PipelineNodeState::StreamingOrderedMerge {
             directions: vec![SortOrder::Ascending],
-            query_fingerprint: "fp".to_owned(),
             ranges: vec![OrderByRangeToken {
                 min_epk: "40".to_owned(),
                 max_epk: "80".to_owned(),
@@ -459,7 +508,7 @@ mod tests {
                         },
                     }],
                     last_rid: "rid-2".to_owned(),
-                    rows_emitted: Some(40),
+                    skip_count: 1,
                 }),
             }],
         };
@@ -468,39 +517,99 @@ mod tests {
         assert_eq!(parsed, state);
     }
 
+    /// A boundary's `skip_count` round-trips, and a token that predates the
+    /// field parses as `skip_count: 1` (via `default_boundary_skip_count`), so
+    /// an older continuation token never fails to deserialize and still drops
+    /// its boundary row on resume.
     #[test]
-    fn streaming_ordered_merge_round_trips_split_derived_boundary_with_null_count() {
-        // `rows_emitted: None` (split-derived) must round-trip, not become `Some(0)`.
-        let state = PipelineNodeState::StreamingOrderedMerge {
-            directions: vec![SortOrder::Ascending],
-            query_fingerprint: "fp".to_owned(),
-            ranges: vec![OrderByRangeToken {
-                min_epk: String::new(),
-                max_epk: "80".to_owned(),
-                server_continuation: None,
-                boundary: Some(ValueBoundary {
-                    resume_values: vec![OrderByResumeValue::Number { value: 5.0.into() }],
-                    last_rid: "rid-3".to_owned(),
-                    rows_emitted: None,
-                }),
-            }],
+    fn streaming_ordered_merge_boundary_skip_count_round_trips_and_defaults() {
+        let with_skip = r#"{
+            "kind": "streaming_ordered_merge",
+            "directions": ["Ascending"],
+            "ranges": [{
+                "min_epk": "",
+                "max_epk": "FF",
+                "boundary": {
+                    "resume_values": [{"type": "number", "value": 5.0}],
+                    "last_rid": "rid-1",
+                    "skip_count": 3
+                }
+            }]
+        }"#;
+        let parsed: PipelineNodeState = serde_json::from_str(with_skip).unwrap();
+        let PipelineNodeState::StreamingOrderedMerge { ranges, .. } = &parsed else {
+            panic!("expected StreamingOrderedMerge");
         };
-        let json = serde_json::to_string(&state).unwrap();
-        let parsed: PipelineNodeState = serde_json::from_str(&json).unwrap();
-        assert_eq!(parsed, state);
-        match &parsed {
-            PipelineNodeState::StreamingOrderedMerge { ranges, .. } => {
-                assert_eq!(ranges[0].boundary.as_ref().unwrap().rows_emitted, None);
+        assert_eq!(ranges[0].boundary.as_ref().unwrap().skip_count, 3);
+        // Re-serializing preserves the value.
+        let round_tripped: PipelineNodeState =
+            serde_json::from_str(&serde_json::to_string(&parsed).unwrap()).unwrap();
+        assert_eq!(round_tripped, parsed);
+
+        // A token missing `skip_count` parses as 1 — a real boundary always
+        // emitted its boundary row, so resume still discards it.
+        let without_skip = r#"{
+            "kind": "streaming_ordered_merge",
+            "directions": ["Ascending"],
+            "ranges": [{
+                "min_epk": "",
+                "max_epk": "FF",
+                "boundary": {
+                    "resume_values": [{"type": "number", "value": 5.0}],
+                    "last_rid": "rid-1"
+                }
+            }]
+        }"#;
+        let parsed: PipelineNodeState = serde_json::from_str(without_skip).unwrap();
+        let PipelineNodeState::StreamingOrderedMerge { ranges, .. } = &parsed else {
+            panic!("expected StreamingOrderedMerge");
+        };
+        assert_eq!(ranges[0].boundary.as_ref().unwrap().skip_count, 1);
+    }
+
+    #[test]
+    fn streaming_ordered_merge_ignores_legacy_rows_emitted_field() {
+        let json = r#"{
+            "kind": "streaming_ordered_merge",
+            "directions": ["Ascending"],
+            "ranges": [{
+                "min_epk": "",
+                "max_epk": "80",
+                "boundary": {
+                    "resume_values": [{"type": "number", "value": 5.0}],
+                    "last_rid": "rid-3",
+                    "rows_emitted": 40
+                }
+            }]
+        }"#;
+        let parsed: PipelineNodeState = serde_json::from_str(json).unwrap();
+        assert_eq!(
+            parsed,
+            PipelineNodeState::StreamingOrderedMerge {
+                directions: vec![SortOrder::Ascending],
+                ranges: vec![OrderByRangeToken {
+                    min_epk: String::new(),
+                    max_epk: "80".to_owned(),
+                    server_continuation: None,
+                    boundary: Some(ValueBoundary {
+                        resume_values: vec![OrderByResumeValue::Number { value: 5.0.into() }],
+                        last_rid: "rid-3".to_owned(),
+                        skip_count: 1,
+                    }),
+                }],
             }
-            other => panic!("expected StreamingOrderedMerge, got {other:?}"),
-        }
+        );
+        let new_json = serde_json::to_string(&parsed).unwrap();
+        assert!(
+            !new_json.contains("rows_emitted"),
+            "new tokens must not emit the retired field: {new_json}"
+        );
     }
 
     #[test]
     fn streaming_ordered_merge_omits_absent_continuation_and_boundary() {
         let state = PipelineNodeState::StreamingOrderedMerge {
             directions: vec![SortOrder::Ascending],
-            query_fingerprint: "fp".to_owned(),
             ranges: vec![OrderByRangeToken {
                 min_epk: String::new(),
                 max_epk: "FF".to_owned(),

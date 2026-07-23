@@ -17,7 +17,7 @@ use std::sync::Arc;
 
 use super::super::{
     mocks::{MockRequestExecutor, MockTopologyProvider},
-    order_by::{query_fingerprint, OrderByItem, OrderByResumeValue},
+    order_by::{OrderByItem, OrderByResumeValue},
     planner::build_streaming_ordered_merge,
     query_plan::{QueryInfo, QueryPlan, QueryRange, SortOrder},
     snapshot::{OrderByRangeToken, ValueBoundary},
@@ -192,6 +192,41 @@ fn envelope_page(rows: &[(&str, i64)], continuation: Option<&str>) -> CosmosResp
     )
 }
 
+/// Like [`envelope_page`] but JOIN-shaped: `(rid, rank, id)` rows where
+/// several rows may share one `_rid` (a single document expanded by a JOIN)
+/// while carrying distinct payload `id`s. Drives the `skip_count` resume path.
+fn join_envelope_page(rows: &[(&str, i64, &str)], continuation: Option<&str>) -> CosmosResponse {
+    let documents: Vec<serde_json::Value> = rows
+        .iter()
+        .map(|(rid, rank, id)| {
+            serde_json::json!({
+                "_rid": rid,
+                "orderByItems": [{"item": rank}],
+                "payload": {"id": id},
+            })
+        })
+        .collect();
+    let body = serde_json::json!({
+        "_rid": "",
+        "Documents": documents,
+        "_count": documents.len(),
+    });
+    let mut diagnostics = DiagnosticsContextBuilder::new(
+        ActivityId::new_uuid(),
+        Arc::new(DiagnosticsOptions::default()),
+    );
+    diagnostics.set_operation_status(azure_core::http::StatusCode::Ok, None);
+    let mut headers = CosmosResponseHeaders::new();
+    headers.continuation = continuation.map(str::to_owned);
+    headers.request_charge = Some(crate::models::RequestCharge::new(1.5));
+    CosmosResponse::new(
+        serde_json::to_vec(&body).unwrap(),
+        headers,
+        CosmosStatus::new(azure_core::http::StatusCode::Ok),
+        Arc::new(diagnostics.complete()),
+    )
+}
+
 /// Like [`envelope_page`] but with a string sort key per row, for
 /// string-boundary resume coverage.
 fn string_envelope_page(rows: &[(&str, &str)], continuation: Option<&str>) -> CosmosResponse {
@@ -202,6 +237,40 @@ fn string_envelope_page(rows: &[(&str, &str)], continuation: Option<&str>) -> Co
                 "_rid": rid,
                 "orderByItems": [{"item": key}],
                 "payload": {"id": rid, "key": key},
+            })
+        })
+        .collect();
+    let body = serde_json::json!({
+        "_rid": "",
+        "Documents": documents,
+        "_count": documents.len(),
+    });
+    let mut diagnostics = DiagnosticsContextBuilder::new(
+        ActivityId::new_uuid(),
+        Arc::new(DiagnosticsOptions::default()),
+    );
+    diagnostics.set_operation_status(azure_core::http::StatusCode::Ok, None);
+    let mut headers = CosmosResponseHeaders::new();
+    headers.continuation = continuation.map(str::to_owned);
+    headers.request_charge = Some(crate::models::RequestCharge::new(1.5));
+    CosmosResponse::new(
+        serde_json::to_vec(&body).unwrap(),
+        headers,
+        CosmosStatus::new(azure_core::http::StatusCode::Ok),
+        Arc::new(diagnostics.complete()),
+    )
+}
+
+/// Like [`envelope_page`] but with a complex array sort key `[value]` per
+/// row, for complex-boundary resume coverage.
+fn array_envelope_page(rows: &[(&str, i64)], continuation: Option<&str>) -> CosmosResponse {
+    let documents: Vec<serde_json::Value> = rows
+        .iter()
+        .map(|(rid, value)| {
+            serde_json::json!({
+                "_rid": rid,
+                "orderByItems": [{"item": [value]}],
+                "payload": {"id": rid},
             })
         })
         .collect();
@@ -519,7 +588,7 @@ async fn catalog_equal_key_resume_requiring_skip_count_replays_correctly() {
         })
         .collect();
 
-    let rows: Vec<(String, i64)> = scenario["mock"]["partitions"][0]["pages"][0]["rows"]
+    let rows: Vec<(String, i64, String)> = scenario["mock"]["partitions"][0]["pages"][0]["rows"]
         .as_array()
         .expect("scenario must declare mock rows")
         .iter()
@@ -532,12 +601,18 @@ async fn catalog_equal_key_resume_requiring_skip_count_replays_correctly() {
             let item = row["orderByItems"][0]["item"]
                 .as_i64()
                 .expect("this scenario's sort key is a plain integer");
-            (rid, item)
+            // A JOIN row's payload `id` is distinct from its `_rid` (several
+            // rows share one document's `_rid`), so read it explicitly.
+            let id = row["payload"]["id"]
+                .as_str()
+                .expect("row payload must have an id")
+                .to_owned();
+            (rid, item, id)
         })
         .collect();
-    let row_refs: Vec<(&str, i64)> = rows
+    let row_refs: Vec<(&str, i64, &str)> = rows
         .iter()
-        .map(|(rid, rank)| (rid.as_str(), *rank))
+        .map(|(rid, rank, id)| (rid.as_str(), *rank, id.as_str()))
         .collect();
 
     let checkpoint = &scenario["checkpoint"];
@@ -548,29 +623,17 @@ async fn catalog_equal_key_resume_requiring_skip_count_replays_correctly() {
         .as_str()
         .expect("checkpoint must declare lastRid")
         .to_owned();
-    // `skipCount` records how many rows tied with the boundary were
-    // already emitted; the `_rid`-aware resume no longer consumes a
-    // positional count, but the field is still meaningful metadata (and
-    // seeds `rows_emitted`).
-    let rows_emitted = Some(
-        checkpoint["skipCount"]
-            .as_u64()
-            .expect("checkpoint must declare skipCount"),
-    );
+    // A real boundary always emitted at least the boundary row, so a fixture
+    // that omits `skipCount` resumes as 1.
+    let skip_count = checkpoint
+        .get("skipCount")
+        .and_then(|v| v.as_u64())
+        .map_or(1, |n| n as u32);
 
     let op = order_by_operation();
     let plan = order_by_plan();
-    let rewritten_query = plan
-        .query_info
-        .as_ref()
-        .unwrap()
-        .rewritten_query
-        .as_deref()
-        .unwrap();
-
     let resumed_state = PipelineNodeState::StreamingOrderedMerge {
         directions: vec![SortOrder::Ascending],
-        query_fingerprint: query_fingerprint(rewritten_query),
         ranges: vec![OrderByRangeToken {
             min_epk: String::new(),
             max_epk: "FF".to_owned(),
@@ -578,13 +641,13 @@ async fn catalog_equal_key_resume_requiring_skip_count_replays_correctly() {
             boundary: Some(ValueBoundary {
                 resume_values,
                 last_rid,
-                rows_emitted,
+                skip_count,
             }),
         }],
     };
 
     let mut topology = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
-    let mut executor = MockRequestExecutor::new(vec![Ok(envelope_page(&row_refs, None))]);
+    let mut executor = MockRequestExecutor::new(vec![Ok(join_envelope_page(&row_refs, None))]);
     let mut pipeline =
         build_streaming_ordered_merge(&plan, &mut topology, &op, Some(resumed_state))
             .await
@@ -604,14 +667,11 @@ async fn split_mid_merge_splices_replacements_and_preserves_order() {
     let op = order_by_operation();
     let plan = order_by_plan();
 
-    // A split resolves the new topology twice (see `handle_split`'s doc
-    // comment), so the same post-split resolution is queued twice.
+    // The split child (a `Request`) resolves the new topology once when it
+    // produces its replacement nodes; the merge consumes those directly, so no
+    // second resolution is queued.
     let mut topology = MockTopologyProvider::new(vec![
         Ok(vec![resolved("", "FF", "pk-0")]),
-        Ok(vec![
-            resolved("", "80", "pk-left"),
-            resolved("80", "FF", "pk-right"),
-        ]),
         Ok(vec![
             resolved("", "80", "pk-left"),
             resolved("80", "FF", "pk-right"),
@@ -647,9 +707,9 @@ async fn split_during_replenish_primes_all_replacements_preserving_order() {
     let op = order_by_operation();
     let plan = order_by_plan();
 
-    // Initial resolve yields two live partitions; P0 then splits (its own
-    // resolve + `handle_split`'s), so the post-split resolution is queued
-    // twice after the initial one.
+    // Initial resolve yields two live partitions; P0 then splits, resolving
+    // the post-split topology once when it produces its replacement nodes
+    // (the merge consumes them directly, without a second resolution).
     let mut topology = MockTopologyProvider::new(vec![
         Ok(vec![
             resolved("", "80", "pk-p0"),
@@ -659,14 +719,11 @@ async fn split_during_replenish_primes_all_replacements_preserving_order() {
             resolved("", "40", "pk-a"),
             resolved("40", "80", "pk-b"),
         ]),
-        Ok(vec![
-            resolved("", "40", "pk-a"),
-            resolved("40", "80", "pk-b"),
-        ]),
     ]);
     // P0's first page delivers 1, 2 (continuation pending); replenishing it
-    // 410s into a split. P0a resumes with 3, P0b with 10, 20 (the mock can't
-    // honor the seek filter, so the `_rid`-aware discard keeps rows past 2).
+    // 410s into a split. Each replacement carries P0's forwarded continuation
+    // (Cosmos contract), so it resumes past the `2` boundary with no client
+    // discard: P0a resumes with 3, P0b with 10, 20.
     let mut executor = MockRequestExecutor::new(vec![
         Ok(envelope_page(&[("d1", 1), ("d2", 2)], Some("p0-ct"))),
         Ok(envelope_page(&[("d50", 50)], None)),
@@ -702,10 +759,6 @@ async fn split_during_replenish_checkpoint_resumes_in_global_order() {
         Ok(vec![
             resolved("", "80", "pk-p0"),
             resolved("80", "FF", "pk-p1"),
-        ]),
-        Ok(vec![
-            resolved("", "40", "pk-a"),
-            resolved("40", "80", "pk-b"),
         ]),
         Ok(vec![
             resolved("", "40", "pk-a"),
@@ -776,23 +829,64 @@ async fn split_during_replenish_checkpoint_resumes_in_global_order() {
     );
 }
 
+/// Two full snapshot/resume cycles over a JOIN tie run: one document (`docA`)
+/// expands into four result rows sharing its `_rid`, so the boundary's
+/// `skip_count` must accumulate across cycles — each cycle emits two more
+/// docA rows, and the next resume skips exactly the ones already delivered.
+/// Every result id must appear exactly once across all three pages.
+#[tokio::test]
+async fn two_snapshot_resume_cycles_accumulate_join_skip_count() {
+    // Page size 2 forces a checkpoint mid-tie-run. The mock can't honor the
+    // structured resumeFilter, so it re-returns the whole page each cycle and
+    // the client-side `skip_count` discard trims the already-emitted prefix.
+    let op = order_by_operation_with_page_size(2);
+    let plan = order_by_plan();
+    let full_page = || {
+        join_envelope_page(
+            &[
+                ("docA", 5, "a1"),
+                ("docA", 5, "a2"),
+                ("docA", 5, "a3"),
+                ("docA", 5, "a4"),
+                ("docB", 6, "b1"),
+            ],
+            None,
+        )
+    };
+
+    let mut collected: Vec<String> = Vec::new();
+    let mut resume: Option<PipelineNodeState> = None;
+    // Cycle 0 emits a1,a2; cycle 1 emits a3,a4; cycle 2 emits b1 (terminal).
+    for cycle in 0..3 {
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+        let mut executor = MockRequestExecutor::new(vec![Ok(full_page())]);
+        let mut pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, resume.clone())
+            .await
+            .unwrap();
+        collected.extend(drain_one(&mut pipeline, &mut executor).await);
+        if cycle < 2 {
+            resume = Some(round_trip_state(pipeline.snapshot_state().unwrap(), &op));
+        }
+    }
+
+    assert_eq!(
+        collected,
+        vec!["a1", "a2", "a3", "a4", "b1"]
+            .into_iter()
+            .map(str::to_owned)
+            .collect::<Vec<_>>(),
+        "each JOIN result row is emitted exactly once across two resume cycles"
+    );
+}
+
 /// Regression: after a split, both sub-ranges resume from the same
 /// boundary; the `_rid`-aware discard must avoid dropping/duplicating rows.
 #[tokio::test]
 async fn resume_after_split_with_emitted_ties_has_no_omissions_or_duplicates() {
     let op = order_by_operation();
     let plan = order_by_plan();
-    let rewritten_query = plan
-        .query_info
-        .as_ref()
-        .unwrap()
-        .rewritten_query
-        .as_deref()
-        .unwrap();
-
     let resumed_state = PipelineNodeState::StreamingOrderedMerge {
         directions: vec![SortOrder::Ascending],
-        query_fingerprint: query_fingerprint(rewritten_query),
         ranges: vec![OrderByRangeToken {
             min_epk: String::new(),
             max_epk: "FF".to_owned(),
@@ -800,7 +894,7 @@ async fn resume_after_split_with_emitted_ties_has_no_omissions_or_duplicates() {
             boundary: Some(ValueBoundary {
                 resume_values: vec![OrderByResumeValue::Number { value: 5.0.into() }],
                 last_rid: "c".to_owned(),
-                rows_emitted: Some(3),
+                skip_count: 1,
             }),
         }],
     };
@@ -837,24 +931,18 @@ async fn resume_after_split_with_emitted_ties_has_no_omissions_or_duplicates() {
     );
 }
 
-/// Regression: a complex boundary crossing a split must fail fast, since
-/// its positional count can't be attributed to the new sub-ranges.
+/// A complex (array/object) boundary now also resumes across a split via
+/// the structured `resumeFilter`, discarding already-emitted ties by hash +
+/// `_rid` client-side — no more topology-change rejection.
 #[tokio::test]
-async fn resume_rejects_complex_boundary_across_split() {
+async fn resume_complex_boundary_across_split_has_no_omissions_or_duplicates() {
     let op = order_by_operation();
     let plan = order_by_plan();
-    let rewritten_query = plan
-        .query_info
-        .as_ref()
-        .unwrap()
-        .rewritten_query
-        .as_deref()
-        .unwrap();
-
-    let complex = OrderByItem::Array(vec![OrderByItem::Number(1.0.into())]).to_resume_value();
+    // Boundary is the array `[5]`, last emitted at rid "c". Built from the
+    // same integer representation the envelope rows carry, so the hashes match.
+    let complex = OrderByItem::Array(vec![OrderByItem::Number(5_i64.into())]).to_resume_value();
     let resumed_state = PipelineNodeState::StreamingOrderedMerge {
         directions: vec![SortOrder::Ascending],
-        query_fingerprint: query_fingerprint(rewritten_query),
         ranges: vec![OrderByRangeToken {
             min_epk: String::new(),
             max_epk: "FF".to_owned(),
@@ -862,21 +950,45 @@ async fn resume_rejects_complex_boundary_across_split() {
             boundary: Some(ValueBoundary {
                 resume_values: vec![complex],
                 last_rid: "c".to_owned(),
-                rows_emitted: Some(3),
+                skip_count: 1,
             }),
         }],
     };
 
+    // The saved range resolves to two post-split sub-ranges.
     let mut topology = MockTopologyProvider::new(vec![Ok(vec![
         resolved("", "80", "pk-left"),
         resolved("80", "FF", "pk-right"),
     ])]);
-    let err = build_streaming_ordered_merge(&plan, &mut topology, &op, Some(resumed_state))
-        .await
-        .unwrap_err();
+    // Every row ties on the same array `[5]` (a whole tie run split across
+    // the two sub-ranges), so the client-side hash + `_rid` discard is
+    // deterministic: rids at or before "c" (a, b, c) were already emitted;
+    // "d" and "e" survive. (A *differently*-valued complex row's ordering is
+    // the backend's hash order, which a `MockLeaf` can't reproduce, so the
+    // synthetic split test exercises the tie run.)
+    let mut executor = MockRequestExecutor::new(vec![
+        Ok(array_envelope_page(&[("a", 5), ("c", 5), ("e", 5)], None)),
+        Ok(array_envelope_page(&[("b", 5), ("d", 5)], None)),
+    ]);
+
+    let mut pipeline =
+        build_streaming_ordered_merge(&plan, &mut topology, &op, Some(resumed_state))
+            .await
+            .expect("a complex boundary now resumes across a split");
+    // Assert the resume-filtered request bodies carry the structured
+    // complex `resumeFilter` (reaching the executor), then check ordering.
+    let ids = drain_all(&mut pipeline, &mut executor).await;
+    for i in 0..2 {
+        assert_is_complex_resume_filtered_query(&executor.body_text(i));
+    }
     assert_eq!(
-        err.status(),
-        CosmosStatus::CLIENT_STREAMING_MERGE_COMPLEX_BOUNDARY_TOPOLOGY_CHANGE
+        ids,
+        vec!["d", "e"]
+            .into_iter()
+            .map(str::to_owned)
+            .collect::<Vec<_>>(),
+        "already-emitted tied rows (a, b, c) are dropped by hash+`_rid`; the \
+         unemitted tied rows (d, e) survive with no duplicates"
     );
 }
 
@@ -886,17 +998,8 @@ async fn resume_rejects_complex_boundary_across_split() {
 async fn resume_after_merge_clips_widened_range_and_drains() {
     let op = order_by_operation();
     let plan = order_by_plan();
-    let rewritten_query = plan
-        .query_info
-        .as_ref()
-        .unwrap()
-        .rewritten_query
-        .as_deref()
-        .unwrap();
-
     let resumed_state = PipelineNodeState::StreamingOrderedMerge {
         directions: vec![SortOrder::Ascending],
-        query_fingerprint: query_fingerprint(rewritten_query),
         ranges: vec![OrderByRangeToken {
             min_epk: String::new(),
             max_epk: "80".to_owned(),
@@ -904,7 +1007,7 @@ async fn resume_after_merge_clips_widened_range_and_drains() {
             boundary: Some(ValueBoundary {
                 resume_values: vec![OrderByResumeValue::Number { value: 5.0.into() }],
                 last_rid: "c".to_owned(),
-                rows_emitted: Some(3),
+                skip_count: 1,
             }),
         }],
     };
@@ -929,34 +1032,6 @@ async fn resume_after_merge_clips_widened_range_and_drains() {
             .map(str::to_owned)
             .collect::<Vec<_>>(),
         "already-emitted rows (a, c) are dropped; the range's unemitted rows drain"
-    );
-}
-
-/// A token minted for a different rewritten query (fingerprint mismatch)
-/// must be rejected outright, not silently resumed.
-#[tokio::test]
-async fn resume_rejects_fingerprint_mismatch() {
-    let op = order_by_operation();
-    let plan = order_by_plan();
-
-    let mismatched_state = PipelineNodeState::StreamingOrderedMerge {
-        directions: vec![SortOrder::Ascending],
-        query_fingerprint: "not-the-real-fingerprint".to_owned(),
-        ranges: vec![super::super::snapshot::OrderByRangeToken {
-            min_epk: String::new(),
-            max_epk: "FF".to_owned(),
-            server_continuation: Some("ct".to_owned()),
-            boundary: None,
-        }],
-    };
-
-    let mut topology = MockTopologyProvider::new(vec![]);
-    let err = build_streaming_ordered_merge(&plan, &mut topology, &op, Some(mismatched_state))
-        .await
-        .unwrap_err();
-    assert_eq!(
-        err.status(),
-        CosmosStatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID
     );
 }
 
@@ -1035,45 +1110,64 @@ async fn aggregates_request_charge_and_omits_backend_continuation_header() {
 
 // ── Query-shape / continuation-binding regression ───────────────────────────
 
-/// Asserts a recorded request body is the resume-filtered value-boundary
-/// query: the rewritten query with a scalar seek filter substituted for
-/// the Gateway placeholder — not the plain query, the raw placeholder, or
-/// an outer subquery wrapper (a rejected shape).
+/// Asserts a recorded request body carries the .NET-compatible structured
+/// `resumeFilter` (Rust's per-range "target" style: `rid` present,
+/// `exclude:false`) — not a fresh query, an SDK-generated `@cosmos...`
+/// parameter, or an inline SQL seek predicate.
 fn assert_is_resume_filtered_query(body: &str) {
+    let value: serde_json::Value =
+        serde_json::from_str(body).expect("recorded request body must be valid JSON");
     assert!(
         !body.contains("{documentdb-formattableorderbyquery-filter}"),
         "the resume filter placeholder must be substituted, not sent verbatim: {body}"
     );
     assert!(
-        !body.contains("SELECT VALUE r FROM ("),
-        "resume must inject a flat scalar filter, never wrap the rewritten query as an \
-         outer envelope subquery: {body}"
+        !body.contains("@cosmosResumeFilter"),
+        "resume must not synthesize query parameters: {body}"
+    );
+    let query = value["query"].as_str().expect("body has a query string");
+    assert!(
+        !query.contains("IS_NUMBER(") && !query.contains(" > @") && !query.contains(" < @"),
+        "resume must not rewrite the SQL with a seek predicate: {query}"
+    );
+    let filter = &value["resumeFilter"];
+    assert!(
+        filter.is_object(),
+        "a value-boundary resume must carry a structured resumeFilter: {body}"
     );
     assert!(
-        body.contains("IS_NUMBER(c.rank)") && !body.contains("WHERE true"),
-        "resume-filtered query must carry the value-boundary seek filter substituted for \
-         the Gateway placeholder, not the fresh `WHERE true`: {body}"
+        filter["value"].is_array() && !filter["value"].as_array().unwrap().is_empty(),
+        "resumeFilter.value must be a non-empty array: {body}"
     );
-    // `c._rid` appears exactly once, in the envelope's `SELECT` projection
-    // (needed for the client-side numeric discard) — the filter itself
-    // carries no `_rid` predicate: a base64 `_rid` string doesn't sort in
-    // document-ordinal order, so the tie-break stays client-side (see
-    // `order_by::ResumeFilter`).
+    assert!(
+        filter["rid"].is_string(),
+        "Rust resumes each range target-style with its own rid present: {body}"
+    );
     assert_eq!(
-        body.matches("_rid").count(),
-        1,
-        "{body}: rid stays client-side, not in the filter"
+        filter["exclude"],
+        serde_json::Value::Bool(false),
+        "Rust resumes target-style with exclude:false: {body}"
+    );
+}
+
+/// Like [`assert_is_resume_filtered_query`], but for a complex (array)
+/// boundary: the single resume value is the typed hash object with signed
+/// `low`/`high` halves.
+fn assert_is_complex_resume_filtered_query(body: &str) {
+    let value: serde_json::Value =
+        serde_json::from_str(body).expect("recorded request body must be valid JSON");
+    let entry = &value["resumeFilter"]["value"][0];
+    assert_eq!(
+        entry["type"], "array",
+        "a complex array boundary serializes as a typed hash: {body}"
     );
     assert!(
-        body.contains("c.rank"),
-        "resume filter must reference the original source ORDER BY expression, not a \
-         synthesized envelope field: {body}"
+        entry["low"].is_i64() && entry["high"].is_i64(),
+        "the hash halves are signed i64 (matching .NET's (long)ulong): {body}"
     );
-    // The scalar boundary value is bound as a `@cosmosResumeFilter*`
-    // parameter, never inlined as SQL text (see `order_by::ResumeFilter`).
-    assert!(
-        body.contains("c.rank > @cosmosResumeFilter0"),
-        "resume filter must compare against a bound parameter, not an inline literal: {body}"
+    assert_eq!(
+        value["resumeFilter"]["exclude"],
+        serde_json::Value::Bool(false)
     );
 }
 
@@ -1269,27 +1363,18 @@ async fn resume_filtered_query_with_tied_keys_never_replays_backend_continuation
 }
 
 /// A resume whose boundary value is a string full of SQL special characters
-/// (quote, backslash, newline, tab, non-ASCII) must bind it as a query
-/// parameter, never inline it as SQL text. Asserts the recorded request
-/// body: the SQL references the `@cosmosResumeFilter0` parameter, the raw
-/// string never appears in the query text, and the body's `parameters`
-/// array carries the exact string verbatim (B1 service-safe boundaries).
+/// (quote, backslash, newline, tab, non-ASCII) must travel in the structured
+/// `resumeFilter.value`, never inlined as SQL text. Asserts the recorded
+/// request body: the raw string never appears in the query SQL, no
+/// `@cosmos...` parameter is synthesized, and the `resumeFilter` carries the
+/// exact string verbatim as a plain value.
 #[tokio::test]
-async fn string_boundary_resume_binds_parameter_verbatim_not_inline_sql() {
+async fn string_boundary_resume_travels_in_resume_filter_not_inline_sql() {
     let nasty = "a' OR 1=1 -- \\ \n\t\u{2713}";
     let op = order_by_operation();
     let plan = order_by_plan();
-    let rewritten_query = plan
-        .query_info
-        .as_ref()
-        .unwrap()
-        .rewritten_query
-        .as_deref()
-        .unwrap();
-
     let resumed_state = PipelineNodeState::StreamingOrderedMerge {
         directions: vec![SortOrder::Ascending],
-        query_fingerprint: query_fingerprint(rewritten_query),
         ranges: vec![OrderByRangeToken {
             min_epk: String::new(),
             max_epk: "FF".to_owned(),
@@ -1299,7 +1384,7 @@ async fn string_boundary_resume_binds_parameter_verbatim_not_inline_sql() {
                     value: nasty.to_owned(),
                 }],
                 last_rid: "rid-1".to_owned(),
-                rows_emitted: Some(1),
+                skip_count: 1,
             }),
         }],
     };
@@ -1317,51 +1402,37 @@ async fn string_boundary_resume_binds_parameter_verbatim_not_inline_sql() {
         serde_json::from_str(&body).expect("recorded request body must be valid JSON");
     let query = value["query"].as_str().expect("body has a query string");
     assert!(
-        query.contains("@cosmosResumeFilter0"),
-        "SQL must reference the bound parameter: {query}"
+        !body.contains("@cosmosResumeFilter"),
+        "no query parameter may be synthesized: {body}"
     );
-    // The adversarial text must never leak into the SQL — only into the value.
+    // The adversarial text must never leak into the SQL — only into the filter.
     for needle in ["OR 1=1", "'", "\\"] {
         assert!(
             !query.contains(needle),
             "boundary text {needle:?} must not appear in the query SQL: {query}"
         );
     }
-    let parameters = value["parameters"].as_array().expect("body has parameters");
-    let bound = parameters
-        .iter()
-        .find(|p| p["name"] == "@cosmosResumeFilter0")
-        .expect("resume parameter must be present in the body");
     assert_eq!(
-        bound["value"],
+        value["resumeFilter"]["value"][0],
         serde_json::Value::String(nasty.to_owned()),
-        "the exact boundary string round-trips as the parameter value"
+        "the exact boundary string round-trips as the resumeFilter value"
     );
 }
 
-/// Asserts a recorded request body's resume filter binds `expected` as the
-/// `@cosmosResumeFilter0` parameter and never inlines it into the SQL.
-fn assert_string_param_boundary(body: &str, expected: &str) {
+/// Asserts a recorded request body's resume filter carries `expected` as its
+/// first `resumeFilter.value` entry and never inlines it into the SQL.
+fn assert_string_resume_filter_boundary(body: &str, expected: &str) {
     let value: serde_json::Value =
         serde_json::from_str(body).expect("recorded request body must be valid JSON");
     let query = value["query"].as_str().expect("body has a query string");
     assert!(
-        query.contains("@cosmosResumeFilter0"),
-        "SQL must reference the bound parameter: {query}"
-    );
-    assert!(
         !query.contains(expected),
         "boundary text {expected:?} must not appear in the query SQL: {query}"
     );
-    let bound = value["parameters"]
-        .as_array()
-        .expect("body has parameters")
-        .iter()
-        .find(|p| p["name"] == "@cosmosResumeFilter0")
-        .expect("resume parameter must be present");
     assert_eq!(
-        bound["value"],
-        serde_json::Value::String(expected.to_owned())
+        value["resumeFilter"]["value"][0],
+        serde_json::Value::String(expected.to_owned()),
+        "the boundary string travels verbatim in the resumeFilter value"
     );
 }
 
@@ -1403,7 +1474,7 @@ async fn repeated_string_boundary_resume_binds_parameter_each_cycle() {
         .unwrap();
     let ids2 = drain_one(&mut pipeline2, &mut executor2).await;
     assert_eq!(ids2, vec!["b".to_owned()]);
-    assert_string_param_boundary(&executor2.body_text(0), ka);
+    assert_string_resume_filter_boundary(&executor2.body_text(0), ka);
     let state2 = pipeline2.snapshot_state().unwrap();
     drop(pipeline2);
 
@@ -1417,7 +1488,7 @@ async fn repeated_string_boundary_resume_binds_parameter_each_cycle() {
         .unwrap();
     let ids3 = drain_all(&mut pipeline3, &mut executor3).await;
     assert_eq!(ids3, vec!["c".to_owned()]);
-    assert_string_param_boundary(&executor3.body_text(0), kb);
+    assert_string_resume_filter_boundary(&executor3.body_text(0), kb);
 
     let mut all = ids1;
     all.extend(ids2);
@@ -1444,11 +1515,10 @@ async fn repeated_string_boundary_resume_binds_parameter_each_cycle() {
 ///    (session A) and after (session C, where an entire page is discarded
 ///    and the fetch loop must continue to the next one) a checkpoint;
 ///  - two full snapshot/resume cycles (A -> B -> C);
-///  - the resume filter's seek operator matching `direction` (`>` for
-///    ascending, `<` for descending), with no `_rid` predicate anywhere in
-///    the SQL — the tie-break is numeric and applied client-side (a base64
-///    `_rid` string does not sort in document order; see
-///    `order_by::ResumeFilter`).
+///  - the resume request carrying the structured `resumeFilter` (the
+///    direction lives in the query's `ORDER BY` clause), with the numeric
+///    `_rid` tie-break applied client-side (a base64 `_rid` string does not
+///    sort in document order).
 ///
 /// Every one of the six rids must be delivered exactly once, in strict
 /// `direction` order — proving no duplicates and no omissions.
@@ -1465,9 +1535,9 @@ async fn tied_full_key_resume_spans_pages_and_two_cycles(direction: SortOrder) {
     let refs = |range: std::ops::Range<usize>| -> Vec<(&str, i64)> {
         rows[range].iter().map(|(r, v)| (r.as_str(), *v)).collect()
     };
-    let seek_operator = match direction {
-        SortOrder::Ascending => ">",
-        SortOrder::Descending => "<",
+    let order_keyword = match direction {
+        SortOrder::Ascending => "ASC",
+        SortOrder::Descending => "DESC",
     };
 
     let op = order_by_operation_with_page_size(1);
@@ -1538,15 +1608,19 @@ async fn tied_full_key_resume_spans_pages_and_two_cycles(direction: SortOrder) {
         "rid(3) surfaced from the first backend page alone; the second must not be fetched yet"
     );
     let body_b = executor_b.body_text(0);
+    assert_is_resume_filtered_query(&body_b);
+    let body_b_value: serde_json::Value = serde_json::from_str(&body_b).unwrap();
     assert!(
-        body_b.contains(&format!("c.rank {seek_operator}")),
-        "{body_b}: the seek operator must match `direction` ({direction:?})"
+        body_b_value["query"]
+            .as_str()
+            .unwrap()
+            .contains(&format!("ORDER BY c.rank {order_keyword}")),
+        "{body_b}: the query's ORDER BY direction must match {direction:?}"
     );
     assert_eq!(
-        body_b.matches("_rid").count(),
-        1,
-        "{body_b}: `_rid` appears only in the envelope's SELECT projection; the filter \
-         itself carries no `_rid` predicate — the tie-break stays client-side"
+        body_b_value["resumeFilter"]["value"][0],
+        serde_json::json!(RANK),
+        "the boundary value travels in the structured resumeFilter, not inline SQL"
     );
 
     let state_b = pipeline_b.snapshot_state().unwrap();

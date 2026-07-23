@@ -518,7 +518,6 @@ impl SubStatusCode {
             20213 => Some("ClientContinuationTokenSavedRangeUnhonored"),
             20214 => Some("ClientContinuationTokenOrderByStateInvalid"),
             20215 => Some("ClientStreamingMergeSplitReplacementInvalid"),
-            20216 => Some("ClientStreamingMergeComplexBoundaryTopologyChange"),
             20300 => Some("ClientNoOverlappingFeedRangesForSessionToken"),
             20301 => Some("ClientNoThroughputOfferForResource"),
             20302 => Some("ClientQueryPlanProducedEmptyRanges"),
@@ -529,7 +528,6 @@ impl SubStatusCode {
             20307 => Some("ClientQueryPlanRangeNotCoveredByTopology"),
             20308 => Some("ServiceOrderByEnvelopeInvalid"),
             20309 => Some("ServiceQueryPlanOrderByMissingRewrittenQuery"),
-            20310 => Some("ServiceOrderByRewrittenQueryMissingFilterPlaceholder"),
             20311 => Some("ServiceQueryPlanOrderByExpressionsMismatch"),
 
             // SDK Server-side codes (21xxx) - consistent across .NET and Java
@@ -1446,19 +1444,16 @@ impl SubStatusCode {
     pub const CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED: SubStatusCode = SubStatusCode(20213);
 
     /// A `StreamingOrderedMerge` continuation token is semantically invalid
-    /// (bad column/direction, fingerprint, hash, RID, or skip count) (20214).
+    /// (bad column/direction, hash, RID, or skip count) (20214).
     pub const CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID: SubStatusCode =
         SubStatusCode(20214);
 
-    /// `StreamingOrderedMerge` split replacement ranges do not exactly
-    /// cover the prior range (20215).
+    /// `StreamingOrderedMerge` split replacement nodes are unusable (20215):
+    /// either their ranges do not exactly cover the prior range (a coverage
+    /// gap/overlap), or a replacement carries no continuation to resume a
+    /// mid-group boundary and cannot be safely repositioned.
     pub const CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID: SubStatusCode =
         SubStatusCode(20215);
-
-    /// A complex (array/object) sort-key resume boundary crossed a
-    /// partition split, so its positional count is unattributable (20216).
-    pub const CLIENT_STREAMING_MERGE_COMPLEX_BOUNDARY_TOPOLOGY_CHANGE: SubStatusCode =
-        SubStatusCode(20216);
 
     // ----- 20300-20349: SDK-detected service contract violations -----
 
@@ -1514,12 +1509,6 @@ impl SubStatusCode {
     /// supply a non-empty `rewrittenQuery` (20309).
     pub const SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY: SubStatusCode =
         SubStatusCode(20309);
-
-    /// The backend-supplied streaming `ORDER BY` `rewrittenQuery` was
-    /// missing the `{documentdb-formattableorderbyquery-filter}`
-    /// placeholder where a resume filter must be injected (20310).
-    pub const SERVICE_ORDER_BY_REWRITTEN_QUERY_MISSING_FILTER_PLACEHOLDER: SubStatusCode =
-        SubStatusCode(20310);
 
     /// The backend query plan's `orderBy` and `orderByExpressions` arrays
     /// had mismatched or zero length, so sort keys can't pair with
@@ -2333,27 +2322,19 @@ impl CosmosStatus {
     };
 
     /// 500 / 20214 — a `StreamingOrderedMerge` continuation token is
-    /// semantically invalid (bad column/direction, fingerprint, hash, RID, or count).
+    /// semantically invalid (bad column/direction, hash, RID, or count).
     pub const CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID: CosmosStatus = CosmosStatus {
         status_code: StatusCode::InternalServerError,
         sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
     };
 
-    /// 500 / 20215 — `StreamingOrderedMerge` split replacement ranges do
-    /// not exactly cover the prior range.
+    /// 500 / 20215 — `StreamingOrderedMerge` split replacement nodes are
+    /// unusable: their ranges do not exactly cover the prior range, or a
+    /// replacement carries no continuation to resume a mid-group boundary.
     pub const CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID: CosmosStatus = CosmosStatus {
         status_code: StatusCode::InternalServerError,
         sub_status: Some(SubStatusCode::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID),
     };
-
-    /// 500 / 20216 — a complex sort-key boundary crossed a partition split.
-    pub const CLIENT_STREAMING_MERGE_COMPLEX_BOUNDARY_TOPOLOGY_CHANGE: CosmosStatus =
-        CosmosStatus {
-            status_code: StatusCode::InternalServerError,
-            sub_status: Some(
-                SubStatusCode::CLIENT_STREAMING_MERGE_COMPLEX_BOUNDARY_TOPOLOGY_CHANGE,
-            ),
-        };
 
     // SDK-detected service contract violations (HTTP varies, sub-status 20300-20349)
 
@@ -2416,16 +2397,6 @@ impl CosmosStatus {
         status_code: StatusCode::InternalServerError,
         sub_status: Some(SubStatusCode::SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY),
     };
-
-    /// 500 / 20310 — the rewritten query was missing the resume-filter
-    /// placeholder.
-    pub const SERVICE_ORDER_BY_REWRITTEN_QUERY_MISSING_FILTER_PLACEHOLDER: CosmosStatus =
-        CosmosStatus {
-            status_code: StatusCode::InternalServerError,
-            sub_status: Some(
-                SubStatusCode::SERVICE_ORDER_BY_REWRITTEN_QUERY_MISSING_FILTER_PLACEHOLDER,
-            ),
-        };
 
     /// 500 / 20311 — the query plan's `orderBy`/`orderByExpressions`
     /// arrays had mismatched or zero length.

@@ -1033,7 +1033,7 @@
     },
     {
       "id": "equal_key_resume_requiring_skip_count",
-      "description": "Resume boundary ties with two additional rows already emitted (last emitted RID `tied-2`); the `_rid`-aware boundary discards exactly the tied rows at or before that RID before new rows are visible.",
+      "description": "A JOIN expands one document (RID `tied`) into three result rows sharing that RID and the same sort key `5`; two were already emitted (skipCount 2), so on resume the `(sort key, _rid, skipCount)` discard drops exactly those two duplicates and keeps the third plus the next document.",
       "sources": [
         {
           "sdk": "dotnet",
@@ -1045,7 +1045,7 @@
         "mockPipeline"
       ],
       "query": {
-        "text": "SELECT * FROM c ORDER BY c.rank ASC",
+        "text": "SELECT VALUE t FROM c JOIN t IN c.tags ORDER BY c.rank ASC",
         "parameters": [],
         "columns": [
           {
@@ -1066,25 +1066,36 @@
               {
                 "rows": [
                   {
-                    "rid": "tied-1",
+                    "rid": "tied",
                     "orderByItems": [
                       {
                         "item": 5
                       }
                     ],
                     "payload": {
-                      "id": "tied-1"
+                      "id": "dup-1"
                     }
                   },
                   {
-                    "rid": "tied-2",
+                    "rid": "tied",
                     "orderByItems": [
                       {
                         "item": 5
                       }
                     ],
                     "payload": {
-                      "id": "tied-2"
+                      "id": "dup-2"
+                    }
+                  },
+                  {
+                    "rid": "tied",
+                    "orderByItems": [
+                      {
+                        "item": 5
+                      }
+                    ],
+                    "payload": {
+                      "id": "dup-3"
                     }
                   },
                   {
@@ -1110,6 +1121,7 @@
         10
       ],
       "expectedIds": [
+        "dup-3",
         "new"
       ],
       "checkpoint": {
@@ -1119,7 +1131,7 @@
             "value": 5.0
           }
         ],
-        "lastRid": "tied-2",
+        "lastRid": "tied",
         "skipCount": 2
       },
       "expectedContinuation": null,
@@ -1127,7 +1139,7 @@
     },
     {
       "id": "formatted_resume_filter_asc_desc_multi_column",
-      "description": "The formatted resume filter's multi-column seek predicate is correct for a mix of ASC and DESC columns.",
+      "description": "A multi-column ASC/DESC resume sends the boundary as the .NET-compatible structured resumeFilter (query text unchanged; direction lives in the ORDER BY clause), not an SDK-rewritten seek predicate.",
       "sources": [
         {
           "sdk": "dotnet",
@@ -1169,13 +1181,14 @@
         ]
       },
       "expectedContinuation": {
-        "kind": "formatted_resume_filter",
-        "mustContainFragments": [
-          "c.rank > 5",
-          "c.rank = 5",
-          "c.name < 'mid'",
-          "c.name = 'mid'"
-        ]
+        "kind": "resume_filter",
+        "resumeFilter": {
+          "value": [
+            5.0,
+            "mid"
+          ],
+          "exclude": false
+        }
       },
       "expectedError": null
     },
@@ -1699,43 +1712,6 @@
       "expectedError": {
         "category": "client_continuation_token_shape_mismatch",
         "messageFragment": "does not match a streaming ORDER BY operation"
-      }
-    },
-    {
-      "id": "malformed_token_query_fingerprint_mismatch",
-      "description": "A continuation token minted for a different rewritten query (different fingerprint) must be rejected.",
-      "sources": [
-        {
-          "sdk": "dotnet",
-          "path": "Microsoft.Azure.Cosmos.Tests/Query/ContinuationTokens/OrderByContinuationTokenTests.cs",
-          "test": "TestNegativeCases"
-        }
-      ],
-      "layers": [
-        "comparator"
-      ],
-      "query": {
-        "text": "SELECT * FROM c ORDER BY c.rank ASC",
-        "parameters": [],
-        "columns": [
-          {
-            "expression": "c.rank",
-            "direction": "Ascending"
-          }
-        ]
-      },
-      "documents": [],
-      "mock": null,
-      "pageSizes": [],
-      "expectedIds": [],
-      "checkpoint": {
-        "tokenShape": "streaming_ordered_merge",
-        "queryFingerprint": "stale-fingerprint"
-      },
-      "expectedContinuation": null,
-      "expectedError": {
-        "category": "client_continuation_token_order_by_state_invalid",
-        "messageFragment": "fingerprint"
       }
     },
     {
