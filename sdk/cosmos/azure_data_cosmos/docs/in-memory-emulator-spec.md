@@ -61,7 +61,7 @@ An **in-memory emulator** that intercepts requests at the `HttpClient` transport
 - Bulk / Patch operations (return hard-coded errors).
 - Network hosting remains outside the in-process `HttpClient` interception contract described by
   this document. The separate `azure_data_cosmos_emulator` host supports Gateway V1 and a scoped
-  Gateway 2.0 adapter; see `sdk/cosmos/azure_data_cosmos_emulator/docs/plan.md`.
+  Gateway 2.0 adapter; see `sdk/cosmos/azure_data_cosmos_emulator/AGENTS.md`.
 - Change feed.
 - Stored procedures / triggers / UDFs.
 - Complete Cosmos SQL service parity beyond the local query evaluator and local query-plan analyzer.

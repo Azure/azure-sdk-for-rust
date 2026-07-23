@@ -45,4 +45,4 @@ particular parser implementation.
 
 ## References
 
-- Plan & summary: `sdk/cosmos/azure_data_cosmos_emulator/docs/plan.md`
+- Plan & summary: `sdk/cosmos/azure_data_cosmos_emulator/AGENTS.md`

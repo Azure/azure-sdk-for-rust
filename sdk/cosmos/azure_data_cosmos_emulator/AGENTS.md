@@ -124,9 +124,9 @@ flowchart LR
 ```text
 sdk/cosmos/azure_data_cosmos_emulator/
 ├── Cargo.toml            # publish = false; deps: clap, axum, tokio, serde, serde_json, tracing
+├── AGENTS.md             # this document (plan & summary; auto-discovered by agents)
 ├── README.md
 ├── docs/
-│   ├── plan.md           # this document
 │   └── adr/              # architecture decision records
 └── src/
     ├── main.rs           # CLI (clap), startup, listener wiring
