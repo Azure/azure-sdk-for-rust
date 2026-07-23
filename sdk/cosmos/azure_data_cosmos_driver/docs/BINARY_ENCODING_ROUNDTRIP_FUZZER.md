@@ -65,27 +65,41 @@ round-trip would *falsely* report a mismatch.
 
 The harness therefore uses a **Cosmos-compatible** number canonicalizer, not JCS:
 
-- **Integers** (fit `i64`/`u64`): emit plain decimal, no decimal point, no
+- **Integers up to `i64::MAX`**: emit plain decimal, no decimal point, no
   exponent, no leading zeros. `-0` → `0`.
+- **Integers above `i64::MAX`**: routed through `f64` (see the calibration
+  finding below) — the backend stores them as doubles, so a sent u64 and its
+  returned double must canonicalize identically.
 - **Integral-valued floats** (e.g. `1.0`, `2.0e1`): normalized to their integer
   form (`1`, `20`) — this mirrors the observed backend rewrite where a trailing
   `.0` is dropped.
 - **Non-integral floats**: shortest round-trippable decimal (Rust's `ryu`, via
   `serde_json`'s `f64` formatting).
 
-> **This rule set is a starting point and MUST be calibrated against a real
-> account.** Run the harness in calibration mode
-> (`AZURE_COSMOS_FUZZ_CALIBRATE=true`, see §6) to have it store a fixed spread of
-> numeric edge cases through the binary path, read them back, and print a table
-> comparing how `canonicalize_number` renders each value against the backend's
-> actual returned form. Every `DIFF` row is a form the canonicalizer does not yet
-> model — tune `canonicalize_number` until the table is all `MATCH`. The probe
-> set (`NUMBER_PROBES` in the harness) covers: integral floats (`1.0`, `2e1`),
-> repeating/high-precision floats (`0.1`, `0.1 + 0.2`, π), large/small exponents
-> (`1e20`, `1e-20`), integers near `2^63`/`2^64`, negative zero, and trailing
-> zeros (`1.2300`). Calibration is a **diagnostic** — it prints the table and
-> does not assert, since a `DIFF` on the first run is the expected signal to
-> tune, not a failure.
+> **Calibrated against a live account (§6).** The first calibration run
+> (18 probes) confirmed **16/18 forms already match**, including the tricky ones:
+> integral floats and integral exponents collapse to integers (`1.0`, `2e1` →
+> `1`, `20`), `-0` → `0`, trailing zeros are dropped (`1.2300` → `1.23`),
+> repeating/high-precision floats and `0.1 + 0.2` round-trip exactly, and the
+> backend renders large/small exponents in scientific notation (`1e20`,
+> `1e-20`) which reparses to the same `f64`. The **two DIFFs** were integers
+> above `i64::MAX`: the backend stores them as IEEE-754 doubles (lossy) and
+> returns scientific notation — `18446744073709551614` → `1.8446744073709552e+19`
+> and `2^63` → `9.223372036854776e+18`. `canonicalize_number` now models this by
+> routing `u64`-above-`i64::MAX` through `f64`, so both sides canonicalize to the
+> same double form. Re-running calibration after this change yields all `MATCH`.
+>
+> To re-calibrate after any change (or against a different account/config), run
+> calibration mode (`AZURE_COSMOS_FUZZ_CALIBRATE=true`, see §6): it stores each
+> probe in `NUMBER_PROBES` through the binary path, reads it back, and prints a
+> table comparing `canonicalize_number`'s rendering against the backend's
+> returned form. Every `DIFF` is a form to model; calibration is a **diagnostic**
+> (prints the table, does not assert), since a `DIFF` is the signal to tune, not
+> a failure.
+
+### 3.2 Generator stays inside the calibrated envelope
+
+To avoid false positives from *un-calibrated* number forms, the generator emits
 
 ### 3.2 Generator stays inside the calibrated envelope
 

@@ -323,7 +323,14 @@ fn canonicalize_number(n: &Number, out: &mut String) {
     if let Some(i) = n.as_i64() {
         out.push_str(&i.to_string());
     } else if let Some(u) = n.as_u64() {
-        out.push_str(&u.to_string());
+        // Calibrated behavior (design doc §3.1): the backend stores integers
+        // above i64::MAX as IEEE-754 doubles (lossy) and returns them in
+        // scientific notation — e.g. 18446744073709551614 comes back as
+        // 1.8446744073709552e+19, and 2^63 as 9.223372036854776e+18. Model that
+        // by routing through f64 so a sent u64 and its returned double
+        // canonicalize identically. (Values 0..=i64::MAX are handled by the
+        // `as_i64` branch above and keep exact integer form.)
+        out.push_str(&format!("{}", u as f64));
     } else if let Some(f) = n.as_f64() {
         // Integral-valued floats (e.g. 1.0) → integer form, mirroring the
         // backend's observed rewrite of dropping a trailing ".0".
@@ -833,9 +840,23 @@ mod tests {
     }
 
     #[test]
-    fn canonicalize_large_unsigned_integer() {
-        let v: Value = serde_json::from_str("18446744073709551614").unwrap();
-        assert_eq!(canon(&v), "18446744073709551614");
+    fn canonicalize_large_unsigned_integer_matches_backend_double() {
+        // Calibrated (§3.1): the backend stores integers above i64::MAX as
+        // doubles and returns them in scientific notation, so the canonicalizer
+        // models that — a large u64 canonicalizes identically to the double form
+        // the backend returns, keeping sent and round-tripped values comparable.
+        let sent_u64: Value = serde_json::from_str("18446744073709551614").unwrap();
+        let backend_double: Value = serde_json::from_str("1.8446744073709552e+19").unwrap();
+        assert_eq!(canon(&sent_u64), canon(&backend_double));
+
+        // 2^63 (just above i64::MAX) behaves the same way.
+        let sent_2p63: Value = serde_json::from_str("9223372036854775808").unwrap();
+        let backend_2p63: Value = serde_json::from_str("9.223372036854776e+18").unwrap();
+        assert_eq!(canon(&sent_2p63), canon(&backend_2p63));
+
+        // Values up to i64::MAX are still preserved exactly (integer branch).
+        let i64_max: Value = serde_json::from_str("9223372036854775807").unwrap();
+        assert_eq!(canon(&i64_max), "9223372036854775807");
     }
 
     #[test]
