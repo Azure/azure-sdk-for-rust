@@ -6,6 +6,9 @@
 
 ### Breaking Changes
 
+- Changed `BlobContainerClient::list_blobs()` to return `Result<ListBlobsPager>` instead of `Result<Pager<ListBlobsResponse, XmlFormat>>`. Each page is now a `ListBlobsPageResponse` that selects XML or Apache Arrow based on the response headers.
+- Added an `accept` field to `BlobContainerClientListBlobsOptions` to select the `list_blobs()` response format (defaults to `ListBlobsAcceptFormat::Auto`; use `ListBlobsAcceptFormat::Xml` to force XML).
+
 ### Bugs Fixed
 
 ### Other Changes
