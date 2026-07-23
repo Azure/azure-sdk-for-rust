@@ -9,7 +9,9 @@ use azure_data_cosmos::fault_injection::{
     FaultInjectionRuleBuilder, FaultOperationType,
 };
 use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
-use azure_data_cosmos::options::{ExcludedRegions, ItemReadOptions, OperationOptions};
+use azure_data_cosmos::options::{
+    ExcludedRegions, ItemReadOptions, OperationOptions, ThrottlingRetryOptionsBuilder,
+};
 use framework::{
     assert_local_retry_attempted_on_region, assert_region_contacted_with_retry,
     assert_region_not_contacted, TestClient, TestOptions, HUB_REGION, SATELLITE_REGION,
@@ -30,6 +32,20 @@ struct TestItem {
     value: usize,
     nested: NestedItem,
     bool_value: bool,
+}
+
+fn read_options_for_expected_status(expected_status: StatusCode) -> Option<ItemReadOptions> {
+    if expected_status != StatusCode::TooManyRequests {
+        return None;
+    }
+
+    let mut operation = OperationOptions::default();
+    operation.throttling_retry_options = Some(
+        ThrottlingRetryOptionsBuilder::new()
+            .with_max_retry_count(0)
+            .build(),
+    );
+    Some(ItemReadOptions::default().with_operation_options(operation))
 }
 
 /// Shared implementation for fault injection read failure tests.
@@ -89,8 +105,10 @@ async fn verify_read_fails_with_injected_error(
             let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
+            let options = read_options_for_expected_status(expected_status);
+
             let result = run_context
-                .read_item(&fault_container_client, &pk, &item_id, None)
+                .read_item(&fault_container_client, &pk, &item_id, options)
                 .await;
 
             let err = result.expect_err(&format!(
@@ -114,6 +132,15 @@ async fn verify_read_fails_with_injected_error(
         ),
     )
     .await
+}
+
+#[test]
+fn too_many_requests_test_disables_throttling_retries() {
+    let options = read_options_for_expected_status(StatusCode::TooManyRequests).unwrap();
+    let throttling = options.operation.throttling_retry_options.unwrap();
+
+    assert_eq!(throttling.max_retry_count, Some(0));
+    assert!(read_options_for_expected_status(StatusCode::ServiceUnavailable).is_none());
 }
 
 #[tokio::test]

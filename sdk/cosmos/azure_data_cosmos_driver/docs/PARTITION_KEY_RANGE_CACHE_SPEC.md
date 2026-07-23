@@ -363,7 +363,7 @@ flowchart TD
     Init["continuation = None<br/>all_ranges = HashMap&lt;id, range&gt;"]
     Trace1["trace!(iteration, has_continuation)"]
     Fetch["result = fetch_fn(container, continuation)?"]
-    Update["continuation = result.continuation"]
+    Update["continuation = result.continuation.or(continuation)"]
     NM{"result.not_modified?"}
     Break["trace! + break"]
     Extend["trace!(range_count) + insert ranges by ID"]
