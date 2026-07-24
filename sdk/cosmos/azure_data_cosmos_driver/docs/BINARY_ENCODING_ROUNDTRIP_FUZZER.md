@@ -90,6 +90,87 @@ positives (noise); a form the generator never emits → false negatives (blind
 spots). Calibrate first (§3.1), then widen coverage progressively with
 `--wide-numbers` / `max_depth` / `unicode`.
 
+### 2.2 How it works, visualized
+
+**The per-document loop.** Every generated document is canonicalized once to get
+the expected hash `H0`, then stored + read back under each config and compared:
+
+```mermaid
+flowchart TD
+    SEED["Seed (SplitMix64)\nAZURE_COSMOS_FUZZ_SEED"] --> GEN
+    GEN["arbitrary-json\ngenerate random Value D"] --> BOUND["bound_value\nclamp numbers/strings\nto calibrated envelope"]
+    BOUND --> NORM0["normalize_numbers(D)\nCosmos number rewrite"]
+    NORM0 --> CANON0["json-canon (RFC 8785)\ncanonical string"]
+    CANON0 --> HASH0["SHA-256 -> H0\n(expected)"]
+
+    BOUND --> STORE["for each config:\ncreate_item(D) -> read_item -> R"]
+    STORE --> PROJ["project(R, keys(D))\nstrip _rid/_etag/_ts/..."]
+    PROJ --> NORM1["normalize_numbers"]
+    NORM1 --> CANON1["json-canon"]
+    CANON1 --> HASH1["SHA-256 -> Hc\n(actual)"]
+
+    HASH0 --> CMP{"Hc == H0 ?"}
+    HASH1 --> CMP
+    CMP -->|yes| OK["round-trip OK\nnext doc"]
+    CMP -->|no| FAIL["MISMATCH\ndump seed + both canonical forms"]
+```
+
+**Three configs localize the broken layer.** The same document `D` runs through
+three client configurations; because only one variable differs, *which* config
+fails points at *which* layer is broken:
+
+```mermaid
+flowchart LR
+    D["Document D"] --> C1 & C2 & C3
+
+    subgraph C1["Config A - text control"]
+      A1["binary = off\nwire = text JSON"]
+    end
+    subgraph C2["Config B - binary"]
+      B1["binary = on\nwire = binary both ways"]
+    end
+    subgraph C3["Config C - binary + text-response"]
+      G1["binary = on\nrequest_text_response = on\ndriver transcodes response to text"]
+    end
+
+    C1 --> R{"compare canonical(sent)\nvs canonical(returned)"}
+    C2 --> R
+    C3 --> R
+```
+
+| What fails | Where the bug is |
+| ---------- | ---------------- |
+| **Text (A) fails** | Not the codec — a canonicalization gap or a real backend rewrite; escalate. |
+| **Binary (B) fails, text (A) passes** | The **encoder** (`ser.rs`/`writer.rs`) emitted wrong bytes. |
+| Binary write OK but **read decodes wrong** | The **decoder** (`de.rs`/`reader.rs`) mishandles a wire form. |
+| **C fails, B passes** | The **driver transcode** (`transcode_to_text`) loses something binary to text. |
+| **All three fail identically** | A backend rewrite the canonicalizer doesn't model yet (tune `normalize_number`), or a genuine service behavior to escalate. |
+
+**The debugging loop.** Every failure is deterministically reproducible and
+reduces to a permanent regression guard:
+
+```mermaid
+flowchart LR
+    F["MISMATCH\nprints seed + config\n+ both canonical forms"] --> REPRO["Reproduce:\nAZURE_COSMOS_FUZZ_SEED=<n>\ndeterministic replay"]
+    REPRO --> REDUCE["Reduce to the minimal\ntriggering value"]
+    REDUCE --> CLASS{"Classify"}
+    CLASS -->|codec bug| FIX["Fix ser/de + add a\ngolden vector (regression)"]
+    CLASS -->|canonicalization gap| TUNE["Tune normalize_number\n(re-run calibration -> MATCH)"]
+    CLASS -->|backend rewrite| ESC["Escalate - genuine\nservice behavior difference"]
+```
+
+**Calibration is the safety valve.** Before a soak is trustworthy, calibration
+proves the number model matches *this* account, so a mismatch is a real bug and
+not modeling noise (it prints a table; it does not assert — see §3.1):
+
+```mermaid
+flowchart LR
+    P["NUMBER_PROBES\n(1e20, i64::MAX, u64-1, -0, 1.0, ...)"] --> ST["store via binary\n-> read back"]
+    ST --> T{"our-canonical ==\nbackend-returned ?"}
+    T -->|MATCH| GOOD["number model correct\n-> soak results are trustworthy"]
+    T -->|DIFF| BAD["tune normalize_number\nbefore soaking"]
+```
+
 ## 3. Canonicalization (the hard part)
 
 Two JSON texts are "the same value" if they canonicalize identically. Rules:
