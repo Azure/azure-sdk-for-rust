@@ -87,6 +87,8 @@ version = "1.0.0"
 version = "1.0.0"
 
 [workspace.dependencies]
+arbitrary = { version = "1.4", features = ["derive"] }
+arbitrary-json = "0.1"
 async-lock = "3.4"
 async-stream = { version = "0.3.6" }
 async-trait = "0.1"
@@ -115,6 +117,7 @@ hdrhistogram = "7.5"
 hostname = "0.4"
 hmac = { version = "0.12" }
 include-file = { version = "1.0.0", default-features = false }
+json-canon = "0.1"
 openssl = { version = "0.10.79" }
 opentelemetry = { version = "0.32", features = ["trace"] }
 opentelemetry-appender-tracing = { version = "0.32" }
