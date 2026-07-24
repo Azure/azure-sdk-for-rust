@@ -122,10 +122,16 @@ pub(crate) fn offer_to_json(meta: &super::store::OfferMetadata) -> serde_json::V
     })
 }
 
-/// Returns a JSON representation of partition key ranges for a container.
-pub(crate) fn pkranges_to_json(container: &super::store::ContainerState) -> serde_json::Value {
+/// Returns a JSON representation of a page of partition key ranges.
+pub(crate) fn pkranges_to_json(
+    container: &super::store::ContainerState,
+    start: usize,
+    end: usize,
+) -> serde_json::Value {
     let ranges: Vec<serde_json::Value> = container
         .physical_partitions
+        .get(start..end)
+        .unwrap_or_default()
         .iter()
         .map(|p| {
             let parents: Vec<String> = p.parents.iter().map(|id| id.to_string()).collect();
@@ -136,8 +142,8 @@ pub(crate) fn pkranges_to_json(container: &super::store::ContainerState) -> serd
                 "_etag": container.metadata.etag,
                 "_ts": container.metadata.ts,
                 "_lsn": p.current_lsn(),
-                "minInclusive": p.epk_min.as_str(),
-                "maxExclusive": p.epk_max.as_str(),
+                "minInclusive": p.epk_min.to_hex(),
+                "maxExclusive": p.epk_max.to_hex(),
                 "ridPrefix": p.rid_prefix,
                 "throughputFraction": p.throughput_fraction,
                 "status": "online",

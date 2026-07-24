@@ -73,7 +73,11 @@ async fn read_document_feed_paginates_documents() {
     let (status, headers, body) = collect_response(response).await;
     assert_eq!(status, StatusCode::Ok);
     assert_eq!(headers.get_optional_str(&ITEM_COUNT), Some("2"));
-    assert_eq!(headers.get_optional_str(&CONTINUATION), Some("2"));
+    let continuation = headers
+        .get_optional_str(&CONTINUATION)
+        .expect("first page should return a continuation")
+        .to_owned();
+    assert!(continuation.contains("document_feed_cursor_v1"));
     let documents = body["Documents"].as_array().unwrap();
     assert_eq!(documents.len(), 2);
     assert_eq!(documents[0]["id"], "item1");
@@ -83,7 +87,7 @@ async fn read_document_feed_paginates_documents() {
     req.headers_mut()
         .insert(MAX_ITEM_COUNT.clone(), HeaderValue::from_static("2"));
     req.headers_mut()
-        .insert(CONTINUATION.clone(), HeaderValue::from_static("2"));
+        .insert(CONTINUATION.clone(), HeaderValue::from(continuation));
 
     let response = ctx.emulator.execute_request(&req).await.unwrap();
     let (status, headers, body) = collect_response(response).await;

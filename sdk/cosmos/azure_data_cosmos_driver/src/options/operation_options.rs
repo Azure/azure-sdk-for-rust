@@ -358,6 +358,32 @@ mod tests {
         assert!(view.max_session_retry_count().is_none());
     }
 
+    /// Rule 2 + Rule 3 (RCS resolution):
+    /// An explicit per-request `Default` overrides a client-level non-`Default`,
+    /// resulting in no RCS being emitted on the wire.
+    #[test]
+    fn view_request_level_default_overrides_client_level_non_default() {
+        use std::sync::Arc;
+
+        let client = Arc::new(OperationOptions {
+            read_consistency_strategy: Some(ReadConsistencyStrategy::LatestCommitted),
+            ..Default::default()
+        });
+
+        let operation = OperationOptions {
+            read_consistency_strategy: Some(ReadConsistencyStrategy::Default),
+            ..Default::default()
+        };
+
+        let view = OperationOptionsView::new(None, Some(client), None, Some(&operation));
+
+        assert_eq!(
+            view.read_consistency_strategy(),
+            Some(&ReadConsistencyStrategy::Default),
+            "explicit request-level Default must override client-level non-Default"
+        );
+    }
+
     #[test]
     fn from_env_vars_parses_known_vars() {
         let options = OperationOptions::from_env_vars(|key| match key {
@@ -533,8 +559,10 @@ mod tests {
 
     /// When *no* layer sets `throttling_retry_options`, the view's
     /// inner-field accessors must return `None` so the consumer falls back
-    /// to the compile-time defaults (`DEFAULT_MAX_THROTTLE_ATTEMPTS` /
-    /// `DEFAULT_MAX_THROTTLE_WAIT`).
+    /// to the request-class compile-time defaults selected by the operation
+    /// pipeline (metadata: `METADATA_MAX_THROTTLE_ATTEMPTS` /
+    /// `METADATA_MAX_THROTTLE_WAIT`; data-plane: `DATA_PLANE_MAX_THROTTLE_ATTEMPTS`
+    /// / `DATA_PLANE_MAX_THROTTLE_WAIT`).
     #[test]
     fn nested_throttling_retry_options_view_is_none_when_unset_at_every_layer() {
         let op = OperationOptions::default();

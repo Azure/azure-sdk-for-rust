@@ -687,6 +687,26 @@ impl CosmosOperation {
         Self::for_item(OperationType::Patch, item)
     }
 
+    /// Builds a distributed transaction coordinator operation.
+    #[cfg(feature = "preview_dtx")]
+    pub fn distributed_transaction(
+        account: AccountReference,
+        transaction_type: crate::models::DistributedTransactionType,
+    ) -> Self {
+        let operation_type = match transaction_type {
+            crate::models::DistributedTransactionType::Write => {
+                OperationType::CommitDistributedTransaction
+            }
+            crate::models::DistributedTransactionType::Read => {
+                OperationType::ReadDistributedTransaction
+            }
+        };
+        let resource_ref: CosmosResourceReference = CosmosResourceReference::from(account)
+            .with_resource_type(ResourceType::DistributedTransactionBatch)
+            .with_name(Cow::Borrowed("dtc"));
+        Self::new(operation_type, resource_ref, None)
+    }
+
     /// Reads (lists) all items within a single partition.
     ///
     /// Returns a feed of document resources from the specified partition.
@@ -1000,6 +1020,30 @@ mod tests {
 
         assert!(!op.is_read_only());
         assert!(!op.is_idempotent());
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn distributed_write_transaction_is_idempotent() {
+        let op = CosmosOperation::distributed_transaction(
+            test_account(),
+            crate::models::DistributedTransactionType::Write,
+        );
+
+        assert!(!op.is_read_only());
+        assert!(op.is_idempotent());
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    #[test]
+    fn distributed_read_transaction_is_read_only_and_idempotent() {
+        let op = CosmosOperation::distributed_transaction(
+            test_account(),
+            crate::models::DistributedTransactionType::Read,
+        );
+
+        assert!(op.is_read_only());
+        assert!(op.is_idempotent());
     }
 
     /// The change feed factory sets both the incremental-feed indicator and the

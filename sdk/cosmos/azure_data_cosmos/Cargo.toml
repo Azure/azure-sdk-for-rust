@@ -1,6 +1,6 @@
 [package]
 name = "azure_data_cosmos"
-version = "0.37.0"
+version = "0.38.0"
 description = "Rust wrappers around Microsoft Azure REST APIs - Azure Cosmos DB"
 readme = "README.md"
 authors.workspace = true
@@ -17,7 +17,7 @@ categories = ["api-bindings"]
 async-lock.workspace = true
 async-trait.workspace = true
 azure_core = { workspace = true, default-features = false }
-azure_data_cosmos_driver = { version = "0.6.0", path = "../azure_data_cosmos_driver", default-features = false }
+azure_data_cosmos_driver = { version = "0.7.0", path = "../azure_data_cosmos_driver", default-features = false }
 base64.workspace = true
 futures.workspace = true
 pin-project.workspace = true
@@ -30,10 +30,7 @@ url.workspace = true
 
 # NOTE: Cargo does not support feature-gating dev-dependencies. The `serde` and
 # `tokio test-util` entries below merge into existing features and add no
-# compile-time cost. `uuid` is only required by the
-# `__internal_in_memory_emulator`-gated dual-backend tests; if its compile
-# footprint becomes a concern, move those tests to a dedicated crate gated on
-# the same feature instead of trying to gate the dev-dep here.
+# compile-time cost.
 [dev-dependencies]
 azure_core_test = { workspace = true, features = ["tracing"] }
 # Re-declare the driver here with the internal test-only diagnostics-construction feature.
@@ -87,6 +84,9 @@ hmac_openssl = ["azure_core/hmac_openssl"]
 fault_injection = [
   "azure_data_cosmos_driver/fault_injection",
 ] # Enables support for fault injection testing
+preview_dtx = [
+  "azure_data_cosmos_driver/preview_dtx",
+] # Enables preview Distributed Transaction APIs. Disabled by default and not production-ready.
 __internal_in_memory_emulator = [
   "azure_data_cosmos_driver/__internal_in_memory_emulator",
   "key_auth",
@@ -120,6 +120,11 @@ required-features = ["key_auth", "fault_injection"]
 [[test]]
 name = "split"
 path = "tests/split.rs"
+required-features = ["key_auth", "fault_injection"]
+
+[[test]]
+name = "gateway_v2"
+path = "tests/gateway_v2.rs"
 required-features = ["key_auth", "fault_injection"]
 
 [[test]]

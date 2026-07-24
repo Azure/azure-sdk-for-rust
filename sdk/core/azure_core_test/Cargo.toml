@@ -1,6 +1,7 @@
 [package]
 name = "azure_core_test"
 version = "0.2.0"
+publish = false
 description = "Utilities for testing client libraries built on azure_core."
 readme = "README.md"
 authors.workspace = true
@@ -19,7 +20,7 @@ tracing = ["tracing-subscriber"]
 
 [dependencies]
 async-trait.workspace = true
-azure_core = { path = "../azure_core", version = "1.1.0-beta.1", default-features = false, features = ["test"] }
+azure_core = { path = "../azure_core", version = "1.2.0-beta.1", default-features = false, features = ["test"] }
 azure_core_test_macros = { path = "../azure_core_test_macros", version = "0.2.0" }
 azure_identity = { path = "../../identity/azure_identity", version = "1.1.0-beta.1" }
 clap.workspace = true
@@ -48,7 +49,7 @@ url.workspace = true
 zip.workspace = true
 
 [dev-dependencies]
-azure_core_examples.path = "../azure_core_examples"
+azure_core_examples = { path = "../azure_core_examples" }
 clap.workspace = true
 include-file.workspace = true
 tokio = { workspace = true, features = ["macros", "rt", "signal"] }

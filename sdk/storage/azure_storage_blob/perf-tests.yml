@@ -29,7 +29,7 @@ PackageVersions:
 
 Tests:
   - Test: download
-    Class: download_blob
+    Class: download
     Arguments:
       - --size 10240 --parallel 64
       - --size 10485760 --parallel 32
@@ -42,7 +42,7 @@ Tests:
       - --size 1073741824 --parallel 64 --warmup 30 --duration 60 --count 1 --collect vec_bytes
 
   - Test: upload
-    Class: upload_blob
+    Class: upload
     Arguments:
       - --size 10240 --parallel 64
       - --size 10485760 --parallel 32
@@ -50,7 +50,7 @@ Tests:
       - --size 1073741824 --parallel 8 --warmup 60 --duration 60
 
   - Test: list-blobs
-    Class: list_blob
+    Class: list
     Arguments:
       - --count 5 --parallel 64
       - --count 500 --parallel 32

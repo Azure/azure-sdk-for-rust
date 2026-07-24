@@ -132,14 +132,12 @@ impl ContainerRoutingMap {
             return None;
         }
 
-        let epk_str = epk.as_str();
-
         // Special case: the minimum EPK is always in the first range.
-        if epk_str.is_empty() {
+        if epk.as_bytes().is_empty() {
             return Some(&self.ordered_ranges[0]);
         }
 
-        let idx = self.find_range_index(epk_str);
+        let idx = self.find_range_index(epk);
 
         let range = &self.ordered_ranges[idx];
         let min_ok = range.min_inclusive <= *epk;
@@ -240,7 +238,7 @@ impl ContainerRoutingMap {
         let max_epk = epk_range.end;
 
         // Start: rightmost range whose min_inclusive <= query min.
-        let start_idx = self.find_range_index(min_epk.as_str());
+        let start_idx = self.find_range_index(min_epk);
 
         // End: first range whose min_inclusive >= query max (all ranges from
         // start_idx up to but not including this index overlap the query).
@@ -329,11 +327,10 @@ impl ContainerRoutingMap {
     /// `min_inclusive <= epk`.
     ///
     /// Callers must ensure `ordered_ranges` is non-empty and `epk` is non-empty.
-    fn find_range_index(&self, epk: &str) -> usize {
-        let epk_val = EffectivePartitionKey::from(epk);
+    fn find_range_index(&self, epk: &EffectivePartitionKey) -> usize {
         match self
             .ordered_ranges
-            .binary_search_by(|r| r.min_inclusive.cmp(&epk_val))
+            .binary_search_by(|r| r.min_inclusive.cmp(epk))
         {
             Ok(i) => i,               // Exact match on min_inclusive.
             Err(i) if i > 0 => i - 1, // epk falls between ranges[i-1] and ranges[i].
@@ -353,18 +350,17 @@ impl ContainerRoutingMap {
     fn validate_and_build_index(
         sorted: &[PartitionKeyRange],
     ) -> Result<(i32, HashMap<String, PartitionKeyRange>), RoutingMapError> {
-        let min_epk = EffectivePartitionKey::MIN.clone();
         let max_epk = EffectivePartitionKey::MAX.clone();
-        let mut expected_min = min_epk.as_str();
+        let mut expected_min = EffectivePartitionKey::MIN.clone();
         for range in sorted {
-            match range.min_inclusive.as_str().cmp(expected_min) {
+            match range.min_inclusive.cmp(&expected_min) {
                 std::cmp::Ordering::Greater => return Err(RoutingMapError::IncompleteRanges),
                 std::cmp::Ordering::Less => return Err(RoutingMapError::OverlappingRanges),
                 std::cmp::Ordering::Equal => {}
             }
-            expected_min = range.max_exclusive.as_str();
+            expected_min = range.max_exclusive.clone();
         }
-        if expected_min != max_epk.as_str() {
+        if expected_min != max_epk {
             return Err(RoutingMapError::IncompleteRanges);
         }
 
@@ -661,6 +657,35 @@ mod tests {
                 .id,
             "2"
         );
+    }
+
+    #[test]
+    fn try_combine_resolves_cascading_splits_from_one_page() {
+        let map = ContainerRoutingMap::try_create(single_range(), None, None)
+            .unwrap()
+            .unwrap();
+
+        // 0 -> B + C, then B -> D + E. Children of B intentionally precede B.
+        let new_ranges = vec![
+            make_range("D", "", "33", Some(vec!["B".into()])),
+            make_range("E", "33", "55", Some(vec!["B".into()])),
+            make_range("B", "", "55", Some(vec!["0".into()])),
+            make_range("C", "55", "FF", Some(vec!["0".into()])),
+        ];
+
+        let merged = map
+            .try_combine(new_ranges, Some("new-etag".into()))
+            .unwrap()
+            .unwrap();
+
+        let ids = merged
+            .ranges()
+            .iter()
+            .map(|range| range.id.as_str())
+            .collect::<Vec<_>>();
+        assert_eq!(ids, ["D", "E", "C"]);
+        assert!(merged.is_gone("0"));
+        assert!(merged.is_gone("B"));
     }
 
     #[test]

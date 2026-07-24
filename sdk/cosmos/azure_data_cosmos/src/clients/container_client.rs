@@ -5,7 +5,7 @@ use crate::{
     clients::{offers_client, ClientContext},
     feed::{ChangeFeedPageIterator, FeedRange, FeedScope, QueryItemIterator},
     models::TransactionalBatch,
-    models::{BatchResponse, ItemResponse, ResourceResponse},
+    models::{BatchResponse, ChangeFeedItem, ItemResponse, ResourceResponse},
     models::{ContainerProperties, PatchInstructions, ThroughputProperties},
     options::{
         BatchOptions, ChangeFeedOptions, ChangeFeedStartFrom, DeleteContainerOptions,
@@ -32,6 +32,12 @@ pub struct ContainerClient {
 }
 
 impl ContainerClient {
+    /// Returns the resolved [`ContainerReference`] for the container this client is attached to.
+    #[cfg(feature = "preview_dtx")]
+    pub(crate) fn container_reference(&self) -> &ContainerReference {
+        &self.container_ref
+    }
+
     pub(crate) async fn new(
         context: ClientContext,
         container_id: &str,
@@ -858,7 +864,9 @@ impl ContainerClient {
     /// Queries the change feed for a container, returning a stream of pages.
     ///
     /// The change feed provides an ordered list of changes (creates and
-    /// replaces in LatestVersion mode) made to items in the container.
+    /// replaces) made to items in the container. Each change is yielded as a
+    /// [`ChangeFeedItem<T>`](crate::models::ChangeFeedItem); see that type for
+    /// how to read the changed document.
     ///
     /// # Arguments
     /// * `scope` - Determines which partitions to read changes from.
@@ -870,7 +878,9 @@ impl ContainerClient {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// use azure_data_cosmos::{clients::ContainerClient, feed::FeedScope, options::ChangeFeedStartFrom};
+    /// use azure_data_cosmos::{
+    ///     clients::ContainerClient, feed::FeedScope, options::ChangeFeedStartFrom,
+    /// };
     /// use futures::StreamExt;
     /// use serde::Deserialize;
     ///
@@ -880,13 +890,17 @@ impl ContainerClient {
     /// # async fn example(container: ContainerClient) -> Result<(), Box<dyn std::error::Error>> {
     /// // Read all changes from the beginning
     /// let mut pages = container
-    ///     .query_change_feed::<MyItem>(FeedScope::full_container(), ChangeFeedStartFrom::Beginning, None)
+    ///     .query_change_feed::<MyItem>(
+    ///         FeedScope::full_container(),
+    ///         ChangeFeedStartFrom::Beginning,
+    ///         None,
+    ///     )
     ///     .await?;
     ///
     /// while let Some(page) = pages.next().await {
     ///     let page = page?;
     ///     for item in page.items() {
-    ///         println!("changed: {:?}", item);
+    ///         println!("changed: {:?}", item.current());
     ///     }
     ///     // Save checkpoint for resumption
     ///     let _token = pages.to_continuation_token()?;
@@ -899,7 +913,7 @@ impl ContainerClient {
         scope: FeedScope,
         start_from: ChangeFeedStartFrom,
         options: Option<ChangeFeedOptions>,
-    ) -> crate::Result<ChangeFeedPageIterator<T>> {
+    ) -> crate::Result<ChangeFeedPageIterator<ChangeFeedItem<T>>> {
         let options = options.unwrap_or_default();
 
         let mut initial_operation = CosmosOperation::change_feed(
@@ -1015,52 +1029,29 @@ impl ContainerClient {
             .context
             .driver
             .resolve_all_partition_key_ranges(&self.container_ref, options.force_refresh())
-            .await
-            .ok_or_else(|| {
-                // Service was reachable but didn't return a usable routing
-                // map — a service-side invariant violation, surfaced as a
-                // 500 with the client-generated
-                // `SERIALIZATION_RESPONSE_BODY_INVALID` sub-status so
-                // callers can distinguish it from caller misuse.
-                crate::DriverCosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-                    .with_message("failed to resolve routing map for container")
-                    .build()
-            })?;
+            .await;
 
-        if ranges.is_empty() && !options.force_refresh() {
+        if should_force_refresh_feed_ranges(ranges.as_deref(), options.force_refresh()) {
             // A valid container always has at least one partition key range.
-            // Empty result likely means a stale/failed cache — retry with forced refresh.
+            // Missing or empty results likely mean a stale/failed cache.
             ranges = self
                 .context
                 .driver
                 .resolve_all_partition_key_ranges(&self.container_ref, true)
-                .await
-                .ok_or_else(|| {
-                    crate::DriverCosmosError::builder()
-                        .with_status(
-                            crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
-                        )
-                        .with_message("failed to resolve routing map for container")
-                        .build()
-                })?;
+                .await;
         }
 
-        if ranges.is_empty() {
-            // Forced refresh produced an empty routing map — either the
-            // container truly does not exist or the service is
-            // unreachable. Map to 503 with the transport-generated
-            // sub-status so the caller treats this as a service-side
-            // availability issue (not their bug).
-            return Err(crate::DriverCosmosError::builder()
-                .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
-                .with_message(
-                    "resolved routing map contains no partition key ranges; \
-                     the container may not exist or the service may be unreachable",
-                )
+        let ranges = ranges.ok_or_else(|| {
+            // Service was reachable but didn't return a usable routing
+            // map — a service-side invariant violation, surfaced as a
+            // 500 with the client-generated
+            // `SERIALIZATION_RESPONSE_BODY_INVALID` sub-status so
+            // callers can distinguish it from caller misuse.
+            crate::DriverCosmosError::builder()
+                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_message("failed to resolve routing map for container")
                 .build()
-                .into());
-        }
+        })?;
 
         ranges
             .iter()
@@ -1248,6 +1239,10 @@ fn apply_batch_options(mut operation: CosmosOperation, options: &BatchOptions) -
     operation
 }
 
+fn should_force_refresh_feed_ranges<T>(ranges: Option<&[T]>, force_refresh: bool) -> bool {
+    !force_refresh && ranges.is_none_or(<[T]>::is_empty)
+}
+
 /// Compile-time guarantee that the futures returned by [`ContainerClient`]
 /// helpers are `Send`.
 ///
@@ -1264,4 +1259,17 @@ fn _assert_futures_are_send() {
     let patch: PatchInstructions = todo!();
     let options: Option<PatchItemOptions> = todo!();
     assert_send(client.patch_item(partition_key, item_id, patch, options));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::should_force_refresh_feed_ranges;
+
+    #[test]
+    fn feed_ranges_refreshes_missing_or_empty_initial_resolution() {
+        assert!(should_force_refresh_feed_ranges::<()>(None, false));
+        assert!(should_force_refresh_feed_ranges::<()>(Some(&[]), false));
+        assert!(!should_force_refresh_feed_ranges(Some(&[()]), false));
+        assert!(!should_force_refresh_feed_ranges::<()>(None, true));
+    }
 }

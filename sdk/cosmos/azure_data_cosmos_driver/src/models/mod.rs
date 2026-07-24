@@ -18,6 +18,8 @@ pub(crate) mod cosmos_headers;
 mod cosmos_operation;
 mod cosmos_resource_reference;
 mod cosmos_response;
+#[cfg(feature = "preview_dtx")]
+mod distributed_transaction;
 mod finite_f64;
 pub(crate) mod partition_key;
 mod patch;
@@ -56,6 +58,13 @@ pub use cosmos_resource_reference::CosmosResourceReference;
 pub(crate) use cosmos_resource_reference::ResourcePaths;
 pub use cosmos_response::CosmosResponse;
 pub(crate) use cosmos_response::CosmosResponsePayload;
+#[cfg(feature = "preview_dtx")]
+pub use distributed_transaction::{
+    DistributedTransactionOperation, DistributedTransactionOperationKind,
+    DistributedTransactionOperationResult, DistributedTransactionRequest,
+    DistributedTransactionResponse, DistributedTransactionResultBody, DistributedTransactionTarget,
+    DistributedTransactionType,
+};
 // Cosmos status types are owned by `crate::error::cosmos_status` (canonical home,
 // tightly coupled to the typed Cosmos error). Re-exported here for ergonomic access
 // via the historic `crate::models::CosmosStatus` path used throughout the driver
@@ -121,7 +130,7 @@ pub(crate) struct ContainerProperties {
 /// Partition key definition for a container.
 ///
 /// Specifies the JSON path(s) used for partitioning data across physical partitions.
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
 #[non_exhaustive]
 #[serde(rename_all = "camelCase")]
 pub struct PartitionKeyDefinition {
@@ -132,9 +141,65 @@ pub struct PartitionKeyDefinition {
     #[serde(default)]
     kind: PartitionKeyKind,
 
-    /// Partition key version (1 for single, 2 for hierarchical).
+    /// Partition key hashing version.
+    ///
+    /// The service omits this field for legacy V1 containers; V2 and MultiHash
+    /// container definitions always include an explicit version.
     #[serde(default = "default_pk_version")]
     version: PartitionKeyVersion,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PartitionKeyDefinitionWire {
+    paths: Vec<Cow<'static, str>>,
+    #[serde(default)]
+    kind: PartitionKeyKind,
+    #[serde(default)]
+    version: PartitionKeyVersionWire,
+}
+
+#[derive(Default)]
+enum PartitionKeyVersionWire {
+    #[default]
+    Missing,
+    Present(PartitionKeyVersion),
+}
+
+impl<'de> Deserialize<'de> for PartitionKeyVersionWire {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        PartitionKeyVersion::deserialize(deserializer).map(Self::Present)
+    }
+}
+
+impl<'de> Deserialize<'de> for PartitionKeyDefinition {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let wire = PartitionKeyDefinitionWire::deserialize(deserializer)?;
+        match wire.version {
+            PartitionKeyVersionWire::Missing => Ok(Self {
+                paths: wire.paths,
+                kind: PartitionKeyKind::Hash,
+                version: default_pk_version(),
+            }),
+            PartitionKeyVersionWire::Present(version)
+                if wire.kind == PartitionKeyKind::MultiHash
+                    && version != PartitionKeyVersion::V2 =>
+            {
+                Err(serde::de::Error::custom("MultiHash requires version 2"))
+            }
+            PartitionKeyVersionWire::Present(version) => Ok(Self {
+                paths: wire.paths,
+                kind: wire.kind,
+                version,
+            }),
+        }
+    }
 }
 
 impl PartitionKeyDefinition {
@@ -247,8 +312,25 @@ impl<S1: Into<String>, S2: Into<String>, S3: Into<String>> From<(S1, S2, S3)>
     }
 }
 
+/// The serde default for a [`PartitionKeyDefinition`] `version` field that is
+/// absent on the wire.
+///
+/// The Cosmos service omits `version` **only** for legacy V1 (Hash) containers;
+/// V2 and MultiHash container definitions always serialize an explicit
+/// `version: 2`. So an absent version unambiguously means a V1 container.
+///
+/// This default only affects deserialization of a version-less definition read
+/// back from the service. The create path ([`PartitionKeyDefinition::new`])
+/// hard-codes `V2` independently and is unaffected.
+///
+/// Defaulting to V2 here previously broke Gateway 2.0 (thin-client) point-op
+/// routing: the client computes the EffectivePartitionKey (EPK) client-side, so
+/// a V1 container mis-detected as V2 produced a V2 (MurmurHash3-128) EPK the
+/// proxy could not reconcile with the container's V1 routing map, stalling
+/// point operations until timeout. This matches the .NET/Java convention where
+/// an absent partition-key version deserializes to V1.
 fn default_pk_version() -> PartitionKeyVersion {
-    PartitionKeyVersion::V2
+    PartitionKeyVersion::V1
 }
 
 /// Partition key version.
@@ -348,6 +430,9 @@ pub enum ResourceType {
     PartitionKeyRange,
     /// An offer (throughput configuration).
     Offer,
+    /// Distributed transaction coordinator batch.
+    #[cfg(feature = "preview_dtx")]
+    DistributedTransactionBatch,
 }
 
 impl ResourceType {
@@ -363,6 +448,8 @@ impl ResourceType {
             ResourceType::UserDefinedFunction => "user_defined_function",
             ResourceType::PartitionKeyRange => "partition_key_range",
             ResourceType::Offer => "offer",
+            #[cfg(feature = "preview_dtx")]
+            ResourceType::DistributedTransactionBatch => "distributed_transaction_batch",
         }
     }
 
@@ -378,6 +465,8 @@ impl ResourceType {
             ResourceType::UserDefinedFunction => "udfs",
             ResourceType::PartitionKeyRange => "pkranges",
             ResourceType::Offer => "offers",
+            #[cfg(feature = "preview_dtx")]
+            ResourceType::DistributedTransactionBatch => "distributedtransactionbatch",
         }
     }
 
@@ -464,6 +553,10 @@ impl std::str::FromStr for ResourceType {
             "user_defined_function" | "udf" => Ok(ResourceType::UserDefinedFunction),
             "partition_key_range" | "pkrange" => Ok(ResourceType::PartitionKeyRange),
             "offer" => Ok(ResourceType::Offer),
+            #[cfg(feature = "preview_dtx")]
+            "distributed_transaction_batch" | "distributedtransactionbatch" => {
+                Ok(ResourceType::DistributedTransactionBatch)
+            }
             _ => Err(format!(
                 "Unknown resource type: '{}'. Expected one of: database_account, database, \
                  document_collection, document, stored_procedure, trigger, \
@@ -523,6 +616,12 @@ pub enum OperationType {
     /// never sent on the wire; the variant is a virtual operation type the
     /// driver dispatches to a dedicated handler.
     Patch,
+    /// Commit a distributed write transaction.
+    #[cfg(feature = "preview_dtx")]
+    CommitDistributedTransaction,
+    /// Execute a distributed read transaction.
+    #[cfg(feature = "preview_dtx")]
+    ReadDistributedTransaction,
 }
 
 impl OperationType {
@@ -548,6 +647,9 @@ impl OperationType {
             | OperationType::Batch
             | OperationType::QueryPlan
             | OperationType::Execute => Method::Post,
+            #[cfg(feature = "preview_dtx")]
+            OperationType::CommitDistributedTransaction
+            | OperationType::ReadDistributedTransaction => Method::Post,
             OperationType::Delete => Method::Delete,
             OperationType::Read => Method::Get,
             OperationType::ReadFeed => Method::Get,
@@ -563,32 +665,47 @@ impl OperationType {
 
     /// Returns true if the operation does not modify server state.
     pub fn is_read_only(self) -> bool {
-        matches!(
-            self,
+        match self {
             OperationType::Read
-                | OperationType::ReadFeed
-                | OperationType::Query
-                | OperationType::SqlQuery
-                | OperationType::QueryPlan
-                | OperationType::Head
-                | OperationType::HeadFeed
-        )
+            | OperationType::ReadFeed
+            | OperationType::Query
+            | OperationType::SqlQuery
+            | OperationType::QueryPlan
+            | OperationType::Head
+            | OperationType::HeadFeed => true,
+            #[cfg(feature = "preview_dtx")]
+            OperationType::ReadDistributedTransaction => true,
+            _ => false,
+        }
+    }
+
+    /// Returns true if this operation must be routed to write endpoints.
+    pub fn routes_to_write_endpoints(self) -> bool {
+        match self {
+            #[cfg(feature = "preview_dtx")]
+            OperationType::CommitDistributedTransaction
+            | OperationType::ReadDistributedTransaction => true,
+            _ => !self.is_read_only(),
+        }
     }
 
     /// Returns true if the operation is idempotent (safe to retry).
     pub fn is_idempotent(self) -> bool {
-        matches!(
-            self,
+        match self {
             OperationType::Read
-                | OperationType::ReadFeed
-                | OperationType::Query
-                | OperationType::SqlQuery
-                | OperationType::QueryPlan
-                | OperationType::Head
-                | OperationType::HeadFeed
-                | OperationType::Replace
-                | OperationType::Delete
-        )
+            | OperationType::ReadFeed
+            | OperationType::Query
+            | OperationType::SqlQuery
+            | OperationType::QueryPlan
+            | OperationType::Head
+            | OperationType::HeadFeed
+            | OperationType::Replace
+            | OperationType::Delete => true,
+            #[cfg(feature = "preview_dtx")]
+            OperationType::CommitDistributedTransaction
+            | OperationType::ReadDistributedTransaction => true,
+            _ => false,
+        }
     }
 
     /// Returns the string representation of this operation type.
@@ -608,6 +725,10 @@ impl OperationType {
             OperationType::HeadFeed => "head_feed",
             OperationType::Execute => "execute",
             OperationType::Patch => "patch",
+            #[cfg(feature = "preview_dtx")]
+            OperationType::CommitDistributedTransaction => "commit_distributed_transaction",
+            #[cfg(feature = "preview_dtx")]
+            OperationType::ReadDistributedTransaction => "read_distributed_transaction",
         }
     }
 }
@@ -797,8 +918,50 @@ mod tests {
 
         assert_eq!(parsed.paths().len(), 1);
         assert_eq!(parsed.paths()[0].as_ref(), "/pk");
-        assert_eq!(parsed.version(), PartitionKeyVersion::V2);
+        // An absent `version` on the wire means a legacy V1 (Hash) container:
+        // the service only omits `version` for V1; V2/MultiHash always send an
+        // explicit `version: 2`. See `default_pk_version`.
+        assert_eq!(parsed.version(), PartitionKeyVersion::V1);
         assert_eq!(parsed.kind(), PartitionKeyKind::Hash);
+    }
+
+    #[test]
+    fn partition_key_definition_explicit_versions_honored() {
+        // An explicit `version` on the wire is always honored as-is; only an
+        // absent version defaults (to V1).
+        let v1: PartitionKeyDefinition =
+            serde_json::from_str(r#"{"paths":["/pk"],"version":1}"#).unwrap();
+        let v2: PartitionKeyDefinition =
+            serde_json::from_str(r#"{"paths":["/pk"],"version":2}"#).unwrap();
+
+        assert_eq!(v1.version(), PartitionKeyVersion::V1);
+        assert_eq!(v2.version(), PartitionKeyVersion::V2);
+    }
+
+    #[test]
+    fn partition_key_definition_version_less_multihash_normalizes_to_v1_hash() {
+        let parsed: PartitionKeyDefinition =
+            serde_json::from_str(r#"{"paths":["/a","/b"],"kind":"MultiHash"}"#).unwrap();
+
+        assert_eq!(parsed.kind(), PartitionKeyKind::Hash);
+        assert_eq!(parsed.version(), PartitionKeyVersion::V1);
+    }
+
+    #[test]
+    fn partition_key_definition_explicit_null_version_is_rejected() {
+        let result =
+            serde_json::from_str::<PartitionKeyDefinition>(r#"{"paths":["/pk"],"version":null}"#);
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn partition_key_definition_explicit_v1_multihash_is_rejected() {
+        let result = serde_json::from_str::<PartitionKeyDefinition>(
+            r#"{"paths":["/a","/b"],"kind":"MultiHash","version":1}"#,
+        );
+
+        assert!(result.is_err());
     }
 
     #[test]

@@ -326,6 +326,7 @@ impl SubStatusCode {
             // 449: Retry With
             5350 => Some("RbacAadGroupUnavailable"),
             5351 => Some("AzureRbacAccessDecisionUnavailable"),
+            5352 => Some("DtcCoordinatorRaceConflict"),
 
             // 500: Internal Server Error
             3001 => Some("ConfigurationNameNotEmpty"),
@@ -337,6 +338,10 @@ impl SubStatusCode {
             3042 => Some("OperationCancelledWithNoRollback"),
             3043 => Some("SplitTimedOut"),
             5360 => Some("RbacDisabledDueToArmPath"),
+            5411 => Some("DtcLedgerFailure"),
+            5412 => Some("DtcAccountConfigFailure"),
+            5413 => Some("DtcDispatchFailure"),
+            5415 => Some("DtcOperationRolledBack"),
 
             // 503: Service Unavailable
             1337 => Some("GoneException"),
@@ -837,6 +842,26 @@ impl SubStatusCode {
     /// RU budget exceeded (3200).
     pub const RU_BUDGET_EXCEEDED: SubStatusCode = SubStatusCode(3200);
 
+    /// DTX coordinator race conflict (5352).
+    #[cfg(feature = "preview_dtx")]
+    pub const DTC_COORDINATOR_RACE_CONFLICT: SubStatusCode = SubStatusCode(5352);
+
+    /// DTX ledger failure (5411).
+    #[cfg(feature = "preview_dtx")]
+    pub const DTC_LEDGER_FAILURE: SubStatusCode = SubStatusCode(5411);
+
+    /// DTX account configuration failure (5412).
+    #[cfg(feature = "preview_dtx")]
+    pub const DTC_ACCOUNT_CONFIG_FAILURE: SubStatusCode = SubStatusCode(5412);
+
+    /// DTX backend dispatch infrastructure failure (5413).
+    #[cfg(feature = "preview_dtx")]
+    pub const DTC_DISPATCH_FAILURE: SubStatusCode = SubStatusCode(5413);
+
+    /// DTX prepared operation rolled back on abort (5415, DtcOperationRolledBack).
+    #[cfg(feature = "preview_dtx")]
+    pub const DTC_OPERATION_ROLLED_BACK: SubStatusCode = SubStatusCode(5415);
+
     /// Gateway throttled (3201).
     pub const GATEWAY_THROTTLED: SubStatusCode = SubStatusCode(3201);
 
@@ -1010,6 +1035,15 @@ impl SubStatusCode {
     pub const TOO_MANY_TENTATIVE_WRITES_TO_SATELLITE_REGION: SubStatusCode = SubStatusCode(1339);
 
     // ----- SDK Client-side codes (10xxx, 2xxxx) -----
+    //
+    // Provenance: the `10001`-`10004` gateway codes and `CLIENT_OPERATION_TIMEOUT`
+    // (20008) match Java's `HttpConstants.SubStatusCodes` exactly. The remaining
+    // `2000x` / `20401` codes are sourced from .NET's client-side `SubStatusCodes`;
+    // Java only ported a subset of that range, so they have no Java equivalent.
+    // Note: Java models the HTTP/2-ping channel-closed case as
+    // `GATEWAY_HTTP2_PING_TIMEOUT_CHANNEL_CLOSED` (10006) — a local transport
+    // failure that skips endpoint mark-down — which is a narrower semantic than
+    // the generic `CHANNEL_CLOSED` (20006, aligned with .NET) defined below.
 
     /// Gateway endpoint unavailable (10001).
     pub const GATEWAY_ENDPOINT_UNAVAILABLE: SubStatusCode = SubStatusCode(10001);
@@ -1025,6 +1059,18 @@ impl SubStatusCode {
 
     /// Transport generated 503 (20003).
     pub const TRANSPORT_GENERATED_503: SubStatusCode = SubStatusCode(20003);
+
+    /// Client CPU overload (20004).
+    pub const CLIENT_CPU_OVERLOAD: SubStatusCode = SubStatusCode(20004);
+
+    /// Client thread starvation (20005).
+    pub const CLIENT_THREAD_STARVATION: SubStatusCode = SubStatusCode(20005);
+
+    /// Channel closed (20006).
+    pub const CHANNEL_CLOSED: SubStatusCode = SubStatusCode(20006);
+
+    /// Malformed continuation token (20007).
+    pub const MALFORMED_CONTINUATION_TOKEN: SubStatusCode = SubStatusCode(20007);
 
     /// Client generated 401 — authorization/signing failure (20401).
     pub const CLIENT_GENERATED_401: SubStatusCode = SubStatusCode(20401);
@@ -1434,6 +1480,15 @@ impl SubStatusCode {
     /// has no routing information for the operation. Paired with HTTP
     /// 503 — an internal client-side condition, not a transport failure.
     pub const CLIENT_TOPOLOGY_RESOLUTION_FAILED: SubStatusCode = SubStatusCode(20305);
+
+    /// A topology range resolved for a query-plan EPK range did not
+    /// overlap that range (20307). The query planner intersects each
+    /// resolved partition with the query-plan range it was resolved
+    /// for; an empty intersection means `resolve_ranges` violated its
+    /// contract of returning only overlapping ranges. Surfaced as an
+    /// error (paired with HTTP 500) instead of panicking the worker
+    /// thread, which would deadlock the caller. See issue #4574.
+    pub const CLIENT_QUERY_PLAN_RANGE_NOT_COVERED_BY_TOPOLOGY: SubStatusCode = SubStatusCode(20307);
 }
 
 impl Default for SubStatusCode {
@@ -1557,6 +1612,19 @@ impl CosmosStatus {
     /// Returns `true` if this is a throttling response (HTTP 429).
     pub fn is_throttled(&self) -> bool {
         u16::from(self.status_code) == 429
+    }
+
+    /// Returns `true` if this is an HTTP 449 RetryWith response.
+    ///
+    /// 449 RetryWith is returned by Cosmos backends for transient
+    /// concurrency conflicts (e.g. concurrent writes racing through the
+    /// store, RBAC info momentarily unavailable). The client is expected
+    /// to retry in the same region after a short delay. See
+    /// `try_handle_retry_with` in
+    /// `driver::pipeline::retry_evaluation` and the cross-SDK
+    /// `RetryWithRetryPolicy` for the policy.
+    pub fn is_retry_with(&self) -> bool {
+        u16::from(self.status_code) == 449
     }
 
     /// Returns `true` if this is an HTTP 410 Gone response.
@@ -1786,10 +1854,27 @@ impl CosmosStatus {
         sub_status: Some(SubStatusCode::TRANSPORT_GENERATED_503),
     };
 
+    /// Client-generated 400 Bad Request, **no sub-status**.
+    ///
+    /// Generated by the SDK when a request could not be constructed for the
+    /// wire — most commonly when Gateway 2.0 request wrapping fails before
+    /// the request is sent. The HTTP status is set to 400 to mirror what
+    /// the service would return for malformed input, but no sub-status code
+    /// is attached: the failure originates in the client, and no entry in
+    /// the canonical [`SubStatusCode`] table (sourced from the C++ backend
+    /// `SubstatusCodeType` enum) covers client-side construction failures.
+    /// This matches the .NET SDK's `BadRequestException`, which carries
+    /// `HttpStatusCode.BadRequest` with the default (zero) sub-status.
+    pub const CLIENT_BAD_REQUEST: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: None,
+    };
+
     /// Client-generated 401 Unauthorized (sub-status 20401).
     ///
     /// Generated by the SDK when request signing/authorization fails before
-    /// the request is sent (e.g., credential error, token acquisition failure).
+    /// the request is sent (e.g., credential error, token acquisition
+    /// failure).
     pub const CLIENT_GENERATED_401: CosmosStatus = CosmosStatus {
         status_code: StatusCode::Unauthorized,
         sub_status: Some(SubStatusCode::CLIENT_GENERATED_401),
@@ -2249,6 +2334,15 @@ impl CosmosStatus {
         sub_status: Some(SubStatusCode::CLIENT_TOPOLOGY_RESOLUTION_FAILED),
     };
 
+    /// 500 / 20307 — a topology range resolved for a query-plan EPK
+    /// range did not overlap that range, a `resolve_ranges` contract
+    /// violation. Returned instead of panicking the query worker (see
+    /// issue #4574).
+    pub const CLIENT_QUERY_PLAN_RANGE_NOT_COVERED_BY_TOPOLOGY: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_QUERY_PLAN_RANGE_NOT_COVERED_BY_TOPOLOGY),
+    };
+
     /// 500 / 20306 — the service returned a resource read response
     /// without the `_rid` system property, violating its own contract.
     pub const SERVICE_RETURNED_OBJECT_WITHOUT_RID: CosmosStatus = CosmosStatus {
@@ -2550,6 +2644,17 @@ mod tests {
         assert_eq!(
             SubStatusCode::RU_BUDGET_EXCEEDED.name(None),
             Some("RUBudgetExceeded")
+        );
+    }
+
+    #[test]
+    fn name_returns_client_generated_401() {
+        // Regression guard: the 20401 name mapping must stay in lockstep with
+        // the `CLIENT_GENERATED_401` constant so diagnostics keep rendering a
+        // name instead of `None`.
+        assert_eq!(
+            SubStatusCode::CLIENT_GENERATED_401.name(None),
+            Some("ClientGenerated401")
         );
     }
 

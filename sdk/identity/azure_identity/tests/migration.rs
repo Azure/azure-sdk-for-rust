@@ -2,8 +2,28 @@
 // Licensed under the MIT License.
 
 #![allow(dead_code)]
-use azure_core_examples::secrets as azure_security_keyvault_secrets;
+#![allow(
+    clippy::needless_update,
+    reason = "documentation examples intentionally use ..Default::default()"
+)]
 use include_file::include_markdown;
+
+mod azure_security_keyvault_secrets {
+    use azure_core::credentials::TokenCredential;
+    use std::sync::Arc;
+
+    pub struct SecretClient;
+
+    impl SecretClient {
+        pub fn new(
+            _endpoint: &str,
+            _credential: Arc<dyn TokenCredential>,
+            _options: Option<()>,
+        ) -> azure_core::Result<Self> {
+            Ok(Self)
+        }
+    }
+}
 
 #[ignore = "only compile doc examples"]
 #[tokio::test]

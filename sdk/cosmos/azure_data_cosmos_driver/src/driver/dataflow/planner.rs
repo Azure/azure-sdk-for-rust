@@ -14,7 +14,10 @@ use std::sync::Arc;
 
 use crate::{
     driver::dataflow::query_plan::DistinctType,
-    models::{effective_partition_key::EffectivePartitionKey, CosmosOperation, FeedRange},
+    models::{
+        effective_partition_key::{normalized_epk_len, EffectivePartitionKey},
+        CosmosOperation, FeedRange,
+    },
 };
 
 use super::{
@@ -378,15 +381,42 @@ async fn plan_fresh(
     operation: &Arc<CosmosOperation>,
 ) -> crate::error::Result<Vec<Box<dyn PipelineNode>>> {
     let mut nodes: Vec<Box<dyn PipelineNode>> = Vec::new();
+    // Clip each server-supplied query range to the operation scope (e.g.
+    // `FeedScope::partition(partial_hpk)`), which bounds the partition-key
+    // prefix. The `query_ranges` always cover the full container, so we
+    // intersect to keep the fan-out (and per-pkrange wire EPK bounds) scoped.
+    //
+    // An equality / `IN` predicate yields a point plan range `[X, X]`, which
+    // `query_range_to_feed_range` normalizes to the half-open window
+    // `[X, successor(X))` so it routes like any other range (#4574 / #4638).
+    let scope_range = operation.target();
+    // Full EPK width for this container, used to zero-extend a closed range's
+    // (or point's) inclusive upper bound to full width before making it
+    // exclusive (#4574).
+    let normalized_len = operation
+        .container()
+        .and_then(|c| normalized_epk_len(c.partition_key_definition()));
     for query_range in &query_plan.query_ranges {
-        let feed_range = query_range_to_feed_range(query_range)?;
+        let plan_range = query_range_to_feed_range(query_range, normalized_len)?;
+        let feed_range = match scope_range {
+            Some(scope) => match intersect_feed_ranges(scope, &plan_range) {
+                Some(r) => r,
+                None => continue,
+            },
+            None => plan_range,
+        };
         let resolved = topology_provider
             .resolve_ranges(&feed_range, PartitionRoutingRefresh::UseCached)
             .await?;
         for resolved_range in resolved {
-            let range = intersect_feed_ranges(&resolved_range.range, &feed_range).expect(
-                "topology provider must return ranges that overlap the query plan EPK range",
-            );
+            // Clip the resolved partition to the query range (for an equality
+            // point this is the narrow `[X, successor(X))` window, emitted as a
+            // `start`/`end-epk` pair alongside `partitionkeyrangeid`).
+            let range =
+                intersect_feed_ranges(&resolved_range.range, &feed_range).ok_or_else(|| {
+                    topology_range_not_overlapping_error(&resolved_range.range, &feed_range)
+                })?;
+
             let target = RequestTarget::effective_partition_key_range(
                 range,
                 resolved_range.partition_key_range_id,
@@ -426,18 +456,34 @@ async fn plan_resume_from_saved_snapshot(
 ) -> crate::error::Result<Vec<Box<dyn PipelineNode>>> {
     let mut nodes: Vec<Box<dyn PipelineNode>> = Vec::new();
     let mut coverage: Vec<Vec<FeedRange>> = vec![Vec::new(); saved.active_tokens.len()];
+    // See `plan_fresh` for the scope-clip rationale. Equality / `IN` points are
+    // normalized to `[X, successor(X))` windows by `query_range_to_feed_range`,
+    // so they resume through the same half-open path as any other range.
+    let scope_range = operation.target();
+    // Full EPK width for this container (see `plan_fresh`).
+    let normalized_len = operation
+        .container()
+        .and_then(|c| normalized_epk_len(c.partition_key_definition()));
 
     for query_range in &query_plan.query_ranges {
-        let feed_range = query_range_to_feed_range(query_range)?;
+        let plan_range = query_range_to_feed_range(query_range, normalized_len)?;
+        let feed_range = match scope_range {
+            Some(scope) => match intersect_feed_ranges(scope, &plan_range) {
+                Some(r) => r,
+                None => continue,
+            },
+            None => plan_range,
+        };
         let resolved = topology_provider
             .resolve_ranges(&feed_range, PartitionRoutingRefresh::UseCached)
             .await?;
 
         for resolved_range in resolved {
-            // The leaf's range is the resolved range clipped to the query range.
-            let leaf_scope = intersect_feed_ranges(&resolved_range.range, &feed_range).expect(
-                "topology provider must return ranges that overlap the query plan EPK range",
-            );
+            // Clip the resolved partition to the query range.
+            let leaf_scope =
+                intersect_feed_ranges(&resolved_range.range, &feed_range).ok_or_else(|| {
+                    topology_range_not_overlapping_error(&resolved_range.range, &feed_range)
+                })?;
 
             // Clip to "at or above cursor". Drop leaves entirely below.
             if leaf_scope.max_exclusive() <= &saved.cursor {
@@ -533,8 +579,8 @@ async fn plan_resume_from_saved_snapshot(
                     .map(|r| {
                         format!(
                             "[{}, {})",
-                            r.min_inclusive().as_str(),
-                            r.max_exclusive().as_str()
+                            r.min_inclusive().to_hex(),
+                            r.max_exclusive().to_hex()
                         )
                     })
                     .collect();
@@ -552,8 +598,8 @@ async fn plan_resume_from_saved_snapshot(
                     "continuation token active range [{}, {}) could not be fully covered \
                      by the current topology above the cursor (covered: {}); the query \
                      cannot be safely resumed",
-                    entry.range.min_inclusive().as_str(),
-                    entry.range.max_exclusive().as_str(),
+                    entry.range.min_inclusive().to_hex(),
+                    entry.range.max_exclusive().to_hex(),
                     coverage_summary,
                 ))
                 .build());
@@ -564,11 +610,60 @@ async fn plan_resume_from_saved_snapshot(
 }
 
 /// Converts a query-plan EPK range to a [`FeedRange`].
+///
+/// The gateway returns a *closed* range `[a, b]`
+/// (`isMinInclusive == isMaxInclusive == true`) when a query filters on the
+/// partition key with an equality / `IN` predicate (issue #4574) — a *point*
+/// `[X, X]` per value — and a normal half-open `[min, max)` range otherwise.
+///
+/// Any closed upper bound is made exclusive by advancing it to its successor,
+/// so a point `[X, X]` becomes the non-empty half-open range `[X, successor(X))`
+/// and a closed range `[a, b]` becomes `[a, successor(b))`. Both then flow
+/// through the normal `[min, max)` routing (scope intersection, topology
+/// resolution, per-partition EPK-window emit) instead of collapsing to the empty
+/// set (which panicked, #4574) or being special-cased to whole-partition
+/// routing. Emitting the narrow `[X, successor(X))` window as a `start`/`end-epk`
+/// pair alongside `partitionkeyrangeid` (with
+/// `x-ms-read-key-type: EffectivePartitionKeyRange`, #4729) is honored by the
+/// gateway and matches the normalize-to-EPK-range model the .NET SDK uses.
+///
+/// `normalized_len` is the container's full EPK width in bytes (see
+/// [`normalized_epk_len`](crate::models::effective_partition_key::normalized_epk_len)).
+/// It is applied **only to a point** (`min == max`, an equality / `IN` value,
+/// which is always a *full* partition key): the trailing-zero-trimmed value is
+/// zero-extended to full width before the increment, so the successor is the
+/// exact one the backend expects (matching .NET's full-width HPK normalization).
+/// When the width is unknown (V1), a point falls back to the width-preserving
+/// [`successor`](EffectivePartitionKey::successor) so it still becomes a
+/// non-empty window instead of collapsing to the empty set (the #4574 panic).
+///
+/// Every *other* range — including a closed **non-point** range such as an HPK
+/// **prefix** upper bound — is passed through unchanged, exactly as upstream
+/// does. Those bounds are produced at partition-boundary granularity by the
+/// gateway/topology layer; advancing them with a successor over-extends the band
+/// and routes incorrectly (it drops owning physical partitions — the
+/// `hpk_tenant_prefix_where_full_scope` regression).
 fn query_range_to_feed_range(
     query_range: &super::query_plan::QueryRange,
+    normalized_len: Option<usize>,
 ) -> crate::error::Result<FeedRange> {
     let min = EffectivePartitionKey::from(query_range.min.as_str());
     let max = EffectivePartitionKey::from(query_range.max.as_str());
+    // Only a closed *point* `[X, X]` (equality / `IN`, min == max) is
+    // transformed — into the non-empty half-open window `[X, successor(X))`.
+    // Every other range is left as-is (upstream behavior).
+    let max = if query_range.is_max_inclusive && min == max {
+        match normalized_len {
+            // Full key: normalize to full EPK width before incrementing
+            // (Option B, #4574 / #4638), matching .NET's HPK normalization.
+            Some(len) => max.normalized_successor(len),
+            // Unknown width (V1): width-preserving successor keeps `[X, X]` from
+            // collapsing to the empty set.
+            None => max.successor(),
+        }
+    } else {
+        max
+    };
     FeedRange::new(min, max)
 }
 
@@ -589,10 +684,10 @@ fn range_fully_covered(range: &FeedRange, pieces: &[FeedRange]) -> bool {
             piece.min_inclusive() >= range.min_inclusive()
                 && piece.max_exclusive() <= range.max_exclusive(),
             "range_fully_covered piece [{}, {}) is not a subset of range [{}, {})",
-            piece.min_inclusive().as_str(),
-            piece.max_exclusive().as_str(),
-            range.min_inclusive().as_str(),
-            range.max_exclusive().as_str(),
+            piece.min_inclusive().to_hex(),
+            piece.max_exclusive().to_hex(),
+            range.min_inclusive().to_hex(),
+            range.max_exclusive().to_hex(),
         );
         if piece.min_inclusive() > &cursor {
             return false;
@@ -640,8 +735,8 @@ fn validate_saved_snapshot(
                 )
                 .with_message(format!(
                     "continuation token has invalid active_tokens entry (min `{}` > max `{}`)",
-                    min.as_str(),
-                    max.as_str(),
+                    min.to_hex(),
+                    max.to_hex(),
                 ))
                 .build());
         }
@@ -656,7 +751,7 @@ fn validate_saved_snapshot(
                 .with_message(format!(
                     "continuation token has zero-width active_tokens entry (min == max == `{}`); \
                      zero-width entries cannot carry remaining work",
-                    min.as_str(),
+                    min.to_hex(),
                 ))
                 .build());
         }
@@ -670,10 +765,10 @@ fn validate_saved_snapshot(
                     .with_message(format!(
                         "continuation token active_tokens must be sorted and non-overlapping; \
                          entry [{}, {}) is out of order or overlaps the previous entry [{}, {})",
-                        range.min_inclusive().as_str(),
-                        range.max_exclusive().as_str(),
-                        prev.range.min_inclusive().as_str(),
-                        prev.range.max_exclusive().as_str(),
+                        range.min_inclusive().to_hex(),
+                        range.max_exclusive().to_hex(),
+                        prev.range.min_inclusive().to_hex(),
+                        prev.range.max_exclusive().to_hex(),
                     ))
                     .build());
             }
@@ -694,9 +789,9 @@ fn validate_saved_snapshot(
                 .with_message(format!(
                     "continuation token cursor `{}` is past the first active_tokens entry [{}, {}); \
                      cursor must be at or before every active range",
-                    cursor.as_str(),
-                    first.range.min_inclusive().as_str(),
-                    first.range.max_exclusive().as_str(),
+                    cursor.to_hex(),
+                    first.range.min_inclusive().to_hex(),
+                    first.range.max_exclusive().to_hex(),
                 ))
                 .build());
         }
@@ -736,8 +831,8 @@ fn validate_unordered_merge_tokens(
                 .with_message(format!(
                     "continuation token has invalid active_tokens entry \
                      (min `{}` >= max `{}`)",
-                    min.as_str(),
-                    max.as_str(),
+                    min.to_hex(),
+                    max.to_hex(),
                 ))
                 .build());
         }
@@ -751,10 +846,10 @@ fn validate_unordered_merge_tokens(
                     .with_message(format!(
                         "continuation token active_tokens must be sorted and non-overlapping; \
                          entry [{}, {}) overlaps [{}, {})",
-                        range.min_inclusive().as_str(),
-                        range.max_exclusive().as_str(),
-                        prev.range.min_inclusive().as_str(),
-                        prev.range.max_exclusive().as_str(),
+                        range.min_inclusive().to_hex(),
+                        range.max_exclusive().to_hex(),
+                        prev.range.min_inclusive().to_hex(),
+                        prev.range.max_exclusive().to_hex(),
                     ))
                     .build());
             }
@@ -811,6 +906,37 @@ fn unsupported_feature(feature: &str) -> crate::error::CosmosError {
         .build()
 }
 
+/// Builds the error returned when a topology range resolved for a query-plan
+/// EPK range does not actually overlap that range.
+///
+/// This is a contract violation: [`TopologyProvider::resolve_ranges`] is
+/// expected to return only ranges that overlap the requested feed range. It
+/// should be unreachable in practice, but returning a structured error rather
+/// than panicking keeps a plan that cannot be served from taking down the
+/// worker thread (and deadlocking the caller) — see issue #4574.
+fn topology_range_not_overlapping_error(
+    resolved: &FeedRange,
+    query: &FeedRange,
+) -> crate::error::CosmosError {
+    crate::error::CosmosError::builder()
+        .with_status(crate::error::CosmosStatus::CLIENT_QUERY_PLAN_RANGE_NOT_COVERED_BY_TOPOLOGY)
+        .with_message(format!(
+            "resolved topology range {} does not overlap query plan EPK {}",
+            render_feed_range_for_error(resolved),
+            render_feed_range_for_error(query),
+        ))
+        .build()
+}
+
+/// Renders a feed range for diagnostics as a half-open `[min, max)` range.
+fn render_feed_range_for_error(range: &FeedRange) -> String {
+    format!(
+        "range [{}, {})",
+        range.min_inclusive().to_hex(),
+        range.max_exclusive().to_hex(),
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use std::borrow::Cow;
@@ -837,7 +963,13 @@ mod tests {
     }
 
     fn test_partition_key_definition() -> PartitionKeyDefinition {
-        serde_json::from_str(r#"{"paths":["/pk"]}"#).unwrap()
+        // Explicit `version: 2`: this fixture models a modern V2 hash container,
+        // which is the shape the EPK-window normalization path targets. An
+        // absent `version` now deserializes to legacy V1 (see
+        // `models::default_pk_version`), which would route these point queries
+        // through the width-preserving `successor()` path instead of the
+        // full-width `normalized_successor(16)` EPK window.
+        serde_json::from_str(r#"{"paths":["/pk"],"version":2}"#).unwrap()
     }
 
     fn test_container_props() -> ContainerProperties {
@@ -891,6 +1023,29 @@ mod tests {
         );
         assert_eq!(request.operation().operation_type(), OperationType::Read);
         assert_eq!(request.operation().resource_type(), ResourceType::Document);
+    }
+
+    #[test]
+    fn plans_logical_partition_pipeline_for_partition_scoped_query() {
+        // Regression for the SDK→driver differentiation (issue #4574 follow-up):
+        // a query scoped to a COMPLETE partition key via `FeedScope::Partition`
+        // / `cosmos_feed_range_for_partition_key` (a `LogicalPartition` feed
+        // range) must still route by the logical partition key — emitting
+        // `x-ms-documentdb-partitionkey` — NOT through the planner's EPK-point
+        // path. This is the path that already works and must stay distinct from
+        // the predicate-derived gateway point.
+        let pk = PartitionKey::from("pk-value");
+        let feed_range = FeedRange::for_partition(pk.clone(), &test_partition_key_definition());
+        let op = CosmosOperation::query_items(test_container(), Some(feed_range))
+            .with_body(br#"{"query":"SELECT * FROM c"}"#.to_vec());
+
+        // The operation is trivial (complete PK), so it routes through the
+        // single-request trivial pipeline rather than the cross-partition planner.
+        assert!(op.is_trivial());
+        let pipeline = build_trivial_pipeline(Arc::new(op), None).unwrap();
+
+        let request = pipeline.root().downcast_ref::<Request>().unwrap();
+        assert_eq!(*request.target(), RequestTarget::LogicalPartitionKey(pk));
     }
 
     #[test]
@@ -1178,6 +1333,219 @@ mod tests {
             .await
             .unwrap();
         assert_drain_requests_with_partitions(pipeline, &[("20", "80", "pkrange-wide", "", "FF")]);
+    }
+
+    #[tokio::test]
+    async fn closed_point_query_range_emits_epk_window() {
+        // Regression for issues #4574 / #4638: an equality / `IN` predicate on
+        // the partition key makes the gateway return a *closed* point range
+        // `[X, X]` (isMinInclusive == isMaxInclusive == true). Option B: the
+        // planner normalizes it to the half-open window `[X, successor(X))` and
+        // emits it as a `start`/`end-epk` pair scoped to the owning partition
+        // (with `x-ms-read-key-type: EffectivePartitionKeyRange`, #4729). The
+        // empty-intersection panic is avoided because `min != max`.
+        let point = QueryRange {
+            min: "30".to_string(),
+            max: "30".to_string(),
+            is_min_inclusive: true,
+            is_max_inclusive: true,
+        };
+        let plan = plan_with_ranges(vec![point]);
+        let op = cross_partition_query_operation();
+        // The single physical partition `["", "FF")` owns EPK "30".
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+            .await
+            .unwrap();
+
+        // Narrow `[30, successor(30))` EPK window over the owning partition.
+        let s30 = EffectivePartitionKey::from("30")
+            .normalized_successor(16)
+            .to_hex();
+        assert_drain_requests_with_partitions(
+            pipeline,
+            &[("30", s30.as_str(), "pkrange-0", "", "FF")],
+        );
+    }
+
+    #[tokio::test]
+    async fn in_predicate_colocated_points_emit_one_window_each() {
+        // `WHERE c.pk IN (@a, @b)` where both values hash into the same
+        // physical partition: the gateway returns two point ranges, both
+        // resolving to `pkrange-0`. Option B emits a distinct, disjoint EPK
+        // window (`[X, successor(X))`) per value — no de-duplication needed
+        // because each window matches only its own value.
+        let plan = plan_with_ranges(vec![
+            QueryRange {
+                min: "30".to_string(),
+                max: "30".to_string(),
+                is_min_inclusive: true,
+                is_max_inclusive: true,
+            },
+            QueryRange {
+                min: "50".to_string(),
+                max: "50".to_string(),
+                is_min_inclusive: true,
+                is_max_inclusive: true,
+            },
+        ]);
+        let op = cross_partition_query_operation();
+        // Both points resolve to the same single partition.
+        let mut topology = MockTopologyProvider::new(vec![
+            Ok(vec![rr("", "FF", "pkrange-0")]),
+            Ok(vec![rr("", "FF", "pkrange-0")]),
+        ]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+            .await
+            .unwrap();
+
+        let s30 = EffectivePartitionKey::from("30")
+            .normalized_successor(16)
+            .to_hex();
+        let s50 = EffectivePartitionKey::from("50")
+            .normalized_successor(16)
+            .to_hex();
+        assert_drain_requests_with_partitions(
+            pipeline,
+            &[
+                ("30", s30.as_str(), "pkrange-0", "", "FF"),
+                ("50", s50.as_str(), "pkrange-0", "", "FF"),
+            ],
+        );
+    }
+
+    #[tokio::test]
+    async fn in_predicate_points_across_partitions_emit_one_window_each() {
+        // `WHERE c.pk IN (@a, @b)` where the values live in different
+        // partitions: each point normalizes to its own `[X, successor(X))`
+        // EPK window scoped to the owning partition.
+        let plan = plan_with_ranges(vec![
+            QueryRange {
+                min: "20".to_string(),
+                max: "20".to_string(),
+                is_min_inclusive: true,
+                is_max_inclusive: true,
+            },
+            QueryRange {
+                min: "C0".to_string(),
+                max: "C0".to_string(),
+                is_min_inclusive: true,
+                is_max_inclusive: true,
+            },
+        ]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![
+            Ok(vec![rr("", "80", "pkrange-left")]),
+            Ok(vec![rr("80", "FF", "pkrange-right")]),
+        ]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+            .await
+            .unwrap();
+
+        let s20 = EffectivePartitionKey::from("20")
+            .normalized_successor(16)
+            .to_hex();
+        let sc0 = EffectivePartitionKey::from("C0")
+            .normalized_successor(16)
+            .to_hex();
+        assert_drain_requests_with_partitions(
+            pipeline,
+            &[
+                ("20", s20.as_str(), "pkrange-left", "", "80"),
+                ("C0", sc0.as_str(), "pkrange-right", "80", "FF"),
+            ],
+        );
+    }
+
+    #[test]
+    fn query_range_to_feed_range_normalizes_closed_point_to_window() {
+        // A closed point range `[X, X]` (isMaxInclusive=true) is normalized to
+        // the half-open window `[X, successor(X))` (Option B, issues #4574 /
+        // #4638) rather than kept as an empty point.
+        let point = QueryRange {
+            min: "30".to_string(),
+            max: "30".to_string(),
+            is_min_inclusive: true,
+            is_max_inclusive: true,
+        };
+        let fr = query_range_to_feed_range(&point, None).unwrap();
+        assert_eq!(fr.min_inclusive().to_hex(), "30");
+        // successor("30") = "31" (no width normalization requested).
+        assert_eq!(fr.max_exclusive().to_hex(), "31");
+    }
+
+    #[test]
+    fn query_range_to_feed_range_preserves_half_open() {
+        // A half-open range `[A, B)` (isMaxInclusive=false) is a plain range —
+        // the common full-container / split case.
+        let fr = query_range_to_feed_range(&qr("20", "80"), None).unwrap();
+        assert_eq!(fr.min_inclusive().to_hex(), "20");
+        assert_eq!(fr.max_exclusive().to_hex(), "80");
+    }
+
+    #[test]
+    fn query_range_to_feed_range_closed_non_point_range_passes_through_when_len_unknown() {
+        // A closed non-point range `[A, B]` (`min != max`) with no known EPK
+        // width (V1) is passed through unchanged — only equality / `IN` *points*
+        // are transformed.
+        let closed = QueryRange {
+            min: "20".to_string(),
+            max: "3AFF".to_string(),
+            is_min_inclusive: true,
+            is_max_inclusive: true,
+        };
+        let fr = query_range_to_feed_range(&closed, None).unwrap();
+        assert_eq!(fr.min_inclusive().to_hex(), "20");
+        // Non-point range: upper bound is passed through, no successor applied.
+        assert_eq!(fr.max_exclusive().to_hex(), "3AFF");
+    }
+
+    #[test]
+    fn query_range_to_feed_range_closed_non_point_range_passes_through_even_with_known_len() {
+        // Regression guard (#4574 / #4638): a closed *non-point* range
+        // (`min != max`) is an HPK **prefix** bound, not a full key. It must be
+        // passed through unchanged even when the full EPK width is known —
+        // advancing it with a successor over-extends the prefix band and drops
+        // owning partitions (the in-memory-emulator
+        // `hpk_tenant_prefix_where_full_scope` regression: touched {5,6} instead
+        // of {4,5,6}).
+        let closed = QueryRange {
+            min: "20".to_string(),
+            max: "3A".to_string(),
+            is_min_inclusive: true,
+            is_max_inclusive: true,
+        };
+        let fr = query_range_to_feed_range(&closed, Some(16)).unwrap();
+        assert_eq!(fr.min_inclusive().to_hex(), "20");
+        // Non-point range: passed through, NOT normalized / incremented.
+        assert_eq!(fr.max_exclusive().to_hex(), "3A");
+    }
+
+    #[test]
+    fn query_range_to_feed_range_normalizes_point_to_full_width() {
+        // A closed *point* (`min == max`, an equality / `IN` value — always a
+        // full key) on a single-path V2 container (16-byte EPK): the
+        // trailing-zero-trimmed value `3A` is zero-extended to 16 bytes, then
+        // incremented at the last byte (Option B full-width normalization,
+        // matching .NET).
+        let point = QueryRange {
+            min: "3A".to_string(),
+            max: "3A".to_string(),
+            is_min_inclusive: true,
+            is_max_inclusive: true,
+        };
+        let fr = query_range_to_feed_range(&point, Some(16)).unwrap();
+        assert_eq!(fr.min_inclusive().to_hex(), "3A");
+        // normalized_successor("3A", 16) = "3A" zero-extended to 16 bytes, then
+        // +1 at the last byte: [0x3A, 0x00 x14, 0x01].
+        let mut expected = vec![0x3Au8];
+        expected.resize(16, 0x00);
+        expected[15] = 0x01;
+        let expected_hex: String = expected.iter().map(|b| format!("{:02X}", b)).collect();
+        assert_eq!(fr.max_exclusive().to_hex(), expected_hex);
     }
 
     #[tokio::test]
@@ -1720,6 +2088,118 @@ mod tests {
             &[
                 ("55", "AA", "pk-b", "55", "AA", Some("server-token-xyz")),
                 ("AA", "FF", "pk-c", "AA", "FF", None),
+            ],
+        );
+    }
+
+    #[tokio::test]
+    async fn resume_in_predicate_drops_point_partition_below_cursor() {
+        // Regression for issues #4574 / #4638 resume path (Option B): an
+        // `IN (@a, @b)` whose values hash into two different partitions, resumed
+        // with a cursor that has fully drained the first point's window. Each
+        // point normalizes to `[X, successor(X))`. The first window lies entirely
+        // at/below the cursor and is dropped; only the second point's window is
+        // emitted (fresh-start, no token).
+        let plan = plan_with_ranges(vec![
+            QueryRange {
+                min: "20".to_string(),
+                max: "20".to_string(),
+                is_min_inclusive: true,
+                is_max_inclusive: true,
+            },
+            QueryRange {
+                min: "C0".to_string(),
+                max: "C0".to_string(),
+                is_min_inclusive: true,
+                is_max_inclusive: true,
+            },
+        ]);
+        let op = cross_partition_query_operation();
+        // One resolve_ranges call per query range: "20" → left, "C0" → right.
+        let mut topology = MockTopologyProvider::new(vec![
+            Ok(vec![rr("", "80", "pk-left")]),
+            Ok(vec![rr("80", "FF", "pk-right")]),
+        ]);
+
+        // Cursor at "80": the left window `[20, successor(20))` is fully drained.
+        let resume = PipelineNodeState::SequentialDrain {
+            left_most_undrained_epk: "80".to_owned(),
+            active_tokens: vec![],
+        };
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+            .await
+            .unwrap();
+        // Left window dropped (at/below cursor); right window emitted fresh-start.
+        let sc0 = EffectivePartitionKey::from("C0")
+            .normalized_successor(16)
+            .to_hex();
+        assert_drain_requests_with_partitions_and_continuation(
+            pipeline,
+            &[("C0", sc0.as_str(), "pk-right", "80", "FF", None)],
+        );
+    }
+
+    #[tokio::test]
+    async fn resume_in_predicate_colocated_windows_carry_their_continuations() {
+        // Resume path, Option B: an `IN (@a, @b)` whose values are co-located in
+        // ONE partition. Each equality value is its own `[X, successor(X))` EPK
+        // window with an independent server continuation, so the saved snapshot
+        // carries one token per window. On resume each window re-emits carrying
+        // its own token — disjoint windows, no de-duplication.
+        let plan = plan_with_ranges(vec![
+            QueryRange {
+                min: "20".to_string(),
+                max: "20".to_string(),
+                is_min_inclusive: true,
+                is_max_inclusive: true,
+            },
+            QueryRange {
+                min: "50".to_string(),
+                max: "50".to_string(),
+                is_min_inclusive: true,
+                is_max_inclusive: true,
+            },
+        ]);
+        let op = cross_partition_query_operation();
+        // Both points resolve to the same single partition.
+        let mut topology = MockTopologyProvider::new(vec![
+            Ok(vec![rr("", "FF", "pk-0")]),
+            Ok(vec![rr("", "FF", "pk-0")]),
+        ]);
+
+        let s20 = EffectivePartitionKey::from("20")
+            .normalized_successor(16)
+            .to_hex();
+        let s50 = EffectivePartitionKey::from("50")
+            .normalized_successor(16)
+            .to_hex();
+
+        // Each in-flight window has its own saved server continuation.
+        let resume = PipelineNodeState::SequentialDrain {
+            left_most_undrained_epk: "".to_owned(),
+            active_tokens: vec![
+                RangedToken {
+                    min_epk: "20".to_owned(),
+                    max_epk: s20.clone(),
+                    server_continuation: "tok-a".to_owned(),
+                },
+                RangedToken {
+                    min_epk: "50".to_owned(),
+                    max_epk: s50.clone(),
+                    server_continuation: "tok-b".to_owned(),
+                },
+            ],
+        };
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+            .await
+            .unwrap();
+        assert_drain_requests_with_partitions_and_continuation(
+            pipeline,
+            &[
+                ("20", s20.as_str(), "pk-0", "", "FF", Some("tok-a")),
+                ("50", s50.as_str(), "pk-0", "", "FF", Some("tok-b")),
             ],
         );
     }

@@ -13,7 +13,7 @@ use azure_data_cosmos::{
         ConnectionPoolOptions, CreateContainerOptions, ItemReadOptions, Region,
         ServerCertificateValidation,
     },
-    CosmosClient, CosmosRuntime, PartitionKey, Query, RoutingStrategy,
+    CosmosClient, CosmosError, CosmosRuntime, CosmosStatus, PartitionKey, Query, RoutingStrategy,
 };
 use azure_data_cosmos_driver::models::ConnectionString;
 use futures::TryStreamExt;
@@ -111,6 +111,57 @@ pub fn assert_region_not_contacted(
 
 /// Default timeout for tests (80 seconds).
 pub const DEFAULT_TEST_TIMEOUT: Duration = Duration::from_secs(80);
+const CONTAINER_READINESS_ATTEMPT_TIMEOUT: Duration = Duration::from_secs(5);
+const CONTAINER_READINESS_RETRY_DELAY: Duration = Duration::from_secs(1);
+const FAULT_INJECTION_READINESS_MAX_ATTEMPTS: usize = 20;
+
+async fn retry_container_readiness<T, E, F, Fut, TimeoutError>(
+    region: &str,
+    attempt_timeout: Duration,
+    retry_delay: Duration,
+    max_attempts: Option<usize>,
+    timeout_error: TimeoutError,
+    mut probe: F,
+) -> Result<T, E>
+where
+    E: std::fmt::Display,
+    F: FnMut() -> Fut,
+    Fut: Future<Output = Result<T, E>>,
+    TimeoutError: Fn(&str, usize) -> E,
+{
+    let mut attempts = 0;
+    let mut last_error = None;
+    loop {
+        attempts += 1;
+        match tokio::time::timeout(attempt_timeout, probe()).await {
+            Ok(Ok(value)) => return Ok(value),
+            Ok(Err(error)) => {
+                if max_attempts.is_some_and(|limit| attempts >= limit) {
+                    return Err(error);
+                }
+                println!("waiting for container to be ready in {region}: {error}");
+                last_error = Some(error);
+            }
+            Err(_) => {
+                if max_attempts.is_some_and(|limit| attempts >= limit) {
+                    return Err(last_error.unwrap_or_else(|| timeout_error(region, attempts)));
+                }
+                println!("container readiness probe timed out in {region}");
+            }
+        }
+        tokio::time::sleep(retry_delay).await;
+    }
+}
+
+fn container_readiness_timeout_error(region: &str, attempts: usize) -> CosmosError {
+    azure_data_cosmos_driver::error::CosmosError::builder()
+        .with_status(CosmosStatus::new(StatusCode::RequestTimeout))
+        .with_message(format!(
+            "container readiness probe timed out in {region} after {attempts} attempts"
+        ))
+        .build()
+        .into()
+}
 
 /// Options for configuring test execution.
 #[derive(Default)]
@@ -882,6 +933,76 @@ impl TestRunContext {
         }
     }
 
+    /// Creates a container and waits until both the normal and fault-injection
+    /// clients can read it in their configured region.
+    pub fn create_container_for_fault_injection<'a>(
+        &'a self,
+        db_client: &'a DatabaseClient,
+        properties: azure_data_cosmos::models::ContainerProperties,
+        throughput: ThroughputProperties,
+    ) -> Pin<Box<dyn Future<Output = azure_data_cosmos::Result<ContainerClient>> + Send + 'a>> {
+        let fault_client = self
+            .fault_client
+            .clone()
+            .expect("fault-injection client must be configured");
+
+        Box::pin(async move {
+            let created = db_client
+                .create_container(
+                    properties,
+                    Some(CreateContainerOptions::default().with_throughput(throughput)),
+                )
+                .await?
+                .into_model()?;
+            let container_id = created.id;
+
+            let original_db_client = db_client;
+            let original_container_id = container_id.clone();
+            let original_readiness = retry_container_readiness(
+                "original client",
+                CONTAINER_READINESS_ATTEMPT_TIMEOUT,
+                CONTAINER_READINESS_RETRY_DELAY,
+                Some(FAULT_INJECTION_READINESS_MAX_ATTEMPTS),
+                container_readiness_timeout_error,
+                move || {
+                    let db_client = original_db_client;
+                    let container_id = original_container_id.clone();
+                    async move {
+                        let container = db_client.container_client(&container_id).await?;
+                        container.read(None).await?;
+                        Ok::<_, azure_data_cosmos::CosmosError>(container)
+                    }
+                },
+            );
+
+            let fault_db_id = db_client.id().to_owned();
+            let fault_container_id = container_id;
+            let fault_readiness = retry_container_readiness(
+                "fault-injection client",
+                CONTAINER_READINESS_ATTEMPT_TIMEOUT,
+                CONTAINER_READINESS_RETRY_DELAY,
+                Some(FAULT_INJECTION_READINESS_MAX_ATTEMPTS),
+                container_readiness_timeout_error,
+                move || {
+                    let fault_client = fault_client.clone();
+                    let db_id = fault_db_id.clone();
+                    let container_id = fault_container_id.clone();
+                    async move {
+                        let container = fault_client
+                            .database_client(&db_id)
+                            .container_client(&container_id)
+                            .await?;
+                        container.read(None).await?;
+                        Ok::<_, azure_data_cosmos::CosmosError>(container)
+                    }
+                },
+            );
+
+            let (container, _) = tokio::try_join!(original_readiness, fault_readiness)?;
+            Ok(container)
+        })
+    }
+
     /// Creates a container with specified throughput and waits for it to be fully created.
     ///
     /// This method:
@@ -914,57 +1035,77 @@ impl TestRunContext {
 
             let container_id = &created_properties.id;
 
-            // Wait for hub region client to successfully resolve and read the container.
-            // Both `container_client()` (which resolves metadata via the driver) and
-            // `read()` can fail with 404 while the container replicates.
-            loop {
-                let result = async {
-                    hub_client
-                        .database_client(db_client.id())
-                        .container_client(container_id)
-                        .await?
-                        .read(None)
-                        .await
-                }
-                .await;
-                match result {
-                    Ok(_) => break,
-                    Err(e) => {
-                        println!(
-                            "waiting for container to be created in hub region ({}): {}",
-                            HUB_REGION.as_str(),
-                            e
-                        );
-                        tokio::time::sleep(Duration::from_secs(1)).await;
-                    }
-                }
-            }
+            let db_id = db_client.id().to_owned();
 
-            // Wait for satellite region client to successfully resolve and read the container.
-            loop {
-                let result = async {
-                    satellite_client
-                        .database_client(db_client.id())
-                        .container_client(container_id)
-                        .await?
-                        .read(None)
-                        .await
-                }
-                .await;
-                match result {
-                    Ok(_) => break,
-                    Err(e) => {
-                        println!(
-                            "waiting for container to be created in satellite region ({}): {}",
-                            SATELLITE_REGION.as_str(),
-                            e
-                        );
-                        tokio::time::sleep(Duration::from_secs(1)).await;
+            let hub_probe_client = hub_client.clone();
+            let hub_db_id = db_id.clone();
+            let hub_container_id = container_id.clone();
+            retry_container_readiness(
+                HUB_REGION.as_str(),
+                CONTAINER_READINESS_ATTEMPT_TIMEOUT,
+                CONTAINER_READINESS_RETRY_DELAY,
+                None,
+                container_readiness_timeout_error,
+                move || {
+                    let client = hub_probe_client.clone();
+                    let db_id = hub_db_id.clone();
+                    let container_id = hub_container_id.clone();
+                    async move {
+                        let container = client
+                            .database_client(&db_id)
+                            .container_client(&container_id)
+                            .await?;
+                        container.read(None).await?;
+                        Ok::<_, azure_data_cosmos::CosmosError>(container)
                     }
-                }
-            }
+                },
+            )
+            .await?;
 
-            db_client.container_client(container_id).await
+            let satellite_probe_client = satellite_client.clone();
+            let satellite_db_id = db_id.clone();
+            let satellite_container_id = container_id.clone();
+            retry_container_readiness(
+                SATELLITE_REGION.as_str(),
+                CONTAINER_READINESS_ATTEMPT_TIMEOUT,
+                CONTAINER_READINESS_RETRY_DELAY,
+                None,
+                container_readiness_timeout_error,
+                move || {
+                    let client = satellite_probe_client.clone();
+                    let db_id = satellite_db_id.clone();
+                    let container_id = satellite_container_id.clone();
+                    async move {
+                        let container = client
+                            .database_client(&db_id)
+                            .container_client(&container_id)
+                            .await?;
+                        container.read(None).await?;
+                        Ok::<_, azure_data_cosmos::CosmosError>(container)
+                    }
+                },
+            )
+            .await?;
+
+            let original_db_client = db_client;
+            let original_container_id = container_id.clone();
+            retry_container_readiness(
+                "original client",
+                CONTAINER_READINESS_ATTEMPT_TIMEOUT,
+                CONTAINER_READINESS_RETRY_DELAY,
+                Some(30),
+                container_readiness_timeout_error,
+                move || {
+                    let db_client = original_db_client;
+                    let container_id = original_container_id.clone();
+                    async move {
+                        let container = db_client.container_client(&container_id).await?;
+                        container.read(None).await?;
+                        Ok::<_, azure_data_cosmos::CosmosError>(container)
+                    }
+                },
+            )
+            .await
         })
     }
 
@@ -1008,6 +1149,22 @@ impl TestRunContext {
             .await
     }
 
+    /// Builds a [`CosmosClient`] authenticated with an Entra ID (AAD) token
+    /// credential, targeting the same account the key client uses.
+    ///
+    /// This is the entry point for AAD integration tests. The returned client
+    /// performs data-plane operations under AAD; database/container management
+    /// must still go through the key client (`client()`), because the
+    /// data-plane RBAC role granted in `test-resources.bicep` does not permit
+    /// management-plane operations.
+    ///
+    /// See [`build_aad_client_from_env`] for credential-selection details.
+    pub async fn aad_client(
+        &self,
+    ) -> Result<(CosmosClient, Option<super::CredentialRecorder>), Box<dyn std::error::Error>> {
+        build_aad_client_from_env(HUB_REGION).await
+    }
+
     /// Cleans up test resources.
     ///
     /// This should be called at the end of a test run to delete any databases created during the test.
@@ -1032,5 +1189,183 @@ impl TestRunContext {
             self.client().database_client(&id).delete(None).await?;
         }
         Ok(())
+    }
+}
+
+/// Returns `true` if `endpoint`'s host is a loopback/local host, indicating the
+/// Cosmos DB emulator rather than a live account.
+fn host_is_local(endpoint: &str) -> bool {
+    match url::Url::parse(endpoint) {
+        Ok(url) => matches!(
+            url.host_str(),
+            Some("127.0.0.1") | Some("localhost") | Some("::1") | Some("[::1]")
+        ),
+        Err(_) => false,
+    }
+}
+
+/// Builds a [`CosmosClient`] authenticated with an Entra ID (AAD) token
+/// credential, reading the target account from the same environment the
+/// key-auth client uses (`AZURE_COSMOS_CONNECTION_STRING`).
+///
+/// Credential selection is based on the target host:
+/// - **Emulator** (`AZURE_COSMOS_CONNECTION_STRING=emulator`, or an endpoint
+///   whose host is `127.0.0.1`/`localhost`): uses [`CosmosEmulatorCredential`],
+///   which mints the emulator's fake JWT signed with the account's master key,
+///   and enables invalid-certificate acceptance. A [`CredentialRecorder`] is
+///   returned so tests can assert the AAD path (not key auth) was exercised.
+/// - **Live account**: uses `azure_core_test::credentials::from_env`, which
+///   resolves to `AzurePipelinesCredential` in CI (matching the principal the
+///   bicep grants the data-plane RBAC role to) and `DeveloperToolsCredential`
+///   locally. No recorder is returned in this case.
+pub async fn build_aad_client_from_env(
+    region: Region,
+) -> Result<(CosmosClient, Option<super::CredentialRecorder>), Box<dyn std::error::Error>> {
+    use super::CosmosEmulatorCredential;
+
+    let env_var = std::env::var(CONNECTION_STRING_ENV_VAR)?;
+    let is_emulator_shorthand = env_var == "emulator";
+    let connection_string_str = if is_emulator_shorthand {
+        EMULATOR_CONNECTION_STRING
+    } else {
+        env_var.as_str()
+    };
+
+    let parsed: ConnectionString = connection_string_str.parse()?;
+    let endpoint_str = parsed.account_endpoint().to_string();
+    let endpoint: azure_data_cosmos::AccountEndpoint = endpoint_str.parse()?;
+
+    let is_emulator = is_emulator_shorthand || host_is_local(&endpoint_str);
+
+    let mut builder = CosmosClient::builder();
+    let strategy = RoutingStrategy::ProximityTo(region);
+
+    let (credential, recorder): (
+        std::sync::Arc<dyn azure_core::credentials::TokenCredential>,
+        Option<super::CredentialRecorder>,
+    ) = if is_emulator {
+        // The emulator serves a self-signed certificate, so route the client
+        // through a runtime that skips certificate validation for emulator
+        // hosts (mirroring the key-auth emulator client setup).
+        let runtime = CosmosRuntime::builder()
+            .with_connection_pool(
+                ConnectionPoolOptions::builder()
+                    .with_server_certificate_validation(
+                        ServerCertificateValidation::RequiredUnlessEmulator,
+                    )
+                    .build()?,
+            )
+            .build()
+            .await?;
+        builder = builder.with_runtime(runtime);
+
+        // Sign the fake JWT with the same master key the emulator validates against.
+        let master_key = parsed.account_key().secret().to_string();
+        let credential = std::sync::Arc::new(CosmosEmulatorCredential::with_master_key(master_key));
+        let recorder = credential.recorder();
+        (credential, Some(recorder))
+    } else {
+        (azure_core_test::credentials::from_env(None)?, None)
+    };
+
+    let account = azure_data_cosmos::AccountReference::with_credential(endpoint, credential);
+    let client = builder.build(account, strategy).await?;
+    Ok((client, recorder))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::retry_container_readiness;
+    use std::{
+        future::pending,
+        sync::{
+            atomic::{AtomicUsize, Ordering},
+            Arc,
+        },
+        time::Duration,
+    };
+
+    #[tokio::test]
+    async fn container_readiness_retries_timeout_and_error() {
+        let attempts = Arc::new(AtomicUsize::new(0));
+        let count = attempts.clone();
+
+        let result = retry_container_readiness(
+            "test-region",
+            Duration::from_millis(10),
+            Duration::ZERO,
+            None,
+            |_, _| "timed out",
+            move || {
+                let count = count.clone();
+                async move {
+                    match count.fetch_add(1, Ordering::SeqCst) {
+                        0 => pending::<Result<usize, &'static str>>().await,
+                        1 => Err("not ready"),
+                        _ => Ok(42),
+                    }
+                }
+            },
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(result, 42);
+        assert_eq!(attempts.load(Ordering::SeqCst), 3);
+    }
+
+    #[tokio::test]
+    async fn container_readiness_returns_last_error_after_attempt_limit() {
+        let attempts = Arc::new(AtomicUsize::new(0));
+        let count = attempts.clone();
+
+        let error = retry_container_readiness(
+            "test-region",
+            Duration::from_millis(10),
+            Duration::ZERO,
+            Some(2),
+            |_, _| "timed out",
+            move || {
+                let count = count.clone();
+                async move {
+                    count.fetch_add(1, Ordering::SeqCst);
+                    Err::<(), _>("permanent failure")
+                }
+            },
+        )
+        .await
+        .unwrap_err();
+
+        assert_eq!(error, "permanent failure");
+        assert_eq!(attempts.load(Ordering::SeqCst), 2);
+    }
+
+    #[tokio::test]
+    async fn container_readiness_bounds_timeout_only_failures() {
+        let attempts = Arc::new(AtomicUsize::new(0));
+        let count = attempts.clone();
+
+        let error = retry_container_readiness(
+            "test-region",
+            Duration::from_millis(10),
+            Duration::ZERO,
+            Some(2),
+            |_, attempts| match attempts {
+                2 => "timed out after two attempts",
+                _ => unreachable!(),
+            },
+            move || {
+                let count = count.clone();
+                async move {
+                    count.fetch_add(1, Ordering::SeqCst);
+                    pending::<Result<(), &'static str>>().await
+                }
+            },
+        )
+        .await
+        .unwrap_err();
+
+        assert_eq!(error, "timed out after two attempts");
+        assert_eq!(attempts.load(Ordering::SeqCst), 2);
     }
 }
