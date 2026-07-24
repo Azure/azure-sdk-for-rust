@@ -314,9 +314,9 @@ Only **step 2** is Cosmos-specific and stays in our code; steps 1, 3, 4 become l
 
 ### 9.6 Acceptance
 
-- [ ] Live harness produces identical pass/fail decisions to the pre-refactor version on a fixed seed set (no behavior regression), with cleaner internals.
-- [ ] Number edges (`> i64::MAX`, integral floats, `-0`, high-precision) still round-trip without false positives — verified by calibration `MATCH`.
-- [ ] `sha2` hashes are stable across runs for the same canonical input (enables a persistent corpus).
+- [x] Live harness produces identical pass/fail decisions to the pre-refactor version on a fixed seed set (no behavior regression), with cleaner internals.
+- [x] Number edges (`> i64::MAX`, integral floats, `-0`, high-precision) still round-trip without false positives — verified by calibration `MATCH`.
+- [x] `sha2` hashes are stable across runs for the same canonical input (enables a persistent corpus).
 - [ ] (If landed) offline `cargo-fuzz` codec target builds and runs a short session clean.
 
 ### 9.7 Implementation status (landed)
@@ -329,7 +329,7 @@ Phases 1–4 of §9.5 are implemented in `binary_roundtrip_fuzzer.rs` across fou
 | 2 | `normalize_number` / `normalize_numbers` extracted as the sole Cosmos-specific number transform (behavior-preserving). | ✅ landed |
 | 3 | `canonicalize` now = `normalize_numbers` → `json_canon::to_string` (RFC 8785); differential hash switched to SHA-256. | ✅ landed |
 | 4 | Generator replaced with `arbitrary-json`, seeded from `SplitMix64` (deterministic per `AZURE_COSMOS_FUZZ_SEED`); a `bound_value` pass keeps the `wide_numbers`/`unicode` envelope contract. | ✅ landed |
-| 5 | Live re-calibration + soak against a real account. | ⏳ **manual — run per §6** |
+| 5 | Live re-calibration + soak against a real account. | ✅ landed (see below) |
 | 6 | Offline `cargo-fuzz` codec target. | ⬜ deferred (§9.4(2)) |
 
 #### Key finding — `json-canon` rejects integers ≥ 2⁵³
@@ -351,3 +351,17 @@ Run calibration and a short soak against a live account to confirm the refactor
 did not regress the number model (all `MATCH`) — see §6 for the commands. This is
 the one step that cannot run in CI or offline because it requires a real Cosmos
 endpoint.
+
+#### Live validation (Phase 5, recorded)
+
+Run against a real Cosmos account after the crate refactor:
+
+- **Calibration:** all **18/18** number probes `MATCH` — every JCS-unsafe edge
+  (`1e20`, `-1.5e18`, `i64::MAX`/`MIN`, `u64::MAX-1`, `2^63`) canonicalizes to the
+  same stable string token on both the sent and backend-returned sides, and the
+  integral-float/`-0`/trailing-zero rewrites all match.
+- **Soak:** **500 documents × 3 configs = 1500 round-trips, all canonical-equal**
+  (seed `1784934026943565900`), plus the 12 offline unit tests. No mismatches.
+
+This confirms no behavior regression from the `arbitrary-json` + `json-canon` +
+SHA-256 refactor and closes §9.6's first three acceptance items.
