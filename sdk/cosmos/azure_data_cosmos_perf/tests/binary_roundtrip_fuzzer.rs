@@ -34,9 +34,7 @@
 
 #![allow(clippy::large_futures)]
 
-use std::collections::BTreeMap;
 use std::error::Error;
-use std::hash::{Hash, Hasher};
 
 use azure_core::http::StatusCode;
 use azure_data_cosmos::models::ContainerProperties;
@@ -49,6 +47,7 @@ use azure_data_cosmos::{
 };
 use azure_data_cosmos_driver::models::ConnectionString;
 use serde_json::{Map, Number, Value};
+use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
 const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
@@ -277,43 +276,18 @@ fn gen_number(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Value {
 // Cosmos-compatible canonicalization (design doc §3)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Produces a canonical string for a JSON value: whitespace removed, object keys
-/// sorted, numbers normalized to a Cosmos-compatible form. Two values with the
-/// same canonical string are considered equal after a round-trip.
-fn canonicalize(value: &Value, out: &mut String) {
-    match value {
-        Value::Null => out.push_str("null"),
-        Value::Bool(b) => out.push_str(if *b { "true" } else { "false" }),
-        Value::Number(n) => canonicalize_number(n, out),
-        Value::String(s) => {
-            // Reuse serde_json's minimal escaping for exact string semantics.
-            out.push_str(&serde_json::to_string(s).expect("string always serializes"));
-        }
-        Value::Array(items) => {
-            out.push('[');
-            for (i, item) in items.iter().enumerate() {
-                if i > 0 {
-                    out.push(',');
-                }
-                canonicalize(item, out);
-            }
-            out.push(']');
-        }
-        Value::Object(map) => {
-            // Sort keys lexicographically by UTF-8 code unit.
-            let sorted: BTreeMap<&String, &Value> = map.iter().collect();
-            out.push('{');
-            for (i, (k, v)) in sorted.iter().enumerate() {
-                if i > 0 {
-                    out.push(',');
-                }
-                out.push_str(&serde_json::to_string(k).expect("key always serializes"));
-                out.push(':');
-                canonicalize(v, out);
-            }
-            out.push('}');
-        }
-    }
+/// Produces the canonical string for a JSON value: the calibrated Cosmos number
+/// rewrite ([`normalize_numbers`]) followed by RFC 8785 (JCS) structural
+/// canonicalization via [`json_canon`] — whitespace removed, object keys sorted,
+/// strings minimally escaped. Two values with the same canonical string are
+/// considered equal after a round-trip.
+///
+/// Numbers are normalized **first** so the JCS serializer's own number
+/// formatting no longer affects the comparison; the only Cosmos-specific step is
+/// [`normalize_numbers`] (design doc §3.1).
+fn canonicalize(value: &Value) -> String {
+    let normalized = normalize_numbers(value);
+    json_canon::to_string(&normalized).expect("normalized value always canonicalizes")
 }
 
 /// Rewrites a single JSON number to its **Cosmos-calibrated** canonical
@@ -323,27 +297,43 @@ fn canonicalize(value: &Value, out: &mut String) {
 /// canonicalization around it can be delegated to a standard JCS serializer.
 ///
 /// Rules (calibrated against a live account, design doc §3.1):
-/// - integers up to `i64::MAX` → exact integer;
-/// - integers above `i64::MAX` → routed through `f64` (the backend stores them
-///   as IEEE-754 doubles), so a sent `u64` and its returned double normalize to
-///   the same value;
+/// - integers with magnitude `< 2^53` → exact integer (JCS-safe);
+/// - integers with magnitude `>= 2^53` that fit `i64` → exact **string token**
+///   (Cosmos preserves them exactly, but RFC 8785 / JCS refuses to emit integers
+///   beyond the safe range, so they are compared as a stable decimal token);
+/// - integers above `i64::MAX` → **string token** of the `f64` form (the backend
+///   stores them as IEEE-754 doubles), so a sent `u64` and its returned double
+///   map to the same token;
 /// - integral-valued floats below `2^53` (e.g. `1.0`) → integer form (the
 ///   backend drops the trailing `.0`);
-/// - other finite floats → kept as `f64`;
+/// - integral-valued floats `>= 2^53` → `f64` string token (matches the lossy
+///   double case above);
+/// - other finite floats → kept as `f64` (JCS-safe);
 /// - non-finite (`NaN` / `±∞`) → `null`.
+///
+/// The string tokens are only ever compared for equality (never parsed back), so
+/// representing an out-of-JCS-range number as a token is sound: any two values
+/// Cosmos would round-trip to each other produce the identical token.
 fn normalize_number(n: &Number) -> Value {
     if let Some(i) = n.as_i64() {
-        Value::Number(Number::from(i))
+        if (i.unsigned_abs() as f64) < JCS_SAFE_INT_LIMIT {
+            Value::Number(Number::from(i))
+        } else {
+            Value::String(i.to_string())
+        }
     } else if let Some(u) = n.as_u64() {
-        Number::from_f64(u as f64)
-            .map(Value::Number)
-            .unwrap_or(Value::Null)
+        // u > i64::MAX: Cosmos stores it as a lossy double; token from the double.
+        Value::String(cosmos_double_token(u as f64))
     } else if let Some(f) = n.as_f64() {
         if !f.is_finite() {
             Value::Null
-        } else if f.fract() == 0.0 && f.abs() < 9.007_199_254_740_992e15 {
+        } else if f.fract() == 0.0 && f.abs() < JCS_SAFE_INT_LIMIT {
             Value::Number(Number::from(f as i64))
+        } else if f.fract() == 0.0 {
+            // Integral but out of the JCS-safe range → double token.
+            Value::String(cosmos_double_token(f))
         } else {
+            // Non-integral finite float is JCS-safe as a number.
             Number::from_f64(f)
                 .map(Value::Number)
                 .unwrap_or(Value::Null)
@@ -351,6 +341,19 @@ fn normalize_number(n: &Number) -> Value {
     } else {
         Value::Null
     }
+}
+
+/// `2^53`: the largest magnitude RFC 8785 (JCS) will emit as an integer. At or
+/// beyond this, `json-canon` refuses integer output and Cosmos stores `u64`
+/// above `i64::MAX` lossily as doubles, so such numbers are canonicalized as
+/// string tokens (see [`normalize_number`]).
+const JCS_SAFE_INT_LIMIT: f64 = 9_007_199_254_740_992.0;
+
+/// A stable decimal token for a Cosmos-stored double, from the `f64` value.
+/// Both a sent `u64` and its returned scientific-notation double parse to the
+/// same `f64`, so they produce the same token.
+fn cosmos_double_token(f: f64) -> String {
+    format!("{f}")
 }
 
 /// Recursively rewrites every number in `value` to its Cosmos-calibrated form
@@ -371,32 +374,24 @@ fn normalize_numbers(value: &Value) -> Value {
     }
 }
 
-/// Cosmos-compatible number canonicalization. Delegates the number decision to
-/// [`normalize_number`] (the calibrated tuning surface, design doc §3.1) and
-/// renders the resulting value; integers print exact, floats print via Rust's
-/// shortest round-trippable `Display`.
-fn canonicalize_number(n: &Number, out: &mut String) {
-    match normalize_number(n) {
-        Value::Number(m) => {
-            if let Some(i) = m.as_i64() {
-                out.push_str(&i.to_string());
-            } else if let Some(f) = m.as_f64() {
-                out.push_str(&format!("{f}"));
-            } else {
-                out.push_str("null");
-            }
-        }
-        _ => out.push_str("null"),
-    }
+/// Canonicalizes and returns `(canonical_string, SHA-256 digest)`.
+///
+/// The digest is a cryptographic hash of the canonical string, so it is stable
+/// across runs and platforms — suitable for a durable corpus of expected `H0`
+/// values ("store the hash once, compare later").
+fn canonical_hash(value: &Value) -> (String, [u8; 32]) {
+    let s = canonicalize(value);
+    let digest: [u8; 32] = Sha256::digest(s.as_bytes()).into();
+    (s, digest)
 }
 
-/// Canonicalizes and returns `(canonical_string, 64-bit hash)`.
-fn canonical_hash(value: &Value) -> (String, u64) {
-    let mut s = String::new();
-    canonicalize(value, &mut s);
-    let mut hasher = std::collections::hash_map::DefaultHasher::new();
-    s.hash(&mut hasher);
-    (s, hasher.finish())
+/// Formats a 32-byte digest as lowercase hex, for mismatch reporting.
+fn hex(digest: &[u8; 32]) -> String {
+    let mut out = String::with_capacity(64);
+    for b in digest {
+        out.push_str(&format!("{b:02x}"));
+    }
+    out
 }
 
 /// Normalizes a value by one JSON serialize→parse pass. Any Cosmos round-trip
@@ -605,7 +600,7 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
                 &doc,
                 &created_doc,
                 &sent_canon,
-                sent_hash,
+                &sent_hash,
                 &context,
                 "create",
             );
@@ -618,7 +613,7 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
             let read_doc: Value = read
                 .into_model()
                 .map_err(|e| format!("{context}: read response decode failed: {e}"))?;
-            assert_roundtrip(&doc, &read_doc, &sent_canon, sent_hash, &context, "read");
+            assert_roundtrip(&doc, &read_doc, &sent_canon, &sent_hash, &context, "read");
 
             checked += 1;
         }
@@ -801,7 +796,7 @@ async fn run_calibration() -> Result<(), Box<dyn Error>> {
             "MATCH"
         } else {
             diffs += 1;
-            "DIFF  <-- tune canonicalize_number"
+            "DIFF  <-- tune normalize_number"
         };
 
         println!(
@@ -812,10 +807,10 @@ async fn run_calibration() -> Result<(), Box<dyn Error>> {
 
     println!("{}", "-".repeat(120));
     if diffs == 0 {
-        println!("CALIBRATION: all probes MATCH — canonicalize_number models the backend rewrite.");
+        println!("CALIBRATION: all probes MATCH — normalize_number models the backend rewrite.");
     } else {
         println!(
-            "CALIBRATION: {diffs} probe(s) DIFF — update `canonicalize_number` to match the backend-returned column above."
+            "CALIBRATION: {diffs} probe(s) DIFF — update `normalize_number` to match the backend-returned column above."
         );
     }
     Ok(())
@@ -828,15 +823,17 @@ fn assert_roundtrip(
     sent: &Map<String, Value>,
     got: &Value,
     sent_canon: &str,
-    sent_hash: u64,
+    sent_hash: &[u8; 32],
     context: &str,
     phase: &str,
 ) {
     let projected = project_to_sent_keys(sent, got);
     let (got_canon, got_hash) = canonical_hash(&projected);
-    if got_hash != sent_hash || got_canon != sent_canon {
+    if &got_hash != sent_hash || got_canon != sent_canon {
         panic!(
-            "{context}: {phase} round-trip MISMATCH\n  sent  (hash {sent_hash:016x}): {sent_canon}\n  got   (hash {got_hash:016x}): {got_canon}\n  reproduce with {SEED_ENV_VAR} from the context above",
+            "{context}: {phase} round-trip MISMATCH\n  sent  (sha256 {}): {sent_canon}\n  got   (sha256 {}): {got_canon}\n  reproduce with {SEED_ENV_VAR} from the context above",
+            hex(sent_hash),
+            hex(&got_hash),
         );
     }
 }
@@ -851,9 +848,7 @@ mod tests {
     use super::*;
 
     fn canon(value: &Value) -> String {
-        let mut s = String::new();
-        canonicalize(value, &mut s);
-        s
+        canonicalize(value)
     }
 
     #[test]
@@ -890,7 +885,9 @@ mod tests {
         // Calibrated (§3.1): the backend stores integers above i64::MAX as
         // doubles and returns them in scientific notation, so the canonicalizer
         // models that — a large u64 canonicalizes identically to the double form
-        // the backend returns, keeping sent and round-tripped values comparable.
+        // the backend returns. Because RFC 8785 (JCS) refuses to emit integers
+        // beyond 2^53, these are compared as stable string tokens (of the f64),
+        // which keeps sent and round-tripped values comparable.
         let sent_u64: Value = serde_json::from_str("18446744073709551614").unwrap();
         let backend_double: Value = serde_json::from_str("1.8446744073709552e+19").unwrap();
         assert_eq!(canon(&sent_u64), canon(&backend_double));
@@ -900,9 +897,13 @@ mod tests {
         let backend_2p63: Value = serde_json::from_str("9.223372036854776e+18").unwrap();
         assert_eq!(canon(&sent_2p63), canon(&backend_2p63));
 
-        // Values up to i64::MAX are still preserved exactly (integer branch).
+        // i64::MAX exceeds the JCS-safe integer range, so it canonicalizes to
+        // an exact decimal string token (quoted by JCS), not a bare number.
         let i64_max: Value = serde_json::from_str("9223372036854775807").unwrap();
-        assert_eq!(canon(&i64_max), "9223372036854775807");
+        assert_eq!(canon(&i64_max), r#""9223372036854775807""#);
+
+        // A JCS-safe integer stays a bare number.
+        assert_eq!(canon(&serde_json::json!(1_000_000)), "1000000");
     }
 
     #[test]
@@ -946,27 +947,20 @@ mod tests {
     }
 
     #[test]
-    fn normalize_number_matches_canonicalize_number() {
-        // The extracted `normalize_number` value-transform and the string-based
-        // `canonicalize_number` must agree on every calibration probe, so the
-        // Phase-2 extraction is behavior-preserving.
-        for probe in NUMBER_PROBES {
-            let Ok(Value::Number(n)) = serde_json::from_str::<Value>(probe.literal) else {
-                continue;
-            };
-            let mut via_string = String::new();
-            canonicalize_number(&n, &mut via_string);
+    fn canonical_hash_is_stable_and_matches_json_canon() {
+        // The digest is a deterministic function of the canonical string, and
+        // the canonical string is the JCS form of the number-normalized value.
+        let v = serde_json::json!({ "b": 1.0, "a": [2.0, 3.5], "c": "x" });
+        let (s1, h1) = canonical_hash(&v);
+        let (s2, h2) = canonical_hash(&v);
+        assert_eq!(s1, s2);
+        assert_eq!(h1, h2);
 
-            let via_value = normalize_numbers(&Value::Number(n.clone()));
-            let mut value_rendered = String::new();
-            canonicalize(&via_value, &mut value_rendered);
-
-            assert_eq!(
-                via_string, value_rendered,
-                "normalize_number and canonicalize_number disagree on probe {}",
-                probe.label
-            );
-        }
+        // Structural equivalence (key order / whitespace / integral floats) maps
+        // to the same digest.
+        let equiv = serde_json::from_str::<Value>(r#" { "c":"x", "a":[2,3.5], "b":1 } "#).unwrap();
+        let (_, h_equiv) = canonical_hash(&equiv);
+        assert_eq!(h1, h_equiv);
     }
 
     #[test]
