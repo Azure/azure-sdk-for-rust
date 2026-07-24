@@ -36,6 +36,8 @@
 
 use std::error::Error;
 
+use arbitrary::{Arbitrary, Unstructured};
+use arbitrary_json::ArbitraryObject;
 use azure_core::http::StatusCode;
 use azure_data_cosmos::models::ContainerProperties;
 use azure_data_cosmos::options::{
@@ -94,16 +96,6 @@ impl SplitMix64 {
     fn below(&mut self, n: u64) -> u64 {
         self.next_u64() % n
     }
-
-    /// `true` with probability `num/den`.
-    fn chance(&mut self, num: u64, den: u64) -> bool {
-        self.below(den) < num
-    }
-
-    fn f64_unit(&mut self) -> f64 {
-        // 53-bit mantissa → [0, 1).
-        (self.next_u64() >> 11) as f64 / (1u64 << 53) as f64
-    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -157,118 +149,92 @@ fn env_bool(name: &str, default: bool) -> bool {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// JSON generator
+// JSON generator (arbitrary-json, seeded from the PRNG)
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Generates a random JSON **object** suitable as a Cosmos item body.
-fn gen_object(rng: &mut SplitMix64, cfg: &FuzzConfig, depth: u32) -> Map<String, Value> {
-    let field_count = rng.below(6); // 0..=5 fields
-    let mut map = Map::new();
-    for _ in 0..field_count {
-        let key = gen_key(rng, cfg);
-        map.insert(key, gen_value(rng, cfg, depth + 1));
+///
+/// Structure comes from [`arbitrary_json`], driven by a byte buffer derived
+/// deterministically from the [`SplitMix64`] seed stream — so the same seed
+/// reproduces the same document (`AZURE_COSMOS_FUZZ_SEED`). `max_depth` scales
+/// the byte budget (`arbitrary` stops nesting when it runs out of bytes, so a
+/// larger budget yields larger, deeper documents).
+///
+/// A post-generation [`bound_value`] pass applies the `wide_numbers` / `unicode`
+/// knobs: by default numbers are clamped into the calibrated-safe envelope
+/// (design doc §3.2) and strings to ASCII, so a run stays inside the calibrated
+/// number/string range unless explicitly widened.
+fn gen_object(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Map<String, Value> {
+    // Byte budget scales with the depth knob; refilled from the PRNG so the
+    // whole document is a deterministic function of the seed.
+    let budget = 64 + (cfg.max_depth as usize + 1) * 128;
+    let mut bytes = Vec::with_capacity(budget);
+    while bytes.len() < budget {
+        bytes.extend_from_slice(&rng.next_u64().to_le_bytes());
+    }
+
+    let mut u = Unstructured::new(&bytes);
+    let mut map: Map<String, Value> = ArbitraryObject::arbitrary(&mut u)
+        .map(Into::into)
+        .unwrap_or_default();
+
+    // Apply the numeric/string bounds to each field value.
+    for value in map.values_mut() {
+        bound_value(value, cfg);
     }
     map
 }
 
-/// Generates a random JSON value, biased toward scalars as depth increases.
-fn gen_value(rng: &mut SplitMix64, cfg: &FuzzConfig, depth: u32) -> Value {
-    // Past max depth, only scalars.
-    let allow_containers = depth < cfg.max_depth;
-    let pick = if allow_containers {
-        rng.below(9)
-    } else {
-        rng.below(6)
-    };
-    match pick {
-        0 => Value::Null,
-        1 => Value::Bool(rng.chance(1, 2)),
-        2 | 3 => gen_number(rng, cfg),
-        4 | 5 => Value::String(gen_string(rng, cfg)),
-        6 => Value::Array(gen_array(rng, cfg, depth)),
-        7 => Value::Array(gen_uniform_number_array(rng, cfg)),
-        _ => Value::Object(gen_object(rng, cfg, depth)),
-    }
-}
-
-fn gen_array(rng: &mut SplitMix64, cfg: &FuzzConfig, depth: u32) -> Vec<Value> {
-    let len = rng.below(6);
-    (0..len).map(|_| gen_value(rng, cfg, depth + 1)).collect()
-}
-
-/// A homogeneous array of numbers, to exercise the uniform-number-array wire
-/// forms (`ArrNumC*`).
-fn gen_uniform_number_array(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Vec<Value> {
-    let len = rng.below(8);
-    (0..len).map(|_| gen_number(rng, cfg)).collect()
-}
-
-/// Object keys: a mix of common Cosmos-ish names (to hit the system-string
-/// dictionary) and random short identifiers.
-fn gen_key(rng: &mut SplitMix64, cfg: &FuzzConfig) -> String {
-    const COMMON: &[&str] = &[
-        "id", "type", "name", "value", "data", "items", "count", "tags", "meta", "nested",
-    ];
-    if rng.chance(1, 2) {
-        COMMON[rng.below(COMMON.len() as u64) as usize].to_string()
-    } else {
-        gen_string(rng, cfg)
-    }
-}
-
-fn gen_string(rng: &mut SplitMix64, cfg: &FuzzConfig) -> String {
-    let len = rng.below(24); // 0..=23 chars
-    let mut s = String::new();
-    for _ in 0..len {
-        let ch = if cfg.unicode && rng.chance(1, 8) {
-            // Occasionally emit a non-ASCII BMP or astral code point.
-            if rng.chance(1, 3) {
-                // Astral (emoji-ish) range.
-                char::from_u32(0x1_F300 + rng.below(0x300) as u32).unwrap_or('*')
-            } else {
-                // BMP above ASCII, skipping surrogates.
-                char::from_u32(0x00A1 + rng.below(0x2000) as u32).unwrap_or('*')
+/// Recursively applies the generation bounds to a value: clamps numbers into the
+/// calibrated-safe envelope unless `wide_numbers`, and drops non-ASCII from
+/// strings unless `unicode`. Leaves structure otherwise untouched.
+fn bound_value(value: &mut Value, cfg: &FuzzConfig) {
+    match value {
+        Value::Number(n) => {
+            if !cfg.wide_numbers {
+                *value = clamp_number_to_envelope(n);
             }
-        } else {
-            // Printable ASCII, including characters that need JSON escaping.
-            let ascii = 0x20 + rng.below(0x5F) as u8;
-            ascii as char
-        };
-        s.push(ch);
+        }
+        Value::String(s) => {
+            if !cfg.unicode && !s.is_ascii() {
+                *s = s.chars().filter(char::is_ascii).collect();
+            }
+        }
+        Value::Array(items) => {
+            for item in items.iter_mut() {
+                bound_value(item, cfg);
+            }
+        }
+        Value::Object(map) => {
+            for v in map.values_mut() {
+                bound_value(v, cfg);
+            }
+        }
+        _ => {}
     }
-    s
 }
 
-/// Generates a number inside the **backend-safe** envelope by default (see the
-/// design doc §3.2). `wide_numbers` widens it once the canonicalizer has been
-/// calibrated for the extra forms.
-fn gen_number(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Value {
-    match rng.below(4) {
-        // Small integer (literal / narrow markers).
-        0 => Value::Number(Number::from(rng.below(64) as i64)),
-        // Signed integer across the i64 range (narrowed unless wide).
-        1 => {
-            let magnitude = if cfg.wide_numbers {
-                rng.next_u64() as i64
-            } else {
-                (rng.below(2_000_000) as i64) - 1_000_000
-            };
-            Value::Number(Number::from(magnitude))
-        }
-        // Large unsigned (exercises NumberUInt64) — only when wide.
-        2 if cfg.wide_numbers => Value::Number(Number::from(rng.next_u64())),
-        // Non-integral float with bounded precision.
-        _ => {
-            let f = if cfg.wide_numbers {
-                (rng.f64_unit() - 0.5) * 1e6
-            } else {
-                // Two decimal places keeps it within the calibrated envelope.
-                (rng.below(200_000) as f64 - 100_000.0) / 100.0
-            };
-            Number::from_f64(f)
-                .map(Value::Number)
-                .unwrap_or(Value::Null)
-        }
+/// Clamps a number into the **backend-safe** envelope (design doc §3.2): bounded
+/// integers and two-decimal floats, matching what the calibrated
+/// [`normalize_number`] models without `--wide-numbers`.
+fn clamp_number_to_envelope(n: &Number) -> Value {
+    if let Some(i) = n.as_i64() {
+        Value::Number(Number::from(i.rem_euclid(2_000_001) - 1_000_000))
+    } else if let Some(u) = n.as_u64() {
+        Value::Number(Number::from((u % 2_000_001) as i64 - 1_000_000))
+    } else if let Some(f) = n.as_f64() {
+        // Two decimal places within ±100_000 keeps it inside the calibrated
+        // envelope; a non-finite arbitrary float collapses to 0.
+        let bounded = if f.is_finite() {
+            ((f % 100_000.0) * 100.0).round() / 100.0
+        } else {
+            0.0
+        };
+        Number::from_f64(bounded)
+            .map(Value::Number)
+            .unwrap_or_else(|| Value::Number(Number::from(0)))
+    } else {
+        Value::Number(Number::from(0))
     }
 }
 
@@ -566,7 +532,7 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
         // test the *same value* three ways. Each config gets a distinct `id`
         // below — the same document stored under multiple configs would
         // otherwise collide on the `(pk, id)` key and fail with 409 Conflict.
-        let base_doc = gen_object(&mut rng, &cfg, 0);
+        let base_doc = gen_object(&mut rng, &cfg);
         let pk = format!("pk-{}", rng.below(16));
 
         for (label, client) in &clients {
@@ -989,8 +955,8 @@ mod tests {
         };
         let mut a = SplitMix64::new(cfg.seed);
         let mut b = SplitMix64::new(cfg.seed);
-        let doc_a = Value::Object(gen_object(&mut a, &cfg, 0));
-        let doc_b = Value::Object(gen_object(&mut b, &cfg, 0));
+        let doc_a = Value::Object(gen_object(&mut a, &cfg));
+        let doc_b = Value::Object(gen_object(&mut b, &cfg));
         assert_eq!(canon(&doc_a), canon(&doc_b));
     }
 
@@ -1010,7 +976,7 @@ mod tests {
         };
         let mut rng = SplitMix64::new(cfg.seed);
         for _ in 0..500 {
-            let doc = Value::Object(gen_object(&mut rng, &cfg, 0));
+            let doc = Value::Object(gen_object(&mut rng, &cfg));
             let once = normalize(&doc);
             let twice = normalize(&once);
             assert_eq!(
