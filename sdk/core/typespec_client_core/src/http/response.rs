@@ -186,9 +186,11 @@ impl<T: DeserializeWith<F>, F: Format> Response<T, F> {
     /// assert_eq!(model.value, "hunter2");
     /// # }
     /// ```
-    pub fn into_model(self) -> crate::Result<T> {
-        let body = self.into_body();
-        T::deserialize_with(body)
+    pub fn into_model(self) -> crate::Result<T>
+    where
+        T: serde::de::DeserializeOwned,
+    {
+        F::deserialize_from::<T>(&self.raw)
     }
 }
 

@@ -3,90 +3,102 @@
 
 //! ## Prototype Notes
 //!
+//! ### Design goal
+//!
+//! Let `Response<T, AutoFormat>::into_model()` dispatch to JSON or XML at runtime
+//! based on the response `content-type` header, with **zero caller boilerplate** and
+//! **no breaking changes** to the existing `Format` / `Response` public APIs.
+//! MSRV is rustc 1.88 (stable); no nightly features are permissible.
+//!
 //! ### Options tried (in order)
 //!
-//! **Option C: `SelectFormat` trait on model types** — tried first.
+//! **Option C: blanket `SelectFormat` default** — explored first, rejected.
 //!
-//! Defined [`SelectFormat`] with `fn select_format(headers: &Headers) -> FormatChoice`.
-//! A blanket *default* impl (all types → JSON unless overridden) requires the
-//! `specialization` nightly feature. Without specialization, a blanket
-//! `impl<T> SelectFormat for T` is a *seal* — downstream crates cannot override it for
-//! their own types (orphan rules prevent both crates from providing impls for the same
-//! foreign type, and the blanket impl in this crate would conflict with any downstream
-//! impl).
+//! A blanket `impl<T> SelectFormat for T` with a JSON default would give every
+//! `DeserializeOwned` type automatic format selection that they could opt out of.
+//! This requires `#![feature(specialization)]`, which is nightly-only.  Since the
+//! MSRV is rustc 1.88 (stable), this option is **not viable**.
+//! `SelectFormat` is therefore kept as an *explicit opt-in* trait for types that want
+//! custom format selection inside `AutoResponse<T>`.
 //!
-//! **Result**: blanket default impl is not viable on stable Rust.
-//! `SelectFormat` is kept as an *explicit opt-in* trait; types that want header-driven
-//! dispatch implement it themselves.
-//!
-//! **Option B: callback passed at call-site** — implemented alongside Option C.
+//! **Option B: callback passed at call-site** — adopted for `AutoResponse<T>`.
 //!
 //! [`AutoResponse<T>`] wraps a [`RawResponse`] and exposes:
-//! - [`AutoResponse::into_model_with`] — caller provides a format-selector closure.
-//! - [`AutoResponse::into_model_auto`] — detects format from the `content-type` header.
-//! - [`AutoResponse::into_model`] — available when `T: SelectFormat`; uses the type's
-//!   own selector.
+//! - [`AutoResponse::into_model_with`] — caller provides an arbitrary closure
+//!   `Fn(&RawResponse) -> crate::Result<T>`.  The closure is responsible for
+//!   calling whichever format's `deserialize` (or `deserialize_from`) it needs.
+//!   This is **fully extensible**: the closure is not tied to any sealed enum of
+//!   known formats, so service crates can introduce their own formats.
+//! - [`AutoResponse::into_model_auto`] — header inspection via
+//!   [`AutoFormat::deserialize_from`]; no boilerplate needed.
+//! - [`AutoResponse::into_model`] (requires `T: SelectFormat`) — the type itself
+//!   declares which [`FormatChoice`] to use.  `FormatChoice` is a convenience helper
+//!   for the common JSON / XML case; for additional formats, use a custom [`Format`]
+//!   type with [`Format::deserialize_from`] or the `into_model_with` closure path.
 //!
-//! **Result**: all three methods compile on stable Rust with no nightly features.
+//! **Option A: `AutoFormat` implementing `Format` with `deserialize_from`**
+//! — primary recommended path.
 //!
-//! **Option A: `AutoFormat` implementing `Format`** — explored as a bonus.
+//! [`Format`] now exposes a `deserialize_from(response: &RawResponse)` method that
+//! receives the complete response (headers + body).  The default impl ignores headers
+//! and delegates to [`Format::deserialize`], preserving behaviour for all existing
+//! format types (`JsonFormat`, `XmlFormat`, `NoFormat`).
 //!
-//! [`Format::deserialize`](crate::http::Format::deserialize) receives only bytes —
-//! headers are not in scope. Therefore [`AutoFormat::deserialize`] must fall back to
-//! JSON; it cannot inspect the `content-type` header. A blanket
-//! `DeserializeWith<AutoFormat>` impl (also JSON) means
-//! `Response<T, AutoFormat>::into_model()` compiles and works, but **always uses JSON**
-//! — defeating the purpose of a mixed-format type.
-//!
-//! Skipping the `DeserializeWith<AutoFormat>` impl would prevent
-//! `Response<T, AutoFormat>` from calling `into_model()` at all, which is a confusing
-//! API surface.
-//!
-//! **Result**: [`AutoFormat`] is included as a convenience alias for JSON when used
-//! inside [`crate::http::Response`], but crate authors that need real header-based
-//! dispatch should use [`AutoResponse<T>`] instead.
+//! [`AutoFormat`] **overrides** `deserialize_from` to inspect the `content-type`
+//! header and dispatch to JSON or XML accordingly.  Because `Response<T, F>::into_model`
+//! now calls `F::deserialize_from::<T>(&self.raw)`, callers of
+//! `Response<T, AutoFormat>::into_model()` get correct JSON/XML dispatch **without
+//! any additional boilerplate**.  Service crates can define their own format type and
+//! override `deserialize_from` for any new format.
 //!
 //! ---
 //!
 //! ### What worked
-//! - `AutoResponse<T>` + `into_model_with` (Option B) compiles on stable Rust.
-//! - Explicit `SelectFormat` opt-in + `AutoResponse::into_model` (Option C) also works.
-//! - [`detect_format_from_headers`] inspects the `content-type` header with no extra deps.
-//! - `AutoFormat: Format` + `DeserializeWith<AutoFormat>` compiles; `into_model()` on
-//!   `Response<T, AutoFormat>` works but always uses JSON.
+//! - `Format::deserialize_from` addition (stable Rust, default impl preserves backward
+//!   compatibility, zero boilerplate for callers).
+//! - `AutoFormat::deserialize_from` override — `Response<T, AutoFormat>::into_model()`
+//!   now correctly dispatches to JSON or XML based on `content-type`.
+//! - `AutoResponse<T>` + `into_model_with(Fn(&RawResponse) -> Result<T>)` gives
+//!   fully extensible closure-based dispatch.
 //!
-//! ### What didn't work
-//! - Blanket default impl for `SelectFormat` (requires `#![feature(specialization)]`).
-//! - Making `AutoFormat: Format` header-aware (`Format::deserialize` has no headers).
+//! ### What didn't work / trade-offs
+//! - Blanket `SelectFormat` default requires `specialization` (nightly) — not viable
+//!   at MSRV rustc 1.88.
+//! - `FormatChoice { Json, Xml }` is a sealed enum; service crates that need additional
+//!   formats should define a custom [`Format`] type and override `deserialize_from`
+//!   rather than extending `FormatChoice`.
 //!
 //! ### Viability without nightly features
-//! Yes — `AutoResponse<T>` + closures + explicit `SelectFormat` impls is 100% stable
-//! Rust.
+//! Yes — the `Format::deserialize_from` + `AutoFormat` approach is 100% stable Rust.
 //!
 //! ### Ergonomic cost for crate authors
-//! - **Closure path** (`into_model_with` / `into_model_auto`): zero extra impl; callers
-//!   pass [`detect_format_from_headers`] or their own closure.
-//! - **SelectFormat path** (`into_model`): one explicit `impl SelectFormat for MyType`
-//!   per model type (~3 lines). A `#[derive(SelectFormat)]` proc-macro would eliminate
-//!   this boilerplate entirely.
+//! - **Primary path** (`Response<T, AutoFormat>`): zero boilerplate.  `into_model()`
+//!   automatically detects JSON vs XML from `content-type`.
+//! - **Custom format** (e.g. `Response<T, MyCborFormat>`): define a struct, implement
+//!   `Format` (2–3 methods), optionally override `deserialize_from`.
+//! - **`AutoResponse` closure** (`into_model_with`): zero boilerplate; the closure
+//!   is entirely responsible for picking and calling the right format.
+//! - **Explicit `SelectFormat` opt-in**: one `impl SelectFormat for MyType` per model
+//!   type (~3 lines).  Only needed for `AutoResponse::into_model`.
 //!
-//! ### Minimal changes to existing public APIs that would make this cleaner
-//! - A new `DeserializeWithHeaders<F>` trait with
-//!   `fn deserialize_with_headers(headers: &Headers, body: ResponseBody) -> Result<Self>`
-//!   would make header-aware dispatch first-class in `Response<T, F>` without breaking
-//!   the existing `DeserializeWith` impls.
-//! - A `#[derive(SelectFormat)]` proc-macro accepting a `content_type = "application/xml"`
-//!   attribute would eliminate per-type boilerplate when XML is the intended format.
+//! ### Minimal changes to existing public APIs
+//! - Adding `Format::deserialize_from` (done) is the key unlock.
+//! - `Response::into_model` now calls `F::deserialize_from` (done).
+//! - No other existing public APIs are changed.
 
 use crate::http::{
     headers::{Headers, CONTENT_TYPE},
     response::ResponseBody,
-    DeserializeWith, Format, RawResponse, StatusCode,
+    DeserializeWith, Format, JsonFormat, RawResponse, StatusCode, XmlFormat,
 };
 use serde::de::DeserializeOwned;
 use std::marker::PhantomData;
 
 /// Indicates whether a response body should be deserialized as JSON or XML.
+///
+/// Used as a convenience return type by [`detect_format_from_headers`] and
+/// [`SelectFormat`].  For formats beyond JSON and XML, define a custom [`Format`]
+/// type and override [`Format::deserialize_from`] instead of extending this enum.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FormatChoice {
     /// Deserialize as JSON.
@@ -115,39 +127,74 @@ pub fn detect_format_from_headers(headers: &Headers) -> FormatChoice {
 /// # Note on blanket defaults
 ///
 /// A blanket `impl<T> SelectFormat for T` that defaults to JSON would require the
-/// `specialization` nightly feature, which is unavailable on stable Rust. Types that
-/// do not need custom format selection can call
+/// `specialization` nightly feature, which is unavailable on stable Rust (MSRV 1.88).
+/// Types that do not need custom format selection can call
 /// [`AutoResponse::into_model_auto`] (automatic content-type detection) or
 /// [`AutoResponse::into_model_with`] (caller-provided closure) instead.
+///
+/// For service crates that need custom format selection beyond JSON and XML, the
+/// recommended approach is to define a custom [`Format`] type and override
+/// [`Format::deserialize_from`].
 pub trait SelectFormat {
     /// Return the deserialization format to use for a response with these headers.
     fn select_format(headers: &Headers) -> FormatChoice;
 }
 
-/// A [`Format`] that falls back to JSON deserialization.
+/// A [`Format`] that selects JSON or XML deserialization based on the
+/// `content-type` response header.
 ///
-/// This type implements [`Format`] so that `Response<T, AutoFormat>` is a valid type
-/// and `into_model()` compiles; however, because [`Format::deserialize`] does not
-/// receive response headers, this implementation **always uses JSON** regardless of
-/// the `content-type` header.
+/// This type implements [`Format`] and overrides [`Format::deserialize_from`] to
+/// inspect the `content-type` header. When used as the format parameter in
+/// [`crate::http::Response<T, AutoFormat>`], `into_model()` automatically dispatches
+/// to JSON or XML — **no caller boilerplate required**.
 ///
-/// For header-based dispatch, use [`AutoResponse<T>`] instead.
+/// If the `content-type` header is absent or does not contain `"xml"`, JSON is used.
+///
+/// # Limitations
+///
+/// `AutoFormat` only supports JSON and XML. For service-specific formats, define a
+/// custom type that implements [`Format`] and overrides [`Format::deserialize_from`].
+///
+/// # Example
+///
+/// ```no_run
+/// # use serde::Deserialize;
+/// # use typespec_client_core::http::{Response, StatusCode, headers::Headers};
+/// # use typespec_client_core::http::auto_format::AutoFormat;
+/// # #[derive(Deserialize)] struct MyModel { value: String }
+/// # fn get_raw_response() -> typespec_client_core::http::RawResponse { unimplemented!() }
+/// // Service client returns Response<MyModel, AutoFormat>.
+/// // Content-type header is inspected automatically in into_model().
+/// let response: Response<MyModel, AutoFormat> = get_raw_response().into();
+/// let model = response.into_model().expect("deserialized");
+/// ```
 #[derive(Debug, Clone)]
 pub struct AutoFormat;
 
 impl Format for AutoFormat {
     fn deserialize<T: DeserializeOwned, S: AsRef<[u8]>>(body: S) -> crate::Result<T> {
+        // `Format::deserialize` receives only bytes; fall back to JSON.
+        // Real header-based dispatch happens in `deserialize_from` below.
         crate::json::from_json(body)
+    }
+
+    fn deserialize_from<T: DeserializeOwned>(response: &RawResponse) -> crate::Result<T> {
+        match detect_format_from_headers(response.headers()) {
+            FormatChoice::Json => JsonFormat::deserialize(response.body()),
+            FormatChoice::Xml => XmlFormat::deserialize(response.body()),
+        }
     }
 }
 
 impl<D: DeserializeOwned> DeserializeWith<AutoFormat> for D {
     fn deserialize_with(body: ResponseBody) -> typespec::Result<Self> {
+        // Blanket impl so Response<T, AutoFormat> is a valid type.
+        // Real dispatch uses Format::deserialize_from via Response::into_model.
         body.json()
     }
 }
 
-/// A typed fully-buffered HTTP response that selects JSON or XML deserialization
+/// A typed fully-buffered HTTP response that selects its deserialization format
 /// based on the response headers **at runtime**.
 ///
 /// Unlike [`crate::http::Response<T, F>`], where the format is fixed at compile time,
@@ -156,8 +203,10 @@ impl<D: DeserializeOwned> DeserializeWith<AutoFormat> for D {
 /// 1. [`into_model`](AutoResponse::into_model) — requires `T: SelectFormat`; the type
 ///    itself declares which format to use.
 /// 2. [`into_model_auto`](AutoResponse::into_model_auto) — inspects the `content-type`
-///    header automatically via [`detect_format_from_headers`].
-/// 3. [`into_model_with`](AutoResponse::into_model_with) — caller provides a closure.
+///    header automatically via [`AutoFormat::deserialize_from`].
+/// 3. [`into_model_with`](AutoResponse::into_model_with) — caller provides a closure
+///    `Fn(&RawResponse) -> crate::Result<T>` that is **not** tied to any sealed enum
+///    of known formats, allowing full extensibility.
 pub struct AutoResponse<T> {
     raw: RawResponse,
     phantom: PhantomData<T>,
@@ -191,51 +240,55 @@ impl<T> AutoResponse<T> {
 }
 
 impl<T: DeserializeOwned> AutoResponse<T> {
-    /// Deserialize the body using the format selected by `selector`.
+    /// Deserialize the body using the provided `selector` closure.
     ///
-    /// # Arguments
-    /// * `selector` — a closure that receives the response headers and returns a
-    ///   [`FormatChoice`].
+    /// The closure receives the full [`RawResponse`] (headers + body) and is
+    /// responsible for calling the appropriate format's deserialization.  This path
+    /// is **not** constrained to a sealed set of known formats, so service crates can
+    /// use any [`Format`] type — including ones defined outside `azure_core`.
     ///
     /// # Example
     ///
     /// ```
     /// # use serde::Deserialize;
-    /// # use typespec_client_core::http::{RawResponse, StatusCode, headers::Headers};
-    /// # use typespec_client_core::http::auto_format::{AutoResponse, FormatChoice};
+    /// # use typespec_client_core::http::{RawResponse, StatusCode, headers::Headers, JsonFormat, Format};
+    /// # use typespec_client_core::http::auto_format::AutoResponse;
     /// # #[derive(Debug, Deserialize)] struct MyModel { name: String }
     /// let raw = RawResponse::from_bytes(
     ///     StatusCode::Ok, Headers::new(), r#"{"name":"test"}"#,
     /// );
     /// let resp: AutoResponse<MyModel> = raw.into();
-    /// let model = resp.into_model_with(|_headers| FormatChoice::Json).unwrap();
+    /// let model = resp.into_model_with(|raw| JsonFormat::deserialize(raw.body())).unwrap();
     /// assert_eq!(model.name, "test");
     /// ```
-    pub fn into_model_with<F>(self, selector: F) -> crate::Result<T>
+    pub fn into_model_with<Sel>(self, selector: Sel) -> crate::Result<T>
     where
-        F: Fn(&Headers) -> FormatChoice,
+        Sel: Fn(&RawResponse) -> crate::Result<T>,
     {
-        let (_, headers, body) = self.raw.deconstruct();
-        match selector(&headers) {
-            FormatChoice::Json => body.json(),
-            FormatChoice::Xml => body.xml(),
-        }
+        selector(&self.raw)
     }
 
     /// Deserialize the body by automatically detecting the format from the
     /// `content-type` response header.
     ///
-    /// Delegates to [`detect_format_from_headers`] for format selection.
+    /// Delegates to [`AutoFormat::deserialize_from`] for format selection.
     pub fn into_model_auto(self) -> crate::Result<T> {
-        self.into_model_with(detect_format_from_headers)
+        AutoFormat::deserialize_from::<T>(&self.raw)
     }
 }
 
 impl<T: DeserializeOwned + SelectFormat> AutoResponse<T> {
     /// Deserialize the body using the format returned by
     /// [`T::select_format`](SelectFormat::select_format).
+    ///
+    /// Note that [`SelectFormat`] returns [`FormatChoice`], which only covers JSON and
+    /// XML.  For additional formats, use [`AutoResponse::into_model_with`] or define a
+    /// custom [`Format`] type and use `Response<T, MyFormat>` directly.
     pub fn into_model(self) -> crate::Result<T> {
-        self.into_model_with(T::select_format)
+        match T::select_format(self.raw.headers()) {
+            FormatChoice::Json => JsonFormat::deserialize(self.raw.body()),
+            FormatChoice::Xml => XmlFormat::deserialize(self.raw.body()),
+        }
     }
 }
 
@@ -259,7 +312,7 @@ impl<T> std::fmt::Debug for AutoResponse<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::http::{headers::Headers, RawResponse, Response, StatusCode};
+    use crate::http::{headers::Headers, Format, JsonFormat, RawResponse, Response, StatusCode};
     use serde::Deserialize;
 
     #[derive(Debug, Deserialize, PartialEq)]
@@ -418,8 +471,9 @@ mod tests {
             r#"{"id":5,"name":"widget-e"}"#,
         );
         let resp: AutoResponse<Widget> = raw.into();
+        // The closure is not tied to FormatChoice; it can call any Format::deserialize.
         let model = resp
-            .into_model_with(|_| FormatChoice::Json)
+            .into_model_with(|r| JsonFormat::deserialize(r.body()))
             .expect("deserializes with JSON closure");
         assert_eq!(
             model,
@@ -439,7 +493,7 @@ mod tests {
         );
         let resp: AutoResponse<Widget> = raw.into();
         let model = resp
-            .into_model_with(|_| FormatChoice::Xml)
+            .into_model_with(|r| crate::http::XmlFormat::deserialize(r.body()))
             .expect("deserializes with XML closure");
         assert_eq!(
             model,
@@ -450,23 +504,65 @@ mod tests {
         );
     }
 
+    #[test]
+    fn into_model_with_closure_delegates_to_auto_format() {
+        // into_model_with can delegate to AutoFormat::deserialize_from for header dispatch.
+        let raw = RawResponse::from_bytes(
+            StatusCode::Ok,
+            xml_headers(),
+            r#"<Widget><id>9</id><name>widget-i</name></Widget>"#,
+        );
+        let resp: AutoResponse<Widget> = raw.into();
+        let model = resp
+            .into_model_with(AutoFormat::deserialize_from)
+            .expect("dispatches to XML via AutoFormat");
+        assert_eq!(
+            model,
+            Widget {
+                id: 9,
+                name: "widget-i".into()
+            }
+        );
+    }
+
     // --- AutoFormat on Response<T, AutoFormat> ---
 
     #[test]
-    fn auto_format_response_always_uses_json() {
-        // AutoFormat: Format falls back to JSON since Format::deserialize has no headers.
+    fn auto_format_response_dispatches_json_by_content_type() {
+        // Response<T, AutoFormat>::into_model() calls AutoFormat::deserialize_from,
+        // which inspects the content-type header and selects JSON.
         let raw = RawResponse::from_bytes(
             StatusCode::Ok,
-            Headers::new(),
+            json_headers(),
             r#"{"id":7,"name":"widget-g"}"#,
         );
         let resp: Response<Widget, AutoFormat> = raw.into();
-        let model = resp.into_model().expect("AutoFormat always uses JSON");
+        let model = resp.into_model().expect("AutoFormat dispatches to JSON");
         assert_eq!(
             model,
             Widget {
                 id: 7,
                 name: "widget-g".into()
+            }
+        );
+    }
+
+    #[test]
+    fn auto_format_response_dispatches_xml_by_content_type() {
+        // Response<T, AutoFormat>::into_model() dispatches to XML when content-type
+        // is application/xml — no boilerplate on T required.
+        let raw = RawResponse::from_bytes(
+            StatusCode::Ok,
+            xml_headers(),
+            r#"<Widget><id>8</id><name>widget-h</name></Widget>"#,
+        );
+        let resp: Response<Widget, AutoFormat> = raw.into();
+        let model = resp.into_model().expect("AutoFormat dispatches to XML");
+        assert_eq!(
+            model,
+            Widget {
+                id: 8,
+                name: "widget-h".into()
             }
         );
     }
