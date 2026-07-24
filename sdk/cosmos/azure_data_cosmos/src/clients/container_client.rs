@@ -1283,7 +1283,9 @@ fn resolve_binary_encoding(
         .binary_encoding
         .take()
         .unwrap_or_else(|| client_default.clone());
-    options.binary_encoding = effective.enabled.then(|| effective.clone());
+    // Write `Some` (never `None`, which means "inherit") so a resolved disable
+    // overrides driver-layer defaults; the wire is unchanged when disabled.
+    options.binary_encoding = Some(effective.clone());
     (options, effective)
 }
 
@@ -1387,24 +1389,31 @@ mod tests {
 
     #[test]
     fn resolve_binary_encoding_omits_option_when_disabled() {
-        // Disabled client default and no per-op value ⇒ no binary-encoding
-        // option, so the request is byte-for-byte unchanged.
+        // Disabled default with no per-op value is preserved as `Some(false)`,
+        // not erased to `None`, so it overrides driver-layer defaults.
         let client = BinaryEncodingOptions::new().with_enabled(false);
         let (options, effective) = resolve_binary_encoding(OperationOptions::default(), &client);
         assert!(!effective.enabled);
-        assert!(options.binary_encoding.is_none());
+        assert_eq!(
+            options.binary_encoding.map(|b| b.enabled),
+            Some(false),
+            "resolved disable must be preserved as Some(false) to override driver defaults"
+        );
     }
 
     #[test]
     fn resolve_binary_encoding_operation_disable_overrides_enabled_client() {
-        // Client enabled, but the caller disabled binary for this operation:
-        // the per-operation value wins, so the request stays text (no option).
+        // A per-operation disable wins over an enabled client default.
         let client = BinaryEncodingOptions::new().with_enabled(true);
         let mut operation = OperationOptions::default();
         operation.binary_encoding = Some(BinaryEncodingOptions::new().with_enabled(false));
         let (options, effective) = resolve_binary_encoding(operation, &client);
         assert!(!effective.enabled);
-        assert!(options.binary_encoding.is_none());
+        assert_eq!(
+            options.binary_encoding.map(|b| b.enabled),
+            Some(false),
+            "per-operation disable must be preserved as Some(false)"
+        );
     }
 
     #[test]

@@ -171,14 +171,25 @@ pub(super) struct Reader<'a> {
     ref_budget: Cell<usize>,
 }
 
-/// The reference-string expansion budget for a buffer of `buf_len` bytes.
+/// Reference-string expansion budget for a `buf_len`-byte buffer.
 ///
-/// References normally *shrink* payloads (they replace a repeated string with a
-/// few offset bytes), so a legitimate buffer never approaches this. The cap is
-/// generous -- a multiple of the buffer size, floored at a small constant so
-/// tiny buffers still permit some expansion -- while still bounding the
-/// adversarial O(S^2) blow-up to O(S).
+/// References let a small wire payload expand into a larger logical document,
+/// so the true ceiling is the Cosmos item-size limit, not the input size. The
+/// floor sits above the max item size; the factor still bounds the adversarial
+/// O(S^2) blow-up.
 fn reference_budget(buf_len: usize) -> usize {
+    // Above the 16 MB absolute Cosmos item-size limit.
+    const FLOOR: usize = 64 * 1024 * 1024;
+    const FACTOR: usize = 16;
+    buf_len.saturating_mul(FACTOR).max(FLOOR)
+}
+
+/// Max number of empty inner arrays a uniform array-of-arrays may declare.
+///
+/// Empty inner arrays consume no body bytes, so a large `outer_count` could
+/// expand a few bytes into many nodes. Bounding by buffer size keeps output
+/// O(input) (the `outer_count` field is at most 2 bytes wide).
+fn empty_element_budget(buf_len: usize) -> usize {
     const FLOOR: usize = 64 * 1024;
     const FACTOR: usize = 16;
     buf_len.saturating_mul(FACTOR).max(FLOOR)
@@ -1150,21 +1161,36 @@ impl<'a> Reader<'a> {
     /// array count (each a `count_width`-byte little-endian field). The body is
     /// `outer_count` inner arrays, each holding `inner_count` bare numbers.
     fn read_uniform_array_of_number_arrays(&mut self, count_width: FieldWidth) -> Result<Value> {
-        // Inner-array type marker (ArrNumC1/ArrNumC2); consumed but not needed
-        // beyond confirming the structure, since the shared number type follows.
-        let _inner_array_marker = self.read_u8()?;
+        // Inner-array type marker: `ArrNumC1` for `ArrArrNumC1C1`, `ArrNumC2`
+        // for `ArrArrNumC2C2`. Validate it matches the outer count width so a
+        // malformed marker in this slot is rejected rather than silently
+        // decoded as a valid array.
+        let inner_array_marker_offset = self.pos;
+        let inner_array_marker = self.read_u8()?;
+        let expected_inner_array_marker = match count_width {
+            FieldWidth::U8 => ARR_NUM_C1,
+            FieldWidth::U16 => ARR_NUM_C2,
+            // Nested uniform number arrays only use the 1- and 2-byte count
+            // forms; no 4-byte (`U32`) variant exists.
+            FieldWidth::U32 => ARR_NUM_C2,
+        };
+        if inner_array_marker != expected_inner_array_marker {
+            return Err(BinaryError::InvalidMarker {
+                marker: inner_array_marker,
+                offset: inner_array_marker_offset,
+            });
+        }
+
         let item_marker_offset = self.pos;
         let item_marker = self.read_u8()?;
         let inner_count = self.read_len(count_width)?;
         let outer_count = self.read_len(count_width)?;
 
-        // When `inner_count == 0` each inner array reads zero body bytes, so a
-        // large `outer_count` could produce many empty arrays from a few input
-        // bytes. Bound the element count by the bytes remaining so decode output
-        // stays proportional to input (`decode` runs on untrusted bytes).
-        if inner_count == 0 && outer_count > self.buf.len().saturating_sub(self.pos) {
+        // Empty inner arrays read zero body bytes, so bound `outer_count` by a
+        // buffer-proportional budget to keep decode output O(input).
+        if inner_count == 0 && outer_count > empty_element_budget(self.buf.len()) {
             return Err(BinaryError::InvalidLength {
-                detail: "uniform array of empty number arrays declares more elements than remaining bytes",
+                detail: "uniform array of empty number arrays declares more elements than the input can justify",
             });
         }
 
@@ -1534,6 +1560,39 @@ mod tests {
             decode(&buf(&bytes)),
             Err(BinaryError::UnexpectedEof { needed: 4 }),
         );
+    }
+
+    #[test]
+    fn decodes_uniform_array_of_empty_number_arrays() {
+        // `[[], []]` as ArrArrNumC1C1: inner-array marker, item-type marker,
+        // inner_count = 0, outer_count = 2. Empty inner arrays carry no body
+        // bytes; the decoder must accept this rather than reject it for having
+        // "more elements than remaining bytes".
+        let bytes = vec![
+            markers::ARR_ARR_NUM_C1C1,
+            markers::ARR_NUM_C1, // inner-array marker
+            markers::INT32,      // shared item-type marker
+            0,                   // inner_count
+            2,                   // outer_count
+        ];
+        assert_eq!(decode(&buf(&bytes)).unwrap(), serde_json::json!([[], []]),);
+    }
+
+    #[test]
+    fn rejects_uniform_array_with_wrong_inner_array_marker() {
+        // The inner-array marker slot must hold ARR_NUM_C1 for a C1C1 form; any
+        // other byte is a malformed buffer and must be rejected.
+        let bytes = vec![
+            markers::ARR_ARR_NUM_C1C1,
+            markers::NULL, // wrong: not ARR_NUM_C1
+            markers::INT32,
+            0,
+            1,
+        ];
+        assert!(matches!(
+            decode(&buf(&bytes)),
+            Err(BinaryError::InvalidMarker { .. })
+        ));
     }
 
     #[test]

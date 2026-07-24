@@ -276,13 +276,10 @@ fn decode_and_from_slice_agree_on_truncated_and_corrupted_buffers() {
 
 #[test]
 fn many_references_to_one_large_string_stay_bounded() {
-    // A buffer with one large `StrL2` string followed by many `StrR2`
-    // references to it must not amplify into unbounded aggregate output: the
-    // reference-expansion budget caps the total materialized text and fails
-    // rather than allocating O(S²) `String`s. The decoder must still terminate
-    // (never hang / OOM), and the native path must not panic either.
+    // One large `StrL2` string followed by many `StrR2` refs must be rejected
+    // by the reference-expansion budget, not amplified into O(S²) `String`s.
     let payload_len = 4096usize;
-    let reference_count = 5000usize;
+    let reference_count = 20_000usize;
     let element_count = reference_count + 1;
 
     // Container prefix is ArrLC4: PREAMBLE + marker + 4-byte length + 4-byte
@@ -304,8 +301,7 @@ fn many_references_to_one_large_string_stay_bounded() {
     buf.extend_from_slice(&(element_count as u32).to_le_bytes());
     buf.extend_from_slice(&body);
 
-    // `reference_count * payload_len` ≈ 20 MB of expansion far exceeds the
-    // ~16× buffer budget, so the decoder must reject it with an error.
+    // ~80 MB of expansion exceeds the budget floor, so decode must error.
     assert!(
         decode(&buf).is_err(),
         "expected the reference-expansion budget to reject the amplified buffer"

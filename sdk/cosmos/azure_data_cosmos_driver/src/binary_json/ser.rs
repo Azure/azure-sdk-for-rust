@@ -25,6 +25,12 @@ use super::{
     BinaryError, Result, PREAMBLE,
 };
 
+/// Magic struct name `serde_json::value::RawValue` uses for verbatim JSON;
+/// rejected by [`serialize_struct`] rather than silently corrupted.
+///
+/// [`serialize_struct`]: BinarySerializer::serialize_struct
+const RAW_VALUE_TOKEN: &str = "$serde_json::private::RawValue";
+
 /// Serializes a value into a complete Cosmos binary JSON buffer.
 ///
 /// The returned buffer begins with the [`PREAMBLE`] byte (`0x80`) and can be
@@ -256,7 +262,15 @@ impl<'a> ser::Serializer for BinarySerializer<'a> {
         Ok(ContainerBuilder::new(self.out, ContainerKind::Object))
     }
 
-    fn serialize_struct(self, _name: &'static str, _len: usize) -> Result<ContainerBuilder<'a>> {
+    fn serialize_struct(self, name: &'static str, _len: usize) -> Result<ContainerBuilder<'a>> {
+        // Reject `serde_json::RawValue` rather than corrupt its raw JSON into a
+        // stringified wrapper object; use the text path for raw JSON.
+        if name == RAW_VALUE_TOKEN {
+            return Err(BinaryError::Custom(
+                "serde_json RawValue is not supported by the Cosmos binary JSON serializer"
+                    .to_owned(),
+            ));
+        }
         Ok(ContainerBuilder::new(self.out, ContainerKind::Object))
     }
 
@@ -710,6 +724,29 @@ mod tests {
     fn to_vec_begins_with_preamble() {
         let bytes = to_vec(&json!({ "id": "1" })).unwrap();
         assert_eq!(bytes.first(), Some(&PREAMBLE));
+    }
+
+    #[test]
+    fn raw_value_is_rejected_rather_than_corrupted() {
+        // Mirrors how `RawValue`'s `Serialize` impl drives a serializer (the
+        // driver doesn't enable serde_json's `raw_value` feature).
+        struct RawValueLike;
+        impl Serialize for RawValueLike {
+            fn serialize<S: serde::Serializer>(
+                &self,
+                serializer: S,
+            ) -> std::result::Result<S::Ok, S::Error> {
+                use serde::ser::SerializeStruct;
+                let mut s = serializer.serialize_struct("$serde_json::private::RawValue", 1)?;
+                s.serialize_field("$serde_json::private::RawValue", r#"{"a":1}"#)?;
+                s.end()
+            }
+        }
+        let err = to_vec(&RawValueLike).unwrap_err();
+        assert!(
+            matches!(err, BinaryError::Custom(msg) if msg.contains("RawValue")),
+            "expected a RawValue rejection error"
+        );
     }
 
     #[derive(Serialize, Deserialize, PartialEq, Debug)]

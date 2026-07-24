@@ -636,12 +636,11 @@ impl OperationType {
         )
     }
 
-    /// Returns true if driver-side binary encoding/transcoding is honored for
-    /// this operation type.
-    ///
-    /// Only point item operations (excluding delete) are supported; query, feed, batch, and
-    /// stored-procedure paths are deferred per the binary-encoding spec.
-    pub fn supports_binary_encoding(self) -> bool {
+    /// True for the point item ops (create/read/replace/upsert) eligible for
+    /// binary encoding. Necessary but not sufficient: the full gate also
+    /// requires [`ResourceType::Document`] (see
+    /// `CosmosDriver::binary_encoding_applies`).
+    pub(crate) fn supports_binary_encoding(self) -> bool {
         matches!(
             self,
             OperationType::Create
