@@ -6,13 +6,11 @@
 
 - Added a schema-agnostic Cosmos binary JSON codec (`binary_json`) and driver-side binary encoding via `OperationOptions.binary_encoding` (`BinaryEncodingOptions`). When enabled, the driver transcodes item request/response bodies between text and Cosmos binary JSON and negotiates the wire format; it is honored only for point `Document` item operations. Off by default and inert on the wire when unset. ([#4671](https://github.com/Azure/azure-sdk-for-rust/pull/4671))
 
-### Breaking Changes
+## 0.6.1 (2026-07-23)
 
 ### Bugs Fixed
 
 - Fixed partition-range discovery for containers whose routing metadata spans more than ten pages, added full-refresh recovery for invalid incremental maps, and prevented empty routing maps from remaining cached. ([#4845](https://github.com/Azure/azure-sdk-for-rust/pull/4845))
-
-### Other Changes
 
 ## 0.6.0 (2026-07-20)
 

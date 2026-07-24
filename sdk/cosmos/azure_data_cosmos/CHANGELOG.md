@@ -6,13 +6,11 @@
 
 - Added opt-in Cosmos binary JSON encoding for item operations (`create`/`read`/`replace`/`upsert`). Enable it via `CosmosClientBuilder::with_binary_encoding_options` (or the `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment-variable fallback). Off by default; when disabled, requests and responses are byte-for-byte unchanged. ([#4671](https://github.com/Azure/azure-sdk-for-rust/pull/4671))
 
-### Breaking Changes
+## 0.37.1 (2026-07-23)
 
 ### Bugs Fixed
 
 - Fixed `ContainerClient::read_feed_ranges` failing on containers with large partition counts by fully draining routing metadata and retrying missing cache results with a forced refresh. ([#4845](https://github.com/Azure/azure-sdk-for-rust/pull/4845))
-
-### Other Changes
 
 ## 0.37.0 (2026-07-20)
 

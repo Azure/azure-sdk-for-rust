@@ -1,6 +1,6 @@
 [package]
 name = "azure_data_cosmos"
-version = "0.38.0"
+version = "0.37.1"
 description = "Rust wrappers around Microsoft Azure REST APIs - Azure Cosmos DB"
 readme = "README.md"
 authors.workspace = true
@@ -17,7 +17,7 @@ categories = ["api-bindings"]
 async-lock.workspace = true
 async-trait.workspace = true
 azure_core = { workspace = true, default-features = false }
-azure_data_cosmos_driver = { version = "0.7.0", path = "../azure_data_cosmos_driver", default-features = false }
+azure_data_cosmos_driver = { version = "0.6.1", path = "../azure_data_cosmos_driver", default-features = false }
 base64.workspace = true
 futures.workspace = true
 pin-project.workspace = true
