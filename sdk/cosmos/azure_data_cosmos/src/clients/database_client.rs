@@ -40,7 +40,7 @@ impl DatabaseClient {
 
     /// Gets a [`ContainerClient`] that can be used to access the container with the specified name.
     ///
-    /// This method performs I/O to fetch container metadata from the service before returning.
+    /// This method will resolve container metadata so that the client is ready for immediate use without per-operation cache lookup.
     ///
     /// # Arguments
     /// * `name` - The name of the container.
@@ -52,7 +52,7 @@ impl DatabaseClient {
     pub async fn container_client(
         &self,
         name: &str,
-        _options: Option<ContainerClientOptions>,
+        #[allow(unused_variables, reason = "for future use")] options: Option<ContainerClientOptions>,
     ) -> crate::Result<ContainerClient> {
         ContainerClient::new(self.context.clone(), name, &self.database_id).await
     }
