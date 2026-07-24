@@ -32,7 +32,8 @@ pub use consistency::ConsistencyLevel;
 pub use container::ReadContainerOptions;
 #[cfg(feature = "control_plane")]
 pub use container::{
-    CreateContainerOptions, DeleteContainerOptions, QueryContainersOptions, ReplaceContainerOptions,
+    ContainerClientOptions, CreateContainerOptions, DeleteContainerOptions, QueryContainersOptions,
+    ReplaceContainerOptions,
 };
 #[cfg(feature = "control_plane")]
 pub use database::{

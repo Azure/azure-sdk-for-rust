@@ -13,6 +13,7 @@
 ### Breaking Changes
 
 - Control-plane APIs are now gated behind the new `control_plane` feature, which is **not** enabled by default. Code using database or container management (`CosmosClient::create_database`/`query_databases`, `DatabaseClient::read`/`create_container`/`query_containers`/`delete`, `ContainerClient::replace`/`delete`), throughput management (`read_throughput`/`begin_replace_throughput`, `ThroughputPoller`), or the associated model and options types (`DatabaseProperties`, `ThroughputProperties`, and the container create/replace/delete/query, database, and throughput option types) must now enable the `control_plane` feature. Reading container properties via `ContainerClient::read()` — along with `ContainerProperties`, `IndexingPolicy`, `ResourceResponse`, and `ReadContainerOptions` — remains available without the feature, since it works with Entra ID authentication and mirrors the metadata read the SDK already performs internally. ([#4854](https://github.com/Azure/azure-sdk-for-rust/pull/4854))
+- `DatabaseClient::container_client()` now accepts an `Option<ContainerClientOptions>` second argument, aligning it with other async operations. ([#4617](https://github.com/Azure/azure-sdk-for-rust/issues/4617))
 
 ### Bugs Fixed
 

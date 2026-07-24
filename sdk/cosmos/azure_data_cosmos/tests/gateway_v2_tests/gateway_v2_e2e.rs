@@ -171,7 +171,7 @@ async fn wait_for_container_ready(
 
     for attempt in 0..MAX_ATTEMPTS {
         let last_err: Box<dyn std::error::Error> =
-            match db_client.container_client(container_name).await {
+            match db_client.container_client(container_name, None).await {
                 Ok(container_client) => match container_client.read(None).await {
                     Ok(_) => return Ok(container_client),
                     Err(e)
@@ -329,7 +329,7 @@ async fn assert_item_readable_from_region(
     let db_client = client.database_client(db_name);
 
     for attempt in 0..MAX_ATTEMPTS {
-        let container = match db_client.container_client(container_name).await {
+        let container = match db_client.container_client(container_name, None).await {
             Ok(container) => container,
             Err(e)
                 if (e.status().status_code() == StatusCode::NotFound

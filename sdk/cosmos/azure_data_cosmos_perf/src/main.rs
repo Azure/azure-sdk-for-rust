@@ -196,7 +196,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Ensure the container exists and grab the ContainerClient. We can't
-    // build the ContainerClient ahead of this — `container_client(name)`
+    // build the ContainerClient ahead of this — `container_client(name, None)`
     // resolves metadata eagerly and would 404 on a brand-new database.
     let container_client = setup::ensure_container(
         &db_client,

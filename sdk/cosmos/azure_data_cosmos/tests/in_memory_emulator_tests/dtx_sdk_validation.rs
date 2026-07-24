@@ -117,7 +117,7 @@ async fn write_transaction_rejects_container_from_different_account() -> Result<
     );
     let foreign_container = container_client_owner
         .database_client("db")
-        .container_client("coll")
+        .container_client("coll", None)
         .await?;
 
     let transaction = azure_data_cosmos::DistributedWriteTransaction::new().delete_item(
@@ -162,7 +162,7 @@ async fn read_transaction_rejects_container_from_different_account() -> Result<(
     );
     let foreign_container = container_client_owner
         .database_client("db")
-        .container_client("coll")
+        .container_client("coll", None)
         .await?;
 
     let transaction = azure_data_cosmos::DistributedReadTransaction::new().read_item(
