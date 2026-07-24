@@ -37,11 +37,12 @@ For each generated document `D`:
 `_ts`, `_self`, `_attachments`) so only the fields we control are compared.
 
 The harness compares **canonical strings directly** (strongest signal — it can
-print the exact diff) *and* logs a 64-bit hash so the "store `H0` once, compare
-later" workflow is available for a persistent corpus. The hash is
-`std::hash::DefaultHasher` (SipHash): we are detecting *differences*, not
-defending against adversarial collisions, so a cryptographic digest is
-unnecessary. Swap in SHA-256 if a durable cross-run corpus is later desired.
+print the exact diff) *and* logs a **SHA-256** digest so the "store `H0` once,
+compare later" workflow is available for a persistent corpus. SHA-256 is stable
+across runs and platforms; we are detecting *differences*, so the digest's role
+is a compact, durable corpus key rather than collision defense. (The canonical
+string is produced by RFC 8785 / `json_canon` over the number-normalized value —
+see §9.)
 
 ### 2.1 How this detects codec gaps
 
@@ -258,3 +259,95 @@ These are complementary: golden vectors + conformance pin *the format*, in-tree
 fuzz hardens *the decoder*, and this harness validates *the whole pipeline
 against the live service* — and its number-canonicalization calibration (§3.1)
 feeds the backend's observed rewrite rules back into the RFC's §7.
+
+## 9. Planned evolution — `arbitrary-json` + `json-canon` + `sha2`
+
+This section captures an agreed enhancement plan for the harness. The current harness uses a hand-rolled seeded generator (§4) and a hand-rolled canonicalizer (§3). Three well-maintained crates can replace the parts of that machinery that are pure boilerplate, while we **keep** the one part that is genuinely Cosmos-specific.
+
+### 9.1 The crates and what each replaces
+
+| Crate | Role | Replaces |
+| ----- | ---- | -------- |
+| [`arbitrary-json`](https://docs.rs/arbitrary-json) | Turns raw fuzzer/PRNG bytes into a random, structurally-valid `serde_json::Value` (via the `arbitrary` crate). | Our hand-rolled `gen_object` / `gen_value` / `gen_array` generator (§4). |
+| [`json-canon`](https://docs.rs/json-canon) | RFC 8785 (JCS) canonical serialization — object-key sort, whitespace removal, string escaping. | The **structural** part of our `canonicalize` (§3): keys, whitespace, strings, array order. |
+| [`sha2`](https://docs.rs/sha2) | SHA-256 over the canonical string, enabling a durable cross-run corpus of `H0` hashes. | Our `DefaultHasher` (SipHash) 64-bit hash. |
+
+### 9.2 The critical constraint — keep Cosmos number canonicalization
+
+**JCS number formatting is *not* Cosmos number formatting.** This is the whole reason the harness exists (§3.1). RFC 8785 uses ES6 `Number.prototype.toString` (shortest round-trippable), which differs from the backend's observed store-time rewrite:
+
+- the backend stores integers above `i64::MAX` as IEEE-754 **doubles** and returns scientific notation (`18446744073709551614` → `1.8446744073709552e+19`);
+- integral floats/exponents collapse to integers (`2e1` → `20`).
+
+If we canonicalized numbers with raw JCS, a *faithful* round-trip would report **false-positive** mismatches on exactly the number edges we most want to test. So the plan is a **hybrid**, not a wholesale swap:
+
+> **Normalize numbers with our calibrated `canonicalize_number` first (produce a number-normalized `Value`), then run that `Value` through `json_canon` for the structural pass, then `sha2` the result.**
+
+`json-canon`'s own docs also note it emits `null` for `NaN`/`Inf` — incidentally aligned with Cosmos, but we do not want to rely on that incidentally, so number handling stays under our control.
+
+### 9.3 Target pipeline
+
+```
+generate:      bytes ──arbitrary-json──▶ Value
+normalize:     Value  ──our normalize_numbers (calibrated §3.1)──▶ Value′
+canonicalize:  Value′ ──json_canon (RFC 8785 structural)──▶ canonical String
+hash:          String ──sha2 (SHA-256)──▶ H
+compare:       H(sent) == H(project(returned, keys(sent)))
+```
+
+Only **step 2** is Cosmos-specific and stays in our code; steps 1, 3, 4 become library calls.
+
+### 9.4 Two harness shapes (we will land both, in order)
+
+1. **Live-service round-trip (this harness, evolved).** Keep the `#[tokio::test]` soak driven by a seeded PRNG, but feed the PRNG bytes into `arbitrary-json` for generation and swap the structural canonicalizer to `json_canon` + `sha2`. This is the primary deliverable — it validates the whole pipeline against a real account, which per-doc network I/O makes unsuitable for a coverage-guided engine.
+2. **Offline codec fuzzer (new, optional, no account).** A `cargo-fuzz` target using `arbitrary-json` that exercises the pure in-process invariant `Value → to_vec → from_slice → Value` (and the `decode`/`encode` reference oracle) with **no network**, so libfuzzer's coverage guidance and speed apply. This complements the decoder-only `fuzz_tests.rs` with a coverage-guided *round-trip* check.
+
+### 9.5 Work plan
+
+1. Add `arbitrary`, `arbitrary-json`, `json-canon`, and `sha2` as **dev-dependencies** of `azure_data_cosmos_perf` (test-only; not shipped in the SDK).
+2. Extract the current number logic into a standalone `normalize_numbers(&Value) -> Value` that applies the calibrated `canonicalize_number` rules and leave calibration mode (§6) pointing at it.
+3. Replace `canonicalize` internals with: `normalize_numbers` → `json_canon::to_string` → `sha2` digest. Keep the `project_to_sent_keys` step (§2) unchanged.
+4. Replace `gen_object`/`gen_value` with an `arbitrary-json`-backed generator seeded from the existing `SplitMix64` byte stream (so runs stay reproducible via `AZURE_COSMOS_FUZZ_SEED`).
+5. Re-run **calibration** (§6) against a live account to confirm `normalize_numbers` still yields all `MATCH` after the refactor; fold any new `DIFF` back in.
+6. (Separate change) Add the `cargo-fuzz` offline codec target from §9.4(2).
+7. Update §3, §4, and the layer table (§8) to reference the crates once landed.
+
+### 9.6 Acceptance
+
+- [ ] Live harness produces identical pass/fail decisions to the pre-refactor version on a fixed seed set (no behavior regression), with cleaner internals.
+- [ ] Number edges (`> i64::MAX`, integral floats, `-0`, high-precision) still round-trip without false positives — verified by calibration `MATCH`.
+- [ ] `sha2` hashes are stable across runs for the same canonical input (enables a persistent corpus).
+- [ ] (If landed) offline `cargo-fuzz` codec target builds and runs a short session clean.
+
+### 9.7 Implementation status (landed)
+
+Phases 1–4 of §9.5 are implemented in `binary_roundtrip_fuzzer.rs` across four commits:
+
+| Phase | Change | Status |
+| ----- | ------ | ------ |
+| 1 | Dev-deps `arbitrary`, `arbitrary-json`, `json-canon`, `sha2` wired into `azure_data_cosmos_perf`. | ✅ landed |
+| 2 | `normalize_number` / `normalize_numbers` extracted as the sole Cosmos-specific number transform (behavior-preserving). | ✅ landed |
+| 3 | `canonicalize` now = `normalize_numbers` → `json_canon::to_string` (RFC 8785); differential hash switched to SHA-256. | ✅ landed |
+| 4 | Generator replaced with `arbitrary-json`, seeded from `SplitMix64` (deterministic per `AZURE_COSMOS_FUZZ_SEED`); a `bound_value` pass keeps the `wide_numbers`/`unicode` envelope contract. | ✅ landed |
+| 5 | Live re-calibration + soak against a real account. | ⏳ **manual — run per §6** |
+| 6 | Offline `cargo-fuzz` codec target. | ⬜ deferred (§9.4(2)) |
+
+#### Key finding — `json-canon` rejects integers ≥ 2⁵³
+
+RFC 8785 / `json-canon` refuses to serialize any integer at or beyond the JSON
+"max safe integer" (`2^53`), returning `Error("u64 must be less than JSON max
+safe integer")`. Cosmos, however, **preserves `i64` integers exactly** and stores
+`u64` above `i64::MAX` as lossy IEEE-754 doubles. To bridge this,
+`normalize_number` maps JCS-unsafe numbers to **stable string tokens** (an exact
+decimal for large `i64`, or the `f64` form for the lossy-double case), which are
+only ever compared for equality — never parsed back. This keeps the sent and
+round-tripped values comparable without tripping the JCS safe-integer guard, and
+is the concrete realization of the §9.2 "keep Cosmos number canonicalization"
+constraint. JCS-safe numbers still serialize as bare JSON numbers.
+
+#### Remaining manual step (Phase 5)
+
+Run calibration and a short soak against a live account to confirm the refactor
+did not regress the number model (all `MATCH`) — see §6 for the commands. This is
+the one step that cannot run in CI or offline because it requires a real Cosmos
+endpoint.
