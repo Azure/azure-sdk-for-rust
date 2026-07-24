@@ -67,7 +67,6 @@ uuid = { workspace = true, features = ["v4", "fast-rng"] }
 workspace = true
 
 [features]
-default = ["hmac_rust", "reqwest", "rustls"]
 reqwest = [
   "dep:reqwest",
   "azure_core/reqwest",

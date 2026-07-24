@@ -3,14 +3,14 @@
 
 // cSpell:ignore benchdb benchcontainer benchitem
 
-//! Shared transport infrastructure for `azure_data_cosmos_benchmarks`.
-//!
-//! Provides both a mock transport (zero-latency, in-memory) and a live-transport
-//! setup backed by a real Cosmos DB endpoint. The active mode is controlled by the
-//! `AZURE_BENCH_MODE` environment variable.
-//!
-//! Re-used by both the Criterion benchmarks (`benches/`) and the Valgrind
-//! example (`examples/`).
+#![doc = include_str!("../README.md")]
+// Cosmos-wide lint policy (see sdk/cosmos/lints.rs for documentation).
+#![deny(clippy::allow_attributes)]
+#![deny(clippy::missing_panics_doc)]
+#![deny(clippy::should_panic_without_expect)]
+#![deny(clippy::unwrap_in_result)]
+#![cfg_attr(not(test), deny(clippy::unwrap_used))]
+#![deny(clippy::wildcard_imports)]
 
 use std::sync::Arc;
 

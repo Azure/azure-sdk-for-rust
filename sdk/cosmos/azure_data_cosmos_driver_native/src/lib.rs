@@ -1,21 +1,17 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! C ABI wrapper for the Azure Cosmos DB driver crate
-//! ([`azure_data_cosmos_driver`]).
-//!
-//! This crate exposes a schema-agnostic completion-queue-style FFI suitable
-//! for cross-language SDK reuse (.NET, Java, Go, Python, native C/C++). The
-//! design is fully specified in [`docs/NATIVE_WRAPPER_SPEC.md`] in the driver
-//! crate, with a picture-first overview in [`docs/ASYNC_INVOCATION_ARCHITECTURE.md`].
-//!
-//! [`azure_data_cosmos_driver`]: https://docs.rs/azure_data_cosmos_driver
-//! [`docs/NATIVE_WRAPPER_SPEC.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md
-//! [`docs/ASYNC_INVOCATION_ARCHITECTURE.md`]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/ASYNC_INVOCATION_ARCHITECTURE.md
-
+#![doc = include_str!("../README.md")]
 // We routinely dereference C-supplied pointers at the FFI boundary; that is
 // the entire point of the crate.
-#![allow(clippy::not_unsafe_ptr_arg_deref)]
+#![expect(clippy::not_unsafe_ptr_arg_deref, reason = "FFI boundary: intentional raw pointer dereference is the purpose of this crate")]
+// Cosmos-wide lint policy (see sdk/cosmos/lints.rs for documentation).
+#![deny(clippy::allow_attributes)]
+#![deny(clippy::missing_panics_doc)]
+#![deny(clippy::should_panic_without_expect)]
+#![deny(clippy::unwrap_in_result)]
+#![cfg_attr(not(test), deny(clippy::unwrap_used))]
+#![deny(clippy::wildcard_imports)]
 
 use std::ffi::{c_char, CStr};
 

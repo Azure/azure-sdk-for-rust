@@ -1,6 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// Cosmos-wide lint policy (see sdk/cosmos/lints.rs for documentation).
+#![deny(clippy::allow_attributes)]
+#![deny(clippy::missing_panics_doc)]
+#![deny(clippy::should_panic_without_expect)]
+#![deny(clippy::unwrap_in_result)]
+#![cfg_attr(not(test), deny(clippy::unwrap_used))]
+#![deny(clippy::wildcard_imports)]
+
 use azure_data_cosmos::models::TimeToLive;
 
 mod config;

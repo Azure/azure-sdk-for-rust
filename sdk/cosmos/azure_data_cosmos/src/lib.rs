@@ -3,6 +3,13 @@
 
 #![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_cfg))]
+// Cosmos-wide lint policy (see sdk/cosmos/lints.rs for documentation).
+#![deny(clippy::allow_attributes)]
+#![deny(clippy::missing_panics_doc)]
+#![deny(clippy::should_panic_without_expect)]
+#![deny(clippy::unwrap_in_result)]
+#![cfg_attr(not(test), deny(clippy::unwrap_used))]
+#![deny(clippy::wildcard_imports)]
 
 // =========================================================================
 // Public API
