@@ -35,8 +35,10 @@ MUST
 - Ensure subclients are created from parent clients only, exported from `clients`, and named with `_client` returning methods.
 - Keep model fields public and typically optional; apply serde mappings required by service contract.
 - Require `#[non_exhaustive]` on response-only structs; do not use it for request or request-response structs.
-- Prefer `SafeDebug` when PII risk exists; never trace/telemeter PII.
+- Prefer deriving `SafeDebug` instead of `Debug` when PII risk exists; never trace/telemeter PII.
 - Check required SDK packaging metadata and crate layout (`sdk/<service>/<crate>`, naming prefixes, workspace wiring).
+- Require tests for changed behavior (unit/integration/recorded as applicable).
+- Require crate `README.md` with standard H1 and H2 sections (`Getting started`, `Key concepts`, `Examples`, `Troubleshooting`, `Contributing`) following `sdk/core/azure_core/README.md`.
 - Enforce generated boundary: no manual edits under `generated/`; route fixes to TypeSpec/spec regeneration path.
 - Flag security issues and secrets immediately.
 

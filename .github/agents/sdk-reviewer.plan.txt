@@ -1,0 +1,30 @@
+# sdk-reviewer distillation plan
+
+Goal: regenerate low-token custom-agent instructions from Azure Rust guidelines with priority on correctness and compactness.
+
+Inputs (required):
+1) `https://azure.github.io/azure-sdk/rust_introduction.html` (highest priority)
+2) `https://azure.github.io/azure-sdk/rust_implementation.html`
+3) Same-site linked guidance only when needed to resolve gaps/conflicts (`general_introduction.html`, `general_design.html`, `general_implementation.html`, `general_documentation.html`, `policies_support.html`)
+4) README template baseline: `sdk/core/azure_core/README.md` (required H1/H2 section expectations)
+
+Stop and report if any required URL is inaccessible.
+
+Distillation process:
+1) Extract normative statements and map modal verbs: DO=>MUST, DO NOT=>MUST NOT, SHOULD=>SHOULD, MAY=>MAY.
+2) De-duplicate equivalent rules; keep the strictest form.
+3) Resolve conflicts by source priority (rust_introduction first).
+4) Convert prose/examples into compact reviewer checks.
+5) Keep merge-signal rules only: API compatibility, security/PII/secrets, dependency/runtime constraints, module/export layout, model/error/paging/LRO contracts, packaging metadata, generated boundaries, tests, README required sections.
+6) Remove narrative/background and redundant wording.
+7) Normalize output sections: MUST, MUST NOT, SHOULD, MAY, Severity, Output format.
+8) Keep wording short, imperative, machine-oriented.
+9) Validate no contradictions against current repo conventions/workflows.
+
+Maintenance checklist:
+- Re-fetch sources each refresh (no stale summaries).
+- Update rules when upstream wording changes.
+- Preserve source priority.
+- Keep README checks aligned to `sdk/core/azure_core/README.md` headings.
+- Verify workflow repo/doc access and full-crate review behavior remain codified.
+- Recompile affected agentic workflow lock files after changes.
