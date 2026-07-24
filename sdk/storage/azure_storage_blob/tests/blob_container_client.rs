@@ -16,7 +16,7 @@ use azure_storage_blob::models::{
     BlobContainerClientGetAccountInfoResultHeaders, BlobContainerClientGetPropertiesResultHeaders,
     BlobContainerClientListBlobsHierarchicalOptions, BlobContainerClientListBlobsOptions,
     BlobContainerClientSetMetadataOptions, BlobType, BlockBlobClientUploadOptions, LeaseState,
-    ListBlobsIncludeItem, SignedIdentifiers, StorageErrorCode,
+    ListBlobsAcceptFormat, ListBlobsIncludeItem, SignedIdentifiers, StorageErrorCode,
 };
 use azure_storage_blob::StorageError;
 use common::{
@@ -123,7 +123,12 @@ async fn test_list_blobs(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     )
     .await?;
 
-    let mut list_blobs_response = container_client.list_blobs(None)?.into_pages();
+    let mut list_blobs_response = container_client
+        .list_blobs(Some(BlobContainerClientListBlobsOptions {
+            accept: ListBlobsAcceptFormat::Xml,
+            ..Default::default()
+        }))?
+        .into_pages();
 
     let page = list_blobs_response.try_next().await?;
     let list_blob_segment_response = page.unwrap().into_model()?;
@@ -183,6 +188,7 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
 
     // Continuation Token with Token Provided
     let list_blobs_options = BlobContainerClientListBlobsOptions {
+        accept: ListBlobsAcceptFormat::Xml,
         maxresults: Some(2),
         ..Default::default()
     };
@@ -201,6 +207,7 @@ async fn test_list_blobs_with_continuation(ctx: TestContext) -> Result<(), Box<d
         assert_eq!(BlobType::BlockBlob, blob_type);
     }
     let list_blobs_options = BlobContainerClientListBlobsOptions {
+        accept: ListBlobsAcceptFormat::Xml,
         marker: continuation_token,
         ..Default::default()
     };
@@ -282,7 +289,12 @@ async fn test_list_blobs_decodes_xml_invalid_names(ctx: TestContext) -> Result<(
     }
 
     // List blobs and verify the names are correctly percent-decoded
-    let mut list_blobs_response = container_client.list_blobs(None)?.into_pages();
+    let mut list_blobs_response = container_client
+        .list_blobs(Some(BlobContainerClientListBlobsOptions {
+            accept: ListBlobsAcceptFormat::Xml,
+            ..Default::default()
+        }))?
+        .into_pages();
     let page = list_blobs_response.try_next().await?;
     let list_blob_segment_response = page.unwrap().into_model()?;
     let blob_items = list_blob_segment_response.blob_items;
@@ -638,6 +650,7 @@ async fn test_list_blobs_with_include_options(ctx: TestContext) -> Result<(), Bo
     // List with both Metadata and Tags includes
     let page = container_client
         .list_blobs(Some(BlobContainerClientListBlobsOptions {
+            accept: ListBlobsAcceptFormat::Xml,
             include: Some(vec![
                 ListBlobsIncludeItem::Metadata,
                 ListBlobsIncludeItem::Tags,
@@ -694,6 +707,7 @@ async fn test_list_blobs_with_prefix(ctx: TestContext) -> Result<(), Box<dyn Err
 
     let page = container_client
         .list_blobs(Some(BlobContainerClientListBlobsOptions {
+            accept: ListBlobsAcceptFormat::Xml,
             prefix: Some(prefix.to_string()),
             ..Default::default()
         }))?
@@ -731,7 +745,10 @@ async fn test_list_blobs_with_uncommitted_blobs_include(
 
     // Without UncommittedBlobs Include Scenario
     let page_without = container_client
-        .list_blobs(None)?
+        .list_blobs(Some(BlobContainerClientListBlobsOptions {
+            accept: ListBlobsAcceptFormat::Xml,
+            ..Default::default()
+        }))?
         .into_pages()
         .try_next()
         .await?
@@ -748,6 +765,7 @@ async fn test_list_blobs_with_uncommitted_blobs_include(
     // With UncommittedBlobs Include Scenario
     let page_with = container_client
         .list_blobs(Some(BlobContainerClientListBlobsOptions {
+            accept: ListBlobsAcceptFormat::Xml,
             include: Some(vec![ListBlobsIncludeItem::UncommittedBlobs]),
             ..Default::default()
         }))?
@@ -788,7 +806,10 @@ async fn test_list_blobs_with_deleted_include(ctx: TestContext) -> Result<(), Bo
 
     // Without Deleted Include Scenario
     let page_without = container_client
-        .list_blobs(None)?
+        .list_blobs(Some(BlobContainerClientListBlobsOptions {
+            accept: ListBlobsAcceptFormat::Xml,
+            ..Default::default()
+        }))?
         .into_pages()
         .try_next()
         .await?
@@ -805,6 +826,7 @@ async fn test_list_blobs_with_deleted_include(ctx: TestContext) -> Result<(), Bo
     // With Deleted Include Scenario
     let page_with = container_client
         .list_blobs(Some(BlobContainerClientListBlobsOptions {
+            accept: ListBlobsAcceptFormat::Xml,
             include: Some(vec![ListBlobsIncludeItem::Deleted]),
             ..Default::default()
         }))?
@@ -850,6 +872,7 @@ async fn test_list_blobs_with_copy_include(ctx: TestContext) -> Result<(), Box<d
     // Copy Include Scenario
     let page = container_client
         .list_blobs(Some(BlobContainerClientListBlobsOptions {
+            accept: ListBlobsAcceptFormat::Xml,
             include: Some(vec![ListBlobsIncludeItem::Copy]),
             ..Default::default()
         }))?

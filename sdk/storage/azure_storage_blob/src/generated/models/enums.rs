@@ -257,6 +257,20 @@ pub enum LeaseStatus {
     Unlocked,
 }
 
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum ListBlobsAcceptFormat {
+    /// Request an Apache Arrow stream, falling back to XML if Arrow is unavailable.
+    Arrow,
+
+    /// Let the SDK choose the best available format. Currently requests the Apache Arrow stream,
+    /// falling back to XML if Arrow is unavailable.
+    #[default]
+    Auto,
+
+    /// Request the listing as XML.
+    Xml,
+}
+
 /// Specifies additional datasets to include when listing blobs in a container.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ListBlobsIncludeItem {

@@ -712,11 +712,13 @@ impl BlobContainerClient {
     /// # Arguments
     ///
     /// * `options` - Optional parameters for the request.
+
+    // [Emitter Support]: Would need emitter support to point to crate::<Format>
     #[tracing::function("Storage.Blob.BlobContainerClient.listBlobs")]
     pub fn list_blobs(
         &self,
         options: Option<BlobContainerClientListBlobsOptions<'_>>,
-    ) -> Result<Pager<ListBlobsResponse, XmlFormat>> {
+    ) -> Result<Pager<ListBlobsResponse, crate::ArrowXmlFormat>> {
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
@@ -750,13 +752,8 @@ impl BlobContainerClient {
             query_builder.set_pair("timeout", timeout.to_string());
         }
         query_builder.build();
-        #[derive(serde::Deserialize)]
-        struct BlobContainerClientListBlobsPage {
-            #[serde(rename = "NextMarker")]
-            next_marker: Option<String>,
-        }
-
         let version = self.version.clone();
+        let accept = options.accept;
         Ok(Pager::new(
             move |marker: PagerState, pager_options| {
                 let mut url = first_url.clone();
@@ -766,7 +763,7 @@ impl BlobContainerClient {
                     query_builder.build();
                 }
                 let mut request = Request::new(url, Method::Get);
-                request.insert_header("accept", "application/xml");
+                request.insert_header("accept", accept.to_string());
                 request.insert_header("x-ms-version", &version);
                 let pipeline = pipeline.clone();
                 Box::pin(async move {
@@ -783,14 +780,15 @@ impl BlobContainerClient {
                         )
                         .await?;
                     let (status, headers, body) = rsp.deconstruct();
-                    let res: BlobContainerClientListBlobsPage = xml::from_xml(&body)?;
+                    // [Emitter Support]: Would need emitter support for format-aware marker extraction (Arrow schema metadata or XML). (currently hard-codes from_xml)
+                    let next_marker = crate::arrow_decode::decode_next_marker(&headers, &body)?;
                     let rsp = RawResponse::from_bytes(status, headers, body).into();
-                    Ok(match res.next_marker {
-                        Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
+                    Ok(match next_marker {
+                        Some(next_marker) => PagerResult::More {
                             response: rsp,
                             continuation: PagerContinuation::Token(next_marker),
                         },
-                        _ => PagerResult::Done { response: rsp },
+                        None => PagerResult::Done { response: rsp },
                     })
                 })
             },

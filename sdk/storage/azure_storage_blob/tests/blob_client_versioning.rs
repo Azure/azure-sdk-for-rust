@@ -13,7 +13,7 @@ use azure_storage_blob::models::{
     BlobClientDownloadOptions, BlobClientGetPropertiesOptions,
     BlobClientGetPropertiesResultHeaders, BlobClientSetImmutabilityPolicyOptions,
     BlobClientSetTierOptions, BlobContainerClientListBlobsOptions, BlobTags,
-    BlockBlobClientUploadOptions, ListBlobsIncludeItem,
+    BlockBlobClientUploadOptions, ListBlobsAcceptFormat, ListBlobsIncludeItem,
 };
 use common::{create_test_blob, get_blob_name, get_container_client, StorageAccount};
 use futures::TryStreamExt;
@@ -242,7 +242,12 @@ async fn test_list_blobs_with_versions(ctx: TestContext) -> Result<(), Box<dyn E
     create_test_blob(&blob_2_client, None, None).await?;
 
     // List Blobs Without Versions
-    let mut list_response = container_client.list_blobs(None)?.into_pages();
+    let mut list_response = container_client
+        .list_blobs(Some(BlobContainerClientListBlobsOptions {
+            accept: ListBlobsAcceptFormat::Xml,
+            ..Default::default()
+        }))?
+        .into_pages();
     let page = list_response.try_next().await?;
     let segment = page.unwrap().into_model()?;
     let blob_items = segment.blob_items;
@@ -251,6 +256,7 @@ async fn test_list_blobs_with_versions(ctx: TestContext) -> Result<(), Box<dyn E
 
     // List Blobs With Versions
     let list_options = BlobContainerClientListBlobsOptions {
+        accept: ListBlobsAcceptFormat::Xml,
         include: Some(vec![ListBlobsIncludeItem::Versions]),
         ..Default::default()
     };

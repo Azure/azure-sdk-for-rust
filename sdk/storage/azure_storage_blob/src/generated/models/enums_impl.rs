@@ -7,9 +7,9 @@ use super::{
     AccessTier, AccountKind, ArchiveStatus, BlobCopySourceTags, BlobDeleteType, BlobType,
     BlockListType, CopyStatus, DeleteSnapshotsOptionType, EncryptionAlgorithmType,
     FileShareTokenIntent, FilterBlobsIncludeItem, GeoReplicationStatusType, ImmutabilityPolicyMode,
-    LeaseDuration, LeaseState, LeaseStatus, ListBlobsIncludeItem, ListContainersIncludeType,
-    PremiumPageBlobAccessTier, PublicAccessType, RehydratePriority, SequenceNumberActionType,
-    SkuName, StorageErrorCode,
+    LeaseDuration, LeaseState, LeaseStatus, ListBlobsAcceptFormat, ListBlobsIncludeItem,
+    ListContainersIncludeType, PremiumPageBlobAccessTier, PublicAccessType, RehydratePriority,
+    SequenceNumberActionType, SkuName, StorageErrorCode,
 };
 use azure_core::error::{Error, ErrorKind};
 use std::{
@@ -695,6 +695,22 @@ impl Display for LeaseStatus {
             LeaseStatus::Locked => Display::fmt("locked", f),
             LeaseStatus::Unlocked => Display::fmt("unlocked", f),
         }
+    }
+}
+
+impl AsRef<str> for ListBlobsAcceptFormat {
+    fn as_ref(&self) -> &str {
+        match self {
+            ListBlobsAcceptFormat::Arrow => "application/vnd.apache.arrow.stream,application/xml",
+            ListBlobsAcceptFormat::Auto => "application/vnd.apache.arrow.stream,application/xml",
+            ListBlobsAcceptFormat::Xml => "application/xml",
+        }
+    }
+}
+
+impl Display for ListBlobsAcceptFormat {
+    fn fmt(&self, f: &mut Formatter<'_>) -> ::std::fmt::Result {
+        Display::fmt(self.as_ref(), f)
     }
 }
 

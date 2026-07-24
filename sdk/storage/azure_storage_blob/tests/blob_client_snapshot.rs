@@ -10,7 +10,7 @@ use azure_storage_blob::models::{
     BlobClientCreateSnapshotResultHeaders, BlobClientDeleteOptions, BlobClientDownloadOptions,
     BlobClientGetPropertiesResultHeaders, BlobClientSetPropertiesOptions,
     BlobContainerClientListBlobsOptions, BlobTags, BlockBlobClientUploadOptions,
-    DeleteSnapshotsOptionType, ListBlobsIncludeItem,
+    DeleteSnapshotsOptionType, ListBlobsAcceptFormat, ListBlobsIncludeItem,
 };
 use common::{create_test_blob, get_blob_name, get_container_client, StorageAccount};
 use futures::TryStreamExt;
@@ -167,7 +167,12 @@ async fn test_list_blobs_with_snapshots(ctx: TestContext) -> Result<(), Box<dyn 
     blob_2_client.create_snapshot(None).await?;
 
     // List Blobs Without Snapshots
-    let mut list_response = container_client.list_blobs(None)?.into_pages();
+    let mut list_response = container_client
+        .list_blobs(Some(BlobContainerClientListBlobsOptions {
+            accept: ListBlobsAcceptFormat::Xml,
+            ..Default::default()
+        }))?
+        .into_pages();
     let page = list_response.try_next().await?;
     let segment = page.unwrap().into_model()?;
     let blob_items = segment.blob_items;
@@ -179,6 +184,7 @@ async fn test_list_blobs_with_snapshots(ctx: TestContext) -> Result<(), Box<dyn 
 
     // List Blobs With Snapshots
     let list_options = BlobContainerClientListBlobsOptions {
+        accept: ListBlobsAcceptFormat::Xml,
         include: Some(vec![ListBlobsIncludeItem::Snapshots]),
         ..Default::default()
     };

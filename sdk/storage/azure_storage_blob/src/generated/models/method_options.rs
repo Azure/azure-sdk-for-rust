@@ -6,8 +6,8 @@
 use super::{
     AccessTier, BlobCopySourceTags, BlobDeleteType, DeleteSnapshotsOptionType,
     EncryptionAlgorithmType, FileShareTokenIntent, FilterBlobsIncludeItem, ImmutabilityPolicyMode,
-    ListBlobsIncludeItem, ListContainersIncludeType, PremiumPageBlobAccessTier, PublicAccessType,
-    RehydratePriority,
+    ListBlobsAcceptFormat, ListBlobsIncludeItem, ListContainersIncludeType,
+    PremiumPageBlobAccessTier, PublicAccessType, RehydratePriority,
 };
 use crate::models::HttpRange;
 use azure_core::{
@@ -1056,6 +1056,9 @@ impl BlobContainerClientListBlobsHierarchicalOptions<'_> {
 /// Options to be passed to `BlobContainerClient::list_blobs()`
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlobContainerClientListBlobsOptions<'a> {
+    /// The format in which the blob listing should be requested.
+    pub accept: ListBlobsAcceptFormat,
+
     /// Specify to include additional, optional information.
     pub include: Option<Vec<ListBlobsIncludeItem>>,
 
@@ -1084,6 +1087,7 @@ impl BlobContainerClientListBlobsOptions<'_> {
     /// Transforms this [`BlobContainerClientListBlobsOptions`] into a new `BlobContainerClientListBlobsOptions` that owns the underlying data, cloning it if necessary.
     pub fn into_owned(self) -> BlobContainerClientListBlobsOptions<'static> {
         BlobContainerClientListBlobsOptions {
+            accept: self.accept,
             include: self.include,
             marker: self.marker,
             maxresults: self.maxresults,

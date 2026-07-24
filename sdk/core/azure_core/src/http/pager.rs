@@ -133,7 +133,7 @@ pub trait Page {
 #[async_trait]
 impl<P, F> Page for Response<P, F>
 where
-    P: DeserializeWith<F> + Page + Send,
+    P: DeserializeWith<F> + serde::de::DeserializeOwned + Page + Send,
     F: Format + Send,
 {
     type Item = P::Item;

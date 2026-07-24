@@ -87,6 +87,9 @@ version = "1.0.0"
 version = "1.0.0"
 
 [workspace.dependencies]
+arrow-array = "59.1.0"
+arrow-ipc = "59.1.0"
+arrow-schema = "59.1.0"
 async-lock = "3.4"
 async-stream = { version = "0.3.6" }
 async-trait = "0.1"
