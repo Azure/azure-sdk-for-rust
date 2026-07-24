@@ -23,7 +23,6 @@ use std::error::Error;
 use std::sync::Arc;
 use std::time::Duration;
 
-use azure_core::http::StatusCode;
 use azure_data_cosmos::feed::{ChangeFeedPageIterator, ContinuationToken, FeedScope};
 use azure_data_cosmos::models::{
     ChangeFeedItem, ChangeFeedOperationType, ChangeFeedPolicy, ContainerProperties,
@@ -304,31 +303,15 @@ pub async fn change_feed_all_versions_and_deletes_resume_across_split() -> Resul
                 Duration::from_secs(60 * 60),
             ));
             let throughput = ThroughputProperties::manual(1000);
-            let container_client = match run_context
-                .create_container(
-                    db_client,
-                    properties,
-                    Some(CreateContainerOptions::default().with_throughput(throughput)),
-                )
-                .await
-            {
-                Ok(container) => Arc::new(container),
-                // Full-fidelity change feed requires the account to be provisioned
-                // for continuous backup; standard (periodic-backup) public test
-                // accounts reject a container carrying an AVAD change feed policy at
-                // creation with `400 BadRequest`. Soft-skip there rather than fail.
-                // The policy's wire format is still verified unconditionally by the
-                // `container_properties_serialize_change_feed_policy` unit test in the
-                // required PR gate, so this skip cannot mask a serialization regression.
-                Err(err) if err.status().status_code() == StatusCode::BadRequest => {
-                    eprintln!(
-                        "skipping AllVersionsAndDeletes split test: account does not \
-                         support full-fidelity change feed (continuous backup not enabled)"
-                    );
-                    return Ok(());
-                }
-                Err(err) => return Err(err.into()),
-            };
+            let container_client = Arc::new(
+                run_context
+                    .create_container(
+                        db_client,
+                        properties,
+                        Some(CreateContainerOptions::default().with_throughput(throughput)),
+                    )
+                    .await?,
+            );
 
             // Seed the baseline (pre-split, pre-token) creates. AVAD `Now` must
             // exclude these, and they must never replay after the split.
