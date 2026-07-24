@@ -7,8 +7,8 @@ use crate::{
     models::ResourceResponse,
     models::{ContainerProperties, DatabaseProperties, ThroughputProperties},
     options::{
-        CreateContainerOptions, DeleteDatabaseOptions, QueryContainersOptions, ReadDatabaseOptions,
-        ThroughputOptions,
+        ContainerClientOptions, CreateContainerOptions, DeleteDatabaseOptions,
+        QueryContainersOptions, ReadDatabaseOptions, ThroughputOptions,
     },
     Query,
 };
@@ -38,19 +38,22 @@ impl DatabaseClient {
         }
     }
 
-    /// Gets a [`ContainerClient`] that can be used to access the collection with the specified name.
+    /// Gets a [`ContainerClient`] that can be used to access the container with the specified name.
     ///
-    /// This method eagerly resolves immutable container metadata (resource ID and partition key
-    /// definition) from the service, so the returned client is ready for immediate use without
-    /// per-operation cache lookups.
+    /// This method performs I/O to fetch container metadata from the service before returning.
     ///
     /// # Arguments
     /// * `name` - The name of the container.
+    /// * `options` - Optional parameters for the request.
     ///
     /// # Errors
     ///
-    /// Returns an error if the container does not exist or the metadata cannot be resolved.
-    pub async fn container_client(&self, name: &str) -> crate::Result<ContainerClient> {
+    /// Returns an error if the container does not exist or the metadata cannot be fetched.
+    pub async fn container_client(
+        &self,
+        name: &str,
+        _options: Option<ContainerClientOptions>,
+    ) -> crate::Result<ContainerClient> {
         ContainerClient::new(self.context.clone(), name, &self.database_id).await
     }
 
@@ -312,7 +315,7 @@ mod tests {
     fn _assert_futures_are_send() {
         fn assert_send<T: Send>(_: T) {}
         let client: &DatabaseClient = todo!();
-        assert_send(client.container_client(todo!()));
+        assert_send(client.container_client(todo!(), todo!()));
         assert_send(client.read(todo!()));
         assert_send(client.query_containers(Query::from("SELECT * FROM c"), todo!()));
         assert_send(client.create_container(todo!(), todo!()));

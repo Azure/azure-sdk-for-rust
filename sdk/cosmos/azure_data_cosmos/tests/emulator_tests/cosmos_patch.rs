@@ -42,7 +42,7 @@ async fn create_container(
             None,
         )
         .await?;
-    let container_client = db_client.container_client(&container_id).await?;
+    let container_client = db_client.container_client(&container_id, None).await?;
     Ok(container_client)
 }
 
@@ -279,7 +279,7 @@ async fn setup_fault_injected_container(
         )
         .await?;
 
-    let regular = db_client.container_client(&container_id).await?;
+    let regular = db_client.container_client(&container_id, None).await?;
     regular
         .create_item(&initial.partition_key, &initial.id, initial, None)
         .await?;
@@ -288,7 +288,9 @@ async fn setup_fault_injected_container(
         .fault_client()
         .expect("fault client should be configured");
     let fault_db_client = fault_client.database_client(db_client.id());
-    let fault_container = fault_db_client.container_client(&container_id).await?;
+    let fault_container = fault_db_client
+        .container_client(&container_id, None)
+        .await?;
 
     Ok((
         regular,

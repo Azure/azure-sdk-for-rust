@@ -68,7 +68,7 @@ pub async fn aad_item_crud_roundtrip() -> Result<(), Box<dyn Error>> {
             let (aad_client, recorder) = run_context.aad_client().await?;
             let aad_container = aad_client
                 .database_client(db_client.id())
-                .container_client(&container_id)
+                .container_client(&container_id, None)
                 .await?;
 
             let unique = Uuid::new_v4().to_string();
@@ -167,7 +167,7 @@ pub async fn aad_read_container_metadata() -> Result<(), Box<dyn Error>> {
             let (aad_client, recorder) = run_context.aad_client().await?;
             let aad_container = aad_client
                 .database_client(db_client.id())
-                .container_client(&container_id)
+                .container_client(&container_id, None)
                 .await?;
 
             let properties = aad_container.read(None).await?.into_model()?;

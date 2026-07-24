@@ -100,7 +100,7 @@ async fn setup_container() -> ContainerClient {
 
     let container = client
         .database_client(&db_name)
-        .container_client("docs")
+        .container_client("docs", None)
         .await
         .unwrap();
 

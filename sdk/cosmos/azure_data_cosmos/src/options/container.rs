@@ -7,6 +7,11 @@ use azure_data_cosmos_driver::options::OperationOptions;
 
 use crate::models::ThroughputProperties;
 
+/// Options to be passed to [`DatabaseClient::container_client()`](crate::clients::DatabaseClient::container_client()).
+#[derive(Clone, Default)]
+#[non_exhaustive]
+pub struct ContainerClientOptions {}
+
 /// Options to be passed to [`DatabaseClient::create_container()`](crate::clients::DatabaseClient::create_container()).
 #[derive(Clone, Default)]
 #[non_exhaustive]

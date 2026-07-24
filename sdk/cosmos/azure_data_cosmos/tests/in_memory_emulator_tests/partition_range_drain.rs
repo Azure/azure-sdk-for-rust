@@ -97,7 +97,7 @@ async fn read_feed_ranges_drains_25k_partition_container() {
         .unwrap();
     let container = client
         .database_client("large-db")
-        .container_client("large-container")
+        .container_client("large-container", None)
         .await
         .unwrap();
 

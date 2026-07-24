@@ -4,7 +4,11 @@
 
 ### Features Added
 
+- `DatabaseClient::container_client()` now accepts an `Option<ContainerClientOptions>` second argument, aligning it with other async operations. The doc comment also now reflects that this method performs I/O to fetch container metadata. ([#4617](https://github.com/Azure/azure-sdk-for-rust/issues/4617))
+
 ### Breaking Changes
+
+- `DatabaseClient::container_client()` now requires an `Option<ContainerClientOptions>` second argument; callers must pass `None` to preserve existing behavior.
 
 ### Bugs Fixed
 

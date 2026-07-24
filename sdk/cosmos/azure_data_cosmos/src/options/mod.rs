@@ -29,8 +29,8 @@ pub use change_feed::{ChangeFeedMode, ChangeFeedOptions, ChangeFeedStartFrom};
 pub use client::CosmosClientOptions;
 pub use consistency::ConsistencyLevel;
 pub use container::{
-    CreateContainerOptions, DeleteContainerOptions, QueryContainersOptions, ReadContainerOptions,
-    ReplaceContainerOptions,
+    ContainerClientOptions, CreateContainerOptions, DeleteContainerOptions, QueryContainersOptions,
+    ReadContainerOptions, ReplaceContainerOptions,
 };
 pub use database::{
     CreateDatabaseOptions, DeleteDatabaseOptions, QueryDatabasesOptions, ReadDatabaseOptions,

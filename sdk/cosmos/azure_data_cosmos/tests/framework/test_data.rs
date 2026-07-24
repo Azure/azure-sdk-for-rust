@@ -62,7 +62,7 @@ pub async fn create_container_with_items(
         }
     }
 
-    let container_client = db.container_client("TestContainer").await?;
+    let container_client = db.container_client("TestContainer", None).await?;
 
     for item in items {
         let item_id = item.id.clone();

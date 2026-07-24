@@ -369,7 +369,7 @@ async fn provision_fixture_with_topology(
         .emulator
         .client
         .database_client(db_name)
-        .container_client(container_name)
+        .container_client(container_name, None)
         .await?;
     let external_container = if let Some(external) = &harness.external {
         Some(resolve_container_when_ready(&external.client, db_name, container_name).await?)
@@ -528,7 +528,7 @@ async fn resolve_container_when_ready(
     loop {
         match client
             .database_client(db_name)
-            .container_client(container_name)
+            .container_client(container_name, None)
             .await
         {
             Ok(container) => return Ok(container),
