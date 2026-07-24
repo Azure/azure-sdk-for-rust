@@ -5,6 +5,7 @@
 ### Features Added
 
 - Added `Tracer::start_span_with_options`, `Tracer::start_span_with_parent_and_options`, and `Span::end_at`, along with a `SpanOptions` struct, to allow reconstructing spans with explicit (backdated) start and end timestamps. These are additive with default implementations, so existing `Tracer`/`Span` implementations continue to work unchanged.
+- Added `AutoResponse<T>`, `SelectFormat`, `FormatChoice`, and `detect_format_from_headers` (under `#[cfg(all(feature = "json", feature = "xml"))]`) to support runtime JSON/XML dispatch based on response headers. Also added `AutoFormat` as a `Format` impl that falls back to JSON for use with `Response<T, AutoFormat>`.
 
 ### Breaking Changes
 
