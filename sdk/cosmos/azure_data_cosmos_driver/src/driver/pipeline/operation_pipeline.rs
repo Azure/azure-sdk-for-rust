@@ -2448,7 +2448,7 @@ fn finalize_hedge_attempt(
                 request_count = diagnostics.request_count(),
                 http_status = u16::from(status.status_code()),
                 sub_status = ?status.sub_status(),
-                "cosmos.hedge.terminal_http_error",
+                "non-retriable http error in hedging attempt",
             );
             let diagnostics_ctx = Arc::new(diagnostics.complete());
             let base = build_service_error(&status, &cosmos_headers, &body);
@@ -2457,11 +2457,11 @@ fn finalize_hedge_attempt(
                 .build())
         }
         TransportOutcome::TransportError { error, .. } => {
-            tracing::warn!(
+            tracing::debug!(
                 activity_id = %diagnostics.activity_id(),
                 request_count = diagnostics.request_count(),
                 error = %error,
-                "cosmos.hedge.terminal_transport_error",
+                "non-retriable transport error in hedging attempt",
             );
             let diagnostics_ctx = Arc::new(diagnostics.complete());
             Err(crate::error::CosmosErrorBuilder::from_error(error)
@@ -2472,7 +2472,7 @@ fn finalize_hedge_attempt(
             tracing::warn!(
                 activity_id = %diagnostics.activity_id(),
                 request_count = diagnostics.request_count(),
-                "cosmos.hedge.terminal_deadline_exceeded",
+                "deadline exceeded in hedging attempt",
             );
             // Typed status (408 + CLIENT_OPERATION_TIMEOUT) mirrors
             // `enforce_deadline_or_timeout` so retry-evaluation and
