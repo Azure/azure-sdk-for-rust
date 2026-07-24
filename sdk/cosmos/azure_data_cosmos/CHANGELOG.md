@@ -1,5 +1,15 @@
 # Release History
 
+## 0.38.0 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.37.1 (2026-07-23)
 
 ### Bugs Fixed

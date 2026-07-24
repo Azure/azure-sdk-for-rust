@@ -26,7 +26,7 @@ crate-type = ["cdylib", "staticlib"]
 # HTTP client (the driver's default factory needs either `rustls` or
 # `native_tls` — `rustls` matches the driver's own default and avoids the
 # OpenSSL-on-Windows breakage that bites `native_tls`).
-azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", version = "0.6.1", default-features = false, features = ["tokio", "rustls"] }
+azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", version = "0.7.0", default-features = false, features = ["tokio", "rustls"] }
 # Required at runtime for master-key auth — `Secret` lives in
 # `azure_core::credentials` and `Url::parse` is the gate for the account
 # endpoint. Both are zero-cost wrappers around existing driver deps so
