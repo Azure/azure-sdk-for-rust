@@ -316,37 +316,77 @@ fn canonicalize(value: &Value, out: &mut String) {
     }
 }
 
-/// Cosmos-compatible number normalization. **This is the tuning surface** — see
-/// the design doc §3.1. Calibrate against a real account before widening the
-/// generator's numeric envelope.
-fn canonicalize_number(n: &Number, out: &mut String) {
+/// Rewrites a single JSON number to its **Cosmos-calibrated** canonical
+/// [`Value`]. **This is the tuning surface** — see the design doc §3.1. It is
+/// the one number-specific step that must stay under our control (RFC 8785 / JCS
+/// number formatting is *not* the backend's store-time rewrite); the structural
+/// canonicalization around it can be delegated to a standard JCS serializer.
+///
+/// Rules (calibrated against a live account, design doc §3.1):
+/// - integers up to `i64::MAX` → exact integer;
+/// - integers above `i64::MAX` → routed through `f64` (the backend stores them
+///   as IEEE-754 doubles), so a sent `u64` and its returned double normalize to
+///   the same value;
+/// - integral-valued floats below `2^53` (e.g. `1.0`) → integer form (the
+///   backend drops the trailing `.0`);
+/// - other finite floats → kept as `f64`;
+/// - non-finite (`NaN` / `±∞`) → `null`.
+fn normalize_number(n: &Number) -> Value {
     if let Some(i) = n.as_i64() {
-        out.push_str(&i.to_string());
+        Value::Number(Number::from(i))
     } else if let Some(u) = n.as_u64() {
-        // Calibrated behavior (design doc §3.1): the backend stores integers
-        // above i64::MAX as IEEE-754 doubles (lossy) and returns them in
-        // scientific notation — e.g. 18446744073709551614 comes back as
-        // 1.8446744073709552e+19, and 2^63 as 9.223372036854776e+18. Model that
-        // by routing through f64 so a sent u64 and its returned double
-        // canonicalize identically. (Values 0..=i64::MAX are handled by the
-        // `as_i64` branch above and keep exact integer form.)
-        out.push_str(&format!("{}", u as f64));
+        Number::from_f64(u as f64)
+            .map(Value::Number)
+            .unwrap_or(Value::Null)
     } else if let Some(f) = n.as_f64() {
-        // Integral-valued floats (e.g. 1.0) → integer form, mirroring the
-        // backend's observed rewrite of dropping a trailing ".0".
-        if f.is_finite() && f.fract() == 0.0 && f.abs() < 9.007_199_254_740_992e15 {
-            out.push_str(&(f as i64).to_string());
+        if !f.is_finite() {
+            Value::Null
+        } else if f.fract() == 0.0 && f.abs() < 9.007_199_254_740_992e15 {
+            Value::Number(Number::from(f as i64))
         } else {
-            // Format from the `f64` via Rust's shortest round-trippable Display.
-            // This is idempotent under serialize→parse: `serde_json::to_string`
-            // of a `from_f64` value can emit a 17-digit form that reparses to a
-            // neighboring `f64` with a shorter shortest-form, so formatting the
-            // decoded `f64` directly keeps the sent and round-tripped values
-            // comparable.
-            out.push_str(&format!("{f}"));
+            Number::from_f64(f)
+                .map(Value::Number)
+                .unwrap_or(Value::Null)
         }
     } else {
-        out.push_str("null");
+        Value::Null
+    }
+}
+
+/// Recursively rewrites every number in `value` to its Cosmos-calibrated form
+/// (see [`normalize_number`]), leaving all other value kinds unchanged. The
+/// result is a `Value` ready for a standard (JCS) structural canonicalization
+/// pass — the number rewrite has already been applied, so the structural
+/// serializer's own number formatting no longer changes the comparison.
+fn normalize_numbers(value: &Value) -> Value {
+    match value {
+        Value::Number(n) => normalize_number(n),
+        Value::Array(items) => Value::Array(items.iter().map(normalize_numbers).collect()),
+        Value::Object(map) => Value::Object(
+            map.iter()
+                .map(|(k, v)| (k.clone(), normalize_numbers(v)))
+                .collect(),
+        ),
+        other => other.clone(),
+    }
+}
+
+/// Cosmos-compatible number canonicalization. Delegates the number decision to
+/// [`normalize_number`] (the calibrated tuning surface, design doc §3.1) and
+/// renders the resulting value; integers print exact, floats print via Rust's
+/// shortest round-trippable `Display`.
+fn canonicalize_number(n: &Number, out: &mut String) {
+    match normalize_number(n) {
+        Value::Number(m) => {
+            if let Some(i) = m.as_i64() {
+                out.push_str(&i.to_string());
+            } else if let Some(f) = m.as_f64() {
+                out.push_str(&format!("{f}"));
+            } else {
+                out.push_str("null");
+            }
+        }
+        _ => out.push_str("null"),
     }
 }
 
@@ -863,6 +903,70 @@ mod tests {
         // Values up to i64::MAX are still preserved exactly (integer branch).
         let i64_max: Value = serde_json::from_str("9223372036854775807").unwrap();
         assert_eq!(canon(&i64_max), "9223372036854775807");
+    }
+
+    #[test]
+    fn normalize_numbers_rewrites_every_number_in_the_tree() {
+        // The Cosmos-calibrated number rewrite applies recursively through
+        // arrays and nested objects, leaving non-number values untouched.
+        let input = serde_json::json!({
+            "int": 5,
+            "integral_float": 1.0,
+            "fraction": 2.5,
+            "arr": [1.0, 2.0, 3.5],
+            "nested": { "big": 18446744073709551614u64, "s": "x", "b": true, "n": null }
+        });
+        let out = normalize_numbers(&input);
+
+        // Integral floats collapse to integers; fractions stay; big u64 → f64.
+        assert_eq!(out["int"], serde_json::json!(5));
+        assert_eq!(out["integral_float"], serde_json::json!(1));
+        assert_eq!(out["fraction"], serde_json::json!(2.5));
+        assert_eq!(out["arr"], serde_json::json!([1, 2, 3.5]));
+        assert_eq!(
+            out["nested"]["big"],
+            normalize_number(&serde_json::from_str::<Number>("18446744073709551614").unwrap())
+        );
+        // Non-number leaves pass through unchanged.
+        assert_eq!(out["nested"]["s"], serde_json::json!("x"));
+        assert_eq!(out["nested"]["b"], serde_json::json!(true));
+        assert_eq!(out["nested"]["n"], Value::Null);
+    }
+
+    #[test]
+    fn normalize_numbers_is_idempotent() {
+        // Applying the rewrite twice yields the same tree — a prerequisite for
+        // comparing a normalized sent doc against a normalized returned doc.
+        let input = serde_json::json!({
+            "a": 1.0, "b": [2.0, 3.5, 18446744073709551614u64], "c": { "d": 9223372036854775807i64 }
+        });
+        let once = normalize_numbers(&input);
+        let twice = normalize_numbers(&once);
+        assert_eq!(once, twice);
+    }
+
+    #[test]
+    fn normalize_number_matches_canonicalize_number() {
+        // The extracted `normalize_number` value-transform and the string-based
+        // `canonicalize_number` must agree on every calibration probe, so the
+        // Phase-2 extraction is behavior-preserving.
+        for probe in NUMBER_PROBES {
+            let Ok(Value::Number(n)) = serde_json::from_str::<Value>(probe.literal) else {
+                continue;
+            };
+            let mut via_string = String::new();
+            canonicalize_number(&n, &mut via_string);
+
+            let via_value = normalize_numbers(&Value::Number(n.clone()));
+            let mut value_rendered = String::new();
+            canonicalize(&via_value, &mut value_rendered);
+
+            assert_eq!(
+                via_string, value_rendered,
+                "normalize_number and canonicalize_number disagree on probe {}",
+                probe.label
+            );
+        }
     }
 
     #[test]
