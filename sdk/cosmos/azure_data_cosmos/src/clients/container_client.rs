@@ -1029,52 +1029,29 @@ impl ContainerClient {
             .context
             .driver
             .resolve_all_partition_key_ranges(&self.container_ref, options.force_refresh())
-            .await
-            .ok_or_else(|| {
-                // Service was reachable but didn't return a usable routing
-                // map — a service-side invariant violation, surfaced as a
-                // 500 with the client-generated
-                // `SERIALIZATION_RESPONSE_BODY_INVALID` sub-status so
-                // callers can distinguish it from caller misuse.
-                crate::DriverCosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-                    .with_message("failed to resolve routing map for container")
-                    .build()
-            })?;
+            .await;
 
-        if ranges.is_empty() && !options.force_refresh() {
+        if should_force_refresh_feed_ranges(ranges.as_deref(), options.force_refresh()) {
             // A valid container always has at least one partition key range.
-            // Empty result likely means a stale/failed cache — retry with forced refresh.
+            // Missing or empty results likely mean a stale/failed cache.
             ranges = self
                 .context
                 .driver
                 .resolve_all_partition_key_ranges(&self.container_ref, true)
-                .await
-                .ok_or_else(|| {
-                    crate::DriverCosmosError::builder()
-                        .with_status(
-                            crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
-                        )
-                        .with_message("failed to resolve routing map for container")
-                        .build()
-                })?;
+                .await;
         }
 
-        if ranges.is_empty() {
-            // Forced refresh produced an empty routing map — either the
-            // container truly does not exist or the service is
-            // unreachable. Map to 503 with the transport-generated
-            // sub-status so the caller treats this as a service-side
-            // availability issue (not their bug).
-            return Err(crate::DriverCosmosError::builder()
-                .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
-                .with_message(
-                    "resolved routing map contains no partition key ranges; \
-                     the container may not exist or the service may be unreachable",
-                )
+        let ranges = ranges.ok_or_else(|| {
+            // Service was reachable but didn't return a usable routing
+            // map — a service-side invariant violation, surfaced as a
+            // 500 with the client-generated
+            // `SERIALIZATION_RESPONSE_BODY_INVALID` sub-status so
+            // callers can distinguish it from caller misuse.
+            crate::DriverCosmosError::builder()
+                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_message("failed to resolve routing map for container")
                 .build()
-                .into());
-        }
+        })?;
 
         ranges
             .iter()
@@ -1262,6 +1239,10 @@ fn apply_batch_options(mut operation: CosmosOperation, options: &BatchOptions) -
     operation
 }
 
+fn should_force_refresh_feed_ranges<T>(ranges: Option<&[T]>, force_refresh: bool) -> bool {
+    !force_refresh && ranges.is_none_or(<[T]>::is_empty)
+}
+
 /// Compile-time guarantee that the futures returned by [`ContainerClient`]
 /// helpers are `Send`.
 ///
@@ -1278,4 +1259,17 @@ fn _assert_futures_are_send() {
     let patch: PatchInstructions = todo!();
     let options: Option<PatchItemOptions> = todo!();
     assert_send(client.patch_item(partition_key, item_id, patch, options));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::should_force_refresh_feed_ranges;
+
+    #[test]
+    fn feed_ranges_refreshes_missing_or_empty_initial_resolution() {
+        assert!(should_force_refresh_feed_ranges::<()>(None, false));
+        assert!(should_force_refresh_feed_ranges::<()>(Some(&[]), false));
+        assert!(!should_force_refresh_feed_ranges(Some(&[()]), false));
+        assert!(!should_force_refresh_feed_ranges::<()>(None, true));
+    }
 }

@@ -10,16 +10,13 @@ use azure_core::{
         Method,
     },
 };
-use base64::{
-    engine::general_purpose::{STANDARD as BASE64_STANDARD, URL_SAFE as BASE64_URL_SAFE},
-    Engine as _,
-};
 use uuid::Uuid;
 
 use crate::{
     models::{
         cosmos_headers::{request_header_names, response_header_names},
         effective_partition_key::EffectivePartitionKey,
+        resource_id::decode_rid,
         DefaultConsistencyLevel, OperationType, ResourceType,
     },
     options::ReadConsistencyStrategy,
@@ -160,19 +157,9 @@ pub(crate) fn wrap_request_for_gateway_v2(
     metadata.push(Token::collection_name(resource_names.collection));
     if let Some(rid) = inputs.collection_rid.filter(|s| !s.is_empty()) {
         metadata.push(Token::collection_rid(rid.to_owned()));
-        // Both CollectionRid (string, base64) and ResourceId (binary, 8 bytes) are emitted.
-        // The proxy uses ResourceId as the document routing key — without it requests
-        // fail with sub-status 13007 ("error routing the request"). Cosmos rids may use
-        // either standard (`+/`) or url-safe (`-_`) base64; try url-safe first since
-        // standard rejects `-_`.
-        let decoded = BASE64_URL_SAFE
-            .decode(rid)
-            .or_else(|_| BASE64_STANDARD.decode(rid));
-        if let Ok(decoded) = decoded {
-            if !decoded.is_empty() {
-                metadata.push(Token::resource_id(decoded));
-            }
-        }
+        let decoded = decode_rid(rid)
+            .map_err(|e| data_conversion_error(format!("invalid collection RID: {e}")))?;
+        metadata.push(Token::resource_id(decoded));
     }
     metadata.push(Token::payload_present(has_payload));
     if inputs.resource_type == ResourceType::Document
@@ -1108,12 +1095,43 @@ mod tests {
 
     #[test]
     fn wrap_emits_collection_rid_and_decoded_resource_id_when_supplied() {
-        // Regression: the proxy uses the binary `ResourceId` token (0x0000, 8
-        // bytes) as the document routing key. Both `CollectionRid`
-        // (string base64) and `ResourceId` (decoded bytes) must be emitted.
-        // Cosmos rids use URL-safe base64 (e.g. `wT0aAOnu_xc=`); pin the
-        // url-safe-first decode path so plain `STANDARD` rejection of `-_`
-        // does not cause us to silently drop the routing key.
+        let request = signed_request(None);
+        let auth_context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs/doc1",
+        );
+
+        for (rid, expected_resource_id) in [
+            (
+                "-NY+AJoR+cc=",
+                [0xfc, 0xd6, 0x3e, 0x00, 0x9a, 0x11, 0xf9, 0xc7],
+            ),
+            (
+                "YpNuAIVuY-0=",
+                [0x62, 0x93, 0x6e, 0x00, 0x85, 0x6e, 0x63, 0xfd],
+            ),
+        ] {
+            let mut inputs = wrap_inputs(&auth_context, OperationType::Read, None);
+            inputs.collection_rid = Some(rid);
+
+            let wrapped = wrap_request_for_gateway_v2(&request, &inputs).unwrap();
+            let parsed = parse_wrapped_request(&wrapped, 0);
+
+            assert_eq!(
+                parsed.tokens[&0x0035],
+                ParsedTokenValue::String(rid.into()),
+                "CollectionRid (0x0035) must preserve the wire value"
+            );
+            match &parsed.tokens[&0x0000] {
+                ParsedTokenValue::Bytes(bytes) => assert_eq!(bytes, &expected_resource_id),
+                other => panic!("expected ResourceId bytes, got {other:?}"),
+            }
+        }
+    }
+
+    #[test]
+    fn wrap_rejects_invalid_collection_rid() {
         let request = signed_request(None);
         let auth_context = AuthorizationContext::new(
             Method::Get,
@@ -1121,24 +1139,10 @@ mod tests {
             "dbs/db1/colls/coll1/docs/doc1",
         );
         let mut inputs = wrap_inputs(&auth_context, OperationType::Read, None);
-        // "wT0aAOnu_xc=" -> 8 bytes containing the url-safe `_` (0x5F maps to 0xFF7F in std b64).
-        let rid = "wT0aAOnu_xc=";
-        inputs.collection_rid = Some(rid);
+        inputs.collection_rid = Some("invalid!");
 
-        let wrapped = wrap_request_for_gateway_v2(&request, &inputs).unwrap();
-        let parsed = parse_wrapped_request(&wrapped, 0);
-
-        assert_eq!(
-            parsed.tokens[&0x0035],
-            ParsedTokenValue::String(rid.into()),
-            "CollectionRid (0x0035) must be the raw base64 string"
-        );
-        match &parsed.tokens[&0x0000] {
-            ParsedTokenValue::Bytes(bytes) => {
-                assert_eq!(bytes.len(), 8, "ResourceId must be 8 bytes");
-            }
-            other => panic!("expected ResourceId bytes, got {other:?}"),
-        }
+        let err = wrap_request_for_gateway_v2(&request, &inputs).unwrap_err();
+        assert!(err.to_string().contains("invalid collection RID"));
     }
 
     #[test]

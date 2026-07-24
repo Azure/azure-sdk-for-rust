@@ -559,8 +559,10 @@ mod tests {
 
     /// When *no* layer sets `throttling_retry_options`, the view's
     /// inner-field accessors must return `None` so the consumer falls back
-    /// to the compile-time defaults (`DEFAULT_MAX_THROTTLE_ATTEMPTS` /
-    /// `DEFAULT_MAX_THROTTLE_WAIT`).
+    /// to the request-class compile-time defaults selected by the operation
+    /// pipeline (metadata: `METADATA_MAX_THROTTLE_ATTEMPTS` /
+    /// `METADATA_MAX_THROTTLE_WAIT`; data-plane: `DATA_PLANE_MAX_THROTTLE_ATTEMPTS`
+    /// / `DATA_PLANE_MAX_THROTTLE_WAIT`).
     #[test]
     fn nested_throttling_retry_options_view_is_none_when_unset_at_every_layer() {
         let op = OperationOptions::default();
