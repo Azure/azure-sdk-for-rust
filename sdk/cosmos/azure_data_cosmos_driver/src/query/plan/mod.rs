@@ -522,7 +522,7 @@ fn is_unresolved_pk_value(v: &PartitionKeyValue) -> bool {
     )
 }
 
-#[allow(clippy::collapsible_match)] // clippy suggests a match guard, but that won't compile with &mut
+#[expect(clippy::collapsible_match, reason = "clippy suggests a match guard, but that won't compile with &mut")]
 fn collect_path_parts(expr: &SqlScalarExpression, parts: &mut Vec<String>) -> bool {
     match expr {
         SqlScalarExpression::PropertyRef(name) => {
@@ -845,7 +845,10 @@ fn normalize_pk_union(values: Vec<Vec<PartitionKeyValue>>) -> PartitionKeyFilter
 
     match deduped.len() {
         0 => PartitionKeyFilter::Unconstrained,
-        1 => PartitionKeyFilter::Equality(deduped.into_iter().next().unwrap()),
+        1 => match deduped.into_iter().next() {
+            Some(value) => PartitionKeyFilter::Equality(value),
+            None => PartitionKeyFilter::Unconstrained,
+        },
         _ => PartitionKeyFilter::InList(deduped),
     }
 }
@@ -914,7 +917,10 @@ fn intersect_pk_filters(a: PartitionKeyFilter, b: PartitionKeyFilter) -> Partiti
                 a.into_iter().filter(|item| b.contains(item)).collect();
             match intersection.len() {
                 0 => PartitionKeyFilter::Contradictory,
-                1 => PartitionKeyFilter::Equality(intersection.into_iter().next().unwrap()),
+                1 => match intersection.into_iter().next() {
+                    Some(value) => PartitionKeyFilter::Equality(value),
+                    None => PartitionKeyFilter::Contradictory,
+                },
                 _ => PartitionKeyFilter::InList(intersection),
             }
         }
@@ -1081,7 +1087,10 @@ fn extract_hierarchical_pk(
         tuples = next;
     }
     if tuples.len() == 1 {
-        PartitionKeyFilter::Equality(tuples.into_iter().next().unwrap())
+        match tuples.into_iter().next() {
+            Some(value) => PartitionKeyFilter::Equality(value),
+            None => PartitionKeyFilter::Unconstrained,
+        }
     } else {
         PartitionKeyFilter::InList(tuples)
     }
@@ -1140,7 +1149,7 @@ fn is_pk_reference(expr: &SqlScalarExpression, pk_path: &[&str], root_alias: Opt
     resolved_path.iter().map(String::as_str).collect::<Vec<_>>() == pk_path
 }
 
-#[allow(clippy::collapsible_match)] // clippy suggests a match guard, but that won't compile with &mut
+#[expect(clippy::collapsible_match, reason = "clippy suggests a match guard, but that won't compile with &mut")]
 fn resolve_property_path(expr: &SqlScalarExpression, path: &mut Vec<String>) -> bool {
     match expr {
         SqlScalarExpression::PropertyRef(name) => {

@@ -1,6 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// In-memory emulator is test infrastructure; unwrap/expect are acceptable.
+#![expect(clippy::unwrap_used, reason = "in-memory emulator is test infrastructure")]
+#![expect(clippy::expect_used, reason = "in-memory emulator is test infrastructure")]
+
 // cspell:ignore behaviour epks
 //! Session token parsing, formatting, and state tracking.
 //!

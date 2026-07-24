@@ -36,8 +36,12 @@ pub(crate) fn murmurhash3_128(span: &[u8], seed: u128) -> u128 {
     let len = span.len();
 
     while position + 16 <= len {
-        let k1 = u64::from_le_bytes(span[position..position + 8].try_into().unwrap());
-        let k2 = u64::from_le_bytes(span[position + 8..position + 16].try_into().unwrap());
+        let mut k1_bytes = [0u8; 8];
+        k1_bytes.copy_from_slice(&span[position..position + 8]);
+        let k1 = u64::from_le_bytes(k1_bytes);
+        let mut k2_bytes = [0u8; 8];
+        k2_bytes.copy_from_slice(&span[position + 8..position + 16]);
+        let k2 = u64::from_le_bytes(k2_bytes);
 
         let mut k1 = k1.wrapping_mul(c1);
         k1 = k1.rotate_left(31);

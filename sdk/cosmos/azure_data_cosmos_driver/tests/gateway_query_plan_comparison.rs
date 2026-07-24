@@ -545,7 +545,7 @@ async fn validate_nested(sql: &str) {
     validate(d, c, &["/address/city"], sql).await;
 }
 
-#[allow(dead_code)]
+#[expect(dead_code, reason = "implementation in progress")]
 async fn validate_nopk(sql: &str) {
     let (d, c) = require_driver_and(get_driver().await, c_nopk().await);
     validate(d, c, &["/id"], sql).await;

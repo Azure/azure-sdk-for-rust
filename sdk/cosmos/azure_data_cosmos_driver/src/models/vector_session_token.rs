@@ -132,7 +132,7 @@ impl VectorSessionToken {
     /// `global_lsn` and per-region LSN values.
     ///
     /// Regions present in `other` but missing in `self` are treated as behind.
-    #[allow(dead_code)] // Will be used by PKRange cache resolution
+    #[expect(dead_code, reason = "Will be used by PKRange cache resolution")]
     pub(crate) fn is_as_recent_as(&self, other: &Self) -> bool {
         if self.version > other.version {
             return true;
@@ -328,7 +328,7 @@ impl SessionTokenValue {
     }
 
     /// Returns `true` if this token is at least as recent as `other`.
-    #[allow(dead_code)] // Will be used by PKRange cache resolution
+    #[expect(dead_code, reason = "Will be used by PKRange cache resolution")]
     pub(crate) fn is_as_recent_as(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::Vector(a), Self::Vector(b)) => a.is_as_recent_as(b),

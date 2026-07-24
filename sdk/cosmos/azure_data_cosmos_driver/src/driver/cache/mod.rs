@@ -17,9 +17,9 @@ mod async_lazy;
 mod container_cache;
 // Some methods/fields in the routing map and PK range cache are not yet called
 // from wired-in code paths but exist for the full PPAF/PPCB feature set.
-#[allow(dead_code)]
+#[expect(dead_code, reason = "implementation in progress")]
 mod container_routing_map;
-#[allow(dead_code)]
+#[expect(dead_code, reason = "implementation in progress")]
 mod partition_key_range_cache;
 
 pub(crate) use account_metadata_cache::{AccountMetadataCache, AccountProperties, AccountRegion};

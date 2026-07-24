@@ -79,6 +79,10 @@ pub struct ConnectionPoolOptions {
 }
 
 impl Default for ConnectionPoolOptions {
+    #[expect(
+        clippy::expect_used,
+        reason = "the default connection-pool builder configuration is validated when it is constructed"
+    )]
     fn default() -> Self {
         ConnectionPoolOptionsBuilder::new()
             .build()

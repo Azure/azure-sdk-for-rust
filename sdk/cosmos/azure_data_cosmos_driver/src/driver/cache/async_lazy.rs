@@ -77,7 +77,7 @@ impl<T> AsyncLazy<T> {
     /// If the value is not yet initialized (another task is about to call
     /// [`get_or_init`](Self::get_or_init)), this method yields and retries
     /// until the value becomes available. It will not panic.
-    #[allow(dead_code)] // Consumer coming once Driver is used
+    #[expect(dead_code, reason = "Consumer coming once Driver is used")]
     pub(crate) async fn get(&self) -> Arc<T> {
         loop {
             {
@@ -97,7 +97,7 @@ impl<T> AsyncLazy<T> {
 ///
 /// This is runtime-agnostic: it returns [`Poll::Pending`] once (scheduling a
 /// wake-up via the waker) and [`Poll::Ready`] on the subsequent poll.
-#[allow(dead_code)] // Used by AsyncLazy::get, consumer coming once Driver is used
+#[expect(dead_code, reason = "Used by AsyncLazy::get, consumer coming once Driver is used")]
 struct YieldOnce(bool);
 
 impl Future for YieldOnce {

@@ -264,7 +264,7 @@ pub(crate) struct QueryPlan {
 /// Information about a hybrid search query.
 #[derive(Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
-#[allow(dead_code)] // Wire-format fields; hybrid search isn't fully wired yet.
+#[expect(dead_code, reason = "Wire-format fields; hybrid search isn't fully wired yet.")]
 pub(crate) struct HybridSearchQueryInfo {
     /// The query used for global statistics gathering.
     pub global_statistics_query: String,
@@ -371,7 +371,7 @@ pub(crate) enum SortOrder {
 /// [`RawQueryPlan::resolve`] to hash structured PK values into proper EPK hex.
 #[derive(Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
-#[allow(dead_code)] // Inclusivity flags are wire-format; planner treats ranges uniformly.
+#[expect(dead_code, reason = "Inclusivity flags are wire-format; planner treats ranges uniformly.")]
 pub(crate) struct QueryRange {
     /// The minimum EPK value (hex string, `""` for MIN, `"FF"` for MAX).
     #[serde(deserialize_with = "string_or_json")]

@@ -267,7 +267,7 @@ impl OperationRetryState {
     /// today runs a single transport attempt (no per-hedge retry loop).
     /// When §8.4 lands per-hedge operation-level retry, the secondary's
     /// `OperationRetryState` constructor will switch to this builder.
-    #[allow(dead_code)] // reserved for §8.4 per-hedge retry state
+    #[expect(dead_code, reason = "reserved for §8.4 per-hedge retry state")]
     pub fn with_shared_hub_region_latch(mut self, latch: Arc<AtomicBool>) -> Self {
         self.shared_hub_region_latch = Some(latch);
         self

@@ -101,6 +101,10 @@ impl TransportClient for ReqwestTransportClient {
     }
 }
 
+#[expect(
+    clippy::expect_used,
+    reason = "azure_core HTTP methods are normalized tokens that reqwest accepts unchanged"
+)]
 fn to_reqwest_method(method: azure_core::http::Method) -> reqwest::Method {
     reqwest::Method::from_bytes(method.as_str().as_bytes())
         .expect("azure_core::http::Method should always be a valid HTTP method")

@@ -106,7 +106,7 @@ impl ContainerCache {
     }
 
     /// Returns a cached container looked up by name, or `None` if not cached.
-    #[allow(dead_code)] // Used in tests; will be called from production code once lookup-by-name is wired up.
+    #[expect(dead_code, reason = "Used in tests; will be called from production code once lookup-by-name is wired up.")]
     pub(crate) async fn get_by_name(
         &self,
         account_endpoint: &str,
@@ -122,7 +122,7 @@ impl ContainerCache {
     }
 
     /// Returns a cached container looked up by RID, or `None` if not cached.
-    #[allow(dead_code)] // Used in tests; will be called from production code once lookup-by-RID is wired up.
+    #[expect(dead_code, reason = "Used in tests; will be called from production code once lookup-by-RID is wired up.")]
     pub(crate) async fn get_by_rid(
         &self,
         account_endpoint: &str,

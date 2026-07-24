@@ -20,7 +20,7 @@ use tracing::{debug, error};
 /// When the manager is dropped, all handles are aborted, cancelling the
 /// associated tasks (tokio `JoinHandle`s detach on drop rather than cancel,
 /// so explicit abort is required).
-#[allow(dead_code)]
+#[expect(dead_code, reason = "implementation in progress")]
 pub(crate) struct BackgroundTaskManager {
     /// Stored task handles. Aborting these cancels the tasks.
     /// Uses a [`Mutex`] for interior mutability so that [`spawn`](Self::spawn)
@@ -40,7 +40,7 @@ impl std::fmt::Debug for BackgroundTaskManager {
     }
 }
 
-#[allow(dead_code)]
+#[expect(dead_code, reason = "implementation in progress")]
 impl BackgroundTaskManager {
     /// Creates a new [`BackgroundTaskManager`] with no active tasks.
     pub fn new() -> Self {

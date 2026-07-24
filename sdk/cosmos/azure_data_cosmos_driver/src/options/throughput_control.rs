@@ -16,7 +16,7 @@ use crate::{
 };
 use std::{
     collections::HashMap,
-    sync::{Arc, RwLock},
+    sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard},
 };
 
 /// Runtime settings for a throughput control group.
@@ -49,6 +49,26 @@ pub struct ThroughputControlGroupOptions {
 }
 
 impl ThroughputControlGroupOptions {
+    #[expect(
+        clippy::expect_used,
+        reason = "throughput control groups only mutate driver-owned state; lock poisoning indicates a prior internal panic"
+    )]
+    fn settings_read(&self) -> RwLockReadGuard<'_, ThroughputControlSettings> {
+        self.mutable
+            .read()
+            .expect("throughput control settings lock poisoned")
+    }
+
+    #[expect(
+        clippy::expect_used,
+        reason = "throughput control groups only mutate driver-owned state; lock poisoning indicates a prior internal panic"
+    )]
+    fn settings_write(&self) -> RwLockWriteGuard<'_, ThroughputControlSettings> {
+        self.mutable
+            .write()
+            .expect("throughput control settings lock poisoned")
+    }
+
     /// Creates a new throughput control group.
     pub fn new(
         name: impl Into<ThroughputControlGroupName>,
@@ -64,14 +84,20 @@ impl ThroughputControlGroupOptions {
     }
 
     /// Sets the initial throughput bucket value.
+    ///
+    /// # Panics
+    /// Panics if the group's internal settings lock is poisoned by a prior panic.
     pub fn with_throughput_bucket(self, bucket: u32) -> Self {
-        self.mutable.write().unwrap().throughput_bucket = Some(bucket);
+        self.settings_write().throughput_bucket = Some(bucket);
         self
     }
 
     /// Sets the initial priority level.
+    ///
+    /// # Panics
+    /// Panics if the group's internal settings lock is poisoned by a prior panic.
     pub fn with_priority_level(self, level: PriorityLevel) -> Self {
-        self.mutable.write().unwrap().priority_level = Some(level);
+        self.settings_write().priority_level = Some(level);
         self
     }
 
@@ -99,23 +125,35 @@ impl ThroughputControlGroupOptions {
     }
 
     /// Returns the current throughput bucket, if set.
+    ///
+    /// # Panics
+    /// Panics if the group's internal settings lock is poisoned by a prior panic.
     pub fn throughput_bucket(&self) -> Option<u32> {
-        self.mutable.read().unwrap().throughput_bucket
+        self.settings_read().throughput_bucket
     }
 
     /// Sets the throughput bucket.
+    ///
+    /// # Panics
+    /// Panics if the group's internal settings lock is poisoned by a prior panic.
     pub fn set_throughput_bucket(&self, bucket: u32) {
-        self.mutable.write().unwrap().throughput_bucket = Some(bucket);
+        self.settings_write().throughput_bucket = Some(bucket);
     }
 
     /// Returns the current priority level, if set.
+    ///
+    /// # Panics
+    /// Panics if the group's internal settings lock is poisoned by a prior panic.
     pub fn priority_level(&self) -> Option<PriorityLevel> {
-        self.mutable.read().unwrap().priority_level
+        self.settings_read().priority_level
     }
 
     /// Sets the priority level.
+    ///
+    /// # Panics
+    /// Panics if the group's internal settings lock is poisoned by a prior panic.
     pub fn set_priority_level(&self, level: PriorityLevel) {
-        self.mutable.write().unwrap().priority_level = Some(level);
+        self.settings_write().priority_level = Some(level);
     }
 }
 
@@ -132,7 +170,7 @@ pub(crate) struct ThroughputControlGroupKey {
     pub(crate) name: ThroughputControlGroupName,
 }
 
-#[allow(dead_code)] // used in tests
+#[expect(dead_code, reason = "used in tests")]
 impl ThroughputControlGroupKey {
     /// Creates a new key.
     pub(crate) fn new(
@@ -151,7 +189,7 @@ impl ThroughputControlGroupKey {
 /// This provides an immutable view of the group's configuration at a point in time.
 #[non_exhaustive]
 #[derive(Clone, Debug)]
-#[allow(dead_code)] // name/container/is_default kept for diagnostics and future use
+#[expect(dead_code, reason = "name/container/is_default kept for diagnostics and future use")]
 pub(crate) struct ThroughputControlGroupSnapshot {
     /// The group name.
     pub(crate) name: ThroughputControlGroupName,
@@ -165,7 +203,7 @@ pub(crate) struct ThroughputControlGroupSnapshot {
     pub(crate) priority_level: Option<PriorityLevel>,
 }
 
-#[allow(dead_code)] // some methods kept for diagnostics and future use
+#[expect(dead_code, reason = "some methods kept for diagnostics and future use")]
 impl ThroughputControlGroupSnapshot {
     /// Creates a new snapshot with the required fields.
     ///
@@ -225,7 +263,7 @@ impl ThroughputControlGroupSnapshot {
 
 impl From<&ThroughputControlGroupOptions> for ThroughputControlGroupSnapshot {
     fn from(group: &ThroughputControlGroupOptions) -> Self {
-        let mutable = group.mutable.read().unwrap();
+        let mutable = group.settings_read();
         let mut snapshot = Self::new(
             group.name().clone(),
             group.container().clone(),
@@ -321,7 +359,7 @@ pub(crate) struct ThroughputControlGroupRegistry {
     defaults: HashMap<ContainerReference, ThroughputControlGroupName>,
 }
 
-#[allow(dead_code)] // some methods only used in tests
+#[expect(dead_code, reason = "some methods only used in tests")]
 impl ThroughputControlGroupRegistry {
     /// Creates an empty registry.
     pub(crate) fn new() -> Self {
@@ -335,7 +373,7 @@ impl ThroughputControlGroupRegistry {
     /// Returns an error if:
     /// - A group with the same (container, name) key already exists
     /// - Another group is already marked as default for the same container
-    #[allow(clippy::result_large_err)]
+    #[expect(clippy::result_large_err, reason = "error type is complex but unavoidable")]
     pub(crate) fn register(
         &mut self,
         group: ThroughputControlGroupOptions,

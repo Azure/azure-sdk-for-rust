@@ -45,7 +45,7 @@ impl UserAgentFeatureFlags {
     /// Cosmos SDKs; this driver does not advertise it yet (PPAF is server-driven
     /// and resolved per-partition at request time, so it is unknown when the
     /// shared header value is computed).
-    #[allow(dead_code)] // Reserved cross-SDK bit; not advertised by this driver yet.
+    #[expect(dead_code, reason = "Reserved cross-SDK bit; not advertised by this driver yet.")]
     pub(crate) const PER_PARTITION_AUTOMATIC_FAILOVER: Self = Self(1);
 
     /// Per-partition circuit breaker (PPCB). Cross-SDK bit value `0x2`.
@@ -54,13 +54,13 @@ impl UserAgentFeatureFlags {
     /// Thin client mode. Cross-SDK bit value `0x4`.
     ///
     /// Reserved for cross-SDK parity; not advertised by this driver yet.
-    #[allow(dead_code)] // Reserved cross-SDK bit; not advertised by this driver yet.
+    #[expect(dead_code, reason = "Reserved cross-SDK bit; not advertised by this driver yet.")]
     pub(crate) const THIN_CLIENT: Self = Self(4);
 
     /// Cosmos binary encoding. Cross-SDK bit value `0x8`.
     ///
     /// Reserved for cross-SDK parity; not advertised by this driver yet.
-    #[allow(dead_code)] // Reserved cross-SDK bit; not advertised by this driver yet.
+    #[expect(dead_code, reason = "Reserved cross-SDK bit; not advertised by this driver yet.")]
     pub(crate) const BINARY_ENCODING: Self = Self(8);
 
     /// HTTP/2 transport. Cross-SDK bit value `0x10`.

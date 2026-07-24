@@ -25,9 +25,9 @@ pub mod options;
 // The `query` module is local-plan scaffolding. Many helpers (gateway response
 // envelope, value comparison helpers, etc.) are temporarily unused in the driver
 // proper because no production caller wires the local plan generator in yet. The
-// `#[allow(dead_code)]` annotation is intentional and should be removed once the
+// `#[expect(dead_code)]` annotation is intentional and should be removed once the
 // driver pipeline starts consuming the local plan output. Until then, individual
-// per-item `#[allow(dead_code)]` would mean ~50 annotations across lexer/parser/
+// per-item `#[expect(dead_code)]` would mean ~50 annotations across lexer/parser/
 // eval/plan scaffolding without changing what the compiler actually checks.
 //
 // The two `mod query;` declarations differ only in visibility, which is gated on
@@ -41,12 +41,12 @@ pub mod options;
 // TODO(local-plan-wire-up): drop `allow(dead_code)` once the driver wires the
 // local plan generator into the query execution path.
 #[cfg(any(test, feature = "__internal_testing"))]
-#[allow(dead_code)]
+#[expect(dead_code, reason = "implementation in progress")]
 pub mod query;
 #[cfg(not(any(test, feature = "__internal_testing")))]
-#[allow(dead_code)]
+#[expect(dead_code, reason = "implementation in progress")]
 pub(crate) mod query;
-#[allow(dead_code)]
+#[expect(dead_code, reason = "implementation in progress")]
 pub(crate) mod query_plan_native;
 pub(crate) mod system;
 #[cfg(feature = "__internal_mocking")]

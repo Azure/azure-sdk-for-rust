@@ -34,7 +34,7 @@ use uuid::Uuid;
 // The framework module is shared across test binaries; not all exports are used
 // from every binary so silence both dead-code and unused-import lints (other
 // driver test binaries do the same thing).
-#[allow(dead_code, unused_imports)]
+#[expect(dead_code, unused_imports, reason = "shared test framework exports are used selectively across test binaries")]
 mod framework;
 
 use framework::resolve_test_env;

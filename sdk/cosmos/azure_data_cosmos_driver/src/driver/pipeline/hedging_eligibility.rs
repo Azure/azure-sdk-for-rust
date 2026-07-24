@@ -161,6 +161,10 @@ pub(crate) fn resolve_availability_strategy(
 /// Computes the driver-default threshold: `min(1000ms, request_timeout / 2)`,
 /// falling back to `request_timeout` itself when `t/2 == 0` (sub-ms input),
 /// then to `1000ms` only when no timeout is configured.
+#[expect(
+    clippy::expect_used,
+    reason = "DEFAULT_THRESHOLD_CAP is a statically non-zero duration"
+)]
 fn default_threshold(request_timeout: Option<Duration>) -> HedgeThreshold {
     let candidate = match request_timeout {
         Some(t) if !t.is_zero() => (t / 2).min(DEFAULT_THRESHOLD_CAP),
@@ -208,6 +212,10 @@ pub(crate) struct HedgeUpgrade {
 /// or no applicable region distinct from `primary` exists — in all cases
 /// the caller falls back to its non-hedged decision (typically
 /// `FailoverRetry`).
+#[expect(
+    clippy::expect_used,
+    reason = "selected hedge URLs come from validated account endpoints with stable host and port components"
+)]
 pub(crate) fn evaluate_hedge_eligibility(
     operation: &CosmosOperation,
     options: &OperationOptionsView<'_>,

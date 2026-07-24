@@ -583,6 +583,10 @@ impl CosmosDriver {
     /// `backup_endpoints` are intentionally omitted: this reference is used for
     /// a single-endpoint probe inside the fallback loop and must not trigger
     /// its own recursive fallback.
+    #[expect(
+        clippy::expect_used,
+        reason = "cloning auth from an existing AccountReference preserves the builder invariant that credentials are present"
+    )]
     fn with_endpoint(account: &AccountReference, endpoint: Url) -> AccountReference {
         AccountReference::builder(endpoint)
             .auth(account.auth().clone())
@@ -1072,7 +1076,7 @@ impl CosmosDriver {
     /// Called when the primary global endpoint is unreachable. Iterates through
     /// readable regional endpoints from the previous account metadata and tries
     /// each one.
-    #[allow(clippy::too_many_arguments)]
+    #[expect(clippy::too_many_arguments, reason = "complex operation requires multiple parameters")]
     async fn refresh_via_regional_endpoints(
         runtime: &CosmosDriverRuntime,
         account: &AccountReference,
@@ -1220,7 +1224,7 @@ impl CosmosDriver {
     /// If the error indicates explicit HTTP/2 incompatibility, falls back to
     /// the alternate version directly. Otherwise, performs a full version probe
     /// to determine whether the gateway's protocol support has changed.
-    #[allow(clippy::too_many_arguments)]
+    #[expect(clippy::too_many_arguments, reason = "complex operation requires multiple parameters")]
     async fn handle_refresh_failure(
         runtime: &CosmosDriverRuntime,
         http_client_factory: &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
@@ -1648,7 +1652,7 @@ impl CosmosDriver {
     /// Equivalent to the runtime's factory when this driver has no fault
     /// injection rules; otherwise wraps the runtime's factory with a
     /// fault-injecting factory carrying this driver's rules.
-    #[allow(dead_code)]
+    #[expect(dead_code, reason = "implementation in progress")]
     pub(crate) fn http_client_factory(
         &self,
     ) -> &Arc<dyn super::transport::http_client_factory::HttpClientFactory> {
@@ -1657,7 +1661,7 @@ impl CosmosDriver {
 
     /// Returns whether fault injection is enabled for this driver.
     #[cfg(feature = "fault_injection")]
-    #[allow(dead_code)]
+    #[expect(dead_code, reason = "implementation in progress")]
     pub(crate) fn fault_injection_enabled(&self) -> bool {
         self.fault_injection_enabled
     }
@@ -4169,7 +4173,7 @@ mod tests {
     /// Compile-time assertion that functions are send.
     ///
     /// This function is never called; it only needs to compile.
-    #[allow(dead_code, unreachable_code, unused_variables)]
+    #[expect(dead_code, unreachable_code, unused_variables, reason = "dead code in test placeholder")]
     fn _assert_functions_are_send() {
         fn assert_send<T: Send>(_: T) {}
         let driver: &CosmosDriver = todo!();

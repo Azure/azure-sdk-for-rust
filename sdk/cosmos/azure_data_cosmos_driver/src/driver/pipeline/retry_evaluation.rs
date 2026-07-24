@@ -356,7 +356,7 @@ pub(crate) fn evaluate_hedge_leg_effects(
 /// (5xx). The first handler that recognizes the response returns
 /// `Some(action, effects)`; if none match, the response is aborted with a
 /// rich HTTP error.
-#[allow(clippy::too_many_arguments)]
+#[expect(clippy::too_many_arguments, reason = "complex operation requires multiple parameters")]
 fn evaluate_http_outcome(
     operation: &CosmosOperation,
     endpoint: &CosmosEndpoint,

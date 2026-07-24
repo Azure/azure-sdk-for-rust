@@ -32,7 +32,7 @@ use std::sync::Arc;
 
 // Framework module shared across test binaries — only a subset of its
 // exports are used here.
-#[allow(dead_code, unused_imports)]
+#[expect(dead_code, unused_imports, reason = "shared test framework exports are used selectively across test binaries")]
 mod framework;
 
 use framework::DriverTestClient;

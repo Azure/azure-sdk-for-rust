@@ -101,7 +101,7 @@ pub fn resolve_test_env() -> Result<Option<TestEnv>, Box<dyn Error>> {
         return resolve_gateway_v2_env(test_mode);
     }
 
-    #[allow(unreachable_code)]
+    #[expect(unreachable_code, reason = "cfg-gated test categories use the fallback path")]
     let connection_string = match std::env::var(CONNECTION_STRING_ENV_VAR) {
         Ok(val) if val.to_lowercase() == "emulator" => EMULATOR_CONNECTION_STRING.to_string(),
         Ok(val) => val,

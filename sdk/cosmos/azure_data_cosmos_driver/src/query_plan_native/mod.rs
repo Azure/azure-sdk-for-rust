@@ -93,17 +93,17 @@
 
 // ABI contract items (HRESULT constants, enum variants, free_library) are
 // defined for completeness but not all are consumed by the driver yet.
-#[allow(dead_code)]
+#[expect(dead_code, reason = "implementation in progress")]
 pub(crate) mod error;
 #[path = "generated/native_bindings.rs"]
-#[allow(dead_code)]
+#[expect(dead_code, reason = "implementation in progress")]
 // NOTE: Generated bindings assume Windows (WCHAR = u16). On Linux/macOS
 // WCHAR is u32. These bindings are only used for struct layout validation,
 // not for runtime FFI calls. See native.rs for the platform-correct WChar type.
 pub(crate) mod generated_bindings;
-#[allow(dead_code)]
+#[expect(dead_code, reason = "implementation in progress")]
 pub(crate) mod native;
-#[allow(dead_code)]
+#[expect(dead_code, reason = "implementation in progress")]
 pub(crate) mod provider;
 
 #[cfg(test)]

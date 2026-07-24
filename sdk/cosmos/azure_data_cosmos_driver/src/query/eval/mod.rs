@@ -602,8 +602,8 @@ fn total_cmp_for_sort(a: &CosmosValue, b: &CosmosValue) -> Ordering {
 ///
 /// F20 note: superseded by inline pre-computed-keys sort in `query_documents`
 /// (eval errors must propagate, which `sort_by` cannot do). Kept for now
-/// behind `#[allow(dead_code)]` until callers outside this module are removed.
-#[allow(dead_code)]
+/// behind `#[expect(dead_code)]` until callers outside this module are removed.
+#[expect(dead_code, reason = "implementation in progress")]
 fn compare_for_order_by(
     a: &serde_json::Value,
     b: &serde_json::Value,
@@ -627,7 +627,7 @@ fn compare_for_order_by(
     Ordering::Equal
 }
 
-#[allow(dead_code)] // superseded by inline pre-computed-keys sort.
+#[expect(dead_code, reason = "superseded by inline pre-computed-keys sort.")]
 fn compare_for_grouped_order_by(
     projected_a: &serde_json::Value,
     group_a: &[serde_json::Value],
@@ -758,7 +758,16 @@ pub fn query_documents(
 
     for doc in documents {
         if use_binding_context {
-            let from = &query.from.as_ref().unwrap().collection;
+            let from = &query
+                .from
+                .as_ref()
+                .ok_or_else(|| {
+                    crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                        .with_message("binding-context query evaluation requires a FROM clause")
+                        .build()
+                })?
+                .collection;
             let bindings_list = expand_from(doc, from, &serde_json::Map::new()).map_err(|e| {
                 crate::error::CosmosError::builder()
                     .with_status(crate::error::CosmosStatus::new(

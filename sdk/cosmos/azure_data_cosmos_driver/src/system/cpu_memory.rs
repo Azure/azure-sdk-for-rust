@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 //! CPU and memory monitoring with historical snapshots.
-#![allow(dead_code)]
+#![expect(dead_code, reason = "implementation in progress")]
 
 use std::{
     cmp::Ordering,
@@ -325,6 +325,46 @@ impl CpuMemoryMonitorInner {
         }
     }
 
+    #[expect(
+        clippy::expect_used,
+        reason = "monitor lock poisoning indicates a prior panic while mutating driver-owned sampling state"
+    )]
+    fn buffer_read(&self) -> std::sync::RwLockReadGuard<'_, VecDeque<SystemSample>> {
+        self.buffer.read().expect("CPU monitor buffer lock poisoned")
+    }
+
+    #[expect(
+        clippy::expect_used,
+        reason = "monitor lock poisoning indicates a prior panic while mutating driver-owned sampling state"
+    )]
+    fn buffer_write(&self) -> std::sync::RwLockWriteGuard<'_, VecDeque<SystemSample>> {
+        self.buffer.write().expect("CPU monitor buffer lock poisoned")
+    }
+
+    #[expect(
+        clippy::expect_used,
+        reason = "monitor lock poisoning indicates a prior panic while mutating driver-owned sampling state"
+    )]
+    fn listener_count_read(&self) -> std::sync::RwLockReadGuard<'_, usize> {
+        self.listener_count
+            .read()
+            .expect("CPU monitor listener-count lock poisoned")
+    }
+
+    #[expect(
+        clippy::expect_used,
+        reason = "monitor lock poisoning indicates a prior panic while mutating driver-owned sampling state"
+    )]
+    fn listener_count_write(&self) -> std::sync::RwLockWriteGuard<'_, usize> {
+        self.listener_count
+            .write()
+            .expect("CPU monitor listener-count lock poisoned")
+    }
+
+    #[expect(
+        clippy::expect_used,
+        reason = "monitor startup is expected to succeed on supported targets"
+    )]
     fn start(self: &Arc<Self>) {
         let weak = Arc::downgrade(self);
         let refresh_interval = self.refresh_interval;
@@ -338,25 +378,25 @@ impl CpuMemoryMonitorInner {
 
     fn register(&self) {
         // Poisoning cannot occur: the critical section only increments a counter.
-        let mut count = self.listener_count.write().unwrap();
+        let mut count = self.listener_count_write();
         *count += 1;
     }
 
     fn unregister(&self) {
         // Poisoning cannot occur: the critical section only decrements a counter.
-        let mut count = self.listener_count.write().unwrap();
+        let mut count = self.listener_count_write();
         *count = count.saturating_sub(1);
     }
 
     fn has_listeners(&self) -> bool {
         // Poisoning cannot occur: see register/unregister.
-        *self.listener_count.read().unwrap() > 0
+        *self.listener_count_read() > 0
     }
 
     fn snapshot(&self) -> CpuMemoryHistory {
         // Poisoning cannot occur: the write side (refresh) only does
         // infallible VecDeque push/pop operations.
-        let samples: Vec<SystemSample> = self.buffer.read().unwrap().iter().copied().collect();
+        let samples: Vec<SystemSample> = self.buffer_read().iter().copied().collect();
 
         CpuMemoryHistory {
             samples,
@@ -394,7 +434,7 @@ impl CpuMemoryMonitorInner {
         };
 
         // Poisoning cannot occur: push_back/pop_front are infallible.
-        let mut buffer = self.buffer.write().unwrap();
+        let mut buffer = self.buffer_write();
         if buffer.len() >= HISTORY_LENGTH {
             buffer.pop_front();
         }

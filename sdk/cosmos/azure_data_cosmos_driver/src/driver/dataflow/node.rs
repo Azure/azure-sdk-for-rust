@@ -15,7 +15,7 @@ use super::{context::PipelineContext, snapshot::PipelineNodeState};
 /// would add a heap allocation on every page fetch — the hot path. The `SplitRequired`
 /// variant is rare (only on partition splits), so the size difference is acceptable.
 #[must_use = "a PageResult carries the next page, drain signal, or a split request that the caller must act on"]
-#[allow(clippy::large_enum_variant)]
+#[expect(clippy::large_enum_variant, reason = "variant sizes differ significantly but boxing would add indirection")]
 pub(crate) enum PageResult {
     /// A page of results was produced.
     ///

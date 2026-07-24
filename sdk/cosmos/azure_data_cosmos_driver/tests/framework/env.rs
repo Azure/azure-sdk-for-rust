@@ -19,7 +19,7 @@ pub const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
 /// `sdk/cosmos/azure_data_cosmos/tests/gateway_v2_tests/gateway_v2_e2e.rs`) must
 /// point at this pre-provisioned account instead of the standard
 /// `AZURE_COSMOS_CONNECTION_STRING`.
-#[allow(
+#[expect(
     dead_code,
     reason = "Consumed only by gateway_v2 test categories; unused in other test binaries that include this shared framework module."
 )]
@@ -27,7 +27,7 @@ pub const GATEWAY_V2_ENDPOINT_ENV_VAR: &str = "AZURE_COSMOS_GW_V2_ENDPOINT";
 
 /// Environment variable name for the pre-provisioned Gateway 2.0 account
 /// master key. See [`GATEWAY_V2_ENDPOINT_ENV_VAR`].
-#[allow(
+#[expect(
     dead_code,
     reason = "Consumed only by gateway_v2 test categories; unused in other test binaries that include this shared framework module."
 )]
@@ -39,7 +39,7 @@ pub const GATEWAY_V2_KEY_ENV_VAR: &str = "AZURE_COSMOS_GW_V2_KEY";
 /// referenced by [`GATEWAY_V2_ENDPOINT_ENV_VAR`] cannot exercise
 /// regional-failover behaviors, so multi-region tests need a dedicated
 /// multi-region GW_V2 account.
-#[allow(
+#[expect(
     dead_code,
     reason = "Consumed only by gateway_v2_multi_region test categories; unused in other test binaries that include this shared framework module."
 )]
@@ -48,21 +48,21 @@ pub const GATEWAY_V2_MULTI_REGION_ENDPOINT_ENV_VAR: &str =
 
 /// Environment variable name for the pre-provisioned multi-region Gateway 2.0
 /// account master key. See [`GATEWAY_V2_MULTI_REGION_ENDPOINT_ENV_VAR`].
-#[allow(
+#[expect(
     dead_code,
     reason = "Consumed only by gateway_v2_multi_region test categories; unused in other test binaries that include this shared framework module."
 )]
 pub const GATEWAY_V2_MULTI_REGION_KEY_ENV_VAR: &str = "AZURE_COSMOS_GW_V2_MULTI_REGION_KEY";
 
 /// Environment variable for shared database name.
-#[allow(
+#[expect(
     dead_code,
     reason = "Part of the shared test-framework surface; unused in test binaries that include this module without referencing it."
 )]
 pub const DATABASE_NAME_ENV_VAR: &str = "DATABASE_NAME";
 
 /// Environment variable to allow invalid certificates.
-#[allow(
+#[expect(
     dead_code,
     reason = "Part of the shared test-framework surface; unused in test binaries that include this module without referencing it."
 )]

@@ -222,6 +222,10 @@ pub(crate) async fn build_sequential_drain(
 /// to its children, while a merge reads each saved sub-range independently
 /// without dropping a continuation — matching the per-EPK-range change feed
 /// resume used by the other Cosmos SDKs (.NET, Java, Python).
+#[expect(
+    clippy::expect_used,
+    reason = "topology resolution only returns ranges that overlap the requested feed range"
+)]
 pub(crate) async fn build_unordered_merge(
     feed_range: &FeedRange,
     topology_provider: &mut dyn TopologyProvider,

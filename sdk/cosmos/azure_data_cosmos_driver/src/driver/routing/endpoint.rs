@@ -43,10 +43,17 @@ impl std::hash::Hash for CosmosEndpoint {
 }
 
 impl CosmosEndpoint {
+    #[expect(
+        clippy::expect_used,
+        reason = "Cosmos endpoints are constructed from parsed URLs that always include a host and port"
+    )]
+    fn endpoint_key_for(url: &Url) -> EndpointKey {
+        EndpointKey::try_from(url).expect("CosmosEndpoint URL must have a valid host and port")
+    }
+
     /// Creates a global endpoint.
     pub fn global(url: Url) -> Self {
-        let endpoint_key = EndpointKey::try_from(&url)
-            .expect("CosmosEndpoint URL must have a valid host and port");
+        let endpoint_key = Self::endpoint_key_for(&url);
         Self(Arc::new(CosmosEndpointData {
             region: None,
             gateway_url: url,
@@ -57,8 +64,7 @@ impl CosmosEndpoint {
 
     /// Creates a regional endpoint.
     pub fn regional(region: Region, url: Url) -> Self {
-        let endpoint_key = EndpointKey::try_from(&url)
-            .expect("CosmosEndpoint URL must have a valid host and port");
+        let endpoint_key = Self::endpoint_key_for(&url);
         Self(Arc::new(CosmosEndpointData {
             region: Some(region),
             gateway_url: url,
@@ -69,8 +75,7 @@ impl CosmosEndpoint {
 
     /// Creates a regional endpoint with an optional Gateway 2.0 URL.
     pub fn regional_with_gateway_v2(region: Region, gateway_url: Url, gateway_v2_url: Url) -> Self {
-        let endpoint_key = EndpointKey::try_from(&gateway_url)
-            .expect("CosmosEndpoint URL must have a valid host and port");
+        let endpoint_key = Self::endpoint_key_for(&gateway_url);
         Self(Arc::new(CosmosEndpointData {
             region: Some(region),
             gateway_url,

@@ -1,6 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// In-memory emulator is test infrastructure; unwrap/expect are acceptable.
+#![expect(clippy::unwrap_used, reason = "in-memory emulator is test infrastructure")]
+#![expect(clippy::expect_used, reason = "in-memory emulator is test infrastructure")]
+
 // cspell:ignore epks llsn splittable
 //! In-memory document store with multi-region support.
 
@@ -205,7 +209,7 @@ pub struct EmulatorStore {
     replication_semaphore: Arc<tokio::sync::Semaphore>,
     /// Count of replication entries dropped because the per-region buffer was
     /// full. The proactive 429/3075 short-circuit in
-    /// ind_overflowed_replication_target is racy across concurrent writers,
+    /// `find_overflowed_replication_target` is racy across concurrent writers,
     /// so the apply path still has to drop on overflow as a safety net. Tests
     /// that want to assert the safety net never fired can read this counter
     /// in teardown via [Self::dropped_replications] and fail when non-zero.
@@ -1331,7 +1335,7 @@ pub(crate) struct DatabaseMetadata {
 pub(crate) struct ContainerMetadata {
     pub id: String,
     pub rid: String,
-    #[allow(dead_code)]
+    #[expect(dead_code, reason = "implementation in progress")]
     pub db_rid: String,
     pub numeric_db_id: u32,
     pub numeric_coll_id: u32,
@@ -1374,7 +1378,7 @@ pub(crate) struct ContainerState {
 }
 
 /// Snapshot of container metadata (without borrowing the lock).
-#[allow(dead_code)]
+#[expect(dead_code, reason = "implementation in progress")]
 pub(crate) struct ContainerStateSnapshot {
     pub metadata: ContainerMetadata,
 }
@@ -1494,10 +1498,10 @@ pub(crate) struct StoredDocument {
     pub id: String,
     pub rid: String,
     pub etag: String,
-    #[allow(dead_code)]
+    #[expect(dead_code, reason = "implementation in progress")]
     pub ts: u64,
     pub self_link: String,
-    #[allow(dead_code)]
+    #[expect(dead_code, reason = "implementation in progress")]
     pub lsn: u64,
     pub epk: Epk,
     /// Size of `body` when serialized to JSON, captured at insertion. Cached
@@ -1513,7 +1517,7 @@ pub(crate) struct StoredDocument {
     /// avoiding any tiebreaker that depends on which region happened to
     /// produce the colliding write. See the comment in
     /// `apply_doc_to_partition` for the rationale.
-    #[allow(dead_code)]
+    #[expect(dead_code, reason = "implementation in progress")]
     pub source_region: String,
 }
 

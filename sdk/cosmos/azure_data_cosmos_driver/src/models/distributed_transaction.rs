@@ -706,7 +706,7 @@ impl DistributedTransactionResponse {
     /// is treated as a hard failure and synthesized as `500 InternalServerError`
     /// (`fail_closed`); on a non-success envelope the results are padded with the
     /// envelope status so the caller still sees one result per operation.
-    #[allow(clippy::too_many_arguments)]
+    #[expect(clippy::too_many_arguments, reason = "complex operation requires multiple parameters")]
     fn fallback(
         is_success_envelope: bool,
         status_code: azure_core::http::StatusCode,

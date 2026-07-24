@@ -1,6 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// In-memory emulator is test infrastructure; unwrap/expect are acceptable.
+#![expect(clippy::unwrap_used, reason = "in-memory emulator is test infrastructure")]
+#![expect(clippy::expect_used, reason = "in-memory emulator is test infrastructure")]
+
 //! Point operation and control-plane operation handlers.
 
 // cspell:ignore acked hexdigit llsn
@@ -541,7 +545,7 @@ pub(crate) async fn handle_operation(
     /// Serializes a single per-operation result into the `.NET`-shaped wire
     /// object consumed by `DistributedTransactionResponse::from_body`.
     #[cfg(feature = "preview_dtx")]
-    #[allow(clippy::too_many_arguments)]
+    #[expect(clippy::too_many_arguments, reason = "complex operation requires multiple parameters")]
     fn dtx_op_json(
         index: usize,
         status: StatusCode,

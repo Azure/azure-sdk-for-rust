@@ -68,6 +68,10 @@ impl RequestTarget {
     }
 }
 
+#[expect(
+    clippy::expect_used,
+    reason = "valid feed-range intersections always produce valid bounds"
+)]
 pub(crate) fn intersect_feed_ranges(left: &FeedRange, right: &FeedRange) -> Option<FeedRange> {
     let min = if left.min_inclusive() >= right.min_inclusive() {
         left.min_inclusive().clone()
@@ -146,6 +150,10 @@ impl Request {
 
 #[async_trait]
 impl PipelineNode for Request {
+    #[expect(
+        clippy::expect_used,
+        reason = "effective-partition-key range requests always carry an owned range"
+    )]
     async fn next_page(
         &mut self,
         context: &mut PipelineContext<'_>,
@@ -354,6 +362,10 @@ impl Request {
 
     /// Resolves the current topology for this node's EPK range and returns
     /// a `SplitRequired` result with replacement nodes for each sub-range.
+    #[expect(
+        clippy::expect_used,
+        reason = "topology refresh only returns physical ranges that overlap the node's owned range"
+    )]
     async fn split_for_topology_change(
         &self,
         context: &mut PipelineContext<'_>,

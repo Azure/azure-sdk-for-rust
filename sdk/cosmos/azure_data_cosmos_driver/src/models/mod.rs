@@ -33,14 +33,14 @@ mod user_agent;
 pub(crate) mod vector_session_token;
 pub(crate) use cosmos_headers::request_header_names;
 pub(crate) use finite_f64::FiniteF64;
-#[allow(dead_code)]
+#[expect(dead_code, reason = "implementation in progress")]
 pub mod effective_partition_key;
 mod feed_range;
-#[allow(dead_code)]
+#[expect(dead_code, reason = "implementation in progress")]
 mod murmur_hash;
-#[allow(dead_code)]
+#[expect(dead_code, reason = "implementation in progress")]
 pub mod partition_key_range;
-#[allow(dead_code)]
+#[expect(dead_code, reason = "implementation in progress")]
 pub(crate) mod range;
 
 pub use account_reference::{AccountReference, AccountReferenceBuilder, Credential};
@@ -97,7 +97,7 @@ use std::borrow::Cow;
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[non_exhaustive]
 #[serde(rename_all = "camelCase")]
-#[allow(dead_code)] // Reserved wire-format model for read-database/query-databases responses.
+#[expect(dead_code, reason = "Reserved wire-format model for read-database/query-databases responses.")]
 pub(crate) struct DatabaseProperties {
     /// Unique identifier for the database within the account.
     pub id: Cow<'static, str>,

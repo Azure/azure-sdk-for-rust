@@ -515,11 +515,7 @@ impl RequestDiagnostics {
         self.error = None;
         self.timed_out = false;
         self.request_sent = RequestSentStatus::Sent;
-        self.duration_ms = self
-            .completed_at
-            .unwrap()
-            .duration_since(self.started_at)
-            .as_millis() as u64;
+        self.record_duration_from_completion();
     }
 
     /// Records end-to-end timeout of this request.
@@ -534,11 +530,7 @@ impl RequestDiagnostics {
             StatusCode::RequestTimeout,
             Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
         );
-        self.duration_ms = self
-            .completed_at
-            .unwrap()
-            .duration_since(self.started_at)
-            .as_millis() as u64;
+        self.record_duration_from_completion();
     }
 
     /// Records a transport-level failure using the synthetic Cosmos status
@@ -554,11 +546,7 @@ impl RequestDiagnostics {
         self.with_error(error);
         self.request_sent = request_sent;
         self.timed_out = false;
-        self.duration_ms = self
-            .completed_at
-            .unwrap()
-            .duration_since(self.started_at)
-            .as_millis() as u64;
+        self.record_duration_from_completion();
     }
 
     /// Records an error for this request.
@@ -1350,7 +1338,7 @@ impl DiagnosticsContextBuilder {
     /// Returns the operation-level activity ID.
     // TODO(Step 2): remove this allow once Step 2 diagnostics assertions are
     // added in integration tests for operation pipeline retries/failover.
-    #[allow(dead_code)]
+    #[expect(dead_code, reason = "implementation in progress")]
     pub(crate) fn activity_id(&self) -> &ActivityId {
         &self.activity_id
     }
@@ -1358,7 +1346,7 @@ impl DiagnosticsContextBuilder {
     /// Returns the number of tracked requests for this operation.
     // TODO(Step 2): remove this allow once Step 2 diagnostics assertions are
     // added in integration tests for operation pipeline retries/failover.
-    #[allow(dead_code)]
+    #[expect(dead_code, reason = "implementation in progress")]
     pub(crate) fn request_count(&self) -> usize {
         self.requests.len()
     }
@@ -3349,3 +3337,13 @@ mod tests {
         assert_eq!(ctx.machine_id(), None);
     }
 }
+    #[expect(
+        clippy::expect_used,
+        reason = "request completion paths set completed_at immediately before computing duration"
+    )]
+    fn record_duration_from_completion(&mut self) {
+        let completed_at = self
+            .completed_at
+            .expect("completed_at is set before request duration is computed");
+        self.duration_ms = completed_at.duration_since(self.started_at).as_millis() as u64;
+    }

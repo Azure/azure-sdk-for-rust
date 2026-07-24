@@ -18,7 +18,7 @@ pub enum QueryPlanError {
     /// diagnostic payload (e.g. a query-syntax error message).
     Expected {
         /// The raw HRESULT value.
-        #[allow(dead_code)]
+        #[expect(dead_code, reason = "implementation in progress")]
         hresult: u32,
         /// The UTF-8 JSON payload returned by the native library.
         message: String,

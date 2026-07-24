@@ -1,0 +1,133 @@
+[1m[92m   Compiling[0m azure_data_cosmos_driver v0.7.0 (/home/runner/work/azure-sdk-for-rust/azure-sdk-for-rust/sdk/cosmos/azure_data_cosmos_driver)
+sdk/cosmos/azure_data_cosmos_driver/src/diagnostics/diagnostics_context.rs:518:28: [1m[91merror[0m: used `unwrap()` on an `Option` value
+sdk/cosmos/azure_data_cosmos_driver/src/diagnostics/diagnostics_context.rs:537:28: [1m[91merror[0m: used `unwrap()` on an `Option` value
+sdk/cosmos/azure_data_cosmos_driver/src/diagnostics/diagnostics_context.rs:557:28: [1m[91merror[0m: used `unwrap()` on an `Option` value
+sdk/cosmos/azure_data_cosmos_driver/src/driver/cosmos_driver.rs:587:9: [1m[91merror[0m: used `expect()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/driver/cosmos_driver.rs:2320:5: [1m[91merror[0m: docs for function which may panic missing `# Panics` section
+sdk/cosmos/azure_data_cosmos_driver/src/driver/dataflow/planner.rs:285:21: [1m[91merror[0m: used `expect()` on an `Option` value
+sdk/cosmos/azure_data_cosmos_driver/src/driver/dataflow/request.rs:84:25: [1m[91merror[0m: used `expect()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/driver/dataflow/request.rs:333:29: [1m[91merror[0m: used `expect()` on an `Option` value
+sdk/cosmos/azure_data_cosmos_driver/src/driver/dataflow/request.rs:378:35: [1m[91merror[0m: used `expect()` on an `Option` value
+sdk/cosmos/azure_data_cosmos_driver/src/driver/pipeline/hedging_eligibility.rs:173:13: [1m[91merror[0m: used `expect()` on an `Option` value
+sdk/cosmos/azure_data_cosmos_driver/src/driver/pipeline/hedging_eligibility.rs:274:9: [1m[91merror[0m: used `expect()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/driver/pipeline/operation_pipeline.rs:1255:13: [1m[91merror[0m: used `expect()` on an `Option` value
+sdk/cosmos/azure_data_cosmos_driver/src/driver/pipeline/operation_pipeline.rs:1280:9: [1m[91merror[0m: used `expect()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/driver/pipeline/operation_pipeline.rs:1303:17: [1m[91merror[0m: used `expect()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/driver/pipeline/operation_pipeline.rs:3220:26: [1m[91merror[0m: used `expect()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/driver/pipeline/patch_eval.rs:209:26: [1m[91merror[0m: used `expect()` on an `Option` value
+sdk/cosmos/azure_data_cosmos_driver/src/driver/pipeline/patch_handler.rs:310:25: [1m[91merror[0m: used `expect()` on an `Option` value
+sdk/cosmos/azure_data_cosmos_driver/src/driver/routing/endpoint.rs:48:28: [1m[91merror[0m: used `expect()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/driver/routing/endpoint.rs:60:28: [1m[91merror[0m: used `expect()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/driver/routing/endpoint.rs:72:28: [1m[91merror[0m: used `expect()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/driver/routing/location_state_store.rs:244:30: [1m[91merror[0m: used `unwrap()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/driver/routing/location_state_store.rs:264:26: [1m[91merror[0m: used `unwrap()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/driver/routing/location_state_store.rs:289:26: [1m[91merror[0m: used `unwrap()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/driver/routing/location_state_store.rs:676:17: [1m[91merror[0m: used `unwrap()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/driver/routing/location_state_store.rs:689:25: [1m[91merror[0m: used `unwrap()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/driver/routing/location_state_store.rs:699:25: [1m[91merror[0m: used `unwrap()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/driver/routing/location_state_store.rs:714:33: [1m[91merror[0m: used `unwrap()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/driver/routing/location_state_store.rs:733:25: [1m[91merror[0m: used `unwrap()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/driver/routing/location_state_store.rs:745:13: [1m[91merror[0m: used `unwrap()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/driver/routing/location_state_store.rs:766:24: [1m[91merror[0m: used `unwrap()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/driver/routing/location_state_store.rs:773:29: [1m[91merror[0m: used `unwrap()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/driver/routing/location_state_store.rs:777:18: [1m[91merror[0m: used `unwrap()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/driver/routing/location_state_store.rs:801:33: [1m[91merror[0m: used `unwrap()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/driver/routing/location_state_store.rs:809:10: [1m[91merror[0m: used `unwrap()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/driver/routing/routing_systems.rs:163:34: [1m[91merror[0m: used `unwrap()` on an `Option` value
+sdk/cosmos/azure_data_cosmos_driver/src/driver/transport/reqwest_transport_client.rs:105:5: [1m[91merror[0m: used `expect()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/error/backtrace.rs:475:21: [1m[91merror[0m: used `unwrap()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/error/backtrace.rs:511:29: [1m[91merror[0m: used `unwrap()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/in_memory_emulator/store.rs:773:23: [1m[91merror[0m: `unwrap` used in a function that returns a `Result`
+sdk/cosmos/azure_data_cosmos_driver/src/in_memory_emulator/store.rs:782:26: [1m[91merror[0m: `unwrap` used in a function that returns a `Result`
+sdk/cosmos/azure_data_cosmos_driver/src/in_memory_emulator/store.rs:1774:21: [1m[91merror[0m: `unwrap` used in a function that returns a `Result`
+sdk/cosmos/azure_data_cosmos_driver/src/models/cosmos_operation.rs:62:5: [1m[91merror[0m: used `expect()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/models/effective_partition_key.rs:435:9: [1m[91merror[0m: used `unwrap()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/models/murmur_hash.rs:39:37: [1m[91merror[0m: used `unwrap()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/models/murmur_hash.rs:40:37: [1m[91merror[0m: used `unwrap()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/options/connection_pool.rs:83:9: [1m[91merror[0m: used `expect()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/options/diagnostics_options.rs:106:9: [1m[91merror[0m: used `expect()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/options/throughput_control.rs:67:5: [1m[91merror[0m: docs for function which may panic missing `# Panics` section
+sdk/cosmos/azure_data_cosmos_driver/src/options/throughput_control.rs:68:9: [1m[91merror[0m: used `unwrap()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/options/throughput_control.rs:73:5: [1m[91merror[0m: docs for function which may panic missing `# Panics` section
+sdk/cosmos/azure_data_cosmos_driver/src/options/throughput_control.rs:74:9: [1m[91merror[0m: used `unwrap()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/options/throughput_control.rs:102:5: [1m[91merror[0m: docs for function which may panic missing `# Panics` section
+sdk/cosmos/azure_data_cosmos_driver/src/options/throughput_control.rs:103:9: [1m[91merror[0m: used `unwrap()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/options/throughput_control.rs:107:5: [1m[91merror[0m: docs for function which may panic missing `# Panics` section
+sdk/cosmos/azure_data_cosmos_driver/src/options/throughput_control.rs:108:9: [1m[91merror[0m: used `unwrap()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/options/throughput_control.rs:112:5: [1m[91merror[0m: docs for function which may panic missing `# Panics` section
+sdk/cosmos/azure_data_cosmos_driver/src/options/throughput_control.rs:113:9: [1m[91merror[0m: used `unwrap()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/options/throughput_control.rs:117:5: [1m[91merror[0m: docs for function which may panic missing `# Panics` section
+sdk/cosmos/azure_data_cosmos_driver/src/options/throughput_control.rs:118:9: [1m[91merror[0m: used `unwrap()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/options/throughput_control.rs:228:23: [1m[91merror[0m: used `unwrap()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/query/eval/mod.rs:761:25: [1m[91merror[0m: used `unwrap()` on an `Option` value
+sdk/cosmos/azure_data_cosmos_driver/src/query/plan/mod.rs:848:43: [1m[91merror[0m: used `unwrap()` on an `Option` value
+sdk/cosmos/azure_data_cosmos_driver/src/query/plan/mod.rs:917:51: [1m[91merror[0m: used `unwrap()` on an `Option` value
+sdk/cosmos/azure_data_cosmos_driver/src/query/plan/mod.rs:1084:38: [1m[91merror[0m: used `unwrap()` on an `Option` value
+sdk/cosmos/azure_data_cosmos_driver/src/system/cpu_memory.rs:331:9: [1m[91merror[0m: used `expect()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/system/cpu_memory.rs:341:25: [1m[91merror[0m: used `unwrap()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/system/cpu_memory.rs:347:25: [1m[91merror[0m: used `unwrap()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/system/cpu_memory.rs:353:10: [1m[91merror[0m: used `unwrap()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/system/cpu_memory.rs:359:42: [1m[91merror[0m: used `unwrap()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/system/cpu_memory.rs:397:26: [1m[91merror[0m: used `unwrap()` on a `Result` value
+sdk/cosmos/azure_data_cosmos_driver/src/system/vm_metadata.rs:147:25: [1m[91merror[0m: used `expect()` on an `Option` value
+sdk/cosmos/azure_data_cosmos_driver/src/driver/cache/account_metadata_cache.rs:27:10: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/driver/cache/account_metadata_cache.rs:46:10: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/driver/cache/account_metadata_cache.rs:89:10: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/driver/cache/account_metadata_cache.rs:118:10: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/driver/cache/account_metadata_cache.rs:142:10: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/driver/cache/async_lazy.rs:100:10: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/driver/dataflow/query_plan.rs:267:10: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/driver/dataflow/query_plan.rs:374:10: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/driver/pipeline/retry_evaluation.rs:359:10: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/driver/transport/background_task_manager.rs:23:10: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/in_memory_emulator/config.rs:6:11: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/in_memory_emulator/dispatch.rs:74:14: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/in_memory_emulator/dispatch.rs:76:14: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/in_memory_emulator/dispatch.rs:78:14: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/in_memory_emulator/dispatch.rs:80:14: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/in_memory_emulator/dispatch.rs:82:14: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/in_memory_emulator/rid.rs:6:11: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/in_memory_emulator/session.rs:6:11: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/in_memory_emulator/store.rs:1381:10: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/in_memory_emulator/store.rs:1501:14: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/in_memory_emulator/store.rs:1504:14: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/models/cosmos_headers.rs:85:14: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/models/cosmos_headers.rs:500:14: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/models/cosmos_headers.rs:507:14: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/models/mod.rs:36:10: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/models/mod.rs:39:10: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/options/throughput_control.rs:154:10: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/query/mod.rs:22:10: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/lib.rs:49:10: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/query_plan_native/mod.rs:96:10: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/query_plan_native/native.rs:112:10: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/query_plan_native/mod.rs:106:10: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/diagnostics/diagnostics_context.rs:1353:14: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/diagnostics/diagnostics_context.rs:1361:14: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/driver/cache/async_cache.rs:142:14: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/driver/cache/async_lazy.rs:80:14: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/driver/routing/location_state_store.rs:303:14: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/models/vector_session_token.rs:135:14: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/models/vector_session_token.rs:331:14: [1m[33mwarning[0m: this lint expectation is unfulfilled
+[1m[33mwarning[0m: `azure_data_cosmos_driver` (lib) generated 39 warnings
+[1m[91merror[0m: could not compile `azure_data_cosmos_driver` (lib) due to 71 previous errors; 39 warnings emitted
+[1m[33mwarning[0m: build failed, waiting for other jobs to finish...
+sdk/cosmos/azure_data_cosmos_driver/src/driver/cosmos_driver.rs:3344:13: [1m[91merror[0m: `expect` used in a function that returns a `Result`
+sdk/cosmos/azure_data_cosmos_driver/src/driver/cosmos_driver.rs:3349:24: [1m[91merror[0m: `expect` used in a function that returns a `Result`
+sdk/cosmos/azure_data_cosmos_driver/src/driver/transport/sharded_transport.rs:967:13: [1m[91merror[0m: `expect` used in a function that returns a `Result`
+sdk/cosmos/azure_data_cosmos_driver/src/driver/transport/transport_pipeline.rs:1709:13: [1m[91merror[0m: `unwrap` used in a function that returns a `Result`
+sdk/cosmos/azure_data_cosmos_driver/src/driver/cache/mod.rs:20:10: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/driver/cosmos_driver.rs:4172:14: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/driver/routing/routing_systems.rs:199:10: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/driver/transport/background_task_manager.rs:43:10: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/models/mod.rs:41:10: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/models/mod.rs:43:10: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/options/throughput_control.rs:135:10: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/driver/cache/container_cache.rs:109:14: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/driver/cache/container_cache.rs:125:14: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/driver/pipeline/components.rs:270:14: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/models/user_agent.rs:48:14: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/models/user_agent.rs:57:14: [1m[33mwarning[0m: this lint expectation is unfulfilled
+sdk/cosmos/azure_data_cosmos_driver/src/models/user_agent.rs:63:14: [1m[33mwarning[0m: this lint expectation is unfulfilled
+[1m[33mwarning[0m: `azure_data_cosmos_driver` (lib test) generated 52 warnings (39 duplicates)
+[1m[91merror[0m: could not compile `azure_data_cosmos_driver` (lib test) due to 14 previous errors; 52 warnings emitted

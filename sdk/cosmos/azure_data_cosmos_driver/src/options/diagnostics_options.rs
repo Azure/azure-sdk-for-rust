@@ -102,6 +102,10 @@ pub struct DiagnosticsOptions {
 }
 
 impl Default for DiagnosticsOptions {
+    #[expect(
+        clippy::expect_used,
+        reason = "the default diagnostics builder configuration is validated when it is constructed"
+    )]
     fn default() -> Self {
         DiagnosticsOptionsBuilder::new()
             .build()

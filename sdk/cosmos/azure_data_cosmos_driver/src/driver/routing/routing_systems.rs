@@ -160,7 +160,9 @@ fn reorder_by_preferred_regions(
         for slot in remaining.iter_mut() {
             if let Some(ep) = slot {
                 if ep.region().is_some_and(|r| r == region) {
-                    ordered.push(slot.take().unwrap());
+                    if let Some(endpoint) = slot.take() {
+                        ordered.push(endpoint);
+                    }
                     break;
                 }
             }
@@ -196,7 +198,7 @@ pub(crate) fn mark_endpoint_unavailable(
 }
 
 /// Returns a new state with expired endpoint unavailability removed.
-#[allow(dead_code)] // Spec-defined system function; used in tests and future steps.
+#[expect(dead_code, reason = "Spec-defined system function; used in tests and future steps.")]
 pub(crate) fn expire_unavailable_endpoints(
     state: &AccountEndpointState,
     now: Instant,

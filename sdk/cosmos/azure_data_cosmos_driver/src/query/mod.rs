@@ -19,7 +19,7 @@ pub(crate) mod plan;
 #[cfg(any(test, feature = "__internal_in_memory_emulator"))]
 mod value;
 
-#[allow(unused_imports)]
+#[expect(unused_imports, reason = "imports used in future code")]
 // Used by tests, the in-memory evaluator, and the (not-yet-wired) local plan caller.
 pub(crate) use parser::parse;
 

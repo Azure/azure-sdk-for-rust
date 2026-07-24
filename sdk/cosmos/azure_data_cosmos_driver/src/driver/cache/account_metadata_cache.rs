@@ -24,7 +24,7 @@ use std::sync::Arc;
 #[non_exhaustive]
 // All fields reflect the JSON contract of the account properties response and
 // are kept intentionally even when not yet consumed by driver logic.
-#[allow(dead_code)]
+#[expect(dead_code, reason = "implementation in progress")]
 pub(crate) struct AccountRegion {
     pub name: Region,
 
@@ -43,7 +43,7 @@ pub(crate) struct AccountRegion {
 #[non_exhaustive]
 // All fields reflect the JSON contract of the account properties response and
 // are kept intentionally even when not yet consumed by driver logic.
-#[allow(dead_code)]
+#[expect(dead_code, reason = "implementation in progress")]
 pub(crate) struct ReplicationPolicy {
     #[serde(default = "ReplicationPolicy::default_min_replica_set_size")]
     pub min_replica_set_size: i32,
@@ -86,7 +86,7 @@ impl Default for ReplicationPolicy {
 #[non_exhaustive]
 // All fields reflect the JSON contract of the account properties response and
 // are kept intentionally even when not yet consumed by driver logic.
-#[allow(dead_code)]
+#[expect(dead_code, reason = "implementation in progress")]
 pub(crate) struct ConsistencyPolicy {
     #[serde(default = "ConsistencyPolicy::default_consistency_level")]
     pub default_consistency_level: DefaultConsistencyLevel,
@@ -115,7 +115,7 @@ impl Default for ConsistencyPolicy {
 #[non_exhaustive]
 // All fields reflect the JSON contract of the account properties response and
 // are kept intentionally even when not yet consumed by driver logic.
-#[allow(dead_code)]
+#[expect(dead_code, reason = "implementation in progress")]
 pub(crate) struct ReadPolicy {
     #[serde(default)]
     pub primary_read_coefficient: i32,
@@ -139,7 +139,7 @@ pub(crate) struct ReadPolicy {
 #[non_exhaustive]
 // All fields reflect the JSON contract of the account properties response and
 // are kept intentionally even when not yet consumed by driver logic.
-#[allow(dead_code)]
+#[expect(dead_code, reason = "implementation in progress")]
 pub(crate) struct AccountProperties {
     #[serde(rename = "_self")]
     pub self_link: String,
@@ -226,7 +226,7 @@ pub(crate) struct AccountProperties {
 
 // Convenience accessors for the account properties JSON contract. Some may not
 // yet be used by driver logic but are kept intentionally for future use.
-#[allow(dead_code)]
+#[expect(dead_code, reason = "implementation in progress")]
 impl AccountProperties {
     /// Returns the first writable [`AccountRegion`], if any.
     pub(crate) fn write_account_region(&self) -> Option<&AccountRegion> {

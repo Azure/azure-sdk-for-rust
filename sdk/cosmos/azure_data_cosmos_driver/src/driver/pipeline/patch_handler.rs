@@ -105,6 +105,10 @@ pub(crate) async fn execute(
 /// Same as [`execute`], but parameterized over the sub-operation dispatcher.
 /// Tests provide a stub that returns scripted responses without a live
 /// endpoint.
+#[expect(
+    clippy::expect_used,
+    reason = "a successful replace always appends at least one sub-operation diagnostics entry"
+)]
 pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
     dispatcher: &D,
     operation: CosmosOperation,

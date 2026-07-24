@@ -430,9 +430,11 @@ pub(crate) fn effective_partition_key_v1_binary(pk_values: &[PartitionKeyValue])
 }
 
 fn bytes_to_hex_upper(bytes: &[u8]) -> String {
+    const HEX: &[u8; 16] = b"0123456789ABCDEF";
     let mut s = String::with_capacity(bytes.len() * 2);
     for b in bytes {
-        write!(&mut s, "{:02X}", b).unwrap();
+        s.push(HEX[(b >> 4) as usize] as char);
+        s.push(HEX[(b & 0x0F) as usize] as char);
     }
     s
 }

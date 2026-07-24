@@ -3,7 +3,7 @@
 
 //! Common utilities shared across query modules.
 
-use crate::query::ast::*;
+use crate::query::ast::{SqlCollection, SqlCollectionExpression, SqlQuery};
 
 /// Extract the root alias from a query's FROM clause.
 ///

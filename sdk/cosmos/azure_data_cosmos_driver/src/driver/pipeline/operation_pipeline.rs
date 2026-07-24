@@ -214,7 +214,7 @@ impl OperationOverrides {
 /// When `pre_resolved_pk_range_id` is `Some`, it is used to seed the
 /// `OperationRetryState` so that partition-level failover overrides (PPAF/PPCB)
 /// can take effect from the very first attempt.
-#[allow(clippy::too_many_arguments)]
+#[expect(clippy::too_many_arguments, reason = "complex operation requires multiple parameters")]
 pub(crate) async fn execute_operation_pipeline(
     operation: &CosmosOperation,
     overrides: OperationOverrides,
@@ -1140,6 +1140,10 @@ fn is_effect_already_applied(effect: &LocationEffect, snapshot: &LocationSnapsho
 ///
 /// Uses `LocationSnapshot` and `AccountEndpointState` to select the best
 /// available endpoint, respecting excluded regions and unavailability TTL.
+#[expect(
+    clippy::expect_used,
+    reason = "routing decisions are built from validated account topology that always supplies an endpoint and host:port authority"
+)]
 fn resolve_endpoint(
     operation: &CosmosOperation,
     retry_state: &OperationRetryState,
@@ -2909,7 +2913,7 @@ fn deadline_elapsed(deadline: Option<Instant>) -> bool {
 /// attempt, while a hedge-eligible read would burn both regions in a
 /// single race and give up immediately.
 #[derive(Debug)]
-#[allow(
+#[expect(
     clippy::large_enum_variant,
     reason = "single return value from an async function on a hot path; \
               boxing either variant would add a heap allocation per race \
@@ -3043,6 +3047,10 @@ async fn apply_hedge_leg_effects(
 ///
 /// - Operation-level retry inside each hedge; we rely on per-attempt
 ///   transport-pipeline retry only.
+#[expect(
+    clippy::expect_used,
+    reason = "the primary_was_final guard proves the primary hedge result is Ok before extraction"
+)]
 async fn execute_hedged(
     ctx: &AttemptContext<'_>,
     primary_routing: &RoutingDecision,
@@ -3696,7 +3704,7 @@ fn transient_outcome_error(
 /// per-leg signals accumulated during the race; both are surfaced
 /// verbatim on `HedgedRaceResult::BothTransient` for the failover
 /// loop's write-back contract (see the variant docs).
-#[allow(
+#[expect(
     clippy::too_many_arguments,
     reason = "All ten values come from `execute_hedged`'s state and \
               are passed through to a single helper call site. Bundling \

@@ -53,6 +53,10 @@ pub enum ChangeFeedStartFrom {
 
 /// Formats an [`OffsetDateTime`] as an RFC 1123 timestamp (the IMF fixed-date
 /// production in RFC 7231) for the `If-Modified-Since` change feed header.
+#[expect(
+    clippy::expect_used,
+    reason = "RFC 1123 formatting with a fixed description cannot fail for a valid OffsetDateTime"
+)]
 fn format_rfc1123(timestamp: &OffsetDateTime) -> String {
     use time::format_description::FormatItem;
     use time::macros::format_description;
@@ -801,7 +805,7 @@ impl CosmosOperation {
     /// Creates a read-feed request for partition key ranges in a container.
     ///
     /// Used to populate the partition key range cache for topology resolution.
-    #[allow(dead_code)] // Reserved for an upcoming pk-range cache refresh path.
+    #[expect(dead_code, reason = "Reserved for an upcoming pk-range cache refresh path.")]
     pub(crate) fn read_partition_key_ranges(container: ContainerReference) -> Self {
         let resource_ref: CosmosResourceReference = CosmosResourceReference::from(container)
             .with_resource_type(ResourceType::PartitionKeyRange)
@@ -1061,7 +1065,12 @@ mod tests {
     /// Creating a partitioned operation without a partition target panics in
     /// debug builds and silently proceeds in release builds.
     #[test]
-    #[cfg_attr(debug_assertions, should_panic)]
+    #[cfg_attr(
+        debug_assertions,
+        should_panic(
+            expected = "Attempted to create a partitioned operation without an OperationTarget specifying the partitions to access"
+        )
+    )]
     fn rejects_partitioned_operation_without_target() {
         let item_ref =
             ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");

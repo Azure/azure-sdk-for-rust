@@ -82,7 +82,7 @@ pub(crate) mod request_header_names {
     /// tokens. Legacy gateway ignores unknown headers, so they're inert there.
     pub const THINCLIENT_PKRANGE_MIN: &str = "x-ms-thinclient-pkrange-min";
     pub const THINCLIENT_PKRANGE_MAX: &str = "x-ms-thinclient-pkrange-max";
-    #[allow(dead_code)] // Reserved for future direct partition-key header writes.
+    #[expect(dead_code, reason = "Reserved for future direct partition-key header writes.")]
     pub const PARTITION_KEY: &str = "x-ms-documentdb-partitionkey";
     pub const PARTITION_KEY_RANGE_ID: &str = "x-ms-documentdb-partitionkeyrangeid";
     /// Request-only header that asks the backend, on retries after a
@@ -497,14 +497,14 @@ pub struct CosmosResponseHeaders {
     ///
     /// Contains the name-based path of the owning collection, e.g. `dbs/mydb/colls/mycoll`.
     /// Will be used for container identity validation in follow-up work.
-    #[allow(dead_code)] // Used in follow-up PR for container identity validation
+    #[expect(dead_code, reason = "Used in follow-up PR for container identity validation")]
     pub(crate) owner_full_name: Option<String>,
 
     /// Owner resource ID / content path (`x-ms-content-path`).
     ///
     /// Contains the RID of the owning collection. Will be used for
     /// RID mismatch validation in container-recreate detection.
-    #[allow(dead_code)] // Used in follow-up PR for RID validation
+    #[expect(dead_code, reason = "Used in follow-up PR for RID validation")]
     pub(crate) owner_id: Option<String>,
 
     /// Indicates whether an offer replace is still pending (`x-ms-offer-replace-pending`).

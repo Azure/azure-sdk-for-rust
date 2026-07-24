@@ -109,7 +109,7 @@ type CreateServiceProviderFn =
 
 type UpdateServiceProviderFn = unsafe extern "C" fn(ServiceProviderHandle, *const u8) -> HResult;
 
-#[allow(clippy::type_complexity)]
+#[expect(clippy::type_complexity, reason = "complex type is necessary for FFI binding")]
 type GetPartitionKeyRangesFromQuery4Fn = unsafe extern "C" fn(
     ServiceProviderHandle,
     *const WChar,
@@ -359,7 +359,7 @@ impl QueryPlanNativeLibrary {
     ///
     /// # Safety
     /// All pointer arguments must be valid for the duration of the call.
-    #[allow(clippy::too_many_arguments)]
+    #[expect(clippy::too_many_arguments, reason = "complex operation requires multiple parameters")]
     pub unsafe fn get_partition_key_ranges(
         &self,
         handle: ServiceProviderHandle,

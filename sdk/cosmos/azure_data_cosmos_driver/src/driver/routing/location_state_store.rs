@@ -177,7 +177,7 @@ impl Drop for LocationStateStore {
 
 impl LocationStateStore {
     /// Creates a new location store with a single-endpoint account snapshot.
-    #[allow(clippy::too_many_arguments)]
+    #[expect(clippy::too_many_arguments, reason = "complex operation requires multiple parameters")]
     pub fn new(
         account_metadata_cache: Arc<AccountMetadataCache>,
         account_endpoint: AccountEndpoint,
@@ -300,7 +300,7 @@ impl LocationStateStore {
     }
 
     /// Returns the latest account snapshot.
-    #[allow(dead_code)]
+    #[expect(dead_code, reason = "implementation in progress")]
     pub fn account_snapshot(&self) -> Arc<AccountEndpointState> {
         let guard = epoch::pin();
         // SAFETY: pointer comes from `Atomic` and stays valid while guard is pinned.
