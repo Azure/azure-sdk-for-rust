@@ -29,9 +29,17 @@ For each generated document `D`:
 
 1. `H0 = hash(canonicalize(D))`
 2. For each config `C` (binary on/off, text-response on/off, …):
-   - store `D`, read back `R`
-   - `Hc = hash(canonicalize(project(R, keys(D))))`
-   - **assert `Hc == H0`** — otherwise dump the seed + both canonical forms.
+   - drive every **body-carrying point op** — `create` → `read` → `replace` →
+     `upsert` — each returning a document `R` (writes use content-response so the
+     response decode path is exercised too);
+   - `Hc = hash(canonicalize(project(R, keys(D))))` for each op's `R`;
+   - **assert `Hc == H0`** for every op — otherwise dump the seed + both
+     canonical forms.
+
+These are exactly the four point operations for which binary encoding is honored
+(`create` / `read` / `replace` / `upsert`); `delete` carries no body, and
+`patch` / transactional batch / bulk are deferred (see the SPEC/HLD), so they are
+intentionally excluded.
 
 `project(R, keys(D))` strips the service-added system fields (`_rid`, `_etag`,
 `_ts`, `_self`, `_attachments`) so only the fields we control are compared.
@@ -103,7 +111,7 @@ flowchart TD
     NORM0 --> CANON0["json-canon (RFC 8785)\ncanonical string"]
     CANON0 --> HASH0["SHA-256 -> H0\n(expected)"]
 
-    BOUND --> STORE["for each config:\ncreate_item(D) -> read_item -> R"]
+    BOUND --> STORE["for each config:\ncreate -> read -> replace -> upsert\n(each returns R)"]
     STORE --> PROJ["project(R, keys(D))\nstrip _rid/_etag/_ts/..."]
     PROJ --> NORM1["normalize_numbers"]
     NORM1 --> CANON1["json-canon"]

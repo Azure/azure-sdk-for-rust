@@ -581,7 +581,46 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
                 .map_err(|e| format!("{context}: read response decode failed: {e}"))?;
             assert_roundtrip(&doc, &read_doc, &sent_canon, &sent_hash, &context, "read");
 
-            checked += 1;
+            // REPLACE the item with the same value (exercises the replace point
+            // op's request encode + response decode). Binary encoding is honored
+            // for replace, so this drives the encoder/decoder just like create.
+            let replaced = container
+                .replace_item(&pk, &id, &doc, Some(write_options_with_content()))
+                .await
+                .map_err(|e| format!("{context}: replace failed: {e}"))?;
+            let replaced_doc: Value = replaced
+                .into_model()
+                .map_err(|e| format!("{context}: replace response decode failed: {e}"))?;
+            assert_roundtrip(
+                &doc,
+                &replaced_doc,
+                &sent_canon,
+                &sent_hash,
+                &context,
+                "replace",
+            );
+
+            // UPSERT the same value (upsert is a point op that also carries a
+            // body; here it updates the existing item). Covers the upsert
+            // request-encode + response-decode path.
+            let upserted = container
+                .upsert_item(&pk, &id, &doc, Some(write_options_with_content()))
+                .await
+                .map_err(|e| format!("{context}: upsert failed: {e}"))?;
+            let upserted_doc: Value = upserted
+                .into_model()
+                .map_err(|e| format!("{context}: upsert response decode failed: {e}"))?;
+            assert_roundtrip(
+                &doc,
+                &upserted_doc,
+                &sent_canon,
+                &sent_hash,
+                &context,
+                "upsert",
+            );
+
+            // Four point-op round-trips this config: create, read, replace, upsert.
+            checked += 4;
         }
 
         if (iter + 1) % 100 == 0 {
@@ -590,7 +629,7 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
     }
 
     println!(
-        "binary_roundtrip_fuzzer: DONE — {} documents × {} configs = {checked} round-trips, all canonical-equal (seed={})",
+        "binary_roundtrip_fuzzer: DONE — {} documents × {} configs × 4 point ops = {checked} round-trips, all canonical-equal (seed={})",
         cfg.iterations,
         configs.len(),
         cfg.seed
