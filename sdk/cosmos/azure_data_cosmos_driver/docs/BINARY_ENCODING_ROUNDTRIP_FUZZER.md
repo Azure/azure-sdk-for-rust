@@ -449,8 +449,13 @@ Run against a real Cosmos account after the crate refactor:
   (`1e20`, `-1.5e18`, `i64::MAX`/`MIN`, `u64::MAX-1`, `2^63`) canonicalizes to the
   same stable string token on both the sent and backend-returned sides, and the
   integral-float/`-0`/trailing-zero rewrites all match.
-- **Soak:** **500 documents × 3 configs = 1500 round-trips, all canonical-equal**
-  (seed `1784934026943565900`), plus the 12 offline unit tests. No mismatches.
+- **Soak (initial, create + read):** 500 documents × 3 configs = 1500
+  round-trips, all canonical-equal (seed `1784934026943565900`).
+- **Soak (all four point ops):** **1000 documents × 3 configs × 4 point ops
+  (create/read/replace/upsert) = 12,000 round-trips, all canonical-equal**
+  (seed `1784944014111583800`), plus the offline unit tests. No mismatches.
 
 This confirms no behavior regression from the `arbitrary-json` + `json-canon` +
-SHA-256 refactor and closes §9.6's first three acceptance items.
+SHA-256 refactor, and that the request-encode + response-decode paths for
+`replace` and `upsert` round-trip identically to `create`/`read`. Closes §9.6's
+first three acceptance items.
