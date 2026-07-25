@@ -37,7 +37,7 @@
 use std::error::Error;
 
 use arbitrary::{Arbitrary, Unstructured};
-use arbitrary_json::ArbitraryObject;
+use arbitrary_json::ArbitraryValue;
 use azure_core::http::StatusCode;
 use azure_data_cosmos::models::ContainerProperties;
 use azure_data_cosmos::options::{
@@ -154,35 +154,108 @@ fn env_bool(name: &str, default: bool) -> bool {
 
 /// Generates a random JSON **object** suitable as a Cosmos item body.
 ///
-/// Structure comes from [`arbitrary_json`], driven by a byte buffer derived
-/// deterministically from the [`SplitMix64`] seed stream — so the same seed
-/// reproduces the same document (`AZURE_COSMOS_FUZZ_SEED`). `max_depth` scales
-/// the byte budget (`arbitrary` stops nesting when it runs out of bytes, so a
-/// larger budget yields larger, deeper documents).
+/// Uses a **hybrid** strategy: a depth-controlled *skeleton* guarantees the
+/// document actually reaches a target nesting depth (drawn from `[1, max_depth]`),
+/// while every leaf and filler branch is irregular JSON produced by
+/// [`arbitrary_json`]. This fixes the `arbitrary_iter` shallowness (it stops
+/// nesting almost immediately regardless of byte budget), so `max_depth` now
+/// meaningfully scales structure. Everything is driven by the [`SplitMix64`] seed
+/// stream, so the same `AZURE_COSMOS_FUZZ_SEED` reproduces the same document.
 ///
-/// A post-generation [`bound_value`] pass applies the `wide_numbers` / `unicode`
-/// knobs: by default numbers are clamped into the calibrated-safe envelope
-/// (design doc §3.2) and strings to ASCII, so a run stays inside the calibrated
-/// number/string range unless explicitly widened.
+/// A [`bound_value`] pass applies the `wide_numbers` / `unicode` knobs: by
+/// default numbers are clamped into the calibrated-safe envelope (design doc
+/// §3.2) and strings to ASCII, unless explicitly widened.
 fn gen_object(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Map<String, Value> {
-    // Byte budget scales with the depth knob; refilled from the PRNG so the
-    // whole document is a deterministic function of the seed.
-    let budget = 64 + (cfg.max_depth as usize + 1) * 128;
-    let mut bytes = Vec::with_capacity(budget);
-    while bytes.len() < budget {
+    let max_depth = cfg.max_depth.max(1);
+    // Target nesting depth for this document's spine, in [1, max_depth].
+    let target_depth = 1 + rng.below(max_depth as u64) as u32;
+
+    let mut map = Map::new();
+    // A few irregular root fields (arbitrary-json subtrees).
+    for _ in 0..rng.below(4) {
+        map.insert(gen_key(rng), gen_filler_value(rng, cfg));
+    }
+    // The spine field guarantees the target depth is reached. Its key avoids the
+    // caller-reserved `id`/`pk` (and empty) so the caller's later inserts can't
+    // overwrite the deep subtree.
+    let mut spine_key = gen_key(rng);
+    while spine_key.is_empty() || spine_key == "id" || spine_key == "pk" {
+        spine_key.push('_');
+    }
+    map.insert(spine_key, gen_spine(rng, cfg, target_depth));
+
+    map
+}
+
+/// Number of PRNG bytes fed to `arbitrary-json` for one shallow filler subtree.
+const FILLER_BUDGET: usize = 96;
+
+/// Refills `n` bytes deterministically from the PRNG.
+fn fill_bytes(rng: &mut SplitMix64, n: usize) -> Vec<u8> {
+    let mut bytes = Vec::with_capacity(n);
+    while bytes.len() < n {
         bytes.extend_from_slice(&rng.next_u64().to_le_bytes());
     }
+    bytes
+}
 
+/// A random object key from `arbitrary-json`'s string generator.
+fn gen_key(rng: &mut SplitMix64) -> String {
+    let bytes = fill_bytes(rng, 16);
     let mut u = Unstructured::new(&bytes);
-    let mut map: Map<String, Value> = ArbitraryObject::arbitrary(&mut u)
-        .map(Into::into)
-        .unwrap_or_default();
+    String::arbitrary(&mut u).unwrap_or_default()
+}
 
-    // Apply the numeric/string bounds to each field value.
-    for value in map.values_mut() {
-        bound_value(value, cfg);
+/// A small, irregular filler value: usually an `arbitrary-json` subtree, and
+/// occasionally a homogeneous number array (to exercise the uniform-number wire
+/// forms once the backend re-encodes it). Already `bound_value`-clamped.
+fn gen_filler_value(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Value {
+    // ~1/8 of the time, a homogeneous number array.
+    if rng.below(8) == 0 {
+        let len = rng.below(8);
+        let arr = (0..len)
+            .map(|_| Value::Number(Number::from(rng.below(2_000_001) as i64 - 1_000_000)))
+            .collect();
+        return Value::Array(arr);
     }
-    map
+    let bytes = fill_bytes(rng, FILLER_BUDGET);
+    let mut u = Unstructured::new(&bytes);
+    let mut v: Value = ArbitraryValue::arbitrary(&mut u)
+        .map(Into::into)
+        .unwrap_or(Value::Null);
+    bound_value(&mut v, cfg);
+    v
+}
+
+/// Builds a nested container chain `depth` levels deep, with a few irregular
+/// filler siblings at each level, guaranteeing the document reaches `depth`.
+/// Each level is randomly an object or an array; exactly one child continues the
+/// spine deeper.
+fn gen_spine(rng: &mut SplitMix64, cfg: &FuzzConfig, depth: u32) -> Value {
+    if depth == 0 {
+        return gen_filler_value(rng, cfg);
+    }
+    if rng.below(2) == 0 {
+        // Object: filler fields + one spine field going deeper.
+        let mut map = Map::new();
+        for _ in 0..rng.below(3) {
+            map.insert(gen_key(rng), gen_filler_value(rng, cfg));
+        }
+        let mut key = gen_key(rng);
+        while key.is_empty() {
+            key.push('_');
+        }
+        map.insert(key, gen_spine(rng, cfg, depth - 1));
+        Value::Object(map)
+    } else {
+        // Array: filler elements + one spine element going deeper.
+        let mut arr = Vec::new();
+        for _ in 0..rng.below(3) {
+            arr.push(gen_filler_value(rng, cfg));
+        }
+        arr.push(gen_spine(rng, cfg, depth - 1));
+        Value::Array(arr)
+    }
 }
 
 /// Recursively applies the generation bounds to a value: clamps numbers into the
@@ -997,6 +1070,61 @@ mod tests {
         let doc_a = Value::Object(gen_object(&mut a, &cfg));
         let doc_b = Value::Object(gen_object(&mut b, &cfg));
         assert_eq!(canon(&doc_a), canon(&doc_b));
+    }
+
+    /// Nesting depth of a JSON value (scalars are depth 0).
+    fn depth_of(v: &Value) -> u32 {
+        match v {
+            Value::Array(items) => 1 + items.iter().map(depth_of).max().unwrap_or(0),
+            Value::Object(map) => 1 + map.values().map(depth_of).max().unwrap_or(0),
+            _ => 0,
+        }
+    }
+
+    #[test]
+    fn generator_depth_scales_with_max_depth() {
+        // Guards the hybrid-skeleton generator: the average nesting depth must
+        // grow with `max_depth` (the old arbitrary-json-only generator was flat
+        // at ~1.3 regardless of the knob). We assert a conservative lower bound
+        // on the average and that the deepest doc reaches near the target.
+        fn avg_and_max_depth(max_depth: u32) -> (f64, u32) {
+            let cfg = FuzzConfig {
+                iterations: 0,
+                seed: 1784944014111583800,
+                max_depth,
+                wide_numbers: false,
+                unicode: true,
+                calibrate: false,
+            };
+            let mut rng = SplitMix64::new(cfg.seed);
+            let n = 1000u32;
+            let mut sum = 0u64;
+            let mut max_seen = 0u32;
+            for _ in 0..n {
+                let d = depth_of(&Value::Object(gen_object(&mut rng, &cfg)));
+                sum += d as u64;
+                max_seen = max_seen.max(d);
+            }
+            (sum as f64 / n as f64, max_seen)
+        }
+
+        let (avg3, max3) = avg_and_max_depth(3);
+        let (avg8, max8) = avg_and_max_depth(8);
+
+        // Depth clearly scales with the knob (not flat like the old generator).
+        assert!(
+            avg8 > avg3 + 1.0,
+            "avg depth should grow with max_depth: avg@3={avg3:.2}, avg@8={avg8:.2}"
+        );
+        // The deepest documents actually approach the requested depth.
+        assert!(
+            max3 >= 3,
+            "max depth @3 should reach the target, got {max3}"
+        );
+        assert!(
+            max8 >= 8,
+            "max depth @8 should reach the target, got {max8}"
+        );
     }
 
     #[test]

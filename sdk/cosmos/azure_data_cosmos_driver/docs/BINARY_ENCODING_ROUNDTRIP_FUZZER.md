@@ -246,15 +246,30 @@ calibrated for those forms — this is how you progressively expand coverage.
 
 ## 4. Generator
 
-A seeded PRNG (`StdRng`, seed logged for exact reproduction) produces a random
-JSON **object** (Cosmos items are objects) with:
+A seeded PRNG (`SplitMix64`, seed logged for exact reproduction) produces a
+random JSON **object** (Cosmos items are objects) using a **hybrid** strategy:
 
-- bounded nesting depth (default 5),
-- mixed-type and uniform-type arrays,
-- nested sub-objects and arrays-of-objects,
-- strings of varied length, optionally including Unicode (BMP + astral),
-- numbers across the calibrated envelope (§3.2),
-- `null`, `true`, `false`.
+- a **depth-controlled skeleton** builds a nested container *spine* to a target
+  depth drawn from `[1, max_depth]`, guaranteeing the document actually reaches
+  that depth (each level is randomly an object or an array, with a few irregular
+  filler siblings);
+- every **leaf and filler branch** is irregular JSON from
+  [`arbitrary-json`](https://docs.rs/arbitrary-json) — random keys (incl. empty,
+  control-char, and Unicode), mixed-type arrays, nested sub-objects and
+  arrays-of-objects, occasional homogeneous number arrays, and the scalars
+  `null` / `true` / `false`;
+- numbers are clamped to the calibrated envelope (§3.2) unless `--wide-numbers`;
+  strings to ASCII unless `unicode`.
+
+> **Why hybrid?** `arbitrary-json`'s `arbitrary_iter` decides whether to recurse
+> from *remaining bytes* and stops almost immediately, so an `arbitrary-json`-only
+> generator produced near-flat documents (avg depth ≈ 1.3, unchanged by
+> `max_depth`). The explicit skeleton restores real depth: measured average depth
+> now scales with the knob (≈ 3.9 at `max_depth=3`, ≈ 8.5 at `max_depth=12`, with
+> deepest docs reaching 11–17 levels), which is what exercises the codec's
+> container framing (length/count prefixes, nested arrays-of-objects) and the
+> decoder's `MAX_DEPTH` guard. A `generator_depth_scales_with_max_depth` offline
+> test locks this in.
 
 Every run prints its seed; a failing run is reproduced exactly with
 `AZURE_COSMOS_FUZZ_SEED=<seed>`.
