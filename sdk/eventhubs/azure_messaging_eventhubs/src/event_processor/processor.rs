@@ -526,7 +526,7 @@ impl EventProcessor {
         // Close all partition clients.
         info!("Closing all partition clients.");
         let mut clients = self.next_partition_clients.lock().await;
-        while let Ok(client) = clients.try_recv() {
+        while let Ok(Some(client)) = clients.try_next() {
             info!(
                 partition_id = %client.get_partition_id(),
                 "Closing partition client for partition."
