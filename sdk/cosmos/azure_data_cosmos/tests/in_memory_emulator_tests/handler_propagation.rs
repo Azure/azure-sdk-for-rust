@@ -234,17 +234,16 @@ async fn handler_receives_paginated_success() {
     }
 
     let before = handler.total();
-    let items: Vec<TestDoc> = c
-        .query_items(
-            Query::from("SELECT * FROM c"),
-            FeedScope::partition("pkQ"),
-            None,
-        )
-        .await
-        .unwrap()
-        .try_collect()
-        .await
-        .unwrap();
+    let items: Vec<TestDoc> = Box::pin(c.query_items(
+        Query::from("SELECT * FROM c"),
+        FeedScope::partition("pkQ"),
+        None,
+    ))
+    .await
+    .unwrap()
+    .try_collect()
+    .await
+    .unwrap();
 
     assert_eq!(items.len(), 3);
     assert_eq!(
@@ -282,16 +281,15 @@ async fn handler_receives_paginated_failure() {
     // A syntactically invalid query is rejected by the emulator with a terminal
     // (non-retryable) 400 BadRequest, so the first page fetch errors instead of
     // returning a page — exercising the iterator's failure dispatch branch.
-    let result: Result<Vec<TestDoc>, _> = c
-        .query_items(
-            Query::from("SELECT * FROM c WHERE"),
-            FeedScope::partition("pkFail"),
-            None,
-        )
-        .await
-        .unwrap()
-        .try_collect()
-        .await;
+    let result: Result<Vec<TestDoc>, _> = Box::pin(c.query_items(
+        Query::from("SELECT * FROM c WHERE"),
+        FeedScope::partition("pkFail"),
+        None,
+    ))
+    .await
+    .unwrap()
+    .try_collect()
+    .await;
     assert!(
         result.is_err(),
         "the invalid query must surface as a terminal page-fetch error"
