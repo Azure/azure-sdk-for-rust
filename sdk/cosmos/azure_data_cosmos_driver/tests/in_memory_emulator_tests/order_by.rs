@@ -260,8 +260,12 @@ async fn tied_order_by_key_within_one_partition_returns_rid_order_not_storage_or
             .expect("seed item created");
     }
 
-    let asc_ids =
-        run_query_collecting_ids(&driver, &container, "SELECT * FROM c ORDER BY c.rank ASC").await;
+    let asc_ids = Box::pin(run_query_collecting_ids(
+        &driver,
+        &container,
+        "SELECT * FROM c ORDER BY c.rank ASC",
+    ))
+    .await;
     assert_eq!(
         asc_ids,
         vec!["bbb", "aaa", "ccc"],
@@ -269,8 +273,12 @@ async fn tied_order_by_key_within_one_partition_returns_rid_order_not_storage_or
          iteration order: {asc_ids:?}"
     );
 
-    let desc_ids =
-        run_query_collecting_ids(&driver, &container, "SELECT * FROM c ORDER BY c.rank DESC").await;
+    let desc_ids = Box::pin(run_query_collecting_ids(
+        &driver,
+        &container,
+        "SELECT * FROM c ORDER BY c.rank DESC",
+    ))
+    .await;
     assert_eq!(
         desc_ids,
         vec!["ccc", "aaa", "bbb"],
@@ -278,13 +286,11 @@ async fn tied_order_by_key_within_one_partition_returns_rid_order_not_storage_or
     );
 }
 
-/// Regression: a full-key tie spanning *different* physical partitions
-/// must also be broken by document `_rid` in the driver's cross-partition
-/// merge — not by whichever partition happens to be polled/arrive first.
-/// Seeded out of both alphabetical-id and partition-key order so neither
-/// coincidentally matches rid (creation) order.
+/// Regression: a full-key tie spanning physical partitions is deterministic
+/// and complete. Cross-stream ties use leftmost EPK range; RID ordering remains
+/// local to each backend range.
 #[tokio::test]
-async fn tied_order_by_key_across_partitions_returns_rid_order() {
+async fn tied_order_by_key_across_partitions_is_deterministic_and_complete() {
     let (_emulator, driver) = setup().await;
     let container = driver
         .resolve_container("testdb", "testcoll")
@@ -313,21 +319,46 @@ async fn tied_order_by_key_across_partitions_returns_rid_order() {
             .await
             .expect("seed item created");
     }
-    let creation_order: Vec<String> = seeds.iter().map(|(id, _)| id.to_string()).collect();
+    let mut expected_ids: Vec<String> = seeds.iter().map(|(id, _)| id.to_string()).collect();
+    expected_ids.sort();
 
-    let asc_ids =
-        run_query_collecting_ids(&driver, &container, "SELECT * FROM c ORDER BY c.rank ASC").await;
+    let asc_ids = Box::pin(run_query_collecting_ids(
+        &driver,
+        &container,
+        "SELECT * FROM c ORDER BY c.rank ASC",
+    ))
+    .await;
+    let asc_ids_again = Box::pin(run_query_collecting_ids(
+        &driver,
+        &container,
+        "SELECT * FROM c ORDER BY c.rank ASC",
+    ))
+    .await;
+    assert_eq!(asc_ids, asc_ids_again, "ASC ties must be deterministic");
+    let mut sorted_asc = asc_ids.clone();
+    sorted_asc.sort();
     assert_eq!(
-        asc_ids, creation_order,
-        "cross-partition ASC ties must follow creation (rid) order: {asc_ids:?}"
+        sorted_asc, expected_ids,
+        "cross-partition ASC ties must return every row exactly once: {asc_ids:?}"
     );
 
-    let desc_ids =
-        run_query_collecting_ids(&driver, &container, "SELECT * FROM c ORDER BY c.rank DESC").await;
-    let mut expected_desc = creation_order;
-    expected_desc.reverse();
+    let desc_ids = Box::pin(run_query_collecting_ids(
+        &driver,
+        &container,
+        "SELECT * FROM c ORDER BY c.rank DESC",
+    ))
+    .await;
+    let desc_ids_again = Box::pin(run_query_collecting_ids(
+        &driver,
+        &container,
+        "SELECT * FROM c ORDER BY c.rank DESC",
+    ))
+    .await;
+    assert_eq!(desc_ids, desc_ids_again, "DESC ties must be deterministic");
+    let mut sorted_desc = desc_ids.clone();
+    sorted_desc.sort();
     assert_eq!(
-        desc_ids, expected_desc,
-        "cross-partition DESC ties must follow reverse creation (rid) order: {desc_ids:?}"
+        sorted_desc, expected_ids,
+        "cross-partition DESC ties must return every row exactly once: {desc_ids:?}"
     );
 }

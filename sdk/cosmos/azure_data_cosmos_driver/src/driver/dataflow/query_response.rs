@@ -29,21 +29,146 @@ use serde_json::value::RawValue;
 
 use crate::diagnostics::{DiagnosticsContext, DiagnosticsContextBuilder};
 use crate::models::{
-    ActivityId, CosmosResponse, CosmosResponseHeaders, CosmosStatus, ResponseBody,
+    ActivityId, CosmosResponse, CosmosResponseHeaders, CosmosStatus, ResponseBody, SessionToken,
 };
 use crate::options::DiagnosticsOptions;
 
 use super::order_by::{self, OrderByItem, OrderByResumeValue};
+use super::query_plan::SortOrder;
 
 /// Placeholder emitted by the Gateway in rewritten streaming `ORDER BY`
 /// queries so SDKs can inject a continuation resume filter.
 const ORDER_BY_FILTER_PLACEHOLDER: &str = "{documentdb-formattableorderbyquery-filter}";
 
-/// Produces the executable rewritten query used for a fresh range: the
-/// Gateway's filter placeholder is replaced with `true` (matching
-/// .NET/Java), or left as-is if the placeholder is absent.
-pub(crate) fn rewritten_query_from_beginning(rewritten_query: &str) -> String {
-    rewritten_query.replace(ORDER_BY_FILTER_PLACEHOLDER, "true")
+/// Produces the executable rewritten query used for a fresh range by replacing
+/// the Gateway's syntactic filter placeholder, never matching inside a SQL
+/// string, quoted identifier, or comment.
+pub(crate) fn rewritten_query_from_beginning(
+    rewritten_query: &str,
+) -> crate::error::Result<String> {
+    let bytes = rewritten_query.as_bytes();
+    let placeholder = ORDER_BY_FILTER_PLACEHOLDER.as_bytes();
+    let mut offsets = Vec::new();
+    let mut index = 0;
+    let mut state = SqlScanState::Normal;
+
+    while index < bytes.len() {
+        match state {
+            SqlScanState::Normal => {
+                if bytes[index..].starts_with(placeholder) {
+                    offsets.push(index);
+                    index += placeholder.len();
+                } else if bytes[index] == b'\'' {
+                    state = SqlScanState::SingleQuoted;
+                    index += 1;
+                } else if bytes[index] == b'"' {
+                    state = SqlScanState::DoubleQuoted;
+                    index += 1;
+                } else if bytes[index..].starts_with(b"--") {
+                    state = SqlScanState::LineComment;
+                    index += 2;
+                } else if bytes[index..].starts_with(b"/*") {
+                    state = SqlScanState::BlockComment;
+                    index += 2;
+                } else {
+                    index += 1;
+                }
+            }
+            SqlScanState::SingleQuoted => {
+                if bytes[index] == b'\'' {
+                    if bytes.get(index + 1) == Some(&b'\'') {
+                        index += 2;
+                    } else {
+                        state = SqlScanState::Normal;
+                        index += 1;
+                    }
+                } else {
+                    index += 1;
+                }
+            }
+            SqlScanState::DoubleQuoted => {
+                if bytes[index] == b'"' {
+                    if bytes.get(index + 1) == Some(&b'"') {
+                        index += 2;
+                    } else {
+                        state = SqlScanState::Normal;
+                        index += 1;
+                    }
+                } else {
+                    index += 1;
+                }
+            }
+            SqlScanState::LineComment => {
+                if bytes[index] == b'\n' {
+                    state = SqlScanState::Normal;
+                }
+                index += 1;
+            }
+            SqlScanState::BlockComment => {
+                if bytes[index..].starts_with(b"*/") {
+                    state = SqlScanState::Normal;
+                    index += 2;
+                } else {
+                    index += 1;
+                }
+            }
+        }
+    }
+
+    match offsets.as_slice() {
+        [] => Ok(rewritten_query.to_owned()),
+        [offset] => {
+            let mut result = String::with_capacity(
+                rewritten_query.len() - ORDER_BY_FILTER_PLACEHOLDER.len() + 4,
+            );
+            result.push_str(&rewritten_query[..*offset]);
+            result.push_str("true");
+            result.push_str(&rewritten_query[*offset + ORDER_BY_FILTER_PLACEHOLDER.len()..]);
+            Ok(result)
+        }
+        _ => Err(body_error_msg(
+            "rewritten ORDER BY query contains multiple resume-filter placeholders",
+        )),
+    }
+}
+
+#[derive(Clone, Copy)]
+enum SqlScanState {
+    Normal,
+    SingleQuoted,
+    DoubleQuoted,
+    LineComment,
+    BlockComment,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct QueryExecutionInfo {
+    #[serde(default)]
+    reverse_rid_enabled: bool,
+    #[serde(default)]
+    reverse_index_scan: bool,
+}
+
+/// Derives the backend's RID ordering for one resumed page. Modern backends
+/// supply their index-scan direction; absent/legacy metadata falls back to the
+/// first ORDER BY column, matching .NET and Java.
+pub(crate) fn effective_rid_direction(
+    headers: &CosmosResponseHeaders,
+    first_direction: SortOrder,
+) -> crate::error::Result<SortOrder> {
+    let Some(raw) = headers.query_execution_info.as_deref() else {
+        return Ok(first_direction);
+    };
+    let info: QueryExecutionInfo = serde_json::from_str(raw)
+        .map_err(|source| body_error("failed to parse x-ms-cosmos-query-execution-info", source))?;
+    if info.reverse_rid_enabled {
+        Ok(first_direction)
+    } else if info.reverse_index_scan {
+        Ok(SortOrder::Descending)
+    } else {
+        Ok(SortOrder::Ascending)
+    }
 }
 
 /// Replaces only the `"query"` field of a query operation's JSON body with
@@ -133,7 +258,7 @@ struct EnvelopeItem {
     rid: Option<String>,
     #[serde(rename = "orderByItems")]
     order_by_items: Option<serde_json::Value>,
-    payload: Option<Box<RawValue>>,
+    payload: Box<RawValue>,
 }
 
 /// The standard Cosmos feed-response wire shape:
@@ -197,10 +322,11 @@ fn parse_envelope_item(
         .order_by_items
         .ok_or_else(|| envelope_error("rewritten envelope item is missing `orderByItems`"))?;
     let keys = order_by::parse_order_by_items(&order_by_items, order_by_column_count)?;
-    let payload = item
-        .payload
-        .ok_or_else(|| envelope_error("rewritten envelope item is missing `payload`"))?;
-    Ok(EnvelopeRow { keys, rid, payload })
+    Ok(EnvelopeRow {
+        keys,
+        rid,
+        payload: item.payload,
+    })
 }
 
 /// Accumulates request charge and diagnostics across every backend page
@@ -210,6 +336,9 @@ pub(crate) struct PageAggregator {
     request_charge: crate::models::RequestCharge,
     diagnostics_sources: Vec<Arc<DiagnosticsContext>>,
     activity_id: Option<ActivityId>,
+    session_token: Option<SessionToken>,
+    index_metrics: Option<String>,
+    query_metrics: Option<String>,
     status: CosmosStatus,
 }
 
@@ -219,6 +348,9 @@ impl Default for PageAggregator {
             request_charge: crate::models::RequestCharge::default(),
             diagnostics_sources: Vec::new(),
             activity_id: None,
+            session_token: None,
+            index_metrics: None,
+            query_metrics: None,
             status: CosmosStatus::new(azure_core::http::StatusCode::Ok),
         }
     }
@@ -229,19 +361,51 @@ impl PageAggregator {
         Self::default()
     }
 
+    pub(crate) fn seed_session_token(&mut self, session_token: Option<SessionToken>) {
+        self.session_token = session_token;
+    }
+
+    pub(crate) fn session_token(&self) -> Option<&SessionToken> {
+        self.session_token.as_ref()
+    }
+
     /// Folds one consumed backend page's headers/diagnostics/status into
     /// the running aggregate. The *last* absorbed response's activity ID
     /// and status win (matching how a single multi-page fetch already
-    /// surfaces "the most recent" status to callers); request charge is
+    /// surfaces "the most recent" status to callers). Query/index metrics
+    /// retain the latest non-empty service-formatted value; request charge is
     /// summed across every absorbed response.
-    pub(crate) fn absorb(&mut self, response: &CosmosResponse) {
+    pub(crate) fn absorb(&mut self, response: &CosmosResponse) -> crate::error::Result<()> {
         let charge = response.headers().request_charge.unwrap_or_default();
         self.request_charge = self.request_charge + charge;
         self.diagnostics_sources.push(response.diagnostics());
         if let Some(id) = &response.headers().activity_id {
             self.activity_id = Some(id.clone());
         }
+        if let Some(token) = &response.headers().session_token {
+            self.session_token = Some(match &self.session_token {
+                Some(current) => current.merge(token)?,
+                None => token.clone(),
+            });
+        }
+        if let Some(metrics) = response
+            .headers()
+            .index_metrics
+            .as_ref()
+            .filter(|metrics| !metrics.is_empty())
+        {
+            self.index_metrics = Some(metrics.clone());
+        }
+        if let Some(metrics) = response
+            .headers()
+            .query_metrics
+            .as_ref()
+            .filter(|metrics| !metrics.is_empty())
+        {
+            self.query_metrics = Some(metrics.clone());
+        }
         self.status = response.status();
+        Ok(())
     }
 
     /// Builds the emitted page from the accumulated aggregate plus the
@@ -279,10 +443,13 @@ impl PageAggregator {
         let headers = CosmosResponseHeaders {
             activity_id: self.activity_id,
             request_charge: Some(self.request_charge),
+            session_token: self.session_token,
             item_count: Some(payloads.len() as u32),
+            index_metrics: self.index_metrics,
+            query_metrics: self.query_metrics,
             // Omitted: `continuation` (owned by
-            // `OperationPlan::to_continuation_token`), `session_token`/`etag`
-            // (not meaningful once pages are interleaved).
+            // `OperationPlan::to_continuation_token`) and `etag` (not
+            // meaningful once pages are interleaved).
             ..Default::default()
         };
 
@@ -403,7 +570,7 @@ mod tests {
     fn rewritten_query_from_beginning_replaces_order_by_filter_placeholder() {
         let rewritten = "SELECT * FROM c WHERE {documentdb-formattableorderbyquery-filter}";
         assert_eq!(
-            rewritten_query_from_beginning(rewritten),
+            rewritten_query_from_beginning(rewritten).unwrap(),
             "SELECT * FROM c WHERE true"
         );
     }
@@ -411,7 +578,75 @@ mod tests {
     #[test]
     fn rewritten_query_from_beginning_preserves_query_without_placeholder() {
         let rewritten = "SELECT * FROM c";
-        assert_eq!(rewritten_query_from_beginning(rewritten), rewritten);
+        assert_eq!(
+            rewritten_query_from_beginning(rewritten).unwrap(),
+            rewritten
+        );
+    }
+
+    #[test]
+    fn rewritten_query_from_beginning_preserves_placeholder_in_literals_and_comments() {
+        let rewritten = "SELECT * FROM c WHERE c.value = \
+            '{documentdb-formattableorderbyquery-filter}' \
+            AND {documentdb-formattableorderbyquery-filter} \
+            /* {documentdb-formattableorderbyquery-filter} */";
+        let result = rewritten_query_from_beginning(rewritten).unwrap();
+
+        assert!(result.contains("c.value = '{documentdb-formattableorderbyquery-filter}'"));
+        assert!(result.contains("AND true"));
+        assert!(result.contains("/* {documentdb-formattableorderbyquery-filter} */"));
+    }
+
+    #[test]
+    fn rewritten_query_from_beginning_rejects_multiple_syntactic_placeholders() {
+        let rewritten = "SELECT * FROM c WHERE \
+            {documentdb-formattableorderbyquery-filter} OR \
+            {documentdb-formattableorderbyquery-filter}";
+        assert!(rewritten_query_from_beginning(rewritten).is_err());
+    }
+
+    #[test]
+    fn effective_rid_direction_honors_modern_execution_metadata() {
+        let headers = CosmosResponseHeaders {
+            query_execution_info: Some(
+                r#"{"reverseRidEnabled":false,"reverseIndexScan":true}"#.to_owned(),
+            ),
+            ..Default::default()
+        };
+        assert_eq!(
+            effective_rid_direction(&headers, SortOrder::Ascending).unwrap(),
+            SortOrder::Descending
+        );
+
+        let headers = CosmosResponseHeaders {
+            query_execution_info: Some(
+                r#"{"reverseRidEnabled":false,"reverseIndexScan":false}"#.to_owned(),
+            ),
+            ..Default::default()
+        };
+        assert_eq!(
+            effective_rid_direction(&headers, SortOrder::Descending).unwrap(),
+            SortOrder::Ascending
+        );
+    }
+
+    #[test]
+    fn effective_rid_direction_uses_legacy_first_column_fallback() {
+        assert_eq!(
+            effective_rid_direction(&CosmosResponseHeaders::default(), SortOrder::Descending)
+                .unwrap(),
+            SortOrder::Descending
+        );
+        let headers = CosmosResponseHeaders {
+            query_execution_info: Some(
+                r#"{"reverseRidEnabled":true,"reverseIndexScan":false}"#.to_owned(),
+            ),
+            ..Default::default()
+        };
+        assert_eq!(
+            effective_rid_direction(&headers, SortOrder::Descending).unwrap(),
+            SortOrder::Descending
+        );
     }
 
     #[test]
@@ -477,6 +712,17 @@ mod tests {
     }
 
     #[test]
+    fn parse_envelope_page_preserves_explicit_null_payload() {
+        let body = ResponseBody::from_bytes(
+            br#"{"Documents":[{"_rid":"r1","orderByItems":[{"item":1}],"payload":null}]}"#.to_vec(),
+        );
+        let rows = parse_envelope_page(&body, 1).unwrap();
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].payload.get(), "null");
+    }
+
+    #[test]
     fn parse_envelope_page_rejects_items_body_shape() {
         let body = ResponseBody::from_items(vec![]);
         let err = parse_envelope_page(&body, 1).unwrap_err();
@@ -489,8 +735,8 @@ mod tests {
     #[test]
     fn page_aggregator_sums_charge_and_builds_documents_envelope() {
         let mut aggregator = PageAggregator::new();
-        aggregator.absorb(&response(b"{}"));
-        aggregator.absorb(&response(b"{}"));
+        aggregator.absorb(&response(b"{}")).unwrap();
+        aggregator.absorb(&response(b"{}")).unwrap();
         let payloads: Vec<Box<RawValue>> = vec![
             RawValue::from_string(r#"{"id":"a"}"#.to_owned()).unwrap(),
             RawValue::from_string(r#"{"id":"b"}"#.to_owned()).unwrap(),
@@ -505,10 +751,78 @@ mod tests {
     }
 
     #[test]
+    fn page_aggregator_merges_session_tokens() {
+        fn response_with_token(token: &'static str) -> CosmosResponse {
+            let mut headers = CosmosResponseHeaders::default();
+            headers.session_token = Some(SessionToken::new(token));
+            CosmosResponse::new(
+                ResponseBody::NoPayload,
+                headers,
+                CosmosStatus::new(azure_core::http::StatusCode::Ok),
+                empty_diagnostics(),
+            )
+        }
+
+        let mut aggregator = PageAggregator::new();
+        aggregator.absorb(&response_with_token("0:1#10")).unwrap();
+        aggregator.absorb(&response_with_token("1:1#20")).unwrap();
+        let page = aggregator.build_page(&[]).unwrap();
+
+        assert_eq!(
+            page.headers()
+                .session_token
+                .as_ref()
+                .map(SessionToken::as_str),
+            Some("0:1#10,1:1#20")
+        );
+    }
+
+    #[test]
+    fn page_aggregator_preserves_latest_non_empty_metrics() {
+        fn response_with_metrics(
+            index_metrics: Option<&str>,
+            query_metrics: Option<&str>,
+        ) -> CosmosResponse {
+            let headers = CosmosResponseHeaders {
+                index_metrics: index_metrics.map(str::to_owned),
+                query_metrics: query_metrics.map(str::to_owned),
+                ..Default::default()
+            };
+            CosmosResponse::new(
+                ResponseBody::NoPayload,
+                headers,
+                CosmosStatus::new(azure_core::http::StatusCode::Ok),
+                empty_diagnostics(),
+            )
+        }
+
+        let mut aggregator = PageAggregator::new();
+        aggregator
+            .absorb(&response_with_metrics(
+                Some(r#"{"UtilizedSingleIndexes":["first"]}"#),
+                Some("retrievedDocumentCount=1"),
+            ))
+            .unwrap();
+        aggregator
+            .absorb(&response_with_metrics(Some(""), Some("")))
+            .unwrap();
+        let page = aggregator.build_page(&[]).unwrap();
+
+        assert_eq!(
+            page.headers().index_metrics.as_deref(),
+            Some(r#"{"UtilizedSingleIndexes":["first"]}"#)
+        );
+        assert_eq!(
+            page.headers().query_metrics.as_deref(),
+            Some("retrievedDocumentCount=1")
+        );
+    }
+
+    #[test]
     fn page_aggregator_builds_empty_page_when_polled_children_yielded_no_rows() {
         // At least one page absorbed, but zero rows contributed.
         let mut aggregator = PageAggregator::new();
-        aggregator.absorb(&response(b"{}"));
+        aggregator.absorb(&response(b"{}")).unwrap();
         let page = aggregator.build_page(&[]).unwrap();
         let value: serde_json::Value = serde_json::from_slice(page.body_bytes()).unwrap();
         assert_eq!(value["Documents"].as_array().unwrap().len(), 0);

@@ -13,7 +13,7 @@
 //! shape (`{"_rid": ..., "Documents": [{"_rid", "orderByItems", "payload"}]}`)
 //! `StreamingOrderedMerge` expects.
 
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
 use super::super::{
     mocks::{MockRequestExecutor, MockTopologyProvider},
@@ -363,6 +363,68 @@ fn round_trip_state(state: PipelineNodeState, op: &CosmosOperation) -> PipelineN
 }
 
 // ── Tests ────────────────────────────────────────────────────────────────
+
+#[tokio::test]
+async fn slow_consumer_fetches_only_one_head_page_per_partition() {
+    let operation = order_by_operation_with_page_size(1);
+    let plan = order_by_plan();
+    let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+        resolved("", "80", "pk-left"),
+        resolved("80", "FF", "pk-right"),
+    ])]);
+    let mut executor = MockRequestExecutor::new(vec![
+        Ok(envelope_page(
+            &[("left-1", 1), ("left-3", 3), ("left-5", 5)],
+            Some("left-next"),
+        )),
+        Ok(envelope_page(
+            &[("right-2", 2), ("right-4", 4), ("right-6", 6)],
+            Some("right-next"),
+        )),
+    ]);
+    let mut pipeline = build_streaming_ordered_merge(&plan, &mut topology, &operation, None)
+        .await
+        .unwrap();
+
+    let first = {
+        let mut noop_topology = super::super::mocks::NoopTopologyProvider;
+        let mut context = PipelineContext::new(&mut executor, Some(&mut noop_topology));
+        pipeline.next_page(&mut context).await.unwrap().unwrap()
+    };
+    assert_eq!(ids_in_page(&first), vec!["left-1"]);
+    assert_eq!(
+        executor.continuation_calls.len(),
+        2,
+        "first output page may prime one backend page per partition, but no more"
+    );
+
+    tokio::time::sleep(Duration::from_millis(10)).await;
+    assert_eq!(
+        executor.continuation_calls.len(),
+        2,
+        "a paused consumer must not trigger background prefetch"
+    );
+
+    let second = {
+        let mut noop_topology = super::super::mocks::NoopTopologyProvider;
+        let mut context = PipelineContext::new(&mut executor, Some(&mut noop_topology));
+        pipeline.next_page(&mut context).await.unwrap().unwrap()
+    };
+    assert_eq!(ids_in_page(&second), vec!["right-2"]);
+    assert_eq!(
+        executor.continuation_calls.len(),
+        2,
+        "buffered heads must satisfy the next page without another request"
+    );
+
+    drop(pipeline);
+    tokio::time::sleep(Duration::from_millis(10)).await;
+    assert_eq!(
+        executor.continuation_calls.len(),
+        2,
+        "dropping the stream must not schedule additional requests"
+    );
+}
 
 /// Baseline: two partitions each locally sorted ascending by `rank`; the
 /// merge must interleave them into one globally sorted stream.
@@ -961,11 +1023,9 @@ async fn resume_complex_boundary_across_split_has_no_omissions_or_duplicates() {
         resolved("80", "FF", "pk-right"),
     ])]);
     // Every row ties on the same array `[5]` (a whole tie run split across
-    // the two sub-ranges), so the client-side hash + `_rid` discard is
-    // deterministic: rids at or before "c" (a, b, c) were already emitted;
-    // "d" and "e" survive. (A *differently*-valued complex row's ordering is
-    // the backend's hash order, which a `MockLeaf` can't reproduce, so the
-    // synthetic split test exercises the tie run.)
+    // the two sub-ranges). Per-range `_rid` discard removes a, b, and c;
+    // e and d survive and merge in EPK-range order. Distinct-hash ordering is covered by
+    // `resume_distinct_complex_boundary_across_split_drops_before_keeps_after`.
     let mut executor = MockRequestExecutor::new(vec![
         Ok(array_envelope_page(&[("a", 5), ("c", 5), ("e", 5)], None)),
         Ok(array_envelope_page(&[("b", 5), ("d", 5)], None)),
@@ -983,12 +1043,73 @@ async fn resume_complex_boundary_across_split_has_no_omissions_or_duplicates() {
     }
     assert_eq!(
         ids,
-        vec!["d", "e"]
+        vec!["e", "d"]
             .into_iter()
             .map(str::to_owned)
             .collect::<Vec<_>>(),
-        "already-emitted tied rows (a, b, c) are dropped by hash+`_rid`; the \
-         unemitted tied rows (d, e) survive with no duplicates"
+        "already-emitted tied rows (a, b, c) are dropped per range; the \
+         unemitted tied rows (e, d) survive in range order with no duplicates"
+    );
+}
+
+/// Distinct complex values across a split: the boundary is the array `[3]`,
+/// and each post-split sub-range returns a mix of provably-before, boundary,
+/// and after values. The client discard drops rows whose exact `DistinctHash`
+/// sorts before the boundary (already emitted, since the backend sorts complex
+/// values in that same hash order) plus the boundary tie, and keeps the
+/// after-boundary rows — which then merge in global hash order with no
+/// omissions or duplicates.
+#[tokio::test]
+async fn resume_distinct_complex_boundary_across_split_drops_before_keeps_after() {
+    let op = order_by_operation();
+    let plan = order_by_plan();
+    let complex = OrderByItem::Array(vec![OrderByItem::Number(3_i64.into())]).to_resume_value();
+    let resumed_state = PipelineNodeState::StreamingOrderedMerge {
+        directions: vec![SortOrder::Ascending],
+        ranges: vec![OrderByRangeToken {
+            min_epk: String::new(),
+            max_epk: "FF".to_owned(),
+            server_continuation: None,
+            boundary: Some(ValueBoundary {
+                resume_values: vec![complex],
+                last_rid: "at-3".to_owned(),
+                skip_count: 1,
+            }),
+        }],
+    };
+
+    let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+        resolved("", "80", "pk-left"),
+        resolved("80", "FF", "pk-right"),
+    ])]);
+    // Each sub-range page is locally hash-sorted (as a backend page is).
+    // Bytewise hash order: [5] < [3] < [2] < [6].
+    // Left: the boundary tie `at-3` (dropped by rid+skip) then `after-2`.
+    // Right: `before-5` (hash before boundary -> dropped) then `after-6`.
+    let mut executor = MockRequestExecutor::new(vec![
+        Ok(array_envelope_page(&[("at-3", 3), ("after-2", 2)], None)),
+        Ok(array_envelope_page(
+            &[("before-5", 5), ("after-6", 6)],
+            None,
+        )),
+    ]);
+
+    let mut pipeline =
+        build_streaming_ordered_merge(&plan, &mut topology, &op, Some(resumed_state))
+            .await
+            .expect("a distinct complex boundary resumes across a split");
+    let ids = drain_all(&mut pipeline, &mut executor).await;
+    for i in 0..2 {
+        assert_is_complex_resume_filtered_query(&executor.body_text(i));
+    }
+    assert_eq!(
+        ids,
+        vec!["after-2", "after-6"]
+            .into_iter()
+            .map(str::to_owned)
+            .collect::<Vec<_>>(),
+        "provably-before (before-5) and the boundary tie (at-3) are dropped; \
+         after-boundary rows (after-2, after-6) survive in hash order, no duplicates"
     );
 }
 

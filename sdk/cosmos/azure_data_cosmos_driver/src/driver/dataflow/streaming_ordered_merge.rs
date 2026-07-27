@@ -7,10 +7,9 @@
 //!
 //! [`StreamingOrderedMerge`] polls one leaf [`Request`] per active EPK range,
 //! buffers one locally-sorted row per range, and repeatedly emits the
-//! globally smallest buffered row (per [`compare_key_tuples`]). With the
-//! documented fan-out cap (`FEED_OPERATIONS_REQS.md` §3, default 100), a
-//! linear per-pop scan over active children is simpler than a real heap and
-//! not a meaningful cost next to per-page network I/O.
+//! globally smallest buffered row (per [`compare_key_tuples`]). A linear
+//! per-pop scan over active children is simpler than a real heap and not a
+//! meaningful cost next to per-page network I/O.
 //!
 //! # Resume model
 //!
@@ -57,7 +56,7 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use serde_json::value::RawValue;
 
-use crate::models::{CosmosOperation, FeedRange, MaxItemCountHint};
+use crate::models::{CosmosOperation, FeedRange, MaxItemCountHint, SessionToken};
 
 use super::order_by::{
     classify_row_vs_boundary, compare_key_tuples, compare_rids, OrderByItem, OrderByResumeValue,
@@ -127,7 +126,11 @@ enum PendingDiscard {
 }
 
 impl PendingDiscard {
-    fn apply(&mut self, rows: &mut VecDeque<query_response::EnvelopeRow>) {
+    fn apply(
+        &mut self,
+        rows: &mut VecDeque<query_response::EnvelopeRow>,
+        rid_direction: SortOrder,
+    ) {
         match self {
             PendingDiscard::None => {}
             PendingDiscard::ResumeBoundary {
@@ -136,18 +139,14 @@ impl PendingDiscard {
                 skip_count,
                 directions,
             } => {
-                // The first sort column governs the `_rid` tie direction
-                // (matching the backend within a full-key tie run).
-                let rid_direction = directions.first().copied().unwrap_or(SortOrder::Ascending);
                 while let Some(front) = rows.front() {
                     let discard =
                         match classify_row_vs_boundary(&front.keys, resume_values, directions) {
                             // Phase 1: sorts strictly before the boundary key.
                             RowVsBoundary::Before => true,
-                            // Phase 1: at/after the boundary key (or an
-                            // indeterminate complex column) — nothing left to
-                            // discard.
-                            RowVsBoundary::AfterOrIndeterminate => false,
+                            // Phase 1: at or after the boundary key — nothing
+                            // left to discard.
+                            RowVsBoundary::After => false,
                             RowVsBoundary::Tie => {
                                 match compare_rids(&front.rid, last_rid, rid_direction) {
                                     // Phase 2: `_rid` strictly before the boundary.
@@ -283,6 +282,7 @@ pub(crate) struct StreamingOrderedMerge {
     plain_operation: Arc<CosmosOperation>,
     directions: Vec<SortOrder>,
     children: Vec<ChildStream>,
+    session_token: Option<SessionToken>,
 }
 
 impl StreamingOrderedMerge {
@@ -295,6 +295,7 @@ impl StreamingOrderedMerge {
             plain_operation,
             directions,
             children,
+            session_token: None,
         }
     }
 
@@ -324,14 +325,30 @@ impl StreamingOrderedMerge {
                     response,
                     is_terminal,
                 } => {
-                    aggregator.absorb(&response);
+                    aggregator.absorb(&response)?;
+                    self.session_token = aggregator.session_token().cloned();
                     let mut rows: VecDeque<query_response::EnvelopeRow> =
                         query_response::parse_envelope_page(
                             response.body(),
                             self.directions.len(),
                         )?
                         .into();
-                    self.children[idx].pending_discard.apply(&mut rows);
+                    let fallback = self
+                        .directions
+                        .first()
+                        .copied()
+                        .unwrap_or(SortOrder::Ascending);
+                    let rid_direction = if matches!(
+                        &self.children[idx].pending_discard,
+                        PendingDiscard::ResumeBoundary { .. }
+                    ) {
+                        query_response::effective_rid_direction(response.headers(), fallback)?
+                    } else {
+                        fallback
+                    };
+                    self.children[idx]
+                        .pending_discard
+                        .apply(&mut rows, rid_direction);
                     self.children[idx].buffered = rows;
                     if is_terminal {
                         self.children[idx].drained = true;
@@ -420,7 +437,6 @@ impl StreamingOrderedMerge {
         }
         replacements.sort_by(|a, b| a.0.min_inclusive().cmp(b.0.min_inclusive()));
         validate_exact_coverage(&scope, replacements.iter().map(|(range, _)| range))?;
-
         // Wrap each replacement before mutating `self.children`, so a rejected
         // replacement leaves the merge unchanged rather than half-spliced.
         let mut wrapped = Vec::with_capacity(replacements.len());
@@ -442,8 +458,7 @@ impl StreamingOrderedMerge {
     }
 
     /// Index of the active child whose buffered head row compares smallest
-    /// (per [`compare_key_tuples`], tie-broken by the direction-aware
-    /// numeric `_rid` then range identity), or `None` if no child has a
+    /// (per [`compare_key_tuples`], tie-broken by range identity), or `None` if no child has a
     /// buffered row.
     fn select_min_child_index(&self) -> Option<usize> {
         let mut best: Option<usize> = None;
@@ -474,22 +489,12 @@ impl StreamingOrderedMerge {
             .buffered
             .front()
             .expect("caller only compares children with a buffered row");
-        // The full-key tie-break must match the backend's per-partition
-        // order — numeric `_rid` in the first sort column's direction — so a
-        // resumed range's scalar boundary is a clean cut point across a split.
-        let rid_direction = self
-            .directions
-            .first()
-            .copied()
-            .unwrap_or(SortOrder::Ascending);
-        let ordering = compare_key_tuples(&a.keys, &b.keys, &self.directions)
-            .then_with(|| compare_rids(&a.rid, &b.rid, rid_direction))
-            .then_with(|| {
-                self.children[a_idx]
-                    .range
-                    .min_inclusive()
-                    .cmp(self.children[b_idx].range.min_inclusive())
-            });
+        let ordering = compare_key_tuples(&a.keys, &b.keys, &self.directions).then_with(|| {
+            self.children[a_idx]
+                .range
+                .min_inclusive()
+                .cmp(self.children[b_idx].range.min_inclusive())
+        });
         ordering == std::cmp::Ordering::Less
     }
 }
@@ -505,6 +510,7 @@ impl PipelineNode for StreamingOrderedMerge {
         }
 
         let mut aggregator = PageAggregator::new();
+        aggregator.seed_session_token(self.session_token.clone());
 
         // Prime every child up front so the first `select_min_child_index`
         // sees a head row for each non-drained child (see
@@ -543,6 +549,7 @@ impl PipelineNode for StreamingOrderedMerge {
             .retain(|child| !(child.drained && child.buffered.is_empty()));
         let is_terminal = self.children.is_empty();
 
+        self.session_token = aggregator.session_token().cloned();
         let response = aggregator.build_page(&payloads)?;
         Ok(PageResult::Page {
             response,
@@ -942,6 +949,46 @@ mod tests {
         })
     }
 
+    fn envelope_page_with_execution_info(
+        rows: &[(&str, i64)],
+        execution_info: &str,
+    ) -> crate::error::Result<PageResult> {
+        let response = envelope_response(rows, None);
+        let headers = crate::models::CosmosResponseHeaders {
+            query_execution_info: Some(execution_info.to_owned()),
+            ..Default::default()
+        };
+        Ok(PageResult::Page {
+            response: crate::models::CosmosResponse::new(
+                response.body_bytes().to_vec(),
+                headers,
+                response.status(),
+                response.diagnostics(),
+            ),
+            is_terminal: true,
+        })
+    }
+
+    fn envelope_page_with_session_token(
+        rows: &[(&str, i64)],
+        session_token: &'static str,
+    ) -> crate::error::Result<PageResult> {
+        let response = envelope_response(rows, None);
+        let headers = crate::models::CosmosResponseHeaders {
+            session_token: Some(SessionToken::new(session_token)),
+            ..Default::default()
+        };
+        Ok(PageResult::Page {
+            response: crate::models::CosmosResponse::new(
+                response.body_bytes().to_vec(),
+                headers,
+                response.status(),
+                response.diagnostics(),
+            ),
+            is_terminal: true,
+        })
+    }
+
     /// A single-column complex (array) envelope backend `CosmosResponse`:
     /// each row's sort key is the array `[value]`. Shared by
     /// [`array_envelope_page`] (MockLeaf pages) and `MockRequestExecutor`
@@ -1274,8 +1321,9 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn ties_are_broken_deterministically_by_rid() {
-        // Both children have a row with rank=1; RID "a" < "b" must win.
+    async fn cross_partition_ties_are_broken_by_range() {
+        // Both children have rank=1; the leftmost EPK range wins regardless
+        // of RID, matching .NET and Java.
         let left = ChildStream::fresh(
             range("", "80"),
             Box::new(MockLeaf::with_pages(vec![envelope_page(&[("b", 1)], None)])),
@@ -1288,7 +1336,99 @@ mod tests {
         let PageResult::Page { response, .. } = next_page(&mut node).await else {
             panic!("expected a page");
         };
-        assert_eq!(ids(&response), vec!["a".to_owned(), "b".to_owned()]);
+        assert_eq!(ids(&response), vec!["b".to_owned(), "a".to_owned()]);
+    }
+
+    #[tokio::test]
+    async fn buffered_only_page_preserves_merged_session_token() {
+        let left = ChildStream::fresh(
+            range("", "80"),
+            Box::new(MockLeaf::with_pages(vec![
+                envelope_page_with_session_token(&[("a", 1)], "0:1#10"),
+            ])),
+        );
+        let right = ChildStream::fresh(
+            range("80", "FF"),
+            Box::new(MockLeaf::with_pages(vec![
+                envelope_page_with_session_token(&[("b", 2)], "1:1#20"),
+            ])),
+        );
+        let operation = Arc::new(
+            mocks::operation().with_max_item_count(MaxItemCountHint::Limit(
+                std::num::NonZeroU32::new(1).unwrap(),
+            )),
+        );
+        let mut node =
+            StreamingOrderedMerge::new(operation, vec![SortOrder::Ascending], vec![left, right]);
+
+        let PageResult::Page {
+            response: first, ..
+        } = next_page(&mut node).await
+        else {
+            panic!("expected first page");
+        };
+        let PageResult::Page {
+            response: second, ..
+        } = next_page(&mut node).await
+        else {
+            panic!("expected buffered second page");
+        };
+        assert_eq!(
+            first
+                .headers()
+                .session_token
+                .as_ref()
+                .map(SessionToken::as_str),
+            Some("0:1#10,1:1#20")
+        );
+        assert_eq!(
+            second
+                .headers()
+                .session_token
+                .as_ref()
+                .map(SessionToken::as_str),
+            Some("0:1#10,1:1#20")
+        );
+    }
+
+    #[tokio::test]
+    async fn partial_priming_failure_preserves_absorbed_session_token() {
+        let left = ChildStream::fresh(
+            range("", "80"),
+            Box::new(MockLeaf::with_pages(vec![
+                envelope_page_with_session_token(&[("a", 1)], "0:1#10"),
+            ])),
+        );
+        let transient = crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::new(
+                azure_core::http::StatusCode::ServiceUnavailable,
+            ))
+            .with_message("transient")
+            .build();
+        let right = ChildStream::fresh(
+            range("80", "FF"),
+            Box::new(MockLeaf::with_pages(vec![
+                Err(transient),
+                envelope_page_with_session_token(&[("b", 2)], "1:1#20"),
+            ])),
+        );
+        let mut node = merge(vec![left, right], vec![SortOrder::Ascending]);
+        let mut executor = mocks::NoopRequestExecutor;
+        let mut topology = mocks::NoopTopologyProvider;
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+
+        assert!(node.next_page(&mut context).await.is_err());
+        let PageResult::Page { response, .. } = node.next_page(&mut context).await.unwrap() else {
+            panic!("expected retry page");
+        };
+        assert_eq!(
+            response
+                .headers()
+                .session_token
+                .as_ref()
+                .map(SessionToken::as_str),
+            Some("0:1#10,1:1#20")
+        );
     }
 
     #[tokio::test]
@@ -1362,6 +1502,36 @@ mod tests {
         );
     }
 
+    /// Cross-partition merge of *distinct* complex values: each partition's
+    /// page is locally sorted by exact `DistinctHash` (as a backend page is),
+    /// and the k-way merge emits them in global bytewise hash order. Numeric
+    /// order would give a different sequence, so this pins the .NET ordering
+    /// end-to-end.
+    #[tokio::test]
+    async fn distinct_complex_values_merge_in_global_hash_order() {
+        // Bytewise hash order: [5] < [3] < [2] < [4] < [10] < [6].
+        let left = ChildStream::fresh(
+            range("", "80"),
+            Box::new(MockLeaf::with_pages(vec![array_envelope_page(
+                &[("a5", 5), ("a3", 3), ("a6", 6)],
+                None,
+            )])),
+        );
+        let right = ChildStream::fresh(
+            range("80", "FF"),
+            Box::new(MockLeaf::with_pages(vec![array_envelope_page(
+                &[("b2", 2), ("b4", 4), ("b10", 10)],
+                None,
+            )])),
+        );
+        let mut node = merge(vec![left, right], vec![SortOrder::Ascending]);
+        assert_eq!(
+            drain_all_ids(&mut node).await,
+            vec!["a5", "a3", "b2", "b4", "b10", "a6"],
+            "arrays merge in global DistinctHash order, not numeric order"
+        );
+    }
+
     /// Helper: an all-scalar single-column resume-boundary discard. `skip_count`
     /// is the number of already-emitted rows sharing the exact `(value, rid)`
     /// (usually `1` for a non-JOIN boundary).
@@ -1392,6 +1562,33 @@ mod tests {
             panic!("expected a page");
         };
         assert_eq!(ids(&response), vec!["tied-3".to_owned(), "new".to_owned()]);
+    }
+
+    #[tokio::test]
+    async fn resume_uses_backend_reverse_index_scan_for_rid_discard() {
+        let mut child = ChildStream::fresh(
+            range("", "FF"),
+            Box::new(MockLeaf::with_pages(vec![
+                envelope_page_with_execution_info(
+                    &[("c", 5), ("b", 5), ("a", 5)],
+                    r#"{"reverseRidEnabled":false,"reverseIndexScan":true}"#,
+                ),
+            ])),
+        );
+        child.pending_discard = PendingDiscard::ResumeBoundary {
+            resume_values: vec![OrderByResumeValue::Number {
+                value: 5_i64.into(),
+            }],
+            last_rid: "b".to_owned(),
+            skip_count: 1,
+            directions: vec![SortOrder::Ascending],
+        };
+        let mut node = merge(vec![child], vec![SortOrder::Ascending]);
+
+        let PageResult::Page { response, .. } = next_page(&mut node).await else {
+            panic!("expected a page");
+        };
+        assert_eq!(ids(&response), vec!["a".to_owned()]);
     }
 
     /// Regression: an empty leading page (with continuation) must keep the
@@ -1482,9 +1679,9 @@ mod tests {
 
     /// A complex (array) boundary discards already-emitted ties via the
     /// hash-based comparison, keeping same-hash rows past the rid cut-off.
-    /// This replaces the old positional rescan. (A differently-valued complex
-    /// row orders by the backend's hash order, which a `MockLeaf` can't
-    /// reproduce, so this exercises the tie run.)
+    /// This test focuses on the tie run (all rows share the boundary hash);
+    /// distinct-hash before/after ordering is covered by
+    /// [`resume_complex_boundary_drops_before_and_keeps_after_by_hash`].
     #[tokio::test]
     async fn resume_with_complex_boundary_discards_matching_hash_ties_by_rid() {
         let boundary =
@@ -1514,26 +1711,27 @@ mod tests {
         );
     }
 
-    /// Regression for the complex-boundary discard: a *distinct* un-emitted
-    /// complex value must never be dropped, no matter how its MurmurHash
-    /// happens to order against the boundary's — hash order is not Cosmos
-    /// sort order. (The earlier hash-order comparison could classify `[1]`
-    /// as "before" the `[5]` boundary and silently drop it, ~50% of the
-    /// time, causing data loss.)
+    /// Complex-boundary discard with *distinct* values: a value whose exact
+    /// `DistinctHash` sorts before the boundary is dropped (already emitted by
+    /// the backend, which sorts complex values in the same hash order), and a
+    /// value sorting after it is kept. The page is hash-sorted, as a real
+    /// backend page is.
     #[tokio::test]
-    async fn resume_complex_boundary_never_drops_distinct_unemitted_value() {
+    async fn resume_complex_boundary_drops_before_and_keeps_after_by_hash() {
+        // Boundary is `[3]`, last emitted at rid "at-3".
         let boundary =
-            OrderByItem::Array(vec![OrderByItem::Number(5_i64.into())]).to_resume_value();
+            OrderByItem::Array(vec![OrderByItem::Number(3_i64.into())]).to_resume_value();
+        // Bytewise hash order of the page: [5] < [3] < [2] < [6].
         let mut child = ChildStream::fresh(
             range("", "FF"),
             Box::new(MockLeaf::with_pages(vec![array_envelope_page(
-                &[("emitted", 5), ("distinct", 1)],
+                &[("before-5", 5), ("at-3", 3), ("after-2", 2), ("after-6", 6)],
                 None,
             )])),
         );
         child.pending_discard = PendingDiscard::ResumeBoundary {
             resume_values: vec![boundary],
-            last_rid: "emitted".to_owned(),
+            last_rid: "at-3".to_owned(),
             skip_count: 1,
             directions: vec![SortOrder::Ascending],
         };
@@ -1541,9 +1739,13 @@ mod tests {
         let PageResult::Page { response, .. } = next_page(&mut node).await else {
             panic!("expected a page");
         };
-        // `emitted` (exact-hash tie, rid <= last_rid) is dropped; the
-        // distinct array `[1]` is kept — never inferred "before" from hash.
-        assert_eq!(ids(&response), vec!["distinct".to_owned()]);
+        // `before-5` (hash before the boundary) and `at-3` (exact-hash tie,
+        // rid <= last_rid) are dropped; `after-2`/`after-6` (hash after the
+        // boundary) survive.
+        assert_eq!(
+            ids(&response),
+            vec!["after-2".to_owned(), "after-6".to_owned()]
+        );
     }
 
     // ── skip_count: JOIN duplicate-RID resume ────────────────────────────
@@ -1795,7 +1997,14 @@ mod tests {
     /// clones on a live split.
     #[tokio::test]
     async fn resume_filter_injected_complex_boundary_live_split_is_accepted_and_ordered() {
-        let boundary = complex_boundary("rid-1");
+        // Boundary is `[3]`; replacement values `[2]` and `[4]` sort after it.
+        let boundary = ValueBoundary {
+            resume_values: vec![
+                OrderByItem::Array(vec![OrderByItem::Number(3_i64.into())]).to_resume_value()
+            ],
+            last_rid: "rid-1".to_owned(),
+            skip_count: 1,
+        };
         let filtered_body = query_response::with_resume_filter(
             query_operation().body(),
             &boundary.resume_values,
@@ -1832,10 +2041,11 @@ mod tests {
         let mut node = merge(vec![split_child], vec![SortOrder::Ascending]);
 
         // The backend seek already excluded emitted rows, so each replacement
-        // returns only distinct, later complex values (d3 < d5).
+        // returns only distinct, later complex values. Bytewise hash order
+        // places `[2]` before `[4]`.
         let mut executor = mocks::MockRequestExecutor::new(vec![
-            Ok(array_envelope_response(&[("d3", 3)], None)),
-            Ok(array_envelope_response(&[("d5", 5)], None)),
+            Ok(array_envelope_response(&[("d4", 4)], None)),
+            Ok(array_envelope_response(&[("d2", 2)], None)),
         ]);
         let mut topology = mocks::NoopTopologyProvider;
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
@@ -1848,8 +2058,8 @@ mod tests {
         };
         assert_eq!(
             ids(&response),
-            vec!["d3".to_owned(), "d5".to_owned()],
-            "replacements must be accepted and ordered by key across the split"
+            vec!["d2".to_owned(), "d4".to_owned()],
+            "replacements must be accepted and ordered by hash across the split"
         );
         // Both replacement requests carried the structured resumeFilter seek.
         assert!(

@@ -12,7 +12,7 @@
 //!
 //! Validates: no duplicate scenario IDs; every `layers` entry is a known
 //! layer name; every scenario declares at least one layer and some
-//! expected result; mock partitions are sorted, gapless, and tile
+//! expected result; mock partitions are sorted, have no gaps, and tile
 //! correctly; row `orderByItems` length matches the query's column count;
 //! and required scenario-inventory categories are represented.
 

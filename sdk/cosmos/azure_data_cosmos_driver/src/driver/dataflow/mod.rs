@@ -43,7 +43,7 @@ mod integration_tests;
 #[cfg(test)]
 pub(crate) mod mocks;
 mod node;
-mod order_by;
+pub(crate) mod order_by;
 mod pipeline;
 pub(crate) mod planner;
 pub(crate) mod query_plan;

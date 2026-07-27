@@ -8,12 +8,12 @@
         {
           "sdk": "dotnet",
           "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/OrderByQueryTests.cs",
-          "test": "TestOrderByCrossPartitionQueryAsync"
+          "test": "TestQueryCrossPartitionWithContinuationsAsync"
         },
         {
           "sdk": "java",
           "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/OrderbyDocumentQueryTest.java",
-          "test": "queryDocumentsWithOrderBy"
+          "test": "queryOrderBy"
         }
       ],
       "layers": [
@@ -149,12 +149,12 @@
         {
           "sdk": "dotnet",
           "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/OrderByQueryTests.cs",
-          "test": "TestOrderByCrossPartitionQueryAsync"
+          "test": "TestQueryCrossPartitionWithContinuationsAsync"
         },
         {
           "sdk": "java",
           "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/OrderbyDocumentQueryTest.java",
-          "test": "queryDocumentsWithOrderBy"
+          "test": "queryOrderBy"
         }
       ],
       "layers": [
@@ -295,7 +295,7 @@
         {
           "sdk": "java",
           "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/MultiOrderByQueryTests.java",
-          "test": "queryDocumentsWithMultiOrder"
+          "test": "queryDocumentsWithUndefinedValueAndMultiOrderby"
         }
       ],
       "layers": [
@@ -409,12 +409,12 @@
     },
     {
       "id": "exact_duplicate_keys_across_partitions",
-      "description": "Two partitions each contribute a row with the identical sort key; RID breaks the tie deterministically.",
+      "description": "Two partitions each contribute a row with the identical sort key; the leftmost EPK range breaks the cross-stream tie.",
       "sources": [
         {
           "sdk": "dotnet",
           "path": "Microsoft.Azure.Cosmos.Tests/Query/Pipeline/OrderByCrossPartitionQueryPipelineStageTests.cs",
-          "test": "TestDrainFully"
+          "test": "TestDrainFully_StartFromBeginingAsync_NoDocuments"
         }
       ],
       "layers": [
@@ -489,8 +489,8 @@
         10
       ],
       "expectedIds": [
-        "right",
-        "left"
+        "left",
+        "right"
       ],
       "checkpoint": null,
       "expectedContinuation": null,
@@ -586,7 +586,7 @@
         {
           "sdk": "java",
           "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/MultiOrderByQueryTests.java",
-          "test": "queryDocumentsWithMultiOrder"
+          "test": "queryDocumentsWithUndefinedValueAndMultiOrderby"
         }
       ],
       "layers": [
@@ -670,12 +670,12 @@
         {
           "sdk": "dotnet",
           "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/OrderByQueryTests.cs",
-          "test": "TestOrderByCrossPartitionQueryAsync"
+          "test": "TestMixedTypeOrderByAsync"
         },
         {
           "sdk": "java",
           "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/OrderbyDocumentQueryTest.java",
-          "test": "queryDocumentsWithOrderByAndMixedTypes"
+          "test": "queryOrderByMixedTypes"
         }
       ],
       "layers": [
@@ -822,17 +822,17 @@
     },
     {
       "id": "array_keys_ordering_and_continuation",
-      "description": "Array-typed sort keys compare lexicographically and round-trip through a bounded complex-value continuation.",
+      "description": "Array-typed sort keys compare by DistinctHash using .NET UInt128BinaryComparer byte order and round-trip through a bounded complex-value continuation. This differs from structural array order.",
       "sources": [
         {
           "sdk": "dotnet",
           "path": "Microsoft.Azure.Cosmos.Tests/Query/ContinuationTokens/OrderByContinuationTokenTests.cs",
-          "test": "TestRoundTripComplexKeys"
+          "test": "TestSqlQueryResumeValueRoundTrip"
         },
         {
           "sdk": "java",
-          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/MultiOrderByQueryTests.java",
-          "test": "queryDocumentsWithMultiOrder"
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/OrderbyDocumentQueryTest.java",
+          "test": "queryOrderByArray"
         }
       ],
       "layers": [
@@ -861,16 +861,16 @@
               {
                 "rows": [
                   {
-                    "rid": "r1",
+                    "rid": "r3",
                     "orderByItems": [
                       {
                         "item": [
-                          1
+                          2
                         ]
                       }
                     ],
                     "payload": {
-                      "id": "short"
+                      "id": "greater"
                     }
                   },
                   {
@@ -888,16 +888,16 @@
                     }
                   },
                   {
-                    "rid": "r3",
+                    "rid": "r1",
                     "orderByItems": [
                       {
                         "item": [
-                          2
+                          1
                         ]
                       }
                     ],
                     "payload": {
-                      "id": "greater"
+                      "id": "short"
                     }
                   }
                 ],
@@ -912,9 +912,9 @@
         10
       ],
       "expectedIds": [
-        "short",
+        "greater",
         "prefix",
-        "greater"
+        "short"
       ],
       "checkpoint": {
         "afterItems": 1
@@ -928,17 +928,17 @@
     },
     {
       "id": "object_keys_ordering_and_continuation",
-      "description": "Object-typed sort keys compare by ascending key then value and round-trip through a bounded complex-value continuation.",
+      "description": "Object-typed sort keys compare by property-order-independent DistinctHash using .NET UInt128BinaryComparer byte order and round-trip through a bounded complex-value continuation. This differs from structural object order.",
       "sources": [
         {
           "sdk": "dotnet",
           "path": "Microsoft.Azure.Cosmos.Tests/Query/ContinuationTokens/OrderByContinuationTokenTests.cs",
-          "test": "TestRoundTripComplexKeys"
+          "test": "TestSqlQueryResumeValueRoundTrip"
         },
         {
           "sdk": "java",
-          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/MultiOrderByQueryTests.java",
-          "test": "queryDocumentsWithMultiOrder"
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/OrderbyDocumentQueryTest.java",
+          "test": "queryOrderByObject"
         }
       ],
       "layers": [
@@ -980,19 +980,6 @@
                     }
                   },
                   {
-                    "rid": "r2",
-                    "orderByItems": [
-                      {
-                        "item": {
-                          "a": 2
-                        }
-                      }
-                    ],
-                    "payload": {
-                      "id": "a-2"
-                    }
-                  },
-                  {
                     "rid": "r3",
                     "orderByItems": [
                       {
@@ -1003,6 +990,19 @@
                     ],
                     "payload": {
                       "id": "b-0"
+                    }
+                  },
+                  {
+                    "rid": "r2",
+                    "orderByItems": [
+                      {
+                        "item": {
+                          "a": 2
+                        }
+                      }
+                    ],
+                    "payload": {
+                      "id": "a-2"
                     }
                   }
                 ],
@@ -1018,8 +1018,8 @@
       ],
       "expectedIds": [
         "a-1",
-        "a-2",
-        "b-0"
+        "b-0",
+        "a-2"
       ],
       "checkpoint": {
         "afterItems": 1
@@ -1038,7 +1038,7 @@
         {
           "sdk": "dotnet",
           "path": "Microsoft.Azure.Cosmos.Tests/Query/ContinuationTokens/OrderByContinuationTokenTests.cs",
-          "test": "TestOrderByContinuationTokenWithSkipCount"
+          "test": "TestRoundTripAsCosmosElement"
         }
       ],
       "layers": [
@@ -1144,7 +1144,7 @@
         {
           "sdk": "dotnet",
           "path": "Microsoft.Azure.Cosmos.Tests/Query/Pipeline/OrderByCrossPartitionQueryPipelineStageTests.cs",
-          "test": "TestFormatFilter"
+          "test": "TestFormattedFiltersForTargetPartitionWithContinuationTokenAsync"
         }
       ],
       "layers": [
@@ -1187,6 +1187,7 @@
             5.0,
             "mid"
           ],
+          "rid": "rid-1",
           "exclude": false
         }
       },
@@ -1199,7 +1200,7 @@
         {
           "sdk": "dotnet",
           "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/OrderByQueryTests.cs",
-          "test": "TestOrderByCrossPartitionQueryAsync"
+          "test": "TestQueryCrossPartitionWithContinuationsAsync"
         }
       ],
       "layers": [
@@ -1253,7 +1254,7 @@
         {
           "sdk": "dotnet",
           "path": "Microsoft.Azure.Cosmos.Tests/Query/Pipeline/OrderByCrossPartitionQueryPipelineStageTests.cs",
-          "test": "TestEmptyPages"
+          "test": "TestDrainFully_StartFromBeginingAsync_NoDocuments"
         }
       ],
       "layers": [
@@ -1324,8 +1325,8 @@
       "sources": [
         {
           "sdk": "dotnet",
-          "path": "Microsoft.Azure.Cosmos.Tests/Query/Pipeline/FullPipelineTests.cs",
-          "test": "TestRequestChargeAggregation"
+          "path": "Microsoft.Azure.Cosmos.Tests/Query/Pipeline/OrderByCrossPartitionQueryPipelineStageTests.cs",
+          "test": "TestDrain_IncludesResponseHeadersInQueryPage"
         }
       ],
       "layers": [
@@ -1471,8 +1472,8 @@
       "sources": [
         {
           "sdk": "dotnet",
-          "path": "Microsoft.Azure.Cosmos.Tests/Query/OrderByQueryPartitionRangePageAsyncEnumeratorTests.cs",
-          "test": "TestSplitDuringDrain"
+          "path": "Microsoft.Azure.Cosmos.Tests/Query/Pipeline/OrderByCrossPartitionQueryPipelineStageTests.cs",
+          "test": "TestDrainWithStateSplitsAndMergeAsync"
         },
         {
           "sdk": "java",
@@ -1556,9 +1557,9 @@
       "description": "A rewritten-envelope item missing `payload` is a service contract violation, not silently skipped.",
       "sources": [
         {
-          "sdk": "dotnet",
-          "path": "Microsoft.Azure.Cosmos.Tests/Query/ContinuationTokens/OrderByQueryResultTests.cs",
-          "test": "TestOrderByUndefined"
+          "sdk": "rust",
+          "path": "sdk/cosmos/azure_data_cosmos_driver/src/driver/dataflow/query_response.rs",
+          "test": "parse_envelope_page_rejects_missing_payload"
         }
       ],
       "layers": [
@@ -1617,8 +1618,8 @@
       "sources": [
         {
           "sdk": "java",
-          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/MultiOrderByQueryTests.java",
-          "test": "queryDocumentsWithMultiOrder"
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/OrderbyDocumentQueryTest.java",
+          "test": "queryOrderByObject"
         }
       ],
       "layers": [
@@ -1685,7 +1686,7 @@
         {
           "sdk": "dotnet",
           "path": "Microsoft.Azure.Cosmos.Tests/Query/ContinuationTokens/OrderByContinuationTokenTests.cs",
-          "test": "TestNegativeCases"
+          "test": "TestSqlQueryResumeValueNegativeCases"
         }
       ],
       "layers": [
@@ -1721,7 +1722,7 @@
         {
           "sdk": "dotnet",
           "path": "Microsoft.Azure.Cosmos.Tests/Query/ContinuationTokens/OrderByContinuationTokenTests.cs",
-          "test": "TestNegativeCases"
+          "test": "TestSqlQueryResumeValueNegativeCases"
         }
       ],
       "layers": [
@@ -1761,7 +1762,7 @@
         {
           "sdk": "dotnet",
           "path": "Microsoft.Azure.Cosmos.Tests/Query/ContinuationTokens/OrderByContinuationTokenTests.cs",
-          "test": "TestNegativeCases"
+          "test": "TestSqlQueryResumeValueNegativeCases"
         }
       ],
       "layers": [
@@ -1801,7 +1802,7 @@
         {
           "sdk": "dotnet",
           "path": "Microsoft.Azure.Cosmos.Tests/Query/Pipeline/FullPipelineTests.cs",
-          "test": "TestSinglePartitionOrderBy"
+          "test": "OrderBy"
         }
       ],
       "layers": [
@@ -1848,12 +1849,12 @@
         {
           "sdk": "dotnet",
           "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/OrderByQueryTests.cs",
-          "test": "TestOrderByCrossPartitionQueryAsync"
+          "test": "TestQueryCrossPartitionWithContinuationsAsync"
         },
         {
           "sdk": "java",
           "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/OrderbyDocumentQueryTest.java",
-          "test": "queryDocumentsWithOrderBy"
+          "test": "queryOrderBy"
         }
       ],
       "layers": [
@@ -1947,9 +1948,9 @@
       "description": "TOP combined with streaming ORDER BY remains precisely unsupported until the TOP composition stage (#4750) lands.",
       "sources": [
         {
-          "sdk": "dotnet",
-          "path": "Microsoft.Azure.Cosmos.Tests/Query/Pipeline/FullPipelineTests.cs",
-          "test": "TestUnsupportedCombinations"
+          "sdk": "rust",
+          "path": "sdk/cosmos/azure_data_cosmos_driver/src/driver/dataflow/planner.rs",
+          "test": "validate_query_plan_for_streaming_order_by_rejects_top"
         }
       ],
       "layers": [
@@ -1983,9 +1984,9 @@
       "description": "A query the Gateway marks hasNonStreamingOrderBy remains rejected (issue #4755, not this issue).",
       "sources": [
         {
-          "sdk": "dotnet",
-          "path": "Microsoft.Azure.Cosmos.Tests/Query/Pipeline/FullPipelineTests.cs",
-          "test": "TestUnsupportedCombinations"
+          "sdk": "rust",
+          "path": "sdk/cosmos/azure_data_cosmos_driver/src/driver/dataflow/planner.rs",
+          "test": "validate_query_plan_for_streaming_order_by_rejects_non_streaming_order_by"
         }
       ],
       "layers": [
@@ -2019,9 +2020,9 @@
       "description": "DISTINCT, GROUP BY, and aggregates combined with ORDER BY remain unsupported until their sibling issues land.",
       "sources": [
         {
-          "sdk": "dotnet",
-          "path": "Microsoft.Azure.Cosmos.Tests/Query/Pipeline/FullPipelineTests.cs",
-          "test": "TestUnsupportedCombinations"
+          "sdk": "rust",
+          "path": "sdk/cosmos/azure_data_cosmos_driver/src/driver/dataflow/planner.rs",
+          "test": "validate_query_plan_for_streaming_order_by_rejects_aggregates_group_by_distinct"
         }
       ],
       "layers": [

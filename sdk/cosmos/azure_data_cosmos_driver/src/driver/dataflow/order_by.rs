@@ -50,8 +50,9 @@ pub(crate) enum OrderByItem {
     Number(OrderByNumber),
     String(String),
     Array(Vec<OrderByItem>),
-    /// Key/value pairs in wire order; comparison sorts by key internally
-    /// so differently-ordered wire keys still compare equal.
+    /// Key/value pairs in wire order. Comparison hashes the object with the
+    /// backend / .NET `DistinctHash` (order-independent), so differently-ordered
+    /// wire keys still compare equal.
     Object(Vec<(String, OrderByItem)>),
 }
 
@@ -303,6 +304,13 @@ impl OrderByItem {
     }
 }
 
+/// Compares two defined JSON values using the production Cosmos `ORDER BY`
+/// relation shared by the streaming merge and the in-memory query oracle.
+#[cfg(any(test, feature = "__internal_in_memory_emulator"))]
+pub(crate) fn compare_json_values(left: &serde_json::Value, right: &serde_json::Value) -> Ordering {
+    OrderByItem::from_json(left).cmp(&OrderByItem::from_json(right))
+}
+
 impl PartialEq for OrderByItem {
     fn eq(&self, other: &Self) -> bool {
         self.cmp(other) == Ordering::Equal
@@ -328,36 +336,20 @@ impl Ord for OrderByItem {
             (Self::Null, Self::Null) => Ordering::Equal,
             (Self::Boolean(a), Self::Boolean(b)) => a.cmp(b),
             (Self::Number(a), Self::Number(b)) => a.cmp(b),
-            (Self::String(a), Self::String(b)) => a.cmp(b),
-            (Self::Array(a), Self::Array(b)) => {
-                for (x, y) in a.iter().zip(b.iter()) {
-                    let c = x.cmp(y);
-                    if c != Ordering::Equal {
-                        return c;
-                    }
-                }
-                a.len().cmp(&b.len())
-            }
-            (Self::Object(a), Self::Object(b)) => {
-                let mut a_sorted: Vec<&(String, OrderByItem)> = a.iter().collect();
-                let mut b_sorted: Vec<&(String, OrderByItem)> = b.iter().collect();
-                a_sorted.sort_by(|x, y| x.0.cmp(&y.0));
-                b_sorted.sort_by(|x, y| x.0.cmp(&y.0));
-                for (x, y) in a_sorted.iter().zip(b_sorted.iter()) {
-                    let key_cmp = x.0.cmp(&y.0);
-                    if key_cmp != Ordering::Equal {
-                        return key_cmp;
-                    }
-                    let val_cmp = x.1.cmp(&y.1);
-                    if val_cmp != Ordering::Equal {
-                        return val_cmp;
-                    }
-                }
-                a_sorted.len().cmp(&b_sorted.len())
+            (Self::String(a), Self::String(b)) => compare_strings(a, b),
+            // Arrays and objects use .NET's bytewise `DistinctHash` order,
+            // matching the backend's per-partition order. Object property
+            // order does not matter because the hash folds it out.
+            (Self::Array(_), Self::Array(_)) | (Self::Object(_), Self::Object(_)) => {
+                ComplexHash::of(self).cmp(&ComplexHash::of(other))
             }
             _ => unreachable!("rank_cmp already distinguished differing variants"),
         }
     }
+}
+
+fn compare_strings(a: &str, b: &str) -> Ordering {
+    a.encode_utf16().cmp(b.encode_utf16())
 }
 
 impl OrderByItem {
@@ -471,9 +463,9 @@ pub(crate) fn compare_key_tuples(
 /// the order the backend breaks full-key `ORDER BY` ties in within a
 /// partition. Ascending uses numeric document-ordinal order (see
 /// [`crate::models::resource_id::compare_document_rids`]); descending
-/// reverses it. The direction is the query's first sort column, matching
-/// .NET's `ReverseRidEnabled` fallback (no `reverseIndexScan` signal is
-/// available in the Gateway query plan the driver consumes).
+/// reverses it. Callers derive the effective direction from each backend
+/// page's query-execution metadata, with the first sort column as the legacy
+/// fallback.
 pub(crate) fn compare_rids(a: &str, b: &str, direction: SortOrder) -> Ordering {
     let ascending = crate::models::resource_id::compare_document_rids(a, b);
     match direction {
@@ -501,10 +493,9 @@ pub(crate) enum ComplexTypeTag {
 /// including across a partition split or merge. Structurally-equal values
 /// hash equal regardless of object property order.
 ///
-/// Its *ordering* of distinct values is still not Cosmos sort order —
-/// MurmurHash output is not monotonic — so the client-side discard treats
-/// only an exact-hash tie as already-emitted and never infers less/greater
-/// between two distinct complex hashes (see [`classify_row_vs_boundary`]).
+/// Ordering matches .NET's `UInt128BinaryComparer`: compare each half with
+/// its bytes reversed, low half first. This is the backend's per-partition
+/// complex-value order. An exact-hash tie is broken by `_rid`/`skip_count`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) struct ComplexHash {
     pub(crate) low64: u64,
@@ -518,6 +509,22 @@ impl ComplexHash {
             low64: hash as u64,
             high64: (hash >> 64) as u64,
         }
+    }
+
+    fn binary_order_key(self) -> (u64, u64) {
+        (self.low64.swap_bytes(), self.high64.swap_bytes())
+    }
+}
+
+impl PartialOrd for ComplexHash {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for ComplexHash {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.binary_order_key().cmp(&other.binary_order_key())
     }
 }
 
@@ -642,54 +649,26 @@ pub(crate) fn resume_filter_json(
     serde_json::Value::Object(obj)
 }
 
-/// One column's comparison of a returned row's value against a persisted
-/// resume value. `Ordered` is a reliable Cosmos-sort-order comparison
-/// (scalars by value, cross-type by Cosmos type rank); `Indeterminate`
-/// means both sides are the same complex (array/object) type but their
-/// bounded [`ComplexHash`]es differ. That hash is now the backend's exact
-/// structural `DistinctHash`, yet its *ordering* is still not Cosmos sort
-/// order (MurmurHash output is not monotonic), so a differing hash can't
-/// place the row relative to the boundary — only an exact-hash tie is
-/// meaningful.
-enum ColumnCmp {
-    Ordered(Ordering),
-    Indeterminate,
-}
-
-/// Ascending Cosmos comparison of a returned row's `item` against a
-/// persisted resume-boundary `value` for one column. Cross-type pairs order
-/// by Cosmos type rank; same-type scalars by value; same-type complex
-/// values compare **only** for hash-equality (a differing hash is
-/// [`ColumnCmp::Indeterminate`], never a spurious `Less`/`Greater`).
-fn column_cmp(item: &OrderByItem, value: &OrderByResumeValue) -> ColumnCmp {
+/// One column's ascending Cosmos comparison of a returned row's `item`
+/// against a persisted resume-boundary `value`. Cross-type pairs order by
+/// Cosmos type rank; same-type scalars by value; same-type complex
+/// (array/object) values by their exact backend / .NET `DistinctHash`
+/// ([`ComplexHash`]) using .NET's bytewise hash order.
+fn column_cmp(item: &OrderByItem, value: &OrderByResumeValue) -> Ordering {
     let rank_cmp = item.cosmos_type().cmp(&value.cosmos_type());
     if rank_cmp != Ordering::Equal {
-        return ColumnCmp::Ordered(rank_cmp);
+        return rank_cmp;
     }
     match (item, value) {
-        (OrderByItem::Undefined, OrderByResumeValue::Undefined) => {
-            ColumnCmp::Ordered(Ordering::Equal)
-        }
-        (OrderByItem::Null, OrderByResumeValue::Null) => ColumnCmp::Ordered(Ordering::Equal),
-        (OrderByItem::Boolean(a), OrderByResumeValue::Boolean { value }) => {
-            ColumnCmp::Ordered(a.cmp(value))
-        }
-        (OrderByItem::Number(a), OrderByResumeValue::Number { value }) => {
-            ColumnCmp::Ordered(a.cmp(value))
-        }
-        (OrderByItem::String(a), OrderByResumeValue::String { value }) => {
-            ColumnCmp::Ordered(a.as_str().cmp(value.as_str()))
-        }
+        (OrderByItem::Undefined, OrderByResumeValue::Undefined) => Ordering::Equal,
+        (OrderByItem::Null, OrderByResumeValue::Null) => Ordering::Equal,
+        (OrderByItem::Boolean(a), OrderByResumeValue::Boolean { value }) => a.cmp(value),
+        (OrderByItem::Number(a), OrderByResumeValue::Number { value }) => a.cmp(value),
+        (OrderByItem::String(a), OrderByResumeValue::String { value }) => compare_strings(a, value),
         (
             OrderByItem::Array(_) | OrderByItem::Object(_),
             OrderByResumeValue::Complex { hash, .. },
-        ) => {
-            if ComplexHash::of(item) == *hash {
-                ColumnCmp::Ordered(Ordering::Equal)
-            } else {
-                ColumnCmp::Indeterminate
-            }
-        }
+        ) => ComplexHash::of(item).cmp(hash),
         _ => unreachable!("type rank already distinguished differing variants"),
     }
 }
@@ -697,15 +676,13 @@ fn column_cmp(item: &OrderByItem, value: &OrderByResumeValue) -> ColumnCmp {
 /// Where a returned row's key tuple sits relative to a persisted resume
 /// boundary, for the client-side discard.
 pub(crate) enum RowVsBoundary {
-    /// The row sorts reliably strictly before the boundary — already emitted.
+    /// The row sorts strictly before the boundary — already emitted.
     Before,
     /// Exact full-key tie; the caller breaks it by `_rid`.
     Tie,
-    /// The row sorts at or after the boundary, or its position cannot be
-    /// determined (a differing complex column, whose hash order is not sort
-    /// order). Never treated as already-emitted, so the discard can never
-    /// drop an un-emitted row.
-    AfterOrIndeterminate,
+    /// The row sorts at or after the boundary — never treated as
+    /// already-emitted, so the discard keeps it.
+    After,
 }
 
 /// Classifies a returned row's key tuple against a persisted resume boundary
@@ -713,11 +690,12 @@ pub(crate) enum RowVsBoundary {
 /// stopping at the first non-equal column — the mixed-scalar/complex
 /// counterpart of [`compare_key_tuples`], used by the client-side discard.
 ///
-/// A row is reported [`RowVsBoundary::Before`] (droppable) only when a
-/// scalar (or cross-type) prefix column proves it; a differing complex
-/// column yields [`RowVsBoundary::AfterOrIndeterminate`] so the discard
-/// keeps it rather than risk dropping an un-emitted row. Panics on a length
-/// mismatch; callers validate column-count agreement first.
+/// Every column — scalar, cross-type, or complex — yields a definite
+/// ordering: a complex column compares by the backend's exact `DistinctHash`
+/// ([`column_cmp`]), so a row is reported [`RowVsBoundary::Before`]
+/// (droppable) whenever it sorts before the boundary in that same order.
+/// Panics on a length mismatch; callers validate column-count agreement
+/// first.
 pub(crate) fn classify_row_vs_boundary(
     keys: &[OrderByItem],
     resume_values: &[OrderByResumeValue],
@@ -726,21 +704,14 @@ pub(crate) fn classify_row_vs_boundary(
     debug_assert_eq!(keys.len(), directions.len());
     debug_assert_eq!(resume_values.len(), directions.len());
     for (i, direction) in directions.iter().enumerate() {
-        match column_cmp(&keys[i], &resume_values[i]) {
-            ColumnCmp::Ordered(ord) => {
-                let ord = match direction {
-                    SortOrder::Ascending => ord,
-                    SortOrder::Descending => ord.reverse(),
-                };
-                match ord {
-                    Ordering::Less => return RowVsBoundary::Before,
-                    Ordering::Greater => return RowVsBoundary::AfterOrIndeterminate,
-                    Ordering::Equal => {}
-                }
-            }
-            // A complex column that differs from the boundary by hash: its
-            // true sort position is unknown, so never infer "before".
-            ColumnCmp::Indeterminate => return RowVsBoundary::AfterOrIndeterminate,
+        let ord = match direction {
+            SortOrder::Ascending => column_cmp(&keys[i], &resume_values[i]),
+            SortOrder::Descending => column_cmp(&keys[i], &resume_values[i]).reverse(),
+        };
+        match ord {
+            Ordering::Less => return RowVsBoundary::Before,
+            Ordering::Greater => return RowVsBoundary::After,
+            Ordering::Equal => {}
         }
     }
     RowVsBoundary::Tie
@@ -796,55 +767,118 @@ mod tests {
     }
 
     #[test]
-    fn strings_compare_lexicographically() {
+    fn strings_compare_in_utf16_ordinal_order() {
         assert_eq!(
             OrderByItem::String("a".into()).cosmos_cmp(&OrderByItem::String("b".into())),
+            Ordering::Less
+        );
+        assert_eq!(
+            OrderByItem::String("\u{10000}".into())
+                .cosmos_cmp(&OrderByItem::String("\u{e000}".into())),
             Ordering::Less
         );
     }
 
     #[test]
-    fn arrays_compare_lexicographically_with_prefix_shorter_first() {
-        let a = OrderByItem::Array(vec![OrderByItem::Number(1.0.into())]);
-        let b = OrderByItem::Array(vec![
-            OrderByItem::Number(1.0.into()),
-            OrderByItem::Number(2.0.into()),
-        ]);
-        assert_eq!(a.cosmos_cmp(&b), Ordering::Less);
-
-        let c = OrderByItem::Array(vec![
-            OrderByItem::Number(1.0.into()),
-            OrderByItem::Number(1.0.into()),
-        ]);
-        let d = OrderByItem::Array(vec![
-            OrderByItem::Number(1.0.into()),
-            OrderByItem::Number(2.0.into()),
-        ]);
-        assert_eq!(c.cosmos_cmp(&d), Ordering::Less);
+    fn arrays_order_by_distinct_hash_not_structurally() {
+        let arr = |vs: &[i64]| {
+            OrderByItem::Array(
+                vs.iter()
+                    .map(|v| OrderByItem::Number((*v).into()))
+                    .collect(),
+            )
+        };
+        // Structurally `[2] < [3]`, but .NET's bytewise DistinctHash order
+        // places `[3]` first.
+        assert_eq!(arr(&[2]).cosmos_cmp(&arr(&[3])), Ordering::Greater);
+        // The comparison is exactly .NET's bytewise `DistinctHash` order.
+        let vectors = [arr(&[0]), arr(&[1]), arr(&[2]), arr(&[1, 2]), arr(&[2, 1])];
+        for a in &vectors {
+            for b in &vectors {
+                assert_eq!(a.cosmos_cmp(b), ComplexHash::of(a).cmp(&ComplexHash::of(b)));
+            }
+        }
+        // Structurally-equal arrays still tie (equal hash).
+        assert_eq!(arr(&[1, 2]).cosmos_cmp(&arr(&[1, 2])), Ordering::Equal);
     }
 
     #[test]
-    fn objects_compare_by_sorted_key_regardless_of_wire_order() {
+    fn objects_order_by_distinct_hash_and_ignore_property_order() {
+        // Same content, different wire key order -> equal (the hash folds
+        // property order out), so a differently-serialized object still ties.
         let a = OrderByItem::Object(vec![
-            ("b".to_owned(), OrderByItem::Number(1.0.into())),
-            ("a".to_owned(), OrderByItem::Number(2.0.into())),
+            ("b".to_owned(), OrderByItem::Number(1_i64.into())),
+            ("a".to_owned(), OrderByItem::Number(2_i64.into())),
         ]);
         let b = OrderByItem::Object(vec![
-            ("a".to_owned(), OrderByItem::Number(2.0.into())),
-            ("b".to_owned(), OrderByItem::Number(1.0.into())),
+            ("a".to_owned(), OrderByItem::Number(2_i64.into())),
+            ("b".to_owned(), OrderByItem::Number(1_i64.into())),
         ]);
         assert_eq!(
             a.cosmos_cmp(&b),
             Ordering::Equal,
-            "same content, different wire key order"
+            "same content, different wire key order hashes equal"
         );
 
-        let c = OrderByItem::Object(vec![("a".to_owned(), OrderByItem::Number(3.0.into()))]);
+        // Structurally `{a:2} < {a:3}` (value 2 < 3), but objects order by
+        // `DistinctHash`: hash({a:2})=0xe57aeb1c.. > hash({a:3})=0x0322c08f..,
+        // so it inverts to `Greater` (matching .NET / Java).
+        let o2 = OrderByItem::Object(vec![("a".to_owned(), OrderByItem::Number(2_i64.into()))]);
+        let o3 = OrderByItem::Object(vec![("a".to_owned(), OrderByItem::Number(3_i64.into()))]);
+        assert_eq!(o2.cosmos_cmp(&o3), Ordering::Greater);
         assert_eq!(
-            a.cosmos_cmp(&c),
-            Ordering::Less,
-            "sorted-key comparison first differs on key 'a': 2 < 3"
+            o2.cosmos_cmp(&o3),
+            ComplexHash::of(&o2).cmp(&ComplexHash::of(&o3))
         );
+    }
+
+    #[test]
+    fn complex_hash_orders_like_dotnet_binary_comparer() {
+        // .NET compares reversed bytes of the low half first, then the high
+        // half. This is bytewise hash order, not numeric UInt128 order.
+        let hash = |high64: u64, low64: u64| ComplexHash { low64, high64 };
+        assert_eq!(hash(1, 0).cmp(&hash(0, u64::MAX)), Ordering::Less);
+        assert_eq!(hash(5, 0x0100).cmp(&hash(5, 1)), Ordering::Less);
+        assert_eq!(hash(1, 7).cmp(&hash(2, 7)), Ordering::Less);
+        assert_eq!(hash(7, 7).cmp(&hash(7, 7)), Ordering::Equal);
+    }
+
+    #[test]
+    fn complex_hash_ordering_matches_order_by_item_ordering() {
+        // The boundary discard compares `ComplexHash::of(item)` against a
+        // stored hash; that must agree with the merge's `OrderByItem` order,
+        // so both use the same backend bytewise `DistinctHash` ordering.
+        let arr = |v: i64| OrderByItem::Array(vec![OrderByItem::Number(v.into())]);
+        let vectors = [
+            arr(0),
+            arr(1),
+            arr(2),
+            arr(3),
+            arr(4),
+            arr(5),
+            arr(6),
+            arr(10),
+        ];
+        let mut sorted = vectors.clone();
+        sorted.sort();
+        assert_eq!(
+            sorted,
+            [
+                arr(0),
+                arr(1),
+                arr(5),
+                arr(3),
+                arr(2),
+                arr(4),
+                arr(10),
+                arr(6),
+            ]
+        );
+        for a in &vectors {
+            for b in &vectors {
+                assert_eq!(a.cmp(b), ComplexHash::of(a).cmp(&ComplexHash::of(b)));
+            }
+        }
     }
 
     // ── OrderByNumber: lossless cross-variant comparison ────────────────
@@ -1399,7 +1433,7 @@ mod tests {
         };
         assert!(matches!(classify(4.0), RowVsBoundary::Before));
         assert!(matches!(classify(5.0), RowVsBoundary::Tie));
-        assert!(matches!(classify(6.0), RowVsBoundary::AfterOrIndeterminate));
+        assert!(matches!(classify(6.0), RowVsBoundary::After));
     }
 
     #[test]
@@ -1414,28 +1448,30 @@ mod tests {
     }
 
     #[test]
-    fn classify_row_vs_boundary_complex_ties_by_hash_never_infers_order() {
-        let array = OrderByItem::Array(vec![
-            OrderByItem::Number(1.0.into()),
-            OrderByItem::Number(2.0.into()),
-        ]);
-        let boundary = [array.to_resume_value()];
+    fn classify_row_vs_boundary_complex_orders_by_hash() {
+        let arr = |v: i64| OrderByItem::Array(vec![OrderByItem::Number(v.into())]);
+        // Boundary is the array `[5]` (hash 0x307df76d..).
+        let boundary = [arr(5).to_resume_value()];
         let directions = [SortOrder::Ascending];
-        // The same structural array ties the complex boundary (equal hash).
+        // The same array ties the complex boundary (equal hash).
         assert!(matches!(
-            classify_row_vs_boundary(&[array], &boundary, &directions),
+            classify_row_vs_boundary(&[arr(5)], &boundary, &directions),
             RowVsBoundary::Tie
         ));
-        // A *different* array is never inferred as "before" (its hash order
-        // is not sort order); it is kept, not dropped.
-        assert!(matches!(
-            classify_row_vs_boundary(
-                &[OrderByItem::Array(vec![OrderByItem::Number(9.0.into())])],
-                &boundary,
-                &directions,
-            ),
-            RowVsBoundary::AfterOrIndeterminate
-        ));
+        // Classification matches the same bytewise hash order as the merge.
+        for v in [0_i64, 1, 2, 3, 4, 6, 10] {
+            let expected = match ComplexHash::of(&arr(v)).cmp(&ComplexHash::of(&arr(5))) {
+                Ordering::Less => "before",
+                Ordering::Greater => "after",
+                Ordering::Equal => "tie",
+            };
+            let got = match classify_row_vs_boundary(&[arr(v)], &boundary, &directions) {
+                RowVsBoundary::Before => "before",
+                RowVsBoundary::After => "after",
+                RowVsBoundary::Tie => "tie",
+            };
+            assert_eq!(got, expected, "array [{v}] vs boundary [5]");
+        }
     }
 
     #[test]
@@ -1447,7 +1483,7 @@ mod tests {
                 &[OrderByResumeValue::Number { value: 5.0.into() }],
                 &[SortOrder::Ascending],
             ),
-            RowVsBoundary::AfterOrIndeterminate
+            RowVsBoundary::After
         ));
         // A Number row is reliably *before* a String boundary (lower rank),
         // even though the boundary column is not the row's own type.

@@ -3254,9 +3254,8 @@ fn local_query_info_to_dataflow(
 /// `driver::dataflow::query_response`) — no outer subquery wrapper, so the
 /// result stays flat and directly evaluable.
 ///
-/// Scoped to `SELECT *`-shaped queries (`payload` is always the whole
-/// document); returns `None` if no top-level `FROM` is found, which
-/// shouldn't happen for a query with a non-empty ORDER BY.
+/// Supports `SELECT *` and `SELECT VALUE <expression>`. Other projection
+/// shapes return `None` rather than synthesizing the wrong payload.
 fn synthesize_order_by_rewritten_query(
     original_query: &str,
     order_by_expressions: &[String],
@@ -3268,15 +3267,55 @@ fn synthesize_order_by_rewritten_query(
     const ORDER_BY_FILTER_PLACEHOLDER: &str = "{documentdb-formattableorderbyquery-filter}";
 
     let tokens = Lexer::tokenize(original_query);
-    let from_idx = tokens.iter().position(|t| t.kind == TokenKind::From)?;
+    let mut depth = 0_usize;
+    let mut top_level = Vec::new();
+    for (index, token) in tokens.iter().enumerate() {
+        if matches!(
+            token.kind,
+            TokenKind::RParen | TokenKind::RBracket | TokenKind::RBrace
+        ) {
+            depth = depth.saturating_sub(1);
+        }
+        if depth == 0 {
+            top_level.push(index);
+        }
+        if matches!(
+            token.kind,
+            TokenKind::LParen | TokenKind::LBracket | TokenKind::LBrace
+        ) {
+            depth += 1;
+        }
+    }
+    let is_clause_keyword = |index: usize| index == 0 || tokens[index - 1].kind != TokenKind::Dot;
+    let select_idx = top_level
+        .iter()
+        .copied()
+        .find(|&i| tokens[i].kind == TokenKind::Select)?;
+    let from_idx = top_level
+        .iter()
+        .copied()
+        .find(|&i| tokens[i].kind == TokenKind::From && is_clause_keyword(i))?;
     let collection_token = tokens.get(from_idx + 1)?;
     let alias = match tokens.get(from_idx + 2) {
         Some(t) if t.kind == TokenKind::As => tokens.get(from_idx + 3)?.text,
         Some(t) if t.kind == TokenKind::Identifier => t.text,
         _ => collection_token.text,
     };
+    let payload = match tokens.get(select_idx + 1)? {
+        token if token.kind == TokenKind::Star => alias.to_owned(),
+        token if token.kind == TokenKind::Value => original_query
+            [token.span.end..tokens[from_idx].span.start]
+            .trim()
+            .to_owned(),
+        _ => return None,
+    };
 
-    let order_idx = tokens.iter().position(|t| t.kind == TokenKind::Order);
+    let order_idx = top_level.iter().copied().find(|&i| {
+        tokens[i].kind == TokenKind::Order
+            && tokens
+                .get(i + 1)
+                .is_some_and(|token| token.kind == TokenKind::By)
+    });
     let clause_end = order_idx
         .map(|i| tokens[i].span.start)
         .unwrap_or(original_query.len());
@@ -3285,7 +3324,12 @@ fn synthesize_order_by_rewritten_query(
     // FROM is emitted verbatim; the placeholder is ANDed into WHERE
     // (creating one if absent) — the slot every rewritten query carries.
     let where_bound = order_idx.unwrap_or(tokens.len());
-    let where_idx = (from_idx + 1..where_bound).find(|&i| tokens[i].kind == TokenKind::Where);
+    let where_idx = top_level.iter().copied().find(|&i| {
+        i > from_idx
+            && i < where_bound
+            && tokens[i].kind == TokenKind::Where
+            && is_clause_keyword(i)
+    });
     let from_end = where_idx
         .map(|i| tokens[i].span.start)
         .unwrap_or(clause_end);
@@ -3304,8 +3348,9 @@ fn synthesize_order_by_rewritten_query(
         .collect();
 
     Some(format!(
-        r#"SELECT VALUE {{"_rid": {alias}._rid, "orderByItems": [{items}], "payload": {alias}}} {from_text} {where_clause} {order_by}"#,
+        r#"SELECT VALUE {{"_rid": {alias}._rid, "orderByItems": [{items}], "payload": {payload}}} {from_text} {where_clause} {order_by}"#,
         items = order_by_items.join(", "),
+        payload = payload,
         from_text = from_text,
         where_clause = where_clause,
         order_by = order_by_text,
@@ -5580,6 +5625,63 @@ mod tests {
             Some(1_000)
         );
         assert_eq!(parse_pkrange_page_token(&token, "\"other-etag\""), None);
+    }
+
+    #[test]
+    fn order_by_rewrite_preserves_supported_projection_shapes() {
+        let select_star = synthesize_order_by_rewritten_query(
+            "SELECT * FROM c ORDER BY c.rank",
+            &["c.rank".to_owned()],
+        )
+        .unwrap();
+        assert!(select_star.contains(r#""payload": c"#));
+
+        let select_value = synthesize_order_by_rewritten_query(
+            "SELECT VALUE c.id FROM c ORDER BY c.rank",
+            &["c.rank".to_owned()],
+        )
+        .unwrap();
+        assert!(select_value.contains(r#""payload": c.id"#));
+
+        let join_value = synthesize_order_by_rewritten_query(
+            "SELECT VALUE t FROM c JOIN t IN c.tags ORDER BY c.rank",
+            &["c.rank".to_owned()],
+        )
+        .unwrap();
+        assert!(join_value.contains(r#""payload": t"#));
+    }
+
+    #[test]
+    fn order_by_rewrite_rejects_unsupported_select_list() {
+        assert!(synthesize_order_by_rewritten_query(
+            "SELECT c.id FROM c ORDER BY c.rank",
+            &["c.rank".to_owned()],
+        )
+        .is_none());
+    }
+
+    #[test]
+    fn order_by_rewrite_ignores_order_property_identifier() {
+        let rewritten = synthesize_order_by_rewritten_query(
+            "SELECT * FROM c WHERE c.order > 0 ORDER BY c.rank",
+            &["c.rank".to_owned()],
+        )
+        .unwrap();
+
+        assert!(rewritten
+            .contains("WHERE (c.order > 0) AND {documentdb-formattableorderbyquery-filter}"));
+        assert!(rewritten.ends_with("ORDER BY c.rank"));
+    }
+
+    #[test]
+    fn order_by_rewrite_uses_outer_clauses_around_scalar_subquery() {
+        let rewritten = synthesize_order_by_rewritten_query(
+            "SELECT VALUE (SELECT VALUE t FROM t IN c.tags) FROM c ORDER BY c.rank",
+            &["c.rank".to_owned()],
+        )
+        .unwrap();
+        assert!(rewritten.contains(r#""payload": (SELECT VALUE t FROM t IN c.tags)} FROM c WHERE"#));
+        assert!(rewritten.ends_with("ORDER BY c.rank"));
     }
 
     fn document_item(epk: &str, id: &str) -> DocumentFeedItem {

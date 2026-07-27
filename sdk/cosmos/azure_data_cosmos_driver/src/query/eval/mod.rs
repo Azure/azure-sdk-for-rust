@@ -600,8 +600,10 @@ fn sort_type_order(v: &CosmosValue) -> u8 {
 
 /// Total comparison for ORDER BY (handles cross-type and undefined).
 fn total_cmp_for_sort(a: &CosmosValue, b: &CosmosValue) -> Ordering {
-    a.cosmos_cmp(b)
-        .unwrap_or_else(|| sort_type_order(a).cmp(&sort_type_order(b)))
+    if matches!(a, CosmosValue::Undefined) || matches!(b, CosmosValue::Undefined) {
+        return sort_type_order(a).cmp(&sort_type_order(b));
+    }
+    crate::driver::dataflow::order_by::compare_json_values(&a.to_json(), &b.to_json())
 }
 
 /// Deterministic full-key tie-break for the ORDER BY oracle: orders tied
@@ -2487,6 +2489,100 @@ mod tests {
         assert_eq!(results[0]["val"], 5);
         assert_eq!(results[1]["val"], 10);
         assert_eq!(results[2]["val"], "hello");
+    }
+
+    #[test]
+    fn catalog_in_memory_emulator_scenarios_execute() {
+        #[derive(serde::Deserialize)]
+        struct Catalog {
+            scenarios: Vec<Scenario>,
+        }
+        #[derive(serde::Deserialize)]
+        struct Scenario {
+            id: String,
+            layers: Vec<String>,
+            query: QuerySpec,
+            documents: Vec<serde_json::Value>,
+            #[serde(rename = "expectedIds")]
+            expected_ids: Vec<String>,
+        }
+        #[derive(serde::Deserialize)]
+        struct QuerySpec {
+            text: String,
+            parameters: Vec<serde_json::Value>,
+        }
+
+        let catalog: Catalog = serde_json::from_str(include_str!(
+            "../../../tests/fixtures/streaming_order_by_scenarios.json"
+        ))
+        .unwrap();
+        let scenarios: Vec<_> = catalog
+            .scenarios
+            .into_iter()
+            .filter(|scenario| {
+                scenario
+                    .layers
+                    .iter()
+                    .any(|layer| layer == "inMemoryEmulator")
+            })
+            .collect();
+        assert!(!scenarios.is_empty());
+
+        for scenario in scenarios {
+            let parameters: Vec<(String, serde_json::Value)> = scenario
+                .query
+                .parameters
+                .iter()
+                .map(|parameter| {
+                    (
+                        parameter["name"].as_str().unwrap().to_owned(),
+                        parameter["value"].clone(),
+                    )
+                })
+                .collect();
+            let results =
+                query_documents(&scenario.query.text, &parameters, &scenario.documents).unwrap();
+            let ids: Vec<String> = results
+                .iter()
+                .map(|result| result["id"].as_str().unwrap().to_owned())
+                .collect();
+            assert_eq!(
+                ids, scenario.expected_ids,
+                "catalog scenario {} returned unexpected results",
+                scenario.id
+            );
+        }
+    }
+
+    #[test]
+    fn order_by_complex_values_uses_production_distinct_hash_order() {
+        let docs = vec![
+            serde_json::json!({"id": "two", "val": [2]}),
+            serde_json::json!({"id": "five", "val": [5]}),
+            serde_json::json!({"id": "three", "val": [3]}),
+        ];
+        let results = query_documents("SELECT * FROM c ORDER BY c.val ASC", &[], &docs).unwrap();
+        let ids: Vec<&str> = results
+            .iter()
+            .map(|document| document["id"].as_str().unwrap())
+            .collect();
+
+        assert_eq!(ids, vec!["five", "three", "two"]);
+    }
+
+    #[test]
+    fn order_by_mixed_integer_float_preserves_precision_above_two_pow_53() {
+        let docs = vec![
+            serde_json::json!({"id": "integer", "val": 9_007_199_254_740_993_i64}),
+            serde_json::json!({"id": "float", "val": 9_007_199_254_740_992.0_f64}),
+        ];
+        let results = query_documents("SELECT * FROM c ORDER BY c.val ASC", &[], &docs).unwrap();
+        let ids: Vec<&str> = results
+            .iter()
+            .map(|document| document["id"].as_str().unwrap())
+            .collect();
+
+        assert_eq!(ids, vec!["float", "integer"]);
     }
 
     #[test]

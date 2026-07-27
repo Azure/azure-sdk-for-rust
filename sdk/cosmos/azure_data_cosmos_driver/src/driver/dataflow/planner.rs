@@ -252,7 +252,7 @@ pub(crate) async fn build_streaming_ordered_merge(
         })?;
     let directions = info.order_by.clone();
 
-    let query_from_beginning = query_response::rewritten_query_from_beginning(rewritten_query);
+    let query_from_beginning = query_response::rewritten_query_from_beginning(rewritten_query)?;
     let plain_body = query_response::rewrite_query_body(operation.body(), &query_from_beginning)?;
     let plain_operation = Arc::new((**operation).clone().with_body(plain_body));
 
@@ -2430,6 +2430,7 @@ mod tests {
             left_most_undrained_epk: "80".to_owned(),
             active_tokens: vec![],
         };
+        let resume = serde_json::from_str(&serde_json::to_string(&resume).unwrap()).unwrap();
 
         let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
             .await
@@ -2466,7 +2467,7 @@ mod tests {
             },
         ]);
         let op = cross_partition_query_operation();
-        // Both points resolve to the same single partition.
+        // Both resumed point fragments resolve to the same single partition.
         let mut topology = MockTopologyProvider::new(vec![
             Ok(vec![rr("", "FF", "pk-0")]),
             Ok(vec![rr("", "FF", "pk-0")]),

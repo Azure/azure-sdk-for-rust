@@ -2946,13 +2946,12 @@ impl CosmosDriver {
         )
         .with_body(operation.body().unwrap_or_default().to_vec());
 
-        let response = self
-            .execute_operation_direct(
-                &query_plan_operation,
-                OperationOverrides::default(),
-                options,
-            )
-            .await?;
+        let response = Box::pin(self.execute_operation_direct(
+            &query_plan_operation,
+            OperationOverrides::default(),
+            options,
+        ))
+        .await?;
 
         let query_plan_body = match response.body() {
             crate::models::ResponseBody::Bytes(b) => b.clone(),

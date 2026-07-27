@@ -28,6 +28,7 @@
 use super::framework;
 use crate::split_tests::cosmos_query_split::force_split_and_wait;
 
+use std::collections::BTreeMap;
 use std::error::Error;
 use std::num::NonZeroU32;
 use std::time::Duration;
@@ -43,6 +44,7 @@ use azure_data_cosmos::{
         IndexingPolicy, ThroughputProperties,
     },
     options::{MaxItemCountHint, QueryOptions},
+    Query,
 };
 use framework::{MockItem, TestClient, TestOptions};
 use futures::StreamExt;
@@ -52,7 +54,7 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 /// (`sortText`) sort key, so one container/one split covers ORDER BY
 /// resume for both key kinds. Queries deserialize only the fields they need
 /// ([`MockItem`] for the numeric key, [`StringKeyItem`] for the string key).
-#[derive(Serialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 struct SeedItem {
     id: String,
@@ -78,13 +80,23 @@ struct ArraySeedItem {
     id: String,
     partition_key: String,
     array_key: Vec<i64>,
+    object_key: BTreeMap<String, i64>,
 }
 
-/// Projection for the array-keyed `ORDER BY` (reads only `id`).
+/// Projection for complex-keyed `ORDER BY` validation.
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 struct ArrayKeyItem {
     id: String,
+    array_key: Vec<i64>,
+    object_key: BTreeMap<String, i64>,
+}
+
+#[derive(Deserialize, Clone, Debug, PartialEq, Eq)]
+struct LiveJoinItem {
+    id: String,
+    tag: String,
+    rank: i64,
 }
 
 /// A string sort key for tie group `i`: ordered by the zero-padded index
@@ -140,6 +152,34 @@ async fn drain_resumed<T: DeserializeOwned + Send + 'static>(
             .await?
             .into_pages();
 
+        let Some(page) = pages.next().await else {
+            break;
+        };
+        collected.extend(page?.into_items());
+        let serialized = pages.to_continuation_token()?.as_str().to_owned();
+        drop(pages);
+        continuation = Some(ContinuationToken::from_string(serialized));
+    }
+    Ok(collected)
+}
+
+async fn drain_resumed_query<T: DeserializeOwned + Send + 'static>(
+    container_client: &ContainerClient,
+    query: &Query,
+    page_size: u32,
+) -> Result<Vec<T>, Box<dyn Error>> {
+    let mut collected = Vec::new();
+    let mut continuation = None;
+    loop {
+        let mut options = QueryOptions::default()
+            .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(page_size).unwrap()));
+        if let Some(token) = continuation.take() {
+            options = options.with_continuation_token(token);
+        }
+        let mut pages = container_client
+            .query_items::<T>(query.clone(), FeedScope::full_container(), Some(options))
+            .await?
+            .into_pages();
         let Some(page) = pages.next().await else {
             break;
         };
@@ -270,7 +310,7 @@ pub async fn order_by_query_resume_across_split_preserves_global_order(
             // Fully drain the multi-column query on the pre-split topology for
             // the authoritative expected order, then capture a mid-tie
             // continuation to resume across the split and compare against it.
-            let multi_baseline = drain_resumed::<MockItem>(
+            let multi_baseline = drain_resumed::<SeedItem>(
                 &container_client,
                 MULTI_QUERY,
                 PAGE_SIZE,
@@ -281,7 +321,7 @@ pub async fn order_by_query_resume_across_split_preserves_global_order(
             let multi_baseline_ids: Vec<String> =
                 multi_baseline.iter().map(|item| item.id.clone()).collect();
             let (multi_first, multi_token) =
-                capture_first_page::<MockItem>(&container_client, MULTI_QUERY, PAGE_SIZE).await?;
+                capture_first_page::<SeedItem>(&container_client, MULTI_QUERY, PAGE_SIZE).await?;
 
             println!(
                 "Captured numeric ASC/DESC ({}/{}) and string ASC/DESC ({}/{}) tokens; forcing \
@@ -333,7 +373,7 @@ pub async fn order_by_query_resume_across_split_preserves_global_order(
                 Some(str_desc_token),
             )
             .await?;
-            let multi_all = drain_resumed::<MockItem>(
+            let multi_all = drain_resumed::<SeedItem>(
                 &container_client,
                 MULTI_QUERY,
                 PAGE_SIZE,
@@ -378,35 +418,26 @@ pub async fn order_by_query_resume_across_split_preserves_global_order(
                  {desc_keys:?}"
             );
 
-            // ── Tie order is a real, direction-symmetric rid order ───────
-            // For every tied `mergeOrder` group, DESC's item sequence must
-            // be the *exact reverse* of ASC's: both are broken by the same
-            // document-`_rid` total order, just applied in opposite
-            // directions. Anything else (arbitrary order, storage-order
-            // noise, or a direction-dependent tie-break bug) would make the
-            // two sequences disagree once reversed.
+            // Cross-range ties use EPK range order, while RID direction stays
+            // local to each backend range. Only group completeness is stable
+            // across ASC/DESC and topology changes.
             for group in 0..TIE_GROUP_COUNT {
                 let asc_group: Vec<&str> = asc_all
                     .iter()
                     .filter(|item| item.merge_order == group)
                     .map(|item| item.id.as_str())
                     .collect();
-                let mut desc_group: Vec<&str> = desc_all
+                let desc_group: Vec<&str> = desc_all
                     .iter()
                     .filter(|item| item.merge_order == group)
                     .map(|item| item.id.as_str())
                     .collect();
-                desc_group.reverse();
-                assert_eq!(
-                    asc_group, desc_group,
-                    "tie group mergeOrder={group}: DESC order reversed must equal ASC order \
-                     (both broken by the same rid total order)"
-                );
                 assert_eq!(
                     asc_group.len(),
                     PK_COUNT,
                     "tie group mergeOrder={group} must contain exactly one item per partition key"
                 );
+                assert_eq!(desc_group.len(), PK_COUNT);
             }
 
             // ── String-keyed ORDER BY resume (service-safe boundaries) ────
@@ -454,29 +485,20 @@ pub async fn order_by_query_resume_across_split_preserves_global_order(
                     .filter(|item| item.sort_text == key)
                     .map(|item| item.id.as_str())
                     .collect();
-                let mut desc_group: Vec<&str> = str_desc_all
+                let desc_group: Vec<&str> = str_desc_all
                     .iter()
                     .filter(|item| item.sort_text == key)
                     .map(|item| item.id.as_str())
                     .collect();
-                desc_group.reverse();
-                assert_eq!(
-                    asc_group, desc_group,
-                    "string tie group {group}: DESC order reversed must equal ASC order \
-                     (both broken by the same rid total order)"
-                );
                 assert_eq!(
                     asc_group.len(),
                     PK_COUNT,
                     "string tie group {group} must contain exactly one item per partition key"
                 );
+                assert_eq!(desc_group.len(), PK_COUNT);
             }
 
-            // ── Multi-column resume equals the pre-split baseline exactly ─
-            // The strongest cross-split invariant: a full tuple tie is resolved
-            // only by `_rid`, and `_rid`s are stable across a split, so the exact
-            // pre-split drain order must survive the split/resume — not merely the
-            // same id set.
+            // ── Multi-column resume preserves tuple order and exact-once IDs ─
             assert_eq!(
                 multi_baseline_ids.len(),
                 PK_COUNT * TIE_GROUP_COUNT,
@@ -489,11 +511,24 @@ pub async fn order_by_query_resume_across_split_preserves_global_order(
                 "multi-column baseline's first column (mergeOrder ASC) must be non-decreasing: \
                  {multi_first_col:?}"
             );
-            let multi_ids: Vec<String> = multi_all.iter().map(|item| item.id.clone()).collect();
+            let mut multi_ids: Vec<String> = multi_all.iter().map(|item| item.id.clone()).collect();
+            let mut expected_multi_ids = multi_baseline_ids;
+            multi_ids.sort();
+            expected_multi_ids.sort();
             assert_eq!(
-                multi_ids, multi_baseline_ids,
-                "multi-column mixed-direction resume across the split must reproduce the exact \
-                 pre-split drain order (full tuple ties broken only by `_rid`)"
+                multi_ids, expected_multi_ids,
+                "multi-column mixed-direction resume must return every row exactly once"
+            );
+            let multi_keys: Vec<(usize, &str)> = multi_all
+                .iter()
+                .map(|item| (item.merge_order, item.sort_text.as_str()))
+                .collect();
+            assert!(
+                multi_keys.windows(2).all(|window| {
+                    window[0].0 < window[1].0
+                        || (window[0].0 == window[1].0 && window[0].1 >= window[1].1)
+                }),
+                "multi-column keys must remain ordered by mergeOrder ASC, sortText DESC"
             );
 
             Ok(())
@@ -503,16 +538,14 @@ pub async fn order_by_query_resume_across_split_preserves_global_order(
     .await
 }
 
-/// A dedicated live check that a cross-partition streaming `ORDER BY` on an
-/// **array-valued** sort key resumes across a real split with no omissions
-/// or duplicates.
+/// A dedicated live check that cross-partition streaming `ORDER BY` on
+/// array/object sort keys resumes across a real split without changing key
+/// order or losing/duplicating rows. Equal-key rows may reorder by EPK range
+/// after topology changes, matching .NET and Java.
 ///
-/// Array/object sort values are ordered by the backend's bounded hash (there
-/// is no documented structural order), and Rust sends that boundary to the
-/// backend as the structured `resumeFilter` (its complex value serialized as
-/// `{"type":"array","low":..,"high":..}`). This asserts the resume-correctness
-/// invariant — every seeded id returned exactly once across the split — rather
-/// than an exact global sequence (which is undefined for complex keys).
+/// Complex values are ordered by the backend's `DistinctHash`; Rust sends the
+/// same hash through `resumeFilter`. A full pre-split drain provides the
+/// service-authoritative order for comparison after resume.
 ///
 /// By design this exercises the **saved-token** resume path: the first page is
 /// drained and its continuation token captured, the split is then forced while
@@ -534,12 +567,13 @@ pub async fn order_by_query_resume_across_split_preserves_global_order(
     not(test_category = "split"),
     ignore = "requires test_category 'split'"
 )]
-pub async fn order_by_array_key_resume_across_split_has_no_omissions() -> Result<(), Box<dyn Error>>
-{
+pub async fn order_by_complex_key_resume_across_split_preserves_key_order(
+) -> Result<(), Box<dyn Error>> {
     const PK_COUNT: usize = 30;
     const TIE_GROUP_COUNT: usize = 5;
     const PAGE_SIZE: u32 = 10;
     const ARRAY_QUERY: &str = "SELECT * FROM c ORDER BY c.arrayKey ASC";
+    const OBJECT_QUERY: &str = "SELECT * FROM c ORDER BY c.objectKey ASC";
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -569,6 +603,10 @@ pub async fn order_by_array_key_resume_across_split_has_no_omissions() -> Result
                         id: format!("{p}-{i}"),
                         partition_key: partition_key.clone(),
                         array_key: vec![i as i64],
+                        object_key: BTreeMap::from([
+                            ("group".to_owned(), i as i64),
+                            ("parity".to_owned(), (i % 2) as i64),
+                        ]),
                     };
                     match container_client
                         .create_item(item.partition_key.clone(), &item.id.clone(), item, None)
@@ -584,8 +622,28 @@ pub async fn order_by_array_key_resume_across_split_has_no_omissions() -> Result
             let ranges_before = container_client.read_feed_ranges(None).await?;
             let partitions_before = ranges_before.len();
 
+            let array_baseline = drain_resumed::<ArrayKeyItem>(
+                &container_client,
+                ARRAY_QUERY,
+                PAGE_SIZE,
+                Vec::new(),
+                None,
+            )
+            .await?;
+            let object_baseline = drain_resumed::<ArrayKeyItem>(
+                &container_client,
+                OBJECT_QUERY,
+                PAGE_SIZE,
+                Vec::new(),
+                None,
+            )
+            .await?;
+
             let (array_first, array_token) =
                 capture_first_page::<ArrayKeyItem>(&container_client, ARRAY_QUERY, PAGE_SIZE)
+                    .await?;
+            let (object_first, object_token) =
+                capture_first_page::<ArrayKeyItem>(&container_client, OBJECT_QUERY, PAGE_SIZE)
                     .await?;
 
             let partitions_after =
@@ -604,21 +662,321 @@ pub async fn order_by_array_key_resume_across_split_has_no_omissions() -> Result
                 Some(array_token),
             )
             .await?;
+            let object_all = drain_resumed::<ArrayKeyItem>(
+                &container_client,
+                OBJECT_QUERY,
+                PAGE_SIZE,
+                object_first,
+                Some(object_token),
+            )
+            .await?;
 
-            let mut expected_ids: Vec<String> = (0..PK_COUNT)
-                .flat_map(|p| (0..TIE_GROUP_COUNT).map(move |i| format!("{p}-{i}")))
-                .collect();
-            expected_ids.sort();
-            let mut array_ids: Vec<String> = array_all.iter().map(|item| item.id.clone()).collect();
-            array_ids.sort();
+            let mut array_ids: Vec<&str> = array_all.iter().map(|item| item.id.as_str()).collect();
+            let mut array_baseline_ids: Vec<&str> =
+                array_baseline.iter().map(|item| item.id.as_str()).collect();
+            array_ids.sort_unstable();
+            array_baseline_ids.sort_unstable();
             assert_eq!(
-                array_ids, expected_ids,
-                "array-keyed ORDER BY resume across the split must return every seeded id \
-                 exactly once (no omissions or duplicates)"
+                array_ids, array_baseline_ids,
+                "array-keyed ORDER BY resume must return every row exactly once"
+            );
+            let array_key_order = |items: &[ArrayKeyItem]| {
+                let mut keys = Vec::new();
+                for item in items {
+                    if keys.last() != Some(&item.array_key) {
+                        keys.push(item.array_key.clone());
+                    }
+                }
+                keys
+            };
+            assert_eq!(
+                array_key_order(&array_all),
+                array_key_order(&array_baseline),
+                "array DistinctHash key order must survive the split"
+            );
+
+            let mut object_ids: Vec<&str> =
+                object_all.iter().map(|item| item.id.as_str()).collect();
+            let mut object_baseline_ids: Vec<&str> = object_baseline
+                .iter()
+                .map(|item| item.id.as_str())
+                .collect();
+            object_ids.sort_unstable();
+            object_baseline_ids.sort_unstable();
+            assert_eq!(
+                object_ids, object_baseline_ids,
+                "object-keyed ORDER BY resume must return every row exactly once"
+            );
+            let object_key_order = |items: &[ArrayKeyItem]| {
+                let mut keys = Vec::new();
+                for item in items {
+                    if keys.last() != Some(&item.object_key) {
+                        keys.push(item.object_key.clone());
+                    }
+                }
+                keys
+            };
+            assert_eq!(
+                object_key_order(&object_all),
+                object_key_order(&object_baseline),
+                "object DistinctHash key order must survive the split"
             );
             Ok(())
         },
         Some(TestOptions::new().with_timeout(Duration::from_secs(40 * 60))),
+    )
+    .await
+}
+
+/// Real-account query-shape matrix that does not force a split. Page size one
+/// serializes and recreates the iterator at every boundary.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "split"),
+    ignore = "requires test_category 'split'"
+)]
+pub async fn order_by_live_mixed_types_and_join_resume_matrix() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let composite_index = CompositeIndex::default()
+                .with_property(CompositeIndexProperty::new(
+                    "/primary",
+                    CompositeIndexOrder::Ascending,
+                ))
+                .with_property(CompositeIndexProperty::new(
+                    "/secondary",
+                    CompositeIndexOrder::Descending,
+                ));
+            let properties = ContainerProperties::new("OrderByLiveMatrix", "/partitionKey".into())
+                .with_indexing_policy(
+                    IndexingPolicy::default().with_composite_index(composite_index),
+                );
+            let container_client = run_context
+                .create_container(
+                    db_client,
+                    properties,
+                    Some(
+                        CreateContainerOptions::default()
+                            .with_throughput(ThroughputProperties::manual(1000)),
+                    ),
+                )
+                .await?;
+
+            let mixed_values = [
+                ("mixed-undefined", None),
+                ("mixed-null", Some(serde_json::Value::Null)),
+                ("mixed-false", Some(serde_json::json!(false))),
+                ("mixed-true", Some(serde_json::json!(true))),
+                ("mixed-number", Some(serde_json::json!(42))),
+                ("mixed-string", Some(serde_json::json!("value"))),
+                ("mixed-array", Some(serde_json::json!([1]))),
+                ("mixed-object", Some(serde_json::json!({"a": 1}))),
+            ];
+            for (index, (id, sort_key)) in mixed_values.iter().enumerate() {
+                let partition_key = format!("mixed-pk-{index}");
+                let mut document = serde_json::json!({
+                    "id": id,
+                    "partitionKey": partition_key,
+                    "testCase": "mixed"
+                });
+                if let Some(sort_key) = sort_key {
+                    document
+                        .as_object_mut()
+                        .unwrap()
+                        .insert("sortKey".to_owned(), sort_key.clone());
+                }
+                container_client
+                    .create_item(partition_key, id, document, None)
+                    .await?;
+            }
+
+            let expected_asc = [
+                "mixed-undefined",
+                "mixed-null",
+                "mixed-false",
+                "mixed-true",
+                "mixed-number",
+                "mixed-string",
+                "mixed-array",
+                "mixed-object",
+            ];
+            let asc = drain_resumed_query::<serde_json::Value>(
+                &container_client,
+                &Query::from("SELECT * FROM c WHERE c.testCase = 'mixed' ORDER BY c.sortKey ASC"),
+                1,
+            )
+            .await?;
+            let asc_ids: Vec<&str> = asc
+                .iter()
+                .map(|item| item["id"].as_str().unwrap())
+                .collect();
+            assert_eq!(asc_ids, expected_asc);
+
+            let desc = drain_resumed_query::<serde_json::Value>(
+                &container_client,
+                &Query::from("SELECT * FROM c WHERE c.testCase = 'mixed' ORDER BY c.sortKey DESC"),
+                1,
+            )
+            .await?;
+            let desc_ids: Vec<&str> = desc
+                .iter()
+                .map(|item| item["id"].as_str().unwrap())
+                .collect();
+            assert_eq!(desc_ids, expected_asc.into_iter().rev().collect::<Vec<_>>());
+
+            for (index, secondary) in ["z", "m", "m", "b", "a", "x"].iter().enumerate() {
+                let id = format!("undefined-{index}");
+                let partition_key = format!("undefined-pk-{index}");
+                let document = serde_json::json!({
+                    "id": id,
+                    "partitionKey": partition_key,
+                    "testCase": "undefinedMulti",
+                    "secondary": secondary
+                });
+                container_client
+                    .create_item(partition_key, &id, document, None)
+                    .await?;
+            }
+            for index in 0..3 {
+                let id = format!("defined-{index}");
+                let partition_key = format!("defined-pk-{index}");
+                let document = serde_json::json!({
+                    "id": id,
+                    "partitionKey": partition_key,
+                    "testCase": "undefinedMulti",
+                    "primary": index,
+                    "secondary": format!("s{index}")
+                });
+                container_client
+                    .create_item(partition_key, &id, document, None)
+                    .await?;
+            }
+
+            for query_text in [
+                "SELECT * FROM c WHERE c.testCase = 'undefinedMulti' \
+                 ORDER BY c.primary ASC, c.secondary DESC",
+                "SELECT * FROM c WHERE c.testCase = 'undefinedMulti' \
+                 ORDER BY c.primary DESC, c.secondary ASC",
+            ] {
+                let query = Query::from(query_text);
+                let baseline =
+                    drain_resumed_query::<serde_json::Value>(&container_client, &query, 100)
+                        .await?;
+                let baseline_ids: Vec<&str> = baseline
+                    .iter()
+                    .map(|item| item["id"].as_str().unwrap())
+                    .collect();
+                let mut actual_ids = baseline_ids.clone();
+                actual_ids.sort_unstable();
+                let mut expected_ids: Vec<String> = (0..6)
+                    .map(|index| format!("undefined-{index}"))
+                    .chain((0..3).map(|index| format!("defined-{index}")))
+                    .collect();
+                expected_ids.sort_unstable();
+                assert_eq!(
+                    actual_ids,
+                    expected_ids.iter().map(String::as_str).collect::<Vec<_>>()
+                );
+
+                let undefined_rows: Vec<&serde_json::Value> = baseline
+                    .iter()
+                    .filter(|item| item.get("primary").is_none())
+                    .collect();
+                assert_eq!(undefined_rows.len(), 6);
+                let undefined_secondaries: Vec<&str> = undefined_rows
+                    .iter()
+                    .map(|item| item["secondary"].as_str().unwrap())
+                    .collect();
+                if query_text.contains("primary ASC") {
+                    assert!(baseline[..6]
+                        .iter()
+                        .all(|item| item.get("primary").is_none()));
+                    assert!(undefined_secondaries
+                        .windows(2)
+                        .all(|window| window[0] >= window[1]));
+                } else {
+                    assert!(baseline[baseline.len() - 6..]
+                        .iter()
+                        .all(|item| item.get("primary").is_none()));
+                    assert!(undefined_secondaries
+                        .windows(2)
+                        .all(|window| window[0] <= window[1]));
+                }
+                for page_size in [1, 5, 100] {
+                    let resumed = drain_resumed_query::<serde_json::Value>(
+                        &container_client,
+                        &query,
+                        page_size,
+                    )
+                    .await?;
+                    let resumed_ids: Vec<&str> = resumed
+                        .iter()
+                        .map(|item| item["id"].as_str().unwrap())
+                        .collect();
+                    assert_eq!(
+                        resumed_ids, baseline_ids,
+                        "undefined-leading multi-column ORDER BY diverged at page size {page_size}"
+                    );
+                }
+            }
+
+            let join_documents = [
+                serde_json::json!({
+                    "id": "join-filtered",
+                    "partitionKey": "join-pk-0",
+                    "testCase": "join",
+                    "rank": 0,
+                    "tags": ["ignored"]
+                }),
+                serde_json::json!({
+                    "id": "join-a",
+                    "partitionKey": "join-pk-1",
+                    "testCase": "join",
+                    "rank": 1,
+                    "tags": ["a", "b", "c"]
+                }),
+                serde_json::json!({
+                    "id": "join-b",
+                    "partitionKey": "join-pk-2",
+                    "testCase": "join",
+                    "rank": 2,
+                    "tags": ["d", "e"]
+                }),
+            ];
+            for document in join_documents {
+                let id = document["id"].as_str().unwrap().to_owned();
+                let partition_key = document["partitionKey"].as_str().unwrap().to_owned();
+                container_client
+                    .create_item(partition_key, &id, document, None)
+                    .await?;
+            }
+
+            let join_query = Query::from(
+                "SELECT VALUE {\"id\": c.id, \"tag\": t, \"rank\": c.rank} \
+                 FROM c JOIN t IN c.tags \
+                 WHERE c.testCase = @testCase AND c.rank >= @minRank \
+                 ORDER BY c.rank ASC",
+            )
+            .with_parameter("@testCase", "join")?
+            .with_parameter("@minRank", 1)?;
+            let baseline =
+                drain_resumed_query::<LiveJoinItem>(&container_client, &join_query, 100).await?;
+            let resumed =
+                drain_resumed_query::<LiveJoinItem>(&container_client, &join_query, 1).await?;
+            assert_eq!(resumed, baseline);
+            assert_eq!(resumed.len(), 5);
+            assert!(resumed.iter().all(|item| item.rank >= 1));
+            assert_eq!(
+                resumed
+                    .iter()
+                    .map(|item| item.tag.as_str())
+                    .collect::<Vec<_>>(),
+                vec!["a", "b", "c", "d", "e"]
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::new().with_timeout(Duration::from_secs(20 * 60))),
     )
     .await
 }

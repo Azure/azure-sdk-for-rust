@@ -156,6 +156,7 @@ pub(crate) mod response_header_names {
     pub const SUBSTATUS: &str = "x-ms-substatus";
     pub const INDEX_METRICS: &str = "x-ms-cosmos-index-utilization";
     pub const QUERY_METRICS: &str = "x-ms-documentdb-query-metrics";
+    pub const QUERY_EXECUTION_INFO: &str = "x-ms-cosmos-query-execution-info";
     pub const SERVER_DURATION_MS: &str = "x-ms-request-duration-ms";
     pub const LSN: &str = "lsn";
     /// `x-ms-`-prefixed mirror of [`LSN`], emitted on Gateway 2.0 responses
@@ -480,6 +481,10 @@ pub struct CosmosResponseHeaders {
     /// `x-ms-documentdb-populatequerymetrics` request header is set.
     pub query_metrics: Option<String>,
 
+    /// Raw per-page query execution metadata used internally by ORDER BY
+    /// continuation filtering.
+    pub(crate) query_execution_info: Option<String>,
+
     /// Server-side request processing duration in milliseconds (`x-ms-request-duration-ms`).
     ///
     /// Non-finite and negative values are filtered during parsing and will be `None`.
@@ -655,6 +660,9 @@ impl CosmosResponseHeaders {
                 }
                 response_header_names::QUERY_METRICS => {
                     result.query_metrics = Some(value.as_str().to_owned());
+                }
+                response_header_names::QUERY_EXECUTION_INFO => {
+                    result.query_execution_info = Some(value.as_str().to_owned());
                 }
                 response_header_names::SERVER_DURATION_MS => {
                     result.server_duration_ms = value
@@ -1381,6 +1389,7 @@ mod tests {
             substatus: Some(SubStatusCode::THROTTLE_DUE_TO_SPLIT),
             index_metrics: Some("{\"UtilizedSingleIndexes\":[]}".into()),
             query_metrics: Some("totalExecutionTimeInMs=1.23".into()),
+            query_execution_info: None,
             server_duration_ms: Some(4.5),
             lsn: Some(42),
             item_lsn: Some(37),

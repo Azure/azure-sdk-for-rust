@@ -4,9 +4,13 @@
 
 ### Features Added
 
+- Added resumable cross-partition streaming `ORDER BY` query support. ([#4800](https://github.com/Azure/azure-sdk-for-rust/pull/4800))
+
 ### Breaking Changes
 
 ### Bugs Fixed
+
+- Retried `404/1013 CollectionCreateInProgress` responses in-region while newly created containers propagate. ([#4800](https://github.com/Azure/azure-sdk-for-rust/pull/4800))
 
 ### Other Changes
 
@@ -29,7 +33,6 @@
 - Added change feed pull support via `ContainerClient::query_change_feed()`, which takes a required `ChangeFeedStartFrom` start position (`Beginning`, `Now`, `PointInTime`) and returns a `ChangeFeedPageIterator<T>` that streams `FeedPage<T>` results. New `feed` types `ChangeFeedPageIterator`, `FeedScope`, and `ContinuationToken`, plus `options` types `ChangeFeedOptions` and `ChangeFeedMode` (currently `LatestVersion`); supports single-partition, per-partition-key, and full-container (cross-partition fan-out) reads with continuation-token resumption that persists the original start position so never-polled partitions don't replay history on resume. ([#4621](https://github.com/Azure/azure-sdk-for-rust/pull/4621))
 - Change feed items are now surfaced as an envelope. `ContainerClient::query_change_feed::<YourDoc>()` yields `ChangeFeedItem<YourDoc>`, binding the envelope into the return type so the post-change document is read via `ChangeFeedItem::current()` and cannot be silently deserialized away. The envelope also exposes the pre-change document (`previous()`) and per-change `metadata()` (populated by full-fidelity reads; absent for `LatestVersion`). A full-fidelity delete returns an empty `current` object, which maps to `None` so callers with strict document types still deserialize the delete; the deleted item's identity is available via `ChangeFeedMetadata::id()` and `ChangeFeedMetadata::partition_key()`. `ChangeFeedOperationType` includes an `Unknown` catch-all so a future operation type cannot fail a page and stall the feed. A backend that does not envelope change feed items (such as the Cosmos emulator) returns the bare document, which is mapped onto `current()` so no data is lost. Added the `models` types `ChangeFeedItem<T>`, `ChangeFeedMetadata`, `ChangeFeedOperationType`, and `LogicalSequenceNumber`. ([#4723](https://github.com/Azure/azure-sdk-for-rust/pull/4723))
 - Added `TlsBackend` (re-exported) and a `tls_backend` option on `ConnectionPoolOptions` (`ConnectionPoolOptionsBuilder::with_tls_backend`), defaulting to `TlsBackend::Rustls`, available under the `rustls` feature, to pin the TLS backend used by the transport. This is additive and changes no behavior for the default (rustls) build; it only has an effect in builds that compile in multiple reqwest TLS backends, where reqwest would otherwise default to native-tls and the driver now pins rustls instead. ([#4649](https://github.com/Azure/azure-sdk-for-rust/pull/4649))
-- Added resumable cross-partition streaming `ORDER BY` query support. ([#4800](https://github.com/Azure/azure-sdk-for-rust/pull/4800))
 
 ### Bugs Fixed
 
@@ -76,7 +79,6 @@
   - `with_driver_runtime_builder` — replaced by `with_runtime(CosmosRuntime)`. The `__internal_in_memory_emulator` harness builds its runtime via `CosmosRuntimeBuilder::from(driver_builder)` (the `From<CosmosDriverRuntimeBuilder>` escape hatch).
   - The `allow_invalid_certificates` Cargo feature has been removed. The capability is now in the default feature set but requires explicit opt-in via `CosmosRuntimeBuilder::with_connection_pool(ConnectionPoolOptionsBuilder::new().with_server_certificate_validation(ServerCertificateValidation::RequiredUnlessEmulator).build())`. The new `RequiredUnlessEmulator` policy is not a blanket "disable validation" knob — it validates the server certificate normally and only relaxes validation for detected Cosmos DB emulator hosts (via `AccountEndpoint` + `Region` heuristics, or the `AZURE_COSMOS_EMULATOR_HOST` environment variable). See the driver CHANGELOG for the underlying `EmulatorServerCertValidation` → `ServerCertificateValidation` rename.
 - Per-account driver caching has been removed from the underlying runtime — each `CosmosClient::build(...)` now constructs a fresh `CosmosDriver`. Clients sharing the same `CosmosRuntime` continue to share transport pools, sampler, account cache, etc.; only the per-account `CosmosDriver` instance is no longer reused. ([#4588](https://github.com/Azure/azure-sdk-for-rust/pull/4588))
-
 
 ### Bugs Fixed
 
