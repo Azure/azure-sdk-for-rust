@@ -2523,14 +2523,20 @@ impl DiagnosticsContext {
         Arc::clone(&self.requests)
     }
 
-    /// Returns the hedging diagnostics for this operation, if hedging was
-    /// selected.
+    /// Returns the hedging diagnostics for this operation, if the hedge race
+    /// recorded a terminal outcome.
     ///
-    /// This is `Some(_)` if and only
-    /// if `should_hedge()` returned `true` and `execute_hedged()` was
-    /// entered — even when the primary won before the threshold elapsed.
-    /// `None` means hedging was not selected for this operation (no
-    /// strategy resolved, strategy `Disabled`, or eligibility check failed).
+    /// This is `Some(_)` when the hedge race recorded a terminal outcome —
+    /// including the primary-wins-under-threshold case where `execute_hedged()`
+    /// ran but no alternate leg fanned out. It is `None` when hedging was not
+    /// selected for this operation (no strategy resolved, strategy `Disabled`,
+    /// or eligibility check failed), **and also** on the both-transient→failover
+    /// path: when both hedge legs return transient failures but the deadline has
+    /// not elapsed and failover budget remains, `finalize_both_transient`
+    /// deliberately does not stamp a terminal outcome (a later successful retry
+    /// would otherwise carry a misleading `BothTransient` state), so a retained
+    /// `ExecutionContext::Hedging` request can leave `hedging_started()` `true`
+    /// while this returns `None`.
     pub fn hedge_diagnostics(&self) -> Option<&HedgeDiagnostics> {
         self.hedge_diagnostics.as_ref()
     }
