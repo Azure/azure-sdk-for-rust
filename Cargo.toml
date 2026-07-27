@@ -16,6 +16,7 @@ members = [
   "sdk/cosmos/azure_data_cosmos",
   "sdk/cosmos/azure_data_cosmos_benchmarks",
   "sdk/cosmos/azure_data_cosmos_driver",
+  "sdk/cosmos/azure_data_cosmos_observability_harness",
   "sdk/cosmos/azure_data_cosmos_driver_native",
   "sdk/cosmos/azure_data_cosmos_macros",
   "sdk/cosmos/azure_data_cosmos_perf",
@@ -118,6 +119,11 @@ include-file = { version = "1.0.0", default-features = false }
 openssl = { version = "0.10.79" }
 opentelemetry = { version = "0.32", features = ["trace"] }
 opentelemetry-appender-tracing = { version = "0.32" }
+opentelemetry-otlp = { version = "0.32", default-features = false, features = [
+  "grpc-tonic",
+  "trace",
+  "metrics",
+] }
 opentelemetry-stdout = { version = "0.32" }
 opentelemetry_sdk = "0.32.1"
 percent-encoding = "2.3"

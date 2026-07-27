@@ -1,0 +1,51 @@
+# cSpell:ignore otlp
+[package]
+name = "azure_data_cosmos_observability_harness"
+version = "0.1.0"
+description = "Observability soak/load harness for validating the Azure Cosmos DB Rust SDK diagnostics layer end-to-end"
+publish = false
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+azure_core = { workspace = true, features = ["reqwest"] }
+azure_data_cosmos = { path = "../azure_data_cosmos", version = "0.38.0", features = [
+  "key_auth",
+] }
+azure_identity = { workspace = true }
+clap = { workspace = true, features = ["derive", "env"] }
+futures.workspace = true
+opentelemetry = { workspace = true, features = ["metrics", "trace"] }
+opentelemetry-otlp = { workspace = true, optional = true }
+opentelemetry-stdout = { workspace = true, features = ["metrics"] }
+opentelemetry_sdk = { workspace = true, features = ["metrics"] }
+rand.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio = { workspace = true, features = [
+  "rt-multi-thread",
+  "macros",
+  "time",
+  "signal",
+] }
+tracing.workspace = true
+tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
+uuid = { workspace = true, features = ["v4"] }
+
+[features]
+# The metrics and distributed_tracing handlers are feature-gated in
+# `azure_data_cosmos`; mirror those names here so the harness enables the exact
+# same code path it is validating. `fault_injection` exercises the "rich on
+# error" behavior. All three are on by default so a bare `cargo run` registers
+# every built-in handler. `otlp` is opt-in because it pulls the gRPC stack.
+default = ["metrics", "distributed_tracing", "fault_injection"]
+metrics = ["azure_data_cosmos/metrics"]
+distributed_tracing = ["azure_data_cosmos/distributed_tracing"]
+fault_injection = ["azure_data_cosmos/fault_injection"]
+otlp = ["dep:opentelemetry-otlp"]
+
+[lints]
+workspace = true
