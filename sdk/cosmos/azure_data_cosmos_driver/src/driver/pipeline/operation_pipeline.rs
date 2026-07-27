@@ -1880,7 +1880,7 @@ fn should_capture_session_token_from_status(
 /// transport pipeline expects for diagnostics annotation.
 ///
 /// - First attempt (no failover, no session retry) → `Initial`
-/// - Any session retry in progress → `Retry`
+/// - Any session retry in progress → `OperationRetry`
 /// - Otherwise (a failover retry) → `RegionFailover`
 ///
 /// Session-retry takes precedence over failover-retry because in the rare

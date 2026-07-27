@@ -178,6 +178,19 @@ pub(crate) fn emit_backdated_span_tree<T>(
     }
     // Hedging surfacing: only when a cross-region hedge actually fanned out.
     // These attributes stay off the common (non-hedged) sampled span entirely.
+    //
+    // The span intentionally gates on `hedging_started()` (any fan-out) rather
+    // than on `hedge_diagnostics()` (a resolved terminal outcome), because the
+    // span is a rich per-operation diagnostic: the region history
+    // (`requested_regions`/`responded_regions`) is valuable exactly for a
+    // both-transient hedge that was then resolved by failover, and
+    // `HEDGING_STARTED=true` there is factually correct. The per-outcome
+    // `HEDGE_REGION`/`HEDGE_TERMINAL_STATE` fields are still gated on
+    // `hedge_diagnostics()` below, so no empty/placeholder values are emitted.
+    // This is a deliberate, documented asymmetry vs. the hedged metric counter
+    // and the log hedge fields, which key off `hedge_diagnostics` (a resolved
+    // terminal outcome) so every counter data point carries the
+    // `hedge_terminal_state` dimension — see `DiagnosticsContext::hedging_started`.
     if diagnostics.hedging_started() {
         root_attrs.push(KeyValue::new(attributes::HEDGING_STARTED, true));
         if let Some(hedge) = diagnostics.hedge_diagnostics() {

@@ -2474,10 +2474,19 @@ impl DiagnosticsContext {
     /// hedging threshold elapses, this returns `false` even though a hedging
     /// strategy was active.
     ///
-    /// To check whether a hedging strategy was *configured*, inspect
-    /// [`hedge_diagnostics`](Self::hedge_diagnostics) instead — it is `Some`
-    /// whenever hedging was active for the operation, including the
-    /// primary-wins-under-threshold case where no fan-out happened.
+    /// [`hedge_diagnostics`](Self::hedge_diagnostics) is a related but distinct
+    /// surface: it is `Some` when the hedge race recorded a terminal outcome —
+    /// including the primary-wins-under-threshold case where no fan-out happened
+    /// — but it is `None` when hedging was configured yet ineligible, and also
+    /// for a both-transient hedge that was subsequently resolved by a failover
+    /// attempt (the non-terminal both-transient path deliberately records no
+    /// terminal outcome). So `hedge_diagnostics().is_some()` is not a reliable
+    /// "was hedging configured" probe, and it can disagree with
+    /// `hedging_started()` on that both-transient→failover path (where a
+    /// retained `Hedging` request keeps this accessor `true`). The SDK's hedged
+    /// metric counter and log hedge fields key off `hedge_diagnostics` (a
+    /// resolved terminal outcome), so they intentionally do not surface that
+    /// path even though `hedging_started()` is `true`.
     ///
     /// The result is a disjunction of two independent fan-out signals:
     /// [`HedgeDiagnostics::alternate_region`] being `Some` (the orchestrator
