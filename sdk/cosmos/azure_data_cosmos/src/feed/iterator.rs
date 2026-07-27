@@ -17,6 +17,7 @@ use futures::future::BoxFuture;
 use futures::Stream;
 use serde::de::DeserializeOwned;
 
+use crate::diagnostics::{CosmosOperationContext, DiagnosticsHandlerChain};
 use crate::{driver_bridge, feed::query_page::QueryFeedPage};
 
 type DriverPageFuture = BoxFuture<'static, (OperationPlan, crate::Result<Option<DriverResponse>>)>;
@@ -32,6 +33,11 @@ struct LiveState {
     /// `Some` while a page fetch is pending.
     in_flight: Option<DriverPageFuture>,
     exhausted: bool,
+    /// Emission handler chain plus the paged operation's identity, dispatched
+    /// once per page fetch (both success and failure) so query pagination
+    /// honors the same once-per-operation contract as singleton operations.
+    diagnostics: DiagnosticsHandlerChain,
+    op_context: CosmosOperationContext,
 }
 
 impl LiveState {
@@ -40,6 +46,8 @@ impl LiveState {
         container: Option<ContainerReference>,
         plan: OperationPlan,
         options: OperationOptions,
+        diagnostics: DiagnosticsHandlerChain,
+        op_context: CosmosOperationContext,
     ) -> Self {
         Self {
             driver,
@@ -48,6 +56,8 @@ impl LiveState {
             plan: Some(plan),
             in_flight: None,
             exhausted: false,
+            diagnostics,
+            op_context,
         }
     }
 
@@ -116,15 +126,45 @@ impl LiveState {
             Err(err) => {
                 // An error from the driver indicates a failure to fetch the next page. Mark ourselves as exhausted and return the error.
                 *this.exhausted = true;
+                if let Some(page_diagnostics) = err.diagnostics() {
+                    crate::feed::dispatch_page_diagnostics(
+                        this.diagnostics,
+                        this.op_context,
+                        &page_diagnostics,
+                        None,
+                    );
+                }
                 task::Poll::Ready(Some(Err(err)))
             }
             Ok(Some(driver_response)) => {
                 // Successfully got a response from the driver. Convert it into a QueryFeedPage and yield it.
                 let response = driver_bridge::driver_response_to_cosmos_response(driver_response);
+                // Only take a diagnostics handle when a handler is registered: the
+                // clone is a per-page atomic op the empty-chain default skips.
+                let page_diagnostics =
+                    (!this.diagnostics.is_empty()).then(|| response.diagnostics());
                 match QueryFeedPage::from_response(response) {
-                    Ok(page) => task::Poll::Ready(Some(Ok(page))),
+                    Ok(page) => {
+                        if let Some(page_diagnostics) = &page_diagnostics {
+                            crate::feed::dispatch_page_diagnostics(
+                                this.diagnostics,
+                                this.op_context,
+                                page_diagnostics,
+                                Some(page.items().len() as u64),
+                            );
+                        }
+                        task::Poll::Ready(Some(Ok(page)))
+                    }
                     Err(err) => {
                         *this.exhausted = true;
+                        if let Some(page_diagnostics) = &page_diagnostics {
+                            crate::feed::dispatch_page_diagnostics(
+                                this.diagnostics,
+                                this.op_context,
+                                page_diagnostics,
+                                None,
+                            );
+                        }
                         task::Poll::Ready(Some(Err(err)))
                     }
                 }
@@ -195,9 +235,18 @@ impl<T: Send + DeserializeOwned + 'static> QueryItemIterator<T> {
         container: Option<ContainerReference>,
         plan: OperationPlan,
         options: OperationOptions,
+        diagnostics: DiagnosticsHandlerChain,
+        op_context: CosmosOperationContext,
     ) -> Self {
         Self {
-            source: PageSource::Live(Box::pin(LiveState::new(driver, container, plan, options))),
+            source: PageSource::Live(Box::pin(LiveState::new(
+                driver,
+                container,
+                plan,
+                options,
+                diagnostics,
+                op_context,
+            ))),
             current: None,
             _marker: PhantomData,
         }
