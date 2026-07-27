@@ -1292,7 +1292,7 @@ fn serialize_item_body<T: Serialize>(item: &T, binary: bool) -> crate::Result<Ve
             binary_encoding = false,
             "item write body serialized as text JSON"
         );
-        Ok(serde_json::to_vec(item)?)
+        serde_json::to_vec(item).map_err(crate::error::convert_json_encode_error)
     }
 }
 
@@ -1378,6 +1378,19 @@ mod tests {
         let decoded: serde_json::Value =
             azure_data_cosmos_driver::binary_json::decode(&body).unwrap();
         assert_eq!(decoded, item);
+    }
+
+    #[test]
+    fn serialize_item_body_text_encode_failure_is_request_body_invalid() {
+        // A map with non-string keys fails `serde_json::to_vec`; the write path
+        // must label it as a request-body (encode) error, not response-body.
+        let item: std::collections::HashMap<(i32, i32), i32> =
+            std::collections::HashMap::from([((1, 2), 3)]);
+        let err = serialize_item_body(&item, false).expect_err("must fail to serialize");
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::SERIALIZATION_REQUEST_BODY_INVALID
+        );
     }
 
     #[test]

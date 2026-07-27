@@ -135,6 +135,20 @@ pub(crate) fn convert_binary_encode_error(
     )
 }
 
+/// Maps a text-JSON encode failure on the item **write** path to a request-body
+/// (not response-body) error. The blanket `From<serde_json::Error>` impl labels
+/// every error as `SERIALIZATION_RESPONSE_BODY_INVALID`, correct only for the
+/// decode/`?` sites; this call-site helper keeps write encodes labeled correctly.
+pub(crate) fn convert_json_encode_error(error: serde_json::Error) -> CosmosError {
+    CosmosError(
+        DriverCosmosError::builder()
+            .with_status(CosmosStatus::SERIALIZATION_REQUEST_BODY_INVALID)
+            .with_message("failed to serialize item to JSON")
+            .with_source(error)
+            .build(),
+    )
+}
+
 /// Per Azure SDK for Rust guideline: every service-crate error type provides a
 /// [`From`] impl into [`azure_core::Error`] so callers using the foundation
 /// error type via `?`/`From` continue to compose.
