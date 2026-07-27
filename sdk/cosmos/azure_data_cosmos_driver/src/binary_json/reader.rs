@@ -14,8 +14,8 @@
 //! containers, and uniform number arrays. Two cases have no JSON representation
 //! and are reported as errors: user strings (`0x40`-`0x67`) report
 //! [`BinaryError::UnsupportedUserString`] (they reference an external dictionary
-//! the data plane does not supply), and `Float16` (`0xCF`) plus the standalone
-//! extended `UInt8` (`0xD7`) report [`BinaryError::InvalidMarker`].
+//! the data plane does not supply), and `Float16` (`0xCF`) reports
+//! [`BinaryError::InvalidMarker`].
 
 use base64::Engine;
 use serde_json::{Map, Value};
@@ -389,11 +389,11 @@ impl<'a> Reader<'a> {
             // Fixed-width numbers (little-endian payloads), both the
             // self-describing `NUMBER_*` markers and the extended Cosmos
             // `INT*`/`UINT*`/`FLOAT*` markers, decode through a shared helper.
-            // `Float16` (0xCF) and the extended `UInt8` (0xD7) have no JSON node
-            // type in the service and are intentionally *not* routed here, so
-            // they fall through to the catch-all as InvalidMarker.
+            // `Float16` (0xCF) has no JSON node type in the service and is
+            // intentionally *not* routed here, so it falls through to the
+            // catch-all as InvalidMarker.
             NUMBER_UINT8 | NUMBER_INT16 | NUMBER_INT32 | NUMBER_INT64 | NUMBER_UINT64
-            | NUMBER_DOUBLE | INT8 | INT16 | INT32 | INT64 | UINT32 | FLOAT32 | FLOAT64 => {
+            | NUMBER_DOUBLE | INT8 | UINT8 | INT16 | INT32 | INT64 | UINT32 | FLOAT32 | FLOAT64 => {
                 self.read_number_value(marker, offset)
             }
 
@@ -1424,9 +1424,9 @@ mod tests {
     }
 
     #[test]
-    fn float16_and_extended_uint8_have_no_json_node() {
-        // Float16 (0xCF) and the extended UInt8 (0xD7) map to no JSON node type
-        // in the service, so the decoder rejects them as invalid markers.
+    fn float16_has_no_json_node() {
+        // Float16 (0xCF) maps to no JSON node type in the service, so the
+        // decoder rejects it as an invalid marker.
         assert_eq!(
             decode(&[PREAMBLE, markers::FLOAT16, 0x00, 0x00]),
             Err(BinaryError::InvalidMarker {
@@ -1434,12 +1434,20 @@ mod tests {
                 offset: 1,
             }),
         );
+    }
+
+    #[test]
+    fn decodes_standalone_extended_uint8() {
+        // A standalone extended UInt8 (0xD7) is a valid typed integer token —
+        // it decodes to a JSON number, mirroring its signed twin Int8 (0xD8).
         assert_eq!(
-            decode(&[PREAMBLE, markers::UINT8, 0x00]),
-            Err(BinaryError::InvalidMarker {
-                marker: markers::UINT8,
-                offset: 1,
-            }),
+            decode(&[PREAMBLE, markers::UINT8, 0xC8]),
+            Ok(int_value(200))
+        );
+        assert_eq!(decode(&[PREAMBLE, markers::UINT8, 0x00]), Ok(int_value(0)));
+        assert_eq!(
+            decode(&[PREAMBLE, markers::UINT8, 0xFF]),
+            Ok(int_value(255))
         );
     }
 

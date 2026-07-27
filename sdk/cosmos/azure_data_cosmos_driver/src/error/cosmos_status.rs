@@ -456,6 +456,8 @@ impl SubStatusCode {
             20006 => Some("ChannelClosed"),
             20007 => Some("MalformedContinuationToken"),
             20008 => Some("ClientOperationTimeout"),
+            20020 => Some("SerializationResponseBodyInvalid"),
+            20021 => Some("SerializationRequestBodyInvalid"),
             20401 => Some("ClientGenerated401"),
             20901 => Some("NegativeTimeoutProvided"),
             20902 => Some("MissingPartitionKeyRangeIdInContext"),
@@ -2671,6 +2673,21 @@ mod tests {
     #[test]
     fn name_returns_none_for_unknown() {
         assert_eq!(SubStatusCode::new(65000).name(None), None);
+    }
+
+    #[test]
+    fn name_returns_serialization_boundary_codes() {
+        // Regression guard: the 20020/20021 name mappings must stay in lockstep
+        // with the `SERIALIZATION_*_BODY_INVALID` constants so diagnostics render
+        // a symbolic name instead of a bare number.
+        assert_eq!(
+            SubStatusCode::SERIALIZATION_RESPONSE_BODY_INVALID.name(None),
+            Some("SerializationResponseBodyInvalid")
+        );
+        assert_eq!(
+            SubStatusCode::SERIALIZATION_REQUEST_BODY_INVALID.name(None),
+            Some("SerializationRequestBodyInvalid")
+        );
     }
 
     #[test]

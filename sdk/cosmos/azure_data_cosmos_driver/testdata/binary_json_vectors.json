@@ -11,6 +11,7 @@
   { "name": "uint64", "binary": "80 C7 FE FF FF FF FF FF FF FF", "json": 18446744073709551614 },
   { "name": "double", "binary": "80 CC 00 00 00 00 00 00 0C 40", "json": 3.5 },
   { "name": "ext_int8", "binary": "80 D8 FB", "json": -5 },
+  { "name": "ext_uint8", "binary": "80 D7 C8", "json": 200 },
   { "name": "ext_int16", "binary": "80 D9 18 FC", "json": -1000 },
   { "name": "ext_int32", "binary": "80 DA 90 EE FE FF", "json": -70000 },
   { "name": "ext_int64", "binary": "80 DB 00 0E FA D5 FE FF FF FF", "json": -5000000000 },
