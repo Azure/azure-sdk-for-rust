@@ -4,15 +4,16 @@
 
 ### Features Added
 
-- Extended cross-region hedging to the metadata cache reads (Collection `Read`
-  and PartitionKeyRange `ReadFeed`). Hedge eligibility is now expressed as exact
-  `(resource, operation)` pairs (`HEDGEABLE_PAIRS`) so the metadata reads are
-  covered without a naive widening also enabling document change-feed hedging;
-  the two metadata reads use a fixed 1.5s hedge threshold (matching the .NET
-  control-plane threshold); and for metadata the primary region stays
-  authoritative — a hedge may win only with a definitive success and can never
-  override the primary with a definitive error, guarding the replication-lag
-  race. (Cross-region metadata hedging.)
+- Extended cross-region hedging to the Collection `Read` metadata cache read.
+  Hedge eligibility is now expressed as exact `(resource, operation)` pairs
+  (`HEDGEABLE_PAIRS`) so metadata reads can be covered without a naive widening
+  also enabling document change-feed hedging; the metadata read uses a fixed
+  1.5s hedge threshold (matching the .NET control-plane threshold); and for
+  metadata the primary region stays authoritative — a hedge may win only with a
+  definitive success and can never override the primary with a definitive error,
+  guarding the replication-lag race. (Cross-region metadata hedging. The
+  PartitionKeyRange `ReadFeed` metadata read is a follow-up: it needs a
+  continuation-region pin before it can be hedged safely.)
 
 ### Breaking Changes
 
