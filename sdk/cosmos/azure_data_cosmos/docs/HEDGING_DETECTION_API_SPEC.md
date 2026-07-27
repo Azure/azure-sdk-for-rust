@@ -54,7 +54,7 @@ driver-owned and re-exported by `azure_data_cosmos`, exactly like
 The hedging orchestrator/dispatch is **landed** on `main`
 ([#4432](https://github.com/Azure/azure-sdk-for-rust/pull/4432)): it emits
 `ExecutionContext::Hedging` for alternate legs and populates `HedgeDiagnostics`
-(design: [`HEDGING_SPEC.md`](../../azure_data_cosmos_driver/docs/HEDGING_SPEC.md),
+(design: [`HEDGING_SPEC.md`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/HEDGING_SPEC.md),
 [PR #4330](https://github.com/Azure/azure-sdk-for-rust/pull/4330)).
 
 ---
@@ -203,4 +203,4 @@ collection. If `ExecutionContext` becomes a prominent part of the public
 detection surface it could be renamed to something friendlier (e.g.,
 `RequestPurpose` / `RequestIntent`); that rename is out of scope here.
 
-[`DiagnosticsContext`]: https://docs.rs/azure_data_cosmos/latest/azure_data_cosmos/struct.DiagnosticsContext.html
+[`DiagnosticsContext`]: https://docs.rs/azure_data_cosmos/latest/azure_data_cosmos/
