@@ -3,11 +3,11 @@
 
 //! Builder for creating [`CosmosClient`] instances.
 
-#[cfg(feature = "fault_injection")]
 use std::sync::Arc;
 
 use crate::{
     clients::{resolve_binary_encoding, ClientContext},
+    diagnostics::DiagnosticsHandler,
     options::{
         BinaryEncodingOptions, CosmosClientOptions, OperationOptions, PartitionFailoverOptions,
         ThroughputControlGroupOptions, UserAgentSuffix,
@@ -189,6 +189,22 @@ impl CosmosClientBuilder {
         self
     }
 
+    /// Registers a [`DiagnosticsHandler`](crate::diagnostics::DiagnosticsHandler)
+    /// that is invoked once per operation at completion with the operation's
+    /// completed [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext).
+    ///
+    /// Handlers run in registration order; call this multiple times to build an
+    /// ordered chain. With no handler registered the completion path does
+    /// nothing beyond checking whether a handler is present.
+    ///
+    /// # Arguments
+    ///
+    /// * `handler` - The handler to append to this client's diagnostics chain.
+    pub fn with_diagnostics_handler(mut self, handler: Arc<dyn DiagnosticsHandler>) -> Self {
+        self.options.diagnostics_handlers = self.options.diagnostics_handlers.with_handler(handler);
+        self
+    }
+
     /// Configures fault injection for testing.
     ///
     /// Accepts a vector of [`FaultInjectionRule`](crate::fault_injection::FaultInjectionRule)
@@ -308,6 +324,7 @@ impl CosmosClientBuilder {
             context: ClientContext {
                 driver,
                 binary_encoding: resolve_binary_encoding(self.options.binary_encoding),
+                diagnostics_handlers: self.options.diagnostics_handlers,
             },
         })
     }
