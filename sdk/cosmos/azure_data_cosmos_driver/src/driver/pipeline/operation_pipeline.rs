@@ -83,8 +83,9 @@ fn default_throttle_budget(pipeline_type: PipelineType) -> (u32, Duration, Durat
 ///
 /// Used by the dataflow pipeline to inject routing and pagination state that
 /// varies per physical partition or per page, without mutating the shared
-/// `CosmosOperation`. Each field, when `Some`, emits the corresponding request
-/// header in [`OperationOverrides::apply_headers`].
+/// `CosmosOperation`. Most fields, when `Some`, emit the corresponding request
+/// header in [`OperationOverrides::apply_headers`]; `pinned_endpoint` instead
+/// overrides the STAGE 2 routing decision.
 #[derive(Debug, Clone, Default)]
 pub(crate) struct OperationOverrides {
     /// Feed range to constrain the request to (emits `x-ms-start-epk` / `x-ms-end-epk`).
@@ -105,6 +106,17 @@ pub(crate) struct OperationOverrides {
 
     /// Continuation token for pagination (emits `x-ms-continuation`).
     pub continuation: Option<String>,
+
+    /// Pins this attempt's routing to a specific endpoint, bypassing the normal
+    /// region selection in [`resolve_endpoint`].
+    ///
+    /// Unlike the other fields this is NOT a request header — it is consumed by
+    /// STAGE 2 of the operation pipeline. It keeps a paged read on a specific
+    /// region: the PartitionKeyRange change-feed pages 2..N after a first-page
+    /// hedge win must stay on the region that issued the continuation token
+    /// (whose ETag is only meaningful to that region). When set, the pre-attempt
+    /// hedge (STAGE 2b) is also suppressed so the pin is honored.
+    pub pinned_endpoint: Option<crate::driver::routing::CosmosEndpoint>,
 }
 
 impl OperationOverrides {
@@ -381,14 +393,22 @@ pub(crate) async fn execute_operation_pipeline(
         // parity), falling back to parsing the customer-provided global
         // endpoint hostname when metadata has not synced yet.
         let account_name = location_state_store.global_database_account_name();
-        let routing = resolve_endpoint(
-            operation,
-            &retry_state,
-            &location,
-            pipeline_type.is_data_plane(),
-            account_name.is_some(),
-            location_state_store.endpoint_unavailability_ttl(),
-        );
+        // A pinned endpoint (e.g. PartitionKeyRange pages 2..N after a first-page
+        // hedge win) bypasses normal region selection and routes straight to the
+        // pinned region so the change-feed continuation stays region-consistent.
+        let routing = match overrides.pinned_endpoint.as_ref() {
+            Some(pinned) => {
+                routing_decision_for_pinned_endpoint(pinned, pipeline_type.is_data_plane())
+            }
+            None => resolve_endpoint(
+                operation,
+                &retry_state,
+                &location,
+                pipeline_type.is_data_plane(),
+                account_name.is_some(),
+                location_state_store.endpoint_unavailability_ttl(),
+            ),
+        };
 
         // Emit one structured debug record per attempt with the chosen
         // routing decision. Tests and SREs filter on this to verify which
@@ -420,7 +440,13 @@ pub(crate) async fn execute_operation_pipeline(
         //   applicable read endpoints, env-disabled hedging, or per-op
         //   `AvailabilityStrategy::Disabled`. All gated by
         //   [`evaluate_hedge_eligibility`].
-        if retry_state.failover_retry_count == 0 && retry_state.session_token_retry_count == 0 {
+        // * **Pinned attempts** — when `overrides.pinned_endpoint` is set the
+        //   attempt is deliberately routed to a single region (continuation
+        //   consistency), so racing a second region would defeat the pin.
+        if retry_state.failover_retry_count == 0
+            && retry_state.session_token_retry_count == 0
+            && overrides.pinned_endpoint.is_none()
+        {
             if let Some(upgrade) = evaluate_hedge_eligibility(
                 operation,
                 options,
@@ -1140,6 +1166,38 @@ fn is_effect_already_applied(effect: &LocationEffect, snapshot: &LocationSnapsho
 ///
 /// Uses `LocationSnapshot` and `AccountEndpointState` to select the best
 /// available endpoint, respecting excluded regions and unavailability TTL.
+/// Builds a [`RoutingDecision`] that routes an attempt to a specific `pinned`
+/// endpoint (see [`OperationOverrides::pinned_endpoint`]), bypassing the normal
+/// region selection in [`resolve_endpoint`].
+///
+/// Mirrors the routing construction used for the hedge secondary in
+/// `evaluate_hedge_eligibility`, so a pinned attempt shares the same
+/// gateway-version preference and connection-pool keying.
+fn routing_decision_for_pinned_endpoint(
+    pinned: &crate::driver::routing::CosmosEndpoint,
+    prefer_gateway_v2: bool,
+) -> RoutingDecision {
+    let use_gateway_v2 = pinned.uses_gateway_v2(prefer_gateway_v2);
+    let transport_mode = if use_gateway_v2 {
+        TransportMode::GatewayV2
+    } else {
+        TransportMode::Gateway
+    };
+    let selected_url = pinned.selected_url(use_gateway_v2).clone();
+    let endpoint_key = if use_gateway_v2 {
+        crate::driver::transport::EndpointKey::try_from(&selected_url)
+            .expect("selected URL must have a valid host and port")
+    } else {
+        pinned.endpoint_key()
+    };
+    RoutingDecision {
+        selected_url,
+        transport_mode,
+        endpoint_key,
+        endpoint: pinned.clone(),
+    }
+}
+
 fn resolve_endpoint(
     operation: &CosmosOperation,
     retry_state: &OperationRetryState,

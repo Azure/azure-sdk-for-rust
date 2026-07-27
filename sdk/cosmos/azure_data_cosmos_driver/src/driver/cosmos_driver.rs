@@ -166,6 +166,7 @@ fn request_target_overrides(
             // backend returns every document in the physical partition.
             partition_key: operation_partition_key.cloned(),
             continuation,
+            ..Default::default()
         },
         RequestTarget::NonPartitioned => OperationOverrides {
             continuation,
