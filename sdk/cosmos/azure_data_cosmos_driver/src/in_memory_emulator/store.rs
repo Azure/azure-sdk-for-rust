@@ -628,6 +628,7 @@ impl EmulatorStore {
             etag: new_etag(),
             partition_key: pk_def,
             partition_count: config.partition_count(),
+            partition_key_range_page_size: config.partition_key_range_page_size(),
             provisioned_throughput_ru: config.provisioned_throughput_ru(),
             // Shared counter — first id allocated by split/merge will be
             // `partition_count` (one past the last initial partition id).
@@ -1318,6 +1319,7 @@ pub(crate) struct ContainerMetadata {
     pub etag: String,
     pub partition_key: PartitionKeyDefinition,
     pub partition_count: u32,
+    pub partition_key_range_page_size: Option<u32>,
     pub provisioned_throughput_ru: Option<u32>,
     /// Shared atomic counter for allocating new partition IDs (split/merge).
     /// Authoritative across *all* regions so partition IDs cannot diverge —
