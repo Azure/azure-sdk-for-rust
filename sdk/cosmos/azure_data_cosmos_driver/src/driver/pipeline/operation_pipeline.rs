@@ -2355,6 +2355,34 @@ fn classify_hedge_result(result: crate::error::Result<TransportResult>) -> Hedge
     }
 }
 
+/// Classifies the SECONDARY (hedge) leg, applying the metadata
+/// primary-authoritative rule.
+///
+/// For the two metadata cache reads the primary region is authoritative: a
+/// hedge may improve latency by winning with a definitive **success**, but it
+/// must never override the primary with a definitive **error** (e.g. a
+/// not-yet-replicated secondary returning `404` for a freshly-created container,
+/// or a `409`/`412`/`429`-final). When `primary_authoritative` is set, a
+/// secondary that produced a `Final` but non-`Success` outcome is therefore
+/// downgraded to [`HedgeClass::Transient`] so the race discards it and awaits
+/// the primary's authoritative outcome. A secondary definitive success still
+/// wins; a secondary transient stays transient. Data-plane hedging passes
+/// `false` and keeps the first-`Final`-wins semantics of
+/// [`classify_hedge_result`].
+fn classify_secondary_hedge_result(
+    result: crate::error::Result<TransportResult>,
+    primary_authoritative: bool,
+) -> HedgeClass {
+    match classify_hedge_result(result) {
+        HedgeClass::Final(tr)
+            if primary_authoritative && !matches!(tr.outcome, TransportOutcome::Success { .. }) =>
+        {
+            HedgeClass::Transient
+        }
+        other => other,
+    }
+}
+
 /// Non-consuming version of [`classify_hedge_result`] for the
 /// pre-threshold primary-completion branch, where the caller still
 /// needs the original `TransportResult` to surface the response via
@@ -3073,6 +3101,13 @@ async fn execute_hedged(
         .clone()
         .unwrap_or_else(|| Region::new(HedgeDiagnostics::UNKNOWN_REGION_SENTINEL));
 
+    // Metadata cache reads keep the PRIMARY authoritative: a secondary may win
+    // only with a definitive success, never with a definitive error (guards the
+    // replication-lag race where a not-yet-consistent secondary returns 404/409
+    // before a slow-but-good primary). Data-plane hedging keeps first-Final-wins.
+    // The metadata pipeline is the only place the two metadata read pairs run.
+    let metadata_primary_authoritative = ctx.pipeline_type.is_metadata();
+
     tracing::debug!(
         activity_id = %ctx.activity_id,
         threshold_ms = ?threshold.get().as_millis(),
@@ -3425,7 +3460,10 @@ async fn execute_hedged(
                         &mut race_observed_session_unavailable,
                     )
                     .await;
-                    match classify_hedge_result(secondary_result) {
+                    match classify_secondary_hedge_result(
+                        secondary_result,
+                        metadata_primary_authoritative,
+                    ) {
                         HedgeClass::Final(tr) => {
                             parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::hedge_won(
                                 strategy_config,
@@ -3494,7 +3532,8 @@ async fn execute_hedged(
                 &mut race_observed_session_unavailable,
             )
             .await;
-            match classify_hedge_result(secondary_result) {
+            match classify_secondary_hedge_result(secondary_result, metadata_primary_authoritative)
+            {
                 HedgeClass::Final(tr) => {
                     parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::hedge_won(
                         strategy_config,
@@ -8310,6 +8349,49 @@ mod tests {
         let tr = http_result(503, None);
         assert!(matches!(
             super::classify_hedge_result(Ok(tr)),
+            super::HedgeClass::Transient
+        ));
+    }
+
+    // ── classify_secondary_hedge_result (metadata primary-authoritative) ──
+
+    #[test]
+    fn secondary_definitive_error_defers_to_primary_when_metadata() {
+        // Metadata primary-authoritative: a secondary 404 (Final, non-success)
+        // must NOT win — downgraded to Transient so the primary is awaited.
+        let tr = http_result(404, None);
+        assert!(matches!(
+            super::classify_secondary_hedge_result(Ok(tr), true),
+            super::HedgeClass::Transient
+        ));
+    }
+
+    #[test]
+    fn secondary_definitive_error_wins_when_not_metadata() {
+        // Data-plane (primary_authoritative = false) keeps first-Final-wins.
+        let tr = http_result(404, None);
+        assert!(matches!(
+            super::classify_secondary_hedge_result(Ok(tr), false),
+            super::HedgeClass::Final(_)
+        ));
+    }
+
+    #[test]
+    fn secondary_definitive_success_wins_when_metadata() {
+        // A secondary definitive success still wins under primary-authoritative
+        // (the latency benefit).
+        let tr = http_result(200, None);
+        assert!(matches!(
+            super::classify_secondary_hedge_result(Ok(tr), true),
+            super::HedgeClass::Final(_)
+        ));
+    }
+
+    #[test]
+    fn secondary_transient_stays_transient_when_metadata() {
+        let tr = http_result(503, None);
+        assert!(matches!(
+            super::classify_secondary_hedge_result(Ok(tr), true),
             super::HedgeClass::Transient
         ));
     }
