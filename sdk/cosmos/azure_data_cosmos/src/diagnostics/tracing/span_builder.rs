@@ -101,11 +101,18 @@ pub(crate) fn emit_backdated_span_tree<T>(
     let op_failed = diagnostics.is_failure();
 
     // --- Operation (root) span ---
-    // Prefer the driver context's operation name; fall back to the SDK-supplied
-    // operation identity when the driver did not record one.
-    let op_name_ref = diagnostics
-        .operation_name()
-        .or_else(|| op.and_then(CosmosOperationContext::operation_name));
+    // Prefer the SDK-supplied operation identity (the caller-facing operation,
+    // e.g. `patch_item`) so the span label agrees with the metric
+    // `db.operation.name` and the tail-sampling classifier, which both read the
+    // same `CosmosOperationContext`. Fall back to the driver context's operation
+    // name for operations not surfaced through the SDK wrapper (which therefore
+    // carry no `CosmosOperationContext`). Preferring the driver value here would
+    // mislabel an aggregate whose surfaced sub-op differs from the operation —
+    // e.g. a PATCH that fails during its internal Read would report `read_item`
+    // on the span while the metric reports `patch_item`.
+    let op_name_ref = op
+        .and_then(CosmosOperationContext::operation_name)
+        .or_else(|| diagnostics.operation_name());
     let op_name = op_name_ref
         .unwrap_or(DEFAULT_OPERATION_SPAN_NAME)
         .to_string();

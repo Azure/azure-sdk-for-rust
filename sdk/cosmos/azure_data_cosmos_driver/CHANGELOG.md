@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added `CosmosOperation::db_operation_name`, returning the canonical OpenTelemetry `db.operation.name` (e.g. `read_item`, `query_items`, `execute_batch`) for an operation. The operation pipeline now populates `DiagnosticsContext::operation_name` from it in production (previously always `None`), so the emission layer's `db.operation.name` attribute and the point-vs.-non-point tail-sampling classification are accurate; PATCH aggregates report `patch_item` rather than the underlying Replace. ([#4789](https://github.com/Azure/azure-sdk-for-rust/pull/4789))
+- Added `CosmosOperation::db_operation_name`, returning the canonical OpenTelemetry `db.operation.name` (e.g. `read_item`, `query_items`, `execute_batch`) for an operation. The operation pipeline now populates `DiagnosticsContext::operation_name` from it in production (previously always `None`), so `DiagnosticsContext::operation_name()` is populated for callers inspecting diagnostics and supplies the operation name to the emission layer's tail-sampling classifier and tracing span when no SDK-supplied `CosmosOperationContext` is present. The tracing span's operation label prefers the caller-facing `CosmosOperationContext` identity (consistent with the `db.operation.name` metric), and PATCH aggregates report `patch_item` rather than the underlying Replace. ([#4874](https://github.com/Azure/azure-sdk-for-rust/pull/4874))
 
 ### Breaking Changes
 

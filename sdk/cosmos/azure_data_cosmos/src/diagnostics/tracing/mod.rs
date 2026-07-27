@@ -208,9 +208,9 @@ mod tests {
 
         let now_instant = Instant::now();
         let now_system = SystemTime::now();
-        // A slow operation with NO driver-side operation name — the production
-        // case, since the driver never records one. The SDK-supplied
-        // CosmosOperationContext carries the operation identity instead.
+        // A slow operation with NO driver-side operation name — exercising the
+        // op-context fallback path. The SDK-supplied CosmosOperationContext
+        // carries the operation identity instead.
         let ctx = context(
             Duration::from_millis(1500),
             Some(CosmosStatus::new(StatusCode::Ok)),
@@ -242,6 +242,44 @@ mod tests {
         assert!(root.attributes.iter().any(|kv| {
             kv.key.as_str() == attributes::DB_COLLECTION_NAME && kv.value.as_str() == "my_container"
         }));
+    }
+
+    #[test]
+    fn op_context_operation_name_wins_over_driver_context() {
+        // When both the driver context and the SDK operation context carry a
+        // name, the span must use the caller-facing op-context identity — so a
+        // PATCH whose surfaced sub-op is a Replace is still labeled `patch_item`,
+        // consistent with the `db.operation.name` metric and the tail-sampling
+        // classifier (which both read the op context).
+        let (provider, exporter) = exportable();
+        let tracer = provider.tracer("test");
+
+        let now_instant = Instant::now();
+        let now_system = SystemTime::now();
+        let ctx = context(
+            Duration::from_millis(1500),
+            Some(CosmosStatus::new(StatusCode::Ok)),
+            Some("replace_item"), // driver-side sub-op name
+            &[(1500, 1500, CosmosStatus::new(StatusCode::Ok))],
+            now_instant,
+        );
+        let op = CosmosOperationContext::new().with_operation_name("patch_item");
+
+        emit_backdated_span_tree(&tracer, &ctx, Some(&op), None, now_instant, now_system);
+        provider.force_flush().unwrap();
+
+        let spans = exporter.get_finished_spans().unwrap();
+        let root = spans
+            .iter()
+            .find(|s| s.name == "patch_item")
+            .expect("root span named from op context, not the driver sub-op");
+        assert!(root.attributes.iter().any(|kv| {
+            kv.key.as_str() == attributes::DB_OPERATION_NAME && kv.value.as_str() == "patch_item"
+        }));
+        assert!(
+            !spans.iter().any(|s| s.name == "replace_item"),
+            "the driver sub-op name must not label the operation span"
+        );
     }
 
     #[test]

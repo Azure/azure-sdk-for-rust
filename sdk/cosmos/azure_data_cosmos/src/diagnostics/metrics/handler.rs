@@ -39,7 +39,8 @@ const METER_NAME: &str = "azure_data_cosmos";
 /// ([`MetricsOptions::with_active_instance_metric`]), the handler increments the
 /// `azure.cosmosdb.client.active_instance.count` up-down counter on construction
 /// and decrements it on [`Drop`], so the reported value tracks the number of
-/// live instrumented client instances.
+/// live handler instances (one per instrumented client, under the intended
+/// one-handler-per-client registration).
 ///
 /// The handler captures a [`Meter`] from the globally-registered provider at
 /// construction. Install your meter provider **before** constructing the handler:

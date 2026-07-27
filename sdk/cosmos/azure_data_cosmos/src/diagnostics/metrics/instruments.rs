@@ -37,7 +37,9 @@ pub(crate) struct Instruments {
     ///
     /// An up-down counter incremented when the handler is constructed and
     /// decremented when it is dropped, so the reported value tracks the number
-    /// of live client instrumentation instances.
+    /// of live [`CosmosMetricsHandler`](super::CosmosMetricsHandler) instances
+    /// (one per instrumented client, under the intended one-handler-per-client
+    /// registration).
     pub(crate) active_instance: UpDownCounter<i64>,
 }
 

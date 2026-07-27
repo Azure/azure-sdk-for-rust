@@ -176,6 +176,14 @@ impl CosmosOperation {
             (OperationType::Batch, ResourceType::Document) => "execute_batch",
             (OperationType::Query, ResourceType::Document)
             | (OperationType::SqlQuery, ResourceType::Document) => "query_items",
+            // NOTE: `read_all_items` (and, below, `read_all_containers` /
+            // `read_all_databases` / the granular `query_containers` /
+            // `query_databases`) are this SDK's canonical values. They
+            // intentionally diverge from the .NET SDK, which emits
+            // `read_feed_ranges` for feed reads and funnels container/database
+            // queries through the generic `query_items`. Keep them aligned with
+            // this crate's own `read_all_*` / `query_*` public API, not with
+            // .NET. See DIAGNOSTICS-CONTRACT.md.
             (OperationType::ReadFeed, ResourceType::Document) => {
                 if self.is_change_feed {
                     "query_change_feed"
@@ -198,8 +206,14 @@ impl CosmosOperation {
             (OperationType::Query, ResourceType::Database)
             | (OperationType::SqlQuery, ResourceType::Database) => "query_databases",
             (OperationType::ReadFeed, ResourceType::Database) => "read_all_databases",
-            // Throughput (offer) management.
-            (OperationType::Read, ResourceType::Offer) => "read_throughput",
+            // Throughput (offer) management. The user-facing throughput *read*
+            // locates the offer by querying the offers feed
+            // (`ContainerClient::read_throughput` -> `find_offer` ->
+            // `query_offers`), so its wire op is `(Query, Offer)`; `(Read, Offer)`
+            // is the throughput poller's internal by-RID re-read after a replace.
+            (OperationType::Read, ResourceType::Offer)
+            | (OperationType::Query, ResourceType::Offer)
+            | (OperationType::SqlQuery, ResourceType::Offer) => "read_throughput",
             (OperationType::Replace, ResourceType::Offer) => "replace_throughput",
             // Everything else has no canonical semconv name.
             _ => return None,
@@ -1199,6 +1213,25 @@ mod tests {
         assert_eq!(
             CosmosOperation::query_databases(test_account()).db_operation_name(),
             Some("query_databases")
+        );
+    }
+
+    #[test]
+    fn db_operation_name_maps_throughput_operations() {
+        // Throughput reads locate the offer by querying the offers feed, so the
+        // user-facing read path is `(Query, Offer)`.
+        assert_eq!(
+            CosmosOperation::query_offers(test_account()).db_operation_name(),
+            Some("read_throughput")
+        );
+        // `(Read, Offer)` is the throughput poller's internal by-RID re-read.
+        assert_eq!(
+            CosmosOperation::read_offer(test_account(), "offer-rid").db_operation_name(),
+            Some("read_throughput")
+        );
+        assert_eq!(
+            CosmosOperation::replace_offer(test_account(), "offer-rid").db_operation_name(),
+            Some("replace_throughput")
         );
     }
 
