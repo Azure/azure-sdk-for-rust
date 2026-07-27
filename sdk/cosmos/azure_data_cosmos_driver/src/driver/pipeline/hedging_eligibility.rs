@@ -31,17 +31,28 @@ use crate::{
 /// this constant is the upper bound.
 const DEFAULT_THRESHOLD_CAP: Duration = Duration::from_millis(1000);
 
-/// Resource types eligible for cross-region hedging in the current phase.
+/// `(ResourceType, OperationType)` pairs eligible for cross-region hedging.
 ///
-/// Subsequent phases widen this single constant — no other change to
-/// [`should_hedge`] is required.
-const HEDGEABLE_RESOURCE_TYPES: &[ResourceType] = &[ResourceType::Document];
-
-/// Operation types eligible for cross-region hedging in the current phase.
+/// This is the **single source of truth** for hedge eligibility, expressed as
+/// exact pairs rather than an independent resource set AND operation set. Pair
+/// gating is deliberate: a cartesian `resource ∈ SET_A && op ∈ SET_B` gate would
+/// let widening one dimension silently enable an unintended combination — most
+/// dangerously `(Document, ReadFeed)` (document change feed), a data-plane feed
+/// whose continuation is region-affine and which has no hedge pinning. Listing
+/// pairs makes writes and stray feed combinations non-eligible structurally.
 ///
-/// Future phases will append feed-style operations
-/// (`Query` / `ReadFeed` / `QueryPlan`) and metadata reads.
-const HEDGEABLE_OPERATION_TYPES: &[OperationType] = &[OperationType::Read];
+/// Current members:
+/// * `(Document, Read)` — data-plane point reads (Phase 1).
+/// * `(DocumentCollection, Read)` — `Collection` `Read` metadata cache read.
+/// * `(PartitionKeyRange, ReadFeed)` — `PartitionKeyRange` `ReadFeed` metadata
+///   cache read (first cold page only; later pages pinned by the caller).
+///
+/// See `docs/HEDGING_SPEC.md`.
+const HEDGEABLE_PAIRS: &[(ResourceType, OperationType)] = &[
+    (ResourceType::Document, OperationType::Read),
+    (ResourceType::DocumentCollection, OperationType::Read),
+    (ResourceType::PartitionKeyRange, OperationType::ReadFeed),
+];
 
 /// Returns `true` when the operation is eligible for cross-region hedging.
 ///
@@ -67,20 +78,12 @@ pub(crate) fn should_hedge(
         return false;
     }
 
-    if !HEDGEABLE_RESOURCE_TYPES.contains(&operation.resource_type()) {
-        return false;
-    }
-
-    // Writes are never hedged. The phase also restricts OperationType to
-    // `Read`, which is a superset of "not a write", but the explicit
-    // `is_read_only()` guard documents the intent and protects against
-    // future phase widenings that add non-read OperationTypes (e.g. feed
-    // reads) without revisiting this predicate.
-    let op = operation.operation_type();
-    if !op.is_read_only() {
-        return false;
-    }
-    if !HEDGEABLE_OPERATION_TYPES.contains(&op) {
+    // Eligibility is gated on the exact `(resource, operation)` PAIR — never a
+    // cartesian resource-set × operation-set — so widening one dimension cannot
+    // enable an unintended combination (e.g. `(Document, ReadFeed)` document
+    // change feed). Writes are excluded structurally: no write pair is listed.
+    let pair = (operation.resource_type(), operation.operation_type());
+    if !HEDGEABLE_PAIRS.contains(&pair) {
         return false;
     }
 
@@ -370,6 +373,19 @@ mod tests {
         CosmosOperation::read_database(db)
     }
 
+    fn read_container_operation() -> CosmosOperation {
+        let account = AccountReference::with_master_key(
+            Url::parse("https://acct.documents.azure.com/").unwrap(),
+            "k",
+        );
+        let db = DatabaseReference::from_name(account, "db");
+        CosmosOperation::read_container_by_name(db, "c".to_owned())
+    }
+
+    fn read_pk_ranges_operation() -> CosmosOperation {
+        CosmosOperation::read_all_partition_key_ranges(fake_container_reference())
+    }
+
     fn enabled_strategy() -> HedgingStrategy {
         HedgingStrategy::new(HedgeThreshold::new(Duration::from_millis(500)).unwrap())
     }
@@ -427,21 +443,69 @@ mod tests {
 
     #[test]
     fn should_hedge_non_document() {
-        // Reads against non-Document resource types are excluded in Phase 1.
+        // A Database read is a metadata read that is intentionally NOT in scope
+        // (this phase matches .NET #5999: only Collection Read and
+        // PartitionKeyRange ReadFeed are hedged). `(Database, Read)` is not a
+        // HEDGEABLE_PAIRS member, so it must not hedge.
         let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
         let op = read_database_operation();
         assert!(!should_hedge(Some(&enabled_strategy()), &op, &state, &[],));
+    }
+
+    #[test]
+    fn should_hedge_collection_read() {
+        // Metadata Collection Read `(DocumentCollection, Read)` IS hedged.
+        let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
+        let op = read_container_operation();
+        assert!(should_hedge(Some(&enabled_strategy()), &op, &state, &[],));
+    }
+
+    #[test]
+    fn should_hedge_pkrange_readfeed() {
+        // Metadata PartitionKeyRange ReadFeed `(PartitionKeyRange, ReadFeed)` IS hedged.
+        let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
+        let op = read_pk_ranges_operation();
+        assert!(should_hedge(Some(&enabled_strategy()), &op, &state, &[],));
+    }
+
+    #[test]
+    fn hedgeable_pairs_includes_the_two_metadata_reads() {
+        assert!(HEDGEABLE_PAIRS.contains(&(ResourceType::DocumentCollection, OperationType::Read)));
+        assert!(
+            HEDGEABLE_PAIRS.contains(&(ResourceType::PartitionKeyRange, OperationType::ReadFeed))
+        );
+    }
+
+    #[test]
+    fn hedgeable_pairs_excludes_stray_and_write_pairs() {
+        // Pair gating (not a cartesian resource×op gate) must keep these OUT even
+        // though each element appears in some in-scope pair. `(Document, ReadFeed)`
+        // is the dangerous one: a data-plane change feed with a region-affine
+        // continuation and no hedge pinning.
+        for stray in [
+            (ResourceType::Document, OperationType::ReadFeed),
+            (ResourceType::DocumentCollection, OperationType::ReadFeed),
+            (ResourceType::PartitionKeyRange, OperationType::Read),
+            (ResourceType::Database, OperationType::Read),
+            (ResourceType::Offer, OperationType::Read),
+            (ResourceType::Document, OperationType::Create),
+        ] {
+            assert!(
+                !HEDGEABLE_PAIRS.contains(&stray),
+                "{stray:?} must not be hedge-eligible"
+            );
+        }
     }
 
     #[cfg(feature = "preview_dtx")]
     #[test]
     fn should_hedge_distributed_transaction_never() {
         // DTX operations carry `ResourceType::DistributedTransactionBatch`, which
-        // is not in HEDGEABLE_RESOURCE_TYPES, so neither the write commit nor the
+        // is not in any HEDGEABLE_PAIRS entry, so neither the write commit nor the
         // read snapshot is hedge-eligible — even though the read reports
         // `is_read_only() == true`. This is the real guard: hedging can fire at
         // the pre-attempt STAGE 2b before the DTX classifier ever runs, so the
-        // resource-type exclusion (not the classifier short-circuit) is what
+        // pair-gating exclusion (not the classifier short-circuit) is what
         // keeps DTX out of hedging. Pin it directly.
         let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
         let account = AccountReference::with_master_key(
