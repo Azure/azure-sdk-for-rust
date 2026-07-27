@@ -1,0 +1,48 @@
+# OpenTelemetry Collector config for the Cosmos Rust SDK WS9 soak.
+#
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+#
+# Pipeline: OTLP (from the SDK) -> batch -> Prometheus scrape endpoint (:8889)
+# which Prometheus scrapes. `resource_to_telemetry_conversion` copies resource
+# attributes (service.name, service.instance.id, ...) onto every metric as
+# labels so they are queryable in Grafana.
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  # Small batches keep the soak's steady-state overhead low while staying
+  # responsive during an injected fault window.
+  batch:
+    timeout: 10s
+    send_batch_size: 1024
+
+exporters:
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    send_timestamps: true
+    enable_open_metrics: true
+    # Turn OTLP resource attributes into metric labels.
+    resource_to_telemetry_conversion:
+      enabled: true
+
+  # Human-readable sample of what the SDK is emitting; handy when verifying the
+  # pipeline. Bump verbosity to `detailed` to see individual data points.
+  debug:
+    verbosity: normal
+
+service:
+  telemetry:
+    logs:
+      level: info
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheus, debug]
