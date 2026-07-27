@@ -18,6 +18,7 @@
 #
 # Image tags are pinned for reproducibility; bump them as needed.
 
+# cspell:ignore otelcol
 services:
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.116.0
