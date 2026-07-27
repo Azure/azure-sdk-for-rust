@@ -61,13 +61,17 @@ impl ClientOptions {
     pub(in crate::http) fn deconstruct(
         self,
     ) -> (CoreClientOptions, typespec_client_core::http::ClientOptions) {
-        // Merge the default allowed query parameters with any additional ones from logging options.
-        // This merged set is shared by both the logging policy and the request instrumentation policy
-        // to sanitize query parameters in logs and traced URLs.
+        // Merge query parameters into a HashSet up front because request instrumentation
+        // needs the final lookup set on the hot path. Unlike the Azure-specific header
+        // allowlist below, building an expanded Vec for LoggingOptions would duplicate
+        // the shared defaults without avoiding this HashSet allocation.
         let mut allowed_query_params = (*DEFAULT_ALLOWED_QUERY_PARAMETERS).clone();
         allowed_query_params.extend(self.logging.additional_allowed_query_params.iter().cloned());
 
-        // Merge Azure-specific allowed headers after typespec defaults, before customer headers.
+        // Merge the small Azure-specific allowlist after the shared defaults and before
+        // customer headers. Keep this as a static slice rather than a lazy set because
+        // it is only copied into the final HashSet once and is not used for per-request
+        // lookups on the hot path.
         let mut additional_allowed_header_names: Vec<Cow<'static, str>> =
             DEFAULT_ALLOWED_AZURE_HEADER_NAMES
                 .iter()
