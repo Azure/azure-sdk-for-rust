@@ -79,10 +79,16 @@ impl Stats {
         counter.fetch_add(1, Ordering::Relaxed);
     }
 
+    /// Total operations attempted (successes and failures). Reporting attempts
+    /// keeps throughput meaningful during a fault window, where counting only
+    /// successes would make the request rate appear to fall.
     fn total_ops(&self) -> u64 {
         self.reads_ok.load(Ordering::Relaxed)
+            + self.reads_err.load(Ordering::Relaxed)
             + self.writes_ok.load(Ordering::Relaxed)
+            + self.writes_err.load(Ordering::Relaxed)
             + self.queries_ok.load(Ordering::Relaxed)
+            + self.queries_err.load(Ordering::Relaxed)
     }
 
     fn total_errors(&self) -> u64 {
@@ -94,12 +100,23 @@ impl Stats {
 
 /// Runs the full workload: setup, seed, then the load loop until the duration
 /// elapses or Ctrl+C is received.
-pub async fn run(client: &CosmosClient, config: &Config) -> Result<(), Box<dyn Error>> {
+pub async fn run(
+    client: &CosmosClient,
+    config: &Config,
+    fault_activation: crate::client::FaultActivation,
+) -> Result<(), Box<dyn Error>> {
     ensure_database(client, &config.database).await?;
     let db_client = client.database_client(&config.database);
     let container = ensure_container(&db_client, &config.container, config.throughput).await?;
 
-    let seeded = Arc::new(seed(&container, config.seed_count, config.concurrency).await?);
+    // Isolate each run's data with a unique token so documents left behind by
+    // previous runs against the same (persistent) container never widen this
+    // run's `SELECT * FROM c` query results — keeping query RU, latency, and
+    // returned-row counts comparable across repeated soaks.
+    let run_id = Uuid::new_v4().simple().to_string();
+    println!("Run isolation token: {run_id}");
+
+    let seeded = Arc::new(seed(&container, config.seed_count, config.concurrency, &run_id).await?);
 
     let stats = Arc::new(Stats::default());
     let cancelled = Arc::new(AtomicBool::new(false));
@@ -135,6 +152,10 @@ pub async fn run(client: &CosmosClient, config: &Config) -> Result<(), Box<dyn E
         },
     );
 
+    // Setup and seeding are complete; arm the fault window now so faults only
+    // affect the load loop and `--fault-start-secs` is measured from here.
+    fault_activation.arm();
+
     let start = Instant::now();
     let mut workers = JoinSet::new();
     for _ in 0..config.concurrency {
@@ -166,13 +187,18 @@ pub async fn run(client: &CosmosClient, config: &Config) -> Result<(), Box<dyn E
 /// Precomputed cumulative weights for the operation mix.
 #[derive(Clone, Copy)]
 struct OpWeights {
-    read: u32,
-    read_write: u32,
-    total: u32,
+    read: u64,
+    read_write: u64,
+    total: u64,
 }
 
 impl OpWeights {
     fn new(read: u32, write: u32, query: u32) -> Self {
+        // Accumulate in u64 so any combination of u32 weights is representable
+        // without overflow.
+        let read = u64::from(read);
+        let write = u64::from(write);
+        let query = u64::from(query);
         Self {
             read,
             read_write: read + write,
@@ -204,12 +230,24 @@ async fn worker_loop(
     while !cancelled.load(Ordering::Relaxed) {
         let op_start = Instant::now();
         let op = weights.pick();
-        let ok = execute(&container, &seeded, op).await;
+        // Box the per-op future: the query path makes it large enough to trip
+        // clippy's `large_futures` lint when awaited inline in the worker loop.
+        let ok = Box::pin(execute(&container, &seeded, op)).await;
         stats.record(op, ok);
 
         if let Some(delay) = per_worker_delay {
-            // Pace to a steady cadence, accounting for the time the op took.
-            tokio::time::sleep_until((op_start + delay).into()).await;
+            // Pace to a steady cadence, accounting for the time the op took, but
+            // in bounded steps so cancellation (Ctrl+C / duration elapsed) is
+            // observed promptly even when the pacing delay is large (low --rps).
+            let deadline = op_start + delay;
+            while !cancelled.load(Ordering::Relaxed) {
+                let now = Instant::now();
+                if now >= deadline {
+                    break;
+                }
+                let step = (deadline - now).min(Duration::from_millis(200));
+                tokio::time::sleep(step).await;
+            }
         }
     }
 }
@@ -351,17 +389,20 @@ fn print_final_report(stats: &Stats, elapsed: Duration) {
     );
 }
 
-/// Seeds `count` documents across [`PARTITION_COUNT`] logical partitions.
+/// Seeds `count` documents across [`PARTITION_COUNT`] logical partitions. The
+/// `run_id` is embedded in every partition key so each run's data is isolated
+/// from documents seeded by previous runs against the same container.
 async fn seed(
     container: &ContainerClient,
     count: usize,
     concurrency: usize,
+    run_id: &str,
 ) -> Result<Vec<SeededItem>, Box<dyn Error>> {
     println!("Seeding {count} items across {PARTITION_COUNT} partitions...");
     let seeded: Vec<SeededItem> = (0..count)
         .map(|i| SeededItem {
             id: Uuid::new_v4().to_string(),
-            partition_key: format!("pk-{}", i % PARTITION_COUNT),
+            partition_key: format!("{run_id}-pk-{}", i % PARTITION_COUNT),
         })
         .collect();
 

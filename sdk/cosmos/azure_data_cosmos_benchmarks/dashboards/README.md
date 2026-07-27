@@ -13,12 +13,12 @@ attribute names the SDK emits.
 
 For the full walkthrough — running the soak harness, standing up a local
 Collector + Prometheus + Grafana stack, and interpreting the panels — see the
-[WS9 soak runbook](../docs/WS9_SOAK_RUNBOOK.md).
+[WS9 soak runbook](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_benchmarks/docs/WS9_SOAK_RUNBOOK.md).
 
 ## Importing
 
 - **Automatic (recommended):** `docker compose up -d` in
-  [`../observability`](../observability) provisions the Prometheus datasource and
+  [`../observability`](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/cosmos/azure_data_cosmos_benchmarks/observability) provisions the Prometheus datasource and
   auto-loads this dashboard (folder *Cosmos WS9*).
 - **Manual:** in Grafana, *Dashboards -> New -> Import*, upload
   `cosmos-observability.json`, and pick your Prometheus datasource when prompted.

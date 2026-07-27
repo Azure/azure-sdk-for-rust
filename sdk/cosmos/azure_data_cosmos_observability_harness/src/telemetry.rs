@@ -73,15 +73,31 @@ impl Telemetry {
     }
 
     /// Flushes and shuts down the installed providers, blocking until the final
-    /// batch has been exported.
-    pub fn shutdown(self) {
+    /// batch has been exported. Returns an error if any flush/shutdown fails so a
+    /// collector outage surfaces instead of a silent, clean-looking exit with
+    /// missing telemetry.
+    pub fn shutdown(self) -> Result<(), Box<dyn Error>> {
+        let mut errors: Vec<String> = Vec::new();
         if let Some(meter_provider) = self.meter_provider {
-            let _ = meter_provider.force_flush();
-            let _ = meter_provider.shutdown();
+            if let Err(e) = meter_provider.force_flush() {
+                errors.push(format!("meter provider flush failed: {e}"));
+            }
+            if let Err(e) = meter_provider.shutdown() {
+                errors.push(format!("meter provider shutdown failed: {e}"));
+            }
         }
         if let Some(tracer_provider) = self.tracer_provider {
-            let _ = tracer_provider.force_flush();
-            let _ = tracer_provider.shutdown();
+            if let Err(e) = tracer_provider.force_flush() {
+                errors.push(format!("tracer provider flush failed: {e}"));
+            }
+            if let Err(e) = tracer_provider.shutdown() {
+                errors.push(format!("tracer provider shutdown failed: {e}"));
+            }
+        }
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(errors.join("; ").into())
         }
     }
 }

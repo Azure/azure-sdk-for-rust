@@ -48,7 +48,10 @@ pub struct Config {
     pub region: String,
 
     /// Treat the target as the emulator (relaxes TLS certificate validation).
-    /// Auto-enabled when the endpoint host is `localhost`/`127.0.0.1`.
+    /// Auto-enabled when the endpoint host is `localhost`/`127.0.0.1`. For a
+    /// custom (non-localhost) emulator host the harness exports
+    /// `AZURE_COSMOS_EMULATOR_HOST` so the SDK actually relaxes validation for
+    /// that host.
     #[arg(long, default_value_t = false)]
     pub emulator: bool,
 
@@ -134,6 +137,20 @@ pub struct Config {
     /// Which operations fault injection applies to.
     #[arg(long, value_enum, default_value_t = FaultOp::All)]
     pub fault_operation: FaultOp,
+
+    /// Delay, in seconds, from the start of the load loop before fault injection
+    /// becomes active (setup and seeding always run fault-free). `0` (default)
+    /// faults from the first load operation. Combine with `--fault-duration-secs`
+    /// to inject a bounded fault window partway through a long steady-state soak.
+    /// Requires the `fault_injection` feature.
+    #[arg(long, default_value_t = 0)]
+    pub fault_start_secs: u64,
+
+    /// How long, in seconds, the fault window stays active once it begins. `0`
+    /// (default) leaves faults active for the remainder of the run. Requires the
+    /// `fault_injection` feature.
+    #[arg(long, default_value_t = 0)]
+    pub fault_duration_secs: u64,
 }
 
 /// Authentication method for the Cosmos client.
@@ -204,11 +221,21 @@ impl Config {
         }
 
         let key = match self.auth {
-            AuthMethod::Key => Some(
-                self.key
-                    .clone()
-                    .unwrap_or_else(|| EMULATOR_MASTER_KEY.to_string()),
-            ),
+            AuthMethod::Key => match &self.key {
+                Some(k) => Some(k.clone()),
+                // Only fall back to the emulator's well-known key for an actual
+                // emulator endpoint; for a real account, surface a clear
+                // missing-key error rather than a downstream 401.
+                None if self.is_emulator(&self.endpoint) => Some(EMULATOR_MASTER_KEY.to_string()),
+                None => {
+                    return Err(
+                        "key authentication requires --key (or AZURE_COSMOS_KEY) for a \
+                                non-emulator endpoint; use --auth aad or --connection-string \
+                                otherwise"
+                            .into(),
+                    );
+                }
+            },
             AuthMethod::Aad => None,
         };
         Ok((self.endpoint.clone(), key))
@@ -224,7 +251,15 @@ impl Config {
         if self.concurrency == 0 {
             return Err("--concurrency must be at least 1".into());
         }
-        if self.read_weight + self.write_weight + self.query_weight == 0 {
+        // Cosmos DB's manual-throughput floor is 400 RU/s; a lower value passes
+        // here but fails only when the container is created.
+        if self.throughput < 400 {
+            return Err("--throughput must be at least 400 RU/s (Cosmos DB manual minimum)".into());
+        }
+        // Sum in `u64` so extreme (abuse-case) weights cannot overflow `u32`.
+        if u64::from(self.read_weight) + u64::from(self.write_weight) + u64::from(self.query_weight)
+            == 0
+        {
             return Err("at least one operation weight must be greater than 0".into());
         }
         if self.seed_count == 0 {
@@ -233,8 +268,77 @@ impl Config {
         if !(0.0..=1.0).contains(&self.fault_probability) {
             return Err("--fault-probability must be between 0.0 and 1.0".into());
         }
-        if self.rps < 0.0 {
-            return Err("--rps cannot be negative".into());
+        if self.rps < 0.0 || !self.rps.is_finite() {
+            return Err("--rps must be a finite, non-negative number".into());
+        }
+
+        // Reject configurations that request behavior this build cannot provide,
+        // rather than silently accepting flags that are compiled out.
+        if !cfg!(feature = "fault_injection")
+            && (self.fault_probability > 0.0
+                || self.fault_start_secs > 0
+                || self.fault_duration_secs > 0
+                || self.fault_delay_ms > 0
+                || self.fault_operation != FaultOp::All)
+        {
+            return Err(
+                "fault injection was requested (--fault-* flags) but this build was \
+                        compiled without the `fault_injection` feature; rebuild with \
+                        `--features fault_injection` (on by default)"
+                    .into(),
+            );
+        }
+        if !cfg!(feature = "metrics") && self.extended_metrics {
+            return Err(
+                "--extended-metrics was requested but this build was compiled without \
+                        the `metrics` feature; rebuild with `--features metrics` (on by default)"
+                    .into(),
+            );
+        }
+
+        // Fault window / delay / operation knobs only take effect when a fault
+        // probability is set; reject the combination instead of silently doing
+        // nothing. Only meaningful when the feature is present — otherwise the
+        // check above already rejects the flags.
+        if cfg!(feature = "fault_injection")
+            && self.fault_probability == 0.0
+            && (self.fault_start_secs > 0
+                || self.fault_duration_secs > 0
+                || self.fault_delay_ms > 0
+                || self.fault_operation != FaultOp::All)
+        {
+            return Err(
+                "fault options (--fault-start-secs / --fault-duration-secs / --fault-delay-ms \
+                        / --fault-operation) require a non-zero --fault-probability"
+                    .into(),
+            );
+        }
+
+        // When faults *are* requested, reject configurations whose window can
+        // never open or whose target operation is never issued — both would run
+        // a fault soak that silently injects nothing.
+        if cfg!(feature = "fault_injection") && self.fault_probability > 0.0 {
+            if self.duration_secs > 0 && self.fault_start_secs >= self.duration_secs {
+                return Err(
+                    "--fault-start-secs must be less than --duration-secs, otherwise the fault \
+                            window never opens before the run ends"
+                        .into(),
+                );
+            }
+            let target_weight_zero = match self.fault_operation {
+                FaultOp::All => false,
+                FaultOp::Read => self.read_weight == 0,
+                FaultOp::Write => self.write_weight == 0,
+                FaultOp::Query => self.query_weight == 0,
+            };
+            if target_weight_zero {
+                return Err(
+                    "--fault-operation targets an operation whose mix weight is 0, so no request \
+                            will ever match the fault rule; raise the corresponding \
+                            --read/--write/--query-weight or change --fault-operation"
+                        .into(),
+                );
+            }
         }
         Ok(())
     }
@@ -311,5 +415,106 @@ mod tests {
             "0",
         ]);
         assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn accepts_extreme_weights_without_overflow() {
+        let max = u32::MAX.to_string();
+        let config = Config::parse_from([
+            "harness",
+            "--read-weight",
+            &max,
+            "--write-weight",
+            &max,
+            "--query-weight",
+            &max,
+        ]);
+        // The weight sum is computed in u64, so the maximum u32 values on every
+        // arm must validate cleanly rather than overflowing.
+        assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn rejects_fault_window_without_probability() {
+        // A fault window with the default (zero) probability would silently
+        // inject nothing; reject it instead.
+        let config = Config::parse_from(["harness", "--fault-start-secs", "60"]);
+        assert!(config
+            .validate()
+            .unwrap_err()
+            .contains("require a non-zero --fault-probability"));
+    }
+
+    #[test]
+    fn rejects_fault_window_that_never_opens() {
+        // fault-start-secs >= duration-secs means the window never opens.
+        let config = Config::parse_from([
+            "harness",
+            "--fault-probability",
+            "0.2",
+            "--duration-secs",
+            "60",
+            "--fault-start-secs",
+            "60",
+        ]);
+        assert!(config
+            .validate()
+            .unwrap_err()
+            .contains("must be less than --duration-secs"));
+    }
+
+    #[test]
+    fn rejects_fault_operation_with_zero_target_weight() {
+        // Faulting writes while the write weight is 0 can never match a request.
+        let config = Config::parse_from([
+            "harness",
+            "--fault-probability",
+            "0.2",
+            "--fault-operation",
+            "write",
+            "--write-weight",
+            "0",
+        ]);
+        assert!(config.validate().unwrap_err().contains("mix weight is 0"));
+    }
+
+    #[test]
+    fn accepts_valid_fault_window() {
+        let config = Config::parse_from([
+            "harness",
+            "--fault-probability",
+            "0.2",
+            "--duration-secs",
+            "120",
+            "--fault-start-secs",
+            "30",
+            "--fault-duration-secs",
+            "30",
+        ]);
+        assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn key_auth_requires_key_for_non_emulator_endpoint() {
+        let config = Config::parse_from([
+            "harness",
+            "--endpoint",
+            "https://myacct.documents.azure.com:443/",
+        ]);
+        // No --key against a real endpoint must error rather than silently using
+        // the emulator's public master key (which would yield a confusing 401).
+        assert!(config.resolve_endpoint_and_key().is_err());
+    }
+
+    #[test]
+    fn rejects_non_finite_rps() {
+        let config = Config::parse_from(["harness", "--rps", "inf"]);
+        assert!(config.validate().unwrap_err().contains("finite"));
+    }
+
+    #[test]
+    fn rejects_throughput_below_minimum() {
+        let config = Config::parse_from(["harness", "--throughput", "100"]);
+        assert!(config.validate().unwrap_err().contains("400 RU/s"));
     }
 }

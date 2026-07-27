@@ -6,7 +6,12 @@
 # Pipeline: OTLP (from the SDK) -> batch -> Prometheus scrape endpoint (:8889)
 # which Prometheus scrapes. `resource_to_telemetry_conversion` copies resource
 # attributes (service.name, service.instance.id, ...) onto every metric as
-# labels so they are queryable in Grafana.
+# labels so they are queryable in Grafana. The harness also exports tail-sampled
+# spans over the same OTLP endpoint, so a `traces` pipeline routes them to the
+# debug exporter — this is where the "rich on error" span burst is observed
+# (there is no trace backend in this minimal stack). Sampled *log* lines are NOT
+# exported over OTLP; the SDK's `SamplingLogHandler` emits them through the
+# harness's local `tracing` output (console), so they never reach the collector.
 
 receivers:
   otlp:
@@ -33,9 +38,15 @@ exporters:
       enabled: true
 
   # Human-readable sample of what the SDK is emitting; handy when verifying the
-  # pipeline. Bump verbosity to `detailed` to see individual data points.
+  # metrics pipeline. `normal` keeps steady-state metric logging compact.
   debug:
     verbosity: normal
+
+  # Detailed marshaler for traces: `normal` omits parent span IDs and timestamps,
+  # so the backdated retry tree the runbook root-causes from would be invisible.
+  # Kept separate from metrics so it does not flood the steady-state metric log.
+  debug/traces:
+    verbosity: detailed
 
 service:
   telemetry:
@@ -46,3 +57,12 @@ service:
       receivers: [otlp]
       processors: [batch]
       exporters: [prometheus, debug]
+    # Tail-sampled spans from the harness surface here. There is no trace backend
+    # in this minimal stack, so route them to the detailed debug exporter — the
+    # "rich on error" span burst (with parent IDs + timestamps) shows up in
+    # `docker compose logs otel-collector`. Swap in a Jaeger/Tempo/OTLP exporter
+    # to forward spans to a real trace UI.
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug/traces]

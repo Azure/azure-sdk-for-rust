@@ -38,7 +38,7 @@ published SDK surface.
 | `metrics` | ✅ | Enables `azure_data_cosmos/metrics` and registers `CosmosMetricsHandler`. |
 | `distributed_tracing` | ✅ | Enables `azure_data_cosmos/distributed_tracing` and registers `CosmosTracingHandler`. |
 | `fault_injection` | ✅ | Enables `azure_data_cosmos/fault_injection` and the `--fault-*` flags. |
-| `otlp` | ❌ | Pulls `opentelemetry-otlp` (gRPC) so `--exporter otlp` works. |
+| `otlp` | ❌ | Pulls `opentelemetry-otlp` (gRPC, rustls TLS via `tls-webpki-roots` — no OpenSSL) so `--exporter otlp` works against `http://` or `https://` collectors. |
 
 The feature names intentionally mirror the SDK's own feature names so the harness
 compiles the exact code path it is validating. `key_auth` is always enabled so the
@@ -74,14 +74,18 @@ cargo run -p azure_data_cosmos_observability_harness -- \
   --fault-probability 0.1 --fault-error too-many-requests --fault-delay-ms 50
 ```
 
-Now ~10% of matching operations fail/slow down, and each one emits a sampled
-diagnostics line (a `WARN` on the `azure_data_cosmos::diagnostics::sampled`
-target) plus a backdated span tree.
+Now ~10% of matching operations fail/slow down. The sampling-log and tracing
+handlers are rate-limited (a bounded number of emissions per interval — roughly
+~100/min each by default), so you see a **bounded, sampled subset** of those
+failures: each emitted failure surfaces a sampled diagnostics line (a `WARN` on
+the `azure_data_cosmos::diagnostics::sampled` target) plus a backdated span tree,
+while the rest are suppressed and summarized so an error storm stays bounded.
 
 ## Pointing at an OpenTelemetry collector (OTLP)
 
 Build with the `otlp` feature and point at a collector's gRPC endpoint
-(`4317` by default):
+(`4317` by default). The exporter uses rustls (no OpenSSL), so an `https://`
+endpoint is also supported:
 
 ```sh
 cargo run -p azure_data_cosmos_observability_harness --features otlp -- \
@@ -141,7 +145,7 @@ authoritative list.
 | `--connection-string` | `AZURE_COSMOS_CONNECTION_STRING` | — | `AccountEndpoint=...;AccountKey=...;`. The literal `emulator` expands to the local emulator. Overrides `--endpoint`/`--key`. |
 | `--auth` | — | `key` | `key` or `aad` (Entra ID via the developer-tools credential chain). |
 | `--region` | `AZURE_COSMOS_REGION` | `West US` | Application region for proximity routing. |
-| `--emulator` | — | auto | Relax TLS validation; auto-enabled for `localhost`/`127.0.0.1`. |
+| `--emulator` | — | auto | Relax TLS validation; auto-enabled for `localhost`/`127.0.0.1`. For a custom (non-local) emulator host it exports `AZURE_COSMOS_EMULATOR_HOST` so the SDK relaxes validation for that host. |
 | `--database` / `--container` | — | `observability_soak` / `items` | Created if missing. |
 | `--throughput` | — | `400` | RU/s used when the container is created. |
 
@@ -173,6 +177,8 @@ authoritative list.
 | `--fault-delay-ms` | `0` | Extra server-side delay applied to faulted requests (produces slow ops). |
 | `--fault-error` | `service-unavailable` | `service-unavailable`, `too-many-requests`, `internal-server-error`, `timeout`, `retry-with`, `connection-error`. |
 | `--fault-operation` | `all` | `all`, `read`, `write`, or `query`. |
+| `--fault-start-secs` | `0` | Seconds from the start of the load loop before faults activate; `0` faults from the first op. Setup/seeding always run fault-free. Requires `--fault-probability > 0`. |
+| `--fault-duration-secs` | `0` | How long the fault window stays active once it starts; `0` leaves faults active for the rest of the run. Requires `--fault-probability > 0`. |
 
 ## Notes
 

@@ -9,9 +9,11 @@
 #
 #   docker compose up -d
 #
-# Point the soak harness at the collector:
-#   OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318   (HTTP/protobuf)
-#   OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317   (gRPC)
+# Point the soak harness at the collector. The harness exports OTLP/gRPC and does
+# NOT read the standard OTEL_* environment variables, so pass the endpoint via its
+# own flags (the :4318 HTTP port is exposed for other OTLP/HTTP clients):
+#   cargo run -p azure_data_cosmos_observability_harness --features otlp -- \
+#     --exporter otlp --otlp-endpoint http://localhost:4317
 #
 # Grafana:    http://localhost:3000  (admin / admin)
 # Prometheus: http://localhost:9090
@@ -27,10 +29,13 @@ services:
     volumes:
       - ./otel-collector-config.yaml:/etc/otelcol/config.yaml:ro
     ports:
-      - "4317:4317"   # OTLP gRPC
-      - "4318:4318"   # OTLP HTTP
-      - "8889:8889"   # Prometheus scrape endpoint (SDK metrics)
-      - "8888:8888"   # Collector's own internal metrics
+      # Bind to loopback only: this is a local dev stack with unauthenticated
+      # OTLP ingest and collector metrics, so it must not be reachable from other
+      # hosts. The harness on the same host still connects via localhost.
+      - "127.0.0.1:4317:4317"   # OTLP gRPC
+      - "127.0.0.1:4318:4318"   # OTLP HTTP
+      - "127.0.0.1:8889:8889"   # Prometheus scrape endpoint (SDK metrics)
+      - "127.0.0.1:8888:8888"   # Collector's own internal metrics
     restart: unless-stopped
 
   prometheus:
@@ -44,7 +49,9 @@ services:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
     ports:
-      - "9090:9090"
+      # Loopback only — the collected Cosmos telemetry (database/container names,
+      # endpoint labels) must not be exposed to the surrounding network.
+      - "127.0.0.1:9090:9090"
     depends_on:
       - otel-collector
     restart: unless-stopped
@@ -65,7 +72,9 @@ services:
       - ../dashboards:/var/lib/grafana/dashboards:ro
       - grafana-data:/var/lib/grafana
     ports:
-      - "3000:3000"
+      # Loopback only — the fixed admin/admin credential means this must not be
+      # reachable from other machines on a shared dev host.
+      - "127.0.0.1:3000:3000"
     depends_on:
       - prometheus
     restart: unless-stopped

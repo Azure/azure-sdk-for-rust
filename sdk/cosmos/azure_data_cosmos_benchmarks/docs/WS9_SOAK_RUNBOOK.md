@@ -13,18 +13,20 @@ the **R1** acceptance criteria: *quiet at steady state, rich on error*.
 It has three moving parts:
 
 1. The **WS9 soak harness** — a long-running load generator that drives Cosmos
-   operations and, mid-run, injects a 5–10 minute fault window. Built in parallel
-   on branch [`cosmos-ws9-harness`](https://github.com/Azure/azure-sdk-for-rust/tree/cosmos-ws9-harness);
-   that branch's `README` is the source of truth for its exact CLI/flags.
+   operations and, mid-run, injects a bounded fault window (via
+   `--fault-start-secs` / `--fault-duration-secs`). It is the sibling crate
+   [`azure_data_cosmos_observability_harness`](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/cosmos/azure_data_cosmos_observability_harness);
+   its `README` is the source of truth for the exact CLI/flags.
 2. The **local telemetry stack** — an OpenTelemetry Collector, Prometheus, and
-   Grafana, defined by the [`observability/`](../observability) docker-compose.
-3. The **dashboard** — [`dashboards/cosmos-observability.json`](../dashboards/cosmos-observability.json),
+   Grafana, defined by the [`observability/`](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/cosmos/azure_data_cosmos_benchmarks/observability) docker-compose.
+3. The **dashboard** — [`dashboards/cosmos-observability.json`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_benchmarks/dashboards/cosmos-observability.json),
    auto-provisioned into Grafana.
 
 ```mermaid
 flowchart LR
-  H["WS9 soak harness<br/>(cosmos-ws9-harness)"] -->|"Cosmos ops"| C["Cosmos DB<br/>(emulator or account)"]
-  H -->|"OTLP metrics / spans / logs"| OC["OTel Collector<br/>:4317 / :4318"]
+  H["WS9 soak harness<br/>(azure_data_cosmos_observability_harness)"] -->|"Cosmos ops"| C["Cosmos DB<br/>(emulator or account)"]
+  H -->|"OTLP/gRPC metrics + spans"| OC["OTel Collector<br/>:4317"]
+  H -->|"sampled logs (tracing)"| CON["Harness console"]
   OC -->|"scrape :8889"| P["Prometheus<br/>:9090"]
   P --> G["Grafana<br/>:3000"]
   DASH["cosmos-observability.json"] -. provisioned .-> G
@@ -34,7 +36,7 @@ flowchart LR
 
 The observability layer is **additive and off by default**. The soak turns it on
 and registers the built-in handlers; see the
-[diagnostics contract](../../azure_data_cosmos_driver/DIAGNOSTICS-CONTRACT.md)
+[diagnostics contract](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/DIAGNOSTICS-CONTRACT.md)
 for the full mapping. The three signals:
 
 - **Metrics** (always-on, low cardinality) — the dashboard's fuel. Primary series
@@ -66,11 +68,11 @@ docker compose ps        # all three services should be "running"/"healthy"
 
 Endpoints:
 
-- Grafana — <http://localhost:3000> (login `admin` / `admin`). The
+- Grafana — `http://localhost:3000` (login `admin` / `admin`). The
   **Cosmos WS9** folder already contains the imported dashboard.
-- Prometheus — <http://localhost:9090>.
-- OTLP ingest — `localhost:4317` (gRPC) and `localhost:4318` (HTTP), for the
-  harness to export to.
+- Prometheus — `http://localhost:9090`.
+- OTLP ingest — `localhost:4317` (gRPC; the harness exports here) and
+  `localhost:4318` (HTTP, for other OTLP/HTTP clients).
 
 Sanity-check the Collector is receiving nothing yet but is healthy:
 
@@ -79,69 +81,95 @@ docker compose logs --tail=20 otel-collector
 curl -s http://localhost:8889/metrics | head        # empty until the harness runs
 ```
 
-## Step 2 — Configure and run the WS9 soak harness
+## Step 2 — Run the WS9 soak harness
 
-The harness lives on `cosmos-ws9-harness`. Check that branch out (or its merge
-into the combined WS9 branch) and follow its `README`; the pieces this runbook
-depends on are:
+The harness ([`azure_data_cosmos_observability_harness`](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/cosmos/azure_data_cosmos_observability_harness))
+registers the SDK's metrics, distributed-tracing, and sampling-log handlers for
+you and drives the workload. Build it with the `otlp` feature so it can export to
+the local Collector, and select the OTLP exporter explicitly (the default is
+stdout). See the harness `README` for the full flag set.
 
 ### 2a. Enable the SDK observability layer
 
-The OTel handlers are behind the crate's `metrics` and `distributed_tracing`
-features and are registered on the client builder. Conceptually:
+The metrics and distributed-tracing handlers are on by default (crate features
+`metrics` / `distributed_tracing`). Pass `--extended-metrics` to opt into the
+dev-tier metrics (request charge, returned rows) and the extended attribute set,
+so the RU / returned-rows panels and the `$region` template variable have data;
+omit it to soak the stable, low-cardinality default instead. (The two
+active-client panels stay *No data* regardless — `active_instance.count` is not
+emitted yet; see the caveats below.) No code changes are required — the harness
+constructs the client itself (see the crate's `client.rs`). For reference, that
+is:
 
 ```rust
 use std::sync::Arc;
 use azure_data_cosmos::diagnostics::{CosmosMetricsHandler, MetricsOptions};
+use azure_data_cosmos::{CosmosClientBuilder, AccountReference, RoutingStrategy};
 
-// Opt into the dev metrics + extended attributes so every dashboard panel and
-// the $region template variable have data. Drop these toggles to soak the
-// stable, low-cardinality default instead.
-let metrics = MetricsOptions::default()
+// The `with_*` toggles below are what `--extended-metrics` turns on.
+let options = MetricsOptions::default()
     .with_request_charge_metric(true)
     .with_returned_rows_metric(true)
     .with_extended_attributes(true);
 
-let client = CosmosClientBuilder::new(endpoint, credential)
-    .with_diagnostics_handler(Arc::new(CosmosMetricsHandler::with_options(metrics)))
-    // ... plus the tracing + sampling-log handlers, per the harness README ...
-    .build()?;
+let client = CosmosClientBuilder::new()
+    .with_diagnostics_handler(Arc::new(CosmosMetricsHandler::with_options(options)))
+    // ... plus the tracing + sampling-log handlers, per the harness client.rs ...
+    .build(account, strategy)
+    .await?;
 ```
 
-> **Install the OTel meter provider *before* constructing `CosmosMetricsHandler`.**
-> The handler captures a `Meter` at construction; one obtained while the global
-> provider is still the no-op default stays a no-op, and metrics are silently
-> dropped.
+> **The harness installs the OTel meter provider *before* constructing
+> `CosmosMetricsHandler`.** A handler that captures a `Meter` while the global
+> provider is still the no-op default stays a no-op and metrics are silently
+> dropped — order matters if you adapt this pattern yourself.
 
 ### 2b. Export OTLP to the Collector
 
-The harness installs an OTLP metrics (and, for traces, span) exporter pointed at
-the local Collector. Standard OpenTelemetry environment variables:
+The harness builds an OTLP/gRPC exporter (metrics **and** spans) from its own
+flags; it does **not** read the standard `OTEL_*` environment variables. Point it
+at the Collector's gRPC endpoint and align the metric interval with the
+Prometheus scrape:
 
-```bash
-export OTEL_SERVICE_NAME=cosmos-ws9-soak
-export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
-export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
-export OTEL_METRIC_EXPORT_INTERVAL=5000        # ms; align with Prometheus scrape
+```text
+--exporter otlp                     select the OTLP exporter (default is stdout)
+--otlp-endpoint http://localhost:4317   Collector gRPC endpoint
+--metric-export-interval-secs 5     align with Prometheus scrape_interval (5s)
 ```
+
+Sampled **log** lines are not exported over OTLP — they print on the harness
+console via `tracing` (tune with `RUST_LOG`).
 
 ### 2c. Run the soak with a fault window
 
-Start a long steady-state run, then inject a **5–10 minute** fault window partway
-through (the harness exposes this; typical shape below):
+Start a long steady-state run and inject a bounded fault window partway through
+with `--fault-start-secs` / `--fault-duration-secs` (both in seconds, measured
+from the **start of the load loop** — database/container setup and seeding always
+run fault-free):
 
 ```bash
-# Long steady-state soak (hours) with a fault window injected mid-run.
-cargo run -p <ws9-harness-crate> --release -- \
-    --duration 12h \
-    --workload mixed-point-and-query \
-    --target-rps 500 \
-    --fault-start 2h --fault-duration 8m \
-    --fault-kind throttling+timeouts        # 429 / 503 / injected latency
+# ~4-hour soak; an ~8-minute throttling window opens 2 hours in.
+cargo run -p azure_data_cosmos_observability_harness --features otlp --release -- \
+    --exporter otlp --otlp-endpoint http://localhost:4317 \
+    --metric-export-interval-secs 5 \
+    --duration-secs 14400 --concurrency 16 --rps 500 --throughput 20000 \
+    --read-weight 70 --write-weight 20 --query-weight 10 \
+    --fault-probability 0.2 --fault-error too-many-requests --fault-delay-ms 200 \
+    --fault-start-secs 7200 --fault-duration-secs 480
 ```
 
-Note the wall-clock start/end of the fault window — you'll line it up against the
-dashboard.
+`--fault-error` selects a single injected error kind (`too-many-requests` → 429,
+`service-unavailable` → 503, `timeout` → 408, …); run additional soaks to
+exercise other kinds. Note the wall-clock start/end of the fault window — you'll
+line it up against the dashboard.
+
+> **Provision enough RU.** On a real account, the target `--rps` must fit within
+> the container's throughput or the steady-state phase will throttle on its own
+> and pollute the acceptance comparison. Size `--throughput` above the workload's
+> RU demand (writes and queries cost several RU each). Note `--throughput` only
+> applies when the harness *creates* the container — it is ignored for an existing
+> one, so drop/recreate the container to change it. (The emulator does not enforce
+> RU limits, so this only matters against a real account.)
 
 ## Step 3 — Confirm data is flowing
 
@@ -163,7 +191,7 @@ In Grafana, open **Cosmos WS9 -> Azure Cosmos DB — Rust SDK Client Observabili
 
 During the non-fault portion of the soak:
 
-- **Throughput (ops/sec)** — steady, matching `--target-rps`.
+- **Throughput (ops/sec)** — steady, matching `--rps`.
 - **Error rate** — pinned at ~0%; the *Errors* row panels are flat/empty.
 - **Duration P50/P95/P99** — low and stable (point reads in the low-ms range);
   no sustained upward drift.
@@ -172,8 +200,10 @@ During the non-fault portion of the soak:
   Step 4's caveats).
 - **Off the dashboard:** span emission is **near zero** (tail sampling skips fast
   successes) and sampling-log output is **near zero**. Watch the Collector debug
-  log — at steady state it should be almost entirely metric data points, with
-  essentially no spans or log records. Host CPU for the SDK/telemetry path stays
+  log (`docker compose logs otel-collector`) — at steady state it is almost
+  entirely metric data points, with essentially no spans. Sampled log lines
+  appear on the **harness console** (they are not exported to the Collector); at
+  steady state there are almost none. Host CPU for the SDK/telemetry path stays
   bounded and flat.
 
 This is R9 in action: no per-fast-op lock/log/span cost. If you see a steady
@@ -192,12 +222,13 @@ Line the panels up with the injected 5–10 minute window:
   and **by server.address** localize *which* operation/endpoint degraded.
 - **Request charge** may rise if throttling triggers retries.
 - **Throughput** may dip as operations back off.
-- **Off the dashboard:** a **bounded burst** of tail-sampled spans appears for the
-  failing/slow operations (backdated over each operation's real time window), and
-  the sampling-log handler emits a **capped** number of failure lines per interval
-  plus a single `"suppressed N until reset"` line per window — the storm is
-  visible but never unbounded (R5). Each emitted span/log carries the sampling
-  reason (`failure`, `point_latency`, `non_point_latency`, `request_charge`).
+- **Off the dashboard:** a **bounded burst** of tail-sampled spans appears in the
+  Collector debug log for the failing/slow operations (backdated over each
+  operation's real time window), and the sampling-log handler emits a **capped**
+  number of failure lines per interval on the harness console plus a single
+  `"suppressed N until reset"` line per window — the storm is visible but never
+  unbounded (R5). Each emitted span/log carries the sampling reason (`failure`,
+  `point_latency`, `non_point_latency`, `request_charge`).
 
 Together the three signals root-cause the window: **metrics** say *what and when*
 (which status, which operation, how bad, how long), a **few spans** show the
@@ -217,6 +248,16 @@ pegging CPU.
   opt-in, array-valued attribute and may be flattened by the exporter; the
   always-on, scalar **`server.address`** breakdown ("P95 by server.address") is
   the reliable locational view.
+- **Both signals use the final, post-retry status.** The
+  `db.client.operation.duration` metric is emitted **once per completed
+  operation** with the effective status *after* the SDK's retries, and the
+  harness console tallies errors the same way. An injected transient the SDK
+  retries to success (e.g. a 429 that later succeeds) is therefore **not** counted
+  as an error in either the console or the dashboard — only operations that
+  *exhaust* retries surface in the Errors panels. To populate the Errors row,
+  inject frequently/severely enough that some operations fail outright; the
+  latency panels still reflect the added retry cost even when the final status is
+  success.
 
 ## Step 5 — R1 acceptance criteria
 
@@ -245,6 +286,13 @@ docker compose down            # keep Prometheus/Grafana volumes
 docker compose down -v         # also drop stored metrics + Grafana state
 ```
 
+> **Cosmos data.** Each run isolates its own documents behind a unique
+> partition-key token, so repeated soaks never contaminate each other's query
+> results — but the harness does not delete what it seeds. Against the emulator
+> this is discarded when the emulator resets; against a **real account**, drop or
+> recreate the `observability_soak` database (or the container) between soak
+> campaigns to reclaim storage.
+
 ## Troubleshooting
 
 - **Grafana panels all say *No data*.** Confirm the harness is running and
@@ -259,11 +307,11 @@ docker compose down -v         # also drop stored metrics + Grafana state
   `cosmos-sdk` job scrapes `otel-collector:8889` on the compose network.
 - **Duplicate/renamed series.** The exporter normalizes OTel names (dots ->
   `_`, `_seconds` suffix on the duration histogram). Query the normalized names
-  from the [dashboards README](../dashboards/README.md) mapping table.
+  from the [dashboards README](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_benchmarks/dashboards/README.md) mapping table.
 
 ## References
 
-- [Diagnostics contract & OTel mapping](../../azure_data_cosmos_driver/DIAGNOSTICS-CONTRACT.md)
-- [Dashboard README](../dashboards/README.md)
-- [Local telemetry stack](../observability)
-- WS9 soak harness — branch `cosmos-ws9-harness`
+- [Diagnostics contract & OTel mapping](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/DIAGNOSTICS-CONTRACT.md)
+- [Dashboard README](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_benchmarks/dashboards/README.md)
+- [Local telemetry stack](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/cosmos/azure_data_cosmos_benchmarks/observability)
+- WS9 soak harness — crate [`azure_data_cosmos_observability_harness`](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/cosmos/azure_data_cosmos_observability_harness)

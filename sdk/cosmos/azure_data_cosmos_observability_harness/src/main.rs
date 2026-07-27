@@ -35,13 +35,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     print_banner(&config);
 
-    let client = client::build_client(&config).await?;
-    let result = workload::run(&client, &config).await;
+    // Run client construction *and* the workload under one result so that a
+    // client-construction failure (exporter/auth/account errors) still goes
+    // through the telemetry shutdown/flush path below, matching the README's
+    // promise that exporters are flushed on the error path.
+    let result = async {
+        let (client, fault_activation) = client::build_client(&config).await?;
+        workload::run(&client, &config, fault_activation).await
+    }
+    .await;
 
     // Flush and shut down the exporters so the final metric/span batch is
-    // emitted even on the error path.
-    telemetry.shutdown();
-    result
+    // emitted even on the error path. The workload's own error takes precedence,
+    // but a telemetry-shutdown failure (e.g. a collector outage) is surfaced
+    // rather than exiting cleanly with missing telemetry.
+    let shutdown = telemetry.shutdown();
+    result?;
+    shutdown
 }
 
 /// Prints a short summary of the active configuration and compiled handlers.

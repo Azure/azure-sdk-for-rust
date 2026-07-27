@@ -123,6 +123,11 @@ opentelemetry-otlp = { version = "0.32", default-features = false, features = [
   "grpc-tonic",
   "trace",
   "metrics",
+  # rustls-backed TLS (aws-lc-rs provider — the workspace's rustls provider, no
+  # OpenSSL and not the banned `ring`) + bundled webpki roots, so an https:// OTLP
+  # collector endpoint works.
+  "tls-aws-lc",
+  "tls-webpki-roots",
 ] }
 opentelemetry-stdout = { version = "0.32" }
 opentelemetry_sdk = "0.32.1"

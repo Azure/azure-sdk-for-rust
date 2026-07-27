@@ -17,16 +17,39 @@ use azure_data_cosmos::{
 
 use crate::config::{AuthMethod, Config};
 
+/// Known loopback hosts the SDK already recognizes as emulator endpoints without
+/// any extra configuration.
+const EMULATOR_LOCALHOST_HOSTS: &[&str] = &["localhost", "127.0.0.1", "[::1]", "[0:0:0:0:0:0:0:1]"];
+
 /// Builds a fully-configured [`CosmosClient`] with the observability handlers
-/// registered.
+/// registered, plus a [`FaultActivation`] the caller arms once the load loop
+/// starts (keeping setup and seeding fault-free).
 ///
 /// The global OpenTelemetry providers must already be installed (see
 /// [`crate::telemetry`]) so the metrics handler binds to a live meter at
 /// construction.
-pub async fn build_client(config: &Config) -> Result<CosmosClient, Box<dyn Error>> {
+pub async fn build_client(
+    config: &Config,
+) -> Result<(CosmosClient, FaultActivation), Box<dyn Error>> {
     let (endpoint_str, key) = config.resolve_endpoint_and_key()?;
     let endpoint: AccountEndpoint = endpoint_str.parse()?;
     let strategy = RoutingStrategy::ProximityTo(config.region.clone().into());
+
+    // Honor `--emulator` for a *custom* (non-localhost) emulator host: the SDK's
+    // `RequiredUnlessEmulator` policy only relaxes TLS for hosts it recognizes
+    // (localhost variants or an exact `AZURE_COSMOS_EMULATOR_HOST` match), so
+    // point that variable at the requested endpoint. `--emulator` + `--endpoint`
+    // explicitly select this host, so overwrite any stale pre-existing value.
+    if config.emulator {
+        if let Some(host) = endpoint.url().host_str() {
+            let is_localhost = EMULATOR_LOCALHOST_HOSTS
+                .iter()
+                .any(|h| host.eq_ignore_ascii_case(h));
+            if !is_localhost {
+                std::env::set_var("AZURE_COSMOS_EMULATOR_HOST", host);
+            }
+        }
+    }
 
     let mut builder = CosmosClientBuilder::new();
 
@@ -49,9 +72,19 @@ pub async fn build_client(config: &Config) -> Result<CosmosClient, Box<dyn Error
     builder = register_handlers(builder, config);
 
     #[cfg(feature = "fault_injection")]
-    {
-        builder = apply_fault_injection(builder, config)?;
-    }
+    let fault_activation = {
+        let (updated, rule) = apply_fault_injection(builder, config)?;
+        builder = updated;
+        FaultActivation {
+            schedule: rule.map(|rule| FaultSchedule {
+                rule,
+                start_secs: config.fault_start_secs,
+                duration_secs: config.fault_duration_secs,
+            }),
+        }
+    };
+    #[cfg(not(feature = "fault_injection"))]
+    let fault_activation = FaultActivation::default();
 
     let account = match config.auth {
         AuthMethod::Key => {
@@ -65,7 +98,68 @@ pub async fn build_client(config: &Config) -> Result<CosmosClient, Box<dyn Error
         }
     };
 
-    Ok(builder.build(account, strategy).await?)
+    Ok((builder.build(account, strategy).await?, fault_activation))
+}
+
+/// Schedules activation of the (optional) fault-injection rule relative to the
+/// start of the load loop, so database/container setup and seeding always run
+/// fault-free and `--fault-start-secs` is measured from when real load begins.
+#[derive(Default)]
+pub struct FaultActivation {
+    #[cfg(feature = "fault_injection")]
+    schedule: Option<FaultSchedule>,
+}
+
+#[cfg(feature = "fault_injection")]
+struct FaultSchedule {
+    rule: Arc<azure_data_cosmos::fault_injection::FaultInjectionRule>,
+    start_secs: u64,
+    duration_secs: u64,
+}
+
+impl FaultActivation {
+    /// Arms the fault window relative to *now*. Call at the start of the load
+    /// loop (after seeding): the rule is enabled after `--fault-start-secs` and,
+    /// when `--fault-duration-secs` is set, disabled again after the window. A
+    /// no-op when fault injection is disabled or no rule was configured.
+    pub fn arm(self) {
+        #[cfg(feature = "fault_injection")]
+        if let Some(schedule) = self.schedule {
+            use std::time::Duration;
+
+            let FaultSchedule {
+                rule,
+                start_secs,
+                duration_secs,
+            } = schedule;
+
+            // With no start delay, enable synchronously here so the very first
+            // load operations are covered — `tokio::spawn` would not run before
+            // the workers start issuing requests.
+            if start_secs == 0 {
+                rule.enable();
+                tracing::warn!(start_secs, "fault window opened");
+                if duration_secs > 0 {
+                    tokio::spawn(async move {
+                        tokio::time::sleep(Duration::from_secs(duration_secs)).await;
+                        rule.disable();
+                        tracing::warn!(duration_secs, "fault window closed");
+                    });
+                }
+            } else {
+                tokio::spawn(async move {
+                    tokio::time::sleep(Duration::from_secs(start_secs)).await;
+                    rule.enable();
+                    tracing::warn!(start_secs, "fault window opened");
+                    if duration_secs > 0 {
+                        tokio::time::sleep(Duration::from_secs(duration_secs)).await;
+                        rule.disable();
+                        tracing::warn!(duration_secs, "fault window closed");
+                    }
+                });
+            }
+        }
+    }
 }
 
 /// Registers the built-in diagnostics handlers. Handlers run in registration
@@ -102,13 +196,23 @@ fn register_handlers(builder: CosmosClientBuilder, config: &Config) -> CosmosCli
     builder.with_diagnostics_handler(Arc::new(SamplingLogHandler::new()))
 }
 
-/// Adds a single fault-injection rule derived from the CLI configuration, when a
-/// non-zero probability is requested.
+/// Builds the single fault-injection rule from the CLI configuration and
+/// registers it, returning a handle so the caller can arm it on a schedule. The
+/// rule is built **disabled** so that database/container setup and seeding run
+/// fault-free; [`FaultActivation::arm`] enables it (and later disables it) once
+/// the load loop starts. Returns `None` when no fault probability is requested.
 #[cfg(feature = "fault_injection")]
+#[allow(clippy::type_complexity)]
 fn apply_fault_injection(
     builder: CosmosClientBuilder,
     config: &Config,
-) -> Result<CosmosClientBuilder, Box<dyn Error>> {
+) -> Result<
+    (
+        CosmosClientBuilder,
+        Option<Arc<azure_data_cosmos::fault_injection::FaultInjectionRule>>,
+    ),
+    Box<dyn Error>,
+> {
     use std::time::Duration;
 
     use azure_data_cosmos::fault_injection::{
@@ -119,7 +223,7 @@ fn apply_fault_injection(
     use crate::config::{FaultError, FaultOp};
 
     if config.fault_probability <= 0.0 {
-        return Ok(builder);
+        return Ok((builder, None));
     }
 
     let error_type = match config.fault_error {
@@ -153,15 +257,25 @@ fn apply_fault_injection(
         condition.build()
     };
 
-    let rule = FaultInjectionRuleBuilder::new("soak-fault", result)
-        .with_condition(condition)
-        .build();
+    let rule = Arc::new(
+        FaultInjectionRuleBuilder::new("soak-fault", result)
+            .with_condition(condition)
+            .build(),
+    );
+    // Start disabled so setup/seeding are never faulted; the window is armed
+    // (relative to the load loop) by `FaultActivation::arm`.
+    rule.disable();
 
     tracing::warn!(
         probability = config.fault_probability,
         delay_ms = config.fault_delay_ms,
-        "fault injection enabled"
+        start_secs = config.fault_start_secs,
+        duration_secs = config.fault_duration_secs,
+        "fault injection configured (armed at load start)"
     );
 
-    Ok(builder.with_fault_injection_rules(vec![Arc::new(rule)])?)
+    Ok((
+        builder.with_fault_injection_rules(vec![Arc::clone(&rule)])?,
+        Some(rule),
+    ))
 }
