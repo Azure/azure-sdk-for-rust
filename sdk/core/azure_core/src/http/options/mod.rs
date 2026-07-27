@@ -13,7 +13,7 @@ pub use typespec_client_core::http::{
 };
 pub use user_agent::*;
 
-use crate::cloud::CloudConfiguration;
+use crate::{cloud::CloudConfiguration, http::headers::DEFAULT_ALLOWED_AZURE_HEADER_NAMES};
 
 /// Client options allow customization of general client policies, retry options, and more.
 #[derive(Clone, Debug, Default)]
@@ -67,12 +67,23 @@ impl ClientOptions {
         let mut allowed_query_params = (*DEFAULT_ALLOWED_QUERY_PARAMETERS).clone();
         allowed_query_params.extend(self.logging.additional_allowed_query_params.iter().cloned());
 
+        // Merge Azure-specific allowed headers after typespec defaults, before customer headers.
+        let mut additional_allowed_header_names: Vec<Cow<'static, str>> =
+            DEFAULT_ALLOWED_AZURE_HEADER_NAMES
+                .iter()
+                .map(|s| Cow::Borrowed(*s))
+                .collect();
+        additional_allowed_header_names.extend(self.logging.additional_allowed_header_names);
+
         let options = typespec_client_core::http::ClientOptions {
             per_call_policies: self.per_call_policies,
             per_try_policies: self.per_try_policies,
             retry: self.retry,
             transport: self.transport,
-            logging: self.logging,
+            logging: LoggingOptions {
+                additional_allowed_header_names,
+                additional_allowed_query_params: self.logging.additional_allowed_query_params,
+            },
         };
 
         (
@@ -83,5 +94,27 @@ impl ClientOptions {
             },
             options,
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use typespec_client_core::http::DEFAULT_ALLOWED_HEADER_NAMES;
+
+    #[test]
+    fn client_options_includes_azure_deprecating_header() {
+        let options = ClientOptions::default();
+        let (_core, tsc_options) = options.deconstruct();
+
+        // Build the full set as LoggingPolicy would: typespec defaults + additional.
+        let mut allowed: std::collections::HashSet<std::borrow::Cow<'static, str>> =
+            (*DEFAULT_ALLOWED_HEADER_NAMES).clone();
+        allowed.extend(tsc_options.logging.additional_allowed_header_names);
+
+        assert!(
+            allowed.contains("azure-deprecating"),
+            "`azure-deprecating` must be in the allowed header set"
+        );
     }
 }
