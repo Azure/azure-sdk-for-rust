@@ -67,36 +67,44 @@ impl InMemoryCheckpointStore {
             &ownership.partition_id,
         )?;
         trace!("Update ownership for key {}", key);
-        if store.contains_key(&key) {
-            let actual_etag = store.get(&key).unwrap().etag.clone();
-            if ownership.etag != actual_etag {
-                warn!(
-                    partition_id = %ownership.partition_id,
-                    expected_etag = ?ownership.etag,
-                    actual_etag = ?actual_etag,
-                    "ETag mismatch claiming ownership for key {}",
-                    key
-                );
-                return Err(Error::with_message(
-                    AzureErrorKind::Other,
-                    format!("ETag mismatch for partition {key}"),
-                ));
+
+        // A renewal must present the ETag the store holds. A first claim has
+        // no record to match against.
+        let is_renewal = match store.get(&key) {
+            Some(existing) => {
+                let actual_etag = existing.etag.clone();
+                if ownership.etag != actual_etag {
+                    warn!(
+                        partition_id = %ownership.partition_id,
+                        expected_etag = ?ownership.etag,
+                        actual_etag = ?actual_etag,
+                        "ETag mismatch claiming ownership for key {}",
+                        key
+                    );
+                    return Err(Error::with_message(
+                        AzureErrorKind::Other,
+                        format!("ETag mismatch for partition {key}"),
+                    ));
+                }
+                true
             }
-            let mut renewed_ownership = ownership.clone();
-            renewed_ownership.etag = Some(Etag::from(Uuid::new_v4().to_string()));
-            renewed_ownership.last_modified_time = Some(OffsetDateTime::now_utc());
-            store.insert(key.clone(), renewed_ownership.clone());
+            None => false,
+        };
+
+        // A renewal and a first claim share one path, so the two cannot drift
+        // apart again. Both rotate the ETag and stamp the current time, the
+        // way the blob store does with the values the service returns.
+        let mut updated_ownership = ownership.clone();
+        updated_ownership.etag = Some(Etag::from(Uuid::new_v4().to_string()));
+        updated_ownership.last_modified_time = Some(OffsetDateTime::now_utc());
+        store.insert(key.clone(), updated_ownership.clone());
+
+        if is_renewal {
             trace!("Updated ownership for key {}", key);
-            Ok(renewed_ownership)
         } else {
-            trace!("Insert new ownership for key {}", key);
-            let mut new_ownership = ownership.clone();
-            new_ownership.etag = Some(Etag::from(Uuid::new_v4().to_string()));
-            new_ownership.last_modified_time = Some(OffsetDateTime::now_utc());
-            store.insert(key.clone(), new_ownership.clone());
             trace!("Inserted new ownership for key {}", key);
-            Ok(new_ownership.clone())
         }
+        Ok(updated_ownership)
     }
 }
 
