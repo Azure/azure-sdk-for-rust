@@ -21,10 +21,9 @@
 //!   physical partition, even across a split topology.
 //! * **Distribution / routing correctness** — a multi-country dataset spreads
 //!   deterministically across both partitions (proven via the SDK's
-//!   `feed_range_from_partition_key` routing), and a cross-partition query fans out
-//!   to both partitions and returns the whole dataset. The in-memory emulator's
-//!   query engine does not honor `FeedScope::range` (EPK sub-range) filtering, so
-//!   range-scoped result filtering is validated against the real emulator elsewhere.
+//!   `feed_range_from_partition_key` routing), each physical partition serves only
+//!   its own EPK sub-range under `FeedScope::range`, and a cross-partition query
+//!   fans out to both partitions and returns the whole dataset.
 //! * **Split preservation** — splitting a populated partition grows the topology to
 //!   2 ranges while every item stays readable by full key, a full-container query
 //!   still returns everything, and each item now routes to one of the two children.
@@ -224,15 +223,10 @@ async fn hpk_split_full_key_targets_single_partition() -> Result<(), Box<dyn Err
 }
 
 /// c04 — A multi-country dataset spreads deterministically across both physical
-/// partitions (proven via the SDK's `feed_range_from_partition_key` routing), and
-/// a cross-partition `SELECT * FROM c` fans out to both partitions and returns the
+/// partitions (proven via the SDK's `feed_range_from_partition_key` routing), each
+/// range-scoped query returns exactly the documents that route to that range, and a
+/// cross-partition `SELECT * FROM c` fans out to both partitions and returns the
 /// whole dataset.
-///
-/// Note: distribution is asserted through feed-range *resolution* rather than
-/// `FeedScope::range`-scoped queries, because the in-memory emulator's query engine
-/// does not filter documents by EPK sub-range (a range-scoped `SELECT *` returns the
-/// full container). Range-scoped query filtering is validated against the real
-/// emulator in `cosmos_feed_ranges.rs` / `cosmos_hpk.rs`.
 #[tokio::test]
 async fn hpk_split_dataset_distributes_across_partitions() -> Result<(), Box<dyn Error>> {
     let emulator = emulator();
@@ -283,6 +277,48 @@ async fn hpk_split_dataset_distributes_across_partitions() -> Result<(), Box<dyn
         per_partition[0] + per_partition[1],
         dataset.len(),
         "every item must map to exactly one partition"
+    );
+
+    // Each physical partition serves exactly the documents that route to it: a
+    // range-scoped query returns that range's own documents and nothing else.
+    let mut range_totals = [0usize; 2];
+    for (idx, range) in ranges.iter().enumerate() {
+        let items: Vec<GeoItem> = container
+            .query_items(
+                Query::from("SELECT * FROM c"),
+                FeedScope::range(range.clone()),
+                None,
+            )
+            .await?
+            .try_collect()
+            .await?;
+
+        assert_eq!(
+            items.len(),
+            per_partition[idx],
+            "range-scoped query for partition {idx} must return only that partition's \
+             documents (routing said {}, query returned {})",
+            per_partition[idx],
+            items.len()
+        );
+
+        // Every returned document must genuinely route back to this range.
+        for item in &items {
+            let resolved = container
+                .feed_range_from_partition_key(item.partition_key(), None)
+                .await?;
+            assert_eq!(
+                &resolved[0], range,
+                "document {} leaked into the wrong range-scoped result",
+                item.id
+            );
+        }
+        range_totals[idx] = items.len();
+    }
+    assert_eq!(
+        range_totals[0] + range_totals[1],
+        dataset.len(),
+        "range-scoped queries must partition the dataset exactly (no loss, no duplication)"
     );
 
     // A cross-partition query fans out to both partitions and returns everything.
