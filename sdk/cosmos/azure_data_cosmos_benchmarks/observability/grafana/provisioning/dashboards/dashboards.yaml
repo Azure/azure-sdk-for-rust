@@ -1,0 +1,21 @@
+# Grafana dashboard provisioning for the Cosmos Rust SDK WS9 soak.
+#
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+#
+# Auto-loads every dashboard JSON under /var/lib/grafana/dashboards (the repo's
+# `dashboards/` directory, mounted read-only by docker-compose).
+
+apiVersion: 1
+
+providers:
+  - name: cosmos-ws9
+    orgId: 1
+    folder: Cosmos WS9
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

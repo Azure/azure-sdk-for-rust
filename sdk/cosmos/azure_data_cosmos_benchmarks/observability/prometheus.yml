@@ -1,0 +1,25 @@
+# Prometheus config for the Cosmos Rust SDK WS9 soak.
+#
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+#
+# Scrapes the OpenTelemetry Collector's Prometheus exporter, which is where the
+# SDK's OTLP metrics surface as Prometheus series.
+
+global:
+  scrape_interval: 5s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: cosmos-ws9-soak
+
+scrape_configs:
+  # The SDK metrics, re-exported by the collector.
+  - job_name: cosmos-sdk
+    honor_labels: true
+    static_configs:
+      - targets: ["otel-collector:8889"]
+
+  # The collector's own health/throughput metrics (queue sizes, dropped points).
+  - job_name: otel-collector
+    static_configs:
+      - targets: ["otel-collector:8888"]

@@ -1,0 +1,74 @@
+# Local observability stack for the Cosmos Rust SDK WS9 soak.
+#
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+#
+# Brings up an OpenTelemetry Collector (OTLP in -> Prometheus scrape out),
+# Prometheus (stores the metrics), and Grafana (auto-provisioned with the
+# Prometheus datasource and the checked-in WS9 dashboard).
+#
+#   docker compose up -d
+#
+# Point the soak harness at the collector:
+#   OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318   (HTTP/protobuf)
+#   OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317   (gRPC)
+#
+# Grafana:    http://localhost:3000  (admin / admin)
+# Prometheus: http://localhost:9090
+#
+# Image tags are pinned for reproducibility; bump them as needed.
+
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.116.0
+    container_name: cosmos-ws9-otelcol
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otelcol/config.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+      - "8889:8889"   # Prometheus scrape endpoint (SDK metrics)
+      - "8888:8888"   # Collector's own internal metrics
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    container_name: cosmos-ws9-prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=15d"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - otel-collector
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    container_name: cosmos-ws9-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      # Auto-open the WS9 dashboard on login.
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/cosmos-observability.json
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      # The checked-in dashboards directory is mounted read-only and
+      # auto-loaded by the dashboards provider below.
+      - ../dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+volumes:
+  prometheus-data:
+  grafana-data:

@@ -1,0 +1,18 @@
+# Grafana datasource provisioning for the Cosmos Rust SDK WS9 soak.
+#
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    uid: cosmos-ws9-prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true
+    jsonData:
+      httpMethod: POST
+      timeInterval: 5s
