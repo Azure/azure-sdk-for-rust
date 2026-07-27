@@ -2221,7 +2221,9 @@ impl DiagnosticsContext {
             // out (an alternate region is present); otherwise fall back to any
             // attached hedge diagnostics. Taking the last match mirrors how the
             // aggregate inherits its operation-level fields from the last
-            // sub-op.
+            // sub-op. Limitation: only one representative survives, so if two
+            // sub-ops both fanned out to different alternates, `requested_regions`
+            // recovers only the representative one's dropped leg.
             hedge_diagnostics: sources
                 .iter()
                 .rev()
@@ -2359,6 +2361,11 @@ impl DiagnosticsContext {
     /// entry (a structurally-dropped leg never produced a service reply). This
     /// keeps the accessor consistent with the `hedge_region` observability
     /// attribute, which is also sourced from `hedge_diagnostics`.
+    ///
+    /// For an aggregated operation (e.g. PATCH) stitched from multiple
+    /// sub-operations, recovery uses the single representative `hedge_diagnostics`
+    /// retained by `aggregate_sub_operations`, so if more than one sub-operation
+    /// fanned out, only the representative fan-out's dropped leg is recovered.
     ///
     /// Order is the retained attempts' dispatch (insertion) order, with the two
     /// fan-out legs placed in dispatch order (the `Initial` primary before the

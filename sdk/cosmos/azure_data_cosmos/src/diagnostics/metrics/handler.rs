@@ -714,12 +714,16 @@ mod tests {
 
     #[test]
     fn hedged_metric_skips_when_terminal_state_unavailable() {
-        // Defensive: if an operation reads as hedged (a `Hedging`-tagged request)
-        // but carries no `hedge_diagnostics`, the counter is skipped rather than
-        // emitted without its `hedge_terminal_state` dimension — a missing
-        // dimension would fragment the counter's time series. Real aggregated
-        // operations (e.g. PATCH) propagate a representative `hedge_diagnostics`,
-        // so this is a belt-and-suspenders guard.
+        // A hedge that fanned out both-transient and was then resolved by a later
+        // failover attempt leaves a retained `Hedging` request (so
+        // `hedging_started()` is true) but no recorded terminal outcome
+        // (`finalize_both_transient` deliberately does not stamp `hedge_diagnostics`
+        // on the non-terminal path — see operation_pipeline.rs). The counter is
+        // intentionally skipped there rather than emitted without its
+        // `hedge_terminal_state` dimension, which would fragment the counter's time
+        // series. The counter therefore measures hedges with a resolved terminal
+        // outcome; a both-transient hedge whose winning response ultimately came
+        // from a failover attempt is not counted here.
         use azure_data_cosmos_driver::diagnostics::{ExecutionContext, RequestDiagnostics};
         use azure_data_cosmos_driver::models::RequestCharge;
         use std::time::Instant;

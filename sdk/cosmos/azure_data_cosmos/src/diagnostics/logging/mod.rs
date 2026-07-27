@@ -382,4 +382,55 @@ mod tests {
         assert!(!map.contains_key("hedge_region"));
         assert!(!map.contains_key("hedge_terminal_state"));
     }
+
+    #[test]
+    fn sampled_line_omits_hedging_fields_when_no_terminal_outcome() {
+        // A hedge fanned out both-transient and was then resolved by a later
+        // failover attempt: the retained `Hedging` request makes
+        // `hedging_started()` true, but the pipeline deliberately leaves
+        // `hedge_diagnostics()` None (no terminal outcome). The log line must
+        // still be emitted, but must NOT carry empty-string hedge_region /
+        // hedge_terminal_state fields — consistent with the metrics counter.
+        use azure_data_cosmos_driver::diagnostics::ExecutionContext;
+
+        let captured = Arc::new(std::sync::Mutex::new(HashMap::new()));
+        let layer = FieldCapture(Arc::clone(&captured));
+        let subscriber = tracing_subscriber::registry().with(layer);
+        let handler = SamplingLogHandler::new();
+
+        let now = Instant::now();
+        let hedge_leg = RequestDiagnostics::for_testing(
+            "https://acct-westus2.documents.azure.com:443/",
+            Some(Region::WEST_US_2),
+            CosmosStatus::new(StatusCode::TooManyRequests),
+            RequestCharge::new(2.0),
+            now - Duration::from_millis(20),
+            now,
+        )
+        .with_execution_context_for_testing(ExecutionContext::Hedging);
+        let ctx = DiagnosticsContext::for_testing_with_hedge(
+            ActivityId::new_uuid(),
+            Duration::from_millis(20),
+            Some(CosmosStatus::new(StatusCode::TooManyRequests)),
+            Some("read_item"),
+            vec![hedge_leg],
+            None,
+        );
+        assert!(
+            ctx.hedging_started(),
+            "a retained Hedging request makes hedging_started() true"
+        );
+
+        tracing::subscriber::with_default(subscriber, || {
+            handler.handle(&ctx, &Context::new());
+        });
+
+        let map = captured.lock().unwrap();
+        // The line is emitted (it is a failure) but carries no hedge fields —
+        // crucially, no empty-string hedge_region / hedge_terminal_state.
+        assert!(map.contains_key("reason"));
+        assert!(!map.contains_key("hedging_started"));
+        assert!(!map.contains_key("hedge_region"));
+        assert!(!map.contains_key("hedge_terminal_state"));
+    }
 }

@@ -78,18 +78,29 @@ impl DiagnosticsHandler for TracingLogHandler {
         // (the `tracing` macros run an "is enabled" check before evaluating
         // field expressions).
         //
-        // When a cross-region hedge fanned out, surface the hedging signal as
-        // dedicated fields (in addition to the JSON blob) — it is high-signal for
-        // exactly the failed / threshold-breaching operations this handler emits.
-        if diagnostics.hedging_started() {
-            let hedge = diagnostics.hedge_diagnostics();
+        // When a cross-region hedge fanned out AND produced a recorded terminal
+        // outcome, surface the hedging signal as dedicated fields (in addition to
+        // the JSON blob) — high-signal for exactly the failed / threshold-breaching
+        // operations this handler emits.
+        //
+        // Gate on `hedge_diagnostics` (with a fanned-out alternate) rather than
+        // `hedging_started()`: a both-transient hedge that is subsequently resolved
+        // by a failover attempt leaves a retained `Hedging` request (so
+        // `hedging_started()` is true) but no recorded terminal outcome
+        // (`hedge_diagnostics()` is `None` — `finalize_both_transient` deliberately
+        // does not stamp one on the non-terminal path). Emitting empty
+        // `hedge_region` / `hedge_terminal_state` strings there would be misleading;
+        // this gate keeps the log line consistent with the metrics counter, which is
+        // likewise only recorded when a terminal hedge outcome exists.
+        if let Some(hedge) = diagnostics
+            .hedge_diagnostics()
+            .filter(|hedge| hedge.alternate_region().is_some())
+        {
             let hedge_region = hedge
-                .and_then(|h| h.alternate_region())
+                .alternate_region()
                 .map(|region| region.as_str())
                 .unwrap_or_default();
-            let hedge_terminal_state = hedge
-                .map(|h| h.terminal_state().as_str())
-                .unwrap_or_default();
+            let hedge_terminal_state = hedge.terminal_state().as_str();
             if diagnostics.is_failure() {
                 tracing::warn!(target: SAMPLED_TARGET, reason, hedging_started = true, hedge_region, hedge_terminal_state, diagnostics = %diagnostics.to_json_string(Some(DiagnosticsVerbosity::Summary)), "cosmos operation diagnostics");
             } else {
