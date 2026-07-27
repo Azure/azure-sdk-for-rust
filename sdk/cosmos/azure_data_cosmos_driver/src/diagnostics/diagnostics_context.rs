@@ -638,6 +638,24 @@ impl RequestDiagnostics {
         }
     }
 
+    /// **Internal test helper — do not call.**
+    ///
+    /// Overrides the [`ExecutionContext`] of a test-constructed request so
+    /// emission-layer tests can synthesize a speculative hedge leg (or a retry
+    /// / failover dispatch). Gated behind the
+    /// `__internal_test_diagnostics_construction` Cargo feature and
+    /// `#[doc(hidden)]`, mirroring [`for_testing`](Self::for_testing).
+    #[cfg(feature = "__internal_test_diagnostics_construction")]
+    #[doc(hidden)]
+    #[must_use]
+    pub fn with_execution_context_for_testing(
+        mut self,
+        execution_context: ExecutionContext,
+    ) -> Self {
+        self.execution_context = execution_context;
+        self
+    }
+
     /// Records completion of this request.
     ///
     /// Since we received a response, the request was definitely sent.
@@ -2047,7 +2065,33 @@ impl DiagnosticsContext {
         }
     }
 
-    /// Concatenates the per-request diagnostics from a sequence of
+    /// **Internal test helper — do not call.**
+    ///
+    /// Like [`for_testing_with_requests`](Self::for_testing_with_requests), but
+    /// also attaches `hedge_diagnostics` so the wrapper SDK's emission-layer
+    /// tests can exercise the hedging-surfacing paths (tracing / metrics /
+    /// logging). Gated behind the `__internal_test_diagnostics_construction`
+    /// Cargo feature and `#[doc(hidden)]`, mirroring [`for_testing`](Self::for_testing).
+    #[cfg(feature = "__internal_test_diagnostics_construction")]
+    #[doc(hidden)]
+    pub fn for_testing_with_hedge(
+        activity_id: ActivityId,
+        duration: Duration,
+        status: Option<CosmosStatus>,
+        operation_name: Option<&str>,
+        requests: Vec<RequestDiagnostics>,
+        hedge_diagnostics: Option<HedgeDiagnostics>,
+    ) -> Self {
+        let mut context = Self::for_testing_with_requests(
+            activity_id,
+            duration,
+            status,
+            operation_name,
+            requests,
+        );
+        context.hedge_diagnostics = hedge_diagnostics;
+        context
+    }
     /// sub-operation contexts into a single aggregated [`DiagnosticsContext`].
     ///
     /// Used by the PATCH handler to surface **one operation = one

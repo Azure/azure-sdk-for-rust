@@ -19,11 +19,15 @@ mod tests {
     use std::time::{Duration, Instant, SystemTime};
 
     use azure_core::http::StatusCode;
-    use azure_data_cosmos_driver::diagnostics::{DiagnosticsContext, RequestDiagnostics};
+    use azure_data_cosmos_driver::diagnostics::{
+        DiagnosticsContext, ExecutionContext, HedgeDiagnostics, HedgeTerminalState,
+        RequestDiagnostics,
+    };
     use azure_data_cosmos_driver::models::{ActivityId, RequestCharge};
     use azure_data_cosmos_driver::options::Region;
     use azure_data_cosmos_driver::{CosmosStatus, DiagnosticsThresholds};
     use opentelemetry::trace::{SpanId, TracerProvider};
+    use opentelemetry::{Array, Value};
     use opentelemetry_sdk::trace::{in_memory_exporter::InMemorySpanExporter, SdkTracerProvider};
 
     use super::handler::should_emit_span;
@@ -337,5 +341,150 @@ mod tests {
             root.start_time <= earliest_child,
             "root must start no later than its earliest child"
         );
+    }
+
+    /// Builds a hedged, failed operation: an initial East US leg (429) plus a
+    /// speculative hedge leg to West US 2 (200) tagged `ExecutionContext::Hedging`,
+    /// with `AlternateWon` hedge diagnostics.
+    fn hedged_context(anchor: Instant) -> DiagnosticsContext {
+        let primary = RequestDiagnostics::for_testing(
+            "https://acct-eastus.documents.azure.com:443/",
+            Some(Region::EAST_US),
+            CosmosStatus::new(StatusCode::TooManyRequests),
+            RequestCharge::new(2.0),
+            anchor - Duration::from_millis(300),
+            anchor - Duration::from_millis(200),
+        );
+        let hedge_leg = RequestDiagnostics::for_testing(
+            "https://acct-westus2.documents.azure.com:443/",
+            Some(Region::WEST_US_2),
+            CosmosStatus::new(StatusCode::Ok),
+            RequestCharge::new(2.0),
+            anchor - Duration::from_millis(150),
+            anchor - Duration::from_millis(50),
+        )
+        .with_execution_context_for_testing(ExecutionContext::Hedging);
+        let hedge = HedgeDiagnostics::for_testing(
+            Region::EAST_US,
+            Some(Region::WEST_US_2),
+            Some(Region::WEST_US_2),
+            HedgeTerminalState::AlternateWon,
+        );
+        DiagnosticsContext::for_testing_with_hedge(
+            ActivityId::new_uuid(),
+            Duration::from_millis(250),
+            Some(CosmosStatus::new(StatusCode::TooManyRequests)),
+            Some("read_item"),
+            vec![primary, hedge_leg],
+            Some(hedge),
+        )
+    }
+
+    /// Returns the string members of a `string[]` span attribute, if present.
+    fn string_array_attr(
+        span: &opentelemetry_sdk::trace::SpanData,
+        key: &str,
+    ) -> Option<Vec<String>> {
+        span.attributes.iter().find_map(|kv| {
+            if kv.key.as_str() != key {
+                return None;
+            }
+            match &kv.value {
+                Value::Array(Array::String(values)) => {
+                    Some(values.iter().map(|v| v.as_str().to_string()).collect())
+                }
+                _ => None,
+            }
+        })
+    }
+
+    #[test]
+    fn hedged_operation_surfaces_hedging_span_attributes() {
+        let (provider, exporter) = exportable();
+        let tracer = provider.tracer("test");
+        let now_instant = Instant::now();
+        let now_system = SystemTime::now();
+
+        let ctx = hedged_context(now_instant);
+        emit_backdated_span_tree(&tracer, &ctx, None, None, now_instant, now_system);
+        provider.force_flush().unwrap();
+
+        let spans = exporter.get_finished_spans().unwrap();
+        let root = spans
+            .iter()
+            .find(|s| s.name == "read_item")
+            .expect("root span present");
+
+        // hedging_started = true (bool).
+        assert!(
+            root.attributes.iter().any(|kv| {
+                kv.key.as_str() == attributes::HEDGING_STARTED
+                    && matches!(kv.value, Value::Bool(true))
+            }),
+            "root span must carry hedging_started = true"
+        );
+        // hedge region = the alternate region the hedge fanned out to.
+        assert!(root.attributes.iter().any(|kv| {
+            kv.key.as_str() == attributes::HEDGE_REGION && kv.value.as_str() == "westus2"
+        }));
+        // terminal state = alternate_won.
+        assert!(root.attributes.iter().any(|kv| {
+            kv.key.as_str() == attributes::HEDGE_TERMINAL_STATE
+                && kv.value.as_str() == "alternate_won"
+        }));
+        // requested_regions is an ordered string[] carrying both dispatched regions.
+        let requested = string_array_attr(root, attributes::REQUESTED_REGIONS)
+            .expect("requested_regions string[] present");
+        assert!(requested.iter().any(|r| r == "eastus"));
+        assert!(requested.iter().any(|r| r == "westus2"));
+        // responded_regions is an ordered string[] carrying both responders.
+        let responded = string_array_attr(root, attributes::RESPONDED_REGIONS)
+            .expect("responded_regions string[] present");
+        assert!(responded.iter().any(|r| r == "eastus"));
+        assert!(responded.iter().any(|r| r == "westus2"));
+
+        // The speculative hedge leg's child span is tagged.
+        let tagged = spans
+            .iter()
+            .filter(|s| s.name == "cosmosdb.request")
+            .any(|s| {
+                s.attributes.iter().any(|kv| {
+                    kv.key.as_str() == attributes::HEDGE_LEG
+                        && matches!(kv.value, Value::Bool(true))
+                })
+            });
+        assert!(tagged, "the hedge leg child span must carry the hedge tag");
+    }
+
+    #[test]
+    fn non_hedged_operation_omits_hedging_span_attributes() {
+        let (provider, exporter) = exportable();
+        let tracer = provider.tracer("test");
+        let now_instant = Instant::now();
+        let now_system = SystemTime::now();
+
+        // A plain failed operation — no hedge diagnostics, all Initial legs.
+        let ctx = context(
+            Duration::from_millis(5),
+            Some(CosmosStatus::new(StatusCode::TooManyRequests)),
+            Some("read_item"),
+            &[(5, 5, CosmosStatus::new(StatusCode::TooManyRequests))],
+            now_instant,
+        );
+        emit_backdated_span_tree(&tracer, &ctx, None, None, now_instant, now_system);
+        provider.force_flush().unwrap();
+
+        let spans = exporter.get_finished_spans().unwrap();
+        for span in &spans {
+            for kv in span.attributes.iter() {
+                let key = kv.key.as_str();
+                assert_ne!(key, attributes::HEDGING_STARTED);
+                assert_ne!(key, attributes::HEDGE_REGION);
+                assert_ne!(key, attributes::HEDGE_TERMINAL_STATE);
+                assert_ne!(key, attributes::REQUESTED_REGIONS);
+                assert_ne!(key, attributes::RESPONDED_REGIONS);
+                assert_ne!(key, attributes::HEDGE_LEG);
+            }
+        }
     }
 }

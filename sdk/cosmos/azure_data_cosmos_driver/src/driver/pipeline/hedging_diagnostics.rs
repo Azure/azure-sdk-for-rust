@@ -91,6 +91,31 @@ pub enum HedgeTerminalState {
     CancelledAwaitingPartner,
 }
 
+impl HedgeTerminalState {
+    /// Returns a stable, low-cardinality `snake_case` identifier for this
+    /// terminal state, suitable as an observability attribute / log-field value.
+    ///
+    /// The [`BothTransient`](Self::BothTransient) variant collapses to
+    /// `"both_transient"` regardless of its `deadline_elapsed` payload, keeping
+    /// the emitted value set bounded to one string per variant.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            HedgeTerminalState::PrimaryWonPreThreshold => "primary_won_pre_threshold",
+            HedgeTerminalState::DeadlineExceededPreThreshold => "deadline_exceeded_pre_threshold",
+            HedgeTerminalState::PrimaryWonAfterHedge => "primary_won_after_hedge",
+            HedgeTerminalState::AlternateWon => "alternate_won",
+            HedgeTerminalState::BothTransient { .. } => "both_transient",
+            HedgeTerminalState::CancelledAwaitingPartner => "cancelled_awaiting_partner",
+        }
+    }
+}
+
+impl std::fmt::Display for HedgeTerminalState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
 /// Diagnostic information about a hedging execution, attached to the
 /// winning response when a hedging strategy was active for the operation.
 ///
@@ -293,6 +318,35 @@ impl HedgeDiagnostics {
     /// `matches!(state, HedgeTerminalState::AlternateWon)`.
     pub fn terminal_state(&self) -> HedgeTerminalState {
         self.terminal_state
+    }
+
+    /// **Internal test helper — do not call.**
+    ///
+    /// Builds a [`HedgeDiagnostics`] from explicit parts so the wrapper SDK
+    /// (`azure_data_cosmos`) can exercise the observability layer's hedging
+    /// surfacing (tracing / metrics / logging) against a realistic hedged
+    /// context without standing up the hedging pipeline. The strategy config is
+    /// filled with a fixed non-zero threshold since the emission layer does not
+    /// read it. Gated behind the `__internal_test_diagnostics_construction`
+    /// Cargo feature and `#[doc(hidden)]`, so it never appears on the public
+    /// surface.
+    #[cfg(feature = "__internal_test_diagnostics_construction")]
+    #[doc(hidden)]
+    pub fn for_testing(
+        primary_region: Region,
+        alternate_region: Option<Region>,
+        response_region: Option<Region>,
+        terminal_state: HedgeTerminalState,
+    ) -> Self {
+        let threshold = HedgeThreshold::new(std::time::Duration::from_millis(500))
+            .expect("500ms is a valid non-zero hedge threshold");
+        Self {
+            strategy_config: HedgingStrategyConfig::new(threshold),
+            primary_region,
+            alternate_region,
+            response_region,
+            terminal_state,
+        }
     }
 }
 

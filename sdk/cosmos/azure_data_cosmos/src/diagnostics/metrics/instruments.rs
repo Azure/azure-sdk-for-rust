@@ -8,7 +8,7 @@
 //! reference-counted). Building them eagerly keeps the per-operation hot path to
 //! just `record`/`add` calls with no allocation of instrument state.
 
-use opentelemetry::metrics::{Histogram, Meter};
+use opentelemetry::metrics::{Counter, Histogram, Meter};
 
 use crate::diagnostics::metrics::attributes;
 
@@ -17,10 +17,10 @@ use crate::diagnostics::metrics::attributes;
 /// The stable operation-duration histogram is always recorded; the remaining
 /// per-signal instruments are recorded only when the matching
 /// [`MetricsOptions`](super::MetricsOptions) toggle
-/// (`request_charge_metric_enabled` / `returned_rows_metric_enabled`) is set.
-/// They are still created unconditionally because instrument creation is cheap
-/// and idempotent, and doing so keeps the handler's record path branch-free per
-/// instrument.
+/// (`request_charge_metric_enabled` / `returned_rows_metric_enabled` /
+/// `hedged_metric_enabled`) is set. They are still created unconditionally
+/// because instrument creation is cheap and idempotent, and doing so keeps the
+/// handler's record path branch-free per instrument.
 #[derive(Clone)]
 pub(crate) struct Instruments {
     /// Stable: `db.client.operation.duration` (seconds).
@@ -31,6 +31,10 @@ pub(crate) struct Instruments {
 
     /// Development: `db.client.response.returned_rows` (rows).
     pub(crate) returned_rows: Histogram<u64>,
+
+    /// Development: `azure.cosmosdb.client.operation.hedged` (operations that
+    /// dispatched a cross-region hedge fan-out).
+    pub(crate) hedged: Counter<u64>,
 }
 
 impl Instruments {
@@ -54,10 +58,17 @@ impl Instruments {
             .with_description("Number of rows/items returned by a Cosmos DB operation.")
             .build();
 
+        let hedged = meter
+            .u64_counter(attributes::METRIC_OPERATION_HEDGED)
+            .with_unit(attributes::UNIT_OPERATION)
+            .with_description("Cosmos DB operations that dispatched a cross-region hedge fan-out.")
+            .build();
+
         Self {
             operation_duration,
             request_charge,
             returned_rows,
+            hedged,
         }
     }
 }

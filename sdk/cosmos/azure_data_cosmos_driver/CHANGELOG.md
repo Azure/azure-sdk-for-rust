@@ -5,6 +5,7 @@
 ### Features Added
 
 - Added the Hedging Detection API on `DiagnosticsContext`: `hedging_started()` (whether a hedge arm actually fanned out), `requested_regions()` (regions dispatched to, in dispatch order with duplicates, each tagged with a reason), and `responded_regions()` (regions that produced an actual service reply, in completion order). Adds the public `RequestedRegion` struct and `RequestedRegionReason` enum (both `#[non_exhaustive]`, with a total `From<ExecutionContext>` mapping) and the new `ExecutionContext::OperationRetry` variant. ([#4410](https://github.com/Azure/azure-sdk-for-rust/issues/4410))
+- Added `HedgeTerminalState::as_str()` (and a matching `Display`) returning a stable, low-cardinality `snake_case` identifier for the hedging race outcome, for use as an observability attribute / log-field value. ([#4410](https://github.com/Azure/azure-sdk-for-rust/issues/4410))
 
 ### Breaking Changes
 

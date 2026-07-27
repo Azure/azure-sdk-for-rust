@@ -77,7 +77,25 @@ impl DiagnosticsHandler for TracingLogHandler {
         // only evaluated when a subscriber is actually listening for the event
         // (the `tracing` macros run an "is enabled" check before evaluating
         // field expressions).
-        if diagnostics.is_failure() {
+        //
+        // When a cross-region hedge fanned out, surface the hedging signal as
+        // dedicated fields (in addition to the JSON blob) — it is high-signal for
+        // exactly the failed / threshold-breaching operations this handler emits.
+        if diagnostics.hedging_started() {
+            let hedge = diagnostics.hedge_diagnostics();
+            let hedge_region = hedge
+                .and_then(|h| h.alternate_region())
+                .map(|region| region.as_str())
+                .unwrap_or_default();
+            let hedge_terminal_state = hedge
+                .map(|h| h.terminal_state().as_str())
+                .unwrap_or_default();
+            if diagnostics.is_failure() {
+                tracing::warn!(target: SAMPLED_TARGET, reason, hedging_started = true, hedge_region, hedge_terminal_state, diagnostics = %diagnostics.to_json_string(Some(DiagnosticsVerbosity::Summary)), "cosmos operation diagnostics");
+            } else {
+                tracing::info!(target: SAMPLED_TARGET, reason, hedging_started = true, hedge_region, hedge_terminal_state, diagnostics = %diagnostics.to_json_string(Some(DiagnosticsVerbosity::Summary)), "cosmos operation diagnostics");
+            }
+        } else if diagnostics.is_failure() {
             tracing::warn!(target: SAMPLED_TARGET, reason, diagnostics = %diagnostics.to_json_string(Some(DiagnosticsVerbosity::Summary)), "cosmos operation diagnostics");
         } else {
             tracing::info!(target: SAMPLED_TARGET, reason, diagnostics = %diagnostics.to_json_string(Some(DiagnosticsVerbosity::Summary)), "cosmos operation diagnostics");
