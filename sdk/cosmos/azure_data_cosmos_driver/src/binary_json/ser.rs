@@ -31,6 +31,34 @@ use super::{
 /// [`serialize_struct`]: BinarySerializer::serialize_struct
 const RAW_VALUE_TOKEN: &str = "$serde_json::private::RawValue";
 
+/// Magic struct name `serde_json::Number` uses under the `arbitrary_precision`
+/// feature: a `Number` serializes as `{ NUMBER_TOKEN: "<decimal string>" }`.
+/// [`serialize_struct`] intercepts it and encodes the string as a real number.
+///
+/// [`serialize_struct`]: BinarySerializer::serialize_struct
+const NUMBER_TOKEN: &str = "$serde_json::private::Number";
+
+/// Encodes a decimal number string (from the arbitrary-precision [`NUMBER_TOKEN`])
+/// as a number, mirroring the writer: signed, else unsigned, else double.
+/// Errors if the string is not a JSON number.
+fn encode_number_str(s: &str, out: &mut Vec<u8>) -> Result<()> {
+    let number: serde_json::Number = serde_json::from_str(s).map_err(|_| {
+        BinaryError::Custom(format!("invalid arbitrary-precision number token: {s:?}"))
+    })?;
+    if let Some(i) = number.as_i64() {
+        encode_i64(i, out);
+    } else if let Some(u) = number.as_u64() {
+        encode_u64(u, out);
+    } else if let Some(f) = number.as_f64() {
+        encode_f64(f, out);
+    } else {
+        return Err(BinaryError::Custom(format!(
+            "number {s:?} is out of range for Cosmos binary JSON"
+        )));
+    }
+    Ok(())
+}
+
 /// Serializes a value into a complete Cosmos binary JSON buffer.
 ///
 /// The returned buffer begins with the [`PREAMBLE`] byte (`0x80`) and can be
@@ -271,6 +299,11 @@ impl<'a> ser::Serializer for BinarySerializer<'a> {
                     .to_owned(),
             ));
         }
+        // Honor the arbitrary-precision `Number` token: encode its decimal
+        // string as a real number instead of a wrapper object.
+        if name == NUMBER_TOKEN {
+            return Ok(ContainerBuilder::new_number_token(self.out));
+        }
         Ok(ContainerBuilder::new(self.out, ContainerKind::Object))
     }
 
@@ -452,6 +485,151 @@ impl ser::Serializer for MapKeySerializer<'_> {
     }
 }
 
+/// Captures a single string value — the decimal string of the arbitrary-precision
+/// [`NUMBER_TOKEN`]. Only `serialize_str` is valid; anything else is malformed.
+struct StrCaptureSerializer;
+
+fn not_a_number_token() -> BinaryError {
+    BinaryError::Custom("arbitrary-precision number token field must be a string".to_owned())
+}
+
+impl ser::Serializer for StrCaptureSerializer {
+    type Ok = String;
+    type Error = BinaryError;
+
+    type SerializeSeq = ser::Impossible<String, BinaryError>;
+    type SerializeTuple = ser::Impossible<String, BinaryError>;
+    type SerializeTupleStruct = ser::Impossible<String, BinaryError>;
+    type SerializeTupleVariant = ser::Impossible<String, BinaryError>;
+    type SerializeMap = ser::Impossible<String, BinaryError>;
+    type SerializeStruct = ser::Impossible<String, BinaryError>;
+    type SerializeStructVariant = ser::Impossible<String, BinaryError>;
+
+    fn serialize_str(self, v: &str) -> Result<String> {
+        Ok(v.to_owned())
+    }
+
+    fn serialize_newtype_struct<T: Serialize + ?Sized>(
+        self,
+        _name: &'static str,
+        value: &T,
+    ) -> Result<String> {
+        value.serialize(self)
+    }
+
+    fn serialize_bool(self, _v: bool) -> Result<String> {
+        Err(not_a_number_token())
+    }
+    fn serialize_i8(self, _v: i8) -> Result<String> {
+        Err(not_a_number_token())
+    }
+    fn serialize_i16(self, _v: i16) -> Result<String> {
+        Err(not_a_number_token())
+    }
+    fn serialize_i32(self, _v: i32) -> Result<String> {
+        Err(not_a_number_token())
+    }
+    fn serialize_i64(self, _v: i64) -> Result<String> {
+        Err(not_a_number_token())
+    }
+    fn serialize_i128(self, _v: i128) -> Result<String> {
+        Err(not_a_number_token())
+    }
+    fn serialize_u8(self, _v: u8) -> Result<String> {
+        Err(not_a_number_token())
+    }
+    fn serialize_u16(self, _v: u16) -> Result<String> {
+        Err(not_a_number_token())
+    }
+    fn serialize_u32(self, _v: u32) -> Result<String> {
+        Err(not_a_number_token())
+    }
+    fn serialize_u64(self, _v: u64) -> Result<String> {
+        Err(not_a_number_token())
+    }
+    fn serialize_u128(self, _v: u128) -> Result<String> {
+        Err(not_a_number_token())
+    }
+    fn serialize_f32(self, _v: f32) -> Result<String> {
+        Err(not_a_number_token())
+    }
+    fn serialize_f64(self, _v: f64) -> Result<String> {
+        Err(not_a_number_token())
+    }
+    fn serialize_char(self, _v: char) -> Result<String> {
+        Err(not_a_number_token())
+    }
+    fn serialize_bytes(self, _v: &[u8]) -> Result<String> {
+        Err(not_a_number_token())
+    }
+    fn serialize_none(self) -> Result<String> {
+        Err(not_a_number_token())
+    }
+    fn serialize_some<T: Serialize + ?Sized>(self, _value: &T) -> Result<String> {
+        Err(not_a_number_token())
+    }
+    fn serialize_unit(self) -> Result<String> {
+        Err(not_a_number_token())
+    }
+    fn serialize_unit_struct(self, _name: &'static str) -> Result<String> {
+        Err(not_a_number_token())
+    }
+    fn serialize_unit_variant(
+        self,
+        _name: &'static str,
+        _variant_index: u32,
+        _variant: &'static str,
+    ) -> Result<String> {
+        Err(not_a_number_token())
+    }
+    fn serialize_newtype_variant<T: Serialize + ?Sized>(
+        self,
+        _name: &'static str,
+        _variant_index: u32,
+        _variant: &'static str,
+        _value: &T,
+    ) -> Result<String> {
+        Err(not_a_number_token())
+    }
+    fn serialize_seq(self, _len: Option<usize>) -> Result<Self::SerializeSeq> {
+        Err(not_a_number_token())
+    }
+    fn serialize_tuple(self, _len: usize) -> Result<Self::SerializeTuple> {
+        Err(not_a_number_token())
+    }
+    fn serialize_tuple_struct(
+        self,
+        _name: &'static str,
+        _len: usize,
+    ) -> Result<Self::SerializeTupleStruct> {
+        Err(not_a_number_token())
+    }
+    fn serialize_tuple_variant(
+        self,
+        _name: &'static str,
+        _variant_index: u32,
+        _variant: &'static str,
+        _len: usize,
+    ) -> Result<Self::SerializeTupleVariant> {
+        Err(not_a_number_token())
+    }
+    fn serialize_map(self, _len: Option<usize>) -> Result<Self::SerializeMap> {
+        Err(not_a_number_token())
+    }
+    fn serialize_struct(self, _name: &'static str, _len: usize) -> Result<Self::SerializeStruct> {
+        Err(not_a_number_token())
+    }
+    fn serialize_struct_variant(
+        self,
+        _name: &'static str,
+        _variant_index: u32,
+        _variant: &'static str,
+        _len: usize,
+    ) -> Result<Self::SerializeStructVariant> {
+        Err(not_a_number_token())
+    }
+}
+
 /// Buffers a compound value's children, then frames them on `end`.
 ///
 /// Children are serialized into `buffer` (a scratch buffer); `end` emits the
@@ -465,6 +643,10 @@ struct ContainerBuilder<'a> {
     count: usize,
     kind: ContainerKind,
     variant: Option<&'static str>,
+    /// When set, this builder is the arbitrary-precision [`NUMBER_TOKEN`], not a
+    /// real container: `serialize_field` encodes its decimal-string field as a
+    /// number and `finish` frames nothing.
+    number_token: bool,
 }
 
 impl<'a> ContainerBuilder<'a> {
@@ -475,6 +657,7 @@ impl<'a> ContainerBuilder<'a> {
             count: 0,
             kind,
             variant: None,
+            number_token: false,
         }
     }
 
@@ -485,6 +668,19 @@ impl<'a> ContainerBuilder<'a> {
             count: 0,
             kind,
             variant: Some(variant),
+            number_token: false,
+        }
+    }
+
+    /// Builder for the arbitrary-precision [`NUMBER_TOKEN`]; `kind` is nominal.
+    fn new_number_token(out: &'a mut Vec<u8>) -> Self {
+        Self {
+            out,
+            buffer: Vec::new(),
+            count: 0,
+            kind: ContainerKind::Object,
+            variant: None,
+            number_token: true,
         }
     }
 
@@ -516,6 +712,10 @@ impl<'a> ContainerBuilder<'a> {
     /// Frames the buffered container into the parent buffer, wrapping it in a
     /// single-key object first when this builder represents an enum variant.
     fn finish(self) -> Result<()> {
+        // Number token: the value was already written to `out`; nothing to frame.
+        if self.number_token {
+            return Ok(());
+        }
         let markers = match self.kind {
             ContainerKind::Array => ARRAY_LC_MARKERS,
             ContainerKind::Object => OBJECT_LC_MARKERS,
@@ -614,6 +814,11 @@ impl ser::SerializeStruct for ContainerBuilder<'_> {
         key: &'static str,
         value: &T,
     ) -> Result<()> {
+        // Number token: encode the field's decimal string as a real number.
+        if self.number_token {
+            let s = value.serialize(StrCaptureSerializer)?;
+            return encode_number_str(&s, self.out);
+        }
         self.push_field_name(key);
         self.push_element(value)
     }
@@ -747,6 +952,59 @@ mod tests {
             matches!(err, BinaryError::Custom(msg) if msg.contains("RawValue")),
             "expected a RawValue rejection error"
         );
+    }
+
+    #[test]
+    fn arbitrary_precision_number_token_encodes_as_number() {
+        // Under `arbitrary_precision`, a `Number` serializes as a one-field
+        // struct named `$serde_json::private::Number`. Mirror that drive
+        // sequence and assert it encodes as the plain number.
+        struct NumberLike(&'static str);
+        impl Serialize for NumberLike {
+            fn serialize<S: serde::Serializer>(
+                &self,
+                serializer: S,
+            ) -> std::result::Result<S::Ok, S::Error> {
+                use serde::ser::SerializeStruct;
+                let mut s = serializer.serialize_struct("$serde_json::private::Number", 1)?;
+                s.serialize_field("$serde_json::private::Number", self.0)?;
+                s.end()
+            }
+        }
+
+        for (literal, expected) in [
+            ("7", json!(7)),
+            ("-42", json!(-42)),
+            ("18446744073709551615", json!(u64::MAX)),
+            ("3.5", json!(3.5)),
+            ("-0.0", json!(-0.0)),
+        ] {
+            let via_token = to_vec(&NumberLike(literal)).unwrap();
+            let via_plain = to_vec(&expected).unwrap();
+            assert_eq!(
+                via_token, via_plain,
+                "number token {literal:?} must encode identically to the plain number"
+            );
+            assert_eq!(decode(&via_token).unwrap(), expected);
+        }
+    }
+
+    #[test]
+    fn arbitrary_precision_number_token_rejects_non_numeric() {
+        // A non-numeric field is rejected, not silently mis-encoded.
+        struct BadNumber;
+        impl Serialize for BadNumber {
+            fn serialize<S: serde::Serializer>(
+                &self,
+                serializer: S,
+            ) -> std::result::Result<S::Ok, S::Error> {
+                use serde::ser::SerializeStruct;
+                let mut s = serializer.serialize_struct("$serde_json::private::Number", 1)?;
+                s.serialize_field("$serde_json::private::Number", "not-a-number")?;
+                s.end()
+            }
+        }
+        assert!(to_vec(&BadNumber).is_err());
     }
 
     #[derive(Serialize, Deserialize, PartialEq, Debug)]
