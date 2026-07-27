@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
+// cspell: ignore retryable
+
 use crate::{
     common::{
         recoverable::{RecoverableConnection, RecoverableSender},
@@ -24,6 +26,9 @@ use tracing::{trace, warn};
 
 /// Types used to collect messages into a "batch" before submitting them to an Event Hub.
 pub(crate) mod batch;
+
+/// A producer client that buffers events and publishes them in the background.
+pub(crate) mod buffered;
 
 pub(crate) const DEFAULT_EVENTHUBS_APPLICATION: &str = "DefaultApplicationName";
 
@@ -403,18 +408,8 @@ impl ProducerClient {
         #[allow(unused_variables)] options: Option<SendBatchOptions>,
     ) -> Result<()> {
         let path = batch.get_batch_path()?;
-        let sender = self.connection.get_sender(path.clone()).await?;
-
         let messages = batch.get_messages();
-        let outcome = sender
-            .send(
-                messages,
-                Some(AmqpSendOptions {
-                    message_format: Some(Self::BATCH_MESSAGE_FORMAT),
-                    ..Default::default()
-                }),
-            )
-            .await?;
+        let outcome = self.send_batch_envelope(path.clone(), messages).await?;
         match outcome {
             AmqpSendOutcome::Accepted => Ok(()),
             AmqpSendOutcome::Rejected(reason) => {
@@ -457,6 +452,35 @@ impl ProducerClient {
                 Ok(())
             }
         }
+    }
+
+    /// Sends a batch envelope to a path and returns the raw AMQP outcome.
+    ///
+    /// The caller decides what each outcome means. [`ProducerClient::send_batch`]
+    /// treats `Modified` and `Released` as success with a warning, for backward
+    /// compatibility. The buffered producer treats them as a delivery failure,
+    /// because neither outcome means the service stored the events.
+    ///
+    /// An `Err` from this method means the retry policy is exhausted, or the
+    /// error is not retryable. [`RecoverableSender`] applies the retry policy and
+    /// the connection recovery, and it converts a `Rejected` outcome into an
+    /// error inside the retry loop.
+    pub(crate) async fn send_batch_envelope(
+        &self,
+        path: Url,
+        envelope: AmqpMessage,
+    ) -> Result<AmqpSendOutcome> {
+        let sender = self.connection.get_sender(path).await?;
+        let outcome = sender
+            .send(
+                envelope,
+                Some(AmqpSendOptions {
+                    message_format: Some(Self::BATCH_MESSAGE_FORMAT),
+                    ..Default::default()
+                }),
+            )
+            .await?;
+        Ok(outcome)
     }
 
     /// Gets the properties of the Event Hub.
