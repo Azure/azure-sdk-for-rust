@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added `azure-deprecating` to `DEFAULT_ALLOWED_HEADER_NAMES` so the header is logged without redaction.
+
 ### Breaking Changes
 
 ### Bugs Fixed

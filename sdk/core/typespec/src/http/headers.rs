@@ -15,6 +15,7 @@ pub static DEFAULT_ALLOWED_HEADER_NAMES: LazyLock<HashSet<Cow<'static, str>>> =
     LazyLock::new(|| {
         [
             "accept",
+            "azure-deprecating",
             "cache-control",
             "connection",
             "content-length",
@@ -620,5 +621,10 @@ mod tests {
         let removed_value = headers.remove("test-header".to_string());
         assert!(removed_value.is_some());
         assert_eq!(removed_value.unwrap().as_str(), "test-value");
+    }
+
+    #[test]
+    fn azure_deprecating_is_allowed_header() {
+        assert!(super::DEFAULT_ALLOWED_HEADER_NAMES.contains("azure-deprecating"));
     }
 }
