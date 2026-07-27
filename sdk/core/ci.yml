@@ -32,14 +32,6 @@ parameters:
   displayName: azure_core_macros
   type: boolean
   default: false
-- name: release_azure_core_test
-  displayName: azure_core_test
-  type: boolean
-  default: false
-- name: release_azure_core_test_macros
-  displayName: azure_core_test_macros
-  type: boolean
-  default: false
 - name: release_azure_core_amqp
   displayName: azure_core_amqp
   type: boolean
@@ -64,10 +56,6 @@ extends:
       releaseInBatch: ${{ parameters.release_azure_core }}
     - name: azure_core_macros
       releaseInBatch: ${{ parameters.release_azure_core_macros }}
-    - name: azure_core_test
-      releaseInBatch: ${{ parameters.release_azure_core_test }}
-    - name: azure_core_test_macros
-      releaseInBatch: ${{ parameters.release_azure_core_test_macros }}
     - name: azure_core_amqp
       releaseInBatch: ${{ parameters.release_azure_core_amqp }}
     - name: azure_core_opentelemetry

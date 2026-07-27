@@ -3,11 +3,11 @@
 
 //! Builder for creating [`CosmosClient`] instances.
 
-#[cfg(feature = "fault_injection")]
 use std::sync::Arc;
 
 use crate::{
     clients::ClientContext,
+    diagnostics::DiagnosticsHandler,
     options::{
         CosmosClientOptions, OperationOptions, PartitionFailoverOptions,
         ThroughputControlGroupOptions, UserAgentSuffix,
@@ -173,6 +173,22 @@ impl CosmosClientBuilder {
         self
     }
 
+    /// Registers a [`DiagnosticsHandler`](crate::diagnostics::DiagnosticsHandler)
+    /// that is invoked once per operation at completion with the operation's
+    /// completed [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext).
+    ///
+    /// Handlers run in registration order; call this multiple times to build an
+    /// ordered chain. With no handler registered the completion path does
+    /// nothing beyond checking whether a handler is present.
+    ///
+    /// # Arguments
+    ///
+    /// * `handler` - The handler to append to this client's diagnostics chain.
+    pub fn with_diagnostics_handler(mut self, handler: Arc<dyn DiagnosticsHandler>) -> Self {
+        self.options.diagnostics_handlers = self.options.diagnostics_handlers.with_handler(handler);
+        self
+    }
+
     /// Configures fault injection for testing.
     ///
     /// Accepts a vector of [`FaultInjectionRule`](crate::fault_injection::FaultInjectionRule)
@@ -255,7 +271,9 @@ impl CosmosClientBuilder {
     ///
     /// # Errors
     ///
-    /// Returns an error if the client cannot be constructed.
+    /// Returns an error if the client cannot be constructed. In particular, an
+    /// endpoint that uses `http://` (non-HTTPS) is rejected unless its host is a
+    /// known Cosmos DB emulator host; production accounts must use `https://`.
     pub async fn build(
         self,
         account: AccountReference,
@@ -287,7 +305,10 @@ impl CosmosClientBuilder {
         let driver = runtime.into_inner().create_driver(driver_options).await?;
 
         Ok(CosmosClient {
-            context: ClientContext { driver },
+            context: ClientContext {
+                driver,
+                diagnostics_handlers: self.options.diagnostics_handlers,
+            },
         })
     }
 }
@@ -434,6 +455,27 @@ mod tests {
             "https://test.documents.azure.com/".parse().unwrap(),
             "dGVzdA==",
         )
+    }
+
+    /// `CosmosClientBuilder::build` must reject an `http://` production endpoint,
+    /// surfacing the invalid-endpoint status through the SDK error type.
+    #[cfg(feature = "key_auth")]
+    #[tokio::test]
+    async fn build_rejects_http_production_endpoint() {
+        use crate::{AccountEndpoint, AccountReference};
+        use azure_core::credentials::Secret;
+
+        let endpoint: AccountEndpoint = "http://myaccount.documents.azure.com/".parse().unwrap();
+        let account = AccountReference::with_authentication_key(endpoint, Secret::from("dGVzdA=="));
+
+        let error = CosmosClientBuilder::new()
+            .build(account, RoutingStrategy::PreferredRegions(Vec::new()))
+            .await
+            .expect_err("http production endpoint must be rejected");
+        assert_eq!(
+            error.status(),
+            crate::error::CosmosStatus::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL
+        );
     }
 
     /// `ProximityTo` a known region produces a non-empty preferred_regions list

@@ -91,6 +91,13 @@ pub(crate) struct RecoverableConnection {
 
     #[cfg(test)]
     forced_error: Mutex<Option<AmqpError>>,
+
+    // Separate from `forced_error`, which the per-operation wrappers
+    // (receive, send, management call) consume. This slot is consumed only
+    // by `ensure_receiver`, so a test can fail an attach without changing
+    // how the operation wrappers behave.
+    #[cfg(test)]
+    forced_attach_error: Mutex<Option<AmqpError>>,
 }
 
 unsafe impl Send for RecoverableConnection {}
@@ -200,6 +207,8 @@ impl RecoverableConnection {
                 authorizer,
                 #[cfg(test)]
                 forced_error: Mutex::new(None),
+                #[cfg(test)]
+                forced_attach_error: Mutex::new(None),
             }
         })
     }
@@ -231,6 +240,35 @@ impl RecoverableConnection {
             .forced_error
             .lock()
             .expect("Forced error lock is poisoned")
+            .take();
+        v.map_or(Ok(()), Err)
+    }
+
+    /// Makes the next `ensure_receiver` call fail with `error`.
+    ///
+    /// The injected error takes the same return path as a rejected link
+    /// attach: out of the `get_or_try_init` closure, through
+    /// `ensure_receiver` and `get_receiver`, and into the caller's error
+    /// handling. Tests use this to drive the attach-failure branch of
+    /// `EventReceiver::stream_events` without a live broker.
+    #[cfg(test)]
+    pub(crate) fn force_attach_error(&self, error: AmqpError) -> Result<()> {
+        use crate::EventHubsError;
+
+        let mut err = self
+            .forced_attach_error
+            .lock()
+            .map_err(|e| EventHubsError::with_message(e.to_string()))?;
+        *err = Some(error);
+        Ok(())
+    }
+
+    #[cfg(test)]
+    fn get_forced_attach_error(&self) -> azure_core_amqp::error::Result<()> {
+        let v = self
+            .forced_attach_error
+            .lock()
+            .expect("Forced attach error lock is poisoned")
             .take();
         v.map_or(Ok(()), Err)
     }
@@ -632,6 +670,12 @@ impl RecoverableConnection {
         let cell = self.receiver_cell(source_url).await;
         let receiver = cell
             .get_or_try_init(|| async {
+                // Test seam: fail the attach with an injected error before
+                // any network activity. The error leaves this closure on the
+                // same path a rejected `receiver.attach` below takes.
+                #[cfg(test)]
+                self.get_forced_attach_error()?;
+
                 self.ensure_connection().await?;
                 self.authorizer.authorize_path(self, source_url).await?;
 
@@ -995,31 +1039,10 @@ impl RecoverableConnection {
 
     /// Returns true if `amqp_error` is, or wraps via its [`std::error::Error::source`]
     /// chain, an [`AmqpErrorKind::AmqpDescribedError`] whose condition is `LinkStolen`.
-    /// Mirrors the bounded walk in [`Self::classify_azure_core_chain`].
+    /// The stream translation uses the same walk, so both agree on what counts
+    /// as a stolen link.
     fn is_link_stolen(amqp_error: &AmqpError) -> bool {
-        use std::error::Error as _;
-        const MAX_DEPTH: usize = 16;
-        fn is_stolen(e: &AmqpError) -> bool {
-            matches!(
-                e.kind(),
-                AmqpErrorKind::AmqpDescribedError(d)
-                    if matches!(d.condition, AmqpErrorCondition::LinkStolen)
-            )
-        }
-        if is_stolen(amqp_error) {
-            return true;
-        }
-        let mut cause: Option<&(dyn std::error::Error + 'static)> = amqp_error.source();
-        for _ in 0..MAX_DEPTH {
-            let Some(c) = cause else { break };
-            if let Some(amqp) = c.downcast_ref::<AmqpError>() {
-                if is_stolen(amqp) {
-                    return true;
-                }
-            }
-            cause = c.source();
-        }
-        false
+        crate::error::find_link_stolen(amqp_error).is_some()
     }
 
     /// Walks the [`std::error::Error::source`] chain looking for a wrapped [`AmqpError`]

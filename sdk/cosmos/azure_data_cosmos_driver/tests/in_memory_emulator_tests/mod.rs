@@ -8,6 +8,8 @@ pub mod batch;
 pub mod control_plane;
 #[cfg(feature = "preview_dtx")]
 pub mod distributed_transaction;
+#[cfg(feature = "fault_injection")]
+pub mod endpoint_probe_failback;
 pub mod error_cases;
 pub mod error_diagnostics;
 pub mod excluded_regions_fallback;

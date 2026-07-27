@@ -97,6 +97,21 @@ where
         write_guard.remove(key).and_then(|lazy| lazy.try_get())
     }
 
+    /// Removes an entry only if it still contains the observed value.
+    pub(crate) async fn invalidate_if_same(&self, key: &K, observed: &Arc<V>) -> bool {
+        let mut write_guard = self.map.write().await;
+        let should_remove = write_guard
+            .get(key)
+            .and_then(|lazy| lazy.try_get())
+            .is_some_and(|current| Arc::ptr_eq(&current, observed));
+
+        if should_remove {
+            write_guard.remove(key);
+        }
+
+        should_remove
+    }
+
     /// Clears all entries from the cache.
     #[cfg(test)]
     pub(crate) async fn clear(&self) {
@@ -319,13 +334,58 @@ mod tests {
             }));
         }
 
+        let mut results = Vec::new();
         for handle in handles {
             let result = handle.await.unwrap();
             assert_eq!(*result, "result");
+            results.push(result);
         }
 
         // Only ONE initialization should have occurred - this is the key invariant!
         assert_eq!(counter.load(Ordering::SeqCst), 1);
+        assert!(results[1..]
+            .iter()
+            .all(|result| Arc::ptr_eq(&results[0], result)));
+    }
+
+    #[tokio::test]
+    async fn concurrent_different_keys_do_not_serialize() {
+        let cache = Arc::new(AsyncCache::<String, i32>::new());
+        let barrier = Arc::new(tokio::sync::Barrier::new(2));
+
+        let first = {
+            let cache = cache.clone();
+            let barrier = barrier.clone();
+            async move {
+                cache
+                    .get_or_insert_with("first".to_string(), || async move {
+                        barrier.wait().await;
+                        1
+                    })
+                    .await
+            }
+        };
+        let second = {
+            let cache = cache.clone();
+            let barrier = barrier.clone();
+            async move {
+                cache
+                    .get_or_insert_with("second".to_string(), || async move {
+                        barrier.wait().await;
+                        2
+                    })
+                    .await
+            }
+        };
+
+        let (first, second) = tokio::time::timeout(Duration::from_secs(1), async {
+            tokio::join!(first, second)
+        })
+        .await
+        .expect("different cache keys should initialize concurrently");
+
+        assert_eq!(*first, 1);
+        assert_eq!(*second, 2);
     }
 
     #[tokio::test]
@@ -355,6 +415,20 @@ mod tests {
         assert_eq!(*removed.unwrap(), 42);
         assert!(cache.get(&"key".to_string()).await.is_none());
         assert!(cache_is_empty(&cache).await);
+    }
+
+    #[tokio::test]
+    async fn conditional_invalidation_preserves_replacement() {
+        let cache: AsyncCache<String, i32> = AsyncCache::new();
+        let key = "key".to_string();
+        let observed = cache.get_or_insert_with(key.clone(), || async { 42 }).await;
+
+        cache
+            .get_or_refresh_with(key.clone(), |_| true, || async { 100 })
+            .await;
+
+        assert!(!cache.invalidate_if_same(&key, &observed).await);
+        assert_eq!(*cache.get(&key).await.unwrap(), 100);
     }
 
     #[tokio::test]

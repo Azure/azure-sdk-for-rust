@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+mod common;
+
 use azure_core::{
     error::ErrorKind,
     http::{headers::CONTENT_TYPE, ClientOptions, RequestContent, StatusCode, Url},
@@ -21,11 +23,11 @@ use azure_storage_blob::{
     },
     BlobClient, BlobClientOptions, BlobContainerClient, BlobContainerClientOptions, StorageError,
 };
-use azure_storage_blob_test::{
+use bytes::{BufMut, BytesMut};
+use common::{
     create_test_blob, get_blob_name, get_container_client, get_container_name, ClientOptionsExt,
     StorageAccount, TestPolicy,
 };
-use bytes::{BufMut, BytesMut};
 use flate2::{write::GzEncoder, Compression};
 use futures::TryStreamExt;
 use std::{

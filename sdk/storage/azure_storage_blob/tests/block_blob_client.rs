@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+mod common;
+
 use azure_core::{
     http::{headers::CONTENT_TYPE, RequestContent, StatusCode},
     Bytes,
@@ -15,11 +17,11 @@ use azure_storage_blob::{
     },
     BlobContainerClientOptions,
 };
-use azure_storage_blob_test::{
+use bytes::{BufMut, BytesMut};
+use common::{
     block_lookup, create_test_blob, get_blob_name, get_container_client, predicates,
     ClientOptionsExt, StorageAccount, TestPolicy, KB, MB,
 };
-use bytes::{BufMut, BytesMut};
 use std::{
     collections::HashMap,
     error::Error,
