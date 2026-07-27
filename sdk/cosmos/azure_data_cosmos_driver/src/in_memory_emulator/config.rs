@@ -555,6 +555,7 @@ fn rand_fraction() -> f64 {
 #[derive(Clone, Debug)]
 pub struct ContainerConfig {
     partition_count: u32,
+    partition_key_range_page_size: Option<u32>,
     provisioned_throughput_ru: Option<u32>,
 }
 
@@ -577,6 +578,14 @@ impl ContainerConfig {
         self
     }
 
+    /// Sets the number of partition key ranges returned per `/pkranges` page.
+    ///
+    /// When unset, the emulator returns all ranges in one page.
+    pub fn with_partition_key_range_page_size(mut self, page_size: u32) -> Self {
+        self.partition_key_range_page_size = Some(page_size);
+        self
+    }
+
     /// Sets the provisioned throughput in RU/s. Validation is deferred to
     /// [`Self::build`].
     pub fn with_throughput(mut self, ru_per_second: u32) -> Self {
@@ -589,6 +598,7 @@ impl ContainerConfig {
     ///
     /// Validation rules:
     /// - `partition_count` must be in `1..=MAX_PARTITION_COUNT`.
+    /// - `partition_key_range_page_size`, when set, must be greater than zero.
     /// - `provisioned_throughput_ru`, when set, must be `>= 400` RU/s.
     ///
     /// Returns a `Client` error on the first violation.
@@ -609,6 +619,14 @@ impl ContainerConfig {
                 .with_message(format!("partition count must be <= {MAX_PARTITION_COUNT}"))
                 .build());
         }
+        if self.partition_key_range_page_size == Some(0) {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message("partition key range page size must be > 0")
+                .build());
+        }
         if let Some(ru) = self.provisioned_throughput_ru {
             if ru < 400 {
                 return Err(crate::error::CosmosError::builder()
@@ -626,20 +644,40 @@ impl ContainerConfig {
         self.partition_count
     }
 
+    pub fn partition_key_range_page_size(&self) -> Option<u32> {
+        self.partition_key_range_page_size
+    }
+
     pub fn provisioned_throughput_ru(&self) -> Option<u32> {
         self.provisioned_throughput_ru
     }
 }
 
 impl Default for ContainerConfig {
-    /// Defaults: **4 physical partitions** and no provisioned throughput
-    /// (throttling disabled even if the account-level `with_throttling_enabled`
-    /// is `true`). Override with [`ContainerConfig::with_partition_count`] and
-    /// [`ContainerConfig::with_throughput`].
+    /// Defaults to 4 physical partitions, unpaged partition metadata, and no
+    /// provisioned throughput.
     fn default() -> Self {
         Self {
             partition_count: 4,
+            partition_key_range_page_size: None,
             provisioned_throughput_ru: None,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ContainerConfig;
+
+    #[test]
+    fn partition_key_range_page_size_must_be_positive() {
+        let error = ContainerConfig::new()
+            .with_partition_key_range_page_size(0)
+            .build()
+            .unwrap_err();
+
+        assert!(error
+            .to_string()
+            .contains("partition key range page size must be > 0"));
     }
 }

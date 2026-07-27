@@ -17,6 +17,7 @@ pub mod dual_backend;
 pub mod end_to_end;
 pub mod hpk;
 pub mod partition_key_equality;
+pub mod partition_range_drain;
 pub mod query_comparison;
 pub mod session_token;
 pub mod user_agent;
