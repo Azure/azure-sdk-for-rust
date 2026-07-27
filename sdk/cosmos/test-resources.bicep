@@ -6,6 +6,9 @@ param enableAutomaticFailover bool = false
 @description('Flag to enable or disable multiple write locations on CosmosDB Account')
 param enableMultipleWriteLocations bool = false
 
+@description('Enable continuous backup mode, required to read the AllVersionsAndDeletes (full-fidelity) change feed. Incompatible with multiple write locations.')
+param enableContinuousBackup bool = false
+
 @description('Dictates which tests run for this resource')
 param testCategory string = 'emulator'
 
@@ -50,6 +53,14 @@ var multiRegionConfiguration = [
   }
 ]
 var locationsConfiguration = (enableMultipleRegions ? multiRegionConfiguration : singleRegionConfiguration)
+var backupPolicy = (enableContinuousBackup ? {
+  type: 'Continuous'
+  continuousModeProperties: {
+    tier: 'Continuous7Days'
+  }
+} : {
+  type: 'Periodic'
+})
 var roleDefinitionId = guid(baseName, 'roleDefinitionId')
 var roleAssignmentId = guid(baseName, 'roleAssignmentId')
 var roleDefinitionName = 'ExpandedRbacActions'
@@ -74,6 +85,7 @@ resource cosmosAccount 'Microsoft.DocumentDB/databaseAccounts@2023-04-15' = {
         {name: 'EnableNoSQLVectorSearch'}, {name: 'EnableNoSQLFullTextSearch'}
     ]
     locations: locationsConfiguration
+    backupPolicy: backupPolicy
   }
 }
 
