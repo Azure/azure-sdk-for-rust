@@ -42,7 +42,7 @@
 
 #[doc(inline)]
 pub use azure_data_cosmos_driver::diagnostics::{
-    DiagnosticsContext, ThresholdBreach, TransportKind,
+    DiagnosticsContext, RequestedRegion, RequestedRegionReason, ThresholdBreach, TransportKind,
 };
 #[doc(inline)]
 pub use azure_data_cosmos_driver::DiagnosticsThresholds;

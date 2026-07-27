@@ -4,7 +4,11 @@
 
 ### Features Added
 
+- Added the Hedging Detection API on `DiagnosticsContext`: `hedging_started()` (whether a hedge arm actually fanned out), `requested_regions()` (regions dispatched to, in dispatch order with duplicates, each tagged with a reason), and `responded_regions()` (regions that produced an actual service reply, in completion order). Adds the public `RequestedRegion` struct and `RequestedRegionReason` enum (both `#[non_exhaustive]`, with a total `From<ExecutionContext>` mapping) and the new `ExecutionContext::OperationRetry` variant. ([#4410](https://github.com/Azure/azure-sdk-for-rust/issues/4410))
+
 ### Breaking Changes
+
+- Renamed `ExecutionContext::Retry` to `ExecutionContext::OperationRetry` to distinguish operation-level retries from transport-level `TransportRetry`. The old `Retry` variant remains for one release as a `#[deprecated]` alias, but its serialized form changes from `"retry"` to `"operation_retry"`; telemetry parsers that match the literal `"retry"` must update. ([#4410](https://github.com/Azure/azure-sdk-for-rust/issues/4410))
 
 ### Bugs Fixed
 
