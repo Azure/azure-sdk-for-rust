@@ -100,18 +100,18 @@ flowchart TD
         RA["create/replace/upsert_item&lt;T&gt;(item)"]
         RS["serialize_item_body(item, binary)"]
         RA --> RS
-        RS -->|binary=true| RBIN["binary_json::to_vec(T)<br/>&rarr; already 0x80 binary"]
-        RS -->|binary=false| RTXT["serde_json::to_vec(T)<br/>&rarr; text JSON"]
+        RS -->|binary=true| rust_binary["binary_json::to_vec(T)<br/>&rarr; already 0x80 binary"]
+        RS -->|binary=false| rust_text["serde_json::to_vec(T)<br/>&rarr; text JSON"]
     end
 
     subgraph FFI["FFI / text hosts (driver_native)"]
         FA["create_item(bytes)"]
-        FA --> FTXT["raw text JSON bytes"]
+        FA --> ffi_text["raw text JSON bytes"]
     end
 
-    RBIN --> DRV
-    RTXT --> DRV
-    FTXT --> DRV
+    rust_binary --> DRV
+    rust_text --> DRV
+    ffi_text --> DRV
 
     subgraph DRIVER_REQ["Driver — request side (schema-agnostic)"]
         DRV["execute_operation"]
@@ -131,24 +131,24 @@ flowchart TD
 
     subgraph DRIVER_RESP["Driver — response side (schema-agnostic)"]
         RESP --> RT{"request_text_response?<br/>(binary.enabled &&<br/>request_text_response)"}
-        RT -->|yes = FFI/text host| TOTEXT["transcode_body_to_text<br/>(binary &rarr; text bytes)"]
-        RT -->|no = Rust SDK| RAWOUT["return raw response bytes"]
+        RT -->|yes = FFI/text host| to_text["transcode_body_to_text<br/>(binary &rarr; text bytes)"]
+        RT -->|no = Rust SDK| raw_out["return raw response bytes"]
     end
 
-    TOTEXT --> FRET["FFI: text JSON bytes<br/>back to native caller"]
-    RAWOUT --> SDKDEC["SDK: deserialize_item_body&lt;T&gt;"]
+    to_text --> FRET["FFI: text JSON bytes<br/>back to native caller"]
+    raw_out --> sdk_decode["SDK: deserialize_item_body&lt;T&gt;"]
 
-    subgraph SDKRESP["Rust SDK — response decode"]
-        SDKDEC --> ISBIN{"first byte == 0x80?"}
-        ISBIN -->|yes| DBIN["binary_json::from_slice::&lt;T&gt;"]
-        ISBIN -->|no| DTXT["serde_json::from_slice::&lt;T&gt;"]
-        DBIN --> TYPED["typed T returned to caller"]
-        DTXT --> TYPED
+    subgraph sdk_response_decode["Rust SDK — response decode"]
+        sdk_decode --> is_binary{"first byte == 0x80?"}
+        is_binary -->|yes| decode_binary["binary_json::from_slice::&lt;T&gt;"]
+        is_binary -->|no| decode_text["serde_json::from_slice::&lt;T&gt;"]
+        decode_binary --> TYPED["typed T returned to caller"]
+        decode_text --> TYPED
     end
 
     style TRANS fill:#d0ffd0,stroke:#0a0
-    style TOTEXT fill:#d0ffd0,stroke:#0a0
-    style RBIN fill:#d0e8ff,stroke:#06c
+    style to_text fill:#d0ffd0,stroke:#0a0
+    style rust_binary fill:#d0e8ff,stroke:#06c
     style GATE fill:#ffe8c0,stroke:#e80
 ```
 
