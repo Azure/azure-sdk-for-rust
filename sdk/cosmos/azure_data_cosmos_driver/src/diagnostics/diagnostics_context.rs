@@ -60,10 +60,14 @@ pub enum ExecutionContext {
     Initial,
     /// Retry due to transient error (e.g., 429, 503).
     ///
-    /// Renamed to [`ExecutionContext::OperationRetry`] to align with the
-    /// cross-SDK reason taxonomy. Retained for one release for source
-    /// compatibility; the serialized form also changes from `"retry"` to
-    /// `"operation_retry"`.
+    /// **Deprecated:** superseded by [`ExecutionContext::OperationRetry`], which
+    /// aligns with the cross-SDK reason taxonomy and is distinct from the
+    /// transport-level [`ExecutionContext::TransportRetry`]. This is a distinct,
+    /// still-constructible variant — **not** a serde alias: a `Retry` value
+    /// continues to serialize as `"retry"`. The wire-format change to
+    /// `"operation_retry"` comes from the dispatch sites now emitting
+    /// `OperationRetry` instead of `Retry`, not from any change to this variant's
+    /// own serialization. Retained for one release for source compatibility.
     #[deprecated(since = "0.7.0", note = "use `ExecutionContext::OperationRetry`")]
     Retry,
     /// An operation-level retry decided by the SDK's client-retry policy.
@@ -2208,7 +2212,30 @@ impl DiagnosticsContext {
             machine_id: last.machine_id.clone(),
             operation_name: last.operation_name.clone(),
             fault_injection_enabled: sources.iter().any(|c| c.fault_injection_enabled),
-            hedge_diagnostics: None,
+            // Propagate a representative hedge diagnostics so an aggregated
+            // operation (e.g. PATCH, whose internal Read sub-op can itself
+            // hedge) still reports hedging consistently: `hedging_started()`,
+            // the hedged metric's `hedge_terminal_state` dimension, and the
+            // tracing/log hedge fields must not silently drop just because the
+            // operation was aggregated. Prefer a sub-op that actually fanned
+            // out (an alternate region is present); otherwise fall back to any
+            // attached hedge diagnostics. Taking the last match mirrors how the
+            // aggregate inherits its operation-level fields from the last
+            // sub-op.
+            hedge_diagnostics: sources
+                .iter()
+                .rev()
+                .find_map(|c| {
+                    c.hedge_diagnostics
+                        .clone()
+                        .filter(|hd| hd.alternate_region().is_some())
+                })
+                .or_else(|| {
+                    sources
+                        .iter()
+                        .rev()
+                        .find_map(|c| c.hedge_diagnostics.clone())
+                }),
             compaction,
             #[cfg(test)]
             test_system_usage: last.test_system_usage.clone(),
@@ -2306,24 +2333,44 @@ impl DiagnosticsContext {
         self.regions_contacted.clone()
     }
 
-    /// Returns the regions to which this operation dispatched a request, in
-    /// dispatch order, each tagged with the reason the SDK chose it.
+    /// Returns the regions to which this operation dispatched a request, each
+    /// tagged with the reason the SDK chose it.
     ///
-    /// Each dispatched attempt with a resolved region contributes one entry.
-    /// Duplicates are allowed: the same region may appear more than once if it
-    /// was dispatched multiple times (e.g., a retry to the same region, or a
-    /// hedge request to a region that was also the primary). The initial
+    /// Each retained dispatched attempt with a resolved region contributes one
+    /// entry. Duplicates are allowed: the same region may appear more than once
+    /// if it was dispatched multiple times (e.g., a retry to the same region,
+    /// or a hedge request to a region that was also the primary). The initial
     /// attempt is included and tagged [`RequestedRegionReason::Initial`].
     ///
     /// Entries with no resolved region (pre-region-selection failures) are
     /// skipped, so this returns an empty `Vec` when an operation failed before
     /// any region was selected.
     ///
-    /// Order matches [`RequestDiagnostics`] insertion order, which is dispatch
-    /// order. This is distinct from [`regions_contacted`](Self::regions_contacted),
-    /// which is sorted and deduplicated.
+    /// **Hedge fan-out recovery.** When a hedge race resolves as a clean win
+    /// (the primary wins after the threshold, or the alternate wins outright),
+    /// the losing leg's future — and its per-request [`RequestDiagnostics`] — is
+    /// structurally dropped before it can be merged, so [`requests`](Self::requests)
+    /// holds only the winning leg. The fan-out regions are still recorded
+    /// authoritatively on [`hedge_diagnostics`](Self::hedge_diagnostics), so
+    /// when a fan-out occurred this accessor guarantees both fan-out legs are
+    /// represented: the primary leg tagged [`RequestedRegionReason::Initial`]
+    /// and the alternate leg tagged [`RequestedRegionReason::Hedging`]. A
+    /// recovered leg has no corresponding [`responded_regions`](Self::responded_regions)
+    /// entry (a structurally-dropped leg never produced a service reply). This
+    /// keeps the accessor consistent with the `hedge_region` observability
+    /// attribute, which is also sourced from `hedge_diagnostics`.
+    ///
+    /// Order is the retained attempts' dispatch (insertion) order, with the two
+    /// fan-out legs placed in dispatch order (the `Initial` primary before the
+    /// `Hedging` alternate). Under a `429`/`410` retry storm the retained list
+    /// may be bounded by [`DiagnosticsOptions::max_request_diagnostics`], so a
+    /// dropped attempt can be absent here even though it is still counted by
+    /// [`regions_contacted`](Self::regions_contacted) (which is captured from
+    /// the full attempt list before compaction and is deduplicated in
+    /// first-contact order).
     pub fn requested_regions(&self) -> Vec<RequestedRegion> {
-        self.requests
+        let mut regions: Vec<RequestedRegion> = self
+            .requests
             .iter()
             .filter_map(|r| {
                 r.region().map(|region| RequestedRegion {
@@ -2331,7 +2378,50 @@ impl DiagnosticsContext {
                     reason: RequestedRegionReason::from(r.execution_context()),
                 })
             })
-            .collect()
+            .collect();
+
+        // Recover a structurally-dropped hedge fan-out leg (see the doc comment).
+        // `hedge_diagnostics.alternate_region()` is `Some` exactly when a hedge
+        // arm fanned out; the primary leg is always dispatched as `Initial` and
+        // the alternate as `Hedging`.
+        if let Some(hedge) = self.hedge_diagnostics.as_ref() {
+            if let Some(alternate) = hedge.alternate_region() {
+                let is_sentinel =
+                    |region: &Region| region.as_str() == HedgeDiagnostics::UNKNOWN_REGION_SENTINEL;
+
+                let has_hedge_leg = regions
+                    .iter()
+                    .any(|r| r.reason == RequestedRegionReason::Hedging && &r.region == alternate);
+                if !has_hedge_leg && !is_sentinel(alternate) {
+                    regions.push(RequestedRegion {
+                        region: alternate.clone(),
+                        reason: RequestedRegionReason::Hedging,
+                    });
+                }
+
+                let primary = hedge.primary_region();
+                let has_initial_leg = regions
+                    .iter()
+                    .any(|r| r.reason == RequestedRegionReason::Initial && &r.region == primary);
+                if !has_initial_leg && !is_sentinel(primary) {
+                    // The primary leg is always launched first; place it before
+                    // the first hedge leg so the fan-out reads in dispatch order.
+                    let insert_at = regions
+                        .iter()
+                        .position(|r| r.reason == RequestedRegionReason::Hedging)
+                        .unwrap_or(regions.len());
+                    regions.insert(
+                        insert_at,
+                        RequestedRegion {
+                            region: primary.clone(),
+                            reason: RequestedRegionReason::Initial,
+                        },
+                    );
+                }
+            }
+        }
+
+        regions
     }
 
     /// Returns the regions from which this operation received a response, in
@@ -2348,6 +2438,12 @@ impl DiagnosticsContext {
     /// internal `responded_with_service_reply` predicate on each request).
     /// A non-2xx HTTP status (e.g., 404/429) still counts — it is a response
     /// from the region.
+    ///
+    /// Unlike [`requested_regions`](Self::requested_regions), this accessor does
+    /// **not** recover a structurally-dropped hedge loser leg: on a clean hedge
+    /// win the losing leg is cancelled before it produces a service reply, so it
+    /// correctly does not appear here. A clean hedge win therefore lists only the
+    /// winning region even though `requested_regions()` lists both fan-out legs.
     ///
     /// To deduplicate, callers can collect into a set, for example:
     /// `ctx.responded_regions().into_iter().collect::<std::collections::BTreeSet<_>>()`.
@@ -4165,6 +4261,158 @@ mod tests {
         });
 
         assert!(ctx.hedging_started());
+    }
+
+    fn hedge_config() -> crate::driver::pipeline::hedging_diagnostics::HedgingStrategyConfig {
+        crate::driver::pipeline::hedging_diagnostics::HedgingStrategyConfig::new(
+            crate::options::HedgeThreshold::new(std::time::Duration::from_millis(500))
+                .expect("500ms is a valid hedge threshold"),
+        )
+    }
+
+    #[test]
+    fn requested_regions_recovers_dropped_hedge_leg_on_primary_win() {
+        // PrimaryWonAfterHedge: the alternate leg is structurally dropped, so
+        // `requests` holds only the primary (Initial) record. The alternate
+        // region must still be recovered from `hedge_diagnostics` and appended
+        // in dispatch order (after the Initial primary).
+        let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
+            let h = builder.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::EAST_US_2),
+                "https://test.eastus2.documents.azure.com",
+            );
+            builder.complete_request(h, StatusCode::Ok, None);
+            builder.set_hedge_diagnostics(HedgeDiagnostics::primary_won_after_hedge(
+                hedge_config(),
+                Region::EAST_US_2,
+                Region::WEST_US_2,
+            ));
+        });
+
+        assert!(ctx.hedging_started());
+        assert_eq!(
+            ctx.requested_regions(),
+            vec![
+                RequestedRegion {
+                    region: Region::EAST_US_2,
+                    reason: RequestedRegionReason::Initial,
+                },
+                RequestedRegion {
+                    region: Region::WEST_US_2,
+                    reason: RequestedRegionReason::Hedging,
+                },
+            ]
+        );
+        // The dropped alternate leg never produced a service reply, so only the
+        // winning primary appears in responded_regions.
+        assert_eq!(ctx.responded_regions(), vec![&Region::EAST_US_2]);
+    }
+
+    #[test]
+    fn requested_regions_recovers_dropped_primary_leg_on_alternate_win() {
+        // AlternateWon: the primary leg is structurally dropped, so `requests`
+        // holds only the alternate (Hedging) record. The Initial primary region
+        // must be recovered and placed first (dispatch order).
+        let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
+            let h = builder.start_test_request(
+                ExecutionContext::Hedging,
+                Some(Region::WEST_US_2),
+                "https://test.westus2.documents.azure.com",
+            );
+            builder.complete_request(h, StatusCode::Ok, None);
+            builder.set_hedge_diagnostics(HedgeDiagnostics::hedge_won(
+                hedge_config(),
+                Region::EAST_US_2,
+                Region::WEST_US_2,
+            ));
+        });
+
+        assert!(ctx.hedging_started());
+        assert_eq!(
+            ctx.requested_regions(),
+            vec![
+                RequestedRegion {
+                    region: Region::EAST_US_2,
+                    reason: RequestedRegionReason::Initial,
+                },
+                RequestedRegion {
+                    region: Region::WEST_US_2,
+                    reason: RequestedRegionReason::Hedging,
+                },
+            ]
+        );
+        // Only the winning alternate produced a service reply.
+        assert_eq!(ctx.responded_regions(), vec![&Region::WEST_US_2]);
+    }
+
+    #[test]
+    fn requested_regions_no_recovery_when_no_fanout() {
+        // PrimaryWonPreThreshold: a strategy was active but no alternate fanned
+        // out (alternate_region = None), so nothing is recovered and
+        // hedging_started() is false.
+        let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
+            let h = builder.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::EAST_US_2),
+                "https://test.eastus2.documents.azure.com",
+            );
+            builder.complete_request(h, StatusCode::Ok, None);
+            builder.set_hedge_diagnostics(HedgeDiagnostics::primary_only(
+                hedge_config(),
+                Region::EAST_US_2,
+            ));
+        });
+
+        assert!(!ctx.hedging_started());
+        assert_eq!(
+            ctx.requested_regions(),
+            vec![RequestedRegion {
+                region: Region::EAST_US_2,
+                reason: RequestedRegionReason::Initial,
+            }]
+        );
+    }
+
+    #[test]
+    fn aggregate_sub_operations_propagates_hedge_diagnostics() {
+        // An aggregated operation (e.g. PATCH) whose sub-op hedged must still
+        // report hedging so the metric/log/span surfaces stay consistent, even
+        // though the aggregate is stitched from multiple sub-op contexts.
+        let read = make_context_with(ActivityId::new_uuid(), |builder| {
+            let h = builder.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::EAST_US_2),
+                "https://test.eastus2.documents.azure.com",
+            );
+            builder.complete_request(h, StatusCode::Ok, None);
+        });
+        let patch = make_context_with(ActivityId::new_uuid(), |builder| {
+            let h = builder.start_test_request(
+                ExecutionContext::Hedging,
+                Some(Region::WEST_US_2),
+                "https://test.westus2.documents.azure.com",
+            );
+            builder.complete_request(h, StatusCode::Ok, None);
+            builder.set_hedge_diagnostics(HedgeDiagnostics::hedge_won(
+                hedge_config(),
+                Region::EAST_US_2,
+                Region::WEST_US_2,
+            ));
+        });
+
+        let aggregate =
+            DiagnosticsContext::aggregate_sub_operations(&[Arc::new(read), Arc::new(patch)])
+                .expect("non-empty sources");
+
+        assert!(aggregate.hedging_started());
+        let hedge = aggregate
+            .hedge_diagnostics()
+            .expect("aggregate must inherit a representative hedge diagnostics");
+        assert_eq!(
+            hedge.terminal_state(),
+            crate::driver::pipeline::hedging_diagnostics::HedgeTerminalState::AlternateWon,
+        );
     }
 
     #[test]

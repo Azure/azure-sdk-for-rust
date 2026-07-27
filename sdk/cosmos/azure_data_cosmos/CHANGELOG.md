@@ -12,6 +12,8 @@
 
 ### Breaking Changes
 
+- Serialized `DiagnosticsContext` output (the diagnostics JSON surfaced to consumers, and the sampled diagnostics log line) now serializes driver-generated operation retries with `execution_context` = `"operation_retry"` instead of `"retry"`, following the driver's `ExecutionContext::Retry` → `OperationRetry` rename. This is additive to the enum (the deprecated `Retry` variant still serializes as `"retry"`), but the wire value emitted for operation retries changes; telemetry/log parsers that match the literal `"retry"` execution context must update. ([#4410](https://github.com/Azure/azure-sdk-for-rust/issues/4410))
+
 ### Bugs Fixed
 
 ### Other Changes

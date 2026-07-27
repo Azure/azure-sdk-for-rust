@@ -217,20 +217,28 @@ impl CosmosMetricsHandler {
     /// the higher-cardinality `hedge_region` dimension is added only under the
     /// extended-attributes opt-in (mirroring how contacted regions are gated on
     /// the duration metric).
+    ///
+    /// The counter is emitted only when `hedge_diagnostics` is present, so a
+    /// data point can never be recorded without its `hedge_terminal_state`
+    /// dimension — a mixed attribute schema on the same counter would fragment
+    /// its time series and break `group by hedge_terminal_state`. An aggregated
+    /// operation (e.g. PATCH) whose sub-op hedged propagates a representative
+    /// `hedge_diagnostics`, so this stays consistent with non-aggregated ops.
     fn record_hedged(&self, diagnostics: &DiagnosticsContext, base_attrs: &[KeyValue]) {
+        let Some(hedge) = diagnostics.hedge_diagnostics() else {
+            return;
+        };
         let mut attrs = base_attrs.to_vec();
-        if let Some(hedge) = diagnostics.hedge_diagnostics() {
-            attrs.push(KeyValue::new(
-                attributes::ATTR_HEDGE_TERMINAL_STATE,
-                hedge.terminal_state().as_str(),
-            ));
-            if self.options.extended_attributes_enabled() {
-                if let Some(alternate) = hedge.alternate_region() {
-                    attrs.push(KeyValue::new(
-                        attributes::ATTR_HEDGE_REGION,
-                        alternate.as_str().to_string(),
-                    ));
-                }
+        attrs.push(KeyValue::new(
+            attributes::ATTR_HEDGE_TERMINAL_STATE,
+            hedge.terminal_state().as_str(),
+        ));
+        if self.options.extended_attributes_enabled() {
+            if let Some(alternate) = hedge.alternate_region() {
+                attrs.push(KeyValue::new(
+                    attributes::ATTR_HEDGE_REGION,
+                    alternate.as_str().to_string(),
+                ));
             }
         }
         self.instruments.hedged.add(1, &attrs);
@@ -701,6 +709,55 @@ mod tests {
         assert!(
             hedged_point(&metrics).is_none(),
             "a non-hedged operation must not increment the hedged counter"
+        );
+    }
+
+    #[test]
+    fn hedged_metric_skips_when_terminal_state_unavailable() {
+        // Defensive: if an operation reads as hedged (a `Hedging`-tagged request)
+        // but carries no `hedge_diagnostics`, the counter is skipped rather than
+        // emitted without its `hedge_terminal_state` dimension — a missing
+        // dimension would fragment the counter's time series. Real aggregated
+        // operations (e.g. PATCH) propagate a representative `hedge_diagnostics`,
+        // so this is a belt-and-suspenders guard.
+        use azure_data_cosmos_driver::diagnostics::{ExecutionContext, RequestDiagnostics};
+        use azure_data_cosmos_driver::models::RequestCharge;
+        use std::time::Instant;
+
+        let harness = test_meter();
+        let options = MetricsOptions::default().with_hedged_metric(true);
+        let handler = CosmosMetricsHandler::with_meter_and_options(harness.meter.clone(), options);
+
+        let now = Instant::now();
+        let hedge_leg = RequestDiagnostics::for_testing(
+            "https://acct-westus2.documents.azure.com:443/",
+            Some(Region::WEST_US_2),
+            CosmosStatus::new(StatusCode::Ok),
+            RequestCharge::new(1.0),
+            now - Duration::from_millis(50),
+            now,
+        )
+        .with_execution_context_for_testing(ExecutionContext::Hedging);
+        let ctx = DiagnosticsContext::for_testing_with_hedge(
+            ActivityId::new_uuid(),
+            Duration::from_millis(42),
+            Some(CosmosStatus::new(StatusCode::Ok)),
+            Some("read_item"),
+            vec![hedge_leg],
+            None,
+        );
+        assert!(
+            ctx.hedging_started(),
+            "a Hedging-tagged request makes hedging_started() true"
+        );
+
+        let cx = Context::new().with_value(operation_context());
+        handler.handle(&ctx, &cx);
+
+        let metrics = harness.collect();
+        assert!(
+            hedged_point(&metrics).is_none(),
+            "the counter must not emit a data point missing the hedge_terminal_state dimension"
         );
     }
 }

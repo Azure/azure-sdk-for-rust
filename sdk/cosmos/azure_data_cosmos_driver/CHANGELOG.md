@@ -9,7 +9,7 @@
 
 ### Breaking Changes
 
-- Renamed `ExecutionContext::Retry` to `ExecutionContext::OperationRetry` to distinguish operation-level retries from transport-level `TransportRetry`. The old `Retry` variant remains for one release as a `#[deprecated]` alias, but its serialized form changes from `"retry"` to `"operation_retry"`; telemetry parsers that match the literal `"retry"` must update. ([#4410](https://github.com/Azure/azure-sdk-for-rust/issues/4410))
+- Renamed `ExecutionContext::Retry` to `ExecutionContext::OperationRetry` to distinguish operation-level retries from transport-level `TransportRetry`. The old `Retry` remains for one release as a distinct `#[deprecated]` variant (**not** a serde alias); a `Retry` value still serializes as `"retry"`. The customer-visible wire-format change is that driver-generated operation retries now serialize as `"operation_retry"` instead of `"retry"`, because the dispatch sites emit `OperationRetry`; telemetry parsers that match the literal `"retry"` execution context must update. ([#4410](https://github.com/Azure/azure-sdk-for-rust/issues/4410))
 
 ### Bugs Fixed
 

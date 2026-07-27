@@ -33,9 +33,9 @@ Rust-native `HedgeDiagnostics` surface (see §5); the two are complementary.
 | Item | Signature | Notes |
 | --- | --- | --- |
 | `DiagnosticsContext` | re-exported as `azure_data_cosmos::DiagnosticsContext` | The per-operation diagnostics handle. |
-| `DiagnosticsContext::requests` | `-> Arc<Vec<RequestDiagnostics>>` | All dispatched attempts, in **dispatch order** (append-only). Cloning the `Arc` is a cheap atomic increment. |
+| `DiagnosticsContext::requests` | `-> Arc<Vec<RequestDiagnostics>>` | Retained per-attempt records in dispatch order — **not** a guaranteed-complete append-only history: under a `429`/`410` retry storm the list is bounded/compacted (see `max_request_diagnostics`, which can drop or reorder entries), and a structurally-dropped hedge loser leg is absent. Cloning the `Arc` is a cheap atomic increment. |
 | `DiagnosticsContext::hedge_diagnostics` | `-> Option<&HedgeDiagnostics>` | `Some` whenever a hedging strategy was active for the operation (including primary-wins-under-threshold). |
-| `DiagnosticsContext::regions_contacted` | `-> Vec<Region>` | **Sorted and deduplicated** distinct regions — not dispatch order. |
+| `DiagnosticsContext::regions_contacted` | `-> Vec<Region>` | Distinct regions **deduplicated in first-contact (failover) order — not sorted**, captured from the full attempt list before compaction. |
 | `RequestDiagnostics::region` | `-> Option<&Region>` | `None` for pre-region-selection failures. |
 | `RequestDiagnostics::execution_context` | `-> ExecutionContext` | Why this attempt was dispatched (see §3). |
 | `RequestDiagnostics::completed_at` | `-> Option<Instant>` | Set by `complete()`, `timeout()`, **and** `fail_transport()` — so "completed" alone is not "responded" (see §4.3). |
@@ -86,10 +86,13 @@ clearly distinct from the transport-level `TransportRetry`. The hand-written
 `transport_pipeline.rs`, `cosmos_driver.rs`) are updated accordingly.
 
 **Compatibility.** The old `Retry` variant is retained for one release as a
-`#[deprecated]` alias so existing source keeps compiling. The **serialized form
-changes from `"retry"` to `"operation_retry"`**: telemetry parsers that match on
-the literal `"retry"` must update. (`ExecutionContext` derives `Serialize` only,
-not `Deserialize`, so no `#[serde(alias)]` is needed.)
+distinct `#[deprecated]` variant (**not** a serde alias) so existing source keeps
+compiling; a `Retry` value still serializes as `"retry"`. The customer-visible
+wire-format change is that the dispatch sites now emit `OperationRetry` for
+driver-generated operation retries, so those attempts serialize as
+`"operation_retry"` instead of `"retry"`; telemetry parsers that match the
+literal `"retry"` execution context must update. (`ExecutionContext` derives
+`Serialize` only, not `Deserialize`, so no `#[serde(alias)]` is needed.)
 
 ---
 
@@ -128,10 +131,22 @@ correct if a future change ever drifts one signal.
 
 ### 4.3 Regions dispatched to, with reason — `requested_regions()`
 
-Dispatch order, duplicates preserved (a region dispatched twice appears twice),
-entries with no resolved region skipped. The initial attempt is included and
-tagged `RequestedRegionReason::Initial`. This is distinct from
-`regions_contacted()`, which is sorted and deduplicated.
+Retained attempts in dispatch order, duplicates preserved (a region dispatched
+twice appears twice), entries with no resolved region skipped. The initial
+attempt is included and tagged `RequestedRegionReason::Initial`.
+
+When a hedge fanned out and the race resolved as a **clean win** (the primary
+wins after the threshold, or the alternate wins outright), the losing leg's
+per-request record is structurally dropped before it can be merged (see §5 and
+`HedgeDiagnostics`). This accessor recovers the missing fan-out leg(s) from the
+authoritative `hedge_diagnostics` — the primary tagged `Initial` and the
+alternate tagged `Hedging`, in dispatch order — so both dispatched regions are
+always represented and consistent with the `hedge_region` telemetry attribute. A
+recovered leg has **no** `responded_regions()` entry (a dropped leg never
+produced a service reply). This is distinct from `regions_contacted()`, which is
+deduplicated in first-contact order; under a retry storm the retained attempt
+list may be compacted, so `regions_contacted()` (captured pre-compaction) is the
+complete distinct-region set.
 
 ### 4.4 Regions that responded — `responded_regions()`
 

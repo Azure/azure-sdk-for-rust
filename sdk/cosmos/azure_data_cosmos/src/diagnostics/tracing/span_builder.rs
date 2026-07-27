@@ -298,7 +298,14 @@ pub(crate) fn emit_backdated_span_tree<T>(
             ));
         }
         // Tag the speculative hedge leg so the child span is attributable to the
-        // hedge fan-out rather than an initial/retry dispatch.
+        // hedge fan-out rather than an initial/retry dispatch. This tag is
+        // present only for a *retained* hedge-leg record: when the primary wins
+        // a clean race the alternate leg is structurally cancelled before it
+        // produces a per-request record, so no child span exists for it. In that
+        // case the authoritative hedge signal lives on the root span
+        // (`hedge_started` / `hedge_region` / `hedge_terminal_state`, plus the
+        // alternate region in `requested_regions`), so the fan-out is still
+        // attributable even without a tagged child.
         if matches!(req.execution_context(), ExecutionContext::Hedging) {
             child_attrs.push(KeyValue::new(attributes::HEDGE_LEG, true));
         }

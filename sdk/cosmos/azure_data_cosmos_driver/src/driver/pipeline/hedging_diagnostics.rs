@@ -539,6 +539,50 @@ mod tests {
     }
 
     #[test]
+    fn terminal_state_as_str_is_stable_for_every_variant() {
+        // These strings are an observability contract (metric/log/span values),
+        // so pin all six. `BothTransient` collapses to a single value regardless
+        // of its `deadline_elapsed` payload to keep the emitted value set bounded.
+        assert_eq!(
+            HedgeTerminalState::PrimaryWonPreThreshold.as_str(),
+            "primary_won_pre_threshold"
+        );
+        assert_eq!(
+            HedgeTerminalState::DeadlineExceededPreThreshold.as_str(),
+            "deadline_exceeded_pre_threshold"
+        );
+        assert_eq!(
+            HedgeTerminalState::PrimaryWonAfterHedge.as_str(),
+            "primary_won_after_hedge"
+        );
+        assert_eq!(HedgeTerminalState::AlternateWon.as_str(), "alternate_won");
+        assert_eq!(
+            HedgeTerminalState::CancelledAwaitingPartner.as_str(),
+            "cancelled_awaiting_partner"
+        );
+        assert_eq!(
+            HedgeTerminalState::BothTransient {
+                deadline_elapsed: true
+            }
+            .as_str(),
+            "both_transient"
+        );
+        assert_eq!(
+            HedgeTerminalState::BothTransient {
+                deadline_elapsed: false
+            }
+            .as_str(),
+            "both_transient",
+            "both_transient must collapse regardless of deadline_elapsed"
+        );
+        // Display delegates to as_str().
+        assert_eq!(
+            HedgeTerminalState::AlternateWon.to_string(),
+            "alternate_won"
+        );
+    }
+
+    #[test]
     fn debug_clone_round_trip() {
         let diag = HedgeDiagnostics::hedge_won(config(), Region::EAST_US, Region::WEST_US_2);
         let cloned = diag.clone();
