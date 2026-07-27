@@ -8454,6 +8454,25 @@ mod tests {
         ));
     }
 
+    // ── routing_decision_for_pinned_endpoint (pinned_endpoint override) ──
+
+    #[test]
+    fn routing_decision_for_pinned_endpoint_routes_to_the_pinned_endpoint() {
+        use crate::driver::routing::CosmosEndpoint;
+        use crate::options::Region;
+        let url = url::Url::parse("https://acct-westus2.documents.azure.com/").unwrap();
+        let pinned = CosmosEndpoint::regional(Region::WEST_US_2, url.clone());
+
+        let routing = super::routing_decision_for_pinned_endpoint(&pinned, false);
+
+        assert_eq!(routing.endpoint.region(), Some(&Region::WEST_US_2));
+        assert_eq!(routing.selected_url, url);
+        assert!(matches!(
+            routing.transport_mode,
+            super::TransportMode::Gateway
+        ));
+    }
+
     #[test]
     fn classify_hedge_result_404_1002_is_transient() {
         // 404/1002 ReadSessionNotAvailable is retriable.

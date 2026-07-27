@@ -56,20 +56,16 @@ const METADATA_HEDGE_THRESHOLD: Duration = Duration::from_millis(1500);
 /// Current members:
 /// * `(Document, Read)` — data-plane point reads (Phase 1).
 /// * `(DocumentCollection, Read)` — `Collection` `Read` metadata cache read.
-///
-/// **Deferred:** `(PartitionKeyRange, ReadFeed)` is intentionally NOT listed yet.
-/// That metadata read is a multi-page change-feed whose continuation ETag is
-/// region-affine, so a first-page hedge win must pin pages 2..N to the winning
-/// region. Enabling it is gated on the `pinned_endpoint` routing override
-/// (`OperationOverrides` + `resolve_endpoint`); until that lands, hedging it
-/// would risk an inconsistent routing map. Container Read is a single request
-/// with no continuation, so it is safe today. See `docs/HEDGING_SPEC.md` and
-/// `.work/PHASE2-STATUS.md`.
+/// * `(PartitionKeyRange, ReadFeed)` — `PartitionKeyRange` `ReadFeed` metadata
+///   cache read. Only the cold first change-feed page is hedged; if the hedge
+///   wins, later pages are pinned to the winning region (the continuation ETag
+///   is region-affine) via `OperationOverrides::pinned_endpoint`.
 ///
 /// See `docs/HEDGING_SPEC.md`.
 const HEDGEABLE_PAIRS: &[(ResourceType, OperationType)] = &[
     (ResourceType::Document, OperationType::Read),
     (ResourceType::DocumentCollection, OperationType::Read),
+    (ResourceType::PartitionKeyRange, OperationType::ReadFeed),
 ];
 
 /// Returns `true` when the operation is eligible for cross-region hedging.
@@ -507,22 +503,20 @@ mod tests {
     }
 
     #[test]
-    fn should_not_hedge_pkrange_readfeed_pending_pin() {
-        // `(PartitionKeyRange, ReadFeed)` is a multi-page change-feed whose
-        // continuation ETag is region-affine; hedging it safely requires the
-        // `pinned_endpoint` routing override (not yet implemented). Until then it
-        // is intentionally NOT hedge-eligible. See `.work/PHASE2-STATUS.md`.
+    fn should_hedge_pkrange_readfeed() {
+        // Metadata PartitionKeyRange ReadFeed `(PartitionKeyRange, ReadFeed)` IS
+        // hedged; the cache hedges only the cold first change-feed page and pins
+        // later pages to the winner via OperationOverrides::pinned_endpoint.
         let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
         let op = read_pk_ranges_operation();
-        assert!(!should_hedge(Some(&enabled_strategy()), &op, &state, &[],));
+        assert!(should_hedge(Some(&enabled_strategy()), &op, &state, &[],));
     }
 
     #[test]
-    fn hedgeable_pairs_includes_collection_read_but_not_pkrange_yet() {
+    fn hedgeable_pairs_includes_both_metadata_reads() {
         assert!(HEDGEABLE_PAIRS.contains(&(ResourceType::DocumentCollection, OperationType::Read)));
-        // PartitionKeyRange ReadFeed is deferred until the continuation pin lands.
         assert!(
-            !HEDGEABLE_PAIRS.contains(&(ResourceType::PartitionKeyRange, OperationType::ReadFeed))
+            HEDGEABLE_PAIRS.contains(&(ResourceType::PartitionKeyRange, OperationType::ReadFeed))
         );
     }
 
@@ -535,7 +529,6 @@ mod tests {
         for stray in [
             (ResourceType::Document, OperationType::ReadFeed),
             (ResourceType::DocumentCollection, OperationType::ReadFeed),
-            (ResourceType::PartitionKeyRange, OperationType::ReadFeed),
             (ResourceType::PartitionKeyRange, OperationType::Read),
             (ResourceType::Database, OperationType::Read),
             (ResourceType::Offer, OperationType::Read),
@@ -958,27 +951,27 @@ mod tests {
 
     #[test]
     fn evaluate_uses_fixed_1500ms_threshold_for_metadata_reads() {
-        // The hedged metadata read (Collection Read) uses a fixed 1.5s threshold
-        // (match .NET), independent of request_timeout and not the data-plane
-        // min(1000ms, timeout/2) default. (PartitionKeyRange ReadFeed will join
-        // once its continuation pin lands; it is not hedge-eligible yet.)
+        // Both hedged metadata reads (Collection Read, PartitionKeyRange ReadFeed)
+        // use a fixed 1.5s threshold (match .NET), independent of request_timeout
+        // and not the data-plane min(1000ms, timeout/2) default.
         let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
         let primary = primary_routing_for(&state);
         let op_opts = OperationOptions::default();
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        let op = read_container_operation();
-        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None)
-            .expect("eligible metadata read");
-        assert_eq!(
-            upgrade.threshold.get(),
-            Duration::from_millis(1500),
-            "metadata reads use the fixed 1.5s threshold"
-        );
-        assert_eq!(
-            upgrade.strategy_config,
-            HedgingStrategyConfig::new(upgrade.threshold)
-        );
+        for op in [read_container_operation(), read_pk_ranges_operation()] {
+            let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None)
+                .expect("eligible metadata read");
+            assert_eq!(
+                upgrade.threshold.get(),
+                Duration::from_millis(1500),
+                "metadata reads use the fixed 1.5s threshold"
+            );
+            assert_eq!(
+                upgrade.strategy_config,
+                HedgingStrategyConfig::new(upgrade.threshold)
+            );
+        }
 
         // A data-plane point read still gets the driver default (1000ms), even
         // with a request_timeout supplied, so the metadata override is scoped.
