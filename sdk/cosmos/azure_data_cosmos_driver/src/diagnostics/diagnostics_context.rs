@@ -1359,6 +1359,12 @@ pub(crate) struct DiagnosticsContextBuilder {
     /// Machine identifier (VM ID on Azure, generated UUID otherwise).
     machine_id: Option<Arc<String>>,
 
+    /// Canonical `db.operation.name` for the operation (e.g. `read_item`),
+    /// when known. Set by the driver pipeline from
+    /// [`CosmosOperation::db_operation_name`](crate::models::CosmosOperation::db_operation_name)
+    /// and carried onto the finalized [`DiagnosticsContext::operation_name`].
+    operation_name: Option<Arc<str>>,
+
     /// Whether fault injection is enabled for this operation's runtime.
     #[cfg(feature = "fault_injection")]
     fault_injection_enabled: bool,
@@ -1383,6 +1389,7 @@ impl DiagnosticsContextBuilder {
             options,
             cpu_monitor: None,
             machine_id: None,
+            operation_name: None,
             #[cfg(feature = "fault_injection")]
             fault_injection_enabled: false,
             hedge_diagnostics: None,
@@ -1399,6 +1406,13 @@ impl DiagnosticsContextBuilder {
     /// Sets the machine identifier (from [`VmMetadataService`](crate::system::VmMetadataService)).
     pub(crate) fn set_machine_id(&mut self, machine_id: Arc<String>) {
         self.machine_id = Some(machine_id);
+    }
+
+    /// Sets the canonical `db.operation.name` for this operation (e.g.
+    /// `read_item`). Carried onto the finalized
+    /// [`DiagnosticsContext::operation_name`].
+    pub(crate) fn set_operation_name(&mut self, name: impl Into<Arc<str>>) {
+        self.operation_name = Some(name.into());
     }
 
     /// Sets the hedging diagnostics for this operation.
@@ -1423,6 +1437,7 @@ impl DiagnosticsContextBuilder {
             options: Arc::clone(&self.options),
             cpu_monitor: self.cpu_monitor.clone(),
             machine_id: self.machine_id.clone(),
+            operation_name: self.operation_name.clone(),
             #[cfg(feature = "fault_injection")]
             fault_injection_enabled: self.fault_injection_enabled,
             hedge_diagnostics: None,
@@ -1729,7 +1744,7 @@ impl DiagnosticsContextBuilder {
             options: self.options,
             cpu_monitor: self.cpu_monitor,
             machine_id: self.machine_id,
-            operation_name: None,
+            operation_name: self.operation_name,
             #[cfg(feature = "fault_injection")]
             fault_injection_enabled: self.fault_injection_enabled,
             #[cfg(not(feature = "fault_injection"))]
@@ -1827,11 +1842,11 @@ pub struct DiagnosticsContext {
     /// Canonical `db.operation.name` for the operation (e.g. `read_item`,
     /// `query_items`), when known.
     ///
-    /// This is an optional seam for the emission layer: it feeds the
-    /// `db.operation.name` span/log attribute and lets
+    /// This feeds the `db.operation.name` span/log attribute and lets
     /// [`is_threshold_violated`](Self::is_threshold_violated) pick the point vs.
-    /// non-point latency threshold. It defaults to `None` — the driver pipeline
-    /// does not populate it yet, so today it is set only by test constructors.
+    /// non-point latency threshold. The driver pipeline populates it from
+    /// [`CosmosOperation::db_operation_name`](crate::models::CosmosOperation::db_operation_name);
+    /// it stays `None` for operations without a canonical name.
     operation_name: Option<Arc<str>>,
 
     /// Whether fault injection was enabled when this operation executed.
@@ -2224,10 +2239,25 @@ impl DiagnosticsContext {
     /// Returns the canonical `db.operation.name` for this operation, if known.
     ///
     /// Values are the semantic-convention operation names such as `read_item`,
-    /// `create_item`, or `query_items`. Returns `None` when the operation name
-    /// was not recorded (the common case today — see the field docs).
+    /// `create_item`, or `query_items`. The driver pipeline populates this from
+    /// [`CosmosOperation::db_operation_name`](crate::models::CosmosOperation::db_operation_name);
+    /// it is `None` only for operations without a canonical name (query plans,
+    /// partition-key-range reads, and other internal requests).
     pub fn operation_name(&self) -> Option<&str> {
         self.operation_name.as_deref()
+    }
+
+    /// Returns this context with its canonical `db.operation.name` replaced.
+    ///
+    /// Used by aggregating callers (notably the PATCH handler) that build a
+    /// single operation-level context out of sub-operation contexts: the
+    /// aggregate would otherwise inherit the *last* sub-op's name (e.g.
+    /// `replace_item` for a PATCH's final Replace) instead of the virtual
+    /// operation's own name (`patch_item`). Consumes `self` before it is shared
+    /// via `Arc`, preserving the type's immutability contract.
+    pub(crate) fn with_operation_name(mut self, operation_name: Option<Arc<str>>) -> Self {
+        self.operation_name = operation_name;
+        self
     }
 
     /// Returns `true` when this context represents a finished operation.
@@ -4554,6 +4584,51 @@ mod tests {
     fn operation_name_defaults_to_none() {
         let ctx = make_context_with(ActivityId::new_uuid(), |_| {});
         assert_eq!(ctx.operation_name(), None);
+    }
+
+    #[test]
+    fn set_operation_name_populates_completed_context() {
+        let ctx = make_context_with(ActivityId::new_uuid(), |b| {
+            b.set_operation_name("read_item");
+        });
+        assert_eq!(ctx.operation_name(), Some("read_item"));
+    }
+
+    #[test]
+    fn with_operation_name_overrides_after_construction() {
+        let ctx = make_context_with(ActivityId::new_uuid(), |b| {
+            b.set_operation_name("replace_item");
+        });
+        assert_eq!(ctx.operation_name(), Some("replace_item"));
+
+        let overridden = ctx.with_operation_name(Some(Arc::from("patch_item")));
+        assert_eq!(overridden.operation_name(), Some("patch_item"));
+
+        let cleared = overridden.with_operation_name(None);
+        assert_eq!(cleared.operation_name(), None);
+    }
+
+    #[test]
+    fn aggregate_sub_operations_can_override_operation_name() {
+        // Mirrors the PATCH handler: a Read + Replace aggregate would inherit
+        // `replace_item` from the last source, but `with_operation_name` lets
+        // the caller stamp the virtual operation's own name.
+        let read = Arc::new(make_context_with(ActivityId::new_uuid(), |b| {
+            b.set_operation_name("read_item");
+        }));
+        let replace = Arc::new(make_context_with(ActivityId::new_uuid(), |b| {
+            b.set_operation_name("replace_item");
+        }));
+
+        let inherited =
+            DiagnosticsContext::aggregate_sub_operations(&[read.clone(), replace.clone()])
+                .expect("aggregation of two contexts yields Some");
+        assert_eq!(inherited.operation_name(), Some("replace_item"));
+
+        let stamped = DiagnosticsContext::aggregate_sub_operations(&[read, replace])
+            .expect("aggregation of two contexts yields Some")
+            .with_operation_name(Some(Arc::from("patch_item")));
+        assert_eq!(stamped.operation_name(), Some("patch_item"));
     }
 
     #[test]

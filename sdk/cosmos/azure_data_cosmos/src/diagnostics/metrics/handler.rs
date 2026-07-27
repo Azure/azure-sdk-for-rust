@@ -35,6 +35,12 @@ const METER_NAME: &str = "azure_data_cosmos";
 /// histogram. The optional per-signal metrics and the extended attribute set are
 /// opt-in via [`MetricsOptions`] (see [`with_options`](CosmosMetricsHandler::with_options)).
 ///
+/// When the active-instance metric is enabled
+/// ([`MetricsOptions::with_active_instance_metric`]), the handler increments the
+/// `azure.cosmosdb.client.active_instance.count` up-down counter on construction
+/// and decrements it on [`Drop`], so the reported value tracks the number of
+/// live instrumented client instances.
+///
 /// The handler captures a [`Meter`] from the globally-registered provider at
 /// construction. Install your meter provider **before** constructing the handler:
 /// a `Meter` obtained while the global provider is still the default no-op stays a
@@ -76,10 +82,34 @@ impl CosmosMetricsHandler {
     }
 
     fn from_meter(meter: &Meter, options: MetricsOptions) -> Self {
-        Self {
+        let handler = Self {
             instruments: Instruments::new(meter),
             options,
+        };
+        // Record the +1 half of the active-instance up-down counter at
+        // construction. One handler is created per instrumented client and
+        // held for that client's lifetime, so the handler's own lifecycle is
+        // a faithful proxy for a live client instance. The matching -1 is
+        // recorded in `Drop`.
+        if handler.options.active_instance_metric_enabled() {
+            handler
+                .instruments
+                .active_instance
+                .add(1, &Self::active_instance_attributes());
         }
+        handler
+    }
+
+    /// Low-cardinality attribute set for the active-instance up-down counter.
+    ///
+    /// Deliberately keyed on `db.system.name` alone so every client instance
+    /// aggregates into a single series whose value is the live instance count,
+    /// rather than fanning out per-instance.
+    fn active_instance_attributes() -> [KeyValue; 1] {
+        [KeyValue::new(
+            attributes::ATTR_DB_SYSTEM_NAME,
+            attributes::DB_SYSTEM_NAME_VALUE,
+        )]
     }
 
     /// Resolves `server.address`: the operation-context override if present,
@@ -212,6 +242,18 @@ impl CosmosMetricsHandler {
 impl Default for CosmosMetricsHandler {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl Drop for CosmosMetricsHandler {
+    fn drop(&mut self) {
+        // Record the -1 half of the active-instance up-down counter: the client
+        // instrumentation instance this handler represents is going away.
+        if self.options.active_instance_metric_enabled() {
+            self.instruments
+                .active_instance
+                .add(-1, &Self::active_instance_attributes());
+        }
     }
 }
 
@@ -351,6 +393,29 @@ mod tests {
             }
         }
         None
+    }
+
+    /// Returns the summed value of the `active_instance.count` up-down counter
+    /// from the most recent export, or `None` if the metric was never emitted.
+    ///
+    /// The in-memory exporter accumulates one snapshot per `collect()` call, so
+    /// we scan every snapshot and keep the value from the last one — the current
+    /// cumulative count.
+    fn active_instance_value(metrics: &[ResourceMetrics]) -> Option<i64> {
+        let mut latest = None;
+        for rm in metrics {
+            for sm in rm.scope_metrics() {
+                for m in sm.metrics() {
+                    if m.name() != attributes::METRIC_ACTIVE_INSTANCE_COUNT {
+                        continue;
+                    }
+                    if let AggregatedMetrics::I64(MetricData::Sum(sum)) = m.data() {
+                        latest = Some(sum.data_points().map(|point| point.value()).sum());
+                    }
+                }
+            }
+        }
+        latest
     }
 
     #[test]
@@ -528,6 +593,32 @@ mod tests {
         // no-op meter; recording must not panic (the exporter-absent path).
         let handler = CosmosMetricsHandler::new();
         handler.handle(&completed(200), &Context::new());
+    }
+
+    #[test]
+    fn active_instance_metric_off_by_default() {
+        // With default options the active-instance counter is never touched, so
+        // no such series is exported even across the handler's whole lifecycle.
+        let harness = test_meter();
+        let handler = CosmosMetricsHandler::with_meter(harness.meter.clone());
+        assert_eq!(active_instance_value(&harness.collect()), None);
+        drop(handler);
+        assert_eq!(active_instance_value(&harness.collect()), None);
+    }
+
+    #[test]
+    fn active_instance_metric_tracks_handler_lifecycle() {
+        let harness = test_meter();
+        let options = MetricsOptions::default().with_active_instance_metric(true);
+
+        let handler = CosmosMetricsHandler::with_meter_and_options(harness.meter.clone(), options);
+        // +1 recorded at construction.
+        assert_eq!(active_instance_value(&harness.collect()), Some(1));
+
+        // Dropping the handler records the matching -1, so the up-down counter
+        // returns to zero — it reflects live instances, not a monotonic total.
+        drop(handler);
+        assert_eq!(active_instance_value(&harness.collect()), Some(0));
     }
 
     #[test]

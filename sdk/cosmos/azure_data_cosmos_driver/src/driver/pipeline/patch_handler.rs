@@ -201,6 +201,12 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
     // Replace's. See `DiagnosticsContext::aggregate_sub_operations`.
     let mut sub_op_diagnostics: Vec<Arc<DiagnosticsContext>> =
         Vec::with_capacity(2 * attempts as usize);
+
+    // The aggregated context concatenates the Read + Replace sub-ops and would
+    // otherwise inherit the *last* sub-op's `db.operation.name` (`replace_item`).
+    // Stamp the virtual PATCH operation's own canonical name instead.
+    let operation_name: Option<Arc<str>> = operation.db_operation_name().map(Arc::from);
+
     for _ in 0..attempts {
         // Read the current item, propagating the freshest session token we
         // have observed so far (caller's on attempt 1; carried-forward on
@@ -305,7 +311,7 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
                 // (e.g. an empty source slice — which can't happen here, but
                 // we keep the safe fallback for forward-compat).
                 let diagnostics = DiagnosticsContext::aggregate_sub_operations(&sub_op_diagnostics)
-                    .map(Arc::new)
+                    .map(|ctx| Arc::new(ctx.with_operation_name(operation_name.clone())))
                     .unwrap_or_else(|| {
                         sub_op_diagnostics
                             .last()
@@ -382,7 +388,12 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
         }
     }
 
-    Err(exhaustion_error(attempts, last_412, &sub_op_diagnostics))
+    Err(exhaustion_error(
+        attempts,
+        last_412,
+        &sub_op_diagnostics,
+        operation_name,
+    ))
 }
 
 fn missing_body_error(msg: &'static str) -> crate::error::CosmosError {
@@ -536,9 +547,11 @@ fn exhaustion_error(
     attempts: u8,
     last_412: Option<crate::error::CosmosError>,
     sub_op_diagnostics: &[Arc<DiagnosticsContext>],
+    operation_name: Option<Arc<str>>,
 ) -> crate::error::CosmosError {
     let message = format!("patch_item: ETag conflict after {attempts} attempts");
-    let aggregated = DiagnosticsContext::aggregate_sub_operations(sub_op_diagnostics).map(Arc::new);
+    let aggregated = DiagnosticsContext::aggregate_sub_operations(sub_op_diagnostics)
+        .map(|ctx| Arc::new(ctx.with_operation_name(operation_name)));
     match last_412 {
         Some(source) => {
             let mut b = crate::error::CosmosErrorBuilder::from_error(source).with_context(message);
@@ -915,7 +928,7 @@ mod tests {
             None,
             b"server-body",
         );
-        let err = exhaustion_error(7, Some(underlying), &[]);
+        let err = exhaustion_error(7, Some(underlying), &[], Some(Arc::from("patch_item")));
 
         // (a) Shape.
         assert_eq!(
@@ -956,7 +969,7 @@ mod tests {
         // `attempts = 0` short-circuit), we still want the caller to see a
         // 412-shaped error so they can recognize "we gave up" the same way
         // they would for any other PATCH retry exhaustion.
-        let err = exhaustion_error(0, None, &[]);
+        let err = exhaustion_error(0, None, &[], Some(Arc::from("patch_item")));
 
         assert_eq!(err.status().status_code(), StatusCode::PreconditionFailed);
         // No underlying service error was supplied, so the synthesized
@@ -984,7 +997,7 @@ mod tests {
             Some("0:1#42"),
             b"{\"code\":\"PreconditionFailed\",\"message\":\"server: stale etag\"}",
         );
-        let err = exhaustion_error(4, Some(underlying), &[]);
+        let err = exhaustion_error(4, Some(underlying), &[], Some(Arc::from("patch_item")));
 
         assert_eq!(err.status().status_code(), StatusCode::PreconditionFailed);
         assert_eq!(
@@ -1045,7 +1058,12 @@ mod tests {
                 Arc::new(builder.complete())
             })
             .collect();
-        let err = exhaustion_error(2, Some(underlying), &attempt_diags);
+        let err = exhaustion_error(
+            2,
+            Some(underlying),
+            &attempt_diags,
+            Some(Arc::from("patch_item")),
+        );
 
         let diag = err
             .diagnostics()
@@ -1054,6 +1072,11 @@ mod tests {
             diag.request_count(),
             4,
             "aggregated diagnostics must concatenate every per-attempt RequestDiagnostics",
+        );
+        assert_eq!(
+            diag.operation_name(),
+            Some("patch_item"),
+            "aggregated PATCH diagnostics must carry the virtual operation's own name",
         );
         // And critically, the attached diagnostics must be distinct from
         // every input Arc — the aggregator returns a fresh context.
@@ -1900,5 +1923,10 @@ mod tests {
         // The aggregated context inherits its activity_id from the LAST
         // source (the Replace), per `aggregate_sub_operations`'s contract.
         assert_eq!(returned.activity_id(), handed_out[1].activity_id());
+
+        // ...but its `db.operation.name` is the virtual PATCH operation's own
+        // name, not the Replace sub-op's, so telemetry labels the operation
+        // correctly.
+        assert_eq!(returned.operation_name(), Some("patch_item"));
     }
 }

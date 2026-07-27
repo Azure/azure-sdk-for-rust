@@ -33,15 +33,18 @@
 /// let full = MetricsOptions::default()
 ///     .with_request_charge_metric(true)
 ///     .with_returned_rows_metric(true)
+///     .with_active_instance_metric(true)
 ///     .with_extended_attributes(true);
 /// assert!(full.request_charge_metric_enabled());
 /// assert!(full.returned_rows_metric_enabled());
+/// assert!(full.active_instance_metric_enabled());
 /// assert!(full.extended_attributes_enabled());
 /// ```
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct MetricsOptions {
     request_charge_metric: bool,
     returned_rows_metric: bool,
+    active_instance_metric: bool,
     extended_attributes: bool,
 }
 
@@ -68,6 +71,17 @@ impl MetricsOptions {
         self
     }
 
+    /// Enables (or disables) the
+    /// `azure.cosmosdb.client.active_instance.count` up-down counter, which
+    /// tracks the number of live client instrumentation instances: it is
+    /// incremented by one when the [`CosmosMetricsHandler`](super::CosmosMetricsHandler)
+    /// is created and decremented by one when it is dropped. Off by default.
+    #[must_use]
+    pub fn with_active_instance_metric(mut self, enabled: bool) -> Self {
+        self.active_instance_metric = enabled;
+        self
+    }
+
     /// Enables (or disables) the extended attribute set on every emitted metric:
     /// consistency level, contacted regions, sub-status code, and connection
     /// mode. These can be higher cardinality, so they are opt-in and off by
@@ -86,6 +100,11 @@ impl MetricsOptions {
     /// Whether the returned-rows histogram is emitted.
     pub fn returned_rows_metric_enabled(&self) -> bool {
         self.returned_rows_metric
+    }
+
+    /// Whether the active-instance up-down counter is emitted.
+    pub fn active_instance_metric_enabled(&self) -> bool {
+        self.active_instance_metric
     }
 
     /// Whether the extended attribute set is attached to emitted metrics.

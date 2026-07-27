@@ -149,6 +149,64 @@ impl CosmosOperation {
         self.resource_type
     }
 
+    /// Returns the canonical OpenTelemetry `db.operation.name` for this
+    /// operation, when it maps to a well-known Cosmos DB operation.
+    ///
+    /// The returned value uses the semantic-convention names the SDK surfaces
+    /// (`read_item`, `create_item`, `query_items`, `query_change_feed`,
+    /// `execute_batch`, `read_container`, …). It feeds
+    /// [`DiagnosticsContext::operation_name`](crate::diagnostics::DiagnosticsContext::operation_name)
+    /// so the emission layer can label spans/logs and
+    /// [`is_threshold_violated`](crate::diagnostics::DiagnosticsContext::is_threshold_violated)
+    /// can distinguish point from non-point operations for tail-based sampling.
+    ///
+    /// Operations without a canonical name (query plans, partition-key-range
+    /// reads, HEAD probes, stored procedures, triggers, UDFs, distributed
+    /// transactions) return `None`, which leaves the diagnostics
+    /// `operation_name` unset — identical to the pre-population behavior.
+    pub fn db_operation_name(&self) -> Option<&'static str> {
+        let name = match (self.operation_type, self.resource_type) {
+            // Data-plane item operations.
+            (OperationType::Create, ResourceType::Document) => "create_item",
+            (OperationType::Read, ResourceType::Document) => "read_item",
+            (OperationType::Replace, ResourceType::Document) => "replace_item",
+            (OperationType::Delete, ResourceType::Document) => "delete_item",
+            (OperationType::Upsert, ResourceType::Document) => "upsert_item",
+            (OperationType::Patch, ResourceType::Document) => "patch_item",
+            (OperationType::Batch, ResourceType::Document) => "execute_batch",
+            (OperationType::Query, ResourceType::Document)
+            | (OperationType::SqlQuery, ResourceType::Document) => "query_items",
+            (OperationType::ReadFeed, ResourceType::Document) => {
+                if self.is_change_feed {
+                    "query_change_feed"
+                } else {
+                    "read_all_items"
+                }
+            }
+            // Container (collection) management.
+            (OperationType::Create, ResourceType::DocumentCollection) => "create_container",
+            (OperationType::Read, ResourceType::DocumentCollection) => "read_container",
+            (OperationType::Replace, ResourceType::DocumentCollection) => "replace_container",
+            (OperationType::Delete, ResourceType::DocumentCollection) => "delete_container",
+            (OperationType::Query, ResourceType::DocumentCollection)
+            | (OperationType::SqlQuery, ResourceType::DocumentCollection) => "query_containers",
+            (OperationType::ReadFeed, ResourceType::DocumentCollection) => "read_all_containers",
+            // Database management.
+            (OperationType::Create, ResourceType::Database) => "create_database",
+            (OperationType::Read, ResourceType::Database) => "read_database",
+            (OperationType::Delete, ResourceType::Database) => "delete_database",
+            (OperationType::Query, ResourceType::Database)
+            | (OperationType::SqlQuery, ResourceType::Database) => "query_databases",
+            (OperationType::ReadFeed, ResourceType::Database) => "read_all_databases",
+            // Throughput (offer) management.
+            (OperationType::Read, ResourceType::Offer) => "read_throughput",
+            (OperationType::Replace, ResourceType::Offer) => "replace_throughput",
+            // Everything else has no canonical semconv name.
+            _ => return None,
+        };
+        Some(name)
+    }
+
     /// Returns a reference to the resource being operated on.
     pub(crate) fn resource_reference(&self) -> &CosmosResourceReference {
         &self.resource_reference
@@ -1067,5 +1125,87 @@ mod tests {
             ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let resource_ref: CosmosResourceReference = item_ref.into();
         let _op = CosmosOperation::new(OperationType::Create, resource_ref, None);
+    }
+
+    #[test]
+    fn db_operation_name_maps_item_operations() {
+        let item =
+            || ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+
+        assert_eq!(
+            CosmosOperation::create_item(item()).db_operation_name(),
+            Some("create_item")
+        );
+        assert_eq!(
+            CosmosOperation::read_item(item()).db_operation_name(),
+            Some("read_item")
+        );
+        assert_eq!(
+            CosmosOperation::replace_item(item()).db_operation_name(),
+            Some("replace_item")
+        );
+        assert_eq!(
+            CosmosOperation::upsert_item(item()).db_operation_name(),
+            Some("upsert_item")
+        );
+        assert_eq!(
+            CosmosOperation::delete_item(item()).db_operation_name(),
+            Some("delete_item")
+        );
+        assert_eq!(
+            CosmosOperation::patch_item(item()).db_operation_name(),
+            Some("patch_item")
+        );
+    }
+
+    #[test]
+    fn db_operation_name_maps_feed_and_query_operations() {
+        assert_eq!(
+            CosmosOperation::query_items(test_container(), Some(FeedRange::full()))
+                .db_operation_name(),
+            Some("query_items")
+        );
+        assert_eq!(
+            CosmosOperation::change_feed(test_container(), Some(FeedRange::full()))
+                .db_operation_name(),
+            Some("query_change_feed")
+        );
+        assert_eq!(
+            CosmosOperation::read_all_items_cross_partition(test_container()).db_operation_name(),
+            Some("read_all_items")
+        );
+        assert_eq!(
+            CosmosOperation::batch(test_container(), PartitionKey::from("pk1")).db_operation_name(),
+            Some("execute_batch")
+        );
+    }
+
+    #[test]
+    fn db_operation_name_maps_metadata_operations() {
+        let db = DatabaseReference::from_name(test_account(), "testdb");
+
+        assert_eq!(
+            CosmosOperation::read_container(test_container()).db_operation_name(),
+            Some("read_container")
+        );
+        assert_eq!(
+            CosmosOperation::create_container(db.clone()).db_operation_name(),
+            Some("create_container")
+        );
+        assert_eq!(
+            CosmosOperation::read_database(db.clone()).db_operation_name(),
+            Some("read_database")
+        );
+        assert_eq!(
+            CosmosOperation::query_databases(test_account()).db_operation_name(),
+            Some("query_databases")
+        );
+    }
+
+    #[test]
+    fn db_operation_name_none_for_unmapped_operations() {
+        // Query plans have no canonical semconv operation name.
+        let op = CosmosOperation::query_plan(test_container(), std::borrow::Cow::Borrowed(""));
+        assert_eq!(op.db_operation_name(), None);
     }
 }

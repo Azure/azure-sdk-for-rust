@@ -2649,12 +2649,21 @@ impl CosmosDriver {
                 false
             }
         };
-        let (diagnostics_builder, transport_security) = Self::new_diagnostics_envelope(
+        let (mut diagnostics_builder, transport_security) = Self::new_diagnostics_envelope(
             &self.runtime,
             activity_id.clone(),
             &endpoint,
             fault_injection_enabled,
         );
+
+        // Populate the canonical `db.operation.name` (e.g. `read_item`,
+        // `query_items`) so the finalized diagnostics carry it in production —
+        // feeding the emission layer's span/log attribute and the point-vs.-
+        // non-point tail-sampling classification. `None` for operations without
+        // a canonical name leaves it unset, matching prior behavior.
+        if let Some(operation_name) = operation.db_operation_name() {
+            diagnostics_builder.set_operation_name(operation_name);
+        }
 
         let pipeline_type = if is_dataplane {
             PipelineType::DataPlane

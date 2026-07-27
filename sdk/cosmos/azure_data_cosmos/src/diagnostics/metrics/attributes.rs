@@ -32,6 +32,10 @@ pub const METRIC_OPERATION_REQUEST_CHARGE: &str = "azure.cosmosdb.client.operati
 /// Optional histogram (rows): number of rows/items returned by an operation.
 pub const METRIC_RESPONSE_RETURNED_ROWS: &str = "db.client.response.returned_rows";
 
+/// Optional up-down counter (instances): number of live Cosmos client
+/// instrumentation instances (one per active [`CosmosMetricsHandler`](super::CosmosMetricsHandler)).
+pub const METRIC_ACTIVE_INSTANCE_COUNT: &str = "azure.cosmosdb.client.active_instance.count";
+
 // =========================================================================
 // Instrument units
 // =========================================================================
@@ -48,6 +52,9 @@ pub const UNIT_REQUEST_UNIT: &str = "{request_unit}";
 
 /// Unit for [`METRIC_RESPONSE_RETURNED_ROWS`] — rows.
 pub const UNIT_ROW: &str = "{row}";
+
+/// Unit for [`METRIC_ACTIVE_INSTANCE_COUNT`] — client instances.
+pub const UNIT_INSTANCE: &str = "{instance}";
 
 // =========================================================================
 // Stable attributes (always emitted; operation scope, low cardinality)
