@@ -60,6 +60,11 @@ var backupPolicy = (enableContinuousBackup ? {
   }
 } : {
   type: 'Periodic'
+  periodicModeProperties: {
+    backupIntervalInMinutes: 240
+    backupRetentionIntervalInHours: 8
+    backupStorageRedundancy: 'Geo'
+  }
 })
 var roleDefinitionId = guid(baseName, 'roleDefinitionId')
 var roleAssignmentId = guid(baseName, 'roleAssignmentId')
