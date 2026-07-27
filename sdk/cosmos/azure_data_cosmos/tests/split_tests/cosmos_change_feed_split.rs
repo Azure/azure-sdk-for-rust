@@ -299,9 +299,9 @@ pub async fn change_feed_all_versions_and_deletes_resume_across_split() -> Resul
                 "ChangeFeedAvadResumeAcrossSplit",
                 "/partitionKey".into(),
             )
-            .with_change_feed_policy(ChangeFeedPolicy::all_versions_and_deletes(
-                Duration::from_secs(60 * 60),
-            ));
+            .with_change_feed_policy(
+                ChangeFeedPolicy::default().with_retention_duration(Duration::from_secs(60 * 60)),
+            );
             let throughput = ThroughputProperties::manual(1000);
             let container_client = Arc::new(
                 run_context

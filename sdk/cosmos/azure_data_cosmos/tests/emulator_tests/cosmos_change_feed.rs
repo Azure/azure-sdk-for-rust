@@ -670,7 +670,7 @@ async fn create_avad_container(
     throughput: Option<ThroughputProperties>,
 ) -> azure_data_cosmos::Result<ContainerClient> {
     let properties = ContainerProperties::new(name.to_string(), "/partitionKey".into())
-        .with_change_feed_policy(ChangeFeedPolicy::all_versions_and_deletes(retention));
+        .with_change_feed_policy(ChangeFeedPolicy::default().with_retention_duration(retention));
     let options = throughput.map(|t| CreateContainerOptions::default().with_throughput(t));
     run_context
         .create_container(db_client, properties, options)

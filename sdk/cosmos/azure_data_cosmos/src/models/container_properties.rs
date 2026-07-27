@@ -195,7 +195,7 @@ impl ContainerProperties {
 
     /// Sets the change feed policy for the container.
     ///
-    /// Use [`ChangeFeedPolicy::all_versions_and_deletes`] to enable the
+    /// Use [`ChangeFeedPolicy::with_retention_duration`] to enable the
     /// [`AllVersionsAndDeletes`](crate::options::ChangeFeedMode::AllVersionsAndDeletes)
     /// change feed mode with a retention window.
     pub fn with_change_feed_policy(mut self, change_feed_policy: ChangeFeedPolicy) -> Self {
@@ -450,58 +450,69 @@ pub enum ConflictResolutionMode {
 #[safe(true)]
 #[non_exhaustive]
 pub struct ChangeFeedPolicy {
-    /// The all versions and deletes retention window, in minutes.
+    /// The all versions and deletes retention window.
     ///
-    /// A value of `0` (the default) disables all versions and deletes, leaving only
-    /// `LatestVersion` reads available. Kept private so it can only be set through
-    /// [`all_versions_and_deletes`](ChangeFeedPolicy::all_versions_and_deletes),
-    /// and clamped to a non-negative value on the wire.
+    /// `None` (the default) disables all versions and deletes, leaving only
+    /// `LatestVersion` reads available. On the wire this maps to a whole number
+    /// of minutes, where `0` means "no retention"; that conversion happens in
+    /// [`serialize_retention_minutes`] and [`deserialize_retention_minutes`].
     #[serde(
         rename = "retentionDuration",
         default,
-        serialize_with = "serialize_retention_minutes"
+        serialize_with = "serialize_retention_minutes",
+        deserialize_with = "deserialize_retention_minutes"
     )]
-    retention_duration_minutes: i32,
+    retention_duration: Option<Duration>,
 }
 
-/// Serializes the retention window, clamping any negative value to `0` so a
-/// malformed (deserialized) policy can never send a negative window to the
-/// service.
-fn serialize_retention_minutes<S>(value: &i32, serializer: S) -> Result<S::Ok, S::Error>
+/// Serializes the retention window as the whole number of minutes the service
+/// expects, where `0` means "no retention".
+///
+/// A `None` window serializes to `0`. Any non-zero [`Duration`] is rounded
+/// **up** to the next whole minute so a sub-minute window never truncates to
+/// `0` (which the service reads as "disabled").
+fn serialize_retention_minutes<S>(
+    value: &Option<Duration>,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
 where
-    S: serde::Serializer,
+    S: Serializer,
 {
-    serializer.serialize_i32((*value).max(0))
+    let minutes = value
+        .map(|retention| retention.as_secs().div_ceil(60).min(i32::MAX as u64) as i32)
+        .unwrap_or(0);
+    serializer.serialize_i32(minutes)
+}
+
+/// Deserializes the retention window from the whole number of minutes on the
+/// wire, where `0` (or any non-positive value from a malformed payload) means
+/// "no retention" and maps to `None`.
+fn deserialize_retention_minutes<'de, D>(deserializer: D) -> Result<Option<Duration>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let minutes = i32::deserialize(deserializer)?;
+    Ok((minutes > 0).then(|| Duration::from_secs(minutes as u64 * 60)))
 }
 
 impl ChangeFeedPolicy {
-    /// Creates a change feed policy that enables the
+    /// Sets the all versions and deletes retention window, enabling the
     /// [`AllVersionsAndDeletes`](crate::options::ChangeFeedMode::AllVersionsAndDeletes)
-    /// mode with the given retention window.
+    /// change feed mode.
     ///
-    /// The window has minute granularity; any non-zero `retention` is rounded
-    /// **up** to the next whole minute so a sub-minute request never truncates
-    /// to `0` (which would disable the mode). A zero `retention` leaves the mode
-    /// disabled.
-    pub fn all_versions_and_deletes(retention: Duration) -> Self {
-        Self {
-            retention_duration_minutes: retention.as_secs().div_ceil(60).min(i32::MAX as u64)
-                as i32,
-        }
+    /// The window has minute granularity on the service; any non-zero
+    /// `retention` is rounded **up** to the next whole minute when serialized so
+    /// a sub-minute request never truncates to `0` (which would disable the
+    /// mode).
+    pub fn with_retention_duration(mut self, retention: Duration) -> Self {
+        self.retention_duration = Some(retention);
+        self
     }
 
-    /// Returns the all versions and deletes retention window, in whole minutes.
-    ///
-    /// A value of `0` means all versions and deletes is disabled.
-    pub fn retention_duration_minutes(&self) -> i32 {
-        self.retention_duration_minutes.max(0)
-    }
-
-    /// Returns the all versions and deletes retention window.
-    ///
-    /// A zero duration means all versions and deletes is disabled.
-    pub fn retention_duration(&self) -> Duration {
-        Duration::from_secs(self.retention_duration_minutes.max(0) as u64 * 60)
+    /// Returns the all versions and deletes retention window, or `None` when the
+    /// mode is disabled.
+    pub fn retention_duration(&self) -> Option<Duration> {
+        self.retention_duration
     }
 }
 
@@ -649,67 +660,96 @@ mod tests {
     }
 
     #[test]
-    fn change_feed_policy_serializes_retention_minutes() {
-        let policy = ChangeFeedPolicy::all_versions_and_deletes(Duration::from_secs(5 * 60));
-        assert_eq!(5, policy.retention_duration_minutes());
-        let json = serde_json::to_string(&policy).unwrap();
-        assert_eq!(r#"{"retentionDuration":5}"#, json);
+    fn change_feed_policy_serializes_retention_as_minutes() {
+        let policy =
+            ChangeFeedPolicy::default().with_retention_duration(Duration::from_secs(5 * 60));
+        assert_eq!(
+            r#"{"retentionDuration":5}"#,
+            serde_json::to_string(&policy).unwrap()
+        );
     }
 
     #[test]
-    fn change_feed_policy_rounds_sub_minute_retention_up() {
+    fn change_feed_policy_serializes_sub_minute_retention_rounded_up() {
         // A sub-minute window must round up to 1 minute, not truncate to 0
         // (which would disable the mode).
-        let policy = ChangeFeedPolicy::all_versions_and_deletes(Duration::from_secs(30));
-        assert_eq!(1, policy.retention_duration_minutes());
-        assert_eq!(Duration::from_secs(60), policy.retention_duration());
-
-        // A non-whole-minute window rounds up to the next whole minute.
-        let policy = ChangeFeedPolicy::all_versions_and_deletes(Duration::from_secs(90));
-        assert_eq!(2, policy.retention_duration_minutes());
-        assert_eq!(Duration::from_secs(120), policy.retention_duration());
-
-        // A zero window leaves the mode disabled.
-        let policy = ChangeFeedPolicy::all_versions_and_deletes(Duration::from_secs(0));
-        assert_eq!(0, policy.retention_duration_minutes());
-    }
-
-    #[test]
-    fn change_feed_policy_clamps_negative_retention_on_serialize() {
-        // A negative window can only arrive by deserializing a malformed policy;
-        // it must never be sent back to the service as a negative value.
-        let policy: ChangeFeedPolicy = serde_json::from_str(r#"{"retentionDuration":-5}"#).unwrap();
-        assert_eq!(0, policy.retention_duration_minutes());
-        assert_eq!(Duration::from_secs(0), policy.retention_duration());
-        let json = serde_json::to_string(&policy).unwrap();
-        assert_eq!(r#"{"retentionDuration":0}"#, json);
-    }
-
-    #[test]
-    fn change_feed_policy_deserializes_retention_minutes() {
-        let policy: ChangeFeedPolicy = serde_json::from_str(r#"{"retentionDuration":10}"#).unwrap();
-        assert_eq!(10, policy.retention_duration_minutes());
-        assert_eq!(Duration::from_secs(10 * 60), policy.retention_duration());
-    }
-
-    #[test]
-    fn container_properties_with_change_feed_policy_round_trips() {
-        let properties = ContainerProperties::new("MyContainer", "/partitionKey".into())
-            .with_change_feed_policy(ChangeFeedPolicy::all_versions_and_deletes(
-                Duration::from_secs(60 * 60),
-            ));
-        let json = serde_json::to_string(&properties).unwrap();
-        assert!(
-            json.contains(r#""changeFeedPolicy":{"retentionDuration":60}"#),
-            "unexpected json: {json}"
+        let policy = ChangeFeedPolicy::default().with_retention_duration(Duration::from_secs(30));
+        assert_eq!(
+            r#"{"retentionDuration":1}"#,
+            serde_json::to_string(&policy).unwrap()
         );
 
-        let round_tripped: ContainerProperties = serde_json::from_str(&json).unwrap();
+        // A non-whole-minute window rounds up to the next whole minute.
+        let policy = ChangeFeedPolicy::default().with_retention_duration(Duration::from_secs(90));
         assert_eq!(
-            Some(60),
-            round_tripped
+            r#"{"retentionDuration":2}"#,
+            serde_json::to_string(&policy).unwrap()
+        );
+    }
+
+    #[test]
+    fn change_feed_policy_serializes_default_as_zero() {
+        let policy = ChangeFeedPolicy::default();
+        assert_eq!(
+            r#"{"retentionDuration":0}"#,
+            serde_json::to_string(&policy).unwrap()
+        );
+    }
+
+    #[test]
+    fn change_feed_policy_deserializes_retention_from_minutes() {
+        let policy: ChangeFeedPolicy = serde_json::from_str(r#"{"retentionDuration":10}"#).unwrap();
+        assert_eq!(
+            Some(Duration::from_secs(10 * 60)),
+            policy.retention_duration()
+        );
+    }
+
+    #[test]
+    fn change_feed_policy_deserializes_zero_retention_as_none() {
+        let policy: ChangeFeedPolicy = serde_json::from_str(r#"{"retentionDuration":0}"#).unwrap();
+        assert_eq!(None, policy.retention_duration());
+    }
+
+    #[test]
+    fn change_feed_policy_deserializes_negative_retention_as_none() {
+        // A negative window can only arrive from a malformed payload; it maps to
+        // `None` so it can never be sent back to the service as a negative value.
+        let policy: ChangeFeedPolicy = serde_json::from_str(r#"{"retentionDuration":-5}"#).unwrap();
+        assert_eq!(None, policy.retention_duration());
+    }
+
+    #[test]
+    fn change_feed_policy_deserializes_missing_retention_as_none() {
+        let policy: ChangeFeedPolicy = serde_json::from_str("{}").unwrap();
+        assert_eq!(None, policy.retention_duration());
+    }
+
+    #[test]
+    fn container_properties_serializes_change_feed_policy() {
+        let properties = ContainerProperties::new("MyContainer", "/partitionKey".into())
+            .with_change_feed_policy(
+                ChangeFeedPolicy::default().with_retention_duration(Duration::from_secs(60 * 60)),
+            );
+        assert_eq!(
+            "{\"id\":\"MyContainer\",\"partitionKey\":{\"paths\":[\"/partitionKey\"],\"kind\":\"Hash\",\"version\":2},\"changeFeedPolicy\":{\"retentionDuration\":60}}",
+            serde_json::to_string(&properties).unwrap()
+        );
+    }
+
+    #[test]
+    fn container_properties_deserializes_change_feed_policy() {
+        let json = r#"{
+            "id": "MyContainer",
+            "partitionKey": {"paths": ["/partitionKey"], "kind": "Hash", "version": 2},
+            "changeFeedPolicy": {"retentionDuration": 60}
+        }"#;
+        let properties: ContainerProperties = serde_json::from_str(json).unwrap();
+        assert_eq!(
+            Some(Duration::from_secs(60 * 60)),
+            properties
                 .change_feed_policy
-                .map(|p| p.retention_duration_minutes())
+                .and_then(|policy| policy.retention_duration())
         );
     }
 }
