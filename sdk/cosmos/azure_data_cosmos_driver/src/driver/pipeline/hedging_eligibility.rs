@@ -31,6 +31,18 @@ use crate::{
 /// this constant is the upper bound.
 const DEFAULT_THRESHOLD_CAP: Duration = Duration::from_millis(1000);
 
+/// Fixed cross-region hedge threshold for the two metadata cache reads
+/// (`Collection` `Read` and `PartitionKeyRange` `ReadFeed`).
+///
+/// Unlike the data-plane default (`min(1000ms, request_timeout / 2)`), metadata
+/// reads use a fixed threshold chosen to sit between the control-plane
+/// first-attempt (~1s) and second-attempt (~5s) HTTP timeouts — matching the
+/// .NET metadata hedging threshold (first-attempt timeout + 500ms = 1.5s).
+/// Metadata reads run with `OperationOptions::default()` (no configured
+/// end-to-end latency), so deriving from `request_timeout` is not meaningful;
+/// the value is fixed and not customer-configurable. See `docs/HEDGING_SPEC.md`.
+const METADATA_HEDGE_THRESHOLD: Duration = Duration::from_millis(1500);
+
 /// `(ResourceType, OperationType)` pairs eligible for cross-region hedging.
 ///
 /// This is the **single source of truth** for hedge eligibility, expressed as
@@ -285,11 +297,33 @@ pub(crate) fn evaluate_hedge_eligibility(
         endpoint: secondary_ep,
     };
 
+    // Metadata cache reads use a fixed threshold (see METADATA_HEDGE_THRESHOLD),
+    // not the data-plane `min(1000ms, request_timeout / 2)` default. The
+    // enablement decision (Disabled / env-disabled) still comes from
+    // `resolve_availability_strategy` above; only the threshold is overridden.
+    let threshold = if is_metadata_hedge_read(operation) {
+        HedgeThreshold::new(METADATA_HEDGE_THRESHOLD)
+            .expect("METADATA_HEDGE_THRESHOLD is statically non-zero")
+    } else {
+        strategy.threshold()
+    };
+
     Some(HedgeUpgrade {
         secondary_routing,
-        threshold: strategy.threshold(),
-        strategy_config: HedgingStrategyConfig::new(strategy.threshold()),
+        threshold,
+        strategy_config: HedgingStrategyConfig::new(threshold),
     })
+}
+
+/// True when the operation is one of the metadata cache reads that hedge with
+/// the fixed [`METADATA_HEDGE_THRESHOLD`] rather than the data-plane default.
+/// Mirrors the metadata entries in [`HEDGEABLE_PAIRS`].
+fn is_metadata_hedge_read(operation: &CosmosOperation) -> bool {
+    matches!(
+        (operation.resource_type(), operation.operation_type()),
+        (ResourceType::DocumentCollection, OperationType::Read)
+            | (ResourceType::PartitionKeyRange, OperationType::ReadFeed)
+    )
 }
 
 #[cfg(test)]
@@ -903,6 +937,39 @@ mod tests {
             upgrade.strategy_config,
             HedgingStrategyConfig::new(upgrade.threshold)
         );
+    }
+
+    #[test]
+    fn evaluate_uses_fixed_1500ms_threshold_for_metadata_reads() {
+        // Metadata reads (Collection Read, PartitionKeyRange ReadFeed) hedge with
+        // a fixed 1.5s threshold (match .NET), independent of request_timeout and
+        // not the data-plane min(1000ms, timeout/2) default.
+        let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
+        let primary = primary_routing_for(&state);
+        let op_opts = OperationOptions::default();
+        let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
+
+        for op in [read_container_operation(), read_pk_ranges_operation()] {
+            let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None)
+                .expect("eligible metadata read");
+            assert_eq!(
+                upgrade.threshold.get(),
+                Duration::from_millis(1500),
+                "metadata reads use the fixed 1.5s threshold"
+            );
+            assert_eq!(
+                upgrade.strategy_config,
+                HedgingStrategyConfig::new(upgrade.threshold)
+            );
+        }
+
+        // A data-plane point read still gets the driver default (1000ms), even
+        // with a request_timeout supplied, so the metadata override is scoped.
+        let dp = read_item_operation();
+        let dp_upgrade =
+            evaluate_hedge_eligibility(&dp, &view, &state, &primary, Some(Duration::from_secs(10)))
+                .expect("eligible data-plane read");
+        assert_eq!(dp_upgrade.threshold.get(), Duration::from_millis(1000));
     }
 
     #[test]
