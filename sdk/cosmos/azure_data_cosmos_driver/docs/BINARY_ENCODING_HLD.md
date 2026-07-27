@@ -86,6 +86,72 @@ and the two transcodes. The only difference is *how the request body arrives*:
 the Rust SDK may pre-encode typed `T` to binary (an optimization), while an FFI
 host sends plain text and lets the driver transcode.
 
+### End-to-end request + response (both paths, unified)
+
+This single view follows an item write/read all the way through: how the body
+arrives (Rust SDK typed fast path vs FFI text), the driver's schema-agnostic
+request-side gate/transcode, the service round-trip, and the two response
+outcomes (raw bytes for the SDK to decode by `0x80` sniffing, or a driver
+binary&rarr;text transcode for text-only FFI hosts).
+
+```mermaid
+flowchart TD
+    subgraph RUST["Rust SDK (azure_data_cosmos)"]
+        RA["create/replace/upsert_item&lt;T&gt;(item)"]
+        RS["serialize_item_body(item, binary)"]
+        RA --> RS
+        RS -->|binary=true| RBIN["binary_json::to_vec(T)<br/>&rarr; already 0x80 binary"]
+        RS -->|binary=false| RTXT["serde_json::to_vec(T)<br/>&rarr; text JSON"]
+    end
+
+    subgraph FFI["FFI / text hosts (driver_native)"]
+        FA["create_item(bytes)"]
+        FA --> FTXT["raw text JSON bytes"]
+    end
+
+    RBIN --> DRV
+    RTXT --> DRV
+    FTXT --> DRV
+
+    subgraph DRIVER_REQ["Driver — request side (schema-agnostic)"]
+        DRV["execute_operation"]
+        DRV --> GATE{"binary_encoding_applies?<br/>(Document + point op)<br/>AND binary.enabled"}
+        GATE -->|no| WIRE
+        GATE -->|yes| APPLY["apply_request_binary_encoding"]
+        APPLY --> CHK{"body already binary?"}
+        CHK -->|yes / empty| PASS["pass through unchanged"]
+        CHK -->|no = text| TRANS["transcode_to_binary(bytes)"]
+        PASS --> HDR
+        TRANS --> HDR["advertise CosmosBinary<br/>(supported-serialization-formats header)"]
+        HDR --> WIRE["send request to Cosmos"]
+    end
+
+    WIRE --> COSMOS[("Cosmos DB service")]
+    COSMOS --> RESP["response body<br/>(binary 0x80 or text,<br/>per negotiation)"]
+
+    subgraph DRIVER_RESP["Driver — response side (schema-agnostic)"]
+        RESP --> RT{"request_text_response?<br/>(binary.enabled &&<br/>request_text_response)"}
+        RT -->|yes = FFI/text host| TOTEXT["transcode_body_to_text<br/>(binary &rarr; text bytes)"]
+        RT -->|no = Rust SDK| RAWOUT["return raw response bytes"]
+    end
+
+    TOTEXT --> FRET["FFI: text JSON bytes<br/>back to native caller"]
+    RAWOUT --> SDKDEC["SDK: deserialize_item_body&lt;T&gt;"]
+
+    subgraph SDKRESP["Rust SDK — response decode"]
+        SDKDEC --> ISBIN{"first byte == 0x80?"}
+        ISBIN -->|yes| DBIN["binary_json::from_slice::&lt;T&gt;"]
+        ISBIN -->|no| DTXT["serde_json::from_slice::&lt;T&gt;"]
+        DBIN --> TYPED["typed T returned to caller"]
+        DTXT --> TYPED
+    end
+
+    style TRANS fill:#d0ffd0,stroke:#0a0
+    style TOTEXT fill:#d0ffd0,stroke:#0a0
+    style RBIN fill:#d0e8ff,stroke:#06c
+    style GATE fill:#ffe8c0,stroke:#e80
+```
+
 ### Where the option comes from (Rust SDK vs FFI)
 
 ```mermaid
