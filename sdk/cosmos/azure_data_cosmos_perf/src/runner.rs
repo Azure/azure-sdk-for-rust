@@ -176,9 +176,6 @@ pub struct RunConfig {
     /// Maximum in-flight requests in open-loop mode. Ignored when
     /// `target_rate` is `None`.
     pub max_in_flight: usize,
-    /// Successful operations exceeding this latency emit detailed diagnostics.
-    /// `None` disables successful-operation diagnostics logging.
-    pub diagnostics_threshold: Option<Duration>,
     pub duration: Option<Duration>,
     pub report_interval: Duration,
     pub results_container: ContainerClient,
@@ -215,7 +212,6 @@ struct OperationRunContext<'a> {
     workload_id: &'a str,
     commit_sha: &'a str,
     hostname: &'a str,
-    diagnostics_threshold: Option<Duration>,
     postprocessing_slots: Option<Arc<Semaphore>>,
     postprocessing_skipped: Option<Arc<AtomicU64>>,
 }
@@ -230,9 +226,7 @@ async fn run_one(
     permit: Option<OwnedSemaphorePermit>,
 ) {
     let op_start = Instant::now();
-    let result = op
-        .execute(container, context.diagnostics_threshold.is_some())
-        .await;
+    let result = op.execute(container).await;
     drop(permit);
 
     match result {
@@ -241,15 +235,6 @@ async fn run_one(
             context
                 .stats
                 .record_latency(op.name(), elapsed, result.backend_duration);
-            if diagnostics_threshold_exceeded(elapsed, context.diagnostics_threshold) {
-                if let Some(_postprocessing_permit) =
-                    try_acquire_postprocessing_slot(&context.postprocessing_slots)
-                {
-                    log_slow_operation_diagnostics(op.name(), elapsed, &result.diagnostics);
-                } else {
-                    record_skipped_postprocessing(&context.postprocessing_skipped);
-                }
-            }
         }
         Err(e) => {
             context.stats.record_error(op.name());
@@ -307,7 +292,6 @@ pub async fn run(config: RunConfig) {
         concurrency,
         target_rate,
         max_in_flight,
-        diagnostics_threshold,
         duration,
         report_interval,
         results_container,
@@ -490,7 +474,6 @@ pub async fn run(config: RunConfig) {
                                     workload_id: &workload_id,
                                     commit_sha: &commit_sha,
                                     hostname: &hostname,
-                                    diagnostics_threshold,
                                     postprocessing_slots: Some(postprocessing_slots),
                                     postprocessing_skipped: Some(postprocessing_skipped),
                                 },
@@ -573,7 +556,6 @@ pub async fn run(config: RunConfig) {
                             workload_id: &err_workload_id,
                             commit_sha: &err_commit_sha,
                             hostname: &err_hostname,
-                            diagnostics_threshold,
                             postprocessing_slots: None,
                             postprocessing_skipped: None,
                         },
@@ -760,37 +742,9 @@ async fn upsert_error(
     }
 }
 
-/// Serializes a finalized [`DiagnosticsContext`] to a `serde_json::Value` so it
-/// can be embedded as a `dynamic` column in the upserted document (rather than
-/// a quoted JSON string). Panics if the roundtrip fails — `to_json_string`
-/// always produces valid JSON, so a failure here is a serialization bug we
-/// want surfaced immediately in the perf harness.
 fn diagnostics_to_json(diagnostics: &DiagnosticsContext) -> serde_json::Value {
-    let json_str = diagnostics.to_json_string(Some(DiagnosticsVerbosity::Detailed));
-    serde_json::from_str(json_str)
+    serde_json::from_str(diagnostics.to_json_string(Some(DiagnosticsVerbosity::Detailed)))
         .expect("DiagnosticsContext::to_json_string should always produce valid JSON")
-}
-
-fn log_slow_operation_diagnostics(
-    operation: &str,
-    elapsed: Duration,
-    diagnostics: &[Arc<DiagnosticsContext>],
-) {
-    let diagnostics: Vec<_> = diagnostics
-        .iter()
-        .map(|context| diagnostics_to_json(context))
-        .collect();
-    let entry = serde_json::json!({
-        "event": "slow_operation_diagnostics",
-        "operation": operation,
-        "elapsed_ms": elapsed.as_secs_f64() * 1000.0,
-        "diagnostics": diagnostics,
-    });
-    eprintln!("{entry}");
-}
-
-fn diagnostics_threshold_exceeded(elapsed: Duration, threshold: Option<Duration>) -> bool {
-    threshold.is_some_and(|threshold| elapsed > threshold)
 }
 
 fn saturated_skip_count(issued_after_increment: u64, target: u64) -> u64 {
@@ -800,29 +754,7 @@ fn saturated_skip_count(issued_after_increment: u64, target: u64) -> u64 {
 
 #[cfg(test)]
 mod tests {
-    use super::{diagnostics_threshold_exceeded, saturated_skip_count};
-    use std::time::Duration;
-
-    #[test]
-    fn diagnostics_logging_is_disabled_without_threshold() {
-        assert!(!diagnostics_threshold_exceeded(
-            Duration::from_secs(1),
-            None
-        ));
-    }
-
-    #[test]
-    fn diagnostics_logging_requires_latency_over_threshold() {
-        let threshold = Some(Duration::from_millis(100));
-        assert!(!diagnostics_threshold_exceeded(
-            Duration::from_millis(100),
-            threshold
-        ));
-        assert!(diagnostics_threshold_exceeded(
-            Duration::from_millis(101),
-            threshold
-        ));
-    }
+    use super::saturated_skip_count;
 
     #[test]
     fn saturation_batches_current_and_remaining_arrivals() {

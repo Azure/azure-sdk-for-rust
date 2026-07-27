@@ -45,7 +45,6 @@ impl Operation for ChangeFeedOperation {
     async fn execute(
         &self,
         container: &ContainerClient,
-        capture_diagnostics: bool,
     ) -> azure_data_cosmos::Result<OperationResult> {
         let snapshot = {
             let guard = self.cache.read().expect("feed-range cache lock poisoned");
@@ -70,18 +69,14 @@ impl Operation for ChangeFeedOperation {
         let mut stream = Box::pin(iterator.take(self.max_pages));
 
         let mut backend_total: Option<Duration> = None;
-        let mut diagnostics = Vec::new();
         while let Some(result) = stream.next().await {
             let page = result?;
             if let Some(duration) = extract_backend_duration(page.headers()) {
                 backend_total = Some(backend_total.unwrap_or_default() + duration);
             }
-            if capture_diagnostics {
-                diagnostics.push(page.diagnostics());
-            }
         }
 
-        Ok(OperationResult::paged(backend_total, diagnostics))
+        Ok(OperationResult::new(backend_total))
     }
 }
 

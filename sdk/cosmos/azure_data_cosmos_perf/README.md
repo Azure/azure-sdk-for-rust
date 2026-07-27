@@ -72,7 +72,7 @@ cargo run -p azure_data_cosmos_perf -- \
 | `--throughput` | `100000` | Throughput (RU/s) when creating the container |
 | `--default-ttl` | `3600` | Default TTL in seconds for items (0 to disable) |
 | `--report-interval` | `300` | Stats reporting interval in seconds |
-| `--diagnostics-threshold-ms` | — | Log detailed diagnostics for successful operations slower than this threshold; disabled when omitted |
+| `--diagnostics-threshold-ms` | — | Emit rate-limited summary diagnostics for failures and operations slower than this threshold; disabled when omitted |
 | `--results-container` | `perfresults` | Container for storing perf results and error documents |
 | `--results-endpoint` | — | Cosmos DB endpoint for results (omit to use same account as `--endpoint`) |
 | `--results-database` | `perfdb` | Database name on the results account |
@@ -90,6 +90,12 @@ cargo run -p azure_data_cosmos_perf -- \
 | `--no-feed-range-queries` | `false` | Disable per-feed-range query operations |
 | `--feed-range-query-max-pages` | `4` | Maximum pages consumed by each per-feed-range query |
 | `--feed-range-refresh-secs` | `60` | Interval between feed-range cache refreshes (0 disables refresh) |
+
+When `--diagnostics-threshold-ms` is set, the workload client registers the
+SDK's `SamplingLogHandler`. The configured latency applies to point and
+non-point operations; failures are always eligible, and output uses the
+handler's default time-window rate limit. When omitted, no diagnostics handler
+is registered.
 
 ### Examples
 

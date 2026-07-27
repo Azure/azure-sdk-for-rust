@@ -35,7 +35,6 @@ impl Operation for QueryItemsOperation {
     async fn execute(
         &self,
         container: &ContainerClient,
-        capture_diagnostics: bool,
     ) -> azure_data_cosmos::Result<OperationResult> {
         let item = self.items.random();
         let pk = &item.partition_key;
@@ -55,17 +54,13 @@ impl Operation for QueryItemsOperation {
         // the total server processing time, mirroring how the client-observed
         // elapsed wraps the entire stream consumption.
         let mut backend_total: Option<Duration> = None;
-        let mut diagnostics = Vec::new();
         while let Some(result) = stream.next().await {
             let page = result?;
             if let Some(d) = extract_backend_duration(page.headers()) {
                 backend_total = Some(backend_total.unwrap_or_default() + d);
             }
-            if capture_diagnostics {
-                diagnostics.push(page.diagnostics());
-            }
         }
 
-        Ok(OperationResult::paged(backend_total, diagnostics))
+        Ok(OperationResult::new(backend_total))
     }
 }

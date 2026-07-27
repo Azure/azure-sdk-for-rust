@@ -35,7 +35,6 @@ impl Operation for UpsertItemOperation {
     async fn execute(
         &self,
         container: &ContainerClient,
-        capture_diagnostics: bool,
     ) -> azure_data_cosmos::Result<OperationResult> {
         let seeded = self.items.random();
         let value = rand::rng().random_range(0..u64::MAX);
@@ -50,9 +49,8 @@ impl Operation for UpsertItemOperation {
         let response = container
             .upsert_item(&item.partition_key, &seeded.id, &item, self.options.clone())
             .await?;
-        Ok(OperationResult::single(
-            extract_backend_duration(response.headers()),
-            capture_diagnostics.then(|| response.diagnostics()),
-        ))
+        Ok(OperationResult::new(extract_backend_duration(
+            response.headers(),
+        )))
     }
 }

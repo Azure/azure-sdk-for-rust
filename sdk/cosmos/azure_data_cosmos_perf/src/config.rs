@@ -142,9 +142,10 @@ pub struct Config {
     #[arg(long, default_value_t = 300)]
     pub report_interval: u64,
 
-    /// Log detailed diagnostics for successful operations slower than this threshold in milliseconds.
+    /// Emit sampled summary diagnostics for operations slower than this threshold in milliseconds.
     ///
-    /// Omit to disable diagnostics logging for successful operations.
+    /// Failures are also eligible for emission. Output is rate-limited by the
+    /// SDK's `SamplingLogHandler`. Omit to disable diagnostics logging.
     #[arg(long)]
     pub diagnostics_threshold_ms: Option<u64>,
 

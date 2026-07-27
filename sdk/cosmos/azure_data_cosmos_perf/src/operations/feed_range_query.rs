@@ -56,7 +56,6 @@ impl Operation for FeedRangeQueryOperation {
     async fn execute(
         &self,
         container: &ContainerClient,
-        capture_diagnostics: bool,
     ) -> azure_data_cosmos::Result<OperationResult> {
         // Snapshot the current ranges; release the lock immediately.
         let snapshot = {
@@ -90,18 +89,14 @@ impl Operation for FeedRangeQueryOperation {
         // reports the total server processing time, matching the
         // client-observed elapsed which wraps the entire stream drain.
         let mut backend_total: Option<Duration> = None;
-        let mut diagnostics = Vec::new();
         while let Some(result) = stream.next().await {
             let page = result?;
             if let Some(d) = extract_backend_duration(page.headers()) {
                 backend_total = Some(backend_total.unwrap_or_default() + d);
             }
-            if capture_diagnostics {
-                diagnostics.push(page.diagnostics());
-            }
         }
 
-        Ok(OperationResult::paged(backend_total, diagnostics))
+        Ok(OperationResult::new(backend_total))
     }
 }
 

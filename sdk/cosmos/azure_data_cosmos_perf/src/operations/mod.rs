@@ -18,7 +18,6 @@ mod upsert_item;
 
 use async_trait::async_trait;
 use azure_data_cosmos::clients::ContainerClient;
-use azure_data_cosmos::diagnostics::DiagnosticsContext;
 use azure_data_cosmos::models::ResponseHeaders;
 use azure_data_cosmos::options::Region;
 use azure_data_cosmos::options::{
@@ -60,12 +59,10 @@ pub trait Operation: Send + Sync {
 
     /// Executes one instance of the operation.
     ///
-    /// Returns backend latency and, when `capture_diagnostics` is true,
-    /// finalized diagnostics for the response or query pages.
+    /// Returns the aggregated backend latency, when available.
     async fn execute(
         &self,
         container: &ContainerClient,
-        capture_diagnostics: bool,
     ) -> azure_data_cosmos::Result<OperationResult>;
 }
 
@@ -73,29 +70,11 @@ pub trait Operation: Send + Sync {
 pub struct OperationResult {
     /// Aggregated server-reported processing duration, when available.
     pub backend_duration: Option<Duration>,
-    /// Finalized diagnostics captured from successful responses.
-    pub diagnostics: Vec<Arc<DiagnosticsContext>>,
 }
 
 impl OperationResult {
-    pub fn single(
-        backend_duration: Option<Duration>,
-        diagnostics: Option<Arc<DiagnosticsContext>>,
-    ) -> Self {
-        Self {
-            backend_duration,
-            diagnostics: diagnostics.into_iter().collect(),
-        }
-    }
-
-    pub fn paged(
-        backend_duration: Option<Duration>,
-        diagnostics: Vec<Arc<DiagnosticsContext>>,
-    ) -> Self {
-        Self {
-            backend_duration,
-            diagnostics,
-        }
+    pub fn new(backend_duration: Option<Duration>) -> Self {
+        Self { backend_duration }
     }
 }
 

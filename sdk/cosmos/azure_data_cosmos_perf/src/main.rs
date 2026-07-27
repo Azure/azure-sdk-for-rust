@@ -11,6 +11,30 @@ mod setup;
 mod stats;
 mod ua_suffix;
 
+fn diagnostics_logging_filter() -> tracing_subscriber::filter::Targets {
+    use tracing_subscriber::filter::LevelFilter;
+
+    tracing_subscriber::filter::Targets::new()
+        .with_target("azure_data_cosmos::diagnostics::sampled", LevelFilter::INFO)
+        .with_target(
+            "azure_data_cosmos::diagnostics::suppressed",
+            LevelFilter::WARN,
+        )
+}
+
+fn diagnostics_thresholds(
+    threshold_ms: u64,
+) -> azure_data_cosmos::diagnostics::DiagnosticsThresholds {
+    use azure_data_cosmos::diagnostics::DiagnosticsThresholds;
+
+    let latency = std::time::Duration::from_millis(threshold_ms);
+    DiagnosticsThresholds::default()
+        .with_point_operation_latency(latency)
+        .with_non_point_operation_latency(latency)
+        .with_request_charge(f64::MAX)
+        .with_payload_size(u64::MAX)
+}
+
 /// Creates an AAD credential using WorkloadIdentity (AKS) with fallback to ManagedIdentity (VMs).
 fn create_aad_credential(
 ) -> Result<std::sync::Arc<dyn azure_core::credentials::TokenCredential>, Box<dyn std::error::Error>>
@@ -49,11 +73,16 @@ fn validate_max_in_flight(max_in_flight: usize) -> Result<(), String> {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    use clap::Parser;
+
+    let config = config::Config::parse();
+
     // Initialize tokio-console subscriber when the feature is enabled.
     // This must happen before any tokio tasks are spawned.
     #[cfg(feature = "tokio-console")]
     {
         use std::net::{IpAddr, Ipv4Addr};
+        use tracing_subscriber::prelude::*;
 
         let console_addr: IpAddr = match std::env::var("TOKIO_CONSOLE_ADDR") {
             Ok(val) => val.parse().unwrap_or_else(|e| {
@@ -72,9 +101,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             Err(_) => 6669,
         };
 
-        console_subscriber::ConsoleLayer::builder()
-            .server_addr((console_addr, console_port))
-            .init();
+        let console_builder =
+            console_subscriber::ConsoleLayer::builder().server_addr((console_addr, console_port));
+        if config.diagnostics_threshold_ms.is_some() {
+            tracing_subscriber::registry()
+                .with(console_builder.spawn())
+                .with(tracing_subscriber::fmt::layer().with_filter(diagnostics_logging_filter()))
+                .init();
+        } else {
+            console_builder.init();
+        }
 
         let addr_display = if console_addr.is_ipv6() {
             format!("[{}]", console_addr)
@@ -101,6 +137,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
+    #[cfg(not(feature = "tokio-console"))]
+    if config.diagnostics_threshold_ms.is_some() {
+        use tracing_subscriber::prelude::*;
+
+        tracing_subscriber::registry()
+            .with(tracing_subscriber::fmt::layer().with_filter(diagnostics_logging_filter()))
+            .init();
+    }
+
     // Log Pyroscope status (profiling is handled externally via eBPF auto-instrumentation)
     if std::env::var("PYROSCOPE_SERVER_URL")
         .map(|v| !v.is_empty())
@@ -113,18 +158,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     use std::time::Duration;
 
     use azure_core::credentials::Secret;
+    use azure_data_cosmos::diagnostics::SamplingLogHandler;
     use azure_data_cosmos::{
         AccountEndpoint, AccountReference, CosmosClientBuilder, RoutingStrategy,
     };
     use azure_data_cosmos_driver::options::ConnectionPoolOptionsBuilder;
-    use clap::Parser;
 
-    use crate::config::{AuthMethod, Config};
+    use crate::config::AuthMethod;
     use crate::operations::{create_operations, READ_FEED_RANGES_STAT};
     use crate::runner::{ConfigSnapshot, RunConfig};
     use crate::stats::Stats;
-
-    let config = Config::parse();
 
     // Validate configuration
     if config.no_reads
@@ -197,6 +240,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut builder = CosmosClientBuilder::new();
     if let Some(s) = user_agent_suffix.clone() {
         builder = builder.with_user_agent_suffix(s);
+    }
+    if let Some(threshold_ms) = config.diagnostics_threshold_ms {
+        builder = builder.with_diagnostics_handler(Arc::new(SamplingLogHandler::with_thresholds(
+            diagnostics_thresholds(threshold_ms),
+        )));
     }
 
     let endpoint: AccountEndpoint = config.endpoint.parse()?;
@@ -395,7 +443,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         concurrency: config.concurrency,
         target_rate: config.target_rate,
         max_in_flight: config.max_in_flight,
-        diagnostics_threshold: config.diagnostics_threshold_ms.map(Duration::from_millis),
         duration,
         report_interval: Duration::from_secs(config.report_interval),
         results_container,
@@ -411,7 +458,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 #[cfg(test)]
 mod tests {
-    use super::validate_max_in_flight;
+    use super::{diagnostics_thresholds, validate_max_in_flight};
+    use std::time::Duration;
     use tokio::sync::Semaphore;
 
     #[test]
@@ -423,5 +471,20 @@ mod tests {
     fn max_in_flight_rejects_zero_and_values_above_semaphore_limit() {
         assert!(validate_max_in_flight(0).is_err());
         assert!(validate_max_in_flight(Semaphore::MAX_PERMITS + 1).is_err());
+    }
+
+    #[test]
+    fn diagnostics_cli_threshold_configures_latency_only() {
+        let thresholds = diagnostics_thresholds(250);
+        assert_eq!(
+            thresholds.point_operation_latency(),
+            Duration::from_millis(250)
+        );
+        assert_eq!(
+            thresholds.non_point_operation_latency(),
+            Duration::from_millis(250)
+        );
+        assert_eq!(thresholds.request_charge(), f64::MAX);
+        assert_eq!(thresholds.payload_size(), u64::MAX);
     }
 }

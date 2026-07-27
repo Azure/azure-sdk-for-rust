@@ -18,6 +18,7 @@
 mod availability_strategy;
 mod connection_pool;
 mod diagnostics_options;
+mod diagnostics_thresholds;
 mod driver_options;
 pub(crate) mod env_parsing;
 mod identity;
@@ -34,6 +35,8 @@ pub use connection_pool::{ConnectionPoolOptions, ConnectionPoolOptionsBuilder};
 pub use diagnostics_options::{
     DiagnosticsOptions, DiagnosticsOptionsBuilder, DiagnosticsVerbosity,
 };
+pub(crate) use diagnostics_thresholds::is_point_operation;
+pub use diagnostics_thresholds::DiagnosticsThresholds;
 pub use driver_options::{DriverOptions, DriverOptionsBuilder};
 pub(crate) use env_parsing::parse_duration_millis_from_env;
 pub use identity::{CorrelationId, UserAgentSuffix, WorkloadId};

@@ -39,7 +39,6 @@ impl Operation for CreateItemOperation {
     async fn execute(
         &self,
         container: &ContainerClient,
-        capture_diagnostics: bool,
     ) -> azure_data_cosmos::Result<OperationResult> {
         let id = Uuid::new_v4().to_string();
         let partition_key = Uuid::new_v4().to_string();
@@ -56,9 +55,8 @@ impl Operation for CreateItemOperation {
             .create_item(&item.partition_key, &id, &item, self.options.clone())
             .await?;
         let backend = extract_backend_duration(response.headers());
-        let diagnostics = capture_diagnostics.then(|| response.diagnostics());
 
         self.items.push(SeededItem { id, partition_key });
-        Ok(OperationResult::single(backend, diagnostics))
+        Ok(OperationResult::new(backend))
     }
 }

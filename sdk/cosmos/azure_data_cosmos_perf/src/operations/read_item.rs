@@ -34,16 +34,14 @@ impl Operation for ReadItemOperation {
     async fn execute(
         &self,
         container: &ContainerClient,
-        capture_diagnostics: bool,
     ) -> azure_data_cosmos::Result<OperationResult> {
         let item = self.items.random();
 
         let response = container
             .read_item(&item.partition_key, &item.id, self.options.clone())
             .await?;
-        Ok(OperationResult::single(
-            extract_backend_duration(response.headers()),
-            capture_diagnostics.then(|| response.diagnostics()),
-        ))
+        Ok(OperationResult::new(extract_backend_duration(
+            response.headers(),
+        )))
     }
 }
