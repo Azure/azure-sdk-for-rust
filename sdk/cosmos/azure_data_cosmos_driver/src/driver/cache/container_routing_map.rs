@@ -660,6 +660,35 @@ mod tests {
     }
 
     #[test]
+    fn try_combine_resolves_cascading_splits_from_one_page() {
+        let map = ContainerRoutingMap::try_create(single_range(), None, None)
+            .unwrap()
+            .unwrap();
+
+        // 0 -> B + C, then B -> D + E. Children of B intentionally precede B.
+        let new_ranges = vec![
+            make_range("D", "", "33", Some(vec!["B".into()])),
+            make_range("E", "33", "55", Some(vec!["B".into()])),
+            make_range("B", "", "55", Some(vec!["0".into()])),
+            make_range("C", "55", "FF", Some(vec!["0".into()])),
+        ];
+
+        let merged = map
+            .try_combine(new_ranges, Some("new-etag".into()))
+            .unwrap()
+            .unwrap();
+
+        let ids = merged
+            .ranges()
+            .iter()
+            .map(|range| range.id.as_str())
+            .collect::<Vec<_>>();
+        assert_eq!(ids, ["D", "E", "C"]);
+        assert!(merged.is_gone("0"));
+        assert!(merged.is_gone("B"));
+    }
+
+    #[test]
     fn try_combine_incomplete_returns_none() {
         let map = ContainerRoutingMap::try_create(single_range(), None, None)
             .unwrap()

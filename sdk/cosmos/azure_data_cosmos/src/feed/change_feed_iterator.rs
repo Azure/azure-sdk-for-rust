@@ -14,6 +14,7 @@ use futures::future::BoxFuture;
 use futures::Stream;
 use serde::de::DeserializeOwned;
 
+use crate::diagnostics::{CosmosOperationContext, DiagnosticsHandlerChain};
 use crate::{driver_bridge, feed::page::FeedBody, feed::FeedPage, models::CosmosResponse};
 
 type DriverPageFuture = BoxFuture<'static, (OperationPlan, crate::Result<Option<DriverResponse>>)>;
@@ -27,6 +28,11 @@ struct LiveState {
     plan: Option<OperationPlan>,
     in_flight: Option<DriverPageFuture>,
     errored: bool,
+    /// Emission handler chain plus the paged operation's identity, dispatched
+    /// once per page fetch (both success and failure) so change-feed pagination
+    /// honors the same once-per-operation contract as singleton operations.
+    diagnostics: DiagnosticsHandlerChain,
+    op_context: CosmosOperationContext,
 }
 
 impl LiveState {
@@ -35,6 +41,8 @@ impl LiveState {
         container: Option<ContainerReference>,
         plan: OperationPlan,
         options: OperationOptions,
+        diagnostics: DiagnosticsHandlerChain,
+        op_context: CosmosOperationContext,
     ) -> Self {
         Self {
             driver,
@@ -43,6 +51,8 @@ impl LiveState {
             plan: Some(plan),
             in_flight: None,
             errored: false,
+            diagnostics,
+            op_context,
         }
     }
 
@@ -107,6 +117,14 @@ impl LiveState {
             }
             Err(err) => {
                 *this.errored = true;
+                if let Some(page_diagnostics) = err.diagnostics() {
+                    crate::feed::dispatch_page_diagnostics(
+                        this.diagnostics,
+                        this.op_context,
+                        &page_diagnostics,
+                        None,
+                    );
+                }
                 task::Poll::Ready(Some(Err(err)))
             }
             Ok(Some(driver_response)) => {
@@ -119,6 +137,12 @@ impl LiveState {
                 // Return an empty page — do not try to deserialize the
                 // (potentially empty) body.
                 if status.status_code() == azure_core::http::StatusCode::NotModified {
+                    crate::feed::dispatch_page_diagnostics(
+                        this.diagnostics,
+                        this.op_context,
+                        &diagnostics,
+                        Some(0),
+                    );
                     let page = FeedPage::new(Vec::new(), headers, diagnostics);
                     return task::Poll::Ready(Some(Ok(page)));
                 }
@@ -128,11 +152,23 @@ impl LiveState {
                 // `ChangeFeedItem<Doc>`) without stripping any fields.
                 match deserialize_change_feed_items::<T>(response) {
                     Ok(items) => {
+                        crate::feed::dispatch_page_diagnostics(
+                            this.diagnostics,
+                            this.op_context,
+                            &diagnostics,
+                            Some(items.len() as u64),
+                        );
                         let page = FeedPage::new(items, headers, diagnostics);
                         task::Poll::Ready(Some(Ok(page)))
                     }
                     Err(err) => {
                         *this.errored = true;
+                        crate::feed::dispatch_page_diagnostics(
+                            this.diagnostics,
+                            this.op_context,
+                            &diagnostics,
+                            None,
+                        );
                         task::Poll::Ready(Some(Err(err)))
                     }
                 }
@@ -236,9 +272,18 @@ impl<T: Send + DeserializeOwned + 'static> ChangeFeedPageIterator<T> {
         container: Option<ContainerReference>,
         plan: OperationPlan,
         options: OperationOptions,
+        diagnostics: DiagnosticsHandlerChain,
+        op_context: CosmosOperationContext,
     ) -> Self {
         Self {
-            state: Box::pin(LiveState::new(driver, container, plan, options)),
+            state: Box::pin(LiveState::new(
+                driver,
+                container,
+                plan,
+                options,
+                diagnostics,
+                op_context,
+            )),
             _marker: PhantomData,
         }
     }

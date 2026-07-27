@@ -3,6 +3,7 @@
 
 use crate::{
     clients::{offers_client, ClientContext},
+    diagnostics::CosmosOperationContext,
     feed::{ChangeFeedPageIterator, FeedRange, FeedScope, QueryItemIterator},
     models::TransactionalBatch,
     models::{BatchResponse, ChangeFeedItem, ItemResponse, ResourceResponse},
@@ -62,6 +63,16 @@ impl ContainerClient {
         })
     }
 
+    /// Builds the SDK-side [`CosmosOperationContext`] for this container's
+    /// operations, carrying the operation name plus the database and container
+    /// identity the driver context does not know.
+    fn operation_context(&self, operation_name: &'static str) -> CosmosOperationContext {
+        CosmosOperationContext::new()
+            .with_operation_name(operation_name)
+            .with_database_name(self.container_ref.database_name().to_string())
+            .with_container_name(self.container_ref.name().to_string())
+    }
+
     /// Reads the properties of the container.
     ///
     /// # Arguments
@@ -85,14 +96,15 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
         let operation = CosmosOperation::read_container(self.container_ref.clone());
 
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, options.operation)
-            .await?;
+            .await;
 
         Ok(ResourceResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context
+                .complete_result(driver_result, || self.operation_context("read_container"))?,
         ))
     }
 
@@ -138,14 +150,16 @@ impl ContainerClient {
         operation_options.content_response_on_write =
             Some(azure_data_cosmos_driver::options::ContentResponseOnWrite::Enabled);
 
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, operation_options)
-            .await?;
+            .await;
 
         Ok(ResourceResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context.complete_result(driver_result, || {
+                self.operation_context("replace_container")
+            })?,
         ))
     }
 
@@ -161,10 +175,11 @@ impl ContainerClient {
     ) -> crate::Result<Option<ThroughputProperties>> {
         let options = options.unwrap_or_default();
         offers_client::find_offer(
-            &self.context.driver,
+            &self.context,
             self.container_ref.account(),
             self.container_ref.rid(),
             options.operation,
+            self.operation_context("read_throughput"),
         )
         .await
     }
@@ -202,11 +217,12 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
 
         offers_client::begin_replace(
-            self.context.driver.clone(),
+            self.context.clone(),
             self.container_ref.account().clone(),
             self.container_ref.rid(),
             throughput,
             options.operation,
+            self.operation_context("replace_throughput"),
         )
         .await
     }
@@ -224,14 +240,15 @@ impl ContainerClient {
         let options = options.unwrap_or_default();
         let operation = CosmosOperation::delete_container(self.container_ref.clone());
 
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, options.operation)
-            .await?;
+            .await;
 
         Ok(ResourceResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context
+                .complete_result(driver_result, || self.operation_context("delete_container"))?,
         ))
     }
 
@@ -322,15 +339,16 @@ impl ContainerClient {
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
         // Execute through the driver.
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, options.operation)
-            .await?;
+            .await;
 
         // Bridge the driver response to the SDK response type.
         Ok(ItemResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context
+                .complete_result(driver_result, || self.operation_context("create_item"))?,
         ))
     }
 
@@ -420,15 +438,16 @@ impl ContainerClient {
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
         // Execute through the driver.
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, options.operation)
-            .await?;
+            .await;
 
         // Bridge the driver response to the SDK response type.
         Ok(ItemResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context
+                .complete_result(driver_result, || self.operation_context("replace_item"))?,
         ))
     }
 
@@ -527,14 +546,15 @@ impl ContainerClient {
         // session token.
         let operation = apply_item_options(operation, options.session_token, None);
 
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, options.operation)
-            .await?;
+            .await;
 
         Ok(ItemResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context
+                .complete_result(driver_result, || self.operation_context("patch_item"))?,
         ))
     }
 
@@ -628,15 +648,16 @@ impl ContainerClient {
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
         // Execute through the driver.
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, options.operation)
-            .await?;
+            .await;
 
         // Bridge the driver response to the SDK response type.
         Ok(ItemResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context
+                .complete_result(driver_result, || self.operation_context("upsert_item"))?,
         ))
     }
 
@@ -688,15 +709,16 @@ impl ContainerClient {
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
         // Execute through the driver.
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, options.operation)
-            .await?;
+            .await;
 
         // Bridge the driver response to the SDK response type.
         Ok(ItemResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context
+                .complete_result(driver_result, || self.operation_context("read_item"))?,
         ))
     }
 
@@ -740,15 +762,16 @@ impl ContainerClient {
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
         // Execute through the driver.
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, options.operation)
-            .await?;
+            .await;
 
         // Bridge the driver response to the SDK response type.
         Ok(ItemResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context
+                .complete_result(driver_result, || self.operation_context("delete_item"))?,
         ))
     }
 
@@ -858,6 +881,8 @@ impl ContainerClient {
             Some(self.container_ref.clone()),
             plan,
             options.operation,
+            self.context.diagnostics_handlers.clone(),
+            self.operation_context("query_items"),
         ))
     }
 
@@ -1043,6 +1068,8 @@ impl ContainerClient {
             Some(self.container_ref.clone()),
             plan,
             options.operation,
+            self.context.diagnostics_handlers.clone(),
+            self.operation_context("query_change_feed"),
         ))
     }
 
@@ -1100,14 +1127,15 @@ impl ContainerClient {
             CosmosOperation::batch(self.container_ref.clone(), driver_pk).with_body(body);
         let operation = apply_batch_options(operation, &options);
 
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, options.operation)
-            .await?;
+            .await;
 
         Ok(BatchResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context
+                .complete_result(driver_result, || self.operation_context("execute_batch"))?,
         ))
     }
 
@@ -1121,52 +1149,29 @@ impl ContainerClient {
             .context
             .driver
             .resolve_all_partition_key_ranges(&self.container_ref, options.force_refresh())
-            .await
-            .ok_or_else(|| {
-                // Service was reachable but didn't return a usable routing
-                // map — a service-side invariant violation, surfaced as a
-                // 500 with the client-generated
-                // `SERIALIZATION_RESPONSE_BODY_INVALID` sub-status so
-                // callers can distinguish it from caller misuse.
-                crate::DriverCosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-                    .with_message("failed to resolve routing map for container")
-                    .build()
-            })?;
+            .await;
 
-        if ranges.is_empty() && !options.force_refresh() {
+        if should_force_refresh_feed_ranges(ranges.as_deref(), options.force_refresh()) {
             // A valid container always has at least one partition key range.
-            // Empty result likely means a stale/failed cache — retry with forced refresh.
+            // Missing or empty results likely mean a stale/failed cache.
             ranges = self
                 .context
                 .driver
                 .resolve_all_partition_key_ranges(&self.container_ref, true)
-                .await
-                .ok_or_else(|| {
-                    crate::DriverCosmosError::builder()
-                        .with_status(
-                            crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
-                        )
-                        .with_message("failed to resolve routing map for container")
-                        .build()
-                })?;
+                .await;
         }
 
-        if ranges.is_empty() {
-            // Forced refresh produced an empty routing map — either the
-            // container truly does not exist or the service is
-            // unreachable. Map to 503 with the transport-generated
-            // sub-status so the caller treats this as a service-side
-            // availability issue (not their bug).
-            return Err(crate::DriverCosmosError::builder()
-                .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
-                .with_message(
-                    "resolved routing map contains no partition key ranges; \
-                     the container may not exist or the service may be unreachable",
-                )
+        let ranges = ranges.ok_or_else(|| {
+            // Service was reachable but didn't return a usable routing
+            // map — a service-side invariant violation, surfaced as a
+            // 500 with the client-generated
+            // `SERIALIZATION_RESPONSE_BODY_INVALID` sub-status so
+            // callers can distinguish it from caller misuse.
+            crate::DriverCosmosError::builder()
+                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_message("failed to resolve routing map for container")
                 .build()
-                .into());
-        }
+        })?;
 
         ranges
             .iter()
@@ -1354,6 +1359,10 @@ fn apply_batch_options(mut operation: CosmosOperation, options: &BatchOptions) -
     operation
 }
 
+fn should_force_refresh_feed_ranges<T>(ranges: Option<&[T]>, force_refresh: bool) -> bool {
+    !force_refresh && ranges.is_none_or(<[T]>::is_empty)
+}
+
 /// Compile-time guarantee that the futures returned by [`ContainerClient`]
 /// helpers are `Send`.
 ///
@@ -1370,4 +1379,17 @@ fn _assert_futures_are_send() {
     let patch: PatchInstructions = todo!();
     let options: Option<PatchItemOptions> = todo!();
     assert_send(client.patch_item(partition_key, item_id, patch, options));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::should_force_refresh_feed_ranges;
+
+    #[test]
+    fn feed_ranges_refreshes_missing_or_empty_initial_resolution() {
+        assert!(should_force_refresh_feed_ranges::<()>(None, false));
+        assert!(should_force_refresh_feed_ranges::<()>(Some(&[]), false));
+        assert!(!should_force_refresh_feed_ranges(Some(&[()]), false));
+        assert!(!should_force_refresh_feed_ranges::<()>(None, true));
+    }
 }
