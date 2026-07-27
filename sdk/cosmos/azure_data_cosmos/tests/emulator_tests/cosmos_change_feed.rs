@@ -724,12 +724,13 @@ where
 /// the create's LSN. The delete carries a delete `operationType` and metadata
 /// but a minimal `current`.
 ///
-/// Gated on `test_category = "emulator"` only: full-fidelity reads are not
-/// supported by the vnext (Linux) emulator.
+/// Gated on `test_category = "avad"` only: full-fidelity reads require a live
+/// Cosmos account with continuous backup and the AllVersionsAndDeletes change
+/// feed feature enabled, which the emulators do not provide.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator' (the vnext emulator does not support full-fidelity change feed)"
+    not(test_category = "avad"),
+    ignore = "requires test_category 'avad' (a live AllVersionsAndDeletes-enabled Cosmos account)"
 )]
 pub async fn all_versions_and_deletes_surfaces_create_replace_delete() -> Result<(), Box<dyn Error>>
 {
@@ -853,12 +854,12 @@ pub async fn all_versions_and_deletes_surfaces_create_replace_delete() -> Result
 /// create envelope. The container is provisioned with enough throughput to force
 /// multiple physical partitions so the cross-partition merge path is exercised.
 ///
-/// Gated on `test_category = "emulator"` only: full-fidelity reads are not
-/// supported by the vnext (Linux) emulator.
+/// Gated on `test_category = "avad"` only: full-fidelity reads require a live
+/// AllVersionsAndDeletes-enabled Cosmos account, which the emulators do not provide.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator' (the vnext emulator does not support full-fidelity change feed)"
+    not(test_category = "avad"),
+    ignore = "requires test_category 'avad' (a live AllVersionsAndDeletes-enabled Cosmos account)"
 )]
 pub async fn all_versions_and_deletes_fans_out_creates_across_partitions(
 ) -> Result<(), Box<dyn Error>> {
@@ -954,12 +955,12 @@ pub async fn all_versions_and_deletes_fans_out_creates_across_partitions(
 /// `ChangeFeedStartFrom.Time` for all-versions-and-deletes. The client issues
 /// the request and the service returns a `BadRequest`.
 ///
-/// Gated on `test_category = "emulator"` only: full-fidelity reads are not
-/// supported by the vnext (Linux) emulator.
+/// Gated on `test_category = "avad"` only: full-fidelity reads require a live
+/// AllVersionsAndDeletes-enabled Cosmos account, which the emulators do not provide.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator' (the vnext emulator does not support full-fidelity change feed)"
+    not(test_category = "avad"),
+    ignore = "requires test_category 'avad' (a live AllVersionsAndDeletes-enabled Cosmos account)"
 )]
 pub async fn all_versions_and_deletes_rejects_point_in_time_start() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
