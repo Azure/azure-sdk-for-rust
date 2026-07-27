@@ -31,6 +31,7 @@ azure_core_test.path = "../../core/azure_core_test"
 azure_core_examples.path = "../../core/azure_core_examples"
 clap.workspace = true
 include-file.workspace = true
+rand = { workspace = true, features = ["thread_rng"] }
 serde_json.workspace = true
 serde_test.workspace = true
 serial_test.workspace = true

@@ -4,11 +4,21 @@
 
 ### Features Added
 
+- Added a pluggable client-side diagnostics emission layer — the `DiagnosticsHandler` trait and ordered `DiagnosticsHandlerChain` (registered via `CosmosClientBuilder::with_diagnostics_handler`) — invoked once per operation (singleton and paginated, on success and failure) with the completed `DiagnosticsContext` plus an SDK-supplied `CosmosOperationContext`; the empty default chain is a zero-overhead no-op. ([#4789](https://github.com/Azure/azure-sdk-for-rust/pull/4789))
+- Added the `metrics`-gated `CosmosMetricsHandler` (with `MetricsOptions`), emitting the stable `db.client.operation.duration` histogram plus per-signal opt-in metrics (`with_request_charge_metric`, `with_returned_rows_metric`) and an opt-in extended attribute set (`with_extended_attributes`); a no-op when no meter provider is registered. ([#4789](https://github.com/Azure/azure-sdk-for-rust/pull/4789))
+- Added composable tail-sampled emission handlers — a `TracingLogHandler` leaf that writes a compact `tracing` line and a `SamplingLogHandler` wrapper (holding an `Arc<dyn DiagnosticsHandler>`) that applies the sampling gate plus a shared per-window rate limit, defaulting to wrap a `TracingLogHandler` — and the `distributed_tracing`-gated `CosmosTracingHandler` (backdated span tree), also rate-limited so an error storm can't overwhelm exporters. All emit only for operations which fail or breach a configurable `DiagnosticsThresholds`, and stamp *why* they were sampled (a failure, or which threshold) on the emitted line and span. ([#4789](https://github.com/Azure/azure-sdk-for-rust/pull/4789))
+
 ### Breaking Changes
 
 ### Bugs Fixed
 
 ### Other Changes
+
+## 0.37.1 (2026-07-23)
+
+### Bugs Fixed
+
+- Fixed `ContainerClient::read_feed_ranges` failing on containers with large partition counts by fully draining routing metadata and retrying missing cache results with a forced refresh. ([#4845](https://github.com/Azure/azure-sdk-for-rust/pull/4845))
 
 ## 0.37.0 (2026-07-20)
 

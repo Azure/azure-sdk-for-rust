@@ -3,7 +3,11 @@
 
 //! [`CosmosClientOptions`] — options for [`CosmosClient`](crate::CosmosClient) construction.
 
+use std::sync::Arc;
+
 use azure_data_cosmos_driver::options::{OperationOptions, UserAgentSuffix};
+
+use crate::diagnostics::{DiagnosticsHandler, DiagnosticsHandlerChain};
 
 /// Options used when creating a [`CosmosClient`](crate::CosmosClient).
 ///
@@ -17,6 +21,8 @@ pub struct CosmosClientOptions {
     /// unless overridden by per-request options.
     pub operation: OperationOptions,
     pub(crate) user_agent_suffix: Option<UserAgentSuffix>,
+    /// Diagnostics emission handlers invoked once per operation at completion.
+    pub(crate) diagnostics_handlers: DiagnosticsHandlerChain,
 }
 
 impl CosmosClientOptions {
@@ -27,6 +33,16 @@ impl CosmosClientOptions {
 
     pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
         self.operation = operation;
+        self
+    }
+
+    /// Registers a [`DiagnosticsHandler`](crate::diagnostics::DiagnosticsHandler)
+    /// invoked once per operation at completion.
+    ///
+    /// Handlers run in registration order. Call this multiple times to build an
+    /// ordered chain.
+    pub fn with_diagnostics_handler(mut self, handler: Arc<dyn DiagnosticsHandler>) -> Self {
+        self.diagnostics_handlers = self.diagnostics_handlers.with_handler(handler);
         self
     }
 }
