@@ -70,7 +70,7 @@ var roleDefinitionId = guid(baseName, 'roleDefinitionId')
 var roleAssignmentId = guid(baseName, 'roleAssignmentId')
 var roleDefinitionName = 'ExpandedRbacActions'
 
-resource cosmosAccount 'Microsoft.DocumentDB/databaseAccounts@2025-05-01-preview' = {
+resource cosmosAccount 'Microsoft.DocumentDB/databaseAccounts@2023-04-15' = {
   name: toLower(accountName)
   location: location
   kind: 'GlobalDocumentDB'
@@ -83,7 +83,6 @@ resource cosmosAccount 'Microsoft.DocumentDB/databaseAccounts@2025-05-01-preview
     enableFreeTier: false
     enableAnalyticalStorage: false
     databaseAccountOfferType: 'Standard'
-    enableAllVersionsAndDeletesChangeFeed: enableContinuousBackup
     consistencyPolicy: {
       defaultConsistencyLevel: defaultConsistencyLevel
     }
