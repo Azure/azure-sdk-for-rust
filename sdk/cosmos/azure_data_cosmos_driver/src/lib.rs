@@ -64,4 +64,4 @@ pub use diagnostics::{DiagnosticsContext, ExecutionContext, RequestDiagnostics, 
 pub use driver::{CosmosDriver, CosmosDriverRuntime, CosmosDriverRuntimeBuilder, OperationPlan};
 pub use error::{CosmosError, CosmosErrorBuilder, CosmosStatus, Result, SubStatusCode};
 pub use models::{ActivityId, CosmosResponse, RequestCharge, ResponseBody};
-pub use options::{DiagnosticsOptions, DiagnosticsVerbosity, DriverOptions};
+pub use options::{DiagnosticsOptions, DiagnosticsThresholds, DiagnosticsVerbosity, DriverOptions};

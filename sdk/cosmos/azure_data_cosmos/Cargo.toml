@@ -20,6 +20,7 @@ azure_core = { workspace = true, default-features = false }
 azure_data_cosmos_driver = { version = "0.7.0", path = "../azure_data_cosmos_driver", default-features = false }
 base64.workspace = true
 futures.workspace = true
+opentelemetry = { workspace = true, optional = true, features = ["metrics"] }
 pin-project.workspace = true
 reqwest = { workspace = true, optional = true }
 serde.workspace = true
@@ -51,6 +52,10 @@ azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", default-featu
 ] }
 azure_identity.workspace = true
 clap.workspace = true
+# Enabled here (dev-only) so the metrics and tracing handler tests can drive
+# in-memory OpenTelemetry exporters. `testing` provides `InMemoryMetricExporter`
+# and `InMemorySpanExporter`.
+opentelemetry_sdk = { workspace = true, features = ["testing"] }
 reqwest = { workspace = true, features = ["http2"] }
 serde = { workspace = true, features = ["derive"] }
 serde_bytes.workspace = true
@@ -79,11 +84,17 @@ rustls = ["reqwest", "azure_data_cosmos_driver/rustls", "__tls"]
 native_tls = ["reqwest", "azure_data_cosmos_driver/native_tls", "__tls"]
 key_auth = [
 ] # Enables support for key-based authentication (Primary Keys and Resource Tokens)
+distributed_tracing = [
+  "dep:opentelemetry",
+] # Enables the OpenTelemetry distributed-tracing diagnostics handler (off by default)
 hmac_rust = ["azure_core/hmac_rust"]
 hmac_openssl = ["azure_core/hmac_openssl"]
 fault_injection = [
   "azure_data_cosmos_driver/fault_injection",
 ] # Enables support for fault injection testing
+metrics = [
+  "dep:opentelemetry",
+] # Enables the OpenTelemetry metrics handler (`CosmosMetricsHandler`). Off by default: with the feature disabled the metrics module is not compiled, so there is zero cost.
 preview_dtx = [
   "azure_data_cosmos_driver/preview_dtx",
 ] # Enables preview Distributed Transaction APIs. Disabled by default and not production-ready.
@@ -95,10 +106,12 @@ __tls = []
 
 [package.metadata.docs.rs]
 features = [
+  "distributed_tracing",
   "fault_injection",
   "hmac_openssl",
   "hmac_rust",
   "key_auth",
+  "metrics",
   "native_tls",
   "rustls",
 ]
