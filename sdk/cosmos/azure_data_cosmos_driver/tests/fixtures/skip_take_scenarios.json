@@ -1,0 +1,301 @@
+{
+  "schemaVersion": 1,
+  "scenarios": [
+    {
+      "id": "offset_limit_cross_partition_boundary_spanning",
+      "description": "OFFSET 3 LIMIT 4 over eight documents spread across two physical partitions. The window straddles the partition boundary, so a correct implementation must skip exactly three documents globally and take four; a per-partition double-skip would return fewer. Cross-partition order is unspecified (no ORDER BY), so only the cardinality and membership are asserted.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/SkipTakeQueryTests.cs",
+          "test": "TestQueryCrossPartitionOffsetLimitAsync"
+        },
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/OffsetLimitQueryTests.java",
+          "test": "queryDocuments"
+        }
+      ],
+      "layers": [
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT c.id FROM c OFFSET 3 LIMIT 4",
+        "parameters": []
+      },
+      "documents": [
+        { "id": "d1", "pk": "pk-a" },
+        { "id": "d2", "pk": "pk-b" },
+        { "id": "d3", "pk": "pk-c" },
+        { "id": "d4", "pk": "pk-d" },
+        { "id": "d5", "pk": "pk-e" },
+        { "id": "d6", "pk": "pk-f" },
+        { "id": "d7", "pk": "pk-g" },
+        { "id": "d8", "pk": "pk-h" }
+      ],
+      "partitionCount": 2,
+      "assertion": "unorderedSubsetCount",
+      "expectedCount": 4
+    },
+    {
+      "id": "offset_limit_cross_partition_window",
+      "description": "OFFSET 2 LIMIT 3 over six documents across two physical partitions returns exactly three documents. This is the load-bearing regression for the emulator's Gateway-style OFFSET x LIMIT y -> OFFSET 0 LIMIT (x+y) rewrite: without it, each partition skips two locally and the client SkipTake skips two more, collapsing the result.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/SkipTakeQueryTests.cs",
+          "test": "TestQueryCrossPartitionOffsetLimitAsync"
+        },
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/OffsetLimitQueryTests.java",
+          "test": "queryDocuments"
+        }
+      ],
+      "layers": [
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT c.id FROM c OFFSET 2 LIMIT 3",
+        "parameters": []
+      },
+      "documents": [
+        { "id": "d1", "pk": "pk-a" },
+        { "id": "d2", "pk": "pk-b" },
+        { "id": "d3", "pk": "pk-c" },
+        { "id": "d4", "pk": "pk-d" },
+        { "id": "d5", "pk": "pk-e" },
+        { "id": "d6", "pk": "pk-f" }
+      ],
+      "partitionCount": 2,
+      "assertion": "unorderedSubsetCount",
+      "expectedCount": 3
+    },
+    {
+      "id": "offset_limit_single_partition_window",
+      "description": "When every document shares one partition key it occupies a single physical partition, so the emitted order is deterministic (_rid / creation order) and the exact window can be asserted. OFFSET 2 LIMIT 3 returns the third through fifth documents in creation order.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/SkipTakeQueryTests.cs",
+          "test": "TestQueryCrossPartitionOffsetLimitAsync"
+        },
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/OffsetLimitQueryTests.java",
+          "test": "queryDocumentsWithOffsetContinuationTokens"
+        }
+      ],
+      "layers": [
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT c.id FROM c OFFSET 2 LIMIT 3",
+        "parameters": []
+      },
+      "documents": [
+        { "id": "d0", "pk": "solo" },
+        { "id": "d1", "pk": "solo" },
+        { "id": "d2", "pk": "solo" },
+        { "id": "d3", "pk": "solo" },
+        { "id": "d4", "pk": "solo" },
+        { "id": "d5", "pk": "solo" }
+      ],
+      "partitionCount": 2,
+      "assertion": "exactOrdered",
+      "expectedIds": ["d2", "d3", "d4"]
+    },
+    {
+      "id": "offset_limit_single_partition_full_span",
+      "description": "OFFSET 0 LIMIT n over a single logical partition returns every document in creation order. Guards that a zero skip and a take equal to the total is a no-op window rather than dropping the first or last row.",
+      "sources": [
+        {
+          "sdk": "java",
+          "path": "sdk/cosmos/azure-cosmos-tests/src/test/java/com/azure/cosmos/rx/OffsetLimitQueryTests.java",
+          "test": "drainAllDocumentsUsingOffsetLimit"
+        }
+      ],
+      "layers": [
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT c.id FROM c OFFSET 0 LIMIT 5",
+        "parameters": []
+      },
+      "documents": [
+        { "id": "d0", "pk": "solo" },
+        { "id": "d1", "pk": "solo" },
+        { "id": "d2", "pk": "solo" },
+        { "id": "d3", "pk": "solo" },
+        { "id": "d4", "pk": "solo" }
+      ],
+      "partitionCount": 2,
+      "assertion": "exactOrdered",
+      "expectedIds": ["d0", "d1", "d2", "d3", "d4"]
+    },
+    {
+      "id": "offset_beyond_total_empty",
+      "description": "An OFFSET at or beyond the total document count yields an empty result deterministically, even across partitions. Mirrors the .NET client-range test where OFFSET is set past the data.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/SkipTakeQueryTests.cs",
+          "test": "TestTopOffsetLimitClientRanges"
+        }
+      ],
+      "layers": [
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT c.id FROM c OFFSET 10 LIMIT 5",
+        "parameters": []
+      },
+      "documents": [
+        { "id": "d1", "pk": "pk-a" },
+        { "id": "d2", "pk": "pk-b" },
+        { "id": "d3", "pk": "pk-c" },
+        { "id": "d4", "pk": "pk-d" }
+      ],
+      "partitionCount": 2,
+      "assertion": "empty",
+      "expectedCount": 0
+    },
+    {
+      "id": "limit_zero_empty",
+      "description": "LIMIT 0 yields an empty result regardless of offset or partitioning. Mirrors the .NET client-range test where LIMIT is zero.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/SkipTakeQueryTests.cs",
+          "test": "TestTopOffsetLimitClientRanges"
+        }
+      ],
+      "layers": [
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT c.id FROM c OFFSET 1 LIMIT 0",
+        "parameters": []
+      },
+      "documents": [
+        { "id": "d1", "pk": "pk-a" },
+        { "id": "d2", "pk": "pk-b" },
+        { "id": "d3", "pk": "pk-c" },
+        { "id": "d4", "pk": "pk-d" }
+      ],
+      "partitionCount": 2,
+      "assertion": "empty",
+      "expectedCount": 0
+    },
+    {
+      "id": "top_cross_partition_subset",
+      "description": "Cross-partition TOP n returns exactly min(n, total) documents. TOP needs no query rewrite (per-partition TOP n plus a global TOP n is already correct); this guards that the SkipTake take-bound is applied once and not doubled.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/SkipTakeQueryTests.cs",
+          "test": "TestQueryCrossPartitionTopAsync"
+        }
+      ],
+      "layers": [
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT TOP 4 c.id FROM c",
+        "parameters": []
+      },
+      "documents": [
+        { "id": "d1", "pk": "pk-a" },
+        { "id": "d2", "pk": "pk-b" },
+        { "id": "d3", "pk": "pk-c" },
+        { "id": "d4", "pk": "pk-d" },
+        { "id": "d5", "pk": "pk-e" },
+        { "id": "d6", "pk": "pk-f" }
+      ],
+      "partitionCount": 2,
+      "assertion": "unorderedSubsetCount",
+      "expectedCount": 4
+    },
+    {
+      "id": "top_larger_than_total_all",
+      "description": "TOP n with n greater than the total returns every document exactly once. Guards that an over-large take clamps to the available data rather than erroring or truncating.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/SkipTakeQueryTests.cs",
+          "test": "TestQueryCrossPartitionTopAsync"
+        }
+      ],
+      "layers": [
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT TOP 50 c.id FROM c",
+        "parameters": []
+      },
+      "documents": [
+        { "id": "d1", "pk": "pk-a" },
+        { "id": "d2", "pk": "pk-b" },
+        { "id": "d3", "pk": "pk-c" }
+      ],
+      "partitionCount": 2,
+      "assertion": "unorderedSubsetCount",
+      "expectedCount": 3
+    },
+    {
+      "id": "top_zero_empty",
+      "description": "TOP 0 yields an empty result. Mirrors the .NET client-range test where TOP is zero.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/SkipTakeQueryTests.cs",
+          "test": "TestTopOffsetLimitClientRanges"
+        }
+      ],
+      "layers": [
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT TOP 0 c.id FROM c",
+        "parameters": []
+      },
+      "documents": [
+        { "id": "d1", "pk": "pk-a" },
+        { "id": "d2", "pk": "pk-b" },
+        { "id": "d3", "pk": "pk-c" },
+        { "id": "d4", "pk": "pk-d" }
+      ],
+      "partitionCount": 2,
+      "assertion": "empty",
+      "expectedCount": 0
+    },
+    {
+      "id": "top_one_single_partition",
+      "description": "TOP 1 over a single logical partition returns the first document in creation order deterministically.",
+      "sources": [
+        {
+          "sdk": "dotnet",
+          "path": "Microsoft.Azure.Cosmos.EmulatorTests/Query/SkipTakeQueryTests.cs",
+          "test": "TestQueryCrossPartitionTopAsync"
+        }
+      ],
+      "layers": [
+        "inMemoryEmulator"
+      ],
+      "query": {
+        "text": "SELECT TOP 1 c.id FROM c",
+        "parameters": []
+      },
+      "documents": [
+        { "id": "d0", "pk": "solo" },
+        { "id": "d1", "pk": "solo" },
+        { "id": "d2", "pk": "solo" },
+        { "id": "d3", "pk": "solo" },
+        { "id": "d4", "pk": "solo" }
+      ],
+      "partitionCount": 2,
+      "assertion": "exactOrdered",
+      "expectedIds": ["d0"]
+    }
+  ]
+}

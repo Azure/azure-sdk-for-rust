@@ -21,7 +21,8 @@ use super::{
     intersect_feed_ranges,
     query_plan::{QueryInfo, QueryPlan},
     DrainedLeaf, PartitionRoutingRefresh, Pipeline, PipelineNode, PipelineNodeState, RangedToken,
-    Request, RequestTarget, ResolvedRange, SequentialDrain, TopologyProvider, UnorderedMerge,
+    Request, RequestTarget, ResolvedRange, SequentialDrain, SkipTake, TopologyProvider,
+    UnorderedMerge,
 };
 
 /// Builds a single-node [`Pipeline`] for a trivial operation.
@@ -150,7 +151,35 @@ pub(crate) async fn build_sequential_drain(
 ) -> crate::error::Result<Pipeline> {
     validate_query_plan(query_plan)?;
 
-    let saved_snapshot = match resume {
+    // Global OFFSET / LIMIT / TOP window derived from the query plan.
+    let query_info = query_plan.query_info.as_ref();
+    let mut skip = query_info.and_then(|info| info.offset).unwrap_or(0);
+    let mut take = query_info.and_then(combine_take);
+
+    // A `SkipTake` continuation wraps the fan-out snapshot; peel it so the saved
+    // remaining window overrides the plan and the inner child drives the
+    // fan-out resume below.
+    let inner_resume = match resume {
+        Some(PipelineNodeState::SkipTake {
+            remaining_skip,
+            remaining_take,
+            child,
+        }) => {
+            skip = remaining_skip;
+            take = remaining_take;
+            Some(*child)
+        }
+        other => other,
+    };
+
+    let needs_skip_take = skip > 0 || take.is_some();
+
+    // Per-partition requests must use the plan's `rewrittenQuery` so
+    // OFFSET / LIMIT / TOP are applied once, globally, by the `SkipTake` node
+    // here rather than being re-applied inside every partition.
+    let effective_operation = rewritten_operation(operation, query_plan)?;
+
+    let saved_snapshot = match inner_resume {
         None => None,
         Some(PipelineNodeState::Drained) => {
             return Ok(Pipeline::new(Box::new(DrainedLeaf)));
@@ -174,9 +203,10 @@ pub(crate) async fn build_sequential_drain(
     };
 
     let request_nodes = if let Some(saved) = saved_snapshot.as_ref() {
-        plan_resume_from_saved_snapshot(query_plan, topology_provider, operation, saved).await?
+        plan_resume_from_saved_snapshot(query_plan, topology_provider, &effective_operation, saved)
+            .await?
     } else {
-        plan_fresh(query_plan, topology_provider, operation).await?
+        plan_fresh(query_plan, topology_provider, &effective_operation).await?
     };
 
     // TODO: enforce max fan-out (default 100, configurable). See FEED_OPERATIONS_REQS.md §3.
@@ -197,7 +227,16 @@ pub(crate) async fn build_sequential_drain(
     // Even when there's only one request node, we still need to wrap it in
     // a SequentialDrain so the pipeline can react to splits by replacing
     // the single Request with multiple Requests.
-    let root = Box::new(SequentialDrain::new(request_nodes));
+    let fanout: Box<dyn PipelineNode> = Box::new(SequentialDrain::new(request_nodes));
+
+    // Cross-partition OFFSET / LIMIT / TOP applies a global skip/take over the
+    // fan-out's EPK-ordered stream. When none is present the fan-out is the
+    // pipeline root directly.
+    let root: Box<dyn PipelineNode> = if needs_skip_take {
+        Box::new(SkipTake::new(fanout, skip, take))
+    } else {
+        fanout
+    };
     Ok(Pipeline::new(root))
 }
 
@@ -736,6 +775,7 @@ fn snapshot_kind(state: &PipelineNodeState) -> &'static str {
         PipelineNodeState::Request { .. } => "Request",
         PipelineNodeState::SequentialDrain { .. } => "SequentialDrain",
         PipelineNodeState::UnorderedMerge { .. } => "UnorderedMerge",
+        PipelineNodeState::SkipTake { .. } => "SkipTake",
     }
 }
 
@@ -803,14 +843,6 @@ fn validate_query_plan(plan: &QueryPlan) -> crate::error::Result<()> {
 }
 
 fn validate_query_info(info: &QueryInfo) -> crate::error::Result<()> {
-    if info.top.is_some() {
-        return Err(unsupported_feature("TOP clause in cross-partition queries"));
-    }
-    if info.limit.is_some() {
-        return Err(unsupported_feature(
-            "LIMIT clause in cross-partition queries",
-        ));
-    }
     if !info.order_by.is_empty() {
         return Err(unsupported_feature("ORDER BY in cross-partition queries"));
     }
@@ -824,6 +856,81 @@ fn validate_query_info(info: &QueryInfo) -> crate::error::Result<()> {
         return Err(unsupported_feature("DISTINCT in cross-partition queries"));
     }
     Ok(())
+}
+
+/// Combines a query plan's `TOP` and `LIMIT` into a single global take bound.
+///
+/// Both clauses cap the number of documents returned, so the effective take is
+/// the tighter of the two (`min`), treating an absent clause as unbounded.
+fn combine_take(info: &QueryInfo) -> Option<u64> {
+    match (info.top, info.limit) {
+        (Some(top), Some(limit)) => Some(top.min(limit)),
+        (Some(top), None) => Some(top),
+        (None, Some(limit)) => Some(limit),
+        (None, None) => None,
+    }
+}
+
+/// Returns `operation` with its query text replaced by the plan's
+/// `rewrittenQuery`, if the plan provides a non-empty one.
+///
+/// The gateway rewrites `OFFSET x LIMIT y` (and `TOP n`) into a per-partition
+/// bound (e.g. `OFFSET 0 LIMIT x + y`) so each partition returns enough
+/// documents for the client to apply the *global* skip/take in
+/// [`SkipTake`](super::SkipTake). Sending the original query to each partition
+/// would double-apply the clause, so this substitution is required for
+/// correctness — not an optimization. When the plan carries no rewritten query
+/// the operation is returned unchanged (a cheap `Arc` clone).
+fn rewritten_operation(
+    operation: &Arc<CosmosOperation>,
+    query_plan: &QueryPlan,
+) -> crate::error::Result<Arc<CosmosOperation>> {
+    let Some(rewritten) = query_plan
+        .query_info
+        .as_ref()
+        .and_then(|info| info.rewritten_query.as_deref())
+        .filter(|query| !query.is_empty())
+    else {
+        return Ok(Arc::clone(operation));
+    };
+
+    let mut body: serde_json::Value = match operation.body() {
+        Some(bytes) if !bytes.is_empty() => serde_json::from_slice(bytes).map_err(|e| {
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_QUERY_REWRITE_BODY_INVALID)
+                .with_message(
+                    "cross-partition query request body is not valid JSON; \
+                     cannot apply the plan's rewritten query",
+                )
+                .with_source(e)
+                .build()
+        })?,
+        _ => serde_json::Value::Object(serde_json::Map::new()),
+    };
+
+    let serde_json::Value::Object(map) = &mut body else {
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::CLIENT_QUERY_REWRITE_BODY_INVALID)
+            .with_message(
+                "cross-partition query request body must be a JSON object; \
+                 cannot apply the plan's rewritten query",
+            )
+            .build());
+    };
+    map.insert(
+        "query".to_owned(),
+        serde_json::Value::String(rewritten.to_owned()),
+    );
+
+    let new_body = serde_json::to_vec(&body).map_err(|e| {
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::CLIENT_QUERY_REWRITE_BODY_INVALID)
+            .with_message("failed to serialize rewritten cross-partition query body")
+            .with_source(e)
+            .build()
+    })?;
+
+    Ok(Arc::new((**operation).clone().with_body(new_body)))
 }
 
 fn unsupported_feature(feature: &str) -> crate::error::CosmosError {
@@ -976,6 +1083,31 @@ mod tests {
             query_ranges: ranges,
             hybrid_search_query_info: None,
         }
+    }
+
+    /// Asserts the pipeline root is a `SkipTake`, returning its
+    /// `(remaining_skip, remaining_take)` window and the wrapped fan-out child.
+    fn unwrap_skip_take(pipeline: Pipeline) -> (u64, Option<u64>, Box<SequentialDrain>) {
+        let root = pipeline
+            .into_root()
+            .downcast::<SkipTake>()
+            .expect("expected SkipTake root");
+        let (skip, take) = match root.snapshot_state().unwrap() {
+            PipelineNodeState::SkipTake {
+                remaining_skip,
+                remaining_take,
+                ..
+            } => (remaining_skip, remaining_take),
+            other => panic!("expected SkipTake snapshot, got {other:?}"),
+        };
+        let mut children = root.into_children();
+        assert_eq!(children.len(), 1, "SkipTake must wrap exactly one child");
+        let child = children
+            .pop()
+            .unwrap()
+            .downcast::<SequentialDrain>()
+            .expect("expected SequentialDrain child");
+        (skip, take, child)
     }
 
     /// Asserts that the pipeline is a `SequentialDrain` containing `Request` nodes
@@ -1203,7 +1335,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn rejects_query_plan_with_top() {
+    async fn wraps_fanout_in_skip_take_for_top() {
         let plan = QueryPlan {
             query_info: Some(QueryInfo {
                 top: Some(10),
@@ -1212,39 +1344,81 @@ mod tests {
             ..plan_with_ranges(vec![qr("", "FF")])
         };
         let op = cross_partition_query_operation();
-        let mut topology = NoopTopologyProvider;
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-a")])]);
 
-        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
-            .unwrap_err();
-        let rendered = err.to_string();
-        assert!(
-            rendered.ends_with("unsupported query feature: TOP clause in cross-partition queries"),
-            "unexpected: {rendered}"
-        );
+            .unwrap();
+        let (skip, take, _child) = unwrap_skip_take(pipeline);
+        assert_eq!(skip, 0);
+        assert_eq!(take, Some(10));
     }
 
     #[tokio::test]
-    async fn rejects_query_plan_with_limit() {
+    async fn wraps_fanout_in_skip_take_for_offset_limit() {
         let plan = QueryPlan {
             query_info: Some(QueryInfo {
-                limit: Some(20),
+                offset: Some(5),
+                limit: Some(10),
+                top: Some(7),
                 ..Default::default()
             }),
             ..plan_with_ranges(vec![qr("", "FF")])
         };
         let op = cross_partition_query_operation();
-        let mut topology = NoopTopologyProvider;
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-a")])]);
 
-        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
-            .unwrap_err();
-        let rendered = err.to_string();
-        assert!(
-            rendered
-                .ends_with("unsupported query feature: LIMIT clause in cross-partition queries"),
-            "unexpected: {rendered}"
-        );
+            .unwrap();
+        let (skip, take, _child) = unwrap_skip_take(pipeline);
+        assert_eq!(skip, 5);
+        // Effective take = min(top = 7, limit = 10) = 7.
+        assert_eq!(take, Some(7));
+    }
+
+    #[tokio::test]
+    async fn no_skip_take_wrapper_without_offset_limit_top() {
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-a")])]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+            .await
+            .unwrap();
+        // The fan-out is the pipeline root directly (no SkipTake wrapper).
+        assert_drain_requests(pipeline, &[("", "FF", "pkrange-a")]);
+    }
+
+    #[tokio::test]
+    async fn applies_rewritten_query_to_request_bodies() {
+        let plan = QueryPlan {
+            query_info: Some(QueryInfo {
+                offset: Some(2),
+                limit: Some(3),
+                rewritten_query: Some("SELECT * FROM c OFFSET 0 LIMIT 5".to_owned()),
+                ..Default::default()
+            }),
+            ..plan_with_ranges(vec![qr("", "FF")])
+        };
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-a")])]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
+            .await
+            .unwrap();
+        let (_skip, _take, child) = unwrap_skip_take(pipeline);
+        let requests = child.into_children();
+        assert_eq!(requests.len(), 1);
+        let request = requests
+            .into_iter()
+            .next()
+            .unwrap()
+            .downcast::<Request>()
+            .expect("expected Request node");
+        let body = request.operation().body().expect("request body");
+        let parsed: serde_json::Value = serde_json::from_slice(body).unwrap();
+        assert_eq!(parsed["query"], "SELECT * FROM c OFFSET 0 LIMIT 5");
     }
 
     #[tokio::test]

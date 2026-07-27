@@ -493,6 +493,7 @@ impl SubStatusCode {
             20115 => Some("ClientQueryPlanComplexProjectionUnsupported"),
             20116 => Some("ClientOpaqueTokenInvalidForCrossPartitionQuery"),
             20117 => Some("ClientContinuationTokenNonQueryOperation"),
+            20118 => Some("ClientQueryRewriteBodyInvalid"),
             20150 => Some("ClientDuplicateFaultInjectionRuleId"),
             20151 => Some("ClientThroughputControlGroupRegistrationFailed"),
             20152 => Some("ClientThroughputControlGroupNotRegistered"),
@@ -1321,6 +1322,12 @@ impl SubStatusCode {
     /// operations.
     pub const CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION: SubStatusCode = SubStatusCode(20117);
 
+    /// The query plan's `rewrittenQuery` could not be substituted into the
+    /// per-partition request body because that body was not valid JSON
+    /// (20118). Cross-partition `OFFSET` / `LIMIT` / `TOP` requires rewriting
+    /// each partition's query text.
+    pub const CLIENT_QUERY_REWRITE_BODY_INVALID: SubStatusCode = SubStatusCode(20118);
+
     // ----- 20150-20199: SDK configuration / setup errors -----
 
     /// Two fault-injection rules registered with the same id (20150).
@@ -2121,6 +2128,14 @@ impl CosmosStatus {
     pub const CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION: CosmosStatus = CosmosStatus {
         status_code: StatusCode::BadRequest,
         sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION),
+    };
+
+    /// 400 / 20118 — the query plan's `rewrittenQuery` could not be
+    /// substituted into a per-partition request body because that body was
+    /// not valid JSON.
+    pub const CLIENT_QUERY_REWRITE_BODY_INVALID: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_QUERY_REWRITE_BODY_INVALID),
     };
 
     // Configuration / setup (HTTP 400, sub-status 20150-20199)

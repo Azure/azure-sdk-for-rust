@@ -78,6 +78,20 @@ pub(crate) enum PipelineNodeState {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         start_from: Option<ChangeFeedStartFrom>,
     },
+
+    /// A global skip/take (`OFFSET` / `LIMIT` / `TOP`) applied over a single
+    /// child pipeline.
+    ///
+    /// `remaining_skip` and `remaining_take` are the still-unsatisfied portions
+    /// of the window at snapshot time (`remaining_take = None` = unbounded).
+    /// `child` is the wrapped fan-out node's own snapshot, so resume rebuilds
+    /// the child and re-wraps it with the remaining window.
+    SkipTake {
+        remaining_skip: u64,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        remaining_take: Option<u64>,
+        child: Box<PipelineNodeState>,
+    },
 }
 
 /// One entry in a [`PipelineNodeState::SequentialDrain`] `active_tokens`
@@ -145,6 +159,7 @@ impl PipelineNodeState {
                         PipelineNodeState::Request { .. } => "Request",
                         PipelineNodeState::SequentialDrain { .. } => "SequentialDrain",
                         PipelineNodeState::UnorderedMerge { .. } => "UnorderedMerge",
+                        PipelineNodeState::SkipTake { .. } => "SkipTake",
                     },
                 ))
                 .build()),

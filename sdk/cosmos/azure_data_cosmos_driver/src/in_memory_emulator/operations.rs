@@ -3185,7 +3185,24 @@ fn local_sort_order_to_dataflow(
 
 fn local_query_info_to_dataflow(
     info: crate::query::plan::LocalQueryInfo,
+    original_query: &str,
 ) -> crate::driver::dataflow::query_plan::QueryInfo {
+    // The real Gateway returns a per-partition `rewrittenQuery` for
+    // `OFFSET`/`LIMIT` so that each partition yields `offset + limit`
+    // documents from the top (no per-partition skip); the client then applies
+    // the single *global* skip/take. Without this rewrite a cross-partition
+    // `OFFSET x LIMIT y` would skip `x` in every partition *and* again in the
+    // client's `SkipTake`, dropping rows. `TOP`-only queries need no rewrite:
+    // a per-partition `TOP n` combined with the client's global `TOP n` is
+    // already correct, so they keep the empty (no-op) rewritten query.
+    let rewritten_query = match info.limit {
+        Some(limit) => synthesize_offset_limit_rewritten_query(
+            original_query,
+            info.offset.unwrap_or(0) as u64,
+            limit as u64,
+        ),
+        None => Some(String::new()),
+    };
     crate::driver::dataflow::query_plan::QueryInfo {
         distinct_type: local_distinct_type_to_dataflow(info.distinct_type),
         top: info.top.map(|v| v as u64),
@@ -3205,10 +3222,41 @@ fn local_query_info_to_dataflow(
             .map(|a| format!("{a:?}"))
             .collect(),
         group_by_alias_to_aggregate_type: HashMap::new(),
-        rewritten_query: Some(String::new()),
+        rewritten_query,
         has_select_value: info.has_select_value,
         has_non_streaming_order_by: false,
     }
+}
+
+/// Synthesizes the per-partition `rewrittenQuery` the real Gateway returns for
+/// `OFFSET`/`LIMIT`: the original query with its trailing `OFFSET <x> LIMIT
+/// <y>` replaced by `OFFSET 0 LIMIT <x + y>`. Each partition then returns the
+/// first `x + y` documents (no per-partition skip) and the client applies the
+/// single global skip/take (see `driver::dataflow::SkipTake`).
+///
+/// The clause boundary is located by lexing rather than string-matching so a
+/// property path such as `c.offset` cannot be mistaken for the keyword. Returns
+/// `Some(String::new())` (no rewrite) if the query carries no `OFFSET` token,
+/// which shouldn't happen for a plan whose `LocalQueryInfo` reports a limit.
+///
+/// NOTE (convergence): when the streaming `ORDER BY` work lands, an
+/// `ORDER BY ... OFFSET ... LIMIT` query will need both this rewrite and the
+/// order-by envelope; today the driver rejects cross-partition `ORDER BY`
+/// before execution, so the two rewrites do not yet interact here.
+fn synthesize_offset_limit_rewritten_query(
+    original_query: &str,
+    offset: u64,
+    limit: u64,
+) -> Option<String> {
+    use crate::query::lexer::{Lexer, TokenKind};
+
+    let tokens = Lexer::tokenize(original_query);
+    let Some(offset_idx) = tokens.iter().position(|t| t.kind == TokenKind::Offset) else {
+        return Some(String::new());
+    };
+    let prefix = original_query[..tokens[offset_idx].span.start].trim_end();
+    let combined = offset.saturating_add(limit);
+    Some(format!("{prefix} OFFSET 0 LIMIT {combined}"))
 }
 
 fn full_query_range() -> crate::driver::dataflow::query_plan::QueryRange {
@@ -3387,7 +3435,7 @@ fn handle_query_plan(
 
     let plan = crate::driver::dataflow::query_plan::QueryPlan {
         partitioned_query_execution_info_version: 2,
-        query_info: Some(local_query_info_to_dataflow(local_plan.query_info)),
+        query_info: Some(local_query_info_to_dataflow(local_plan.query_info, &query)),
         query_ranges,
         hybrid_search_query_info: None,
     };

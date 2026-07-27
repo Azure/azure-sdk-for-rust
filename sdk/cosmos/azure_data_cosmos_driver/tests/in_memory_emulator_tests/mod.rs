@@ -22,6 +22,7 @@ pub mod query;
 pub mod read_feed;
 #[cfg(feature = "fault_injection")]
 pub mod regional_gateway_unreachable;
+pub mod skip_take;
 pub mod split_merge;
 pub mod throttling;
 #[cfg(feature = "fault_injection")]
