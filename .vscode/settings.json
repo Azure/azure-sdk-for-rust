@@ -23,6 +23,7 @@
     "eng/tools/Cargo.toml",
     "eng/scripts/update-cratenames.rs",
     "eng/scripts/update-pathversions.rs",
+    "eng/scripts/update-samples.rs",
     "eng/scripts/verify-dependencies.rs",
     "eng/scripts/verify-keywords.rs",
   ],

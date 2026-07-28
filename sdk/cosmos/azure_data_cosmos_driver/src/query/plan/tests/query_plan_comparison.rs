@@ -409,7 +409,9 @@ fn hpk_partial_is_cross() {
     assert_eq!(
         plan_hpk("SELECT * FROM c WHERE c.tenant = 'acme'"),
         QueryPlan {
-            pk_filters: PartitionKeyFilter::Unconstrained,
+            pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String(
+                "acme".into(),
+            )]),
             query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
@@ -1726,11 +1728,13 @@ fn hpk_null_component() {
 
 #[test]
 fn hpk_missing_second_component() {
-    // Only first HPK component specified — should be cross-partition
+    // Only first HPK component specified — route to the leading HPK prefix.
     assert_eq!(
         plan_hpk("SELECT * FROM c WHERE c.tenant = 'acme' AND c.age > 21"),
         QueryPlan {
-            pk_filters: PartitionKeyFilter::Unconstrained,
+            pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String(
+                "acme".into(),
+            )]),
             query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
@@ -1833,7 +1837,7 @@ fn hpk3_missing_middle_component() {
     assert_eq!(
         plan_hpk3("SELECT * FROM c WHERE c.tenant = 'a' AND c.sessionId = 's1'"),
         QueryPlan {
-            pk_filters: PartitionKeyFilter::Unconstrained,
+            pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("a".into())]),
             query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
@@ -1847,7 +1851,10 @@ fn hpk3_missing_last_component() {
     assert_eq!(
         plan_hpk3("SELECT * FROM c WHERE c.tenant = 'a' AND c.userId = 'u1'"),
         QueryPlan {
-            pk_filters: PartitionKeyFilter::Unconstrained,
+            pk_filters: PartitionKeyFilter::Equality(vec![
+                PartitionKeyValue::String("a".into()),
+                PartitionKeyValue::String("u1".into()),
+            ]),
             query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
@@ -4422,11 +4429,13 @@ fn hpk_alias_mismatch_cross_partition() {
 
 #[test]
 fn hpk_non_equality_on_second_component() {
-    // Inequality on second component — cross-partition
+    // Inequality on second component still preserves the leading HPK prefix.
     assert_eq!(
         plan_hpk("SELECT * FROM c WHERE c.tenant = 'acme' AND c.userId > 'u1'"),
         QueryPlan {
-            pk_filters: PartitionKeyFilter::Unconstrained,
+            pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String(
+                "acme".into(),
+            )]),
             query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
@@ -4483,7 +4492,9 @@ fn hpk_like_on_second_component_no_extract() {
     assert_eq!(
         plan_hpk("SELECT * FROM c WHERE c.tenant = 'acme' AND c.userId LIKE 'u%'"),
         QueryPlan {
-            pk_filters: PartitionKeyFilter::Unconstrained,
+            pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String(
+                "acme".into(),
+            )]),
             query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
@@ -4596,13 +4607,17 @@ fn hpk_or_of_three_full_hpk_tuples_extracts_inlist() {
 
 #[test]
 fn hpk_or_with_one_partial_tuple_falls_back_to_unconstrained() {
-    // if one disjunct misses an HPK component, the union becomes
-    // `Unconstrained` (per `union_pk_filters` rules — Unconstrained is
-    // absorbing on the OR side because we can't bound that disjunct).
+    // A partial tuple disjunct contributes its leading HPK prefix.
     assert_eq!(
         plan_hpk("SELECT * FROM c WHERE (c.tenant = 'a' AND c.userId = 'u1') OR (c.tenant = 'b')"),
         QueryPlan {
-            pk_filters: PartitionKeyFilter::Unconstrained,
+            pk_filters: PartitionKeyFilter::InList(vec![
+                vec![
+                    PartitionKeyValue::String("a".into()),
+                    PartitionKeyValue::String("u1".into()),
+                ],
+                vec![PartitionKeyValue::String("b".into())],
+            ]),
             query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
@@ -4613,11 +4628,13 @@ fn hpk_or_with_one_partial_tuple_falls_back_to_unconstrained() {
 
 #[test]
 fn hpk_wrong_root_on_second_component() {
-    // First component uses 'c', second uses 'd' — unresolvable
+    // First component uses 'c', second uses 'd' — preserve the leading prefix.
     assert_eq!(
         plan_hpk("SELECT * FROM c WHERE c.tenant = 'acme' AND d.userId = 'u1'"),
         QueryPlan {
-            pk_filters: PartitionKeyFilter::Unconstrained,
+            pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String(
+                "acme".into(),
+            )]),
             query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
@@ -4629,11 +4646,13 @@ fn hpk_wrong_root_on_second_component() {
 
 #[test]
 fn hpk_comparison_to_other_field_no_extract() {
-    // Second component compared to another field, not a literal
+    // Second component compared to another field, not a literal — preserve the leading prefix.
     assert_eq!(
         plan_hpk("SELECT * FROM c WHERE c.tenant = 'acme' AND c.userId = c.other"),
         QueryPlan {
-            pk_filters: PartitionKeyFilter::Unconstrained,
+            pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String(
+                "acme".into(),
+            )]),
             query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
@@ -4796,7 +4815,7 @@ fn hpk3_only_first_component() {
     assert_eq!(
         plan_hpk3("SELECT * FROM c WHERE c.tenant = 'a'"),
         QueryPlan {
-            pk_filters: PartitionKeyFilter::Unconstrained,
+            pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("a".into())]),
             query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()
@@ -4824,7 +4843,7 @@ fn hpk3_first_and_last_missing_middle() {
     assert_eq!(
         plan_hpk3("SELECT * FROM c WHERE c.tenant = 'a' AND c.sessionId = 's1'"),
         QueryPlan {
-            pk_filters: PartitionKeyFilter::Unconstrained,
+            pk_filters: PartitionKeyFilter::Equality(vec![PartitionKeyValue::String("a".into())]),
             query_info: LocalQueryInfo {
                 has_where: true,
                 ..qi()

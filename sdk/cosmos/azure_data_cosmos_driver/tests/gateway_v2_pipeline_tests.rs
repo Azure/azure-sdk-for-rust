@@ -8,10 +8,10 @@
 //!
 //! ## Categories
 //!
-//! 1. **Server-driven transport selection** — Gateway 2.0 vs. the standard
-//!    gateway is chosen by the account advertisement plus a runtime probe; it
-//!    is not customer-configurable. The only client-side prerequisite is
-//!    HTTP/2, covered by the inside-crate tests in
+//! 1. **Transport selection** — Gateway 2.0 vs. the standard gateway is chosen
+//!    by the account advertisement plus a runtime probe unless the runtime
+//!    explicitly opts out. HTTP/2 remains a hard prerequisite, covered by the
+//!    inside-crate tests in
 //!    `driver::transport::tests::dataplane_transport_*`.
 //!
 //! 2. **Operation eligibility** — operations that Gateway 2.0 does not yet
@@ -152,9 +152,8 @@ fn live_account_from_env() -> Option<AccountReference> {
 
 /// Builds a runtime with the capturing factory.
 ///
-/// Transport selection (Gateway 2.0 vs. standard gateway) is server-driven, so
-/// there is nothing to toggle here — the captured frames are the V1 HTTP
-/// metadata/probe requests the runtime emits during bootstrap.
+/// The default runtime leaves Gateway 2.0 enabled; captured frames are the V1
+/// HTTP metadata/probe requests emitted during bootstrap.
 async fn capturing_runtime() -> (Arc<CosmosDriverRuntime>, Arc<CapturingTransport>) {
     let (factory, transport) = CapturingFactory::new();
     let pool = ConnectionPoolOptions::builder()

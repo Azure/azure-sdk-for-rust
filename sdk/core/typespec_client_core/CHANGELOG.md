@@ -1,14 +1,22 @@
 # Release History
 
-## 1.1.0-beta.1 (Unreleased)
+## 1.2.0-beta.1 (Unreleased)
 
 ### Features Added
 
-- `Error` now captures a `std::backtrace::Backtrace` at construction time and includes it in `Debug` output (e.g., `{:?}`) when `RUST_BACKTRACE=1` is set.
+- Added `Tracer::start_span_with_options`, `Tracer::start_span_with_parent_and_options`, and `Span::end_at`, along with a `SpanOptions` struct, to allow reconstructing spans with explicit (backdated) start and end timestamps. These are additive with default implementations, so existing `Tracer`/`Span` implementations continue to work unchanged.
 
 ### Breaking Changes
 
 ### Bugs Fixed
+
+### Other Changes
+
+## 1.1.0 (2026-07-09)
+
+### Features Added
+
+- `Error` now captures a `std::backtrace::Backtrace` at construction time and includes it in `Debug` output (e.g., `{:?}`) when `RUST_BACKTRACE=1` is set.
 
 ### Other Changes
 

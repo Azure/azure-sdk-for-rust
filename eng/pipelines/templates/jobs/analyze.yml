@@ -38,13 +38,12 @@ jobs:
     inputs:
       pwsh: true
       filePath: $(Build.SourcesDirectory)/eng/scripts/Analyze-Code.ps1
-      # BUGBUG: Disable `cargo deny` in PRs. See https://github.com/Azure/azure-sdk-for-rust/issues/4689
       arguments: >
         -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
         -Toolchain 'nightly'
         -SkipPackageAnalysis:('$(NoPackagesChanged)' -eq 'true')
         -Audit:('$(Build.Reason)' -ne 'PullRequest')
-        -Deny:('$(Build.Reason)' -ne 'PullRequest')
+        -Deny
 
   - template: /eng/common/pipelines/templates/steps/check-spelling.yml
     parameters:

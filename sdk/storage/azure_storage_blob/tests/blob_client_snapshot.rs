@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+mod common;
+
 use azure_core::http::{RequestContent, StatusCode};
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
@@ -10,9 +12,7 @@ use azure_storage_blob::models::{
     BlobContainerClientListBlobsOptions, BlobTags, BlockBlobClientUploadOptions,
     DeleteSnapshotsOptionType, ListBlobsIncludeItem,
 };
-use azure_storage_blob_test::{
-    create_test_blob, get_blob_name, get_container_client, StorageAccount,
-};
+use common::{create_test_blob, get_blob_name, get_container_client, StorageAccount};
 use futures::TryStreamExt;
 use std::{collections::HashMap, error::Error};
 

@@ -413,13 +413,13 @@ Release builds will fail if a library depends on another Azure SDK for Rust libr
 
 #### Workspace dependencies
 
-The root `Cargo.toml` file represents released versions of crates commonly used by other Azure SDK for Rust libraries. To use a released version of a library, use `workspace = true` in your library's `Cargo.toml`.
+The root `Cargo.toml` file is the source of truth for common internal dependencies. Service crates should generally use `workspace = true`, which typically resolves to the latest published internal crate.
 
 ```toml
 azure_core = { workspace = true }
 ```
 
-If an SDK library depends on an unreleased SDK library, specify that dependency using a `path`-based dependency with a `version` matching the crate version, which is required for the library to release:
+If a crate needs unreleased changes from `sdk/core`, use an explicit `path`-based dependency with a matching `version` instead of `workspace = true`:
 
 ```toml
 azure_core = { path = "../../core/azure_core", version = "0.31.0" }
@@ -443,6 +443,20 @@ Current pin locations:
 - MSRV: root `Cargo.toml` -> `rust-version` e.g., `"1.88"`
 - Nightly for `eng/scripts` and `cargo +nightly` utility scripts: `eng/scripts/Language-Settings.ps1` e.g., `"nightly-2026-04-14"`
 - Nightly for tooling under `eng/tools` such as doc and APIView generation: `eng/tools/rust-toolchain.toml` -> `channel` e.g., `"nightly-2025-05-09"`
+
+Contributors can install pinned toolchains easily with:
+
+```powershell
+eng/scripts/Install-RustToolchains.ps1
+```
+
+By default this installs only the pinned stable toolchain. To install stable plus all optional toolchains:
+
+```powershell
+eng/scripts/Install-RustToolchains.ps1 -MSRV -Nightly -Tools
+```
+
+To preview commands without executing them, use `-WhatIf`.
 
 Project maintainers can update the root stable toolchain, the `eng/scripts` nightly pin, and the `eng/scripts/**/*.rs` nightly shebangs by running:
 

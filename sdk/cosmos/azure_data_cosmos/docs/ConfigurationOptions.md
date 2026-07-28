@@ -89,6 +89,7 @@ an override:
 | --- | --- | --- |
 | `AZURE_COSMOS_HEDGING_ENABLED` | `AZURE_COSMOS_HEDGING_ENABLED_OVERRIDE` | Forces cross-region read hedging on/off regardless of any programmatic `AvailabilityStrategy` or per-request value. |
 | `AZURE_COSMOS_PPCB_ENABLED` | `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` | Forces the per-partition circuit breaker (PPCB) on/off regardless of the `PartitionFailoverOptions` setting **and** the account property `enable_per_partition_failover_behavior`. |
+| `AZURE_COSMOS_CONNECTION_POOL_GATEWAY_V2_DISABLED` | `AZURE_COSMOS_CONNECTION_POOL_GATEWAY_V2_DISABLED_OVERRIDE` | Forces the runtime to allow or suppress Gateway V2 regardless of the normal `ConnectionPoolOptions` value. It cannot bypass HTTP/2 availability, endpoint advertisement, or connectivity probing. |
 
 > **Note on the PPCB kill switch.** Unlike the hedging switch, PPCB enablement
 > is a **driver-level** (`PartitionFailoverOptions`) setting rather than a
@@ -242,6 +243,7 @@ pub struct ConnectionPoolOptions { /* fields below */ }
 | --- | --- | --- | --- |
 | `idle_timeout` | `Option<Duration>` | `AZURE_COSMOS_POOL_IDLE_TIMEOUT` | How long idle connections are kept alive. |
 | `max_connections` | `Option<usize>` | `AZURE_COSMOS_POOL_MAX_CONNECTIONS` | Maximum number of connections in the pool. |
+| `gateway_v2_disabled` | `bool` | `AZURE_COSMOS_CONNECTION_POOL_GATEWAY_V2_DISABLED` | Runtime-scoped Gateway V2 opt-out configured with `ConnectionPoolOptionsBuilder::with_gateway_v2_disabled`; defaults to `false`. The generated `_OVERRIDE` variant is authoritative over the builder and base environment value, but cannot bypass HTTP/2 or server eligibility when set to `false`. |
 
 ### 3.4 `RegionOptions`
 

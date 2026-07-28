@@ -7,12 +7,10 @@ use azure_core::{
     xml,
 };
 use azure_core_test::{
-    perf::{
-        CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption,
-        PerfTestOptionKind,
-    },
+    perf::{CreatePerfTestReturn, PerfTest},
     TestContext,
 };
+use clap::Args;
 use futures::FutureExt as _;
 use std::{hint::black_box, sync::Arc};
 
@@ -20,35 +18,20 @@ pub struct MockXmlTest {
     pipeline: Pipeline,
 }
 
-impl MockXmlTest {
-    fn create_items(runner: PerfRunner) -> CreatePerfTestReturn {
-        async move {
-            let count = runner
-                .try_get_test_arg("count")?
-                .unwrap_or(super::DEFAULT_COUNT);
-            let pipeline = super::create_pipeline(count, xml::to_xml)?;
-            Ok(Box::new(MockXmlTest { pipeline }) as Box<dyn PerfTest>)
-        }
-        .boxed()
-    }
+#[derive(Args, Debug, Clone)]
+pub struct MockXmlTestArgs {
+    // Number of items per page.
+    #[arg(long, default_value_t = super::DEFAULT_COUNT)]
+    pub count: usize,
+}
 
-    pub fn test_metadata() -> PerfTestMetadata {
-        PerfTestMetadata {
-            name: "mock_xml",
-            description: "Mock transport that returns XML",
-            options: vec![PerfTestOption {
-                name: "count",
-                display_message: "Number of items per page",
-                mandatory: false,
-                short_activator: None,
-                long_activator: "count",
-                expected_args_len: 1,
-                option_type: PerfTestOptionKind::Usize,
-                ..Default::default()
-            }],
-            create_test: Self::create_items,
-        }
+pub fn create_test(args: &MockXmlTestArgs) -> CreatePerfTestReturn {
+    let count = args.count;
+    async move {
+        let pipeline = super::create_pipeline(count, xml::to_xml)?;
+        Ok(Box::new(MockXmlTest { pipeline }) as Box<dyn PerfTest>)
     }
+    .boxed()
 }
 
 #[async_trait::async_trait]

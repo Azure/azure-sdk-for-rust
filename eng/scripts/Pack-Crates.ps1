@@ -16,6 +16,8 @@ param(
   [string] $PackageInfoDirectory,
 
   [switch] $Release,
+  # Temporary testing switch; may be removed in a future version.
+  [switch] $APIReview,
   [switch] $NoVerify,
   [string] $OutBuildOrderFile
 )
@@ -109,15 +111,49 @@ function Get-OutputPackageNames($packages) {
   return $names
 }
 
-function Create-ApiViewFile($package) {
-  $packageName = $package.name
+function New-ApiFile(
+  $package,
+  [string] $Format,
+  [string] $OutputDirectory
+) {
   $manifestPath = $package.manifest_path
-  $command = "cargo run --manifest-path $RepoRoot/eng/tools/generate_api_report/Cargo.toml -- --package $packageName --manifest-path $manifestPath"
+  $command = "cargo run --manifest-path `"$RepoRoot/eng/tools/Cargo.toml`" -p generate_api -- --manifest-path `"$manifestPath`" --format $Format --output `"$OutputDirectory`""
   Invoke-LoggedCommand $command -GroupOutput | Out-Host
 
-  $packagePath = Split-Path -Path $manifestPath -Parent
+  $fileName = switch ($Format) {
+    'markdown' { 'API.md' }
+    'apiview' { 'apiview.json' }
+    default {
+      LogError "Unsupported API output format '$Format'"
+      exit 1
+    }
+  }
 
-  "$packagePath/review/$packageName.rust.json"
+  return [System.IO.Path]::Combine($OutputDirectory, $fileName)
+}
+
+function Get-CratePath(
+  $package,
+  [bool] $ReleaseBuild
+) {
+  $crateFileName = "$($package.name)-$($package.version).crate"
+  $rootCratePath = [System.IO.Path]::Combine($RepoRoot, "target", "package", $crateFileName)
+  $tmpCratePath = [System.IO.Path]::Combine($RepoRoot, "target", "package", "tmp-crate", $crateFileName)
+  $candidatePaths = if ($ReleaseBuild) {
+    @($tmpCratePath, $rootCratePath)
+  }
+  else {
+    @($rootCratePath, $tmpCratePath)
+  }
+
+  foreach ($candidatePath in $candidatePaths) {
+    if (Test-Path -Path $candidatePath) {
+      return $candidatePath
+    }
+  }
+
+  LogError "Failed to find packaged crate for '$($package.name)'. Checked '$($candidatePaths -join "', '")'."
+  exit 1
 }
 
 $originalLocation = Get-Location
@@ -160,27 +196,28 @@ try {
     exit $LASTEXITCODE
   }
 
+  if ($APIReview) {
+    foreach ($package in $packages) {
+      $packagePath = Split-Path -Path $package.manifest_path -Parent
+      Write-Host "Creating API review markdown at '$packagePath'"
+      New-ApiFile -package $package -Format 'markdown' -OutputDirectory $packagePath | Out-Null
+    }
+  }
+
   if ($OutputPath) {
     $OutputPath = New-Item -ItemType Directory -Path $OutputPath -Force | Select-Object -ExpandProperty FullName
 
     foreach ($package in $packages) {
       $sourcePath = [System.IO.Path]::Combine($RepoRoot, "target", "package", "$($package.name)-$($package.version)")
 
-      # The .crate file location depends on the Cargo subcommand. `cargo publish` (used with -Release)
-      # writes it to target/package/tmp-crate as an intermediate artifact since
-      # https://github.com/rust-lang/cargo/pull/15915 (Rust 1.93), while `cargo package` writes it
-      # directly to target/package as a final artifact.
-      $crateFileName = "$($package.name)-$($package.version).crate"
-      if ($Release) {
-        $cratePath = [System.IO.Path]::Combine($RepoRoot, "target", "package", "tmp-crate", $crateFileName)
-      }
-      else {
-        $cratePath = [System.IO.Path]::Combine($RepoRoot, "target", "package", $crateFileName)
-      }
+      # Cargo uses different .crate output locations depending on command and version.
+      # Prefer the expected layout for the current build mode, but fall back to the
+      # other known location so the pack pipeline works on both 1.92 and newer toolchains.
+      $cratePath = Get-CratePath -package $package -ReleaseBuild $Release
 
       $targetPath = [System.IO.Path]::Combine($OutputPath, $package.name)
       $targetContentsPath = [System.IO.Path]::Combine($targetPath, "contents")
-      $targetApiReviewFile = [System.IO.Path]::Combine($targetPath, "$($package.name).rust.json")
+      $targetApiReviewFile = [System.IO.Path]::Combine($targetPath, "$($package.name)_rust.json")
 
       if (Test-Path -Path $targetContentsPath) {
         Remove-Item -Path $targetContentsPath -Recurse -Force
@@ -193,11 +230,14 @@ try {
       Write-Host "Copying .crate file for '$($package.name)' to '$targetPath'"
       Copy-Item -Path $cratePath -Destination $targetPath -Force
 
-      Write-Host "Creating API review file"
-      $apiReviewFile = Create-ApiViewFile $package
+      if (-not $APIReview) {
+        Write-Host "Creating API review file"
+        $apiReviewFile = New-ApiFile -package $package -Format 'apiview' -OutputDirectory $targetPath
 
-      Write-Host "Copying API review file to '$targetApiReviewFile'"
-      Copy-Item -Path $apiReviewFile -Destination $targetApiReviewFile -Force
+        Write-Host "Copying API review file to '$targetApiReviewFile'"
+        Copy-Item -Path $apiReviewFile -Destination $targetApiReviewFile -Force
+        Remove-Item -Path $apiReviewFile -Force
+      }
     }
   }
 

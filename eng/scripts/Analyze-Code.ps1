@@ -62,7 +62,7 @@ Invoke-LoggedCommand "taplo format --check"
 Invoke-LoggedCommand "cargo clippy $packageArgs --all-features --all-targets --keep-going --no-deps" -GroupOutput
 
 if ($Deny) {
-  Invoke-LoggedCommand "cargo deny --all-features check" -GroupOutput
+  Invoke-LoggedCommand "cargo deny --all-features check bans licenses sources" -GroupOutput
 }
 
 Invoke-LoggedCommand "cargo doc --no-deps --all-features" -GroupOutput

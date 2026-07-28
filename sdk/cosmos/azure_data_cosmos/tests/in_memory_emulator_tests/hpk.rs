@@ -251,3 +251,75 @@ async fn hpk_query_full_key_single_partition() {
     assert_eq!(items.len(), 1, "complete key should return exactly 1 item");
     assert_eq!(items[0].city, "SanFrancisco");
 }
+
+/// Runs `query` as a cross-partition (`FeedScope::full_container`) request and
+/// collects the results.
+async fn query_full_container_sql(container: &ContainerClient, query: Query) -> Vec<GeoItem> {
+    let iter = Box::pin(container.query_items(query, FeedScope::full_container(), None))
+        .await
+        .unwrap();
+    Box::pin(iter.try_collect()).await.unwrap()
+}
+
+/// #4574 / #4638 — a full-key equality predicate in a *cross-partition* query
+/// (`FeedScope::full_container`, no partition scope) makes the gateway query
+/// plan return a closed point EPK range `[X, X]` for the 3-component key.
+/// Option B normalizes it to `[X, normalized_successor(X))`, zero-extending to
+/// the full MultiHash width (`3 * 16` bytes) before the increment (Ashley's
+/// "normalizedHpkLength(x) + 1 with trailing 0s"), and routes it as a
+/// `start`/`end-epk` window with `x-ms-read-key-type: EffectivePartitionKeyRange`.
+/// Exactly the one matching row must return — no empty-intersection panic (the
+/// #4574 regression) and no over/under-fetch.
+#[tokio::test]
+async fn hpk_query_full_key_equality_cross_partition() {
+    let container = setup_hpk_container().await;
+    let query = Query::from(
+        "SELECT * FROM c WHERE c.country = @country AND c.state = @state AND c.city = @city",
+    )
+    .with_parameter("@country", "USA")
+    .unwrap()
+    .with_parameter("@state", "CA")
+    .unwrap()
+    .with_parameter("@city", "SanFrancisco")
+    .unwrap();
+
+    let items = query_full_container_sql(&container, query).await;
+
+    assert_eq!(
+        items.len(),
+        1,
+        "full-key equality on an HPK container should return exactly 1 row, got {items:?}"
+    );
+    assert_eq!(items[0].country, "USA");
+    assert_eq!(items[0].state, "CA");
+    assert_eq!(items[0].city, "SanFrancisco");
+}
+
+/// #4574 / #4638 — a full-key equality whose value hashes into a partition that
+/// also holds *other* rows must still return only the matching row. This guards
+/// the Option B window against widening back to the whole partition: the narrow
+/// `[X, normalized_successor(X))` EPK window filters out the co-resident rows.
+#[tokio::test]
+async fn hpk_query_full_key_equality_excludes_colocated_rows() {
+    let container = setup_hpk_container().await;
+    // USA/CA has 5 rows; a full-key query for one of them must not leak the
+    // other four even though they may share a physical partition.
+    let query = Query::from(
+        "SELECT * FROM c WHERE c.country = @country AND c.state = @state AND c.city = @city",
+    )
+    .with_parameter("@country", "USA")
+    .unwrap()
+    .with_parameter("@state", "CA")
+    .unwrap()
+    .with_parameter("@city", "Oakland")
+    .unwrap();
+
+    let items = query_full_container_sql(&container, query).await;
+
+    assert_eq!(
+        items.len(),
+        1,
+        "full-key equality must exclude co-located CA rows, got {items:?}"
+    );
+    assert_eq!(items[0].city, "Oakland");
+}

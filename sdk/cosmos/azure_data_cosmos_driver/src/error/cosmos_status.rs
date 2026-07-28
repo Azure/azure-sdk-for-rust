@@ -456,6 +456,8 @@ impl SubStatusCode {
             20006 => Some("ChannelClosed"),
             20007 => Some("MalformedContinuationToken"),
             20008 => Some("ClientOperationTimeout"),
+            20020 => Some("SerializationResponseBodyInvalid"),
+            20021 => Some("SerializationRequestBodyInvalid"),
             20401 => Some("ClientGenerated401"),
             20901 => Some("NegativeTimeoutProvided"),
             20902 => Some("MissingPartitionKeyRangeIdInContext"),
@@ -1117,6 +1119,9 @@ impl SubStatusCode {
     /// `crate::error::Error::serialization`.
     pub const SERIALIZATION_RESPONSE_BODY_INVALID: SubStatusCode = SubStatusCode(20020);
 
+    /// Request body failed to serialize (20021).
+    pub const SERIALIZATION_REQUEST_BODY_INVALID: SubStatusCode = SubStatusCode(20021);
+
     // ----- Authentication boundary mapping code (20402) -----
 
     /// Credential / AAD token acquisition failed before the request was
@@ -1480,6 +1485,15 @@ impl SubStatusCode {
     /// has no routing information for the operation. Paired with HTTP
     /// 503 — an internal client-side condition, not a transport failure.
     pub const CLIENT_TOPOLOGY_RESOLUTION_FAILED: SubStatusCode = SubStatusCode(20305);
+
+    /// A topology range resolved for a query-plan EPK range did not
+    /// overlap that range (20307). The query planner intersects each
+    /// resolved partition with the query-plan range it was resolved
+    /// for; an empty intersection means `resolve_ranges` violated its
+    /// contract of returning only overlapping ranges. Surfaced as an
+    /// error (paired with HTTP 500) instead of panicking the worker
+    /// thread, which would deadlock the caller. See issue #4574.
+    pub const CLIENT_QUERY_PLAN_RANGE_NOT_COVERED_BY_TOPOLOGY: SubStatusCode = SubStatusCode(20307);
 }
 
 impl Default for SubStatusCode {
@@ -1908,6 +1922,13 @@ impl CosmosStatus {
         sub_status: Some(SubStatusCode::SERIALIZATION_RESPONSE_BODY_INVALID),
     };
 
+    /// Request body failed to serialize (HTTP 400, sub-status 20021). The
+    /// caller supplied an item that could not be encoded.
+    pub const SERIALIZATION_REQUEST_BODY_INVALID: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::SERIALIZATION_REQUEST_BODY_INVALID),
+    };
+
     /// AAD / credential provider token acquisition failed
     /// (HTTP 401, sub-status 20402).
     pub const AUTHENTICATION_TOKEN_ACQUISITION_FAILED: CosmosStatus = CosmosStatus {
@@ -2325,6 +2346,15 @@ impl CosmosStatus {
         sub_status: Some(SubStatusCode::CLIENT_TOPOLOGY_RESOLUTION_FAILED),
     };
 
+    /// 500 / 20307 — a topology range resolved for a query-plan EPK
+    /// range did not overlap that range, a `resolve_ranges` contract
+    /// violation. Returned instead of panicking the query worker (see
+    /// issue #4574).
+    pub const CLIENT_QUERY_PLAN_RANGE_NOT_COVERED_BY_TOPOLOGY: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_QUERY_PLAN_RANGE_NOT_COVERED_BY_TOPOLOGY),
+    };
+
     /// 500 / 20306 — the service returned a resource read response
     /// without the `_rid` system property, violating its own contract.
     pub const SERVICE_RETURNED_OBJECT_WITHOUT_RID: CosmosStatus = CosmosStatus {
@@ -2643,6 +2673,21 @@ mod tests {
     #[test]
     fn name_returns_none_for_unknown() {
         assert_eq!(SubStatusCode::new(65000).name(None), None);
+    }
+
+    #[test]
+    fn name_returns_serialization_boundary_codes() {
+        // Regression guard: the 20020/20021 name mappings must stay in lockstep
+        // with the `SERIALIZATION_*_BODY_INVALID` constants so diagnostics render
+        // a symbolic name instead of a bare number.
+        assert_eq!(
+            SubStatusCode::SERIALIZATION_RESPONSE_BODY_INVALID.name(None),
+            Some("SerializationResponseBodyInvalid")
+        );
+        assert_eq!(
+            SubStatusCode::SERIALIZATION_REQUEST_BODY_INVALID.name(None),
+            Some("SerializationRequestBodyInvalid")
+        );
     }
 
     #[test]

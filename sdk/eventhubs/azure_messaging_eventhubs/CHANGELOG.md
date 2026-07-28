@@ -15,6 +15,7 @@
 ### Bugs Fixed
 
 - Increased `DEFAULT_PARTITION_EXPIRATION_DURATION` from 10 seconds to 60 seconds. The previous default was shorter than `DEFAULT_UPDATE_INTERVAL` (30 seconds), so ownership records expired between load-balancing cycles. The load balancer perpetually saw `current=0` for every consumer and continuously re-claimed partitions, causing widespread duplicate event processing. `EventProcessorBuilder::build` now rejects configurations where `partition_expiration_duration <= update_interval`. ([#3851](https://github.com/Azure/azure-sdk-for-rust/issues/3851))
+- A partition stolen by a higher-or-equal-epoch attacher now surfaces as `ErrorKind::ConsumerDisconnected` when the broker reports `amqp:link:stolen` on a re-attach, not only on an in-flight receive. Other attach failures inside the receive loop now classify by their own kind. The wrapper reported all of them as a message error, which the retry decider treated as non-retryable.
 - The `EventProcessor`'s load-balancer reconciliation now closes the underlying AMQP receiver for any partition that has been reassigned to another consumer, so the consumer's `stream_events()` resolves and the loop can terminate. Previously a stolen partition's client could continue to attempt receives until the broker tore down the link.
 
 ### Other Changes
