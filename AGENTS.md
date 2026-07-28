@@ -276,6 +276,7 @@ Additional specialized instructions for specific workflows can be found in:
   - `create-perf-test` - Generate a new performance test
   - `create-recorded-test` - Generate a new recorded integration test
   - `lint-markdown` - Check and fix formatting in markdown files using markdownlint-cli2
+- Keep local AGENTS terse: add only deltas, use short imperative bullets, and link instead of repeating detail.
 
 ## Cross-References
 

@@ -120,53 +120,90 @@ impl ResponseBody {
         }
     }
 
-    /// Deserializes a single-payload body as JSON of type `T`.
+    /// Deserializes a single-payload body as type `T`, transparently accepting
+    /// either Cosmos binary JSON or UTF-8 text JSON (auto-detected by the
+    /// `0x80` preamble).
     ///
     /// Returns an error if the body is a feed [`Items`](Self::Items) response
     /// or if the body is [`NoPayload`](Self::NoPayload) (nothing to parse).
     pub fn into_single<T: DeserializeOwned>(self) -> crate::error::Result<T> {
         let bytes = self.single()?;
-        serde_json::from_slice(&bytes).map_err(|e| {
-            crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-                .with_message("failed to deserialize response body")
-                .with_source(e)
-                .build()
-        })
+        deserialize_response(&bytes, "failed to deserialize response body")
     }
 
     /// Deserializes every item in a feed response, or the single payload, as
-    /// JSON of type `T`. A [`NoPayload`](Self::NoPayload) body yields an empty
-    /// `Vec`.
+    /// type `T`. A [`NoPayload`](Self::NoPayload) body yields an empty `Vec`.
+    ///
+    /// Each buffer is decoded transparently as either Cosmos binary JSON or
+    /// UTF-8 text JSON (auto-detected by the `0x80` preamble).
     pub fn into_items<T: DeserializeOwned>(self) -> crate::error::Result<Vec<T>> {
         match self {
             Self::NoPayload => Ok(Vec::new()),
             Self::Bytes(b) => {
-                let item = serde_json::from_slice(&b).map_err(|e| {
-                    crate::error::CosmosError::builder()
-                        .with_status(
-                            crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
-                        )
-                        .with_message("failed to deserialize response body")
-                        .with_source(e)
-                        .build()
-                })?;
+                let item = deserialize_response(&b, "failed to deserialize response body")?;
                 Ok(vec![item])
             }
             Self::Items(items) => items
                 .into_iter()
-                .map(|b| {
-                    serde_json::from_slice(&b).map_err(|e| {
-                        crate::error::CosmosError::builder()
-                            .with_status(
-                                crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
-                            )
-                            .with_message("failed to deserialize feed item")
-                            .with_source(e)
-                            .build()
-                    })
-                })
+                // NOTE: `deserialize_response` auto-detects binary per slice via
+                // the `0x80` preamble, but the feed pipeline that produces
+                // `Self::Items` splits the `Documents` array by scanning **text**
+                // JSON — it is not binary-aware. A single-preamble binary feed
+                // envelope would therefore be sliced into sub-documents *without*
+                // preambles, which `is_binary` would then route to the text path.
+                // This is inert today because query/feed binary negotiation is
+                // deferred (the service does not emit binary feeds without the
+                // negotiation header), so the binary `Items` branch is only
+                // exercised by hand-prefixed synthetic tests. When feed/query
+                // binary negotiation is added, the feed splitter must be made
+                // binary-aware (or each slice re-prefixed) before this path can
+                // decode real binary feeds.
+                .map(|b| deserialize_response(&b, "failed to deserialize feed item"))
                 .collect(),
+        }
+    }
+
+    /// Transcodes any Cosmos **binary** JSON payload(s) to UTF-8 **text** JSON
+    /// in place, leaving text payloads unchanged.
+    ///
+    /// Used by the driver when the operation requested a text response while
+    /// keeping the wire binary (see
+    /// [`BinaryEncodingOptions::request_text_response`](crate::options::BinaryEncodingOptions)).
+    /// The conversion is schema-agnostic: each buffer is decoded with
+    /// [`binary_json::decode`](crate::binary_json::decode) and re-serialized as
+    /// compact text JSON. A [`NoPayload`](Self::NoPayload) body is a no-op.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if a binary payload is malformed.
+    pub(crate) fn transcode_to_text(self) -> crate::error::Result<Self> {
+        fn convert(bytes: &Bytes) -> crate::error::Result<Bytes> {
+            // Already-text payloads are left unchanged: return a cheap refcount
+            // clone instead of round-tripping through `transcode_to_text` (which
+            // would copy the buffer into a fresh `Vec<u8>`).
+            if !crate::binary_json::is_binary(bytes) {
+                return Ok(bytes.clone());
+            }
+            let text = crate::binary_json::transcode_to_text(bytes).map_err(|e| {
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                    .with_message(format!("failed to transcode binary response to text: {e}"))
+                    .with_source(e)
+                    .build()
+            })?;
+            Ok(Bytes::from(text))
+        }
+
+        match self {
+            Self::NoPayload => Ok(Self::NoPayload),
+            Self::Bytes(b) => Ok(Self::Bytes(convert(&b)?)),
+            Self::Items(items) => {
+                let converted = items
+                    .into_iter()
+                    .map(|b| convert(&b))
+                    .collect::<crate::error::Result<Vec<_>>>()?;
+                Ok(Self::Items(converted))
+            }
         }
     }
 }
@@ -180,6 +217,42 @@ impl From<Bytes> for ResponseBody {
 impl From<Vec<u8>> for ResponseBody {
     fn from(bytes: Vec<u8>) -> Self {
         Self::from_bytes(Bytes::from(bytes))
+    }
+}
+
+/// Builds a `SERIALIZATION_RESPONSE_BODY_INVALID` error carrying `message` and
+/// the underlying `source`.
+fn invalid_body_error<E>(message: &'static str, source: E) -> crate::error::CosmosError
+where
+    E: std::error::Error + Send + Sync + 'static,
+{
+    crate::error::CosmosError::builder()
+        .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+        .with_message(message)
+        .with_source(source)
+        .build()
+}
+
+/// Deserializes a response buffer as `T`, transparently accepting either Cosmos
+/// binary JSON or UTF-8 text JSON.
+///
+/// A buffer that begins with the binary preamble (`0x80`, detected by
+/// [`is_binary`](crate::binary_json::is_binary)) is deserialized directly by the
+/// binary-JSON codec's native serde deserializer
+/// ([`from_slice`](crate::binary_json::from_slice)) — driving `T::deserialize`
+/// straight off the bytes with no intermediate [`serde_json::Value`]; any other
+/// buffer is parsed directly as text JSON. Because no UTF-8 text JSON document
+/// can begin with `0x80` (it is a UTF-8 continuation byte), the detection is
+/// unambiguous and the text path is byte-for-byte unchanged. `message` is the
+/// error context attached on failure.
+fn deserialize_response<T: DeserializeOwned>(
+    bytes: &[u8],
+    message: &'static str,
+) -> crate::error::Result<T> {
+    if crate::binary_json::is_binary(bytes) {
+        crate::binary_json::from_slice(bytes).map_err(|e| invalid_body_error(message, e))
+    } else {
+        serde_json::from_slice(bytes).map_err(|e| invalid_body_error(message, e))
     }
 }
 
@@ -349,5 +422,177 @@ mod tests {
     #[test]
     fn is_empty_false_for_non_empty_bytes() {
         assert!(!ResponseBody::Bytes(Bytes::from_static(b"x")).is_empty());
+    }
+
+    // ── Binary JSON auto-detection (P1e) ────────────────────────────────────
+    //
+    // The encoder is a later phase, so these vectors are hand-encoded. Each
+    // buffer starts with the `0x80` preamble; `into_single` / `into_items`
+    // detect it and route through the binary-JSON decoder.
+
+    use crate::binary_json::{markers, PREAMBLE};
+
+    /// Wraps already-encoded value bytes in a complete binary buffer (preamble
+    /// prefix), returning shared [`Bytes`].
+    fn binary(value_bytes: &[u8]) -> Bytes {
+        let mut buf = vec![PREAMBLE];
+        buf.extend_from_slice(value_bytes);
+        Bytes::from(buf)
+    }
+
+    /// Encodes a `{"id": n}` object: `OBJ1` (single property), the 1-byte
+    /// system string for `id` (index 12), then the literal-int value `n`
+    /// (`n` must be < 32 to use the literal-int form).
+    fn id_object(n: u8) -> Vec<u8> {
+        assert!(n < 32, "literal-int form requires n < 32");
+        vec![markers::OBJ1, markers::SYSTEM_STRING_1BYTE_MIN + 12, n]
+    }
+
+    /// Encodes an encoded-length string value (the marker carries the length).
+    fn enc_str(s: &str) -> Vec<u8> {
+        let mut v = vec![markers::ENCODED_STRING_LENGTH_MIN | (s.len() as u8)];
+        v.extend_from_slice(s.as_bytes());
+        v
+    }
+
+    #[derive(serde::Deserialize, PartialEq, Debug)]
+    struct Item {
+        id: u32,
+    }
+
+    #[test]
+    fn into_single_decodes_binary_object() {
+        // Binary `{"id": 7}` decodes through the typed point-read path.
+        let body = ResponseBody::Bytes(binary(&id_object(7)));
+        let item: Item = body.into_single().unwrap();
+        assert_eq!(item, Item { id: 7 });
+    }
+
+    #[test]
+    fn into_items_decodes_binary_bytes_variant() {
+        let body = ResponseBody::Bytes(binary(&id_object(9)));
+        let items: Vec<Item> = body.into_items().unwrap();
+        assert_eq!(items, vec![Item { id: 9 }]);
+    }
+
+    #[test]
+    fn into_items_decodes_binary_items_variant() {
+        let body = ResponseBody::from_items(vec![binary(&id_object(1)), binary(&id_object(2))]);
+        let items: Vec<Item> = body.into_items().unwrap();
+        assert_eq!(items, vec![Item { id: 1 }, Item { id: 2 }]);
+    }
+
+    #[test]
+    fn into_single_decodes_binary_feed_envelope() {
+        // Proves the query path: the whole `{"Documents":[…],"_count":N}`
+        // envelope is decoded from binary and deserialized into a typed feed
+        // body in one pass (as the SDK does via `into_single::<FeedBody<T>>`).
+        #[derive(serde::Deserialize, PartialEq, Debug)]
+        struct Feed {
+            #[serde(rename = "Documents")]
+            documents: Vec<Item>,
+            #[serde(rename = "_count")]
+            count: u32,
+        }
+
+        // Documents: ARR1 wrapping a single `{"id": 1}`.
+        let mut documents = vec![markers::ARR1];
+        documents.extend_from_slice(&id_object(1));
+
+        // OBJ_L1 envelope with two members.
+        let mut payload = Vec::new();
+        payload.extend_from_slice(&enc_str("Documents"));
+        payload.extend_from_slice(&documents);
+        payload.extend_from_slice(&enc_str("_count"));
+        payload.push(0x01); // literal int 1
+        let mut envelope = vec![markers::OBJ_L1, payload.len() as u8];
+        envelope.extend_from_slice(&payload);
+
+        let body = ResponseBody::Bytes(binary(&envelope));
+        let feed: Feed = body.into_single().unwrap();
+        assert_eq!(
+            feed,
+            Feed {
+                documents: vec![Item { id: 1 }],
+                count: 1,
+            }
+        );
+    }
+
+    #[test]
+    fn text_json_still_deserializes_unchanged() {
+        // A text buffer never begins with `0x80`, so it takes the unchanged
+        // text path even with auto-detection in place.
+        let body = ResponseBody::Bytes(Bytes::from_static(br#"{"id":5}"#));
+        let item: Item = body.into_single().unwrap();
+        assert_eq!(item, Item { id: 5 });
+    }
+
+    #[test]
+    fn malformed_binary_body_errors() {
+        // A lone preamble is a truncated binary buffer; decoding fails and the
+        // error surfaces as a response-body deserialization error.
+        let body = ResponseBody::Bytes(Bytes::from_static(&[PREAMBLE]));
+        let result: crate::error::Result<Item> = body.into_single();
+        assert!(result.is_err());
+    }
+
+    // ── Binary → text transcoding ───────────────────────────────────────────
+
+    #[test]
+    fn transcode_bytes_binary_to_text() {
+        // A binary `{"id": 7}` body transcodes to text bytes (no `0x80`) that
+        // deserialize to the same value.
+        let body = ResponseBody::Bytes(binary(&id_object(7)));
+        let text = body.transcode_to_text().unwrap();
+        match &text {
+            ResponseBody::Bytes(b) => {
+                assert!(!crate::binary_json::is_binary(b), "must be text now");
+                let item: Item = serde_json::from_slice(b).unwrap();
+                assert_eq!(item, Item { id: 7 });
+            }
+            _ => panic!("expected Bytes variant"),
+        }
+    }
+
+    #[test]
+    fn transcode_items_binary_to_text() {
+        let body = ResponseBody::from_items(vec![binary(&id_object(1)), binary(&id_object(2))]);
+        let text = body.transcode_to_text().unwrap();
+        match &text {
+            ResponseBody::Items(items) => {
+                assert_eq!(items.len(), 2);
+                for b in items {
+                    assert!(!crate::binary_json::is_binary(b));
+                }
+            }
+            _ => panic!("expected Items variant"),
+        }
+    }
+
+    #[test]
+    fn transcode_text_body_unchanged() {
+        // Text passes through byte-for-byte.
+        let body = ResponseBody::Bytes(Bytes::from_static(br#"{"id":5}"#));
+        let text = body.transcode_to_text().unwrap();
+        match &text {
+            ResponseBody::Bytes(b) => assert_eq!(&b[..], br#"{"id":5}"#),
+            _ => panic!("expected Bytes variant"),
+        }
+    }
+
+    #[test]
+    fn transcode_no_payload_is_noop() {
+        let body = ResponseBody::NoPayload;
+        assert!(matches!(
+            body.transcode_to_text().unwrap(),
+            ResponseBody::NoPayload
+        ));
+    }
+
+    #[test]
+    fn transcode_malformed_binary_errors() {
+        let body = ResponseBody::Bytes(Bytes::from_static(&[PREAMBLE]));
+        assert!(body.transcode_to_text().is_err());
     }
 }

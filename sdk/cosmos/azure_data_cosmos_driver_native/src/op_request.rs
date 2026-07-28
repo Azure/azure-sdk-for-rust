@@ -45,8 +45,8 @@ use azure_data_cosmos_driver::models::{
     MaxItemCountHint, PartitionKey, Precondition, SessionToken, ThroughputControlGroupName,
 };
 use azure_data_cosmos_driver::options::{
-    ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions, OperationOptions,
-    ReadConsistencyStrategy, Region, ThroughputControlOptions,
+    BinaryEncodingOptions, ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions,
+    OperationOptions, ReadConsistencyStrategy, Region, ThroughputControlOptions,
 };
 
 use crate::account_ref::AccountRefHandle;
@@ -285,6 +285,24 @@ pub struct CosmosOperationOptions {
     pub custom_headers: *const CosmosHeaderKv,
     /// Number of entries in `custom_headers`.
     pub custom_headers_len: usize,
+
+    /// Whether Cosmos binary JSON is used on the wire. Tri-state bool
+    /// (`0` unset / `1` false / `2` true).
+    ///
+    /// When true, the driver transcodes a **text** request body to binary
+    /// before sending it (an already-binary body is passed through) and
+    /// advertises `CosmosBinary`, so the caller never encodes binary itself.
+    /// An explicit `false` forces binary **off** for this operation regardless
+    /// of any account/runtime default; `unset` inherits a lower layer (text by
+    /// default).
+    pub binary_encoding_enabled: i8,
+    /// Whether the driver transcodes the binary response back to **text** JSON.
+    /// Tri-state bool (`0` unset / `1` false / `2` true).
+    ///
+    /// Only meaningful when [`binary_encoding_enabled`](Self::binary_encoding_enabled)
+    /// is true: the wire stays binary in both directions and the driver hands
+    /// back text. `unset` / `false` returns the binary response as-is.
+    pub binary_encoding_request_text_response: i8,
 }
 
 impl CosmosOperationOptions {
@@ -337,6 +355,21 @@ impl CosmosOperationOptions {
             unsafe { decode_headers(self.custom_headers, self.custom_headers_len)? }
         {
             opts.custom_headers = Some(headers);
+        }
+
+        // Binary encoding is a whole-value option. It is tri-state: `unset`
+        // leaves `binary_encoding` as `None` (inherit a lower layer), while an
+        // explicit `true`/`false` is honored as `Some(..)` so a host can force
+        // binary off regardless of any account/runtime default. The
+        // `request_text_response` flag is only meaningful when binary is on.
+        if let Some(enabled) = decode_tristate_bool(self.binary_encoding_enabled)? {
+            let request_text_response =
+                decode_tristate_bool(self.binary_encoding_request_text_response)?.unwrap_or(false);
+            opts.binary_encoding = Some(
+                BinaryEncodingOptions::new()
+                    .with_enabled(enabled)
+                    .with_request_text_response(request_text_response),
+            );
         }
 
         Ok(opts)
@@ -393,6 +426,8 @@ pub extern "C" fn cosmos_operation_options_default() -> CosmosOperationOptions {
         excluded_regions_len: 0,
         custom_headers: std::ptr::null(),
         custom_headers_len: 0,
+        binary_encoding_enabled: TRISTATE_UNSET,
+        binary_encoding_request_text_response: TRISTATE_UNSET,
     }
 }
 
@@ -1098,6 +1133,8 @@ mod tests {
         assert_eq!(o.excluded_regions_len, 0);
         assert!(o.custom_headers.is_null());
         assert_eq!(o.custom_headers_len, 0);
+        assert_eq!(o.binary_encoding_enabled, TRISTATE_UNSET);
+        assert_eq!(o.binary_encoding_request_text_response, TRISTATE_UNSET);
     }
 
     #[test]
@@ -1115,6 +1152,62 @@ mod tests {
         assert_eq!(driver.end_to_end_latency_policy, None);
         assert_eq!(driver.excluded_regions, None);
         assert!(driver.throughput_control.is_none());
+        assert!(driver.binary_encoding.is_none());
+    }
+
+    #[test]
+    fn binary_encoding_flags_convert_to_driver_option() {
+        // enabled = true, request_text = true → the driver option is built with
+        // both flags set. An FFI host that deals only in text can thus get a
+        // binary wire and a text response without encoding anything itself.
+        let mut o = cosmos_operation_options_default();
+        o.binary_encoding_enabled = TRISTATE_TRUE;
+        o.binary_encoding_request_text_response = TRISTATE_TRUE;
+        // SAFETY: all pointer fields are NULL / len 0.
+        let driver = unsafe { o.to_driver() }.expect("options convert");
+        let be = driver.binary_encoding.expect("binary encoding set");
+        assert!(be.enabled);
+        assert!(be.request_text_response);
+    }
+
+    #[test]
+    fn binary_encoding_enabled_without_text_response() {
+        let mut o = cosmos_operation_options_default();
+        o.binary_encoding_enabled = TRISTATE_TRUE;
+        // request_text_response left unset → defaults to false.
+        // SAFETY: all pointer fields are NULL / len 0.
+        let driver = unsafe { o.to_driver() }.expect("options convert");
+        let be = driver.binary_encoding.expect("binary encoding set");
+        assert!(be.enabled);
+        assert!(!be.request_text_response);
+    }
+
+    #[test]
+    fn binary_encoding_unset_yields_no_option() {
+        // enabled unset → no binary-encoding option at all (inherit a lower
+        // layer), even if the text-response flag is set (a no-op when unset).
+        let mut o = cosmos_operation_options_default();
+        o.binary_encoding_request_text_response = TRISTATE_TRUE;
+        // SAFETY: all pointer fields are NULL / len 0.
+        let driver = unsafe { o.to_driver() }.expect("options convert");
+        assert!(driver.binary_encoding.is_none());
+    }
+
+    #[test]
+    fn binary_encoding_explicit_false_is_honored() {
+        // enabled = false is an *explicit* opt-out: it must produce
+        // `Some(disabled)` so the driver forces binary off for this operation
+        // rather than inheriting an account/runtime default (which `None` does).
+        let mut o = cosmos_operation_options_default();
+        o.binary_encoding_enabled = TRISTATE_FALSE;
+        // request_text_response set but irrelevant when binary is off.
+        o.binary_encoding_request_text_response = TRISTATE_TRUE;
+        // SAFETY: all pointer fields are NULL / len 0.
+        let driver = unsafe { o.to_driver() }.expect("options convert");
+        let be = driver
+            .binary_encoding
+            .expect("explicit false must be honored as Some(disabled)");
+        assert!(!be.enabled);
     }
 
     #[test]

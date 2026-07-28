@@ -6,10 +6,10 @@
 use std::sync::Arc;
 
 use crate::{
-    clients::ClientContext,
+    clients::{resolve_binary_encoding, ClientContext},
     diagnostics::DiagnosticsHandler,
     options::{
-        CosmosClientOptions, OperationOptions, PartitionFailoverOptions,
+        BinaryEncodingOptions, CosmosClientOptions, OperationOptions, PartitionFailoverOptions,
         ThroughputControlGroupOptions, UserAgentSuffix,
     },
     AccountReference, CosmosClient, CosmosCredential, CosmosRuntime, RoutingStrategy,
@@ -173,6 +173,22 @@ impl CosmosClientBuilder {
         self
     }
 
+    /// Sets the Cosmos binary JSON encoding options for this client.
+    ///
+    /// Binary encoding governs two things together: encoding item write bodies
+    /// as binary and advertising that the client accepts binary responses via
+    /// the response-format negotiation header. The options are resolved once at
+    /// [`build()`](Self::build) time.
+    ///
+    /// When this setter is **not** called, enablement falls back to the
+    /// `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment variable (truthy
+    /// values `1` / `true` / `yes` / `on`, case-insensitive, trimmed). Passing
+    /// explicit options here takes precedence over that variable.
+    pub fn with_binary_encoding_options(mut self, options: BinaryEncodingOptions) -> Self {
+        self.options.binary_encoding = Some(options);
+        self
+    }
+
     /// Registers a [`DiagnosticsHandler`](crate::diagnostics::DiagnosticsHandler)
     /// that is invoked once per operation at completion with the operation's
     /// completed [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext).
@@ -307,6 +323,7 @@ impl CosmosClientBuilder {
         Ok(CosmosClient {
             context: ClientContext {
                 driver,
+                binary_encoding: resolve_binary_encoding(self.options.binary_encoding),
                 diagnostics_handlers: self.options.diagnostics_handlers,
             },
         })
