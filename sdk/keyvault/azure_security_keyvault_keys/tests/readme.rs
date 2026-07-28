@@ -5,14 +5,24 @@ use azure_core::{error::Result, http::StatusCode};
 use azure_core_test::{recorded, TestContext, TestMode};
 use azure_security_keyvault_keys::{KeyClient, KeyClientOptions};
 use include_file::include_markdown;
+use std::sync::Arc;
 
 #[recorded::test]
 async fn readme(ctx: TestContext) -> Result<()> {
-    use azure_security_keyvault_test::Retry;
+    use azure_security_keyvault_test::{policies::GetLatestResource, Retry};
 
     let recording = ctx.recording();
 
     let mut options = KeyClientOptions::default();
+    // "key-version" is not detected as a valid version but as an unsupported operation.
+    options
+        .client_options
+        .per_try_policies
+        .push(Arc::new(GetLatestResource {
+            collection: "keys",
+            name: "key-name",
+            version: "key-version",
+        }));
     recording.instrument(&mut options.client_options);
 
     let client = KeyClient::new(
