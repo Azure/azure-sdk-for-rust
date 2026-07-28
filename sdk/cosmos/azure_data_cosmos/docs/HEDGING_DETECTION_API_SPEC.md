@@ -18,8 +18,10 @@ value types, all re-exported from `azure_data_cosmos`:
 | Member | Signature | Semantics |
 | --- | --- | --- |
 | `DiagnosticsContext::hedging_started` | `-> bool` | `true` iff a hedge arm was actually dispatched (fan-out happened). |
-| `DiagnosticsContext::requested_regions` | `-> Vec<RequestedRegion>` | Regions dispatched to, in **dispatch order**, duplicates allowed, each tagged with a reason. |
-| `DiagnosticsContext::responded_regions` | `-> Vec<&Region>` | Regions that produced a **service reply**, in **completion order**, duplicates allowed. |
+| `DiagnosticsContext::requested_regions` | `-> Vec<RequestedRegion>` | Regions dispatched to, in **dispatch order**, duplicates allowed, each tagged with a reason. Bounded (§4.5). |
+| `DiagnosticsContext::responded_regions` | `-> Vec<&Region>` | Regions that produced a **service reply**, in **completion order**, duplicates allowed. Bounded (§4.5). |
+| `DiagnosticsContext::total_requested_regions` | `-> usize` | Exact dispatch count, including entries elided by the bound. |
+| `DiagnosticsContext::total_responded_regions` | `-> usize` | Exact reply count, including entries elided by the bound. |
 | `RequestedRegion` | `{ region, reason }` | A dispatched region paired with the reason it was chosen. |
 | `RequestedRegionReason` | enum | Why the SDK dispatched to a region; `#[non_exhaustive]`. |
 
@@ -192,6 +194,31 @@ order among ties); duplicates are preserved. To deduplicate, collect into a
 `BTreeSet`. Like `requested_regions()`, the list is materialized from the full
 pre-compaction attempt list, so a response whose attempt was later compacted
 away is still reported.
+
+### 4.5 Both histories are bounded
+
+Materializing from the *pre-compaction* attempt list is what makes a dropped
+hedge leg survive, but taken alone it would make the two histories grow with
+attempt count — a 410/429 retry storm would produce an O(attempts) artifact even
+though the retained `requests()` list stays capped. That violates the bounded-size
+guarantee in the driver's `DIAGNOSTICS-CONTRACT.md` §8, which requires every
+materialized representation to have an upper bound independent of attempt count,
+and it would flow straight into span attributes.
+
+Both histories are therefore capped at `max_request_diagnostics` (default 512,
+minimum 16) at finalization, and re-capped in `aggregate_sub_operations` — the
+aggregate is an independent unbounded path, since a PATCH conflict loop adds a
+sub-operation per retry.
+
+The elision keeps the **head and tail** of the history and drops the repetitive
+middle, mirroring the "first and last of each run" policy the contract already
+applies to attempt compaction. The head preserves the initial dispatch and any
+early hedge fan-out; the tail preserves where the operation finally landed.
+
+Truncation is never silent. `total_requested_regions()` / `total_responded_regions()`
+report the exact pre-truncation counts, so `requested_regions().len() < total_requested_regions()`
+detects an elision. On the span, the matching `*_total` attribute is emitted only
+when the history was truncated, so the normal path carries no redundant integer.
 
 ---
 

@@ -188,6 +188,12 @@ pub(crate) fn emit_backdated_span_tree<T>(
     // there rather than carrying empty or placeholder values. The region
     // history is still emitted on that path, which is exactly where it is most
     // useful.
+    //
+    // Both region arrays come from the driver already bounded by
+    // `max_request_diagnostics`, so a retry storm cannot produce an unbounded
+    // span attribute. When the driver elided the middle of a history, the
+    // matching `*_total` count is emitted alongside so the truncation is
+    // explicit in the telemetry rather than silent.
     if diagnostics.hedging_started() {
         root_attrs.push(KeyValue::new(attributes::HEDGING_STARTED, true));
         if let Some(hedge) = diagnostics.hedge_diagnostics() {
@@ -208,6 +214,13 @@ pub(crate) fn emit_backdated_span_tree<T>(
                 attributes::REQUESTED_REGIONS,
                 region_string_array(requested.iter().map(|r| r.region.as_str())),
             ));
+            let total = diagnostics.total_requested_regions();
+            if total > requested.len() {
+                root_attrs.push(KeyValue::new(
+                    attributes::REQUESTED_REGIONS_TOTAL,
+                    total as i64,
+                ));
+            }
         }
         let responded = diagnostics.responded_regions();
         if !responded.is_empty() {
@@ -215,6 +228,13 @@ pub(crate) fn emit_backdated_span_tree<T>(
                 attributes::RESPONDED_REGIONS,
                 region_string_array(responded.iter().map(|region| region.as_str())),
             ));
+            let total = diagnostics.total_responded_regions();
+            if total > responded.len() {
+                root_attrs.push(KeyValue::new(
+                    attributes::RESPONDED_REGIONS_TOTAL,
+                    total as i64,
+                ));
+            }
         }
     }
     // Prefer the caller-supplied server-address override (mirroring the metrics

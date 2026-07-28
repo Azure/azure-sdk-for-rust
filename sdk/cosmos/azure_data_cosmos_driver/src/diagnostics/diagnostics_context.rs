@@ -1860,8 +1860,18 @@ impl DiagnosticsContextBuilder {
         // attempt list plus the dispatch-time hedge fan-out log, for the same
         // reason: neither the retained (possibly compacted) attempt list nor the
         // winning leg alone is a complete dispatch history.
+        //
+        // Both histories are then bounded by the same `max_request_diagnostics`
+        // cap as the attempt list, so a retry storm cannot grow them without
+        // limit (DIAGNOSTICS-CONTRACT.md §8). The pre-truncation lengths are
+        // retained so the truncation is explicit rather than silent.
+        let cap = self.options.max_request_diagnostics();
         let requested_regions = requested_regions_from(&self.requests, &self.hedge_fanouts);
         let responded_regions = responded_regions_from(&self.requests);
+        let total_requested_regions = requested_regions.len();
+        let total_responded_regions = responded_regions.len();
+        let requested_regions = bound_region_history(requested_regions, cap);
+        let responded_regions = bound_region_history(responded_regions, cap);
         let hedging_started = !self.hedge_fanouts.is_empty()
             || self
                 .hedge_diagnostics
@@ -1888,7 +1898,6 @@ impl DiagnosticsContextBuilder {
         // is on the finalized serialized artifact, not on live mid-operation
         // memory: `self.requests` still grows one entry per attempt while the
         // operation is in flight.
-        let cap = self.options.max_request_diagnostics();
         let original_count = self.requests.len();
         let (requests, compaction) = if original_count > cap {
             let compacted = compact_requests(self.requests, cap);
@@ -1915,6 +1924,8 @@ impl DiagnosticsContextBuilder {
             regions_contacted,
             requested_regions,
             responded_regions,
+            total_requested_regions,
+            total_responded_regions,
             hedging_started,
             status: self.status,
             options: self.options,
@@ -2012,15 +2023,28 @@ pub struct DiagnosticsContext {
     /// compacted-away retry are both still reported. Unlike `regions_contacted`
     /// this list is *not* deduplicated: it is a dispatch log, so repeat
     /// dispatches to the same region each contribute an entry.
+    ///
+    /// Bounded by `max_request_diagnostics` (head + tail retained, repetitive
+    /// middle elided) so a retry storm cannot grow it without limit;
+    /// `total_requested_regions` records the pre-truncation length.
     requested_regions: Vec<RequestedRegion>,
 
     /// Regions that produced an actual service reply, in arrival (completion)
     /// order.
     ///
     /// Materialized at finalization from the **full** attempt list, for the same
-    /// reason as `requested_regions`. Client-side timeouts and transport
-    /// failures are excluded; a non-2xx service response still counts.
+    /// reason as `requested_regions`, and bounded the same way. Client-side
+    /// timeouts and transport failures are excluded; a non-2xx service response
+    /// still counts.
     responded_regions: Vec<Region>,
+
+    /// Exact number of dispatches recorded before `requested_regions` was
+    /// bounded. Equal to `requested_regions.len()` when no truncation occurred.
+    total_requested_regions: usize,
+
+    /// Exact number of service replies recorded before `responded_regions` was
+    /// bounded. Equal to `responded_regions.len()` when no truncation occurred.
+    total_responded_regions: usize,
 
     /// Whether this operation actually fanned out at least one hedge request.
     ///
@@ -2160,6 +2184,10 @@ impl DiagnosticsContext {
         let regions_contacted = ordered_unique_regions(&requests);
         let requested_regions = requested_regions_from(&requests, &[]);
         let responded_regions = responded_regions_from(&requests);
+        // The helper builds a fixed, hand-supplied attempt list, so the history
+        // is never over the cap and the totals are simply its length.
+        let total_requested_regions = requested_regions.len();
+        let total_responded_regions = responded_regions.len();
         let hedging_started = requests
             .iter()
             .any(|r| matches!(r.execution_context(), ExecutionContext::Hedging));
@@ -2171,6 +2199,8 @@ impl DiagnosticsContext {
             regions_contacted,
             requested_regions,
             responded_regions,
+            total_requested_regions,
+            total_responded_regions,
             hedging_started,
             status,
             options: Arc::new(DiagnosticsOptions::default()),
@@ -2359,14 +2389,30 @@ impl DiagnosticsContext {
         // full attempt list plus its own fan-out records, so every sub-op's
         // hedge fan-out is preserved — unlike the single representative
         // `hedge_diagnostics` below, which can only describe one of them.
-        let requested_regions: Vec<RequestedRegion> = sources
-            .iter()
-            .flat_map(|c| c.requested_regions.iter().cloned())
-            .collect();
-        let responded_regions: Vec<Region> = sources
-            .iter()
-            .flat_map(|c| c.responded_regions.iter().cloned())
-            .collect();
+        //
+        // Concatenation is an independent unbounded path — a PATCH conflict loop
+        // adds a sub-op per retry, so the aggregate grows with sub-op count even
+        // when each source is individually bounded. Re-bound the result under
+        // the same cap and carry the summed pre-truncation totals, so the
+        // aggregate honours the same guarantee as a single operation.
+        let total_requested_regions: usize =
+            sources.iter().map(|c| c.total_requested_regions).sum();
+        let total_responded_regions: usize =
+            sources.iter().map(|c| c.total_responded_regions).sum();
+        let requested_regions = bound_region_history(
+            sources
+                .iter()
+                .flat_map(|c| c.requested_regions.iter().cloned())
+                .collect(),
+            cap,
+        );
+        let responded_regions = bound_region_history(
+            sources
+                .iter()
+                .flat_map(|c| c.responded_regions.iter().cloned())
+                .collect(),
+            cap,
+        );
         let hedging_started = sources.iter().any(|c| c.hedging_started);
 
         Some(DiagnosticsContext {
@@ -2377,6 +2423,8 @@ impl DiagnosticsContext {
             regions_contacted,
             requested_regions,
             responded_regions,
+            total_requested_regions,
+            total_responded_regions,
             hedging_started,
             status: last.status,
             options: Arc::clone(&last.options),
@@ -2545,8 +2593,27 @@ impl DiagnosticsContext {
     ///
     /// Order is dispatch order: each fan-out's two legs are spliced in at the
     /// point the race was dispatched, primary before alternate.
+    ///
+    /// # Bounded under a retry storm
+    ///
+    /// The list is capped at `DiagnosticsOptions::max_request_diagnostics`
+    /// (default 512). Past that, the head and tail are kept verbatim and the
+    /// repetitive middle is elided, so the initial dispatch, any early hedge
+    /// fan-out, and the final landing region all survive. Truncation is never
+    /// silent: [`total_requested_regions`](Self::total_requested_regions)
+    /// reports the exact pre-truncation count, so
+    /// `requested_regions().len() < total_requested_regions()` detects it.
     pub fn requested_regions(&self) -> Vec<RequestedRegion> {
         self.requested_regions.clone()
+    }
+
+    /// Returns the exact number of dispatches recorded for this operation,
+    /// including any elided by the bound on
+    /// [`requested_regions`](Self::requested_regions).
+    ///
+    /// Equal to `requested_regions().len()` unless the history was truncated.
+    pub fn total_requested_regions(&self) -> usize {
+        self.total_requested_regions
     }
 
     /// Returns the regions from which this operation received a response, in
@@ -2576,8 +2643,23 @@ impl DiagnosticsContext {
     ///
     /// To deduplicate, callers can collect into a set, for example:
     /// `ctx.responded_regions().into_iter().collect::<std::collections::BTreeSet<_>>()`.
+    ///
+    /// # Bounded under a retry storm
+    ///
+    /// Capped the same way as [`requested_regions`](Self::requested_regions);
+    /// [`total_responded_regions`](Self::total_responded_regions) reports the
+    /// exact pre-truncation count.
     pub fn responded_regions(&self) -> Vec<&Region> {
         self.responded_regions.iter().collect()
+    }
+
+    /// Returns the exact number of service replies recorded for this operation,
+    /// including any elided by the bound on
+    /// [`responded_regions`](Self::responded_regions).
+    ///
+    /// Equal to `responded_regions().len()` unless the history was truncated.
+    pub fn total_responded_regions(&self) -> usize {
+        self.total_responded_regions
     }
 
     /// Returns `true` iff this operation actually dispatched at least one hedge
@@ -2602,10 +2684,11 @@ impl DiagnosticsContext {
     /// terminal outcome). So `hedge_diagnostics().is_some()` is not a reliable
     /// "was hedging configured" probe, and it can disagree with
     /// `hedging_started()` on that both-transient→failover path (where the
-    /// recorded fan-out keeps this accessor `true`). The SDK's hedged metric
-    /// counter and log hedge fields key off `hedge_diagnostics` (a resolved
-    /// terminal outcome), so they intentionally do not surface that path even
-    /// though `hedging_started()` is `true`.
+    /// recorded fan-out keeps this accessor `true`). This accessor is the
+    /// authoritative fan-out signal: the SDK's hedged metric counter, sampled
+    /// log line, and root-span hedging attributes all gate on it, so an
+    /// operation that demonstrably fanned out is reported on every surface even
+    /// when no terminal outcome was retained.
     pub fn hedging_started(&self) -> bool {
         self.hedging_started
     }
@@ -2893,6 +2976,8 @@ impl Clone for DiagnosticsContext {
             regions_contacted: self.regions_contacted.clone(),
             requested_regions: self.requested_regions.clone(),
             responded_regions: self.responded_regions.clone(),
+            total_requested_regions: self.total_requested_regions,
+            total_responded_regions: self.total_responded_regions,
             hedging_started: self.hedging_started,
             status: self.status,
             options: Arc::clone(&self.options),
@@ -2936,6 +3021,13 @@ impl PartialEq for DiagnosticsContext {
             && self.regions_contacted == other.regions_contacted
             && self.requested_regions == other.requested_regions
             && self.responded_regions == other.responded_regions
+            // Compared for the same reason as `total_request_charge`: after the
+            // region histories are bounded these are no longer derivable from
+            // the retained vectors, so excluding them would let two contexts
+            // with different public `total_requested_regions()` /
+            // `total_responded_regions()` results compare equal.
+            && self.total_requested_regions == other.total_requested_regions
+            && self.total_responded_regions == other.total_responded_regions
             && self.hedging_started == other.hedging_started
             && self.status == other.status
             && self.options == other.options
@@ -2996,6 +3088,30 @@ fn ordered_unique_regions(requests: &[RequestDiagnostics]) -> Vec<Region> {
         }
     }
     regions
+}
+
+/// Bounds a materialized region history to `cap` entries, independently of
+/// attempt count, per the bounded-size guarantee in `DIAGNOSTICS-CONTRACT.md`
+/// §8.
+///
+/// Under a `410`/`429` retry storm the dispatch history grows one entry per
+/// attempt, so it needs its own bound — the per-attempt list's compaction does
+/// not apply to it. The repetitive middle of a storm is elided while the head
+/// (the initial dispatch and any early hedge fan-out) and the tail (where the
+/// operation finally landed) are kept verbatim, mirroring the "first + last of
+/// each run" policy `compact_requests` already uses.
+///
+/// Truncation is never silent: the caller records the pre-truncation length,
+/// which [`DiagnosticsContext::total_requested_regions`] and
+/// [`DiagnosticsContext::total_responded_regions`] expose.
+fn bound_region_history<T>(mut history: Vec<T>, cap: usize) -> Vec<T> {
+    if history.len() <= cap {
+        return history;
+    }
+    let head = cap.div_ceil(2);
+    let tail = cap - head;
+    history.drain(head..history.len() - tail);
+    history
 }
 
 /// Builds the dispatch-ordered requested-region history from the **full**
@@ -4625,11 +4741,12 @@ mod tests {
     }
 
     #[test]
-    fn requested_regions_survives_retry_storm_compaction() {
+    fn requested_regions_bounded_but_exact_under_retry_storm() {
         // The dispatch history is materialized from the FULL attempt list, so a
-        // retry storm that compacts `requests` down to the cap must not shrink
-        // it — including the hedge fan-out recorded mid-storm. Repeat dispatches
-        // to one region must survive as distinct entries.
+        // retry storm that compacts `requests` down to the cap must not lose the
+        // hedge fan-out recorded mid-storm. But the history itself is also
+        // bounded (DIAGNOSTICS-CONTRACT.md §8) — the elision keeps head and tail
+        // and the exact count stays available.
         let cap = 16;
         let options = Arc::new(
             DiagnosticsOptions::builder()
@@ -4662,12 +4779,140 @@ mod tests {
         // The retained attempt list really was bounded...
         assert!(ctx.requests().len() <= cap);
         assert!(ctx.compaction().is_some());
-        // ...but the dispatch history is complete: 40 retries + both fan-out
+        // ...and so is the dispatch history, independently of attempt count
+        // (DIAGNOSTICS-CONTRACT.md §8) — but the elision is explicit, not
+        // silent: the exact count is still reported. 40 retries + both fan-out
         // legs (the winning alternate's merged attempt is absorbed by the
         // fan-out entry it repeats).
-        assert_eq!(ctx.requested_regions().len(), 42);
+        assert_eq!(ctx.total_requested_regions(), 42);
+        assert_eq!(ctx.requested_regions().len(), cap);
+        assert_eq!(ctx.total_responded_regions(), 41);
+        assert_eq!(ctx.responded_regions().len(), cap);
         assert!(ctx.hedging_started());
-        assert_eq!(ctx.responded_regions().len(), 41);
+
+        // Head and tail survive: the storm's opening dispatch and the hedge
+        // fan-out that ended it are both still visible.
+        let requested = ctx.requested_regions();
+        assert_eq!(requested[0].region, Region::EAST_US_2);
+        assert_eq!(requested[0].reason, RequestedRegionReason::OperationRetry);
+        assert_eq!(
+            requested.last().expect("non-empty").reason,
+            RequestedRegionReason::Hedging
+        );
+        assert_eq!(
+            requested.last().expect("non-empty").region,
+            Region::WEST_US_2
+        );
+    }
+
+    #[test]
+    fn region_history_is_bounded_without_a_hedge() {
+        // The bound is a property of the history itself, not of hedging: a plain
+        // retry storm must not produce an unbounded artifact either.
+        let cap = 16;
+        let options = Arc::new(
+            DiagnosticsOptions::builder()
+                .with_max_request_diagnostics(cap)
+                .build()
+                .expect("valid options"),
+        );
+        let mut builder = DiagnosticsContextBuilder::new(ActivityId::new_uuid(), options);
+        for _ in 0..500 {
+            let h = builder.start_test_request(
+                ExecutionContext::OperationRetry,
+                Some(Region::EAST_US_2),
+                "https://test.eastus2.documents.azure.com",
+            );
+            builder.complete_request(h, StatusCode::TooManyRequests, None);
+        }
+        let ctx = builder.complete();
+
+        assert_eq!(ctx.total_requested_regions(), 500);
+        assert_eq!(ctx.requested_regions().len(), cap);
+        assert_eq!(ctx.total_responded_regions(), 500);
+        assert_eq!(ctx.responded_regions().len(), cap);
+        assert!(!ctx.hedging_started());
+    }
+
+    #[test]
+    fn region_history_is_verbatim_under_the_cap() {
+        // The common path must be untouched: at or below the cap the history is
+        // exact and the reported total agrees with it.
+        let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
+            for region in [Region::EAST_US_2, Region::WEST_US_2] {
+                let h = builder.start_test_request(
+                    ExecutionContext::RegionFailover,
+                    Some(region),
+                    "https://test.documents.azure.com",
+                );
+                builder.complete_request(h, StatusCode::Ok, None);
+            }
+        });
+
+        assert_eq!(ctx.requested_regions().len(), 2);
+        assert_eq!(ctx.total_requested_regions(), 2);
+        assert_eq!(ctx.responded_regions().len(), 2);
+        assert_eq!(ctx.total_responded_regions(), 2);
+    }
+
+    #[test]
+    fn aggregated_region_history_is_rebounded() {
+        // Aggregation concatenates each sub-op's already-bounded history, which
+        // is an independent unbounded path: a PATCH conflict loop adds a sub-op
+        // per retry. The aggregate must be re-bounded and must report the summed
+        // exact totals.
+        let cap = 16;
+        let options = Arc::new(
+            DiagnosticsOptions::builder()
+                .with_max_request_diagnostics(cap)
+                .build()
+                .expect("valid options"),
+        );
+        let sub_ops: Vec<Arc<DiagnosticsContext>> = (0..20)
+            .map(|_| {
+                let mut builder =
+                    DiagnosticsContextBuilder::new(ActivityId::new_uuid(), Arc::clone(&options));
+                for _ in 0..5 {
+                    let h = builder.start_test_request(
+                        ExecutionContext::OperationRetry,
+                        Some(Region::EAST_US_2),
+                        "https://test.eastus2.documents.azure.com",
+                    );
+                    builder.complete_request(h, StatusCode::Conflict, None);
+                }
+                Arc::new(builder.complete())
+            })
+            .collect();
+
+        // Each sub-op is individually under the cap, so none is truncated.
+        assert_eq!(sub_ops[0].requested_regions().len(), 5);
+        assert_eq!(sub_ops[0].total_requested_regions(), 5);
+
+        let aggregated =
+            DiagnosticsContext::aggregate_sub_operations(&sub_ops).expect("non-empty sources");
+
+        // 20 sub-ops x 5 dispatches = 100, bounded back down to the cap.
+        assert_eq!(aggregated.total_requested_regions(), 100);
+        assert_eq!(aggregated.requested_regions().len(), cap);
+        assert_eq!(aggregated.total_responded_regions(), 100);
+        assert_eq!(aggregated.responded_regions().len(), cap);
+    }
+
+    #[test]
+    fn bound_region_history_keeps_head_and_tail() {
+        // The elision targets the repetitive middle, so both ends survive.
+        let bounded = bound_region_history((0..100).collect::<Vec<u32>>(), 10);
+        assert_eq!(bounded, vec![0, 1, 2, 3, 4, 95, 96, 97, 98, 99]);
+
+        // An odd cap favors the head by one.
+        let bounded = bound_region_history((0..100).collect::<Vec<u32>>(), 5);
+        assert_eq!(bounded, vec![0, 1, 2, 98, 99]);
+
+        // At or under the cap the input is returned verbatim.
+        let bounded = bound_region_history(vec![1, 2, 3], 10);
+        assert_eq!(bounded, vec![1, 2, 3]);
+        let bounded = bound_region_history(vec![1, 2, 3], 3);
+        assert_eq!(bounded, vec![1, 2, 3]);
     }
 
     #[test]

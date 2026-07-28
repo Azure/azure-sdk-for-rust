@@ -443,6 +443,19 @@ mod tests {
             !responded.iter().any(|r| r == "eastus"),
             "the structurally-dropped primary leg must not appear in responded_regions"
         );
+        // Nothing was truncated, so the exact-count attributes stay off the span
+        // entirely — they exist only to make an elision explicit, and emitting
+        // them unconditionally would put a redundant integer on every hedged
+        // span.
+        for key in [
+            attributes::REQUESTED_REGIONS_TOTAL,
+            attributes::RESPONDED_REGIONS_TOTAL,
+        ] {
+            assert!(
+                !root.attributes.iter().any(|kv| kv.key.as_str() == key),
+                "{key} must be absent when the region history was not truncated"
+            );
+        }
 
         // The speculative hedge leg's child span is tagged.
         let tagged = spans
