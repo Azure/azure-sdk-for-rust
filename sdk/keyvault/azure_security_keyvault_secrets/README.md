@@ -140,7 +140,7 @@ let get_options = SecretClientGetSecretOptions {
     ..Default::default()
 };
 let secret = client
-    .get_secret("secret-name", None)
+    .get_secret("secret-name", Some(get_options))
     .await?
     .into_model()?;
 
