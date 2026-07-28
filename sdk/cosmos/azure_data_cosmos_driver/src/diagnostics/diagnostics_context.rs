@@ -10,7 +10,7 @@
 use crate::{
     driver::{pipeline::hedging_diagnostics::HedgeDiagnostics, routing::CosmosEndpoint},
     models::{ActivityId, CosmosResponseHeaders, CosmosStatus, RequestCharge, SubStatusCode},
-    options::{DiagnosticsOptions, DiagnosticsVerbosity, Region},
+    options::{DiagnosticsOptions, DiagnosticsThresholds, DiagnosticsVerbosity, Region},
     system::CpuMemoryMonitor,
 };
 use azure_core::http::StatusCode;
@@ -20,6 +20,29 @@ use std::{
     sync::{Arc, OnceLock},
     time::{Duration, Instant},
 };
+
+use super::compaction::{compact_requests, CompactedRun, CompactionInfo};
+
+// =============================================================================
+// Threshold breach classification
+// =============================================================================
+
+/// The specific sampling threshold a completed operation crossed.
+///
+/// Returned by
+/// [`DiagnosticsContext::threshold_breach_for`](DiagnosticsContext::threshold_breach_for)
+/// so emission handlers can record *why* a diagnostic was sampled (which bound
+/// was breached), not just that one was.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum ThresholdBreach {
+    /// Latency exceeded the point-operation latency threshold.
+    PointLatency,
+    /// Latency exceeded the non-point-operation latency threshold.
+    NonPointLatency,
+    /// Total request charge exceeded the request-charge (RU) threshold.
+    RequestCharge,
+}
 
 // =============================================================================
 // Execution Context
@@ -492,6 +515,53 @@ impl RequestDiagnostics {
             local_shard_retry_count: 0,
             timed_out: false,
             request_sent: RequestSentStatus::Unknown,
+            error: None,
+            #[cfg(feature = "fault_injection")]
+            fault_injection_evaluations: Vec::new(),
+        }
+    }
+
+    /// **Internal test helper — do not call.**
+    ///
+    /// Builds a completed [`RequestDiagnostics`] entry with explicit endpoint,
+    /// region, status, charge, and start/completion instants, so emission-layer
+    /// tests can synthesize realistic (and backdated) attempt spans. Gated
+    /// behind the `__internal_test_diagnostics_construction` Cargo feature.
+    #[cfg(feature = "__internal_test_diagnostics_construction")]
+    #[doc(hidden)]
+    pub fn for_testing(
+        endpoint: impl Into<String>,
+        region: Option<Region>,
+        status: CosmosStatus,
+        request_charge: RequestCharge,
+        started_at: Instant,
+        completed_at: Instant,
+    ) -> Self {
+        let duration_ms = completed_at
+            .saturating_duration_since(started_at)
+            .as_millis() as u64;
+        Self {
+            execution_context: ExecutionContext::Initial,
+            pipeline_type: PipelineType::DataPlane,
+            transport_security: TransportSecurity::Secure,
+            transport_kind: TransportKind::Gateway,
+            transport_http_version: TransportHttpVersion::Http2,
+            region,
+            endpoint: endpoint.into(),
+            status,
+            request_charge,
+            activity_id: None,
+            session_token: None,
+            server_duration_ms: None,
+            started_at,
+            completed_at: Some(completed_at),
+            duration_ms,
+            events: Vec::new(),
+            transport_shard: None,
+            failed_transport_shards: Vec::new(),
+            local_shard_retry_count: 0,
+            timed_out: false,
+            request_sent: RequestSentStatus::Sent,
             error: None,
             #[cfg(feature = "fault_injection")]
             fault_injection_evaluations: Vec::new(),
@@ -1055,6 +1125,10 @@ struct DiagnosticsOutput<'a> {
     system_usage: Option<SystemUsageSnapshot>,
     #[serde(skip_serializing_if = "Option::is_none")]
     machine_id: Option<&'a str>,
+    /// Present only when the per-attempt list was compacted under a retry storm;
+    /// absent (and thus byte-identical to prior output) otherwise.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    compaction: Option<&'a CompactionInfo>,
     #[serde(flatten)]
     payload: DiagnosticsPayload<'a>,
 }
@@ -1116,7 +1190,43 @@ struct TruncatedOutput<'a> {
     total_duration_ms: u64,
     request_count: usize,
     truncated: bool,
+    /// Present only when the per-attempt list was compacted under a retry storm.
+    ///
+    /// Counts-only: the per-run rollup (`CompactionInfo::runs`, up to `cap`
+    /// endpoint-bearing entries) is deliberately omitted here — it is the
+    /// unbounded part that can blow the size budget, and re-serializing it in the
+    /// size-limited fallback is exactly what would keep the "truncated" summary
+    /// oversized.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    compaction: Option<CompactionSummary>,
     message: &'static str,
+}
+
+/// Counts-only projection of [`CompactionInfo`] for the size-limited truncated
+/// summary. Carries the scalar counts (always tiny) but never the per-run rollup.
+#[derive(Serialize)]
+struct CompactionSummary {
+    original_request_count: usize,
+    retained_request_count: usize,
+    collapsed_runs: usize,
+    total_runs: usize,
+    retained_truncated: bool,
+    omitted_runs: usize,
+    omitted_request_count: usize,
+}
+
+impl From<&CompactionInfo> for CompactionSummary {
+    fn from(info: &CompactionInfo) -> Self {
+        Self {
+            original_request_count: info.original_request_count,
+            retained_request_count: info.retained_request_count,
+            collapsed_runs: info.collapsed_runs,
+            total_runs: info.total_runs,
+            retained_truncated: info.retained_truncated,
+            omitted_runs: info.omitted_runs,
+            omitted_request_count: info.omitted_request_count,
+        }
+    }
 }
 
 /// Status of the CPU sample history in a [`SystemUsageSnapshot`].
@@ -1562,19 +1672,70 @@ impl DiagnosticsContextBuilder {
     /// shared via `Arc` without any locking overhead.
     pub(crate) fn complete(self) -> DiagnosticsContext {
         let duration = self.started_at.elapsed();
+
+        // Exact operation-level total charge, summed from the FULL attempt list
+        // before any compaction so it stays exact even when the retained list is
+        // bounded under a retry storm.
+        let total_request_charge: RequestCharge =
+            self.requests.iter().map(|r| r.request_charge).sum();
+
+        // Capture the contacted regions in first-contact order from the FULL
+        // attempt list, before compaction can drop whole buckets: a region whose
+        // only attempts are elided must still surface at the operation level.
+        let regions_contacted = ordered_unique_regions(&self.requests);
+
+        // Bound the finalized per-attempt list under a retry storm.
+        //
+        // Common path (attempts <= cap): the list is retained verbatim, no
+        // `CompactionInfo` is attached, and the serialized output is
+        // byte-identical to the pre-compaction behavior.
+        //
+        // Storm path (attempts > cap): run-length collapse (with a global
+        // key-bucket fallback for order ping-pong) bounds the retained records
+        // and per-run rollup to `cap`, while a `CompactionInfo` marker records
+        // the true attempt count, the exact per-run aggregates, and every drop.
+        //
+        // Compaction runs here at finalization, never mid-operation, so any
+        // outstanding `RequestHandle` indices are never invalidated. The bound
+        // is on the finalized serialized artifact, not on live mid-operation
+        // memory: `self.requests` still grows one entry per attempt while the
+        // operation is in flight.
+        let cap = self.options.max_request_diagnostics();
+        let original_count = self.requests.len();
+        let (requests, compaction) = if original_count > cap {
+            let compacted = compact_requests(self.requests, cap);
+            let info = CompactionInfo {
+                original_request_count: original_count,
+                retained_request_count: compacted.retained.len(),
+                collapsed_runs: compacted.collapsed_runs,
+                total_runs: compacted.total_runs,
+                retained_truncated: compacted.retained_truncated,
+                omitted_runs: compacted.omitted_runs,
+                omitted_request_count: compacted.omitted_request_count,
+                runs: compacted.runs,
+            };
+            (compacted.retained, Some(info))
+        } else {
+            (self.requests, None)
+        };
+
         DiagnosticsContext {
             activity_id: self.activity_id,
             duration,
-            requests: Arc::new(self.requests),
+            requests: Arc::new(requests),
+            total_request_charge,
+            regions_contacted,
             status: self.status,
             options: self.options,
             cpu_monitor: self.cpu_monitor,
             machine_id: self.machine_id,
+            operation_name: None,
             #[cfg(feature = "fault_injection")]
             fault_injection_enabled: self.fault_injection_enabled,
             #[cfg(not(feature = "fault_injection"))]
             fault_injection_enabled: false,
             hedge_diagnostics: self.hedge_diagnostics,
+            compaction,
             #[cfg(test)]
             test_system_usage: self.test_system_usage,
             cached_json_detailed: OnceLock::new(),
@@ -1629,8 +1790,27 @@ pub struct DiagnosticsContext {
     /// All request diagnostics (shared via `Arc` for efficient multi-read).
     ///
     /// `Vec<T>` in Rust guarantees insertion order, so requests are stored in
-    /// the order they were added.
+    /// the order they were added. Under a retry storm this list is compacted at
+    /// finalization to at most
+    /// [`max_request_diagnostics`](crate::options::DiagnosticsOptions::max_request_diagnostics)
+    /// records; see [`compaction`](Self::compaction).
     requests: Arc<Vec<RequestDiagnostics>>,
+
+    /// Total request charge (RU) across **all** attempts.
+    ///
+    /// Computed from the full attempt list at finalization, before any
+    /// compaction, so it stays exact even when `requests` was bounded under a
+    /// retry storm.
+    total_request_charge: RequestCharge,
+
+    /// Regions contacted during the operation, in first-contact order.
+    ///
+    /// Captured at finalization from the **full** attempt list — before any
+    /// retry-storm compaction — so a region whose only attempts were dropped
+    /// from `requests` is still reported. Duplicates are removed while
+    /// preserving the order in which each region was first contacted, which the
+    /// Cosmos semantic conventions require (it conveys failover order).
+    regions_contacted: Vec<Region>,
 
     /// Operation-level combined HTTP status and sub-status (final status after retries).
     status: Option<CosmosStatus>,
@@ -1643,6 +1823,16 @@ pub struct DiagnosticsContext {
 
     /// Machine identifier (VM ID on Azure, generated UUID otherwise).
     machine_id: Option<Arc<String>>,
+
+    /// Canonical `db.operation.name` for the operation (e.g. `read_item`,
+    /// `query_items`), when known.
+    ///
+    /// This is an optional seam for the emission layer: it feeds the
+    /// `db.operation.name` span/log attribute and lets
+    /// [`is_threshold_violated`](Self::is_threshold_violated) pick the point vs.
+    /// non-point latency threshold. It defaults to `None` — the driver pipeline
+    /// does not populate it yet, so today it is set only by test constructors.
+    operation_name: Option<Arc<str>>,
 
     /// Whether fault injection was enabled when this operation executed.
     fault_injection_enabled: bool,
@@ -1659,6 +1849,13 @@ pub struct DiagnosticsContext {
     /// Test-only override for system usage snapshot, bypassing the CPU monitor.
     #[cfg(test)]
     test_system_usage: Option<SystemUsageSnapshot>,
+
+    /// Compaction metadata, present only when the per-attempt list exceeded the
+    /// configured `max_request_diagnostics` cap under a retry storm and was
+    /// compacted. `None` for normal operations, where `requests` is the full,
+    /// unmodified set of attempts (and the serialized output is byte-identical
+    /// to the pre-compaction behavior).
+    compaction: Option<CompactionInfo>,
 
     /// Cached JSON string for detailed verbosity.
     cached_json_detailed: OnceLock<String>,
@@ -1691,6 +1888,80 @@ impl DiagnosticsContext {
             .complete()
     }
 
+    /// **Internal escape hatch — do not call.**
+    ///
+    /// Synthesizes a completed [`DiagnosticsContext`] carrying an explicit
+    /// operation `duration` and final `status`, so the wrapper SDK
+    /// (`azure_data_cosmos`) can exercise emission-layer code paths — such as
+    /// the metrics handler — against a realistic operation-level rollup without
+    /// standing up the full driver pipeline. Per-request diagnostics remain
+    /// empty; only the operation-scope fields the emission layer reads are set.
+    ///
+    /// Gated behind the `__internal_test_diagnostics_construction` Cargo feature
+    /// (enabled only by the wrapper SDK's own test build) and `#[doc(hidden)]`,
+    /// so it never appears on the public surface. Mirrors [`for_testing`](Self::for_testing).
+    #[cfg(feature = "__internal_test_diagnostics_construction")]
+    #[doc(hidden)]
+    pub fn for_testing_completed(
+        activity_id: ActivityId,
+        duration: Duration,
+        status: Option<CosmosStatus>,
+    ) -> Self {
+        let mut context =
+            DiagnosticsContextBuilder::new(activity_id, Arc::new(DiagnosticsOptions::default()))
+                .complete();
+        context.duration = duration;
+        context.status = status;
+        context
+    }
+
+    /// **Internal test helper — do not call.**
+    ///
+    /// Builds a fully-populated [`DiagnosticsContext`] from explicit parts so
+    /// the SDK's emission-layer tests (tracing, sampled logging) can exercise
+    /// realistic operations — including backdated per-request timestamps —
+    /// without a live driver pipeline. Gated behind the
+    /// `__internal_test_diagnostics_construction` Cargo feature and
+    /// `#[doc(hidden)]`, mirroring [`for_testing`](Self::for_testing).
+    #[cfg(feature = "__internal_test_diagnostics_construction")]
+    #[doc(hidden)]
+    pub fn for_testing_with_requests(
+        activity_id: ActivityId,
+        duration: Duration,
+        status: Option<CosmosStatus>,
+        operation_name: Option<&str>,
+        requests: Vec<RequestDiagnostics>,
+    ) -> Self {
+        // Mirror the pipeline's exact-at-finalization rollup by summing the
+        // per-attempt charges supplied by the test.
+        let total_request_charge = RequestCharge::new(
+            requests
+                .iter()
+                .map(|r| r.request_charge().value())
+                .sum::<f64>(),
+        );
+        let regions_contacted = ordered_unique_regions(&requests);
+        DiagnosticsContext {
+            activity_id,
+            duration,
+            requests: Arc::new(requests),
+            total_request_charge,
+            regions_contacted,
+            status,
+            options: Arc::new(DiagnosticsOptions::default()),
+            cpu_monitor: None,
+            machine_id: None,
+            operation_name: operation_name.map(Arc::from),
+            fault_injection_enabled: false,
+            hedge_diagnostics: None,
+            #[cfg(test)]
+            test_system_usage: None,
+            compaction: None,
+            cached_json_detailed: OnceLock::new(),
+            cached_json_summary: OnceLock::new(),
+        }
+    }
+
     /// Concatenates the per-request diagnostics from a sequence of
     /// sub-operation contexts into a single aggregated [`DiagnosticsContext`].
     ///
@@ -1720,16 +1991,96 @@ impl DiagnosticsContext {
             .iter()
             .map(|c| c.duration)
             .fold(Duration::ZERO, |a, b| a.saturating_add(b));
+        // Sum each source's exact total charge (which already accounts for any
+        // per-sub-op compaction) rather than re-summing the possibly-compacted
+        // concatenated records.
+        let total_request_charge: RequestCharge =
+            sources.iter().map(|c| c.total_request_charge).sum();
+
+        // Exact total attempts across all sub-ops. Each source's own count is
+        // already exact — even if that source was individually compacted — so
+        // summing the per-source counts keeps `request_count()` exact on the
+        // aggregate instead of collapsing to the retained-record count.
+        let original_request_count: usize = sources.iter().map(|c| c.request_count()).sum();
+        let cap = last.options.max_request_diagnostics();
+
+        // Re-bound the concatenated retained records so the aggregate artifact
+        // stays within the cap regardless of how many sub-ops contributed, and
+        // attach a `CompactionInfo` whenever the retained records under-count the
+        // true attempts (from re-bounding here or from a sub-op's own
+        // compaction) so the exact original count is never lost.
+        let (requests, compaction) = if aggregated_requests.len() > cap {
+            let compacted = compact_requests(aggregated_requests, cap);
+            let retained_request_count = compacted.retained.len();
+            let info = CompactionInfo {
+                original_request_count,
+                retained_request_count,
+                collapsed_runs: compacted.collapsed_runs,
+                total_runs: compacted.total_runs,
+                retained_truncated: compacted.retained_truncated,
+                omitted_runs: compacted.omitted_runs,
+                omitted_request_count: original_request_count
+                    .saturating_sub(retained_request_count),
+                runs: compacted.runs,
+            };
+            (compacted.retained, Some(info))
+        } else if original_request_count > aggregated_requests.len() {
+            // The concatenation fits the cap, but at least one sub-op was itself
+            // compacted, so the retained records under-count the true attempts.
+            // Attach a counts-only marker (carrying the sub-ops' per-run rollup
+            // entries) so `request_count()` stays exact and the storm shape is
+            // preserved.
+            let retained_request_count = aggregated_requests.len();
+            let source_infos = || sources.iter().filter_map(|c| c.compaction.as_ref());
+            let runs: Vec<CompactedRun> = source_infos()
+                .flat_map(|info| info.runs.iter().cloned())
+                .collect();
+            let info = CompactionInfo {
+                original_request_count,
+                retained_request_count,
+                collapsed_runs: source_infos().map(|info| info.collapsed_runs).sum(),
+                total_runs: source_infos().map(|info| info.total_runs).sum(),
+                retained_truncated: false,
+                omitted_runs: source_infos().map(|info| info.omitted_runs).sum(),
+                omitted_request_count: original_request_count
+                    .saturating_sub(retained_request_count),
+                runs,
+            };
+            (aggregated_requests, Some(info))
+        } else {
+            // No sub-op was compacted and the concatenation fits the cap: the
+            // aggregate is exact and verbatim.
+            (aggregated_requests, None)
+        };
+
+        // First-contact-ordered union of the sub-ops' contacted regions. Each
+        // source already captured its exact ordered regions from its full
+        // attempt list, so concatenating them in sub-op order (dedup preserving
+        // order) yields the operation-level failover order without re-deriving
+        // from the possibly-compacted concatenation.
+        let mut regions_contacted: Vec<Region> = Vec::new();
+        for source in sources {
+            for region in &source.regions_contacted {
+                if !regions_contacted.contains(region) {
+                    regions_contacted.push(region.clone());
+                }
+            }
+        }
+
         Some(DiagnosticsContext {
             activity_id: last.activity_id.clone(),
             duration: aggregated_duration,
-            requests: Arc::new(aggregated_requests),
+            requests: Arc::new(requests),
+            total_request_charge,
+            regions_contacted,
             status: last.status,
             options: Arc::clone(&last.options),
             cpu_monitor: last.cpu_monitor.clone(),
             machine_id: last.machine_id.clone(),
+            operation_name: last.operation_name.clone(),
             fault_injection_enabled: sources.iter().any(|c| c.fault_injection_enabled),
             hedge_diagnostics: None,
+            compaction,
             #[cfg(test)]
             test_system_usage: last.test_system_usage.clone(),
             cached_json_detailed: OnceLock::new(),
@@ -1756,26 +2107,74 @@ impl DiagnosticsContext {
         self.status.as_ref()
     }
 
+    /// Returns the **effective** final status for the operation.
+    ///
+    /// This is the operation-level [`status`](Self::status) when one was recorded,
+    /// otherwise the terminal attempt's status — mirroring the fallback used by
+    /// [`is_failure`](Self::is_failure). Some driver error-finalization paths graft
+    /// diagnostics onto the returned error without stamping an operation-level
+    /// status; this accessor lets emitters (metrics/tracing) report an accurate
+    /// status/`error.type` for those failures instead of treating them as unknown.
+    /// `None` only when there is neither an operation status nor any attempt.
+    pub fn effective_status(&self) -> Option<CosmosStatus> {
+        self.status
+            .or_else(|| self.requests.last().map(|request| *request.status()))
+    }
+
     /// Returns the total request charge (RU) across all requests.
+    ///
+    /// This stays exact even under a retry storm: it is summed from the full
+    /// attempt list at finalization, before any compaction of
+    /// [`requests`](Self::requests).
     pub fn total_request_charge(&self) -> RequestCharge {
-        self.requests.iter().map(|r| r.request_charge).sum()
+        self.total_request_charge
     }
 
     /// Returns the number of requests made during this operation.
+    ///
+    /// This is always the **true** total number of attempts, even when the
+    /// per-attempt list was compacted under a retry storm. Use
+    /// [`retained_request_count`](Self::retained_request_count) for the number
+    /// of records actually retained in [`requests`](Self::requests).
     pub fn request_count(&self) -> usize {
+        self.compaction
+            .as_ref()
+            .map(|c| c.original_request_count)
+            .unwrap_or(self.requests.len())
+    }
+
+    /// Returns the number of per-attempt records retained in
+    /// [`requests`](Self::requests).
+    ///
+    /// Equal to [`request_count`](Self::request_count) for normal operations;
+    /// bounded by the configured
+    /// [`max_request_diagnostics`](crate::options::DiagnosticsOptions::max_request_diagnostics)
+    /// cap under a retry storm.
+    pub fn retained_request_count(&self) -> usize {
         self.requests.len()
     }
 
-    /// Returns all regions contacted during this operation.
+    /// Returns compaction metadata when a retry storm exceeded the configured
+    /// [`max_request_diagnostics`](crate::options::DiagnosticsOptions::max_request_diagnostics)
+    /// cap and the per-attempt list was compacted.
+    ///
+    /// `None` for normal operations, where the retained list is the full,
+    /// unmodified set of attempts.
+    pub fn compaction(&self) -> Option<&CompactionInfo> {
+        self.compaction.as_ref()
+    }
+
+    /// Returns all regions contacted during this operation, in first-contact
+    /// order.
+    ///
+    /// The list is captured at finalization from the **full** attempt list —
+    /// before any retry-storm compaction — so a region whose only attempts were
+    /// dropped from [`requests`](Self::requests) is still reported here.
+    /// Duplicates are removed while preserving the order in which each region was
+    /// first contacted, as the Cosmos semantic conventions require for the
+    /// contacted-regions attribute (it conveys failover order).
     pub fn regions_contacted(&self) -> Vec<Region> {
-        let mut regions: Vec<Region> = self
-            .requests
-            .iter()
-            .filter_map(|r| r.region.clone())
-            .collect();
-        regions.sort();
-        regions.dedup();
-        regions
+        self.regions_contacted.clone()
     }
 
     /// Returns a shared reference to all request diagnostics.
@@ -1822,6 +2221,115 @@ impl DiagnosticsContext {
         self.fault_injection_enabled
     }
 
+    /// Returns the canonical `db.operation.name` for this operation, if known.
+    ///
+    /// Values are the semantic-convention operation names such as `read_item`,
+    /// `create_item`, or `query_items`. Returns `None` when the operation name
+    /// was not recorded (the common case today — see the field docs).
+    pub fn operation_name(&self) -> Option<&str> {
+        self.operation_name.as_deref()
+    }
+
+    /// Returns `true` when this context represents a finished operation.
+    ///
+    /// A [`DiagnosticsContext`] is immutable and finalized at construction, so
+    /// any context with a recorded final status or at least one request is
+    /// complete. This is the gate the emission handlers check before deciding
+    /// whether to emit.
+    pub fn is_completed(&self) -> bool {
+        self.status.is_some() || !self.requests.is_empty()
+    }
+
+    /// Returns `true` when the operation completed with a non-success status.
+    ///
+    /// Derived from [`status`](Self::status): an operation is a failure when its
+    /// final [`CosmosStatus`] is not a success. When no operation-level status was
+    /// recorded — some driver error-finalization paths graft diagnostics onto the
+    /// returned error without first stamping the operation status — this falls
+    /// back to the terminal attempt's status, so a genuine failure still gates the
+    /// tail-sampled handlers. A context with neither a status nor any request is
+    /// not treated as a failure.
+    pub fn is_failure(&self) -> bool {
+        match self.status.as_ref() {
+            Some(status) => !status.is_success(),
+            None => self
+                .requests
+                .last()
+                .is_some_and(|request| !request.status().is_success()),
+        }
+    }
+
+    /// Returns `true` when the operation crossed one of the sampling
+    /// [`thresholds`](DiagnosticsThresholds) — the tail-based sampling signal.
+    ///
+    /// The latency check uses the point-operation threshold when
+    /// [`operation_name`](Self::operation_name) identifies a single-item
+    /// operation, the non-point threshold when it identifies a query/batch/etc.,
+    /// and — when the operation name is unknown — falls back to the (stricter)
+    /// point-operation threshold so genuinely slow operations are still caught.
+    ///
+    /// The request-charge threshold is compared against the operation's total
+    /// RU. The payload-size threshold is not evaluated yet (the context does not
+    /// carry body sizes).
+    pub fn is_threshold_violated(&self, thresholds: &DiagnosticsThresholds) -> bool {
+        self.is_threshold_violated_for(thresholds, None)
+    }
+
+    /// Like [`is_threshold_violated`](Self::is_threshold_violated), but takes an
+    /// explicit operation name for point/non-point latency classification.
+    ///
+    /// Production `DiagnosticsContext`s do not carry an operation name, so the
+    /// SDK's emission handlers pass the caller-facing name from the
+    /// `CosmosOperationContext` here; otherwise every operation would be
+    /// classified with the stricter 1s point-operation threshold. When
+    /// `operation_name` is `None` this falls back to
+    /// [`operation_name`](Self::operation_name), then to the point threshold.
+    pub fn is_threshold_violated_for(
+        &self,
+        thresholds: &DiagnosticsThresholds,
+        operation_name: Option<&str>,
+    ) -> bool {
+        self.threshold_breach_for(thresholds, operation_name)
+            .is_some()
+    }
+
+    /// Like [`is_threshold_violated_for`](Self::is_threshold_violated_for), but
+    /// reports *which* threshold was crossed rather than just whether one was.
+    ///
+    /// Latency is checked before request charge, so when an operation is both
+    /// slow and expensive the latency breach is reported. Returns `None` when no
+    /// threshold was crossed. The point/non-point latency threshold is chosen
+    /// from `operation_name` exactly as in
+    /// [`is_threshold_violated_for`](Self::is_threshold_violated_for).
+    pub fn threshold_breach_for(
+        &self,
+        thresholds: &DiagnosticsThresholds,
+        operation_name: Option<&str>,
+    ) -> Option<ThresholdBreach> {
+        let operation_name = operation_name.or_else(|| self.operation_name());
+        let (latency_threshold, latency_breach) = match operation_name {
+            Some(name) if crate::options::is_point_operation(name) => (
+                thresholds.point_operation_latency(),
+                ThresholdBreach::PointLatency,
+            ),
+            Some(_) => (
+                thresholds.non_point_operation_latency(),
+                ThresholdBreach::NonPointLatency,
+            ),
+            None => (
+                thresholds.point_operation_latency(),
+                ThresholdBreach::PointLatency,
+            ),
+        };
+        if self.duration > latency_threshold {
+            return Some(latency_breach);
+        }
+        if self.total_request_charge().value() > thresholds.request_charge() {
+            return Some(ThresholdBreach::RequestCharge);
+        }
+        None
+    }
+
     /// Serializes diagnostics to a JSON string.
     ///
     /// The result is lazily cached - the first call computes the JSON,
@@ -1866,10 +2374,11 @@ impl DiagnosticsContext {
         let output = DiagnosticsOutput {
             activity_id: &self.activity_id,
             total_duration_ms,
-            total_request_charge: self.requests.iter().map(|r| r.request_charge).sum(),
-            request_count: self.requests.len(),
+            total_request_charge: self.total_request_charge(),
+            request_count: self.request_count(),
             system_usage,
             machine_id: self.machine_id.as_ref().map(|s| s.as_str()),
+            compaction: self.compaction.as_ref(),
             payload: DiagnosticsPayload::Requests {
                 requests: &self.requests,
             },
@@ -1902,10 +2411,11 @@ impl DiagnosticsContext {
         let output = DiagnosticsOutput {
             activity_id: &self.activity_id,
             total_duration_ms,
-            total_request_charge: self.requests.iter().map(|r| r.request_charge).sum(),
-            request_count: self.requests.len(),
+            total_request_charge: self.total_request_charge(),
+            request_count: self.request_count(),
             system_usage: self.resolve_system_usage(),
             machine_id: self.machine_id.as_ref().map(|s| s.as_str()),
+            compaction: self.compaction.as_ref(),
             payload: DiagnosticsPayload::Summary {
                 regions: region_summaries,
             },
@@ -1922,8 +2432,9 @@ impl DiagnosticsContext {
             let truncated = TruncatedOutput {
                 activity_id: &self.activity_id,
                 total_duration_ms,
-                request_count: self.requests.len(),
+                request_count: self.request_count(),
                 truncated: true,
+                compaction: self.compaction.as_ref().map(CompactionSummary::from),
                 message:
                     "Output truncated to fit size limit. Use Detailed verbosity for full diagnostics.",
             };
@@ -1939,12 +2450,16 @@ impl Clone for DiagnosticsContext {
             activity_id: self.activity_id.clone(),
             duration: self.duration,
             requests: Arc::clone(&self.requests),
+            total_request_charge: self.total_request_charge,
+            regions_contacted: self.regions_contacted.clone(),
             status: self.status,
             options: Arc::clone(&self.options),
             cpu_monitor: self.cpu_monitor.clone(),
             machine_id: self.machine_id.clone(),
+            operation_name: self.operation_name.clone(),
             fault_injection_enabled: self.fault_injection_enabled,
             hedge_diagnostics: self.hedge_diagnostics.clone(),
+            compaction: self.compaction.clone(),
             #[cfg(test)]
             test_system_usage: self.test_system_usage.clone(),
             // OnceLock does not implement Clone, so we propagate any cached
@@ -1968,12 +2483,20 @@ impl Clone for DiagnosticsContext {
 impl PartialEq for DiagnosticsContext {
     fn eq(&self, other: &Self) -> bool {
         // Compare semantic data only; cached JSON is derived and excluded.
+        // `total_request_charge` IS compared: after compaction it is no longer
+        // derivable from `requests` (dropped runs still carry charge), so
+        // excluding it would let two contexts with a different public
+        // `total_request_charge()` result compare equal.
         self.activity_id == other.activity_id
             && self.duration == other.duration
             && self.requests == other.requests
+            && self.total_request_charge == other.total_request_charge
+            && self.regions_contacted == other.regions_contacted
             && self.status == other.status
             && self.options == other.options
+            && self.operation_name == other.operation_name
             && self.hedge_diagnostics == other.hedge_diagnostics
+            && self.compaction == other.compaction
     }
 }
 
@@ -2011,6 +2534,23 @@ impl std::fmt::Display for DiagnosticsContext {
         }
         Ok(())
     }
+}
+
+/// Collects the regions contacted across `requests` in first-contact order.
+///
+/// Duplicates are removed while preserving the order in which each region was
+/// first seen. Unlike a sort+dedup this keeps the failover order intact, which
+/// the Cosmos semantic conventions require for the contacted-regions attribute.
+fn ordered_unique_regions(requests: &[RequestDiagnostics]) -> Vec<Region> {
+    let mut regions: Vec<Region> = Vec::new();
+    for request in requests {
+        if let Some(region) = request.region() {
+            if !regions.contains(region) {
+                regions.push(region.clone());
+            }
+        }
+    }
+    regions
 }
 
 /// Builds a summary for requests in a single region.
@@ -2095,7 +2635,7 @@ fn deduplicate_requests(requests: Vec<&RequestDiagnostics>) -> Vec<DeduplicatedG
 /// The caller must ensure `values` is sorted in ascending order.
 /// This avoids redundant sorting when min, max, and percentiles are all
 /// computed from the same data.
-fn percentile_sorted(values: &[u64], p: u8) -> u64 {
+pub(crate) fn percentile_sorted(values: &[u64], p: u8) -> u64 {
     if values.is_empty() {
         return 0;
     }
@@ -2357,6 +2897,189 @@ mod tests {
     }
 
     #[test]
+    fn regions_contacted_preserves_order_and_survives_compaction() {
+        // Regions must surface in first-contact (failover) order — not sorted —
+        // and a region contacted only by a bucket that global-bucket compaction
+        // drops from the retained per-attempt list must still be reported,
+        // because the set is captured from the full attempt list before
+        // compaction. Covers the metrics/tracing contacted-region attribute
+        // contract and the compaction bucket-drop gap.
+        let cap = 16;
+        let region_count = 20usize;
+        let mut b = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("regions-storm".to_string()),
+            options_with_cap(cap),
+        );
+        // Contact `region_count` distinct single-attempt region buckets in
+        // reverse-numeric order, so first-contact order differs from sorted
+        // order. Global compaction reserves the operation-wide first ("Region
+        // 19") and terminal ("Region 00") buckets and drops middle ones.
+        for i in (0..region_count).rev() {
+            record_run(
+                &mut b,
+                ExecutionContext::RegionFailover,
+                &format!("Region {i:02}"),
+                "https://acct/",
+                CosmosStatus::new(StatusCode::Gone),
+                1.0,
+                1,
+            );
+        }
+        b.set_operation_status(StatusCode::Ok, None);
+        let ctx = b.complete();
+
+        let info = ctx
+            .compaction()
+            .expect("more distinct buckets than the cap must compact");
+        assert!(
+            info.omitted_runs >= 1,
+            "at least one whole bucket must have been dropped from the retained list"
+        );
+
+        // First-contact order across all contacted regions, none lost.
+        let expected: Vec<Region> = (0..region_count)
+            .rev()
+            .map(|i| Region::new(format!("Region {i:02}")))
+            .collect();
+        let regions = ctx.regions_contacted();
+        assert_eq!(
+            regions, expected,
+            "all contacted regions must survive compaction, in first-contact order"
+        );
+
+        // Prove the order is first-contact, not sorted.
+        let mut sorted = regions.clone();
+        sorted.sort();
+        assert_ne!(
+            regions, sorted,
+            "first-contact order must differ from a sorted list for these inputs"
+        );
+
+        // A region whose only attempt was a dropped MIDDLE bucket must still
+        // appear at the operation level even though it's gone from the retained
+        // list. "Region 01" is neither the first nor the last attempt, so it is
+        // eligible to be ranked out.
+        let retained_regions: Vec<Region> = ctx
+            .requests()
+            .iter()
+            .filter_map(|r| r.region().cloned())
+            .collect();
+        let dropped = Region::new("Region 01".to_string());
+        assert!(
+            !retained_regions.contains(&dropped),
+            "a low-ranked middle bucket should have been dropped from the retained list"
+        );
+        assert!(
+            regions.contains(&dropped),
+            "a region dropped from the retained list must still be reported"
+        );
+
+        // The operation-wide first and terminal attempts are reserved regardless
+        // of bucket ranking: their regions must survive in the retained list, and
+        // the terminal attempt ("Region 00") must be the LAST retained record so
+        // downstream status/span-end fallbacks see the true terminal.
+        let first = Region::new("Region 19".to_string());
+        let terminal = Region::new("Region 00".to_string());
+        assert!(
+            retained_regions.contains(&first),
+            "the operation-wide first attempt's bucket must be retained"
+        );
+        assert_eq!(
+            retained_regions.last(),
+            Some(&terminal),
+            "the operation-wide terminal attempt must be the last retained record"
+        );
+    }
+
+    #[test]
+    fn effective_status_falls_back_to_terminal_attempt() {
+        // A context with no operation-level status but a failed terminal attempt
+        // must report that attempt's status as the effective status, so metrics
+        // and tracing can classify status-less error-finalization paths
+        // accurately instead of dropping the status / using the _OTHER catch-all.
+        let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
+            let h = builder.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::WEST_US_2),
+                "https://test.westus2.documents.azure.com",
+            );
+            builder.complete_request(h, StatusCode::TooManyRequests, None);
+            // Intentionally no set_operation_status: the operation-level status
+            // stays `None`, mirroring the graft-onto-error finalization paths.
+        });
+
+        assert!(
+            ctx.status().is_none(),
+            "no operation-level status should be set"
+        );
+        assert_eq!(
+            ctx.effective_status().map(|s| s.status_code()),
+            Some(StatusCode::TooManyRequests),
+            "effective status must fall back to the terminal attempt"
+        );
+        assert!(ctx.is_failure());
+    }
+
+    #[test]
+    fn size_limited_summary_fallback_omits_run_rollup() {
+        // Under a storm whose full summary exceeds the size budget, the truncated
+        // fallback must NOT re-serialize the (large) per-run rollup — re-emitting
+        // it is exactly what would keep the "truncated" summary oversized. It
+        // keeps counts only.
+        let cap = 64;
+        let options = Arc::new(
+            DiagnosticsOptions::builder()
+                .with_max_request_diagnostics(cap)
+                .with_max_summary_size_bytes(4096)
+                .build()
+                .expect("valid options"),
+        );
+        let mut b = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("storm-size".to_string()),
+            options,
+        );
+        // Many distinct long-endpoint single-attempt buckets, so the per-run
+        // rollup (bounded to `cap`) alone is large enough that the full summary
+        // blows the size budget.
+        for i in 0..(cap + 4) {
+            let endpoint = format!(
+                "https://very-long-endpoint-{i:04}.documents.azure.com:443/padding/segment/path"
+            );
+            record_run(
+                &mut b,
+                ExecutionContext::RegionFailover,
+                &format!("Region {i:04}"),
+                &endpoint,
+                CosmosStatus::new(StatusCode::Gone),
+                1.0,
+                1,
+            );
+        }
+        b.set_operation_status(StatusCode::ServiceUnavailable, None);
+        let ctx = b.complete();
+        assert!(ctx.compaction().is_some(), "the storm must compact");
+
+        let summary = ctx.to_json_string(Some(DiagnosticsVerbosity::Summary));
+        assert!(
+            summary.contains("\"truncated\":true"),
+            "summary must have fallen back to the truncated form:\n{summary}"
+        );
+        assert!(
+            !summary.contains("\"runs\""),
+            "the truncated summary must omit the per-run rollup:\n{summary}"
+        );
+        assert!(
+            summary.contains("original_request_count"),
+            "the counts-only compaction summary must still be present:\n{summary}"
+        );
+        assert!(
+            summary.len() <= 4096,
+            "the truncated summary must respect the size budget, was {} bytes",
+            summary.len()
+        );
+    }
+
+    #[test]
     fn aggregate_sub_operations_concatenates_request_diagnostics() {
         // Concatenates sub-op RequestDiagnostics in input order, inherits
         // operation-level fields (activity_id, status) from the LAST source,
@@ -2406,6 +3129,76 @@ mod tests {
         let regions = aggregated.regions_contacted();
         assert!(regions.contains(&Region::WEST_US_2));
         assert!(regions.contains(&Region::EAST_US_2));
+    }
+
+    #[test]
+    fn aggregate_sub_operations_preserves_exact_counts_when_sources_compacted() {
+        // Two sub-ops, each individually compacted past a small cap (the PATCH
+        // Read + Replace shape under a retry storm). The aggregate must report
+        // the exact total attempt count — the sum of the sub-ops' true counts,
+        // not just the retained records — and keep the combined artifact within
+        // the cap, rather than dropping the compaction metadata.
+        let cap = 16;
+
+        let mut read = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("agg-read".to_string()),
+            options_with_cap(cap),
+        );
+        record_run(
+            &mut read,
+            ExecutionContext::Retry,
+            "East US",
+            "https://east/",
+            CosmosStatus::new(StatusCode::TooManyRequests),
+            2.0,
+            600,
+        );
+        read.set_operation_status(StatusCode::Ok, None);
+        let read_ctx = Arc::new(read.complete());
+        assert!(
+            read_ctx.compaction().is_some(),
+            "source must be individually compacted"
+        );
+
+        let mut replace = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("agg-replace".to_string()),
+            options_with_cap(cap),
+        );
+        record_run(
+            &mut replace,
+            ExecutionContext::Retry,
+            "West US",
+            "https://west/",
+            CosmosStatus::new(StatusCode::Gone),
+            3.0,
+            400,
+        );
+        replace.set_operation_status(StatusCode::Created, None);
+        let replace_ctx = Arc::new(replace.complete());
+
+        let aggregated =
+            DiagnosticsContext::aggregate_sub_operations(&[read_ctx.clone(), replace_ctx.clone()])
+                .expect("aggregation must succeed");
+
+        // Exact total across sub-ops, not just the retained records.
+        assert_eq!(
+            aggregated.request_count(),
+            read_ctx.request_count() + replace_ctx.request_count()
+        );
+        assert_eq!(aggregated.request_count(), 1000);
+        // The combined artifact respects the cap.
+        assert!(
+            aggregated.retained_request_count() <= cap,
+            "retained {} exceeds cap {cap}",
+            aggregated.retained_request_count()
+        );
+        // Exact total charge preserved (600*2.0 + 400*3.0).
+        assert!((aggregated.total_request_charge().value() - 2400.0).abs() < f64::EPSILON);
+        // Compaction metadata reports the exact original attempt count.
+        let info = aggregated
+            .compaction()
+            .expect("aggregate of compacted sources must carry compaction metadata");
+        assert_eq!(info.original_request_count, 1000);
     }
 
     #[test]
@@ -3347,5 +4140,546 @@ mod tests {
         let builder = DiagnosticsContextBuilder::new(ActivityId::new_uuid(), make_options());
         let ctx = builder.complete();
         assert_eq!(ctx.machine_id(), None);
+    }
+
+    // ---- Compaction (retry-storm bounding, WS6) -------------------------------------------
+
+    fn options_with_cap(cap: usize) -> Arc<DiagnosticsOptions> {
+        Arc::new(
+            DiagnosticsOptions::builder()
+                .with_max_request_diagnostics(cap)
+                .build()
+                .expect("valid cap"),
+        )
+    }
+
+    /// Records `count` attempts sharing one (region, endpoint, status, exec-ctx)
+    /// key, each charged `charge` RU, so per-run aggregates are deterministic.
+    fn record_run(
+        builder: &mut DiagnosticsContextBuilder,
+        exec: ExecutionContext,
+        region: &str,
+        endpoint: &str,
+        status: CosmosStatus,
+        charge: f64,
+        count: usize,
+    ) {
+        for _ in 0..count {
+            let h =
+                builder.start_test_request(exec, Some(Region::new(region.to_string())), endpoint);
+            builder.update_request(h, |req| req.with_charge(RequestCharge::new(charge)));
+            builder.complete_request(h, status.status_code(), status.sub_status());
+        }
+    }
+
+    #[test]
+    fn retry_storm_429_is_bounded_and_lossless() {
+        // A single partition hammered with 429 for the whole retry budget: one
+        // run of many near-identical attempts. The retained list must be bounded
+        // by the cap while the true count and exact aggregates survive.
+        let cap = 16;
+        let mut b = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("storm-429".to_string()),
+            options_with_cap(cap),
+        );
+        record_run(
+            &mut b,
+            ExecutionContext::Retry,
+            "East US",
+            "https://east/",
+            CosmosStatus::new(StatusCode::TooManyRequests),
+            2.0,
+            1000,
+        );
+        b.set_operation_status(StatusCode::TooManyRequests, None);
+        let ctx = b.complete();
+
+        // True total preserved; retained records bounded by the cap.
+        assert_eq!(ctx.request_count(), 1000);
+        assert!(
+            ctx.retained_request_count() <= cap,
+            "retained {} exceeds cap {cap}",
+            ctx.retained_request_count()
+        );
+
+        let info = ctx.compaction().expect("a storm past the cap must compact");
+        assert_eq!(info.original_request_count, 1000);
+        assert_eq!(info.retained_request_count, ctx.retained_request_count());
+        assert_eq!(info.runs.len(), 1);
+        assert_eq!(info.runs[0].count, 1000);
+
+        // Aggregates stay EXACT despite the bounded retained list.
+        assert_eq!(
+            info.runs[0].total_request_charge,
+            RequestCharge::new(2000.0)
+        );
+        assert_eq!(ctx.total_request_charge(), RequestCharge::new(2000.0));
+        assert!(info.runs[0].min_duration_ms <= info.runs[0].p50_duration_ms);
+        assert!(info.runs[0].p50_duration_ms <= info.runs[0].max_duration_ms);
+
+        // Truncation is visible in the serialized output and the output is bounded.
+        let json = ctx.to_json_string(Some(DiagnosticsVerbosity::Detailed));
+        assert!(json.contains("\"compaction\""), "compaction marker missing");
+        assert!(json.contains("\"original_request_count\":1000"));
+        assert!(
+            json.len() < 16 * 1024,
+            "detailed json {} bytes is not bounded",
+            json.len()
+        );
+
+        // First and last of the run are retained in full.
+        let requests = ctx.requests();
+        assert_eq!(
+            u16::from(requests.first().unwrap().status().status_code()),
+            429
+        );
+        assert_eq!(
+            u16::from(requests.last().unwrap().status().status_code()),
+            429
+        );
+    }
+
+    #[test]
+    fn mixed_429_410_runs_preserve_boundaries_and_exact_counts() {
+        // A 429 storm that escalates to a 410/1002 (PartitionKeyRangeGone) storm
+        // then recovers with a 200. Order-preserving run-length collapse keeps
+        // each run's boundaries and exact per-run aggregates.
+        let cap = 16;
+        let mut b = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("mixed-429-410".to_string()),
+            options_with_cap(cap),
+        );
+        record_run(
+            &mut b,
+            ExecutionContext::Retry,
+            "East US",
+            "https://east/",
+            CosmosStatus::new(StatusCode::TooManyRequests),
+            1.0,
+            100,
+        );
+        record_run(
+            &mut b,
+            ExecutionContext::Retry,
+            "East US",
+            "https://east/",
+            CosmosStatus::new(StatusCode::Gone).with_sub_status(1002),
+            1.0,
+            50,
+        );
+        record_run(
+            &mut b,
+            ExecutionContext::Retry,
+            "West US",
+            "https://west/",
+            CosmosStatus::new(StatusCode::Ok),
+            1.0,
+            1,
+        );
+        b.set_operation_status(StatusCode::Ok, None);
+        let ctx = b.complete();
+
+        assert_eq!(ctx.request_count(), 151);
+        assert!(ctx.retained_request_count() <= cap);
+        let info = ctx.compaction().expect("compacted");
+        assert_eq!(info.runs.len(), 3);
+        assert_eq!(info.runs[0].count, 100);
+        assert_eq!(info.runs[1].count, 50);
+        assert_eq!(info.runs[2].count, 1);
+
+        // The 410 run carries its sub-status exactly.
+        assert_eq!(
+            info.runs[1].status,
+            CosmosStatus::new(StatusCode::Gone).with_sub_status(1002)
+        );
+
+        // Exact, lossless totals across all three runs.
+        let run_attempts: usize = info.runs.iter().map(|r| r.count).sum();
+        assert_eq!(run_attempts, 151);
+        assert_eq!(ctx.total_request_charge(), RequestCharge::new(151.0));
+
+        // Onset (429) and terminal (200) boundaries retained; order preserved.
+        let requests = ctx.requests();
+        assert_eq!(
+            u16::from(requests.first().unwrap().status().status_code()),
+            429
+        );
+        assert_eq!(
+            u16::from(requests.last().unwrap().status().status_code()),
+            200
+        );
+    }
+
+    #[test]
+    fn region_ping_pong_is_bounded_via_global_fallback() {
+        // Alternating regions: every consecutive run is length one, defeating the
+        // order-preserving run-length collapse and forcing the order-robust
+        // global key-bucket fallback. The artifact must still stay bounded.
+        let cap = 16;
+        let mut b = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("pingpong".to_string()),
+            options_with_cap(cap),
+        );
+        for _ in 0..200 {
+            let he = b.start_test_request(
+                ExecutionContext::Retry,
+                Some(Region::new("East US")),
+                "https://east/",
+            );
+            b.complete_request(he, StatusCode::ServiceUnavailable, None);
+            let hw = b.start_test_request(
+                ExecutionContext::Retry,
+                Some(Region::new("West US")),
+                "https://west/",
+            );
+            b.complete_request(hw, StatusCode::ServiceUnavailable, None);
+        }
+        b.set_operation_status(StatusCode::ServiceUnavailable, None);
+        let ctx = b.complete();
+
+        assert_eq!(ctx.request_count(), 400);
+        assert!(
+            ctx.retained_request_count() <= cap,
+            "retained {} exceeds cap {cap}",
+            ctx.retained_request_count()
+        );
+        let info = ctx.compaction().expect("ping-pong storm must compact");
+        // Two distinct keys -> two runs, each covering 200 attempts.
+        assert_eq!(info.runs.len(), 2);
+        assert!(info.runs.iter().all(|r| r.count == 200));
+
+        // Both regions still reported (normalized: lowercase, no spaces).
+        let mut regions: Vec<String> = ctx
+            .regions_contacted()
+            .iter()
+            .map(|r| r.as_str().to_string())
+            .collect();
+        regions.sort();
+        assert_eq!(regions, ["eastus".to_string(), "westus".to_string()]);
+    }
+
+    #[test]
+    fn distinct_endpoint_410_fanout_is_bounded() {
+        // A 410 fan-out across thousands of physical-partition endpoints is
+        // high-cardinality exactly when the storm is worst: every attempt is a
+        // distinct key. Both the retained records AND the per-run rollup must
+        // stay bounded by the cap, the omission explicit, the total exact.
+        let cap = 16;
+        let distinct = 5000usize;
+        let mut b = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("fanout".to_string()),
+            options_with_cap(cap),
+        );
+        for i in 0..distinct {
+            record_run(
+                &mut b,
+                ExecutionContext::Retry,
+                "East US",
+                &format!("https://pkrange-{i}/"),
+                CosmosStatus::new(StatusCode::Gone).with_sub_status(1002),
+                1.0,
+                1,
+            );
+        }
+        b.set_operation_status(StatusCode::Gone, Some(SubStatusCode::new(1002)));
+        let ctx = b.complete();
+
+        assert_eq!(ctx.request_count(), distinct);
+        let info = ctx
+            .compaction()
+            .expect("a high-cardinality storm must compact");
+        assert_eq!(info.original_request_count, distinct);
+        assert_eq!(info.total_runs, distinct);
+
+        // Both the retained records and the per-run rollup are bounded by the cap.
+        assert!(
+            ctx.retained_request_count() <= cap,
+            "retained {} exceeds cap {cap}",
+            ctx.retained_request_count()
+        );
+        assert!(
+            info.runs.len() <= cap,
+            "runs {} not bounded by cap {cap}",
+            info.runs.len()
+        );
+
+        // Every drop is explicit, never silent, and lossless in aggregate.
+        assert!(info.omitted_runs > 0, "run omission must be marked");
+        assert_eq!(info.omitted_runs, info.total_runs - info.runs.len());
+        let retained_run_attempts: usize = info.runs.iter().map(|r| r.count).sum();
+        assert_eq!(retained_run_attempts + info.omitted_request_count, distinct);
+
+        // Detailed JSON size is bounded by the cap, independent of the topology.
+        let json = ctx.to_json_string(Some(DiagnosticsVerbosity::Detailed));
+        assert!(json.contains("\"omitted_runs\""), "omission not surfaced");
+        assert!(
+            json.len() < 32 * 1024,
+            "detailed json {} bytes grows with topology (distinct={distinct})",
+            json.len()
+        );
+    }
+
+    #[test]
+    fn phase2_heterogeneous_runs_keep_largest_and_stay_coherent() {
+        // Phase 2 with heterogeneous run counts: a few "hot" keys (introduced
+        // LAST) each retry many times, interleaved with many "cold" single-attempt
+        // keys (introduced FIRST). The rollup must keep the largest runs, the
+        // retained records must be drawn from the SAME kept set (so a span emitter
+        // never sees an attempt whose run was omitted), and totals stay exact.
+        let cap = 16;
+        let cold = 40usize;
+        let hot = 3usize;
+        let hot_retries = 100usize;
+        let mut b = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("heterogeneous".to_string()),
+            options_with_cap(cap),
+        );
+
+        for i in 0..cold {
+            let h = b.start_test_request(
+                ExecutionContext::Retry,
+                Some(Region::new("East US")),
+                &format!("https://cold-{i}/"),
+            );
+            b.complete_request(h, StatusCode::TooManyRequests, None);
+        }
+        // Interleaved so no two consecutive attempts share a key (forces Phase 2).
+        for _round in 0..hot_retries {
+            for j in 0..hot {
+                let h = b.start_test_request(
+                    ExecutionContext::Retry,
+                    Some(Region::new("West US")),
+                    &format!("https://hot-{j}/"),
+                );
+                b.complete_request(h, StatusCode::ServiceUnavailable, None);
+            }
+        }
+        b.set_operation_status(StatusCode::ServiceUnavailable, None);
+        let ctx = b.complete();
+
+        let total = cold + hot * hot_retries;
+        assert_eq!(ctx.request_count(), total);
+        let info = ctx
+            .compaction()
+            .expect("a heterogeneous storm must compact");
+        assert_eq!(info.total_runs, cold + hot);
+
+        assert!(
+            info.runs.len() <= cap,
+            "runs {} exceed cap {cap}",
+            info.runs.len()
+        );
+        assert!(
+            ctx.retained_request_count() <= cap,
+            "retained {} exceed cap {cap}",
+            ctx.retained_request_count()
+        );
+
+        // The largest (hot) runs are the ones kept in the rollup.
+        let kept_hot = info.runs.iter().filter(|r| r.count == hot_retries).count();
+        assert_eq!(
+            kept_hot, hot,
+            "all hot runs must survive the by-count rollup"
+        );
+
+        // Coherence: every retained record's key is represented by a run.
+        let run_keys: std::collections::HashSet<(
+            Option<String>,
+            String,
+            CosmosStatus,
+            ExecutionContext,
+        )> = info
+            .runs
+            .iter()
+            .map(|r| {
+                (
+                    r.region.clone(),
+                    r.endpoint.clone(),
+                    r.status,
+                    r.execution_context,
+                )
+            })
+            .collect();
+        for rec in ctx.requests().iter() {
+            let id = (
+                rec.region().map(|r| r.as_str().to_string()),
+                rec.endpoint().to_string(),
+                *rec.status(),
+                rec.execution_context(),
+            );
+            assert!(
+                run_keys.contains(&id),
+                "retained record {id:?} has no matching run in the bounded rollup"
+            );
+        }
+
+        // Exact, lossless totals despite the bounded rollup + retained list.
+        let kept_run_attempts: usize = info.runs.iter().map(|r| r.count).sum();
+        assert_eq!(kept_run_attempts + info.omitted_request_count, total);
+        assert_eq!(info.omitted_runs, info.total_runs - info.runs.len());
+    }
+
+    #[test]
+    fn under_cap_is_not_compacted_and_output_has_no_marker() {
+        // The default cap (512) is far above a normal operation's attempts, so
+        // the list is retained verbatim and the output is byte-identical to the
+        // pre-compaction behavior (no compaction marker).
+        let ctx = make_context_with(ActivityId::from_string("normal".to_string()), |b| {
+            for _ in 0..3 {
+                let h = b.start_test_request(
+                    ExecutionContext::Retry,
+                    Some(Region::new("East US")),
+                    "https://east/",
+                );
+                b.complete_request(h, StatusCode::TooManyRequests, None);
+            }
+        });
+
+        assert!(ctx.compaction().is_none());
+        assert_eq!(ctx.request_count(), 3);
+        assert_eq!(ctx.retained_request_count(), 3);
+        for verbosity in [
+            DiagnosticsVerbosity::Detailed,
+            DiagnosticsVerbosity::Summary,
+        ] {
+            let json = ctx.to_json_string(Some(verbosity));
+            assert!(
+                !json.contains("compaction"),
+                "{verbosity} output must not carry a compaction marker: {json}"
+            );
+        }
+    }
+
+    #[test]
+    fn operation_name_defaults_to_none() {
+        let ctx = make_context_with(ActivityId::new_uuid(), |_| {});
+        assert_eq!(ctx.operation_name(), None);
+    }
+
+    #[test]
+    fn is_failure_reflects_operation_status() {
+        let ok = make_context_with(ActivityId::new_uuid(), |b| {
+            b.set_operation_status(StatusCode::Ok, None);
+        });
+        assert!(!ok.is_failure());
+
+        let failed = make_context_with(ActivityId::new_uuid(), |b| {
+            b.set_operation_status(StatusCode::TooManyRequests, None);
+        });
+        assert!(failed.is_failure());
+
+        // No recorded status is not a failure.
+        let no_status = make_context_with(ActivityId::new_uuid(), |_| {});
+        assert!(!no_status.is_failure());
+    }
+
+    #[test]
+    fn is_failure_falls_back_to_terminal_request_status() {
+        // Some driver error-finalization paths graft diagnostics onto the error
+        // without stamping the operation status. The terminal attempt's failed
+        // status must still surface as a failure so tail-sampled handlers emit.
+        let failed = make_context_with(ActivityId::new_uuid(), |b| {
+            let handle = b.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::WEST_US_2),
+                "https://test.documents.azure.com",
+            );
+            b.complete_request(handle, StatusCode::TooManyRequests, None);
+        });
+        assert!(failed.is_failure());
+
+        // A successful terminal attempt with no operation status is not a failure.
+        let ok = make_context_with(ActivityId::new_uuid(), |b| {
+            let handle = b.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::WEST_US_2),
+                "https://test.documents.azure.com",
+            );
+            b.complete_request(handle, StatusCode::Ok, None);
+        });
+        assert!(!ok.is_failure());
+    }
+
+    #[test]
+    fn is_completed_requires_status_or_request() {
+        let empty = make_context_with(ActivityId::new_uuid(), |_| {});
+        assert!(!empty.is_completed());
+
+        let with_status = make_context_with(ActivityId::new_uuid(), |b| {
+            b.set_operation_status(StatusCode::Ok, None);
+        });
+        assert!(with_status.is_completed());
+
+        let with_request = make_context_with(ActivityId::new_uuid(), |b| {
+            let handle = b.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::WEST_US_2),
+                "https://test.documents.azure.com",
+            );
+            b.complete_request(handle, StatusCode::Ok, None);
+        });
+        assert!(with_request.is_completed());
+    }
+
+    #[test]
+    fn is_threshold_violated_on_request_charge() {
+        let thresholds = DiagnosticsThresholds::default().with_request_charge(100.0);
+
+        let cheap = make_context_with(ActivityId::new_uuid(), |b| {
+            let handle = b.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::WEST_US_2),
+                "https://test.documents.azure.com",
+            );
+            b.update_request(handle, |req| req.request_charge = RequestCharge::new(10.0));
+            b.complete_request(handle, StatusCode::Ok, None);
+        });
+        assert!(!cheap.is_threshold_violated(&thresholds));
+
+        let expensive = make_context_with(ActivityId::new_uuid(), |b| {
+            let handle = b.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::WEST_US_2),
+                "https://test.documents.azure.com",
+            );
+            b.update_request(handle, |req| req.request_charge = RequestCharge::new(150.0));
+            b.complete_request(handle, StatusCode::Ok, None);
+        });
+        assert!(expensive.is_threshold_violated(&thresholds));
+    }
+
+    #[test]
+    fn threshold_breach_reports_the_specific_bound() {
+        let thresholds = DiagnosticsThresholds::default().with_request_charge(100.0);
+
+        // Cheap, fast success: no breach.
+        let cheap = make_context_with(ActivityId::new_uuid(), |b| {
+            let handle = b.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::WEST_US_2),
+                "https://test.documents.azure.com",
+            );
+            b.update_request(handle, |req| req.request_charge = RequestCharge::new(10.0));
+            b.complete_request(handle, StatusCode::Ok, None);
+        });
+        assert_eq!(
+            cheap.threshold_breach_for(&thresholds, Some("read_item")),
+            None
+        );
+
+        // Over the RU bound: the breach names the request charge.
+        let expensive = make_context_with(ActivityId::new_uuid(), |b| {
+            let handle = b.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::WEST_US_2),
+                "https://test.documents.azure.com",
+            );
+            b.update_request(handle, |req| req.request_charge = RequestCharge::new(150.0));
+            b.complete_request(handle, StatusCode::Ok, None);
+        });
+        assert_eq!(
+            expensive.threshold_breach_for(&thresholds, Some("read_item")),
+            Some(ThresholdBreach::RequestCharge)
+        );
     }
 }

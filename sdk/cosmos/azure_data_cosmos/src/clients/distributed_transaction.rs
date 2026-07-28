@@ -16,7 +16,7 @@ use azure_data_cosmos_driver::models as driver_models;
 use serde::{de::DeserializeOwned, Serialize};
 
 use crate::clients::{ClientContext, ContainerClient};
-use crate::diagnostics::DiagnosticsContext;
+use crate::diagnostics::{CosmosOperationContext, DiagnosticsContext};
 use crate::models::{PartitionKey, PatchInstructions, ResponseHeaders};
 use crate::options::{Precondition, SessionToken};
 
@@ -323,11 +323,22 @@ pub(crate) async fn commit_distributed_write(
         driver_models::DistributedTransactionType::Write,
         operations,
     );
-    let response = context
+    match context
         .driver
         .execute_distributed_transaction(request, Default::default())
-        .await?;
-    Ok(DistributedTransactionResponse::from_driver(response))
+        .await
+    {
+        Ok(response) => {
+            let response = DistributedTransactionResponse::from_driver(response);
+            dispatch_transaction_diagnostics(context, &response, "commit_distributed_write");
+            Ok(response)
+        }
+        Err(err) => {
+            let err = crate::CosmosError::from(err);
+            context.dispatch_error(&err, || transaction_op_context("commit_distributed_write"));
+            Err(err)
+        }
+    }
 }
 
 pub(crate) async fn execute_distributed_read(
@@ -340,11 +351,43 @@ pub(crate) async fn execute_distributed_read(
         driver_models::DistributedTransactionType::Read,
         operations,
     );
-    let response = context
+    match context
         .driver
         .execute_distributed_transaction(request, Default::default())
-        .await?;
-    Ok(DistributedTransactionResponse::from_driver(response))
+        .await
+    {
+        Ok(response) => {
+            let response = DistributedTransactionResponse::from_driver(response);
+            dispatch_transaction_diagnostics(context, &response, "execute_distributed_read");
+            Ok(response)
+        }
+        Err(err) => {
+            let err = crate::CosmosError::from(err);
+            context.dispatch_error(&err, || transaction_op_context("execute_distributed_read"));
+            Err(err)
+        }
+    }
+}
+
+/// Operation identity for a distributed transaction. A transaction can span
+/// multiple containers/accounts, so only the operation name is carried.
+fn transaction_op_context(operation_name: &'static str) -> CosmosOperationContext {
+    CosmosOperationContext::new().with_operation_name(operation_name)
+}
+
+/// Dispatches a successful distributed transaction's diagnostics to the handler
+/// chain, guarded so the empty-chain default takes no diagnostics handle.
+fn dispatch_transaction_diagnostics(
+    context: &ClientContext,
+    response: &DistributedTransactionResponse,
+    operation_name: &'static str,
+) {
+    if context.diagnostics_handlers.is_empty() {
+        return;
+    }
+    if let Some(diagnostics) = response.diagnostics() {
+        context.dispatch_diagnostics(&diagnostics, || transaction_op_context(operation_name));
+    }
 }
 
 fn validate_transaction_account(
