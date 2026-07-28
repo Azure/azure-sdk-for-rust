@@ -24,7 +24,7 @@ use std::num::NonZeroU32;
 use std::time::Duration;
 
 use azure_data_cosmos::feed::{ChangeFeedPageIterator, ContinuationToken, FeedScope};
-use azure_data_cosmos::models::ThroughputProperties;
+use azure_data_cosmos::models::{ChangeFeedItem, ThroughputProperties};
 use azure_data_cosmos::options::{ChangeFeedOptions, ChangeFeedStartFrom, MaxItemCountHint};
 use framework::{test_data, MockItem, TestClient, TestOptions};
 use futures::StreamExt;
@@ -91,6 +91,24 @@ fn sort_by_id(items: &mut [MockItem]) {
     items.sort_by_key(|item| item.id.parse::<usize>().unwrap_or(usize::MAX));
 }
 
+/// Extracts the post-change document (`current`) from each change feed
+/// envelope.
+///
+/// Every change feed item is a [`ChangeFeedItem<MockItem>`] envelope; these
+/// LatestVersion tests only assert on the document, which is carried under
+/// `current` (never a delete, so `current` is always present).
+fn currents(envelopes: Vec<ChangeFeedItem<MockItem>>) -> Vec<MockItem> {
+    envelopes
+        .into_iter()
+        .map(|envelope| {
+            envelope
+                .current()
+                .cloned()
+                .expect("LatestVersion change feed items carry a current document")
+        })
+        .collect()
+}
+
 /// `StartFrom::Beginning` against a single logical partition returns exactly
 /// the items written to that partition. This exercises the trivial
 /// (single-request) change feed path.
@@ -120,7 +138,7 @@ pub async fn change_feed_from_beginning_single_partition() -> Result<(), Box<dyn
                 )
                 .await?;
 
-            let mut actual = drain_changes(&mut iterator).await?;
+            let mut actual = currents(drain_changes(&mut iterator).await?);
             sort_by_id(&mut actual);
 
             assert_eq!(expected, actual);
@@ -164,7 +182,7 @@ pub async fn change_feed_from_beginning_full_container() -> Result<(), Box<dyn E
                 )
                 .await?;
 
-            let mut actual = drain_changes(&mut iterator).await?;
+            let mut actual = currents(drain_changes(&mut iterator).await?);
             sort_by_id(&mut actual);
 
             assert_eq!(expected, actual);
@@ -224,7 +242,7 @@ pub async fn change_feed_start_from_now_returns_only_new_changes() -> Result<(),
                     .await?;
             }
 
-            let mut actual = drain_changes(&mut iterator).await?;
+            let mut actual = currents(drain_changes(&mut iterator).await?);
             sort_by_id(&mut actual);
 
             let mut expected = new_items;
@@ -311,7 +329,7 @@ pub async fn change_feed_continuation_token_resume() -> Result<(), Box<dyn Error
                     None,
                 )
                 .await?;
-            let mut first_batch = drain_changes(&mut iterator).await?;
+            let mut first_batch = currents(drain_changes(&mut iterator).await?);
             sort_by_id(&mut first_batch);
             assert_eq!(expected_baseline, first_batch);
 
@@ -344,7 +362,7 @@ pub async fn change_feed_continuation_token_resume() -> Result<(), Box<dyn Error
                     Some(ChangeFeedOptions::default().with_continuation_token(token)),
                 )
                 .await?;
-            let mut second_batch = drain_changes(&mut resumed).await?;
+            let mut second_batch = currents(drain_changes(&mut resumed).await?);
             sort_by_id(&mut second_batch);
 
             let mut expected_new = new_items;
@@ -497,7 +515,7 @@ pub async fn change_feed_point_in_time_excludes_earlier_changes() -> Result<(), 
                 )
                 .await?;
 
-            let mut actual = drain_changes(&mut iterator).await?;
+            let mut actual = currents(drain_changes(&mut iterator).await?);
             sort_by_id(&mut actual);
 
             let mut expected = new_items;
@@ -573,7 +591,7 @@ pub async fn change_feed_max_item_count_pages_backlog() -> Result<(), Box<dyn Er
                         "page returned {} items, exceeding the max_item_count limit of {PAGE_LIMIT}",
                         page.items().len()
                     );
-                    collected.extend(page.into_items());
+                    collected.extend(currents(page.into_items()));
                 }
 
                 if polls >= MAX_DRAIN_POLLS {

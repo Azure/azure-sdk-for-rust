@@ -114,6 +114,41 @@ impl From<url::ParseError> for CosmosError {
     }
 }
 
+/// Converts a binary-JSON encode error into a [`CosmosError`].
+///
+/// This is deliberately a call-site helper rather than a `From` impl: the
+/// binary codec is only ever encoded on the item **write** path
+/// (`binary_json::to_vec(item)`), so a failure is always a request-body
+/// (encode) error, never a response-body (decode) error — binary **response**
+/// decoding is mapped inside the driver. A blanket `From` would invite `?` to
+/// mislabel a future decode failure as a request-body error, so the mapping is
+/// kept explicit at the one call site that needs it.
+pub(crate) fn convert_binary_encode_error(
+    error: azure_data_cosmos_driver::binary_json::BinaryError,
+) -> CosmosError {
+    CosmosError(
+        DriverCosmosError::builder()
+            .with_status(CosmosStatus::SERIALIZATION_REQUEST_BODY_INVALID)
+            .with_message("failed to serialize item to Cosmos binary JSON")
+            .with_source(error)
+            .build(),
+    )
+}
+
+/// Maps a text-JSON encode failure on the item **write** path to a request-body
+/// (not response-body) error. The blanket `From<serde_json::Error>` impl labels
+/// every error as `SERIALIZATION_RESPONSE_BODY_INVALID`, correct only for the
+/// decode/`?` sites; this call-site helper keeps write encodes labeled correctly.
+pub(crate) fn convert_json_encode_error(error: serde_json::Error) -> CosmosError {
+    CosmosError(
+        DriverCosmosError::builder()
+            .with_status(CosmosStatus::SERIALIZATION_REQUEST_BODY_INVALID)
+            .with_message("failed to serialize item to JSON")
+            .with_source(error)
+            .build(),
+    )
+}
+
 /// Per Azure SDK for Rust guideline: every service-crate error type provides a
 /// [`From`] impl into [`azure_core::Error`] so callers using the foundation
 /// error type via `?`/`From` continue to compose.
@@ -204,7 +239,8 @@ fn classify_for_azure_core(err: &CosmosError) -> azure_core::error::ErrorKind {
         | Some(SubStatusCode::CLIENT_GENERATED_401) => CoreKind::Credential,
 
         // Serialization boundary
-        Some(SubStatusCode::SERIALIZATION_RESPONSE_BODY_INVALID) => CoreKind::DataConversion,
+        Some(SubStatusCode::SERIALIZATION_RESPONSE_BODY_INVALID)
+        | Some(SubStatusCode::SERIALIZATION_REQUEST_BODY_INVALID) => CoreKind::DataConversion,
 
         // Request provably NEVER reached the wire — safe to retry non-idempotent writes
         // (matches `azure_core::ErrorKind::Connection` semantics).

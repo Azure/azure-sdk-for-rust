@@ -13,9 +13,12 @@ This directory contains a set of examples for the use of the Blob Storage client
 | `block_blob_client.rs` | Block blob operations: staged block upload, copy from URL |
 | `append_blob_client.rs` | Append blob operations: create, append blocks, seal |
 | `page_blob_client.rs` | Page blob operations: create, upload/clear pages, list page ranges, resize |
-| `blob_storage_logging.rs` | Logging and OpenTelemetry distributed tracing |
 | `blob_storage_upload_file.rs` | Upload a local file with streaming support for large files |
 | `storage_error.rs` | Structured error handling with `StorageError` |
+
+For logging and OpenTelemetry distributed tracing, see the
+[`samples/storage_blob_logging`](https://github.com/Azure/azure-sdk-for-rust/tree/main/samples/storage_blob_logging) sample.
+Logging and distributed tracing works the same across all Azure SDK for Rust client libraries.
 
 ## Setup
 

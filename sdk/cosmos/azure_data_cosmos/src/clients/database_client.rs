@@ -3,6 +3,7 @@
 
 use crate::{
     clients::{offers_client, ClientContext, ContainerClient},
+    diagnostics::CosmosOperationContext,
     feed::QueryItemIterator,
     models::ResourceResponse,
     models::{ContainerProperties, DatabaseProperties, ThroughputProperties},
@@ -41,6 +42,17 @@ impl DatabaseClient {
             identity,
             context,
             database_ref,
+        }
+    }
+
+    /// Builds the SDK-side [`CosmosOperationContext`] for this database's
+    /// operations, carrying the operation name plus the database identity the
+    /// driver context does not know.
+    fn operation_context(&self, operation_name: &'static str) -> CosmosOperationContext {
+        let context = CosmosOperationContext::new().with_operation_name(operation_name);
+        match self.identity.as_name() {
+            Some(name) => context.with_database_name(name.to_owned()),
+            None => context,
         }
     }
 
@@ -108,14 +120,15 @@ impl DatabaseClient {
         let options = options.unwrap_or_default();
         let operation = CosmosOperation::read_database(self.database_ref.clone());
 
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, options.operation)
-            .await?;
+            .await;
 
         Ok(ResourceResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context
+                .complete_result(driver_result, || self.operation_context("read_database"))?,
         ))
     }
 
@@ -164,6 +177,8 @@ impl DatabaseClient {
             None,
             plan,
             operation_options,
+            self.context.diagnostics_handlers.clone(),
+            self.operation_context("query_containers"),
         ))
     }
 
@@ -198,15 +213,19 @@ impl DatabaseClient {
         operation_options.content_response_on_write =
             Some(azure_data_cosmos_driver::options::ContentResponseOnWrite::Enabled);
 
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, operation_options)
-            .await?;
+            .await;
 
-        Ok(ResourceResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
-        ))
+        Ok(ResourceResponse::new(self.context.complete_result(
+            driver_result,
+            || {
+                self.operation_context("create_container")
+                    .with_container_name(properties.id.clone())
+            },
+        )?))
     }
 
     /// Deletes this database.
@@ -222,14 +241,15 @@ impl DatabaseClient {
         let options = options.unwrap_or_default();
         let operation = CosmosOperation::delete_database(self.database_ref.clone());
 
-        let driver_response = self
+        let driver_result = self
             .context
             .driver
             .execute_singleton_operation(operation, options.operation)
-            .await?;
+            .await;
 
         Ok(ResourceResponse::new(
-            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+            self.context
+                .complete_result(driver_result, || self.operation_context("delete_database"))?,
         ))
     }
 
@@ -258,10 +278,11 @@ impl DatabaseClient {
         let resource_id = self.resource_id().await?;
 
         offers_client::find_offer(
-            &self.context.driver,
+            &self.context,
             self.context.driver.account(),
             &resource_id,
             options.operation,
+            self.operation_context("read_throughput"),
         )
         .await
     }
@@ -300,11 +321,12 @@ impl DatabaseClient {
         let resource_id = self.resource_id().await?;
 
         offers_client::begin_replace(
-            self.context.driver.clone(),
+            self.context.clone(),
             self.context.driver.account().clone(),
             &resource_id,
             throughput,
             options.operation,
+            self.operation_context("replace_throughput"),
         )
         .await
     }
