@@ -4,7 +4,8 @@
 //! Live tests for the buffered producer client.
 //!
 //! The tests need a real Event Hub. They read the namespace from
-//! `EVENTHUBS_HOST` and the Event Hub name from `EVENTHUB_NAME`.
+//! `EVENTHUBS_HOST` and the Event Hub name from `EVENTHUB_NAME`. The
+//! connection string test also reads `EVENTHUBS_CONNECTION_STRING`.
 
 use azure_core::time::Duration;
 use azure_core_test::{recorded, TestContext};
@@ -357,6 +358,78 @@ async fn buffered_graceful_close_sends_events(ctx: TestContext) -> Result<(), Bo
         assert!(bodies.contains(&format!("closed-{index}")));
     }
 
+    consumer.close().await?;
+    Ok(())
+}
+
+/// A connection string opens the client, and the delivery path still works.
+#[recorded::test(live)]
+async fn buffered_round_trip_with_connection_string(
+    _ctx: TestContext,
+) -> Result<(), Box<dyn Error>> {
+    const TEST_NAME: &str = "buffered_round_trip_with_connection_string";
+    const PARTITION: &str = "4";
+    const EVENT_COUNT: usize = 5;
+
+    // SAS credentials come from the connection string, not the recording.
+    let connection_string = env::var("EVENTHUBS_CONNECTION_STRING")?;
+    let eventhub = env::var("EVENTHUB_NAME").ok();
+
+    let consumer = ConsumerClient::builder()
+        .with_application_id(TEST_NAME.to_string())
+        .open_with_connection_string(&connection_string, eventhub.as_deref())
+        .await?;
+    let start_sequence = consumer
+        .get_partition_properties(PARTITION)
+        .await?
+        .last_enqueued_sequence_number;
+
+    let reports = Arc::new(Reports::default());
+    let for_success = reports.clone();
+    let for_failure = reports.clone();
+
+    let producer = BufferedProducerClient::builder()
+        .with_application_id(TEST_NAME.to_string())
+        .with_max_wait_time(Duration::seconds(1))
+        .with_on_send_succeeded(move |context| {
+            let reports = for_success.clone();
+            async move {
+                reports.on_success(&context);
+            }
+        })
+        .with_on_send_failed(move |context| {
+            let reports = for_failure.clone();
+            async move {
+                reports.on_failure(&context);
+            }
+        })
+        .open_with_connection_string(&connection_string, eventhub.as_deref())
+        .await?;
+
+    // Tag the events, so the test finds them among the other events of the partition.
+    let marker = format!("sas-buffered-{start_sequence}");
+    for index in 0..EVENT_COUNT {
+        producer
+            .enqueue_event(
+                format!("{marker}-{index}"),
+                Some(EnqueueEventOptions {
+                    partition_id: Some(PARTITION.to_string()),
+                    ..Default::default()
+                }),
+            )
+            .await?;
+    }
+    producer.flush().await?;
+
+    assert_eq!(reports.succeeded(), EVENT_COUNT);
+    assert_eq!(reports.failed(), 0, "failures: {:?}", reports.failures());
+
+    let bodies = receive_bodies(&consumer, PARTITION, start_sequence, EVENT_COUNT).await?;
+    for index in 0..EVENT_COUNT {
+        assert!(bodies.contains(&format!("{marker}-{index}")));
+    }
+
+    producer.close().await?;
     consumer.close().await?;
     Ok(())
 }
