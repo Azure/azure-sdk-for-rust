@@ -219,9 +219,7 @@ impl CosmosMetricsHandler {
     /// counted; this sentinel keeps the counter's attribute schema uniform
     /// (every data point carries the dimension, so `group by
     /// hedge_terminal_state` never fragments) while staying distinguishable
-    /// from every real [`HedgeTerminalState`] value.
-    ///
-    /// [`HedgeTerminalState`]: azure_data_cosmos_driver::HedgeTerminalState
+    /// from every real `HedgeTerminalState` value.
     const HEDGE_TERMINAL_STATE_UNRESOLVED: &'static str = "unresolved";
 
     /// Records the hedged-operation counter for an operation that fanned out a
