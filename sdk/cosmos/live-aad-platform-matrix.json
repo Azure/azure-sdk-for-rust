@@ -13,10 +13,10 @@
     "AZURE_COSMOS_AUTH_MODE": ["aad"],
     "Account Settings": {
       "Eventual SingleWrite": {
-        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Eventual'; enableAutomaticFailover = $false }"
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Eventual'; enableAutomaticFailover = $false; enableContinuousBackup = $true }"
       },
       "Session SingleWrite": {
-        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAutomaticFailover = $false }"
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAutomaticFailover = $false; enableContinuousBackup = $true }"
       },
       "Session MultiWrite": {
         "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableMultipleWriteLocations = $true; enableAutomaticFailover = $false; testCategory = 'multi_write'; enableMultipleRegions = $true }"
