@@ -99,7 +99,8 @@ impl RntbdResponse {
     ///     follow immediately after the metadata section.
     ///
     /// Unknown metadata token IDs are silently consumed when their token type is known.
-    /// Malformed token values and unknown token type bytes return errors.
+    /// Optional metadata with an unexpected value type is ignored with a warning; malformed
+    /// control tokens and unknown token type bytes return errors.
     pub(crate) fn read(bytes: &[u8]) -> azure_core::Result<Self> {
         let mut src = bytes;
         let total_len = read_u32_le(&mut src)? as usize;
@@ -160,7 +161,7 @@ impl RntbdResponse {
                 }
                 Ok(RntbdResponseToken::LastStateChangeDateTime) => {
                     last_state_change_date_time =
-                        Some(expect_small_string(token, "LastStateChangeDateTime")?);
+                        optional_metadata(token.into_small_string(), "LastStateChangeDateTime");
                 }
                 Ok(RntbdResponseToken::ContinuationToken) => {
                     continuation_token = Some(expect_string(token, "ContinuationToken")?);
@@ -173,54 +174,56 @@ impl RntbdResponse {
                 }
                 Ok(RntbdResponseToken::StorageMaxResourceQuota) => {
                     storage_max_resource_quota =
-                        Some(expect_string(token, "StorageMaxResourceQuota")?);
+                        optional_metadata(token.into_string(), "StorageMaxResourceQuota");
                 }
                 Ok(RntbdResponseToken::StorageResourceQuotaUsage) => {
                     storage_resource_quota_usage =
-                        Some(expect_string(token, "StorageResourceQuotaUsage")?);
+                        optional_metadata(token.into_string(), "StorageResourceQuotaUsage");
                 }
                 Ok(RntbdResponseToken::SchemaVersion) => {
-                    schema_version = Some(expect_small_string(token, "SchemaVersion")?);
+                    schema_version = optional_metadata(token.into_small_string(), "SchemaVersion");
                 }
                 Ok(RntbdResponseToken::Lsn) => {
                     lsn = Some(expect_i64(token, "LSN")?);
                 }
                 Ok(RntbdResponseToken::ItemCount) => {
-                    item_count = Some(expect_u32(token, "ItemCount")?);
+                    item_count = optional_metadata(token.as_u32(), "ItemCount");
                 }
                 Ok(RntbdResponseToken::RequestCharge) => {
                     request_charge = Some(expect_f64(token, "RequestCharge")?);
                 }
                 Ok(RntbdResponseToken::BackendRequestDurationMilliseconds) => {
                     backend_request_duration_ms =
-                        Some(expect_f64(token, "BackendRequestDurationMilliseconds")?);
+                        optional_metadata(token.as_f64(), "BackendRequestDurationMilliseconds");
                 }
                 Ok(RntbdResponseToken::OwnerFullName) => {
                     owner_full_name = Some(expect_string(token, "OwnerFullName")?);
                 }
                 Ok(RntbdResponseToken::OwnerId) => {
-                    owner_id = Some(expect_string(token, "OwnerId")?);
+                    owner_id = optional_metadata(token.into_string(), "OwnerId");
                 }
                 Ok(RntbdResponseToken::QuorumAckedLsn) => {
-                    quorum_acked_lsn = Some(expect_i64(token, "QuorumAckedLSN")?);
+                    quorum_acked_lsn = optional_metadata(token.as_i64(), "QuorumAckedLSN");
                 }
                 Ok(RntbdResponseToken::SubStatus) => {
                     sub_status = Some(expect_u32(token, "SubStatus")?);
                 }
                 Ok(RntbdResponseToken::CurrentWriteQuorum) => {
-                    current_write_quorum = Some(expect_u32(token, "CurrentWriteQuorum")?);
+                    current_write_quorum = optional_metadata(token.as_u32(), "CurrentWriteQuorum");
                 }
                 Ok(RntbdResponseToken::CurrentReplicaSetSize) => {
-                    current_replica_set_size = Some(expect_u32(token, "CurrentReplicaSetSize")?);
+                    current_replica_set_size =
+                        optional_metadata(token.as_u32(), "CurrentReplicaSetSize");
                 }
                 Ok(RntbdResponseToken::PartitionKeyRangeId) => {
                     partition_key_range_id = Some(expect_string(token, "PartitionKeyRangeId")?);
                 }
                 Ok(RntbdResponseToken::XpRole) => {
-                    xp_role = Some(expect_u32(token, "XPRole")?);
+                    xp_role = optional_metadata(token.as_u32(), "XPRole");
                 }
                 Ok(RntbdResponseToken::NumberOfReadRegions) => {
-                    number_of_read_regions = Some(expect_u32(token, "NumberOfReadRegions")?);
+                    number_of_read_regions =
+                        optional_metadata(token.as_u32(), "NumberOfReadRegions");
                 }
                 Ok(RntbdResponseToken::ItemLsn) => {
                     item_lsn = Some(expect_i64(token, "ItemLSN")?);
@@ -229,13 +232,14 @@ impl RntbdResponse {
                     global_committed_lsn = Some(expect_i64(token, "GlobalCommittedLSN")?);
                 }
                 Ok(RntbdResponseToken::LocalLsn) => {
-                    local_lsn = Some(expect_i64(token, "LocalLSN")?);
+                    local_lsn = optional_metadata(token.as_i64(), "LocalLSN");
                 }
                 Ok(RntbdResponseToken::QuorumAckedLocalLsn) => {
-                    quorum_acked_local_lsn = Some(expect_i64(token, "QuorumAckedLocalLSN")?);
+                    quorum_acked_local_lsn =
+                        optional_metadata(token.as_i64(), "QuorumAckedLocalLSN");
                 }
                 Ok(RntbdResponseToken::ItemLocalLsn) => {
-                    item_local_lsn = Some(expect_i64(token, "ItemLocalLSN")?);
+                    item_local_lsn = optional_metadata(token.as_i64(), "ItemLocalLSN");
                 }
                 Ok(RntbdResponseToken::TransportRequestId) => {
                     transport_request_id = Some(expect_u32(token, "TransportRequestID")?);
@@ -244,17 +248,20 @@ impl RntbdResponse {
                     session_token = Some(expect_string(token, "SessionToken")?);
                 }
                 Ok(RntbdResponseToken::QueryExecutionInfo) => {
-                    query_execution_info = Some(expect_string(token, "QueryExecutionInfo")?);
+                    query_execution_info =
+                        optional_metadata(token.into_string(), "QueryExecutionInfo");
                 }
                 Ok(RntbdResponseToken::PendingPkDelete) => {
-                    pending_pk_delete = Some(expect_byte(token, "PendingPKDelete")? != 0);
+                    pending_pk_delete = optional_metadata(token.as_byte(), "PendingPKDelete")
+                        .map(|value| value != 0);
                 }
                 Ok(RntbdResponseToken::PhysicalPartitionId) => {
-                    physical_partition_id = Some(expect_string(token, "PhysicalPartitionId")?);
+                    physical_partition_id =
+                        optional_metadata(token.into_string(), "PhysicalPartitionId");
                 }
                 Ok(RntbdResponseToken::ConflictResolvedTimestamp) => {
                     conflict_resolved_timestamp =
-                        Some(expect_u64(token, "ConflictResolvedTimestamp")?);
+                        optional_metadata(token.as_u64(), "ConflictResolvedTimestamp");
                 }
                 Err(()) => {}
             }
@@ -318,12 +325,6 @@ fn expect_string(token: Token, name: &str) -> azure_core::Result<String> {
         .ok_or_else(|| unexpected_token_type(name))
 }
 
-fn expect_small_string(token: Token, name: &str) -> azure_core::Result<String> {
-    token
-        .into_small_string()
-        .ok_or_else(|| unexpected_token_type(name))
-}
-
 fn expect_byte(token: Token, name: &str) -> azure_core::Result<u8> {
     token.as_byte().ok_or_else(|| unexpected_token_type(name))
 }
@@ -336,12 +337,18 @@ fn expect_i64(token: Token, name: &str) -> azure_core::Result<i64> {
     token.as_i64().ok_or_else(|| unexpected_token_type(name))
 }
 
-fn expect_u64(token: Token, name: &str) -> azure_core::Result<u64> {
-    token.as_u64().ok_or_else(|| unexpected_token_type(name))
-}
-
 fn expect_f64(token: Token, name: &str) -> azure_core::Result<f64> {
     token.as_f64().ok_or_else(|| unexpected_token_type(name))
+}
+
+fn optional_metadata<T>(value: Option<T>, name: &str) -> Option<T> {
+    if value.is_none() {
+        tracing::warn!(
+            token = name,
+            "ignoring optional RNTBD response metadata with an unexpected value type"
+        );
+    }
+    value
 }
 
 fn unexpected_token_type(name: &str) -> azure_core::Error {
@@ -391,22 +398,26 @@ mod tests {
     }
 
     #[test]
-    fn backend_request_duration_rejects_wrong_token_type() {
+    fn optional_metadata_with_wrong_token_type_is_ignored() {
         let mut frame = response_header(StatusCode::Ok);
         Token::new(0x0051, TokenValue::ULong(12))
             .write_to(&mut frame)
             .unwrap();
+        Token::new(0x001C, TokenValue::ULong(1002))
+            .write_to(&mut frame)
+            .unwrap();
         patch_total_len(&mut frame);
 
-        let err = RntbdResponse::read(&frame).unwrap_err();
+        let response = RntbdResponse::read(&frame).unwrap();
 
-        assert_eq!(*err.kind(), azure_core::error::ErrorKind::DataConversion);
+        assert_eq!(response.backend_request_duration_ms, None);
+        assert_eq!(response.status.sub_status().unwrap().value(), 1002);
     }
 
     #[test]
-    fn known_token_with_wrong_type_is_rejected() {
+    fn control_token_with_wrong_type_is_rejected() {
         let mut frame = response_header(StatusCode::Ok);
-        Token::new(0x0010, TokenValue::String("1.0".into()))
+        Token::new(0x0000, TokenValue::String("true".into()))
             .write_to(&mut frame)
             .unwrap();
         patch_total_len(&mut frame);

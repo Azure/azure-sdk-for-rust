@@ -90,8 +90,9 @@ pub struct PerfItem {
 /// Bundle returned by [`create_operations`]: the per-worker operations plus
 /// (optionally) a background feed-range refresher.
 ///
-/// `feed_range_refresher` is `None` when the feed-range query op is
-/// disabled (`--no-feed-range-queries`) or when the refresh interval is 0.
+/// `feed_range_refresher` is `None` when both feed-range workloads are
+/// disabled (`--no-feed-range-queries` and `--no-change-feed`) or when the
+/// refresh interval is 0.
 pub struct OperationsBundle {
     pub ops: Vec<Arc<dyn Operation>>,
     pub feed_range_refresher: Option<FeedRangeRefresher>,
@@ -99,8 +100,8 @@ pub struct OperationsBundle {
 
 /// Creates the list of enabled operations based on CLI configuration.
 ///
-/// Asynchronous because the feed-range query op requires an initial
-/// `read_feed_ranges` to seed its shared cache.
+/// Asynchronous because the feed-range query and change-feed operations require
+/// an initial `read_feed_ranges` to seed their shared cache.
 pub async fn create_operations(
     config: &Config,
     container: &ContainerClient,
