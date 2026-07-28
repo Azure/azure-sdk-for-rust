@@ -385,19 +385,22 @@ pub struct CosmosCompletion {
     user_data: isize,                     // opaque pointer-sized cookie, verbatim
     was_cancel_requested: u8,             // 0/1 (u8, not bool, to avoid UB)
 
-    // ── Response scalars (0 / default on non-OK / degenerate) ────
+    // ── Response / error scalars (0 / default on non-OK / degenerate) ────
+    // No header-derived scalars are duplicated here; the `headers` list
+    // below is the sole source of truth for `x-ms-*` metadata like the
+    // request charge, activity id, session token, ETag, sub-status,
+    // server continuation, and retry-after.
     http_status_code: u16,                // wire HTTP status (0 when none)
-    request_charge: f64,                  // RU (0.0 when absent)
+    is_from_wire: u8,                     // 1 iff error originated from the wire
 
     // ── Borrowed strings — valid until cosmos_cq_free_completions ─
-    activity_id: *const c_char,           // NULL when absent
-    session_token: *const c_char,
-    etag: *const c_char,
-    continuation: *const c_char,          // server header continuation
+    message: *const c_char,               // error message; NULL on OK / suppressed
     next_continuation: *const c_char,     // planner-derived next-page token
+    backtrace: *const c_char,             // error backtrace, when captured
 
-    // ── Borrowed header list (net-new) ───────────────────────────
-    headers: *const CosmosHeaderKv,       // NULL/0 when none
+    // ── Borrowed native-typed header list ────────────────────────
+    headers: *const CosmosResponseHeader, // NULL/0 when none;
+                                          // each entry: (id, CosmosValue tagged union)
     headers_len: usize,
 
     // ── Borrowed body — NULL/0 when empty ────────────────────────
@@ -405,7 +408,6 @@ pub struct CosmosCompletion {
     body_len: usize,
 
     // ── Owned payloads the SDK takes / the free reclaims ─────────
-    error: *mut CosmosErrorHandle,        // owned; non-NULL only on Error (+ details on)
     diagnostics: *mut c_void,             // deferred — always NULL for now
     driver: *mut DriverHandle,            // owned; degenerate get_or_create completion
     container: *mut ContainerRefHandle,   // owned; degenerate resolve_container completion
@@ -422,16 +424,10 @@ reference so they stay valid until free:
 ```rust
 struct CosmosCompletionBacking {
     response: Option<CosmosResponse>,      // owns the body bytes
-    header_values: Vec<CString>,           // backs each CosmosResponseHeader.value
-    headers: Vec<CosmosResponseHeader>,    // the array `headers` points at
-    message: Option<CString>,              // backs the error-string ptrs
-    activity_id: Option<CString>,
-    session_token: Option<CString>,
-    etag: Option<CString>,
-    continuation: Option<CString>,
-    next_continuation: Option<CString>,
-    backtrace: Option<CString>,
-    op_inner: Arc<OperationInner>,         // for op-handle state after the fact
+    headers: OwnedResponseHeaders,         // backs the header array + string values
+    message: Option<CString>,              // backs the error message ptr
+    next_continuation: Option<CString>,    // backs the planner continuation ptr
+    backtrace: Option<CString>,            // backs the backtrace ptr
 }
 ```
 
@@ -544,11 +540,12 @@ changes, tree stays green. *P4b* does the completion inversion consuming it.
 | Aspect | Previous | Current |
 |---|---|---|
 | Header list | **none** — no generic header list existed | `cosmos_response_header_t[]` inline on the completion (`headers`, `headers_len`) |
-| Representation | 4 hardcoded typed strings (activity id, session token, etag, continuation) via separate accessor calls | `struct { cosmos_header_id_t id; const char* value; }` — an `(id, value)` pair |
+| Representation | 4 hardcoded typed strings (activity id, session token, etag, continuation) via separate accessor calls | `struct { cosmos_header_id_t id; cosmos_value_t value; }` — an `(id, tagged-union value)` pair |
 | Name model | string-named accessors baked into the ABI | numeric **`cosmos_header_id_t`** enum (append-only, `0 = UNKNOWN` sentinel, 19 known ids) |
 | Id → name mapping | n/a | `cosmos_header_name(id)` returns the canonical `x-ms-*` wire name (statically allocated) |
+| Value model | `const char*` only (numeric/bool headers were stringified) | `cosmos_value_t` tagged union: `String` / `I64` / `F64` / `Bool` — numeric and bool headers carry their native type |
 | SDK usage | string-compare header names | **switch on numeric ids** (codegen-friendly, RNTBD-token style) |
-| Source | — | synthesized from the driver's typed `CosmosResponseHeaders`; `CString` storage owned by the completion's backing box |
+| Source | — | synthesized from the driver's typed `CosmosResponseHeaders`; `CString` storage for string variants owned by the completion's backing box |
 | Coverage | 4 headers | 19 headers; append-only, exhaustive/raw-map is a follow-up |
 
 ### 11.2 Point 2 — raw response in the completion (avoid query → response → destroy)
@@ -557,7 +554,7 @@ changes, tree stays green. *P4b* does the completion inversion consuming it.
 |---|---|---|
 | Wait ops | `cosmos_cq_wait` (single) + `cosmos_cq_wait_batch` (array) | **one** `cosmos_completion_queue_wait(queue, out[], max, timeout)` → array |
 | Completion type | **opaque** handle (`cosmos_completion_t*`, no `#[repr(C)]`) | owned **`#[repr(C)]` value** the SDK reads directly |
-| Reading scalars | `cosmos_completion_view()` snapshot call | inline fields (`outcome`, `status`, `user_data`, `http_status_code`, `sub_status`, `request_charge`, `retry_after_ms`, …) |
+| Reading scalars | `cosmos_completion_view()` snapshot call | inline fields (`outcome`, `status`, `user_data`, `http_status_code`, `is_from_wire`, …); all header-derived scalars live in the `headers` list as native-typed [`cosmos_value_t`] entries |
 | Getting the response | `cosmos_completion_take_response()` → separate `cosmos_response_t*` handle | **body inline** on the completion (`body`, `body_len`) |
 | Reading the body | `cosmos_response_view()` / `cosmos_response_body()` on that handle | direct `body` / `body_len` fields |
 | Error detail | detachable `cosmos_error_t*` via `take_error` | **inline scalar fields** (`message`, `backtrace`, `is_from_wire`, …) — no handle |

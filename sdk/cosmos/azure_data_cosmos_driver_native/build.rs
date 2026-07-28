@@ -112,7 +112,14 @@ fn generate_c_header() {
             "CosmosPartitionKeyComponentKind".into(),
             "partition_key_component_kind_t".into(),
         ),
+        (
+            "CosmosPartitionKeyComponentValue".into(),
+            "partition_key_component_value_t".into(),
+        ),
         ("CosmosResponseHeader".into(), "response_header_t".into()),
+        ("CosmosValue".into(), "value_t".into()),
+        ("CosmosValueKind".into(), "value_kind_t".into()),
+        ("CosmosValuePayload".into(), "value_payload_t".into()),
         (
             "CosmosOperationOptions".into(),
             "operation_options_t".into(),
@@ -185,6 +192,7 @@ fn generate_c_header() {
                 cbindgen::ItemType::Constants,
                 cbindgen::ItemType::Enums,
                 cbindgen::ItemType::Structs,
+                cbindgen::ItemType::Unions,
                 cbindgen::ItemType::OpaqueItems,
                 cbindgen::ItemType::Typedefs,
             ],
@@ -199,6 +207,7 @@ fn generate_c_header() {
                 "CosmosReadConsistencyStrategy".into(),
                 "CosmosContentResponseOnWriteOpt".into(),
                 "CosmosPartitionKeyComponentKind".into(),
+                "CosmosValueKind".into(),
             ],
             rename,
             ..Default::default()

@@ -690,7 +690,7 @@ mod tests {
         let opts = CosmosCompletionQueueOptions {
             capacity_hint: 0,
             max_capacity: 0,
-            include_error_details: 1,
+            include_error_details: true,
         };
         let queue = cosmos_completion_queue_create(rt, &opts as *const _);
         assert!(!queue.is_null());
@@ -723,7 +723,7 @@ mod tests {
         let opts = CosmosCompletionQueueOptions {
             capacity_hint: 0,
             max_capacity: 0,
-            include_error_details: 1,
+            include_error_details: true,
         };
         let queue = cosmos_completion_queue_create(rt, &opts as *const _);
         assert!(!queue.is_null());
