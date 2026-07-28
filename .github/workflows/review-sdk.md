@@ -32,6 +32,7 @@ safe-outputs:
 
 tools:
   bash: false
+  web-fetch:
   github:
     toolsets: [pull_requests, repos]
     lockdown: false

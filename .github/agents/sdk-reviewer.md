@@ -6,6 +6,8 @@ tools:
   - read
   - search
   - github/*
+  - web-fetch
+  - safeoutputs/*
 ---
 
 # sdk-reviewer
