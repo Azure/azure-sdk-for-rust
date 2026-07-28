@@ -56,8 +56,8 @@ const DB_NAME: &str = "testdb";
 const COLL_NAME: &str = "testcoll";
 
 /// A primary-region metadata delay comfortably above the fixed 1.5 s metadata
-/// hedge threshold, so the threshold reliably elapses and the (undelayed)
-/// alternate region wins the race.
+/// hedge threshold, so the threshold reliably elapses and the alternate region
+/// (which has no delay) wins the race.
 const PRIMARY_METADATA_DELAY: Duration = Duration::from_millis(2500);
 
 fn account() -> AccountReference {
@@ -155,7 +155,8 @@ async fn container_read_hedge_diagnostics(
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Enabled + primary metadata read slow past the (fixed 1.5 s) threshold ⇒ the
-/// container metadata read is hedged and the undelayed alternate region wins.
+/// container metadata read is hedged and the alternate region, which has no
+/// delay, wins.
 #[tokio::test]
 async fn metadata_container_read_hedges_when_primary_slow() {
     let ctx = setup_multi_region(WriteMode::Single).await;
@@ -173,7 +174,7 @@ async fn metadata_container_read_hedges_when_primary_slow() {
     assert_eq!(
         hedge_diag.terminal_state(),
         HedgeTerminalState::AlternateWon,
-        "the undelayed alternate region should win the metadata hedge race; \
+        "the alternate region, which has no delay, should win the metadata hedge race; \
          diag={hedge_diag:?}",
     );
     assert_eq!(
