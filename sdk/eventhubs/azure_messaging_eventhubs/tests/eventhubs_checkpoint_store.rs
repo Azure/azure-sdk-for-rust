@@ -7,6 +7,7 @@
 
 mod common;
 use azure_core::error::ErrorKind as AzureErrorKind;
+use azure_core::time::{Duration, OffsetDateTime};
 use azure_messaging_eventhubs::CheckpointStore;
 use std::sync::Arc;
 
@@ -73,8 +74,15 @@ async fn test_claim_ownership_renewal_rotates_etag_and_timestamp() {
     assert!(first.etag.is_some());
     assert!(first.last_modified_time.is_some());
 
+    // Renew with a deliberately old timestamp. A store that keeps the caller's
+    // value gives the old time back, so the test tells a refresh from a copy
+    // without a dependency on the clock resolution.
+    let stale_time = OffsetDateTime::now_utc() - Duration::seconds(3600);
+    let mut renewal = first.clone();
+    renewal.last_modified_time = Some(stale_time);
+
     let second = store
-        .claim_ownership(std::slice::from_ref(&first))
+        .claim_ownership(std::slice::from_ref(&renewal))
         .await
         .unwrap()
         .pop()
@@ -84,8 +92,8 @@ async fn test_claim_ownership_renewal_rotates_etag_and_timestamp() {
     assert!(second.etag.is_some());
     assert_ne!(first.etag, second.etag);
 
-    // The renewal must refresh the timestamp. The clock can tie, so allow equal.
-    assert!(second.last_modified_time >= first.last_modified_time);
+    // The renewal must stamp the current time, not keep the caller's value.
+    assert!(second.last_modified_time.expect("the renewal sets a time") > stale_time);
 
     // The first record is stale now, so a claim that carries its ETag fails.
     let stale = store.update_ownership(&first);
