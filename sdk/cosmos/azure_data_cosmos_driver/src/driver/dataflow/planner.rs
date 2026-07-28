@@ -262,6 +262,20 @@ pub(crate) async fn build_unordered_merge(
         operation.change_feed_start().cloned()
     };
 
+    // Full-fidelity (AllVersionsAndDeletes) feeds must pin every range to a
+    // concrete starting continuation before the first checkpoint, so a range
+    // that is never polled can't resume from a stale `Now` and drop the
+    // versions/deletes in the gap. Priming is needed whenever no range has yet
+    // recorded a continuation: on a fresh start, and also on resume from a
+    // checkpoint taken *before* the first page was pulled (an empty token set).
+    // A fully drained resume arrives as `PipelineNodeState::Drained` and is
+    // handled earlier, so an empty `UnorderedMerge` token set here only ever
+    // means "nothing has been polled yet". A resume that already carries saved
+    // continuations must NOT prime: those ranges would re-poll from their real
+    // ETags and the discarded primed page would lose real data.
+    let prime_on_first_drain = operation.request_headers().full_fidelity_feed
+        && saved_tokens.as_ref().is_none_or(|tokens| tokens.is_empty());
+
     // On resume the operation rebuilt by the SDK no longer carries the original
     // start headers (the caller only passed the continuation token). Re-derive
     // them from the persisted marker so partitions with no saved continuation
@@ -345,7 +359,11 @@ pub(crate) async fn build_unordered_merge(
             .build());
     }
 
-    let root = Box::new(UnorderedMerge::new(request_nodes).with_start_marker(start_marker));
+    let root = Box::new(
+        UnorderedMerge::new(request_nodes)
+            .with_start_marker(start_marker)
+            .with_prime_on_first_drain(prime_on_first_drain),
+    );
     Ok(Pipeline::new(root))
 }
 

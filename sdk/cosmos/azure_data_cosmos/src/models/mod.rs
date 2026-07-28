@@ -18,9 +18,9 @@ pub use change_feed_item::{
     ChangeFeedItem, ChangeFeedMetadata, ChangeFeedOperationType, LogicalSequenceNumber,
 };
 pub use container_properties::{
-    ConflictResolutionMode, ConflictResolutionPolicy, ContainerProperties, TimeToLive, UniqueKey,
-    UniqueKeyPolicy, VectorDataType, VectorDistanceFunction, VectorEmbedding,
-    VectorEmbeddingPolicy,
+    ChangeFeedPolicy, ConflictResolutionMode, ConflictResolutionPolicy, ContainerProperties,
+    TimeToLive, UniqueKey, UniqueKeyPolicy, VectorDataType, VectorDistanceFunction,
+    VectorEmbedding, VectorEmbeddingPolicy,
 };
 pub use database_properties::DatabaseProperties;
 pub use indexing_policy::{

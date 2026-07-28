@@ -10,8 +10,8 @@ use azure_data_cosmos::{
     feed::FeedScope,
     models::{ItemResponse, ThroughputProperties},
     options::{
-        ConnectionPoolOptions, CreateContainerOptions, ItemReadOptions, Region,
-        ServerCertificateValidation,
+        BinaryEncodingOptions, ConnectionPoolOptions, CreateContainerOptions, ItemReadOptions,
+        Region, ServerCertificateValidation,
     },
     CosmosClient, CosmosError, CosmosRuntime, CosmosStatus, PartitionKey, Query, RoutingStrategy,
 };
@@ -193,6 +193,17 @@ pub struct TestOptions {
     /// `false` so that the default `ServerCertificateValidation::Required`
     /// applies.
     pub allow_invalid_certificates: bool,
+    /// Binary-encoding options applied to the normal (non-fault) client.
+    ///
+    /// `Some(..)` configures the underlying [`CosmosClient`] via the standard
+    /// [`CosmosClientBuilder::with_binary_encoding_options`] client option, so
+    /// tests can enable binary encoding without mutating the process
+    /// environment (`std::env::set_var` is `unsafe` and racy under the parallel
+    /// harness). `None` (the default) leaves the client's own environment-based
+    /// resolution in place.
+    ///
+    /// [`CosmosClientBuilder::with_binary_encoding_options`]: azure_data_cosmos::CosmosClientBuilder::with_binary_encoding_options
+    pub binary_encoding: Option<BinaryEncodingOptions>,
 }
 
 impl TestOptions {
@@ -250,6 +261,13 @@ impl TestOptions {
     /// `false` (the default) for tests targeting a live Cosmos DB account.
     pub fn with_allow_invalid_certificates(mut self, allow: bool) -> Self {
         self.allow_invalid_certificates = allow;
+        self
+    }
+
+    /// Configures Cosmos binary JSON encoding for the normal (non-fault) client
+    /// via the standard client option, avoiding any `std::env` mutation.
+    pub fn with_binary_encoding(mut self, options: BinaryEncodingOptions) -> Self {
+        self.binary_encoding = Some(options);
         self
     }
 }
@@ -364,6 +382,7 @@ impl TestClient {
             Vec::new(),
             fault_client_application_region,
             allow_invalid_certificates,
+            None,
         )
         .await
     }
@@ -371,12 +390,14 @@ impl TestClient {
     pub async fn from_env(
         application_region: Option<Region>,
         allow_invalid_certificates: bool,
+        binary_encoding: Option<BinaryEncodingOptions>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         Self::from_env_inner(
             application_region,
             Vec::new(),
             None,
             allow_invalid_certificates,
+            binary_encoding,
         )
         .await
     }
@@ -391,6 +412,7 @@ impl TestClient {
             fault_rules,
             application_region,
             allow_invalid_certificates,
+            None,
         )
         .await
     }
@@ -405,6 +427,7 @@ impl TestClient {
         fault_rules: Vec<std::sync::Arc<FaultInjectionRule>>,
         fault_client_application_region: Option<Region>,
         allow_invalid_certificates: bool,
+        binary_encoding: Option<BinaryEncodingOptions>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let Ok(env_var) = std::env::var(CONNECTION_STRING_ENV_VAR) else {
             // No connection string provided, so we'll skip tests that require it.
@@ -428,6 +451,7 @@ impl TestClient {
                     true,
                     fault_rules,
                     None,
+                    binary_encoding,
                 )
                 .await
             }
@@ -438,6 +462,7 @@ impl TestClient {
                     allow_invalid_certificates,
                     fault_rules,
                     fault_client_application_region,
+                    binary_encoding,
                 )
                 .await
             }
@@ -450,6 +475,7 @@ impl TestClient {
         mut allow_invalid_certificates: bool,
         fault_rules: Vec<std::sync::Arc<FaultInjectionRule>>,
         fault_client_application_region: Option<Region>,
+        binary_encoding: Option<BinaryEncodingOptions>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let connection_string: ConnectionString = connection_string.parse()?;
 
@@ -488,6 +514,12 @@ impl TestClient {
         // Configure fault injection if rules provided
         if !fault_rules.is_empty() {
             builder = builder.with_fault_injection_rules(fault_rules)?;
+        }
+
+        // Apply binary-encoding options via the standard client option so tests
+        // never mutate the process environment.
+        if let Some(options) = binary_encoding {
+            builder = builder.with_binary_encoding_options(options);
         }
 
         let endpoint: azure_data_cosmos::AccountEndpoint =
@@ -563,6 +595,7 @@ impl TestClient {
         let test_client = Self::from_env(
             options.client_application_region.clone(),
             options.allow_invalid_certificates,
+            options.binary_encoding.clone(),
         )
         .await?;
 
