@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+mod common;
+
 use azure_core::http::{headers::CONTENT_TYPE, RequestContent, StatusCode};
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
@@ -9,7 +11,7 @@ use azure_storage_blob::models::{
     PageBlobClientSetSequenceNumberResultHeaders, PageBlobClientUploadPagesFromUrlOptions,
     PageBlobClientUploadPagesOptions, PageListHeaders, SequenceNumberActionType,
 };
-use azure_storage_blob_test::{get_blob_name, get_container_client, StorageAccount};
+use common::{get_blob_name, get_container_client, StorageAccount};
 use futures::TryStreamExt;
 use std::{collections::HashMap, error::Error};
 

@@ -29,8 +29,8 @@ pub mod tracing {
     pub use crate::http::policies::PublicApiInstrumentationInformation;
     pub use azure_core_macros::{client, function, new, subclient};
     pub use typespec_client_core::tracing::{
-        AsAny, Attribute, AttributeArray, AttributeValue, Span, SpanGuard, SpanKind, SpanStatus,
-        Tracer, TracerProvider,
+        AsAny, Attribute, AttributeArray, AttributeValue, Span, SpanGuard, SpanKind, SpanOptions,
+        SpanStatus, Tracer, TracerProvider,
     };
 }
 

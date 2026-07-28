@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+mod common;
+
 use azure_core::http::RequestContent;
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
@@ -14,7 +16,7 @@ use azure_storage_blob::models::{
     PageBlobClientClearPagesOptions, PageBlobClientCreateOptions, PageBlobClientResizeOptions,
     PageBlobClientUploadPagesFromUrlOptions, PageBlobClientUploadPagesOptions,
 };
-use azure_storage_blob_test::{
+use common::{
     assert_bad_request_or_conflict, block_lookup, create_test_blob, get_blob_name,
     get_container_client, get_cpk, get_cpk_2, get_invalid_encryption_scope,
     get_valid_encryption_scope, invalid_key_sha256, StorageAccount,

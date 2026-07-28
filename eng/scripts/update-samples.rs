@@ -5,11 +5,13 @@ edition = "2021"
 description = "In sample Cargo.toml files in the repo, update dependency versions from crate@version arguments."
 
 [dependencies]
+semver = "1.0"
 regex = "1.5"
 toml_edit = "0.22"
 ---
 
 use regex::Regex;
+use semver::Version;
 use std::collections::BTreeMap;
 use std::io::{Error as IoError, ErrorKind, Write};
 use std::{env, error::Error, fs, path::Path, path::PathBuf};
@@ -17,6 +19,11 @@ use toml_edit::{value, DocumentMut, Item, Table};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let released_versions = parse_released_versions(env::args().skip(1))?;
+    if released_versions.is_empty() {
+        println!("No sample dependency updates required: no stable versions were provided.");
+        return Ok(());
+    }
+
     let script_root = PathBuf::from(env::var("CARGO_MANIFEST_DIR")?);
     let repo_root = script_root.join("../..").canonicalize()?;
     let sample_root = repo_root.join("samples");
@@ -56,17 +63,19 @@ fn parse_released_versions(
             .into());
         }
 
+        let parsed_version = Version::parse(version).map_err(|err| {
+            IoError::new(
+                ErrorKind::InvalidInput,
+                format!("invalid released version argument '{arg}': {err}"),
+            )
+        })?;
+
+        if !parsed_version.pre.is_empty() {
+            continue;
+        }
+
         released_versions.insert(crate_name.to_string(), version.to_string());
     }
-
-    if released_versions.is_empty() {
-        return Err(IoError::new(
-            ErrorKind::InvalidInput,
-            "requires at least one crate@version argument",
-        )
-        .into());
-    }
-
     Ok(released_versions)
 }
 

@@ -44,6 +44,12 @@ applyTo: "eng/**/*.ps1"
     - If you see similar code blocks repeated, extract them into a reusable function
     - Functions should have clear parameters and return values
     - Example: Extract test execution logic into a shared function rather than duplicating it
+- **Do not modify `eng/common` scripts directly**
+    - Treat `eng/common/` as shared upstream engineering infrastructure
+    - Add repository-specific helpers under `eng/scripts/shared/` instead of changing `eng/common/` directly
+- **Use `eng/scripts/shared/common.ps1` for repository-specific shared helpers**
+    - Add new helper imports there and have scripts import that file rather than dot-sourcing multiple repo-local helper files individually
+    - Put new functions in new or existing helper files under `eng/scripts/shared/` as appropriate
 
 ## Parameter Defaults
 
