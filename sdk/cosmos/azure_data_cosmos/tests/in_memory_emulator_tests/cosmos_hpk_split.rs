@@ -162,15 +162,15 @@ async fn seed(container: &ContainerClient, items: &[GeoItem]) -> Result<(), Box<
 /// Runs a cross-partition `SELECT * FROM c` (full-container fan-out) and returns
 /// the sorted ids found.
 async fn query_all_ids(container: &ContainerClient) -> Result<Vec<String>, Box<dyn Error>> {
-    let items: Vec<GeoItem> = container
-        .query_items(
-            Query::from("SELECT * FROM c"),
-            FeedScope::full_container(),
-            None,
-        )
-        .await?
-        .try_collect()
-        .await?;
+    // Box the query pipeline futures so callers awaiting `query_all_ids` don't trip
+    // `clippy::large-futures` (the `query_items` future is ~16 KB on the stack).
+    let iter = Box::pin(container.query_items(
+        Query::from("SELECT * FROM c"),
+        FeedScope::full_container(),
+        None,
+    ))
+    .await?;
+    let items: Vec<GeoItem> = Box::pin(iter.try_collect()).await?;
     let mut ids: Vec<String> = items.into_iter().map(|i| i.id).collect();
     ids.sort();
     Ok(ids)
@@ -283,15 +283,13 @@ async fn hpk_split_dataset_distributes_across_partitions() -> Result<(), Box<dyn
     // range-scoped query returns that range's own documents and nothing else.
     let mut range_totals = [0usize; 2];
     for (idx, range) in ranges.iter().enumerate() {
-        let items: Vec<GeoItem> = container
-            .query_items(
-                Query::from("SELECT * FROM c"),
-                FeedScope::range(range.clone()),
-                None,
-            )
-            .await?
-            .try_collect()
-            .await?;
+        let iter = Box::pin(container.query_items(
+            Query::from("SELECT * FROM c"),
+            FeedScope::range(range.clone()),
+            None,
+        ))
+        .await?;
+        let items: Vec<GeoItem> = Box::pin(iter.try_collect()).await?;
 
         assert_eq!(
             items.len(),
