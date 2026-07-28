@@ -1037,6 +1037,27 @@ typedef struct cosmos_operation_options_t {
    * Number of entries in `custom_headers`.
    */
   uintptr_t custom_headers_len;
+  /**
+   * Whether Cosmos binary JSON is used on the wire. Tri-state bool
+   * (`0` unset / `1` false / `2` true).
+   *
+   * When true, the driver transcodes a **text** request body to binary
+   * before sending it (an already-binary body is passed through) and
+   * advertises `CosmosBinary`, so the caller never encodes binary itself.
+   * An explicit `false` forces binary **off** for this operation regardless
+   * of any account/runtime default; `unset` inherits a lower layer (text by
+   * default).
+   */
+  int8_t binary_encoding_enabled;
+  /**
+   * Whether the driver transcodes the binary response back to **text** JSON.
+   * Tri-state bool (`0` unset / `1` false / `2` true).
+   *
+   * Only meaningful when [`binary_encoding_enabled`](Self::binary_encoding_enabled)
+   * is true: the wire stays binary in both directions and the driver hands
+   * back text. `unset` / `false` returns the binary response as-is.
+   */
+  int8_t binary_encoding_request_text_response;
 } cosmos_operation_options_t;
 
 /**

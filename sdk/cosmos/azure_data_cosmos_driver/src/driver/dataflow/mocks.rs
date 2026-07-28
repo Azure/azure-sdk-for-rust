@@ -5,7 +5,7 @@
 
 use std::{collections::VecDeque, sync::Arc};
 
-use azure_core::http::StatusCode;
+use azure_core::http::{Etag, StatusCode};
 use futures::future::BoxFuture;
 
 use super::{
@@ -255,6 +255,25 @@ pub(crate) fn response_with_continuation(
     diagnostics.set_operation_status(StatusCode::Ok, None);
     let mut headers = CosmosResponseHeaders::new();
     headers.continuation = continuation.map(str::to_owned);
+    CosmosResponse::new(
+        body.to_vec(),
+        headers,
+        CosmosStatus::new(StatusCode::Ok),
+        Arc::new(diagnostics.complete()),
+    )
+}
+
+/// Creates a test response with the given body and an `ETag`, mirroring the
+/// change feed contract where every poll (including a start-from-`Now` 304)
+/// carries an ETag continuation.
+pub(crate) fn response_with_etag(body: &[u8], etag: &str) -> CosmosResponse {
+    let mut diagnostics = DiagnosticsContextBuilder::new(
+        ActivityId::new_uuid(),
+        Arc::new(DiagnosticsOptions::default()),
+    );
+    diagnostics.set_operation_status(StatusCode::Ok, None);
+    let mut headers = CosmosResponseHeaders::new();
+    headers.etag = Some(Etag::from(etag.to_owned()));
     CosmosResponse::new(
         body.to_vec(),
         headers,

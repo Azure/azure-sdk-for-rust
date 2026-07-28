@@ -47,6 +47,8 @@ Seldom used words can be ignored within the file they are used by adding an appr
 // cspell:ignore {word}
 ```
 
+To disable cSpell for just the next line, use `cspell:disable-next-line`.
+
 ## Testing
 
 Run the same command again used to check spelling. All misspellings should be fixed.

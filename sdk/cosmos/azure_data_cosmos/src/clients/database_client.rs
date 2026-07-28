@@ -1,21 +1,26 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::clients::{ClientContext, ContainerClient};
+#[cfg(feature = "control_plane")]
+use azure_data_cosmos_driver::models::DatabaseReference;
+
+#[cfg(feature = "control_plane")]
 use crate::{
-    clients::{offers_client, ClientContext, ContainerClient},
-    diagnostics::CosmosOperationContext,
+    clients::offers_client,
     feed::QueryItemIterator,
-    models::ResourceResponse,
-    models::{ContainerProperties, DatabaseProperties, ThroughputProperties},
+    models::{ContainerProperties, DatabaseProperties, ResourceResponse, ThroughputProperties},
     options::{
         CreateContainerOptions, DeleteDatabaseOptions, QueryContainersOptions, ReadDatabaseOptions,
         ThroughputOptions,
     },
     Query,
 };
-use azure_data_cosmos_driver::models::{CosmosOperation, DatabaseReference};
+#[cfg(feature = "control_plane")]
+use azure_data_cosmos_driver::models::CosmosOperation;
 
-use super::ThroughputPoller;
+#[cfg(feature = "control_plane")]
+use crate::{clients::ThroughputPoller, diagnostics::CosmosOperationContext};
 
 /// A client for working with a specific database in a Cosmos DB account.
 ///
@@ -23,18 +28,21 @@ use super::ThroughputPoller;
 pub struct DatabaseClient {
     database_id: String,
     context: ClientContext,
+    #[cfg(feature = "control_plane")]
     database_ref: DatabaseReference,
 }
 
 impl DatabaseClient {
     pub(crate) fn new(context: ClientContext, database_id: &str) -> Self {
         let database_id = database_id.to_string();
+        #[cfg(feature = "control_plane")]
         let database_ref =
             DatabaseReference::from_name(context.driver.account().clone(), database_id.clone());
 
         Self {
             database_id,
             context,
+            #[cfg(feature = "control_plane")]
             database_ref,
         }
     }
@@ -42,6 +50,7 @@ impl DatabaseClient {
     /// Builds the SDK-side [`CosmosOperationContext`] for this database's
     /// operations, carrying the operation name plus the database identity the
     /// driver context does not know.
+    #[cfg(feature = "control_plane")]
     fn operation_context(&self, operation_name: &'static str) -> CosmosOperationContext {
         CosmosOperationContext::new()
             .with_operation_name(operation_name)
@@ -86,6 +95,7 @@ impl DatabaseClient {
     ///     .into_model()?;
     /// # }
     /// ```
+    #[cfg(feature = "control_plane")]
     pub async fn read(
         &self,
         options: Option<ReadDatabaseOptions>,
@@ -128,6 +138,7 @@ impl DatabaseClient {
     /// ```
     ///
     /// See [`Query`] for more information on how to specify a query.
+    #[cfg(feature = "control_plane")]
     pub async fn query_containers(
         &self,
         query: impl Into<Query>,
@@ -164,6 +175,7 @@ impl DatabaseClient {
     /// # Arguments
     /// * `properties` - A [`ContainerProperties`] describing the new container.
     /// * `options` - Optional parameters for the request.
+    #[cfg(feature = "control_plane")]
     pub async fn create_container(
         &self,
         properties: ContainerProperties,
@@ -207,6 +219,7 @@ impl DatabaseClient {
     ///
     /// # Arguments
     /// * `options` - Optional parameters for the request.
+    #[cfg(feature = "control_plane")]
     pub async fn delete(
         &self,
         options: Option<DeleteDatabaseOptions>,
@@ -232,6 +245,7 @@ impl DatabaseClient {
     ///
     /// # Arguments
     /// * `options` - Optional parameters for the request.
+    #[cfg(feature = "control_plane")]
     pub async fn read_throughput(
         &self,
         options: Option<ThroughputOptions>,
@@ -276,6 +290,7 @@ impl DatabaseClient {
     /// # Ok(())
     /// # }
     /// ```
+    #[cfg(feature = "control_plane")]
     pub async fn begin_replace_throughput(
         &self,
         throughput: ThroughputProperties,
@@ -304,6 +319,7 @@ impl DatabaseClient {
 /// rather than panicking, since panics in public methods would crash callers'
 /// applications. The `debug_assert!` keeps tests honest while still letting
 /// release builds recover.
+#[cfg(feature = "control_plane")]
 fn resource_id_or_error(rid: Option<String>, resource_kind: &str) -> crate::Result<String> {
     debug_assert!(
         rid.is_some(),
@@ -320,7 +336,7 @@ fn resource_id_or_error(rid: Option<String>, resource_kind: &str) -> crate::Resu
     })
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "control_plane"))]
 mod tests {
     use super::*;
 
