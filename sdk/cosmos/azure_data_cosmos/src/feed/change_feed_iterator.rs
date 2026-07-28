@@ -187,8 +187,18 @@ impl LiveState {
     }
 }
 
-/// Deserializes a change feed response body into the caller's item type `T`
-/// (bound to [`ChangeFeedItem<Doc>`](crate::models::ChangeFeedItem)).
+/// Deserializes a change feed response body into the caller's item type.
+///
+/// Every change feed item is returned as a wire-format envelope
+/// (`{ current, ... }`) because the SDK always sends the
+/// `x-ms-cosmos-changefeed-wire-format-version` header (see
+/// [`CosmosOperation::change_feed`]). Each entry in the feed body is
+/// deserialized directly into `T` — which
+/// [`ContainerClient::query_change_feed`](crate::clients::ContainerClient::query_change_feed)
+/// binds to [`ChangeFeedItem<Doc>`](crate::models::ChangeFeedItem) — so the whole
+/// envelope is preserved rather than stripped.
+///
+/// [`CosmosOperation::change_feed`]: azure_data_cosmos_driver::models::CosmosOperation
 fn deserialize_change_feed_items<T: DeserializeOwned>(
     response: CosmosResponse,
 ) -> crate::Result<Vec<T>> {
@@ -199,8 +209,9 @@ fn deserialize_change_feed_items<T: DeserializeOwned>(
 /// A stream of pages from a Cosmos DB change feed operation.
 ///
 /// Yields [`FeedPage<T>`] instances where `T` is
-/// [`ChangeFeedItem<YourDoc>`](crate::models::ChangeFeedItem); read the
-/// changed document via [`current()`](crate::models::ChangeFeedItem::current).
+/// [`ChangeFeedItem<YourDoc>`](crate::models::ChangeFeedItem): every item is
+/// returned as the wire-format envelope, so the caller reads the post-change
+/// document via [`current()`](crate::models::ChangeFeedItem::current).
 ///
 /// The stream is conceptually infinite: when a partition has no new changes
 /// (304 Not Modified), an empty page is returned instead of terminating the
@@ -212,9 +223,7 @@ fn deserialize_change_feed_items<T: DeserializeOwned>(
 /// # Examples
 ///
 /// ```rust,no_run
-/// use azure_data_cosmos::{
-///     clients::ContainerClient, feed::FeedScope, options::ChangeFeedStartFrom,
-/// };
+/// use azure_data_cosmos::{clients::ContainerClient, feed::FeedScope, options::ChangeFeedStartFrom};
 /// use futures::StreamExt;
 /// use serde::Deserialize;
 ///
@@ -312,7 +321,7 @@ impl<T: Send + DeserializeOwned + 'static> Stream for ChangeFeedPageIterator<T> 
 #[cfg(test)]
 mod tests {
     use super::deserialize_change_feed_items;
-    use crate::models::{ChangeFeedItem, CosmosResponse};
+    use crate::models::{ChangeFeedItem, ChangeFeedOperationType, CosmosResponse};
     use azure_core::http::StatusCode;
     use azure_data_cosmos_driver::diagnostics::DiagnosticsContext;
     use azure_data_cosmos_driver::models::{
@@ -367,6 +376,77 @@ mod tests {
         assert_eq!(
             metadata.lsn(),
             Some(crate::models::LogicalSequenceNumber::from(100))
+        );
+    }
+
+    #[test]
+    fn deserializes_all_versions_and_deletes_page() {
+        // AllVersionsAndDeletes binds `T = ChangeFeedItem<Doc>` and keeps the
+        // whole envelope: create + replace + delete, with metadata and a
+        // pre-image preserved rather than stripped.
+        let body = json!({
+            "Documents": [
+                {
+                    "current": { "id": "1" },
+                    "metadata": { "operationType": "create", "lsn": 10, "crts": 1720322460 }
+                },
+                {
+                    "current": { "id": "2" },
+                    "previous": { "id": "2" },
+                    "metadata": { "operationType": "replace", "lsn": 11, "previousImageLSN": 10 }
+                },
+                {
+                    "previous": { "id": "3" },
+                    "metadata": { "operationType": "delete", "lsn": 12, "timeToLiveExpired": true }
+                }
+            ],
+            "_count": 3
+        });
+
+        let items: Vec<ChangeFeedItem<Doc>> =
+            deserialize_change_feed_items(make_response(body)).unwrap();
+        assert_eq!(items.len(), 3);
+
+        // Create: current present, no previous.
+        assert_eq!(
+            items[0].operation_type(),
+            Some(ChangeFeedOperationType::Create)
+        );
+        assert_eq!(items[0].current(), Some(&Doc { id: "1".into() }));
+        assert!(items[0].previous().is_none());
+        assert_eq!(
+            items[0].metadata().and_then(|m| m.lsn()),
+            Some(crate::models::LogicalSequenceNumber::from(10))
+        );
+        assert_eq!(
+            items[0]
+                .metadata()
+                .and_then(|m| m.conflict_resolution_timestamp()),
+            Some(std::time::Duration::from_secs(1720322460))
+        );
+
+        // Replace: both current and previous present.
+        assert_eq!(
+            items[1].operation_type(),
+            Some(ChangeFeedOperationType::Replace)
+        );
+        assert_eq!(items[1].current(), Some(&Doc { id: "2".into() }));
+        assert_eq!(items[1].previous(), Some(&Doc { id: "2".into() }));
+        assert_eq!(
+            items[1].metadata().and_then(|m| m.previous_image_lsn()),
+            Some(crate::models::LogicalSequenceNumber::from(10))
+        );
+
+        // Delete: current absent, previous (pre-image) preserved, TTL flag set.
+        assert_eq!(
+            items[2].operation_type(),
+            Some(ChangeFeedOperationType::Delete)
+        );
+        assert!(items[2].current().is_none());
+        assert_eq!(items[2].previous(), Some(&Doc { id: "3".into() }));
+        assert_eq!(
+            items[2].metadata().and_then(|m| m.time_to_live_expired()),
+            Some(true)
         );
     }
 
