@@ -135,6 +135,13 @@ pub(crate) struct RecoverableConnection {
     // how the operation wrappers behave.
     #[cfg(test)]
     forced_attach_error: Mutex<Option<AmqpError>>,
+
+    // Test seam for the caller side of the #4454 supersession race. When armed,
+    // `run_peer_supersession_hook` fires once on the next generational init. It
+    // plays a peer task that drove a recovery in the window between a caller's
+    // generation capture and its cell resolution. See the hook for details.
+    #[cfg(test)]
+    peer_supersession_pending: std::sync::atomic::AtomicBool,
 }
 
 /// A per-path cache cell tagged with the recovery [`RecoverableConnection::generation`]
@@ -288,6 +295,8 @@ impl RecoverableConnection {
                 forced_error: Mutex::new(None),
                 #[cfg(test)]
                 forced_attach_error: Mutex::new(None),
+                #[cfg(test)]
+                peer_supersession_pending: std::sync::atomic::AtomicBool::new(false),
             }
         })
     }
@@ -641,6 +650,13 @@ impl RecoverableConnection {
 
         for _ in 0..MAX_GENERATION_RETRIES {
             let generation = self.current_generation();
+
+            // Test seam (#4454): reproduce a peer task that drives a recovery and
+            // installs a newer cell in the window between this capture and the
+            // resolve below. In production this compiles away.
+            #[cfg(test)]
+            self.run_peer_supersession_hook(map, key).await;
+
             let entry = or_init_cell(map, key, generation).await;
             let value = entry.cell.get_or_try_init(&mut init).await?;
 
@@ -1134,6 +1150,54 @@ impl RecoverableConnection {
         self.generation.fetch_add(1, Ordering::AcqRel);
     }
 
+    /// Arms `run_peer_supersession_hook` to fire on the next generational init.
+    /// See that hook and the `get_or_init_generational_returns_superseding_peer_cell`
+    /// test.
+    #[cfg(test)]
+    pub(crate) fn arm_peer_supersession_for_test(&self) {
+        self.peer_supersession_pending
+            .store(true, Ordering::Release);
+    }
+
+    /// Test seam for the caller side of the #4454 supersession property. When
+    /// armed by `arm_peer_supersession_for_test`, this fires once, in the window
+    /// between a caller capturing its generation and resolving its cell. It plays
+    /// a peer task that drove a recovery in that window: it bumps the generation,
+    /// so the caller's captured value is now stale, and installs a fresh, empty
+    /// cell for `key` at the new generation. `or_init_cell` then hands that newer
+    /// cell back to the caller.
+    ///
+    /// The correct guard in `get_or_init_generational` compares the cell's own
+    /// generation, so it returns the resource the caller attaches into that cell:
+    /// the cell is current, the resource is valid, and no eviction happens. A
+    /// guard that compared the captured local generation instead would see a
+    /// mismatch, evict the valid cell, and re-attach, the wasted recovery cycle
+    /// #4454 removes. The empty cell makes that difference observable: a correct
+    /// return keeps the caller's single `init`, a wrong eviction forces a second.
+    /// This compiles away in production; the field is `cfg(test)` only.
+    #[cfg(test)]
+    async fn run_peer_supersession_hook<T>(
+        &self,
+        map: &RwLock<HashMap<Url, GenerationalCell<T>>>,
+        key: &Url,
+    ) {
+        if self.peer_supersession_pending.swap(false, Ordering::AcqRel) {
+            // Drive the peer's recovery: the caller's captured generation is now
+            // behind by one.
+            self.generation.fetch_add(1, Ordering::AcqRel);
+            // Install the peer's fresh, higher-generation cell. It is empty on
+            // purpose, so the caller's own `init` fills it.
+            let generation = self.current_generation();
+            map.write().await.insert(
+                key.clone(),
+                GenerationalCell {
+                    generation,
+                    cell: Arc::new(OnceCell::new()),
+                },
+            );
+        }
+    }
+
     /// Classifies an [`AmqpError`] into the recovery action the retry loop should take.
     ///
     /// Connection-level transport failures (dropped, framing, idle timeout) require a
@@ -1607,6 +1671,70 @@ mod tests {
         );
         assert_eq!(replaced.generation, 2);
         assert!(replaced.cell.get().is_none());
+    }
+
+    // #4454 regression, the caller side of the supersession property. `or_init_cell`
+    // owns one half: it never overwrites a newer cell (see
+    // `or_init_cell_reuses_newer_cell_and_replaces_older`). `get_or_init_generational`
+    // owns the other half, exercised here: when `or_init_cell` hands back a cell that
+    // is newer than the caller's captured generation but still current, the caller
+    // must attach into it and return the result, not evict it against the stale
+    // captured generation and re-attach.
+    //
+    // The scenario is a slow caller that captures generation N, then a peer task
+    // drives a recovery to N+1 and installs a fresh cell there before the caller
+    // resolves its own cell. The `run_peer_supersession_hook` seam reproduces that
+    // peer exactly, in the capture-to-resolve window, so the race is deterministic.
+    //
+    // With the correct guard (compare the cell's own generation) the init closure
+    // runs once and its value is returned. If the guard wrongly compared the captured
+    // local generation, the caller would evict the valid cell and run init a second
+    // time; this test then fails on the call count and the returned value. That is the
+    // mutation the earlier proof left uncaught, so this test closes the gap.
+    #[tokio::test]
+    async fn get_or_init_generational_returns_superseding_peer_cell() {
+        let url = Url::parse("amqps://example.com").unwrap();
+        let connection = RecoverableConnection::new(
+            url,
+            None,
+            None,
+            Arc::new(MockCredential),
+            Default::default(),
+            None,
+        );
+        let path = Url::parse("amqps://example.com/eh/Partitions/0").unwrap();
+
+        let calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let map: RwLock<HashMap<Url, GenerationalCell<u64>>> = RwLock::new(HashMap::new());
+
+        // Arm the peer: on the next generational init it bumps the generation and
+        // installs a fresh, higher-generation cell between the capture and the resolve.
+        connection.arm_peer_supersession_for_test();
+
+        let result = connection
+            .get_or_init_generational(&map, &path, || {
+                let calls = calls.clone();
+                async move {
+                    let attempt = calls.fetch_add(1, Ordering::SeqCst);
+                    Ok::<_, AmqpError>(Arc::new(attempt as u64))
+                }
+            })
+            .await
+            .expect("init should succeed against the peer's current-generation cell");
+
+        // The init closure ran exactly once: the caller attached into the peer's
+        // newer-but-current cell and returned it, with no eviction and no retry.
+        assert_eq!(
+            calls.load(Ordering::SeqCst),
+            1,
+            "a newer-but-current cell must be returned, not evicted and re-initialized"
+        );
+        // The returned value is that single init's value (attempt index 0).
+        assert_eq!(*result, 0);
+        // The cached cell is stamped at the post-recovery generation and holds the value.
+        let cached = map.read().await.get(&path).cloned().unwrap();
+        assert_eq!(cached.generation, connection.generation());
+        assert_eq!(**cached.cell.get().unwrap(), 0);
     }
 
     // The RecoverableConnection supports using a custom endpoint for connecting to Event Hubs proxies.
