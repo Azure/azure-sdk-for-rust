@@ -9,6 +9,7 @@
 ### Bugs Fixed
 
 - Link properties set through `AmqpReceiverOptions::properties` and `AmqpSenderOptions::properties` now reach the Attach frame. They were discarded before the link attached.
+- A failed receive now reports the link-state kind the sender path already reports: `AmqpDescribedError` when the remote closed or detached with an AMQP error, and `LinkClosedByRemote` or `LinkDetachedByRemote` otherwise. All of these previously reported `LinkStateError`.
 
 ### Other Changes
 
