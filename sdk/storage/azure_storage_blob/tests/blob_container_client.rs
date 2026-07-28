@@ -227,7 +227,10 @@ async fn test_list_blobs_arrow_populates_properties(
     assert_eq!(Some(1), props.tag_count);
 
     // [Phase 2] Map-typed columns decode from the Arrow `map<utf8,utf8>` columns.
-    let blob_meta = blob.metadata.as_ref().expect("metadata should be populated");
+    let blob_meta = blob
+        .metadata
+        .as_ref()
+        .expect("metadata should be populated");
     assert_eq!(Some(&metadata), blob_meta.values.as_ref());
     let tags = blob
         .blob_tags

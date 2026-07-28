@@ -291,7 +291,11 @@ fn blob_metadata_at(batch: &RecordBatch, name: &str, row: usize) -> Option<BlobM
 }
 
 // [Phase 2] Maps the Arrow `OrMetadata` map column to [`ObjectReplicationMetadata`].
-fn or_metadata_at(batch: &RecordBatch, name: &str, row: usize) -> Option<ObjectReplicationMetadata> {
+fn or_metadata_at(
+    batch: &RecordBatch,
+    name: &str,
+    row: usize,
+) -> Option<ObjectReplicationMetadata> {
     Some(ObjectReplicationMetadata {
         additional_properties: Some(map_entries_at(batch, name, row)?.into_iter().collect()),
     })
@@ -414,8 +418,8 @@ mod tests {
         AccessTier, ArchiveStatus, BlobType, CopyStatus, ImmutabilityPolicyMode, LeaseDuration,
         LeaseState, LeaseStatus, RehydratePriority,
     };
-    use arrow_array::ArrayRef;
     use arrow_array::builder::{MapBuilder, StringBuilder};
+    use arrow_array::ArrayRef;
     use arrow_ipc::writer::StreamWriter;
     use arrow_schema::{Field, Schema};
     use std::collections::HashMap;
