@@ -51,23 +51,11 @@ These are deterministic client errors. No retry will change the outcome.
 
 | Substatus | Meaning | Action | Budget (multi-write) | Budget (single-write) |
 |-----------|---------|--------|----------------------|-----------------------|
-| 3 | `WriteForbidden` — region is not currently a valid write region for this partition (writes only) | Refresh account topology + cross-region failover retry | **5s cumulative delay** with exponential backoff and jitter (dedicated backend-failover state) | **5s cumulative delay** with exponential backoff and jitter (dedicated backend-failover state) |
-| 1008 | `DatabaseAccountNotFound` — region no longer owns this account (all op types, including reads, writes, queries, feed-range queries, metadata) | Refresh account topology + cross-region failover retry | **5s cumulative delay** with exponential backoff and jitter (dedicated backend-failover state) | **5s cumulative delay** with exponential backoff and jitter (dedicated backend-failover state) |
+| 3 | `WriteForbidden` — region is not currently a valid write region for this partition (writes only) | Refresh account topology + cross-region failover retry | **5s cumulative delay**, immediate first retry then exponential backoff with jitter (dedicated backend-failover state) | **5s cumulative delay**, immediate first retry then exponential backoff with jitter (dedicated backend-failover state) |
+| 1008 | `DatabaseAccountNotFound` — region no longer owns this account (all op types, including reads, writes, queries, feed-range queries, metadata) | Refresh account topology + cross-region failover retry | **5s cumulative delay**, immediate first retry then exponential backoff with jitter (dedicated backend-failover state) | **5s cumulative delay**, immediate first retry then exponential backoff with jitter (dedicated backend-failover state) |
 | Other | Permission denied | Abort | — | — |
 
 Both 403/3 and 403/1008 signal that the cached topology in the SDK has diverged from the backend's current routing — typically during a backend-initiated failover or a customer-initiated topology change. On each retry the driver requests `LocationEffect::RefreshAccountProperties` so the next attempt routes against the freshly learned region set. The metadata refresh itself is rate-limited (at most one network fetch per `refresh_interval`, default 5 s) and is independent of the caller's `excluded_regions` — the GetDatabaseAccount probe iterates the global endpoint and the cached `readable_locations` regardless of the operation-level exclusion list, because excluding a region from data-plane routing should not blind the SDK to topology changes happening in that region.
-
-**Why a dedicated 5s cumulative budget?** The 3-attempt generic failover budget can be exhausted before the refreshed topology becomes usable, turning a recoverable convergence window into an application-visible failure. The dedicated policy starts at 1 s, doubles on each retry, applies ±25% jitter, and caps each delay at 15 s. The final delay is truncated to the remaining cumulative budget, and a 10-attempt cap is retained as a defensive bound. This provides fast early retries without hot-looping cross-region requests while the topology settles.
-
-Live add/remove-region experiments across 2–10 physical partitions and 8–38 GB showed the SDK-visible transition completing in 263–314 ms with no surfaced topology errors. A separate single-probe read experiment completed the transition in 263 ms with 0 surfaced errors across 1,257 point reads.
-
-An all-partition experiment mapped one logical partition key into each of 10 measured physical ranges and round-robin read all 10 probes while a region was removed. Across 8,399 reads, every partition observed 21–22 internal `403/1008` responses and surfaced 0 errors. Nine transition reads completed in 167–554 ms; the first partition triggered the shared topology refresh and completed in 1.78 s.
-
-Hedging is limited to the initial topology round. If the initial primary and alternate both return `403/1008`, subsequent delayed topology retries are sequential; the five-second policy therefore produces five physical requests (two initial hedge legs plus three retries), not a new hedge race on every round.
-
-For single-write `403/3`, a real failover with the generic three-retry policy surfaced 9 application errors during a ~4.8 s convergence window. Repeating failovers with 15s, 10s, and 5s backend budgets each surfaced 0 application errors. The 5s run observed 12 internal `403/3` responses across 401 writes; its longest operation succeeded after 6.35 s including request and refresh overhead.
-
-Persistent fault injection exhausted the 5s budget in three retries (four total attempts) and approximately 6.65–6.81 s wall time, including request and refresh overhead.
 
 #### `excluded_regions` interaction
 
@@ -235,9 +223,13 @@ Without PPCB, the driver marks entire endpoints as unavailable when errors occur
 |-------|--------|-------|
 | Transport (429) | 9 attempts or 30s | Per-request, local only |
 | Operation failover (generic — 5xx, 408, 410, transport) | 3 attempts | Per-operation, cross-region |
-| Backend-failover (403/1008) — single-write and multi-write | **5s cumulative delay**, exponential backoff + jitter | Per-operation, cross-region |
-| Backend-failover (403/3) — single-write and multi-write | **5s cumulative delay**, exponential backoff + jitter | Per-operation, cross-region |
+| Backend-failover (403/1008) — single-write and multi-write | **5s cumulative delay**, immediate first retry then exponential backoff + jitter | Per-operation, cross-region |
+| Backend-failover (403/3) — single-write and multi-write | **5s cumulative delay**, immediate first retry then exponential backoff + jitter | Per-operation, cross-region |
 | Session retry (404/1002) | 2 (single-write) or `preferred_endpoints.len()` (multi-write) | Per-operation |
+
+The 403/3 hub-region discovery branch is the one exception: a 403/3 on a read
+with the `hub_region_processing_only` latch rotates the cached hub endpoint and
+stays on the generic 3-attempt failover budget with no pacing.
 
 ## Comparison with Other SDKs
 

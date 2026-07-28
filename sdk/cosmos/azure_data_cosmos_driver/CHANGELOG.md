@@ -8,9 +8,9 @@
 
 ### Bugs Fixed
 
-### Other Changes
+- Bounded `403/3` and `403/1008` topology retries to a 5-second cumulative delay budget, down from ~120 seconds, so a persistent topology error surfaces promptly instead of hanging. The first retry is now immediate; later retries use exponential backoff with jitter. ([#4740](https://github.com/Azure/azure-sdk-for-rust/pull/4740))
 
-- Changed the retry pacing for the backend topology-change signals `403/3` (WriteForbidden) and `403/1008` (DatabaseAccountNotFound) from fixed or immediate retries to exponential backoff with jitter (1s base, ×2 growth, capped at 15s per retry, ±25% jitter). Retries are bounded by a cumulative 5s delay budget, keeping fast early retries while easing pressure on the service as topology changes settle. ([#4740](https://github.com/Azure/azure-sdk-for-rust/pull/4740))
+### Other Changes
 
 ## 0.6.1 (2026-07-23)
 
@@ -43,8 +43,6 @@
 - Fixed hierarchical-partition-key (HPK / MultiHash) queries emitting the wrong `x-ms-read-key-type` for effective-partition-key range-scoped requests. The driver sent the point value `EffectivePartitionKey` alongside `x-ms-start-epk`/`x-ms-end-epk`, which the gateway rejects with `400 "One of the input values is invalid"`; it now sends `EffectivePartitionKeyRange`. This enables filtered partition-key *prefix* queries (issue [#4680](https://github.com/Azure/azure-sdk-for-rust/issues/4680)) and fixes cross-partition queries over HPK containers failing with `400 Bad Request` (issue [#4681](https://github.com/Azure/azure-sdk-for-rust/issues/4681)). ([#4729](https://github.com/Azure/azure-sdk-for-rust/pull/4729))
 - Fixed session-token parsing rejecting the `-1` region-progress sentinel that multi-region accounts emit for regions with no local progress. Region LSNs in the version vector are now parsed as signed values, with `-1` (and any negative value) modeled as "no progress" instead of failing the whole token as malformed. This applies to all Session-consistency traffic (not just distributed transactions) and prevents otherwise-valid multi-region session tokens from being discarded. ([#4702](https://github.com/Azure/azure-sdk-for-rust/pull/4702))
 - Fixed `AZURE_COSMOS_PPCB_*` environment variables (including the `AZURE_COSMOS_PPCB_ENABLED` master switch and the `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` kill switch) being silently ignored when a caller built `DriverOptions` without calling `DriverOptionsBuilder::with_partition_failover_options`. The environment is read only by `PartitionFailoverOptionsBuilder::build`, but the omitted-options path used a bare `PartitionFailoverOptions::default()` (which hard-codes PPCB enabled and reads no environment), so PPCB stayed on even with `AZURE_COSMOS_PPCB_ENABLED=false`. `DriverOptionsBuilder::build` now resolves the partition-failover options from the environment when the caller does not supply them (falling back to defaults, fail-soft, if an environment value is out of bounds). An explicitly supplied `PartitionFailoverOptions` continues to take precedence. ([#4655](https://github.com/Azure/azure-sdk-for-rust/pull/4655))
-
-### Other Changes
 
 ## 0.5.0 (2026-06-19)
 

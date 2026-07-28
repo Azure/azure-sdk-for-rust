@@ -508,8 +508,9 @@ fn dtx_infra_retry_delay(attempt: u32) -> std::time::Duration {
 /// Always retries cross-region when the failover budget allows, and emits
 /// effects to (a) refresh account properties so the new write region is
 /// learned, (b) mark this endpoint unavailable, and (c) mark this partition
-/// unavailable in the current (read) region for write traffic. Multi-write
-/// paces retries with exponential backoff bounded by the 5s budget.
+/// unavailable in the current (read) region for write traffic. Both
+/// single-write and multi-write pace retries with exponential backoff bounded
+/// by the 5s budget, with the first retry immediate.
 ///
 /// **Hub-region discovery branch.** When the
 /// `hub_region_processing_only` latch is active on a read with a known
@@ -616,7 +617,8 @@ fn try_handle_write_forbidden(
 /// Handles 403/1008 DatabaseAccountNotFound for all operation types.
 ///
 /// The region no longer owns the account; refresh topology and fail over with
-/// exponential backoff bounded by the 5s backend-failover budget.
+/// exponential backoff bounded by the 5s backend-failover budget, with the
+/// first retry immediate.
 fn try_handle_database_account_not_found(
     operation: &CosmosOperation,
     endpoint: &CosmosEndpoint,
@@ -1110,19 +1112,21 @@ mod tests {
     use azure_core::http::StatusCode;
     use std::time::Duration;
 
-    /// Lower/upper bounds of the jittered first backend-failover delay (base 1s ±25%).
-    fn first_backend_failover_delay_bounds() -> (Duration, Duration) {
+    /// Lower/upper bounds of the jittered *second* backend-failover delay. The
+    /// first retry is immediate, so the 1s exponential base applies from the
+    /// second retry onward (base 1s ±25%).
+    fn second_backend_failover_delay_bounds() -> (Duration, Duration) {
         let base = Duration::from_millis(1000);
         let lo = base.mul_f64(1.0 - BACKEND_FAILOVER_JITTER_RATIO);
         let hi = base.mul_f64(1.0 + BACKEND_FAILOVER_JITTER_RATIO);
         (lo, hi)
     }
 
-    /// Asserts a delay is a plausible jittered backend-failover backoff:
-    /// positive and never above the per-retry cap plus jitter.
+    /// Asserts a delay is a plausible jittered backend-failover backoff: never
+    /// above the per-retry cap plus jitter. The first retry is legitimately
+    /// zero, so only the upper bound is enforced.
     fn assert_within_backoff_cap(delay: Duration) {
         let max = BACKEND_FAILOVER_MAX_BACKOFF.mul_f64(1.0 + BACKEND_FAILOVER_JITTER_RATIO);
-        assert!(delay > Duration::ZERO, "backoff delay must be positive");
         assert!(
             delay <= max,
             "backoff delay {delay:?} must stay within capped+jitter {max:?}"
@@ -2036,9 +2040,54 @@ mod tests {
             BACKEND_FAILOVER_MAX_TOTAL_DELAY
         );
         assert!(
-            state.backend_failover_retry_count == 3,
-            "5s budget should be exhausted in 3 retries, got {}",
+            state.backend_failover_retry_count == 4,
+            "5s budget should be exhausted in 4 retries (first is immediate), got {}",
             state.backend_failover_retry_count
+        );
+    }
+
+    #[test]
+    fn backend_failover_second_retry_uses_exponential_base() {
+        // The first retry is immediate; the 1s exponential base starts at the
+        // second retry so a persistent topology error still backs off.
+        let op = make_create_operation();
+        let state = OperationRetryState::initial(0, true, Vec::new(), 3, 1);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (first, _) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            &state,
+        );
+        let OperationAction::FailoverRetry {
+            new_state,
+            delay: Some(first_delay),
+        } = first
+        else {
+            panic!("expected paced FailoverRetry");
+        };
+        assert_eq!(first_delay, Duration::ZERO);
+
+        let (second, _) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            &new_state,
+        );
+        let OperationAction::FailoverRetry {
+            delay: Some(second_delay),
+            ..
+        } = second
+        else {
+            panic!("expected paced FailoverRetry");
+        };
+        let (lo, hi) = second_backend_failover_delay_bounds();
+        assert!(
+            second_delay >= lo && second_delay <= hi,
+            "second retry must use the ~1s exponential base (jittered), got {second_delay:?}"
         );
     }
 
@@ -2063,10 +2112,11 @@ mod tests {
                 assert_eq!(new_state.failover_retry_count, 0);
                 assert_eq!(new_state.backend_failover_retry_count, 1);
                 let delay = delay.expect("multi-write 1008 must pace retries with a backoff delay");
-                let (lo, hi) = first_backend_failover_delay_bounds();
-                assert!(
-                    delay >= lo && delay <= hi,
-                    "multi-write 1008 first retry must use ~1s exponential base (jittered), got {delay:?}"
+                assert_eq!(
+                    delay,
+                    Duration::ZERO,
+                    "multi-write 1008 first retry is immediate; the account refresh already \
+                     supplies the new region"
                 );
                 assert_eq!(
                     new_state.backend_failover_cumulative_delay, delay,
@@ -2099,10 +2149,11 @@ mod tests {
                 assert_eq!(new_state.backend_failover_retry_count, 1);
                 let delay =
                     delay.expect("multi-write 403/3 must pace retries with a backoff delay");
-                let (lo, hi) = first_backend_failover_delay_bounds();
-                assert!(
-                    delay >= lo && delay <= hi,
-                    "multi-write 403/3 first retry must use ~1s exponential base (jittered), got {delay:?}"
+                assert_eq!(
+                    delay,
+                    Duration::ZERO,
+                    "multi-write 403/3 first retry is immediate; the account refresh already \
+                     supplies the new region"
                 );
                 assert_eq!(
                     new_state.backend_failover_cumulative_delay, delay,
@@ -2134,10 +2185,11 @@ mod tests {
                 assert_eq!(new_state.backend_failover_retry_count, 1);
                 let delay =
                     delay.expect("single-write 403/3 must pace retries with a backoff delay");
-                let (lo, hi) = first_backend_failover_delay_bounds();
-                assert!(
-                    delay >= lo && delay <= hi,
-                    "single-write 403/3 first retry must use ~1s exponential base (jittered), got {delay:?}"
+                assert_eq!(
+                    delay,
+                    Duration::ZERO,
+                    "single-write 403/3 first retry is immediate; the account refresh already \
+                     supplies the new region"
                 );
                 assert_eq!(new_state.backend_failover_cumulative_delay, delay);
             }
@@ -2213,10 +2265,11 @@ mod tests {
                 assert_eq!(new_state.backend_failover_retry_count, 1);
                 let delay =
                     delay.expect("single-write 1008 must pace retries with a backoff delay");
-                let (lo, hi) = first_backend_failover_delay_bounds();
-                assert!(
-                    delay >= lo && delay <= hi,
-                    "single-write 1008 first retry must use ~1s exponential base (jittered), got {delay:?}"
+                assert_eq!(
+                    delay,
+                    Duration::ZERO,
+                    "single-write 1008 first retry is immediate; the account refresh already \
+                     supplies the new region"
                 );
                 assert_eq!(
                     new_state.backend_failover_cumulative_delay, delay,

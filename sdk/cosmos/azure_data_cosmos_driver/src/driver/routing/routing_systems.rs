@@ -2188,7 +2188,7 @@ mod tests {
     }
 
     #[test]
-    fn ordered_hub_discovery_failures_reach_healthy_fourth_region() {
+    fn hub_discovery_skips_already_failed_endpoints_across_four_regions() {
         let endpoints = [
             regional_endpoint("region-a"),
             regional_endpoint("region-b"),
@@ -2213,8 +2213,8 @@ mod tests {
             },
         );
 
-        // The hedge reconciler applies primary A before secondary B regardless
-        // of completion order.
+        // Rotation skips endpoints already in `failed_endpoints`, so each
+        // failure advances to a genuinely untried region.
         state = advance_hub_region_discovery(&state, &account, &pk("0"), &endpoints[0]);
         state = advance_hub_region_discovery(&state, &account, &pk("0"), &endpoints[1]);
         assert_eq!(

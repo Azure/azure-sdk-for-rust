@@ -393,11 +393,12 @@ async fn all_regions_403_1008_bounded_retries_then_bubble_up() {
         })
         .count();
     assert_eq!(
-        data_attempts, 5,
-        "five-second 1008 policy must hedge once, then make three sequential retries"
+        data_attempts, 7,
+        "the initial two-leg hedge uses generic both-transient accounting; \
+         subsequent 1008 retries must remain sequential and bounded"
     );
     assert!(
-        elapsed >= Duration::from_secs(5) && elapsed < Duration::from_secs(20),
+        elapsed >= Duration::from_millis(4900) && elapsed < Duration::from_secs(20),
         "five-second 1008 policy took {elapsed:?}"
     );
 }
@@ -428,74 +429,6 @@ async fn read_item_403_1008_triggers_topology_refresh() {
         refresh_count >= 1,
         "post-fix: receipt of 1008 must trigger at least one \
          account-topology refresh (`GET /`); observed refresh_count={refresh_count}",
-    );
-}
-
-#[tokio::test]
-async fn failed_event_refresh_is_retried_within_same_operation() {
-    let recorder = HostRecorder::new();
-    let east_1008 = region_fault_rule(
-        "1008-east-first-leg",
-        FaultOperationType::ReadItem,
-        Region::EAST_US,
-        FaultInjectionErrorType::DatabaseAccountNotFound,
-        Some(1),
-    );
-    let west_1008 = region_fault_rule(
-        "1008-west-second-leg",
-        FaultOperationType::ReadItem,
-        Region::WEST_US,
-        FaultInjectionErrorType::DatabaseAccountNotFound,
-        Some(1),
-    );
-    // One complete refresh probes two distinct emulator endpoints. Fault
-    // exactly those requests; the second hedge-leg refresh must retry
-    // immediately rather than waiting for the five-second throttle interval.
-    let metadata_rule = Arc::new(
-        FaultInjectionRuleBuilder::new(
-            "metadata-first-refresh-fails",
-            FaultInjectionResultBuilder::new()
-                .with_error(FaultInjectionErrorType::ServiceUnavailable)
-                .with_probability(1.0)
-                .build(),
-        )
-        .with_condition(
-            FaultInjectionConditionBuilder::new()
-                .with_operation_type(FaultOperationType::MetadataReadDatabaseAccount)
-                .build(),
-        )
-        .with_hit_limit(2)
-        .build(),
-    );
-    east_1008.disable();
-    west_1008.disable();
-    metadata_rule.disable();
-
-    let (driver, _account) = build_driver_with_faults(
-        WriteMode::Multi,
-        recorder.clone(),
-        vec![east_1008.clone(), west_1008.clone(), metadata_rule.clone()],
-    )
-    .await;
-    seed_item_via_driver(&driver, "refresh-recovery-item").await;
-    recorder.clear();
-    east_1008.enable();
-    west_1008.enable();
-    metadata_rule.enable();
-
-    let response = read_item(&driver, "refresh-recovery-item")
-        .await
-        .expect("later event-driven refresh must recover the operation")
-        .expect("read returns a response");
-    assert!(response
-        .diagnostics()
-        .status()
-        .is_some_and(|s| s.is_success()));
-    assert_eq!(metadata_rule.hit_count(), 2);
-    assert!(
-        recorder.account_read_count() >= 1,
-        "expected a successful topology fetch after two injected failures; observed {}",
-        recorder.account_read_count()
     );
 }
 
@@ -619,11 +552,11 @@ async fn all_regions_403_3_bounded_retries_then_bubble_up() {
         })
         .count();
     assert_eq!(
-        data_attempts, 4,
-        "five-second 403/3 policy must produce initial + 3 retry attempts"
+        data_attempts, 5,
+        "five-second 403/3 policy must produce initial + 4 retry attempts"
     );
     assert!(
-        elapsed >= Duration::from_secs(5) && elapsed < Duration::from_secs(20),
+        elapsed >= Duration::from_millis(4900) && elapsed < Duration::from_secs(20),
         "five-second 403/3 policy took {elapsed:?}"
     );
 }

@@ -408,10 +408,10 @@ pub(crate) async fn execute_operation_pipeline(
         //
         // Falls through to STAGE 3 (sequential execute-then-classify) on:
         //
-        // * **Subsequent retries** (any retry counter > 0 or a hedge already
-        //   fired). A retry has already consumed region budget and the next
-        //   attempt is to a different region; re-racing it makes no sense.
-        //   The post-attempt
+        // * **Subsequent retries** (`failover_retry_count > 0` or
+        //   `session_token_retry_count > 0`). A retry has already consumed
+        //   region budget and the next attempt is to a different region;
+        //   re-racing it makes no sense. The post-attempt
         //   `maybe_upgrade_to_hedge` at STAGE 5b is the safety net for the
         //   rare "first attempt non-eligible, later retry became eligible"
         //   case.
@@ -420,11 +420,7 @@ pub(crate) async fn execute_operation_pipeline(
         //   applicable read endpoints, env-disabled hedging, or per-op
         //   `AvailabilityStrategy::Disabled`. All gated by
         //   [`evaluate_hedge_eligibility`].
-        if !retry_state.hedge_already_fired
-            && retry_state.failover_retry_count == 0
-            && retry_state.session_token_retry_count == 0
-            && retry_state.backend_failover_retry_count == 0
-        {
+        if retry_state.failover_retry_count == 0 && retry_state.session_token_retry_count == 0 {
             if let Some(upgrade) = evaluate_hedge_eligibility(
                 operation,
                 options,
@@ -496,7 +492,6 @@ pub(crate) async fn execute_operation_pipeline(
                         diagnostics: returned_diagnostics,
                         partition_key_range_id: race_pk_range_id,
                         observed_session_unavailable: race_observed_1002,
-                        observed_database_account_not_found,
                     } => {
                         // Both legs failed with retriable errors; fall back
                         // into the failover loop against the untried regions.
@@ -514,37 +509,30 @@ pub(crate) async fn execute_operation_pipeline(
                             retry_state.partition_key_range_id = race_pk_range_id;
                         }
                         propagate_hedge_session_unavailable(&mut retry_state, race_observed_1002);
-                        let delay = match try_advance_after_both_transient(
+                        if let Err(e) = try_advance_after_both_transient(
                             &mut retry_state,
                             &location,
                             operation.is_read_only(),
                             primary_region.as_ref(),
                             secondary_region.as_ref(),
                             last_error,
-                            observed_database_account_not_found,
                         ) {
-                            Ok(delay) => delay,
-                            Err(e) => {
-                                // Budget exhausted: the race is the terminal
-                                // outcome, so stamp the both-transient result
-                                // before grafting diagnostics onto the error.
-                                // `deadline_elapsed = false`: the budget, not
-                                // the deadline, ended the race.
-                                diagnostics.set_hedge_diagnostics(
-                                    HedgeDiagnostics::both_transient(
-                                        strategy_config,
-                                        primary_region_for_diag,
-                                        secondary_region_for_diag,
-                                        false,
-                                    ),
-                                );
-                                let diagnostics_ctx = Arc::new(diagnostics.complete());
-                                return Err(crate::error::CosmosErrorBuilder::from_error(e)
-                                    .with_diagnostics(diagnostics_ctx)
-                                    .build());
-                            }
-                        };
-                        apply_failover_delay(delay, deadline).await;
+                            // Budget exhausted: the race is the terminal
+                            // outcome, so stamp the both-transient result
+                            // before grafting diagnostics onto the error.
+                            // `deadline_elapsed = false`: the budget, not
+                            // the deadline, ended the race.
+                            diagnostics.set_hedge_diagnostics(HedgeDiagnostics::both_transient(
+                                strategy_config,
+                                primary_region_for_diag,
+                                secondary_region_for_diag,
+                                false,
+                            ));
+                            let diagnostics_ctx = Arc::new(diagnostics.complete());
+                            return Err(crate::error::CosmosErrorBuilder::from_error(e)
+                                .with_diagnostics(diagnostics_ctx)
+                                .build());
+                        }
                         diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;
                         continue;
                     }
@@ -1009,7 +997,6 @@ pub(crate) async fn execute_operation_pipeline(
                         diagnostics: returned_diagnostics,
                         partition_key_range_id: race_pk_range_id,
                         observed_session_unavailable: race_observed_1002,
-                        observed_database_account_not_found,
                     } => {
                         // Both legs returned a retriable failure with
                         // budget remaining — fall back into the failover
@@ -1027,36 +1014,29 @@ pub(crate) async fn execute_operation_pipeline(
                             retry_state.partition_key_range_id = race_pk_range_id;
                         }
                         propagate_hedge_session_unavailable(&mut retry_state, race_observed_1002);
-                        let delay = match try_advance_after_both_transient(
+                        if let Err(e) = try_advance_after_both_transient(
                             &mut retry_state,
                             &location,
                             operation.is_read_only(),
                             primary_region.as_ref(),
                             secondary_region.as_ref(),
                             last_error,
-                            observed_database_account_not_found,
                         ) {
-                            Ok(delay) => delay,
-                            Err(e) => {
-                                // Budget exhausted: stamp the both-transient
-                                // result before grafting diagnostics onto the
-                                // error (see STAGE 2b). `deadline_elapsed =
-                                // false`: the budget, not the deadline, ended it.
-                                diagnostics.set_hedge_diagnostics(
-                                    HedgeDiagnostics::both_transient(
-                                        strategy_config,
-                                        primary_region_for_diag,
-                                        secondary_region_for_diag,
-                                        false,
-                                    ),
-                                );
-                                let diagnostics_ctx = Arc::new(diagnostics.complete());
-                                return Err(crate::error::CosmosErrorBuilder::from_error(e)
-                                    .with_diagnostics(diagnostics_ctx)
-                                    .build());
-                            }
-                        };
-                        apply_failover_delay(delay, deadline).await;
+                            // Budget exhausted: stamp the both-transient
+                            // result before grafting diagnostics onto the
+                            // error (see STAGE 2b). `deadline_elapsed =
+                            // false`: the budget, not the deadline, ended it.
+                            diagnostics.set_hedge_diagnostics(HedgeDiagnostics::both_transient(
+                                strategy_config,
+                                primary_region_for_diag,
+                                secondary_region_for_diag,
+                                false,
+                            ));
+                            let diagnostics_ctx = Arc::new(diagnostics.complete());
+                            return Err(crate::error::CosmosErrorBuilder::from_error(e)
+                                .with_diagnostics(diagnostics_ctx)
+                                .build());
+                        }
                         diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;
                         continue;
                     }
@@ -2359,17 +2339,12 @@ enum HedgeClass {
 /// TransportOutcome map to `Transient`. A `Success` is always final; an
 /// `HttpError` is final iff [`CosmosStatus::is_final_result`] returns `true` for its
 /// status.
-fn classify_hedge_result(
-    result: crate::error::Result<TransportResult>,
-    hub_region_discovery: bool,
-) -> HedgeClass {
+fn classify_hedge_result(result: crate::error::Result<TransportResult>) -> HedgeClass {
     match result {
         Ok(tr) => match &tr.outcome {
             TransportOutcome::Success { .. } => HedgeClass::Final(Box::new(tr)),
             TransportOutcome::HttpError { status, .. } => {
-                if status.is_final_result()
-                    && !(hub_region_discovery && status.is_write_forbidden())
-                {
+                if status.is_final_result() {
                     HedgeClass::Final(Box::new(tr))
                 } else {
                     HedgeClass::Transient
@@ -2392,12 +2367,10 @@ fn classify_hedge_result(
 /// Returns `true` iff a `Success` or an `HttpError` whose status passes
 /// [`CosmosStatus::is_final_result`]. Mirrors `classify_hedge_result` exactly — keep
 /// the two in lockstep.
-fn result_is_final(tr: &TransportResult, hub_region_discovery: bool) -> bool {
+fn result_is_final(tr: &TransportResult) -> bool {
     match &tr.outcome {
         TransportOutcome::Success { .. } => true,
-        TransportOutcome::HttpError { status, .. } => {
-            status.is_final_result() && !(hub_region_discovery && status.is_write_forbidden())
-        }
+        TransportOutcome::HttpError { status, .. } => status.is_final_result(),
         TransportOutcome::TransportError { .. } | TransportOutcome::DeadlineExceeded { .. } => {
             false
         }
@@ -2551,9 +2524,11 @@ fn maybe_upgrade_to_hedge(
     // Extract `new_state` from the retry-upgrade-eligible variants;
     // return everything else unchanged.
     let new_state = match &action {
-        // A service-requested delay is part of the retry policy. Upgrading it
-        // to an immediate hedge would bypass the backoff and its delay budget.
-        OperationAction::FailoverRetry { delay: Some(_), .. } => return action,
+        // The only producers of `delay: Some(_)` are the 403/3 and 403/1008
+        // handlers, so this preserves the backend-failover backoff instead of
+        // replacing it with an immediate hedge. A zero delay carries no backoff
+        // to preserve, so it stays hedge-eligible like `None`.
+        OperationAction::FailoverRetry { delay: Some(d), .. } if !d.is_zero() => return action,
         OperationAction::FailoverRetry { new_state, .. } => new_state.clone(),
         OperationAction::SessionRetry { new_state } => new_state.clone(),
         _ => return action,
@@ -2984,7 +2959,6 @@ pub(crate) enum HedgedRaceResult {
         diagnostics: DiagnosticsContextBuilder,
         partition_key_range_id: Option<PartitionKeyRangeId>,
         observed_session_unavailable: bool,
-        observed_database_account_not_found: bool,
     },
 }
 
@@ -2996,132 +2970,13 @@ pub(crate) enum HedgedRaceResult {
 /// Called at every classify site in [`execute_hedged`] so the hedged
 /// path's routing-state and hub-region-latch mutations stay symmetric
 /// with the non-hedged `evaluate_transport_result` path.
-#[derive(Default)]
-struct HedgeRaceSignals {
-    observed_session_unavailable: bool,
-    primary_service_error: Option<crate::error::CosmosError>,
-    secondary_service_error: Option<crate::error::CosmosError>,
-    primary_hub_discovery_effects: Vec<LocationEffect>,
-    secondary_hub_discovery_effects: Vec<LocationEffect>,
-    primary_pending_write_forbidden: Option<CosmosEndpoint>,
-    secondary_pending_write_forbidden: Option<CosmosEndpoint>,
-}
-
-#[derive(Clone, Copy)]
-enum HedgeLeg {
-    Primary,
-    Secondary,
-}
-
-impl HedgeRaceSignals {
-    fn into_both_transient(self) -> (bool, Option<crate::error::CosmosError>, bool) {
-        let observed_database_account_not_found = self
-            .primary_service_error
-            .as_ref()
-            .is_some_and(|error| error.status().is_database_account_not_found())
-            || self
-                .secondary_service_error
-                .as_ref()
-                .is_some_and(|error| error.status().is_database_account_not_found());
-        let service_error = if observed_database_account_not_found {
-            self.primary_service_error
-                .filter(|error| error.status().is_database_account_not_found())
-                .or_else(|| {
-                    self.secondary_service_error
-                        .filter(|error| error.status().is_database_account_not_found())
-                })
-        } else {
-            // Deterministic precedence: primary response, then secondary.
-            self.primary_service_error.or(self.secondary_service_error)
-        };
-        (
-            self.observed_session_unavailable,
-            service_error,
-            observed_database_account_not_found,
-        )
-    }
-
-    fn take_hub_discovery_effects(&mut self) -> Vec<LocationEffect> {
-        self.primary_hub_discovery_effects
-            .drain(..)
-            .chain(self.secondary_hub_discovery_effects.drain(..))
-            .collect()
-    }
-}
-
-fn capture_hedge_leg_signals(
-    transport_result: &TransportResult,
-    leg: HedgeLeg,
-    signals: &mut HedgeRaceSignals,
-) {
-    if let TransportOutcome::HttpError {
-        status,
-        cosmos_headers,
-        body,
-        ..
-    } = &transport_result.outcome
-    {
-        let error = Some(build_service_error(status, cosmos_headers, body));
-        match leg {
-            HedgeLeg::Primary => signals.primary_service_error = error,
-            HedgeLeg::Secondary => signals.secondary_service_error = error,
-        }
-    }
-}
-
-async fn apply_deferred_hub_discovery_effects(
-    ctx: &AttemptContext<'_>,
-    signals: &mut HedgeRaceSignals,
-    shared_hub_region_latch: Option<&Arc<AtomicBool>>,
-    partition_key_range_id: Option<&PartitionKeyRangeId>,
-) {
-    if shared_hub_region_latch.is_some_and(|latch| latch.load(Ordering::Acquire)) {
-        if let Some(partition_key_range_id) = partition_key_range_id {
-            if let Some(failed_endpoint) = signals.primary_pending_write_forbidden.take() {
-                signals.primary_hub_discovery_effects.push(
-                    LocationEffect::AdvanceHubRegionDiscovery {
-                        partition_key_range_id: partition_key_range_id.clone(),
-                        failed_endpoint,
-                    },
-                );
-            }
-            if let Some(failed_endpoint) = signals.secondary_pending_write_forbidden.take() {
-                signals.secondary_hub_discovery_effects.push(
-                    LocationEffect::AdvanceHubRegionDiscovery {
-                        partition_key_range_id: partition_key_range_id.clone(),
-                        failed_endpoint,
-                    },
-                );
-            }
-        }
-    }
-    signals.primary_pending_write_forbidden = None;
-    signals.secondary_pending_write_forbidden = None;
-
-    // Apply in routing order, not completion order. If A and B both rejected
-    // the hub read, this advances A→B and then B→C regardless of which response
-    // completed first.
-    let effects = signals.take_hub_discovery_effects();
-    if !effects.is_empty() {
-        ctx.location_state_store.apply(&effects).await;
-    }
-}
-
-fn hedge_partition_key_range_id<'a>(
-    captured: Option<&'a PartitionKeyRangeId>,
-    existing: Option<&'a PartitionKeyRangeId>,
-) -> Option<&'a PartitionKeyRangeId> {
-    captured.or(existing)
-}
-
 async fn apply_hedge_leg_effects(
     ctx: &AttemptContext<'_>,
     retry_state_snapshot: &OperationRetryState,
     endpoint: &CosmosEndpoint,
     result: &crate::error::Result<TransportResult>,
-    leg: HedgeLeg,
     shared_hub_region_latch: Option<&Arc<AtomicBool>>,
-    signals: &mut HedgeRaceSignals,
+    race_observed_session_unavailable: &mut bool,
 ) {
     // Pre-transport / request-build errors carry no `TransportResult`
     // and therefore no observable side effects to mirror — they fail
@@ -3129,46 +2984,17 @@ async fn apply_hedge_leg_effects(
     let Ok(transport_result) = result.as_ref() else {
         return;
     };
-    capture_hedge_leg_signals(transport_result, leg, signals);
-    let pending_hub_discovery = shared_hub_region_latch.is_some()
-        && ctx.operation.is_read_only()
-        && !retry_state_snapshot.can_use_multiple_write_locations
-        && !retry_state_snapshot.hub_region_processing_only
-        && matches!(
-            &transport_result.outcome,
-            TransportOutcome::HttpError { status, .. } if status.is_write_forbidden()
-        );
-    if pending_hub_discovery {
-        match leg {
-            HedgeLeg::Primary => signals.primary_pending_write_forbidden = Some(endpoint.clone()),
-            HedgeLeg::Secondary => {
-                signals.secondary_pending_write_forbidden = Some(endpoint.clone())
-            }
-        }
-        return;
-    }
     let eval = evaluate_hedge_leg_effects(
         ctx.operation,
         endpoint,
         retry_state_snapshot,
         transport_result,
     );
-    let mut immediate_effects = Vec::new();
-    for effect in eval.effects {
-        if matches!(effect, LocationEffect::AdvanceHubRegionDiscovery { .. }) {
-            match leg {
-                HedgeLeg::Primary => signals.primary_hub_discovery_effects.push(effect),
-                HedgeLeg::Secondary => signals.secondary_hub_discovery_effects.push(effect),
-            }
-        } else {
-            immediate_effects.push(effect);
-        }
-    }
-    if !immediate_effects.is_empty() {
-        ctx.location_state_store.apply(&immediate_effects).await;
+    if !eval.effects.is_empty() {
+        ctx.location_state_store.apply(&eval.effects).await;
     }
     if eval.observed_session_unavailable {
-        signals.observed_session_unavailable = true;
+        *race_observed_session_unavailable = true;
         if let Some(latch) = shared_hub_region_latch {
             latch.store(true, Ordering::Release);
         }
@@ -3239,9 +3065,6 @@ async fn execute_hedged(
 ) -> HedgedRaceResult {
     let primary_region = primary_routing.endpoint.region().cloned();
     let secondary_region = secondary_routing.endpoint.region().cloned();
-    let potential_hub_region_discovery = ctx.pipeline_type.is_data_plane()
-        && ctx.operation.is_read_only()
-        && !retry_state_snapshot.can_use_multiple_write_locations;
     // `HedgeDiagnostics` is attached iff `execute_hedged` ran,
     // regardless of whether the routed endpoints carry a named region
     // (global-endpoint accounts do not). For diagnostics-construction
@@ -3356,7 +3179,7 @@ async fn execute_hedged(
             // performed without the hedge upgrade.
             let primary_was_final = matches!(
                 &result,
-                Ok(tr) if result_is_final(tr, potential_hub_region_discovery),
+                Ok(tr) if result_is_final(tr),
             );
             if primary_was_final {
                 // Zero-overhead happy path — no secondary attempt is
@@ -3513,7 +3336,7 @@ async fn execute_hedged(
     // fallback can rehydrate `retry_state` with what the race observed
     // — see `pk_range_id_from_result` and `apply_hedge_leg_effects`.
     let mut captured_pk_range_id: Option<PartitionKeyRangeId> = None;
-    let mut race_signals = HedgeRaceSignals::default();
+    let mut race_observed_session_unavailable = false;
     match select(primary_attempt, secondary_attempt).await {
         Either::Left(((primary_result, primary_diag), secondary_remaining)) => {
             parent_diagnostics.merge_hedge_attempt(primary_diag);
@@ -3524,12 +3347,11 @@ async fn execute_hedged(
                 retry_state_snapshot,
                 &primary_routing.endpoint,
                 &primary_result,
-                HedgeLeg::Primary,
                 shared_hub_region_latch.as_ref(),
-                &mut race_signals,
+                &mut race_observed_session_unavailable,
             )
             .await;
-            match classify_hedge_result(primary_result, potential_hub_region_discovery) {
+            match classify_hedge_result(primary_result) {
                 HedgeClass::Final(tr) => {
                     // Primary won post-threshold; drop secondary.
                     parent_diagnostics.set_hedge_diagnostics(
@@ -3561,10 +3383,9 @@ async fn execute_hedged(
                     record_hedge_outcome(
                         ctx.location_state_store,
                         HedgeOutcome::PrimaryWin,
-                        hedge_partition_key_range_id(
-                            captured_pk_range_id.as_ref(),
-                            ctx.partition_key_range_id.as_ref(),
-                        ),
+                        captured_pk_range_id
+                            .as_ref()
+                            .or(ctx.partition_key_range_id.as_ref()),
                         primary_region.as_ref(),
                     );
                     capture_session_token_for_winner(ctx, &tr);
@@ -3585,16 +3406,6 @@ async fn execute_hedged(
                             activity_id = %ctx.activity_id,
                             "execute_hedged: deadline fired awaiting secondary after primary transient",
                         );
-                        apply_deferred_hub_discovery_effects(
-                            ctx,
-                            &mut race_signals,
-                            shared_hub_region_latch.as_ref(),
-                            hedge_partition_key_range_id(
-                                captured_pk_range_id.as_ref(),
-                                ctx.partition_key_range_id.as_ref(),
-                            ),
-                        )
-                        .await;
                         // No leg produced a final response — attach
                         // CancelledAwaitingPartner terminal state
                         // (was_hedge=false) so hedge win-rate metrics
@@ -3618,22 +3429,11 @@ async fn execute_hedged(
                         retry_state_snapshot,
                         &secondary_routing.endpoint,
                         &secondary_result,
-                        HedgeLeg::Secondary,
                         shared_hub_region_latch.as_ref(),
-                        &mut race_signals,
+                        &mut race_observed_session_unavailable,
                     )
                     .await;
-                    apply_deferred_hub_discovery_effects(
-                        ctx,
-                        &mut race_signals,
-                        shared_hub_region_latch.as_ref(),
-                        hedge_partition_key_range_id(
-                            captured_pk_range_id.as_ref(),
-                            ctx.partition_key_range_id.as_ref(),
-                        ),
-                    )
-                    .await;
-                    match classify_hedge_result(secondary_result, potential_hub_region_discovery) {
+                    match classify_hedge_result(secondary_result) {
                         HedgeClass::Final(tr) => {
                             parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::hedge_won(
                                 strategy_config,
@@ -3653,10 +3453,9 @@ async fn execute_hedged(
                             record_hedge_outcome(
                                 ctx.location_state_store,
                                 HedgeOutcome::AlternateWin,
-                                hedge_partition_key_range_id(
-                                    captured_pk_range_id.as_ref(),
-                                    ctx.partition_key_range_id.as_ref(),
-                                ),
+                                captured_pk_range_id
+                                    .as_ref()
+                                    .or(ctx.partition_key_range_id.as_ref()),
                                 primary_region.as_ref(),
                             );
                             capture_session_token_for_winner(ctx, &tr);
@@ -3673,8 +3472,6 @@ async fn execute_hedged(
                             // returns `BothTransient` so the operation
                             // pipeline can re-enter the failover loop
                             // against the remaining regions.
-                            let (observed_1002, service_error, observed_1008) =
-                                race_signals.into_both_transient();
                             finalize_both_transient(
                                 ctx.activity_id,
                                 ctx.deadline,
@@ -3685,9 +3482,7 @@ async fn execute_hedged(
                                 secondary_region_for_diag.clone(),
                                 parent_diagnostics,
                                 captured_pk_range_id,
-                                observed_1002,
-                                service_error,
-                                observed_1008,
+                                race_observed_session_unavailable,
                             )
                         }
                     }
@@ -3703,12 +3498,11 @@ async fn execute_hedged(
                 retry_state_snapshot,
                 &secondary_routing.endpoint,
                 &secondary_result,
-                HedgeLeg::Secondary,
                 shared_hub_region_latch.as_ref(),
-                &mut race_signals,
+                &mut race_observed_session_unavailable,
             )
             .await;
-            match classify_hedge_result(secondary_result, potential_hub_region_discovery) {
+            match classify_hedge_result(secondary_result) {
                 HedgeClass::Final(tr) => {
                     parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::hedge_won(
                         strategy_config,
@@ -3759,15 +3553,6 @@ async fn execute_hedged(
                             activity_id = %ctx.activity_id,
                             "execute_hedged: deadline fired awaiting primary after secondary transient",
                         );
-                        apply_deferred_hub_discovery_effects(
-                            ctx,
-                            &mut race_signals,
-                            shared_hub_region_latch.as_ref(),
-                            captured_pk_range_id
-                                .as_ref()
-                                .or(ctx.partition_key_range_id.as_ref()),
-                        )
-                        .await;
                         // No leg produced a final response — attach
                         // CancelledAwaitingPartner terminal state
                         // (was_hedge=false) so hedge win-rate metrics
@@ -3791,21 +3576,11 @@ async fn execute_hedged(
                         retry_state_snapshot,
                         &primary_routing.endpoint,
                         &primary_result,
-                        HedgeLeg::Primary,
                         shared_hub_region_latch.as_ref(),
-                        &mut race_signals,
+                        &mut race_observed_session_unavailable,
                     )
                     .await;
-                    apply_deferred_hub_discovery_effects(
-                        ctx,
-                        &mut race_signals,
-                        shared_hub_region_latch.as_ref(),
-                        captured_pk_range_id
-                            .as_ref()
-                            .or(ctx.partition_key_range_id.as_ref()),
-                    )
-                    .await;
-                    match classify_hedge_result(primary_result, potential_hub_region_discovery) {
+                    match classify_hedge_result(primary_result) {
                         HedgeClass::Final(tr) => {
                             parent_diagnostics.set_hedge_diagnostics(
                                 HedgeDiagnostics::primary_won_after_hedge(
@@ -3842,8 +3617,6 @@ async fn execute_hedged(
                             // Both legs transient. Same loop-fallback
                             // semantics as the symmetric Either::Left arm
                             // — see [`finalize_both_transient`].
-                            let (observed_1002, service_error, observed_1008) =
-                                race_signals.into_both_transient();
                             finalize_both_transient(
                                 ctx.activity_id,
                                 ctx.deadline,
@@ -3854,9 +3627,7 @@ async fn execute_hedged(
                                 secondary_region_for_diag.clone(),
                                 parent_diagnostics,
                                 captured_pk_range_id,
-                                observed_1002,
-                                service_error,
-                                observed_1008,
+                                race_observed_session_unavailable,
                             )
                         }
                     }
@@ -3952,8 +3723,6 @@ fn finalize_both_transient(
     mut parent_diagnostics: DiagnosticsContextBuilder,
     partition_key_range_id: Option<PartitionKeyRangeId>,
     observed_session_unavailable: bool,
-    last_service_error: Option<crate::error::CosmosError>,
-    observed_database_account_not_found: bool,
 ) -> HedgedRaceResult {
     let deadline_was_elapsed = deadline_elapsed(deadline);
     tracing::warn!(
@@ -3993,9 +3762,7 @@ fn finalize_both_transient(
             "execute_hedged: both legs transient; bubbling up for failover-loop fallback",
         );
         HedgedRaceResult::BothTransient {
-            last_error: last_service_error.unwrap_or_else(|| {
-                transient_outcome_error(primary_region.as_ref(), secondary_region.as_ref())
-            }),
+            last_error: transient_outcome_error(primary_region.as_ref(), secondary_region.as_ref()),
             primary_region,
             secondary_region,
             strategy_config,
@@ -4004,7 +3771,6 @@ fn finalize_both_transient(
             diagnostics: parent_diagnostics,
             partition_key_range_id,
             observed_session_unavailable,
-            observed_database_account_not_found,
         }
     }
 }
@@ -4015,21 +3781,21 @@ fn finalize_both_transient(
 ///
 /// Returns:
 ///
-/// - `Ok(Some(delay))` when any hedge leg observed `403/1008`; the backend
-///   failover state advances once and the caller sleeps before continuing.
-/// - `Ok(None)` for other transient combinations; the generic failover state
-///   advances by the two regions consumed by the race.
-/// - `Err(last_error)` when the applicable retry budget is exhausted.
+/// - `Ok(())` when the budget allowed advancing (caller `continue`s
+///   the loop).
+/// - `Err(last_error)` when `failover_retry_count + 2 >
+///   max_failover_retries` (no remaining budget; caller surfaces
+///   `last_error` as the operation's terminal error).
 ///
 /// # Region accounting
 ///
-/// The race consumed exactly two regions (the primary at the snapshot's
-/// current `LocationIndex` and the secondary picked by
-/// `evaluate_hedge_eligibility`). For generic transients, both regions are
-/// charged to `failover_retry_count`. If either leg observed `403/1008`, one
-/// topology round is charged to `backend_failover_retry_count` instead. In
-/// both cases the `LocationIndex` walks forward until it lands on an endpoint
-/// whose region matches neither raced region.
+/// The race consumed exactly two regions (the primary at the
+/// snapshot's current `LocationIndex` and the secondary picked by
+/// `evaluate_hedge_eligibility`). We charge two slots against
+/// `failover_retry_count` and walk the `LocationIndex` forward until
+/// it lands on an endpoint whose region matches neither the raced
+/// primary nor the raced secondary, so the next iteration's
+/// `resolve_endpoint` selects a region not yet tried in this race.
 ///
 /// Walking forward (rather than blindly advancing by a fixed offset)
 /// matters because the secondary picker no longer guarantees the
@@ -4057,34 +3823,19 @@ fn try_advance_after_both_transient(
     primary_region: Option<&Region>,
     secondary_region: Option<&Region>,
     last_error: crate::error::CosmosError,
-    observed_database_account_not_found: bool,
-) -> Result<Option<Duration>, crate::error::CosmosError> {
-    let delay = if observed_database_account_not_found {
-        if !retry_state.can_retry_backend_failover() {
-            tracing::debug!(
-                backend_failover_retry_count = retry_state.backend_failover_retry_count,
-                "hedge both-transient: backend-failover budget exhausted; surfacing terminal error",
-            );
-            return Err(last_error);
-        }
-        let delay = retry_state.backend_failover_delay();
-        *retry_state = retry_state.clone().advance_backend_failover(delay);
-        Some(delay)
-    } else {
-        let consumed: u32 = 2;
-        let next_count = retry_state.failover_retry_count.saturating_add(consumed);
-        if next_count > retry_state.max_failover_retries {
-            tracing::debug!(
-                failover_retry_count = retry_state.failover_retry_count,
-                max_failover_retries = retry_state.max_failover_retries,
-                "hedge both-transient: failover budget exhausted; surfacing terminal error",
-            );
-            return Err(last_error);
-        }
-        retry_state.failover_retry_count = next_count;
-        None
-    };
+) -> Result<(), crate::error::CosmosError> {
+    let consumed: u32 = 2;
+    let next_count = retry_state.failover_retry_count.saturating_add(consumed);
+    if next_count > retry_state.max_failover_retries {
+        tracing::debug!(
+            failover_retry_count = retry_state.failover_retry_count,
+            max_failover_retries = retry_state.max_failover_retries,
+            "hedge both-transient: failover budget exhausted; surfacing terminal error",
+        );
+        return Err(last_error);
+    }
 
+    retry_state.failover_retry_count = next_count;
     let endpoints = preferred_endpoints_for_attempt(
         location.account.as_ref(),
         retry_state,
@@ -4133,7 +3884,7 @@ fn try_advance_after_both_transient(
         max_failover_retries = retry_state.max_failover_retries,
         "hedge both-transient: failover loop will continue against remaining regions",
     );
-    Ok(delay)
+    Ok(())
 }
 
 /// Flips the per-state and shared `hub_region_processing_only` latches
@@ -4715,7 +4466,7 @@ mod tests {
             session_token_retry_count: 1,
             retry_with_state: None,
             backend_failover_retry_count: 0,
-            backend_failover_cumulative_delay: std::time::Duration::ZERO,
+            backend_failover_cumulative_delay: Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -4882,7 +4633,7 @@ mod tests {
             session_token_retry_count: 0,
             retry_with_state: None,
             backend_failover_retry_count: 0,
-            backend_failover_cumulative_delay: std::time::Duration::ZERO,
+            backend_failover_cumulative_delay: Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -4950,7 +4701,7 @@ mod tests {
             session_token_retry_count: 0,
             retry_with_state: None,
             backend_failover_retry_count: 0,
-            backend_failover_cumulative_delay: std::time::Duration::ZERO,
+            backend_failover_cumulative_delay: Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -5030,7 +4781,7 @@ mod tests {
             session_token_retry_count: 0,
             retry_with_state: None,
             backend_failover_retry_count: 0,
-            backend_failover_cumulative_delay: std::time::Duration::ZERO,
+            backend_failover_cumulative_delay: Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -5144,7 +4895,7 @@ mod tests {
             max_failover_retries: 3,
             max_session_retries: 3,
             backend_failover_retry_count: 0,
-            backend_failover_cumulative_delay: std::time::Duration::ZERO,
+            backend_failover_cumulative_delay: Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -5860,7 +5611,7 @@ mod tests {
             session_token_retry_count: 0,
             retry_with_state: None,
             backend_failover_retry_count: 0,
-            backend_failover_cumulative_delay: std::time::Duration::ZERO,
+            backend_failover_cumulative_delay: Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -5927,7 +5678,7 @@ mod tests {
             failover_retry_count: 0,
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
-            backend_failover_cumulative_delay: std::time::Duration::ZERO,
+            backend_failover_cumulative_delay: Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -5997,7 +5748,7 @@ mod tests {
             failover_retry_count: 0,
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
-            backend_failover_cumulative_delay: std::time::Duration::ZERO,
+            backend_failover_cumulative_delay: Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -6080,7 +5831,7 @@ mod tests {
             failover_retry_count: 0,
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
-            backend_failover_cumulative_delay: std::time::Duration::ZERO,
+            backend_failover_cumulative_delay: Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -6174,7 +5925,7 @@ mod tests {
             failover_retry_count: 0,
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
-            backend_failover_cumulative_delay: std::time::Duration::ZERO,
+            backend_failover_cumulative_delay: Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -8459,100 +8210,6 @@ mod tests {
         assert!(tentative_writes_header(&request).is_none());
     }
 
-    fn hedge_upgrade_fixture() -> (
-        CosmosOperation,
-        crate::options::OperationOptions,
-        AccountEndpointState,
-        RoutingDecision,
-    ) {
-        let east = CosmosEndpoint::regional(
-            "eastus".into(),
-            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
-        );
-        let west = CosmosEndpoint::regional(
-            "westus".into(),
-            Url::parse("https://test-westus.documents.azure.com:443/").unwrap(),
-        );
-        let operation = CosmosOperation::read_item(ItemReference::from_name(
-            &test_container(),
-            PartitionKey::from("pk1"),
-            "doc1",
-        ));
-        let threshold = crate::options::HedgeThreshold::new(Duration::from_millis(100)).unwrap();
-        let options = crate::options::OperationOptions {
-            availability_strategy: Some(crate::options::AvailabilityStrategy::Hedging(
-                crate::options::HedgingStrategy::new(threshold),
-            )),
-            ..Default::default()
-        };
-        let account_state = AccountEndpointState {
-            generation: 0,
-            preferred_read_endpoints: vec![east.clone(), west].into(),
-            preferred_write_endpoints: vec![east.clone()].into(),
-            account_write_endpoints: vec![east.clone()].into(),
-            unavailable_endpoints: Default::default(),
-            multiple_write_locations_enabled: false,
-            default_endpoint: east.clone(),
-        };
-        let primary = RoutingDecision {
-            selected_url: east.url().clone(),
-            endpoint_key: east.endpoint_key(),
-            endpoint: east,
-            transport_mode: TransportMode::Gateway,
-        };
-        (operation, options, account_state, primary)
-    }
-
-    #[test]
-    fn delayed_failover_retry_is_not_upgraded_to_hedge() {
-        let (operation, options, account_state, primary) = hedge_upgrade_fixture();
-        let view = crate::options::OperationOptionsView::new(None, None, None, Some(&options));
-        let state = super::OperationRetryState::initial(0, false, Vec::new(), 3, 1);
-        let action = super::OperationAction::FailoverRetry {
-            new_state: state,
-            delay: Some(Duration::from_secs(1)),
-        };
-
-        let result = super::maybe_upgrade_to_hedge(
-            action,
-            &operation,
-            &view,
-            &account_state,
-            &primary,
-            Some(Duration::from_secs(10)),
-        );
-
-        assert!(matches!(
-            result,
-            super::OperationAction::FailoverRetry {
-                delay: Some(delay),
-                ..
-            } if delay == Duration::from_secs(1)
-        ));
-    }
-
-    #[test]
-    fn no_delay_failover_retry_remains_hedge_upgradeable() {
-        let (operation, options, account_state, primary) = hedge_upgrade_fixture();
-        let view = crate::options::OperationOptionsView::new(None, None, None, Some(&options));
-        let state = super::OperationRetryState::initial(0, false, Vec::new(), 3, 1);
-        let action = super::OperationAction::FailoverRetry {
-            new_state: state,
-            delay: None,
-        };
-
-        let result = super::maybe_upgrade_to_hedge(
-            action,
-            &operation,
-            &view,
-            &account_state,
-            &primary,
-            Some(Duration::from_secs(10)),
-        );
-
-        assert!(matches!(result, super::OperationAction::Hedge { .. }));
-    }
-
     // ── apply_failover_delay ──────────────────────────────────────────
 
     #[tokio::test]
@@ -8675,7 +8332,7 @@ mod tests {
     fn classify_hedge_result_success_is_final() {
         let tr = http_result(200, None);
         assert!(matches!(
-            super::classify_hedge_result(Ok(tr), false),
+            super::classify_hedge_result(Ok(tr)),
             super::HedgeClass::Final(_)
         ));
     }
@@ -8685,7 +8342,7 @@ mod tests {
         // 409 is a final HTTP error — terminates hedging.
         let tr = http_result(409, None);
         assert!(matches!(
-            super::classify_hedge_result(Ok(tr), false),
+            super::classify_hedge_result(Ok(tr)),
             super::HedgeClass::Final(_)
         ));
     }
@@ -8695,7 +8352,7 @@ mod tests {
         // 503 ServiceUnavailable is transient — keeps the other side racing.
         let tr = http_result(503, None);
         assert!(matches!(
-            super::classify_hedge_result(Ok(tr), false),
+            super::classify_hedge_result(Ok(tr)),
             super::HedgeClass::Transient
         ));
     }
@@ -8705,23 +8362,9 @@ mod tests {
         // 404/1002 ReadSessionNotAvailable is retriable.
         let tr = http_result(404, Some(1002));
         assert!(matches!(
-            super::classify_hedge_result(Ok(tr), false),
+            super::classify_hedge_result(Ok(tr)),
             super::HedgeClass::Transient
         ));
-    }
-
-    #[test]
-    fn classify_hedge_result_403_3_is_transient_only_for_hub_discovery() {
-        assert!(matches!(
-            super::classify_hedge_result(Ok(http_result(403, Some(3))), false),
-            super::HedgeClass::Final(_)
-        ));
-        assert!(matches!(
-            super::classify_hedge_result(Ok(http_result(403, Some(3))), true),
-            super::HedgeClass::Transient
-        ));
-        assert!(super::result_is_final(&http_result(403, Some(3)), false));
-        assert!(!super::result_is_final(&http_result(403, Some(3)), true));
     }
 
     #[test]
@@ -8729,7 +8372,7 @@ mod tests {
         let tr =
             super::TransportResult::deadline_exceeded(crate::diagnostics::RequestSentStatus::Sent);
         assert!(matches!(
-            super::classify_hedge_result(Ok(tr), false),
+            super::classify_hedge_result(Ok(tr)),
             super::HedgeClass::Transient
         ));
     }
@@ -8740,7 +8383,7 @@ mod tests {
             .with_message("synthetic build error")
             .build();
         assert!(matches!(
-            super::classify_hedge_result(Err(err), false),
+            super::classify_hedge_result(Err(err)),
             super::HedgeClass::Transient
         ));
     }
@@ -8760,19 +8403,19 @@ mod tests {
     #[test]
     fn result_is_final_success_is_true() {
         let tr = http_result(200, None);
-        assert!(super::result_is_final(&tr, false));
+        assert!(super::result_is_final(&tr));
     }
 
     #[test]
     fn result_is_final_409_conflict_is_true() {
         let tr = http_result(409, None);
-        assert!(super::result_is_final(&tr, false));
+        assert!(super::result_is_final(&tr));
     }
 
     #[test]
     fn result_is_final_503_is_false() {
         let tr = http_result(503, None);
-        assert!(!super::result_is_final(&tr, false));
+        assert!(!super::result_is_final(&tr));
     }
 
     #[test]
@@ -8781,34 +8424,31 @@ mod tests {
         // pre-threshold branch must NOT record PrimaryWin (per the
         // c328cf50 over-correction).
         let tr = http_result(404, Some(1002));
-        assert!(!super::result_is_final(&tr, false));
+        assert!(!super::result_is_final(&tr));
     }
 
     #[test]
     fn result_is_final_deadline_exceeded_is_false() {
         let tr =
             super::TransportResult::deadline_exceeded(crate::diagnostics::RequestSentStatus::Sent);
-        assert!(!super::result_is_final(&tr, false));
+        assert!(!super::result_is_final(&tr));
     }
 
     #[test]
     fn result_is_final_429_ru_budget_and_hot_partition_are_final() {
         // RU-budget / hot-partition throttles cannot be relieved by racing a
         // second region, so they short-circuit the race.
-        assert!(super::result_is_final(&http_result(429, Some(3200)), false)); // RU_BUDGET_EXCEEDED
-        assert!(super::result_is_final(&http_result(429, Some(3210)), false)); // RU_BUDGET_EXCEEDED_FOR_MASTER
-        assert!(super::result_is_final(&http_result(429, Some(3214)), false)); // HOT_PARTITION_KEY_THROTTLED
+        assert!(super::result_is_final(&http_result(429, Some(3200)))); // RU_BUDGET_EXCEEDED
+        assert!(super::result_is_final(&http_result(429, Some(3210)))); // RU_BUDGET_EXCEEDED_FOR_MASTER
+        assert!(super::result_is_final(&http_result(429, Some(3214)))); // HOT_PARTITION_KEY_THROTTLED
     }
 
     #[test]
     fn result_is_final_429_generic_and_3092_are_transient() {
         // A generic 429 and the transient-capacity 3092 sub-status keep the
         // other leg racing — another region may have spare capacity.
-        assert!(!super::result_is_final(&http_result(429, None), false));
-        assert!(!super::result_is_final(
-            &http_result(429, Some(3092)),
-            false
-        ));
+        assert!(!super::result_is_final(&http_result(429, None)));
+        assert!(!super::result_is_final(&http_result(429, Some(3092))));
     }
 
     /// Cross-check: every `Ok(tr)` shape that `classify_hedge_result`
@@ -8837,9 +8477,9 @@ mod tests {
             super::TransportResult::deadline_exceeded(crate::diagnostics::RequestSentStatus::Sent),
         ];
         for tr in cases {
-            let by_peek = super::result_is_final(&tr, false);
+            let by_peek = super::result_is_final(&tr);
             let by_classify = matches!(
-                super::classify_hedge_result(Ok(tr), false),
+                super::classify_hedge_result(Ok(tr)),
                 super::HedgeClass::Final(_)
             );
             assert_eq!(
@@ -9215,7 +8855,7 @@ mod tests {
             failover_retry_count: 0,
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
-            backend_failover_cumulative_delay: std::time::Duration::ZERO,
+            backend_failover_cumulative_delay: Duration::ZERO,
             #[cfg(feature = "preview_dtx")]
             dtx_coordinator_retry_count: 0,
             #[cfg(feature = "preview_dtx")]
@@ -9259,260 +8899,6 @@ mod tests {
             .build()
     }
 
-    fn database_account_not_found_error() -> crate::error::CosmosError {
-        crate::error::CosmosError::builder()
-            .with_status(crate::models::CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND)
-            .with_message("test-topology-both-transient")
-            .build()
-    }
-
-    #[test]
-    fn finalize_both_transient_preserves_last_service_error() {
-        let region_a = crate::options::Region::new("region-a");
-        let region_b = crate::options::Region::new("region-b");
-        let threshold = crate::options::HedgeThreshold::new(Duration::from_millis(100)).unwrap();
-        let race = super::finalize_both_transient(
-            &crate::models::ActivityId::from_string("preserve-service-error".to_owned()),
-            None,
-            super::HedgingStrategyConfig::new(threshold),
-            Some(region_a.clone()),
-            Some(region_b.clone()),
-            region_a,
-            region_b,
-            test_diagnostics(),
-            None,
-            false,
-            Some(database_account_not_found_error()),
-            true,
-        );
-
-        let super::HedgedRaceResult::BothTransient { last_error, .. } = race else {
-            panic!("deadline-not-elapsed race must remain non-terminal");
-        };
-        assert_eq!(
-            last_error.status(),
-            crate::models::CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND
-        );
-    }
-
-    #[test]
-    fn dual_1008_hedge_legs_preserve_status_and_backend_budget() {
-        let mut signals = super::HedgeRaceSignals::default();
-        let primary_result = http_result(403, Some(1008));
-        let secondary_result = http_result(403, Some(1008));
-        super::capture_hedge_leg_signals(&primary_result, super::HedgeLeg::Primary, &mut signals);
-        super::capture_hedge_leg_signals(
-            &secondary_result,
-            super::HedgeLeg::Secondary,
-            &mut signals,
-        );
-        let (observed_1002, service_error, observed_1008) = signals.into_both_transient();
-
-        assert!(observed_1008);
-        let region_a = crate::options::Region::new("region-a");
-        let region_b = crate::options::Region::new("region-b");
-        let threshold = crate::options::HedgeThreshold::new(Duration::from_millis(100)).unwrap();
-        let race = super::finalize_both_transient(
-            &crate::models::ActivityId::from_string("dual-1008".to_owned()),
-            None,
-            super::HedgingStrategyConfig::new(threshold),
-            Some(region_a.clone()),
-            Some(region_b.clone()),
-            region_a.clone(),
-            region_b.clone(),
-            test_diagnostics(),
-            None,
-            observed_1002,
-            service_error,
-            observed_1008,
-        );
-        let super::HedgedRaceResult::BothTransient {
-            last_error,
-            observed_database_account_not_found,
-            ..
-        } = race
-        else {
-            panic!("dual transient service responses must re-enter the failover loop");
-        };
-        assert_eq!(
-            last_error.status(),
-            crate::models::CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND
-        );
-        assert!(observed_database_account_not_found);
-
-        let location = make_advance_test_location(&["region-a", "region-b", "region-c"]);
-        let mut state = make_advance_test_state(0, 3);
-        let delay = super::try_advance_after_both_transient(
-            &mut state,
-            &location,
-            true,
-            Some(&region_a),
-            Some(&region_b),
-            last_error,
-            observed_database_account_not_found,
-        )
-        .expect("backend budget must allow the fallback")
-        .expect("dual 1008 fallback must retain the backoff delay");
-
-        assert!(delay > Duration::ZERO);
-        assert_eq!(state.failover_retry_count, 0);
-        assert_eq!(state.backend_failover_retry_count, 1);
-        assert_eq!(state.backend_failover_cumulative_delay, delay);
-    }
-
-    #[test]
-    fn mixed_1008_hedge_uses_topology_policy_independent_of_completion_order() {
-        for reverse_completion in [false, true] {
-            let mut signals = super::HedgeRaceSignals::default();
-            let primary = http_result(403, Some(1008));
-            let secondary = http_result(503, None);
-            if reverse_completion {
-                super::capture_hedge_leg_signals(
-                    &secondary,
-                    super::HedgeLeg::Secondary,
-                    &mut signals,
-                );
-                super::capture_hedge_leg_signals(&primary, super::HedgeLeg::Primary, &mut signals);
-            } else {
-                super::capture_hedge_leg_signals(&primary, super::HedgeLeg::Primary, &mut signals);
-                super::capture_hedge_leg_signals(
-                    &secondary,
-                    super::HedgeLeg::Secondary,
-                    &mut signals,
-                );
-            }
-
-            let (_, error, observed_1008) = signals.into_both_transient();
-            assert!(observed_1008);
-            assert_eq!(
-                error.expect("1008 must be preserved").status(),
-                crate::models::CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND
-            );
-        }
-    }
-
-    #[test]
-    fn mixed_non_topology_hedge_prefers_primary_service_error() {
-        for reverse_completion in [false, true] {
-            let mut signals = super::HedgeRaceSignals::default();
-            let primary = http_result(429, None);
-            let secondary = http_result(503, None);
-            if reverse_completion {
-                super::capture_hedge_leg_signals(
-                    &secondary,
-                    super::HedgeLeg::Secondary,
-                    &mut signals,
-                );
-                super::capture_hedge_leg_signals(&primary, super::HedgeLeg::Primary, &mut signals);
-            } else {
-                super::capture_hedge_leg_signals(&primary, super::HedgeLeg::Primary, &mut signals);
-                super::capture_hedge_leg_signals(
-                    &secondary,
-                    super::HedgeLeg::Secondary,
-                    &mut signals,
-                );
-            }
-
-            let (_, error, observed_1008) = signals.into_both_transient();
-            assert!(!observed_1008);
-            assert_eq!(
-                u16::from(
-                    error
-                        .expect("primary service error must be preserved")
-                        .status()
-                        .status_code()
-                ),
-                429
-            );
-        }
-    }
-
-    #[test]
-    fn deferred_hub_discovery_effects_are_taken_in_routing_order() {
-        let primary = CosmosEndpoint::regional(
-            "region-a".into(),
-            Url::parse("https://region-a.example.com").unwrap(),
-        );
-        let secondary = CosmosEndpoint::regional(
-            "region-b".into(),
-            Url::parse("https://region-b.example.com").unwrap(),
-        );
-        let partition_key_range_id: crate::driver::routing::partition_key_range_id::PartitionKeyRangeId =
-            "0".parse().unwrap();
-        let mut signals = super::HedgeRaceSignals::default();
-
-        // Simulate the secondary completing first. Storage is per leg, so the
-        // extracted order must still be primary then secondary.
-        signals.secondary_hub_discovery_effects.push(
-            crate::driver::routing::LocationEffect::AdvanceHubRegionDiscovery {
-                partition_key_range_id: partition_key_range_id.clone(),
-                failed_endpoint: secondary.clone(),
-            },
-        );
-        signals.primary_hub_discovery_effects.push(
-            crate::driver::routing::LocationEffect::AdvanceHubRegionDiscovery {
-                partition_key_range_id,
-                failed_endpoint: primary.clone(),
-            },
-        );
-
-        let effects = signals.take_hub_discovery_effects();
-        let failed: Vec<_> = effects
-            .iter()
-            .filter_map(|effect| match effect {
-                crate::driver::routing::LocationEffect::AdvanceHubRegionDiscovery {
-                    failed_endpoint,
-                    ..
-                } => Some(failed_endpoint),
-                _ => None,
-            })
-            .collect();
-        assert_eq!(failed, vec![&primary, &secondary]);
-    }
-
-    #[test]
-    fn hedge_partition_range_falls_back_to_existing_operation_state() {
-        let captured: crate::driver::routing::partition_key_range_id::PartitionKeyRangeId =
-            "captured".parse().unwrap();
-        let existing: crate::driver::routing::partition_key_range_id::PartitionKeyRangeId =
-            "existing".parse().unwrap();
-
-        assert_eq!(
-            super::hedge_partition_key_range_id(Some(&captured), Some(&existing)),
-            Some(&captured)
-        );
-        assert_eq!(
-            super::hedge_partition_key_range_id(None, Some(&existing)),
-            Some(&existing)
-        );
-    }
-
-    #[test]
-    fn try_advance_after_both_transient_preserves_backend_failover_budget_for_1008() {
-        let regions = ["region-a", "region-b", "region-c"];
-        let location = make_advance_test_location(&regions);
-        let mut state = make_advance_test_state(0, regions.len());
-        let primary = crate::options::Region::new("region-a");
-        let secondary = crate::options::Region::new("region-b");
-
-        let delay = super::try_advance_after_both_transient(
-            &mut state,
-            &location,
-            true,
-            Some(&primary),
-            Some(&secondary),
-            database_account_not_found_error(),
-            true,
-        )
-        .expect("backend-failover budget should allow advance")
-        .expect("403/1008 hedge fallback must preserve its delay");
-
-        assert!(delay > Duration::ZERO);
-        assert_eq!(state.failover_retry_count, 0);
-        assert_eq!(state.backend_failover_retry_count, 1);
-        assert_eq!(state.backend_failover_cumulative_delay, delay);
-    }
-
     /// Regression: STAGE 7 picker now selects the secondary as the
     /// first endpoint with a region/key different from the primary,
     /// which can sit at an index earlier than the primary. The
@@ -9539,7 +8925,6 @@ mod tests {
             Some(&primary),
             Some(&secondary),
             dummy_last_error(),
-            false,
         )
         .expect("budget should allow advance");
 
@@ -9574,7 +8959,6 @@ mod tests {
             Some(&primary),
             Some(&secondary),
             dummy_last_error(),
-            false,
         )
         .expect("budget should allow advance");
 
@@ -9608,7 +8992,6 @@ mod tests {
             Some(&primary),
             Some(&secondary),
             dummy_last_error(),
-            false,
         );
 
         assert!(
@@ -9643,7 +9026,6 @@ mod tests {
             Some(&primary),
             Some(&secondary),
             dummy_last_error(),
-            false,
         );
 
         assert!(result.is_err(), "exhausted budget must surface terminal");
@@ -9679,8 +9061,6 @@ mod tests {
             primary_for_diag.clone(),
             secondary_for_diag.clone(),
             test_diagnostics(),
-            None,
-            false,
             None,
             false,
         );
