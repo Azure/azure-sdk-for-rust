@@ -21,7 +21,7 @@ use azure_data_cosmos::feed::FeedScope;
 use azure_data_cosmos::models::{
     ContainerProperties, PartitionKeyKind, PatchInstructions, PatchOperation,
 };
-use azure_data_cosmos::{PartitionKey, Query, TransactionalBatch};
+use azure_data_cosmos::{CosmosStatus, PartitionKey, Query, SubStatusCode, TransactionalBatch};
 use framework::{TestClient, TestOptions, TestRunContext};
 use futures::{StreamExt, TryStreamExt};
 use serde::de::DeserializeOwned;
@@ -161,16 +161,15 @@ where
 /// returns the matching items.
 ///
 /// Prefix (partial-key) HPK queries are issued through [`FeedScope::partition`]
-/// with fewer components than the container has paths. NOTE: this does **not**
-/// filter by the prefix today. `FeedScope::partition` lowers to
-/// `FeedRange::for_partition`, which computes a single-*point* effective
-/// partition key (`EffectivePartitionKey::compute`, not `compute_range`), so the
-/// query routes to one physical partition and scans it in full, returning every
-/// item in that partition regardless of the prefix. The
-/// [`ContainerClient::feed_range_from_partition_key`] route is no better — it
-/// resolves the *physical* partition range (the whole partition). There is no
-/// supported filtered-prefix query path yet; see the `#[ignore]`d prefix tests
-/// below and issue #4680.
+/// with fewer components than the container has paths. Since #4729,
+/// `FeedRange::for_partition` computes an EPK *range* (`compute_range`, not the
+/// single-point `compute`) and the driver tags the request as an
+/// `EffectivePartitionKeyRange`, so the backend filters results to the prefix
+/// rather than scanning the whole physical partition.
+///
+/// The classic Cosmos emulator predates that support and rejects these requests
+/// with 400 BadRequest, which is why the prefix tests below skip there — see
+/// [`skip_prefix_query_on_classic_emulator`].
 async fn query_geo_prefix(
     container: &ContainerClient,
     prefix: PartitionKey,
@@ -418,6 +417,11 @@ pub async fn hpk_item_partial_key_point_op_fails() -> Result<(), Box<dyn Error>>
                 StatusCode::BadRequest,
                 "partial-key point read should be rejected with 400 BadRequest"
             );
+            assert_eq!(
+                err.status().sub_status(),
+                Some(SubStatusCode::PARTITION_KEY_MISMATCH),
+                "partial-key point read should carry sub-status 1001 PartitionKeyMismatch"
+            );
 
             Ok(())
         },
@@ -446,7 +450,9 @@ pub async fn hpk_item_too_many_components_point_op_fails() -> Result<(), Box<dyn
                 .await
                 .expect_err("too-many-component point op should fail");
             // A point op with more components than the container has paths is
-            // rejected by the gateway with 400 BadRequest (1001 PartitionKeyMismatch).
+            // rejected by the gateway with a bare 400 BadRequest. Unlike the
+            // partial-key case (A6), the emulator returns no sub-status here, so
+            // only the status code is asserted.
             assert_eq!(
                 err.status().status_code(),
                 StatusCode::BadRequest,
@@ -714,13 +720,11 @@ pub async fn hpk_query_cross_partition_full_container() -> Result<(), Box<dyn Er
 /// B7: a SQL filter on a *non-leading* partition-key path, scoped to a fully
 /// routed (single logical partition) 3-level key, is served by the backend.
 ///
-/// This deliberately scopes to a **full** key rather than a prefix: prefix
-/// scoping (`FeedScope::partition(("USA", "CA"))`) lowers to a single-point EPK
-/// and is not reliably servable across emulator versions — that behavior is the
-/// #4680 gap, covered by the ignored `hpk_query_prefix_*` tests. Here we prove
-/// the complementary, supported case: within a routed partition the server
-/// accepts and applies a SQL predicate that references a non-leading key path
-/// (`/city`).
+/// This deliberately scopes to a **full** key rather than a prefix so the case
+/// under test is the SQL predicate itself, not prefix routing: prefix scoping is
+/// exercised separately by the `hpk_query_prefix_*` tests. Here we prove that
+/// within a routed partition the server accepts and applies a SQL predicate that
+/// references a non-leading key path (`/city`).
 #[tokio::test]
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
@@ -797,10 +801,10 @@ pub async fn hpk_query_single_partition_order_by_servable() -> Result<(), Box<dy
 ///
 /// The Rust SDK advertises no cross-partition query features
 /// (`SUPPORTED_QUERY_FEATURES=""`), so any full-container query that needs a
-/// client-side pipeline is rejected. On hierarchical containers this is
-/// compounded by the cross-partition fan-out defect (#4681), so these fail
-/// regardless of operator. Each case is expected to error (400 BadRequest /
-/// 1004 CrossPartitionQueryNotServable).
+/// client-side pipeline is rejected. HPK fan-out itself works since #4729 (see
+/// B6); these cases fail solely because the SDK lacks the cross-partition
+/// operator pipeline. Each case is expected to error with 400 BadRequest /
+/// 1004 CrossPartitionQueryNotServable.
 #[tokio::test]
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
@@ -823,15 +827,24 @@ pub async fn hpk_query_cross_partition_advanced_not_servable() -> Result<(), Box
             ];
 
             for query in advanced {
-                let result = collect_query::<serde_json::Value>(
+                let err = collect_query::<serde_json::Value>(
                     &container,
                     query,
                     FeedScope::full_container(),
                 )
-                .await;
-                assert!(
-                    result.is_err(),
+                .await
+                .expect_err(&format!(
                     "cross-partition query should not be servable on an HPK container: {query}"
+                ));
+
+                let status = err
+                    .downcast_ref::<azure_data_cosmos::CosmosError>()
+                    .map(|e| e.status())
+                    .unwrap_or_else(|| panic!("expected a CosmosError for {query}, got: {err}"));
+                assert_eq!(
+                    status,
+                    CosmosStatus::CROSS_PARTITION_QUERY_NOT_SERVABLE,
+                    "expected 400 / 1004 CrossPartitionQueryNotServable for {query}"
                 );
             }
 
@@ -842,16 +855,17 @@ pub async fn hpk_query_cross_partition_advanced_not_servable() -> Result<(), Box
     .await
 }
 
-/// B10: a full-key equality predicate over the whole container should route to
-/// the single owning partition (closed point) and return the matching docs.
+/// B10: a full-key equality predicate over the whole container routes to
+/// the single owning partition (closed point) and returns the matching docs.
 ///
-/// Currently ignored: the full-key equality/`IN` collapse-to-point fix lives in
-/// PR #4638 (issue #4574), which is not yet merged. Until then this predicate
-/// shape either panics the query worker or is rejected. Re-enable once #4638
-/// lands.
+/// The equality/`IN` collapse-to-point fix landed in #4638 (issue #4574), which
+/// normalizes the closed point range `[X, X]` to `[X, normalized_successor(X))`
+/// and routes it as an EPK window, so this predicate shape is now servable.
 #[tokio::test]
-#[ignore = "GAP (#4574/#4638): full-key equality over full_container collapses to an empty point and \
-            is not servable until PR #4638 merges. Re-enable once the equality/IN point-routing fix lands."]
+#[cfg_attr(
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
 pub async fn hpk_query_full_key_equality_cross_partition() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {

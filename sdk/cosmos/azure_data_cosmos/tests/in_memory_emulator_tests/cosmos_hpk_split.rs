@@ -34,12 +34,12 @@
 //!   the geometric EPK midpoint (`compute_epk_midpoint`), never inside a single
 //!   prefix's hash band, so a shared-prefix dataset always lands wholly on one side
 //!   and a prefix resolves to exactly one range (verified below in
-//!   [`hpk_split_prefix_resolves_to_single_partition`]). Real prefix-query behavior
-//!   against a genuine emulator is covered by the `hpk_query_prefix_*` tests in
-//!   `cosmos_hpk.rs` (tracked by #4680).
-//! * **Full-key-equality cross-partition query** — covered by the `#[ignore]`d
-//!   `hpk_query_full_key_equality_cross_partition` in `cosmos_hpk.rs`, pending the
-//!   planner fix in #4638.
+//!   [`hpk_split_prefix_resolves_to_single_partition`]). Prefix-query filtering
+//!   itself is covered by `in_memory_emulator_tests::hpk` and the
+//!   `hpk_query_prefix_*` tests in `cosmos_hpk.rs`.
+//! * **Full-key-equality cross-partition query** — covered by
+//!   `hpk_query_full_key_equality_cross_partition` in `cosmos_hpk.rs` and the
+//!   in-memory regressions in `in_memory_emulator_tests::hpk`.
 
 use azure_data_cosmos::{
     options::Region, AccountEndpoint, AccountReference, ContainerClient, CosmosClient,
