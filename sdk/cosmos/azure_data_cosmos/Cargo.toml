@@ -136,6 +136,11 @@ path = "tests/split.rs"
 required-features = ["key_auth", "fault_injection"]
 
 [[test]]
+name = "binary_encoding"
+path = "tests/binary_encoding.rs"
+required-features = ["key_auth", "fault_injection"]
+
+[[test]]
 name = "gateway_v2"
 path = "tests/gateway_v2.rs"
 required-features = ["key_auth", "fault_injection"]
