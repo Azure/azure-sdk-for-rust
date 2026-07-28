@@ -12,7 +12,7 @@
 
 ### Other Changes
 
-- Updated `typespec` HTTP header defaults so `azure-deprecating` is not redacted in shared debug and logging paths.
+- Added `azure-deprecating` to the default allowed HTTP header list so shared debug and logging paths stop redacting it.
 
 ## 1.1.0 (2026-07-09)
 
