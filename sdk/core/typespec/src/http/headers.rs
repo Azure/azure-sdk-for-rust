@@ -459,7 +459,7 @@ mod tests {
     use crate::error::ErrorKind;
     use url::Url;
 
-    use super::{FromHeaders, HeaderName, Headers, DEFAULT_ALLOWED_HEADER_NAMES};
+    use super::{FromHeaders, HeaderName, Headers};
 
     // Just in case we add a ContentLocation struct later, this one is named "ForTest" to indicate it's just here for this test.
     #[derive(Debug)]
