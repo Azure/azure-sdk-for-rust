@@ -550,6 +550,8 @@ dependencies = [
  "azure_core 1.1.0",
  "azure_data_cosmos_driver",
  "criterion",
+ "serde",
+ "serde_json",
  "tokio",
  "url",
 ]
@@ -835,6 +837,8 @@ dependencies = [
 name = "azure_security_keyvault_test"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
+ "azure_core 1.2.0-beta.1",
  "tokio",
 ]
 

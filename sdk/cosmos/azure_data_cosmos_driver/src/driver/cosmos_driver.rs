@@ -70,6 +70,19 @@ const DTX_OUTER_JITTER_RATIO: f64 = 0.25;
 const ACCOUNT_PROPERTIES_CONNECTIVITY_MAX_RETRIES: u32 = 2;
 const ACCOUNT_PROPERTIES_CONNECTIVITY_BASE_DELAY: Duration = Duration::from_millis(100);
 
+/// Serialization formats advertised (`x-ms-cosmos-supported-serialization-formats`)
+/// on point operations when binary encoding is enabled. Point operations
+/// advertise `CosmosBinary` only — matching the .NET SDK's point-op default
+/// (`RequestInvokerHandler` sets `BinarySerializationFormat =
+/// SupportedSerializationFormats.CosmosBinary`) — so the service is required to
+/// reply in binary, preserving the read-side RU/COGS benefit the caller opted
+/// into. When the caller also asked for a text payload
+/// (`request_text_response`), the driver transcodes the guaranteed-binary
+/// response back to text after receiving it, keeping the wire binary in both
+/// directions. (The broader `JsonText,CosmosBinary` negotiation applies to
+/// query/feed, which is not yet wired.)
+const BINARY_NEGOTIATION_FORMATS: &str = "CosmosBinary";
+
 fn should_retry_account_properties_connectivity_error(
     error: &crate::error::CosmosError,
     request_sent: RequestSentStatus,
@@ -2284,10 +2297,9 @@ impl CosmosDriver {
         options: OperationOptions,
     ) -> crate::error::Result<Option<crate::models::CosmosResponse>> {
         // PATCH is a virtual operation type: dispatch it to the dedicated
-        // Read-Modify-Write handler before any of the standard pipeline steps
-        // run, because the handler issues its own Read/Replace operations
-        // through this same entry point. `Box::pin` is required so the
-        // resulting async future has a fixed size even though it can recurse.
+        // Read-Modify-Write handler, which issues its own Read/Replace
+        // operations through this same entry point. `Box::pin` gives the
+        // recursive future a fixed size.
         if operation.operation_type() == crate::models::OperationType::Patch {
             let max_attempts = operation.patch_max_attempts();
             return Box::pin(async {
@@ -2303,14 +2315,95 @@ impl CosmosDriver {
             .await;
         }
 
+        // Resolve binary encoding through the same layered view as every other
+        // option, and only honor it for point **item** operations (the resource
+        // must be a `Document`; query/feed/batch and every control-plane
+        // resource are deferred per the binary-encoding spec).
+        let binary =
+            if Self::binary_encoding_applies(operation.resource_type(), operation.operation_type())
+            {
+                self.operation_options_view(&options)
+                    .binary_encoding()
+                    .cloned()
+                    .unwrap_or_default()
+            } else {
+                crate::options::BinaryEncodingOptions::default()
+            };
+        let operation = if binary.enabled {
+            Self::apply_request_binary_encoding(operation)?
+        } else {
+            operation
+        };
+
+        let transcode_response_to_text = binary.enabled && binary.request_text_response;
+
         // TODO: This boxing is a temporary fix to avoid a large future.
         // We need to do some refactoring here to shrink the future size and avoid this heap allocation if possible.
-        Box::pin(async {
+        let response = Box::pin(async {
             let container = operation.container().cloned();
             let mut plan = Box::pin(self.plan_operation(operation, &options, None)).await?;
             self.execute_plan(&mut plan, container, options).await
         })
-        .await
+        .await?;
+
+        // Driver-side transcoding: convert the binary response body to text
+        // when the caller asked for a text payload over a binary wire.
+        if transcode_response_to_text {
+            if let Some(mut response) = response {
+                response.transcode_body_to_text()?;
+                return Ok(Some(response));
+            }
+        }
+        Ok(response)
+    }
+
+    /// Whether binary encoding applies to an operation.
+    ///
+    /// Honored only for point item operations: the resource must be a
+    /// [`ResourceType::Document`] and the operation one of create/read/replace/
+    /// upsert. Control-plane resources share those operation types but must
+    /// never be binary encoded (some carry JSON bodies).
+    fn binary_encoding_applies(
+        resource_type: crate::models::ResourceType,
+        operation_type: crate::models::OperationType,
+    ) -> bool {
+        resource_type == crate::models::ResourceType::Document
+            && operation_type.supports_binary_encoding()
+    }
+
+    /// Applies request-side binary encoding to an operation: transcodes a text
+    /// request body to Cosmos binary JSON (an already-binary or empty body is
+    /// passed through) and advertises binary responses via the
+    /// `x-ms-cosmos-supported-serialization-formats` header.
+    ///
+    /// This is schema-agnostic — it operates on the raw body bytes — so a
+    /// caller that deals only in text JSON gets a binary wire without encoding
+    /// anything itself.
+    fn apply_request_binary_encoding(
+        operation: CosmosOperation,
+    ) -> crate::error::Result<CosmosOperation> {
+        // Transcode a non-empty *text* body to binary. A body that is already
+        // binary (the SDK's typed fast path) or empty is left in place — no
+        // clone — so only genuinely text bodies pay the conversion.
+        let transcoded = match operation.body() {
+            Some(body) if !body.is_empty() && !crate::binary_json::is_binary(body) => {
+                Some(crate::binary_json::transcode_to_binary(body).map_err(|e| {
+                    crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::SERIALIZATION_REQUEST_BODY_INVALID)
+                        .with_message(format!(
+                            "failed to transcode text request body to Cosmos binary JSON: {e}"
+                        ))
+                        .with_source(e)
+                        .build()
+                })?)
+            }
+            _ => None,
+        };
+        let operation = match transcoded {
+            Some(bytes) => operation.with_body(bytes),
+            None => operation,
+        };
+        Ok(operation.with_supported_serialization_formats(BINARY_NEGOTIATION_FORMATS))
     }
 
     /// Executes a singleton operation (operations which return only a single result).
@@ -5665,6 +5758,129 @@ mod tests {
         assert!(
             id.as_str() == "0" || id.as_str() == "1",
             "logical PK must resolve to a single owning range, got {id}",
+        );
+    }
+
+    // ── apply_request_binary_encoding (schema-agnostic request-side encode) ──
+
+    #[test]
+    fn binary_encoding_applies_only_to_document_item_ops() {
+        use crate::models::{OperationType, ResourceType};
+
+        // Point item ops on `Document` are the only combinations that qualify.
+        for op in [
+            OperationType::Create,
+            OperationType::Read,
+            OperationType::Replace,
+            OperationType::Upsert,
+        ] {
+            assert!(
+                CosmosDriver::binary_encoding_applies(ResourceType::Document, op),
+                "Document + {op:?} should be binary-encodable",
+            );
+        }
+
+        // Non-item operation types on `Document` are excluded (query/feed/delete/patch).
+        for op in [
+            OperationType::Delete,
+            OperationType::Query,
+            OperationType::ReadFeed,
+            OperationType::Patch,
+        ] {
+            assert!(
+                !CosmosDriver::binary_encoding_applies(ResourceType::Document, op),
+                "Document + {op:?} must not be binary-encoded",
+            );
+        }
+
+        // Control-plane resources share the create/read/replace/upsert operation
+        // types but must NEVER be binary encoded — some carry JSON bodies.
+        for rt in [
+            ResourceType::Database,
+            ResourceType::DocumentCollection,
+            ResourceType::Offer,
+            ResourceType::StoredProcedure,
+            ResourceType::Trigger,
+            ResourceType::UserDefinedFunction,
+        ] {
+            for op in [
+                OperationType::Create,
+                OperationType::Read,
+                OperationType::Replace,
+                OperationType::Upsert,
+            ] {
+                assert!(
+                    !CosmosDriver::binary_encoding_applies(rt, op),
+                    "{rt:?} + {op:?} must not be binary-encoded (control plane)",
+                );
+            }
+        }
+    }
+
+    fn binary_encoding_test_operation(body: Vec<u8>) -> CosmosOperation {
+        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+        let item =
+            crate::models::ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
+        CosmosOperation::create_item(item).with_body(body)
+    }
+
+    #[test]
+    fn apply_request_binary_encoding_transcodes_text_body_to_binary() {
+        // A caller (e.g. FFI) hands a TEXT JSON body; the driver transcodes it
+        // to Cosmos binary JSON and advertises binary responses. The caller
+        // never encoded binary itself.
+        let text = serde_json::to_vec(&serde_json::json!({ "id": "doc1", "n": 7 })).unwrap();
+        assert!(!crate::binary_json::is_binary(&text));
+
+        let op = binary_encoding_test_operation(text);
+        let op = CosmosDriver::apply_request_binary_encoding(op).unwrap();
+
+        let body = op.body().expect("body present");
+        assert!(
+            crate::binary_json::is_binary(body),
+            "text body must be transcoded to binary on the wire",
+        );
+        // Decodes back to the same value.
+        assert_eq!(
+            crate::binary_json::decode(body).unwrap(),
+            serde_json::json!({ "id": "doc1", "n": 7 }),
+        );
+        // Advertises binary responses.
+        assert_eq!(
+            op.request_headers()
+                .supported_serialization_formats
+                .as_deref(),
+            Some("CosmosBinary"),
+        );
+    }
+
+    #[test]
+    fn apply_request_binary_encoding_passes_binary_body_through() {
+        // A typed consumer (Rust SDK) may pre-encode to binary; the driver's
+        // request-side transcode sees an already-binary body and passes it
+        // through unchanged.
+        let binary = crate::binary_json::encode(&serde_json::json!({ "id": "doc1", "n": 7 }));
+        let op = binary_encoding_test_operation(binary.clone());
+        let op = CosmosDriver::apply_request_binary_encoding(op).unwrap();
+
+        assert_eq!(op.body().unwrap(), binary.as_slice());
+        assert_eq!(
+            op.request_headers()
+                .supported_serialization_formats
+                .as_deref(),
+            Some("CosmosBinary"),
+        );
+    }
+
+    #[test]
+    fn apply_request_binary_encoding_errors_on_invalid_text_body() {
+        // A body that is neither binary nor valid JSON surfaces as a
+        // request-body serialization error.
+        let op = binary_encoding_test_operation(b"{not json".to_vec());
+        let err = CosmosDriver::apply_request_binary_encoding(op).unwrap_err();
+        assert_eq!(
+            err.status().sub_status(),
+            Some(crate::error::SubStatusCode::SERIALIZATION_REQUEST_BODY_INVALID),
         );
     }
 }

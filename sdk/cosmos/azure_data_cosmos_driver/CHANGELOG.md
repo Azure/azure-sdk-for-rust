@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added a schema-agnostic Cosmos binary JSON codec (`binary_json`) and driver-side binary encoding via `OperationOptions.binary_encoding` (`BinaryEncodingOptions`). When enabled, the driver transcodes item request/response bodies between text and Cosmos binary JSON and negotiates the wire format; it is honored only for point `Document` item operations. Off by default and inert on the wire when unset. ([#4671](https://github.com/Azure/azure-sdk-for-rust/pull/4671))
 - Added `CosmosOperation::db_operation_name`, returning the canonical OpenTelemetry `db.operation.name` (e.g. `read_item`, `query_items`, `execute_batch`, and `read_all_items_of_logical_partition` for a read feed scoped to one logical partition) for an operation. ([#4874](https://github.com/Azure/azure-sdk-for-rust/pull/4874))
 
 ### Breaking Changes
