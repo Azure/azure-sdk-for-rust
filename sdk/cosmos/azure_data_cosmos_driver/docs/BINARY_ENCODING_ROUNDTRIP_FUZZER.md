@@ -271,6 +271,33 @@ random JSON **object** (Cosmos items are objects) using a **hybrid** strategy:
 > decoder's `MAX_DEPTH` guard. A `generator_depth_scales_with_max_depth` offline
 > test locks this in.
 
+### 4.1 Corpus-shaped documents
+
+Beyond the free-form hybrid documents, a configurable fraction of each run
+(`AZURE_COSMOS_FUZZ_SHAPE_RATIO`, default 50%) generates documents in the
+**shape of the real service testdata corpus**. A set of ~24 *shape samplers*
+(`SHAPE_SAMPLERS`) each reproduce the structure of one `testdata/*.json` family
+— GeoJSON features, embedding vectors, blog/telemetry/log records, Cosmos-run
+metadata, user records with GUIDs, nutrition/food docs, error buckets with
+multiline stack traces, legislator/committee records, and more — populated with
+randomized, seed-reproducible data spanning every datatype: integers, floats,
+high-precision unit/coordinate doubles, alphabetic / alphanumeric / free-text /
+**non-ASCII + emoji** strings, booleans, `null`s, ISO-8601 timestamps, hex
+hashes, and UUIDs. These reproduce the *shape*, not verbatim corpus bytes (no
+data is embedded). Every shaped document still carries the all-category
+`_sampler` subtree, so category coverage holds regardless of shape. Set
+`AZURE_COSMOS_FUZZ_SHAPE_RATIO=0` for purely free-form docs, or `=100` for an
+all-corpus run. Offline tests (`every_corpus_shape_produces_a_valid_object`,
+`shaped_documents_are_emitted_when_ratio_is_full`) lock this in.
+
+`AZURE_COSMOS_FUZZ_SIZE_SCALE` (default `1`) multiplies every corpus-shape
+collection length — embedding-vector dimensions, nutrient / member / keyword /
+`similars` arrays, etc. — so a run can grow per-item payloads toward corpus-scale
+sizes (e.g. `SIZE_SCALE=40` yields ~18-40 KB items with hundreds-of-dimension
+vectors, versus ~1 KB at the default). The corpus's overall *bulk* is a function
+of item **count**, so scale volume with `AZURE_COSMOS_FUZZ_ITERATIONS` (live) or
+`AZURE_COSMOS_FUZZ_PRINT_COUNT` (offline printer).
+
 Every run prints its seed; a failing run is reproduced exactly with
 `AZURE_COSMOS_FUZZ_SEED=<seed>`.
 

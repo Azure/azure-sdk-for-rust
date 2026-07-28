@@ -62,6 +62,8 @@ const MAX_DEPTH_ENV_VAR: &str = "AZURE_COSMOS_FUZZ_MAX_DEPTH";
 const WIDE_NUMBERS_ENV_VAR: &str = "AZURE_COSMOS_FUZZ_WIDE_NUMBERS";
 const UNICODE_ENV_VAR: &str = "AZURE_COSMOS_FUZZ_UNICODE";
 const BREADTH_ENV_VAR: &str = "AZURE_COSMOS_FUZZ_BREADTH";
+const SHAPE_RATIO_ENV_VAR: &str = "AZURE_COSMOS_FUZZ_SHAPE_RATIO";
+const SIZE_SCALE_ENV_VAR: &str = "AZURE_COSMOS_FUZZ_SIZE_SCALE";
 const CALIBRATE_ENV_VAR: &str = "AZURE_COSMOS_FUZZ_CALIBRATE";
 const PRINT_ENV_VAR: &str = "AZURE_COSMOS_FUZZ_PRINT";
 
@@ -74,6 +76,14 @@ const DEFAULT_MAX_DEPTH: u32 = 6;
 /// Default maximum number of child fields/elements generated at each container
 /// level (the branching factor). Higher values produce larger, wider documents.
 const DEFAULT_BREADTH: u32 = 6;
+/// Default percent (0-100) of generated documents built in the shape of a real
+/// corpus file (see `SHAPE_SAMPLERS`); the rest are free-form hybrid documents.
+const DEFAULT_SHAPE_RATIO: u32 = 50;
+/// Default multiplier applied to the internal array / collection sizes of the
+/// corpus shape samplers. `1` keeps documents compact; larger values grow the
+/// per-item payload (e.g. embedding-vector dimensions, nutrient / member /
+/// keyword / similars arrays) toward corpus-scale sizes.
+const DEFAULT_SIZE_SCALE: u32 = 1;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Seeded PRNG (SplitMix64) — deterministic and dependency-feature-free, matching
@@ -114,6 +124,8 @@ struct FuzzConfig {
     wide_numbers: bool,
     unicode: bool,
     breadth: u32,
+    shape_ratio: u32,
+    size_scale: u32,
     calibrate: bool,
     print_docs: bool,
 }
@@ -137,6 +149,8 @@ impl FuzzConfig {
             wide_numbers: env_bool(WIDE_NUMBERS_ENV_VAR, false),
             unicode: env_bool(UNICODE_ENV_VAR, true),
             breadth: env_u64(BREADTH_ENV_VAR, DEFAULT_BREADTH as u64).max(1) as u32,
+            shape_ratio: env_u64(SHAPE_RATIO_ENV_VAR, DEFAULT_SHAPE_RATIO as u64).min(100) as u32,
+            size_scale: env_u64(SIZE_SCALE_ENV_VAR, DEFAULT_SIZE_SCALE as u64).max(1) as u32,
             calibrate: env_bool(CALIBRATE_ENV_VAR, false),
             print_docs: env_bool(PRINT_ENV_VAR, false),
         }
@@ -184,6 +198,19 @@ fn env_bool(name: &str, default: bool) -> bool {
 /// §3.2) and strings to ASCII, unless explicitly widened. The hand-rolled
 /// scalars already respect those knobs directly.
 fn gen_object(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Map<String, Value> {
+    // A configurable fraction of documents are built in the shape of a real
+    // corpus file (see SHAPE_SAMPLERS), so a run resembles the service corpus.
+    // The rest are the free-form hybrid documents below. The `_sampler` subtree
+    // is attached in both cases so every document still covers all categories.
+    let shaped = cfg.shape_ratio > 0 && rng.below(100) < cfg.shape_ratio as u64;
+    if shaped {
+        let mut map = gen_shaped_document(rng, cfg);
+        // Ensure the all-category sampler is present without clobbering a
+        // shape field of the same name (shapes never use `_sampler`).
+        map.insert("_sampler".to_string(), gen_sampler(rng, cfg));
+        return map;
+    }
+
     let max_depth = cfg.max_depth.max(1);
     // Target nesting depth for this document's spine, in [1, max_depth].
     let target_depth = 1 + rng.below(max_depth as u64) as u32;
@@ -364,7 +391,923 @@ fn gen_sampler(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Value {
     Value::Object(map)
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Domain-flavored scalar helpers (used by the corpus shape samplers below).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Lowercase hex string of `len` nibbles (e.g. hashes, GUIDs-as-hex).
+fn gen_hex(rng: &mut SplitMix64, len: usize) -> String {
+    const HEX: &[u8] = b"0123456789abcdef";
+    (0..len)
+        .map(|_| HEX[rng.below(16) as usize] as char)
+        .collect()
+}
+
+/// Uppercase-hex string of `len` nibbles (e.g. GUID-like ids without dashes).
+fn gen_hex_upper(rng: &mut SplitMix64, len: usize) -> String {
+    gen_hex(rng, len).to_ascii_uppercase()
+}
+
+/// A canonical `8-4-4-4-12` UUID string (lowercase hex).
+fn gen_uuid(rng: &mut SplitMix64) -> String {
+    format!(
+        "{}-{}-{}-{}-{}",
+        gen_hex(rng, 8),
+        gen_hex(rng, 4),
+        gen_hex(rng, 4),
+        gen_hex(rng, 4),
+        gen_hex(rng, 12)
+    )
+}
+
+/// An ISO-8601-ish timestamp string, optionally with fractional seconds and a
+/// UTC `Z` suffix. Deterministic from the PRNG (not the wall clock).
+fn gen_iso_datetime(rng: &mut SplitMix64) -> String {
+    let year = gen_int_in(rng, 1990, 2024);
+    let month = gen_int_in(rng, 1, 12);
+    let day = gen_int_in(rng, 1, 28);
+    let hour = gen_int_in(rng, 0, 23);
+    let min = gen_int_in(rng, 0, 59);
+    let sec = gen_int_in(rng, 0, 59);
+    match rng.below(3) {
+        0 => format!("{year:04}-{month:02}-{day:02}T{hour:02}:{min:02}:{sec:02}"),
+        1 => format!(
+            "{year:04}-{month:02}-{day:02}T{hour:02}:{min:02}:{sec:02}.{:07}Z",
+            gen_int_in(rng, 0, 9_999_999)
+        ),
+        _ => format!("{year:04}-{month:02}-{day:02} {hour:02}:{min:02}:{sec:02}"),
+    }
+}
+
+/// A short uppercase alphabetic code (e.g. airport / entity codes).
+fn gen_code(rng: &mut SplitMix64, len: usize) -> String {
+    const UPPER: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    (0..len)
+        .map(|_| UPPER[rng.below(26) as usize] as char)
+        .collect()
+}
+
+/// A signed geographic coordinate (`±180`) with high precision, as an `f64`.
+fn gen_coordinate(rng: &mut SplitMix64) -> Value {
+    let scaled = gen_int_in(rng, -180_000_000, 180_000_000);
+    Number::from_f64(scaled as f64 / 1_000_000.0)
+        .map(Value::Number)
+        .unwrap_or(Value::Null)
+}
+
+/// A tiny normalized floating value in `[-1, 1]` (e.g. embedding components,
+/// similarity scores) with many significant digits.
+fn gen_unit_float(rng: &mut SplitMix64) -> Value {
+    let scaled = gen_int_in(rng, -100_000_000, 100_000_000);
+    Number::from_f64(scaled as f64 / 100_000_000.0)
+        .map(Value::Number)
+        .unwrap_or(Value::Null)
+}
+
+/// A short human-ish name from a small fixed pool (keeps documents readable and
+/// deterministic without a names dictionary).
+fn gen_name(rng: &mut SplitMix64) -> String {
+    const NAMES: &[&str] = &[
+        "Casual",
+        "Joe Flacco",
+        "Emmanuel",
+        "Aruba",
+        "Gary Stevens",
+        "Aachen",
+        "Atlanta",
+        "Chenault",
+        "Millett",
+        "Coffee",
+        "Volcano",
+        "Xpert",
+        "Reddit",
+        "Bitcoin",
+    ];
+    NAMES[rng.below(NAMES.len() as u64) as usize].to_string()
+}
+
+/// A GeoJSON linear-ring of `n` `[lon, lat]` coordinate pairs.
+fn gen_coord_ring(rng: &mut SplitMix64, n: usize) -> Value {
+    Value::Array(
+        (0..n)
+            .map(|_| Value::Array(vec![gen_coordinate(rng), gen_coordinate(rng)]))
+            .collect(),
+    )
+}
+
+/// `n` items produced by `f`, as a JSON array. `n` is computed **before** the
+/// call to avoid double-borrowing `rng`.
+fn gen_array_of<F>(rng: &mut SplitMix64, n: usize, mut f: F) -> Value
+where
+    F: FnMut(&mut SplitMix64) -> Value,
+{
+    Value::Array((0..n).map(|_| f(rng)).collect())
+}
+
+/// A random, **size-scaled** count in `[min, min+span)` × `cfg.size_scale` — a
+/// small helper so array builders can pick their length in a `let` binding
+/// (keeping the `gen_array_of` call from borrowing `rng` twice in one
+/// expression). The `size_scale` knob multiplies every corpus-shape collection
+/// length, so a run can grow per-item payloads toward corpus-scale sizes.
+fn count(rng: &mut SplitMix64, cfg: &FuzzConfig, min: usize, span: u64) -> usize {
+    let scale = cfg.size_scale.max(1) as usize;
+    (min + rng.below(span) as usize) * scale
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Corpus shape samplers.
+//
+// Each `shape_*` produces a single document (a `Map`) matching the structural
+// "shape" of one of the local `testdata/*.json` corpus files, populated with
+// randomized alphanumeric / numeric / float / non-ASCII / boolean / null /
+// datetime / GUID / coordinate values. The generator can emit any of these
+// shapes at random (see [`gen_shaped_document`]), so a run resembles the real
+// service corpus while staying fully synthetic and seed-reproducible.
+//
+// These reproduce the *shape*, not verbatim data — no corpus bytes are embedded.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// `airline-delays-2003-2016.json`: nested Airport/Time/Statistics record.
+fn shape_airline_delays(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Map<String, Value> {
+    let mut airport = Map::new();
+    airport.insert("Code".into(), Value::String(gen_code(rng, 3)));
+    airport.insert(
+        "Name".into(),
+        Value::String(gen_unicode_string(rng, cfg, 40)),
+    );
+    let mut time = Map::new();
+    time.insert(
+        "Label".into(),
+        Value::String(format!(
+            "{:04}/{:02}",
+            gen_int_in(rng, 2003, 2016),
+            gen_int_in(rng, 1, 12)
+        )),
+    );
+    time.insert(
+        "Month".into(),
+        Value::Number(Number::from(gen_int_in(rng, 1, 12))),
+    );
+    time.insert(
+        "Year".into(),
+        Value::Number(Number::from(gen_int_in(rng, 2003, 2016))),
+    );
+    let mut stats = Map::new();
+    stats.insert(
+        "Delayed".into(),
+        Value::Number(Number::from(gen_int_in(rng, 0, 100_000))),
+    );
+    stats.insert("OnTime".into(), gen_envelope_float(rng));
+    let mut m = Map::new();
+    m.insert("Airport".into(), Value::Object(airport));
+    m.insert("Time".into(), Value::Object(time));
+    m.insert("Statistics".into(), Value::Object(stats));
+    m
+}
+
+/// `bitcoin_transactions.json`: flat transaction with hash + numeric fields.
+fn shape_bitcoin(rng: &mut SplitMix64, _cfg: &FuzzConfig) -> Map<String, Value> {
+    let mut m = Map::new();
+    m.insert("hash".into(), Value::String(gen_hex(rng, 64)));
+    m.insert(
+        "ver".into(),
+        Value::Number(Number::from(gen_int_in(rng, 1, 2))),
+    );
+    m.insert(
+        "vin_sz".into(),
+        Value::Number(Number::from(gen_int_in(rng, 1, 10))),
+    );
+    m.insert(
+        "vout_sz".into(),
+        Value::Number(Number::from(gen_int_in(rng, 1, 10))),
+    );
+    m.insert(
+        "size".into(),
+        Value::Number(Number::from(gen_int_in(rng, 100, 5000))),
+    );
+    m.insert(
+        "fee".into(),
+        Value::Number(Number::from(gen_int_in(rng, 0, 100_000))),
+    );
+    m.insert("relayed_by".into(), Value::String("0.0.0.0".into()));
+    m
+}
+
+/// `CombinedBingDocs.json`: blog post with a structured `postTime`.
+fn shape_bing_docs(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Map<String, Value> {
+    let mut post_time = Map::new();
+    post_time.insert(
+        "Month".into(),
+        Value::Number(Number::from(gen_int_in(rng, 1, 12))),
+    );
+    post_time.insert(
+        "Day".into(),
+        Value::Number(Number::from(gen_int_in(rng, 1, 28))),
+    );
+    post_time.insert(
+        "Year".into(),
+        Value::Number(Number::from(gen_int_in(rng, 1600, 2024))),
+    );
+    post_time.insert(
+        "Hour".into(),
+        Value::Number(Number::from(gen_int_in(rng, 0, 23))),
+    );
+    post_time.insert(
+        "Minute".into(),
+        Value::Number(Number::from(gen_int_in(rng, 0, 59))),
+    );
+    let mut m = Map::new();
+    m.insert("blogId".into(), Value::String(gen_code(rng, 9)));
+    m.insert(
+        "blogName".into(),
+        Value::String(gen_string_from(rng, ALPHA_CHARS, 12)),
+    );
+    m.insert("postId".into(), Value::String(gen_code(rng, 9)));
+    m.insert("postTitle".into(), Value::String(gen_code(rng, 32)));
+    m.insert("authorName".into(), Value::String(gen_name(rng)));
+    m.insert("postTime".into(), Value::Object(post_time));
+    m.insert(
+        "body".into(),
+        Value::String(gen_unicode_string(rng, cfg, 120)),
+    );
+    m
+}
+
+/// `CombinedScriptsData.Json`: entity with a `from` object + `actions` array.
+fn shape_scripts_data(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Map<String, Value> {
+    let mut from = Map::new();
+    from.insert("name".into(), Value::String(gen_name(rng)));
+    from.insert(
+        "id".into(),
+        Value::Number(Number::from(gen_int_in(rng, 1, 1000))),
+    );
+    let n = count(rng, cfg, 1, 4);
+    let actions = gen_array_of(rng, n, |_r| {
+        let mut a = Map::new();
+        a.insert("name".into(), Value::String("Comment".into()));
+        a.insert(
+            "link".into(),
+            Value::String("http://www.facebook.com/X999/posts/Y999".into()),
+        );
+        Value::Object(a)
+    });
+    let mut m = Map::new();
+    m.insert("entityId".into(), Value::String(gen_code(rng, 9)));
+    m.insert("from".into(), Value::Object(from));
+    m.insert(
+        "message".into(),
+        Value::String(gen_unicode_string(rng, cfg, 60)),
+    );
+    m.insert("actions".into(), actions);
+    m
+}
+
+/// `countries.json` / `Volcanoes.json`: a GeoJSON `Feature` with geometry.
+fn shape_geojson_feature(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Map<String, Value> {
+    let mut props = Map::new();
+    props.insert("ADMIN".into(), Value::String(gen_name(rng)));
+    props.insert("ISO_A3".into(), Value::String(gen_code(rng, 3)));
+    props.insert(
+        "POP".into(),
+        Value::Number(Number::from(gen_int_in(rng, 0, 1_000_000))),
+    );
+    props.insert(
+        "NOTE".into(),
+        Value::String(gen_unicode_string(rng, cfg, 30)),
+    );
+    let mut geometry = Map::new();
+    if rng.below(2) == 0 {
+        geometry.insert("type".into(), Value::String("Point".into()));
+        geometry.insert(
+            "coordinates".into(),
+            Value::Array(vec![gen_coordinate(rng), gen_coordinate(rng)]),
+        );
+    } else {
+        geometry.insert("type".into(), Value::String("Polygon".into()));
+        let ring_len = count(rng, cfg, 3, 5);
+        geometry.insert(
+            "coordinates".into(),
+            Value::Array(vec![gen_coord_ring(rng, ring_len)]),
+        );
+    }
+    let mut m = Map::new();
+    m.insert("type".into(), Value::String("Feature".into()));
+    m.insert("properties".into(), Value::Object(props));
+    m.insert("geometry".into(), Value::Object(geometry));
+    m
+}
+
+/// `devtestcoll.json` / `runsCollection.json`: Cosmos-run metadata record with
+/// `id`, state strings, and ISO timestamps. (The corpus files also carry a
+/// `_self` resource link, but that is a Cosmos-reserved system property the
+/// service owns; we model it as a non-reserved `resourceLink` string instead so
+/// the document round-trips cleanly.)
+fn shape_cosmos_run(rng: &mut SplitMix64, _cfg: &FuzzConfig) -> Map<String, Value> {
+    const STATES: &[&str] = &["InProgress", "Completed", "Failed", "Queued"];
+    let mut m = Map::new();
+    m.insert("id".into(), Value::String(gen_hex(rng, 7)));
+    m.insert(
+        "resourceLink".into(),
+        Value::String(format!(
+            "dbs/{}==/colls/{}=/docs/{}==/",
+            gen_code(rng, 6),
+            gen_code(rng, 9),
+            gen_code(rng, 20)
+        )),
+    );
+    m.insert(
+        "RunState".into(),
+        Value::String(STATES[rng.below(STATES.len() as u64) as usize].into()),
+    );
+    m.insert("RunResult".into(), Value::String("Failed".into()));
+    m.insert(
+        "FederationName".into(),
+        Value::String(gen_string_from(rng, ALPHANUMERIC_CHARS, 24)),
+    );
+    m.insert("StartTime".into(), Value::String(gen_iso_datetime(rng)));
+    m.insert("CompletedTime".into(), Value::String(gen_iso_datetime(rng)));
+    m
+}
+
+/// `earth-meteorite-landings.json`: flat record with **numbers-as-strings** and
+/// a nested `geolocation`.
+fn shape_meteorite(rng: &mut SplitMix64, _cfg: &FuzzConfig) -> Map<String, Value> {
+    let lat = gen_int_in(rng, -90_000_000, 90_000_000) as f64 / 1_000_000.0;
+    let lon = gen_int_in(rng, -180_000_000, 180_000_000) as f64 / 1_000_000.0;
+    let mut geo = Map::new();
+    geo.insert("type".into(), Value::String("Point".into()));
+    geo.insert(
+        "coordinates".into(),
+        Value::Array(vec![gen_coordinate(rng), gen_coordinate(rng)]),
+    );
+    let mut m = Map::new();
+    m.insert("name".into(), Value::String(gen_name(rng)));
+    m.insert(
+        "id".into(),
+        Value::String(gen_int_in(rng, 1, 100_000).to_string()),
+    );
+    m.insert("nametype".into(), Value::String("Valid".into()));
+    m.insert("recclass".into(), Value::String(gen_code(rng, 2)));
+    m.insert(
+        "mass".into(),
+        Value::String(gen_int_in(rng, 1, 100_000).to_string()),
+    );
+    m.insert("year".into(), Value::String(gen_iso_datetime(rng)));
+    m.insert("reclat".into(), Value::String(format!("{lat:.6}")));
+    m.insert("reclong".into(), Value::String(format!("{lon:.6}")));
+    m.insert("geolocation".into(), Value::Object(geo));
+    m
+}
+
+/// `Employee-Data-Skewed*.json`: user record with GUIDs, names, a cloud SID.
+fn shape_employee(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Map<String, Value> {
+    let mut m = Map::new();
+    m.insert("objectType".into(), Value::String("User".into()));
+    m.insert("id".into(), Value::String(gen_uuid(rng)));
+    m.insert("objectId".into(), Value::String(gen_uuid(rng)));
+    m.insert("tenantId".into(), Value::String(gen_uuid(rng)));
+    m.insert(
+        "firstName".into(),
+        Value::String(gen_string_from(rng, ALPHA_CHARS, 8)),
+    );
+    m.insert(
+        "lastName".into(),
+        Value::String(gen_unicode_string(rng, cfg, 12)),
+    );
+    m.insert(
+        "MailNickname".into(),
+        Value::String(gen_string_from(rng, ALPHANUMERIC_CHARS, 10)),
+    );
+    m.insert(
+        "cloudSid".into(),
+        Value::String(format!(
+            "S-1-12-1-{}-{}",
+            gen_int_in(rng, 1, 4_000_000_000i64),
+            gen_int_in(rng, 1, 4_000_000_000i64)
+        )),
+    );
+    m.insert("isActive".into(), Value::Bool(rng.below(2) == 0));
+    m
+}
+
+/// `FuzzingStrings.json`: `{ "string": <adversarial string> }`. Draws from a
+/// pool of edge-case strings plus random unicode.
+fn shape_fuzzing_string(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Map<String, Value> {
+    const EDGE: &[&str] = &[
+        "",
+        "undefined",
+        "null",
+        "NULL",
+        "#",
+        "\t",
+        "\n",
+        "true",
+        "false",
+        "0",
+        "-0",
+        "NaN",
+        "\\",
+        "\"",
+        "{}",
+        "[]",
+        "\u{0000}",
+        "😀",
+        "中文",
+        "\u{feff}",
+    ];
+    let s = if rng.below(2) == 0 {
+        EDGE[rng.below(EDGE.len() as u64) as usize].to_string()
+    } else {
+        gen_unicode_string(rng, cfg, 40)
+    };
+    let mut m = Map::new();
+    m.insert("string".into(), Value::String(s));
+    m
+}
+
+/// `lastfm.json` / `MillionSong1KDocuments.json`: artist track with a `similars`
+/// array of `[trackId, score]` heterogeneous pairs.
+fn shape_lastfm(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Map<String, Value> {
+    let n = count(rng, cfg, 1, 6);
+    let similars = gen_array_of(rng, n, |r| {
+        Value::Array(vec![
+            Value::String(format!("TR{}", gen_hex_upper(r, 16))),
+            gen_unit_float(r),
+        ])
+    });
+    let mut m = Map::new();
+    m.insert(
+        "id".into(),
+        Value::String(format!("item {:03}", gen_int_in(rng, 0, 999))),
+    );
+    m.insert("artist".into(), Value::String(gen_name(rng)));
+    m.insert("timestamp".into(), Value::String(gen_iso_datetime(rng)));
+    m.insert("similars".into(), similars);
+    m
+}
+
+/// `MsnCollection.json`: food item with a deeply nested `Contents` of
+/// unit-tagged numbers, some with scientific-notation-scale floats.
+fn shape_msn_food(rng: &mut SplitMix64, _cfg: &FuzzConfig) -> Map<String, Value> {
+    let mut calories = Map::new();
+    calories.insert(
+        "InCalories".into(),
+        Value::Number(Number::from(gen_int_in(rng, 0, 2000))),
+    );
+    let mut carbs = Map::new();
+    // Small scientific-scale magnitude, kept envelope-safe as a plain float.
+    carbs.insert("InKg".into(), gen_unit_float(rng));
+    carbs.insert(
+        "PreferredUnit".into(),
+        Value::Number(Number::from(gen_int_in(rng, 0, 5))),
+    );
+    let mut contents = Map::new();
+    contents.insert("TotalCalories".into(), Value::Object(calories));
+    contents.insert("Carbohydrates".into(), Value::Object(carbs));
+    let mut m = Map::new();
+    m.insert(
+        "FoodId".into(),
+        Value::String(gen_int_in(rng, 1, 99999).to_string()),
+    );
+    m.insert("FoodName".into(), Value::String(gen_name(rng)));
+    m.insert(
+        "ServingSize".into(),
+        Value::String("1 mug (8 fl oz)".into()),
+    );
+    m.insert(
+        "NumberOfServings".into(),
+        Value::Number(Number::from(gen_int_in(rng, 1, 10))),
+    );
+    m.insert("Contents".into(), Value::Object(contents));
+    m
+}
+
+/// `NutritionData.json`: food doc with `tags` and `nutrients` object arrays.
+fn shape_nutrition(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Map<String, Value> {
+    let n_tags = count(rng, cfg, 1, 5);
+    let tags = gen_array_of(rng, n_tags, |r| {
+        let mut t = Map::new();
+        t.insert(
+            "name".into(),
+            Value::String(gen_string_from(r, ALPHA_CHARS, 10)),
+        );
+        Value::Object(t)
+    });
+    let n_nutrients = count(rng, cfg, 1, 6);
+    let nutrients = gen_array_of(rng, n_nutrients, |r| {
+        let mut n = Map::new();
+        n.insert(
+            "id".into(),
+            Value::String(gen_int_in(r, 1, 999).to_string()),
+        );
+        n.insert(
+            "description".into(),
+            Value::String(gen_string_from(r, ALPHANUMERIC_CHARS, 8)),
+        );
+        n.insert("nutritionValue".into(), gen_envelope_float(r));
+        Value::Object(n)
+    });
+    let mut m = Map::new();
+    m.insert(
+        "id".into(),
+        Value::String(format!("{:05}", gen_int_in(rng, 0, 99999))),
+    );
+    m.insert(
+        "description".into(),
+        Value::String(gen_unicode_string(rng, cfg, 50)),
+    );
+    m.insert("tags".into(), tags);
+    m.insert(
+        "version".into(),
+        Value::Number(Number::from(gen_int_in(rng, 1, 5))),
+    );
+    m.insert("foodGroup".into(), Value::String(gen_name(rng)));
+    m.insert("nutrients".into(), nutrients);
+    m
+}
+
+/// `OpenAI_3072dim.json`: `{ "vector": [ <many unit floats> ] }`.
+fn shape_embedding_vector(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Map<String, Value> {
+    // Base 16-80 dims; `size_scale` grows it toward the corpus's 3072-dim
+    // vectors (e.g. scale=40 → ~640-3200 dims).
+    let dims = count(rng, cfg, 16, 64);
+    let mut m = Map::new();
+    m.insert("vector".into(), gen_array_of(rng, dims, gen_unit_float));
+    m
+}
+
+/// `store01C.json`: shop record with id arrays, a status, and **non-ASCII**
+/// (CJK) name/description fields plus a `null`.
+fn shape_store(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Map<String, Value> {
+    let n = count(rng, cfg, 0, 4);
+    let cat_ids = gen_array_of(rng, n, |r| {
+        Value::String(gen_string_from(r, ALPHANUMERIC_CHARS, 22))
+    });
+    let mut m = Map::new();
+    m.insert(
+        "ShopId".into(),
+        Value::String(gen_string_from(rng, ALPHANUMERIC_CHARS, 22)),
+    );
+    m.insert("CategoryIds".into(), cat_ids);
+    m.insert("CollectionIds".into(), Value::Array(Vec::new()));
+    m.insert("IsActive".into(), Value::Bool(rng.below(2) == 0));
+    m.insert(
+        "Status".into(),
+        Value::Number(Number::from(gen_int_in(rng, 0, 100))),
+    );
+    m.insert(
+        "Name".into(),
+        Value::String(gen_unicode_string(rng, cfg, 20)),
+    );
+    m.insert(
+        "Summary".into(),
+        Value::String(gen_unicode_string(rng, cfg, 20)),
+    );
+    m.insert("Description".into(), Value::Null);
+    m
+}
+
+/// `TicinoErrorBuckets.json`: error-bucket with a multiline stack-trace string
+/// (embedded `\n`), a hash, and a hit count.
+fn shape_error_bucket(rng: &mut SplitMix64, _cfg: &FuzzConfig) -> Map<String, Value> {
+    let stack = format!(
+        "Error: spawn REG ENOENT\n    at exports._errnoException (util.js:{}:11)\n    at Process.ChildProcess._handle.onexit (child_process.js:{}:32)",
+        gen_int_in(rng, 100, 999),
+        gen_int_in(rng, 1000, 2000)
+    );
+    let mut m = Map::new();
+    m.insert("BucketId".into(), Value::String(stack));
+    m.insert("BucketIdHash".into(), Value::String(gen_hex(rng, 32)));
+    m.insert(
+        "Hits".into(),
+        Value::Number(Number::from(gen_int_in(rng, 1, 100_000))),
+    );
+    m
+}
+
+/// `XpertEvents.json`: telemetry event with nested `ingest`, ISO timestamps, a
+/// GUID-bearing `userId`, and mixed numeric quality.
+fn shape_xpert_event(rng: &mut SplitMix64, _cfg: &FuzzConfig) -> Map<String, Value> {
+    let mut ingest = Map::new();
+    ingest.insert("time".into(), Value::String(gen_iso_datetime(rng)));
+    ingest.insert("uploadTime".into(), Value::String(gen_iso_datetime(rng)));
+    ingest.insert(
+        "clientIp".into(),
+        Value::String(format!(
+            "{}.{}.{}.{}",
+            gen_int_in(rng, 0, 255),
+            gen_int_in(rng, 0, 255),
+            gen_int_in(rng, 0, 255),
+            gen_int_in(rng, 0, 255)
+        )),
+    );
+    ingest.insert(
+        "quality".into(),
+        Value::Number(Number::from(gen_int_in(rng, 0, 5))),
+    );
+    let mut m = Map::new();
+    m.insert("ingest".into(), Value::Object(ingest));
+    m.insert("time".into(), Value::String(gen_iso_datetime(rng)));
+    m.insert(
+        "userId".into(),
+        Value::String(format!("w:{{{}}}", gen_uuid(rng).to_ascii_uppercase())),
+    );
+    m.insert("appId".into(), Value::String(gen_hex(rng, 40)));
+    m
+}
+
+/// `ups1.json`: personalization payload with an opaque high-entropy `Vector`
+/// string, an ANID GUID, and a small nested `payload`.
+fn shape_ups(rng: &mut SplitMix64, _cfg: &FuzzConfig) -> Map<String, Value> {
+    let mut payload = Map::new();
+    payload.insert("ANID".into(), Value::String(gen_uuid(rng)));
+    payload.insert(
+        "MUID".into(),
+        Value::Array(vec![Value::String("muid".into())]),
+    );
+    payload.insert("AppDomain".into(), Value::String("prime".into()));
+    payload.insert("Algo".into(), Value::String("lda".into()));
+    payload.insert("Culture".into(), Value::String("en-us".into()));
+    payload.insert("Version".into(), Value::Number(Number::from(1)));
+    payload.insert(
+        "Vector".into(),
+        Value::String(gen_string_from(rng, ALPHANUMERIC_CHARS, 64)),
+    );
+    let mut m = Map::new();
+    m.insert("domain".into(), Value::String("Personalization".into()));
+    m.insert("lid".into(), Value::String("lda-prime-en-us-1".into()));
+    m.insert("payload".into(), Value::Object(payload));
+    m
+}
+
+/// `states_committees.json`: committee with a `members` array of role records.
+fn shape_committee(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Map<String, Value> {
+    let n = count(rng, cfg, 1, 6);
+    let members = gen_array_of(rng, n, |r| {
+        let mut mem = Map::new();
+        mem.insert(
+            "leg_id".into(),
+            Value::String(format!("{}{:06}", gen_code(r, 3), gen_int_in(r, 0, 999999))),
+        );
+        mem.insert("role".into(), Value::String("member".into()));
+        mem.insert(
+            "name".into(),
+            Value::String(format!("Representative {}", gen_name(r))),
+        );
+        Value::Object(mem)
+    });
+    let mut m = Map::new();
+    m.insert("members".into(), members);
+    m
+}
+
+/// `states_legislators.json`: legislator with `sources`, `old_roles` (object
+/// keyed by term with role arrays containing `null`s), and name fields.
+fn shape_legislator(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Map<String, Value> {
+    let n = count(rng, cfg, 1, 2);
+    let sources = gen_array_of(rng, n, |r| {
+        let mut s = Map::new();
+        s.insert(
+            "url".into(),
+            Value::String(format!(
+                "http://example.gov/legislator.php?id={}",
+                gen_string_from(r, ALPHA_CHARS, 4)
+            )),
+        );
+        Value::Object(s)
+    });
+    let n = count(rng, cfg, 1, 2);
+    let roles = gen_array_of(rng, n, |r| {
+        let mut role = Map::new();
+        role.insert(
+            "term".into(),
+            Value::String(gen_int_in(r, 20, 30).to_string()),
+        );
+        role.insert("end_date".into(), Value::Null);
+        role.insert("district".into(), Value::String(gen_code(r, 1)));
+        Value::Object(role)
+    });
+    let mut old_roles = Map::new();
+    old_roles.insert(gen_int_in(rng, 20, 30).to_string(), roles);
+    let mut m = Map::new();
+    m.insert("last_name".into(), Value::String(gen_name(rng)));
+    m.insert("updated_at".into(), Value::String(gen_iso_datetime(rng)));
+    m.insert("sources".into(), sources);
+    m.insert("full_name".into(), Value::String(gen_name(rng)));
+    m.insert("old_roles".into(), Value::Object(old_roles));
+    m
+}
+
+/// `LogData.json`: impression log with GUID ids, a boolean, and an `Events`
+/// array of nested event/page/requestInfo objects.
+fn shape_logdata(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Map<String, Value> {
+    let n = count(rng, cfg, 1, 3);
+    let events = gen_array_of(rng, n, |r| {
+        let mut page = Map::new();
+        page.insert("Name".into(), Value::String("API.Qsml".into()));
+        let mut req = Map::new();
+        req.insert("AFORM".into(), Value::String("MSNH2".into()));
+        req.insert(
+            "Bytes".into(),
+            Value::Number(Number::from(gen_int_in(r, 0, 10000))),
+        );
+        let mut ev = Map::new();
+        ev.insert("T".into(), Value::String("Event.Impression".into()));
+        ev.insert("EventId".into(), Value::String(gen_hex_upper(r, 32)));
+        ev.insert("Page".into(), Value::Object(page));
+        ev.insert("RequestInfo".into(), Value::Object(req));
+        Value::Object(ev)
+    });
+    let mut m = Map::new();
+    m.insert("AppNS".into(), Value::String("API".into()));
+    m.insert("ClientId".into(), Value::String(gen_hex_upper(rng, 32)));
+    m.insert(
+        "ImpressionGuid".into(),
+        Value::String(gen_hex_upper(rng, 32)),
+    );
+    m.insert("ProvClientId".into(), Value::Bool(rng.below(2) == 0));
+    m.insert("Events".into(), events);
+    m
+}
+
+/// `sampleWorkload.json`: record with a `header` carrying nested `schema`.
+fn shape_workload(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Map<String, Value> {
+    let mut schema = Map::new();
+    schema.insert("name".into(), Value::String("_xdm.context.profile".into()));
+    schema.insert("version".into(), Value::String("1.0".into()));
+    let mut header = Map::new();
+    header.insert("recordType".into(), Value::String("keyvalue".into()));
+    header.insert(
+        "tag".into(),
+        Value::String(format!("batchId-{}", gen_hex_upper(rng, 26))),
+    );
+    header.insert("packetVersion".into(), Value::String("1.0".into()));
+    header.insert(
+        "component".into(),
+        Value::String(format!("{:03}", gen_int_in(rng, 0, 999))),
+    );
+    header.insert("schema".into(), Value::Object(schema));
+    let mut m = Map::new();
+    m.insert("header".into(), Value::Object(header));
+    m.insert(
+        "payload".into(),
+        Value::String(gen_unicode_string(rng, cfg, 40)),
+    );
+    m
+}
+
+/// `DefaultHybridRowSchema.json`: schema-policy document with booleans and a
+/// nested `tableSchema.schemas` array (options flags).
+fn shape_hybrid_schema(rng: &mut SplitMix64, _cfg: &FuzzConfig) -> Map<String, Value> {
+    let mut options = Map::new();
+    options.insert(
+        "disallowUnschematized".into(),
+        Value::Bool(rng.below(2) == 0),
+    );
+    options.insert(
+        "enablePropertyLevelTimestamp".into(),
+        Value::Bool(rng.below(2) == 0),
+    );
+    options.insert("disableSystemPrefix".into(), Value::Bool(rng.below(2) == 0));
+    let schema = {
+        let mut s = Map::new();
+        s.insert("version".into(), Value::String("v1".into()));
+        s.insert("name".into(), Value::String("Row".into()));
+        s.insert("id".into(), Value::Number(Number::from(-1)));
+        s.insert("type".into(), Value::String("schema".into()));
+        s.insert("options".into(), Value::Object(options));
+        Value::Object(s)
+    };
+    let mut table_schema = Map::new();
+    table_schema.insert("version".into(), Value::String("v1".into()));
+    table_schema.insert("name".into(), Value::String("tableSchema".into()));
+    table_schema.insert("schemas".into(), Value::Array(vec![schema]));
+    let mut policy = Map::new();
+    policy.insert("tableSchema".into(), Value::Object(table_schema));
+    let mut m = Map::new();
+    m.insert("schemaPolicy".into(), Value::Object(policy));
+    m
+}
+
+/// `reddit_all.json` (single-record variant): a Listing with a nested `data`
+/// carrying a `children` array of `t3` post objects and many `null`s.
+fn shape_reddit(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Map<String, Value> {
+    let n = count(rng, cfg, 1, 4);
+    let children = gen_array_of(rng, n, |r| {
+        let mut data = Map::new();
+        data.insert("approved_at_utc".into(), Value::Null);
+        data.insert(
+            "title".into(),
+            Value::String(gen_unicode_string_for(r, cfg, 40)),
+        );
+        data.insert(
+            "ups".into(),
+            Value::Number(Number::from(gen_int_in(r, 0, 100_000))),
+        );
+        data.insert("over_18".into(), Value::Bool(r.below(2) == 0));
+        data.insert("score".into(), gen_envelope_float(r));
+        let mut child = Map::new();
+        child.insert("kind".into(), Value::String("t3".into()));
+        child.insert("data".into(), Value::Object(data));
+        Value::Object(child)
+    });
+    let mut data = Map::new();
+    data.insert(
+        "after".into(),
+        Value::String(format!(
+            "t3_{}",
+            gen_string_from(rng, ALPHANUMERIC_CHARS, 7)
+        )),
+    );
+    data.insert(
+        "dist".into(),
+        Value::Number(Number::from(gen_int_in(rng, 1, 100))),
+    );
+    data.insert("modhash".into(), Value::String(String::new()));
+    data.insert("geo_filter".into(), Value::Null);
+    data.insert("children".into(), children);
+    let mut m = Map::new();
+    m.insert("kind".into(), Value::String("Listing".into()));
+    m.insert("data".into(), Value::Object(data));
+    m
+}
+
+/// `open-food-facts.json` (single-record variant): a product wrapper with a
+/// `_keywords` string array and a nested `product`.
+fn shape_open_food(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Map<String, Value> {
+    let n = count(rng, cfg, 3, 6);
+    let keywords = gen_array_of(rng, n, |r| {
+        Value::String(gen_string_from(r, ALPHA_CHARS, 10))
+    });
+    let mut product = Map::new();
+    product.insert(
+        "_id".into(),
+        Value::String(gen_int_in(rng, 1, i64::MAX / 2).to_string()),
+    );
+    product.insert("_keywords".into(), keywords);
+    product.insert("nutriments".into(), {
+        let mut n = Map::new();
+        n.insert("energy".into(), gen_envelope_float(rng));
+        n.insert("fat".into(), gen_envelope_float(rng));
+        Value::Object(n)
+    });
+    let mut m = Map::new();
+    m.insert(
+        "code".into(),
+        Value::String(gen_int_in(rng, 1, i64::MAX / 2).to_string()),
+    );
+    m.insert("product".into(), Value::Object(product));
+    m
+}
+
+/// Convenience: unicode string honoring the `unicode` knob (thin wrapper so the
+/// closure-based array builders can call it with a `cfg`).
+fn gen_unicode_string_for(rng: &mut SplitMix64, cfg: &FuzzConfig, max_len: usize) -> String {
+    gen_unicode_string(rng, cfg, max_len)
+}
+
+/// The set of corpus-shape samplers. Each entry is `(name, fn)` where `name`
+/// mirrors the originating `testdata/*.json` file and `fn` builds one document
+/// in that shape. [`gen_shaped_document`] picks one uniformly at random.
+type ShapeSampler = fn(&mut SplitMix64, &FuzzConfig) -> Map<String, Value>;
+
+const SHAPE_SAMPLERS: &[(&str, ShapeSampler)] = &[
+    ("airline-delays", shape_airline_delays),
+    ("bitcoin", shape_bitcoin),
+    ("bing-docs", shape_bing_docs),
+    ("scripts-data", shape_scripts_data),
+    ("geojson-feature", shape_geojson_feature),
+    ("cosmos-run", shape_cosmos_run),
+    ("meteorite", shape_meteorite),
+    ("employee", shape_employee),
+    ("fuzzing-string", shape_fuzzing_string),
+    ("lastfm", shape_lastfm),
+    ("msn-food", shape_msn_food),
+    ("nutrition", shape_nutrition),
+    ("embedding-vector", shape_embedding_vector),
+    ("store", shape_store),
+    ("error-bucket", shape_error_bucket),
+    ("xpert-event", shape_xpert_event),
+    ("ups", shape_ups),
+    ("committee", shape_committee),
+    ("legislator", shape_legislator),
+    ("logdata", shape_logdata),
+    ("workload", shape_workload),
+    ("hybrid-schema", shape_hybrid_schema),
+    ("reddit", shape_reddit),
+    ("open-food", shape_open_food),
+];
+
+/// Builds one document matching a **randomly chosen** corpus shape (see
+/// [`SHAPE_SAMPLERS`]). The returned map does not yet carry the caller-reserved
+/// `id`/`pk` fields — the run loop inserts those.
+fn gen_shaped_document(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Map<String, Value> {
+    let idx = rng.below(SHAPE_SAMPLERS.len() as u64) as usize;
+    SHAPE_SAMPLERS[idx].1(rng, cfg)
+}
+
 /// A small, irregular filler value. Draws from typed scalars, mixed
+
 /// arrays/objects of typed scalars, homogeneous number arrays (to exercise the
 /// uniform-number wire forms), and `arbitrary-json` subtrees — so filler is both
 /// varied and non-trivial in size. Already respects the `wide_numbers`/`unicode`
@@ -624,6 +1567,21 @@ fn normalize(value: &Value) -> Value {
     serde_json::from_str(&text).expect("serialized value always parses")
 }
 
+/// Cosmos-reserved system properties: the service assigns and owns these, so a
+/// document we author must never carry them (a random value would round-trip
+/// back as the service's own value and cause a false mismatch).
+const RESERVED_SYSTEM_KEYS: &[&str] = &["_rid", "_self", "_etag", "_ts", "_attachments"];
+
+/// Removes any Cosmos-reserved system properties from `doc` in place. Applied to
+/// every generated document before it is sent, so neither the corpus shapes nor
+/// the free-form arbitrary-json generator can emit a reserved key the service
+/// would overwrite.
+fn strip_reserved_fields(doc: &mut Map<String, Value>) {
+    for key in RESERVED_SYSTEM_KEYS {
+        doc.remove(*key);
+    }
+}
+
 /// Projects a returned document to only the keys present in `sent`, so
 /// service-added system fields (`_rid`, `_etag`, `_ts`, ...) don't affect the
 /// comparison.
@@ -809,6 +1767,12 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
             let mut doc = base_doc.clone();
             doc.insert("id".to_string(), Value::String(id.clone()));
             doc.insert("pk".to_string(), Value::String(pk.clone()));
+            // Never send Cosmos-reserved system properties (`_rid`, `_self`,
+            // `_etag`, `_ts`, `_attachments`): the service **owns** these and
+            // overwrites/assigns them, so a random value we send would come
+            // back different and cause a false round-trip mismatch. The corpus
+            // shapes (and free-form arbitrary-json) can incidentally emit them.
+            strip_reserved_fields(&mut doc);
 
             // Compute the sent canonical form from a normalized copy so it
             // matches documents that have been through the backend's
@@ -1254,6 +2218,8 @@ mod tests {
             wide_numbers: false,
             unicode: true,
             breadth: DEFAULT_BREADTH,
+            shape_ratio: DEFAULT_SHAPE_RATIO,
+            size_scale: DEFAULT_SIZE_SCALE,
             calibrate: false,
             print_docs: false,
         };
@@ -1287,6 +2253,8 @@ mod tests {
                 wide_numbers: false,
                 unicode: true,
                 breadth: DEFAULT_BREADTH,
+                shape_ratio: DEFAULT_SHAPE_RATIO,
+                size_scale: DEFAULT_SIZE_SCALE,
                 calibrate: false,
                 print_docs: false,
             };
@@ -1334,6 +2302,8 @@ mod tests {
             wide_numbers: true,
             unicode: true,
             breadth: DEFAULT_BREADTH,
+            shape_ratio: DEFAULT_SHAPE_RATIO,
+            size_scale: DEFAULT_SIZE_SCALE,
             calibrate: false,
             print_docs: false,
         };
@@ -1415,6 +2385,8 @@ mod tests {
             wide_numbers: false,
             unicode: true,
             breadth: DEFAULT_BREADTH,
+            shape_ratio: DEFAULT_SHAPE_RATIO,
+            size_scale: DEFAULT_SIZE_SCALE,
             calibrate: false,
             print_docs: false,
         };
@@ -1441,6 +2413,129 @@ mod tests {
         assert!(
             deepest >= 4,
             "documents should reach multi-level nesting, deepest={deepest}"
+        );
+    }
+
+    #[test]
+    fn every_corpus_shape_produces_a_valid_object() {
+        // Each corpus shape sampler must produce a non-empty JSON object that
+        // serializes and normalizes cleanly (the invariant the round-trip
+        // comparison relies on). Exercised across several seeds and both the
+        // wide-numbers / unicode knob settings.
+        for &wide in &[false, true] {
+            for &uni in &[false, true] {
+                let cfg = FuzzConfig {
+                    iterations: 0,
+                    seed: 0x5EED_1234,
+                    max_depth: 6,
+                    wide_numbers: wide,
+                    unicode: uni,
+                    breadth: DEFAULT_BREADTH,
+                    shape_ratio: DEFAULT_SHAPE_RATIO,
+                    size_scale: DEFAULT_SIZE_SCALE,
+                    calibrate: false,
+                    print_docs: false,
+                };
+                let mut rng = SplitMix64::new(cfg.seed);
+                for (name, sampler) in SHAPE_SAMPLERS {
+                    let doc = sampler(&mut rng, &cfg);
+                    assert!(!doc.is_empty(), "shape {name} produced an empty object");
+                    let value = Value::Object(doc);
+                    // Normalization is idempotent for a well-formed value.
+                    let once = normalize(&value);
+                    let twice = normalize(&once);
+                    assert_eq!(
+                        canon(&once),
+                        canon(&twice),
+                        "shape {name} not normalization-stable"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn no_shape_emits_reserved_system_fields() {
+        // Cosmos owns `_rid`/`_self`/`_etag`/`_ts`/`_attachments`; a generated
+        // document must never author them (the service overwrites them, causing
+        // a false round-trip mismatch). Assert every shape sampler is clean, and
+        // that the strip helper removes them if present.
+        let cfg = FuzzConfig {
+            iterations: 0,
+            seed: 0xBADF00D,
+            max_depth: 6,
+            wide_numbers: true,
+            unicode: true,
+            breadth: DEFAULT_BREADTH,
+            shape_ratio: DEFAULT_SHAPE_RATIO,
+            size_scale: DEFAULT_SIZE_SCALE,
+            calibrate: false,
+            print_docs: false,
+        };
+        let mut rng = SplitMix64::new(cfg.seed);
+        for (name, sampler) in SHAPE_SAMPLERS {
+            let doc = sampler(&mut rng, &cfg);
+            for reserved in RESERVED_SYSTEM_KEYS {
+                assert!(
+                    !doc.contains_key(*reserved),
+                    "shape {name} emitted reserved system field {reserved}"
+                );
+            }
+        }
+        // The strip helper removes reserved keys wherever they appear.
+        let mut with_reserved = Map::new();
+        with_reserved.insert("_self".into(), Value::String("x".into()));
+        with_reserved.insert("_ts".into(), Value::Number(123.into()));
+        with_reserved.insert("keep".into(), Value::Bool(true));
+        strip_reserved_fields(&mut with_reserved);
+        assert_eq!(with_reserved.len(), 1);
+        assert!(with_reserved.contains_key("keep"));
+    }
+
+    #[test]
+    fn shaped_documents_are_emitted_when_ratio_is_full() {
+        // With shape_ratio = 100 every document is a corpus shape; assert that
+        // over many draws we see several distinct shapes (the id/pk-free base is
+        // shaped, then the run loop adds id/pk). Detect a shape by a signature
+        // key unique to a sampler.
+        let cfg = FuzzConfig {
+            iterations: 0,
+            seed: 0xA11CE,
+            max_depth: 6,
+            wide_numbers: false,
+            unicode: true,
+            breadth: DEFAULT_BREADTH,
+            shape_ratio: 100,
+            size_scale: DEFAULT_SIZE_SCALE,
+            calibrate: false,
+            print_docs: false,
+        };
+        let mut rng = SplitMix64::new(cfg.seed);
+        let mut seen_signature_keys = std::collections::BTreeSet::new();
+        // Signature keys that appear only in specific shapes.
+        let signatures = [
+            "hash",         // bitcoin
+            "blogId",       // bing-docs
+            "similars",     // lastfm
+            "vector",       // embedding
+            "BucketId",     // error-bucket
+            "schemaPolicy", // hybrid-schema
+            "ShopId",       // store
+            "cloudSid",     // employee
+        ];
+        for _ in 0..400 {
+            let doc = gen_object(&mut rng, &cfg);
+            // Every shaped document still carries the all-category sampler.
+            assert!(doc.contains_key("_sampler"), "shaped doc missing _sampler");
+            for sig in &signatures {
+                if doc.contains_key(*sig) {
+                    seen_signature_keys.insert(*sig);
+                }
+            }
+        }
+        assert!(
+            seen_signature_keys.len() >= 4,
+            "expected several distinct corpus shapes, saw signatures: {seen_signature_keys:?}"
         );
     }
 
