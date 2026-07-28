@@ -8,6 +8,8 @@
 
 ### Bugs Fixed
 
+- Added `azure-deprecating` to the default allowed HTTP header list so shared debug and logging paths stop redacting it.
+
 ### Other Changes
 
 ## 1.1.0 (2026-07-09)

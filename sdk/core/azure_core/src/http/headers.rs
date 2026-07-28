@@ -3,14 +3,8 @@
 
 //! HTTP headers.
 
-// cspell:ignore deprecating
-
 // Re-export headers to flatten out this module with typespec_client_core.
 pub use typespec_client_core::http::headers::*;
-
-/// Azure-specific default set of allowed headers. These are merged with
-/// [`DEFAULT_ALLOWED_HEADER_NAMES`] for `azure_core` client logging.
-pub(crate) static DEFAULT_ALLOWED_AZURE_HEADER_NAMES: &[&str] = &["azure-deprecating"];
 
 // HTTP headers are case-insensitive.
 // We use lowercase below for simple comparisons downstream.

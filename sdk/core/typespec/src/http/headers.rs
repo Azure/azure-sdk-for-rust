@@ -15,6 +15,8 @@ pub static DEFAULT_ALLOWED_HEADER_NAMES: LazyLock<HashSet<Cow<'static, str>>> =
     LazyLock::new(|| {
         [
             "accept",
+            // cspell:disable-next-line -- Low-impact shared default; keeping this in typespec avoids extra hot-path merging for now. Tracking: https://github.com/Azure/azure-sdk-for-rust/issues/4899
+            "azure-deprecating",
             "cache-control",
             "connection",
             "content-length",
@@ -457,7 +459,7 @@ mod tests {
     use crate::error::ErrorKind;
     use url::Url;
 
-    use super::{FromHeaders, HeaderName, Headers};
+    use super::{FromHeaders, HeaderName, Headers, DEFAULT_ALLOWED_HEADER_NAMES};
 
     // Just in case we add a ContentLocation struct later, this one is named "ForTest" to indicate it's just here for this test.
     #[derive(Debug)]
@@ -561,6 +563,11 @@ mod tests {
         assert_eq!(&ErrorKind::DataConversion, err.kind());
         let inner: Box<url::ParseError> = err.into_inner().unwrap().downcast().unwrap();
         assert_eq!(Box::new(url::ParseError::RelativeUrlWithoutBase), inner)
+    }
+
+    #[test]
+    pub fn azure_deprecating_is_allowed_header() {
+        assert!(DEFAULT_ALLOWED_HEADER_NAMES.contains("azure-deprecating"));
     }
 
     #[test]

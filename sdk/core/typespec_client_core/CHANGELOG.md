@@ -12,6 +12,8 @@
 
 ### Other Changes
 
+- Updated `typespec` HTTP header defaults so `azure-deprecating` is not redacted in shared debug and logging paths.
+
 ## 1.1.0 (2026-07-09)
 
 ### Features Added
