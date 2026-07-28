@@ -25,8 +25,8 @@ parameters:
       - data
       - functions
       - datamovement
-  # Comma separated list of emails allowed to skip codeowners validation. User
-  # must queue the pipeline manually with the 'Skip.VerifyCodeowners' variable
+  # Comma separated list of emails allowed to skip codeowners validation. User 
+  # must queue the pipeline manually with the 'Skip.VerifyCodeowners' variable 
   # set to 'true'.
   - name: AllowSkipEmails
     type: string
