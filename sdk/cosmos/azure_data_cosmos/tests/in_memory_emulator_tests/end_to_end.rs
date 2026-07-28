@@ -1085,25 +1085,25 @@ async fn sdk_query_items_with_filter_and_projection() {
             .unwrap()
     }
 
-    let emu_items: Vec<QueryTestItem> = emu_container
-        .query_items(query(), FeedScope::partition("pk1"), None)
-        .await
-        .unwrap()
-        .try_collect()
-        .await
-        .unwrap();
-    assert_eq!(emu_items.len(), 2);
-    assert_eq!(emu_items[0].id, "query-1");
-    assert_eq!(emu_items[1].id, "query-2");
-
-    if let Some(ref real) = real_container {
-        let real_items: Vec<QueryTestItem> = real
-            .query_items(query(), FeedScope::partition("pk1"), None)
+    let emu_items: Vec<QueryTestItem> =
+        Box::pin(emu_container.query_items(query(), FeedScope::partition("pk1"), None))
             .await
             .unwrap()
             .try_collect()
             .await
             .unwrap();
+    assert_eq!(emu_items.len(), 2);
+    assert_eq!(emu_items[0].id, "query-1");
+    assert_eq!(emu_items[1].id, "query-2");
+
+    if let Some(ref real) = real_container {
+        let real_items: Vec<QueryTestItem> =
+            Box::pin(real.query_items(query(), FeedScope::partition("pk1"), None))
+                .await
+                .unwrap()
+                .try_collect()
+                .await
+                .unwrap();
         assert_eq!(real_items.len(), emu_items.len());
         assert_eq!(
             real_items.iter().map(|i| &i.id).collect::<Vec<_>>(),
