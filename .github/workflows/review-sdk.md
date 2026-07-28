@@ -40,7 +40,9 @@ tools:
     min-integrity: none
 
 timeout-minutes: 12
-engine: copilot
+engine:
+  id: copilot
+  agent: sdk-reviewer
 ---
 
 # Review SDK PR
