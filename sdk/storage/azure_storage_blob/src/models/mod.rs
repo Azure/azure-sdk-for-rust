@@ -164,12 +164,15 @@ pub(crate) mod blob_name {
     pub mod option {
         use super::BlobName;
         use percent_encoding::percent_decode_str;
-        use serde::{de::Error, Deserialize, Deserializer};
+        use serde::de::{value::MapAccessDeserializer, Error, MapAccess, Visitor};
+        use serde::{Deserialize, Deserializer};
+        use std::fmt;
 
-        /// Deserializes a [`BlobName`] XML element into an `Option<String>`.
+        /// Deserializes a blob name into an `Option<String>`.
         ///
-        /// If the `Encoded` attribute is `true`, the content will be percent-decoded.
-        /// Otherwise, the content is returned as-is.
+        /// Accepts either the XML `BlobName` element (percent-decoding the content when the
+        /// `Encoded` attribute is `true`) or a plain string. The plain-string form is produced
+        /// by the Apache Arrow decode path, whose names are already decoded.
         ///
         /// # Errors
         ///
@@ -179,23 +182,71 @@ pub(crate) mod blob_name {
         where
             D: Deserializer<'de>,
         {
-            let blob_name = Option::<BlobName>::deserialize(deserializer)?;
+            deserializer.deserialize_option(OptionVisitor)
+        }
 
-            let Some(blob_name) = blob_name else {
-                return Ok(None);
-            };
-
+        fn decode(blob_name: BlobName) -> Result<Option<String>, String> {
             let Some(content) = blob_name.content else {
                 return Ok(None);
             };
-
             if blob_name.encoded.unwrap_or_default() {
                 let decoded = percent_decode_str(&content)
                     .decode_utf8()
-                    .map_err(D::Error::custom)?;
+                    .map_err(|e| e.to_string())?;
                 Ok(Some(decoded.into_owned()))
             } else {
                 Ok(Some(content))
+            }
+        }
+
+        struct OptionVisitor;
+
+        impl<'de> Visitor<'de> for OptionVisitor {
+            type Value = Option<String>;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("an optional BlobName element or a blob name string")
+            }
+
+            fn visit_none<E: Error>(self) -> Result<Self::Value, E> {
+                Ok(None)
+            }
+
+            fn visit_unit<E: Error>(self) -> Result<Self::Value, E> {
+                Ok(None)
+            }
+
+            fn visit_some<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                deserializer.deserialize_any(ValueVisitor)
+            }
+        }
+
+        struct ValueVisitor;
+
+        impl<'de> Visitor<'de> for ValueVisitor {
+            type Value = Option<String>;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a BlobName element or a blob name string")
+            }
+
+            fn visit_str<E: Error>(self, value: &str) -> Result<Self::Value, E> {
+                Ok(Some(value.to_string()))
+            }
+
+            fn visit_string<E: Error>(self, value: String) -> Result<Self::Value, E> {
+                Ok(Some(value))
+            }
+
+            fn visit_map<A>(self, map: A) -> Result<Self::Value, A::Error>
+            where
+                A: MapAccess<'de>,
+            {
+                let blob_name = BlobName::deserialize(MapAccessDeserializer::new(map))?;
+                decode(blob_name).map_err(A::Error::custom)
             }
         }
     }
