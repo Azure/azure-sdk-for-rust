@@ -728,8 +728,8 @@ where
 /// supported by the vnext (Linux) emulator.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator' (the vnext emulator does not support full-fidelity change feed)"
+    not(test_category = "all_versions_and_deletes"),
+    ignore = "requires test_category 'all_versions_and_deletes' (requires live account with continuous backup enabled)"
 )]
 pub async fn all_versions_and_deletes_surfaces_create_replace_delete() -> Result<(), Box<dyn Error>>
 {
@@ -857,8 +857,8 @@ pub async fn all_versions_and_deletes_surfaces_create_replace_delete() -> Result
 /// supported by the vnext (Linux) emulator.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator' (the vnext emulator does not support full-fidelity change feed)"
+    not(test_category = "all_versions_and_deletes"),
+    ignore = "requires test_category 'all_versions_and_deletes' (requires live account with continuous backup enabled)"
 )]
 pub async fn all_versions_and_deletes_fans_out_creates_across_partitions(
 ) -> Result<(), Box<dyn Error>> {
@@ -958,8 +958,8 @@ pub async fn all_versions_and_deletes_fans_out_creates_across_partitions(
 /// supported by the vnext (Linux) emulator.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator' (the vnext emulator does not support full-fidelity change feed)"
+    not(test_category = "all_versions_and_deletes"),
+    ignore = "requires test_category 'all_versions_and_deletes' (requires live account with continuous backup enabled)"
 )]
 pub async fn all_versions_and_deletes_rejects_point_in_time_start() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
