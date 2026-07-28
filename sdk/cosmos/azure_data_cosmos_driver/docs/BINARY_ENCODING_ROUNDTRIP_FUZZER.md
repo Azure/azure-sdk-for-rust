@@ -357,12 +357,15 @@ for how all the artifacts relate).
 | Golden vectors | fixed corpus | exact byte layout, decode parity | `binary_json/vectors.rs` |
 | Encoder conformance | fixed corpus | encode byte-exactness, canonical form | `binary_json/conformance.rs` |
 | In-tree fuzz | random/truncated buffers | decoder never panics; `decode` ≡ `from_slice` | `binary_json/fuzz_tests.rs` |
+| Coverage-guided codec fuzz | mutated **bytes** | decoder/serde/transcode no-crash + `decode∘encode` idempotence | `fuzz/` (cargo-fuzz) |
 | **Round-trip fuzzer** | **random JSON** | **end-to-end value fidelity across configs** | **this harness** |
 
 These are complementary: golden vectors + conformance pin *the format*, in-tree
-fuzz hardens *the decoder*, and this harness validates *the whole pipeline
-against the live service* — and its number-canonicalization calibration (§3.1)
-feeds the backend's observed rewrite rules back into the RFC's §7.
+fuzz and the coverage-guided `cargo-fuzz` targets harden *the decoder* against
+mis-encoded bytes (the latter mutating outward from valid frames with libFuzzer,
+offline), and this harness validates *the whole pipeline against the live
+service* — and its number-canonicalization calibration (§3.1) feeds the
+backend's observed rewrite rules back into the RFC's §7.
 
 ## 9. Planned evolution — `arbitrary-json` + `json-canon` + `sha2`
 
@@ -404,7 +407,7 @@ Only **step 2** is Cosmos-specific and stays in our code; steps 1, 3, 4 become l
 ### 9.4 Two harness shapes (we will land both, in order)
 
 1. **Live-service round-trip (this harness, evolved).** Keep the `#[tokio::test]` soak driven by a seeded PRNG, but feed the PRNG bytes into `arbitrary-json` for generation and swap the structural canonicalizer to `json_canon` + `sha2`. This is the primary deliverable — it validates the whole pipeline against a real account, which per-doc network I/O makes unsuitable for a coverage-guided engine.
-2. **Offline codec fuzzer (new, optional, no account).** A `cargo-fuzz` target using `arbitrary-json` that exercises the pure in-process invariant `Value → to_vec → from_slice → Value` (and the `decode`/`encode` reference oracle) with **no network**, so libfuzzer's coverage guidance and speed apply. This complements the decoder-only `fuzz_tests.rs` with a coverage-guided *round-trip* check.
+2. **Offline codec fuzzer (new, no account).** A `cargo-fuzz` crate that feeds **raw/mutated bytes** straight into the decoder with **no network**, so libfuzzer's coverage guidance and speed apply. As landed it goes *beyond* the originally-planned round-trip check: it fuzzes the **binary protocol itself** (mis-encoded frames the encoder never produces), not just encoder-produced buffers. See §9.8 for the target set. This complements the decoder-only `fuzz_tests.rs` with coverage-guided, byte-level hardening.
 
 ### 9.5 Work plan
 
@@ -413,7 +416,7 @@ Only **step 2** is Cosmos-specific and stays in our code; steps 1, 3, 4 become l
 3. Replace `canonicalize` internals with: `normalize_numbers` → `json_canon::to_string` → `sha2` digest. Keep the `project_to_sent_keys` step (§2) unchanged.
 4. Replace `gen_object`/`gen_value` with an `arbitrary-json`-backed generator seeded from the existing `SplitMix64` byte stream (so runs stay reproducible via `AZURE_COSMOS_FUZZ_SEED`).
 5. Re-run **calibration** (§6) against a live account to confirm `normalize_numbers` still yields all `MATCH` after the refactor; fold any new `DIFF` back in.
-6. (Separate change) Add the `cargo-fuzz` offline codec target from §9.4(2).
+6. (Separate change) Add the `cargo-fuzz` offline codec target from §9.4(2). *(Landed — see §9.8; scope broadened to byte-level protocol fuzzing.)*
 7. Update §3, §4, and the layer table (§8) to reference the crates once landed.
 
 ### 9.6 Acceptance
@@ -421,7 +424,7 @@ Only **step 2** is Cosmos-specific and stays in our code; steps 1, 3, 4 become l
 - [x] Live harness produces identical pass/fail decisions to the pre-refactor version on a fixed seed set (no behavior regression), with cleaner internals.
 - [x] Number edges (`> i64::MAX`, integral floats, `-0`, high-precision) still round-trip without false positives — verified by calibration `MATCH`.
 - [x] `sha2` hashes are stable across runs for the same canonical input (enables a persistent corpus).
-- [ ] (If landed) offline `cargo-fuzz` codec target builds and runs a short session clean.
+- [x] Offline `cargo-fuzz` codec crate lands (byte-level decoder/serde/transcode no-crash + `decode∘encode` idempotence). See §9.8.
 
 ### 9.7 Implementation status (landed)
 
@@ -434,7 +437,7 @@ Phases 1–4 of §9.5 are implemented in `binary_roundtrip_fuzzer.rs` across fou
 | 3 | `canonicalize` now = `normalize_numbers` → `json_canon::to_string` (RFC 8785); differential hash switched to SHA-256. | ✅ landed |
 | 4 | Generator replaced with `arbitrary-json`, seeded from `SplitMix64` (deterministic per `AZURE_COSMOS_FUZZ_SEED`); a `bound_value` pass keeps the `wide_numbers`/`unicode` envelope contract. | ✅ landed |
 | 5 | Live re-calibration + soak against a real account. | ✅ landed (see below) |
-| 6 | Offline `cargo-fuzz` codec target. | ⬜ deferred (§9.4(2)) |
+| 6 | Offline `cargo-fuzz` codec crate (byte-level protocol fuzzing). | ✅ landed (see §9.8) |
 
 #### Key finding — `json-canon` rejects integers ≥ 2⁵³
 
@@ -474,3 +477,53 @@ This confirms no behavior regression from the `arbitrary-json` + `json-canon` +
 SHA-256 refactor, and that the request-encode + response-decode paths for
 `replace` and `upsert` round-trip identically to `create`/`read`. Closes §9.6's
 first three acceptance items.
+
+## 9.8 Offline codec fuzzer (`cargo-fuzz`) — landed
+
+Phase 6 lands as a self-contained `cargo-fuzz` crate at
+[`azure_data_cosmos_driver/fuzz/`](../fuzz/) (see its
+[`README.md`](../fuzz/README.md)). It closes a gap this live harness structurally
+cannot: because the round-trip fuzzer generates random *JSON values* and only
+ever feeds the decoder **encoder-produced** (well-formed) bytes, it exercises
+happy-path encode/decode symmetry but never the decoder's defensive paths. The
+`cargo-fuzz` crate feeds **arbitrary and mutated bytes** straight into the codec,
+so it fuzzes the **binary protocol itself** — truncated buffers, bad length
+prefixes, unknown/misused markers, reference and depth bombs, non-UTF-8 string
+payloads, and trailing bytes.
+
+### Why a separate crate
+
+`cargo-fuzz` builds targets on **nightly** with **libFuzzer**, whereas the repo
+workspace builds on stable. The crate therefore carries its own empty
+`[workspace]` table so it is *excluded* from the parent workspace; it is not a
+workspace member and does not affect stable builds. It depends on the driver by
+path and is **offline** (no Cosmos account), so unlike this live harness it is
+cheap enough for a CI nightly or a time-boxed PR smoke run.
+
+### Targets
+
+| Target | Entry point | Oracle |
+| ------ | ----------- | ------ |
+| `decode` | `binary_json::decode` | no panic/hang/over-alloc on any bytes |
+| `from_slice` | `binary_json::from_slice::<Value>` | same, for the native serde streaming path |
+| `transcode_to_text` | `binary_json::transcode_to_text` | same, for the driver-side binary→text response path |
+| `decode_reencode_roundtrip` | `decode` + `encode` | **differential**: `decode(encode(decode(x))) == decode(x)` on decoder-accepted input |
+
+The first three assert the robustness oracle (terminate with `Ok`/`Err`, never
+crash); the fourth adds a semantic oracle catching reader/writer disagreements
+that fixed golden vectors don't enumerate.
+
+### Corpus seeding
+
+libFuzzer starts from a corpus of **valid** frames so it mutates outward from
+real wire shapes. The [golden vectors](../testdata/binary_json_vectors.json)
+(every marker family, as hex) seed it directly — the crate README carries the
+one-liner (PowerShell / jq+xxd) that materializes them into `fuzz/corpus/decode`.
+
+### Relationship to the other layers
+
+This `cargo-fuzz` crate and `fuzz_tests.rs` both harden the *decoder* against
+mis-encoded bytes; the difference is coverage-guided mutation and scale
+(libFuzzer) versus a fixed in-tree sweep. Neither replaces this live harness,
+which is the only layer that validates the **whole pipeline against the real
+service**. See the layer table in §8.

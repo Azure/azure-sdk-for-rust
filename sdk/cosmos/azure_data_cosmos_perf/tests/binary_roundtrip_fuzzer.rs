@@ -61,14 +61,19 @@ const SEED_ENV_VAR: &str = "AZURE_COSMOS_FUZZ_SEED";
 const MAX_DEPTH_ENV_VAR: &str = "AZURE_COSMOS_FUZZ_MAX_DEPTH";
 const WIDE_NUMBERS_ENV_VAR: &str = "AZURE_COSMOS_FUZZ_WIDE_NUMBERS";
 const UNICODE_ENV_VAR: &str = "AZURE_COSMOS_FUZZ_UNICODE";
+const BREADTH_ENV_VAR: &str = "AZURE_COSMOS_FUZZ_BREADTH";
 const CALIBRATE_ENV_VAR: &str = "AZURE_COSMOS_FUZZ_CALIBRATE";
+const PRINT_ENV_VAR: &str = "AZURE_COSMOS_FUZZ_PRINT";
 
 const DEFAULT_DATABASE_NAME: &str = "binary-fuzz-db";
 const DEFAULT_CONTAINER_NAME: &str = "binary-fuzz-ct";
 const PARTITION_KEY_PATH: &str = "/pk";
 
 const DEFAULT_ITERATIONS: u64 = 200;
-const DEFAULT_MAX_DEPTH: u32 = 5;
+const DEFAULT_MAX_DEPTH: u32 = 6;
+/// Default maximum number of child fields/elements generated at each container
+/// level (the branching factor). Higher values produce larger, wider documents.
+const DEFAULT_BREADTH: u32 = 6;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Seeded PRNG (SplitMix64) — deterministic and dependency-feature-free, matching
@@ -108,7 +113,9 @@ struct FuzzConfig {
     max_depth: u32,
     wide_numbers: bool,
     unicode: bool,
+    breadth: u32,
     calibrate: bool,
+    print_docs: bool,
 }
 
 impl FuzzConfig {
@@ -129,7 +136,9 @@ impl FuzzConfig {
             max_depth: env_u64(MAX_DEPTH_ENV_VAR, DEFAULT_MAX_DEPTH as u64) as u32,
             wide_numbers: env_bool(WIDE_NUMBERS_ENV_VAR, false),
             unicode: env_bool(UNICODE_ENV_VAR, true),
+            breadth: env_u64(BREADTH_ENV_VAR, DEFAULT_BREADTH as u64).max(1) as u32,
             calibrate: env_bool(CALIBRATE_ENV_VAR, false),
+            print_docs: env_bool(PRINT_ENV_VAR, false),
         }
     }
 }
@@ -156,30 +165,45 @@ fn env_bool(name: &str, default: bool) -> bool {
 ///
 /// Uses a **hybrid** strategy: a depth-controlled *skeleton* guarantees the
 /// document actually reaches a target nesting depth (drawn from `[1, max_depth]`),
-/// while every leaf and filler branch is irregular JSON produced by
-/// [`arbitrary_json`]. This fixes the `arbitrary_iter` shallowness (it stops
-/// nesting almost immediately regardless of byte budget), so `max_depth` now
-/// meaningfully scales structure. Everything is driven by the [`SplitMix64`] seed
-/// stream, so the same `AZURE_COSMOS_FUZZ_SEED` reproduces the same document.
+/// while every leaf and filler branch is irregular JSON — a mix of hand-rolled
+/// typed scalars (integers, floats, alphabetic / alphanumeric / free-text /
+/// non-ASCII strings, booleans, nulls, number arrays) and [`arbitrary_json`]
+/// subtrees. This fixes the `arbitrary_iter` shallowness (it stops nesting
+/// almost immediately regardless of byte budget), so `max_depth` now
+/// meaningfully scales structure and `breadth` scales width. Everything is
+/// driven by the [`SplitMix64`] seed stream, so the same `AZURE_COSMOS_FUZZ_SEED`
+/// reproduces the same document.
+///
+/// Every document also carries a **sampler** subtree ([`gen_sampler`]) that
+/// guarantees at least one value of each category appears, so a single run
+/// exercises numeric, alphabetic, alphanumeric, free-text, and non-ASCII data
+/// under multi-level nesting.
 ///
 /// A [`bound_value`] pass applies the `wide_numbers` / `unicode` knobs: by
 /// default numbers are clamped into the calibrated-safe envelope (design doc
-/// §3.2) and strings to ASCII, unless explicitly widened.
+/// §3.2) and strings to ASCII, unless explicitly widened. The hand-rolled
+/// scalars already respect those knobs directly.
 fn gen_object(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Map<String, Value> {
     let max_depth = cfg.max_depth.max(1);
     // Target nesting depth for this document's spine, in [1, max_depth].
     let target_depth = 1 + rng.below(max_depth as u64) as u32;
 
     let mut map = Map::new();
-    // A few irregular root fields (arbitrary-json subtrees).
-    for _ in 0..rng.below(4) {
+    // A guaranteed sampler covering every value category (numeric, alphabetic,
+    // alphanumeric, free text, non-ASCII, boolean, null, number array, nested).
+    // Keyed distinctly from the caller-reserved `id`/`pk` so it is never
+    // overwritten.
+    map.insert("_sampler".to_string(), gen_sampler(rng, cfg));
+    // A spread of irregular root fields (typed scalars + arbitrary-json subtrees).
+    for _ in 0..rng.below(cfg.breadth as u64 + 1) {
         map.insert(gen_key(rng), gen_filler_value(rng, cfg));
     }
     // The spine field guarantees the target depth is reached. Its key avoids the
-    // caller-reserved `id`/`pk` (and empty) so the caller's later inserts can't
-    // overwrite the deep subtree.
+    // caller-reserved `id`/`pk`/`_sampler` (and empty) so nothing overwrites the
+    // deep subtree.
     let mut spine_key = gen_key(rng);
-    while spine_key.is_empty() || spine_key == "id" || spine_key == "pk" {
+    while spine_key.is_empty() || spine_key == "id" || spine_key == "pk" || spine_key == "_sampler"
+    {
         spine_key.push('_');
     }
     map.insert(spine_key, gen_spine(rng, cfg, target_depth));
@@ -187,8 +211,9 @@ fn gen_object(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Map<String, Value> {
     map
 }
 
-/// Number of PRNG bytes fed to `arbitrary-json` for one shallow filler subtree.
-const FILLER_BUDGET: usize = 96;
+/// Number of PRNG bytes fed to `arbitrary-json` for one filler subtree. A larger
+/// budget lets `arbitrary-json` build bigger, deeper irregular subtrees.
+const FILLER_BUDGET: usize = 256;
 
 /// Refills `n` bytes deterministically from the PRNG.
 fn fill_bytes(rng: &mut SplitMix64, n: usize) -> Vec<u8> {
@@ -206,31 +231,185 @@ fn gen_key(rng: &mut SplitMix64) -> String {
     String::arbitrary(&mut u).unwrap_or_default()
 }
 
-/// A small, irregular filler value: usually an `arbitrary-json` subtree, and
-/// occasionally a homogeneous number array (to exercise the uniform-number wire
-/// forms once the backend re-encodes it). Already `bound_value`-clamped.
-fn gen_filler_value(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Value {
-    // ~1/8 of the time, a homogeneous number array.
-    if rng.below(8) == 0 {
-        let len = rng.below(8);
-        let arr = (0..len)
-            .map(|_| Value::Number(Number::from(rng.below(2_000_001) as i64 - 1_000_000)))
-            .collect();
-        return Value::Array(arr);
-    }
-    let bytes = fill_bytes(rng, FILLER_BUDGET);
-    let mut u = Unstructured::new(&bytes);
-    let mut v: Value = ArbitraryValue::arbitrary(&mut u)
-        .map(Into::into)
-        .unwrap_or(Value::Null);
-    bound_value(&mut v, cfg);
-    v
+// ─────────────────────────────────────────────────────────────────────────────
+// Typed scalar generators (character classes + numbers), seeded from the PRNG.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// ASCII letters, for the alphabetic string class.
+const ALPHA_CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+/// ASCII letters + digits, for the alphanumeric string class.
+const ALPHANUMERIC_CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+/// A spread of non-ASCII scalars across scripts, symbols, and astral-plane
+/// emoji — exercises multi-byte UTF-8 and surrogate-pair paths in the codec.
+const NON_ASCII_CHARS: &[char] = &[
+    'é', 'ñ', 'ü', 'ß', 'ç', 'å', 'ø', 'Ω', 'λ', 'π', 'µ', 'я', 'ж', 'д', 'α', 'β', '中', '文',
+    '日', '本', '語', '한', '국', 'ع', 'ب', '€', '£', '¥', '©', '™', '—', '…', '→', '∑', '≈', '♠',
+    '☃', '😀', '🚀', '🌍', '🎉', '𝄞', '𐍈',
+];
+
+/// A uniform integer in `[lo, hi]` (inclusive). `lo <= hi` required.
+fn gen_int_in(rng: &mut SplitMix64, lo: i64, hi: i64) -> i64 {
+    let span = (hi - lo) as u64 + 1;
+    lo + rng.below(span) as i64
 }
 
-/// Builds a nested container chain `depth` levels deep, with a few irregular
+/// A random ASCII string drawn from `pool`, length in `[1, max_len]`.
+fn gen_string_from(rng: &mut SplitMix64, pool: &[u8], max_len: usize) -> String {
+    let len = 1 + rng.below(max_len as u64) as usize;
+    (0..len)
+        .map(|_| pool[rng.below(pool.len() as u64) as usize] as char)
+        .collect()
+}
+
+/// A string mixing alphanumeric and non-ASCII scalars, length in `[1, max_len]`.
+/// Falls back to alphanumeric-only when `unicode` generation is disabled so the
+/// ASCII envelope contract (design doc §3.2) still holds.
+fn gen_unicode_string(rng: &mut SplitMix64, cfg: &FuzzConfig, max_len: usize) -> String {
+    if !cfg.unicode {
+        return gen_string_from(rng, ALPHANUMERIC_CHARS, max_len);
+    }
+    let len = 1 + rng.below(max_len as u64) as usize;
+    (0..len)
+        .map(|_| {
+            if rng.below(2) == 0 {
+                ALPHANUMERIC_CHARS[rng.below(ALPHANUMERIC_CHARS.len() as u64) as usize] as char
+            } else {
+                NON_ASCII_CHARS[rng.below(NON_ASCII_CHARS.len() as u64) as usize]
+            }
+        })
+        .collect()
+}
+
+/// An envelope-safe integer (`±1_000_000`).
+fn gen_envelope_int(rng: &mut SplitMix64) -> Value {
+    Value::Number(Number::from(gen_int_in(rng, -1_000_000, 1_000_000)))
+}
+
+/// An envelope-safe two-decimal float (`±100_000.00`).
+fn gen_envelope_float(rng: &mut SplitMix64) -> Value {
+    let cents = gen_int_in(rng, -10_000_000, 10_000_000);
+    Number::from_f64(cents as f64 / 100.0)
+        .map(Value::Number)
+        .unwrap_or_else(|| Value::Number(Number::from(0)))
+}
+
+/// A single number: envelope-safe by default; when `wide_numbers` is set,
+/// occasionally a wide value beyond `2^53` that drives the calibrated
+/// string-token comparison path (design doc §3.1).
+fn gen_number(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Value {
+    if cfg.wide_numbers && rng.below(4) == 0 {
+        return Value::Number(Number::from(rng.next_u64() as i64));
+    }
+    if rng.below(2) == 0 {
+        gen_envelope_int(rng)
+    } else {
+        gen_envelope_float(rng)
+    }
+}
+
+/// One rich scalar spanning the value taxonomy: integer, float, alphabetic,
+/// alphanumeric, free text, non-ASCII, boolean, or null.
+fn gen_scalar(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Value {
+    match rng.below(8) {
+        0 | 1 => gen_number(rng, cfg),
+        2 => Value::String(gen_string_from(rng, ALPHA_CHARS, 24)),
+        3 => Value::String(gen_string_from(rng, ALPHANUMERIC_CHARS, 24)),
+        4 => Value::String(gen_unicode_string(rng, cfg, 24)),
+        5 => Value::String(gen_unicode_string(rng, cfg, 80)), // longer free text
+        6 => Value::Bool(rng.below(2) == 0),
+        _ => Value::Null,
+    }
+}
+
+/// A sampler object guaranteeing every value category appears in the document at
+/// least once: integer, float, alphabetic, alphanumeric, free text, non-ASCII,
+/// boolean, null, a homogeneous number array, and a small nested object.
+fn gen_sampler(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Value {
+    let mut map = Map::new();
+    map.insert("int".into(), gen_envelope_int(rng));
+    map.insert("float".into(), gen_envelope_float(rng));
+    map.insert(
+        "alpha".into(),
+        Value::String(gen_string_from(rng, ALPHA_CHARS, 24)),
+    );
+    map.insert(
+        "alphanumeric".into(),
+        Value::String(gen_string_from(rng, ALPHANUMERIC_CHARS, 24)),
+    );
+    map.insert(
+        "text".into(),
+        Value::String(gen_unicode_string(rng, cfg, 64)),
+    );
+    map.insert(
+        "unicode".into(),
+        Value::String(gen_unicode_string(rng, cfg, 24)),
+    );
+    map.insert("flag".into(), Value::Bool(rng.below(2) == 0));
+    map.insert("empty".into(), Value::Null);
+    let count = 1 + rng.below(8);
+    let numbers = (0..count).map(|_| gen_envelope_int(rng)).collect();
+    map.insert("numbers".into(), Value::Array(numbers));
+    // A small nested object so the sampler itself has a second level.
+    let mut nested = Map::new();
+    nested.insert("mixed".into(), gen_scalar(rng, cfg));
+    nested.insert(
+        "list".into(),
+        Value::Array(
+            (0..1 + rng.below(4))
+                .map(|_| gen_scalar(rng, cfg))
+                .collect(),
+        ),
+    );
+    map.insert("nested".into(), Value::Object(nested));
+    Value::Object(map)
+}
+
+/// A small, irregular filler value. Draws from typed scalars, mixed
+/// arrays/objects of typed scalars, homogeneous number arrays (to exercise the
+/// uniform-number wire forms), and `arbitrary-json` subtrees — so filler is both
+/// varied and non-trivial in size. Already respects the `wide_numbers`/`unicode`
+/// knobs.
+fn gen_filler_value(rng: &mut SplitMix64, cfg: &FuzzConfig) -> Value {
+    match rng.below(10) {
+        // Homogeneous number array (uniform-number wire forms).
+        0 => {
+            let len = rng.below(8);
+            let arr = (0..len).map(|_| gen_envelope_int(rng)).collect();
+            Value::Array(arr)
+        }
+        // Typed scalars across the character/number classes.
+        1..=3 => gen_scalar(rng, cfg),
+        // A short mixed-type array.
+        4 => {
+            let len = 1 + rng.below(cfg.breadth as u64 + 1);
+            Value::Array((0..len).map(|_| gen_scalar(rng, cfg)).collect())
+        }
+        // A small object of typed scalars.
+        5 => {
+            let mut map = Map::new();
+            for _ in 0..1 + rng.below(cfg.breadth as u64) {
+                map.insert(gen_key(rng), gen_scalar(rng, cfg));
+            }
+            Value::Object(map)
+        }
+        // An `arbitrary-json` subtree (bigger byte budget), envelope-bounded.
+        _ => {
+            let bytes = fill_bytes(rng, FILLER_BUDGET);
+            let mut u = Unstructured::new(&bytes);
+            let mut v: Value = ArbitraryValue::arbitrary(&mut u)
+                .map(Into::into)
+                .unwrap_or(Value::Null);
+            bound_value(&mut v, cfg);
+            v
+        }
+    }
+}
+
+/// Builds a nested container chain `depth` levels deep, with several irregular
 /// filler siblings at each level, guaranteeing the document reaches `depth`.
 /// Each level is randomly an object or an array; exactly one child continues the
-/// spine deeper.
+/// spine deeper. The sibling count scales with `breadth`, so deeper documents
+/// are also wider.
 fn gen_spine(rng: &mut SplitMix64, cfg: &FuzzConfig, depth: u32) -> Value {
     if depth == 0 {
         return gen_filler_value(rng, cfg);
@@ -238,7 +417,7 @@ fn gen_spine(rng: &mut SplitMix64, cfg: &FuzzConfig, depth: u32) -> Value {
     if rng.below(2) == 0 {
         // Object: filler fields + one spine field going deeper.
         let mut map = Map::new();
-        for _ in 0..rng.below(3) {
+        for _ in 0..rng.below(cfg.breadth as u64 + 1) {
             map.insert(gen_key(rng), gen_filler_value(rng, cfg));
         }
         let mut key = gen_key(rng);
@@ -250,7 +429,7 @@ fn gen_spine(rng: &mut SplitMix64, cfg: &FuzzConfig, depth: u32) -> Value {
     } else {
         // Array: filler elements + one spine element going deeper.
         let mut arr = Vec::new();
-        for _ in 0..rng.below(3) {
+        for _ in 0..rng.below(cfg.breadth as u64 + 1) {
             arr.push(gen_filler_value(rng, cfg));
         }
         arr.push(gen_spine(rng, cfg, depth - 1));
@@ -565,8 +744,8 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
     }
 
     println!(
-        "binary_roundtrip_fuzzer: seed={} iterations={} max_depth={} wide_numbers={} unicode={}",
-        cfg.seed, cfg.iterations, cfg.max_depth, cfg.wide_numbers, cfg.unicode
+        "binary_roundtrip_fuzzer: seed={} iterations={} max_depth={} breadth={} wide_numbers={} unicode={}",
+        cfg.seed, cfg.iterations, cfg.max_depth, cfg.breadth, cfg.wide_numbers, cfg.unicode
     );
     println!("Reproduce this run with {SEED_ENV_VAR}={}", cfg.seed);
 
@@ -607,6 +786,17 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
         // otherwise collide on the `(pk, id)` key and fail with 409 Conflict.
         let base_doc = gen_object(&mut rng, &cfg);
         let pk = format!("pk-{}", rng.below(16));
+
+        // Optionally print the generated document (pretty JSON) so a run can be
+        // eyeballed. Enable with `AZURE_COSMOS_FUZZ_PRINT=true`.
+        if cfg.print_docs {
+            println!(
+                "--- iter {iter} (seed={}) ---\n{}",
+                cfg.seed,
+                serde_json::to_string_pretty(&Value::Object(base_doc.clone()))
+                    .unwrap_or_else(|_| "<unserializable>".to_string())
+            );
+        }
 
         for (label, client) in &clients {
             let container = client
@@ -1063,7 +1253,9 @@ mod tests {
             max_depth: 4,
             wide_numbers: false,
             unicode: true,
+            breadth: DEFAULT_BREADTH,
             calibrate: false,
+            print_docs: false,
         };
         let mut a = SplitMix64::new(cfg.seed);
         let mut b = SplitMix64::new(cfg.seed);
@@ -1094,7 +1286,9 @@ mod tests {
                 max_depth,
                 wide_numbers: false,
                 unicode: true,
+                breadth: DEFAULT_BREADTH,
                 calibrate: false,
+                print_docs: false,
             };
             let mut rng = SplitMix64::new(cfg.seed);
             let n = 1000u32;
@@ -1139,7 +1333,9 @@ mod tests {
             max_depth: 5,
             wide_numbers: true,
             unicode: true,
+            breadth: DEFAULT_BREADTH,
             calibrate: false,
+            print_docs: false,
         };
         let mut rng = SplitMix64::new(cfg.seed);
         for _ in 0..500 {
@@ -1151,6 +1347,134 @@ mod tests {
                 canon(&twice),
                 "normalization not idempotent for doc: {}",
                 serde_json::to_string(&doc).unwrap()
+            );
+        }
+    }
+
+    #[test]
+    fn generated_documents_cover_all_value_categories() {
+        // The sampler subtree guarantees every value category appears in each
+        // document: integer, float, alphabetic, alphanumeric, non-ASCII string,
+        // boolean, null, a number array, and multi-level nesting. This asserts
+        // the "really complex JSON" contract holds for a spread of seeds.
+        fn walk(v: &Value, seen: &mut Categories, max_depth: &mut u32, depth: u32) {
+            *max_depth = (*max_depth).max(depth);
+            match v {
+                Value::Null => seen.null = true,
+                Value::Bool(_) => seen.boolean = true,
+                Value::Number(n) => {
+                    if n.is_f64() {
+                        seen.float = true;
+                    } else {
+                        seen.integer = true;
+                    }
+                }
+                Value::String(s) => {
+                    if !s.is_empty() && s.chars().all(|c| c.is_ascii_alphabetic()) {
+                        seen.alphabetic = true;
+                    }
+                    if !s.is_empty() && s.chars().all(|c| c.is_ascii_alphanumeric()) {
+                        seen.alphanumeric = true;
+                    }
+                    if !s.is_ascii() {
+                        seen.non_ascii = true;
+                    }
+                }
+                Value::Array(items) => {
+                    seen.array = true;
+                    for item in items {
+                        walk(item, seen, max_depth, depth + 1);
+                    }
+                }
+                Value::Object(map) => {
+                    seen.object = true;
+                    for child in map.values() {
+                        walk(child, seen, max_depth, depth + 1);
+                    }
+                }
+            }
+        }
+
+        #[derive(Default)]
+        struct Categories {
+            integer: bool,
+            float: bool,
+            alphabetic: bool,
+            alphanumeric: bool,
+            non_ascii: bool,
+            boolean: bool,
+            null: bool,
+            array: bool,
+            object: bool,
+        }
+
+        let cfg = FuzzConfig {
+            iterations: 0,
+            seed: 0xC0FFEE,
+            max_depth: 6,
+            wide_numbers: false,
+            unicode: true,
+            breadth: DEFAULT_BREADTH,
+            calibrate: false,
+            print_docs: false,
+        };
+        let mut rng = SplitMix64::new(cfg.seed);
+
+        let mut all = Categories::default();
+        let mut deepest = 0u32;
+        for _ in 0..50 {
+            let doc = Value::Object(gen_object(&mut rng, &cfg));
+            walk(&doc, &mut all, &mut deepest, 0);
+        }
+
+        assert!(all.integer, "no integer produced");
+        assert!(all.float, "no float produced");
+        assert!(all.alphabetic, "no alphabetic string produced");
+        assert!(all.alphanumeric, "no alphanumeric string produced");
+        assert!(all.non_ascii, "no non-ASCII string produced");
+        assert!(all.boolean, "no boolean produced");
+        assert!(all.null, "no null produced");
+        assert!(all.array, "no array produced");
+        assert!(all.object, "no nested object produced");
+        // Multi-level nesting: the guaranteed sampler alone reaches depth ≥ 3,
+        // and the spine pushes documents deeper.
+        assert!(
+            deepest >= 4,
+            "documents should reach multi-level nesting, deepest={deepest}"
+        );
+    }
+
+    /// Prints a few sample generated documents as pretty JSON so the generator
+    /// output can be eyeballed **offline** (no Cosmos account). Ignored by
+    /// default; run explicitly with `--ignored --nocapture`:
+    ///
+    /// ```bash
+    /// cargo test -p azure_data_cosmos_perf --test binary_roundtrip_fuzzer \
+    ///   print_sample_documents -- --ignored --nocapture
+    /// ```
+    ///
+    /// Control shape/size via the same env vars as a live run, e.g.
+    /// `AZURE_COSMOS_FUZZ_SEED`, `AZURE_COSMOS_FUZZ_MAX_DEPTH`,
+    /// `AZURE_COSMOS_FUZZ_BREADTH`, `AZURE_COSMOS_FUZZ_WIDE_NUMBERS`; the count
+    /// defaults to 3 (override with `AZURE_COSMOS_FUZZ_PRINT_COUNT`).
+    #[test]
+    #[ignore = "prints sample JSON on demand; run with --ignored --nocapture"]
+    fn print_sample_documents() {
+        let cfg = FuzzConfig::from_env();
+        let count = std::env::var("AZURE_COSMOS_FUZZ_PRINT_COUNT")
+            .ok()
+            .and_then(|v| v.parse::<u32>().ok())
+            .unwrap_or(3);
+        println!(
+            "print_sample_documents: seed={} max_depth={} breadth={} wide_numbers={} unicode={}",
+            cfg.seed, cfg.max_depth, cfg.breadth, cfg.wide_numbers, cfg.unicode
+        );
+        let mut rng = SplitMix64::new(cfg.seed);
+        for i in 0..count {
+            let doc = Value::Object(gen_object(&mut rng, &cfg));
+            println!(
+                "--- sample {i} ---\n{}",
+                serde_json::to_string_pretty(&doc).unwrap()
             );
         }
     }
