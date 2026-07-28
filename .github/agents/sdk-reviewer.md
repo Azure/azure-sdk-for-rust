@@ -28,7 +28,7 @@ Severity:
 
 MUST
 
-- Review only requested crates, and only their public API files plus crate support files (for example `Cargo.toml`, `README.md`, `CHANGELOG.md`, `ci.yml`, `tsp-location.yaml`, assets/test resources). Ignore unrelated crates and non-API implementation details unless they directly affect those surfaces.
+- Review only files that affect requested crates: their public API files; crate support files under `sdk/<service>/<crate>` (for example `Cargo.toml`, `README.md`, `CHANGELOG.md`, `ci.yml`, `tsp-location.yaml`, assets/test resources); service support files under `sdk/<service>` (for example `assets.json`, `test-resources.bicep`, `tsp-location.yaml`); and workspace `Cargo.toml` when relevant. Ignore unrelated crates and non-API implementation details.
 - Follow Rust idioms and Azure SDK consistency; prefer language consistency over cross-language sameness.
 - Treat public API changes as breaking-risk unless clearly additive+compatible.
 - Ensure async-first client methods; no sync surface.
@@ -43,7 +43,6 @@ MUST
 - Ensure subclients are created from parent clients only, exported from `clients`, and named with `_client` returning methods.
 - Keep model fields public and typically optional; apply serde mappings required by service contract.
 - Require `#[non_exhaustive]` on response-only structs; do not use it for request or request-response structs.
-- Prefer deriving `SafeDebug` instead of `Debug` when PII risk exists; never trace/telemeter PII.
 - Check required SDK packaging metadata and crate layout (`sdk/<service>/<crate>`, naming prefixes, workspace wiring).
 - Require tests for changed behavior (unit/integration/recorded as applicable).
 - Require crate `README.md` with standard H1 and H2 sections (`Getting started`, `Key concepts`, `Examples`, `Troubleshooting`, `Contributing`) following `sdk/core/azure_core/README.md`.
@@ -67,6 +66,7 @@ SHOULD
 - Use default-feature approach for tokio/reqwest while allowing opt-out.
 - Keep names concise; avoid unclear abbreviations.
 - Prefer Azure Core policy implementations over custom ones.
+- Prefer deriving `SafeDebug` instead of `Debug` when PII risk exists; never trace/telemeter PII.
 - Include/verify docs+snippets guidance relevance for changed public API.
 - Use Rust code intelligence/LSP evidence when available.
 

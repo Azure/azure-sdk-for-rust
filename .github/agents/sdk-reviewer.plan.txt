@@ -20,7 +20,7 @@ Distillation process:
 3) Resolve conflicts by source priority (rust_introduction first).
 4) Convert prose/examples into compact reviewer checks.
 5) Keep merge-signal rules only: API compatibility, security/PII/secrets, dependency/runtime constraints, module/export layout, model/error/paging/LRO contracts, packaging metadata, generated boundaries, tests, README required sections.
-6) Explicitly scope review to requested crates and only their API/support files; exclude unrelated crates and non-API implementation details unless they affect those surfaces.
+6) Explicitly scope review to files affecting requested crates only: their API files, crate support files under `sdk/<service>/<crate>`, service support files under `sdk/<service>`, and workspace `Cargo.toml` when relevant.
 7) Remove narrative/background and redundant wording.
 8) Normalize output sections: MUST, MUST NOT, SHOULD, MAY, Severity, Output format.
 9) Keep frontmatter aligned to preserved profile settings unless intentionally changed.
@@ -32,6 +32,6 @@ Maintenance checklist:
 - Update rules when upstream wording changes.
 - Preserve source priority.
 - Keep README checks aligned to `sdk/core/azure_core/README.md` headings.
-- Verify workflow repo/doc access and requested-crate API/support-file review scope remain codified.
+- Verify workflow repo/doc access and requested-crate file scope remain codified, including crate-level support files, service-level support files, and workspace `Cargo.toml` when relevant.
 - Verify regenerated frontmatter still uses `model: gpt-5.4` and `tools: [read, search, github/*, web-fetch, safeoutputs/*]`.
 - Recompile affected agentic workflow lock files after changes.
