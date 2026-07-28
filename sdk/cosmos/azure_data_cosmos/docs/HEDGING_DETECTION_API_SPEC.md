@@ -34,7 +34,7 @@ Rust-native `HedgeDiagnostics` surface (see §5); the two are complementary.
 | --- | --- | --- |
 | `DiagnosticsContext` | re-exported as `azure_data_cosmos::DiagnosticsContext` | The per-operation diagnostics handle. |
 | `DiagnosticsContext::requests` | `-> Arc<Vec<RequestDiagnostics>>` | Retained per-attempt records in dispatch order — **not** a guaranteed-complete append-only history: under a `429`/`410` retry storm the list is bounded/compacted (see `max_request_diagnostics`, which can drop or reorder entries), and a structurally-dropped hedge loser leg is absent. Cloning the `Arc` is a cheap atomic increment. |
-| `DiagnosticsContext::hedge_diagnostics` | `-> Option<&HedgeDiagnostics>` | `Some` whenever a hedging strategy was active for the operation (including primary-wins-under-threshold). |
+| `DiagnosticsContext::hedge_diagnostics` | `-> Option<&HedgeDiagnostics>` | An **optional retained race outcome**, not a configuration probe. `Some` when a hedge race recorded a terminal outcome (including primary-wins-under-threshold). `None` when hedging was not selected for the operation, when a configured strategy found the operation ineligible, **and** on the both-transient→failover path, where a terminal outcome is deliberately left unset so a later successful retry does not carry a misleading `BothTransient` state. |
 | `DiagnosticsContext::regions_contacted` | `-> Vec<Region>` | Distinct regions **deduplicated in first-contact (failover) order — not sorted**, captured from the full attempt list before compaction. |
 | `RequestDiagnostics::region` | `-> Option<&Region>` | `None` for pre-region-selection failures. |
 | `RequestDiagnostics::execution_context` | `-> ExecutionContext` | Why this attempt was dispatched (see §3). |
@@ -120,9 +120,13 @@ The mapping is total (no wildcard arm) so it fails to compile if a new
 
 `true` iff at least one hedge arm was actually dispatched. This is `false` — not
 an error — when the primary returns before the hedging threshold elapses, even
-though a hedging strategy was active. To check whether a strategy was merely
-*configured*, use `ctx.hedge_diagnostics().is_some()` (a superset that includes
-primary-wins-under-threshold).
+though a hedging strategy was active.
+
+There is **no** accessor for "was a strategy configured?", and
+`hedge_diagnostics().is_some()` is not one: it is `None` for a configured but
+ineligible operation, and on the both-transient→failover path (§5). Reading it
+as a configuration probe would make consumers conclude hedging was disabled when
+it was not.
 
 Like the two region accessors, this is **materialized at finalization** from the
 dispatch-time fan-out log (§4.3), so a race whose attempts were later compacted
@@ -200,17 +204,26 @@ coexist on the same `DiagnosticsContext` and serve different audiences.
 
 | Question | Hedging Detection API | Rust-native `HedgeDiagnostics` |
 | --- | --- | --- |
-| Did fan-out happen? | `hedging_started()` — from the fan-out log | `alternate_region().is_some()` — equivalent for a single operation |
-| Was a strategy active? | *(not derived)* | `hedge_diagnostics().is_some()` — superset of fan-out |
+| Did fan-out happen? | `hedging_started()` — from the fan-out log | `alternate_region().is_some()` — equivalent only when a terminal outcome was retained |
+| Was a strategy configured? | *(not derived)* | *(not derived — see below)* |
 | Regions tried | `requested_regions()` (every dispatch, with reason) | `primary_region()` + `alternate_region()` (one race's legs only) |
 | Regions that responded | `responded_regions()` (full list, completion order) | `response_region()` (single winner) |
-| Race outcome | *(not derived)* | `terminal_state()` (authoritative) |
+| Race outcome | *(not derived)* | `terminal_state()` (authoritative, when retained) |
+
+Neither surface answers "was hedging configured?". `hedge_diagnostics()` is an
+optional *retained race outcome*: it is `None` for a configured-but-ineligible
+operation, and it is deliberately left unset when a both-transient race
+continues to a successful failover, so that a later successful retry does not
+carry a misleading `BothTransient` state. On that path a dispatched hedge leg
+still makes `hedging_started()` `true` while `hedge_diagnostics()` is `None` —
+the two are not interchangeable.
 
 The Detection API deliberately does **not** read `hedge_diagnostics` to answer
 its three questions. Aggregation keeps only one representative `HedgeDiagnostics`
 for a multi-round-trip operation, so deriving from it would silently under-report
-every other sub-operation's fan-out. The fan-out log is per-builder and survives
-aggregation intact.
+every other sub-operation's fan-out — and the both-transient path would
+under-report fan-out entirely. The fan-out log is per-builder, is written at
+dispatch time, and survives aggregation intact.
 
 `main`'s `HedgeDiagnostics` classifies the race via `terminal_state` /
 `alternate_region` (there is no `total_requests_launched` counter), so "fan-out
@@ -219,6 +232,22 @@ happened" is `alternate_region().is_some()` and "the alternate won" is
 `terminal_state()` for hedge win-rate; do not infer an alternate win from the
 presence of `alternate_region()` alone (several terminal states still record an
 alternate region).
+
+### 5.1 Consequence for the observability surfaces
+
+All three SDK emission surfaces — the sampled root span, the sampled log line,
+and the opt-in `azure.cosmosdb.client.operation.hedged` counter — decide
+"did this operation hedge?" from `hedging_started()`, never from
+`hedge_diagnostics().is_some()`. Gating on the latter would silently undercount
+every both-transient race that was subsequently resolved by a failover attempt,
+which is exactly the population an operator most wants to see.
+
+The per-outcome fields (`hedge_region`, `hedge_terminal_state`) still require
+`hedge_diagnostics`, and are simply omitted when it is absent rather than
+emitted as empty strings. The counter is the one exception: its
+`hedge_terminal_state` dimension carries the `unresolved` sentinel instead of
+being dropped, so every data point on the counter has the same attribute set
+and `group by hedge_terminal_state` never fragments the time series.
 
 ---
 

@@ -210,6 +210,20 @@ impl CosmosMetricsHandler {
 }
 
 impl CosmosMetricsHandler {
+    /// Value of the `hedge_terminal_state` dimension when a hedge demonstrably
+    /// fanned out but the race retained no terminal outcome.
+    ///
+    /// The both-transient→failover path deliberately leaves `hedge_diagnostics`
+    /// unset so a later successful retry does not carry a misleading
+    /// `BothTransient` state. Those operations really did hedge, so they must be
+    /// counted; this sentinel keeps the counter's attribute schema uniform
+    /// (every data point carries the dimension, so `group by
+    /// hedge_terminal_state` never fragments) while staying distinguishable
+    /// from every real [`HedgeTerminalState`] value.
+    ///
+    /// [`HedgeTerminalState`]: azure_data_cosmos_driver::HedgeTerminalState
+    const HEDGE_TERMINAL_STATE_UNRESOLVED: &'static str = "unresolved";
+
     /// Records the hedged-operation counter for an operation that fanned out a
     /// cross-region hedge.
     ///
@@ -218,23 +232,26 @@ impl CosmosMetricsHandler {
     /// extended-attributes opt-in (mirroring how contacted regions are gated on
     /// the duration metric).
     ///
-    /// The counter is emitted only when `hedge_diagnostics` is present, so a
-    /// data point can never be recorded without its `hedge_terminal_state`
-    /// dimension — a mixed attribute schema on the same counter would fragment
-    /// its time series and break `group by hedge_terminal_state`. An aggregated
-    /// operation (e.g. PATCH) whose sub-op hedged propagates a representative
-    /// `hedge_diagnostics`, so this stays consistent with non-aggregated ops.
+    /// Fan-out is decided by [`DiagnosticsContext::hedging_started`], which is
+    /// materialized from the dispatch-time fan-out log and is therefore the
+    /// authoritative signal — gating on `hedge_diagnostics` instead would
+    /// silently undercount, because a both-transient race that later succeeds
+    /// through failover retains no terminal outcome. An aggregated operation
+    /// (e.g. PATCH) whose sub-op hedged is counted once for the whole operation.
     fn record_hedged(&self, diagnostics: &DiagnosticsContext, base_attrs: &[KeyValue]) {
-        let Some(hedge) = diagnostics.hedge_diagnostics() else {
+        if !diagnostics.hedging_started() {
             return;
-        };
+        }
+        let hedge = diagnostics.hedge_diagnostics();
         let mut attrs = base_attrs.to_vec();
         attrs.push(KeyValue::new(
             attributes::ATTR_HEDGE_TERMINAL_STATE,
-            hedge.terminal_state().as_str(),
+            hedge.map_or(Self::HEDGE_TERMINAL_STATE_UNRESOLVED, |hedge| {
+                hedge.terminal_state().as_str()
+            }),
         ));
         if self.options.extended_attributes_enabled() {
-            if let Some(alternate) = hedge.alternate_region() {
+            if let Some(alternate) = hedge.and_then(|hedge| hedge.alternate_region()) {
                 attrs.push(KeyValue::new(
                     attributes::ATTR_HEDGE_REGION,
                     alternate.as_str().to_string(),
@@ -286,8 +303,9 @@ impl DiagnosticsHandler for CosmosMetricsHandler {
         }
 
         // Hedging counter: emitted only when opted in and a hedge actually
-        // fanned out. Reuses H1's hedging_started() detection.
-        if self.options.hedged_metric_enabled() && diagnostics.hedging_started() {
+        // fanned out. `record_hedged` re-checks fan-out so the invariant holds
+        // regardless of call site.
+        if self.options.hedged_metric_enabled() {
             self.record_hedged(diagnostics, &attributes);
         }
     }
@@ -713,17 +731,15 @@ mod tests {
     }
 
     #[test]
-    fn hedged_metric_skips_when_terminal_state_unavailable() {
+    fn hedged_metric_counts_hedge_without_terminal_state() {
         // A hedge that fanned out both-transient and was then resolved by a later
         // failover attempt leaves a retained `Hedging` request (so
         // `hedging_started()` is true) but no recorded terminal outcome
         // (`finalize_both_transient` deliberately does not stamp `hedge_diagnostics`
-        // on the non-terminal path — see operation_pipeline.rs). The counter is
-        // intentionally skipped there rather than emitted without its
-        // `hedge_terminal_state` dimension, which would fragment the counter's time
-        // series. The counter therefore measures hedges with a resolved terminal
-        // outcome; a both-transient hedge whose winning response ultimately came
-        // from a failover attempt is not counted here.
+        // on the non-terminal path — see operation_pipeline.rs). That operation
+        // really did hedge, so it must be counted; the dimension carries the
+        // `unresolved` sentinel rather than being omitted, which keeps the
+        // counter's attribute schema uniform for `group by hedge_terminal_state`.
         use azure_data_cosmos_driver::diagnostics::{ExecutionContext, RequestDiagnostics};
         use azure_data_cosmos_driver::models::RequestCharge;
         use std::time::Instant;
@@ -759,9 +775,15 @@ mod tests {
         handler.handle(&ctx, &cx);
 
         let metrics = harness.collect();
-        assert!(
-            hedged_point(&metrics).is_none(),
-            "the counter must not emit a data point missing the hedge_terminal_state dimension"
+        let (attrs, value) = hedged_point(&metrics)
+            .expect("a hedge that fanned out is counted even without a terminal outcome");
+        assert_eq!(value, 1);
+        assert_eq!(
+            attrs
+                .get(attributes::ATTR_HEDGE_TERMINAL_STATE)
+                .map(String::as_str),
+            Some("unresolved"),
+            "the dimension is always present so the counter's schema stays uniform"
         );
     }
 }

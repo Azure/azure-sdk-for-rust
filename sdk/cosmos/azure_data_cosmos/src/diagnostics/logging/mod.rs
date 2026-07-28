@@ -384,13 +384,14 @@ mod tests {
     }
 
     #[test]
-    fn sampled_line_omits_hedging_fields_when_no_terminal_outcome() {
+    fn sampled_line_reports_fanout_without_terminal_outcome() {
         // A hedge fanned out both-transient and was then resolved by a later
-        // failover attempt: the retained `Hedging` request makes
-        // `hedging_started()` true, but the pipeline deliberately leaves
-        // `hedge_diagnostics()` None (no terminal outcome). The log line must
-        // still be emitted, but must NOT carry empty-string hedge_region /
-        // hedge_terminal_state fields — consistent with the metrics counter.
+        // failover attempt: the fan-out log makes `hedging_started()` true, but
+        // the pipeline deliberately leaves `hedge_diagnostics()` None (no
+        // terminal outcome). The line must still report `hedging_started` — the
+        // operation really did hedge — while omitting the per-outcome
+        // hedge_region / hedge_terminal_state fields rather than emitting empty
+        // strings for them.
         use azure_data_cosmos_driver::diagnostics::ExecutionContext;
 
         let captured = Arc::new(std::sync::Mutex::new(HashMap::new()));
@@ -426,10 +427,14 @@ mod tests {
         });
 
         let map = captured.lock().unwrap();
-        // The line is emitted (it is a failure) but carries no hedge fields —
-        // crucially, no empty-string hedge_region / hedge_terminal_state.
+        // The line is emitted (it is a failure) and reports the fan-out, but
+        // carries no empty-string hedge_region / hedge_terminal_state.
         assert!(map.contains_key("reason"));
-        assert!(!map.contains_key("hedging_started"));
+        assert_eq!(
+            map.get("hedging_started").map(String::as_str),
+            Some("true"),
+            "a fanned-out hedge is reported even without a terminal outcome"
+        );
         assert!(!map.contains_key("hedge_region"));
         assert!(!map.contains_key("hedge_terminal_state"));
     }
