@@ -147,7 +147,7 @@ struct DriverRequestExecutor<'a> {
 /// cache whose entries it protects.
 ///
 /// A cold read (no carried continuation) starts a brand new ETag chain, so it
-/// clears any existing pin; a hedge win on that read installs the new one.
+/// clears any existing pin and installs the region that served it.
 type PkRangeRegionPins = Mutex<HashMap<ContainerReference, CosmosEndpoint>>;
 
 fn request_target_overrides(
@@ -2050,8 +2050,9 @@ impl CosmosDriver {
         // `AvailabilityStrategy::Disabled`, which the
         // `AZURE_COSMOS_HEDGING_ENABLED` env switch is allowed to override —
         // a region-affine continuation must never be raced regardless of
-        // configuration. When the pin also carries an endpoint (a previous cold
-        // read was won by a hedge), the request is routed back to that region.
+        // configuration. The pin's endpoint additionally routes the request back
+        // to the region that served the cold page, so a failover retry cannot
+        // move the chain either.
         let options = OperationOptions::default();
         let overrides = OperationOverrides {
             region_pin: region_pin.map(Box::new),
@@ -2063,10 +2064,10 @@ impl CosmosDriver {
             .await
         {
             Ok(response) => {
-                // Capture the hedge winner (if a hedge fired and an alternate
-                // region won) before the response body is consumed, so the
-                // caller can pin subsequent change-feed pages to that region.
-                let winning_endpoint = self.hedge_winning_endpoint(&response);
+                // Capture the region that served this page before the response
+                // body is consumed, so the caller can pin subsequent
+                // change-feed pages to it.
+                let serving_endpoint = self.response_endpoint(&response);
 
                 let etag = response.headers().etag.as_ref().map(|e| e.to_string());
 
@@ -2079,7 +2080,7 @@ impl CosmosDriver {
                             continuation,
                             not_modified: true,
                         }),
-                        winning_endpoint,
+                        serving_endpoint,
                     );
                 }
 
@@ -2090,7 +2091,7 @@ impl CosmosDriver {
                             container = %container.name(),
                             "Partition key ranges response was a feed body, expected single payload"
                         );
-                        return (None, winning_endpoint);
+                        return (None, serving_endpoint);
                     }
                 };
                 match parse_pk_ranges_response(&body_bytes) {
@@ -2100,14 +2101,14 @@ impl CosmosDriver {
                             continuation: etag,
                             not_modified: false,
                         }),
-                        winning_endpoint,
+                        serving_endpoint,
                     ),
                     None => {
                         tracing::error!(
                             container = %container.name(),
                             "Failed to parse partition key ranges response body"
                         );
-                        (None, winning_endpoint)
+                        (None, serving_endpoint)
                     }
                 }
             }
@@ -2151,30 +2152,46 @@ impl CosmosDriver {
         }
     }
 
-    /// Returns the endpoint of the region that won a cross-region hedge for
-    /// `response`, if a hedge fired and an alternate region produced the winning
-    /// response.
+    /// Returns the endpoint of the region that actually produced `response`.
     ///
-    /// `None` when no hedge won (the primary answered, or no hedge fired), so
-    /// the caller leaves subsequent change-feed pages on the normal per-page
-    /// routing path. When `Some`, the caller pins later pages to this endpoint
-    /// so the region-affine continuation ETag stays valid.
-    fn hedge_winning_endpoint(
+    /// Used to pin the pages that follow a change-feed cold read. The ETag a
+    /// page returns is only meaningful to the region that issued it, so **every**
+    /// successful cold page must be recorded — not just the ones an alternate
+    /// region won via hedging. Recording only hedge wins would leave the common
+    /// primary-answered case unpinned, and a `FailoverRetry`/`SessionRetry` on a
+    /// later page would then be free to carry that region-affine ETag into a
+    /// different region.
+    ///
+    /// The serving region comes from [`HedgeDiagnostics::response_region`] when
+    /// a race occurred, and otherwise from the final attempt's own diagnostics.
+    /// Because this is only called on the success path, the last recorded
+    /// attempt is by construction the one that produced the response.
+    ///
+    /// `None` only when the response carries no attempt diagnostics or its
+    /// region is absent from the account's preferred read endpoints, in which
+    /// case the caller falls back to a pin that carries no endpoint but still
+    /// forbids hedging.
+    ///
+    /// [`HedgeDiagnostics::response_region`]: crate::diagnostics::HedgeDiagnostics::response_region
+    fn response_endpoint(
         &self,
         response: &crate::models::CosmosResponse,
     ) -> Option<CosmosEndpoint> {
         let diagnostics = response.diagnostics();
-        let hedge = diagnostics.hedge_diagnostics()?;
-        if hedge.terminal_state() != crate::diagnostics::HedgeTerminalState::AlternateWon {
-            return None;
-        }
-        let region = hedge.response_region()?;
+        let requests = diagnostics.requests();
+        let region = match diagnostics
+            .hedge_diagnostics()
+            .and_then(|hedge| hedge.response_region())
+        {
+            Some(region) => region.clone(),
+            None => requests.last()?.region()?.clone(),
+        };
         let snapshot = self.location_state_store.snapshot();
         snapshot
             .account
             .preferred_read_endpoints
             .iter()
-            .find(|ep| ep.region() == Some(region))
+            .find(|ep| ep.region() == Some(&region))
             .cloned()
     }
 
@@ -2183,10 +2200,12 @@ impl CosmosDriver {
     ///
     /// Encapsulates the change-feed hedging policy. A **cold** call (no carried
     /// continuation) starts a fresh ETag chain, so it drops any existing pin for
-    /// the container and is hedge-eligible; if a cross-region hedge wins it, the
-    /// winner is recorded as the container's pin. Every call that carries a
-    /// continuation is region-pinned instead: hedging is suppressed, and the
-    /// call is routed back to the recorded winner when there is one.
+    /// the container and is hedge-eligible; whichever region serves it — the
+    /// primary or a hedge-winning alternate — is recorded as the container's
+    /// pin. Every call that carries a continuation is region-pinned instead:
+    /// hedging is suppressed, and the call is routed back to the recorded region
+    /// so neither a hedge nor a mid-page failover can carry the region-affine
+    /// ETag somewhere it means nothing.
     ///
     /// The pin is held on the driver rather than in the closure because the
     /// cache persists the continuation past the closure's lifetime — see
@@ -2214,16 +2233,20 @@ impl CosmosDriver {
                         })
                     }
                 };
-                let allow_hedge = region_pin.is_none();
+                let is_cold = region_pin.is_none();
 
-                let (result, winner) = self
+                let (result, serving_endpoint) = self
                     .fetch_pk_ranges_from_service(container.clone(), continuation, region_pin)
                     .await;
-                if let Some(win) = winner.filter(|_| allow_hedge) {
+                // Record the serving region for every successful cold page, so
+                // the continuation pages that follow are pinned to it. Pages
+                // that already carry a pin leave it untouched: the chain must
+                // stay on the region that opened it.
+                if let Some(endpoint) = serving_endpoint.filter(|_| is_cold) {
                     self.pk_range_region_pins
                         .lock()
                         .expect("pk-range region pin mutex poisoned")
-                        .insert(container, win);
+                        .insert(container, endpoint);
                 }
                 result
             })

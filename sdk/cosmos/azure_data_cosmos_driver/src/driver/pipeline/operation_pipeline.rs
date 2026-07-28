@@ -99,9 +99,15 @@ pub(crate) struct RegionPin {
     /// Region this attempt must be routed to, bypassing the normal region
     /// selection in [`resolve_endpoint`].
     ///
-    /// `None` keeps normal region selection but still suppresses hedging: the
-    /// continuation was issued by whichever region normal routing picks, and
-    /// racing a second region would send that token somewhere it means nothing.
+    /// Normally always populated: the region that served the cold page is
+    /// recorded and every later page in the chain is pinned to it, so a
+    /// `FailoverRetry`/`SessionRetry` cannot carry the region-affine
+    /// continuation into a region that never issued it.
+    ///
+    /// `None` is the degraded fallback for the rare case where the serving
+    /// region could not be identified. Normal region selection then applies,
+    /// but hedging stays suppressed — racing a second region would send the
+    /// token somewhere it means nothing.
     pub endpoint: Option<crate::driver::routing::CosmosEndpoint>,
 }
 
@@ -8540,9 +8546,9 @@ mod tests {
 
     #[test]
     fn region_pin_without_endpoint_suppresses_hedging_only() {
-        // The case the pkranges change feed hits when the primary answered the
-        // cold page: later pages still carry that region's ETag, so they must
-        // not be raced even though there is no specific region to force.
+        // The degraded fallback: the serving region could not be identified, so
+        // there is no region to force, but the page still carries a
+        // region-affine ETag and must not be raced.
         let overrides = super::OperationOverrides {
             region_pin: Some(Box::new(super::RegionPin::default())),
             ..Default::default()
@@ -8568,6 +8574,93 @@ mod tests {
         assert_eq!(
             overrides.pinned_endpoint().and_then(|e| e.region()),
             Some(&Region::WEST_US_2)
+        );
+    }
+
+    #[test]
+    fn region_pin_holds_page_two_on_its_region_across_a_failover_retry() {
+        // The failure this guards: a `/pkranges` page 2 whose primary region has
+        // just been marked unavailable by a failover retry. Normal routing would
+        // move that attempt to the next preferred region and send the
+        // region-affine change-feed ETag somewhere that never issued it. The
+        // STAGE 2 pin must win over `resolve_endpoint` in that state.
+        let operation = CosmosOperation::read_all_partition_key_ranges(test_container());
+
+        let east = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let west = CosmosEndpoint::regional(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+        );
+
+        // East US — the region that served the cold page and issued the ETag —
+        // has just been marked unavailable, exactly as an in-flight failover
+        // retry would leave it.
+        let mut unavailable = std::collections::HashMap::new();
+        unavailable.insert(
+            east.url().clone(),
+            (
+                std::time::Instant::now(),
+                crate::driver::routing::UnavailableReason::ServiceUnavailable,
+            ),
+        );
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![east.clone(), west.clone()].into(),
+            preferred_write_endpoints: vec![east.clone()].into(),
+            account_write_endpoints: vec![east.clone()].into(),
+            unavailable_endpoints: unavailable,
+            multiple_write_locations_enabled: false,
+            default_endpoint: east.clone(),
+        }));
+
+        let mut retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            false,
+            Vec::new(),
+            3,
+            2,
+        );
+        retry_state.failover_retry_count = 1;
+
+        // Baseline: without a pin this attempt leaves East US.
+        let unpinned = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            false,
+            Duration::from_secs(60),
+        );
+        assert_eq!(
+            unpinned.endpoint, west,
+            "sanity check: normal routing must fail over off the unavailable region, \
+             otherwise this test proves nothing",
+        );
+
+        // With the pin, STAGE 2 bypasses `resolve_endpoint` entirely and the
+        // page stays on the region that issued its continuation.
+        let overrides = super::OperationOverrides {
+            region_pin: Some(Box::new(super::RegionPin {
+                endpoint: Some(east.clone()),
+            })),
+            ..Default::default()
+        };
+        let pinned = overrides
+            .pinned_endpoint()
+            .expect("a recorded pin carries its endpoint");
+        let routing = super::routing_decision_for_pinned_endpoint(pinned, false);
+
+        assert_eq!(
+            routing.endpoint, east,
+            "a pinned continuation page must stay on its issuing region even when \
+             that region is unavailable and a failover retry is in flight",
+        );
+        assert!(
+            overrides.hedging_suppressed(),
+            "a pinned continuation page must also never be raced",
         );
     }
 
