@@ -55,8 +55,8 @@ var multiRegionConfiguration = [
 var locationsConfiguration = (enableMultipleRegions ? multiRegionConfiguration : singleRegionConfiguration)
 var backupPolicy = (enableContinuousBackup ? {
   type: 'Continuous'
-  continuousTierPolicy: {
-    state: 'On'
+  continuousModeProperties: {
+    tier: 'Continuous7Days'
   }
 } : {
   type: 'Periodic'
