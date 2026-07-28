@@ -193,6 +193,7 @@ stages:
 
           - template: /eng/common/pipelines/templates/steps/create-pull-request.yml
             parameters:
+              PROwner: 'Azure'
               PRBranchName: increment-package-version-${{parameters.ServiceDirectory}}-$(Build.BuildId)
               CommitMsg: "Increment package version after release of ${{ join(', ', parameters.Artifacts.*.name) }}"
               PRTitle: "Increment versions for ${{parameters.ServiceDirectory}} releases"

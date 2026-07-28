@@ -56,6 +56,7 @@ Write-Host "  Directory: $($pkgProperties.DirectoryPath)"
 Write-Host "  ChangeLogPath: $($pkgProperties.ChangeLogPath)"
 
 $releasedVersion = $pkgProperties.Version
+$releasedSemVer = [AzureEngSemanticVersion]::new($releasedVersion)
 
 #If we're just bumping the version with no release date, we want to set the changelog entry to unreleased
 $setChangeLogEntryToUnreleased = !$ReleaseDate -and !$NewVersionString
@@ -91,8 +92,13 @@ if ($content -ne $updated) {
   Write-Host "Updating dependencies in Cargo.toml files."
   Invoke-LoggedCommand "cargo +$resolvedToolchain -Zscript '$RepoRoot/eng/scripts/update-pathversions.rs' update" | Out-Null
 
-  Write-Host "Updating sample dependency versions in Cargo.toml files."
-  Invoke-LoggedCommand "cargo +$resolvedToolchain -Zscript '$RepoRoot/eng/scripts/update-samples.rs' '$PackageName@$releasedVersion'" | Out-Null
+  if (!$releasedSemVer.IsPrerelease) {
+    Write-Host "Updating sample dependency versions in Cargo.toml files."
+    Invoke-LoggedCommand "cargo +$resolvedToolchain -Zscript '$RepoRoot/eng/scripts/update-samples.rs' '$PackageName@$releasedVersion'" | Out-Null
+  }
+  else {
+    Write-Host "Skipping sample dependency updates for prerelease version $releasedVersion."
+  }
 
   Write-Host "Updating Cargo.lock using 'cargo update --workspace'."
   Invoke-LoggedCommand "cargo update --workspace" | Out-Null

@@ -28,7 +28,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let repo_root = script_root.join("../..").canonicalize()?;
 
     // find all Cargo.toml files in the repo_root directory
-    let exclude_dirs = vec![repo_root.join("eng"), repo_root.join("target")];
+    let exclude_dirs = vec![
+        repo_root.join("eng"),
+        // Sample manifests should stay on the latest stable published versions unless they
+        // intentionally use a path dependency to highlight unpublished functionality.
+        repo_root.join("samples"),
+        repo_root.join("target"),
+    ];
 
     let toml_files = load_cargo_toml_files(&repo_root, &exclude_dirs)?;
 

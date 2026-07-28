@@ -20,6 +20,7 @@
 //! raw bytes (`&[u8]`) and return buffered responses (`Vec<u8>`). Serialization is handled by
 //! the consuming SDK in its native language.
 
+pub mod binary_json;
 pub mod diagnostics;
 pub mod driver;
 pub mod error;
@@ -64,4 +65,4 @@ pub use diagnostics::{DiagnosticsContext, ExecutionContext, RequestDiagnostics, 
 pub use driver::{CosmosDriver, CosmosDriverRuntime, CosmosDriverRuntimeBuilder, OperationPlan};
 pub use error::{CosmosError, CosmosErrorBuilder, CosmosStatus, Result, SubStatusCode};
 pub use models::{ActivityId, CosmosResponse, RequestCharge, ResponseBody};
-pub use options::{DiagnosticsOptions, DiagnosticsVerbosity, DriverOptions};
+pub use options::{DiagnosticsOptions, DiagnosticsThresholds, DiagnosticsVerbosity, DriverOptions};

@@ -69,6 +69,11 @@ pub(crate) struct ParsedRequest {
     /// throughput instead of silently falling back to `ContainerConfig::default()`
     /// (which has no provisioned RU/s and disables throttling for the container).
     pub offer_throughput: Option<u32>,
+    /// Whether the client advertised that it accepts Cosmos binary JSON in the
+    /// response, via `x-ms-cosmos-supported-serialization-formats` containing
+    /// `CosmosBinary`. When set, item read/write responses encode their body as
+    /// binary so the full encode → store → decode loop can be exercised locally.
+    pub binary_response: bool,
     #[allow(dead_code)]
     pub offer_autopilot_settings: Option<String>,
     #[allow(dead_code)]
@@ -112,6 +117,8 @@ static END_EPK: HeaderName = HeaderName::from_static("x-ms-end-epk");
 static READ_FEED_KEY_TYPE: HeaderName = HeaderName::from_static("x-ms-read-key-type");
 static IS_BATCH_REQUEST: HeaderName = HeaderName::from_static("x-ms-cosmos-is-batch-request");
 static OFFER_THROUGHPUT: HeaderName = HeaderName::from_static("x-ms-offer-throughput");
+static SUPPORTED_SERIALIZATION_FORMATS: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-supported-serialization-formats");
 static OFFER_AUTOPILOT_SETTINGS: HeaderName =
     HeaderName::from_static("x-ms-cosmos-offer-autopilot-settings");
 
@@ -178,6 +185,19 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
     let offer_autopilot_settings = headers
         .get_optional_str(&OFFER_AUTOPILOT_SETTINGS)
         .map(|s| s.to_string());
+
+    // The client advertises binary-response support via
+    // `x-ms-cosmos-supported-serialization-formats: JsonText,CosmosBinary`.
+    // Matching the .NET flag enum, the presence of a `CosmosBinary` token (case-
+    // insensitive, comma-separated) means the client can decode a binary
+    // response.
+    let binary_response = headers
+        .get_optional_str(&SUPPORTED_SERIALIZATION_FORMATS)
+        .map(|v| {
+            v.split(',')
+                .any(|fmt| fmt.trim().eq_ignore_ascii_case("CosmosBinary"))
+        })
+        .unwrap_or(false);
 
     let path = url.path();
     // Reject trailing slashes after the leading `/`. `/dbs/mydb/colls/mycoll/docs/`
@@ -246,6 +266,7 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
         activity_id,
         content_response_on_write,
         offer_throughput,
+        binary_response,
         offer_autopilot_settings,
         max_item_count,
         continuation,
@@ -701,5 +722,59 @@ mod tests {
         let req = make_request("GET", "/");
         let parsed = parse_request(&req);
         assert_eq!(parsed.operation, OperationType::ReadAccount);
+    }
+
+    #[test]
+    fn binary_response_true_when_cosmosbinary_advertised() {
+        // The default binary-encoding negotiation header advertises both text
+        // and binary; the emulator must reply with binary.
+        let mut req = make_request("GET", "/dbs/mydb/colls/mycoll/docs/doc1");
+        insert_header(
+            &mut req,
+            SUPPORTED_SERIALIZATION_FORMATS.clone(),
+            "JsonText,CosmosBinary",
+        );
+        assert!(parse_request(&req).binary_response);
+    }
+
+    #[test]
+    fn binary_response_false_when_only_jsontext_advertised() {
+        // `request_text_response` makes the SDK advertise only `JsonText`, so
+        // the emulator must reply with text even though the request body may be
+        // binary. This is the response-side of the `request_text_response`
+        // option.
+        let mut req = make_request("GET", "/dbs/mydb/colls/mycoll/docs/doc1");
+        insert_header(
+            &mut req,
+            SUPPORTED_SERIALIZATION_FORMATS.clone(),
+            "JsonText",
+        );
+        assert!(!parse_request(&req).binary_response);
+    }
+
+    #[test]
+    fn binary_response_false_when_header_absent() {
+        // No negotiation header (binary encoding disabled) ⇒ text response.
+        let req = make_request("GET", "/dbs/mydb/colls/mycoll/docs/doc1");
+        assert!(!parse_request(&req).binary_response);
+    }
+
+    #[test]
+    fn binary_response_detects_cosmosbinary_regardless_of_order_or_case() {
+        // The token match is case-insensitive and order-independent, matching
+        // the .NET flag-enum parse.
+        for value in [
+            "CosmosBinary",
+            "CosmosBinary,JsonText",
+            "cosmosbinary",
+            "JsonText, CosmosBinary",
+        ] {
+            let mut req = make_request("GET", "/dbs/mydb/colls/mycoll/docs/doc1");
+            insert_header(&mut req, SUPPORTED_SERIALIZATION_FORMATS.clone(), value);
+            assert!(
+                parse_request(&req).binary_response,
+                "value {value:?} should negotiate a binary response",
+            );
+        }
     }
 }

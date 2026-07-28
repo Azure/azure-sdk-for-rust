@@ -16,8 +16,10 @@
 //! initialization time and do not participate in per-operation layered resolution.
 
 mod availability_strategy;
+mod binary_encoding;
 mod connection_pool;
 mod diagnostics_options;
+mod diagnostics_thresholds;
 mod driver_options;
 pub(crate) mod env_parsing;
 mod identity;
@@ -30,10 +32,13 @@ mod region;
 mod throughput_control;
 
 pub use availability_strategy::{AvailabilityStrategy, HedgeThreshold, HedgingStrategy};
+pub use binary_encoding::BinaryEncodingOptions;
 pub use connection_pool::{ConnectionPoolOptions, ConnectionPoolOptionsBuilder};
 pub use diagnostics_options::{
     DiagnosticsOptions, DiagnosticsOptionsBuilder, DiagnosticsVerbosity,
 };
+pub(crate) use diagnostics_thresholds::is_point_operation;
+pub use diagnostics_thresholds::DiagnosticsThresholds;
 pub use driver_options::{DriverOptions, DriverOptionsBuilder};
 pub(crate) use env_parsing::parse_duration_millis_from_env;
 pub use identity::{CorrelationId, UserAgentSuffix, WorkloadId};

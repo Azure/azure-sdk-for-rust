@@ -6,6 +6,7 @@
 #![warn(missing_docs)]
 
 mod app_service_managed_identity_credential;
+mod azure_arc_credential;
 mod azure_cli_credential;
 mod azure_developer_cli_credential;
 mod azure_pipelines_credential;
