@@ -90,8 +90,8 @@ fn default_throttle_budget(pipeline_type: PipelineType) -> (u32, Duration, Durat
 /// This deliberately does **not** reuse [`AvailabilityStrategy::Disabled`]:
 /// that is a customer-facing option, and `resolve_availability_strategy` lets
 /// the `AZURE_COSMOS_HEDGING_ENABLED=true` environment switch override it. A
-/// correctness constraint must not be defeatable by configuration, so it lives
-/// here instead.
+/// correctness constraint must not be something configuration can turn off, so
+/// it lives here instead.
 ///
 /// [`AvailabilityStrategy::Disabled`]: crate::options::AvailabilityStrategy::Disabled
 #[derive(Debug, Clone, Default)]
@@ -493,7 +493,8 @@ pub(crate) async fn execute_operation_pipeline(
         //   This is checked directly rather than through
         //   `AvailabilityStrategy::Disabled` because the latter is a customer
         //   option that `AZURE_COSMOS_HEDGING_ENABLED=true` can override; a
-        //   correctness constraint must not be defeatable by configuration.
+        //   correctness constraint must not be something configuration can
+        //   turn off.
         if retry_state.failover_retry_count == 0
             && retry_state.session_token_retry_count == 0
             && !overrides.hedging_suppressed()
@@ -8538,7 +8539,7 @@ mod tests {
     }
 
     #[test]
-    fn endpointless_region_pin_suppresses_hedging_without_pinning_routing() {
+    fn region_pin_without_endpoint_suppresses_hedging_only() {
         // The case the pkranges change feed hits when the primary answered the
         // cold page: later pages still carry that region's ETag, so they must
         // not be raced even though there is no specific region to force.
