@@ -8,6 +8,7 @@
 
 use std::time::Duration;
 
+pub mod binary_round_trip;
 pub mod driver_end_to_end;
 #[cfg(feature = "preview_dtx")]
 pub mod dtx_live_comparison;
