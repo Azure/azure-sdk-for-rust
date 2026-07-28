@@ -18,7 +18,7 @@ use crate::{
     producer::DEFAULT_EVENTHUBS_APPLICATION,
     RetryOptions,
 };
-use async_lock::{Mutex as AsyncMutex, OnceCell, RwLock};
+use async_lock::{Mutex as AsyncMutex, MutexGuard as AsyncMutexGuard, OnceCell, RwLock};
 use azure_core::{credentials::TokenCredential, http::Url, time::Duration, Uuid};
 use azure_core_amqp::{
     error::{AmqpErrorCondition, AmqpErrorKind},
@@ -93,6 +93,11 @@ pub(crate) struct RecoverableConnection {
     session_instances: RwLock<HashMap<Url, Arc<OnceCell<Arc<AmqpSession>>>>>,
     receiver_instances: RwLock<HashMap<Url, Arc<OnceCell<Arc<AmqpReceiver>>>>>,
     pub(super) authorizer: Arc<Authorizer>,
+    // The service permits one `$cbs` link for each connection. Every
+    // authorization attaches a link, uses it, and then drops it, so two
+    // authorizations that overlap make the service reject the second one with
+    // `NotAllowed`. This lock keeps them in sequence. See `lock_claims_based_security`.
+    cbs_lock: AsyncMutex<()>,
     connections: AsyncMutex<Option<Arc<AmqpConnection>>>,
     connection_name: String,
     pub(super) retry_options: RetryOptions,
@@ -207,6 +212,7 @@ impl RecoverableConnection {
                 connection_name,
                 custom_endpoint,
                 retry_options,
+                cbs_lock: AsyncMutex::new(()),
                 connections: AsyncMutex::new(None),
                 session_instances: RwLock::new(HashMap::new()),
                 sender_instances: RwLock::new(HashMap::new()),
@@ -642,6 +648,19 @@ impl RecoverableConnection {
             })
             .await?;
         Ok(management_client.clone())
+    }
+
+    /// Takes the lock that keeps the claims-based-security round trips of this
+    /// connection in sequence.
+    ///
+    /// The service permits one `$cbs` link for each connection, and it rejects a
+    /// second attach with `NotAllowed`. [`Self::ensure_amqp_cbs`] attaches a new
+    /// link for each authorization, so the caller must hold this lock for the
+    /// full round trip. Authorizations for different paths run at the same time
+    /// when a client sets up more than one link at once, for example a buffered
+    /// producer that starts one sender for each partition.
+    pub(super) async fn lock_claims_based_security(&self) -> AsyncMutexGuard<'_, ()> {
+        self.cbs_lock.lock().await
     }
 
     /// Ensures that the AMQP Claims-Based Security (CBS) client is created and attached.
