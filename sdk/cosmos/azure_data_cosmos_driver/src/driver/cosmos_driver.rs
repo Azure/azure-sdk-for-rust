@@ -2337,11 +2337,12 @@ impl CosmosDriver {
 
         let transcode_response_to_text = binary.enabled && binary.request_text_response;
 
-        // TODO: This boxing is a temporary fix to avoid a large future.
-        // We need to do some refactoring here to shrink the future size and avoid this heap allocation if possible.
+        // Boxed: this is the top-level entry point that callers (feed
+        // iterators, user code) compose and nest, so keeping its frame small
+        // matters more than avoiding one allocation per operation.
         let response = Box::pin(async {
             let container = operation.container().cloned();
-            let mut plan = Box::pin(self.plan_operation(operation, &options, None)).await?;
+            let mut plan = self.plan_operation(operation, &options, None).await?;
             self.execute_plan(&mut plan, container, options).await
         })
         .await?;
@@ -2645,7 +2646,11 @@ impl CosmosDriver {
 
         let mut topology = container.map(|c| {
             CachedTopologyProvider::new(&self.pk_range_cache, c, |container, continuation| {
-                self.fetch_pk_ranges_from_service(container, continuation)
+                // Box the fetch future: the cache layer is generic over the
+                // returned future, so leaving it unboxed inlines the whole
+                // `execute_operation_direct` state machine into every cache
+                // frame.
+                Box::pin(self.fetch_pk_ranges_from_service(container, continuation))
             })
         });
 
@@ -2962,7 +2967,8 @@ impl CosmosDriver {
                 &self.pk_range_cache,
                 container_ref,
                 |container, continuation| {
-                    self.fetch_pk_ranges_from_service(container, continuation)
+                    // Box the fetch future — see the note in `execute_plan`.
+                    Box::pin(self.fetch_pk_ranges_from_service(container, continuation))
                 },
             );
             let pipeline = planner::build_unordered_merge(
@@ -2987,16 +2993,22 @@ impl CosmosDriver {
                 .build()
         })?;
 
-        let query_plan = self
-            .resolve_query_plan(container, &operation, options)
-            .await?;
+        // Box the query-plan resolution: unboxed it pulls the entire
+        // `execute_operation_direct` -> `execute_operation_pipeline` state
+        // machine into this function's frame. One allocation per
+        // cross-partition query plan is negligible against the gateway
+        // round-trip it performs.
+        let query_plan = Box::pin(self.resolve_query_plan(container, &operation, options)).await?;
 
         // Build the fan-out pipeline using the query plan.
         let container_ref = container.clone();
         let mut topology = CachedTopologyProvider::new(
             &self.pk_range_cache,
             container_ref,
-            |container, continuation| self.fetch_pk_ranges_from_service(container, continuation),
+            |container, continuation| {
+                // Box the fetch future — see the note in `execute_plan`.
+                Box::pin(self.fetch_pk_ranges_from_service(container, continuation))
+            },
         );
 
         let pipeline =

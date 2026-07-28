@@ -470,7 +470,10 @@ pub(crate) async fn execute_operation_pipeline(
                 // `failover_retry_count`, and `location` on
                 // `retry_state` — see [`OperationRetryState`].
                 retry_state.hedge_already_fired = true;
-                match execute_hedged(
+                // Box the hedge race: it is a cold path (hedge-eligible reads
+                // only) and its state machine otherwise dominates this retry
+                // loop's frame.
+                match Box::pin(execute_hedged(
                     &attempt_ctx,
                     &routing,
                     &upgrade.secondary_routing,
@@ -478,7 +481,7 @@ pub(crate) async fn execute_operation_pipeline(
                     upgrade.strategy_config,
                     diagnostics,
                     &retry_state,
-                )
+                ))
                 .await
                 {
                     HedgedRaceResult::Terminal(result) => return result,
@@ -721,7 +724,9 @@ pub(crate) async fn execute_operation_pipeline(
             effects,
         );
         retry_state.pending_write_effects.extend(deferred_effects);
-        location_state_store.apply(&immediate_effects).await;
+        // Boxed: a cold, side-effect-only await whose frame would otherwise be
+        // combined into every variant of this loop's state machine.
+        Box::pin(location_state_store.apply(&immediate_effects)).await;
 
         // ── STAGE 7: Act on the control-flow decision ──────────────────
         match action {
@@ -731,7 +736,12 @@ pub(crate) async fn execute_operation_pipeline(
                 // healthy, so the previously-failed regions can be safely
                 // marked unavailable for this partition (and endpoint, when
                 // PPAF is active).
-                flush_pending_write_effects(&mut retry_state, location_state_store).await;
+                // Boxed: cold, side-effect-only await.
+                Box::pin(flush_pending_write_effects(
+                    &mut retry_state,
+                    location_state_store,
+                ))
+                .await;
 
                 // If a PPCB probe request succeeded, remove the ProbeCandidate entry.
                 try_cleanup_probe_candidate(&retry_state, location_state_store);
@@ -845,7 +855,12 @@ pub(crate) async fn execute_operation_pipeline(
                 let cosmos_status = error.status();
                 let confirming = is_region_confirming_status(&cosmos_status);
                 if confirming {
-                    flush_pending_write_effects(&mut retry_state, location_state_store).await;
+                    // Boxed: cold, side-effect-only await.
+                    Box::pin(flush_pending_write_effects(
+                        &mut retry_state,
+                        location_state_store,
+                    ))
+                    .await;
                 } else {
                     retry_state.pending_write_effects.clear();
                 }
@@ -975,7 +990,8 @@ pub(crate) async fn execute_operation_pipeline(
                 // replaces `retry_state` from `new_state` (which carries
                 // `hedge_already_fired = false`).
                 retry_state.hedge_already_fired = true;
-                match execute_hedged(
+                // Box the hedge race — cold path; see the note above.
+                match Box::pin(execute_hedged(
                     &attempt_ctx,
                     &primary_routing,
                     &secondary_routing,
@@ -983,7 +999,7 @@ pub(crate) async fn execute_operation_pipeline(
                     strategy_config,
                     diagnostics,
                     &retry_state,
-                )
+                ))
                 .await
                 {
                     HedgedRaceResult::Terminal(result) => return result,
