@@ -9,10 +9,10 @@ use crate::{
     models::{BatchResponse, ChangeFeedItem, ItemResponse, ResourceResponse},
     models::{ContainerProperties, PatchInstructions, ThroughputProperties},
     options::{
-        BatchOptions, ChangeFeedOptions, ChangeFeedStartFrom, DeleteContainerOptions,
-        ItemReadOptions, ItemWriteOptions, PatchItemOptions, Precondition, QueryOptions,
-        ReadContainerOptions, ReadFeedRangesOptions, ReplaceContainerOptions, SessionToken,
-        ThroughputOptions,
+        BatchOptions, BinaryEncodingOptions, ChangeFeedOptions, ChangeFeedStartFrom,
+        DeleteContainerOptions, ItemReadOptions, ItemWriteOptions, OperationOptions,
+        PatchItemOptions, Precondition, QueryOptions, ReadContainerOptions, ReadFeedRangesOptions,
+        ReplaceContainerOptions, SessionToken, ThroughputOptions,
     },
     PartitionKey, Query,
 };
@@ -325,7 +325,9 @@ impl ContainerClient {
         options: Option<ItemWriteOptions>,
     ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
-        let body = serde_json::to_vec(&item)?;
+        let (operation_options, binary) =
+            resolve_binary_encoding(options.operation, &self.context.binary_encoding);
+        let body = serialize_item_body(&item, binary.enabled)?;
 
         // Build the driver's item reference from our stored container metadata.
         let item_ref = ItemReference::from_name(
@@ -338,11 +340,12 @@ impl ContainerClient {
         let operation = CosmosOperation::create_item(item_ref).with_body(body);
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
-        // Execute through the driver.
+        // Execute through the driver, with binary encoding on the operation
+        // options so the driver negotiates the wire format and transcoding.
         let driver_result = self
             .context
             .driver
-            .execute_singleton_operation(operation, options.operation)
+            .execute_singleton_operation(operation, operation_options)
             .await;
 
         // Bridge the driver response to the SDK response type.
@@ -424,7 +427,9 @@ impl ContainerClient {
         options: Option<ItemWriteOptions>,
     ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
-        let body = serde_json::to_vec(&item)?;
+        let (operation_options, binary) =
+            resolve_binary_encoding(options.operation, &self.context.binary_encoding);
+        let body = serialize_item_body(&item, binary.enabled)?;
 
         // Build the driver's item reference from our stored container metadata.
         let item_ref = ItemReference::from_name(
@@ -437,11 +442,12 @@ impl ContainerClient {
         let operation = CosmosOperation::replace_item(item_ref).with_body(body);
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
-        // Execute through the driver.
+        // Execute through the driver, with binary encoding on the operation
+        // options so the driver negotiates the wire format and transcoding.
         let driver_result = self
             .context
             .driver
-            .execute_singleton_operation(operation, options.operation)
+            .execute_singleton_operation(operation, operation_options)
             .await;
 
         // Bridge the driver response to the SDK response type.
@@ -634,7 +640,9 @@ impl ContainerClient {
         options: Option<ItemWriteOptions>,
     ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
-        let body = serde_json::to_vec(&item)?;
+        let (operation_options, binary) =
+            resolve_binary_encoding(options.operation, &self.context.binary_encoding);
+        let body = serialize_item_body(&item, binary.enabled)?;
 
         // Build the driver's item reference from our stored container metadata.
         let item_ref = ItemReference::from_name(
@@ -647,11 +655,12 @@ impl ContainerClient {
         let operation = CosmosOperation::upsert_item(item_ref).with_body(body);
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
-        // Execute through the driver.
+        // Execute through the driver, with binary encoding on the operation
+        // options so the driver negotiates the wire format and transcoding.
         let driver_result = self
             .context
             .driver
-            .execute_singleton_operation(operation, options.operation)
+            .execute_singleton_operation(operation, operation_options)
             .await;
 
         // Bridge the driver response to the SDK response type.
@@ -696,6 +705,8 @@ impl ContainerClient {
         options: Option<ItemReadOptions>,
     ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
+        let (operation_options, _binary) =
+            resolve_binary_encoding(options.operation, &self.context.binary_encoding);
 
         // Build the driver's item reference from our stored container metadata.
         let item_ref = ItemReference::from_name(
@@ -708,11 +719,12 @@ impl ContainerClient {
         let operation = CosmosOperation::read_item(item_ref);
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
-        // Execute through the driver.
+        // Execute through the driver, with binary encoding on the operation
+        // options so the driver negotiates the wire format and transcoding.
         let driver_result = self
             .context
             .driver
-            .execute_singleton_operation(operation, options.operation)
+            .execute_singleton_operation(operation, operation_options)
             .await;
 
         // Bridge the driver response to the SDK response type.
@@ -1256,6 +1268,55 @@ fn apply_item_options(
     operation
 }
 
+/// Serializes an item write body as either Cosmos binary JSON (`binary`) or
+/// UTF-8 text JSON.
+///
+/// The binary path uses the driver's native serde serializer
+/// [`binary_json::to_vec`](azure_data_cosmos_driver::binary_json::to_vec),
+/// encoding `T` straight to Cosmos binary JSON without an intermediate
+/// [`serde_json::Value`]; the text path is the original [`serde_json::to_vec`].
+/// Both produce a body the service accepts — the binary form begins with the
+/// `0x80` preamble, which the service detects from the first byte, so the
+/// request `Content-Type` stays `application/json`.
+fn serialize_item_body<T: Serialize>(item: &T, binary: bool) -> crate::Result<Vec<u8>> {
+    if binary {
+        let body = azure_data_cosmos_driver::binary_json::to_vec(item)
+            .map_err(crate::error::convert_binary_encode_error)?;
+        tracing::debug!(
+            binary_encoding = true,
+            "binary encoding applied to item write body"
+        );
+        Ok(body)
+    } else {
+        tracing::debug!(
+            binary_encoding = false,
+            "item write body serialized as text JSON"
+        );
+        serde_json::to_vec(item).map_err(crate::error::convert_json_encode_error)
+    }
+}
+
+/// Resolves the effective binary encoding for an item operation, preferring a
+/// caller-set per-operation value over the client-level default.
+///
+/// Returns the resolved options alongside the updated [`OperationOptions`] so
+/// the caller drives body serialization from the same decision. The operation
+/// field is normalized to `Some(effective)` when enabled (the driver negotiates
+/// the binary wire) and `None` when disabled (byte-for-byte unchanged).
+fn resolve_binary_encoding(
+    mut options: OperationOptions,
+    client_default: &BinaryEncodingOptions,
+) -> (OperationOptions, BinaryEncodingOptions) {
+    let effective = options
+        .binary_encoding
+        .take()
+        .unwrap_or_else(|| client_default.clone());
+    // Write `Some` (never `None`, which means "inherit") so a resolved disable
+    // overrides driver-layer defaults; the wire is unchanged when disabled.
+    options.binary_encoding = Some(effective.clone());
+    (options, effective)
+}
+
 /// Applies [`BatchOptions`] fields to a [`CosmosOperation`].
 ///
 /// [`BatchOptions`] carries a session token but no precondition (ETag-based
@@ -1291,7 +1352,125 @@ fn _assert_futures_are_send() {
 
 #[cfg(test)]
 mod tests {
-    use super::should_force_refresh_feed_ranges;
+    //! These are sanity checks that [`serialize_item_body`] picks the right
+    //! path (text vs binary) and that binary encoding is actually applied —
+    //! not full serialize/deserialize coverage. Byte-level codec correctness
+    //! lives in the driver's `binary_json` snapshot, golden-vector, and parity
+    //! tests.
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn serialize_item_body_text_matches_serde_to_vec() {
+        // The text path is byte-for-byte the original `serde_json::to_vec`.
+        let item = json!({ "id": "1", "count": 7, "tags": ["a", "b"] });
+        let body = serialize_item_body(&item, false).unwrap();
+        assert_eq!(body, serde_json::to_vec(&item).unwrap());
+    }
+
+    #[test]
+    fn serialize_item_body_binary_round_trips() {
+        // The binary path begins with the `0x80` preamble and decodes back to
+        // the same value the text path would have serialized.
+        let item = json!({ "id": "doc-1", "count": 42, "nested": { "ok": true } });
+        let body = serialize_item_body(&item, true).unwrap();
+        assert_eq!(body.first(), Some(&0x80));
+        let decoded: serde_json::Value =
+            azure_data_cosmos_driver::binary_json::decode(&body).unwrap();
+        assert_eq!(decoded, item);
+    }
+
+    #[test]
+    fn serialize_item_body_text_encode_failure_is_request_body_invalid() {
+        // A map with non-string keys fails `serde_json::to_vec`; the write path
+        // must label it as a request-body (encode) error, not response-body.
+        let item: std::collections::HashMap<(i32, i32), i32> =
+            std::collections::HashMap::from([((1, 2), 3)]);
+        let err = serialize_item_body(&item, false).expect_err("must fail to serialize");
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::SERIALIZATION_REQUEST_BODY_INVALID
+        );
+    }
+
+    #[test]
+    fn serialize_item_body_binary_differs_from_text() {
+        // Sanity check that the two paths actually produce different bytes.
+        let item = json!({ "id": "x" });
+        let text = serialize_item_body(&item, false).unwrap();
+        let binary = serialize_item_body(&item, true).unwrap();
+        assert_ne!(text, binary);
+        assert_ne!(text.first(), Some(&0x80));
+    }
+
+    #[test]
+    fn resolve_binary_encoding_uses_client_default_when_operation_unset() {
+        // No per-operation value: the client-level default applies. Enabled ⇒
+        // the driver option is set.
+        let client = BinaryEncodingOptions::new().with_enabled(true);
+        let (options, effective) = resolve_binary_encoding(OperationOptions::default(), &client);
+        assert!(effective.enabled);
+        assert_eq!(options.binary_encoding, Some(client));
+    }
+
+    #[test]
+    fn resolve_binary_encoding_carries_request_text_response() {
+        // Binary on with request_text_response: the driver keeps the wire binary
+        // and transcodes the response to text. Both flags carry through.
+        let client = BinaryEncodingOptions::new()
+            .with_enabled(true)
+            .with_request_text_response(true);
+        let (options, effective) = resolve_binary_encoding(OperationOptions::default(), &client);
+        assert!(effective.enabled);
+        assert!(effective.request_text_response);
+        let resolved = options.binary_encoding.expect("binary encoding set");
+        assert!(resolved.enabled);
+        assert!(resolved.request_text_response);
+    }
+
+    #[test]
+    fn resolve_binary_encoding_omits_option_when_disabled() {
+        // Disabled default with no per-op value is preserved as `Some(false)`,
+        // not erased to `None`, so it overrides driver-layer defaults.
+        let client = BinaryEncodingOptions::new().with_enabled(false);
+        let (options, effective) = resolve_binary_encoding(OperationOptions::default(), &client);
+        assert!(!effective.enabled);
+        assert_eq!(
+            options.binary_encoding.map(|b| b.enabled),
+            Some(false),
+            "resolved disable must be preserved as Some(false) to override driver defaults"
+        );
+    }
+
+    #[test]
+    fn resolve_binary_encoding_operation_disable_overrides_enabled_client() {
+        // A per-operation disable wins over an enabled client default.
+        let client = BinaryEncodingOptions::new().with_enabled(true);
+        let mut operation = OperationOptions::default();
+        operation.binary_encoding = Some(BinaryEncodingOptions::new().with_enabled(false));
+        let (options, effective) = resolve_binary_encoding(operation, &client);
+        assert!(!effective.enabled);
+        assert_eq!(
+            options.binary_encoding.map(|b| b.enabled),
+            Some(false),
+            "per-operation disable must be preserved as Some(false)"
+        );
+    }
+
+    #[test]
+    fn resolve_binary_encoding_operation_enable_overrides_disabled_client() {
+        // Client disabled, but the caller enabled binary for this operation:
+        // the per-operation value wins, so binary is negotiated for this request.
+        let client = BinaryEncodingOptions::new().with_enabled(false);
+        let operation_be = BinaryEncodingOptions::new()
+            .with_enabled(true)
+            .with_request_text_response(true);
+        let mut operation = OperationOptions::default();
+        operation.binary_encoding = Some(operation_be.clone());
+        let (options, effective) = resolve_binary_encoding(operation, &client);
+        assert!(effective.enabled);
+        assert_eq!(options.binary_encoding, Some(operation_be));
+    }
 
     #[test]
     fn feed_ranges_refreshes_missing_or_empty_initial_resolution() {

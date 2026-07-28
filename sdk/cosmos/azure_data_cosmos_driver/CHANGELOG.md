@@ -4,7 +4,8 @@
 
 ### Features Added
 
-- Added the Hedging Detection API on `DiagnosticsContext`: `hedging_started()` (whether a hedge arm actually fanned out), `requested_regions()` (regions dispatched to, in dispatch order with duplicates, each tagged with a reason), and `responded_regions()` (regions that produced an actual service reply, in completion order). Adds the public `RequestedRegion` struct and `RequestedRegionReason` enum (both `#[non_exhaustive]`, with a total `From<ExecutionContext>` mapping) and the new `ExecutionContext::OperationRetry` variant. ([#4410](https://github.com/Azure/azure-sdk-for-rust/issues/4410), [#4871](https://github.com/Azure/azure-sdk-for-rust/pull/4871))
+- Added a schema-agnostic Cosmos binary JSON codec (`binary_json`) and driver-side binary encoding via `OperationOptions.binary_encoding` (`BinaryEncodingOptions`). When enabled, the driver transcodes item request/response bodies between text and Cosmos binary JSON and negotiates the wire format; it is honored only for point `Document` item operations. Off by default and inert on the wire when unset. ([#4671](https://github.com/Azure/azure-sdk-for-rust/pull/4671))
+- Added the Hedging Detection API on `DiagnosticsContext`: `hedging_started()` (whether a hedge arm actually fanned out), `requested_regions()` (regions dispatched to, in dispatch order with duplicates, each tagged with a reason), and `responded_regions()` (regions that produced an actual service reply, in completion order). All three are materialized at finalization from the full pre-compaction attempt list plus a dispatch-time hedge fan-out log, so a structurally-dropped hedge leg, a retry storm that compacts `requests()`, and multi-round-trip aggregation all report a complete history. Adds the public `RequestedRegion` struct and `RequestedRegionReason` enum (both `#[non_exhaustive]`, with a total `From<ExecutionContext>` mapping) and the new `ExecutionContext::OperationRetry` variant. ([#4410](https://github.com/Azure/azure-sdk-for-rust/issues/4410), [#4871](https://github.com/Azure/azure-sdk-for-rust/pull/4871))
 - Added `HedgeTerminalState::as_str()` (and a matching `Display`) returning a stable, low-cardinality `snake_case` identifier for the hedging race outcome, for use as an observability attribute / log-field value. ([#4410](https://github.com/Azure/azure-sdk-for-rust/issues/4410), [#4871](https://github.com/Azure/azure-sdk-for-rust/pull/4871))
 
 ### Breaking Changes
@@ -12,6 +13,8 @@
 - Renamed `ExecutionContext::Retry` to `ExecutionContext::OperationRetry` to distinguish operation-level retries from transport-level `TransportRetry`. The old `Retry` remains for one release as a distinct `#[deprecated]` variant (**not** a serde alias); a `Retry` value still serializes as `"retry"`. The customer-visible wire-format change is that driver-generated operation retries now serialize as `"operation_retry"` instead of `"retry"`, because the dispatch sites emit `OperationRetry`; telemetry parsers that match the literal `"retry"` execution context must update. ([#4410](https://github.com/Azure/azure-sdk-for-rust/issues/4410), [#4871](https://github.com/Azure/azure-sdk-for-rust/pull/4871))
 
 ### Bugs Fixed
+
+- Fixed the primary leg of a hedged request being recorded with `ExecutionContext::Initial` even when the hedge was dispatched from a retry. The primary leg now carries the execution context computed from the live retry state, so a hedge that upgraded a session retry or a region failover is no longer misreported as a first attempt in diagnostics. ([#4871](https://github.com/Azure/azure-sdk-for-rust/pull/4871))
 
 ### Other Changes
 

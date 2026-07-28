@@ -124,29 +124,48 @@ though a hedging strategy was active. To check whether a strategy was merely
 *configured*, use `ctx.hedge_diagnostics().is_some()` (a superset that includes
 primary-wins-under-threshold).
 
-The result is the disjunction of two equivalent fan-out signals —
-`HedgeDiagnostics::alternate_region().is_some()` and any request tagged
-`ExecutionContext::Hedging`. Either alone is sufficient; the disjunction stays
-correct if a future change ever drifts one signal.
+Like the two region accessors, this is **materialized at finalization** from the
+dispatch-time fan-out log (§4.3), so a race whose attempts were later compacted
+away — or whose representative `HedgeDiagnostics` was dropped during
+sub-operation aggregation — still reports `true`.
 
 ### 4.3 Regions dispatched to, with reason — `requested_regions()`
 
-Retained attempts in dispatch order, duplicates preserved (a region dispatched
-twice appears twice), entries with no resolved region skipped. The initial
-attempt is included and tagged `RequestedRegionReason::Initial`.
+The complete dispatch history in dispatch order, duplicates preserved (a region
+dispatched twice appears twice), entries with no resolved region skipped. The
+initial attempt is included and tagged `RequestedRegionReason::Initial`.
 
-When a hedge fanned out and the race resolved as a **clean win** (the primary
-wins after the threshold, or the alternate wins outright), the losing leg's
-per-request record is structurally dropped before it can be merged (see §5 and
-`HedgeDiagnostics`). This accessor recovers the missing fan-out leg(s) from the
-authoritative `hedge_diagnostics` — the primary tagged `Initial` and the
-alternate tagged `Hedging`, in dispatch order — so both dispatched regions are
-always represented and consistent with the `hedge_region` telemetry attribute. A
-recovered leg has **no** `responded_regions()` entry (a dropped leg never
-produced a service reply). This is distinct from `regions_contacted()`, which is
-deduplicated in first-contact order; under a retry storm the retained attempt
-list may be compacted, so `regions_contacted()` (captured pre-compaction) is the
-complete distinct-region set.
+**Materialized, not derived.** All three accessors are computed once in
+`DiagnosticsContextBuilder::complete()` from the **full, pre-compaction** attempt
+list plus a dispatch-time hedge fan-out log, then stored as fields — the same
+pattern `regions_contacted()` already used. Reading them is a field read. This
+matters because the retained `requests()` list is *not* the dispatch history:
+
+- a clean hedge race structurally drops the losing leg's sub-builder before it
+  can be merged (see §5 and `HedgeDiagnostics`);
+- a `429`/`410` retry storm compacts `requests()` down to
+  `max_request_diagnostics`, dropping whole buckets;
+- `aggregate_sub_operations` keeps only **one** representative
+  `HedgeDiagnostics` for a multi-round-trip operation.
+
+**Hedge fan-out.** Every fan-out is recorded on the *parent* builder at dispatch
+time, before the race runs, so a dropped leg cannot be lost. Both legs therefore
+always appear, spliced in at the point the race was dispatched, primary before
+alternate: the primary leg tagged with the reason it was **actually** dispatched
+under (`Initial` for a first attempt, or the failover/session reason when a
+hedge upgraded a retry), and the alternate leg tagged `Hedging`. A leg that was
+merged back afterwards is absorbed by the fan-out entry it repeats, so the
+winner is listed once; genuine repeat dispatches are never collapsed. A dropped
+leg has **no** `responded_regions()` entry (it never produced a service reply).
+
+For an aggregated operation (e.g. `PATCH`) stitched from multiple
+sub-operations, every sub-operation's fan-out is preserved: the aggregated list
+is the concatenation of each sub-operation's own materialized list, in
+sub-operation order.
+
+This is distinct from `regions_contacted()`, which is *deduplicated* in
+first-contact order and so answers "which distinct regions did we touch?" rather
+than "what did we dispatch, in what order, and why?".
 
 ### 4.4 Regions that responded — `responded_regions()`
 
@@ -166,7 +185,9 @@ self.region.is_some()
 A non-2xx HTTP status (404/429/503 from the service) still counts as a response.
 Results are in arrival order (stable sort by `completed_at`, preserving dispatch
 order among ties); duplicates are preserved. To deduplicate, collect into a
-`BTreeSet`.
+`BTreeSet`. Like `requested_regions()`, the list is materialized from the full
+pre-compaction attempt list, so a response whose attempt was later compacted
+away is still reported.
 
 ---
 
@@ -179,11 +200,17 @@ coexist on the same `DiagnosticsContext` and serve different audiences.
 
 | Question | Hedging Detection API | Rust-native `HedgeDiagnostics` |
 | --- | --- | --- |
-| Did fan-out happen? | `hedging_started()` | `alternate_region().is_some()` — equivalent |
+| Did fan-out happen? | `hedging_started()` — from the fan-out log | `alternate_region().is_some()` — equivalent for a single operation |
 | Was a strategy active? | *(not derived)* | `hedge_diagnostics().is_some()` — superset of fan-out |
-| Regions tried | `requested_regions()` (every attempt, with reason) | `primary_region()` + `alternate_region()` (hedge legs only) |
+| Regions tried | `requested_regions()` (every dispatch, with reason) | `primary_region()` + `alternate_region()` (one race's legs only) |
 | Regions that responded | `responded_regions()` (full list, completion order) | `response_region()` (single winner) |
 | Race outcome | *(not derived)* | `terminal_state()` (authoritative) |
+
+The Detection API deliberately does **not** read `hedge_diagnostics` to answer
+its three questions. Aggregation keeps only one representative `HedgeDiagnostics`
+for a multi-round-trip operation, so deriving from it would silently under-report
+every other sub-operation's fan-out. The fan-out log is per-builder and survives
+aggregation intact.
 
 `main`'s `HedgeDiagnostics` classifies the race via `terminal_state` /
 `alternate_region` (there is no `total_requests_launched` counter), so "fan-out
@@ -197,10 +224,10 @@ alternate region).
 
 ## 6. Future work
 
-The three accessors return owned/borrowed collections computed on demand from
-the append-only attempt list, so callers allocate only when they read a derived
-collection. If `ExecutionContext` becomes a prominent part of the public
-detection surface it could be renamed to something friendlier (e.g.,
-`RequestPurpose` / `RequestIntent`); that rename is out of scope here.
+The three accessors return owned/borrowed collections cloned from fields
+materialized once at finalization, so a read never re-walks the attempt list.
+If `ExecutionContext` becomes a prominent part of the public detection surface
+it could be renamed to something friendlier (e.g., `RequestPurpose` /
+`RequestIntent`); that rename is out of scope here.
 
 [`DiagnosticsContext`]: https://docs.rs/azure_data_cosmos/latest/azure_data_cosmos/

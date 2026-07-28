@@ -22,6 +22,7 @@
 /// let stable = MetricsOptions::default();
 /// assert!(!stable.request_charge_metric_enabled());
 /// assert!(!stable.returned_rows_metric_enabled());
+/// assert!(!stable.hedged_metric_enabled());
 /// assert!(!stable.extended_attributes_enabled());
 ///
 /// // Opt into just the request-charge metric.
@@ -33,9 +34,11 @@
 /// let full = MetricsOptions::default()
 ///     .with_request_charge_metric(true)
 ///     .with_returned_rows_metric(true)
+///     .with_hedged_metric(true)
 ///     .with_extended_attributes(true);
 /// assert!(full.request_charge_metric_enabled());
 /// assert!(full.returned_rows_metric_enabled());
+/// assert!(full.hedged_metric_enabled());
 /// assert!(full.extended_attributes_enabled());
 /// ```
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]

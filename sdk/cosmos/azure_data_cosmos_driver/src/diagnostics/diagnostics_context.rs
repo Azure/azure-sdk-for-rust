@@ -1433,6 +1433,30 @@ impl SystemUsageSnapshot {
     }
 }
 
+/// One cross-region hedge fan-out, recorded on the parent builder at the moment
+/// the race is dispatched.
+///
+/// A hedge race launches two legs concurrently and then structurally drops the
+/// loser's future — and with it the loser's per-attempt [`RequestDiagnostics`] —
+/// so the finalized attempt list alone can never describe the fan-out. Capturing
+/// both legs here, before the race runs, makes the dispatch history authoritative
+/// and independent of which leg won, of retry-storm compaction, and of
+/// sub-operation aggregation.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct HedgeFanout {
+    /// Number of attempts already recorded on the parent when the race was
+    /// dispatched. The winning leg's merged attempts start at this index, so
+    /// recovery can splice a dropped leg back in dispatch order.
+    at: usize,
+    /// The primary leg's dispatched region and reason. `None` when the routed
+    /// endpoint carries no named region (global-endpoint accounts).
+    primary: Option<RequestedRegion>,
+    /// The speculative alternate leg's dispatched region, always tagged
+    /// [`RequestedRegionReason::Hedging`]. `None` when the routed endpoint
+    /// carries no named region.
+    alternate: Option<RequestedRegion>,
+}
+
 /// Internal mutable builder for constructing a [`DiagnosticsContext`].
 ///
 /// This type is used during operation execution to collect diagnostic data.
@@ -1474,6 +1498,14 @@ pub(crate) struct DiagnosticsContextBuilder {
     /// `None` when hedging was not selected for this operation.
     hedge_diagnostics: Option<HedgeDiagnostics>,
 
+    /// Every hedge fan-out dispatched by this operation, in dispatch order.
+    ///
+    /// Recorded by the hedging orchestrator on the *parent* builder before the
+    /// race starts, so a structurally-dropped losing leg is still described.
+    /// Empty for the overwhelming majority of operations (no hedging), which
+    /// keeps the common path allocation-free.
+    hedge_fanouts: Vec<HedgeFanout>,
+
     /// Test-only override for system usage snapshot, bypassing the CPU monitor.
     #[cfg(test)]
     test_system_usage: Option<SystemUsageSnapshot>,
@@ -1493,6 +1525,7 @@ impl DiagnosticsContextBuilder {
             #[cfg(feature = "fault_injection")]
             fault_injection_enabled: false,
             hedge_diagnostics: None,
+            hedge_fanouts: Vec::new(),
             #[cfg(test)]
             test_system_usage: None,
         }
@@ -1511,6 +1544,34 @@ impl DiagnosticsContextBuilder {
     /// Sets the hedging diagnostics for this operation.
     pub(crate) fn set_hedge_diagnostics(&mut self, diagnostics: HedgeDiagnostics) {
         self.hedge_diagnostics = Some(diagnostics);
+    }
+
+    /// Records a cross-region hedge fan-out at the moment the race is dispatched.
+    ///
+    /// Called by the hedging orchestrator on the *parent* builder before the two
+    /// legs are launched, so the dispatch history survives the race dropping the
+    /// loser's builder. Each leg is `None` when its routed endpoint carries no
+    /// named region (global-endpoint accounts), in which case that leg simply
+    /// contributes nothing to
+    /// [`requested_regions`](DiagnosticsContext::requested_regions) — matching
+    /// how a region-less attempt is skipped.
+    pub(crate) fn record_hedge_fanout(
+        &mut self,
+        primary_region: Option<Region>,
+        primary_reason: RequestedRegionReason,
+        alternate_region: Option<Region>,
+    ) {
+        self.hedge_fanouts.push(HedgeFanout {
+            at: self.requests.len(),
+            primary: primary_region.map(|region| RequestedRegion {
+                region,
+                reason: primary_reason,
+            }),
+            alternate: alternate_region.map(|region| RequestedRegion {
+                region,
+                reason: RequestedRegionReason::Hedging,
+            }),
+        });
     }
 
     /// Creates a fresh builder for a single hedge attempt.
@@ -1533,6 +1594,10 @@ impl DiagnosticsContextBuilder {
             #[cfg(feature = "fault_injection")]
             fault_injection_enabled: self.fault_injection_enabled,
             hedge_diagnostics: None,
+            // Fan-out records live on the parent builder only: a leg's own
+            // builder is either merged back (winner) or dropped (loser), so
+            // recording here would be lost exactly when it matters.
+            hedge_fanouts: Vec::new(),
             #[cfg(test)]
             test_system_usage: self.test_system_usage.clone(),
         }
@@ -1791,6 +1856,22 @@ impl DiagnosticsContextBuilder {
         // only attempts are elided must still surface at the operation level.
         let regions_contacted = ordered_unique_regions(&self.requests);
 
+        // Materialize the Hedging Detection API's region history from the FULL
+        // attempt list plus the dispatch-time hedge fan-out log, for the same
+        // reason: neither the retained (possibly compacted) attempt list nor the
+        // winning leg alone is a complete dispatch history.
+        let requested_regions = requested_regions_from(&self.requests, &self.hedge_fanouts);
+        let responded_regions = responded_regions_from(&self.requests);
+        let hedging_started = !self.hedge_fanouts.is_empty()
+            || self
+                .hedge_diagnostics
+                .as_ref()
+                .is_some_and(|hd| hd.alternate_region().is_some())
+            || self
+                .requests
+                .iter()
+                .any(|r| matches!(r.execution_context(), ExecutionContext::Hedging));
+
         // Bound the finalized per-attempt list under a retry storm.
         //
         // Common path (attempts <= cap): the list is retained verbatim, no
@@ -1832,6 +1913,9 @@ impl DiagnosticsContextBuilder {
             requests: Arc::new(requests),
             total_request_charge,
             regions_contacted,
+            requested_regions,
+            responded_regions,
+            hedging_started,
             status: self.status,
             options: self.options,
             cpu_monitor: self.cpu_monitor,
@@ -1918,6 +2002,32 @@ pub struct DiagnosticsContext {
     /// preserving the order in which each region was first contacted, which the
     /// Cosmos semantic conventions require (it conveys failover order).
     regions_contacted: Vec<Region>,
+
+    /// Regions this operation dispatched a request to, in dispatch order, each
+    /// tagged with the reason the SDK chose it.
+    ///
+    /// Materialized at finalization from the **full** attempt list — before any
+    /// retry-storm compaction — with every hedge fan-out spliced in at the point
+    /// it was dispatched, so a structurally-dropped hedge loser leg and a
+    /// compacted-away retry are both still reported. Unlike `regions_contacted`
+    /// this list is *not* deduplicated: it is a dispatch log, so repeat
+    /// dispatches to the same region each contribute an entry.
+    requested_regions: Vec<RequestedRegion>,
+
+    /// Regions that produced an actual service reply, in arrival (completion)
+    /// order.
+    ///
+    /// Materialized at finalization from the **full** attempt list, for the same
+    /// reason as `requested_regions`. Client-side timeouts and transport
+    /// failures are excluded; a non-2xx service response still counts.
+    responded_regions: Vec<Region>,
+
+    /// Whether this operation actually fanned out at least one hedge request.
+    ///
+    /// Materialized at finalization so it survives compaction dropping the
+    /// hedge attempts and aggregation retaining only one representative
+    /// `hedge_diagnostics`.
+    hedging_started: bool,
 
     /// Operation-level combined HTTP status and sub-status (final status after retries).
     status: Option<CosmosStatus>,
@@ -2048,12 +2158,20 @@ impl DiagnosticsContext {
                 .sum::<f64>(),
         );
         let regions_contacted = ordered_unique_regions(&requests);
+        let requested_regions = requested_regions_from(&requests, &[]);
+        let responded_regions = responded_regions_from(&requests);
+        let hedging_started = requests
+            .iter()
+            .any(|r| matches!(r.execution_context(), ExecutionContext::Hedging));
         DiagnosticsContext {
             activity_id,
             duration,
             requests: Arc::new(requests),
             total_request_charge,
             regions_contacted,
+            requested_regions,
+            responded_regions,
+            hedging_started,
             status,
             options: Arc::new(DiagnosticsOptions::default()),
             cpu_monitor: None,
@@ -2074,8 +2192,12 @@ impl DiagnosticsContext {
     /// Like [`for_testing_with_requests`](Self::for_testing_with_requests), but
     /// also attaches `hedge_diagnostics` so the wrapper SDK's emission-layer
     /// tests can exercise the hedging-surfacing paths (tracing / metrics /
-    /// logging). Gated behind the `__internal_test_diagnostics_construction`
-    /// Cargo feature and `#[doc(hidden)]`, mirroring [`for_testing`](Self::for_testing).
+    /// logging). When the supplied diagnostics describe a fan-out (an alternate
+    /// region is present), the dispatch-time fan-out record the driver pipeline
+    /// would have written is synthesized too, so the materialized region history
+    /// matches a real hedged operation. Gated behind the
+    /// `__internal_test_diagnostics_construction` Cargo feature and
+    /// `#[doc(hidden)]`, mirroring [`for_testing`](Self::for_testing).
     #[cfg(feature = "__internal_test_diagnostics_construction")]
     #[doc(hidden)]
     pub fn for_testing_with_hedge(
@@ -2086,6 +2208,32 @@ impl DiagnosticsContext {
         requests: Vec<RequestDiagnostics>,
         hedge_diagnostics: Option<HedgeDiagnostics>,
     ) -> Self {
+        // Reconstruct the fan-out the pipeline records at race dispatch, so the
+        // materialized region history is built the same way it is in production.
+        // The sentinel stands in for a global-endpoint account with no named
+        // region, which contributes no requested-region entry.
+        let not_sentinel = |region: &Region| {
+            (region.as_str() != HedgeDiagnostics::UNKNOWN_REGION_SENTINEL).then(|| region.clone())
+        };
+        let fanouts: Vec<HedgeFanout> = hedge_diagnostics
+            .as_ref()
+            .and_then(|hedge| {
+                let alternate = hedge.alternate_region()?;
+                Some(HedgeFanout {
+                    at: 0,
+                    primary: not_sentinel(hedge.primary_region()).map(|region| RequestedRegion {
+                        region,
+                        reason: RequestedRegionReason::Initial,
+                    }),
+                    alternate: not_sentinel(alternate).map(|region| RequestedRegion {
+                        region,
+                        reason: RequestedRegionReason::Hedging,
+                    }),
+                })
+            })
+            .into_iter()
+            .collect();
+
         let mut context = Self::for_testing_with_requests(
             activity_id,
             duration,
@@ -2093,10 +2241,16 @@ impl DiagnosticsContext {
             operation_name,
             requests,
         );
+        if !fanouts.is_empty() {
+            context.requested_regions = requested_regions_from(&context.requests, &fanouts);
+            context.hedging_started = true;
+        }
         context.hedge_diagnostics = hedge_diagnostics;
         context
     }
-    /// sub-operation contexts into a single aggregated [`DiagnosticsContext`].
+
+    /// Aggregates the finalized per-sub-operation contexts of a multi-round-trip
+    /// operation into a single aggregated [`DiagnosticsContext`].
     ///
     /// Used by the PATCH handler to surface **one operation = one
     /// [`DiagnosticsContext`]** even though the handler internally executes
@@ -2200,12 +2354,30 @@ impl DiagnosticsContext {
             }
         }
 
+        // Concatenate the sub-ops' materialized dispatch histories in sub-op
+        // order. Each source already captured its own exact history from its
+        // full attempt list plus its own fan-out records, so every sub-op's
+        // hedge fan-out is preserved — unlike the single representative
+        // `hedge_diagnostics` below, which can only describe one of them.
+        let requested_regions: Vec<RequestedRegion> = sources
+            .iter()
+            .flat_map(|c| c.requested_regions.iter().cloned())
+            .collect();
+        let responded_regions: Vec<Region> = sources
+            .iter()
+            .flat_map(|c| c.responded_regions.iter().cloned())
+            .collect();
+        let hedging_started = sources.iter().any(|c| c.hedging_started);
+
         Some(DiagnosticsContext {
             activity_id: last.activity_id.clone(),
             duration: aggregated_duration,
             requests: Arc::new(requests),
             total_request_charge,
             regions_contacted,
+            requested_regions,
+            responded_regions,
+            hedging_started,
             status: last.status,
             options: Arc::clone(&last.options),
             cpu_monitor: last.cpu_monitor.clone(),
@@ -2214,16 +2386,16 @@ impl DiagnosticsContext {
             fault_injection_enabled: sources.iter().any(|c| c.fault_injection_enabled),
             // Propagate a representative hedge diagnostics so an aggregated
             // operation (e.g. PATCH, whose internal Read sub-op can itself
-            // hedge) still reports hedging consistently: `hedging_started()`,
-            // the hedged metric's `hedge_terminal_state` dimension, and the
-            // tracing/log hedge fields must not silently drop just because the
-            // operation was aggregated. Prefer a sub-op that actually fanned
-            // out (an alternate region is present); otherwise fall back to any
-            // attached hedge diagnostics. Taking the last match mirrors how the
-            // aggregate inherits its operation-level fields from the last
-            // sub-op. Limitation: only one representative survives, so if two
-            // sub-ops both fanned out to different alternates, `requested_regions`
-            // recovers only the representative one's dropped leg.
+            // hedge) still reports a hedge terminal outcome: the hedged metric's
+            // `hedge_terminal_state` dimension and the tracing/log hedge fields
+            // must not silently drop just because the operation was aggregated.
+            // Prefer a sub-op that actually fanned out (an alternate region is
+            // present); otherwise fall back to any attached hedge diagnostics.
+            // Taking the last match mirrors how the aggregate inherits its
+            // operation-level fields from the last sub-op. Only one
+            // representative terminal outcome survives — but the Hedging
+            // Detection API does not depend on it, since `hedging_started` and
+            // `requested_regions` are stitched from every sub-op above.
             hedge_diagnostics: sources
                 .iter()
                 .rev()
@@ -2338,101 +2510,51 @@ impl DiagnosticsContext {
     /// Returns the regions to which this operation dispatched a request, each
     /// tagged with the reason the SDK chose it.
     ///
-    /// Each retained dispatched attempt with a resolved region contributes one
-    /// entry. Duplicates are allowed: the same region may appear more than once
-    /// if it was dispatched multiple times (e.g., a retry to the same region,
-    /// or a hedge request to a region that was also the primary). The initial
-    /// attempt is included and tagged [`RequestedRegionReason::Initial`].
+    /// The list is materialized at finalization from the **full** attempt list —
+    /// before any retry-storm compaction — plus the dispatch-time hedge fan-out
+    /// log, so it is a complete dispatch history regardless of what survives in
+    /// [`requests`](Self::requests).
     ///
-    /// Entries with no resolved region (pre-region-selection failures) are
-    /// skipped, so this returns an empty `Vec` when an operation failed before
-    /// any region was selected.
+    /// Each dispatched attempt with a resolved region contributes one entry.
+    /// Duplicates are allowed: the same region may appear more than once if it
+    /// was dispatched multiple times (e.g., a retry to the same region, or a
+    /// hedge request to a region that was also the primary). The initial attempt
+    /// is included and tagged [`RequestedRegionReason::Initial`].
     ///
-    /// **Hedge fan-out recovery.** When a hedge race resolves as a clean win
-    /// (the primary wins after the threshold, or the alternate wins outright),
-    /// the losing leg's future — and its per-request [`RequestDiagnostics`] — is
+    /// Entries with no resolved region (pre-region-selection failures, and
+    /// global-endpoint accounts that carry no named region) are skipped, so this
+    /// returns an empty `Vec` when an operation failed before any region was
+    /// selected.
+    ///
+    /// **Hedge fan-out.** When a hedge race resolves as a clean win (the primary
+    /// wins after the threshold, or the alternate wins outright), the losing
+    /// leg's future — and its per-request [`RequestDiagnostics`] — is
     /// structurally dropped before it can be merged, so [`requests`](Self::requests)
-    /// holds only the winning leg. The fan-out regions are still recorded
-    /// authoritatively on [`hedge_diagnostics`](Self::hedge_diagnostics), so
-    /// when a fan-out occurred this accessor guarantees both fan-out legs are
-    /// represented: the primary leg tagged [`RequestedRegionReason::Initial`]
-    /// and the alternate leg tagged [`RequestedRegionReason::Hedging`]. A
-    /// recovered leg has no corresponding [`responded_regions`](Self::responded_regions)
-    /// entry (a structurally-dropped leg never produced a service reply). This
-    /// keeps the accessor consistent with the `hedge_region` observability
-    /// attribute, which is also sourced from `hedge_diagnostics`.
+    /// holds only the winning leg. Every fan-out is therefore recorded on the
+    /// parent at dispatch time, so **both** legs always appear here: the primary
+    /// leg tagged with the reason it was actually dispatched under (`Initial` for
+    /// a first attempt, or the failover/session reason when the hedge upgraded a
+    /// retry), and the alternate leg tagged [`RequestedRegionReason::Hedging`].
+    /// A dropped leg has no corresponding [`responded_regions`](Self::responded_regions)
+    /// entry, since it never produced a service reply.
     ///
     /// For an aggregated operation (e.g. PATCH) stitched from multiple
-    /// sub-operations, recovery uses the single representative `hedge_diagnostics`
-    /// retained by `aggregate_sub_operations`, so if more than one sub-operation
-    /// fanned out, only the representative fan-out's dropped leg is recovered.
+    /// sub-operations, every sub-operation's fan-out is preserved: the
+    /// aggregated list is the concatenation of each sub-operation's own
+    /// materialized list, in sub-operation order.
     ///
-    /// Order is the retained attempts' dispatch (insertion) order, with the two
-    /// fan-out legs placed in dispatch order (the `Initial` primary before the
-    /// `Hedging` alternate). Under a `429`/`410` retry storm the retained list
-    /// may be bounded by [`DiagnosticsOptions::max_request_diagnostics`], so a
-    /// dropped attempt can be absent here even though it is still counted by
-    /// [`regions_contacted`](Self::regions_contacted) (which is captured from
-    /// the full attempt list before compaction and is deduplicated in
-    /// first-contact order).
+    /// Order is dispatch order: each fan-out's two legs are spliced in at the
+    /// point the race was dispatched, primary before alternate.
     pub fn requested_regions(&self) -> Vec<RequestedRegion> {
-        let mut regions: Vec<RequestedRegion> = self
-            .requests
-            .iter()
-            .filter_map(|r| {
-                r.region().map(|region| RequestedRegion {
-                    region: region.clone(),
-                    reason: RequestedRegionReason::from(r.execution_context()),
-                })
-            })
-            .collect();
-
-        // Recover a structurally-dropped hedge fan-out leg (see the doc comment).
-        // `hedge_diagnostics.alternate_region()` is `Some` exactly when a hedge
-        // arm fanned out; the primary leg is always dispatched as `Initial` and
-        // the alternate as `Hedging`.
-        if let Some(hedge) = self.hedge_diagnostics.as_ref() {
-            if let Some(alternate) = hedge.alternate_region() {
-                let is_sentinel =
-                    |region: &Region| region.as_str() == HedgeDiagnostics::UNKNOWN_REGION_SENTINEL;
-
-                let has_hedge_leg = regions
-                    .iter()
-                    .any(|r| r.reason == RequestedRegionReason::Hedging && &r.region == alternate);
-                if !has_hedge_leg && !is_sentinel(alternate) {
-                    regions.push(RequestedRegion {
-                        region: alternate.clone(),
-                        reason: RequestedRegionReason::Hedging,
-                    });
-                }
-
-                let primary = hedge.primary_region();
-                let has_initial_leg = regions
-                    .iter()
-                    .any(|r| r.reason == RequestedRegionReason::Initial && &r.region == primary);
-                if !has_initial_leg && !is_sentinel(primary) {
-                    // The primary leg is always launched first; place it before
-                    // the first hedge leg so the fan-out reads in dispatch order.
-                    let insert_at = regions
-                        .iter()
-                        .position(|r| r.reason == RequestedRegionReason::Hedging)
-                        .unwrap_or(regions.len());
-                    regions.insert(
-                        insert_at,
-                        RequestedRegion {
-                            region: primary.clone(),
-                            reason: RequestedRegionReason::Initial,
-                        },
-                    );
-                }
-            }
-        }
-
-        regions
+        self.requested_regions.clone()
     }
 
     /// Returns the regions from which this operation received a response, in
     /// arrival (completion) order.
+    ///
+    /// The list is materialized at finalization from the **full** attempt list —
+    /// before any retry-storm compaction — so a response whose attempt was later
+    /// elided from [`requests`](Self::requests) is still reported here.
     ///
     /// Each request that produced a service reply contributes one entry.
     /// Duplicates are allowed: the same region may appear more than once if
@@ -2447,7 +2569,7 @@ impl DiagnosticsContext {
     /// from the region.
     ///
     /// Unlike [`requested_regions`](Self::requested_regions), this accessor does
-    /// **not** recover a structurally-dropped hedge loser leg: on a clean hedge
+    /// **not** include a structurally-dropped hedge loser leg: on a clean hedge
     /// win the losing leg is cancelled before it produces a service reply, so it
     /// correctly does not appear here. A clean hedge win therefore lists only the
     /// winning region even though `requested_regions()` lists both fan-out legs.
@@ -2455,19 +2577,16 @@ impl DiagnosticsContext {
     /// To deduplicate, callers can collect into a set, for example:
     /// `ctx.responded_regions().into_iter().collect::<std::collections::BTreeSet<_>>()`.
     pub fn responded_regions(&self) -> Vec<&Region> {
-        let mut responded: Vec<&RequestDiagnostics> = self
-            .requests
-            .iter()
-            .filter(|r| r.responded_with_service_reply())
-            .collect();
-        // Stable sort by completion time to yield arrival order while
-        // preserving dispatch order among ties.
-        responded.sort_by_key(|r| r.completed_at());
-        responded.iter().filter_map(|r| r.region()).collect()
+        self.responded_regions.iter().collect()
     }
 
     /// Returns `true` iff this operation actually dispatched at least one hedge
     /// request (i.e., fan-out occurred), and `false` otherwise.
+    ///
+    /// Like the two region accessors, this is materialized at finalization from
+    /// the full pre-compaction attempt list plus the dispatch-time fan-out log,
+    /// so a hedge race whose attempts were later compacted away still reports
+    /// `true`.
     ///
     /// `false` does NOT mean hedging was disabled or misconfigured; it means no
     /// fan-out occurred. In particular, when the primary returns before the
@@ -2482,26 +2601,13 @@ impl DiagnosticsContext {
     /// attempt (the non-terminal both-transient path deliberately records no
     /// terminal outcome). So `hedge_diagnostics().is_some()` is not a reliable
     /// "was hedging configured" probe, and it can disagree with
-    /// `hedging_started()` on that both-transient→failover path (where a
-    /// retained `Hedging` request keeps this accessor `true`). The SDK's hedged
-    /// metric counter and log hedge fields key off `hedge_diagnostics` (a
-    /// resolved terminal outcome), so they intentionally do not surface that
-    /// path even though `hedging_started()` is `true`.
-    ///
-    /// The result is a disjunction of two independent fan-out signals:
-    /// [`HedgeDiagnostics::alternate_region`] being `Some` (the orchestrator
-    /// dispatched an alternate leg) and any [`RequestDiagnostics`] tagged
-    /// [`ExecutionContext::Hedging`]. Either alone is sufficient; the
-    /// disjunction stays correct if a future change ever drifts one signal.
+    /// `hedging_started()` on that both-transient→failover path (where the
+    /// recorded fan-out keeps this accessor `true`). The SDK's hedged metric
+    /// counter and log hedge fields key off `hedge_diagnostics` (a resolved
+    /// terminal outcome), so they intentionally do not surface that path even
+    /// though `hedging_started()` is `true`.
     pub fn hedging_started(&self) -> bool {
-        self.hedge_diagnostics
-            .as_ref()
-            .map(|hd| hd.alternate_region().is_some())
-            .unwrap_or(false)
-            || self
-                .requests
-                .iter()
-                .any(|r| matches!(r.execution_context(), ExecutionContext::Hedging))
+        self.hedging_started
     }
 
     /// Returns a shared reference to all request diagnostics.
@@ -2785,6 +2891,9 @@ impl Clone for DiagnosticsContext {
             requests: Arc::clone(&self.requests),
             total_request_charge: self.total_request_charge,
             regions_contacted: self.regions_contacted.clone(),
+            requested_regions: self.requested_regions.clone(),
+            responded_regions: self.responded_regions.clone(),
+            hedging_started: self.hedging_started,
             status: self.status,
             options: Arc::clone(&self.options),
             cpu_monitor: self.cpu_monitor.clone(),
@@ -2825,6 +2934,9 @@ impl PartialEq for DiagnosticsContext {
             && self.requests == other.requests
             && self.total_request_charge == other.total_request_charge
             && self.regions_contacted == other.regions_contacted
+            && self.requested_regions == other.requested_regions
+            && self.responded_regions == other.responded_regions
+            && self.hedging_started == other.hedging_started
             && self.status == other.status
             && self.options == other.options
             && self.operation_name == other.operation_name
@@ -2884,6 +2996,95 @@ fn ordered_unique_regions(requests: &[RequestDiagnostics]) -> Vec<Region> {
         }
     }
     regions
+}
+
+/// Builds the dispatch-ordered requested-region history from the **full**
+/// (pre-compaction) attempt list, splicing in each hedge fan-out at the point it
+/// was dispatched.
+///
+/// A fan-out's two legs are recorded on the parent before the race runs, while
+/// each surviving leg's own attempts are merged back afterwards. Splicing at
+/// `HedgeFanout::at` therefore restores true dispatch order.
+///
+/// A merged-back leg repeats an attempt the fan-out already described, so each
+/// fan-out entry is held in a small "pending" matcher that absorbs at most one
+/// merged attempt apiece. Genuine repeat dispatches — a retry storm hammering
+/// one region, say — are never collapsed, matching the documented contract that
+/// duplicates are meaningful.
+fn requested_regions_from(
+    requests: &[RequestDiagnostics],
+    fanouts: &[HedgeFanout],
+) -> Vec<RequestedRegion> {
+    let mut regions: Vec<RequestedRegion> = Vec::new();
+    let mut next_fanout = 0usize;
+    // Fan-out legs awaiting the merged attempt that repeats them. Holds at most
+    // two entries (one race's legs) and is reset when the next race is spliced.
+    let mut pending: Vec<RequestedRegion> = Vec::new();
+
+    for (index, request) in requests.iter().enumerate() {
+        // Emit every fan-out dispatched at or before this attempt first, so the
+        // race's two legs precede the winner's merged attempts.
+        while let Some(fanout) = fanouts.get(next_fanout) {
+            if fanout.at > index {
+                break;
+            }
+            let legs = fanout.primary.iter().chain(fanout.alternate.iter());
+            pending.clear();
+            pending.extend(legs.clone().cloned());
+            regions.extend(legs.cloned());
+            next_fanout += 1;
+        }
+
+        if let Some(region) = request.region() {
+            let candidate = RequestedRegion {
+                region: region.clone(),
+                reason: RequestedRegionReason::from(request.execution_context()),
+            };
+            // A merged hedge leg repeats the entry its fan-out already recorded;
+            // consume the pending match instead of listing the leg twice.
+            match pending.iter().position(|pending| *pending == candidate) {
+                Some(matched) => {
+                    pending.swap_remove(matched);
+                }
+                None => regions.push(candidate),
+            }
+        }
+    }
+
+    // Fan-outs dispatched after the last recorded attempt (e.g. both legs failed
+    // before recording anything) still belong in the history.
+    for fanout in &fanouts[next_fanout.min(fanouts.len())..] {
+        regions.extend(
+            fanout
+                .primary
+                .iter()
+                .chain(fanout.alternate.iter())
+                .cloned(),
+        );
+    }
+
+    regions
+}
+
+/// Builds the arrival-ordered responded-region history from the **full**
+/// (pre-compaction) attempt list.
+///
+/// Only attempts that received an actual service reply contribute; a
+/// structurally-dropped hedge leg never does, which is why this list can be
+/// shorter than [`requested_regions_from`]'s.
+fn responded_regions_from(requests: &[RequestDiagnostics]) -> Vec<Region> {
+    let mut responded: Vec<&RequestDiagnostics> = requests
+        .iter()
+        .filter(|r| r.responded_with_service_reply())
+        .collect();
+    // Stable sort by completion time to yield arrival order while preserving
+    // dispatch order among ties.
+    responded.sort_by_key(|r| r.completed_at());
+    responded
+        .iter()
+        .filter_map(|r| r.region())
+        .cloned()
+        .collect()
 }
 
 /// Builds a summary for requests in a single region.
@@ -4293,12 +4494,17 @@ mod tests {
     }
 
     #[test]
-    fn requested_regions_recovers_dropped_hedge_leg_on_primary_win() {
+    fn requested_regions_keeps_dropped_hedge_leg_on_primary_win() {
         // PrimaryWonAfterHedge: the alternate leg is structurally dropped, so
-        // `requests` holds only the primary (Initial) record. The alternate
-        // region must still be recovered from `hedge_diagnostics` and appended
-        // in dispatch order (after the Initial primary).
+        // `requests` holds only the primary (Initial) record. Both legs must
+        // still appear, in dispatch order, from the fan-out the orchestrator
+        // recorded on the parent before the race.
         let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
+            builder.record_hedge_fanout(
+                Some(Region::EAST_US_2),
+                RequestedRegionReason::Initial,
+                Some(Region::WEST_US_2),
+            );
             let h = builder.start_test_request(
                 ExecutionContext::Initial,
                 Some(Region::EAST_US_2),
@@ -4332,11 +4538,16 @@ mod tests {
     }
 
     #[test]
-    fn requested_regions_recovers_dropped_primary_leg_on_alternate_win() {
+    fn requested_regions_keeps_dropped_primary_leg_on_alternate_win() {
         // AlternateWon: the primary leg is structurally dropped, so `requests`
-        // holds only the alternate (Hedging) record. The Initial primary region
-        // must be recovered and placed first (dispatch order).
+        // holds only the alternate (Hedging) record. The Initial primary must
+        // still be listed first (dispatch order).
         let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
+            builder.record_hedge_fanout(
+                Some(Region::EAST_US_2),
+                RequestedRegionReason::Initial,
+                Some(Region::WEST_US_2),
+            );
             let h = builder.start_test_request(
                 ExecutionContext::Hedging,
                 Some(Region::WEST_US_2),
@@ -4366,6 +4577,179 @@ mod tests {
         );
         // Only the winning alternate produced a service reply.
         assert_eq!(ctx.responded_regions(), vec![&Region::WEST_US_2]);
+    }
+
+    #[test]
+    fn requested_regions_tags_primary_leg_with_upgrade_reason() {
+        // A hedge upgraded after a failover retry (STAGE 7) dispatches its
+        // primary leg as a failover, not as a first attempt — the recorded
+        // fan-out must carry that reason rather than defaulting to `Initial`.
+        let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
+            let h = builder.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::EAST_US_2),
+                "https://test.eastus2.documents.azure.com",
+            );
+            builder.complete_request(h, StatusCode::ServiceUnavailable, None);
+            builder.record_hedge_fanout(
+                Some(Region::WEST_US_2),
+                RequestedRegionReason::RegionFailover,
+                Some(Region::CENTRAL_US),
+            );
+            let h = builder.start_test_request(
+                ExecutionContext::RegionFailover,
+                Some(Region::WEST_US_2),
+                "https://test.westus2.documents.azure.com",
+            );
+            builder.complete_request(h, StatusCode::Ok, None);
+        });
+
+        assert!(ctx.hedging_started());
+        assert_eq!(
+            ctx.requested_regions(),
+            vec![
+                RequestedRegion {
+                    region: Region::EAST_US_2,
+                    reason: RequestedRegionReason::Initial,
+                },
+                RequestedRegion {
+                    region: Region::WEST_US_2,
+                    reason: RequestedRegionReason::RegionFailover,
+                },
+                RequestedRegion {
+                    region: Region::CENTRAL_US,
+                    reason: RequestedRegionReason::Hedging,
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn requested_regions_survives_retry_storm_compaction() {
+        // The dispatch history is materialized from the FULL attempt list, so a
+        // retry storm that compacts `requests` down to the cap must not shrink
+        // it — including the hedge fan-out recorded mid-storm. Repeat dispatches
+        // to one region must survive as distinct entries.
+        let cap = 16;
+        let options = Arc::new(
+            DiagnosticsOptions::builder()
+                .with_max_request_diagnostics(cap)
+                .build()
+                .expect("valid options"),
+        );
+        let mut builder = DiagnosticsContextBuilder::new(ActivityId::new_uuid(), options);
+        for _ in 0..40 {
+            let h = builder.start_test_request(
+                ExecutionContext::OperationRetry,
+                Some(Region::EAST_US_2),
+                "https://test.eastus2.documents.azure.com",
+            );
+            builder.complete_request(h, StatusCode::TooManyRequests, None);
+        }
+        builder.record_hedge_fanout(
+            Some(Region::EAST_US_2),
+            RequestedRegionReason::OperationRetry,
+            Some(Region::WEST_US_2),
+        );
+        let h = builder.start_test_request(
+            ExecutionContext::Hedging,
+            Some(Region::WEST_US_2),
+            "https://test.westus2.documents.azure.com",
+        );
+        builder.complete_request(h, StatusCode::Ok, None);
+        let ctx = builder.complete();
+
+        // The retained attempt list really was bounded...
+        assert!(ctx.requests().len() <= cap);
+        assert!(ctx.compaction().is_some());
+        // ...but the dispatch history is complete: 40 retries + both fan-out
+        // legs (the winning alternate's merged attempt is absorbed by the
+        // fan-out entry it repeats).
+        assert_eq!(ctx.requested_regions().len(), 42);
+        assert!(ctx.hedging_started());
+        assert_eq!(ctx.responded_regions().len(), 41);
+    }
+
+    #[test]
+    fn requested_regions_preserves_repeat_dispatches_around_a_fanout() {
+        // Duplicates are meaningful: the fan-out matcher absorbs only the merged
+        // leg that repeats it, never a genuine repeat dispatch to the same
+        // region under the same reason.
+        let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
+            for _ in 0..2 {
+                let h = builder.start_test_request(
+                    ExecutionContext::OperationRetry,
+                    Some(Region::EAST_US_2),
+                    "https://test.eastus2.documents.azure.com",
+                );
+                builder.complete_request(h, StatusCode::TooManyRequests, None);
+            }
+            builder.record_hedge_fanout(
+                Some(Region::EAST_US_2),
+                RequestedRegionReason::OperationRetry,
+                Some(Region::WEST_US_2),
+            );
+            // Both legs get harvested back into the parent, so both fan-out
+            // entries are absorbed exactly once...
+            let primary = builder.start_test_request(
+                ExecutionContext::OperationRetry,
+                Some(Region::EAST_US_2),
+                "https://test.eastus2.documents.azure.com",
+            );
+            builder.complete_request(primary, StatusCode::Ok, None);
+            let alternate = builder.start_test_request(
+                ExecutionContext::Hedging,
+                Some(Region::WEST_US_2),
+                "https://test.westus2.documents.azure.com",
+            );
+            builder.complete_request(alternate, StatusCode::Ok, None);
+            // ...and a later retry to the same region is still its own entry.
+            let late = builder.start_test_request(
+                ExecutionContext::OperationRetry,
+                Some(Region::EAST_US_2),
+                "https://test.eastus2.documents.azure.com",
+            );
+            builder.complete_request(late, StatusCode::Ok, None);
+        });
+
+        assert_eq!(
+            ctx.requested_regions(),
+            vec![
+                RequestedRegion {
+                    region: Region::EAST_US_2,
+                    reason: RequestedRegionReason::OperationRetry,
+                },
+                RequestedRegion {
+                    region: Region::EAST_US_2,
+                    reason: RequestedRegionReason::OperationRetry,
+                },
+                RequestedRegion {
+                    region: Region::EAST_US_2,
+                    reason: RequestedRegionReason::OperationRetry,
+                },
+                RequestedRegion {
+                    region: Region::WEST_US_2,
+                    reason: RequestedRegionReason::Hedging,
+                },
+                RequestedRegion {
+                    region: Region::EAST_US_2,
+                    reason: RequestedRegionReason::OperationRetry,
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn requested_regions_skips_fanout_without_named_regions() {
+        // Global-endpoint accounts route to endpoints with no named region; a
+        // fan-out there contributes no requested-region entries, but still
+        // counts as a fan-out.
+        let ctx = make_context_with(ActivityId::new_uuid(), |builder| {
+            builder.record_hedge_fanout(None, RequestedRegionReason::Initial, None);
+        });
+
+        assert!(ctx.hedging_started());
+        assert!(ctx.requested_regions().is_empty());
     }
 
     #[test]
@@ -4434,6 +4818,81 @@ mod tests {
         assert_eq!(
             hedge.terminal_state(),
             crate::driver::pipeline::hedging_diagnostics::HedgeTerminalState::AlternateWon,
+        );
+    }
+
+    #[test]
+    fn aggregate_sub_operations_keeps_every_sub_op_fanout() {
+        // Only one representative `hedge_diagnostics` survives aggregation, so
+        // the Hedging Detection API must not depend on it: each sub-op's own
+        // materialized dispatch history is concatenated in sub-op order.
+        let read = make_context_with(ActivityId::new_uuid(), |builder| {
+            builder.record_hedge_fanout(
+                Some(Region::EAST_US_2),
+                RequestedRegionReason::Initial,
+                Some(Region::WEST_US_2),
+            );
+            let h = builder.start_test_request(
+                ExecutionContext::Hedging,
+                Some(Region::WEST_US_2),
+                "https://test.westus2.documents.azure.com",
+            );
+            builder.complete_request(h, StatusCode::Ok, None);
+            builder.set_hedge_diagnostics(HedgeDiagnostics::hedge_won(
+                hedge_config(),
+                Region::EAST_US_2,
+                Region::WEST_US_2,
+            ));
+        });
+        let replace = make_context_with(ActivityId::new_uuid(), |builder| {
+            builder.record_hedge_fanout(
+                Some(Region::EAST_US_2),
+                RequestedRegionReason::Initial,
+                Some(Region::CENTRAL_US),
+            );
+            let h = builder.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::EAST_US_2),
+                "https://test.eastus2.documents.azure.com",
+            );
+            builder.complete_request(h, StatusCode::Ok, None);
+            builder.set_hedge_diagnostics(HedgeDiagnostics::primary_won_after_hedge(
+                hedge_config(),
+                Region::EAST_US_2,
+                Region::CENTRAL_US,
+            ));
+        });
+
+        let aggregate =
+            DiagnosticsContext::aggregate_sub_operations(&[Arc::new(read), Arc::new(replace)])
+                .expect("non-empty sources");
+
+        assert!(aggregate.hedging_started());
+        // Both fan-outs survive, including the non-representative one.
+        assert_eq!(
+            aggregate.requested_regions(),
+            vec![
+                RequestedRegion {
+                    region: Region::EAST_US_2,
+                    reason: RequestedRegionReason::Initial,
+                },
+                RequestedRegion {
+                    region: Region::WEST_US_2,
+                    reason: RequestedRegionReason::Hedging,
+                },
+                RequestedRegion {
+                    region: Region::EAST_US_2,
+                    reason: RequestedRegionReason::Initial,
+                },
+                RequestedRegion {
+                    region: Region::CENTRAL_US,
+                    reason: RequestedRegionReason::Hedging,
+                },
+            ]
+        );
+        assert_eq!(
+            aggregate.responded_regions(),
+            vec![&Region::WEST_US_2, &Region::EAST_US_2]
         );
     }
 
