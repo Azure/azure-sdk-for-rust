@@ -1110,3 +1110,71 @@ mod tests {
         assert_eq!(merged.as_str(), "0:2#200#1=100");
     }
 }
+
+/// Size budgets for the hot-path model types.
+///
+/// `CosmosOperation` and `CosmosResponse` are moved and cloned throughout the
+/// driver pipeline (planner, dataflow, retry). Keeping them small keeps those
+/// moves cheap and keeps futures that hold them small.
+///
+/// Budgets are set above the current actual sizes, so adding a field is not an
+/// automatic failure — but growing past the budget is, which forces a conscious
+/// decision: does the new state belong inline, or behind a `Box` / `Arc` / rare
+/// storage? When a change legitimately needs more room, raise the budget
+/// deliberately rather than silently.
+///
+/// The four concrete handles (`AccountReference`, `DatabaseReference`,
+/// `ContainerReference`, `ItemReference`) are newtypes over an `Arc<…Inner>`, so
+/// they are pointer-sized and their budgets are tight on purpose: a regression
+/// there means someone re-inlined state that should be shared.
+/// `CosmosResourceReference` stays inline — it holds a resource type, an account
+/// handle, a scope, and an optional identifier — so its budget is correspondingly
+/// larger.
+#[cfg(test)]
+mod size_budgets {
+    use super::*;
+    use std::mem::size_of;
+
+    /// Asserts `size_of::<T>() <= budget`, reporting the actual size.
+    macro_rules! assert_size {
+        ($t:ty, $budget:expr) => {{
+            let actual = size_of::<$t>();
+            assert!(
+                actual <= $budget,
+                concat!(
+                    "size_of::<",
+                    stringify!($t),
+                    ">() = {} exceeds budget of {} bytes. \
+                     Consider boxing/sharing the new state instead of inlining it, \
+                     or raise the budget deliberately if the growth is warranted."
+                ),
+                actual,
+                $budget
+            );
+        }};
+    }
+
+    #[test]
+    fn model_sizes_within_budget() {
+        // 392 today. Dominated by the inline `CosmosRequestHeaders` (208) and
+        // `Option<FeedRange>` (72); shrinking further means splitting the
+        // request headers into common + rare storage.
+        assert_size!(CosmosOperation, 448);
+
+        // 688 today (704 with `preview_dtx`), almost entirely
+        // `CosmosResponseHeaders`. Splitting those into common fields +
+        // `Option<Box<RareResponseHeaders>>` is the outstanding follow-up.
+        assert_size!(CosmosResponse, 720);
+        assert_size!(CosmosRequestHeaders, 224);
+        assert_size!(CosmosResponseHeaders, 672);
+
+        // Pointer-sized (or near it) by construction — see the module docs.
+        assert_size!(CosmosResourceReference, 72);
+        assert_size!(AccountReference, 8);
+        assert_size!(DatabaseReference, 8);
+        assert_size!(ContainerReference, 8);
+        assert_size!(ItemReference, 8);
+
+        assert_size!(FeedRange, 80);
+    }
+}
